@@ -44,7 +44,7 @@ export const createCreditNote = async (req, res) => {
 
     const Secondary_user_id = req.sUserId;
 
-    /// generate voucher number(sales number)
+    /// generate voucher number(creditNote number)
     const { voucherNumber: creditNoteNumber, usedSeriesNumber } =
       await generateVoucherNumber(orgId, voucherType, series_id, session);
     if (creditNoteNumber) {

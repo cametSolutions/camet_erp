@@ -11,6 +11,7 @@ import secondaryUserModel from "../models/secondaryUserModel.js";
 import mongoose from "mongoose";
 import { formatToLocalDate } from "../helpers/helper.js";
 import partyModel from "../models/partyModel.js";
+import { generateVoucherNumber, getSeriesDetailsById } from "../helpers/voucherHelper.js";
 
 /**
  * @desc  create sale order
@@ -38,26 +39,22 @@ export const createInvoice = async (req, res) => {
           priceLevelFromRedux,
           additionalChargesFromRedux,
           finalAmount: lastAmount,
-          saleOrderNumber:orderNumber,
           despatchDetails,
           selectedDate,
+          voucherType,
+          series_id,
         } = req.body;
 
         formatToLocalDate(selectedDate, orgId);
 
-        const numberExistence = await checkForNumberExistence(
-          invoiceModel,
-          "orderNumber",
-          orderNumber,
-          orgId,
-          session
-        );
-
-        if (numberExistence) {
-          await session.abortTransaction();
-          return res
-            .status(400)
-            .json({ message: "SaleOrder with the same number already exists" });
+        /// generate voucher number(invoice number)
+        const { voucherNumber: orderNumber, usedSeriesNumber } =
+          await generateVoucherNumber(orgId, voucherType, series_id, session);
+        if (orderNumber) {
+          req.body.orderNumber = orderNumber;
+        }
+        if (usedSeriesNumber) {
+          req.body.usedSeriesNumber = usedSeriesNumber;
         }
 
         const newSerialNumber = await fetchLastInvoice(invoiceModel, session);
@@ -84,6 +81,8 @@ export const createInvoice = async (req, res) => {
           Primary_user_id: owner,
           Secondary_user_id,
           orderNumber,
+          series_id,
+          usedSeriesNumber,
           despatchDetails,
           date: await formatToLocalDate(selectedDate, orgId, session),
         });
@@ -151,11 +150,12 @@ export const editInvoice = async (req, res) => {
         items,
         priceLevelFromRedux,
         additionalChargesFromRedux,
-        finalAmount:lastAmount,
-        orderNumber,
+        finalAmount: lastAmount,
         despatchDetails,
         selectedDate,
       } = req.body;
+
+      let { orderNumber, series_id, usedSeriesNumber } = req.body;
 
       // Fetch the existing invoice
       const existingInvoice = await invoiceModel
@@ -167,6 +167,19 @@ export const editInvoice = async (req, res) => {
         return res
           .status(404)
           .json({ success: false, message: "Invoice not found" });
+      }
+
+      if (existingInvoice?.series_id?.toString() !== series_id?.toString()) {
+        const { voucherNumber, usedSeriesNumber: newUsedSeriesNumber } =
+          await generateVoucherNumber(
+            orgId,
+            existingInvoice.voucherType,
+            series_id,
+            session
+          );
+
+        orderNumber = voucherNumber; // Always update when series changes
+        usedSeriesNumber = newUsedSeriesNumber; // Always update when series changes
       }
 
       // Revert stock changes based on the original invoice
@@ -226,7 +239,7 @@ export const editInvoice = async (req, res) => {
 
       // Handle write conflict or transient transaction errors
       if (
-        error.codeName === "WriteConflict" || 
+        error.codeName === "WriteConflict" ||
         error.errorLabels.has("TransientTransactionError")
       ) {
         retries -= 1;
@@ -322,13 +335,11 @@ export const cancelSalesOrder = async (req, res) => {
   }
 };
 
-
 /**
  * @desc get invoice details
  * @route GET/api/sUsers/getInvoiceDetails/:id
  * @access Public
  */
-
 
 export const getInvoiceDetails = async (req, res) => {
   const invoiceId = req.params.id;
@@ -351,11 +362,20 @@ export const getInvoiceDetails = async (req, res) => {
       })
       .lean();
 
-
-
-
     if (!invoiceDetails) {
       return res.status(404).json({ error: "Invoice not found" });
+    }
+
+    const seriesDetails = await getSeriesDetailsById(
+      invoiceDetails?.series_id,
+      invoiceDetails?.cmp_id,
+      invoiceDetails?.voucherType
+    );
+
+    seriesDetails.currentNumber = invoiceDetails?.usedSeriesNumber;
+
+    if (seriesDetails) {
+      invoiceDetails.seriesDetails = seriesDetails;
     }
 
     // Update party name and fix _id
@@ -368,11 +388,10 @@ export const getInvoiceDetails = async (req, res) => {
     // Update item and godown details
     if (invoiceDetails.items && invoiceDetails.items.length > 0) {
       invoiceDetails.items.forEach((item) => {
-
         console.log("itemfgd", item._id);
-        
+
         if (item._id?.product_name) {
-          console.log("here")
+          console.log("here");
           item.product_name = item._id.product_name;
           item.balance_stock = item._id.balance_stock;
           item._id = item._id._id;
@@ -380,7 +399,6 @@ export const getInvoiceDetails = async (req, res) => {
 
         console.log(item?.product_name);
         console.log(item?.balance_stock);
-        
 
         if (item.GodownList && item.GodownList.length > 0) {
           item.GodownList.forEach((godown) => {
@@ -403,8 +421,6 @@ export const getInvoiceDetails = async (req, res) => {
   }
 };
 
-
-
 /**
  * @desc finding party List with total amount of sale orders
  * @route POST/api/sUsers/cancelSalesOrder
@@ -415,23 +431,26 @@ export const PartyListWithOrderPending = async (req, res) => {
   const { cmp_id } = req.params;
   const { owner: Primary_user_id, sUserId: secUserId } = req;
 
-
   try {
     // Fetch parties and orders concurrently
     const [partyList, orders] = await Promise.all([
-      partyModel.find({ cmp_id, Primary_user_id }).select(
-        "_id partyName billingAddress shippingAddress mobileNumber gstNo emailID pin country state accountGroup"
-      ),
-      invoiceModel.find({
-        cmp_id,
-        Primary_user_id,
-        isCancelled: false,
-        $or: [
-          { isConverted: false },
-          { isConverted: { $exists: false } },
-          { isConverted: null }
-        ]
-      }).select("party._id finalAmount")
+      partyModel
+        .find({ cmp_id, Primary_user_id })
+        .select(
+          "_id partyName billingAddress shippingAddress mobileNumber gstNo emailID pin country state accountGroup"
+        ),
+      invoiceModel
+        .find({
+          cmp_id,
+          Primary_user_id,
+          isCancelled: false,
+          $or: [
+            { isConverted: false },
+            { isConverted: { $exists: false } },
+            { isConverted: null },
+          ],
+        })
+        .select("party._id finalAmount"),
     ]);
 
     if (partyList.length === 0) {
@@ -452,7 +471,7 @@ export const PartyListWithOrderPending = async (req, res) => {
         const partyId = party._id.toString();
         return {
           ...party.toObject(),
-          totalOutstanding: Number((partyTotals[partyId] || 0).toFixed(2))
+          totalOutstanding: Number((partyTotals[partyId] || 0).toFixed(2)),
         };
       })
       .filter((party) => party.totalOutstanding > 0);
@@ -465,7 +484,7 @@ export const PartyListWithOrderPending = async (req, res) => {
     res.status(200).json({
       success: true,
       partyList: partiesWithTotals,
-      message: "Parties fetched successfully with order totals"
+      message: "Parties fetched successfully with order totals",
     });
   } catch (error) {
     console.error("Error in PartyList:", error.message);

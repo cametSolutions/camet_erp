@@ -20,6 +20,12 @@ const invoiceSchema = new Schema(
     serialNumber: { type: Number },
     userLevelSerialNumber: { type: Number },
     orderNumber: { type: String, required: true },
+    series_id: {
+      type: Schema.Types.ObjectId,
+      ref: "VoucherSeries",
+      required: true,
+    },
+    usedSeriesNumber: { type: Number, required: true },
     Primary_user_id: {
       type: Schema.Types.ObjectId,
       ref: "User",
@@ -59,7 +65,6 @@ const invoiceSchema = new Schema(
       totalOutstanding: { type: Number },
       latestBillDate: { type: Date, default: null },
       newAddress: { type: Object },
-
     },
 
     // priceLevel: { type: Schema.Types.ObjectId, ref: 'PriceLevel' },
@@ -206,15 +211,39 @@ const invoiceSchema = new Schema(
   }
 );
 
-invoiceSchema.index({ cmp_id: 1 });
-invoiceSchema.index({ Secondary_user_id: 1 });
+// 1. Primary unique identifier (order number per company)
+invoiceSchema.index({ cmp_id: 1, orderNumber: -1 }, { unique: true });
+
+// 2. Secondary unique sequence (series-based numbering)
+invoiceSchema.index({ cmp_id: 1, series_id: 1, series_id: -1 }, { unique: true });
+
+// 3. Most common query pattern (company + date sorting)
+invoiceSchema.index({ cmp_id: 1, date: -1 });
+
+// 4. Party reference queries
+invoiceSchema.index({ cmp_id: 1, "party._id": 1 });
+
+// 5. User-specific workflows
+invoiceSchema.index({ cmp_id: 1, Secondary_user_id: 1 });
+
+// 6. Sequential document access
 invoiceSchema.index({ cmp_id: 1, serialNumber: -1 });
-invoiceSchema.index({
-  cmp_id: 1,
-  Secondary_user_id: 1,
-  userLevelSerialNumber: -1,
+
+// 7. User-level document sequences (alternative to index #2 if needed)
+invoiceSchema.index({ 
+  cmp_id: 1, 
+  Secondary_user_id: 1, 
+  userLevelSerialNumber: -1 
 });
-invoiceSchema.index({ date: 1 });
-invoiceSchema.index({ "party._id": 1 });
+
+// NEW INDEX: For fast validation of usedSeriesNumber existence
+invoiceSchema.index({ 
+  cmp_id: 1, 
+  series_id: 1, 
+  usedSeriesNumber: 1 
+}, { 
+  name: "series_number_validation_idx",
+  background: true 
+});
 
 export default mongoose.model("Invoice", invoiceSchema);
