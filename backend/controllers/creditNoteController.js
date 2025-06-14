@@ -19,6 +19,7 @@ import creditNoteModel from "../models/creditNoteModel.js";
 import secondaryUserModel from "../models/secondaryUserModel.js";
 import mongoose from "mongoose";
 import TallyData from "../models/TallyData.js";
+import { generateVoucherNumber } from "../helpers/voucherHelper.js";
 
 // @desc create credit note
 // route GET/api/sUsers/createCreditNote
@@ -33,27 +34,21 @@ export const createCreditNote = async (req, res) => {
       despatchDetails,
       additionalChargesFromRedux,
       finalAmount: lastAmount,
-      creditNoteNumber,
       selectedDate,
       voucherType,
+      series_id
     } = req.body;
 
     const Secondary_user_id = req.sUserId;
 
-    const NumberExistence = await checkForNumberExistence(
-      creditNoteModel,
-      "creditNoteNumber",
-      creditNoteNumber,
-      req.body.orgId,
-      session
-    );
-
-    if (NumberExistence) {
-      await session.abortTransaction();
-      session.endSession();
-      return res.status(400).json({
-        message: "Credit Note with the same number already exists",
-      });
+    /// generate voucher number(sales number)
+    const { voucherNumber: creditNoteNumber, usedSeriesNumber } =
+      await generateVoucherNumber(orgId, voucherType, series_id, session);
+    if (creditNoteNumber) {
+      req.body.creditNoteNumber = creditNoteNumber;
+    }
+    if (usedSeriesNumber) {
+      req.body.usedSeriesNumber = usedSeriesNumber;
     }
 
     const secondaryUser = await secondaryUserModel
@@ -350,10 +345,8 @@ export const editCreditNote = async (req, res) => {
       transactionType: "creditNote",
       secondaryMobile,
       selectedDate,
-      classification:"Cr"
+      classification: "Cr",
     });
-
-
 
     await session.commitTransaction();
     session.endSession();
@@ -375,7 +368,6 @@ export const editCreditNote = async (req, res) => {
     await session.endSession();
   }
 };
-
 
 // @desc to  get details of credit note
 // route get/api/sUsers/getCreditNoteDetails
@@ -453,4 +445,3 @@ export const getCreditNoteDetails = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
-

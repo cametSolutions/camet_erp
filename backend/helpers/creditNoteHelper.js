@@ -175,6 +175,8 @@ export const createCreditNoteRecord = async (
       despatchDetails,
       finalAmount: lastAmount,
       selectedDate,
+      usedSeriesNumber,
+      series_id,
     } = req.body;
 
     console.log("lastAmount", lastAmount);
@@ -200,6 +202,8 @@ export const createCreditNoteRecord = async (
       selectedGodownName: selectedGodownName ? selectedGodownName[0] : "",
       serialNumber: newSerialNumber,
       creditNoteNumber: creditNoteNumber,
+      usedSeriesNumber,
+      series_id,
       cmp_id: orgId,
       partyAccount: party?.partyName,
       party,

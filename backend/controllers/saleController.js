@@ -46,7 +46,6 @@ export const createSale = async (req, res) => {
       paymentSplittingData,
       selectedDate,
       voucherType,
-
       convertedFrom = [],
     } = req.body;
 
@@ -184,7 +183,7 @@ export const createSale = async (req, res) => {
  * @access Public
  */
 
-const MAX_RETRIES = 1;
+const MAX_RETRIES = 5;
 const RETRY_DELAY_MS = 1000;
 
 export const editSale = async (req, res) => {
