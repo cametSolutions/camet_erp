@@ -68,7 +68,7 @@ function VoucherPdfHeaderNonIndian({
             {getTitleNumber()} : {data?.[getVoucherNumber()]}
           </div>
           <div className="text-xs md:text-sm">
-            Date: {new Date(data?.createdAt).toDateString()}
+            Date: {new Date(data?.date).toDateString()}
           </div>
         </div>
       </div>
