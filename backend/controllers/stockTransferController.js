@@ -12,6 +12,10 @@ import {
 import SecondaryUser from "../models/secondaryUserModel.js";
 import stockTransferModel from "../models/stockTransferModel.js";
 import { formatToLocalDate } from "../helpers/stockTransferHelper.js";
+import {
+  generateVoucherNumber,
+  getSeriesDetailsById,
+} from "../helpers/voucherHelper.js";
 
 ////////// facing many issues while adding session and transaction in stock transfer so keeping it without session and transaction  for further updation ///////////
 
@@ -33,19 +37,9 @@ export const createStockTransfer = async (req, res) => {
       stockTransferToGodown,
       items,
       finalAmount: lastAmount,
-      stockTransferNumber,
+      series_id,
+      voucherType,
     } = req.body;
-
-    const transferData = {
-      stockTransferNumber,
-      selectedDate,
-      orgId,
-      stockTransferToGodown,
-      items,
-      lastAmount,
-      req,
-      session, // Pass session to all database operations
-    };
 
     const id = req.sUserId;
     const secondaryUser = await SecondaryUser.findById(id).session(session);
@@ -58,21 +52,26 @@ export const createStockTransfer = async (req, res) => {
       });
     }
 
-    const NumberExistence = await checkForNumberExistence(
-      stockTransferModel,
-      "stockTransferNumber",
-      stockTransferNumber,
-      orgId,
-      session
-    );
-
-    if (NumberExistence) {
-      await session.abortTransaction();
-      session.endSession();
-      return res.status(400).json({
-        message: "Stock Transfer with the same number already exists",
-      });
+    /// generate voucher number(sales number)
+    const { voucherNumber: stockTransferNumber, usedSeriesNumber } =
+      await generateVoucherNumber(orgId, voucherType, series_id, session);
+    if (stockTransferNumber) {
+      req.body.stockTransferNumber = stockTransferNumber;
     }
+    if (usedSeriesNumber) {
+      req.body.usedSeriesNumber = usedSeriesNumber;
+    }
+
+    const transferData = {
+      stockTransferNumber,
+      selectedDate,
+      orgId,
+      stockTransferToGodown,
+      items,
+      lastAmount,
+      req,
+      session, // Pass session to all database operations
+    };
 
     const addSerialNumber = await getNewSerialNumber(
       stockTransferModel,
@@ -123,13 +122,14 @@ export const editStockTransfer = async (req, res) => {
   try {
     const transferId = req.params.id;
     const {
-      stockTransferNumber,
       selectedDate,
       orgId,
       stockTransferToGodown, // Fixing the variable name to match other functions
       items,
       finalAmount: lastAmount,
     } = req.body;
+
+    let { stockTransferNumber, series_id, usedSeriesNumber } = req.body;
 
     // Find the existing stock transfer document by ID with session
     const existingTransfer = await stockTransferModel
@@ -150,6 +150,19 @@ export const editStockTransfer = async (req, res) => {
       return res.status(400).json({
         error: "Cannot edit a cancelled stock transfer",
       });
+    }
+
+    if (existingTransfer?.series_id?.toString() !== series_id?.toString()) {
+      const { voucherNumber, usedSeriesNumber: newUsedSeriesNumber } =
+        await generateVoucherNumber(
+          orgId,
+          existingTransfer.voucherType,
+          series_id,
+          session
+        );
+
+      stockTransferNumber = voucherNumber; // Always update when series changes
+      usedSeriesNumber = newUsedSeriesNumber; // Always update when series changes
     }
 
     // Revert the stock levels affected by the existing transfer using session
@@ -173,7 +186,9 @@ export const editStockTransfer = async (req, res) => {
     // Update the existing stock transfer document with new data
     const updateData = {
       date: await formatToLocalDate(selectedDate, orgId),
-      stockTransferNumber: existingTransfer.stockTransferNumber, // Keep the same number
+      stockTransferNumber: stockTransferNumber,
+      series_id,
+      usedSeriesNumber,
       stockTransferToGodown: stockTransferToGodown,
       items: items,
       finalAmount: lastAmount,
@@ -208,6 +223,12 @@ export const editStockTransfer = async (req, res) => {
     });
   }
 };
+
+/**
+ *  @desc To cancel stock transfer
+ * @route POST /api/sUsers/cancelstockTransfer
+ * @access Public
+ */
 
 export const cancelStockTransfer = async (req, res) => {
   // Start a MongoDB session for transactions
@@ -269,5 +290,98 @@ export const cancelStockTransfer = async (req, res) => {
       error: "Internal Server Error",
       details: error.message,
     });
+  }
+};
+
+/**
+ *  @desc To get stock transfer details
+ * @route GET /api/sUsers/getStockTransferDetails
+ * @access Public
+ */
+
+// @desc to  get stock transfer details
+// route get/api/sUsers/getStockTransferDetails;
+// @desc to get stock transfer details
+// route get/api/sUsers/getStockTransferDetails;
+export const getStockTransferDetails = async (req, res) => {
+  try {
+    const id = req.params.id;
+
+    const details = await stockTransferModel
+      .findById(id)
+      .populate({
+        path: "stockTransferToGodown._id",
+        select: "godown godown_id defaultGodown",
+      })
+      .populate({
+        path: "items._id",
+        select: "product_name balance_stock",
+      })
+      .populate({
+        path: "items.GodownList.godownMongoDbId",
+        select: "godown godown_id defaultGodown",
+      })
+      .lean();
+
+    if (!details) {
+      return res
+        .status(404)
+        .json({ error: "Stock Transfer Details not found" });
+    }
+
+    // Get series details
+    const seriesDetails = await getSeriesDetailsById(
+      details?.series_id,
+      details?.cmp_id,
+      details?.voucherType
+    );
+
+    seriesDetails.currentNumber = details?.usedSeriesNumber;
+
+    if (seriesDetails) {
+      details.seriesDetails = seriesDetails;
+    }
+
+    // Populate stockTransferToGodown details and restore _id
+    if (details.stockTransferToGodown?._id) {
+      const godownData = details.stockTransferToGodown._id;
+      if (godownData.godown) {
+        details.stockTransferToGodown.godown = godownData.godown;
+        details.stockTransferToGodown.godown_id = godownData.godown_id;
+        details.stockTransferToGodown.defaultGodown = godownData.defaultGodown;
+        details.stockTransferToGodown._id = godownData._id;
+      }
+    }
+
+    // Populate item and godown details
+    if (details.items && details.items.length > 0) {
+      details.items.forEach((item) => {
+        // Populate item details
+        if (item._id?.product_name) {
+          item.product_name = item._id.product_name;
+          item.balance_stock = item._id.balance_stock;
+          item._id = item._id._id;
+        }
+
+        // Populate godown details in GodownList
+        if (item.GodownList && item.GodownList.length > 0) {
+          item.GodownList.forEach((godown) => {
+            if (godown.godownMongoDbId?.godown) {
+              godown.godown = godown.godownMongoDbId.godown;
+              godown.godown_id = godown.godownMongoDbId.godown_id;
+              godown.defaultGodown = godown.godownMongoDbId.defaultGodown;
+              godown.godownMongoDbId = godown.godownMongoDbId._id;
+            }
+          });
+        }
+      });
+    }
+
+    res
+      .status(200)
+      .json({ message: "Stock Transfer Details fetched", data: details });
+  } catch (error) {
+    console.error("Error in getting StockTransferDetails:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };

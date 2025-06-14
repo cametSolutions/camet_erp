@@ -323,8 +323,9 @@ function VoucherInitialPage() {
         formData = {
           selectedDate: new Date(selectedDate).toISOString(),
           voucherType,
+          series_id: selectedVoucherSeriesFromRedux?._id,
+          usedSeriesNumber: selectedVoucherSeriesFromRedux?.currentNumber,
           orgId: cmp_id,
-
           [voucherNumberTitle]: voucherNumber,
           stockTransferToGodown,
           items,

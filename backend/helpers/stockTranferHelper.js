@@ -113,11 +113,15 @@ export const handleStockTransfer = async ({
   req,
   session,
 }) => {
+  const { series_id, usedSeriesNumber } = req.body;
+
   try {
     const newStockTransfer = new stockTransferModel({
       serialNumber,
       date: await formatToLocalDate(selectedDate, orgId),
       stockTransferNumber,
+      series_id,
+      usedSeriesNumber,
       Primary_user_id: req.owner.toString(),
       Secondary_user_id: req.sUserId,
       cmp_id: orgId,
