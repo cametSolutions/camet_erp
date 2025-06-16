@@ -44,6 +44,7 @@ function AccVoucherInitialPage() {
     note,
     mode,
     voucherSeries: voucherSeriesFromRedux,
+    selectedVoucherSeries,
   } = useSelector((state) => state.commonAccountingVoucherSlice);
 
   const [voucherNumber, setVoucherNumber] = useState("");
@@ -61,7 +62,7 @@ function AccVoucherInitialPage() {
 
   // ////////////for fetching configuration number
   useEffect(() => {
-    if (voucherSeriesFromRedux ===null) {
+    if (voucherSeriesFromRedux === null) {
       const fetchConfigurationNumber = async () => {
         setLoading(true);
         try {
@@ -73,12 +74,7 @@ function AccVoucherInitialPage() {
             }
           );
 
-          
-
           const configData = res?.data;
-
-          console.log(configData);
-          
 
           if (voucherSeriesFromRedux === null) {
             dispatch(addVoucherSeries(configData.series));
@@ -148,6 +144,8 @@ function AccVoucherInitialPage() {
       paymentMethod,
       paymentDetails,
       note,
+      series_id: selectedVoucherSeries?._id,
+      voucherType: voucherTypeFromRedux,
     };
 
     if (formData?.paymentMethod === "Online") {

@@ -16,6 +16,7 @@ import {
   revertSettlementData,
 } from "../helpers/receiptHelper.js";
 import { formatToLocalDate } from "../helpers/helper.js";
+import { generateVoucherNumber } from "../helpers/voucherHelper.js";
 
 /**
  * @desc  create receipt
@@ -38,6 +39,8 @@ export const createReceipt = async (req, res) => {
     paymentDetails,
     note,
     outstandings,
+    series_id,
+    voucherType,
   } = req.body;
 
   const Primary_user_id = req.owner.toString();
@@ -46,14 +49,16 @@ export const createReceipt = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
-    // Check if receipt number already exists
-    const NumberExistence = await checkForNumberExistence(
-      ReceiptModel,
-      "receiptNumber",
-      receiptNumber,
-      cmp_id,
-      session
-    );
+
+    /// generate voucher number(sales number)
+    const { voucherNumber: receiptNumber, usedSeriesNumber } =
+      await generateVoucherNumber(cmp_id, voucherType, series_id, session);
+    if (receiptNumber) {
+      req.body.receiptNumber = receiptNumber;
+    }
+    if (usedSeriesNumber) {
+      req.body.usedSeriesNumber = usedSeriesNumber;
+    }
 
     const serialNumber = await getNewSerialNumber(
       ReceiptModel,
@@ -86,6 +91,8 @@ export const createReceipt = async (req, res) => {
       date: await formatToLocalDate(date, cmp_id, session),
 
       receiptNumber,
+      series_id,
+      usedSeriesNumber: usedSeriesNumber || null,
       serialNumber,
       cmp_id,
       party,
@@ -388,7 +395,6 @@ export const editReceipt = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
-
 
 /**
  * @desc  get receipt details

@@ -32,7 +32,7 @@ const tallySchema = new mongoose.Schema(
     appliedReceipts: [
       {
         _id: { type: mongoose.Schema.Types.ObjectId, ref: "Receipt" },
-        receiptNumber: { type: Number },
+        receiptNumber: { type: String },
         settledAmount: { type: Number },
         date: { type: Date },
       },
@@ -41,7 +41,7 @@ const tallySchema = new mongoose.Schema(
     appliedPayments: [
       {
         _id: { type: mongoose.Schema.Types.ObjectId, ref: "Payment" },
-        paymentNumber: { type: Number },
+        paymentNumber: { type: String },
         settledAmount: { type: Number },
         date: { type: Date },
       },
