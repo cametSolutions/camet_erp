@@ -52,6 +52,7 @@ export const generateVoucherNumber = async (
     series.suffix || ""
   }`;
 
+
   if (
     voucherNumber === null ||
     voucherNumber === "" ||
@@ -80,6 +81,7 @@ export const generateVoucherNumber = async (
     options
   );
 
+  // return { voucherNumber, usedSeriesNumber };
   return { voucherNumber, usedSeriesNumber };
 };
 

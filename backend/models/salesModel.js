@@ -18,9 +18,22 @@ const salesSchema = new Schema(
     convertedFrom: { type: Array, default: [] },
     serialNumber: { type: Number },
     userLevelSerialNumber: { type: Number },
-    salesNumber: { type: String, required: true },
-    series_id: { type:  Schema.Types.ObjectId, ref: "VoucherSeries", required: true },
-    usedSeriesNumber:{type: Number, required: true},
+    salesNumber: {
+      type: String,
+      required: [true, "Sales number is required"],
+      validate: {
+        validator: function (value) {
+          return typeof value === "string" && value.trim() !== "";
+        },
+        message: "Sales number cannot be empty",
+      },
+    },
+    series_id: {
+      type: Schema.Types.ObjectId,
+      ref: "VoucherSeries",
+      required: true,
+    },
+    usedSeriesNumber: { type: Number, required: true },
     Primary_user_id: {
       type: Schema.Types.ObjectId,
       ref: "User",
@@ -71,7 +84,7 @@ const salesSchema = new Schema(
 
     items: [
       {
-        _id: { type: Schema.Types.ObjectId, ref: "Product", },
+        _id: { type: Schema.Types.ObjectId, ref: "Product" },
         product_name: { type: String },
         cmp_id: { type: Schema.Types.ObjectId, ref: "Company" },
         product_code: { type: String },
@@ -229,21 +242,23 @@ salesSchema.index({ cmp_id: 1, Secondary_user_id: 1 });
 salesSchema.index({ cmp_id: 1, serialNumber: -1 });
 
 // 7. User-level document sequences (alternative to index #2 if needed)
-salesSchema.index({ 
-  cmp_id: 1, 
-  Secondary_user_id: 1, 
-  userLevelSerialNumber: -1 
+salesSchema.index({
+  cmp_id: 1,
+  Secondary_user_id: 1,
+  userLevelSerialNumber: -1,
 });
 
 // NEW INDEX: For fast validation of usedSeriesNumber existence
-salesSchema.index({ 
-  cmp_id: 1, 
-  series_id: 1, 
-  usedSeriesNumber: 1 
-}, { 
-  name: "series_number_validation_idx",
-  background: true 
-});
-
+salesSchema.index(
+  {
+    cmp_id: 1,
+    series_id: 1,
+    usedSeriesNumber: 1,
+  },
+  {
+    name: "series_number_validation_idx",
+    background: true,
+  }
+);
 
 export default mongoose.model("Sales", salesSchema);

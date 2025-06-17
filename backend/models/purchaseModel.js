@@ -19,7 +19,16 @@ const purchaseSchema = new Schema(
     convertedFrom: { type: Array, default: [] },
     serialNumber: { type: Number },
     userLevelSerialNumber: { type: Number },
-    purchaseNumber: { type: String, required: true },
+    purchaseNumber: {
+      type: String,
+      required: [true, "Purchase number is required"],
+      validate: {
+        validator: function (value) {
+          return typeof value === "string" && value.trim() !== "";
+        },
+        message: "Purchase number cannot be empty",
+      },
+    },
     series_id: {
       type: Schema.Types.ObjectId,
       ref: "VoucherSeries",

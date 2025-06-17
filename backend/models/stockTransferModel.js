@@ -15,7 +15,16 @@ const StockTransferSchema = new mongoose.Schema(
     },
     voucherType: { type: String, default: "stockTransfer" },
     serialNumber: { type: Number },
-    stockTransferNumber: { type: String, required: true },
+    stockTransferNumber: {
+      type: String,
+      required: [true, "Stock transfer number is required"],
+      validate: {
+        validator: function (value) {
+          return typeof value === "string" && value.trim() !== "";
+        },
+        message: "Stock transfer number cannot be empty",
+      },
+    },
     series_id: {
       type: Schema.Types.ObjectId,
       ref: "VoucherSeries",
@@ -140,10 +149,16 @@ const StockTransferSchema = new mongoose.Schema(
 );
 
 // 1. Primary unique identifier (stockTransferNumber per company)
-StockTransferSchema.index({ cmp_id: 1, stockTransferNumber: -1 }, { unique: true });
+StockTransferSchema.index(
+  { cmp_id: 1, stockTransferNumber: -1 },
+  { unique: true }
+);
 
 // 2. Secondary unique sequence (series-based numbering)
-StockTransferSchema.index({ cmp_id: 1, series_id: 1, series_id: -1 }, { unique: true });
+StockTransferSchema.index(
+  { cmp_id: 1, series_id: 1, series_id: -1 },
+  { unique: true }
+);
 
 // 3. Most common query pattern (company + date sorting)
 StockTransferSchema.index({ cmp_id: 1, date: -1 });
@@ -158,19 +173,22 @@ StockTransferSchema.index({ cmp_id: 1, Secondary_user_id: 1 });
 StockTransferSchema.index({ cmp_id: 1, serialNumber: -1 });
 
 // 7. User-level document sequences (alternative to index #2 if needed)
-StockTransferSchema.index({ 
-  cmp_id: 1, 
-  Secondary_user_id: 1, 
-  userLevelSerialNumber: -1 
+StockTransferSchema.index({
+  cmp_id: 1,
+  Secondary_user_id: 1,
+  userLevelSerialNumber: -1,
 });
 
 // NEW INDEX: For fast validation of usedSeriesNumber existence
-StockTransferSchema.index({ 
-  cmp_id: 1, 
-  series_id: 1, 
-  usedSeriesNumber: 1 
-}, { 
-  name: "series_number_validation_idx",
-  background: true 
-});
+StockTransferSchema.index(
+  {
+    cmp_id: 1,
+    series_id: 1,
+    usedSeriesNumber: 1,
+  },
+  {
+    name: "series_number_validation_idx",
+    background: true,
+  }
+);
 export default mongoose.model("StockTransfer", StockTransferSchema);

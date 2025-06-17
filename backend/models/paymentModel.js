@@ -16,11 +16,15 @@ const paymentSchema = new mongoose.Schema(
     },
     voucherType: { type: String, default: "payment", required: true },
     serialNumber: { type: Number },
-    paymentNumber: { type: String, required: true }, 
-    series_id: {
-      type: Schema.Types.ObjectId,
-      ref: "VoucherSeries",
-      required: true,
+    paymentNumber: {
+      type: String,
+      required: [true, "Payment number is required"],
+      validate: {
+        validator: function (value) {
+          return typeof value === "string" && value.trim() !== "";
+        },
+        message: "Payment number cannot be empty",
+      },
     },
     usedSeriesNumber: { type: Number, required: true },
     Primary_user_id: {

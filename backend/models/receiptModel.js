@@ -16,7 +16,16 @@ const receiptSchema = new mongoose.Schema(
     },
     voucherType: { type: String, default: "receipt", required: true },
     serialNumber: { type: Number },
-    receiptNumber: { type: String, required: true },
+    receiptNumber: {
+      type: String,
+      required: [true, "Receipt number is required"],
+      validate: {
+        validator: function (value) {
+          return typeof value === "string" && value.trim() !== "";
+        },
+        message: "Receipt number cannot be empty",
+      },
+    },
     series_id: {
       type: Schema.Types.ObjectId,
       ref: "VoucherSeries",

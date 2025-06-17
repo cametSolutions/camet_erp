@@ -19,7 +19,16 @@ const vanSaleSchema = new Schema(
     convertedFrom: { type: Array, default: [] },
     serialNumber: { type: Number },
     userLevelSerialNumber: { type: Number },
-    salesNumber: { type: String, required: true },
+    salesNumber: {
+      type: String,
+      required: [true, "Sales number is required"],
+      validate: {
+        validator: function (value) {
+          return typeof value === "string" && value.trim() !== "";
+        },
+        message: "Sales number cannot be empty",
+      },
+    },
     series_id: {
       type: Schema.Types.ObjectId,
       ref: "VoucherSeries",
@@ -215,7 +224,10 @@ const vanSaleSchema = new Schema(
 vanSaleSchema.index({ cmp_id: 1, salesNumber: -1 }, { unique: true });
 
 // 2. Secondary unique sequence (series-based numbering)
-vanSaleSchema.index({ cmp_id: 1, series_id: 1, series_id: -1 }, { unique: true });
+vanSaleSchema.index(
+  { cmp_id: 1, series_id: 1, series_id: -1 },
+  { unique: true }
+);
 
 // 3. Most common query pattern (company + date sorting)
 vanSaleSchema.index({ cmp_id: 1, date: -1 });
@@ -230,20 +242,23 @@ vanSaleSchema.index({ cmp_id: 1, Secondary_user_id: 1 });
 vanSaleSchema.index({ cmp_id: 1, serialNumber: -1 });
 
 // 7. User-level document sequences (alternative to index #2 if needed)
-vanSaleSchema.index({ 
-  cmp_id: 1, 
-  Secondary_user_id: 1, 
-  userLevelSerialNumber: -1 
+vanSaleSchema.index({
+  cmp_id: 1,
+  Secondary_user_id: 1,
+  userLevelSerialNumber: -1,
 });
 
 // NEW INDEX: For fast validation of usedSeriesNumber existence
-vanSaleSchema.index({ 
-  cmp_id: 1, 
-  series_id: 1, 
-  usedSeriesNumber: 1 
-}, { 
-  name: "series_number_validation_idx",
-  background: true 
-});
+vanSaleSchema.index(
+  {
+    cmp_id: 1,
+    series_id: 1,
+    usedSeriesNumber: 1,
+  },
+  {
+    name: "series_number_validation_idx",
+    background: true,
+  }
+);
 
 export default mongoose.model("vanSale", vanSaleSchema);

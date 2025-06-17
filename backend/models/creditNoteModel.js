@@ -20,7 +20,16 @@ const creditNoteSchema = new Schema(
     convertedFrom: { type: Array, default: [] },
     serialNumber: { type: Number },
     userLevelSerialNumber: { type: Number },
-    creditNoteNumber: { type: String, required: true },
+    creditNoteNumber:{
+      type: String,
+      required: [true, "Credit note number is required"],
+      validate: {
+        validator: function (value) {
+          return typeof value === "string" && value.trim() !== "";
+        },
+        message: "Credit note number cannot be empty",
+      },
+    },
     series_id: { type:  Schema.Types.ObjectId, ref: "VoucherSeries", required: true },
     usedSeriesNumber:{type: Number, required: true},
     Primary_user_id: {

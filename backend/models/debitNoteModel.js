@@ -18,7 +18,16 @@ const debitNoteSchema = new Schema(
     convertedFrom: { type: Array, default: [] },
     serialNumber: { type: Number },
     userLevelSerialNumber: { type: Number },
-    debitNoteNumber: { type: String, required: true },
+    debitNoteNumber: {
+      type: String,
+      required: [true, "Debit note number is required"],
+      validate: {
+        validator: function (value) {
+          return typeof value === "string" && value.trim() !== "";
+        },
+        message: "Debit note number cannot be empty",
+      },
+    },
     series_id: {
       type: Schema.Types.ObjectId,
       ref: "VoucherSeries",
@@ -214,7 +223,10 @@ const debitNoteSchema = new Schema(
 debitNoteSchema.index({ cmp_id: 1, debitNoteNumber: -1 }, { unique: true });
 
 // 2. Secondary unique sequence (series-based numbering)
-debitNoteSchema.index({ cmp_id: 1, series_id: 1, series_id: -1 }, { unique: true });
+debitNoteSchema.index(
+  { cmp_id: 1, series_id: 1, series_id: -1 },
+  { unique: true }
+);
 
 // 3. Most common query pattern (company + date sorting)
 debitNoteSchema.index({ cmp_id: 1, date: -1 });
@@ -229,21 +241,23 @@ debitNoteSchema.index({ cmp_id: 1, Secondary_user_id: 1 });
 debitNoteSchema.index({ cmp_id: 1, serialNumber: -1 });
 
 // 7. User-level document sequences (alternative to index #2 if needed)
-debitNoteSchema.index({ 
-  cmp_id: 1, 
-  Secondary_user_id: 1, 
-  userLevelSerialNumber: -1 
+debitNoteSchema.index({
+  cmp_id: 1,
+  Secondary_user_id: 1,
+  userLevelSerialNumber: -1,
 });
 
 // NEW INDEX: For fast validation of usedSeriesNumber existence
-debitNoteSchema.index({ 
-  cmp_id: 1, 
-  series_id: 1, 
-  usedSeriesNumber: 1 
-}, { 
-  name: "series_number_validation_idx",
-  background: true 
-});
-
+debitNoteSchema.index(
+  {
+    cmp_id: 1,
+    series_id: 1,
+    usedSeriesNumber: 1,
+  },
+  {
+    name: "series_number_validation_idx",
+    background: true,
+  }
+);
 
 export default mongoose.model("DebitNote", debitNoteSchema);

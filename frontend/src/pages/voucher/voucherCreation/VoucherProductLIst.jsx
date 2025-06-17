@@ -588,7 +588,8 @@ export default function VoucherProductList({
             </div>
           </div>
 
-          {el?.added &&
+          {
+          el?.added &&
           !el?.hasGodownOrBatch &&
           el?.GodownList[0]?.count > 0 ? (
             <div className="flex items-center flex-col gap-2">
@@ -688,7 +689,7 @@ export default function VoucherProductList({
           )}
         </div>
 
-        {el?.hasGodownOrBatch && (
+        {(el?.hasGodownOrBatch) && (
           <div className="px-6">
             <div
               onClick={() => {
