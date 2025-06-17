@@ -38,7 +38,6 @@ export const createReceipt = async (req, res) => {
     paymentMethod,
     paymentDetails,
     note,
-    outstandings,
     series_id,
     voucherType,
   } = req.body;
@@ -106,7 +105,6 @@ export const createReceipt = async (req, res) => {
       note,
       Primary_user_id,
       Secondary_user_id,
-      outstandings,
     });
 
     // Save the receipt in the transaction session
@@ -268,7 +266,6 @@ export const editReceipt = async (req, res) => {
     paymentMethod,
     paymentDetails,
     note,
-    outstandings,
   } = req.body;
 
   const session = await mongoose.startSession();
@@ -342,7 +339,6 @@ export const editReceipt = async (req, res) => {
     receipt.paymentMethod = paymentMethod;
     receipt.paymentDetails = paymentDetails;
     receipt.note = note;
-    receipt.outstandings = outstandings;
 
     const savedReceipt = await receipt.save({ session, new: true });
 

@@ -100,7 +100,7 @@ const Register = () => {
         setEmail("");
         setPassword("");
         setConfirmPassword("");
-        navigate("/pUsers/login");
+        navigate("/sUsers/login");
       }, 1000);
     } catch (error) {
       setTimeout(() => {

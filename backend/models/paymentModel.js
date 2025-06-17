@@ -15,8 +15,14 @@ const paymentSchema = new mongoose.Schema(
       },
     },
     voucherType: { type: String, default: "payment", required: true },
-    serialNumber: { type: Number }, // Add this line to include a serial number field
-    paymentNumber: { type: String, required: true }, // Changed from receiptNumber to match req.body
+    serialNumber: { type: Number },
+    paymentNumber: { type: String, required: true }, 
+    series_id: {
+      type: Schema.Types.ObjectId,
+      ref: "VoucherSeries",
+      required: true,
+    },
+    usedSeriesNumber: { type: Number, required: true },
     Primary_user_id: {
       type: Schema.Types.ObjectId,
       ref: "User",
@@ -66,7 +72,7 @@ const paymentSchema = new mongoose.Schema(
 
     totalBillAmount: { type: Number, required: true },
     enteredAmount: { type: Number, required: true },
-    advanceAmount: { type: Number,default:0 },
+    advanceAmount: { type: Number, default: 0 },
     remainingAmount: { type: Number, required: true },
     paymentMethod: {
       type: String,
@@ -96,10 +102,39 @@ const paymentSchema = new mongoose.Schema(
   }
 );
 
-// Add indexes for better query performance
+// 1. Primary unique identifier (paymentNumber per company)
+paymentSchema.index({ cmp_id: 1, paymentNumber: -1 }, { unique: true });
+
+// 2. Secondary unique sequence (series-based numbering)
+paymentSchema.index({ cmp_id: 1, series_id: 1, series_id: -1 }, { unique: true });
+
+// 3. Most common query pattern (company + date sorting)
 paymentSchema.index({ cmp_id: 1, date: -1 });
-paymentSchema.index({ "party._id": 1 });
-paymentSchema.index({ paymentNumber: 1, cmp_id: 1 }, { unique: true });
-paymentSchema.index({ createdAt: -1 });
+
+// 4. Party reference queries
+paymentSchema.index({ cmp_id: 1, "party._id": 1 });
+
+// 5. User-specific workflows
+paymentSchema.index({ cmp_id: 1, Secondary_user_id: 1 });
+
+// 6. Sequential document access
+paymentSchema.index({ cmp_id: 1, serialNumber: -1 });
+
+// 7. User-level document sequences (alternative to index #2 if needed)
+paymentSchema.index({ 
+  cmp_id: 1, 
+  Secondary_user_id: 1, 
+  userLevelSerialNumber: -1 
+});
+
+// NEW INDEX: For fast validation of usedSeriesNumber existence
+paymentSchema.index({ 
+  cmp_id: 1, 
+  series_id: 1, 
+  usedSeriesNumber: 1 
+}, { 
+  name: "series_number_validation_idx",
+  background: true 
+});
 
 export default mongoose.model("Payment", paymentSchema);

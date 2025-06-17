@@ -19,6 +19,7 @@ import {
 } from "../helpers/paymentHelper.js";
 import paymentModel from "../models/paymentModel.js";
 import { formatToLocalDate } from "../helpers/helper.js";
+import { generateVoucherNumber } from "../helpers/voucherHelper.js";
 
 /**
  * @desc  create payment
@@ -40,6 +41,8 @@ export const createPayment = async (req, res) => {
     paymentMethod,
     paymentDetails,
     note,
+    series_id,
+    voucherType,
   } = req.body;
 
   const Primary_user_id = req.owner.toString();
@@ -48,14 +51,15 @@ export const createPayment = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
-    // Check if payment number already exists
-    const NumberExistence = await checkForNumberExistence(
-      paymentModel,
-      "paymentNumber",
-      paymentNumber,
-      cmp_id,
-      session
-    );
+    /// generate voucher number(payment number)
+    const { voucherNumber: paymentNumber, usedSeriesNumber } =
+      await generateVoucherNumber(cmp_id, voucherType, series_id, session);
+    if (paymentNumber) {
+      req.body.paymentNumber = paymentNumber;
+    }
+    if (usedSeriesNumber) {
+      req.body.usedSeriesNumber = usedSeriesNumber;
+    }
 
     const serialNumber = await getNewSerialNumber(
       paymentModel,
@@ -87,6 +91,9 @@ export const createPayment = async (req, res) => {
       createdAt: new Date(),
       date: await formatToLocalDate(date, cmp_id, session),
       paymentNumber,
+      series_id,
+      voucherType,
+      usedSeriesNumber: usedSeriesNumber || null,
       serialNumber,
       cmp_id,
       party,

@@ -412,8 +412,7 @@ export const fetchOutstandingDetails = async (req, res) => {
     sourceMatch = { classification: "Cr" };
   }
 
-  console.log("sourceMatch:", sourceMatch);
-  console.log("partyId:", partyId);
+
   
   try {
     const outstandings = await TallyData.find({
