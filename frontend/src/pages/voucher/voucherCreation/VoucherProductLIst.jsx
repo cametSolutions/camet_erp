@@ -467,6 +467,20 @@ export default function VoucherProductList({
     }
   };
 
+  
+  /**
+   *if voucher is vanSale, then we need to show only one godown .if one batch is present then we don't need to show expansion button
+   */
+
+function isVanSaleWithSingleGodown(item) {
+  return (
+    voucherTypeFromRedux === "vanSale" && item?.GodownList?.length === 1
+  );
+}
+
+
+
+
   const Row = ({ index, style }) => {
     if (!isItemLoaded(index) && !isScanOn) {
       return (
@@ -529,7 +543,7 @@ export default function VoucherProductList({
                   : el?.product_name.slice(0, 30) + "..."}
                 {/* {el?.product_name} */}
               </p>
-              {el?.hasGodownOrBatch && (
+              {(el?.hasGodownOrBatch  && !isVanSaleWithSingleGodown(el)) && (
                 <div className="flex flex-col font-normal">
                   <div className="flex">
                     <span>Net Amount : </span>
@@ -559,7 +573,7 @@ export default function VoucherProductList({
                 </div>
               )}
 
-              {!el?.hasGodownOrBatch && (
+              {(!el?.hasGodownOrBatch || isVanSaleWithSingleGodown(el)) && (
                 <>
                   <div className="flex gap-1 items-center font-normal ">
                     <p>
@@ -590,10 +604,10 @@ export default function VoucherProductList({
 
           {
           el?.added &&
-          !el?.hasGodownOrBatch &&
+          // !el?.hasGodownOrBatch &&
           el?.GodownList[0]?.count > 0 ? (
             <div className="flex items-center flex-col gap-2">
-              {!el?.hasGodownOrBatch && (
+              {(!el?.hasGodownOrBatch || isVanSaleWithSingleGodown(el)) && (
                 <>
                   <button
                     onClick={() => {
@@ -676,7 +690,7 @@ export default function VoucherProductList({
               )}
             </div>
           ) : (
-            !el?.hasGodownOrBatch && (
+            (!el?.hasGodownOrBatch || isVanSaleWithSingleGodown(el) ) && (
               <div
                 onClick={() => {
                   handleAddClick(el?._id);
@@ -689,7 +703,7 @@ export default function VoucherProductList({
           )}
         </div>
 
-        {(el?.hasGodownOrBatch) && (
+        {(el?.hasGodownOrBatch && !isVanSaleWithSingleGodown(el))  && (
           <div className="px-6">
             <div
               onClick={() => {

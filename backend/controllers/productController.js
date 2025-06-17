@@ -428,7 +428,6 @@ export const getProducts = async (req, res) => {
           const isExcluded =
             godownId && godownId.toString() === excludeGodownId.toString();
 
-          console.log("isExcluded", isExcluded);
 
           // Keep godowns that are NOT excluded
           return !isExcluded;
