@@ -411,9 +411,13 @@ export const fetchOutstandingDetails = async (req, res) => {
   } else if (voucher === "payment") {
     sourceMatch = { classification: "Cr" };
   }
+
+  console.log("sourceMatch:", sourceMatch);
+  console.log("partyId:", partyId);
+  
   try {
     const outstandings = await TallyData.find({
-      party_id: partyId,
+      party_id: new mongoose.Types.ObjectId(partyId),
       cmp_id: cmp_id,
       bill_pending_amt: { $gt: 0 },
       isCancelled: false,

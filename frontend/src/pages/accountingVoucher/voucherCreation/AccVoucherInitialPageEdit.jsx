@@ -61,7 +61,10 @@ function AccVoucherInitialPageEdit() {
   } = useSelector((state) => state.commonAccountingVoucherSlice);
 
   const [voucherNumber, setVoucherNumber] = useState("");
-  const [selectedDate, setSelectedDate] = useState(dateRedux);
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const parsedDate = new Date(dateRedux || new Date());
+    return isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
+  });
   const [loading, setLoading] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
 

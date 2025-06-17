@@ -52,6 +52,9 @@ function HeaderTile({
     // dispatch(updateSelectedSeries(series));
   };
 
+  console.log("setSelectedDate:", setSelectedDate);
+  
+
   return (
     <div>
       <div className="flex justify-between p-4 bg-white drop-shadow-lg items-center text-xs md:text-base">
@@ -70,7 +73,7 @@ function HeaderTile({
 
             {/* React DatePicker */}
             <DatePicker
-              selected={new Date(selectedDate)}
+              selected={new Date(selectedDate) }
               onChange={handleDateChange}
               customInput={<CustomInput />}
               dateFormat="yyyy-MM-dd"
