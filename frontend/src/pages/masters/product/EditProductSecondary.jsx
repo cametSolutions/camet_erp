@@ -13,6 +13,28 @@ function EditProductSecondary() {
   const { id } = useParams();
   const [productData, setProductData] = useState({});
   const [loading, setLoading] = useState(false);
+    const [formState, setFormState] = useState({
+    product_name: "",
+    product_code: "",
+    unit: "",
+    altUnit: "",
+    balance_stock: "",
+    alt_unit_conversion: "",
+    unit_conversion: "",
+    hsn_code: "",
+    cgst: 0,
+    sgst: 0,
+    igst: 0,
+    cess: 0,
+    addl_cess: 0,
+    purchase_price: "",
+    purchase_cost: "",
+    item_mrp: 0,
+    selectedBrand: null,
+    selectedCategory: null,
+    selectedSubcategory: null,
+    batchEnabled: false,
+  });
 
   const { _id: orgId } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
@@ -67,6 +89,8 @@ function EditProductSecondary() {
         loading={loading}
       />
       <AddProductForm
+         formState={formState}
+        setFormState={setFormState}
         orgId={orgId}
         submitData={submitHandler}
         productData={productData}

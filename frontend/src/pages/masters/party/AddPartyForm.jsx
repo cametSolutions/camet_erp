@@ -6,13 +6,13 @@ import { statesData } from "../../../../constants/states.js";
 import { countries } from "../../../../constants/countries.js";
 import useFetch from "../../../customHook/useFetch.jsx";
 
+
 function AddPartyForm({
   submitHandler,
   partyDetails = {},
-  userType,
   loading,
   setLoading,
-  allowEditing=true
+  allowEditing = true,
 }) {
   // const [tab, setTab] = useState("business");
   const [accountGroup, setAccountGroup] = useState("");
@@ -32,15 +32,9 @@ function AddPartyForm({
   const [state, setState] = useState("Kerala");
   const [pin, setPin] = useState("");
 
-  const primarySelectedOrg = useSelector(
-    (state) => state.setSelectedOrganization.selectedOrg
-  );
-  const secondarySelectedOrg = useSelector(
+  const selectedOrganization = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
-
-  const selectedOrganization =
-    userType === "primaryUser" ? primarySelectedOrg : secondarySelectedOrg;
 
   const { data: accountGroupList, loading: accountGroupLoading } = useFetch(
     `/api/sUsers/getAccountGroups/${selectedOrganization._id}`
@@ -50,6 +44,7 @@ function AddPartyForm({
   );
 
   const validAccountGroups = ["Sundry Creditors", "Sundry Debtors"];
+
 
   useEffect(() => {
     const loading = accountGroupLoading || subGroupLoading;
@@ -154,8 +149,6 @@ function AddPartyForm({
     submitHandler(formData);
   };
 
-  
-
   return (
     <div className={`${!allowEditing && "pointer-events-none opacity-50"}`}>
       <section
@@ -163,7 +156,7 @@ function AddPartyForm({
           loading && "opacity-50 pointer-events-none"
         }  bg-blueGray-50`}
       >
-        <div className="w-full lg:w-8/12 px-4 mx-auto  pb-[30px] mt-5  ">
+        <div className="w-full px-4 mx-auto  pb-[30px] mt-5  ">
           <div className="relative flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg bg-blueGray-100 border-0">
             <div className="rounded-t bg-white mb-0 px-6 py-2">
               <div className="text-center flex justify-between"></div>

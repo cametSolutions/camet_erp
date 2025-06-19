@@ -24,11 +24,16 @@ function TitleDiv({
   rightSideModalComponent = null,
   rightSideContentOnClick = null,
   dropdownContents = [],
+  customNavigate= null,
 }) {
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
 
   const handleNavigate = () => {
+    if(customNavigate) {
+      customNavigate();
+      return;
+    }
     if (from) {
       navigate(from, { replace: true });
     } else {
@@ -48,13 +53,16 @@ function TitleDiv({
     }
   };
 
-  const handleDropdownClick = (item) => {
-    navigate(item?.to,{
-      state: {
-        from: item?.from
-      }
-    })
-  };
+const handleDropdownClick = (item) => {
+  if (item?.data) {
+    localStorage.setItem(item?.savingName , JSON.stringify(item.data));
+  }
+  navigate(item?.to, {
+    state: {
+      from: item?.from,
+    },
+  });
+};
 
   return (
     <div className="sticky top-0 z-50 ">

@@ -17,31 +17,33 @@ function AddProductForm({
   setLoading = () => {},
   loading,
   process = "add",
+  formState,
+  setFormState = () => {},
 }) {
   // State management
   const [tab, setTab] = useState("priceLevel");
-  const [formState, setFormState] = useState({
-    product_name: "",
-    product_code: "",
-    unit: "",
-    altUnit: "",
-    balance_stock: "",
-    alt_unit_conversion: "",
-    unit_conversion: "",
-    hsn_code: "",
-    cgst: 0,
-    sgst: 0,
-    igst: 0,
-    cess: 0,
-    addl_cess: 0,
-    purchase_price: "",
-    purchase_cost: "",
-    item_mrp: 0,
-    selectedBrand: null,
-    selectedCategory: null,
-    selectedSubcategory: null,
-    batchEnabled: false,
-  });
+  // const [formState, setFormState] = useState({
+  //   product_name: "",
+  //   product_code: "",
+  //   unit: "",
+  //   altUnit: "",
+  //   balance_stock: "",
+  //   alt_unit_conversion: "",
+  //   unit_conversion: "",
+  //   hsn_code: "",
+  //   cgst: 0,
+  //   sgst: 0,
+  //   igst: 0,
+  //   cess: 0,
+  //   addl_cess: 0,
+  //   purchase_price: "",
+  //   purchase_cost: "",
+  //   item_mrp: 0,
+  //   selectedBrand: null,
+  //   selectedCategory: null,
+  //   selectedSubcategory: null,
+  //   batchEnabled: false,
+  // });
 
   // Options data
   const [optionsData, setOptionsData] = useState({
@@ -549,9 +551,9 @@ function AddProductForm({
     <section
       className={` ${
         loading && "opacity-50 pointer-events-none"
-      }  py-1 bg-blueGray-50 shadow-xl w-full lg:w-10/12 flex flex-col items-center justify-center mx-auto`}
+      }  py-1 mb-5 border bg-blueGray-50 shadow-xl  flex flex-col items-center justify-center mx-auto  w-[calc(100%-2rem)] `}
     >
-      <div className=" px-4 mx-auto mt-6  ">
+      <div className=" mx-auto mt-6    ">
         <div className="relative flex flex-col min-w-0 break-words w-full mb-6  rounded-lg bg-blueGray-100 border-0">
           <div className="rounded-t bg-white mb-0 px-6 py-6">
             <div className="text-center flex justify-between">
@@ -851,12 +853,8 @@ function AddProductForm({
       </div>
 
       {/* Price Level and Location Tabs */}
-      <div
-        className={` ${
-          loading && "opacity-50 pointer-events-none "
-        }  px-4 sm:px-8 mx-auto`}
-      >
-        <div className="relative flex flex-col min-w-0 break-words w-full mb-6 pb-3 shadow-lg rounded-lg bg-blueGray-100 border-0">
+      <div className={` ${loading && "opacity-50 pointer-events-none "} `}>
+        <div className="relative flex flex-col min-w-0 break-words w-full  pb-3 rounded-lg bg-blueGray-100 border-0">
           <div className="flex start mx-10 ">
             <div className="mt-[10px]  border-b border-solid border-[#0066ff43]  ">
               <button

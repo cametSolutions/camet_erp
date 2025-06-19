@@ -428,7 +428,6 @@ export const getProducts = async (req, res) => {
           const isExcluded =
             godownId && godownId.toString() === excludeGodownId.toString();
 
-
           // Keep godowns that are NOT excluded
           return !isExcluded;
         });
@@ -448,107 +447,119 @@ export const getProducts = async (req, res) => {
       });
     }
     // Transform products to flatten nested structures and apply business logic
-    const transformedProducts = products.map((product) => {
-      // Convert Mongoose document to plain JavaScript object
-      const productObject = product.toObject();
+    const transformedProducts = products
+      .map((product) => {
+        // Convert Mongoose document to plain JavaScript object
+        const productObject = product.toObject();
 
-      // Determine if product has batch or godown functionality enabled
-      const batchEnabled = productObject.batchEnabled === true;
-      const gdnEnabled = productObject.gdnEnabled === true;
+        // Determine if product has batch or godown functionality enabled
+        const batchEnabled = productObject.batchEnabled === true;
+        const gdnEnabled = productObject.gdnEnabled === true;
 
-      // Set hasGodownOrBatch flag based on context
-      if (isSaleOrder) {
-        // In sale orders, we don't show godown/batch details
-        productObject.hasGodownOrBatch = false;
-      } else {
-        // For other contexts, flag is true if either batch or godown is enabled
-        productObject.hasGodownOrBatch = batchEnabled || gdnEnabled;
-      }
+        // Set hasGodownOrBatch flag based on context
+        if (isSaleOrder) {
+          // In sale orders, we don't show godown/batch details
+          productObject.hasGodownOrBatch = false;
+        } else {
+          // For other contexts, flag is true if either batch or godown is enabled
+          productObject.hasGodownOrBatch = batchEnabled || gdnEnabled;
+        }
 
-      // Process and filter GodownList items
-      if (productObject.GodownList && productObject.GodownList.length > 0) {
-        let filteredGodownList = productObject.GodownList;
+        // Process and filter GodownList items
+        if (productObject.GodownList && productObject.GodownList.length > 0) {
+          let filteredGodownList = productObject.GodownList;
 
-        // Filter godowns based on selected godowns from configuration
-        if (selectedGodowns.length > 0) {
-          filteredGodownList = productObject.GodownList.filter((godownItem) => {
-            if (!godownItem.godown) return false;
+          // Filter godowns based on selected godowns from configuration
+          if (selectedGodowns.length > 0) {
+            filteredGodownList = productObject.GodownList.filter(
+              (godownItem) => {
+                if (!godownItem.godown) return false;
 
-            const godownId = godownItem.godown._id || godownItem.godown;
-            return selectedGodowns.some(
-              (id) => id.toString() === godownId.toString()
+                const godownId = godownItem.godown._id || godownItem.godown;
+                return selectedGodowns.some(
+                  (id) => id.toString() === godownId.toString()
+                );
+              }
             );
-          });
-        }
+          }
 
-        // Additional filtering for excluded godown
-        if (excludeGodownId) {
-          filteredGodownList = filteredGodownList.filter((godownItem) => {
-            if (!godownItem.godown) return true;
+          // Additional filtering for excluded godown
+          if (excludeGodownId) {
+            filteredGodownList = filteredGodownList.filter((godownItem) => {
+              if (!godownItem.godown) return true;
 
-            const godownId = godownItem.godown._id || godownItem.godown;
-            return godownId.toString() !== excludeGodownId.toString();
-          });
-        }
+              const godownId = godownItem.godown._id || godownItem.godown;
+              return godownId.toString() !== excludeGodownId.toString();
+            });
+          }
 
-        // Business logic: Filter out Primary Batch items with zero balance when multiple godowns exist
-        // This prevents showing empty primary batches when there are other godown options available
-        if (productObject.GodownList.length > 1) {
-          filteredGodownList = filteredGodownList.filter((godownItem) => {
-            // Remove Primary Batch entries with exactly zero balance stock
-            if (
-              godownItem.batch === "Primary Batch" &&
-              godownItem.balance_stock === 0
-            ) {
-              return false;
-            }
-            // Keep all other items (including Primary Batch with positive/negative balance)
-            return true;
-          });
-        }
+          // Check if product should be removed after exclusion
+          if (filteredGodownList.length === 0) {
+            return null; // Mark product for removal
+          }
 
-        // Flatten the nested godown structure for easier frontend consumption
-        productObject.GodownList = filteredGodownList.map((godownItem) => {
-          // Skip flattening if no godown reference exists
-          if (!godownItem.godown) return godownItem;
+          // Business logic: Filter out Primary Batch items with zero balance when multiple godowns exist
+          // This prevents showing empty primary batches when there are other godown options available
+          if (productObject.GodownList.length > 1) {
+            filteredGodownList = filteredGodownList.filter((godownItem) => {
+              // Remove Primary Batch entries with exactly zero balance stock
+              if (
+                godownItem.batch === "Primary Batch" &&
+                godownItem.balance_stock === 0
+              ) {
+                return false;
+              }
+              // Keep all other items (including Primary Batch with positive/negative balance)
+              return true;
+            });
+          }
 
-          // Create flattened structure with godown properties at top level
-          const flattenedGodownItem = {
-            ...godownItem,
-            // Extract godown properties to top level
-            godownMongoDbId: godownItem.godown._id,
-            godown: godownItem.godown.godown,
-            godown_id: godownItem.godown.godown_id,
-            defaultGodown: godownItem.godown.defaultGodown,
-          };
+          // Flatten the nested godown structure for easier frontend consumption
+          productObject.GodownList = filteredGodownList.map((godownItem) => {
+            // Skip flattening if no godown reference exists
+            if (!godownItem.godown) return godownItem;
 
-          return flattenedGodownItem;
-        });
-      }
-
-      // Flatten PriceLevels structure for easier frontend consumption
-      if (productObject.Priceleveles && productObject.Priceleveles.length > 0) {
-        productObject.Priceleveles = productObject.Priceleveles.map(
-          (priceLevel) => {
-            // Skip flattening if no pricelevel reference exists
-            if (!priceLevel.pricelevel) return priceLevel;
-
-            // Create flattened price level structure
-            const flattenedPriceLevel = {
-              // Include original price level properties
-              ...priceLevel,
-              // Extract nested pricelevel properties to top level
-              _id: priceLevel.pricelevel._id,
-              pricelevel: priceLevel?.pricelevel?.pricelevel,
+            // Create flattened structure with godown properties at top level
+            const flattenedGodownItem = {
+              ...godownItem,
+              // Extract godown properties to top level
+              godownMongoDbId: godownItem.godown._id,
+              godown: godownItem.godown.godown,
+              godown_id: godownItem.godown.godown_id,
+              defaultGodown: godownItem.godown.defaultGodown,
             };
 
-            return flattenedPriceLevel;
-          }
-        );
-      }
+            return flattenedGodownItem;
+          });
+        }
 
-      return productObject;
-    });
+        // Flatten PriceLevels structure for easier frontend consumption
+        if (
+          productObject.Priceleveles &&
+          productObject.Priceleveles.length > 0
+        ) {
+          productObject.Priceleveles = productObject.Priceleveles.map(
+            (priceLevel) => {
+              // Skip flattening if no pricelevel reference exists
+              if (!priceLevel.pricelevel) return priceLevel;
+
+              // Create flattened price level structure
+              const flattenedPriceLevel = {
+                // Include original price level properties
+                ...priceLevel,
+                // Extract nested pricelevel properties to top level
+                _id: priceLevel.pricelevel._id,
+                pricelevel: priceLevel?.pricelevel?.pricelevel,
+              };
+
+              return flattenedPriceLevel;
+            }
+          );
+        }
+
+        return productObject;
+      })
+      .filter((product) => product?.GodownList?.length > 0); // Remove null products (those with empty GodownList after exclusion);
 
     // Return successful response with products and pagination info
     if (transformedProducts && transformedProducts.length > 0) {

@@ -72,12 +72,16 @@ function VoucherSeriesModal({
 
   // Update current voucher series for edit mode
   const getUpdatedVoucherSeries = () => {
-    if (mode === "edit" && selectedVoucherSeriesForEdit && Object.keys(selectedVoucherSeriesForEdit).length > 0) {
-      return currentVoucherSeries?.map(series => {
+    if (
+      mode === "edit" &&
+      selectedVoucherSeriesForEdit &&
+      Object.keys(selectedVoucherSeriesForEdit).length > 0
+    ) {
+      return currentVoucherSeries?.map((series) => {
         if (series._id === selectedVoucherSeriesForEdit._id) {
           return {
             ...series,
-            currentNumber: selectedVoucherSeriesForEdit.currentNumber
+            currentNumber: selectedVoucherSeriesForEdit.currentNumber,
           };
         }
         return series;
@@ -97,7 +101,10 @@ function VoucherSeriesModal({
       let seriesToSelect;
 
       // Priority 1: If selectedVoucherSeriesForEdit exists, use it
-      if (selectedVoucherSeriesForEdit && Object.keys(selectedVoucherSeriesForEdit).length > 0) {
+      if (
+        selectedVoucherSeriesForEdit &&
+        Object.keys(selectedVoucherSeriesForEdit).length > 0
+      ) {
         // Find the matching series from updatedVoucherSeries
         seriesToSelect = updatedVoucherSeries.find(
           (series) => series._id === selectedVoucherSeriesForEdit._id
@@ -155,15 +162,16 @@ function VoucherSeriesModal({
 
   // Handle confirm selection
   const handleConfirmSelection = async () => {
-    dispatch(addSelectedVoucherSeries(selectedSeries));
-
     // Dispatch to appropriate slice based on path
     if (isReceiptOrPayment) {
       dispatch(
         addAccountingVoucherNumber(generateSeriesFormat(selectedSeries))
       );
+
+      dispatch(addAccountingSelectedVoucherSeries(selectedSeries));
     } else {
       dispatch(addVoucherNumber(generateSeriesFormat(selectedSeries)));
+      dispatch(addSelectedVoucherSeries(selectedSeries));
     }
 
     await makeTheSeriesAsCurrentlySelected(selectedSeries?._id);

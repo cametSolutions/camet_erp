@@ -265,11 +265,84 @@ export const addParty = async (req, res) => {
       await result.save(); // Save the updated party with party_master_id set to _id
     }
 
+    // Get the newly created party with lookups (same as PartyList,because we are also creating party directly form voucher)
     if (result) {
+      const aggregationPipeline = [
+        { 
+          $match: { 
+            _id: new mongoose.Types.ObjectId(result._id) 
+          } 
+        },
+
+        // Lookup for accountGroup
+        {
+          $lookup: {
+            from: "accountgroups",
+            localField: "accountGroup",
+            foreignField: "_id",
+            as: "accountGroupData",
+          },
+        },
+        {
+          $unwind: {
+            path: "$accountGroupData",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+
+        // Lookup for subGroup
+        {
+          $lookup: {
+            from: "subgroups",
+            localField: "subGroup",
+            foreignField: "_id",
+            as: "subGroupData",
+          },
+        },
+        { 
+          $unwind: { 
+            path: "$subGroupData", 
+            preserveNullAndEmptyArrays: true 
+          } 
+        },
+
+        // Project to match PartyList format
+        {
+          $project: {
+            _id: 1,
+            partyName: 1,
+            party_master_id: 1,
+            billingAddress: 1,
+            shippingAddress: 1,
+            mobileNumber: 1,
+            gstNo: 1,
+            emailID: 1,
+            panNo: 1,
+            creditPeriod: 1,
+            creditLimit: 1,
+            openingBalanceType: 1,
+            openingBalanceAmount: 1,
+            pin: 1,
+            country: 1,
+            state: 1,
+            accountGroupName: "$accountGroupData.accountGroup",
+            accountGroup_id: "$accountGroupData._id",
+            subGroupName: "$subGroupData.subGroup",
+            subGroup_id: "$subGroupData._id",
+            subGroup_tally_id: "$subGroupData.subGroup_id",
+          },
+        }
+      ];
+
+      // Execute the aggregation to get party with lookups
+      const partyWithLookups = await partyModel.aggregate(aggregationPipeline);
+      
+      const newParty = partyWithLookups[0] || result;
+
       return res.status(200).json({
         success: true,
         message: "Party added successfully",
-        result: result,
+        result: newParty,
       });
     } else {
       return res.status(400).json({

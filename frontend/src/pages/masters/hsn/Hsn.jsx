@@ -19,7 +19,7 @@ function Hsn() {
   const [sgstUtgstRate, setSgstUtgstRate] = useState("");
   const [onValue, setOnValue] = useState("");
   const [onQuantity, setOnQuantity] = useState("");
-  const [cpm_id, setCmp_id] = useState("");
+
   const [isRevisedChargeApplicable, setIsRevisedChargeApplicable] =
     useState(false);
   const navigate = useNavigate();
@@ -130,27 +130,11 @@ function Hsn() {
     setIsRevisedChargeApplicable(e.target.checked);
   };
 
-  let companyId;
-  const companyIdPrimary = useSelector(
-    (state) => state?.setSelectedOrganization?.selectedOrg?._id
-  );
-  const companyIdSecondary = useSelector(
+  let cpm_id = useSelector(
     (state) => state?.secSelectedOrganization?.secSelectedOrg?._id
   );
 
-  let user;
-
-  if (location?.pathname?.startsWith("/pUsers")) {
-    user = "pUsers";
-    companyId = companyIdPrimary;
-  } else {
-    user = "sUsers";
-    companyId = companyIdSecondary;
-  }
-
-  useEffect(() => {
-    setCmp_id(companyId);
-  }, []);
+  console.log(location.state);
 
   const submitHandler = async () => {
     if (tab == "onValue") {
@@ -256,14 +240,20 @@ function Hsn() {
     //     console.log(formData);
 
     try {
-      const res = await api.post(`/api/${user}/addHsn`, formData, {
+      const res = await api.post(`/api/sUsers/addHsn`, formData, {
         headers: {
           "Content-Type": "application/json",
         },
         withCredentials: true,
       });
       toast.success(res.data.message);
-      navigate(`/${user}/hsnList`);
+      navigate(-1, {
+        state: {
+          from: location.state?.from || "/sUsers/hsn",
+          data: location.state?.data || {},
+        },
+        replace: true,
+      });
 
       // Resetting individual state variables
     } catch (error) {
