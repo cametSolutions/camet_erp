@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose, { set } from "mongoose";
 
 const partySchema = new mongoose.Schema({
   Primary_user_id: {
@@ -16,7 +16,9 @@ const partySchema = new mongoose.Schema({
     ref: "AccountGroup",
     required: true,
   },
-  subGroup: { type: mongoose.Schema.Types.ObjectId, ref: "SubGroup" },
+  subGroup: { type: mongoose.Schema.Types.ObjectId, ref: "SubGroup",
+    set: (v) => v==="" || v===null ? null : v, // Allow subGroup to be optional
+   },
   partyName: { type: String, required: true },
   mobileNumber: { type: String },
   country: { type: String },

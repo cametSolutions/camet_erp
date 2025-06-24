@@ -466,10 +466,15 @@ export const updateTallyData = async (
   voucherType,
   classification
 ) => {
+
+  
   if (
-    party.accountGroupName === "Sundry Debtors" ||
-    party.accountGroup === "Sundry Creditors"
+    party.accountGroupName !== "Sundry Debtors" &&
+    party.accountGroupName !== "Sundry Creditors"
   ) {
+
+    console.log("Invalid account group, skipping Tally update");
+    
     return;
   }
   try {
