@@ -593,7 +593,7 @@ function EditItemForm({ ItemsFromRedux, from, taxInclusive = false }) {
         taxableAmount: taxableAmount,
         individualTotal: individualTotal,
         warrantyCardNo: warrantyCardNo,
-        mfgdt: manufactureDate.toDateString(),
+        mfgdt: manufactureDate,
         expdt: expirationDate,
 
         // Tax related fields
@@ -654,6 +654,9 @@ function EditItemForm({ ItemsFromRedux, from, taxInclusive = false }) {
       (acc, item) => acc + (item.individualTotal || 0),
       0
     );
+
+    // console.log("Updated Item:", updatedItem);
+    
 
     // Uncomment these lines when ready to dispatch the action
     dispatch(updateItem({ item: updatedItem, moveToTop: false }));
