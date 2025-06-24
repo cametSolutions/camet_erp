@@ -102,7 +102,7 @@ export const saveDataFromTally = async (req, res) => {
               throw new Error(`Invalid bill_date format:${dataItem.bill_date}`)
             }
 
-            const { party_id, accountGroup_id, subGroup_id = null, ...resdata } = dataItem;
+            const { party_id, accountGroup_id, subGroup_id , ...resdata } = dataItem;
             if (!party_id) {
               throw new Error(`Missing party_id`);
             }

@@ -16,7 +16,9 @@ const tallySchema = new mongoose.Schema(
       ref: "AccountGroup",
       required: true,
     },
-    subGroup: { type: mongoose.Schema.Types.ObjectId, ref: "SubGroup" },
+    subGroup: { type: mongoose.Schema.Types.ObjectId, ref: "SubGroup",
+     
+     },
     party_name: { type: String, required: true },
     alias: { type: String },
     party_id: { type: mongoose.Types.ObjectId, ref: "Party", required: true },
