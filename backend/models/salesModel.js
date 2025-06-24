@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { convertToUTCMidnight } from "../utils/dateHelpers.js";
 const { Schema } = mongoose;
 
 const salesSchema = new Schema(
@@ -71,7 +72,7 @@ const salesSchema = new Schema(
       shippingAddress: { type: String },
       accountGroup: { type: String },
       totalOutstanding: { type: Number },
-      latestBillDate: { type: Date, default: null },
+      latestBillDate: { type: Date, default: null, set: convertToUTCMidnight },
       newAddress: { type: Object },
     },
 
@@ -109,11 +110,16 @@ const salesSchema = new Schema(
               type: String,
             },
             mfgdt: {
-              type: String,
+              type: Date,
+              default: null,
+              set: convertToUTCMidnight,
             },
             expdt: {
-              type: String,
+              type: Date,
+              default: null,
+              set: convertToUTCMidnight,
             },
+            warrantyCardNo: { type: String },
             selectedPriceRate: { type: Number },
             added: { type: Boolean },
             count: { type: Number },

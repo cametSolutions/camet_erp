@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { convertToUTCMidnight } from "../utils/dateHelpers.js";
 const { Schema } = mongoose;
 
 const invoiceSchema = new Schema(
@@ -101,11 +102,16 @@ const invoiceSchema = new Schema(
               type: String,
             },
             mfgdt: {
-              type: String,
+              type: Date,
+              default: null,
+              set: () => null, // Set to null by default in saleOrder
             },
             expdt: {
-              type: String,
-            },
+              type: Date,
+              default: null,
+              set: () => null, // Set to null by default in saleOrder
+            }, 
+            warrantyCardNo: { type: String, default: null, set: () => null }, // Set to null by default in saleOrder
             selectedPriceRate: { type: Number },
             added: { type: Boolean },
             count: { type: Number },
@@ -215,7 +221,10 @@ const invoiceSchema = new Schema(
 invoiceSchema.index({ cmp_id: 1, orderNumber: -1 }, { unique: true });
 
 // 2. Secondary unique sequence (series-based numbering)
-invoiceSchema.index({ cmp_id: 1, series_id: 1, series_id: -1 }, { unique: true });
+invoiceSchema.index(
+  { cmp_id: 1, series_id: 1, series_id: -1 },
+  { unique: true }
+);
 
 // 3. Most common query pattern (company + date sorting)
 invoiceSchema.index({ cmp_id: 1, date: -1 });
@@ -230,20 +239,23 @@ invoiceSchema.index({ cmp_id: 1, Secondary_user_id: 1 });
 invoiceSchema.index({ cmp_id: 1, serialNumber: -1 });
 
 // 7. User-level document sequences (alternative to index #2 if needed)
-invoiceSchema.index({ 
-  cmp_id: 1, 
-  Secondary_user_id: 1, 
-  userLevelSerialNumber: -1 
+invoiceSchema.index({
+  cmp_id: 1,
+  Secondary_user_id: 1,
+  userLevelSerialNumber: -1,
 });
 
 // NEW INDEX: For fast validation of usedSeriesNumber existence
-invoiceSchema.index({ 
-  cmp_id: 1, 
-  series_id: 1, 
-  usedSeriesNumber: 1 
-}, { 
-  name: "series_number_validation_idx",
-  background: true 
-});
+invoiceSchema.index(
+  {
+    cmp_id: 1,
+    series_id: 1,
+    usedSeriesNumber: 1,
+  },
+  {
+    name: "series_number_validation_idx",
+    background: true,
+  }
+);
 
 export default mongoose.model("Invoice", invoiceSchema);

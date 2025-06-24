@@ -293,6 +293,13 @@ function VoucherInitialPage() {
       return;
     }
 
+    if (!selectedVoucherSeriesFromRedux?._id) {
+      toast.error(
+        "Error with your voucher series. Please select a valid series."
+      );
+      return;
+    }
+
     if (openAdditionalTile) {
       const hasEmptyValue = additionalChargesFromRedux.some(
         (row) => row.value === ""
@@ -439,7 +446,7 @@ function VoucherInitialPage() {
             type="sale"
             convertedFrom={convertedFrom}
             urlToAddItem="/sUsers/addItemSales"
-            urlToEditItem="/sUsers/editItemSales"
+            urlToEditItem="/sUsers/editItemVoucher"
           />
 
           <AdditionalChargesTile

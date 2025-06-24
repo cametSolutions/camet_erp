@@ -149,7 +149,7 @@ const ProductDetails = ({
                         <button
                           onClick={() => {
                             navigate(
-                              `/sUsers/editItem${tab}/${details?._id}/${index}`,
+                              `/sUsers/editItemVoucher/${details?._id}/${index}`,
                               {
                                 state: { from: tab },
                               }

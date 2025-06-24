@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { convertToUTCMidnight } from "../utils/dateHelpers.js";
 const { Schema } = mongoose;
 
 const purchaseSchema = new Schema(
@@ -110,11 +111,16 @@ const purchaseSchema = new Schema(
               type: String,
             },
             mfgdt: {
-              type: String,
+              type: Date,
+              default: null,
+              set: convertToUTCMidnight,
             },
             expdt: {
-              type: String,
+              type: Date,
+              default: null,
+              set: convertToUTCMidnight,
             },
+            warrantyCardNo: { type: String },
             mrp: { type: Number },
             newBatch: { type: Boolean, default: false },
             supplierName: { type: String },
@@ -232,7 +238,10 @@ const purchaseSchema = new Schema(
 purchaseSchema.index({ cmp_id: 1, purchaseNumber: -1 }, { unique: true });
 
 // 2. Secondary unique sequence (series-based numbering)
-purchaseSchema.index({ cmp_id: 1, series_id: 1, series_id: -1 }, { unique: true });
+purchaseSchema.index(
+  { cmp_id: 1, series_id: 1, series_id: -1 },
+  { unique: true }
+);
 
 // 3. Most common query pattern (company + date sorting)
 purchaseSchema.index({ cmp_id: 1, date: -1 });
@@ -247,20 +256,23 @@ purchaseSchema.index({ cmp_id: 1, Secondary_user_id: 1 });
 purchaseSchema.index({ cmp_id: 1, serialNumber: -1 });
 
 // 7. User-level document sequences (alternative to index #2 if needed)
-purchaseSchema.index({ 
-  cmp_id: 1, 
-  Secondary_user_id: 1, 
-  userLevelSerialNumber: -1 
+purchaseSchema.index({
+  cmp_id: 1,
+  Secondary_user_id: 1,
+  userLevelSerialNumber: -1,
 });
 
 // NEW INDEX: For fast validation of usedSeriesNumber existence
-purchaseSchema.index({ 
-  cmp_id: 1, 
-  series_id: 1, 
-  usedSeriesNumber: 1 
-}, { 
-  name: "series_number_validation_idx",
-  background: true 
-});
+purchaseSchema.index(
+  {
+    cmp_id: 1,
+    series_id: 1,
+    usedSeriesNumber: 1,
+  },
+  {
+    name: "series_number_validation_idx",
+    background: true,
+  }
+);
 
 export default mongoose.model("Purchase", purchaseSchema);

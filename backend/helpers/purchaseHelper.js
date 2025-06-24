@@ -47,7 +47,6 @@ export const handlePurchaseStockUpdates = async (
           godown.actualCount !== undefined ? godown.actualCount : godown.count;
 
         if (godown.newBatch) {
-          console.log("godown.batch", godown.batch);
 
           if (godownCount > 0) {
             // Handle new batch logic
@@ -57,6 +56,7 @@ export const handlePurchaseStockUpdates = async (
               balance_stock: godownCount || 0,
               mfgdt: godown?.mfgdt,
               expdt: godown?.expdt,
+              warrantyCardNo: godown?.warrantyCardNo,
               supplierName: godown?.supplierName,
               voucherNumber: godown?.voucherNumber,
               purchase_price: godown?.purchase_price,

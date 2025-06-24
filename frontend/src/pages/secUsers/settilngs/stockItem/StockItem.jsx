@@ -23,6 +23,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { BsCalendar2Date } from "react-icons/bs";
+
 
 const StockItem = () => {
   const [loading, setLoading] = useState(false);
@@ -73,6 +75,28 @@ const StockItem = () => {
         toggle: true,
         toggleValue: configurations[0]?.batchEnabled,
         dbField: "batchEnabled",
+      },
+      {
+        title: "Enable Manufacturing Date",
+        description:
+          "Enable this to include batch while adding item in invoice",
+        icon: <BsCalendar2Date />,
+        to: "/sUsers/addBatchSettings",
+        active: configurations[0]?.batchEnabled,
+        toggle: true,
+        toggleValue: configurations[0]?.enableManufacturingDate || false,
+        dbField: "enableManufacturingDate",
+      },
+      {
+        title: "Enable Expiry Date",
+        description:
+          "Enable this to include batch while adding item in invoice",
+        icon: <BsCalendar2Date />,
+        to: "/sUsers/addBatchSettings",
+        active: configurations[0]?.batchEnabled,
+        toggle: true,
+        toggleValue: configurations[0]?.enableExpiryDate || false,
+        dbField: "enableExpiryDate",
       },
       {
         title: "Price Level",

@@ -67,7 +67,7 @@ const OrderSettings = () => {
           to: "/invoiceSettings/enableShipToBill",
           toggleValue: enableShipTo["saleOrder"] || false,
           dbField: "enableShipTo",
-          active: true,
+          active: false,
           toggle: true,
         },
         {
@@ -104,23 +104,7 @@ const OrderSettings = () => {
     }
   }, [configurations]);
 
-  // useEffect(() => {
-  //   if (configurations.length > 0) {
-  //     const { addRateWithTax } = configurations[0];
-  //     console.log(addRateWithTax);
 
-  //     if (addRateWithTax) {
-  //       const index = settingsOptions.findIndex((option) => option.id === 5);
-  //       console.log(index);
-
-  //       if (index > -1) {
-  //         settingsOptions[index].toggleValue = addRateWithTax["saleOrder"];
-  //       }
-
-  //       console.log(settingsOptions[4].toggleValue);
-  //     }
-  //   }
-  // }, [configurations]);
 
   const getUrl = (title) => {
     let url;

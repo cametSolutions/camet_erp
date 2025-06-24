@@ -1,10 +1,11 @@
 import { createSlice } from "@reduxjs/toolkit";
 
+const voucherTypeFormLocalStorage = localStorage.getItem("voucherType");
 
 const initialState = {
-  voucherNumber: "",
+  voucherNumber: voucherTypeFormLocalStorage ? voucherTypeFormLocalStorage : "",
   voucherType: "",
-  voucherSeries:null,
+  voucherSeries: null,
   selectedVoucherSeries: null,
   selectedVoucherSeriesForEdit: null, /// for edit we need to track the voucher series which is selected while created the voucher
   mode: "create",
@@ -40,7 +41,6 @@ const initialState = {
   stockTransferToGodown: null,
   billToParty: {},
   shipToParty: {},
-  
 };
 
 export const commonVoucherSlice = createSlice({
@@ -288,11 +288,8 @@ export const commonVoucherSlice = createSlice({
         ) {
           state.items.splice(index, 1);
         }
-
       }
     },
-
-   
 
     addDespatchDetails: (state, action) => {
       return {
@@ -367,6 +364,7 @@ export const commonVoucherSlice = createSlice({
 
     addVoucherType: (state, action) => {
       state.voucherType = action.payload;
+      localStorage.setItem("voucherType", action.payload);
     },
     addAllAdditionalCharges: (state, action) => {
       state.allAdditionalCharges = action.payload;
@@ -444,8 +442,8 @@ export const commonVoucherSlice = createSlice({
     },
     addNewAddress: (state, action) => {
       state.party.newAddress = action.payload;
-      state.billToParty={};
-      state.shipToParty={};
+      state.billToParty = {};
+      state.shipToParty = {};
     },
     addBillToParty: (state, action) => {
       state.billToParty = action.payload;

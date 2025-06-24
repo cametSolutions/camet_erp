@@ -64,8 +64,6 @@ function VoucherAddCount() {
     configurations,
     type,
   } = useSelector((state) => state.secSelectedOrganization.secSelectedOrg);
-  const { addRateWithTax } = configurations[0];
-  const taxInclusive = addRateWithTax["sale"] || false;
   const { enableNegativeStockBlockForVanInvoice } = configurations[0];
 
   // Get sales data from Redux
@@ -165,9 +163,7 @@ function VoucherAddCount() {
         const params = new URLSearchParams({
           page: pageNumber,
           limit,
-          vanSale: voucherTypeFromRedux === "vanSale" ? true : false,
-          taxInclusive: taxInclusive,
-          // search: searchTerm,
+          voucherType: voucherTypeFromRedux,
         });
 
         if (searchTerm) {

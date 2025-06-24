@@ -1,19 +1,15 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable react/no-unknown-property */
 import { useEffect, useState } from "react";
-import { IoIosArrowRoundBack } from "react-icons/io";
 import { MdModeEditOutline } from "react-icons/md";
 import { useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
-import { updateItem } from "../../../../../slices/voucherSlices/commonVoucherSlice";
+import { updateItem } from "../../../../slices/voucherSlices/commonVoucherSlice";
 import { useDispatch } from "react-redux";
+import TitleDiv from "@/components/common/TitleDiv";
+import DatePicker from "react-datepicker";
 
-function EditItemForm({
-  // submitHandler,
-  ItemsFromRedux,
-  from,
-  taxInclusive = false,
-}) {
+function EditItemForm({ ItemsFromRedux, from, taxInclusive = false }) {
   const [item, setItem] = useState([]);
   const [newPrice, setNewPrice] = useState("");
   const [quantity, setQuantity] = useState("");
@@ -27,6 +23,9 @@ function EditItemForm({
   const [discountAmount, setDiscountAmount] = useState(0);
   const [discountPercentage, setDiscountPercentage] = useState(0);
   const [isTaxInclusive, setIsTaxInclusive] = useState(false);
+  const [warrantyCardNo, setWarrantyCardNo] = useState(0);
+  const [expirationDate, setExpirationDate] = useState(new Date());
+  const [manufactureDate, setManufactureDate] = useState(new Date());
   // const [taxAmount, setTaxAmount] = useState(0);
 
   // Tax related states
@@ -84,6 +83,8 @@ function EditItemForm({
   const {
     enableActualAndBilledQuantity = false,
     enableNegativeStockBlockForVanInvoice = false,
+    enableManufacturingDate = false,
+    enableExpiryDate = false,
   } = configuration || {};
 
   const calculateTotal = (item, selectedPriceLevel, situation = "normal") => {
@@ -258,6 +259,7 @@ function EditItemForm({
     if (selectedItem) {
       setNewPrice(selectedGodown?.selectedPriceRate || 0);
       setQuantity(selectedGodown?.count || 1);
+      setWarrantyCardNo(selectedGodown?.warrantyCardNo || "");
 
       if (enableActualAndBilledQuantity) {
         setActualQuantity(
@@ -265,6 +267,18 @@ function EditItemForm({
         );
       } else {
         setActualQuantity(selectedGodown?.count || 1);
+      }
+
+      if (selectedGodown?.mfgdt) {
+        setManufactureDate(
+          selectedGodown?.mfgdt ? new Date(selectedGodown?.mfgdt) : new Date()
+        );
+      }
+
+      if (selectedGodown?.expdt) {
+        setExpirationDate(
+          selectedGodown?.expdt ? new Date(selectedGodown?.expdt) : new Date()
+        );
       }
 
       // Set discount information
@@ -435,10 +449,9 @@ function EditItemForm({
       updatedItem.gdnEnabled === true &&
       updatedItem.hasGodownOrBatch === true &&
       updatedItem.batchEnabled !== true;
+    updatedItem.isTaxInclusive = isTaxInclusive;
 
     if (shouldUpdateAllGodowns) {
-      console.log("here in all godown update");
-
       // Get the new rate and discount settings
       const newRate = parseFloat(newPrice);
       const newDiscountType = type;
@@ -462,6 +475,10 @@ function EditItemForm({
             actualCount: godownActualQty,
             selectedPriceRate: newRate,
             discountType: newDiscountType,
+            warrantyCardNo: warrantyCardNo,
+            mfgdt: manufactureDate,
+            expdt: expirationDate,
+
             discountAmount:
               newDiscountType === "amount" ? newDiscountValue : "",
             discountPercentage:
@@ -516,6 +533,9 @@ function EditItemForm({
             discountAmount: calculatedValues.discountAmount,
             discountPercentage: calculatedValues.discountPercentage,
             isTaxInclusive: isTaxInclusive,
+            warrantyCardNo: warrantyCardNo,
+            mfgdt: manufactureDate,
+            expdt: expirationDate,
 
             // Values from calculation
             basePrice: calculatedValues.basePrice,
@@ -562,6 +582,7 @@ function EditItemForm({
         ...godownToUpdate,
         // Update with new values
         count: Number(quantity || 0),
+
         actualCount: Number(actualQuantity || 0),
         selectedPriceRate: parseFloat(newPrice),
         discountAmount: discountAmount,
@@ -571,6 +592,9 @@ function EditItemForm({
         basePrice: basePrice,
         taxableAmount: taxableAmount,
         individualTotal: individualTotal,
+        warrantyCardNo: warrantyCardNo,
+        mfgdt: manufactureDate.toDateString(),
+        expdt: expirationDate,
 
         // Tax related fields
         igstValue: igstValue,
@@ -639,13 +663,7 @@ function EditItemForm({
   return (
     <div>
       <div className="h-screen flex-1">
-        <div className="bg-[#012a4a] shadow-lg px-4 py-3 pb-3 flex items-center gap-2 sticky top-0 z-20">
-          <IoIosArrowRoundBack
-            onClick={handleBackClick}
-            className="text-3xl text-white cursor-pointer"
-          />
-          <p className="text-white text-lg font-bold">Edit Item</p>
-        </div>
+        <TitleDiv title="Edit Item" />
         <div className="min-h-screen bg-gray-100 flex flex-col justify-center">
           <div className="relative md:py-4 sm:max-w-xl sm:mx-auto">
             <div className="relative px-4 py-10 bg-white mx-5 md:mx-0 shadow sm:p-10">
@@ -814,6 +832,57 @@ function EditItemForm({
                         Amount
                       </button>
                     </div>
+
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      {enableManufacturingDate &&
+                        selectedGodown?.mfgdt &&
+                        voucherTypeFromRedux !== "saleOrder" && (
+                          <div className="flex flex-col flex-1">
+                            <label className="leading-loose">
+                              Manufacture Date
+                            </label>
+                            <DatePicker
+                              selected={manufactureDate}
+                              onChange={(date) => setManufactureDate(date)}
+                              dateFormat="yyyy-MM-dd"
+                              className="px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
+                              placeholderText="Select a date"
+                            />
+                          </div>
+                        )}
+
+                      {enableExpiryDate &&
+                        selectedGodown?.expdt &&
+                        voucherTypeFromRedux !== "saleOrder" && (
+                          <div className="flex flex-col flex-1">
+                            <label className="leading-loose">
+                              Expiration Date
+                            </label>
+                            <DatePicker
+                              selected={expirationDate}
+                              onChange={(date) => setExpirationDate(date)}
+                              dateFormat="yyyy-MM-dd"
+                              className="px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
+                              placeholderText="Select a date"
+                            />
+                          </div>
+                        )}
+                    </div>
+
+                    {voucherTypeFromRedux !== "saleOrder" && (
+                      <div className="flex flex-col">
+                        <label className="leading-loose">
+                          Warranty Card No.
+                        </label>
+                        <input
+                          value={warrantyCardNo || ""}
+                          onChange={(e) => setWarrantyCardNo(e.target.value)}
+                          placeholder="123-456-789"
+                          type="text"
+                          className="px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
+                        />
+                      </div>
+                    )}
 
                     <div className="flex flex-col">
                       <label className="leading-loose">Tax Rate</label>

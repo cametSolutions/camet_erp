@@ -185,6 +185,13 @@ function AccVoucherInitialPage() {
       return toast.error(" Amount is required.");
     }
 
+    if (!formData.series_id) {
+      toast.error(
+        "Error with your voucher series. Please select a valid series."
+      );
+      return;
+    }
+
     if (!formData.paymentMethod) {
       setSubmitLoading(false);
       return toast.error("Payment method is required.");

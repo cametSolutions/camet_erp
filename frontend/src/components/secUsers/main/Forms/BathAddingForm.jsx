@@ -20,12 +20,10 @@ function BatchAddingForm({ from, taxInclusive = false }) {
 
   // Batch specific fields
   const [batch, setBatch] = useState("");
-  const [expirationDate, setExpirationDate] = useState(() => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    return tomorrow;
-  });
+  const [expirationDate, setExpirationDate] = useState(new Date());
   const [manufactureDate, setManufactureDate] = useState(new Date());
+
+  
   // const [openingStock, setOpeningStock] = useState(0);
   const [mrp, setMrp] = useState("");
 
@@ -41,6 +39,8 @@ function BatchAddingForm({ from, taxInclusive = false }) {
   const [discountAmount, setDiscountAmount] = useState(0);
   const [discountPercentage, setDiscountPercentage] = useState(0);
   const [isTaxInclusive, setIsTaxInclusive] = useState(false);
+    const [warrantyCardNo, setWarrantyCardNo] = useState(0);
+  
 
   // Tax related states
   const [cess, setCess] = useState(0);
@@ -85,8 +85,11 @@ function BatchAddingForm({ from, taxInclusive = false }) {
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
   const configuration = configurations[0];
-  const enableActualAndBilledQuantity =
-    configuration?.enableActualAndBilledQuantity || false;
+  const {
+    enableActualAndBilledQuantity = false,
+    enableManufacturingDate = false,
+    enableExpiryDate = false,
+  } = configuration;
 
   // Function to calculate totals
   const calculateTotal = (item, selectedPriceLevel, situation = "normal") => {
@@ -462,11 +465,18 @@ function BatchAddingForm({ from, taxInclusive = false }) {
       (godown) => godown._id === selectedGodown
     );
 
+    const defaultGodown = godowns.find(
+      (godown) => godown.defaultGodown === true
+    );
+
+    console.log(defaultGodown);
+    
+
     // Create a new batch object
     const newBatch = {
       batch: batch,
-      expdt: expirationDate.toLocaleDateString(),
-      mfgdt: manufactureDate.toLocaleDateString(),
+      expdt: expirationDate,
+      mfgdt: manufactureDate,
       // openingStock: openingStock,
       mrp: Number(mrp || 0),
       newBatch: true,
@@ -476,11 +486,11 @@ function BatchAddingForm({ from, taxInclusive = false }) {
       purchase_cost,
       hsn_code,
       godown:
-        selectedItem?.gdnEnabled && currentGodown ? currentGodown.godown : null,
+        selectedItem?.gdnEnabled && currentGodown ? currentGodown.godown : defaultGodown?.godown || null,
       godownMongoDbId:
-        selectedItem?.gdnEnabled && selectedGodown ? selectedGodown : null,
+        selectedItem?.gdnEnabled && selectedGodown ? selectedGodown : defaultGodown?._id || null,
       godown_id:
-        selectedItem?.gdnEnabled && selectedGodown ? selectedGodown : null,
+        selectedItem?.gdnEnabled && selectedGodown ? selectedGodown : defaultGodown?.godown_id || null,
       count: Number(quantity || 0),
       actualCount: Number(actualQuantity || 0),
       selectedPriceRate: parseFloat(newPrice),
@@ -488,6 +498,7 @@ function BatchAddingForm({ from, taxInclusive = false }) {
       discountPercentage: discountPercentage,
       discountType: type,
       isTaxInclusive: isTaxInclusive,
+      warrantyCardNo: warrantyCardNo || "",
       basePrice: basePrice,
       taxableAmount: taxableAmount,
       individualTotal: individualTotal,
@@ -557,7 +568,6 @@ function BatchAddingForm({ from, taxInclusive = false }) {
 
     updatedItem.isExpanded = true;
 
-    console.log(updatedItem.added);
 
     if (
       updatedItem?.added !== undefined &&
@@ -608,29 +618,35 @@ function BatchAddingForm({ from, taxInclusive = false }) {
                     </div>
 
                     <div className="flex flex-col sm:flex-row gap-4">
-                      <div className="flex flex-col flex-1">
-                        <label className="leading-loose">
-                          Manufacture Date
-                        </label>
-                        <DatePicker
-                          selected={manufactureDate}
-                          onChange={(date) => setManufactureDate(date)}
-                          dateFormat="yyyy-MM-dd"
-                          className="px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
-                          placeholderText="Select a date"
-                        />
-                      </div>
+                      {enableManufacturingDate && (
+                        <div className="flex flex-col flex-1">
+                          <label className="leading-loose">
+                            Manufacture Date
+                          </label>
+                          <DatePicker
+                            selected={manufactureDate}
+                            onChange={(date) => setManufactureDate(date)}
+                            dateFormat="yyyy-MM-dd"
+                            className="px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
+                            placeholderText="Select a date"
+                          />
+                        </div>
+                      )}
 
-                      <div className="flex flex-col flex-1">
-                        <label className="leading-loose">Expiration Date</label>
-                        <DatePicker
-                          selected={expirationDate}
-                          onChange={(date) => setExpirationDate(date)}
-                          dateFormat="yyyy-MM-dd"
-                          className="px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
-                          placeholderText="Select a date"
-                        />
-                      </div>
+                      {enableExpiryDate && (
+                        <div className="flex flex-col flex-1">
+                          <label className="leading-loose">
+                            Expiration Date
+                          </label>
+                          <DatePicker
+                            selected={expirationDate}
+                            onChange={(date) => setExpirationDate(date)}
+                            dateFormat="yyyy-MM-dd"
+                            className="px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
+                            placeholderText="Select a date"
+                          />
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex flex-col sm:flex-row gap-4 ">
@@ -827,6 +843,17 @@ function BatchAddingForm({ from, taxInclusive = false }) {
                       >
                         Amount
                       </button>
+                    </div>
+
+                      <div className="flex flex-col">
+                      <label className="leading-loose">Warranty Card No.</label>
+                      <input
+                        value={warrantyCardNo || ""}
+                        onChange={(e) => setWarrantyCardNo(e.target.value)}
+                        placeholder="123-456-789"
+                        type="text"
+                        className="px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
+                      />
                     </div>
 
                     <div className="flex flex-col">

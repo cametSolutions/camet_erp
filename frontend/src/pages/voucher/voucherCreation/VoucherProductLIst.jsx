@@ -263,7 +263,7 @@ export default function VoucherProductList({
       (voucherTypeFromRedux == "purchase" ||
         voucherTypeFromRedux == "debitNote")
     ) {
-      navigate(`/sUsers/editItemSales/${_id}/${idx}`);
+      navigate(`/sUsers/editItemVoucher/${_id}/${idx}`);
     }
   };
 
@@ -611,7 +611,7 @@ function isVanSaleWithSingleGodown(item) {
                 <>
                   <button
                     onClick={() => {
-                      navigate(`/sUsers/editItem${tab}/${el?._id}/null`, {
+                      navigate(`/sUsers/editItemVoucher/${el?._id}/null`, {
                         state: {
                           from: tab,
                           id: location?.state?.id,

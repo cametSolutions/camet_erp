@@ -4,55 +4,21 @@ import salesModel from "../models/salesModel.js";
 import stockTransferModel from "../models/stockTransferModel.js";
 import creditNoteModel from "../models/creditNoteModel.js";
 import debitNoteModel from "../models/debitNoteModel.js";
-import TransactionModel from "../models/TransactionModel.js";
 import invoiceModel from "../models/invoiceModel.js";
 import vanSaleModel from "../models/vanSaleModel.js";
 import purchaseModel from "../models/purchaseModel.js";
-import Oragnization from "../models/OragnizationModel.js";
-import AdditionalChargesModel from "../models/additionalChargesModel.js";
+
 import {
   aggregateTransactions,
   aggregateOpeningBalance,
-  addCorrespondingParty,
-  editCorrespondingParty,
-  getEmailService,
 } from "../helpers/helper.js";
 import { startOfDay, endOfDay, parseISO } from "date-fns";
 import receiptModel from "../models/receiptModel.js";
 import paymentModel from "../models/paymentModel.js";
-import OutstandingModel from "../models/TallyData.js";
-import { Brand } from "../models/subDetails.js";
-import { Category } from "../models/subDetails.js";
-import { Subcategory } from "../models/subDetails.js";
-import { Godown } from "../models/subDetails.js";
-import { PriceLevel } from "../models/subDetails.js";
 import mongoose from "mongoose";
-import cashModel from "../models/cashModel.js";
 import TallyData from "../models/TallyData.js";
-import bankModel from "../models/bankModel.js";
 import OragnizationModel from "../models/OragnizationModel.js";
 import nodemailer from "nodemailer";
-import barcodeModel from "../models/barcodeModel.js";
-
-// @desc to  get stock transfer details
-// route get/api/sUsers/getStockTransferDetails;
-export const getStockTransferDetails = async (req, res) => {
-  try {
-    const id = req.params.id;
-
-    const details = await stockTransferModel.findById(id);
-    if (details) {
-      res
-        .status(200)
-        .json({ message: "Stock Transfer Details fetched", data: details });
-    } else {
-      res.status(404).json({ error: "Stock Transfer Details not found" });
-    }
-  } catch (error) {
-    console.error("Error in getting StockTransferDetails:", error);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-};
 
 // @desc to  get transactions
 // route get/api/sUsers/transactions
@@ -285,11 +251,6 @@ export const transactions = async (req, res) => {
   }
 };
 
-
-
-
-
-
 // @desc adding new Hsn
 // route POst/api/pUsers/addHsn
 export const addHsn = async (req, res) => {
@@ -431,47 +392,6 @@ export const deleteHsn = async (req, res) => {
   }
 };
 
-// @desc toget the details of transaction or purchase
-// route get/api/sUsers/getPurchaseDetails
-
-export const getPurchaseDetails = async (req, res) => {
-  const purchaseId = req.params.id;
-
-  try {
-    const purchaseDetails = await purchaseModel.findById(purchaseId).lean();
-
-    if (!purchaseDetails) {
-      return res.status(404).json({ error: "Purchase not found" });
-    }
-
-    ////find the outstanding of the sale
-    const outstandingOfPurchase = await OutstandingModel.findOne({
-      billId: purchaseDetails._id.toString(),
-      bill_no: purchaseDetails.purchaseNumber,
-      cmp_id: purchaseDetails.cmp_id,
-      Primary_user_id: purchaseDetails.Primary_user_id,
-    });
-    let isEditable = true;
-
-    if (outstandingOfPurchase) {
-      isEditable =
-        outstandingOfPurchase?.appliedPayments?.length == 0 ? true : false;
-    }
-
-    purchaseDetails.isEditable = isEditable;
-
-    if (purchaseDetails) {
-      res
-        .status(200)
-        .json({ message: "purchaseDetails  fetched", data: purchaseDetails });
-    } else {
-      res.status(404).json({ error: "Purchase not found" });
-    }
-  } catch (error) {
-    console.error("Error fetching purchase details:", error);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-};
 /**
  * @desc   To calculate opening balances
  * @route  Get /api/sUsers/getOpeningBalances

@@ -53,9 +53,10 @@ const InvoiceSettings = () => {
           active: true,
           toggle: true,
           dbField: "addRateWithTax",
-          toggleValue: addRateWithTax || false,
+          toggleValue: addRateWithTax["sale"] || false,
         },
         {
+          
           title: "Enable Ship to Bill on Invoice",
           description:
             "Enable this option to include 'Ship to Bill' details on the invoice",
@@ -63,7 +64,7 @@ const InvoiceSettings = () => {
           to: "/invoiceSettings/enableShipToBill",
           toggleValue: enableShipTo || false,
           dbField: "enableShipTo",
-          active: true,
+          active: false,
           toggle: true,
         },
 
@@ -76,7 +77,7 @@ const InvoiceSettings = () => {
           toggle: true,
           dbField: "enableNegativeStockBlockForVanInvoice",
           toggleValue:
-            configurations[0].enableNegativeStockBlockForVanInvoice || false,
+            configurations[0]?.enableNegativeStockBlockForVanInvoice || false,
         },
         {
           title: "Disable Rate for an Item",
@@ -110,13 +111,11 @@ const InvoiceSettings = () => {
   }, [configurations]);
 
   const getUrl = (title) => {
-    console.log(title);
-
     let url;
     switch (title) {
       case "addRateWithTax":
         // url = "/updateTaxConfiguration";
-        url = "/updateFirstLayerConfiguration";
+        url = "/updateTaxConfiguration";
         break;
       case "enableShipTo":
         // url = "/updateShipToConfiguration";
@@ -136,22 +135,34 @@ const InvoiceSettings = () => {
   const handleToggleChangeFromParent = async (data) => {
     const url = getUrl(data?.title);
 
+    let body = {};
+
+    console.log("data", data);
+
+    if (data?.title === "addRateWithTax") {
+      body = { addRateWithTax: data?.checked };
+    } else {
+      body = {
+        fieldToUpdate: data?.title,
+        value: data?.checked,
+      };
+    }
+
     if (url) {
       try {
         setLoading(true);
         const res = await api.put(
           `/api/sUsers/${url}/${cmp_id}?voucher=sale`,
-          {
-            fieldToUpdate: data?.title,
-            value: data?.checked,
-          },
-          // { [data?.title]: data?.checked },
+          body,
+
           {
             withCredentials: true,
           }
         );
 
-        dispatch(updateConfiguration(res?.data?.data));
+        dispatch(
+          updateConfiguration(res?.data?.updatedConfig ?? res?.data?.data)
+        );
       } catch (error) {
         console.log(error);
         toast.error(error.response.data.message);

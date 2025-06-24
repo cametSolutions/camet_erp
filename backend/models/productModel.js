@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { convertToUTCMidnight } from "../utils/dateHelpers.js";
 
 const productSchema = new mongoose.Schema({
   product_name: {
@@ -100,9 +101,18 @@ const productSchema = new mongoose.Schema({
         type: String,
       },
       mfgdt: {
-        type: String,
+        type: Date,
+        default: null,
+        set: convertToUTCMidnight,
       },
       expdt: {
+        type: Date,
+        default: null,
+        set: convertToUTCMidnight,
+
+      },
+
+      warrantyCardNo: {
         type: String,
       },
       supplierName: {

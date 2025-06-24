@@ -1,18 +1,30 @@
+
 {
-    "data": [
-        {
-            "accountGroup_id": "20", 
-            "subGroup_id": 175, 
-            "partyName": "EBY", 
-            "party_master_id": "183", 
-            "billingAddress": "null", 
-            "shippingAddress": "null", 
-            "state": "Kerala", 
-            "creditLimit": 0, 
-            "creditPeriod": 0, 
-            "openingBalanceAmount": 0.00, 
-            "Primary_user_id": "6822d31c0c9382468b5663df", 
-            "cmp_id": "6822eecbb7628a073e5e02c6"
-        }
-      ]
+  "data": [
+    {
+      "os": 1,
+      "party_master_id":"001"
+    },
+    {
+      "os": 2,
+      "party_master_id":"002"
+    },
+    {
+      "os": 3,
+      "party_master_id":"003"
+    },
+    {
+      "os": 4,
+      "party_master_id":"001"
+    },
+    {
+      "os": 5,
+      "party_master_id":"002"
     }
+  ],
+  "partyIds": [
+    "001",
+    "002",
+    "003"
+  ]
+}

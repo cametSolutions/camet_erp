@@ -1,6 +1,5 @@
-
-
 import mongoose from "mongoose";
+import { convertToUTCMidnight } from "../utils/dateHelpers.js";
 const { Schema } = mongoose;
 
 const creditNoteSchema = new Schema(
@@ -20,7 +19,7 @@ const creditNoteSchema = new Schema(
     convertedFrom: { type: Array, default: [] },
     serialNumber: { type: Number },
     userLevelSerialNumber: { type: Number },
-    creditNoteNumber:{
+    creditNoteNumber: {
       type: String,
       required: [true, "Credit note number is required"],
       validate: {
@@ -30,8 +29,12 @@ const creditNoteSchema = new Schema(
         message: "Credit note number cannot be empty",
       },
     },
-    series_id: { type:  Schema.Types.ObjectId, ref: "VoucherSeries", required: true },
-    usedSeriesNumber:{type: Number, required: true},
+    series_id: {
+      type: Schema.Types.ObjectId,
+      ref: "VoucherSeries",
+      required: true,
+    },
+    usedSeriesNumber: { type: Number, required: true },
     Primary_user_id: {
       type: Schema.Types.ObjectId,
       ref: "User",
@@ -72,7 +75,6 @@ const creditNoteSchema = new Schema(
       totalOutstanding: { type: Number },
       latestBillDate: { type: Date, default: null },
       newAddress: { type: Object },
-
     },
 
     // priceLevel: { type: Schema.Types.ObjectId, ref: 'PriceLevel' },
@@ -109,11 +111,16 @@ const creditNoteSchema = new Schema(
               type: String,
             },
             mfgdt: {
-              type: String,
+              type: Date,
+              default: null,
+              set: convertToUTCMidnight,
             },
             expdt: {
-              type: String,
+              type: Date,
+              default: null,
+              set: convertToUTCMidnight,
             },
+            warrantyCardNo: { type: String },
             selectedPriceRate: { type: Number },
             added: { type: Boolean },
             count: { type: Number },
@@ -224,7 +231,10 @@ const creditNoteSchema = new Schema(
 creditNoteSchema.index({ cmp_id: 1, creditNoteNumber: -1 }, { unique: true });
 
 // 2. Secondary unique sequence (series-based numbering)
-creditNoteSchema.index({ cmp_id: 1, series_id: 1, series_id: -1 }, { unique: true });
+creditNoteSchema.index(
+  { cmp_id: 1, series_id: 1, series_id: -1 },
+  { unique: true }
+);
 
 // 3. Most common query pattern (company + date sorting)
 creditNoteSchema.index({ cmp_id: 1, date: -1 });
@@ -239,21 +249,23 @@ creditNoteSchema.index({ cmp_id: 1, Secondary_user_id: 1 });
 creditNoteSchema.index({ cmp_id: 1, serialNumber: -1 });
 
 // 7. User-level document sequences (alternative to index #2 if needed)
-creditNoteSchema.index({ 
-  cmp_id: 1, 
-  Secondary_user_id: 1, 
-  userLevelSerialNumber: -1 
+creditNoteSchema.index({
+  cmp_id: 1,
+  Secondary_user_id: 1,
+  userLevelSerialNumber: -1,
 });
 
 // NEW INDEX: For fast validation of usedSeriesNumber existence
-creditNoteSchema.index({ 
-  cmp_id: 1, 
-  series_id: 1, 
-  usedSeriesNumber: 1 
-}, { 
-  name: "series_number_validation_idx",
-  background: true 
-});
-
+creditNoteSchema.index(
+  {
+    cmp_id: 1,
+    series_id: 1,
+    usedSeriesNumber: 1,
+  },
+  {
+    name: "series_number_validation_idx",
+    background: true,
+  }
+);
 
 export default mongoose.model("CreditNote", creditNoteSchema);

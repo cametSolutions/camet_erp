@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { convertToUTCMidnight } from "../utils/dateHelpers.js";
 const { Schema } = mongoose;
 
 const StockTransferSchema = new mongoose.Schema(
@@ -71,11 +72,16 @@ const StockTransferSchema = new mongoose.Schema(
               type: String,
             },
             mfgdt: {
-              type: String,
+              type: Date,
+              default: null,
+              set: convertToUTCMidnight,
             },
             expdt: {
-              type: String,
+              type: Date,
+              default: null,
+              set: convertToUTCMidnight,
             },
+            warrantyCardNo: { type: String },
             selectedPriceRate: { type: Number },
             added: { type: Boolean },
             count: { type: Number },

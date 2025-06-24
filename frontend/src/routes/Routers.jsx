@@ -28,7 +28,6 @@ import OrderConfigurationsSecondary from '../pages/secUsers/OrderConfigurationsS
 // inventory 
 // import SalesSecondary from '../pages/secUsers/SalesSecondary'
 import SearchParty from '../pages/secUsers/SearchParty'
-import EditItemSalesSecondary from '../pages/secUsers/EditItemSalesSecondary'
 import ConfigureSecondaryUser from '../pages/masters/secondaryUsers/ConfigureSecondaryUser'
 // Error Page
 import ErrorPage from '../pages/errorPages/Notfound'
@@ -116,6 +115,7 @@ import StockRegister from '@/pages/voucherReports/stockRegister/StockRegister'
 import VoucherSeriesSettings from '@/pages/secUsers/settilngs/dataEntry/voucherSettings/VoucherSeriesSettings'
 import VoucherSeriesForm from '@/pages/secUsers/settilngs/dataEntry/voucherSettings/voucherSeries/VoucherSeriesForm'
 import VoucherSeriesList from '@/pages/secUsers/settilngs/dataEntry/voucherSettings/voucherSeries/VoucherSeriesList'
+import EditItemVoucher from '@/pages/voucher/voucherCreation/EditItemVoucher'
 
 const Routers = () => {
   return (
@@ -150,7 +150,7 @@ const Routers = () => {
         <Route path='/sUsers/sales' element={<ProtectedSecRoute><VoucherInitialPage/></ProtectedSecRoute>}></Route>
          <Route path='/sUsers/searchPartySales' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/addItemSales' element={<ProtectedSecRoute><VoucherAddCount/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/editItemSales/:id/:index' element={<ProtectedSecRoute><EditItemSalesSecondary/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/editItemVoucher/:id/:index' element={<ProtectedSecRoute><EditItemVoucher/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/salesDetails/:id' element={<ProtectedSecRoute><VoucherDetails/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/vanSaleDetails/:id' element={<ProtectedSecRoute><VoucherDetails/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/shareSales/:id' element={<ProtectedSecRoute><VoucherPdfInitiator/></ProtectedSecRoute>}></Route> 

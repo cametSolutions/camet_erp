@@ -512,7 +512,7 @@ function VoucherInitialPageEdit() {
             type="sale"
             convertedFrom={convertedFrom}
             urlToAddItem="/sUsers/addItemSales"
-            urlToEditItem="/sUsers/editItemSales"
+            urlToEditItem="/sUsers/editItemVoucher"
           />
 
           <AdditionalChargesTile

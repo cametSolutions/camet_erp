@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { convertToUTCMidnight } from "../utils/dateHelpers.js";
 const { Schema } = mongoose;
 
 const debitNoteSchema = new Schema(
@@ -109,11 +110,16 @@ const debitNoteSchema = new Schema(
               type: String,
             },
             mfgdt: {
-              type: String,
+              type: Date,
+              default: null,
+              set: convertToUTCMidnight,
             },
             expdt: {
-              type: String,
+              type: Date,
+              default: null,
+              set: convertToUTCMidnight,
             },
+            warrantyCardNo: { type: String },
             selectedPriceRate: { type: Number },
             added: { type: Boolean },
             count: { type: Number },
