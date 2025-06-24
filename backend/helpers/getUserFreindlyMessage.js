@@ -2,6 +2,9 @@ export const getUserFriendlyMessage = (error, item) => {
     if (error.includes("Missing bill_no")) {
         return "bill_no is missing"
     }
+    if (error.includes("Missing billId")) {
+        return "billId is missing"
+    }
     if (error.includes("Missing bill_amount")) {
         return "Missing bill_amount"
     }
@@ -34,6 +37,18 @@ export const getUserFriendlyMessage = (error, item) => {
     }
     if (error.includes("Invalid subGroup_id")) {
         return `Invalid subGroup_id is invalid for bill no: ${item.bill_no || "N/A"}`;
+    }
+    if (error.includes("Invalid bill_due_date format")) {
+        return `bill_due_date is invalid for bill no: ${item.bill_no || "N/A"}`;
+    }
+    if (error.includes("Invalid bill_date format")) {
+        return `bill_date is invalid for bill no: ${item.bill_no || "N/A"}`;    
+    }
+    if (error.includes("Missing bill_date")) {
+        return `bill_due_date is missing for bill no: ${item.bill_no || "N/A"}`;
+    }
+    if (error.includes("Missing bill_due_date")) {
+        return `bill_due_date is missing for bill no: ${item.bill_no || "N/A"}`;    
     }
 
     if (error.includes("party_name")) {

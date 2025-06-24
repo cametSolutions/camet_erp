@@ -74,8 +74,11 @@ export const saveDataFromTally = async (req, res) => {
       const chunkResults = await Promise.allSettled(
         chunk.map(async (dataItem) => {
           try {
-            if (!dataItem.billId && dataItem.bill_no) {
-              dataItem.billId = dataItem.bill_no;
+            // if (!dataItem.billId && dataItem.bill_no) {
+            //   dataItem.billId = dataItem.bill_no;
+            // }
+            if (!dataItem.billId) {
+              throw new Error(`Missing billId`)
             }
             if (!dataItem.bill_no) {
               throw new Error(`Missing bill_no`)
@@ -101,8 +104,13 @@ export const saveDataFromTally = async (req, res) => {
             } else if (!/^\d{4}-\d{2}-\d{2}$/.test(dataItem.bill_date)) {
               throw new Error(`Invalid bill_date format:${dataItem.bill_date}`)
             }
+            if (!dataItem.bill_due_date) {
+              throw new Error(`Missing bill_due_date`)
+            } else if (!/^\d{4}-\d{2}-\d{2}$/.test(dataItem.bill_due_date)) {
+              throw new Error(`Invalid bill_due_date format:${dataItem.bill_due_date}`)
+            }
 
-            const { party_id, accountGroup_id, subGroup_id , ...resdata } = dataItem;
+            const { party_id, accountGroup_id, subGroup_id =null,subGroup=null, ...resdata } = dataItem;
             if (!party_id) {
               throw new Error(`Missing party_id`);
             }
