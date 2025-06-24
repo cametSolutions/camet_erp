@@ -8,7 +8,9 @@ const tallySchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    // Primary_user_id: { type: String },
     cmp_id: { type: mongoose.Types.ObjectId, ref: "Company", required: true },
+    // cmp_id: { type: String },
     accountGroup: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "AccountGroup",
@@ -18,7 +20,13 @@ const tallySchema = new mongoose.Schema(
     party_name: { type: String, required: true },
     alias: { type: String },
     party_id: { type: mongoose.Types.ObjectId, ref: "Party", required: true },
-    mobile_no: { type: Number },
+    mobile_no: {
+      type: Number, set: v => {
+        if (v === "" || v === "null" || v === null) return null;
+        const num = Number(v);
+        return isNaN(num) ? null : num;
+      }
+    },
     email: { type: String },
     bill_date: { type: Date, required: true },
     bill_no: { type: String, required: true },

@@ -7,6 +7,7 @@ import AccountGroup from "../models/accountGroup.js";
 import subGroupModel from "../models/subGroup.js";
 import AdditionalCharges from "../models/additionalChargesModel.js";
 import { fetchData } from "../helpers/tallyHelper.js";
+import { getUserFriendlyMessage } from "../helpers/getUserFreindlyMessage.js";
 import mongoose from "mongoose";
 import {
   Godown,
@@ -19,46 +20,152 @@ import accountGroupModel from "../models/accountGroup.js";
 
 export const saveDataFromTally = async (req, res) => {
   try {
-    const dataToSave = await req.body.data;
+    const { data, partyIds } = await req.body
+ 
+    const partyIdValues = partyIds.map(p => p.partyId)
 
-    // console.log("dataToSave", dataToSave);
-    const { Primary_user_id, cmp_id } = dataToSave[0];
+    const { Primary_user_id, cmp_id } = data[0];
+  
 
-    await TallyData.deleteMany({ Primary_user_id, cmp_id });
+    const query = {
+      Primary_user_id: {
+        $in: [
+          Primary_user_id,
+          new mongoose.Types.ObjectId(Primary_user_id)
+        ]
+      },
+      cmp_id: {
+        $in: [
+          cmp_id,
+          new mongoose.Types.ObjectId(cmp_id)
+        ]
+      },
+      party_master_id: { $in: partyIdValues }
+    }
+    const matchedParties = await partyModel.find(query,
 
-    // Use Promise.all to parallelize document creation or update
-    const savedData = await Promise.all(
-      dataToSave.map(async (dataItem) => {
-        // Add bill_no as billId if billId is not present
-        if (!dataItem.billId && dataItem.bill_no) {
-          dataItem.billId = dataItem.bill_no;
-        }
+      { _id: 1, party_master_id: 1 }
+    ).lean();
+    const matchedAccountGrp = await AccountGroup.find({ Primary_user_id, cmp_id })
+    const accntgrpMap = Object.fromEntries(matchedAccountGrp.map(item => [item.accountGroup_id, item._id]))
+    const matchedSubGrp = await subGroupModel.find({ Primary_user_id, cmp_id })
+    const subGrpMap = Object.fromEntries(matchedSubGrp.map(item => [item.subGroup_id, item._id]))
+   
+    const partyIdMap = Object.fromEntries(
+      matchedParties.map(item => [item.party_master_id, item._id])
+    )
+    const mathced = await TallyData.find({ cmp_id })
+    console.log("mathcedouts", mathced)
+    const deleted = await TallyData.deleteMany({ Primary_user_id, cmp_id });
 
-        // Use findOne to check if the document already exists
-        const existingDocument = await TallyData.findOne({
-          cmp_id: dataItem.cmp_id,
-          bill_no: dataItem.bill_no,
-          Primary_user_id: dataItem.Primary_user_id,
-          party_id: dataItem.party_id,
-        });
 
-        // Use findOneAndUpdate to find an existing document based on some unique identifier
-        const updatedDocument = await TallyData.findOneAndUpdate(
-          {
-            cmp_id: dataItem.cmp_id,
-            bill_no: dataItem.bill_no,
-            Primary_user_id: dataItem.Primary_user_id,
-            party_id: dataItem.party_id,
-          },
-          dataItem,
-          { upsert: true, new: true }
-        );
 
-        return updatedDocument;
-      })
-    );
+    if (deleted.deletedCount > 0) {
+      console.log(`✅ Deleted ${deleted.deletedCount} documents`);
+    } else {
+      console.log("❌ No documents matched the criteria");
+    }
+    const concurrencyLimit = 100;
+    const results = [];
 
-    res.status(201).json({ message: "data saved successfully", savedData });
+    for (let i = 0;i < data.length;i += concurrencyLimit) {
+      const chunk = data.slice(i, i + concurrencyLimit);
+      //promise.allsettled used instead of promise.all that this ensures that if any item has an error, only that specific item won't be saved left of the items saved promise.all wont do like this.
+      const chunkResults = await Promise.allSettled(
+        chunk.map(async (dataItem) => {
+          try {
+            if (!dataItem.billId && dataItem.bill_no) {
+              dataItem.billId = dataItem.bill_no;
+            }
+            if (!dataItem.bill_no) {
+              throw new Error(`Missing bill_no`)
+            }
+            if (!dataItem.bill_amount) {
+              throw new Error(`Missing bill_amount`)
+            }
+            if (!dataItem.bill_pending_amt) {
+              throw new Error(`Missing bill_pending_amt`)
+            }
+            if (!dataItem.Primary_user_id) {
+              throw new Error("Missing Primary_user_id");
+            } else if (!mongoose.Types.ObjectId.isValid(dataItem.Primary_user_id)) {
+              throw new Error(`Invalid Primary_user_id: ${dataItem.Primary_user_id}`);
+            }
+            if (!dataItem.cmp_id) {
+              throw new Error("Missing cmp_id");
+            } else if (!mongoose.Types.ObjectId.isValid(dataItem.cmp_id)) {
+              throw new Error(`Invalid cmp_id: ${dataItem.cmp_id}`);
+            }
+            if (!dataItem.bill_date) {
+              throw new Error(`Missing bill_date`)
+            } else if (!/^\d{4}-\d{2}-\d{2}$/.test(dataItem.bill_date)) {
+              throw new Error(`Invalid bill_date format:${dataItem.bill_date}`)
+            }
+
+            const { party_id, accountGroup_id, subGroup_id = null, ...resdata } = dataItem;
+            if (!party_id) {
+              throw new Error(`Missing party_id`);
+            }
+            if (!partyIdMap[party_id]) {
+              throw new Error(`Invalid party_id`)
+            }
+
+            if (!accountGroup_id) {
+              throw new Error(`Missing accountGroup_id`);
+            }
+            if (!accntgrpMap[accountGroup_id]) {
+              throw new Error(`Invalid accountGroup_id`)
+            }
+
+            if (subGroup_id && !subGrpMap[subGroup_id]) {
+              throw new Error(`Invalid subGroup_id: ${subGroup_id}`);
+            }
+
+            const baseData = {
+              ...resdata,
+              party_id: partyIdMap[party_id],
+              accountGroup: accntgrpMap[accountGroup_id],
+            };
+
+            if (subGroup_id && subGrpMap[subGroup_id]) {
+              baseData.subGroup = subGrpMap[subGroup_id];
+            }
+
+            const doc = new TallyData(baseData);
+            return await doc.save();
+          } catch (error) {
+            throw { dataItem, error: error.message || error, userMessage: getUserFriendlyMessage(error.message, dataItem) };
+          }
+        })
+      );
+
+      results.push(...chunkResults);
+    }
+    // Separate successes and failures
+    const successful = results
+      .filter((r) => r.status === "fulfilled")
+      .map((r) => r.value);
+
+    const failed = results
+      .filter((r) => r.status === "rejected")
+      .map((r) => r.reason); // { item, error }
+
+    // Final Response
+    const response = {
+      message:
+        failed.length === 0
+          ? "All data saved successfully"
+          : failed.length === data.length
+            ? "All data failed to save"
+            : "Partial save completed",
+      savedCount: successful.length,
+      failedCount: failed.length,
+      failedItems: failed, // Includes both the dataItem and the error
+    };
+
+    return res.status(failed.length > 0 ? 207 : 201).json(response);
+
+
   } catch (error) {
     console.error("Error:", error);
     res.status(500).json({ error: "Internal server error" });
@@ -186,10 +293,10 @@ export const saveProductsFromTally = async (req, res) => {
           reason: !product.cmp_id
             ? "Missing cmp_id"
             : !product.Primary_user_id
-            ? "Missing Primary_user_id"
-            : !product.product_master_id
-            ? "Missing product_master_id"
-            : "Missing product_name",
+              ? "Missing Primary_user_id"
+              : !product.product_master_id
+                ? "Missing product_master_id"
+                : "Missing product_name",
         });
         continue;
       }
@@ -255,9 +362,9 @@ export const saveProductsFromTally = async (req, res) => {
           : [],
         subcategoryIds.length > 0
           ? Subcategory.find({
-              subcategory_id: { $in: subcategoryIds },
-              cmp_id,
-            })
+            subcategory_id: { $in: subcategoryIds },
+            cmp_id,
+          })
           : [],
         productModel.find({
           product_master_id: { $in: existingProductIds },
@@ -329,7 +436,7 @@ export const saveProductsFromTally = async (req, res) => {
     // Execute batches
     let processedCount = 0;
 
-    for (let i = 0; i < operations.length; i += BATCH_SIZE) {
+    for (let i = 0;i < operations.length;i += BATCH_SIZE) {
       const batchOps = operations.slice(i, i + BATCH_SIZE);
       const batchPromises = [];
 
@@ -628,7 +735,7 @@ export const updateStock = async (req, res) => {
     } else {
       // For pushStock=false, use the original bulk operation logic
       // Process in chunks to avoid overwhelming MongoDB
-      for (let i = 0; i < productIds.length; i += chunkSize) {
+      for (let i = 0;i < productIds.length;i += chunkSize) {
         const chunk = productIds.slice(i, i + chunkSize);
 
         const bulkOps = chunk.map((productMasterId) => {
@@ -864,17 +971,15 @@ export const updatePriceLevels = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: `Processed ${
-        Object.keys(productsToUpdate).length
-      } products. Updated: ${result.modifiedCount}`,
+      message: `Processed ${Object.keys(productsToUpdate).length
+        } products. Updated: ${result.modifiedCount}`,
 
       modifiedProducts: modificationSummary,
       totalRecordsProcessed: Object.keys(productsToUpdate).length,
       ...(skippedItems.length > 0 && { skippedItems }),
       ...(modificationSummary.length < Object.keys(productsToUpdate).length && {
-        note: `Showing summary for first ${modificationSummary.length} of ${
-          Object.keys(productsToUpdate).length
-        } products.`,
+        note: `Showing summary for first ${modificationSummary.length} of ${Object.keys(productsToUpdate).length
+          } products.`,
       }),
     });
   } catch (error) {
@@ -884,8 +989,8 @@ export const updatePriceLevels = async (req, res) => {
       error.name === "ValidationError"
         ? 400
         : error.name === "MongoError" || error.name === "MongoServerError"
-        ? 503
-        : 500;
+          ? 503
+          : 500;
 
     return res.status(status).json({
       success: false,
@@ -893,8 +998,8 @@ export const updatePriceLevels = async (req, res) => {
         status === 400
           ? "Validation error"
           : status === 503
-          ? "Database error"
-          : "An error occurred while updating price levels",
+            ? "Database error"
+            : "An error occurred while updating price levels",
       error: error.message,
     });
   }
@@ -986,7 +1091,7 @@ export const savePartyFromTally = async (req, res) => {
       if (validParties.length > 0) {
         // Insert in batches of 500 to avoid overwhelming the database
         const batchSize = 500;
-        for (let i = 0; i < validParties.length; i += batchSize) {
+        for (let i = 0;i < validParties.length;i += batchSize) {
           const batch = validParties.slice(i, i + batchSize);
           const result = await partyModel.insertMany(batch, { session });
           savedParty = savedParty.concat(result);
@@ -1121,8 +1226,8 @@ export const addAccountGroups = async (req, res) => {
             const updatedGroup = await AccountGroup.findByIdAndUpdate(
               existingGroup._id,
               group,
-              { 
-                new: true, 
+              {
+                new: true,
                 runValidators: true
               }
             );
@@ -1166,9 +1271,9 @@ export const addAccountGroups = async (req, res) => {
     });
   } catch (error) {
     console.error("Error in addAccountGroups:", error);
-    res.status(500).json({ 
-      error: "Internal server error", 
-      message: error.message 
+    res.status(500).json({
+      error: "Internal server error",
+      message: error.message
     });
   }
 };
@@ -1237,14 +1342,14 @@ export const addSubGroups = async (req, res) => {
           });
 
           let savedSubGroup;
-          
+
           if (existingSubGroup) {
             // Update the existing document
             savedSubGroup = await subGroupModel.findByIdAndUpdate(
               existingSubGroup._id,
               subGroup,
-              { 
-                new: true, 
+              {
+                new: true,
                 runValidators: true
               }
             );
@@ -1288,9 +1393,9 @@ export const addSubGroups = async (req, res) => {
     });
   } catch (error) {
     console.error("Error in addSubGroups:", error);
-    res.status(500).json({ 
-      error: "Internal server error", 
-      message: error.message 
+    res.status(500).json({
+      error: "Internal server error",
+      message: error.message
     });
   }
 };
@@ -1381,7 +1486,7 @@ export const addSubDetails = async (req, res) => {
 
       try {
         let existingItem = null;
-        
+
         // For price levels, check if item exists by ID (if provided) or by name
         if (isPriceLevel) {
           if (item[idField]) {
@@ -1391,7 +1496,7 @@ export const addSubDetails = async (req, res) => {
               cmp_id: item.cmp_id,
             });
           }
-          
+
           // If no ID or no item found by ID, check by name
           if (!existingItem) {
             existingItem = await Model.findOne({
@@ -1555,9 +1660,8 @@ export const addGodowns = async (req, res) => {
           await Godown.findByIdAndUpdate(existingItem._id, item);
           results.push({
             success: true,
-            message: `Godown updated successfully${
-              item.defaultGodown ? " (maintained as default)" : ""
-            }`,
+            message: `Godown updated successfully${item.defaultGodown ? " (maintained as default)" : ""
+              }`,
             data: item,
           });
         } else {
@@ -1572,9 +1676,8 @@ export const addGodowns = async (req, res) => {
           await newItem.save();
           results.push({
             success: true,
-            message: `Godown added successfully${
-              item.defaultGodown ? " (set as default)" : ""
-            }`,
+            message: `Godown added successfully${item.defaultGodown ? " (set as default)" : ""
+              }`,
             data: newItem,
           });
         }
@@ -1616,7 +1719,7 @@ export const addGodowns = async (req, res) => {
 export const giveInvoice = async (req, res) => {
 
   console.log("haii");
-  
+
   const cmp_id = req.params.cmp_id;
   const serialNumber = req.params.SNo;
   return fetchData("invoices", cmp_id, serialNumber, res);
@@ -1637,8 +1740,8 @@ export const giveSales = async (req, res) => {
 export const giveVanSales = async (req, res) => {
   const cmp_id = req.params.cmp_id;
   const serialNumber = req.params.SNo;
-  const userId=req.query.userId
-  return fetchData("vanSales", cmp_id, serialNumber, res,userId);
+  const userId = req.query.userId
+  return fetchData("vanSales", cmp_id, serialNumber, res, userId);
 };
 
 // @desc for giving transactions to tally
