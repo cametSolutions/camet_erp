@@ -116,6 +116,7 @@ import VoucherSeriesSettings from '@/pages/secUsers/settilngs/dataEntry/voucherS
 import VoucherSeriesForm from '@/pages/secUsers/settilngs/dataEntry/voucherSettings/voucherSeries/VoucherSeriesForm'
 import VoucherSeriesList from '@/pages/secUsers/settilngs/dataEntry/voucherSettings/voucherSeries/VoucherSeriesList'
 import EditItemVoucher from '@/pages/voucher/voucherCreation/EditItemVoucher'
+import WarrantyCard from '@/pages/voucher/voucherPdf/warrantyCard/WarrantyCard'
 
 const Routers = () => {
   return (
@@ -157,6 +158,8 @@ const Routers = () => {
         <Route path='/sUsers/shareVanSale/:id' element={<ProtectedSecRoute><VoucherPdfInitiator/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/shareSalesThreeInch/:id' element={<ProtectedSecRoute><VoucherPdfInitiatorThreeInch/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/shareVanSaleThreeInch/:id' element={<ProtectedSecRoute><VoucherPdfInitiatorThreeInch/></ProtectedSecRoute>}></Route> 
+        <Route path='/sUsers/shareSalesWarrantyCard/:id' element={<ProtectedSecRoute><WarrantyCard/></ProtectedSecRoute>}></Route> 
+
         <Route path='/sUsers/sales/paymentSplitting' element={<ProtectedSecRoute><PaymentSplitting/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/editSale/:id/paymentSplitting' element={<ProtectedSecRoute><PaymentSplitting/></ProtectedSecRoute>}></Route> 
        

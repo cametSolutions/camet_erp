@@ -1,3 +1,6 @@
+
+
+
 * {
   margin: 0;
   padding: 0;
@@ -337,3 +340,13 @@ tr {
     word-wrap: break-word;
   }
 }
+
+
+/* fonts */
+
+.molle-regular-italic {
+  font-family: "Molle", cursive;
+  font-weight: 400;
+  font-style: italic;
+}
+

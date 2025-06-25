@@ -22,6 +22,7 @@ import { useNavigate } from "react-router-dom";
 import { HiDocument } from "react-icons/hi2";
 import { IoDocumentTextSharp } from "react-icons/io5";
 import { formatVoucherType } from "../../../../../utils/formatVoucherType";
+import { BookText } from "lucide-react";
 
 export function ShareFormatSelector({ open, setOpen, voucherId, voucherType }) {
   const [selectedFormat, setSelectedFormat] = useState("tax-invoice");
@@ -40,19 +41,31 @@ export function ShareFormatSelector({ open, setOpen, voucherId, voucherType }) {
     voucherType === "vanSale" ||
     voucherType === "saleOrder"
   ) {
-    formats.push({
-      id: "pos",
-      label: "POS Format",
-      icon: <HiDocument size={20} />,
-    });
+    formats.push(
+      {
+        id: "pos",
+        label: "POS Format",
+        icon: <HiDocument size={20} />,
+      },
+      {
+        id: "warrantyCard",
+        label: "Warranty Card",
+        icon: <BookText fill="white" size={20} />,
+      }
+    );
   }
 
   const handleContinue = () => {
-    navigate(
-      `/sUsers/share${voucherType}${
-        selectedFormat === "pos" ? "ThreeInch" : ""
-      }/${voucherId}`
-    );
+    let path;
+
+    if (selectedFormat === "tax-invoice") {
+      path = `/sUsers/share${voucherType}/${voucherId}`;
+    } else if (selectedFormat === "pos") {
+      path = `/sUsers/share${voucherType}ThreeInch/${voucherId}`;
+    } else if (selectedFormat === "warrantyCard") {
+      path = `/sUsers/share${voucherType}WarrantyCard/${voucherId}`;
+    }
+    navigate(path);
     setOpen(false);
   };
 
