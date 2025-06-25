@@ -793,8 +793,20 @@ export const updateFirstLayerConfiguration = async (req, res) => {
       company.configurations = [{}];
     }
 
+    const companyConfig = company.configurations[0];
+
     // Update only the first element
-    company.configurations[0][fieldToUpdate] = value;
+    companyConfig[fieldToUpdate] = value;
+
+
+    /// if the fieldToUpdate is batchEnabled ,adjust  Manufacturing Date and Expiry Date accordingly
+    if (fieldToUpdate === "batchEnabled") {
+      if (value === false) {
+     
+        companyConfig.enableManufacturingDate = false;
+        companyConfig.enableExpiryDate = false;
+      }
+    }
 
     // Special handling for gdnEnabled
 if (fieldToUpdate === "gdnEnabled" && value === true) {

@@ -180,6 +180,8 @@ function AddProductForm({
           {
             godown: defaultGodown,
             batch: "Primary Batch",
+            mfgdt:new Date().toISOString(),
+            expdt: new Date().toISOString(),
             balance_stock: 0,
           },
         ]);
@@ -443,6 +445,8 @@ function AddProductForm({
           {
             godown: defaultGodown,
             batch: "Primary Batch",
+            mfgdt: new Date().toISOString(),
+            expdt: new Date().toISOString(),
             balance_stock: 0,
           },
         ];
@@ -451,6 +455,8 @@ function AddProductForm({
         return locationRows.map((location) => ({
           ...location,
           batch: "Primary Batch",
+          mfgdt: new Date().toISOString(),
+          expdt: new Date().toISOString(),
         }));
       }
     })();

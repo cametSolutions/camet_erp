@@ -476,6 +476,8 @@ function VoucherInitialPageEdit() {
             removeAll={removeAll}
             isLoading={submitLoading}
             mode={mode}
+            selectedVoucherSeriesFromRedux={selectedVoucherSeriesFromRedux || {}}
+
           />
           {/* adding party */}
 

@@ -476,8 +476,8 @@ function EditItemForm({ ItemsFromRedux, from, taxInclusive = false }) {
             selectedPriceRate: newRate,
             discountType: newDiscountType,
             warrantyCardNo: warrantyCardNo,
-            mfgdt: manufactureDate,
-            expdt: expirationDate,
+            mfgdt: item?.batchEnabled ? manufactureDate : null,
+            expdt: item?.batchEnabled ? expirationDate : null,
 
             discountAmount:
               newDiscountType === "amount" ? newDiscountValue : "",
@@ -534,8 +534,8 @@ function EditItemForm({ ItemsFromRedux, from, taxInclusive = false }) {
             discountPercentage: calculatedValues.discountPercentage,
             isTaxInclusive: isTaxInclusive,
             warrantyCardNo: warrantyCardNo,
-            mfgdt: manufactureDate,
-            expdt: expirationDate,
+            mfgdt: item?.batchEnabled ? manufactureDate : null,
+            expdt: item?.batchEnabled ? expirationDate : null,
 
             // Values from calculation
             basePrice: calculatedValues.basePrice,
@@ -593,8 +593,8 @@ function EditItemForm({ ItemsFromRedux, from, taxInclusive = false }) {
         taxableAmount: taxableAmount,
         individualTotal: individualTotal,
         warrantyCardNo: warrantyCardNo,
-        mfgdt: manufactureDate,
-        expdt: expirationDate,
+        mfgdt: item?.batchEnabled ? manufactureDate : null,
+        expdt: item?.batchEnabled ? expirationDate : null,
 
         // Tax related fields
         igstValue: igstValue,
@@ -656,12 +656,13 @@ function EditItemForm({ ItemsFromRedux, from, taxInclusive = false }) {
     );
 
     // console.log("Updated Item:", updatedItem);
-    
 
     // Uncomment these lines when ready to dispatch the action
     dispatch(updateItem({ item: updatedItem, moveToTop: false }));
     navigate(-1, { replace: true });
   };
+
+  
 
   return (
     <div>
@@ -838,6 +839,7 @@ function EditItemForm({ ItemsFromRedux, from, taxInclusive = false }) {
 
                     <div className="flex flex-col sm:flex-row gap-4">
                       {enableManufacturingDate &&
+                        item?.batchEnabled &&
                         selectedGodown?.mfgdt &&
                         voucherTypeFromRedux !== "saleOrder" && (
                           <div className="flex flex-col flex-1">
@@ -855,6 +857,7 @@ function EditItemForm({ ItemsFromRedux, from, taxInclusive = false }) {
                         )}
 
                       {enableExpiryDate &&
+                        item?.batchEnabled &&
                         selectedGodown?.expdt &&
                         voucherTypeFromRedux !== "saleOrder" && (
                           <div className="flex flex-col flex-1">

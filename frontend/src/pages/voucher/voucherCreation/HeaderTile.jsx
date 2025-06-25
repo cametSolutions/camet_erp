@@ -28,12 +28,11 @@ function HeaderTile({
   mode,
   voucherSeries,
   addSelectedVoucherSeries,
-  number
+  number,
+  selectedVoucherSeriesFromRedux = {}, // Default to null if not provided
 }) {
   const [isSeriesModalOpen, setIsSeriesModalOpen] = useState(false);
   const [selectedSeries, setSelectedSeries] = useState(null);
-
-
 
   const titleText =
     title.split("")[0]?.toUpperCase()?.concat(title.slice(1)) || "Title";
@@ -48,21 +47,21 @@ function HeaderTile({
   // Handle series selection
   const handleSeriesSelect = (series) => {
     setSelectedSeries(series);
-    // Here you can dispatch an action to update the selected series
-    // dispatch(updateSelectedSeries(series));
   };
-
-  console.log("setSelectedDate:", setSelectedDate);
-  
 
   return (
     <div>
       <div className="flex justify-between p-4 bg-white drop-shadow-lg items-center text-xs md:text-base">
         <div className="flex flex-col gap-1 justify-center">
           <p
-            className="text-sm font-semibold text-violet-400 cursor-pointer hover:text-violet-600 transition-colors"
+            className=" flex flex-col   text-sm font-semibold text-violet-400 cursor-pointer hover:text-violet-600 transition-colors"
             onClick={() => setIsSeriesModalOpen(true)}
           >
+            {Object?.keys(selectedVoucherSeriesFromRedux)?.length > 0 && (
+              <span className="text-[10.5px] text-gray-500 ">
+                 {selectedVoucherSeriesFromRedux?.seriesName || ""}
+              </span>
+            )}
             {titleText} No:#{number}
           </p>
 
@@ -73,7 +72,7 @@ function HeaderTile({
 
             {/* React DatePicker */}
             <DatePicker
-              selected={new Date(selectedDate) }
+              selected={new Date(selectedDate)}
               onChange={handleDateChange}
               customInput={<CustomInput />}
               dateFormat="yyyy-MM-dd"
@@ -154,7 +153,7 @@ function HeaderTile({
       <div id="date-picker-portal"></div>
 
       {/* Custom styles for the date picker */}
-      <style >{`
+      <style>{`
         .react-datepicker-popper {
           z-index: 9999 !important;
         }
@@ -200,7 +199,7 @@ function HeaderTile({
         }
 
         .react-datepicker__day--selected {
-          background-color: #8b5cf6;
+          background-color: #4f46e5;
           color: white;
         }
 

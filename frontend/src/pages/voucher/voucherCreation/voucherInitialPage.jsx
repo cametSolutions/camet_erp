@@ -410,6 +410,7 @@ function VoucherInitialPage() {
             tab="add"
             isLoading={submitLoading}
             mode={mode}
+            selectedVoucherSeriesFromRedux={selectedVoucherSeriesFromRedux || {}}
           />
           {/* adding party */}
 
