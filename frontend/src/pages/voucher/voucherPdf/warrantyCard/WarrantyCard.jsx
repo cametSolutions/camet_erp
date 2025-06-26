@@ -58,6 +58,8 @@ const WarrantyCard = () => {
         showControls={true}
         containerHeight="75vh"
         initialScale={0.476}
+        enableScroll={true}
+        scrollDirection="vertical"
       >
         {productData.length > 0
           ? productData?.map((item, index) => (
