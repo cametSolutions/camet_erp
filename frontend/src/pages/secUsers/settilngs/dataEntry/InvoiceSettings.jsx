@@ -16,6 +16,8 @@ import { toast } from "react-toastify";
 import { updateConfiguration } from "../../../../../slices/secSelectedOrgSlice";
 import { PiVan } from "react-icons/pi";
 import { FaRegAddressBook } from "react-icons/fa";
+import { GrDocumentWord } from "react-icons/gr";
+
 
 const InvoiceSettings = () => {
   const [loading, setLoading] = useState(false);
@@ -45,6 +47,15 @@ const InvoiceSettings = () => {
           active: true,
         },
         {
+          title: "Warranty cards ",
+          description: "Add different warranty cards on invoice",
+          icon: <GrDocumentWord />,
+          active: true,
+          modal: false,
+          toggle: false,
+          to: "/sUsers/warrantyCardList",
+        },
+        {
           title: "Add Rate with Tax",
           description:
             "On selection, allows entering the rate with a tax field",
@@ -56,7 +67,6 @@ const InvoiceSettings = () => {
           toggleValue: addRateWithTax["sale"] || false,
         },
         {
-          
           title: "Enable Ship to Bill on Invoice",
           description:
             "Enable this option to include 'Ship to Bill' details on the invoice",
@@ -79,6 +89,7 @@ const InvoiceSettings = () => {
           toggleValue:
             configurations[0]?.enableNegativeStockBlockForVanInvoice || false,
         },
+
         {
           title: "Disable Rate for an Item",
           description:

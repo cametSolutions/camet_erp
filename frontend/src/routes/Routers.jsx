@@ -117,6 +117,8 @@ import VoucherSeriesForm from '@/pages/secUsers/settilngs/dataEntry/voucherSetti
 import VoucherSeriesList from '@/pages/secUsers/settilngs/dataEntry/voucherSettings/voucherSeries/VoucherSeriesList'
 import EditItemVoucher from '@/pages/voucher/voucherCreation/EditItemVoucher'
 import WarrantyCard from '@/pages/voucher/voucherPdf/warrantyCard/WarrantyCard'
+import WarrantyCardList from '@/pages/secUsers/settilngs/dataEntry/invoiceSettings/WarrantyCard/WarrantyCardList'
+import AddWarrantyCard from '@/pages/secUsers/settilngs/dataEntry/invoiceSettings/WarrantyCard/AddWarrantyCard'
 
 const Routers = () => {
   return (
@@ -314,6 +316,8 @@ const Routers = () => {
         <Route path='/sUsers/voucherSeriesList' element={<ProtectedSecRoute><VoucherSeriesList/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/OrderSettings' element={<ProtectedSecRoute><OrderSettings/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/InvoiceSettings' element={<ProtectedSecRoute><InvoiceSettings/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/warrantyCardList' element={<ProtectedSecRoute><WarrantyCardList/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/addWarrantyCard' element={<ProtectedSecRoute><AddWarrantyCard/></ProtectedSecRoute>}></Route>
         {/* voucher settings */}
         <Route path='/sUsers/emailSettings' element={<ProtectedSecRoute><EmailSettings/></ProtectedSecRoute>}></Route>
         {/* despatch title */}

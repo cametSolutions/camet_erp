@@ -602,6 +602,9 @@ export const getProducts = async (req, res) => {
       params
     );
 
+
+    
+
     // Transform products according to business rules
     const transformedProducts = transformProducts(products, {
       selectedGodowns,
