@@ -10,7 +10,7 @@ function SummaryDropdown({ bgColor="#ffff",textColor="#6b7280"}) {
   const selectedOption = useSelector(
     (state) => state.summaryFilter.selectedOption
   );
-
+console.log(selectedOption)
   useEffect(() => {
     setOption(selectedOption);
   }, [selectedOption]);

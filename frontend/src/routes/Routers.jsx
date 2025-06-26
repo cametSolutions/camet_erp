@@ -60,6 +60,7 @@ import PartyStatement from '../pages/voucherReports/PartyStatement/PartyStatemen
 import DateRange from '../components/Filters/DateRange'
 import VouchersList from '../components/common/Reports/VouchersList'
 import SalesSummary from '../pages/secUsers/Reports/salesSummary/SalesSummary'
+import SummaryReport from '@/pages/secUsers/Reports/SummaryReport'
 import PartyFilterList from '../components/Filters/party/PartyFilterList'
 import StatusFilterList from '../components/Filters/status/StatusFilterList'
 import OrderSummary from '../pages/secUsers/Reports/orderSummary/OrderSummary'
@@ -259,6 +260,7 @@ const Routers = () => {
 
         {/* sales summary */}
         <Route path='/sUsers/salesSummary' element={<ProtectedSecRoute><SalesSummary/></ProtectedSecRoute>}></Route>
+  <Route path='/sUsers/summaryReport' element={<ProtectedSecRoute><SummaryReport/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/salesSummaryDetails' element={<ProtectedSecRoute><SalesSummaryTable/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/salesSummaryTransactions' element={<ProtectedSecRoute><SalesSummaryTransactions/></ProtectedSecRoute>}></Route>
         {/* order summary */}

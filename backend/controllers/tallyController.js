@@ -54,7 +54,6 @@ export const saveDataFromTally = async (req, res) => {
     const partyIdMap = Object.fromEntries(
       matchedParties.map(item => [item.party_master_id, item._id])
     )
-    const mathced = await TallyData.find({ cmp_id })
     const deleted = await TallyData.deleteMany({ Primary_user_id, cmp_id });
 
     if (deleted.deletedCount > 0) {

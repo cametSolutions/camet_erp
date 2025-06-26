@@ -21,6 +21,7 @@ import {
     addPartyOpening,
     getPartyOpening,
     editPartyOpening,
+
 } from "../controllers/secondaryUserController.js"
 
 import { createPurchase, editPurchase, cancelPurchase, getPurchaseDetails } from '../controllers/purchaseController.js';
@@ -43,6 +44,7 @@ import { authPrimary } from '../middlewares/authPrimaryUsers.js';
 import { addSecondaryConfigurations, addSecUsers, editSecUSer, fetchConfigurationCurrentNumber, fetchGodownsAndPriceLevels, fetchSecondaryUsers, getSecUserDetails } from '../controllers/primaryUserController.js';
 
 import { getSummary } from "../controllers/summaryController.js"
+import { getSummaryReport } from "../controllers/summaryController.js";
 import { fetchOutstandingDetails, fetchOutstandingTotal, getOutstandingSummary } from '../controllers/outStandingController.js';
 import { addProduct, deleteProduct, productDetails, editProduct, getProducts, addProductSubDetails, getProductSubDetails, deleteProductSubDetails, editProductSubDetails } from '../controllers/productController.js';
 import { addOrganizations, editOrg, getOrganizations } from '../controllers/organizationController.js';
@@ -229,6 +231,7 @@ router.post('/editOrg/:id', authPrimary, secondaryIsBlocked, editOrg);
 
 ////// sales summary
 router.get("/salesSummary/:cmp_id", authSecondary, secondaryIsBlocked, companyAuthentication, getSummary)
+router.get("/summaryReport",getSummaryReport)
 
 //// managing secondary users
 router.get('/fetchSecondaryUsers', authPrimary, secondaryIsBlocked, fetchSecondaryUsers);

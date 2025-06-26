@@ -10,7 +10,8 @@ import mongoose from "mongoose";
 
 //summary report controller
 export const getSummary = async (req, res) => {
-console.log("hhh")
+console.log("hhhddddddddddddd")
+
   const { startOfDayParam, endOfDayParam, selectedVoucher } = req.query;
 
   try {
@@ -107,5 +108,12 @@ const companyObjectId = new mongoose.Types.ObjectId(cmp_id);
     });
   }
 };
+export const getSummaryReport=(req,res)=>{
+console.log("summaryreport")
+
+const {start,end,voucherType,serialNumber,summaryType,selectedOption}=req.query
+console.log("start",start)
+return res.status(200).json({message:"summary found",data:5})
+}
 
 // Aggregation helper function

@@ -26,7 +26,7 @@ function Dashboard() {
 
 
   const { handleToggleSidebar } = useSidebar();
-
+console.log("h")
   useEffect(() => {
     if (org) {
       const fetchTransactions = async () => {
