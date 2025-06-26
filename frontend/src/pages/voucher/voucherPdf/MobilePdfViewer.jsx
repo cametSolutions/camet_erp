@@ -10,9 +10,7 @@ function MobilePdfViewer({
   containerHeight = "75vh",
   initialScale = 0.476,
   className = "",
-  containerClassName = "",
-  enableScroll = true,
-  scrollDirection = "both" // "vertical", "horizontal", "both"
+  containerClassName = ""
 }) {
   const [isMobile, setIsMobile] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1);
@@ -50,11 +48,7 @@ function MobilePdfViewer({
   // Handle touch move for zoom and pan
   const handleTouchMove = (e) => {
     if (!isMobile) return;
-    
-    // Only prevent default if we're handling zoom or pan, allow scroll otherwise
-    if (e.touches.length === 2 || (e.touches.length === 1 && isPanning && zoomLevel > 1)) {
-      e.preventDefault();
-    }
+    e.preventDefault();
 
     if (e.touches.length === 2) {
       // Two finger move - handle zoom
@@ -107,20 +101,6 @@ function MobilePdfViewer({
     }
   };
 
-  // Get scroll class based on direction
-  const getScrollClass = () => {
-    if (!enableScroll) return "overflow-hidden";
-    
-    switch (scrollDirection) {
-      case "vertical":
-        return "overflow-y-auto overflow-x-hidden";
-      case "horizontal":
-        return "overflow-x-auto overflow-y-hidden";
-      case "both":
-      default:
-        return "overflow-auto";
-    }
-  };
   // Check for mobile view
   useEffect(() => {
     const checkIfMobile = () => {
@@ -140,14 +120,14 @@ function MobilePdfViewer({
           loading ? "opacity-30 pointer-events-none" : ""
         } w-full flex flex-col items-center justify-center p-1 ${containerClassName}`}
         style={{
-          touchAction: isMobile && !enableScroll ? "none" : "auto",
+          touchAction: isMobile ? "none" : "auto",
         }}
       >
         {/* PDF container */}
         <div
           ref={pdfContainerRef}
           className={`mobile-pdf-container relative ${
-            isMobile ? getScrollClass() : "overflow-scroll overflow-x-hidden"
+            isMobile ? "overflow-hidden" : "overflow-scroll overflow-x-hidden"
           }`}
           style={{
             width: "100%",
