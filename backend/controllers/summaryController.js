@@ -6,13 +6,17 @@ import purchaseModel from "../models/purchaseModel.js";
 import { aggregateSummary } from "../helpers/summaryHelper.js";
 import debitNoteModel from "../models/debitNoteModel.js";
 import creditNoteModel from "../models/creditNoteModel.js";
+import mongoose from "mongoose";
 
 //summary report controller
 export const getSummary = async (req, res) => {
+console.log("hhh")
   const { startOfDayParam, endOfDayParam, selectedVoucher } = req.query;
 
   try {
     const cmp_id = req.params.cmp_id;
+const companyObjectId = new mongoose.Types.ObjectId(cmp_id);
+
 
     let dateFilter = {};
     if (startOfDayParam && endOfDayParam) {
@@ -27,7 +31,7 @@ export const getSummary = async (req, res) => {
     }
     const matchCriteria = {
       ...dateFilter,
-      cmp_id: cmp_id,
+      cmp_id: companyObjectId,
     };
 
     // Define summary type mappings

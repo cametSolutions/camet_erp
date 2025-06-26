@@ -1,10 +1,12 @@
-import salesModel from "../models/salesModel.js";
 export const aggregateSummary = async (
   model,
   matchCriteria,
   numberField,
   type
 ) => {
+console.log("moddl",model)
+console.log("type",type)
+console.log("matcingcre",matchCriteria)
   try {
     const results = await model.aggregate([{ $match: matchCriteria }]);
 
