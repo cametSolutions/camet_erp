@@ -44,7 +44,7 @@ const organizationSchema = new mongoose.Schema(
         enableBillToShipTo: { type: Boolean, default: true },
         batchEnabled: { type: Boolean, default: false, required: true },
         gdnEnabled: { type: Boolean, default: false, required: true },
-        enableManufacturingDate: { type: Boolean, default: false, },
+        enableManufacturingDate: { type: Boolean, default: false },
         enableExpiryDate: { type: Boolean, default: false },
 
         despatchDetails: { type: Object },
@@ -58,6 +58,13 @@ const organizationSchema = new mongoose.Schema(
           default: false,
         },
         addRateWithTax: {
+          type: Object,
+          default: {
+            sale: false,
+            saleOrder: false,
+          },
+        },
+        showDescription: {
           type: Object,
           default: {
             sale: false,

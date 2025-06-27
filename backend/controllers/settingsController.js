@@ -618,37 +618,33 @@ export const updateBankAccount = async (req, res) => {
   }
 };
 
+
+
 /**
- * @description Update tax configuration of a company
+ * @description Generic function to update any configuration field of a company
  * @param {string} cmp_id Company ID
  * @param {string} voucher Voucher type (sale or saleOrder)
- * @param {boolean} value New value for addRateWithTax
+ * @param {string} configField The configuration field to update (e.g., 'addRateWithTax', 'otherField')
+ * @param {any} value New value for the configuration field
+ * @param {object} defaultValue Default structure for the field if it doesn't exist
  * @returns {object} Updated company configuration
- * @route PUT /api/settings/updateTaxConfiguration/:cmp_id?voucher={sale|saleOrder}
+ * @route PUT /api/settings/updateConfiguration/:cmp_id?voucher={sale|saleOrder}&field={configField}
  * @access Private
  */
-export const updateTaxConfiguration = async (req, res) => {
+export const updateCommonToggleConfiguration = async (req, res) => {
   try {
     const cmp_id = req?.params?.cmp_id;
-    const voucher = req.query.voucher || "";
-    const { addRateWithTax: value } = req.body; // Expecting a boolean value
-
-    console.log("value", value);
+    const { value, voucher, configField } = req.body;
 
     // Validate inputs
-    if (!cmp_id || !voucher) {
+    if (!cmp_id || !voucher || !configField) {
       return res.status(400).json({
-        message: "Company ID and voucher type are required",
+        message:
+          "Company ID, voucher type, and configuration field are required",
       });
     }
 
-    if (typeof value !== "boolean") {
-      return res.status(400).json({
-        message: "Value must be a boolean (true/false)",
-      });
-    }
-
-    // Find company and update configuration
+    // Find company
     const company = await OragnizationModel.findById(cmp_id);
     if (!company) {
       return res.status(404).json({ message: "Company not found" });
@@ -659,30 +655,32 @@ export const updateTaxConfiguration = async (req, res) => {
       company.configurations = [{}];
     }
 
-    // Initialize addRateWithTax if it doesn't exist
-    if (!company.configurations[0].addRateWithTax) {
-      company.configurations[0].addRateWithTax = {
-        sale: false,
-        saleOrder: false,
-      };
-    }
-
-    company.configurations[0].addRateWithTax = {
-      ...company.configurations[0].addRateWithTax,
-      [voucher]: value,
+    // Get default structure for the field (you can customize this based on your needs)
+    const defaultStructures = {
+      sale: false,
+      saleOrder: false,
     };
 
-    // console.log("company.configurations[0].addRateWithTax", company.configurations[0].addRateWithTax);
+    // Initialize field if it doesn't exist
+    if (!company.configurations[0][configField]) {
+      company.configurations[0][configField] = defaultStructures;
+    }
+
+    // Update the specific voucher type for the field
+    company.configurations[0][configField] = {
+      ...company.configurations[0][configField],
+      [voucher]: value,
+    };
 
     // Save the updated company
     await company.save();
 
     return res.status(200).json({
-      message: "Tax configuration updated successfully",
+      message: `${configField} configuration updated successfully`,
       updatedConfig: company,
     });
   } catch (error) {
-    console.error("Error updating tax configuration:", error);
+    console.error("Error updating configuration:", error);
     return res.status(500).json({
       message: "Internal server error",
       error: error.message,
@@ -1005,7 +1003,6 @@ export const updateWarrantyCard = async (req, res) => {
   }
 };
 
-
 // @desc    Delete warranty card
 // @route   DELETE /api/warranty-cards/:id
 // @access  Private
@@ -1016,7 +1013,7 @@ export const deleteWarrantyCard = async (req, res) => {
     if (!warrantyCard) {
       return res.status(404).json({
         success: false,
-        message: 'Warranty card not found'
+        message: "Warranty card not found",
       });
     }
 
@@ -1024,13 +1021,13 @@ export const deleteWarrantyCard = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Warranty card deleted successfully'
+      message: "Warranty card deleted successfully",
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Server Error',
-      error: error.message
+      message: "Server Error",
+      error: error.message,
     });
   }
 };

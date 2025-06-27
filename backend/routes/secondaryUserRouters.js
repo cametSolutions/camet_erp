@@ -35,7 +35,7 @@ import { createPayment,cancelPayment, editPayment, getPaymentDetails } from '../
 import { createInvoice,editInvoice,cancelSalesOrder, PartyListWithOrderPending, getInvoiceDetails } from '../controllers/saleOrderController.js';
 import { createStockTransfer,editStockTransfer, cancelStockTransfer, getStockTransferDetails } from '../controllers/stockTransferController.js';
 import { addBankPaymentDetails } from '../../frontend/slices/payment.js';
-import { addEmailConfiguration, getConfiguration, getBarcodeList, addBarcodeData, editBarcodeData, deleteBarcode, getSingleBarcodeData, getPrintingConfiguration, updateConfiguration, getDespatchTitles, updateDespatchTitles, getTermsAndConditions, updateTermsAndConditions, updateBankAccount, updateTaxConfiguration, updateShipToConfiguration, updateFirstLayerConfiguration, createWarrantyCard, getWarrantyCards, updateWarrantyCard, deleteWarrantyCard } from '../controllers/settingsController.js';
+import { addEmailConfiguration, getConfiguration, getBarcodeList, addBarcodeData, editBarcodeData, deleteBarcode, getSingleBarcodeData, getPrintingConfiguration, updateConfiguration, getDespatchTitles, updateDespatchTitles, getTermsAndConditions, updateTermsAndConditions, updateBankAccount, updateShipToConfiguration, updateFirstLayerConfiguration, createWarrantyCard, getWarrantyCards, updateWarrantyCard, deleteWarrantyCard, updateCommonToggleConfiguration } from '../controllers/settingsController.js';
 import { updateSecondaryUserConfiguration } from '../helpers/saleOrderHelper.js';
 import { addAccountGroupIdToOutstanding, addAccountGroupIdToParties, convertPrimaryToSecondary, createAccountGroups,  updateDateFieldsByCompany, updateSalesItemUnitFields, updateUnitFields } from '../controllers/testingController.js';
 import { authPrimary } from '../middlewares/authPrimaryUsers.js';
@@ -205,8 +205,9 @@ router.put('/updateTermsAndConditions/:cmp_id',authSecondary,secondaryIsBlocked,
 /// update bank account
 router.put('/updateBankAccount/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,updateBankAccount)
 
-/// tax settings
-router.put('/updateTaxConfiguration/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,updateTaxConfiguration)
+
+//// update common toggle configuration
+router.put('/updateCommonToggleConfiguration/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,updateCommonToggleConfiguration)
 /// ship to settings
 router.put('/updateShipToConfiguration/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,updateShipToConfiguration)
 
