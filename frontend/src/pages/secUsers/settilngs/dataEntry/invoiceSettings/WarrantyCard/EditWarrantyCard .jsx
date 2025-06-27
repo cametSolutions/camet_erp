@@ -1,24 +1,26 @@
 import TitleDiv from "@/components/common/TitleDiv";
 import { WarrantyCardForm } from "./WarrantyCardForm ";
-import api from "@/api/api";
-import { toast } from "react-toastify";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import api from "@/api/api";
+import { toast } from "react-toastify";
 
-function AddWarrantyCard() {
-  const [loading, setLoading] = useState(false);
+const EditWarrantyCard = () => {
+  const location = useLocation();
   const navigate = useNavigate();
-
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
-  const handleCreate = async (formData) => {
 
+  const [loading, setLoading] = useState(false);
+  const existingData = location?.state?.card || {};
+
+  const handleUpdate = async (formData) => {
     try {
       setLoading(true);
-      const res = await api.post(
-        `/api/sUsers/createWarrantyCard/${cmp_id}`,
+      const res = await api.put(
+        `/api/sUsers/updateWarrantyCard/${existingData._id}/${cmp_id}`,
         formData,
         {
           headers: {
@@ -27,9 +29,8 @@ function AddWarrantyCard() {
           withCredentials: true,
         }
       );
-
       toast.success(res.data.message);
-      navigate(-1,{replace:true});
+      navigate(-1, { replace: true });
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);
@@ -39,14 +40,18 @@ function AddWarrantyCard() {
     }
     // Your create API call here
   };
-  return (
-    <div>
-      <TitleDiv title={"Add Warranty Card"} loading={loading} />
-      <div className="p-5">
-        <WarrantyCardForm onSubmit={handleCreate} isEditMode={false} loading={loading}/>
-      </div>
-    </div>
-  );
-}
 
-export default AddWarrantyCard;
+  return (
+    <>
+      <TitleDiv title="Edit Warranty Card"  loading={loading}/>
+      <WarrantyCardForm
+        initialData={existingData}
+        onSubmit={handleUpdate}
+        isEditMode={true}
+        loading={loading}
+      />
+    </>
+  );
+};
+
+export default EditWarrantyCard;

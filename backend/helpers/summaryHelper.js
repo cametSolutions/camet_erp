@@ -5,6 +5,7 @@ export const aggregateSummary = async (
   numberField,
   type
 ) => {
+
   try {
     const results = await model.aggregate([{ $match: matchCriteria }]);
 

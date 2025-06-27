@@ -35,7 +35,7 @@ import { createPayment,cancelPayment, editPayment, getPaymentDetails } from '../
 import { createInvoice,editInvoice,cancelSalesOrder, PartyListWithOrderPending, getInvoiceDetails } from '../controllers/saleOrderController.js';
 import { createStockTransfer,editStockTransfer, cancelStockTransfer, getStockTransferDetails } from '../controllers/stockTransferController.js';
 import { addBankPaymentDetails } from '../../frontend/slices/payment.js';
-import { addEmailConfiguration, getConfiguration, getBarcodeList, addBarcodeData, editBarcodeData, deleteBarcode, getSingleBarcodeData, getPrintingConfiguration, updateConfiguration, getDespatchTitles, updateDespatchTitles, getTermsAndConditions, updateTermsAndConditions, updateBankAccount, updateTaxConfiguration, updateShipToConfiguration, updateFirstLayerConfiguration } from '../controllers/settingsController.js';
+import { addEmailConfiguration, getConfiguration, getBarcodeList, addBarcodeData, editBarcodeData, deleteBarcode, getSingleBarcodeData, getPrintingConfiguration, updateConfiguration, getDespatchTitles, updateDespatchTitles, getTermsAndConditions, updateTermsAndConditions, updateBankAccount, updateTaxConfiguration, updateShipToConfiguration, updateFirstLayerConfiguration, createWarrantyCard, getWarrantyCards, updateWarrantyCard, deleteWarrantyCard } from '../controllers/settingsController.js';
 import { updateSecondaryUserConfiguration } from '../helpers/saleOrderHelper.js';
 import { addAccountGroupIdToOutstanding, addAccountGroupIdToParties, convertPrimaryToSecondary, createAccountGroups,  updateDateFieldsByCompany, updateSalesItemUnitFields, updateUnitFields } from '../controllers/testingController.js';
 import { authPrimary } from '../middlewares/authPrimaryUsers.js';
@@ -265,6 +265,12 @@ router.delete('/deleteVoucherSeriesById/:cmp_id',authSecondary,secondaryIsBlocke
 router.put('/editVoucherSeriesById/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,editVoucherSeriesById)
 router.put('/makeTheSeriesAsCurrentlySelected/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,makeTheSeriesAsCurrentlySelected)
 
+
+///// warranty a cards
+router.post('/createWarrantyCard/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,createWarrantyCard)
+router.get('/getWarrantyCards/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,getWarrantyCards)
+router.put('/updateWarrantyCard/:id/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,updateWarrantyCard)
+router.delete('/deleteWarrantyCard/:id/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,deleteWarrantyCard)
 
 
 //// testing routes

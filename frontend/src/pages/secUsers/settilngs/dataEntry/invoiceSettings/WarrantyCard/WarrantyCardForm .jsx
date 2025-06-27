@@ -1,110 +1,120 @@
 /* eslint-disable react/prop-types */
-import  { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
 
-export const WarrantyCardForm = ({ 
-  initialData = null, 
-  onSubmit, 
-  onCancel,
+export const WarrantyCardForm = ({
+  initialData = null,
+  onSubmit,
   isEditMode = false,
-  isLoading = false 
+  loading = false,
 }) => {
-  const { register, handleSubmit,  setValue, formState: { errors } } = useForm({
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    formState: { errors },
+  } = useForm({
     defaultValues: {
-      type: '',
-      warrantyYears: '',
-      warrantyMonths: '',
-      displayInput: '',
-      termsAndConditions: '',
-      customerCareInfo: '',
-      customerCareNo: ''
-    }
+      name: "",
+      warrantyYears: "",
+      warrantyMonths: "",
+      displayInput: "",
+      termsAndConditions: "",
+      customerCareInfo: "",
+      customerCareNo: "",
+    },
   });
 
   // Populate form with initial data when in edit mode
   useEffect(() => {
     if (initialData && isEditMode) {
-      Object.keys(initialData).forEach(key => {
-        // if (key !== 'logo') {
-        //   setValue(key, initialData[key]);
-        // }
+      Object.keys(initialData).forEach((key) => {
+        setValue(key, initialData[key]);
       });
     }
   }, [initialData, isEditMode, setValue]);
 
   const handleFormSubmit = (data) => {
     // Handle file upload - convert FileList to File object
-    const formData = {
-      ...data,
-    };
-    
+
+    console.log(data);
+
     if (onSubmit) {
-      onSubmit(formData);
+      onSubmit(data);
     }
   };
 
-
-
-  const handleCancel = () => {
-    if (onCancel) {
-      onCancel();
-    }
-  };
-
-  const formTitle = isEditMode ? 'Edit Warranty Card' : 'Add Warranty Card';
-  const submitButtonText = isEditMode ? 'Update Warranty Card' : 'Add Warranty Card';
+  const formTitle = isEditMode ? "Edit Warranty Card" : "Add Warranty Card";
+  const submitButtonText = isEditMode
+    ? "Update Warranty Card"
+    : "Add Warranty Card";
 
   return (
-    
     <div className="border mx-auto p-6 bg-white shadow-lg rounded-lg">
       <h2 className="text-2xl font-bold text-gray-800 mb-6">{formTitle}</h2>
-      
+
       <div className="space-y-6">
         {/* Type Field */}
         <div>
-          <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-2">
-            Type *
+          <label
+            htmlFor="name"
+            className="block text-sm font-medium text-gray-700 mb-2"
+          >
+            Name *
           </label>
           <input
             type="text"
-            id="type"
-            {...register('type', { required: 'Type is required' })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Enter warranty type"
-            disabled={isLoading}
+            id="name"
+            {...register("name", { required: "Type is required" })}
+            className="no-focus-box w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="Enter warranty card name"
+            disabled={loading}
           />
-          {errors.type && (
-            <p className="mt-1 text-sm text-red-600">{errors.type.message}</p>
+          {errors.name && (
+            <p className="mt-1 text-sm text-red-600">{errors?.name?.message}</p>
           )}
         </div>
-
-   
 
         {/* Warranty Duration */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label htmlFor="warrantyYears" className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="warrantyYears"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               Warranty Years *
             </label>
             <input
               type="number"
               id="warrantyYears"
               min="0"
-              {...register('warrantyYears', { 
-                required: 'Warranty years is required',
-                min: { value: 0, message: 'Years must be 0 or greater' }
+              {...register("warrantyYears", {
+                valueAsNumber: true,
+                validate: (value) => {
+                  if (value === undefined || value === null || value === "")
+                    return true;
+                  if (value < 0) return "Years must be 0 or greater";
+                  return true;
+                },
+                // required: "Warranty years is required",
+                // min: { value: 0, message: "Years must be 0 or greater" },
               })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className=" no-focus-box w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="0"
-              disabled={isLoading}
+              disabled={loading}
             />
             {errors.warrantyYears && (
-              <p className="mt-1 text-sm text-red-600">{errors.warrantyYears.message}</p>
+              <p className="mt-1 text-sm text-red-600">
+                {errors.warrantyYears.message}
+              </p>
             )}
           </div>
 
           <div>
-            <label htmlFor="warrantyMonths" className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="warrantyMonths"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               Warranty Months *
             </label>
             <input
@@ -112,90 +122,135 @@ export const WarrantyCardForm = ({
               id="warrantyMonths"
               min="0"
               max="11"
-              {...register('warrantyMonths', { 
-                required: 'Warranty months is required',
-                min: { value: 0, message: 'Months must be 0 or greater' },
-                max: { value: 11, message: 'Months must be less than 12' }
+              {...register("warrantyMonths", {
+                valueAsNumber: true,
+                validate: (value) => {
+                  if (value === undefined || value === null || value === "")
+                    return true;
+                  if (value < 0) return "Months must be 0 or greater";
+                  if (value > 11) return "Months must be less than 12";
+                  return true;
+                },
               })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className=" no-focus-box w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="0"
-              disabled={isLoading}
+              disabled={loading}
             />
             {errors.warrantyMonths && (
-              <p className="mt-1 text-sm text-red-600">{errors.warrantyMonths.message}</p>
+              <p className="mt-1 text-sm text-red-600">
+                {errors.warrantyMonths.message}
+              </p>
             )}
           </div>
         </div>
 
         {/* Display Input */}
         <div>
-          <label htmlFor="displayInput" className="block text-sm font-medium text-gray-700 mb-2">
+          <label
+            htmlFor="displayInput"
+            className="block text-sm font-medium text-gray-700 mb-2"
+          >
             Display Input (What should be displayed as year) *
           </label>
           <input
             type="text"
             id="displayInput"
-            {...register('displayInput', { required: 'Display input is required' })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            {...register("displayInput")}
+            className=" no-focus-box w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="e.g., 2 Years Warranty"
-            disabled={isLoading}
+            disabled={loading}
           />
           {errors.displayInput && (
-            <p className="mt-1 text-sm text-red-600">{errors.displayInput.message}</p>
+            <p className="mt-1 text-sm text-red-600">
+              {errors.displayInput.message}
+            </p>
           )}
         </div>
 
         {/* Terms and Conditions */}
         <div>
-          <label htmlFor="termsAndConditions" className="block text-sm font-medium text-gray-700 mb-2">
+          <label
+            htmlFor="termsAndConditions"
+            className="block text-sm font-medium text-gray-700 mb-2"
+          >
             Terms and Conditions *
           </label>
           <textarea
             id="termsAndConditions"
             rows="6"
-            {...register('termsAndConditions', { required: 'Terms and conditions are required' })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
+            {...register("termsAndConditions", {
+              validate: (value) => {
+                if (value && value?.length > 10) {
+                  return "Terms and conditions should not exceed 5000 characters";
+                }
+              },
+            })}
+            className=" no-focus-box w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
             placeholder="Enter terms and conditions..."
-            disabled={isLoading}
+            disabled={loading}
           />
           {errors.termsAndConditions && (
-            <p className="mt-1 text-sm text-red-600">{errors.termsAndConditions.message}</p>
+            <p className="mt-1 text-sm text-red-600">
+              {errors.termsAndConditions.message}
+            </p>
           )}
         </div>
 
         {/* Customer Care Info */}
         <div>
-          <label htmlFor="customerCareInfo" className="block text-sm font-medium text-gray-700 mb-2">
+          <label
+            htmlFor="customerCareInfo"
+            className="block text-sm font-medium text-gray-700 mb-2"
+          >
             Customer Care Info *
           </label>
           <textarea
             id="customerCareInfo"
             rows="4"
-            {...register('customerCareInfo', { required: 'Customer care info is required' })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
+            {...register("customerCareInfo", {
+              validate: (value) => {
+                if (value && value?.length > 2000) {
+                  return "Customer care info should not exceed 2000 characters";
+                }
+              },
+            })}
+            className="no-focus-box w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
             placeholder="Enter customer care information..."
-            disabled={isLoading}
+            disabled={loading}
           />
           {errors.customerCareInfo && (
-            <p className="mt-1 text-sm text-red-600">{errors.customerCareInfo.message}</p>
+            <p className="mt-1 text-sm text-red-600">
+              {errors.customerCareInfo.message}
+            </p>
           )}
         </div>
 
         {/* Customer Care Number */}
         <div>
-          <label htmlFor="customerCareNo" className="block text-sm font-medium text-gray-700 mb-2">
+          <label
+            htmlFor="customerCareNo"
+            className="block text-sm font-medium text-gray-700 mb-2"
+          >
             Customer Care Number *
           </label>
           <input
             type="text"
             id="customerCareNo"
-            {...register('customerCareNo', { required: 'Customer care number is required' })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            {...register("customerCareNo", {
+             validate: (value) => {
+                if (value && value?.length > 50) {
+                  return "Customer care number should not exceed 50 characters";
+                }
+              },
+            })}
+            className=" no-focus-box w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="Enter customer care number"
-            disabled={isLoading}
+            disabled={loading}
           />
           {errors.customerCareNo && (
-            <p className="mt-1 text-sm text-red-600">{errors.customerCareNo.message}</p>
+            <p className="mt-1 text-sm text-red-600">
+              {errors.customerCareNo.message}
+            </p>
           )}
         </div>
 
@@ -204,24 +259,11 @@ export const WarrantyCardForm = ({
           <button
             type="button"
             onClick={handleSubmit(handleFormSubmit)}
-            disabled={isLoading}
-            className="flex-1 bg-pink-500 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-200 disabled:bg-blue-400 disabled:cursor-not-allowed"
+            disabled={loading}
+            className="flex-1 bg-pink-500 text-white py-2 px-4 rounded-md hover:bg-pink-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-200 disabled:bg-gray-500 disabled:cursor-not-allowed"
           >
-            {isLoading ? 'Processing...' : submitButtonText}
+            {loading ? "Processing..." : submitButtonText}
           </button>
-          
-          
-
-          {onCancel && (
-            <button
-              type="button"
-              onClick={handleCancel}
-              disabled={isLoading}
-              className="px-6 bg-red-600 text-white py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition duration-200 disabled:bg-red-400 disabled:cursor-not-allowed"
-            >
-              Cancel
-            </button>
-          )}
         </div>
       </div>
     </div>

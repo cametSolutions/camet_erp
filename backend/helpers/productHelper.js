@@ -53,7 +53,7 @@ export const filterGodownsByIds = (godownList, allowedIds = [], excludedId = nul
 
   return godownList.filter((godownItem) => {
     const godownId = extractGodownId(godownItem);
-    if (!godownId && allowedIds.length > 0) {
+  if (!godownId && allowedIds.length > 0) {
       return false;
     }
     

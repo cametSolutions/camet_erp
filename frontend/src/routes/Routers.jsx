@@ -119,6 +119,7 @@ import EditItemVoucher from '@/pages/voucher/voucherCreation/EditItemVoucher'
 import WarrantyCard from '@/pages/voucher/voucherPdf/warrantyCard/WarrantyCard'
 import WarrantyCardList from '@/pages/secUsers/settilngs/dataEntry/invoiceSettings/WarrantyCard/WarrantyCardList'
 import AddWarrantyCard from '@/pages/secUsers/settilngs/dataEntry/invoiceSettings/WarrantyCard/AddWarrantyCard'
+import EditWarrantyCard from '@/pages/secUsers/settilngs/dataEntry/invoiceSettings/WarrantyCard/EditWarrantyCard '
 
 const Routers = () => {
   return (
@@ -318,6 +319,7 @@ const Routers = () => {
         <Route path='/sUsers/InvoiceSettings' element={<ProtectedSecRoute><InvoiceSettings/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/warrantyCardList' element={<ProtectedSecRoute><WarrantyCardList/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/addWarrantyCard' element={<ProtectedSecRoute><AddWarrantyCard/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/editWarrantyCard' element={<ProtectedSecRoute><EditWarrantyCard/></ProtectedSecRoute>}></Route>
         {/* voucher settings */}
         <Route path='/sUsers/emailSettings' element={<ProtectedSecRoute><EmailSettings/></ProtectedSecRoute>}></Route>
         {/* despatch title */}
