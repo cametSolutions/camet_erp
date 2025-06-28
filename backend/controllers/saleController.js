@@ -572,7 +572,7 @@ export const getSalesDetails = async (req, res) => {
       })
       .populate({
         path: "items.GodownList.warrantyCard",
-        select: "warrantyYears warrantyMonths displayInput", // populate item details
+        select: "warrantyYears warrantyMonths displayInput termsAndConditions customerCareInfo customerCareNo", // populate item details
       })
       .populate({
         path: "items._id",
