@@ -16,8 +16,8 @@ export const WarrantyCardForm = ({
   } = useForm({
     defaultValues: {
       name: "",
-      warrantyYears: "",
-      warrantyMonths: "",
+      warrantyYears: "0",
+      warrantyMonths: "0",
       displayInput: "",
       termsAndConditions: "",
       customerCareInfo: "",
@@ -38,6 +38,7 @@ export const WarrantyCardForm = ({
     // Handle file upload - convert FileList to File object
 
     console.log(data);
+    
 
     if (onSubmit) {
       onSubmit(data);

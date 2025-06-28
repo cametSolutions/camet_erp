@@ -111,7 +111,7 @@ const invoiceSchema = new Schema(
               default: null,
               set: () => null, // Set to null by default in saleOrder
             }, 
-            warrantyCardNo: { type: String, default: null, set: () => null }, // Set to null by default in saleOrder
+            description: { type: String },
             selectedPriceRate: { type: Number },
             added: { type: Boolean },
             count: { type: Number },

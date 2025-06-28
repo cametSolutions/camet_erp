@@ -81,7 +81,7 @@ const StockTransferSchema = new mongoose.Schema(
               default: null,
               set: convertToUTCMidnight,
             },
-            warrantyCardNo: { type: String },
+            description: { type: String },
             selectedPriceRate: { type: Number },
             added: { type: Boolean },
             count: { type: Number },

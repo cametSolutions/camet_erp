@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import MobilePdfViewer from "../MobilePdfViewer";
+import { getFutureDate } from "../../../../../../backend/utils/dateHelpers";
 
 const WarrantyCard = () => {
   const { id } = useParams();
@@ -22,24 +23,33 @@ const WarrantyCard = () => {
       const products = [];
 
       items?.forEach((el) => {
-        if (el?.batchEnabled) {
-          // Filter GodownList items that have 'added: true' and have a batch name
-          const addedBatches = el?.GodownList?.filter(
-            (godown) =>
-              godown?.added === true && godown?.batch && godown?.warrantyCardNo
-          );
+        // Filter GodownList items that have 'added: true' and have a batch name
+        const addedBatches = el?.GodownList?.filter(
+          (godown) =>
+            godown?.added === true && godown?.batch && godown?.warrantyCard
+        );
 
-          // Create a separate product entry for each batch
-          addedBatches?.forEach((godown) => {
-            products?.push({
-              modelNo: el?.product_name,
-              purchaseNO: salesNumber,
-              purchaseDate: date,
-              serialNO: godown?.batch,
-              Warrantyto: godown?.expdt,
-            });
+        // Create a separate product entry for each batch
+        addedBatches?.forEach((godown) => {
+          const { warrantyYears, warrantyMonths, displayInput } =
+            godown.warrantyCard;
+
+          products?.push({
+            modelNo: el?.product_name,
+            purchaseNO: salesNumber,
+            purchaseDate: date,
+            serialNO: godown?.batch,
+            Warrantyto: godown?.expdt,
+            warrantyYears,
+            warrantyMonths,
+            displayInput,
+            warrantyPeriodFrom: date,
+            warrantyPeriodTo: getFutureDate({
+              years: warrantyYears,
+              months: warrantyMonths,
+            }),
           });
-        }
+        });
       });
 
       setProductData(products);
@@ -124,19 +134,30 @@ const WarrantyCard = () => {
                         },
                         {
                           label: "Warranty Period",
-                          value: `${new Date(
-                            voucherDetails?.date
-                          ).toLocaleDateString("en-GB", {
-                            day: "2-digit",
-                            month: "long",
-                            year: "numeric",
-                          })} to  ${new Date(
-                            item?.Warrantyto
-                          ).toLocaleDateString("en-GB", {
-                            day: "2-digit",
-                            month: "long",
-                            year: "numeric",
-                          })}`,
+                          value: (() => {
+                            const from = new Date(item?.warrantyPeriodFrom);
+                            const to = new Date(item?.warrantyPeriodTo);
+
+                            const formattedFrom = from.toLocaleDateString(
+                              "en-GB",
+                              {
+                                day: "2-digit",
+                                month: "long",
+                                year: "numeric",
+                              }
+                            );
+
+                            const formattedTo = to.toLocaleDateString("en-GB", {
+                              day: "2-digit",
+                              month: "long",
+                              year: "numeric",
+                            });
+
+                            return to.setHours(0, 0, 0, 0) >
+                              from.setHours(0, 0, 0, 0)
+                              ? `${formattedFrom} to ${formattedTo}`
+                              : formattedFrom;
+                          })(),
                         },
                       ].map((item, idx) => (
                         <div key={idx} className="flex items-start text-xs">
@@ -157,15 +178,24 @@ const WarrantyCard = () => {
 
                   {/* Right Column - Warranty Year Box */}
                   <div className="flex flex-col items-center">
-                    <div className="p-1 border border-yellow-700 mb-3 ">
-                      <div className="border-2 border-black w-20 h-20 flex items-center justify-center ">
+                    <div className="p-1 border border-yellow-700 mb-3">
+                      <div className="border-2 border-black w-20 h-20 flex items-center justify-center">
                         <span className="text-4xl font-bold molle-regular-italic">
-                          2
+                         {item?.displayInput}
                         </span>
                       </div>
                     </div>
-                    <div className="text-center font-semibold ">
-                      <div>YEAR WARRANTY</div>
+                    <div className="text-center font-semibold">
+                      {(item?.warrantyYears > 0 ||
+                        item?.warrantyMonths > 0) && (
+                        <div>
+                          {item?.warrantyYears > 0
+                            ? "YEAR WARRANTY"
+                            : item?.warrantyMonths > 0
+                            ? "MONTH WARRANTY"
+                            : ""}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

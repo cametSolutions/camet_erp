@@ -571,6 +571,10 @@ export const getSalesDetails = async (req, res) => {
         select: "partyName", // get only the name or other fields as needed
       })
       .populate({
+        path: "items.GodownList.warrantyCard",
+        select: "warrantyYears warrantyMonths displayInput", // populate item details
+      })
+      .populate({
         path: "items._id",
         select: "product_name", // populate item details
       })

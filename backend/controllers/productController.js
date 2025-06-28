@@ -547,7 +547,6 @@ export const getProducts = async (req, res) => {
     // Extract and validate request parameters
     const params = extractRequestParams(req);
 
-    console.log("Request Parameters:", params);
     
 
     // Validate secondary user exists

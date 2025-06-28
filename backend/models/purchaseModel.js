@@ -120,7 +120,7 @@ const purchaseSchema = new Schema(
               default: null,
               set: convertToUTCMidnight,
             },
-            warrantyCardNo: { type: String },
+            description: { type: String },
             mrp: { type: Number },
             newBatch: { type: Boolean, default: false },
             supplierName: { type: String },

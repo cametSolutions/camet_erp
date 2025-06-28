@@ -618,8 +618,6 @@ export const updateBankAccount = async (req, res) => {
   }
 };
 
-
-
 /**
  * @description Generic function to update any configuration field of a company
  * @param {string} cmp_id Company ID
@@ -873,13 +871,19 @@ export const createWarrantyCard = async (req, res) => {
   try {
     const {
       name,
-      warrantyYears,
-      warrantyMonths,
+      warrantyYears = 0,
+      warrantyMonths = 0,
       displayInput,
       termsAndConditions,
       customerCareInfo,
       customerCareNo,
     } = req.body;
+
+    console.log(warrantyYears);
+    
+
+    if (warrantyYears === null) body.warrantyYears = 0;
+    if (warrantyMonths === null) body.warrantyMonths = 0;
 
     const Primary_user_id = req.owner;
     const cmp_id = req.params.cmp_id;

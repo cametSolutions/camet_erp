@@ -8,8 +8,12 @@ import { updateItem } from "../../../../slices/voucherSlices/commonVoucherSlice"
 import { useDispatch } from "react-redux";
 import TitleDiv from "@/components/common/TitleDiv";
 import DatePicker from "react-datepicker";
+import {
+  getFutureDate,
+  isExpiryValid,
+} from "../../../../../backend/utils/dateHelpers";
 
-function EditItemForm({ ItemsFromRedux, from, taxInclusive = false }) {
+function EditItemForm({ ItemsFromRedux, from, taxInclusive = false, loading }) {
   const [item, setItem] = useState([]);
   const [newPrice, setNewPrice] = useState("");
   const [quantity, setQuantity] = useState("");
@@ -23,9 +27,11 @@ function EditItemForm({ ItemsFromRedux, from, taxInclusive = false }) {
   const [discountAmount, setDiscountAmount] = useState(0);
   const [discountPercentage, setDiscountPercentage] = useState(0);
   const [isTaxInclusive, setIsTaxInclusive] = useState(false);
-  const [warrantyCardNo, setWarrantyCardNo] = useState(0);
+  const [description, setDescription] = useState(0);
+  const [warrantyCard, setWarrantyCard] = useState("");
   const [expirationDate, setExpirationDate] = useState(new Date());
   const [manufactureDate, setManufactureDate] = useState(new Date());
+
   // const [taxAmount, setTaxAmount] = useState(0);
 
   // Tax related states
@@ -72,7 +78,7 @@ function EditItemForm({ ItemsFromRedux, from, taxInclusive = false }) {
       ? selectedItem[0]?.GodownList[index]
       : selectedItem[0]?.GodownList[0];
 
-  const { voucherType: voucherTypeFromRedux } = useSelector(
+  const { voucherType: voucherTypeFromRedux, warrantyCardsList } = useSelector(
     (state) => state.commonVoucherSlice
   );
 
@@ -85,7 +91,13 @@ function EditItemForm({ ItemsFromRedux, from, taxInclusive = false }) {
     enableNegativeStockBlockForVanInvoice = false,
     enableManufacturingDate = false,
     enableExpiryDate = false,
+    showDescription,
   } = configuration || {};
+
+  const normalizedVoucherType = {
+    sales: "sale",
+    saleOrder: "saleOrder",
+  }[voucherTypeFromRedux];
 
   const calculateTotal = (item, selectedPriceLevel, situation = "normal") => {
     let priceRate = 0;
@@ -259,7 +271,8 @@ function EditItemForm({ ItemsFromRedux, from, taxInclusive = false }) {
     if (selectedItem) {
       setNewPrice(selectedGodown?.selectedPriceRate || 0);
       setQuantity(selectedGodown?.count || 1);
-      setWarrantyCardNo(selectedGodown?.warrantyCardNo || "");
+      setDescription(selectedGodown?.description || "");
+      setWarrantyCard(selectedGodown?.warrantyCard?._id || "");
 
       if (enableActualAndBilledQuantity) {
         setActualQuantity(
@@ -440,6 +453,33 @@ function EditItemForm({ ItemsFromRedux, from, taxInclusive = false }) {
     setQuantity(value);
   };
 
+  const handleWarrantyCardChange = (value) => {
+    const selectedWarrantyCard = warrantyCardsList.find(
+      (card) => card._id === value
+    );
+    /// here we need to manipulate expiry date according to the date in waranty card;
+    const { warrantyYears = 0, warrantyMonths = 0 } = selectedWarrantyCard;
+    /// get a future date according to the date in waranty card;
+    const futureDate = getFutureDate({
+      years: warrantyYears,
+      months: warrantyMonths,
+    });
+    const valid = isExpiryValid(manufactureDate, futureDate);
+    if (!valid) {
+      return;
+    }
+    setExpirationDate(futureDate);
+    setWarrantyCard(selectedWarrantyCard?._id);
+  };
+
+  const handleExpiryDateChange = (value) => {
+    const valid = isExpiryValid(manufactureDate, value);
+    if (!valid) {
+      return;
+    }
+    setExpirationDate(value);
+  };
+
   const submitFormData = () => {
     // Create a copy of the current item
     const updatedItem = { ...item };
@@ -475,7 +515,8 @@ function EditItemForm({ ItemsFromRedux, from, taxInclusive = false }) {
             actualCount: godownActualQty,
             selectedPriceRate: newRate,
             discountType: newDiscountType,
-            warrantyCardNo: warrantyCardNo,
+            description: description,
+            warrantyCard: warrantyCard,
             mfgdt: item?.batchEnabled ? manufactureDate : null,
             expdt: item?.batchEnabled ? expirationDate : null,
 
@@ -533,7 +574,9 @@ function EditItemForm({ ItemsFromRedux, from, taxInclusive = false }) {
             discountAmount: calculatedValues.discountAmount,
             discountPercentage: calculatedValues.discountPercentage,
             isTaxInclusive: isTaxInclusive,
-            warrantyCardNo: warrantyCardNo,
+            description: description,
+            warrantyCard: warrantyCard,
+
             mfgdt: item?.batchEnabled ? manufactureDate : null,
             expdt: item?.batchEnabled ? expirationDate : null,
 
@@ -592,7 +635,9 @@ function EditItemForm({ ItemsFromRedux, from, taxInclusive = false }) {
         basePrice: basePrice,
         taxableAmount: taxableAmount,
         individualTotal: individualTotal,
-        warrantyCardNo: warrantyCardNo,
+        description: description,
+        warrantyCard: warrantyCard,
+
         mfgdt: item?.batchEnabled ? manufactureDate : null,
         expdt: item?.batchEnabled ? expirationDate : null,
 
@@ -662,12 +707,10 @@ function EditItemForm({ ItemsFromRedux, from, taxInclusive = false }) {
     navigate(-1, { replace: true });
   };
 
-  
-
   return (
     <div>
-      <div className="h-screen flex-1">
-        <TitleDiv title="Edit Item" />
+      <div className=" flex-1">
+        <TitleDiv title="Edit Item" loading={loading} />
         <div className="min-h-screen bg-gray-100 flex flex-col justify-center">
           <div className="relative md:py-4 sm:max-w-xl sm:mx-auto">
             <div className="relative px-4 py-10 bg-white mx-5 md:mx-0 shadow sm:p-10">
@@ -866,7 +909,7 @@ function EditItemForm({ ItemsFromRedux, from, taxInclusive = false }) {
                             </label>
                             <DatePicker
                               selected={expirationDate}
-                              onChange={(date) => setExpirationDate(date)}
+                              onChange={(date) => handleExpiryDateChange(date)}
                               dateFormat="yyyy-MM-dd"
                               className="px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
                               placeholderText="Select a date"
@@ -875,20 +918,42 @@ function EditItemForm({ ItemsFromRedux, from, taxInclusive = false }) {
                         )}
                     </div>
 
-                    {voucherTypeFromRedux !== "saleOrder" && (
+                    {showDescription[normalizedVoucherType] && (
                       <div className="flex flex-col">
-                        <label className="leading-loose">
-                          Warranty Card No.
-                        </label>
+                        <label className="leading-loose">Description</label>
                         <input
-                          value={warrantyCardNo || ""}
-                          onChange={(e) => setWarrantyCardNo(e.target.value)}
-                          placeholder="123-456-789"
+                          value={description || ""}
+                          onChange={(e) => setDescription(e.target.value)}
+                          placeholder="Description of the item"
                           type="text"
                           className="px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
                         />
                       </div>
                     )}
+
+                    {warrantyCardsList?.length > 0 &&
+                      voucherTypeFromRedux === "sales" && (
+                        <div className="flex flex-col">
+                          <label className="leading-loose">Warranty Card</label>
+                          <select
+                            value={warrantyCard || ""}
+                            onChange={(e) =>
+                              handleWarrantyCardChange(e.target.value)
+                            }
+                            className="px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm border-gray-300 rounded-md focus:outline-none text-gray-600"
+                          >
+                            <option value="" disabled>
+                              Select a warranty card
+                            </option>
+                            <option value="">None</option>
+                            {warrantyCardsList?.map((card) => (
+                              <option key={card?._id} value={card?._id}>
+                                {card?.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
 
                     <div className="flex flex-col">
                       <label className="leading-loose">Tax Rate</label>
