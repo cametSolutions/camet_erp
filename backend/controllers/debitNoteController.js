@@ -254,6 +254,11 @@ export const editDebitNote = async (req, res) => {
       debitNoteNumber = voucherNumber; // Always update when series changes
       usedSeriesNumber = newUsedSeriesNumber; // Always update when series changes
     }
+    
+    else{
+      debitNoteNumber = existingDebitNote.debitNoteNumber
+      usedSeriesNumber = existingDebitNote.usedSeriesNumber
+    }
 
     await revertDebitNoteStockUpdates(existingDebitNote.items, session);
 

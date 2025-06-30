@@ -279,6 +279,9 @@ export const editCreditNote = async (req, res) => {
 
       creditNoteNumber = voucherNumber; // Always update when series changes
       usedSeriesNumber = newUsedSeriesNumber; // Always update when series changes
+    }else{
+      creditNoteNumber = existingCreditNote?.creditNoteNumber
+      usedSeriesNumber = existingCreditNote?.usedSeriesNumber
     }
 
     // Revert existing stock updates
