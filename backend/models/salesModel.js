@@ -233,8 +233,7 @@ const salesSchema = new Schema(
 // 1. Primary unique identifier (sales number per company)
 salesSchema.index({ cmp_id: 1, salesNumber: -1 }, { unique: true });
 
-// 2. Secondary unique sequence (series-based numbering)
-salesSchema.index({ cmp_id: 1, series_id: 1, series_id: -1 }, { unique: true });
+
 
 // 3. Most common query pattern (company + date sorting)
 salesSchema.index({ cmp_id: 1, date: -1 });

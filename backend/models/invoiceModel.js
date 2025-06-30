@@ -220,11 +220,7 @@ const invoiceSchema = new Schema(
 // 1. Primary unique identifier (order number per company)
 invoiceSchema.index({ cmp_id: 1, orderNumber: -1 }, { unique: true });
 
-// 2. Secondary unique sequence (series-based numbering)
-invoiceSchema.index(
-  { cmp_id: 1, series_id: 1, series_id: -1 },
-  { unique: true }
-);
+
 
 // 3. Most common query pattern (company + date sorting)
 invoiceSchema.index({ cmp_id: 1, date: -1 });

@@ -230,11 +230,7 @@ const vanSaleSchema = new Schema(
 // 1. Primary unique identifier (sales number per company)
 vanSaleSchema.index({ cmp_id: 1, salesNumber: -1 }, { unique: true });
 
-// 2. Secondary unique sequence (series-based numbering)
-vanSaleSchema.index(
-  { cmp_id: 1, series_id: 1, series_id: -1 },
-  { unique: true }
-);
+
 
 // 3. Most common query pattern (company + date sorting)
 vanSaleSchema.index({ cmp_id: 1, date: -1 });

@@ -160,11 +160,7 @@ StockTransferSchema.index(
   { unique: true }
 );
 
-// 2. Secondary unique sequence (series-based numbering)
-StockTransferSchema.index(
-  { cmp_id: 1, series_id: 1, series_id: -1 },
-  { unique: true }
-);
+
 
 // 3. Most common query pattern (company + date sorting)
 StockTransferSchema.index({ cmp_id: 1, date: -1 });

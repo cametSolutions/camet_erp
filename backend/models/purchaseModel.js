@@ -237,11 +237,7 @@ const purchaseSchema = new Schema(
 // 1. Primary unique identifier (purchase number per company)
 purchaseSchema.index({ cmp_id: 1, purchaseNumber: -1 }, { unique: true });
 
-// 2. Secondary unique sequence (series-based numbering)
-purchaseSchema.index(
-  { cmp_id: 1, series_id: 1, series_id: -1 },
-  { unique: true }
-);
+
 
 // 3. Most common query pattern (company + date sorting)
 purchaseSchema.index({ cmp_id: 1, date: -1 });
