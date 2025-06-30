@@ -28,7 +28,7 @@ function EditItemForm({ ItemsFromRedux, from, taxInclusive = false, loading }) {
   const [discountPercentage, setDiscountPercentage] = useState(0);
   const [isTaxInclusive, setIsTaxInclusive] = useState(false);
   const [description, setDescription] = useState(0);
-  const [warrantyCard, setWarrantyCard] = useState("");
+  const [warrantyCard, setWarrantyCard] = useState(null);
   const [expirationDate, setExpirationDate] = useState(new Date());
   const [manufactureDate, setManufactureDate] = useState(new Date());
 
@@ -272,7 +272,7 @@ function EditItemForm({ ItemsFromRedux, from, taxInclusive = false, loading }) {
       setNewPrice(selectedGodown?.selectedPriceRate || 0);
       setQuantity(selectedGodown?.count || 1);
       setDescription(selectedGodown?.description || "");
-      setWarrantyCard(selectedGodown?.warrantyCard?._id || "");
+      setWarrantyCard(selectedGodown?.warrantyCard?._id || null);
 
       if (enableActualAndBilledQuantity) {
         setActualQuantity(
@@ -516,7 +516,7 @@ function EditItemForm({ ItemsFromRedux, from, taxInclusive = false, loading }) {
             selectedPriceRate: newRate,
             discountType: newDiscountType,
             description: description,
-            warrantyCard: warrantyCard,
+            warrantyCard: warrantyCard || null,
             mfgdt: item?.batchEnabled ? manufactureDate : null,
             expdt: item?.batchEnabled ? expirationDate : null,
 
@@ -575,7 +575,7 @@ function EditItemForm({ ItemsFromRedux, from, taxInclusive = false, loading }) {
             discountPercentage: calculatedValues.discountPercentage,
             isTaxInclusive: isTaxInclusive,
             description: description,
-            warrantyCard: warrantyCard,
+            warrantyCard: warrantyCard || null,
 
             mfgdt: item?.batchEnabled ? manufactureDate : null,
             expdt: item?.batchEnabled ? expirationDate : null,
@@ -636,7 +636,7 @@ function EditItemForm({ ItemsFromRedux, from, taxInclusive = false, loading }) {
         taxableAmount: taxableAmount,
         individualTotal: individualTotal,
         description: description,
-        warrantyCard: warrantyCard,
+        warrantyCard: warrantyCard || null,
 
         mfgdt: item?.batchEnabled ? manufactureDate : null,
         expdt: item?.batchEnabled ? expirationDate : null,

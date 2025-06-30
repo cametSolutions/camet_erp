@@ -120,7 +120,7 @@ const salesSchema = new Schema(
               set: convertToUTCMidnight,
             },
             description: { type: String },
-            warrantyCard: { type: Schema.Types.ObjectId, ref: "WarrantyCard" },
+            warrantyCard: { type: Schema.Types.ObjectId, ref: "WarrantyCard", default: null, },
             selectedPriceRate: { type: Number },
             added: { type: Boolean },
             count: { type: Number },
