@@ -1,4 +1,5 @@
 import TitleDiv from "../TitleDiv"
+import { useEffect } from "react"
 import { BsFillRecord2Fill } from "react-icons/bs"
 import { useNavigate } from "react-router-dom"
 import { useDispatch } from "react-redux"
@@ -6,6 +7,7 @@ import { setSelectedVoucher } from "../../../../slices/filterSlices/voucherType"
 import { useLocation } from "react-router-dom"
 const vouchers = [
   { title: "All Vouchers", value: "all" },
+  { title: "All", value: "allType" },
   { title: "Sale", value: "sale" },
   { title: "Sale Order", value: "saleOrder" },
   { title: "Van Sale", value: "vanSale" },
@@ -19,16 +21,13 @@ const vouchers = [
 function VouchersList() {
   const navigate = useNavigate()
   const dispatch = useDispatch()
-const location=useLocation()
-const filterKeys=location?.state?.filterKeys
-console.log(filterKeys)
+  const location = useLocation()
+  const filterKeys = location?.state?.filterKeys
   const filteredVouchers = filterKeys.length
     ? vouchers.filter((v) => filterKeys.includes(v.value))
     : vouchers
-console.log(filteredVouchers)
 
   const handleSelect = (voucher) => {
-    console.log(voucher)
     dispatch(setSelectedVoucher(voucher))
     navigate(-1)
   }

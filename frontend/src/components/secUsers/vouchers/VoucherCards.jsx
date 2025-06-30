@@ -171,7 +171,7 @@ const popular = [
   {
     title: "Order Summary",
     icon: oderSummary,
-    to: "/sUsers/orderSummary",
+    to: "/sUsers/summaryReport",
     summaryType: "Order Summary",
     active: true,
     subtitle: "Track and manage order status"
@@ -220,7 +220,6 @@ const VoucherCards = ({ tab }) => {
     } else if (tab === "purchase") {
       setSelectedTab(purchaseTiles)
     } else if (tab === "popular") {
-      console.log(popular)
       setSelectedTab(popular)
     } else {
       setSelectedTab(others)
@@ -250,7 +249,6 @@ const VoucherCards = ({ tab }) => {
       alert("This feature is not available yet.")
     }
   }
-  console.log(selectedTab)
   const CardContent = ({ item }) => (
     <div
       onClick={() => handleNavigate(item)}

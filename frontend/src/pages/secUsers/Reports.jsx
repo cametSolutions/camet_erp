@@ -2,10 +2,8 @@ import { IoIosArrowRoundBack } from "react-icons/io";
 import { Link } from "react-router-dom";
 import VoucherSection from "../../components/secUsers/vouchers/VoucherSection";
 import RemoveReduxData from "../../components/secUsers/RemoveReduxData";
-import { useSelector } from "react-redux";
 function Reports() {
 
-  
   return (
     <div>
       <RemoveReduxData/>

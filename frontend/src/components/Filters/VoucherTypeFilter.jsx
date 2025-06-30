@@ -6,7 +6,6 @@ function VoucherTypeFilter({ filterKeys = [] }) {
   const selectedVoucher = useSelector(
     (state) => state?.voucherType?.selectedVoucher
   )
-
   return (
     <div className="flex justify-between  items-center p-3">
       <div className=" flex items-center gap-2">

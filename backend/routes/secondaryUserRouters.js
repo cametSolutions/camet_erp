@@ -231,7 +231,7 @@ router.post('/editOrg/:id', authPrimary, secondaryIsBlocked, editOrg);
 
 ////// sales summary
 router.get("/salesSummary/:cmp_id", authSecondary, secondaryIsBlocked, companyAuthentication, getSummary)
-router.get("/summaryReport",getSummaryReport)
+router.get("/summaryReport/:cmp_id",authSecondary, secondaryIsBlocked, companyAuthentication,getSummaryReport)
 
 //// managing secondary users
 router.get('/fetchSecondaryUsers', authPrimary, secondaryIsBlocked, fetchSecondaryUsers);
