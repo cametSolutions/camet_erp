@@ -228,9 +228,10 @@ const creditNoteSchema = new Schema(
 );
 
 // 1. Primary unique identifier (credit note number per company)
-creditNoteSchema.index({ cmp_id: 1, creditNoteNumber: -1 }, { unique: true });
-
-
+creditNoteSchema.index(
+  { cmp_id: 1, series_id: 1, creditNoteNumber: 1 },
+  { unique: true, name: "unique_credit_note_number_per_series" }
+);
 
 // 3. Most common query pattern (company + date sorting)
 creditNoteSchema.index({ cmp_id: 1, date: -1 });

@@ -107,7 +107,7 @@ const paymentSchema = new mongoose.Schema(
 );
 
 // 1. Primary unique identifier (paymentNumber per company)
-paymentSchema.index({ cmp_id: 1, paymentNumber: -1 }, { unique: true });
+paymentSchema.index({ cmp_id: 1, series_id: 1, paymentNumber: 1 },  { unique: true, name: "unique_payment_number_per_series" });
 
 
 

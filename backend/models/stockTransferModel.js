@@ -156,8 +156,8 @@ const StockTransferSchema = new mongoose.Schema(
 
 // 1. Primary unique identifier (stockTransferNumber per company)
 StockTransferSchema.index(
-  { cmp_id: 1, stockTransferNumber: -1 },
-  { unique: true }
+  { cmp_id: 1,series_id: 1, stockTransferNumber: 1 },
+   { unique: true, name: "stock_transfer_number_per_series" }
 );
 
 

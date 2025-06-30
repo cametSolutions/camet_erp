@@ -226,7 +226,10 @@ const debitNoteSchema = new Schema(
 );
 
 // 1. Primary unique identifier (sales number per company)
-debitNoteSchema.index({ cmp_id: 1, debitNoteNumber: -1 }, { unique: true });
+debitNoteSchema.index(
+  { cmp_id: 1, series_id: 1, debitNoteNumber: 1 },
+  { unique: true, name: "unique_debit_note_number_per_series" }
+);
 
 
 // 3. Most common query pattern (company + date sorting)
