@@ -163,6 +163,9 @@ export const editStockTransfer = async (req, res) => {
 
       stockTransferNumber = voucherNumber; // Always update when series changes
       usedSeriesNumber = newUsedSeriesNumber; // Always update when series changes
+    }else{
+      usedSeriesNumber = existingTransfer.usedSeriesNumber
+      stockTransferNumber = existingTransfer.stockTransferNumber
     }
 
     // Revert the stock levels affected by the existing transfer using session

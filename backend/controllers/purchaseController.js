@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { formatToLocalDate, } from "../helpers/helper.js";
+import { formatToLocalDate } from "../helpers/helper.js";
 import {
   createPurchaseRecord,
   handlePurchaseStockUpdates,
@@ -18,7 +18,10 @@ import { checkForNumberExistence } from "../helpers/secondaryHelper.js";
 import purchaseModel from "../models/purchaseModel.js";
 import secondaryUserModel from "../models/secondaryUserModel.js";
 import TallyData from "../models/TallyData.js";
-import { generateVoucherNumber, getSeriesDetailsById } from "../helpers/voucherHelper.js";
+import {
+  generateVoucherNumber,
+  getSeriesDetailsById,
+} from "../helpers/voucherHelper.js";
 
 // @desc create purchase
 // route GET/api/sUsers/createPurchase
@@ -39,7 +42,7 @@ export const createPurchase = async (req, res) => {
       finalAmount: lastAmount,
       selectedDate,
       voucherType,
-      series_id
+      series_id,
     } = req.body;
 
     const Secondary_user_id = req.sUserId;
@@ -191,6 +194,9 @@ export const editPurchase = async (req, res) => {
 
       purchaseNumber = voucherNumber; // Always update when series changes
       usedSeriesNumber = newUsedSeriesNumber; // Always update when series changes
+    } else {
+      purchaseNumber = existingPurchase?.purchaseNumber;
+      usedSeriesNumber = existingPurchase?.usedSeriesNumber;
     }
 
     // Revert existing stock updates
@@ -403,8 +409,6 @@ export const cancelPurchase = async (req, res) => {
 export const getPurchaseDetails = async (req, res) => {
   const purchaseId = req.params.id;
 
-
-
   try {
     // First, get the sale details with populated references
     let purchaseDetails = await purchaseModel
@@ -487,7 +491,8 @@ export const getPurchaseDetails = async (req, res) => {
     });
 
     const isEditable =
-      !outstandingOfPurchase || outstandingOfPurchase?.appliedPayments?.length === 0;
+      !outstandingOfPurchase ||
+      outstandingOfPurchase?.appliedPayments?.length === 0;
     purchaseDetails.isEditable = isEditable;
 
     res
@@ -498,4 +503,3 @@ export const getPurchaseDetails = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
-

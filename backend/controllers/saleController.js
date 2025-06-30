@@ -235,13 +235,17 @@ export const editSale = async (req, res) => {
             session
           );
 
+
+
         salesNumber = voucherNumber; // Always update when series changes
         usedSeriesNumber = newUsedSeriesNumber; // Always update when series changes
+      }else{
+        salesNumber = existingSale.salesNumber
+        usedSeriesNumber = existingSale.usedSeriesNumber
       }
       await revertSaleStockUpdates(existingSale.items, session);
       await handleSaleStockUpdates(items, session);
 
-      console.log("salesNumber", salesNumber);
 
       const updateData = {
         _id: existingSale._id,
