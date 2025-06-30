@@ -117,8 +117,7 @@ const receiptSchema = new mongoose.Schema(
 // 1. Primary unique identifier (receiptNumber per company)
 receiptSchema.index({ cmp_id: 1, receiptNumber: -1 }, { unique: true });
 
-// 2. Secondary unique sequence (series-based numbering)
-receiptSchema.index({ cmp_id: 1, series_id: 1, series_id: -1 }, { unique: true });
+
 
 // 3. Most common query pattern (company + date sorting)
 receiptSchema.index({ cmp_id: 1, date: -1 });
