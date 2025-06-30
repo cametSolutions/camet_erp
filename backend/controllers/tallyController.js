@@ -21,6 +21,13 @@ import accountGroupModel from "../models/accountGroup.js";
 export const saveDataFromTally = async (req, res) => {
   try {
     const { data, partyIds } = await req.body
+
+    if(!data || !partyIds) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid json structure"
+      })
+    }
  
     const partyIdValues = partyIds.map(p => p.partyId)
 
@@ -1594,7 +1601,7 @@ export const addGodowns = async (req, res) => {
 
     // If no default godown exists, check if one is provided in the request
     const hasDefaultGodownInRequest = data.some(
-      (item) => item.defaultGodown === true
+      (item) => item.defaultGodown === "true"
     );
 
     // If no default godown exists in DB and none provided in request, return error
