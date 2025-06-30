@@ -28,6 +28,7 @@ const initialState = {
   cashList: [],
   note: "",
   isNoteOpen: false,
+
 };
 
 export const commonAccountingVoucherSlice = createSlice({

@@ -25,6 +25,7 @@ import TitleDiv from "../../../components/common/TitleDiv";
 import AdditionalChargesTile from "./AdditionalChargesTile";
 import { formatVoucherType } from "../../../../utils/formatVoucherType";
 import AddGodownTile from "./AddGodownTile";
+import AddNoteTile from "./AddNoteTile";
 
 function VoucherInitialPage() {
   const dispatch = useDispatch();
@@ -456,6 +457,8 @@ function VoucherInitialPage() {
             setOpenAdditionalTile={setOpenAdditionalTile}
             openAdditionalTile={openAdditionalTile}
           />
+
+          <AddNoteTile/>
 
           <div className="flex justify-between items-center bg-white mt-2 p-3">
             <p className="font-bold text-md">Total Amount</p>

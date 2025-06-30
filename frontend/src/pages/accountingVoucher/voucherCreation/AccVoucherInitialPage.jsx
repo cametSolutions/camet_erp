@@ -45,6 +45,8 @@ function AccVoucherInitialPage() {
     mode,
     voucherSeries: voucherSeriesFromRedux,
     selectedVoucherSeries,
+    note: noteFromRedux,
+    isNoteOpen: isNoteOpenFromRedux,
   } = useSelector((state) => state.commonAccountingVoucherSlice);
 
   const [voucherNumber, setVoucherNumber] = useState("");
