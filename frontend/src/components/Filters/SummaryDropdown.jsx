@@ -50,6 +50,7 @@ function SummaryDropdown({
       >
         <option value="Ledger">Ledger</option>
         <option value="Stock Item">Stock Item</option>
+        <option value="voucher">Voucher</option>
         {/* <option value="Stock Group">Stock Group</option>
         <option value="Stock Category">Stock Category</option> */}
       </select>

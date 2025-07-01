@@ -10,7 +10,6 @@ import mongoose from "mongoose";
 
 //summary report controller
 export const getSummary = async (req, res) => {
-
   const { startOfDayParam, endOfDayParam, selectedVoucher } = req.query;
 
   try {

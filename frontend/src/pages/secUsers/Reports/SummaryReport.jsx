@@ -12,15 +12,23 @@ import SelectDate from "@/components/Filters/SelectDate"
 import VoucherTypeFilter from "@/components/Filters/VoucherTypeFilter"
 import { setSelectedVoucher } from "../../../.././slices/filterSlices/voucherType"
 import { setSelectedSerialNumber } from "../../../.././slices/filterSlices/serialNumberFilter"
+import DashboardTransaction from "@/components/common/DashboardTransaction"
 
 export default function SummaryReport() {
   const [processedSummary, setProcessedSummary] = useState([])
+  const [voucherSum, setVocherSum] = useState(0)
   const navigate = useNavigate()
   const location = useLocation()
   const dispatch = useDispatch()
   const { summaryType } = location.state
   const { start, end } = useSelector((state) => state.date)
-
+  const isAdmin =
+    JSON.parse(localStorage.getItem("sUserData")).role === "admin"
+      ? true
+      : false
+  const selectedSecondaryUser = useSelector(
+    (state) => state?.userFilter?.selectedUser
+  )
   const voucherType = useSelector((state) => state.voucherType.selectedVoucher)
   const serialNumber = useSelector(
     (state) => state.serialNumber.selectedSerialNumber
@@ -59,8 +67,29 @@ export default function SummaryReport() {
     () => startOfDay(start).toISOString(),
     [start]
   )
-
   const normalizedEnd = useMemo(() => endOfDay(end).toISOString(), [end])
+  const { data: voucherwisesummary } = useQuery({
+    queryKey: ["voucherSummary", cmp_id, voucherType.value],
+    queryFn: async () => {
+      const res = await axios.get(
+        `http://localhost:7000/api/sUsers/transactions/${cmp_id}?startOfDayParam=${start}&endOfDayParam=${end}&selectedVoucher=${
+          voucherType?.value
+        }&isAdmin=${isAdmin}&selectedSecondaryUser=${
+          selectedSecondaryUser?._id || ""
+        }&summaryType=${summaryType}`,
+        { withCredentials: true }
+      )
+      return res.data
+    },
+    enabled:
+      !!cmp_id &&
+      !!voucherType.value &&
+      voucherType.title !== "All Vouchers" &&
+      selectedOption === "voucher",
+
+    staleTime: 60000,
+    retry: false
+  })
 
   const { data: serialNumberList } = useQuery({
     queryKey: ["serialNumbers", cmp_id, voucherType.value],
@@ -76,10 +105,9 @@ export default function SummaryReport() {
       !!voucherType.value &&
       voucherType.title !== "All Vouchers" &&
       voucherType.value !== "allType",
-    staleTime: 5 * 60 * 1000,
+    staleTime: 5 * 60_000,
     retry: false
   })
-
   const queryKey = [
     "summaryReport",
     {
@@ -98,6 +126,7 @@ export default function SummaryReport() {
     voucherType.title !== "All Vouchers" &&
     !!summaryType &&
     !!selectedOption &&
+    selectedOption !== "voucher" &&
     !!serialNumber
   const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey,
@@ -136,16 +165,88 @@ export default function SummaryReport() {
     refetchOnWindowFocus: false // 👈 Disable auto-refetch on tab focus
   })
   useEffect(() => {
-    setProcessedSummary(data?.flattenedResults)
+    if (voucherwisesummary) {
+      const a = voucherwisesummary.data.combined.map(
+        (item) => item.enteredAmount
+      )
+      const { incomeSum, expenseSum, net } =
+        voucherwisesummary.data.combined.reduce(
+          (acc, txn) => {
+            const type = txn.type.toLowerCase()
+            const amt = Number(txn.enteredAmount) || 0
+
+            if (type === "credit note" || type === "debit note") {
+              acc.expenseSum += amt
+            } else {
+              acc.incomeSum += amt
+            }
+
+            return acc
+          },
+          { incomeSum: 0, expenseSum: 0, net: 0 }
+        )
+      const finalNet = incomeSum - expenseSum
+      setVocherSum(finalNet)
+   
+    }
+  }, [voucherwisesummary])
+
+  useEffect(() => {
+    if (data) {
+      const summary = data?.flattenedResults
+      const map = new Map()
+      for (const item of summary) {
+        const key = item.name
+        if (!map.has(key)) {
+          map.set(key, {
+            name: key,
+            debitSum: 0, // sum of non-credit items
+            creditSum: 0, // sum of credit items
+            transactions: [],
+            sourceTypes: new Set()
+          })
+        }
+
+        const acc = map.get(key)
+
+        // 1) Separate sums for debit vs credit
+        if (item.isCreditOrDebit) {
+          // this is a credit
+          acc.creditSum += item.total
+        } else {
+          // this is a debit (sale/vanSale)
+          acc.debitSum += item.total
+        }
+
+        // 2) collect all transactions
+        acc.transactions.push(...item.transactions)
+
+        // 3) collect distinct sourceTypes
+        acc.sourceTypes.add(item.sourceType)
+      }
+
+      // 4) build final result array, computing net = debitSum - creditSum
+      const result = Array.from(map.values()).map((acc) => ({
+        name: acc.name,
+        total: acc.debitSum, // sum of sale + vanSale
+        credit: acc.creditSum, // sum of creditNote
+        net: acc.debitSum - acc.creditSum, // what you actually want to display
+        sourceType: Array.from(acc.sourceTypes), // e.g. ['sale','vanSale','creditNote']
+        transactions: acc.transactions
+      }))
+      setProcessedSummary(result)
+    }
   }, [data])
+
   const totalAmount = useMemo(() => {
     return (
       processedSummary?.reduce(
-        (sum, item) => sum + (item.isCreditOrDebit ? 0 : Number(item.total)),
-        0
-      ) ?? 0
+        (sum, item) => sum + Number(item.net),
+        0 // ← initial sum = 0
+      ) ?? 0 // if processedSummary is undefined, default to 0
     )
   }, [processedSummary])
+
   // Handle navigation to summary details page
   const handleNavigate = () => {
     navigate("/sUsers/salesSummaryDetails", {
@@ -159,7 +260,7 @@ export default function SummaryReport() {
         <section className="shadow-lg border-b">
           <SelectDate />
         </section>
-        <section className="shadow-lg">
+        <section className="shadow-lg bg-white">
           <VoucherTypeFilter filterKeys={filterKeys} />
         </section>
         {isFetching && (
@@ -205,7 +306,10 @@ export default function SummaryReport() {
           </div>
           <div className="text-center text-white flex justify-center items-center flex-col mt-5">
             <h2 className="text-3xl sm:text-4xl font-bold">
-              ₹{totalAmount?.toLocaleString() || 0}
+              ₹
+              {selectedOption !== "voucher"
+                ? totalAmount?.toLocaleString()
+                : voucherSum}
             </h2>
             <p className="text-sm mt-4 font-semibold opacity-90">
               {/* {new Date(start).toLocaleDateString()} -{" "}
@@ -221,28 +325,41 @@ export default function SummaryReport() {
         </div>
       </div>
 
-      <div className="flex-1 p-4">
-        {!isFetching && processedSummary && processedSummary?.length === 0 && (
-          <p className="text-gray-500 text-center font-bold mt-20">
-            No data found
-          </p>
-        )}
+      <div
 
-        {processedSummary && processedSummary?.length > 0 && (
-          <div className="space-y-2">
-            {processedSummary.map((item, index) => (
-              <div
-                key={index}
-                onClick={() => handleItemClick(item)}
-                className="flex justify-between items-center p-4 py-6 bg-white shadow-md rounded-base cursor-pointer hover:-translate-y-0.5 transition-transform duration-300"
-              >
-                <span className="text-gray-800 font-medium">{item.name}</span>
-                <span className="text-gray-600 font-semibold">
-                  ₹{item.total.toLocaleString()}
-                </span>
-              </div>
-            ))}
-          </div>
+        className={`flex-1 ${selectedOption === "voucher" ? "p-0" : "p-2"}`}
+      >
+        {!isFetching &&
+          processedSummary &&
+          selectedOption !== "voucher" &&
+          processedSummary?.length === 0 && (
+            <p className="text-gray-500 text-center font-bold mt-20">
+              No data found
+            </p>
+          )}
+
+        {processedSummary &&
+          selectedOption !== "voucher" &&
+          processedSummary?.length > 0 && (
+            <div className="space-y-2">
+              {processedSummary.map((item, index) => (
+                <div
+                  key={index}
+                  onClick={() => handleItemClick(item)}
+                  className="flex justify-between items-center p-4 py-6 bg-white shadow-md rounded-base cursor-pointer hover:-translate-y-0.5 transition-transform duration-300"
+                >
+                  <span className="text-gray-800 font-medium">{item.name}</span>
+                  <span className="text-gray-600 font-semibold">
+                    ₹{item.net.toLocaleString()}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        {selectedOption === "voucher" && voucherwisesummary && (
+          <DashboardTransaction
+            filteredData={voucherwisesummary.data.combined}
+          />
         )}
       </div>
     </div>

@@ -10,11 +10,10 @@ export const aggregateSummary = async (
     const results = await model.aggregate([{ $match: matchCriteria }]);
     // Add type to each result to identify its source if not already included in projection
     if (results && results.length && !results[0]?.sourceType) {
+      results.forEach((item) => {
 
-      results.map((item) => ({
-        ...item,
-        sourceType: type,
-      }));
+        item.sourceType = type
+      });
     }
     const calculateTotalsWithTransactions = () => {
 
@@ -26,15 +25,17 @@ export const aggregateSummary = async (
           serialNumber === "all"
             ? results
             : results.filter(item => item.series_id?.toString() === serialNumber)
+ 
+
         filteredResults.forEach((item) => {
           if (!item.party?._id) return
-
           const partyName = item.party.partyName
 
 
           // Get existing data or initialize
           const existing = totalsMap.get(partyName) || {
             total: 0,
+            sourceType: item.sourceType,
             isCreditOrDebit: item.voucherType === "creditNote" || item.voucherType === "debitNote",
             transactions: []
           }
@@ -70,7 +71,7 @@ export const aggregateSummary = async (
             // Get existing data or initialize
             const existing = totalsMap.get(item.product_name) || {
               total: 0,
-              isCreditOrDebit: item.voucherType === "creditNote" || item.voucherType === "debitNote",
+              isCreditOrDebit: sale.voucherType === "creditNote" || sale.voucherType === "debitNote",
               transactions: []
             }
 
@@ -183,6 +184,7 @@ export const aggregateSummary = async (
       // Convert map to array
       return Array.from(totalsMap).map(([name, data]) => ({
         name,
+        sourceType:data.sourceType,
         isCreditOrDebit: data.isCreditOrDebit,
         total: data.total,
         transactions: data.transactions

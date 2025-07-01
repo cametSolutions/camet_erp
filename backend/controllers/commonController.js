@@ -66,6 +66,7 @@ export const transactions = async (req, res) => {
     party_id,
     selectedVoucher,
     fullDetails = "false",
+    summaryType = "none",
     ignore = "", // New parameter for collections to ignore
     selectedSecondaryUser,
   } = req.query;
@@ -138,12 +139,12 @@ export const transactions = async (req, res) => {
       ...(!isAdmin
         ? { Secondary_user_id: new mongoose.Types.ObjectId(userId) }
         : selectedSecondaryUser
-        ? {
+          ? {
             Secondary_user_id: new mongoose.Types.ObjectId(
               selectedSecondaryUser
             ),
           }
-        : {}),
+          : {}),
     };
 
     // Define voucher type mappings
@@ -191,6 +192,19 @@ export const transactions = async (req, res) => {
           numberField: "stockTransferNumber",
         },
       ],
+      saleType: [
+        { model: salesModel, type: "Tax Invoice", numberField: "SalesNumber" },
+        { model: vanSaleModel, type: "Van Sale", numberField: "salesNumber" },
+        {
+          model: creditNoteModel,
+          type: "Credit Note",
+          numberField: "creditNoteNumber",
+        }
+      ],
+      purchaseType: [
+        { model: purchaseModel, type: "Purchase", numberField: "purchaseNumber" },
+        { model: debitNoteModel, type: "Debit Note", numberField: "debitNoteNumber" }
+      ],
       all: [
         { model: salesModel, type: "Tax Invoice", numberField: "salesNumber" },
         { model: invoiceModel, type: "Sale Order", numberField: "orderNumber" },
@@ -222,9 +236,8 @@ export const transactions = async (req, res) => {
 
     // Get the appropriate models to query based on selectedVoucher
     let modelsToQuery = selectedVoucher
-      ? voucherTypeMap[selectedVoucher]
+      ? (selectedVoucher === "allType" && summaryType === "Sales Summary") ? voucherTypeMap.saleType : (selectedVoucher === "allType" && summaryType === "Purchase Summary") ? voucherTypeMap.purchaseType : voucherTypeMap[selectedVoucher]
       : voucherTypeMap.all;
-
     // Filter out ignored collections
     modelsToQuery = modelsToQuery.filter(
       ({ type }) =>
@@ -266,13 +279,23 @@ export const transactions = async (req, res) => {
 
     if (combined.length > 0) {
       return res.status(200).json({
-        message: `${
-          selectedVoucher === "all"
+        message: `${selectedVoucher === "all"
             ? "All transactions"
-            : `${voucherTypeMap[selectedVoucher]?.[0]?.type} transactions`
-        } fetched${todayOnly === "true" ? " for today" : ""}`,
+            : selectedVoucher === "allType"
+              ? "All"
+              : `${voucherTypeMap[selectedVoucher]?.[0]?.type} transactions`
+          } fetched${todayOnly === "true" ? " for today" : ""}`,
         data: { combined, totalTransactionAmount },
       });
+
+      // return res.status(200).json({
+      //   message: `${selectedVoucher === "all"
+      //     ? "All transactions"
+      //     : selectedVoucher === "allType" ? "All" :
+      //     : `${voucherTypeMap[selectedVoucher]?.[0]?.type} transactions`
+      //     } fetched${ todayOnly === "true" ? " for today" : "" } `,
+      //   data: { combined, totalTransactionAmount },
+      // });
     } else {
       return res.status(404).json({ message: "Transactions not found" });
     }
@@ -406,7 +429,7 @@ export const deleteHsn = async (req, res) => {
     if (attachedProduct.length > 0) {
       return res.status(404).json({
         success: false,
-        message: `HSN is linked with product ${attachedProduct[0].product_name}`,
+        message: `HSN is linked with product ${attachedProduct[0].product_name} `,
       });
     } else {
       const deletedHsn = await hsnModel.findByIdAndDelete(hsnId);
@@ -636,16 +659,16 @@ export const updateMissingBillIds = async (req, res) => {
       try {
         const sourceType = doc.source?.toLowerCase()?.trim();
 
-        // console.log(`Processing document with bill_no: ${doc.bill_no}, source: ${sourceType}`);
+        // console.log(`Processing document with bill_no: ${ doc.bill_no }, source: ${ sourceType } `);
 
         const config = modelConfig[sourceType];
 
         if (!config || !config.models?.length) {
-          // console.log(`Invalid source type: ${sourceType}`);
+          // console.log(`Invalid source type: ${ sourceType } `);
           results.failed++;
           results.errors.push({
             bill_no: doc.bill_no,
-            error: `Invalid source type: ${doc.source}`,
+            error: `Invalid source type: ${doc.source} `,
             source: doc.source,
           });
           continue;
@@ -661,7 +684,7 @@ export const updateMissingBillIds = async (req, res) => {
             cmp_id: doc.cmp_id,
           };
 
-          // console.log(`Searching in ${modelConfig.type} with query:`, query);
+          // console.log(`Searching in ${ modelConfig.type } with query: `, query);
 
           const foundDoc = await modelConfig.model.findOne(query);
           if (foundDoc) {
@@ -688,7 +711,7 @@ export const updateMissingBillIds = async (req, res) => {
           );
           results.updated++;
         } else {
-          console.log(`No matching document found for bill_no: ${doc.bill_no}`);
+          console.log(`No matching document found for bill_no: ${doc.bill_no} `);
           results.notFound++;
           results.errors.push({
             bill_no: doc.bill_no,
@@ -698,7 +721,7 @@ export const updateMissingBillIds = async (req, res) => {
           });
         }
       } catch (error) {
-        console.error(`Error processing document ${doc.bill_no}:`, error);
+        console.error(`Error processing document ${doc.bill_no}: `, error);
         results.failed++;
         results.errors.push({
           bill_no: doc.bill_no,
@@ -726,7 +749,7 @@ export const updateMissingBillIds = async (req, res) => {
         updated: results.updated,
         notFound: results.notFound,
         failed: results.failed,
-        successRate: `${((results.updated / results.total) * 100).toFixed(2)}%`,
+        successRate: `${((results.updated / results.total) * 100).toFixed(2)}% `,
       },
     });
   } catch (error) {
