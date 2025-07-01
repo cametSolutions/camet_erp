@@ -112,6 +112,8 @@ export const handleStockTransfer = async ({
   serialNumber,
   req,
   session,
+      note,
+
 }) => {
   const { series_id, usedSeriesNumber } = req.body;
 
@@ -127,6 +129,7 @@ export const handleStockTransfer = async ({
       cmp_id: orgId,
       stockTransferToGodown,
       items,
+      note,
       finalAmount: lastAmount,
       createdAt: new Date(),
     });

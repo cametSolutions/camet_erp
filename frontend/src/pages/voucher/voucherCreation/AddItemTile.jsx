@@ -10,7 +10,6 @@ function AddItemTile({
   removeItem,
   removeGodownOrBatch,
   navigate,
-  godownname,
   subTotal,
   type,
   urlToAddItem,
@@ -30,7 +29,7 @@ function AddItemTile({
   return (
     <div>
       {items?.length == 0 && (
-        <div className="bg-white p-4 pb-6  drop-shadow-lg mt-2 md:mt-3">
+        <div className="bg-white p-4 pb-6  drop-shadow-lg mt-2 md:mt-3 mb-2">
           <div className="flex gap-2 ">
             <p className="font-bold uppercase text-sm">Items</p>
             <span className="text-red-500 mt-[-4px] font-bold">*</span>

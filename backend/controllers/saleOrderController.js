@@ -43,6 +43,7 @@ export const createInvoice = async (req, res) => {
           selectedDate,
           voucherType,
           series_id,
+          note
         } = req.body;
 
         formatToLocalDate(selectedDate, orgId);
@@ -77,6 +78,7 @@ export const createInvoice = async (req, res) => {
           items: updatedItems,
           priceLevel: priceLevelFromRedux,
           additionalCharges: updateAdditionalCharge,
+          note,
           finalAmount: lastAmount,
           Primary_user_id: owner,
           Secondary_user_id,
@@ -153,6 +155,7 @@ export const editInvoice = async (req, res) => {
         finalAmount: lastAmount,
         despatchDetails,
         selectedDate,
+        note
       } = req.body;
 
       let { orderNumber, series_id, usedSeriesNumber } = req.body;
@@ -214,6 +217,7 @@ export const editInvoice = async (req, res) => {
             items: updatedItems,
             priceLevel: priceLevelFromRedux,
             additionalCharges: updateAdditionalCharge, // Use calculated charges
+            note,
             finalAmount: lastAmount,
             Primary_user_id,
             Secondary_user_id,

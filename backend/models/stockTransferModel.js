@@ -146,6 +146,8 @@ const StockTransferSchema = new mongoose.Schema(
         taxInclusive: { type: Boolean },
       },
     ],
+
+    note: { type: String },
     finalAmount: { type: Number, required: true },
     isCancelled: { type: Boolean, default: false },
   },
@@ -159,6 +161,7 @@ StockTransferSchema.index(
   { cmp_id: 1,series_id: 1, stockTransferNumber: 1 },
    { unique: true, name: "stock_transfer_number_per_series" }
 );
+
 
 
 

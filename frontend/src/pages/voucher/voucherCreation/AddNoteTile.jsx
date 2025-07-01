@@ -43,10 +43,10 @@ function AddNoteTile({
 
   return (
     <>
-      <div className="flex  flex-col items-end px-4 bg-white pb-3">
+      <div className="flex  flex-col items-end px-4 bg-white py-3 ">
         <p
           onClick={handleToggleNote}
-          className="flex items-center cursor-pointer  gap-3  text-violet-500 text-xs md:text-md  font-semibold "
+          className="flex items-center cursor-pointer  text-violet-500 text-xs md:text-md  font-semibold "
         >
           {" "}
           <IoMdAdd className="text-lg sm:text-xl" />
