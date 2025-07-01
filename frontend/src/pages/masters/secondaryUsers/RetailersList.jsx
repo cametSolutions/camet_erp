@@ -11,7 +11,7 @@ import { MdEmail } from "react-icons/md";
 import CustomBarLoader from "../../../components/common/CustomBarLoader";
 import CompanyFilter from "../../../components/Filters/CompanyFilter";
 import { RiUser2Fill } from "react-icons/ri";
-
+import { AiFillSetting } from "react-icons/ai";
 
 function RetailersList() {
   const [secondaryUsers, setSecondaryUsers] = useState([]);
@@ -60,7 +60,6 @@ function RetailersList() {
 
   return (
     <section className="flex-1 text-gray-600  ">
-      
       <div className="flex flex-col sticky top-0 z-50">
         <div className=" bg-[#201450] text-white p-3 flex items-center gap-3 text-lg">
           <Link to={"/sUsers/dashboard"}>
@@ -103,9 +102,14 @@ function RetailersList() {
                       <span>{user?._id}</span>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-5">
+                    <Link to={`/sUsers/configureUser/${user._id}`}>
+                      <button className="hover:text-gray-500 mt-1 ">
+                        <AiFillSetting className="text-lg" />
+                      </button>
+                    </Link>
                     <Link to={`/sUsers/editUser/${user._id}`}>
-                      <button className="text-blue-600 hover:text-blue-700">
+                      <button className="text-blue-600 hover:text-blue-700 ">
                         <FaEdit className="text-base" />
                       </button>
                     </Link>

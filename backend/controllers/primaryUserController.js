@@ -854,3 +854,41 @@ export const fetchConfigurationCurrentNumber = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+// @desc  allocating companies for users
+// route put/api/sUsers/allocateCompany
+
+export const allocateCompany = async (req, res) => {
+  try {
+
+    const { userId, selectedCompanies } = req.body;
+
+    const secUser = await SecondaryUser.findById(userId);
+
+    if (!secUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    secUser.organization=[...selectedCompanies];
+    const result = await secUser.save();
+
+    if (result) {
+      return res
+        .status(200)
+        .json({ success: true, message: "User configuration is successful" });
+    } else {
+      return res
+        .status(400)
+        .json({ success: false, message: "User configuration failed" });
+    }
+
+    
+  } catch (error) {
+     console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+
+}
+
+
+

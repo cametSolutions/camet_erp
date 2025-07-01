@@ -31,7 +31,7 @@ import Swal from "sweetalert2";
 import { BsFillBuildingsFill } from "react-icons/bs";
 import { SlUserFollow } from "react-icons/sl";
 
-function SidebarSec({ TAB, showBar }) {
+function SidebarSec({  showBar }) {
   const [showSidebar, setShowSidebar] = useState(false);
   const [userData, setUserData] = useState({});
   const [dropdown, setDropdown] = useState(false);
