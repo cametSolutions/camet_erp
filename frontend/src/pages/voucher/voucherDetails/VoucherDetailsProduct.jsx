@@ -2,7 +2,7 @@
 import { IoIosArrowDown, IoIosArrowUp } from "react-icons/io";
 import { useState } from "react";
 
-function SalesProductDetails({
+function VoucherDetailsProduct({
   data,
   items = [],
   additionalCharges = [],
@@ -230,4 +230,4 @@ function SalesProductDetails({
   );
 }
 
-export default SalesProductDetails;
+export default VoucherDetailsProduct;
