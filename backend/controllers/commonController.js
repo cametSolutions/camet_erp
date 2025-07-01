@@ -67,6 +67,7 @@ export const transactions = async (req, res) => {
     selectedVoucher,
     fullDetails = "false",
     summaryType = "none",
+    serialNumber=null,
     ignore = "", // New parameter for collections to ignore
     selectedSecondaryUser,
   } = req.query;
@@ -193,7 +194,7 @@ export const transactions = async (req, res) => {
         },
       ],
       saleType: [
-        { model: salesModel, type: "Tax Invoice", numberField: "SalesNumber" },
+        { model: salesModel, type: "Tax Invoice", numberField: "salesNumber" },
         { model: vanSaleModel, type: "Van Sale", numberField: "salesNumber" },
         {
           model: creditNoteModel,
@@ -238,6 +239,8 @@ export const transactions = async (req, res) => {
     let modelsToQuery = selectedVoucher
       ? (selectedVoucher === "allType" && summaryType === "Sales Summary") ? voucherTypeMap.saleType : (selectedVoucher === "allType" && summaryType === "Purchase Summary") ? voucherTypeMap.purchaseType : voucherTypeMap[selectedVoucher]
       : voucherTypeMap.all;
+      console.log(modelsToQuery);
+      
     // Filter out ignored collections
     modelsToQuery = modelsToQuery.filter(
       ({ type }) =>

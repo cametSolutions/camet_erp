@@ -1,6 +1,6 @@
 import { useLocation } from "react-router-dom"
 import { useQuery } from "@tanstack/react-query"
-import { useNavigate } from "react-router-dom"
+// import { useNavigate } from "react-router-dom"
 import axios from "axios"
 import { useDispatch, useSelector } from "react-redux"
 import { useEffect, useMemo, useState } from "react"
@@ -17,7 +17,7 @@ import DashboardTransaction from "@/components/common/DashboardTransaction"
 export default function SummaryReport() {
   const [processedSummary, setProcessedSummary] = useState([])
   const [voucherSum, setVocherSum] = useState(0)
-  const navigate = useNavigate()
+  // const navigate = useNavigate()
   const location = useLocation()
   const dispatch = useDispatch()
   const { summaryType } = location.state
@@ -69,7 +69,8 @@ export default function SummaryReport() {
   )
   const normalizedEnd = useMemo(() => endOfDay(end).toISOString(), [end])
   const { data: voucherwisesummary } = useQuery({
-    queryKey: ["voucherSummary", cmp_id, voucherType.value],
+    queryKey: ["voucherSummary", cmp_id, voucherType.value, normalizedStart,
+      normalizedEnd,serialNumber.value],
     queryFn: async () => {
       const res = await axios.get(
         `http://localhost:7000/api/sUsers/transactions/${cmp_id}?startOfDayParam=${start}&endOfDayParam=${end}&selectedVoucher=${
@@ -105,9 +106,10 @@ export default function SummaryReport() {
       !!voucherType.value &&
       voucherType.title !== "All Vouchers" &&
       voucherType.value !== "allType",
-    staleTime: 5 * 60_000,
+    staleTime: 30000,
     retry: false
   })
+  console.log(serialNumber.value)
   const queryKey = [
     "summaryReport",
     {
@@ -128,7 +130,11 @@ export default function SummaryReport() {
     !!selectedOption &&
     selectedOption !== "voucher" &&
     !!serialNumber
-  const { data, isLoading, isFetching, refetch } = useQuery({
+  const { data, 
+    // isLoading, 
+    isFetching, 
+    // refetch 
+  } = useQuery({
     queryKey,
     queryFn: async () => {
       try {
@@ -248,11 +254,11 @@ export default function SummaryReport() {
   }, [processedSummary])
 
   // Handle navigation to summary details page
-  const handleNavigate = () => {
-    navigate("/sUsers/salesSummaryDetails", {
-      state: { summary: processedSummary }
-    })
-  }
+  // const handleNavigate = () => {
+  //   navigate("/sUsers/salesSummaryDetails", {
+  //     state: { summary: processedSummary }
+  //   })
+  // }
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <div className="sticky top-0 z-50">
@@ -345,7 +351,7 @@ export default function SummaryReport() {
               {processedSummary.map((item, index) => (
                 <div
                   key={index}
-                  onClick={() => handleItemClick(item)}
+                  // onClick={() => handleItemClick(item)}
                   className="flex justify-between items-center p-4 py-6 bg-white shadow-md rounded-base cursor-pointer hover:-translate-y-0.5 transition-transform duration-300"
                 >
                   <span className="text-gray-800 font-medium">{item.name}</span>
