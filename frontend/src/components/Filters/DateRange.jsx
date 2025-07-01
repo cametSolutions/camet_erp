@@ -1,5 +1,5 @@
 /* eslint-disable no-case-declarations */
-import  { useState } from "react";
+import { useState } from "react"
 import {
   format,
   // startOfToday,
@@ -13,119 +13,160 @@ import {
   subMonths,
   startOfYear,
   endOfYear,
-  parseISO,
-} from "date-fns";
-import { BsFillCalendar2DateFill } from "react-icons/bs";
-import { useDispatch, useSelector } from "react-redux";
-import { addDate } from "../../../slices/filterSlices/date";
-import { useNavigate } from "react-router-dom";
-import TitleDiv from "../common/TitleDiv";
+  parseISO
+} from "date-fns"
+import { BsFillCalendar2DateFill } from "react-icons/bs"
+import { useDispatch, useSelector } from "react-redux"
+import { addDate } from "../../../slices/filterSlices/date"
+import { useNavigate } from "react-router-dom"
+import TitleDiv from "../common/TitleDiv"
 
 const DateRange = () => {
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
-  const { title } = useSelector((state) => state.date);
-  const [showCustomPicker, setShowCustomPicker] = useState(false);
-  const [customStartDate, setCustomStartDate] = useState("");
-  const [customEndDate, setCustomEndDate] = useState("");
+  const dispatch = useDispatch()
+  const navigate = useNavigate()
+  const { title } = useSelector((state) => state.date)
+  const [showCustomPicker, setShowCustomPicker] = useState(false)
+  const [customStartDate, setCustomStartDate] = useState("")
+  const [customEndDate, setCustomEndDate] = useState("")
 
   const submitHandler = (rangeName, start, end) => {
+    console.log(start)
+    console.log(end)
+    const newstart = new Date(start)
+    const newend = new Date(end)
+    const startdate = new Date(
+      Date.UTC(
+        newstart.getFullYear(),
+        newstart.getMonth(),
+        newstart.getDate(),
+        0,
+        0,
+        0
+      )
+    )
+    const enddate = new Date(
+      Date.UTC(
+        newend.getFullYear(),
+        newend.getMonth(),
+        newend.getDate(),
+        0,
+        0,
+        0
+      )
+    )
+    console.log(startdate.toISOString(), enddate.toISOString())
     dispatch(
       addDate({
         rangeName,
-        start: start.toISOString(),
-        end: end.toISOString(),
+        start: startdate.toISOString(),
+        end: enddate.toISOString()
       })
-    );
-    navigate(-1);
-  };
+    )
+    navigate(-1)
+  }
 
   const handleCustomDateSubmit = () => {
     if (customStartDate && customEndDate) {
-      const startDate = parseISO(customStartDate);
-      const endDate = parseISO(customEndDate);
+      const startDate = parseISO(customStartDate)
+      const endDate = parseISO(customEndDate)
 
       if (endDate < startDate) {
-        alert("End date cannot be before start date.");
-        return;
+        alert("End date cannot be before start date.")
+        return
       }
 
-      submitHandler(
-        "Custom Date",
-        startDate,
-        endDate
-      );
+      submitHandler("Custom Date", startDate, endDate)
     } else {
-      alert("Both start and end dates must be selected.");
+      alert("Both start and end dates must be selected.")
     }
-  };
+  }
 
   const formatDisplayDate = (dateString) =>
-    dateString ? format(parseISO(dateString), "dd-MMM-yyyy") : "";
+    dateString ? format(parseISO(dateString), "dd-MMM-yyyy") : ""
 
   const getRangeDates = (rangeType) => {
-    let startDate, endDate;
+    let startDate, endDate
     switch (rangeType) {
       case "Today":
         // Use a function that gets the current date at midnight in UTC
-        const today = new Date();
-        startDate = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate(), 0, 0, 0, 0));
-        endDate = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate(), 23, 59, 59, 999));
-        break;
-    
+        const today = new Date()
+        startDate = new Date(
+          Date.UTC(
+            today.getUTCFullYear(),
+            today.getUTCMonth(),
+            today.getUTCDate(),
+            0,
+            0,
+            0,
+            0
+          )
+        )
+        endDate = new Date(
+          Date.UTC(
+            today.getUTCFullYear(),
+            today.getUTCMonth(),
+            today.getUTCDate(),
+            0,
+            0,
+            0,
+            0
+          )
+        )
+        break
+
       case "Yesterday":
-        startDate = endDate = subDays(new Date(), 1);
-        break;
+        startDate = endDate = subDays(new Date(), 1)
+        break
       case "This Week":
-        startDate = startOfWeek(new Date(), { weekStartsOn: 1 });
-        endDate = endOfWeek(new Date(), { weekStartsOn: 1 });
-        break;
+        startDate = startOfWeek(new Date(), { weekStartsOn: 1 })
+        endDate = endOfWeek(new Date(), { weekStartsOn: 1 })
+        break
       case "Last Week":
-        startDate = startOfWeek(subDays(new Date(), 7), { weekStartsOn: 1 });
-        endDate = endOfWeek(subDays(new Date(), 7), { weekStartsOn: 1 });
-        break;
+        startDate = startOfWeek(subDays(new Date(), 7), { weekStartsOn: 1 })
+        endDate = endOfWeek(subDays(new Date(), 7), { weekStartsOn: 1 })
+        break
       case "Last 7 Days":
-        startDate = subDays(new Date(), 6);
-        endDate = new Date();
-        break;
+        startDate = subDays(new Date(), 6)
+        endDate = new Date()
+        break
       case "This Month":
-        startDate = startOfMonth(new Date());
-        endDate = endOfMonth(new Date());
-        break;
+        startDate = startOfMonth(new Date())
+        endDate = endOfMonth(new Date())
+        break
       case "Last Month":
-        startDate = startOfMonth(subMonths(new Date(), 1));
-        endDate = endOfMonth(subMonths(new Date(), 1));
-        break;
+        startDate = startOfMonth(subMonths(new Date(), 1))
+        endDate = endOfMonth(subMonths(new Date(), 1))
+        break
       case "Last 30 Days":
-        startDate = subDays(new Date(), 29);
-        endDate = new Date();
-        break;
+        startDate = subDays(new Date(), 29)
+        endDate = new Date()
+        break
       case "This Quarter":
-        startDate = startOfQuarter(new Date());
-        endDate = endOfQuarter(new Date());
-        break;
+        startDate = startOfQuarter(new Date())
+        endDate = endOfQuarter(new Date())
+        break
       case "Last Quarter":
-        startDate = startOfQuarter(subMonths(new Date(), 3));
-        endDate = endOfQuarter(subMonths(new Date(), 3));
-        break;
+        startDate = startOfQuarter(subMonths(new Date(), 3))
+        endDate = endOfQuarter(subMonths(new Date(), 3))
+        break
       case "Current Financial Year":
-        startDate = new Date(new Date().getFullYear(), 3, 1);
-        endDate = new Date(new Date().getFullYear() + 1, 2, 31);
-        break;
+        startDate = new Date(new Date().getFullYear(), 3, 1)
+        endDate = new Date(new Date().getFullYear() + 1, 2, 31)
+        break
       case "Previous Financial Year":
-        startDate = new Date(new Date().getFullYear() - 1, 3, 1);
-        endDate = new Date(new Date().getFullYear(), 2, 31);
-        break;
+        startDate = new Date(new Date().getFullYear() - 1, 3, 1)
+        endDate = new Date(new Date().getFullYear(), 2, 31)
+        break
       case "Last Year":
-        startDate = startOfYear(subMonths(new Date(), 12));
-        endDate = endOfYear(subMonths(new Date(), 12));
-        break;
+        startDate = startOfYear(subMonths(new Date(), 12))
+        endDate = endOfYear(subMonths(new Date(), 12))
+        break
       default:
-        startDate = endDate = new Date();
+        startDate = endDate = new Date()
     }
 
-    return { start: startDate, end: endDate };
-  };
+    return { start: startDate, end: endDate }
+  }
 
   const ranges = [
     "Today",
@@ -140,8 +181,8 @@ const DateRange = () => {
     "Last Quarter",
     "Current Financial Year",
     "Previous Financial Year",
-    "Last Year",
-  ];
+    "Last Year"
+  ]
 
   return (
     <div className="flex-col">
@@ -222,7 +263,7 @@ const DateRange = () => {
         </div>
 
         {ranges.map((rangeName) => {
-          const { start, end } = getRangeDates(rangeName);
+          const { start, end } = getRangeDates(rangeName)
 
           return (
             <div
@@ -240,11 +281,11 @@ const DateRange = () => {
                 {rangeName !== "Today" && ` - ${format(end, "dd-MMM-yyyy")}`}
               </span>
             </div>
-          );
+          )
         })}
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default DateRange;
+export default DateRange

@@ -29,10 +29,11 @@ export const saveDataFromTally = async (req, res) => {
       })
     }
  
+
     const partyIdValues = partyIds.map(p => p.partyId)
 
     const { Primary_user_id, cmp_id } = data[0];
-  
+
 
     const query = {
       Primary_user_id: {
@@ -57,20 +58,16 @@ export const saveDataFromTally = async (req, res) => {
     const accntgrpMap = Object.fromEntries(matchedAccountGrp.map(item => [item.accountGroup_id, item._id]))
     const matchedSubGrp = await subGroupModel.find({ Primary_user_id, cmp_id })
     const subGrpMap = Object.fromEntries(matchedSubGrp.map(item => [item.subGroup_id, item._id]))
-   
+
     const partyIdMap = Object.fromEntries(
       matchedParties.map(item => [item.party_master_id, item._id])
     )
-    const mathced = await TallyData.find({ cmp_id })
-    console.log("mathcedouts", mathced)
     const deleted = await TallyData.deleteMany({ Primary_user_id, cmp_id });
 
-
-
     if (deleted.deletedCount > 0) {
-      console.log(`✅ Deleted ${deleted.deletedCount} documents`);
+      console.log(`Deleted ${deleted.deletedCount} documents`);
     } else {
-      console.log("❌ No documents matched the criteria");
+      console.log("No documents matched the criteria");
     }
     const concurrencyLimit = 100;
     const results = [];
@@ -145,7 +142,7 @@ export const saveDataFromTally = async (req, res) => {
             if (subGroup_id && subGrpMap[subGroup_id]) {
               baseData.subGroup = subGrpMap[subGroup_id];
             }
-
+           
             const doc = new TallyData(baseData);
             return await doc.save();
           } catch (error) {

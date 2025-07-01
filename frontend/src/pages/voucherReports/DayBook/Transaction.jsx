@@ -41,7 +41,6 @@ function Transaction() {
       }`,
     [org?._id, start, end, selectedVoucher, selectedSecondaryUser]
   );
-
   // Fetch data using custom hook
   const { data: transactionData, loading: transactionLoading } =
     useFetch(transactionsUrl);
