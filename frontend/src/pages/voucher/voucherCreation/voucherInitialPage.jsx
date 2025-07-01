@@ -14,6 +14,8 @@ import {
   addAllAdditionalCharges,
   addVansSaleGodown,
   addVoucherSeries,
+  addNote,
+  addIsNoteOpen,
 } from "../../../../slices/voucherSlices/commonVoucherSlice";
 import DespatchDetails from "./DespatchDetails";
 import HeaderTile from "./HeaderTile";
@@ -83,6 +85,8 @@ function VoucherInitialPage() {
     mode,
     voucherSeries: voucherSeriesFromRedux,
     selectedVoucherSeries: selectedVoucherSeriesFromRedux,
+    note: noteFromRedux,
+    isNoteOpen: isNoteOpenFromRedux,
   } = useSelector((state) => state.commonVoucherSlice);
 
   const getApiEndPoint = () => {
@@ -338,6 +342,7 @@ function VoucherInitialPage() {
           stockTransferToGodown,
           items,
           finalAmount: 0,
+          note: noteFromRedux,
         };
       } else {
         formData = {
@@ -350,6 +355,7 @@ function VoucherInitialPage() {
           finalAmount: Number(totalAmount.toFixed(2)),
           party,
           items,
+          note: noteFromRedux,
           despatchDetails,
           priceLevelFromRedux,
           additionalChargesFromRedux,
@@ -411,7 +417,9 @@ function VoucherInitialPage() {
             tab="add"
             isLoading={submitLoading}
             mode={mode}
-            selectedVoucherSeriesFromRedux={selectedVoucherSeriesFromRedux || {}}
+            selectedVoucherSeriesFromRedux={
+              selectedVoucherSeriesFromRedux || {}
+            }
           />
           {/* adding party */}
 
@@ -458,7 +466,12 @@ function VoucherInitialPage() {
             openAdditionalTile={openAdditionalTile}
           />
 
-          <AddNoteTile/>
+          <AddNoteTile
+            noteFromRedux={noteFromRedux}
+            isNoteOpenFromRedux={isNoteOpenFromRedux}
+            addNote={addNote}
+            addIsNoteOpen={addIsNoteOpen}
+          />
 
           <div className="flex justify-between items-center bg-white mt-2 p-3">
             <p className="font-bold text-md">Total Amount</p>

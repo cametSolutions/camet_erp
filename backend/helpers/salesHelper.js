@@ -385,6 +385,7 @@ export const createSaleRecord = async (
       voucherType,
       series_id,
       usedSeriesNumber,
+      note
     } = req.body;
 
     const Primary_user_id = req.owner;
@@ -433,6 +434,7 @@ export const createSaleRecord = async (
       items: updatedItems,
       selectedPriceLevel: req.body.priceLevelFromRedux,
       additionalCharges: updateAdditionalCharge,
+      note,
       finalAmount,
       Primary_user_id,
       Secondary_user_id,
