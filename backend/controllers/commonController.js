@@ -220,7 +220,7 @@ export const transactions = async (req, res) => {
         message: "Invalid voucher type selected or all collections ignored",
       });
     }
-
+console.log("modes",modelsToQuery)
     // Create transaction promises based on selected voucher type
     const transactionPromises = modelsToQuery.map(
       ({ model, type, numberField }) =>
@@ -246,6 +246,7 @@ export const transactions = async (req, res) => {
       const amount = Number(transaction.enteredAmount) || 0;
       return sum + amount;
     }, 0);
+console.log("comdine",combined)
     if (combined.length > 0) {
       return res.status(200).json({
         message: `${selectedVoucher === "all"
@@ -266,7 +267,7 @@ export const transactions = async (req, res) => {
       //   data: { combined, totalTransactionAmount },
       // });
     } else {
-      return res.status(404).json({ message: "Transactions not found",});
+      return res.status(404).json({ message: "Transactions not found"});
     }
   } catch (error) {
     console.error(error);
