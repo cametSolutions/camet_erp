@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import api from "../../../api/api";
 import { toast } from "react-toastify";
 import { FaEdit, FaPhone } from "react-icons/fa";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { removeAll } from "../../../../slices/invoice";
 import { removeAllSales } from "../../../../slices/sales";
 import { useDispatch, useSelector } from "react-redux";
@@ -18,6 +18,7 @@ function RetailersList() {
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const dispatch = useDispatch();
+  const navigate=useNavigate();
 
   const companyFilter = useSelector(
     (state) => state?.companyFilter?.selectedCompany || {}
@@ -57,6 +58,17 @@ function RetailersList() {
       setFilteredUsers(secondaryUsers); // Reset to all users if no filter is selected
     }
   }, [companyFilter, secondaryUsers]);
+
+
+  const handleConfigNavigation = (user) => {
+    console.log(user);
+    
+    navigate(`/sUsers/configureUser/${user._id}`,{
+      state:user
+    });
+  };
+
+
 
   return (
     <section className="flex-1 text-gray-600  ">
@@ -103,11 +115,14 @@ function RetailersList() {
                     </div>
                   </div>
                   <div className="flex items-center space-x-5">
-                    <Link to={`/sUsers/configureUser/${user._id}`}>
-                      <button className="hover:text-gray-500 mt-1 ">
+                    {/* <Link to={`/sUsers/configureUser/${user._id}`}> */}
+
+                      <button
+                      onClick={() => handleConfigNavigation(user)}
+                       className="hover:text-gray-500 mt-1 ">
                         <AiFillSetting className="text-lg" />
                       </button>
-                    </Link>
+                    {/* </Link> */}
                     <Link to={`/sUsers/editUser/${user._id}`}>
                       <button className="text-blue-600 hover:text-blue-700 ">
                         <FaEdit className="text-base" />

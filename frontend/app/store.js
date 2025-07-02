@@ -22,11 +22,12 @@ import userFilter from "../slices/filterSlices/userFilter";
 import statusFilter from "../slices/filterSlices/statusFilter";
 import companyFilter from "../slices/filterSlices/companyFilter";
 import summaryFilter from "../slices/filterSlices/summaryFilter";
+import serialNumber from "../slices/filterSlices/serialNumberFilter";
 import partySlice from "../slices/partySlice";
 import paymentSplitting from "../slices/filterSlices/paymentSplitting/paymentSplitting"
 import barcode from "../slices/barcodeSlice";
-import  commonVoucherSlice  from "../slices/voucherSlices/commonVoucherSlice";
-import  commonAccountingVoucherSlice  from "../slices/voucherSlices/commonAccountingVoucherSlice";
+import commonVoucherSlice from "../slices/voucherSlices/commonVoucherSlice";
+import commonAccountingVoucherSlice from "../slices/voucherSlices/commonAccountingVoucherSlice";
 
 export const store = configureStore({
   reducer: {
@@ -56,6 +57,7 @@ export const store = configureStore({
     barcode,
     companyFilter,
     summaryFilter,
+    serialNumber,
     commonVoucherSlice,
     commonAccountingVoucherSlice
   },

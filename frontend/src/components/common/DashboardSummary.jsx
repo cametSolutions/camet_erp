@@ -21,6 +21,7 @@ const DashboardSummary = () => {
   const cmp_id = useSelector(
     (state) => state?.secSelectedOrganization?.secSelectedOrg?._id
   );
+console.log(cmp_id)
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const {

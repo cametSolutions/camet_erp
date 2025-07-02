@@ -872,10 +872,15 @@ export const allocateCompany = async (req, res) => {
     secUser.organization=[...selectedCompanies];
     const result = await secUser.save();
 
+    const updatedUser = await SecondaryUser.findById(userId).populate({
+      path: "organization",
+      select: "_id name",});
+
     if (result) {
       return res
         .status(200)
-        .json({ success: true, message: "User configuration is successful" });
+        .json({ success: true, message: "User configuration is successful",data:updatedUser });
+        
     } else {
       return res
         .status(400)

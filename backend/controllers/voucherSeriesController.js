@@ -22,17 +22,17 @@ const checkForDuplicateSeries = (
     const sameNameAndAll =
       sameName &&
       (s.suffix?.trim().toLowerCase() || "") ===
-        (newSeries.suffix?.trim().toLowerCase() || "") &&
+      (newSeries.suffix?.trim().toLowerCase() || "") &&
       (s.prefix?.trim().toLowerCase() || "") ===
-        (newSeries.prefix?.trim().toLowerCase() || "") &&
+      (newSeries.prefix?.trim().toLowerCase() || "") &&
       s.widthOfNumericalPart === newSeries.widthOfNumericalPart;
 
     // Check 3: Same suffix + prefix + width (regardless of name)
     const samePrefixSuffixWidth =
       (s.suffix?.trim().toLowerCase() || "") ===
-        (newSeries.suffix?.trim().toLowerCase() || "") &&
+      (newSeries.suffix?.trim().toLowerCase() || "") &&
       (s.prefix?.trim().toLowerCase() || "") ===
-        (newSeries.prefix?.trim().toLowerCase() || "") &&
+      (newSeries.prefix?.trim().toLowerCase() || "") &&
       s.widthOfNumericalPart === newSeries.widthOfNumericalPart;
 
     console.log(sameName, sameNameAndAll, samePrefixSuffixWidth);
@@ -54,7 +54,7 @@ export const getSeriesByVoucher = async (req, res) => {
     }
 
     const seriesDoc = await VoucherSeries.findOne({
-      voucherType,
+      voucherType: voucherType === "sale" ? "sales" : voucherType,
       cmp_id,
     }).lean();
 

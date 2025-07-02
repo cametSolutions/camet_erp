@@ -1058,7 +1058,7 @@ function SalesSummaryTable() {
          />
         {/* <button onClick={()=>{exportToExcel(summaryReport,selectedOption)}}>convet</button> */}
         <SelectDate />
-        <div className="flex px-2  bg-white shadow-lg border-t shadow-lg">
+        <div className="flex px-2  bg-white  border-t shadow-lg">
           <SummmaryDropdown />
         </div>
       </div>
