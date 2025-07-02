@@ -20,6 +20,7 @@ export default function SummaryReport() {
   const dispatch = useDispatch()
   const { summaryType } = location.state
   const { start, end } = useSelector((state) => state.date)
+ 
   const isAdmin =
     JSON.parse(localStorage.getItem("sUserData")).role === "admin"
       ? true
@@ -66,35 +67,38 @@ export default function SummaryReport() {
     [start]
   )
   const normalizedEnd = useMemo(() => endOfDay(end).toISOString(), [end])
-  const { data: voucherwisesummary } = useQuery({
-    queryKey: [
-      "voucherSummary",
-      cmp_id,
-      voucherType.value,
-      normalizedStart,
-      normalizedEnd,
-      serialNumber.value
-    ],
-    queryFn: async () => {
-      const res = await api.get(
-        `/api/sUsers/transactions/${cmp_id}?startOfDayParam=${start}&endOfDayParam=${end}&selectedVoucher=${
-          voucherType?.value
-        }&isAdmin=${isAdmin}&selectedSecondaryUser=${
-          selectedSecondaryUser?._id || ""
-        }&summaryType=${summaryType}`,
-        { withCredentials: true }
-      )
-      return res.data
-    },
-    enabled:
-      !!cmp_id &&
-      !!voucherType.value &&
-      voucherType.title !== "All Vouchers" &&
-      selectedOption === "voucher",
+  console.log(normalizedStart)
+  console.log(normalizedEnd)
+  const { data: voucherwisesummary = [], isFetching: voucherFetching } =
+    useQuery({
+      queryKey: [
+        "voucherSummary",
+        cmp_id,
+        voucherType.value,
+        start,
+        end,
+        serialNumber.value
+      ],
+      queryFn: async () => {
+        const res = await api.get(
+          `/api/sUsers/transactions/${cmp_id}?startOfDayParam=${start}&endOfDayParam=${end}&selectedVoucher=${
+            voucherType?.value
+          }&isAdmin=${isAdmin}&selectedSecondaryUser=${
+            selectedSecondaryUser?._id || ""
+          }&summaryType=${summaryType}&serialNumber=${serialNumber.value}`,
+          { withCredentials: true }
+        )
+        return res.data
+      },
+      enabled:
+        !!cmp_id &&
+        !!voucherType.value &&
+        voucherType.title !== "All Vouchers" &&
+        selectedOption === "voucher",
 
-    staleTime: 30000,
-    retry: false
-  })
+      staleTime: 30000,
+      retry: false
+    })
 
   const { data: serialNumberList } = useQuery({
     queryKey: ["serialNumbers", cmp_id, voucherType.value],
@@ -116,8 +120,8 @@ export default function SummaryReport() {
   const queryKey = [
     "summaryReport",
     {
-      normalizedStart,
-      normalizedEnd,
+      start,
+      end,
       voucherValue: voucherType?.value,
       serialNumberValue: serialNumber?.value,
       selectedOption,
@@ -127,8 +131,8 @@ export default function SummaryReport() {
   ]
   const isQueryReady =
     !!cmp_id &&
-    !!normalizedStart &&
-    !!normalizedEnd &&
+    !!start &&
+    !!end &&
     !!voucherType?.title &&
     voucherType.title !== "All Vouchers" &&
     !!summaryType &&
@@ -146,8 +150,8 @@ export default function SummaryReport() {
       try {
         const res = await api.get(`/api/sUsers/summaryReport/${cmp_id}`, {
           params: {
-            start: normalizedStart,
-            end: normalizedEnd,
+            start,
+            end,
             voucherType: voucherType?.value,
             selectedOption,
             summaryType,
@@ -174,7 +178,7 @@ export default function SummaryReport() {
     refetchOnWindowFocus: false // 👈 Disable auto-refetch on tab focus
   })
   useEffect(() => {
-    if (voucherwisesummary) {
+    if (voucherwisesummary && voucherwisesummary?.data?.combined?.length > 0) {
       const { incomeSum, expenseSum } = voucherwisesummary.data.combined.reduce(
         (acc, txn) => {
           const type = txn.type.toLowerCase()
@@ -241,7 +245,7 @@ export default function SummaryReport() {
       setProcessedSummary(result)
     }
   }, [data])
-
+  console.log(data)
   const totalAmount = useMemo(() => {
     return (
       processedSummary?.reduce(
@@ -257,6 +261,14 @@ export default function SummaryReport() {
   //     state: { summary: processedSummary }
   //   })
   // }
+  console.log(voucherwisesummary)
+  console.log(
+    !voucherFetching &&
+      voucherwisesummary?.data?.combined &&
+      selectedOption === "voucher" &&
+      voucherwisesummary?.data?.combined?.length === 0
+  )
+  console.log(voucherSum)
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <div className="sticky top-0 z-50">
@@ -267,7 +279,7 @@ export default function SummaryReport() {
         <section className="shadow-lg bg-white">
           <VoucherTypeFilter filterKeys={filterKeys} />
         </section>
-        {isFetching && (
+        {(isFetching || voucherFetching) && (
           <section className="w-full">
             <BarLoader color="#9900ff" width="100%" />
           </section>
@@ -338,6 +350,22 @@ export default function SummaryReport() {
               No data found
             </p>
           )}
+        {!voucherFetching &&
+          voucherwisesummary?.data?.combined &&
+          selectedOption === "voucher" &&
+          voucherwisesummary?.data?.combined?.length === 0 && (
+            <p className="text-gray-500 text-center font-bold mt-20">
+              No data found
+            </p>
+          )}
+        {!voucherFetching &&
+          voucherwisesummary &&
+          selectedOption === "voucher" &&
+          voucherwisesummary.length === 0 && (
+            <p className="text-gray-500 text-center font-bold mt-20">
+              No data found
+            </p>
+          )}
 
         {processedSummary &&
           selectedOption !== "voucher" &&
@@ -357,11 +385,13 @@ export default function SummaryReport() {
               ))}
             </div>
           )}
-        {selectedOption === "voucher" && voucherwisesummary && (
-          <DashboardTransaction
-            filteredData={voucherwisesummary.data.combined}
-          />
-        )}
+        {selectedOption === "voucher" &&
+          voucherwisesummary?.data?.combined &&
+          voucherwisesummary?.data?.combined?.length > 0 && (
+            <DashboardTransaction
+              filteredData={voucherwisesummary.data.combined}
+            />
+          )}
       </div>
     </div>
   )

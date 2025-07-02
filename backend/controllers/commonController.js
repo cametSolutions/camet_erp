@@ -33,7 +33,7 @@ export const transactions = async (req, res) => {
     selectedVoucher,
     fullDetails = "false",
     summaryType = "none",
-    serialNumber=null,
+    serialNumber = null,
     ignore = "", // New parameter for collections to ignore
     selectedSecondaryUser,
   } = req.query;
@@ -113,7 +113,9 @@ export const transactions = async (req, res) => {
           }
           : {}),
     };
-
+    if (serialNumber !== "all") {
+      matchCriteria.series_id = new mongoose.Types.ObjectId(serialNumber)
+    }
     // Define voucher type mappings
     const voucherTypeMap = {
       sale: [
@@ -205,8 +207,7 @@ export const transactions = async (req, res) => {
     let modelsToQuery = selectedVoucher
       ? (selectedVoucher === "allType" && summaryType === "Sales Summary") ? voucherTypeMap.saleType : (selectedVoucher === "allType" && summaryType === "Purchase Summary") ? voucherTypeMap.purchaseType : voucherTypeMap[selectedVoucher]
       : voucherTypeMap.all;
-      console.log(modelsToQuery);
-      
+
     // Filter out ignored collections
     modelsToQuery = modelsToQuery.filter(
       ({ type }) =>
@@ -245,14 +246,13 @@ export const transactions = async (req, res) => {
       const amount = Number(transaction.enteredAmount) || 0;
       return sum + amount;
     }, 0);
-
     if (combined.length > 0) {
       return res.status(200).json({
         message: `${selectedVoucher === "all"
-            ? "All transactions"
-            : selectedVoucher === "allType"
-              ? "All"
-              : `${voucherTypeMap[selectedVoucher]?.[0]?.type} transactions`
+          ? "All transactions"
+          : selectedVoucher === "allType"
+            ? "All"
+            : `${voucherTypeMap[selectedVoucher]?.[0]?.type} transactions`
           } fetched${todayOnly === "true" ? " for today" : ""}`,
         data: { combined, totalTransactionAmount },
       });
@@ -266,7 +266,7 @@ export const transactions = async (req, res) => {
       //   data: { combined, totalTransactionAmount },
       // });
     } else {
-      return res.status(404).json({ message: "Transactions not found" });
+      return res.status(404).json({ message: "Transactions not found",});
     }
   } catch (error) {
     console.error(error);

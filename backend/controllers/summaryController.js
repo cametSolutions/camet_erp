@@ -129,6 +129,7 @@ export const getSummaryReport = async (req, res) => {
       cmp_id: companyObjectId,
     };
 
+
     // Define summary type mappings
     const summaryTypeMap = {
       sale: [{ model: salesModel, numberField: "salesNumber", type: "sale" }],
@@ -160,7 +161,7 @@ export const getSummaryReport = async (req, res) => {
         },
       ],
     };
-  
+
     // Handle special case for "sale" which should include both sale and vanSale
     let modelsToQuery = [];
     if (voucherType === "allType") {
