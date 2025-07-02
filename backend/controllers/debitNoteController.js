@@ -33,6 +33,7 @@ export const createDebitNote = async (req, res) => {
       orgId,
       items,
       additionalChargesFromRedux,
+      note,
       finalAmount: lastAmount,
       selectedDate,
       voucherType,
@@ -227,6 +228,7 @@ export const editDebitNote = async (req, res) => {
       additionalChargesFromRedux,
       finalAmount: lastAmount,
       selectedDate,
+      note
     } = req.body;
 
     let { debitNoteNumber, series_id, usedSeriesNumber } = req.body;
@@ -274,6 +276,7 @@ export const editDebitNote = async (req, res) => {
       despatchDetails,
       items,
       additionalCharges: additionalChargesFromRedux,
+      note,
       finalAmount: lastAmount,
       Primary_user_id: req.owner,
       Secondary_user_id: req.secondaryUserId,

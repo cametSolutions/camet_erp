@@ -37,6 +37,7 @@ export const createStockTransfer = async (req, res) => {
       stockTransferToGodown,
       items,
       finalAmount: lastAmount,
+      note,
       series_id,
       voucherType,
     } = req.body;
@@ -71,6 +72,8 @@ export const createStockTransfer = async (req, res) => {
       lastAmount,
       req,
       session, // Pass session to all database operations
+      note,
+
     };
 
     const addSerialNumber = await getNewSerialNumber(
@@ -127,6 +130,7 @@ export const editStockTransfer = async (req, res) => {
       stockTransferToGodown, // Fixing the variable name to match other functions
       items,
       finalAmount: lastAmount,
+      note,
     } = req.body;
 
     let { stockTransferNumber, series_id, usedSeriesNumber } = req.body;
@@ -195,6 +199,7 @@ export const editStockTransfer = async (req, res) => {
       stockTransferToGodown: stockTransferToGodown,
       items: items,
       finalAmount: lastAmount,
+      note: note,
       updatedAt: new Date(),
       updatedBy: req.sUserId, // Track who made the update
     };

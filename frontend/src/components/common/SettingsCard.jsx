@@ -2,6 +2,7 @@
 import { IoSettings } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 import ToggleButton from "./buttons/ToggleButton";
+import { data } from "autoprefixer";
 
 function SettingsCard({
   option,
@@ -20,7 +21,8 @@ function SettingsCard({
       } else {
         navigate(option?.to,{
           state: {
-            from: option?.from
+            from: option?.from,
+            data: option?.data
           },
         });
       }

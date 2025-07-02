@@ -220,6 +220,9 @@ const salesSchema = new Schema(
         finalValue: { type: Number },
       },
     ],
+    
+
+    note: { type: String },
 
     finalAmount: { type: Number, required: true },
     paymentSplittingData: { type: Object },

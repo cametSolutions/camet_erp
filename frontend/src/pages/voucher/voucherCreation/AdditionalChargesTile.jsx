@@ -173,7 +173,7 @@ export default function AdditionalChargesTile({
   return (
     <>
       {voucherTypeFromRedux !== "stockTransfer" && (
-        <div className="w-full bg-white py-4 mt-2">
+        <div className="w-full bg-white py-3 mt-2">
           {openAdditionalTile && type !== "stockTransfer" ? (
             <div className="container  bg-white p-4  text-xs">
               <div className="flex  items-center justify-between  font-bold  text-[13px]">

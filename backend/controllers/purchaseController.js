@@ -167,6 +167,7 @@ export const editPurchase = async (req, res) => {
       additionalChargesFromRedux,
       finalAmount: lastAmount,
       selectedDate,
+      note
     } = req.body;
 
     let { purchaseNumber, series_id, usedSeriesNumber } = req.body;
@@ -220,6 +221,7 @@ export const editPurchase = async (req, res) => {
       despatchDetails,
       items,
       additionalCharges: additionalChargesFromRedux,
+      note,
       finalAmount: lastAmount,
       Primary_user_id: req.owner,
       Secondary_user_id: req.secondaryUserId,

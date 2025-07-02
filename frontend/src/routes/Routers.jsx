@@ -121,6 +121,8 @@ import WarrantyCard from '@/pages/voucher/voucherPdf/warrantyCard/WarrantyCard'
 import WarrantyCardList from '@/pages/secUsers/settilngs/dataEntry/invoiceSettings/WarrantyCard/WarrantyCardList'
 import AddWarrantyCard from '@/pages/secUsers/settilngs/dataEntry/invoiceSettings/WarrantyCard/AddWarrantyCard'
 import EditWarrantyCard from '@/pages/secUsers/settilngs/dataEntry/invoiceSettings/WarrantyCard/EditWarrantyCard '
+import ConfigureRetailer from '@/pages/masters/secondaryUsers/RetailerConfiguration/ConfigureRetailer'
+import AllocateCompany from '@/pages/masters/secondaryUsers/RetailerConfiguration/AllocateCompany'
 
 const Routers = () => {
   return (
@@ -353,6 +355,8 @@ const Routers = () => {
       <Route path='/sUsers/addSecUsers' element={<ProtectedSecRoute><AddSecUsers/></ProtectedSecRoute>}></Route>
       <Route path='/sUsers/editUser/:id' element={<ProtectedSecRoute><EditSecUsers/></ProtectedSecRoute>}></Route>
       <Route path='/sUsers/configureSecondaryUser/:id/:userId/:cmp_name' element={<ProtectedSecRoute><ConfigureSecondaryUser/></ProtectedSecRoute>}></Route>
+      <Route path='/sUsers/configureUser/:userId' element={<ProtectedSecRoute><ConfigureRetailer/></ProtectedSecRoute>}></Route>
+      <Route path='/sUsers/allocateCompany' element={<ProtectedSecRoute><AllocateCompany/></ProtectedSecRoute>}></Route>
 
       {/* outstanding  */}
       <Route path='/sUsers/outstandingSummary' element={<ProtectedSecRoute><OutstandingSummary/></ProtectedSecRoute>}></Route>

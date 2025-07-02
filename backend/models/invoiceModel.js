@@ -208,6 +208,8 @@ const invoiceSchema = new Schema(
       },
     ],
 
+    note: { type: String },
+
     finalAmount: { type: Number, required: true },
     paymentSplittingData: { type: Object },
     isCancelled: { type: Boolean, default: false },

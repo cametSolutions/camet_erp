@@ -1,15 +1,6 @@
-// import { MdTextsms } from "react-icons/md";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-
-// import { FaEdit } from "react-icons/fa";
-import {
-  // useNavigate,
-  useLocation,
-} from "react-router-dom";
-import SalesProductDetails from "./SalesProductDetails";
-// import SwallFireForPdf from "../../../components/common/SwallFireForPdf";
-// import CancelButton from "../../../components/common/CancelButton";
+import { useLocation } from "react-router-dom";
 import VoucherDetailsHeader from "./VoucherDetailsHeader";
 import PaymentSplittingDetails from "../../../components/secUsers/main/paymentSplitting/PaymentSplittingDetails";
 import VoucherDetailsParty from "./VoucherDetailsParty";
@@ -18,6 +9,8 @@ import TitleDiv from "@/components/common/TitleDiv";
 import { formatVoucherType } from "../../../../utils/formatVoucherType";
 import VoucherDetailsActionButtons from "./actionButtons/VoucherDetailsActionButtons";
 import VoucherDetailsToGodown from "./VoucherDetailsToGodown";
+import VoucherDetailsProduct from "./VoucherDetailsProduct";
+import VoucherDetailsNote from "./VoucherDetailsNote";
 
 function VoucherDetails() {
   const [data, setData] = useState("");
@@ -82,8 +75,10 @@ function VoucherDetails() {
   };
 
   const wholeLoading = loading || actionLoading;
+
+  
   return (
-    <div className="bg-[rgb(244,246,254)] flex-1  relative  pb-[70px] md:pb-0  ">
+    <div className="bg-[rgb(244,246,254)] flex-1  relative  pb-2   ">
       {/* headinh section  */}
       <TitleDiv
         title={
@@ -108,12 +103,12 @@ function VoucherDetails() {
           />
 
           {data?.voucherType === "stockTransfer" ? (
-           <VoucherDetailsToGodown data={data} />
+            <VoucherDetailsToGodown data={data} />
           ) : (
             <VoucherDetailsParty data={data} />
           )}
 
-          <SalesProductDetails
+          <VoucherDetailsProduct
             data={data}
             items={data?.items}
             priceLevel={data?.priceLevel}
@@ -121,6 +116,8 @@ function VoucherDetails() {
             paymentSplittingData={data?.paymentSplittingData}
           />
 
+          {/* notes */}
+          <VoucherDetailsNote note={data?.note} />
           {data?.paymentSplittingData &&
             data?.paymentSplittingData?.splittingData?.length > 0 && (
               <PaymentSplittingDetails data={data?.paymentSplittingData} />
@@ -130,28 +127,6 @@ function VoucherDetails() {
 
           <div className=" block sm:hidden z-0 ">
             <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 flex justify-center p-4 gap-12 text-lg text-violet-500  ">
-              {/* <CancelButton
-                id={data._id}
-                tab="Sales"
-                isCancelled={data?.isCancelled}
-                reFetch={reFetch}
-                isEditable={data?.isEditable}
-              />
-
-              <div
-                onClick={handleEdit}
-                className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer"
-              >
-                <FaEdit className="text-blue-500" />
-                <p className="text-black font-bold text-sm">Edit</p>
-              </div>
-              <SwallFireForPdf data={data} />
-
-              <div className="flex flex-col justify-center items-center transition-all duration-150 transform hover:scale-110  cursor-pointer">
-                <MdTextsms className="text-green-500" />
-                <p className="text-black font-bold text-sm">Sms</p>
-              </div> */}
-
               <VoucherDetailsActionButtons
                 data={data}
                 reFetch={refreshHook}

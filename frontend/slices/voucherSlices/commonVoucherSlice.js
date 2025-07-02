@@ -41,7 +41,9 @@ const initialState = {
   stockTransferToGodown: null,
   billToParty: {},
   shipToParty: {},
-  warrantyCardsList:null,
+  warrantyCardsList: null,
+  note: null,
+  isNoteOpen: false,
 };
 
 export const commonVoucherSlice = createSlice({
@@ -467,6 +469,13 @@ export const commonVoucherSlice = createSlice({
     addWarrantyCardsList: (state, action) => {
       state.warrantyCardsList = action.payload;
     },
+    addNote: (state, action) => {
+      state.note = action.payload;
+    },
+
+    addIsNoteOpen: (state, action) => {
+      state.isNoteOpen = action.payload;
+    },
   },
 });
 
@@ -526,7 +535,9 @@ export const {
   addVoucherSeries,
   addSelectedVoucherSeries,
   addSelectedVoucherSeriesForEdit,
-  addWarrantyCardsList
+  addWarrantyCardsList,
+  addNote,
+  addIsNoteOpen,
 } = commonVoucherSlice.actions;
 
 export default commonVoucherSlice.reducer;

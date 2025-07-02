@@ -195,6 +195,7 @@ export const editSale = async (req, res) => {
     despatchDetails,
     priceLevelFromRedux,
     additionalChargesFromRedux,
+    note,
     finalAmount: lastAmount,
 
     selectedDate,
@@ -257,6 +258,7 @@ export const editSale = async (req, res) => {
         items,
         priceLevel: priceLevelFromRedux,
         additionalCharges: additionalChargesFromRedux,
+        note,
         finalAmount: lastAmount,
         Primary_user_id: req.owner,
         Secondary_user_id: req.secondaryUserId,

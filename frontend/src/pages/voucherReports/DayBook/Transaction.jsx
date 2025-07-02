@@ -25,6 +25,9 @@ function Transaction() {
     (state) => state?.userFilter?.selectedUser
   );
 
+  console.log(selectedSecondaryUser);
+  
+
   const isAdmin =
     JSON.parse(localStorage.getItem("sUserData")).role === "admin"
       ? true
