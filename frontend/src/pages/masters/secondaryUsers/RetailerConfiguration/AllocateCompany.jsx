@@ -92,7 +92,7 @@ const AllocateCompany = () => {
 
   // Set pre-selected companies when user details are loaded
   useEffect(() => {
-    const userOrganizations = userDetailsData.data.organization;
+    const userOrganizations = userDetailsData?.data?.organization || [];
     if (userOrganizations) {
       setSelectedCompanies(userOrganizations);
     }
