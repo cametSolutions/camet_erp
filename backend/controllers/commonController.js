@@ -20,8 +20,264 @@ import TallyData from "../models/TallyData.js";
 import OragnizationModel from "../models/OragnizationModel.js";
 import nodemailer from "nodemailer";
 
+/////
 // @desc to  get transactions
 // route get/api/sUsers/transactions
+// export const transactions = async (req, res) => {
+//   const userId = req.sUserId;
+//   const cmp_id = req.params.cmp_id;
+//   const {
+//     todayOnly,
+//     startOfDayParam,
+//     endOfDayParam,
+//     party_id,
+//     selectedVoucher,
+//     fullDetails = "false",
+//     summaryType = "none",
+//     serialNumber = null,
+//     ignore = "", // New parameter for collections to ignore
+//     selectedSecondaryUser,
+//   } = req.query;
+
+//   const isAdmin = req.query.isAdmin === "true" ? true : false;
+
+//   let returnFullDetails = false;
+//   if (fullDetails === "true") {
+//     returnFullDetails = true;
+//   }
+
+//   try {
+//     // Parse ignore parameter - split by comma to handle multiple collections
+//     const ignoredCollections = ignore
+//       .split(",")
+//       .map((item) => item.trim().toLowerCase());
+
+//     // Initialize dateFilter based on provided parameters
+//     let dateFilter = {};
+//     if (startOfDayParam && endOfDayParam) {
+//       const startDate = parseISO(startOfDayParam);
+//       const endDate = parseISO(endOfDayParam);
+//       dateFilter = {
+//         date: {
+//           $gte: startOfDay(startDate),
+//           $lte: endOfDay(endDate),
+//         },
+//       };
+//     } else if (todayOnly === "true") {
+//       const today = new Date();
+//       dateFilter = {
+//         date: {
+//           $gte: new Date(
+//             Date.UTC(
+//               today.getUTCFullYear(),
+//               today.getUTCMonth(),
+//               today.getUTCDate(),
+//               0,
+//               0,
+//               0,
+//               0
+//             )
+//           ),
+//           $lte: new Date(
+//             Date.UTC(
+//               today.getUTCFullYear(),
+//               today.getUTCMonth(),
+//               today.getUTCDate(),
+//               23,
+//               59,
+//               59,
+//               999
+//             )
+//           ),
+//         },
+//       };
+//     }
+//     // Apply user filtering:
+//     // - If not an admin → filter with logged-in user's ID
+//     // - If admin:
+//     //    - If a secondary user is selected → filter with selected user's _id
+//     //    - If no secondary user selected → don't apply user filter
+
+//     const matchCriteria = {
+//       ...dateFilter,
+//       cmp_id: new mongoose.Types.ObjectId(cmp_id),
+//       ...(party_id
+//         ? { "party._id": new mongoose.Types.ObjectId(party_id) }
+//         : {}),
+//       ...(!isAdmin
+//         ? { Secondary_user_id: new mongoose.Types.ObjectId(userId) }
+//         : selectedSecondaryUser
+//           ? {
+//             Secondary_user_id: new mongoose.Types.ObjectId(
+//               selectedSecondaryUser
+//             ),
+//           }
+//           : {}),
+//     };
+//     if (serialNumber !== "all") {
+//       matchCriteria.series_id = new mongoose.Types.ObjectId(serialNumber)
+//     }
+//     // Define voucher type mappings
+//     const voucherTypeMap = {
+//       sale: [
+//         { model: salesModel, type: "Tax Invoice", numberField: "salesNumber" },
+//       ],
+//       saleOrder: [
+//         { model: invoiceModel, type: "Sale Order", numberField: "orderNumber" },
+//       ],
+//       vanSale: [
+//         { model: vanSaleModel, type: "Van Sale", numberField: "salesNumber" },
+//       ],
+//       purchase: [
+//         {
+//           model: purchaseModel,
+//           type: "Purchase",
+//           numberField: "purchaseNumber",
+//         },
+//       ],
+//       debitNote: [
+//         {
+//           model: debitNoteModel,
+//           type: "Debit Note",
+//           numberField: "debitNoteNumber",
+//         },
+//       ],
+//       creditNote: [
+//         {
+//           model: creditNoteModel,
+//           type: "Credit Note",
+//           numberField: "creditNoteNumber",
+//         },
+//       ],
+//       receipt: [
+//         { model: receiptModel, type: "Receipt", numberField: "receiptNumber" },
+//       ],
+//       payment: [
+//         { model: paymentModel, type: "Payment", numberField: "paymentNumber" },
+//       ],
+//       stockTransfer: [
+//         {
+//           model: stockTransferModel,
+//           type: "Stock Transfer",
+//           numberField: "stockTransferNumber",
+//         },
+//       ],
+//       saleType: [
+//         { model: salesModel, type: "Tax Invoice", numberField: "salesNumber" },
+//         { model: vanSaleModel, type: "Van Sale", numberField: "salesNumber" },
+//         {
+//           model: creditNoteModel,
+//           type: "Credit Note",
+//           numberField: "creditNoteNumber",
+//         }
+//       ],
+//       purchaseType: [
+//         { model: purchaseModel, type: "Purchase", numberField: "purchaseNumber" },
+//         { model: debitNoteModel, type: "Debit Note", numberField: "debitNoteNumber" }
+//       ],
+//       all: [
+//         { model: salesModel, type: "Tax Invoice", numberField: "salesNumber" },
+//         { model: invoiceModel, type: "Sale Order", numberField: "orderNumber" },
+//         { model: vanSaleModel, type: "Van Sale", numberField: "salesNumber" },
+//         {
+//           model: purchaseModel,
+//           type: "Purchase",
+//           numberField: "purchaseNumber",
+//         },
+//         {
+//           model: debitNoteModel,
+//           type: "Debit Note",
+//           numberField: "debitNoteNumber",
+//         },
+//         {
+//           model: creditNoteModel,
+//           type: "Credit Note",
+//           numberField: "creditNoteNumber",
+//         },
+//         { model: receiptModel, type: "Receipt", numberField: "receiptNumber" },
+//         { model: paymentModel, type: "Payment", numberField: "paymentNumber" },
+//         {
+//           model: stockTransferModel,
+//           type: "Stock Transfer",
+//           numberField: "stockTransferNumber",
+//         },
+//       ],
+//     };
+
+//     // Get the appropriate models to query based on selectedVoucher
+//     let modelsToQuery = selectedVoucher
+//       ? (selectedVoucher === "allType" && summaryType === "Sales Summary") ? voucherTypeMap.saleType : (selectedVoucher === "allType" && summaryType === "Purchase Summary") ? voucherTypeMap.purchaseType : voucherTypeMap[selectedVoucher]
+//       : voucherTypeMap.all;
+
+//     // Filter out ignored collections
+//     modelsToQuery = modelsToQuery.filter(
+//       ({ type }) =>
+//         !ignoredCollections.includes(type.toLowerCase().replace(/\s+/g, ""))
+//     );
+
+//     if (!modelsToQuery || modelsToQuery.length === 0) {
+//       return res.status(400).json({
+//         status: false,
+//         message: "Invalid voucher type selected or all collections ignored",
+//       });
+//     }
+// console.log("modes",modelsToQuery)
+//     // Create transaction promises based on selected voucher type
+//     const transactionPromises = modelsToQuery.map(
+//       ({ model, type, numberField }) =>
+//         aggregateTransactions(
+//           model,
+//           {
+//             ...matchCriteria,
+//             // ...(userId && !isAdmin ? { Secondary_user_id: userId } : {}),
+//           },
+//           type,
+//           numberField,
+//           returnFullDetails
+//         )
+//     );
+
+//     const results = await Promise.all(transactionPromises);
+
+//     const combined = results
+//       .flat()
+//       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+//     const totalTransactionAmount = combined.reduce((sum, transaction) => {
+//       const amount = Number(transaction.enteredAmount) || 0;
+//       return sum + amount;
+//     }, 0);
+// console.log("comdine",combined)
+//     if (combined.length > 0) {
+//       return res.status(200).json({
+//         message: `${selectedVoucher === "all"
+//           ? "All transactions"
+//           : selectedVoucher === "allType"
+//             ? "All"
+//             : `${voucherTypeMap[selectedVoucher]?.[0]?.type} transactions`
+//           } fetched${todayOnly === "true" ? " for today" : ""}`,
+//         data: { combined, totalTransactionAmount },
+//       });
+
+//       // return res.status(200).json({
+//       //   message: `${selectedVoucher === "all"
+//       //     ? "All transactions"
+//       //     : selectedVoucher === "allType" ? "All" :
+//       //     : `${voucherTypeMap[selectedVoucher]?.[0]?.type} transactions`
+//       //     } fetched${ todayOnly === "true" ? " for today" : "" } `,
+//       //   data: { combined, totalTransactionAmount },
+//       // });
+//     } else {
+//       return res.status(404).json({ message: "Transactions not found"});
+//     }
+//   } catch (error) {
+//     console.error(error);
+//     return res.status(500).json({
+//       status: false,
+//       message: "Internal server error",
+//     });
+//   }
+// };
 export const transactions = async (req, res) => {
   const userId = req.sUserId;
   const cmp_id = req.params.cmp_id;
@@ -32,8 +288,6 @@ export const transactions = async (req, res) => {
     party_id,
     selectedVoucher,
     fullDetails = "false",
-    summaryType = "none",
-    serialNumber = null,
     ignore = "", // New parameter for collections to ignore
     selectedSecondaryUser,
   } = req.query;
@@ -113,9 +367,7 @@ export const transactions = async (req, res) => {
           }
           : {}),
     };
-    if (serialNumber !== "all") {
-      matchCriteria.series_id = new mongoose.Types.ObjectId(serialNumber)
-    }
+
     // Define voucher type mappings
     const voucherTypeMap = {
       sale: [
@@ -161,19 +413,6 @@ export const transactions = async (req, res) => {
           numberField: "stockTransferNumber",
         },
       ],
-      saleType: [
-        { model: salesModel, type: "Tax Invoice", numberField: "salesNumber" },
-        { model: vanSaleModel, type: "Van Sale", numberField: "salesNumber" },
-        {
-          model: creditNoteModel,
-          type: "Credit Note",
-          numberField: "creditNoteNumber",
-        }
-      ],
-      purchaseType: [
-        { model: purchaseModel, type: "Purchase", numberField: "purchaseNumber" },
-        { model: debitNoteModel, type: "Debit Note", numberField: "debitNoteNumber" }
-      ],
       all: [
         { model: salesModel, type: "Tax Invoice", numberField: "salesNumber" },
         { model: invoiceModel, type: "Sale Order", numberField: "orderNumber" },
@@ -205,7 +444,7 @@ export const transactions = async (req, res) => {
 
     // Get the appropriate models to query based on selectedVoucher
     let modelsToQuery = selectedVoucher
-      ? (selectedVoucher === "allType" && summaryType === "Sales Summary") ? voucherTypeMap.saleType : (selectedVoucher === "allType" && summaryType === "Purchase Summary") ? voucherTypeMap.purchaseType : voucherTypeMap[selectedVoucher]
+      ? voucherTypeMap[selectedVoucher]
       : voucherTypeMap.all;
 
     // Filter out ignored collections
@@ -246,27 +485,17 @@ export const transactions = async (req, res) => {
       const amount = Number(transaction.enteredAmount) || 0;
       return sum + amount;
     }, 0);
+
     if (combined.length > 0) {
       return res.status(200).json({
         message: `${selectedVoucher === "all"
-          ? "All transactions"
-          : selectedVoucher === "allType"
-            ? "All"
+            ? "All transactions"
             : `${voucherTypeMap[selectedVoucher]?.[0]?.type} transactions`
           } fetched${todayOnly === "true" ? " for today" : ""}`,
         data: { combined, totalTransactionAmount },
       });
-
-      // return res.status(200).json({
-      //   message: `${selectedVoucher === "all"
-      //     ? "All transactions"
-      //     : selectedVoucher === "allType" ? "All" :
-      //     : `${voucherTypeMap[selectedVoucher]?.[0]?.type} transactions`
-      //     } fetched${ todayOnly === "true" ? " for today" : "" } `,
-      //   data: { combined, totalTransactionAmount },
-      // });
     } else {
-      return res.status(404).json({ message: "Transactions not found",});
+      return res.status(404).json({ message: "Transactions not found" });
     }
   } catch (error) {
     console.error(error);
@@ -275,7 +504,7 @@ export const transactions = async (req, res) => {
       message: "Internal server error",
     });
   }
-};
+}
 
 // @desc adding new Hsn
 // route POst/api/pUsers/addHsn
