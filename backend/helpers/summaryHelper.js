@@ -6,7 +6,6 @@ export const aggregateSummary = async (
   selectedOption,
   serialNumber
 ) => {
-
   try {
     const results = await model.aggregate([{ $match: matchCriteria }]);
     // Add type to each result to identify its source if not already included in projection

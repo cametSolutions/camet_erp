@@ -47,7 +47,7 @@ function RemoveReduxData() {
     dispatch(removeAllForCommonVoucher())
     dispatch(removeAllForCommonAccountingVoucher())
     dispatch(removeAllSerialNumber())
-    dispatch(removeAllSummaryType)
+    dispatch(removeAllSummaryType())
     localStorage.removeItem("voucherType")
   }, [dispatch]) // Adding dispatch to the dependency array
 

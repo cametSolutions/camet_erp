@@ -1,7 +1,5 @@
 import { useLocation } from "react-router-dom"
 import { useQuery } from "@tanstack/react-query"
-// import { useNavigate } from "react-router-dom"
-import axios from "axios"
 import { useDispatch, useSelector } from "react-redux"
 import { useEffect, useMemo, useState } from "react"
 import { startOfDay, endOfDay } from "date-fns"
@@ -13,7 +11,7 @@ import VoucherTypeFilter from "@/components/Filters/VoucherTypeFilter"
 import { setSelectedVoucher } from "../../../.././slices/filterSlices/voucherType"
 import { setSelectedSerialNumber } from "../../../.././slices/filterSlices/serialNumberFilter"
 import DashboardTransaction from "@/components/common/DashboardTransaction"
-
+import api from "@/api/api"
 export default function SummaryReport() {
   const [processedSummary, setProcessedSummary] = useState([])
   const [voucherSum, setVocherSum] = useState(0)
@@ -69,11 +67,17 @@ export default function SummaryReport() {
   )
   const normalizedEnd = useMemo(() => endOfDay(end).toISOString(), [end])
   const { data: voucherwisesummary } = useQuery({
-    queryKey: ["voucherSummary", cmp_id, voucherType.value, normalizedStart,
-      normalizedEnd,serialNumber.value],
+    queryKey: [
+      "voucherSummary",
+      cmp_id,
+      voucherType.value,
+      normalizedStart,
+      normalizedEnd,
+      serialNumber.value
+    ],
     queryFn: async () => {
-      const res = await axios.get(
-        `http://localhost:7000/api/sUsers/transactions/${cmp_id}?startOfDayParam=${start}&endOfDayParam=${end}&selectedVoucher=${
+      const res = await api.get(
+        `/api/sUsers/transactions/${cmp_id}?startOfDayParam=${start}&endOfDayParam=${end}&selectedVoucher=${
           voucherType?.value
         }&isAdmin=${isAdmin}&selectedSecondaryUser=${
           selectedSecondaryUser?._id || ""
@@ -88,15 +92,15 @@ export default function SummaryReport() {
       voucherType.title !== "All Vouchers" &&
       selectedOption === "voucher",
 
-    staleTime: 60000,
+    staleTime: 30000,
     retry: false
   })
 
   const { data: serialNumberList } = useQuery({
     queryKey: ["serialNumbers", cmp_id, voucherType.value],
     queryFn: async () => {
-      const res = await axios.get(
-        `http://localhost:7000/api/sUsers/getSeriesByVoucher/${cmp_id}?voucherType=${voucherType.value}`,
+      const res = await api.get(
+        `/api/sUsers/getSeriesByVoucher/${cmp_id}?voucherType=${voucherType.value}`,
         { withCredentials: true } // 👈 Include cookies)
       )
       return res.data
@@ -109,7 +113,6 @@ export default function SummaryReport() {
     staleTime: 30000,
     retry: false
   })
-  console.log(serialNumber.value)
   const queryKey = [
     "summaryReport",
     {
@@ -118,10 +121,12 @@ export default function SummaryReport() {
       voucherValue: voucherType?.value,
       serialNumberValue: serialNumber?.value,
       selectedOption,
-      summaryType
+      summaryType,
+      cmp_id
     }
   ]
   const isQueryReady =
+    !!cmp_id &&
     !!normalizedStart &&
     !!normalizedEnd &&
     !!voucherType?.title &&
@@ -130,28 +135,26 @@ export default function SummaryReport() {
     !!selectedOption &&
     selectedOption !== "voucher" &&
     !!serialNumber
-  const { data, 
-    // isLoading, 
-    isFetching, 
-    // refetch 
+  const {
+    data,
+    // isLoading,
+    isFetching
+    // refetch
   } = useQuery({
     queryKey,
     queryFn: async () => {
       try {
-        const res = await axios.get(
-          `http://localhost:7000/api/sUsers/summaryReport/${cmp_id}`,
-          {
-            params: {
-              start: normalizedStart,
-              end: normalizedEnd,
-              voucherType: voucherType?.value,
-              selectedOption,
-              summaryType,
-              serialNumber: serialNumber?.value
-            },
-            withCredentials: true // 👈 Include cookies
-          }
-        )
+        const res = await api.get(`/api/sUsers/summaryReport/${cmp_id}`, {
+          params: {
+            start: normalizedStart,
+            end: normalizedEnd,
+            voucherType: voucherType?.value,
+            selectedOption,
+            summaryType,
+            serialNumber: serialNumber?.value
+          },
+          withCredentials: true // 👈 Include cookies
+        })
 
         return res.data
       } catch (error) {
@@ -164,36 +167,31 @@ export default function SummaryReport() {
       }
     },
     enabled: isQueryReady,
-    staleTime: 1 * 60_000, // fresh for 1m
-    cacheTime: 1 * 60_000, // keep in memory for 1m after unmount
+    staleTime: 30000, // fresh for 1m
+    // cacheTime: 60000, // keep in memory for 1m after unmount
     retry: false,
     refetchOnMount: false,
     refetchOnWindowFocus: false // 👈 Disable auto-refetch on tab focus
   })
   useEffect(() => {
     if (voucherwisesummary) {
-      const a = voucherwisesummary.data.combined.map(
-        (item) => item.enteredAmount
+      const { incomeSum, expenseSum } = voucherwisesummary.data.combined.reduce(
+        (acc, txn) => {
+          const type = txn.type.toLowerCase()
+          const amt = Number(txn.enteredAmount) || 0
+
+          if (type === "credit note" || type === "debit note") {
+            acc.expenseSum += amt
+          } else {
+            acc.incomeSum += amt
+          }
+
+          return acc
+        },
+        { incomeSum: 0, expenseSum: 0 }
       )
-      const { incomeSum, expenseSum, net } =
-        voucherwisesummary.data.combined.reduce(
-          (acc, txn) => {
-            const type = txn.type.toLowerCase()
-            const amt = Number(txn.enteredAmount) || 0
-
-            if (type === "credit note" || type === "debit note") {
-              acc.expenseSum += amt
-            } else {
-              acc.incomeSum += amt
-            }
-
-            return acc
-          },
-          { incomeSum: 0, expenseSum: 0, net: 0 }
-        )
       const finalNet = incomeSum - expenseSum
       setVocherSum(finalNet)
-   
     }
   }, [voucherwisesummary])
 
@@ -331,10 +329,7 @@ export default function SummaryReport() {
         </div>
       </div>
 
-      <div
-
-        className={`flex-1 ${selectedOption === "voucher" ? "p-0" : "p-2"}`}
-      >
+      <div className={`flex-1 ${selectedOption === "voucher" ? "p-0" : "p-2"}`}>
         {!isFetching &&
           processedSummary &&
           selectedOption !== "voucher" &&

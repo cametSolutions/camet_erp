@@ -31,12 +31,16 @@ function TitleDiv({
 
   const handleNavigate = () => {
     if(customNavigate) {
+console.log("h")
       customNavigate();
       return;
     }
     if (from) {
+console.log("hhh")
+console.log(from)
       navigate(from, { replace: true });
     } else {
+console.log("hhhh")
       navigate(-1, { replace: true });
     }
   };
