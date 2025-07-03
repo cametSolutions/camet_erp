@@ -20,7 +20,12 @@ const secondaryUserSchema = new mongoose.Schema(
           ref: "Organization",
         },
         selectedGodowns: { type: Array },
-        selectedPriceLevels: { type: Array },
+        selectedPriceLevels: [
+          {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "PriceLevel",
+          },
+        ],
         salesConfiguration: { type: Object },
         salesOrderConfiguration: { type: Object },
         receiptConfiguration: { type: Object },

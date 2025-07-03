@@ -30,7 +30,7 @@ export default function ConfigureRetailer() {
       title: "SET PRICE LEVEL",
       description: "Define pricing tiers and discount levels",
       icon: <HiCurrencyDollar />,
-      to: "/sUsers/SetPriceLevel",
+      to: "/sUsers/allocatePriceLevel",
       active: true,
       data: { userData },
     },

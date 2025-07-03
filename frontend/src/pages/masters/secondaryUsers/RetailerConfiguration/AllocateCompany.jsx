@@ -94,7 +94,11 @@ const AllocateCompany = () => {
   useEffect(() => {
     const userOrganizations = userDetailsData?.data?.organization || [];
     if (userOrganizations) {
-      setSelectedCompanies(userOrganizations);
+
+      const selectedOrganizations= userOrganizations.map((org) => org._id);
+      setSelectedCompanies(selectedOrganizations);
+
+      // setSelectedCompanies(userOrganizations);
     }
   }, [userDetailsData]);
 

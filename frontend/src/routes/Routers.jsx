@@ -123,6 +123,7 @@ import AddWarrantyCard from '@/pages/secUsers/settilngs/dataEntry/invoiceSetting
 import EditWarrantyCard from '@/pages/secUsers/settilngs/dataEntry/invoiceSettings/WarrantyCard/EditWarrantyCard '
 import ConfigureRetailer from '@/pages/masters/secondaryUsers/RetailerConfiguration/ConfigureRetailer'
 import AllocateCompany from '@/pages/masters/secondaryUsers/RetailerConfiguration/AllocateCompany'
+import AllocatePriceLevel from '@/pages/masters/secondaryUsers/RetailerConfiguration/AllocatePricelevel'
 
 const Routers = () => {
   return (
@@ -357,6 +358,7 @@ const Routers = () => {
       <Route path='/sUsers/configureSecondaryUser/:id/:userId/:cmp_name' element={<ProtectedSecRoute><ConfigureSecondaryUser/></ProtectedSecRoute>}></Route>
       <Route path='/sUsers/configureUser/:userId' element={<ProtectedSecRoute><ConfigureRetailer/></ProtectedSecRoute>}></Route>
       <Route path='/sUsers/allocateCompany' element={<ProtectedSecRoute><AllocateCompany/></ProtectedSecRoute>}></Route>
+      <Route path='/sUsers/allocatePriceLevel' element={<ProtectedSecRoute><AllocatePriceLevel/></ProtectedSecRoute>}></Route>
 
       {/* outstanding  */}
       <Route path='/sUsers/outstandingSummary' element={<ProtectedSecRoute><OutstandingSummary/></ProtectedSecRoute>}></Route>
