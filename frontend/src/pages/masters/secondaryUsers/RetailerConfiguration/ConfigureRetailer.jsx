@@ -13,9 +13,7 @@ import { useLocation } from "react-router-dom";
 
 export default function ConfigureRetailer() {
   const location = useLocation();
- const userData = location.state || {};
-
- 
+  const userData = location.state || {};
 
   const tiles = [
     {
@@ -38,7 +36,15 @@ export default function ConfigureRetailer() {
       title: "SET LOCATION",
       description: "Manage warehouse and branch locations",
       icon: <HiLocationMarker />,
-      to: "/sUsers/SetLocation",
+      to: "/sUsers/allocateGodown",
+      active: true,
+      data: { userData },
+    },
+    {
+      title: "SET VAN",
+      description: "Configure delivery vehicles and routes",
+      icon: <HiTruck />,
+      to: "/sUsers/allocateVanSaleGodown",
       active: true,
       data: { userData },
     },
@@ -50,14 +56,7 @@ export default function ConfigureRetailer() {
       active: true,
       data: { userData },
     },
-    {
-      title: "SET VAN",
-      description: "Configure delivery vehicles and routes",
-      icon: <HiTruck />,
-      to: "/sUsers/SetVan",
-      active: true,
-      data: { userData },
-    },
+
     {
       title: "SET SERIES TYPE",
       description: "Define document series and numbering",
