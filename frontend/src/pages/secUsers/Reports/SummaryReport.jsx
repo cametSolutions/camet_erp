@@ -412,27 +412,17 @@ export default function SummaryReport() {
                   <span className="text-gray-800 font-medium">{item.name}</span>
                   <span className="text-gray-600 font-semibold">
                     ₹{item.net.toLocaleString()}
-                    {selectedOption !== "vouher" ? (
+                    {selectedOption !== "vouher" &&(
                       <span
                         className={`ml-2 ${
-                          totalAmount < 0
+                          item.net < 0
                             ? "text-red-500 font-semibold"
                             : "text-green-500 font-semibold"
                         }`}
                       >
-                        {totalAmount < 0 ? "CR" : "DR"}
+                        {item.net < 0 ? "CR" : "DR"}
                       </span>
-                    ) : (
-                      <span
-                        className={`${
-                          voucherSum < 0
-                            ? "text-red-500 font-semibold"
-                            : "text-green-500 font-semibold"
-                        }`}
-                      >
-                        {voucherSum < 0 ? "CR" : "DR"}
-                      </span>
-                    )}
+                    ) }
                   </span>
                 </div>
               ))}
