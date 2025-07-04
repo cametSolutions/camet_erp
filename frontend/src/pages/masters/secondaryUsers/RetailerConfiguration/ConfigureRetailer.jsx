@@ -61,7 +61,7 @@ export default function ConfigureRetailer() {
       title: "UPDATE CUSTOMER GROUP",
       description: "Organize customers into groups and categories",
       icon: <HiUserGroup />,
-      to: "/sUsers/UpdateCustomerGroup",
+      to: "/sUsers/allocateSubGroups",
       active: true,
       data: { userData },
     },

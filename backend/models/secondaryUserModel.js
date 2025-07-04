@@ -49,6 +49,14 @@ const secondaryUserSchema = new mongoose.Schema(
             ],
           },
         ],
+
+        selectedSubGroups: [
+          {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "SubGroup",
+          },
+        ],
+       
         selectedVanSaleSubGroups: { type: Array },
         salesConfiguration: { type: Object },
         salesOrderConfiguration: { type: Object },

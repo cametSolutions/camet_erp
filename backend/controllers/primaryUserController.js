@@ -909,7 +909,8 @@ export const allocateSubDetails = async (req, res) => {
       "selectedPriceLevels",
       "selectedGodowns",
       "selectedVanSaleGodowns",
-      "selectedVoucherSeries"
+      "selectedVoucherSeries",
+      "selectedSubGroups",
     ]; // example
     if (!allowedSubDetails.includes(subDetail)) {
       return res.status(400).json({ message: "Invalid subDetail" });
