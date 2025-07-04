@@ -1,9 +1,9 @@
 import { useLocation } from "react-router-dom"
 import { useQuery } from "@tanstack/react-query"
-import { useNavigate } from "react-router-dom"
+// import { useNavigate } from "react-router-dom"
 import { useDispatch, useSelector } from "react-redux"
 import { useEffect, useMemo, useState } from "react"
-import { startOfDay, endOfDay } from "date-fns"
+// import { startOfDay, endOfDay } from "date-fns"
 import { BarLoader } from "react-spinners"
 import TitleDiv from "@/components/common/TitleDiv"
 import SummaryDropdown from "@/components/Filters/SummaryDropdown"
@@ -16,7 +16,7 @@ import api from "@/api/api"
 export default function SummaryReport() {
   const [processedSummary, setProcessedSummary] = useState([])
   const [voucherSum, setVocherSum] = useState(0)
-  const navigate = useNavigate()
+  // const navigate = useNavigate()
   const location = useLocation()
   const dispatch = useDispatch()
   const { summaryType } = location.state
@@ -63,11 +63,11 @@ export default function SummaryReport() {
       }
     }
   }, [])
-  const normalizedStart = useMemo(
-    () => startOfDay(start).toISOString(),
-    [start]
-  )
-  const normalizedEnd = useMemo(() => endOfDay(end).toISOString(), [end])
+  // const normalizedStart = useMemo(
+  //   () => startOfDay(start).toISOString(),
+  //   [start]
+  // )
+  // const normalizedEnd = useMemo(() => endOfDay(end).toISOString(), [end])
   const { data: voucherwisesummary = [], isFetching: voucherFetching } =
     useQuery({
       queryKey: [
@@ -266,15 +266,15 @@ export default function SummaryReport() {
       ) ?? 0 // if processedSummary is undefined, default to 0
     )
   }, [processedSummary])
-  const handleItemClick = (item) => {
-    // navigate("/sUsers/salesSummaryTransactions", {
-    //   state: {
-    //     transactions: item.transactions,
-    //     title: `${selectedOption}: ${item.name}`,
-    //     total: item.total
-    //   }
-    // })
-  }
+  // const handleItemClick = (item) => {
+  //   // navigate("/sUsers/salesSummaryTransactions", {
+  //   //   state: {
+  //   //     transactions: item.transactions,
+  //   //     title: `${selectedOption}: ${item.name}`,
+  //   //     total: item.total
+  //   //   }
+  //   // })
+  // }
 
   // Handle navigation to summary details page
   // const handleNavigate = () => {
@@ -282,6 +282,9 @@ export default function SummaryReport() {
   //     state: { summary: processedSummary }
   //   })
   // }
+
+
+  
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <div className="sticky top-0 z-50">
@@ -345,7 +348,7 @@ export default function SummaryReport() {
                   <span
                    
                   >
-                    {totalAmount < 0 ? "CR" : "DR"}
+                    {totalAmount < 0 ? "CR" :totalAmount > 0 ? "DR" : ""}
                   </span>
                 </span>
               ) : (
@@ -354,7 +357,7 @@ export default function SummaryReport() {
                   <span
                   
                   >
-                    {voucherSum < 0 ? "CR" : "DR"}
+                    {voucherSum < 0 ? "CR" : voucherSum > 0 ? "DR" : "" }
                   </span>
                 </span>
               )}
