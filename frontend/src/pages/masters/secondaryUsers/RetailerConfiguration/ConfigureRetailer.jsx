@@ -70,7 +70,7 @@ export default function ConfigureRetailer() {
       description: "Configure staff roles and system permissions",
       icon: <HiUsers />,
       to: "/sUsers/SetPages",
-      active: true,
+      active: false,
       data: { userData },
     },
   ];

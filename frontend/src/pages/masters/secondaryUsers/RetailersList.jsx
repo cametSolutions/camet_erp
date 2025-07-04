@@ -6,13 +6,13 @@ import { Link, useNavigate } from "react-router-dom";
 import { removeAll } from "../../../../slices/invoice";
 import { removeAllSales } from "../../../../slices/sales";
 import { useDispatch, useSelector } from "react-redux";
-import { IoIosArrowRoundBack } from "react-icons/io";
 import { MdEmail } from "react-icons/md";
 import CustomBarLoader from "../../../components/common/CustomBarLoader";
 import CompanyFilter from "../../../components/Filters/CompanyFilter";
 import { RiUser2Fill } from "react-icons/ri";
 import { AiFillSetting } from "react-icons/ai";
 import { MdAdminPanelSettings } from "react-icons/md";
+import TitleDiv from "@/components/common/TitleDiv";
 
 function RetailersList() {
   const [secondaryUsers, setSecondaryUsers] = useState([]);
@@ -71,24 +71,22 @@ function RetailersList() {
   return (
     <section className="flex-1 text-gray-600  ">
       <div className="flex flex-col sticky top-0 z-50">
-        <div className=" bg-[#201450] text-white p-3 flex items-center gap-3 text-lg">
-          <Link to={"/sUsers/dashboard"}>
-            <IoIosArrowRoundBack className="block cursor-pointer text-3xl" />
-          </Link>
-          <div className="flex items-center justify-between w-full font-bold">
-            <p>Your Users</p>
-            <Link to={"/sUsers/addSecUsers"}>
-              <button className="flex gap-2 bg-[#2b1b6b] shadow-lg px-2 py-1 rounded-xs text-sm hover:scale-105 duration-100 ease-in-out hover:bg-[#2f245a] mr-3">
-                Add User
-              </button>
-            </Link>
-          </div>
-        </div>
+        <TitleDiv
+        loading={loading}
+          title="Your Users"
+          from="/sUsers/dashboard"
+          dropdownContents={[
+            {
+              title: "Add User",
+              to: "/sUsers/addSecUsers",
+            },
+          ]}
+        />
         <div className="">
           <CompanyFilter setLoading={setLoading} />
         </div>
       </div>
-      {loading && <CustomBarLoader />}
+     
       <div className=" ">
         {filteredUsers.length > 0 && !loading ? (
           <div className="space-y-2 p-2">

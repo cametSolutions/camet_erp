@@ -152,8 +152,8 @@ const AllocateSubGroup = () => {
   const filteredAndSortedData = subGroupData
     .filter((item) => {
       const matchesSearch =
-        item.subGroup.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.subGroup_id.toLowerCase().includes(searchTerm.toLowerCase());
+        item.subGroup.toLowerCase()?.includes(searchTerm.toLowerCase()) ||
+        item.subGroup_id.toLowerCase()?.includes(searchTerm.toLowerCase());
       const matchesFilter =
         !filterByAccountGroup ||
         item.accountGroup?.accountGroup === filterByAccountGroup;
@@ -498,7 +498,7 @@ const AllocateSubGroup = () => {
 
                 {/* Pagination */}
                 {totalPages > 1 && (
-                  <div className="px-4 py-3 bg-gray-50 border-t flex items-center justify-between">
+                  <div className="px-4 py-3 bg-gray-50 border-t flex flex-col sm:flex-row items-center justify-between">
                     <div className="text-sm text-gray-600">
                       Showing {startIndex + 1} to{" "}
                       {Math.min(
@@ -507,7 +507,7 @@ const AllocateSubGroup = () => {
                       )}{" "}
                       of {filteredAndSortedData.length} results
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 mt-4 sm:mt-0">
                       <button
                         onClick={() =>
                           setCurrentPage(Math.max(1, currentPage - 1))
