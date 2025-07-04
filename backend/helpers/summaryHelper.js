@@ -7,11 +7,114 @@ export const aggregateSummary = async (
   serialNumber
 ) => {
   try {
-    const results = await model.aggregate([{ $match: matchCriteria }]);
+    // const results = await model.aggregate([{ $match: matchCriteria }]);
+
+    // // Add type to each result to identify its source if not already included in projection
+    // if (!results[0]?.sourceType) {
+    //   return results.map((item) => ({
+    //     ...item,
+    //     sourceType: type,
+    //   }));
+    // }
+
+    // return results;
+    // const results = await model.aggregate([{ $match: matchCriteria }]);
+    // const results = await model.aggregate([
+    //   { $match: matchCriteria },
+    //   { $unwind: "$items" },
+    //   {
+    //     $lookup: {
+    //       from: "brands",
+    //       localField: "items.brand",
+    //       foreignField: "_id",
+    //       as: "brandLookup"
+    //     }
+    //   },
+    //   {
+    //     $set: {
+    //       "items.brand": { $arrayElemAt: ["$brandLookup", 0] }
+    //     }
+    //   },
+    //   { $unset: "brandLookup" }, // remove temporary field
+    //   {
+    //     $group: {
+    //       _id: "$_id",
+    //       doc: { $first: "$$ROOT" },
+    //       items: { $push: "$items" }
+    //     }
+    //   },
+    //   {
+    //     $set: {
+    //       "doc.items": "$items"
+    //     }
+    //   },
+    //   {
+    //     $replaceRoot: {
+    //       newRoot: "$doc"
+    //     }
+    //   }
+    // ]);
+    const results = await model.aggregate([
+      { $match: matchCriteria },
+
+      { $unwind: "$items" },
+
+      // Lookup for brand
+      {
+        $lookup: {
+          from: "brands",
+          localField: "items.brand",
+          foreignField: "_id",
+          as: "brandLookup"
+        }
+      },
+
+      // Lookup for category
+      {
+        $lookup: {
+          from: "categories", // replace with your actual collection name if different
+          localField: "items.category",
+          foreignField: "_id",
+          as: "categoryLookup"
+        }
+      },
+
+      // Replace `items.brand` and `items.category` with the actual documents
+      {
+        $set: {
+          "items.brand": { $arrayElemAt: ["$brandLookup", 0] },
+          "items.category": { $arrayElemAt: ["$categoryLookup", 0] }
+        }
+      },
+
+      // Cleanup temporary fields
+      { $unset: ["brandLookup", "categoryLookup"] },
+
+      // Reconstruct the full document with updated items array
+      {
+        $group: {
+          _id: "$_id",
+          doc: { $first: "$$ROOT" },
+          items: { $push: "$items" }
+        }
+      },
+
+      {
+        $set: {
+          "doc.items": "$items"
+        }
+      },
+
+      {
+        $replaceRoot: {
+          newRoot: "$doc"
+        }
+      }
+    ]);
+
     // Add type to each result to identify its source if not already included in projection
     if (results && results.length && !results[0]?.sourceType) {
       results.forEach((item) => {
-
         item.sourceType = type
       });
     }
@@ -25,7 +128,7 @@ export const aggregateSummary = async (
           serialNumber === "all"
             ? results
             : results.filter(item => item.series_id?.toString() === serialNumber)
- 
+
 
         filteredResults.forEach((item) => {
           if (!item.party?._id) return
@@ -36,7 +139,7 @@ export const aggregateSummary = async (
           const existing = totalsMap.get(partyName) || {
             total: 0,
             sourceType: item.sourceType,
-            isCreditOrDebit: item.voucherType === "creditNote" || item.voucherType === "debitNote",
+            isCredit: item.voucherType === "creditNote" || item.voucherType === "debitNote",
             transactions: []
           }
 
@@ -51,7 +154,7 @@ export const aggregateSummary = async (
             enteredAmount: Number(item.finalAmount) || 0,
             _id: item._id,
             isCancelled: false,
-            type: "Tax Invoice",
+            type: item.voucherType,
 
           })
 
@@ -71,7 +174,7 @@ export const aggregateSummary = async (
             // Get existing data or initialize
             const existing = totalsMap.get(item.product_name) || {
               total: 0,
-              isCreditOrDebit: sale.voucherType === "creditNote" || sale.voucherType === "debitNote",
+              isCredit: sale.voucherType === "creditNote" || sale.voucherType === "debitNote",
               transactions: []
             }
 
@@ -89,7 +192,7 @@ export const aggregateSummary = async (
                 _id: sale._id,
                 product: item.product_name,
                 isCancelled: false,
-                type: "Tax Invoice"
+                type: item.voucherType
               })
               productTransactionsMap.set(transactionKey, true)
             }
@@ -104,18 +207,20 @@ export const aggregateSummary = async (
           serialNumber === "all"
             ? results
             : results.filter(item => item.series_id?.toString() === serialNumber)
+
         filteredResults.forEach((sale) => {
           sale.items?.forEach((item) => {
+
             if (!item?.brand?._id) return
-            const groupName = item.brand.name
+            const groupName = item?.brand?.brand
 
             // Get existing data or initialize
             const existing = totalsMap.get(groupName) || {
               total: 0,
-              isCreditOrDebit: item.voucherType === "creditNote" || item.voucherType === "debitNote",
+              isCredit: sale.voucherType === "creditNote" || sale.voucherType === "debitNote",
               transactions: []
             }
-
+          
             // Update total
             existing.total += item.total || 0
 
@@ -130,7 +235,7 @@ export const aggregateSummary = async (
                 _id: sale._id,
                 brand: groupName,
                 isCancelled: false,
-                type: "Tax Invoice"
+                type: item.voucherType
               })
               brandTransactionsMap.set(transactionKey, true)
             }
@@ -148,12 +253,12 @@ export const aggregateSummary = async (
         filteredResults.forEach((sale) => {
           sale.items?.forEach((item) => {
             if (!item?.category?._id) return
-            const categoryName = item.category.name
+            const categoryName = item?.category?.category
 
             // Get existing data or initialize
             const existing = totalsMap.get(categoryName) || {
               total: 0,
-              isCreditOrDebit: item.voucherType === "creditNote" || item.voucherType === "debitNote",
+              isCredit: sale.voucherType === "creditNote" || sale.voucherType === "debitNote",
               transactions: []
             }
 
@@ -171,7 +276,7 @@ export const aggregateSummary = async (
                 _id: sale._id,
                 category: categoryName,
                 isCancelled: false,
-                type: "Tax Invoice"
+                type: item.voucherType
               })
               categoryTransactionsMap.set(transactionKey, true)
             }
@@ -184,8 +289,8 @@ export const aggregateSummary = async (
       // Convert map to array
       return Array.from(totalsMap).map(([name, data]) => ({
         name,
-        sourceType:data.sourceType,
-        isCreditOrDebit: data.isCreditOrDebit,
+        sourceType: data.sourceType,
+        isCredit: data.isCredit,
         total: data.total,
         transactions: data.transactions
       }))
