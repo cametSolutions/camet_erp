@@ -277,11 +277,11 @@ export default function SummaryReport() {
   }
 
   // Handle navigation to summary details page
-  // const handleNavigate = () => {
-  //   navigate("/sUsers/salesSummaryDetails", {
-  //     state: { summary: processedSummary }
-  //   })
-  // }
+  const handleNavigate = () => {
+    navigate("/sUsers/salesSummaryDetails", {
+      state: { summaryType }
+    })
+  }
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <div className="sticky top-0 z-50">
@@ -335,27 +335,18 @@ export default function SummaryReport() {
           </div>
           <div className="text-center text-white flex justify-center items-center flex-col mt-5">
             <h2 className="text-3xl sm:text-4xl font-bold">
-              
-{/* {selectedOption !== "voucher"
+              {/* {selectedOption !== "voucher"
                 ? totalAmount?.toLocaleString()
                 : voucherSum?.toLocaleString()} */}
               {selectedOption !== "voucher" ? (
                 <span>
                   ₹{totalAmount?.toLocaleString()}{" "}
-                  <span
-                   
-                  >
-                    {totalAmount < 0 ? "CR" : "DR"}
-                  </span>
+                  <span>{totalAmount < 0 ? "CR" : "DR"}</span>
                 </span>
               ) : (
                 <span>
                   ₹{voucherSum?.toLocaleString()}{" "}
-                  <span
-                  
-                  >
-                    {voucherSum < 0 ? "CR" : "DR"}
-                  </span>
+                  <span>{voucherSum < 0 ? "CR" : "DR"}</span>
                 </span>
               )}
             </h2>
@@ -364,7 +355,7 @@ export default function SummaryReport() {
               {new Date(end).toLocaleDateString()} */}
             </p>
             <button
-              // onClick={handleNavigate}
+              onClick={handleNavigate}
               className="text-xs mt-4 font-bold opacity-90 underline hover:scale-105 transition-transform duration-300"
             >
               View Details
@@ -412,7 +403,7 @@ export default function SummaryReport() {
                   <span className="text-gray-800 font-medium">{item.name}</span>
                   <span className="text-gray-600 font-semibold">
                     ₹{item.net.toLocaleString()}
-                    {selectedOption !== "vouher" &&(
+                    {selectedOption !== "vouher" && (
                       <span
                         className={`ml-2 ${
                           item.net < 0
@@ -422,7 +413,7 @@ export default function SummaryReport() {
                       >
                         {item.net < 0 ? "CR" : "DR"}
                       </span>
-                    ) }
+                    )}
                   </span>
                 </div>
               ))}

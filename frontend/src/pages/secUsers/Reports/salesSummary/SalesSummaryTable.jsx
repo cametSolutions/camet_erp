@@ -14,7 +14,8 @@ function SalesSummaryTable() {
   const [summary, setSummary] = useState([]);
 const location=useLocation()
 const {summaryType}=location.state
-
+console.log(summaryType)
+console.log("HH")
   const { start, end } = useSelector((state) => state.date);
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
@@ -38,6 +39,7 @@ const {summaryType}=location.state
 
   useEffect(() => {
     if (salesummaryData && salesummaryData?.flattenedResults) {
+console.log("hhh")
       setSummary(salesummaryData.flattenedResults);
     }
   }, [salesummaryData, cmp_id]);
@@ -155,6 +157,7 @@ const {summaryType}=location.state
     // let arr = []
     if (option === "Ledger") {
       summary.map((item) => {
+console.log(item)
         let existingParty = check?.find((data) => {
           return data?.partyId === item?.party?._id;
         });
@@ -178,7 +181,7 @@ const {summaryType}=location.state
                     );
 
                     const newSale = {
-                      billnumber: item?.salesNumber||item?.creditNoteNumber,
+                      billnumber: item?.salesNumber||item?.creditNoteNumber||item.debitNoteNumber,
                       billDate: item?.date,
                       itemName: it?.product_name,
                       batch: items?.batch,
@@ -208,7 +211,7 @@ const {summaryType}=location.state
                   it?.discount
                 );
                 const newSale = {
-                  billnumber: item?.salesNumber||item?.creditNoteNumber,
+                  billnumber: item?.salesNumber||item?.creditNoteNumber||item.debitNoteNumber,
                   billDate: item?.date,
                   itemName: it?.product_name,
                   categoryName: it?.category?.name,
@@ -251,7 +254,7 @@ const {summaryType}=location.state
                       items?.discount
                     );
                     const newSale = {
-                      billnumber: item?.salesNumber||item.crediNoteNumber,
+                      billnumber: item?.salesNumber||item.crediNoteNumber||item.debitNoteNumber,
                       billDate: item?.date,
                       itemName: it.product_name,
                       batch: items?.batch,
@@ -282,7 +285,7 @@ const {summaryType}=location.state
                   it?.discount
                 );
                 const a = {
-                  billnumber: item?.salesNumber||item?.creditNoteNumber,
+                  billnumber: item?.salesNumber||item?.creditNoteNumber||item.debitNoteNumber,
                   billDate: item?.date,
                   itemName: it?.product_name,
                   categoryName: it?.category?.name,
@@ -301,9 +304,11 @@ const {summaryType}=location.state
               });
             }
           });
+console.log(saleObject)
           check.push(saleObject);
         }
       });
+console.log(check)
       setSummaryReport(check);
     } else if (option === "Stock Item") {
       summary.map((item) => {
@@ -1047,7 +1052,7 @@ const {summaryType}=location.state
   return (
     <div>
       <div className="flex flex-col sticky top-0 ">
-        <TitleDiv title={"Sales Summary Details"} from="/sUsers/salesSummary" summaryType={summaryType}
+        <TitleDiv title={"Sales Summary Details"} from="/sUsers/summaryReport" summaryType={summaryType}
         rightSideContent={<RiFileExcel2Fill size={20} />}
                   rightSideContentOnClick={exportToExcel}
          />

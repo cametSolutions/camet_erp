@@ -25,8 +25,9 @@ function TitleDiv({
   rightSideContentOnClick = null,
   dropdownContents = [],
   customNavigate = null,
-  // summaryType = null
+  summaryType = null
 }) {
+ 
   const navigate = useNavigate()
   const [showModal, setShowModal] = useState(false)
 
@@ -36,8 +37,13 @@ function TitleDiv({
       return
     }
     if (from) {
-     
-      navigate(from, { replace: true})
+      if (summaryType) {
+        navigate("/sUsers/summaryReport", {
+          state: {summaryType}
+        })///for summaryreport for sales,purchase,ordersumamry
+      } else {
+        navigate(from, { replace: true })
+      }
     } else {
       navigate(-1, { replace: true })
     }
