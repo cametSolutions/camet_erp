@@ -10,7 +10,7 @@ import mongoose from "mongoose";
 
 //summary report controller
 export const getSummary = async (req, res) => {
-  const { startOfDayParam, endOfDayParam, selectedVoucher } = req.query;
+  const { startOfDayParam, endOfDayParam, selectedVoucher,summaryType } = req.query;
 
   try {
     const cmp_id = req.params.cmp_id;
@@ -67,8 +67,18 @@ export const getSummary = async (req, res) => {
 
     // Handle special case for "sale" which should include both sale and vanSale
     let modelsToQuery = [];
-    if (selectedVoucher === "sale") {
-      modelsToQuery = [...summaryTypeMap.sale, ...summaryTypeMap.vanSale];
+    // if (selectedVoucher === "sale") {
+    //   modelsToQuery = [...summaryTypeMap.sale, ...summaryTypeMap.vanSale];
+    // } else {
+    //   modelsToQuery = selectedVoucher ? summaryTypeMap[selectedVoucher] : "";
+    // }
+    if (selectedVoucher === "all") {
+      if (summaryType === "Sales Summary") {
+        modelsToQuery = [...summaryTypeMap.sale, ...summaryTypeMap.vanSale, ...summaryTypeMap.creditNote]
+      } else if (summaryType === "Purchase Summary") {
+        modelsToQuery = [...summaryTypeMap.purchase, ...summaryTypeMap.debitNote]
+      }
+
     } else {
       modelsToQuery = selectedVoucher ? summaryTypeMap[selectedVoucher] : "";
     }

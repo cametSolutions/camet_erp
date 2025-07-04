@@ -2,13 +2,13 @@
 /* eslint-disable react-refresh/only-export-components */
 /* eslint-disable react/prop-types */
 /* eslint-disable react/display-name */
-import React, { useMemo } from "react";
-import dayjs from "dayjs";
-import { useNavigate } from "react-router-dom";
-import { GiCancel } from "react-icons/gi";
+import React, { useMemo } from "react"
+import dayjs from "dayjs"
+import { useNavigate } from "react-router-dom"
+import { GiCancel } from "react-icons/gi"
 
 const DashboardTransaction = ({ filteredData, userType, from }) => {
-  const navigate = useNavigate();
+  const navigate = useNavigate()
 
   const typeColors = useMemo(
     () => ({
@@ -20,14 +20,14 @@ const DashboardTransaction = ({ filteredData, userType, from }) => {
       "Stock Transfer": "bg-purple-500",
       "Credit Note": "bg-pink-500",
       "Debit Note": "bg-[#3b429f]",
-      default: "bg-[#227c9d]",
+      default: "bg-[#227c9d]"
     }),
     []
-  );
+  )
 
   const getNavigationPath = useMemo(
     () => (type, id) => {
-      const baseRoute = `/${userType === "primary" ? "pUsers" : "sUsers"}`;
+      const baseRoute = `/${userType === "primary" ? "pUsers" : "sUsers"}`
       const routes = {
         Receipt: `${baseRoute}/receipt/details/${id}`,
         Payment: `${baseRoute}/payment/details/${id}`,
@@ -37,17 +37,17 @@ const DashboardTransaction = ({ filteredData, userType, from }) => {
         "Stock Transfer": `${baseRoute}/stockTransferDetails/${id}`,
         "Credit Note": `${baseRoute}/creditNoteDetails/${id}`,
         "Debit Note": `${baseRoute}/debitNoteDetails/${id}`,
-        default: `${baseRoute}/saleOrderDetails/${id}`,
-      };
-      return routes[type] || routes.default;
+        default: `${baseRoute}/saleOrderDetails/${id}`
+      }
+      return routes[type] || routes.default
     },
     [userType]
-  );
+  )
 
   const handleTransactionClick = (type, id) => {
-    const path = getNavigationPath(type, id);
-    navigate(path, { state: { from } });
-  };
+    const path = getNavigationPath(type, id)
+    navigate(path, { state: { from } })
+  }
 
   const renderTransaction = useMemo(
     () => (transaction, index) => {
@@ -60,8 +60,8 @@ const DashboardTransaction = ({ filteredData, userType, from }) => {
         enteredAmount,
         isCancelled,
         voucherNumber,
-        secondaryUserName = "",
-      } = transaction;
+        secondaryUserName = ""
+      } = transaction
 
       return (
         <div
@@ -111,6 +111,7 @@ const DashboardTransaction = ({ filteredData, userType, from }) => {
             <div className="flex-1  flex justify-end">
               <p className="font-bold text-sm text-gray-500">
                 ₹{enteredAmount || 0}
+                
               </p>
             </div>
           </div>
@@ -136,19 +137,18 @@ const DashboardTransaction = ({ filteredData, userType, from }) => {
             </>
           )}
         </div>
-      );
+      )
     },
     [typeColors, getNavigationPath, handleTransactionClick]
-  );
+  )
 
-
-  const memoizedData = useMemo(() => filteredData, [filteredData]);
+  const memoizedData = useMemo(() => filteredData, [filteredData])
 
   return (
     <div className="grid grid-cols-1 gap-4 text-center pb-2 mt-2 md:px-2 overflow-hidden  ">
       {memoizedData?.map(renderTransaction)}
     </div>
-  );
-};
+  )
+}
 
-export default React.memo(DashboardTransaction);
+export default React.memo(DashboardTransaction)

@@ -20,6 +20,7 @@ import TallyData from "../models/TallyData.js";
 import OragnizationModel from "../models/OragnizationModel.js";
 import nodemailer from "nodemailer";
 
+/////
 // @desc to  get transactions
 // route get/api/sUsers/transactions
 export const transactions = async (req, res) => {
@@ -33,7 +34,7 @@ export const transactions = async (req, res) => {
     selectedVoucher,
     fullDetails = "false",
     summaryType = "none",
-    serialNumber = null,
+    serialNumber = "all",
     ignore = "", // New parameter for collections to ignore
     selectedSecondaryUser,
   } = req.query;
@@ -220,7 +221,6 @@ export const transactions = async (req, res) => {
         message: "Invalid voucher type selected or all collections ignored",
       });
     }
-
     // Create transaction promises based on selected voucher type
     const transactionPromises = modelsToQuery.map(
       ({ model, type, numberField }) =>
@@ -257,16 +257,9 @@ export const transactions = async (req, res) => {
         data: { combined, totalTransactionAmount },
       });
 
-      // return res.status(200).json({
-      //   message: `${selectedVoucher === "all"
-      //     ? "All transactions"
-      //     : selectedVoucher === "allType" ? "All" :
-      //     : `${voucherTypeMap[selectedVoucher]?.[0]?.type} transactions`
-      //     } fetched${ todayOnly === "true" ? " for today" : "" } `,
-      //   data: { combined, totalTransactionAmount },
-      // });
+   
     } else {
-      return res.status(404).json({ message: "Transactions not found",});
+      return res.status(404).json({ message: "Transactions not found"});
     }
   } catch (error) {
     console.error(error);
@@ -276,6 +269,7 @@ export const transactions = async (req, res) => {
     });
   }
 };
+
 
 // @desc adding new Hsn
 // route POst/api/pUsers/addHsn

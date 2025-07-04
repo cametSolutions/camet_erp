@@ -6,12 +6,14 @@ import TitleDiv from "../../../../components/common/TitleDiv"
 import SummmaryDropdown from "../../../../components/Filters/SummaryDropdown"
 import SelectDate from "../../../../components/Filters/SelectDate"
 import useFetch from "../../../../customHook/useFetch"
-
+import { useLocation } from "react-router-dom"
 const SalesSummary = () => {
   const [summaryData, setSummaryData] = useState([])
   const [processedSummary, setProcessedSummary] = useState([])
   const navigate = useNavigate()
-
+const location=useLocation()
+  const { summaryType } = location.state
+console.log(summaryType)
   const { start, end } = useSelector((state) => state.date)
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
@@ -195,6 +197,7 @@ const SalesSummary = () => {
   }, [summaryData, selectedOption])
 
   console.log("processedSummary", processedSummary)
+console.log(summaryData)
 
   // Calculate total amount
   const totalAmount = useMemo(() => {
@@ -204,9 +207,10 @@ const SalesSummary = () => {
   // Handle navigation to summary details page
   const handleNavigate = () => {
     navigate("/sUsers/salesSummaryDetails", {
-      state: { summary: summaryData }
+      state: { summaryType }
     })
   }
+console.log(summaryData)
 
   // Handle click on a specific summary item - navigate with transaction details
   const handleItemClick = (item) => {

@@ -1,8 +1,9 @@
 import { useLocation } from "react-router-dom"
 import { useQuery } from "@tanstack/react-query"
+// import { useNavigate } from "react-router-dom"
 import { useDispatch, useSelector } from "react-redux"
 import { useEffect, useMemo, useState } from "react"
-import { startOfDay, endOfDay } from "date-fns"
+// import { startOfDay, endOfDay } from "date-fns"
 import { BarLoader } from "react-spinners"
 import TitleDiv from "@/components/common/TitleDiv"
 import SummaryDropdown from "@/components/Filters/SummaryDropdown"
@@ -20,7 +21,7 @@ export default function SummaryReport() {
   const dispatch = useDispatch()
   const { summaryType } = location.state
   const { start, end } = useSelector((state) => state.date)
- 
+
   const isAdmin =
     JSON.parse(localStorage.getItem("sUserData")).role === "admin"
       ? true
@@ -62,13 +63,11 @@ export default function SummaryReport() {
       }
     }
   }, [])
-  const normalizedStart = useMemo(
-    () => startOfDay(start).toISOString(),
-    [start]
-  )
-  const normalizedEnd = useMemo(() => endOfDay(end).toISOString(), [end])
-  console.log(normalizedStart)
-  console.log(normalizedEnd)
+  // const normalizedStart = useMemo(
+  //   () => startOfDay(start).toISOString(),
+  //   [start]
+  // )
+  // const normalizedEnd = useMemo(() => endOfDay(end).toISOString(), [end])
   const { data: voucherwisesummary = [], isFetching: voucherFetching } =
     useQuery({
       queryKey: [
@@ -77,6 +76,8 @@ export default function SummaryReport() {
         voucherType.value,
         start,
         end,
+        serialNumber.value,
+        summaryType,
         serialNumber.value
       ],
       queryFn: async () => {
@@ -129,6 +130,7 @@ export default function SummaryReport() {
       cmp_id
     }
   ]
+
   const isQueryReady =
     !!cmp_id &&
     !!start &&
@@ -194,11 +196,17 @@ export default function SummaryReport() {
         },
         { incomeSum: 0, expenseSum: 0 }
       )
-      const finalNet = incomeSum - expenseSum
+      const finalNet =
+        summaryType === "Sales Summary"
+          ? incomeSum - expenseSum
+          : summaryType === "Purchase Summary"
+          ? expenseSum - incomeSum
+          : incomeSum
       setVocherSum(finalNet)
+    } else {
+      setVocherSum(0)
     }
   }, [voucherwisesummary])
-
   useEffect(() => {
     if (data) {
       const summary = data?.flattenedResults
@@ -218,7 +226,7 @@ export default function SummaryReport() {
         const acc = map.get(key)
 
         // 1) Separate sums for debit vs credit
-        if (item.isCreditOrDebit) {
+        if (item.isCredit) {
           // this is a credit
           acc.creditSum += item.total
         } else {
@@ -238,14 +246,18 @@ export default function SummaryReport() {
         name: acc.name,
         total: acc.debitSum, // sum of sale + vanSale
         credit: acc.creditSum, // sum of creditNote
-        net: acc.debitSum - acc.creditSum, // what you actually want to display
+        net:
+          summaryType === "Sales Summary"
+            ? acc.debitSum - acc.creditSum
+            : summaryType === "Purchase Summary"
+            ? acc.creditSum - acc.debitSum
+            : acc.debitSum, // what you actually want to display
         sourceType: Array.from(acc.sourceTypes), // e.g. ['sale','vanSale','creditNote']
         transactions: acc.transactions
       }))
       setProcessedSummary(result)
     }
   }, [data])
-  console.log(data)
   const totalAmount = useMemo(() => {
     return (
       processedSummary?.reduce(
@@ -254,6 +266,15 @@ export default function SummaryReport() {
       ) ?? 0 // if processedSummary is undefined, default to 0
     )
   }, [processedSummary])
+  // const handleItemClick = (item) => {
+  //   // navigate("/sUsers/salesSummaryTransactions", {
+  //   //   state: {
+  //   //     transactions: item.transactions,
+  //   //     title: `${selectedOption}: ${item.name}`,
+  //   //     total: item.total
+  //   //   }
+  //   // })
+  // }
 
   // Handle navigation to summary details page
   // const handleNavigate = () => {
@@ -261,14 +282,9 @@ export default function SummaryReport() {
   //     state: { summary: processedSummary }
   //   })
   // }
-  console.log(voucherwisesummary)
-  console.log(
-    !voucherFetching &&
-      voucherwisesummary?.data?.combined &&
-      selectedOption === "voucher" &&
-      voucherwisesummary?.data?.combined?.length === 0
-  )
-  console.log(voucherSum)
+
+
+  
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <div className="sticky top-0 z-50">
@@ -322,10 +338,29 @@ export default function SummaryReport() {
           </div>
           <div className="text-center text-white flex justify-center items-center flex-col mt-5">
             <h2 className="text-3xl sm:text-4xl font-bold">
-              ₹
-              {selectedOption !== "voucher"
+              
+{/* {selectedOption !== "voucher"
                 ? totalAmount?.toLocaleString()
-                : voucherSum}
+                : voucherSum?.toLocaleString()} */}
+              {selectedOption !== "voucher" ? (
+                <span>
+                  ₹{totalAmount?.toLocaleString()}{" "}
+                  <span
+                   
+                  >
+                    {totalAmount < 0 ? "CR" :totalAmount > 0 ? "DR" : ""}
+                  </span>
+                </span>
+              ) : (
+                <span>
+                  ₹{voucherSum?.toLocaleString()}{" "}
+                  <span
+                  
+                  >
+                    {voucherSum < 0 ? "CR" : voucherSum > 0 ? "DR" : "" }
+                  </span>
+                </span>
+              )}
             </h2>
             <p className="text-sm mt-4 font-semibold opacity-90">
               {/* {new Date(start).toLocaleDateString()} -{" "}
@@ -380,6 +415,17 @@ export default function SummaryReport() {
                   <span className="text-gray-800 font-medium">{item.name}</span>
                   <span className="text-gray-600 font-semibold">
                     ₹{item.net.toLocaleString()}
+                    {selectedOption !== "vouher" &&(
+                      <span
+                        className={`ml-2 ${
+                          item.net < 0
+                            ? "text-red-500 font-semibold"
+                            : "text-green-500 font-semibold"
+                        }`}
+                      >
+                        {item.net < 0 ? "CR" : "DR"}
+                      </span>
+                    ) }
                   </span>
                 </div>
               ))}

@@ -46,7 +46,7 @@ export const handlePurchaseStockUpdates = async (
         const godownCount =
           godown.actualCount !== undefined ? godown.actualCount : godown.count;
 
-        if (godown.newBatch) {
+        if (godown.newBatch && !godown?.created_by) {
 
           if (godownCount > 0) {
             // Handle new batch logic
