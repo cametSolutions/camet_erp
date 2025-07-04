@@ -130,6 +130,7 @@ export default function SummaryReport() {
       cmp_id
     }
   ]
+
   const isQueryReady =
     !!cmp_id &&
     !!start &&
@@ -334,10 +335,29 @@ export default function SummaryReport() {
           </div>
           <div className="text-center text-white flex justify-center items-center flex-col mt-5">
             <h2 className="text-3xl sm:text-4xl font-bold">
-              ₹
-              {selectedOption !== "voucher"
+              
+{/* {selectedOption !== "voucher"
                 ? totalAmount?.toLocaleString()
-                : voucherSum?.toLocaleString()}
+                : voucherSum?.toLocaleString()} */}
+              {selectedOption !== "voucher" ? (
+                <span>
+                  ₹{totalAmount?.toLocaleString()}{" "}
+                  <span
+                   
+                  >
+                    {totalAmount < 0 ? "CR" : "DR"}
+                  </span>
+                </span>
+              ) : (
+                <span>
+                  ₹{voucherSum?.toLocaleString()}{" "}
+                  <span
+                  
+                  >
+                    {voucherSum < 0 ? "CR" : "DR"}
+                  </span>
+                </span>
+              )}
             </h2>
             <p className="text-sm mt-4 font-semibold opacity-90">
               {/* {new Date(start).toLocaleDateString()} -{" "}
@@ -392,6 +412,27 @@ export default function SummaryReport() {
                   <span className="text-gray-800 font-medium">{item.name}</span>
                   <span className="text-gray-600 font-semibold">
                     ₹{item.net.toLocaleString()}
+                    {selectedOption !== "vouher" ? (
+                      <span
+                        className={`ml-2 ${
+                          totalAmount < 0
+                            ? "text-red-500 font-semibold"
+                            : "text-green-500 font-semibold"
+                        }`}
+                      >
+                        {totalAmount < 0 ? "CR" : "DR"}
+                      </span>
+                    ) : (
+                      <span
+                        className={`${
+                          voucherSum < 0
+                            ? "text-red-500 font-semibold"
+                            : "text-green-500 font-semibold"
+                        }`}
+                      >
+                        {voucherSum < 0 ? "CR" : "DR"}
+                      </span>
+                    )}
                   </span>
                 </div>
               ))}
