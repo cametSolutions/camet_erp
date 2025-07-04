@@ -46,8 +46,7 @@ export const handlePurchaseStockUpdates = async (
         const godownCount =
           godown.actualCount !== undefined ? godown.actualCount : godown.count;
 
-        if (godown.newBatch) {
-
+        if (godown.newBatch && !godown?.created_by )  {
           if (godownCount > 0) {
             // Handle new batch logic
             const newBatchStock = truncateToNDecimals(godownCount, 3);
@@ -87,6 +86,8 @@ export const handlePurchaseStockUpdates = async (
                 return g.batch === godown.batch;
               }
             });
+
+            console.log("existingBatchIndex", existingBatchIndex);
 
             if (existingBatchIndex === -1) {
               product.GodownList.push(newGodownEntry);
@@ -239,7 +240,7 @@ export const createPurchaseRecord = async (
       selectedDate,
       series_id,
       usedSeriesNumber,
-      note
+      note,
     } = req.body;
 
     const Primary_user_id = req.owner;

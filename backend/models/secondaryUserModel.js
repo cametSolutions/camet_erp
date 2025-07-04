@@ -37,6 +37,18 @@ const secondaryUserSchema = new mongoose.Schema(
             ref: "Godown",
           },
         ],
+
+        selectedVoucherSeries: [
+          {
+            voucherType: { type: String },
+            selectedSeriesIds: [
+              {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "VoucherSeries",
+              },
+            ],
+          },
+        ],
         selectedVanSaleSubGroups: { type: Array },
         salesConfiguration: { type: Object },
         salesOrderConfiguration: { type: Object },

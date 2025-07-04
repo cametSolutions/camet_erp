@@ -125,6 +125,8 @@ import ConfigureRetailer from '@/pages/masters/secondaryUsers/RetailerConfigurat
 import AllocateCompany from '@/pages/masters/secondaryUsers/RetailerConfiguration/AllocateCompany'
 import AllocatePriceLevel from '@/pages/masters/secondaryUsers/RetailerConfiguration/AllocatePricelevel'
 import AllocateGodown from '@/pages/masters/secondaryUsers/RetailerConfiguration/AllocateGodown'
+import AllocationSeriesList from '@/pages/masters/secondaryUsers/RetailerConfiguration/AllocationSeriesList'
+import AllocateVoucherSeries from '@/pages/masters/secondaryUsers/RetailerConfiguration/AllocateVoucherSeries'
 
 const Routers = () => {
   return (
@@ -362,6 +364,8 @@ const Routers = () => {
       <Route path='/sUsers/allocatePriceLevel' element={<ProtectedSecRoute><AllocatePriceLevel/></ProtectedSecRoute>}></Route>
       <Route path='/sUsers/allocateGodown' element={<ProtectedSecRoute><AllocateGodown/></ProtectedSecRoute>}></Route>
       <Route path='/sUsers/allocateVanSaleGodown' element={<ProtectedSecRoute><AllocateGodown/></ProtectedSecRoute>}></Route>
+      <Route path='/sUsers/allocateSeries' element={<ProtectedSecRoute><AllocationSeriesList/></ProtectedSecRoute>}></Route>
+      <Route path='/sUsers/allocateSeries/:voucherType' element={<ProtectedSecRoute><AllocateVoucherSeries/></ProtectedSecRoute>}></Route>
 
       {/* outstanding  */}
       <Route path='/sUsers/outstandingSummary' element={<ProtectedSecRoute><OutstandingSummary/></ProtectedSecRoute>}></Route>

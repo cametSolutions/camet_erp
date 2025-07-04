@@ -901,7 +901,7 @@ export const allocateCompany = async (req, res) => {
 
 export const allocateSubDetails = async (req, res) => {
   try {
-    const subDetail = req.query.subDetail;
+    const { subDetail, voucherType } = req.query;
     const { userId, selectedItems, selectedCompany } = req.body;
     const cmp_id = req.params.cmp_id;
 
@@ -909,6 +909,7 @@ export const allocateSubDetails = async (req, res) => {
       "selectedPriceLevels",
       "selectedGodowns",
       "selectedVanSaleGodowns",
+      "selectedVoucherSeries"
     ]; // example
     if (!allowedSubDetails.includes(subDetail)) {
       return res.status(400).json({ message: "Invalid subDetail" });
@@ -922,6 +923,48 @@ export const allocateSubDetails = async (req, res) => {
     const configuration = secUser.configurations.find((item) =>
       item.organization.equals(cmp_id)
     );
+
+    //// for voucher series the structure is different
+if (subDetail === "selectedVoucherSeries" && voucherType) {
+  if (!configuration) {
+    const newConfiguration = {
+      organization: selectedCompany,
+      selectedVoucherSeries: [
+        {
+          voucherType,
+          selectedSeriesIds: selectedItems,
+        },
+      ],
+    };
+    secUser.configurations.push(newConfiguration);
+  } else {
+    if (!configuration.selectedVoucherSeries) {
+      configuration.selectedVoucherSeries = [];
+    }
+
+    const existingSeries = configuration.selectedVoucherSeries.find(
+      (item) => item.voucherType === voucherType
+    );
+
+    if (existingSeries) {
+      existingSeries.selectedSeriesIds = selectedItems;
+    } else {
+      configuration.selectedVoucherSeries.push({
+        voucherType,
+        selectedSeriesIds: selectedItems,
+      });
+    }
+  }
+
+  const result = await secUser.save();
+  return res.status(result ? 200 : 400).json({
+    success: !!result,
+    message: result
+      ? "User configuration is successful"
+      : "User configuration failed",
+  });
+}
+
 
     if (!configuration) {
       /// create one
