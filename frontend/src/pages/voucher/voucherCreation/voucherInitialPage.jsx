@@ -140,7 +140,7 @@ function VoucherInitialPage() {
       // Configuration Number
       if (voucherSeriesFromRedux === null && voucherTypeFromRedux) {
         apiRequests.configNumberRequest = await api.get(
-          `/api/sUsers/getSeriesByVoucher/${cmp_id}?voucherType=${voucherTypeFromRedux}`,
+          `/api/sUsers/getSeriesByVoucher/${cmp_id}?voucherType=${voucherTypeFromRedux}&restrict=true`,
           { withCredentials: true }
         );
       } else {
@@ -399,7 +399,7 @@ function VoucherInitialPage() {
               party={party}
               dispatch={dispatch}
               removeParty={removeParty}
-              link="/sUsers/searchPartySales"
+              link={`/sUsers/searchParty${voucherTypeFromRedux}`}
               linkBillTo="/sUsers/billToSales"
               convertedFrom={convertedFrom}
             />

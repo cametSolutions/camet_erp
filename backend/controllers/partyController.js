@@ -50,7 +50,27 @@ export const PartyList = async (req, res) => {
       ...searchQuery,
     };
 
-    // Create the initial stages of the aggregation pipeline
+    // Add subgroup filter to the initial query if needed
+
+    console.log("voucher", voucher);
+    
+    if (
+      voucher === "sale" &&
+      configuration &&
+      configuration.selectedSubGroups?.length > 0
+    ) {
+      
+      // Convert string IDs to ObjectIds 
+      const subGroupObjectIds = configuration.selectedSubGroups.map(id => 
+        typeof id === 'string' ? new mongoose.Types.ObjectId(id) : id
+      );
+      
+      query.subGroup = {
+        $in: subGroupObjectIds,
+      };
+    }
+
+    // Create the aggregation pipeline
     const aggregationPipeline = [
       { $match: query },
 
@@ -87,27 +107,12 @@ export const PartyList = async (req, res) => {
       },
     ];
 
-    // Add filter for selectedVanSaleSubGroups BEFORE pagination if needed
-    if (
-      voucher === "sale" &&
-      configuration &&
-      configuration.selectedVanSaleSubGroups?.length > 0
-    ) {
-      aggregationPipeline.push({
-        $match: {
-          "subGroupData.subGroup_id": {
-            $in: configuration.selectedVanSaleSubGroups,
-          },
-        },
-      });
-    }
-
     // Get total count for pagination using the same filters
     const countPipeline = [...aggregationPipeline, { $count: "total" }];
     const countResult = await partyModel.aggregate(countPipeline);
     const totalCount = countResult.length > 0 ? countResult[0].total : 0;
 
-    // Now add pagination and projection to the main pipeline
+    //   pagination and projection to the main pipeline
     aggregationPipeline.push(
       { $skip: skip },
       { $limit: pageSize },
@@ -136,6 +141,7 @@ export const PartyList = async (req, res) => {
 
     // Execute the aggregation
     const partyList = await partyModel.aggregate(aggregationPipeline);
+
 
     // Determine the source values to match based on the voucher type
     let sourceMatch = {};

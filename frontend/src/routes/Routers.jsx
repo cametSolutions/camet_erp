@@ -140,7 +140,7 @@ const Routers = () => {
         {/* <Route path='/sUsers/receiptDetails/:id' element={<ProtectedSecRoute><SecReceptionDetails/></ProtectedSecRoute>}></Route> */}
         <Route path='/sUsers/dashboard' element={<ProtectedSecRoute><DashboardSec/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/invoice' element={<ProtectedSecRoute><VoucherInitalPage/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/searchParty' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/searchPartysaleOrder' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/partyList' element={<ProtectedSecRoute><PartyListSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/addParty' element={<ProtectedSecRoute><AddPartySecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/productList' element={<ProtectedSecRoute><ProductListSecondary/></ProtectedSecRoute>}></Route>
@@ -161,6 +161,7 @@ const Routers = () => {
 
         <Route path='/sUsers/sales' element={<ProtectedSecRoute><VoucherInitialPage/></ProtectedSecRoute>}></Route>
          <Route path='/sUsers/searchPartySales' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route>
+         <Route path='/sUsers/searchPartyvanSale' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/addItemSales' element={<ProtectedSecRoute><VoucherAddCount/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editItemVoucher/:id/:index' element={<ProtectedSecRoute><EditItemVoucher/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/salesDetails/:id' element={<ProtectedSecRoute><VoucherDetails/></ProtectedSecRoute>}></Route>

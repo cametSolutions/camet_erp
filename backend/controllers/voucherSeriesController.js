@@ -1,5 +1,6 @@
 import { checkSeriesNumberExists } from "../helpers/voucherHelper.js";
 import VoucherSeries from "../models/VoucherSeriesModel.js";
+import SecondaryUserModel from "../models/secondaryUserModel.js";
 
 // Separate validation function for checking duplicate voucher series
 const checkForDuplicateSeries = (
@@ -22,17 +23,17 @@ const checkForDuplicateSeries = (
     const sameNameAndAll =
       sameName &&
       (s.suffix?.trim().toLowerCase() || "") ===
-      (newSeries.suffix?.trim().toLowerCase() || "") &&
+        (newSeries.suffix?.trim().toLowerCase() || "") &&
       (s.prefix?.trim().toLowerCase() || "") ===
-      (newSeries.prefix?.trim().toLowerCase() || "") &&
+        (newSeries.prefix?.trim().toLowerCase() || "") &&
       s.widthOfNumericalPart === newSeries.widthOfNumericalPart;
 
     // Check 3: Same suffix + prefix + width (regardless of name)
     const samePrefixSuffixWidth =
       (s.suffix?.trim().toLowerCase() || "") ===
-      (newSeries.suffix?.trim().toLowerCase() || "") &&
+        (newSeries.suffix?.trim().toLowerCase() || "") &&
       (s.prefix?.trim().toLowerCase() || "") ===
-      (newSeries.prefix?.trim().toLowerCase() || "") &&
+        (newSeries.prefix?.trim().toLowerCase() || "") &&
       s.widthOfNumericalPart === newSeries.widthOfNumericalPart;
 
     console.log(sameName, sameNameAndAll, samePrefixSuffixWidth);
@@ -44,14 +45,26 @@ const checkForDuplicateSeries = (
 /// @desc for giving voucher series
 export const getSeriesByVoucher = async (req, res) => {
   try {
-    const { voucherType, excludeSeriesId } = req.query;
+    const { voucherType,restrict } = req.query;
     const cmp_id = req.params.cmp_id;
+
+    const isRestricted=restrict==="true"?true:false
 
     if (!voucherType || !cmp_id) {
       return res
         .status(400)
         .json({ message: "voucherType and cmp_id are required" });
     }
+
+    const secondaryUser = await SecondaryUserModel.findById(req.sUserId);
+
+    if (!secondaryUser) {
+      return res.status(404).json({ message: "Secondary user not found" });
+    }
+
+    const configuration = secondaryUser.configurations.find(
+      (item) => item?.organization?.toString() == cmp_id?.toString()
+    );
 
     const seriesDoc = await VoucherSeries.findOne({
       voucherType: voucherType === "sale" ? "sales" : voucherType,
@@ -67,8 +80,28 @@ export const getSeriesByVoucher = async (req, res) => {
     let series = seriesDoc.series;
 
     // Exclude the specified series if excludeSeriesId is provided
-    if (excludeSeriesId) {
-      series = series.filter((s) => s._id.toString() !== excludeSeriesId);
+    if (
+      configuration &&
+      isRestricted &&
+      configuration?.selectedVoucherSeries &&
+      configuration?.selectedVoucherSeries.length > 0
+    ) {
+      console.log(
+        "selectedVoucherSeries",
+        configuration?.selectedVoucherSeries
+      );
+      console.log("voucherType", voucherType);
+
+      const selectedSeriesIds =
+        configuration?.selectedVoucherSeries?.filter(
+          (item) => item?.voucherType == voucherType
+        )[0]?.selectedSeriesIds || [];
+
+      if (selectedSeriesIds?.length > 0) {
+        series = series?.filter((series) =>
+          selectedSeriesIds.includes(series._id)
+        );
+      }
     }
 
     return res.status(200).json({ series });

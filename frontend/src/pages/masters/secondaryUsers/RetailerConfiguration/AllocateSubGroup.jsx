@@ -210,10 +210,7 @@ const AllocateSubGroup = () => {
   };
 
   const handleSubmit = async () => {
-    if (selectedSubGroups.length === 0) {
-      toast.warning("Please select at least one sub group");
-      return;
-    }
+  
 
     if (!selectedCompany) {
       toast.warning("Please select a company");
@@ -549,12 +546,10 @@ const AllocateSubGroup = () => {
                 <button
                   onClick={handleSubmit}
                   disabled={
-                    selectedSubGroups.length === 0 ||
                     !selectedCompany ||
                     allocateMutation.isPending
                   }
                   className={`sm:w-1/2 px-8 py-3 rounded-lg transition-all duration-300 font-semibold flex items-center justify-center gap-2 shadow-lg transform hover:-translate-y-0.5 ${
-                    selectedSubGroups.length > 0 &&
                     selectedCompany &&
                     !allocateMutation.isPending
                       ? "bg-pink-500 text-white hover:bg-pink-600 hover:shadow-xl"
