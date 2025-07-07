@@ -33,16 +33,15 @@ const StockItem = () => {
   const [showGodownDeclineAlert, setShowGodownDeclineAlert] = useState(false);
   const [pendingGodownToggle, setPendingGodownToggle] = useState(null);
 
-  const { _id: cmp_id, configurations } = useSelector(
+  const { _id: cmp_id, configurations ,industry } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
 
-  
 
   useEffect(() => {
     setSettingsOptions([
       {
-        title: "Stock Item Filter",
+        title: industry === 6 || industry === 7 ? "Room Management" : "Stock Item Filter",
         description:
           "Filters only show product creation window if it's enabled",
         icon: <FiSettings />,

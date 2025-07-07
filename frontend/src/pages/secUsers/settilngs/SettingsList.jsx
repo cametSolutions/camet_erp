@@ -6,11 +6,16 @@ import { MdDataSaverOff } from "react-icons/md";
 import { TbMoneybag } from "react-icons/tb";
 import { MdHomeRepairService } from "react-icons/md";
 import SettingsCard from "../../../components/common/SettingsCard";
+import { useSelector } from "react-redux";
 
 const Settings = () => {
+    const { industry } = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg
+  );
+
   const settingsOptions = [
     {
-      title: "STOCK ITEM",
+      title: industry === 6 || industry === 7 ? "ROOM TYPE" : "STOCK ITEM",
       description: "Configure your stock item",
       icon: <HiTemplate />,
       to: "/sUsers/StockItem",

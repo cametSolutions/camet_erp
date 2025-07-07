@@ -10,8 +10,9 @@ import Pagination from "../../components/common/Pagination";
 import { useLocation } from "react-router-dom";
 import { setSecSelectedOrganization } from "../../../slices/secSelectedOrgSlice";
 
-const ProductSubDetailsForm = ({ tab, handleLoader }) => {
+const ProductSubDetailsForm = ({ tab, handleLoader, isHotel }) => {
   const [value, setValue] = useState("");
+  const [price, setPrice] = useState("");
   const [data, setData] = useState([]);
   const [reload, setReload] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -46,6 +47,7 @@ const ProductSubDetailsForm = ({ tab, handleLoader }) => {
   useEffect(() => {
     getSubDetails();
     setValue("");
+    setPrice("");
   }, [reload]);
 
   useEffect(() => {
@@ -77,8 +79,10 @@ const ProductSubDetailsForm = ({ tab, handleLoader }) => {
   const handleSubmit = async (value) => {
     const formData = {
       [tab]: value,
+      ...(isHotel && { price }),
     };
 
+console.log(formData);
     try {
       setLoading(true);
       handleLoader(true);
@@ -166,7 +170,18 @@ const ProductSubDetailsForm = ({ tab, handleLoader }) => {
     }
   };
 
-  const handleEdit = async (id, value) => {
+  const handleEdit = async (id, value, data) => {
+    if(tab === "bedType"){
+      console.log(data)
+      setValue(data?.category)
+    }else if(tab === "roomFloor"){
+      setValue(data?.subcategory)
+    }else if (isHotel && tab === "roomType"){
+      setPrice(data?.roomRent)
+      setValue(data?.brand)
+    }else{
+      setValue(value);
+    }
     if (tab === "godown") {
       const isDefaultGodown = data.find((d) => d._id === id)?.defaultGodown;
 
@@ -180,22 +195,23 @@ const ProductSubDetailsForm = ({ tab, handleLoader }) => {
         return;
       }
     }
-    setValue(value);
     setEdit({
       id,
-
       enabled: true,
     });
   };
 
   // Edit subdetails
   const editSubDetails = async (id, data) => {
-    const formData = {
+      const formData = {
       [tab]: value,
+      ...(isHotel && { price }),
     };
+
     try {
       setLoading(true);
       handleLoader(true);
+      console.log(tab)
       const res = await api.put(
         `/api/${user}/editProductSubDetails/${orgId}/${id}?type=${tab}`,
         formData,
@@ -214,6 +230,8 @@ const ProductSubDetailsForm = ({ tab, handleLoader }) => {
       handleLoader(false);
     }
   };
+
+  console.log(data)
 
   return (
     <div className={`${loading ? "opacity-50 animate-pulse" : ""} `}>
@@ -238,6 +256,28 @@ const ProductSubDetailsForm = ({ tab, handleLoader }) => {
             value={value}
             onChange={(e) => setValue(e.target.value)}
           />
+          {isHotel && (
+            <input
+              type="number"
+              placeholder={`Enter your ${tab} price `}
+              className=" w-4/6  sm:w-2/6   p-1 text-black border border-gray-300 rounded-full mt-3 text-center"
+              value={price}
+              onKeyDown={(e) => {
+                // Prevent invalid keys like e, E, +, -, .
+                if (
+                  !/[0-9]/.test(e.key) &&
+                  e.key !== "Backspace" &&
+                  e.key !== "Delete" &&
+                  e.key !== "ArrowLeft" &&
+                  e.key !== "ArrowRight" &&
+                  e.key !== "Tab"
+                ) {
+                  e.preventDefault();
+                }
+              }}
+              onChange={(e) => setPrice(e.target.value)}
+            />
+          )}
           <button
             onClick={
               edit?.enabled
@@ -261,13 +301,13 @@ const ProductSubDetailsForm = ({ tab, handleLoader }) => {
                 className="flex items-center justify-between border-t-0 align-middle  whitespace-nowrap p-4 mb-2 border-b cursor-pointer hover:bg-slate-100 hover:translate-y-[1px]"
               >
                 <div className=" px-6 text-left text-wrap text-blueGray-700 text-sm font-bold text-gray-500">
-                  {el[tab]}
+                  {el[tab] ? el[tab] : el?.brand ? el?.brand : el?.category ? el?.category : el.subcategory}
                 </div>
 
                 <div className="flex items-center gap-12 text-xs">
                   <div className=" cursor-pointer text-center flex justify-center ">
                     <p
-                      onClick={() => handleEdit(el._id, el[tab])}
+                      onClick={() => handleEdit(el._id, el[tab] ,el)}
                       className="text-blue-500"
                     >
                       <FaEdit size={15} />

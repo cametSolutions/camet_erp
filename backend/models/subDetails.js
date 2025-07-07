@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 
 const brandSchema = new mongoose.Schema({
   brand: { type: String, required: true },
+  roomRent: { type: Number },
   brand_id: { type: String, required: true, index: true }, // Add index: true here
   cmp_id: {
     type: mongoose.Schema.Types.ObjectId,

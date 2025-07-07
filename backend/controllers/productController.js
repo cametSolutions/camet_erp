@@ -294,9 +294,11 @@ export const addProductSubDetails = async (req, res) => {
     /// add godownEnabled tag to company
     const company = await OragnizationModel.findOne({ _id: orgId });
     const generatedId = new mongoose.Types.ObjectId();
-
+    
+    console.log(key);
     switch (key) {
       case "brand":
+      case "roomType":
         Model = Brand;
         dataToSave = {
           _id: generatedId,
@@ -304,8 +306,12 @@ export const addProductSubDetails = async (req, res) => {
           brand_id: generatedId,
           cmp_id: orgId,
           Primary_user_id: req.pUserId || req.owner,
+          ...(Number(subDetails.price) > 0 && {
+            roomRent: Number(subDetails.price),
+          }),
         };
         break;
+      case "bedType":
       case "category":
         Model = Category;
         dataToSave = {
@@ -316,6 +322,7 @@ export const addProductSubDetails = async (req, res) => {
           Primary_user_id: req.pUserId || req.owner,
         };
         break;
+      case "roomFloor":
       case "subcategory":
         Model = Subcategory;
         dataToSave = {
@@ -385,18 +392,21 @@ export const getProductSubDetails = async (req, res) => {
     let data;
 
     switch (type) {
+      case "roomType":
       case "brand":
         data = await Brand.find({
           cmp_id: orgId,
           Primary_user_id: Primary_user_id,
         });
         break;
+      case "bedType":
       case "category":
         data = await Category.find({
           cmp_id: orgId,
           Primary_user_id: Primary_user_id,
         });
         break;
+      case "roomFloor":
       case "subcategory":
         data = await Subcategory.find({
           cmp_id: orgId,
@@ -443,12 +453,15 @@ export const deleteProductSubDetails = async (req, res) => {
 
     let Model;
     switch (type) {
+      case "roomType":
       case "brand":
         Model = Brand;
         break;
+      case "bedType":
       case "category":
         Model = Category;
         break;
+      case "roomFloor":
       case "subcategory":
         Model = Subcategory;
         break;
@@ -490,15 +503,19 @@ export const editProductSubDetails = async (req, res) => {
     const { orgId, id } = req.params;
     const { type } = req.query;
     const updateData = req.body[type];
+    console.log(req.body);
 
     let Model;
     switch (type) {
+      case "roomType":
       case "brand":
         Model = Brand;
         break;
+      case "bedType":
       case "category":
         Model = Category;
         break;
+      case "roomFloor":
       case "subcategory":
         Model = Subcategory;
         break;
@@ -514,8 +531,23 @@ export const editProductSubDetails = async (req, res) => {
 
     const queryConditions = { _id: id, cmp_id: orgId };
     const updateOperation = { [type]: updateData };
-
-    const result = await Model.updateOne(queryConditions, updateOperation);
+    let result;
+    if (type === "roomType") {
+      result = await Model.updateOne(queryConditions, {
+        brand: req.body.roomType,
+        roomRent: req.body.price,
+      });
+    } else if (type === "roomFloor") {
+      result = await Model.updateOne(queryConditions, {
+        subcategory: req.body.roomFloor,
+      });
+    } else if (type === "bedType") {
+      result = await Model.updateOne(queryConditions, {
+        category: req.body.bedType,
+      });
+    } else {
+      result = await Model.updateOne(queryConditions, updateOperation);
+    }
 
     if (result.modifiedCount === 0) {
       return res
@@ -548,7 +580,6 @@ export const getProducts = async (req, res) => {
     const params = extractRequestParams(req);
 
     console.log("Request Parameters:", params);
-    
 
     // Validate secondary user exists
     const secUser = await SecondaryUser.findById(params.Secondary_user_id);
@@ -563,9 +594,9 @@ export const getProducts = async (req, res) => {
 
     /// to find if tax inclusive is enabled
     const company = await OragnizationModel.findById(params.cmp_id).lean();
-    const isTaxInclusive = company?.configurations?.[0]?.addRateWithTax[params?.voucherType] ?? false;
-
-
+    const isTaxInclusive =
+      company?.configurations?.[0]?.addRateWithTax[params?.voucherType] ??
+      false;
 
     // Validate exclude godown ID if provided
     if (
@@ -607,7 +638,7 @@ export const getProducts = async (req, res) => {
       selectedGodowns,
       excludeGodownId: params.excludeGodownId,
       isSaleOrder: params.isSaleOrder,
-      isTaxInclusive
+      isTaxInclusive,
     });
 
     // Send response

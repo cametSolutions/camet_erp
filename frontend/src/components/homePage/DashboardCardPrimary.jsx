@@ -6,35 +6,43 @@ import customers from "../../assets/images/customers.png";
 import vouchers from "../../assets/images/application.png";
 import product from "../../assets/images/product.png";
 import reportImg from "../../assets/images/reports.png";
+import hotelImg from "../../assets/images/hotel.png";
+import restaurantImg from "../../assets/images/restaurant.png";
 
-const DashboardCards = ({ userType, receiptTotal, handleLinkClick }) => {
-  const cardData = {
-    primary: [
+const DashboardCards = ({
+  userType,
+  receiptTotal,
+  handleLinkClick,
+  organization,
+}) => {
+  const primary = [
+    {
+      icon: transactionImg,
+      title: `₹${receiptTotal.toFixed(2)}`,
+      subtitle: "Transactions",
+      link: "/pUsers/transaction",
+    },
+    {
+      icon: customers,
+      subtitle: "Stock Register",
+      link: "/pUsers/Inventory",
+    },
+  ];
+
+  let secondary = [];
+
+  if (organization?.industry === 6 || organization?.industry === 7) {
+    secondary = [
       {
-        icon: transactionImg,
-        title: `₹${receiptTotal.toFixed(2)}`,
-        subtitle: "Transactions",
-        link: "/pUsers/transaction",
+        icon: hotelImg,
+        subtitle: "Hotel Management",
+        link: "/sUsers/hotelDashBoard",
       },
       {
-        icon: customers,
-        subtitle: "Stock Register",
-        link: "/pUsers/Inventory",
+        icon: restaurantImg,
+        subtitle: "Restaurant Management",
+        link: "/sUsers/hotelDashBoard",
       },
-    ],
-    secondary: [
-     
-      {
-        icon: product,
-        subtitle: "Products",
-        link: "/sUsers/productList",
-      },
-      {
-        icon: customers,
-        subtitle: "Customers",
-        link: "/sUsers/partyList",
-      },
- 
       {
         icon: vouchers,
         subtitle: "Vouchers",
@@ -46,7 +54,36 @@ const DashboardCards = ({ userType, receiptTotal, handleLinkClick }) => {
         subtitle: "Reports",
         link: "/sUsers/reports",
       },
-    ],
+    ];
+  } else {
+    secondary = [
+      {
+        icon: product,
+        subtitle: "Products",
+        link: "/sUsers/productList",
+      },
+      {
+        icon: customers,
+        subtitle: "Customers",
+        link: "/sUsers/partyList",
+      },
+      {
+        icon: vouchers,
+        subtitle: "Vouchers",
+        link: "/sUsers/selectVouchers",
+      },
+      {
+        icon: reportImg,
+        title: `₹${receiptTotal.toFixed(2)}`,
+        subtitle: "Reports",
+        link: "/sUsers/reports",
+      },
+    ];
+  }
+
+  const cardData = {
+    primary,
+    secondary,
   };
 
   const cards = cardData[userType];
@@ -72,15 +109,15 @@ const DashboardCards = ({ userType, receiptTotal, handleLinkClick }) => {
                     {card.title}
                   </h4>
                 )} */}
-                <div className="text-gray-500 text-[15px]">{card?.subtitle}</div>
+                <div className="text-gray-500 text-[15px]">
+                  {card?.subtitle}
+                </div>
               </div>
             </div>
           </div>
         </div>
       ))}
     </div>
-
-
   );
 };
 

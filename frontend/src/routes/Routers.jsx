@@ -117,6 +117,14 @@ import VoucherSeriesForm from '@/pages/secUsers/settilngs/dataEntry/voucherSetti
 import VoucherSeriesList from '@/pages/secUsers/settilngs/dataEntry/voucherSettings/voucherSeries/VoucherSeriesList'
 import EditItemVoucher from '@/pages/voucher/voucherCreation/EditItemVoucher'
 import WarrantyCard from '@/pages/voucher/voucherPdf/warrantyCard/WarrantyCard'
+import HotelDashboard from '@/pages/Hotel/Pages/HotelDashboard'
+import AddAdditionalPax from '@/pages/Hotel/Pages/AddAdditionalPax' 
+import VisitOfPurpose from '@/pages/Hotel/Pages/VisitOfPurpose'
+import IdProof from '@/pages/Hotel/Pages/IdProof'
+import FoodPlan from '@/pages/Hotel/Pages/FoodPlan'
+import RoomRegistration from '@/pages/Hotel/Pages/RoomRegistration'
+import RoomList from '@/pages/Hotel/Pages/RoomList'
+import EditRoom from '@/pages/Hotel/Pages/EditRoom'
 
 const Routers = () => {
   return (
@@ -128,6 +136,7 @@ const Routers = () => {
         <Route path='/sUsers/transaction' element={<ProtectedSecRoute><Transaction /></ProtectedSecRoute>}></Route>
         {/* <Route path='/sUsers/receiptDetails/:id' element={<ProtectedSecRoute><SecReceptionDetails/></ProtectedSecRoute>}></Route> */}
         <Route path='/sUsers/dashboard' element={<ProtectedSecRoute><DashboardSec/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/hotelDashBoard' element={<ProtectedSecRoute><HotelDashboard/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/invoice' element={<ProtectedSecRoute><VoucherInitalPage/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/searchParty' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/partyList' element={<ProtectedSecRoute><PartyListSecondary/></ProtectedSecRoute>}></Route>
@@ -362,6 +371,17 @@ const Routers = () => {
         <Route path='/errorPage' element={<ErrorPage />} />
         <Route path='/serverError' element={<ServerError />} />
         <Route path='/sUsers/demo' element={<ProtectedSecRoute><Demo/></ProtectedSecRoute>}></Route>
+
+
+        {/* Hotel route */}
+        <Route path='/sUsers/addAdditionalPax' element={<AddAdditionalPax />} />
+        <Route path= '/sUsers/visitOfPurpose' element={<VisitOfPurpose />} />
+        <Route path= '/sUsers/idProof' element={<IdProof />} />
+        <Route path= '/sUsers/foodPlan' element={<FoodPlan />} />
+        <Route path= '/sUsers/roomRegistration' element={<RoomRegistration />} />
+        <Route path= '/sUsers/roomList' element={<RoomList />} />
+        <Route path= '/sUsers/editRoom' element={<EditRoom />} />
+        
     </Routes>
   )
 }

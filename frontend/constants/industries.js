@@ -20,4 +20,12 @@ export const industries = [
     code: 5,
     industry: "Pharmacy & Healthcare",
   },
+   {
+    code: 6,
+    industry: "Hotel ",
+  },
+   {
+    code: 7,
+    industry: "Hotel & Restaurant",
+  },
 ];
