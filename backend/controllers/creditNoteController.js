@@ -36,6 +36,7 @@ export const createCreditNote = async (req, res) => {
       items,
       despatchDetails,
       additionalChargesFromRedux,
+      note,
       finalAmount: lastAmount,
       selectedDate,
       voucherType,
@@ -249,6 +250,8 @@ export const editCreditNote = async (req, res) => {
       party,
       items,
       despatchDetails,
+      note,
+
       additionalChargesFromRedux,
       finalAmount: lastAmount,
       selectedDate,
@@ -279,6 +282,9 @@ export const editCreditNote = async (req, res) => {
 
       creditNoteNumber = voucherNumber; // Always update when series changes
       usedSeriesNumber = newUsedSeriesNumber; // Always update when series changes
+    }else{
+      creditNoteNumber = existingCreditNote?.creditNoteNumber
+      usedSeriesNumber = existingCreditNote?.usedSeriesNumber
     }
 
     // Revert existing stock updates
@@ -296,6 +302,7 @@ export const editCreditNote = async (req, res) => {
       despatchDetails,
       items,
       additionalCharges: additionalChargesFromRedux,
+      note,
       finalAmount: lastAmount,
       Primary_user_id: req.owner,
       Secondary_user_id: req.secondaryUserId,

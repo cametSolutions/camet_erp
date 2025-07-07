@@ -195,6 +195,7 @@ export const editSale = async (req, res) => {
     despatchDetails,
     priceLevelFromRedux,
     additionalChargesFromRedux,
+    note,
     finalAmount: lastAmount,
 
     selectedDate,
@@ -235,13 +236,17 @@ export const editSale = async (req, res) => {
             session
           );
 
+
+
         salesNumber = voucherNumber; // Always update when series changes
         usedSeriesNumber = newUsedSeriesNumber; // Always update when series changes
+      }else{
+        salesNumber = existingSale.salesNumber
+        usedSeriesNumber = existingSale.usedSeriesNumber
       }
       await revertSaleStockUpdates(existingSale.items, session);
       await handleSaleStockUpdates(items, session);
 
-      console.log("salesNumber", salesNumber);
 
       const updateData = {
         _id: existingSale._id,
@@ -253,6 +258,7 @@ export const editSale = async (req, res) => {
         items,
         priceLevel: priceLevelFromRedux,
         additionalCharges: additionalChargesFromRedux,
+        note,
         finalAmount: lastAmount,
         Primary_user_id: req.owner,
         Secondary_user_id: req.secondaryUserId,
@@ -569,6 +575,10 @@ export const getSalesDetails = async (req, res) => {
       .populate({
         path: "party._id",
         select: "partyName", // get only the name or other fields as needed
+      })
+      .populate({
+        path: "items.GodownList.warrantyCard",
+        select: "warrantyYears warrantyMonths displayInput termsAndConditions customerCareInfo customerCareNo", // populate item details
       })
       .populate({
         path: "items._id",

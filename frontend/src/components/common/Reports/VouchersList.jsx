@@ -1,10 +1,13 @@
-import TitleDiv from "../TitleDiv";
-import { BsFillRecord2Fill } from "react-icons/bs";
-import { useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
-import { setSelectedVoucher } from "../../../../slices/filterSlices/voucherType";
+import TitleDiv from "../TitleDiv"
+import { useEffect } from "react"
+import { BsFillRecord2Fill } from "react-icons/bs"
+import { useNavigate } from "react-router-dom"
+import { useDispatch } from "react-redux"
+import { setSelectedVoucher } from "../../../../slices/filterSlices/voucherType"
+import { useLocation } from "react-router-dom"
 const vouchers = [
   { title: "All Vouchers", value: "all" },
+  { title: "All", value: "allType" },
   { title: "Sale", value: "sale" },
   { title: "Sale Order", value: "saleOrder" },
   { title: "Van Sale", value: "vanSale" },
@@ -13,24 +16,27 @@ const vouchers = [
   { title: "Credit Note", value: "creditNote" },
   { title: "Receipt", value: "receipt" },
   { title: "Payment", value: "payment" },
-  { title: "Stock Transfer", value: "stockTransfer" },
-
-];
+  { title: "Stock Transfer", value: "stockTransfer" }
+]
 function VouchersList() {
-
-  const navigate = useNavigate();
-  const dispatch = useDispatch();
+  const navigate = useNavigate()
+  const dispatch = useDispatch()
+  const location = useLocation()
+  const filterKeys = location?.state?.filterKeys
+  const filteredVouchers = filterKeys.length
+    ? vouchers.filter((v) => filterKeys.includes(v.value))
+    : vouchers
 
   const handleSelect = (voucher) => {
-    dispatch(setSelectedVoucher(voucher));
+    dispatch(setSelectedVoucher(voucher))
     navigate(-1)
-  };
+  }
 
   return (
     <>
       <TitleDiv title="Vouchers" />
       <div className="flex flex-col gap-3 z-10">
-        {vouchers.map((voucher, index) => (
+        {filteredVouchers.map((voucher, index) => (
           <div
             onClick={() => handleSelect(voucher)}
             key={index}
@@ -44,7 +50,7 @@ function VouchersList() {
         ))}
       </div>
     </>
-  );
+  )
 }
 
-export default VouchersList;
+export default VouchersList

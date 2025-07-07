@@ -1,20 +1,38 @@
 /* eslint-disable react/no-unknown-property */
 
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import EditItemForm from "./EditItemForm";
+import useFetch from "@/customHook/useFetch";
+import { useEffect } from "react";
+import { addWarrantyCardsList } from "../../../../slices/voucherSlices/commonVoucherSlice";
 
 function EditItemVoucher() {
   const ItemsFromRedux = useSelector((state) => {
     return state.commonVoucherSlice.items;
   });
 
-  const { voucherType } = useSelector((state) => state.commonVoucherSlice);
+  const { voucherType, warrantyCardsList } = useSelector(
+    (state) => state.commonVoucherSlice
+  );
   const company = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
 
-  let modifiedVoucherType = voucherType;
+  const dispatch = useDispatch();
 
+  //// to get warranty cards
+  const { data: warrantyCardData, loading } = useFetch(
+    warrantyCardsList === null && `/api/sUsers/getWarrantyCards/${company?._id}`
+  );
+
+  useEffect(() => {
+    if (warrantyCardData && warrantyCardsList === null) {
+      dispatch(addWarrantyCardsList(warrantyCardData?.data));
+    }
+  }, [warrantyCardData]);
+
+
+  let modifiedVoucherType = voucherType;
   if (voucherType === "sales") {
     modifiedVoucherType = "sale";
   }
@@ -28,6 +46,7 @@ function EditItemVoucher() {
       ItemsFromRedux={ItemsFromRedux}
       from={voucherType}
       taxInclusive={taxInclusive}
+      loading={loading}
     />
   );
 }

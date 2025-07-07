@@ -24,6 +24,8 @@ import {
   addStockTransferToGodown,
   addVoucherSeries,
   addSelectedVoucherSeriesForEdit,
+  addNote,
+  addIsNoteOpen,
 } from "../../../../slices/voucherSlices/commonVoucherSlice";
 import DespatchDetails from "./DespatchDetails";
 import HeaderTile from "./HeaderTile";
@@ -35,6 +37,7 @@ import TitleDiv from "../../../components/common/TitleDiv";
 import AdditionalChargesTile from "./AdditionalChargesTile";
 import { formatVoucherType } from "../../../../utils/formatVoucherType";
 import AddGodownTile from "./AddGodownTile";
+import AddNoteTile from "./AddNoteTile";
 
 function VoucherInitialPageEdit() {
   const dispatch = useDispatch();
@@ -69,6 +72,8 @@ function VoucherInitialPageEdit() {
     mode,
     voucherSeries: voucherSeriesFromRedux,
     selectedVoucherSeries: selectedVoucherSeriesFromRedux,
+    note: noteFromRedux,
+    isNoteOpen: isNoteOpenFromRedux,
   } = useSelector((state) => state.commonVoucherSlice);
 
   // to find the current voucher
@@ -157,7 +162,10 @@ function VoucherInitialPageEdit() {
       finalAmount: finalAmountFromState = 0,
       _id: voucherIdFromState,
       stockTransferToGodown: stockTransferToGodownFromState = {},
+      note: noteFromState,
     } = location.state.data || {};
+
+    
 
     try {
       if (voucherIdFromState) {
@@ -278,6 +286,12 @@ function VoucherInitialPageEdit() {
         dispatch(addSelectedVoucherSeriesForEdit(seriesDetailsFromState));
       }
 
+      //// store the note in redux from state
+      if (noteFromState && noteFromRedux === null) {
+        
+        dispatch(addNote(noteFromState));
+      }
+
       // Configuration Number
       if (voucherSeriesFromRedux === null && voucherTypeFromRedux) {
         setIsLoading(true);
@@ -395,7 +409,7 @@ function VoucherInitialPageEdit() {
           orgId: cmp_id,
           series_id: selectedVoucherSeriesFromRedux?._id,
           usedSeriesNumber: selectedVoucherSeriesFromRedux?.currentNumber,
-
+          note: noteFromRedux,
           [voucherNumberTitle]: voucherNumber,
           stockTransferToGodown: stockTransferToGodownFromRedux,
           items,
@@ -413,15 +427,13 @@ function VoucherInitialPageEdit() {
           despatchDetails,
           priceLevelFromRedux,
           additionalChargesFromRedux,
+          note: noteFromRedux,
           selectedGodownDetails: vanSaleGodownFromRedux,
           series_id: selectedVoucherSeriesFromRedux?._id,
           usedSeriesNumber: selectedVoucherSeriesFromRedux?.currentNumber,
         };
       }
 
-
-      console.log(formData);
-      
 
       const res = await api.post(
         `/api/sUsers/edit${voucherTypeFromRedux}/${voucherId}?vanSale=${
@@ -476,8 +488,9 @@ function VoucherInitialPageEdit() {
             removeAll={removeAll}
             isLoading={submitLoading}
             mode={mode}
-            selectedVoucherSeriesFromRedux={selectedVoucherSeriesFromRedux || {}}
-
+            selectedVoucherSeriesFromRedux={
+              selectedVoucherSeriesFromRedux || {}
+            }
           />
           {/* adding party */}
 
@@ -522,6 +535,13 @@ function VoucherInitialPageEdit() {
             subTotal={subTotal}
             setOpenAdditionalTile={setOpenAdditionalTile}
             openAdditionalTile={openAdditionalTile}
+          />
+
+          <AddNoteTile
+            noteFromRedux={noteFromRedux}
+            isNoteOpenFromRedux={isNoteOpenFromRedux}
+            addNote={addNote}
+            addIsNoteOpen={addIsNoteOpen}
           />
 
           <div className="flex justify-between items-center bg-white mt-2 p-3">

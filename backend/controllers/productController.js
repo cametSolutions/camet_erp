@@ -579,7 +579,7 @@ export const getProducts = async (req, res) => {
     // Extract and validate request parameters
     const params = extractRequestParams(req);
 
-    console.log("Request Parameters:", params);
+    
 
     // Validate secondary user exists
     const secUser = await SecondaryUser.findById(params.Secondary_user_id);
@@ -632,6 +632,9 @@ export const getProducts = async (req, res) => {
       filter,
       params
     );
+
+
+    
 
     // Transform products according to business rules
     const transformedProducts = transformProducts(products, {

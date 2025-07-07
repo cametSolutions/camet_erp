@@ -14,6 +14,8 @@ import {
   addAllAdditionalCharges,
   addVansSaleGodown,
   addVoucherSeries,
+  addNote,
+  addIsNoteOpen,
 } from "../../../../slices/voucherSlices/commonVoucherSlice";
 import DespatchDetails from "./DespatchDetails";
 import HeaderTile from "./HeaderTile";
@@ -25,6 +27,7 @@ import TitleDiv from "../../../components/common/TitleDiv";
 import AdditionalChargesTile from "./AdditionalChargesTile";
 import { formatVoucherType } from "../../../../utils/formatVoucherType";
 import AddGodownTile from "./AddGodownTile";
+import AddNoteTile from "./AddNoteTile";
 
 function VoucherInitialPage() {
   const dispatch = useDispatch();
@@ -82,6 +85,8 @@ function VoucherInitialPage() {
     mode,
     voucherSeries: voucherSeriesFromRedux,
     selectedVoucherSeries: selectedVoucherSeriesFromRedux,
+    note: noteFromRedux,
+    isNoteOpen: isNoteOpenFromRedux,
   } = useSelector((state) => state.commonVoucherSlice);
 
   const getApiEndPoint = () => {
@@ -337,6 +342,7 @@ function VoucherInitialPage() {
           stockTransferToGodown,
           items,
           finalAmount: 0,
+          note: noteFromRedux,
         };
       } else {
         formData = {
@@ -349,6 +355,7 @@ function VoucherInitialPage() {
           finalAmount: Number(totalAmount.toFixed(2)),
           party,
           items,
+          note: noteFromRedux,
           despatchDetails,
           priceLevelFromRedux,
           additionalChargesFromRedux,
@@ -410,7 +417,9 @@ function VoucherInitialPage() {
             tab="add"
             isLoading={submitLoading}
             mode={mode}
-            selectedVoucherSeriesFromRedux={selectedVoucherSeriesFromRedux || {}}
+            selectedVoucherSeriesFromRedux={
+              selectedVoucherSeriesFromRedux || {}
+            }
           />
           {/* adding party */}
 
@@ -455,6 +464,13 @@ function VoucherInitialPage() {
             subTotal={subTotal}
             setOpenAdditionalTile={setOpenAdditionalTile}
             openAdditionalTile={openAdditionalTile}
+          />
+
+          <AddNoteTile
+            noteFromRedux={noteFromRedux}
+            isNoteOpenFromRedux={isNoteOpenFromRedux}
+            addNote={addNote}
+            addIsNoteOpen={addIsNoteOpen}
           />
 
           <div className="flex justify-between items-center bg-white mt-2 p-3">

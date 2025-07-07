@@ -137,7 +137,6 @@ export const extractRequestParams = (req) => {
   /// to sale if it is sales
    const voucherType = req.query.voucherType ==="sales" ? "sale" : req.query.voucherType || "all" ;
 
-   console.log("voucherType", voucherType);
    
 
   return {
@@ -200,6 +199,8 @@ export const getSelectedGodowns = (configuration, isVanSale) => {
  * @returns {Object|null} Transformed product object or null if should be filtered out
  */
 export const transformSingleProduct = (product, options) => {
+
+  
   const { selectedGodowns = [], excludeGodownId, isSaleOrder = false, isTaxInclusive=false } = options;
   
   const productObject = product.toObject();
@@ -222,6 +223,9 @@ export const transformSingleProduct = (product, options) => {
       selectedGodowns, 
       excludeGodownId
     );
+
+
+    
 
     // If no godowns remain after filtering, mark product for removal
     if (filteredGodownList.length === 0) {

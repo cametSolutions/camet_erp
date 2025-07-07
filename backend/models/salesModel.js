@@ -119,7 +119,8 @@ const salesSchema = new Schema(
               default: null,
               set: convertToUTCMidnight,
             },
-            warrantyCardNo: { type: String },
+            description: { type: String },
+            warrantyCard: { type: Schema.Types.ObjectId, ref: "WarrantyCard", default: null, },
             selectedPriceRate: { type: Number },
             added: { type: Boolean },
             count: { type: Number },
@@ -219,6 +220,9 @@ const salesSchema = new Schema(
         finalValue: { type: Number },
       },
     ],
+    
+
+    note: { type: String },
 
     finalAmount: { type: Number, required: true },
     paymentSplittingData: { type: Object },
@@ -230,10 +234,10 @@ const salesSchema = new Schema(
 );
 
 // 1. Primary unique identifier (sales number per company)
-salesSchema.index({ cmp_id: 1, salesNumber: -1 }, { unique: true });
-
-// 2. Secondary unique sequence (series-based numbering)
-salesSchema.index({ cmp_id: 1, series_id: 1, series_id: -1 }, { unique: true });
+salesSchema.index(
+  { cmp_id: 1, series_id: 1, salesNumber: 1 },
+  { unique: true, name: "unique_sales_number_per_series" }
+);
 
 // 3. Most common query pattern (company + date sorting)
 salesSchema.index({ cmp_id: 1, date: -1 });

@@ -26,7 +26,6 @@ function Dashboard() {
 
 
   const { handleToggleSidebar } = useSidebar();
-
   useEffect(() => {
     if (org) {
       const fetchTransactions = async () => {
@@ -54,7 +53,6 @@ function Dashboard() {
   }, [org]);
 
   const today = new Date();
-
   // Filter data based on today's date
   const filteredData = data?.filter((item) => {
     const createdAtDate = new Date(item?.date);

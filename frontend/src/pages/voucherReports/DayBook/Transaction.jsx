@@ -25,6 +25,9 @@ function Transaction() {
     (state) => state?.userFilter?.selectedUser
   );
 
+  console.log(selectedSecondaryUser);
+  
+
   const isAdmin =
     JSON.parse(localStorage.getItem("sUserData")).role === "admin"
       ? true
@@ -41,7 +44,6 @@ function Transaction() {
       }`,
     [org?._id, start, end, selectedVoucher, selectedSecondaryUser]
   );
-
   // Fetch data using custom hook
   const { data: transactionData, loading: transactionLoading } =
     useFetch(transactionsUrl);

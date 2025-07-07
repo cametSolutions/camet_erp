@@ -110,8 +110,8 @@ const invoiceSchema = new Schema(
               type: Date,
               default: null,
               set: () => null, // Set to null by default in saleOrder
-            }, 
-            warrantyCardNo: { type: String, default: null, set: () => null }, // Set to null by default in saleOrder
+            },
+            description: { type: String },
             selectedPriceRate: { type: Number },
             added: { type: Boolean },
             count: { type: Number },
@@ -208,6 +208,8 @@ const invoiceSchema = new Schema(
       },
     ],
 
+    note: { type: String },
+
     finalAmount: { type: Number, required: true },
     paymentSplittingData: { type: Object },
     isCancelled: { type: Boolean, default: false },
@@ -218,12 +220,9 @@ const invoiceSchema = new Schema(
 );
 
 // 1. Primary unique identifier (order number per company)
-invoiceSchema.index({ cmp_id: 1, orderNumber: -1 }, { unique: true });
-
-// 2. Secondary unique sequence (series-based numbering)
 invoiceSchema.index(
-  { cmp_id: 1, series_id: 1, series_id: -1 },
-  { unique: true }
+  { cmp_id: 1, series_id: 1, orderNumber: 1 },
+  { unique: true, name: "unique_order_number_per_series" }
 );
 
 // 3. Most common query pattern (company + date sorting)

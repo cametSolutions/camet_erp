@@ -187,6 +187,7 @@ export const createDebitNoteRecord = async (
       selectedDate,
       usedSeriesNumber,
       series_id,
+      note,
     } = req.body;
 
     const Primary_user_id = req.owner;
@@ -218,6 +219,7 @@ export const createDebitNoteRecord = async (
       despatchDetails,
       items: updatedItems,
       additionalCharges: updateAdditionalCharge,
+      note,
       finalAmount: lastAmount,
       Primary_user_id,
       Secondary_user_id,

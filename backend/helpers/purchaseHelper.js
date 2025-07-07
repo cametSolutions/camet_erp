@@ -46,7 +46,7 @@ export const handlePurchaseStockUpdates = async (
         const godownCount =
           godown.actualCount !== undefined ? godown.actualCount : godown.count;
 
-        if (godown.newBatch) {
+        if (godown.newBatch && !godown?.created_by) {
 
           if (godownCount > 0) {
             // Handle new batch logic
@@ -239,6 +239,7 @@ export const createPurchaseRecord = async (
       selectedDate,
       series_id,
       usedSeriesNumber,
+      note
     } = req.body;
 
     const Primary_user_id = req.owner;
@@ -269,6 +270,7 @@ export const createPurchaseRecord = async (
       despatchDetails,
       items: updatedItems,
       additionalCharges: updateAdditionalCharge,
+      note,
       finalAmount: lastAmount,
       Primary_user_id,
       Secondary_user_id,

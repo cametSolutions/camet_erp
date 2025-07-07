@@ -4,12 +4,12 @@ import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import MobilePdfViewer from "../MobilePdfViewer";
+import { getFutureDate } from "../../../../../../backend/utils/dateHelpers";
 
 const WarrantyCard = () => {
   const { id } = useParams();
   const [productData, setProductData] = useState([]);
   const [customerData, setCustomerData] = useState([]);
-  const [voucherDetails, setVoucherDetails] = useState({});
 
   const { data, loading } = useFetch(`/api/sUsers/getsalesDetails/${id}`);
 
@@ -18,28 +18,45 @@ const WarrantyCard = () => {
       const { party = {}, items = [], date = "", salesNumber = "" } = data.data;
 
       setCustomerData(party);
-      setVoucherDetails(data.data);
       const products = [];
 
       items?.forEach((el) => {
-        if (el?.batchEnabled) {
-          // Filter GodownList items that have 'added: true' and have a batch name
-          const addedBatches = el?.GodownList?.filter(
-            (godown) =>
-              godown?.added === true && godown?.batch && godown?.warrantyCardNo
-          );
+        // Filter GodownList items that have 'added: true' and have a batch name
+        const addedBatches = el?.GodownList?.filter(
+          (godown) =>
+            godown?.added === true && godown?.batch && godown?.warrantyCard
+        );
 
-          // Create a separate product entry for each batch
-          addedBatches?.forEach((godown) => {
-            products?.push({
-              modelNo: el?.product_name,
-              purchaseNO: salesNumber,
-              purchaseDate: date,
-              serialNO: godown?.batch,
-              Warrantyto: godown?.expdt,
-            });
+        // Create a separate product entry for each batch
+        addedBatches?.forEach((godown) => {
+          const {
+            warrantyYears,
+            warrantyMonths,
+            displayInput,
+            termsAndConditions,
+            customerCareInfo,
+            customerCareNo,
+          } = godown.warrantyCard;
+
+          products?.push({
+            modelNo: el?.product_name,
+            purchaseNO: salesNumber,
+            purchaseDate: date,
+            serialNO: godown?.batch,
+            Warrantyto: godown?.expdt,
+            warrantyYears,
+            warrantyMonths,
+            displayInput,
+            termsAndConditions,
+            customerCareInfo,
+            customerCareNo,
+            warrantyPeriodFrom: date,
+            warrantyPeriodTo: getFutureDate({
+              years: warrantyYears,
+              months: warrantyMonths,
+            }),
           });
-        }
+        });
       });
 
       setProductData(products);
@@ -124,19 +141,30 @@ const WarrantyCard = () => {
                         },
                         {
                           label: "Warranty Period",
-                          value: `${new Date(
-                            voucherDetails?.date
-                          ).toLocaleDateString("en-GB", {
-                            day: "2-digit",
-                            month: "long",
-                            year: "numeric",
-                          })} to  ${new Date(
-                            item?.Warrantyto
-                          ).toLocaleDateString("en-GB", {
-                            day: "2-digit",
-                            month: "long",
-                            year: "numeric",
-                          })}`,
+                          value: (() => {
+                            const from = new Date(item?.warrantyPeriodFrom);
+                            const to = new Date(item?.warrantyPeriodTo);
+
+                            const formattedFrom = from.toLocaleDateString(
+                              "en-GB",
+                              {
+                                day: "2-digit",
+                                month: "long",
+                                year: "numeric",
+                              }
+                            );
+
+                            const formattedTo = to.toLocaleDateString("en-GB", {
+                              day: "2-digit",
+                              month: "long",
+                              year: "numeric",
+                            });
+
+                            return to.setHours(0, 0, 0, 0) >
+                              from.setHours(0, 0, 0, 0)
+                              ? `${formattedFrom} to ${formattedTo}`
+                              : formattedFrom;
+                          })(),
                         },
                       ].map((item, idx) => (
                         <div key={idx} className="flex items-start text-xs">
@@ -157,15 +185,24 @@ const WarrantyCard = () => {
 
                   {/* Right Column - Warranty Year Box */}
                   <div className="flex flex-col items-center">
-                    <div className="p-1 border border-yellow-700 mb-3 ">
-                      <div className="border-2 border-black w-20 h-20 flex items-center justify-center ">
+                    <div className="p-1 border border-yellow-700 mb-3">
+                      <div className="border-2 border-black w-20 h-20 flex items-center justify-center">
                         <span className="text-4xl font-bold molle-regular-italic">
-                          2
+                          {item?.displayInput}
                         </span>
                       </div>
                     </div>
-                    <div className="text-center font-semibold ">
-                      <div>YEAR WARRANTY</div>
+                    <div className="text-center font-semibold">
+                      {(item?.warrantyYears > 0 ||
+                        item?.warrantyMonths > 0) && (
+                        <div>
+                          {item?.warrantyYears > 0
+                            ? "YEAR WARRANTY"
+                            : item?.warrantyMonths > 0
+                            ? "MONTH WARRANTY"
+                            : ""}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -180,36 +217,22 @@ const WarrantyCard = () => {
                 </div>
 
                 {/* Terms & Conditions */}
-
-                <div className="mt-8">
-                  <hr className="border my-4" />
-                  <h3 className="font-bold mb-2">Terms & Conditions</h3>
-                  <p className="text-xs ">
-                    This warranty is valid for manufacturing defects and repair
-                    of your appliance within warranty period at the date of
-                    purchase. Service will be provided within 15 days once the
-                    product goes to dysfunctional. The warranty stand void if
-                    the product, is tampered with or not used in accordance with
-                    the operating terms specified by the manufacturer. Warranty
-                    does not cover any physical or liquid damage (including any
-                    damage caused due to natural calamities like earth quake,
-                    cyclone, voltage fluctuations, lighting natural pouring)
-                    wear & tear 1-3 month warranty for TV remote typically
-                    covers (physical damage not covered under warranty).The
-                    accessories are not covered in this warranty. If the Product
-                    Serial number is altered or removed, warranty is void.
-                  </p>
-                </div>
+                {item?.termsAndConditions && (
+                  <div className="mt-8">
+                    <hr className="border my-4" />
+                    <h3 className="font-bold mb-2">Terms & Conditions</h3>
+                    <p className="text-xs ">{item?.termsAndConditions}</p>
+                  </div>
+                )}
 
                 {/* Customer Care */}
                 <div className="mt-6 text-center">
                   <hr className="border my-2" />
 
                   <p className="text-xs font-semibold">
-                    To register a service or repair request, please call our
-                    customer care number
+                    {item?.customerCareInfo}
                     <br />
-                    <span className="font-bold">8129081503, 8714624330</span>
+                    <span className="font-bold">{item?.customerCareNo}</span>
                   </p>
                 </div>
               </div>

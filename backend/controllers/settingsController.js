@@ -2,8 +2,8 @@ import mongoose from "mongoose";
 import barcodeModel from "../models/barcodeModel.js";
 import OragnizationModel from "../models/OragnizationModel.js";
 import productModel from "../models/productModel.js";
+import WarrantyCard from "../models/warranyCardModel.js";
 import { Godown } from "../models/subDetails.js";
-
 
 /**
  * @desc  add email configuration for a company
@@ -619,36 +619,30 @@ export const updateBankAccount = async (req, res) => {
 };
 
 /**
- * @description Update tax configuration of a company
+ * @description Generic function to update any configuration field of a company
  * @param {string} cmp_id Company ID
  * @param {string} voucher Voucher type (sale or saleOrder)
- * @param {boolean} value New value for addRateWithTax
+ * @param {string} configField The configuration field to update (e.g., 'addRateWithTax', 'otherField')
+ * @param {any} value New value for the configuration field
+ * @param {object} defaultValue Default structure for the field if it doesn't exist
  * @returns {object} Updated company configuration
- * @route PUT /api/settings/updateTaxConfiguration/:cmp_id?voucher={sale|saleOrder}
+ * @route PUT /api/settings/updateConfiguration/:cmp_id?voucher={sale|saleOrder}&field={configField}
  * @access Private
  */
-export const updateTaxConfiguration = async (req, res) => {
+export const updateCommonToggleConfiguration = async (req, res) => {
   try {
     const cmp_id = req?.params?.cmp_id;
-    const voucher = req.query.voucher || "";
-    const { addRateWithTax: value } = req.body; // Expecting a boolean value
-
-    console.log("value", value);
+    const { value, voucher, configField } = req.body;
 
     // Validate inputs
-    if (!cmp_id || !voucher) {
+    if (!cmp_id || !voucher || !configField) {
       return res.status(400).json({
-        message: "Company ID and voucher type are required",
+        message:
+          "Company ID, voucher type, and configuration field are required",
       });
     }
 
-    if (typeof value !== "boolean") {
-      return res.status(400).json({
-        message: "Value must be a boolean (true/false)",
-      });
-    }
-
-    // Find company and update configuration
+    // Find company
     const company = await OragnizationModel.findById(cmp_id);
     if (!company) {
       return res.status(404).json({ message: "Company not found" });
@@ -659,30 +653,32 @@ export const updateTaxConfiguration = async (req, res) => {
       company.configurations = [{}];
     }
 
-    // Initialize addRateWithTax if it doesn't exist
-    if (!company.configurations[0].addRateWithTax) {
-      company.configurations[0].addRateWithTax = {
-        sale: false,
-        saleOrder: false,
-      };
-    }
-
-    company.configurations[0].addRateWithTax = {
-      ...company.configurations[0].addRateWithTax,
-      [voucher]: value,
+    // Get default structure for the field (you can customize this based on your needs)
+    const defaultStructures = {
+      sale: false,
+      saleOrder: false,
     };
 
-    // console.log("company.configurations[0].addRateWithTax", company.configurations[0].addRateWithTax);
+    // Initialize field if it doesn't exist
+    if (!company.configurations[0][configField]) {
+      company.configurations[0][configField] = defaultStructures;
+    }
+
+    // Update the specific voucher type for the field
+    company.configurations[0][configField] = {
+      ...company.configurations[0][configField],
+      [voucher]: value,
+    };
 
     // Save the updated company
     await company.save();
 
     return res.status(200).json({
-      message: "Tax configuration updated successfully",
+      message: `${configField} configuration updated successfully`,
       updatedConfig: company,
     });
   } catch (error) {
-    console.error("Error updating tax configuration:", error);
+    console.error("Error updating configuration:", error);
     return res.status(500).json({
       message: "Internal server error",
       error: error.message,
@@ -798,52 +794,49 @@ export const updateFirstLayerConfiguration = async (req, res) => {
     // Update only the first element
     companyConfig[fieldToUpdate] = value;
 
-
     /// if the fieldToUpdate is batchEnabled ,adjust  Manufacturing Date and Expiry Date accordingly
     if (fieldToUpdate === "batchEnabled") {
       if (value === false) {
-     
         companyConfig.enableManufacturingDate = false;
         companyConfig.enableExpiryDate = false;
       }
     }
 
     // Special handling for gdnEnabled
-if (fieldToUpdate === "gdnEnabled" && value === true) {
-  const defaultGodown = await Godown.findOne({
-    cmp_id: cmp_id,
-    defaultGodown: true,
-  }).session(session);
+    if (fieldToUpdate === "gdnEnabled" && value === true) {
+      const defaultGodown = await Godown.findOne({
+        cmp_id: cmp_id,
+        defaultGodown: true,
+      }).session(session);
 
-  console.log("defaultGodown", defaultGodown);
+      console.log("defaultGodown", defaultGodown);
 
-  if (!defaultGodown) {
-    throw new Error("Default godown not found");
-  }
+      if (!defaultGodown) {
+        throw new Error("Default godown not found");
+      }
 
-  // Update all products: set gdnEnabled and update GodownList
-  const result = await productModel.updateMany(
-    { cmp_id: cmp_id },
-    [
-      {
-        $set: {
-          gdnEnabled: true,
-          GodownList: {
-            $map: {
-              input: "$GodownList",
-              as: "item",
-              in: {
-                $mergeObjects: ["$$item", { godown: defaultGodown._id }],
+      // Update all products: set gdnEnabled and update GodownList
+      const result = await productModel.updateMany(
+        { cmp_id: cmp_id },
+        [
+          {
+            $set: {
+              gdnEnabled: true,
+              GodownList: {
+                $map: {
+                  input: "$GodownList",
+                  as: "item",
+                  in: {
+                    $mergeObjects: ["$$item", { godown: defaultGodown._id }],
+                  },
+                },
               },
             },
           },
-        },
-      },
-    ],
-    { session }
-  );
-}
-
+        ],
+        { session }
+      );
+    }
 
     // Save the updated company
     await company.save({ session });
@@ -866,6 +859,178 @@ if (fieldToUpdate === "gdnEnabled" && value === true) {
     console.error("Error updating configuration:", error);
     return res.status(500).json({
       message: "Internal server error",
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Create warranty card
+// @route   POST /api/warranty-cards
+// @access  Private
+export const createWarrantyCard = async (req, res) => {
+  try {
+    const {
+      name,
+      warrantyYears = 0,
+      warrantyMonths = 0,
+      displayInput,
+      termsAndConditions,
+      customerCareInfo,
+      customerCareNo,
+    } = req.body;
+
+    console.log(warrantyYears);
+    
+
+    if (warrantyYears === null) body.warrantyYears = 0;
+    if (warrantyMonths === null) body.warrantyMonths = 0;
+
+    const Primary_user_id = req.owner;
+    const cmp_id = req.params.cmp_id;
+
+    //// check if any warranty card added with this name
+    const existingWarrantyCard = await WarrantyCard.findOne({
+      name: new RegExp(`^${name}$`, "i"),
+      cmp_id,
+    });
+
+    if (existingWarrantyCard) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Warranty card already exists" });
+    }
+
+    const warrantyCard = await WarrantyCard.create({
+      name,
+      warrantyYears: parseInt(warrantyYears),
+      warrantyMonths: parseInt(warrantyMonths),
+      displayInput,
+      termsAndConditions,
+      customerCareInfo,
+      customerCareNo,
+      cmp_id,
+      Primary_user_id,
+    });
+
+    res.status(201).json({
+      success: true,
+      data: warrantyCard,
+      message: "Warranty card created successfully",
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: "Bad Request",
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Get all warranty cards
+// @route   GET /api/warranty-cards
+// @access  Public
+export const getWarrantyCards = async (req, res) => {
+  try {
+    const cmp_id = req.params.cmp_id;
+
+    if (!cmp_id) {
+      console.error("Company ID is required for getting warranty cards.");
+    }
+
+    const warrantyCards = await WarrantyCard.find({ cmp_id: cmp_id });
+    res.status(200).json({
+      success: true,
+      data: warrantyCards,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Update warranty card
+// @route   PUT /api/warranty-cards/:id
+// @access  Private
+export const updateWarrantyCard = async (req, res) => {
+  try {
+    const warrantyCard = await WarrantyCard.findById(req.params.id);
+
+    if (!warrantyCard) {
+      return res.status(404).json({
+        success: false,
+        message: "Warranty card not found",
+      });
+    }
+
+    const {
+      name,
+      warrantyYears,
+      warrantyMonths,
+      displayInput,
+      termsAndConditions,
+      customerCareInfo,
+      customerCareNo,
+    } = req.body;
+
+    // Update fields
+    warrantyCard.name = name || warrantyCard.name;
+    warrantyCard.warrantyYears = warrantyYears
+      ? parseInt(warrantyYears)
+      : warrantyCard.warrantyYears;
+    warrantyCard.warrantyMonths = warrantyMonths
+      ? parseInt(warrantyMonths)
+      : warrantyCard.warrantyMonths;
+    warrantyCard.displayInput = displayInput || warrantyCard.displayInput;
+    warrantyCard.termsAndConditions =
+      termsAndConditions || warrantyCard.termsAndConditions;
+    warrantyCard.customerCareInfo =
+      customerCareInfo || warrantyCard.customerCareInfo;
+    warrantyCard.customerCareNo = customerCareNo || warrantyCard.customerCareNo;
+    warrantyCard.updatedBy = req.user?.id; // Set if you have authentication
+
+    const updatedWarrantyCard = await warrantyCard.save();
+
+    res.status(200).json({
+      success: true,
+      data: updatedWarrantyCard,
+      message: "Warranty card updated successfully",
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: "Bad Request",
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Delete warranty card
+// @route   DELETE /api/warranty-cards/:id
+// @access  Private
+export const deleteWarrantyCard = async (req, res) => {
+  try {
+    const warrantyCard = await WarrantyCard.findById(req.params.id);
+
+    if (!warrantyCard) {
+      return res.status(404).json({
+        success: false,
+        message: "Warranty card not found",
+      });
+    }
+
+    await WarrantyCard.findByIdAndDelete(req.params.id);
+
+    res.status(200).json({
+      success: true,
+      message: "Warranty card deleted successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
       error: error.message,
     });
   }

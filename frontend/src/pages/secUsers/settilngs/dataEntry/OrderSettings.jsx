@@ -28,7 +28,11 @@ const OrderSettings = () => {
 
   useEffect(() => {
     if (configurations) {
-      const { addRateWithTax,enableShipTo } = configurations[0];
+      const {
+        addRateWithTax = false,
+        enableShipTo = false,
+        showDescription = false,
+      } = configurations[0];
 
       setSettings([
         {
@@ -58,8 +62,18 @@ const OrderSettings = () => {
           dbField: "addRateWithTax",
           toggleValue: addRateWithTax["saleOrder"] || false,
         },
+
         {
-          id:7,
+          title: "Show Description",
+          description: "Show description for items in invoice.",
+          icon: <TbReceiptTax />,
+          active: true,
+          toggle: true,
+          dbField: "showDescription",
+          toggleValue: showDescription["saleOrder"] || false,
+        },
+        {
+          id: 7,
           title: "Enable Ship to Bill on Order",
           description:
             "Enable this option to include 'Ship to Bill' details on the Sale Order",
@@ -104,13 +118,14 @@ const OrderSettings = () => {
     }
   }, [configurations]);
 
-
-
   const getUrl = (title) => {
     let url;
     switch (title) {
       case "addRateWithTax":
-        url = "/updateTaxConfiguration";
+        url = "/updateCommonToggleConfiguration";
+        break;
+      case "showDescription":
+        url = "updateCommonToggleConfiguration";
         break;
       case "enableShipTo":
         url = "/updateShipToConfiguration";
@@ -127,12 +142,27 @@ const OrderSettings = () => {
   const handleToggleChangeFromParent = async (data) => {
     const url = getUrl(data?.title);
 
+    let body = {};
+
+    if (data?.title === "showDescription" || data?.title === "addRateWithTax") {
+      body = {
+        configField: data?.title,
+        voucher: "saleOrder",
+        value: data?.checked,
+      };
+    } else {
+      body = {
+        fieldToUpdate: data?.title,
+        value: data?.checked,
+      };
+    }
+
     if (url) {
       try {
         setLoading(true);
         const res = await api.put(
           `/api/sUsers/${url}/${cmp_id}?voucher=saleOrder`,
-          { [data?.title]: data?.checked },
+          body,
           {
             withCredentials: true,
           }

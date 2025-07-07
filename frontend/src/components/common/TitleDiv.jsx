@@ -1,20 +1,20 @@
 /* eslint-disable react/jsx-key */
 /* eslint-disable react/prop-types */
 /* eslint-disable no-undef */
-import { IoIosArrowRoundBack } from "react-icons/io";
-import {  useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
-import { useState } from "react";
-import CustomBarLoader from "./CustomBarLoader";
+import { IoIosArrowRoundBack } from "react-icons/io"
+import { useNavigate } from "react-router-dom"
+import { useSelector } from "react-redux"
+import { useState } from "react"
+import CustomBarLoader from "./CustomBarLoader"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "../../components/ui/dropdown-menu";
-import { BsThreeDotsVertical } from "react-icons/bs";
+  DropdownMenuTrigger
+} from "../../components/ui/dropdown-menu"
+import { BsThreeDotsVertical } from "react-icons/bs"
 
 function TitleDiv({
   title,
@@ -24,45 +24,47 @@ function TitleDiv({
   rightSideModalComponent = null,
   rightSideContentOnClick = null,
   dropdownContents = [],
-  customNavigate= null,
+  customNavigate = null,
+  // summaryType = null
 }) {
-  const navigate = useNavigate();
-  const [showModal, setShowModal] = useState(false);
+  const navigate = useNavigate()
+  const [showModal, setShowModal] = useState(false)
 
   const handleNavigate = () => {
-    if(customNavigate) {
-      customNavigate();
-      return;
+    if (customNavigate) {
+      customNavigate()
+      return
     }
     if (from) {
-      navigate(from, { replace: true });
+     
+      navigate(from, { replace: true})
     } else {
-      navigate(-1, { replace: true });
+      navigate(-1, { replace: true })
     }
-  };
+  }
 
   const { type } =
     useSelector((state) => state?.secSelectedOrganization?.secSelectedOrg) ||
-    "self";
+    "self"
 
   const handleRightClick = () => {
     if (rightSideContentOnClick) {
-      rightSideContentOnClick();
+      rightSideContentOnClick()
     } else {
-      setShowModal(true);
+      setShowModal(true)
     }
-  };
-
-const handleDropdownClick = (item) => {
-  if (item?.data) {
-    localStorage.setItem(item?.savingName , JSON.stringify(item.data));
   }
-  navigate(item?.to, {
-    state: {
-      from: item?.from,
-    },
-  });
-};
+
+  const handleDropdownClick = (item) => {
+    if (item?.data) {
+      localStorage.setItem(item?.savingName, JSON.stringify(item.data))
+    }
+    navigate(item?.to, {
+      state: {
+        from: item?.from
+      }
+    })
+  }
 
   return (
     <div className="sticky top-0 z-50 ">
@@ -93,7 +95,7 @@ const handleDropdownClick = (item) => {
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
               {dropdownContents.map((item, index) => {
-                const isDisabled = item?.typeSpecific && type !== "self";
+                const isDisabled = item?.typeSpecific && type !== "self"
                 return (
                   <div
                     key={index}
@@ -113,7 +115,7 @@ const handleDropdownClick = (item) => {
                       {item.title}
                     </DropdownMenuItem>
                   </div>
-                );
+                )
               })}
             </DropdownMenuContent>
           </DropdownMenu>
@@ -131,7 +133,7 @@ const handleDropdownClick = (item) => {
         </div>
       )}
     </div>
-  );
+  )
 }
 
-export default TitleDiv;
+export default TitleDiv

@@ -1,6 +1,6 @@
 /* eslint-disable no-prototype-builtins */
 import { useState, useEffect, useMemo } from "react";
-
+import { useLocation } from "react-router-dom";
 import TitleDiv from "../../../../components/common/TitleDiv";
 import SummmaryDropdown from "../../../../components/Filters/SummaryDropdown";
 import SelectDate from "../../../../components/Filters/SelectDate";
@@ -12,23 +12,20 @@ import { RiFileExcel2Fill } from "react-icons/ri";
 function SalesSummaryTable() {
   const [summaryReport, setSummaryReport] = useState([]);
   const [summary, setSummary] = useState([]);
-
-  
-
-  // const location = useLocation();
-  // const summary = location?.state?.summary;
+const location=useLocation()
+const {summaryType}=location.state
 
   const { start, end } = useSelector((state) => state.date);
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
+  const voucherType = useSelector((state) => state.voucherType.selectedVoucher)
   const selectedOption = useSelector(
     (state) => state.summaryFilter.selectedOption
   );
-
   const salesummaryUrl = useMemo(() => {
     if (start && end) {
-      return `/api/sUsers/salesSummary/${cmp_id}?startOfDayParam=${start}&endOfDayParam=${end}&selectedVoucher=sale`;
+      return `/api/sUsers/salesSummary/${cmp_id}?startOfDayParam=${start}&endOfDayParam=${end}&selectedVoucher=${voucherType.value}&summaryType=${summaryType}`;
     }
     return null; // Or return an empty string if preferred
   }, [start, end, cmp_id]);
@@ -44,7 +41,6 @@ function SalesSummaryTable() {
       setSummary(salesummaryData.flattenedResults);
     }
   }, [salesummaryData, cmp_id]);
-
   useEffect(() => {
     if (summary && summary.length > 0) {
       // setSelectedIndex(null);
@@ -182,7 +178,7 @@ function SalesSummaryTable() {
                     );
 
                     const newSale = {
-                      billnumber: item?.salesNumber,
+                      billnumber: item?.salesNumber||item?.creditNoteNumber,
                       billDate: item?.date,
                       itemName: it?.product_name,
                       batch: items?.batch,
@@ -212,7 +208,7 @@ function SalesSummaryTable() {
                   it?.discount
                 );
                 const newSale = {
-                  billnumber: item?.salesNumber,
+                  billnumber: item?.salesNumber||item?.creditNoteNumber,
                   billDate: item?.date,
                   itemName: it?.product_name,
                   categoryName: it?.category?.name,
@@ -255,7 +251,7 @@ function SalesSummaryTable() {
                       items?.discount
                     );
                     const newSale = {
-                      billnumber: item?.salesNumber,
+                      billnumber: item?.salesNumber||item.crediNoteNumber,
                       billDate: item?.date,
                       itemName: it.product_name,
                       batch: items?.batch,
@@ -286,7 +282,7 @@ function SalesSummaryTable() {
                   it?.discount
                 );
                 const a = {
-                  billnumber: item?.salesNumber,
+                  billnumber: item?.salesNumber||item?.creditNoteNumber,
                   billDate: item?.date,
                   itemName: it?.product_name,
                   categoryName: it?.category?.name,
@@ -922,7 +918,6 @@ function SalesSummaryTable() {
     ];
     worksheetData.push(headers);
 
-    console.log(summaryReport);
     
   
     // Add data rows
@@ -1052,13 +1047,13 @@ function SalesSummaryTable() {
   return (
     <div>
       <div className="flex flex-col sticky top-0 ">
-        <TitleDiv title={"Sales Summary Details"} from="/sUsers/salesSummary"
+        <TitleDiv title={"Sales Summary Details"} from="/sUsers/salesSummary" summaryType={summaryType}
         rightSideContent={<RiFileExcel2Fill size={20} />}
                   rightSideContentOnClick={exportToExcel}
          />
         {/* <button onClick={()=>{exportToExcel(summaryReport,selectedOption)}}>convet</button> */}
         <SelectDate />
-        <div className="flex px-2  bg-white shadow-lg border-t shadow-lg">
+        <div className="flex px-2  bg-white  border-t shadow-lg">
           <SummmaryDropdown />
         </div>
       </div>

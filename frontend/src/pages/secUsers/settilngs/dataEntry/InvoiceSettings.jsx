@@ -16,6 +16,7 @@ import { toast } from "react-toastify";
 import { updateConfiguration } from "../../../../../slices/secSelectedOrgSlice";
 import { PiVan } from "react-icons/pi";
 import { FaRegAddressBook } from "react-icons/fa";
+import { GrDocumentWord } from "react-icons/gr";
 
 const InvoiceSettings = () => {
   const [loading, setLoading] = useState(false);
@@ -27,7 +28,11 @@ const InvoiceSettings = () => {
 
   useEffect(() => {
     if (configurations) {
-      const { addRateWithTax, enableShipTo } = configurations[0];
+      const {
+        addRateWithTax = false,
+        enableShipTo = false,
+        showDescription = false,
+      } = configurations[0];
       setSettings([
         {
           title: "Terms & Conditions",
@@ -45,18 +50,34 @@ const InvoiceSettings = () => {
           active: true,
         },
         {
+          title: "Warranty cards ",
+          description: "Add different warranty cards on invoice",
+          icon: <GrDocumentWord />,
+          active: true,
+          modal: false,
+          toggle: false,
+          to: "/sUsers/warrantyCardList",
+        },
+        {
           title: "Add Rate with Tax",
           description:
             "On selection, allows entering the rate with a tax field",
           icon: <TbReceiptTax />,
-          to: "/invoiceSettings/addRateWithTax",
           active: true,
           toggle: true,
           dbField: "addRateWithTax",
           toggleValue: addRateWithTax["sale"] || false,
         },
         {
-          
+          title: "Show Description",
+          description: "Show description for items in invoice.",
+          icon: <TbReceiptTax />,
+          active: true,
+          toggle: true,
+          dbField: "showDescription",
+          toggleValue: showDescription["sale"] || false,
+        },
+        {
           title: "Enable Ship to Bill on Invoice",
           description:
             "Enable this option to include 'Ship to Bill' details on the invoice",
@@ -79,6 +100,7 @@ const InvoiceSettings = () => {
           toggleValue:
             configurations[0]?.enableNegativeStockBlockForVanInvoice || false,
         },
+
         {
           title: "Disable Rate for an Item",
           description:
@@ -114,11 +136,12 @@ const InvoiceSettings = () => {
     let url;
     switch (title) {
       case "addRateWithTax":
-        // url = "/updateTaxConfiguration";
-        url = "/updateTaxConfiguration";
+        url = "updateCommonToggleConfiguration";
+        break;
+      case "showDescription":
+        url = "updateCommonToggleConfiguration";
         break;
       case "enableShipTo":
-        // url = "/updateShipToConfiguration";
         url = "/updateFirstLayerConfiguration";
         break;
 
@@ -137,10 +160,12 @@ const InvoiceSettings = () => {
 
     let body = {};
 
-    console.log("data", data);
-
-    if (data?.title === "addRateWithTax") {
-      body = { addRateWithTax: data?.checked };
+    if (data?.title === "showDescription" || data?.title === "addRateWithTax") {
+      body = {
+        configField: data?.title,
+        voucher: "sale",
+        value: data?.checked,
+      };
     } else {
       body = {
         fieldToUpdate: data?.title,

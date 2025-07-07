@@ -81,7 +81,7 @@ const StockTransferSchema = new mongoose.Schema(
               default: null,
               set: convertToUTCMidnight,
             },
-            warrantyCardNo: { type: String },
+            description: { type: String },
             selectedPriceRate: { type: Number },
             added: { type: Boolean },
             count: { type: Number },
@@ -146,6 +146,8 @@ const StockTransferSchema = new mongoose.Schema(
         taxInclusive: { type: Boolean },
       },
     ],
+
+    note: { type: String },
     finalAmount: { type: Number, required: true },
     isCancelled: { type: Boolean, default: false },
   },
@@ -156,15 +158,12 @@ const StockTransferSchema = new mongoose.Schema(
 
 // 1. Primary unique identifier (stockTransferNumber per company)
 StockTransferSchema.index(
-  { cmp_id: 1, stockTransferNumber: -1 },
-  { unique: true }
+  { cmp_id: 1,series_id: 1, stockTransferNumber: 1 },
+   { unique: true, name: "stock_transfer_number_per_series" }
 );
 
-// 2. Secondary unique sequence (series-based numbering)
-StockTransferSchema.index(
-  { cmp_id: 1, series_id: 1, series_id: -1 },
-  { unique: true }
-);
+
+
 
 // 3. Most common query pattern (company + date sorting)
 StockTransferSchema.index({ cmp_id: 1, date: -1 });
