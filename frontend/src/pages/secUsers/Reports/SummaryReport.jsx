@@ -52,11 +52,9 @@ export default function SummaryReport() {
 
   useEffect(() => {
     if (voucherType.title === "All Vouchers") {
-      if (summaryType === "Sales Summary") {
+      if (summaryType === "Sales Summary"||summaryType ==="Purchase Summary") {
         dispatch(setSelectedVoucher({ title: "All", value: "allType" }))
-      } else if (summaryType === "Purchase Summary") {
-        dispatch(setSelectedVoucher({ title: "All", value: "allType" }))
-      } else if (summaryType === "Order Summary") {
+      }  else if (summaryType === "Order Summary") {
         dispatch(
           setSelectedVoucher({ title: "Sale Order", value: "saleOrder" })
         )
@@ -100,7 +98,6 @@ export default function SummaryReport() {
       staleTime: 30000,
       retry: false
     })
-
   const { data: serialNumberList } = useQuery({
     queryKey: ["serialNumbers", cmp_id, voucherType.value],
     queryFn: async () => {
@@ -113,8 +110,8 @@ export default function SummaryReport() {
     enabled:
       !!cmp_id &&
       !!voucherType.value &&
-      voucherType.title !== "All Vouchers" &&
-      voucherType.value !== "allType",
+      voucherType.title !== "All Vouchers",
+      // voucherType.value !== "allType",
     staleTime: 30000,
     retry: false
   })
@@ -275,13 +272,13 @@ export default function SummaryReport() {
     //   }
     // })
   }
-
   // Handle navigation to summary details page
   const handleNavigate = () => {
     navigate("/sUsers/salesSummaryDetails", {
-      state: { summaryType }
+      state: { summaryType,serialNumber:serialNumber.value,serialNumberList }
     })
   }
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <div className="sticky top-0 z-50">
@@ -341,18 +338,18 @@ export default function SummaryReport() {
               {selectedOption !== "voucher" ? (
                 <span>
                   ₹{totalAmount?.toLocaleString()}{" "}
-                  <span>{totalAmount < 0 ? "CR" : "DR"}</span>
+                  <span>{totalAmount < 0 ? "CR" :totalAmount>0? "DR":""}</span>
                 </span>
               ) : (
                 <span>
                   ₹{voucherSum?.toLocaleString()}{" "}
-                  <span>{voucherSum < 0 ? "CR" : "DR"}</span>
+                  <span>{voucherSum < 0 ? "CR" :voucherSum>0? "DR":""}</span>
                 </span>
               )}
             </h2>
             <p className="text-sm mt-4 font-semibold opacity-90">
-              {/* {new Date(start).toLocaleDateString()} -{" "}
-              {new Date(end).toLocaleDateString()} */}
+              {new Date(start).toLocaleDateString('en-GB')} -{" "}
+              {new Date(end).toLocaleDateString('en-GB')}
             </p>
             <button
               onClick={handleNavigate}

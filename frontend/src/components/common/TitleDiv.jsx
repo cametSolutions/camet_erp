@@ -27,7 +27,7 @@ function TitleDiv({
   customNavigate = null,
   summaryType = null
 }) {
- 
+ console.log(title)
   const navigate = useNavigate()
   const [showModal, setShowModal] = useState(false)
 

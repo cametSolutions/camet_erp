@@ -4,14 +4,14 @@ import invoiceModel from "../models/invoiceModel.js";
 import vanSaleModel from "../models/vanSaleModel.js";
 import purchaseModel from "../models/purchaseModel.js";
 import { aggregateSummary } from "../helpers/summaryHelper.js";
-import {summaryDetails} from "../helpers/summaryHelper.js"
+import { summaryDetails } from "../helpers/summaryHelper.js"
 import debitNoteModel from "../models/debitNoteModel.js";
 import creditNoteModel from "../models/creditNoteModel.js";
 import mongoose from "mongoose";
 
 //summary report controller
 export const getSummary = async (req, res) => {
-  const { startOfDayParam, endOfDayParam, selectedVoucher,summaryType } = req.query;
+  const { startOfDayParam, endOfDayParam, selectedVoucher, summaryType } = req.query;
 
   try {
     const cmp_id = req.params.cmp_id;
@@ -73,9 +73,9 @@ export const getSummary = async (req, res) => {
     // } else {
     //   modelsToQuery = selectedVoucher ? summaryTypeMap[selectedVoucher] : "";
     // }
-console.log("vouchertype",selectedVoucher)
+    console.log("vouchertype", selectedVoucher)
     if (selectedVoucher === "allType") {
-console.log("SUMMARY",summaryType)
+      console.log("SUMMARY", summaryType)
       if (summaryType === "Sales Summary") {
         modelsToQuery = [...summaryTypeMap.sale, ...summaryTypeMap.vanSale, ...summaryTypeMap.creditNote]
       } else if (summaryType === "Purchase Summary") {
@@ -85,6 +85,7 @@ console.log("SUMMARY",summaryType)
     } else {
       modelsToQuery = selectedVoucher ? summaryTypeMap[selectedVoucher] : "";
     }
+console.log("modesss",modelsToQuery)
 
     if (!modelsToQuery || modelsToQuery.length === 0) {
       return res.status(400).json({
