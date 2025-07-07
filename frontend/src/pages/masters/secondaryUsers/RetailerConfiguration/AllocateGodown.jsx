@@ -176,13 +176,7 @@ const AllocateGodown = () => {
   };
 
   const handleSubmit = async () => {
-    if (selectedGodowns.length === 0) {
-      const message = isVanSaleGodown 
-        ? "Please select a van sale godown" 
-        : "Please select at least one godown";
-      toast.warning(message);
-      return;
-    }
+   
 
     if (!selectedCompany) {
       toast.warning("Please select a company");
@@ -448,12 +442,12 @@ const AllocateGodown = () => {
                 <button
                   onClick={handleSubmit}
                   disabled={
-                    selectedGodowns.length === 0 ||
+                 
                     !selectedCompany ||
                     allocateMutation.isPending
                   }
                   className={`sm:w-1/2 px-8 py-3 rounded-lg transition-all duration-300 font-semibold flex items-center justify-center gap-2 shadow-lg transform hover:-translate-y-0.5 ${
-                    selectedGodowns.length > 0 &&
+                   
                     selectedCompany &&
                     !allocateMutation.isPending
                       ? "bg-pink-500 text-white hover:bg-pink-600 hover:shadow-xl"

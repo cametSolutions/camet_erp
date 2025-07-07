@@ -264,7 +264,7 @@ function BatchAddingForm({ from, taxInclusive = false }) {
   const getSubDetails = async () => {
     try {
       const res = await api.get(
-        `/api/sUsers/getProductSubDetails/${orgId}?type=${"godown"}`,
+        `/api/sUsers/getProductSubDetails/${orgId}?type=${"godown"}&restrict=true`,
         {
           withCredentials: true,
         }

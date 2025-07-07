@@ -183,50 +183,19 @@ function VoucherInitialPage() {
         if (isMounted.current && voucherSeriesFromRedux === null) {
           dispatch(addVoucherSeries(configData.series));
         }
-
-        // console.log(configData);
-
-        // if ( isMounted.current) {
-        //   const voucherNumber = configData.configurationNumber;
-        //   setVoucherNumber(voucherNumber);
-        //   dispatch(addVoucherNumber(voucherNumber));
-        // } else {
-        //   const { configDetails, configurationNumber } = configData;
-        //   if (configDetails) {
-        //     const { widthOfNumericalPart, prefixDetails, suffixDetails } =
-        //       configDetails;
-        //     const paddedNumber = configurationNumber
-        //       .toString()
-        //       .padStart(widthOfNumericalPart, 0);
-        //     const finalOrderNumber = [
-        //       prefixDetails,
-        //       paddedNumber,
-        //       suffixDetails,
-        //     ]
-        //       .filter(Boolean)
-        //       .join("/");
-        //     setVoucherNumber(finalOrderNumber);
-        //     if (isMounted.current) {
-        //       dispatch(addVoucherNumber(finalOrderNumber));
-        //     }
-        //   } else {
-        //     setVoucherNumber(configurationNumber);
-        //     dispatch(addVoucherNumber(configurationNumber));
-        //   }
-        // }
       }
 
       // Process Godowns data if requested
       if (
         responses.godownsRequest &&
-        voucherType === "vanSale" &&
+        voucherTypeFromRedux === "vanSale" &&
         Object.keys(vanSaleGodownFromRedux).length === 0 &&
         isMounted.current
       ) {
         const godownsData = responses.godownsRequest.data;
 
-        if (godownsData?.data === null) {
-          navigate("/sUsers/selectVouchers");
+        if (godownsData?.data?.length === 0) {
+          navigate("/sUsers/selectVouchers", { replace: true });
           toast.error("No godown is configured");
           return;
         }

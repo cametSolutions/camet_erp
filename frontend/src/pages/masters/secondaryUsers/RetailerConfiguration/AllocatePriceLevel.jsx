@@ -160,10 +160,10 @@ const AllocatePriceLevel = () => {
   };
 
   const handleSubmit = async () => {
-    if (selectedPriceLevels.length === 0) {
-      toast.warning("Please select at least one price level");
-      return;
-    }
+    // if (selectedPriceLevels.length === 0) {
+    //   toast.warning("Please select at least one price level");
+    //   return;
+    // }
 
     if (!selectedCompany) {
       toast.warning("Please select a company");
@@ -419,12 +419,12 @@ const AllocatePriceLevel = () => {
                 <button
                   onClick={handleSubmit}
                   disabled={
-                    selectedPriceLevels.length === 0 ||
+                    // selectedPriceLevels.length === 0 ||
                     !selectedCompany ||
                     allocateMutation.isPending
                   }
                   className={`sm:w-1/2 px-8 py-3 rounded-lg transition-all duration-300 font-semibold flex items-center justify-center gap-2 shadow-lg transform hover:-translate-y-0.5 ${
-                    selectedPriceLevels.length > 0 &&
+                    // selectedPriceLevels.length > 0 &&
                     selectedCompany &&
                     !allocateMutation.isPending
                       ? "bg-pink-500 text-white hover:bg-pink-600 hover:shadow-xl"

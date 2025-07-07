@@ -181,7 +181,7 @@ export const WarrantyCardForm = ({
             rows="6"
             {...register("termsAndConditions", {
               validate: (value) => {
-                if (value && value?.length > 10) {
+                if (value && value?.length > 5000) {
                   return "Terms and conditions should not exceed 5000 characters";
                 }
               },

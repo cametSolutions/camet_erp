@@ -7,7 +7,6 @@ import { removeAll } from "../../../../slices/invoice";
 import { removeAllSales } from "../../../../slices/sales";
 import { useDispatch, useSelector } from "react-redux";
 import { MdEmail } from "react-icons/md";
-import CustomBarLoader from "../../../components/common/CustomBarLoader";
 import CompanyFilter from "../../../components/Filters/CompanyFilter";
 import { RiUser2Fill } from "react-icons/ri";
 import { AiFillSetting } from "react-icons/ai";
@@ -124,14 +123,21 @@ function RetailersList() {
                   <div className="flex items-center space-x-5">
                     {/* <Link to={`/sUsers/configureUser/${user._id}`}> */}
 
-                    {user?.role !== "admin" && (
+                    {/* {user?.role !== "admin" && (
                       <button
                         onClick={() => handleConfigNavigation(user)}
                         className="hover:text-gray-500  "
                       >
                         <AiFillSetting className="text-lg" />
                       </button>
-                    )}
+                    )} */}
+                  
+                      <button
+                        onClick={() => handleConfigNavigation(user)}
+                        className="hover:text-gray-500  "
+                      >
+                        <AiFillSetting className="text-lg" />
+                      </button>
 
                     {/* </Link> */}
                     <Link to={`/sUsers/editUser/${user._id}`}>

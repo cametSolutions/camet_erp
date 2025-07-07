@@ -712,8 +712,6 @@ export const saveOrderNumber = async (req, res) => {
 // route get/api/sUsers/getTransactionDetails
 
 export const fetchFilters = async (req, res) => {
-  console.log("secondary");
-
   const cmp_id = req.params.cmp_id;
   try {
     const getFilters = async (model, field) => {
@@ -734,10 +732,15 @@ export const fetchFilters = async (req, res) => {
       (config) => config?.organization?.toString() === cmp_id
     )?.selectedPriceLevels;
 
+    
+
+    //// if configuredPriceLevels is empty, then return all price levels
     let filteredPriceLevels = priceLevels || [];
     if (configuredPriceLevels && configuredPriceLevels?.length > 0) {
       filteredPriceLevels = priceLevels?.filter((priceLevel) =>
-        configuredPriceLevels?.includes(priceLevel?.name)
+        configuredPriceLevels?.includes(
+          new mongoose.Types.ObjectId(priceLevel?._id)
+        )
       );
     }
 
@@ -1250,7 +1253,12 @@ export const findGodownsNames = async (req, res) => {
   const selectedUser = req.sUserId;
 
   try {
-    const secUser = await SecondaryUser.findById(selectedUser);
+    // Populate selectedVanSaleGodowns field from the matched configuration
+    const secUser = await SecondaryUser.findById(selectedUser).populate({
+      path: "configurations.selectedVanSaleGodowns",
+      select: "godown", // Only fetch the godown name
+    });
+
     if (!secUser) {
       return res
         .status(404)
@@ -1261,33 +1269,30 @@ export const findGodownsNames = async (req, res) => {
       (item) => item.organization == cmp_id
     );
 
-    if (!configuration || !configuration.selectedVanSaleGodowns?.length) {
+    if (
+      !configuration ||
+      !configuration.selectedVanSaleGodowns ||
+      configuration.selectedVanSaleGodowns.length === 0
+    ) {
       return res
-        .status(404)
-        .json({ message: "No configuration found for van sale", data: null });
+        .status(200)
+        .json({message: "No godowns found", data: [] });
     }
 
-    const godownId = configuration.selectedVanSaleGodowns[0];
-    const godownDetails = await Godown.findById(godownId).select("godown");
-
-    if (!godownDetails) {
-      return res
-        .status(404)
-        .json({ message: "Godown details not found", data: null });
-    }
-
-    const { godown: godownName } = godownDetails;
+    const firstGodown = configuration.selectedVanSaleGodowns[0];
 
     const data = {
-      godownId,
-      godownName,
+      godownId: firstGodown._id,
+      godownName: firstGodown.godown,
     };
 
-    res.status(200).json({ message: "godown details fetched", data });
+    res.status(200).json({ message: "Godown details fetched", data });
   } catch (error) {
+    console.error("Error in findGodownsNames:", error);
     res.status(500).json({ message: "Internal server error", data: null });
   }
 };
+
 
 // @desc get brands, categories, subcategories, godowns, priceLevels
 // route get/api/sUsers/getAllSubDetails
