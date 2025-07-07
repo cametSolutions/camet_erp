@@ -392,7 +392,8 @@ function VoucherInitialPage() {
       setSubmitLoading(false);
     }
   };
-
+console.log(
+"PPPPPPPPPPPPP")
   return (
     <div className="mb-14 sm:mb-0">
       <div className="flex-1 bg-slate-100 h -screen ">

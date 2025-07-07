@@ -7,6 +7,7 @@ export const aggregateSummary = async (
   serialNumber
 ) => {
   try {
+console.log("matchh",matchCriteria)
     // const results = await model.aggregate([{ $match: matchCriteria }]);
 
     // // Add type to each result to identify its source if not already included in projection
@@ -111,6 +112,7 @@ export const aggregateSummary = async (
         }
       }
     ]);
+    // return results
 
     // Add type to each result to identify its source if not already included in projection
     if (results && results.length && !results[0]?.sourceType) {
@@ -220,7 +222,7 @@ export const aggregateSummary = async (
               isCredit: sale.voucherType === "creditNote" || sale.voucherType === "debitNote",
               transactions: []
             }
-          
+
             // Update total
             existing.total += item.total || 0
 
@@ -303,3 +305,68 @@ export const aggregateSummary = async (
     return [];
   }
 };
+export const summaryDetails=async( model,
+  matchCriteria,
+  numberField,
+  type,
+  selectedOption,
+  serialNumber)=>{
+ const results = await model.aggregate([
+      { $match: matchCriteria },
+
+      { $unwind: "$items" },
+
+      // Lookup for brand
+      {
+        $lookup: {
+          from: "brands",
+          localField: "items.brand",
+          foreignField: "_id",
+          as: "brandLookup"
+        }
+      },
+
+      // Lookup for category
+      {
+        $lookup: {
+          from: "categories", // replace with your actual collection name if different
+          localField: "items.category",
+          foreignField: "_id",
+          as: "categoryLookup"
+        }
+      },
+
+      // Replace `items.brand` and `items.category` with the actual documents
+      {
+        $set: {
+          "items.brand": { $arrayElemAt: ["$brandLookup", 0] },
+          "items.category": { $arrayElemAt: ["$categoryLookup", 0] }
+        }
+      },
+
+      // Cleanup temporary fields
+      { $unset: ["brandLookup", "categoryLookup"] },
+
+      // Reconstruct the full document with updated items array
+      {
+        $group: {
+          _id: "$_id",
+          doc: { $first: "$$ROOT" },
+          items: { $push: "$items" }
+        }
+      },
+
+      {
+        $set: {
+          "doc.items": "$items"
+        }
+      },
+
+      {
+        $replaceRoot: {
+          newRoot: "$doc"
+        }
+      }
+    ])
+return results
+}

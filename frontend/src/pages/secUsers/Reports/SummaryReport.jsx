@@ -1,4 +1,4 @@
-import { useLocation } from "react-router-dom"
+import { useLocation, useNavigate } from "react-router-dom"
 import { useQuery } from "@tanstack/react-query"
 // import { useNavigate } from "react-router-dom"
 import { useDispatch, useSelector } from "react-redux"
@@ -19,6 +19,7 @@ export default function SummaryReport() {
   // const navigate = useNavigate()
   const location = useLocation()
   const dispatch = useDispatch()
+  const navigate=useNavigate();
   const { summaryType } = location.state
   const { start, end } = useSelector((state) => state.date)
 
@@ -52,11 +53,9 @@ export default function SummaryReport() {
 
   useEffect(() => {
     if (voucherType.title === "All Vouchers") {
-      if (summaryType === "Sales Summary") {
+      if (summaryType === "Sales Summary"||summaryType ==="Purchase Summary") {
         dispatch(setSelectedVoucher({ title: "All", value: "allType" }))
-      } else if (summaryType === "Purchase Summary") {
-        dispatch(setSelectedVoucher({ title: "All", value: "allType" }))
-      } else if (summaryType === "Order Summary") {
+      }  else if (summaryType === "Order Summary") {
         dispatch(
           setSelectedVoucher({ title: "Sale Order", value: "saleOrder" })
         )
@@ -100,7 +99,6 @@ export default function SummaryReport() {
       staleTime: 30000,
       retry: false
     })
-
   const { data: serialNumberList } = useQuery({
     queryKey: ["serialNumbers", cmp_id, voucherType.value],
     queryFn: async () => {
@@ -113,8 +111,8 @@ export default function SummaryReport() {
     enabled:
       !!cmp_id &&
       !!voucherType.value &&
-      voucherType.title !== "All Vouchers" &&
-      voucherType.value !== "allType",
+      voucherType.title !== "All Vouchers",
+      // voucherType.value !== "allType",
     staleTime: 30000,
     retry: false
   })
@@ -266,6 +264,7 @@ export default function SummaryReport() {
       ) ?? 0 // if processedSummary is undefined, default to 0
     )
   }, [processedSummary])
+
   // const handleItemClick = (item) => {
   //   // navigate("/sUsers/salesSummaryTransactions", {
   //   //   state: {
@@ -275,16 +274,14 @@ export default function SummaryReport() {
   //   //   }
   //   // })
   // }
-
   // Handle navigation to summary details page
-  // const handleNavigate = () => {
-  //   navigate("/sUsers/salesSummaryDetails", {
-  //     state: { summary: processedSummary }
-  //   })
-  // }
+  const handleNavigate = () => {
+    navigate("/sUsers/salesSummaryDetails", {
+      state: { summaryType,serialNumber:serialNumber.value,serialNumberList }
+    })
+  }
 
 
-  
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <div className="sticky top-0 z-50">
@@ -338,8 +335,7 @@ export default function SummaryReport() {
           </div>
           <div className="text-center text-white flex justify-center items-center flex-col mt-5">
             <h2 className="text-3xl sm:text-4xl font-bold">
-              
-{/* {selectedOption !== "voucher"
+              {/* {selectedOption !== "voucher"
                 ? totalAmount?.toLocaleString()
                 : voucherSum?.toLocaleString()} */}
               {selectedOption !== "voucher" ? (
@@ -363,11 +359,11 @@ export default function SummaryReport() {
               )}
             </h2>
             <p className="text-sm mt-4 font-semibold opacity-90">
-              {/* {new Date(start).toLocaleDateString()} -{" "}
-              {new Date(end).toLocaleDateString()} */}
+              {new Date(start).toLocaleDateString('en-GB')} -{" "}
+              {new Date(end).toLocaleDateString('en-GB')}
             </p>
             <button
-              // onClick={handleNavigate}
+              onClick={handleNavigate}
               className="text-xs mt-4 font-bold opacity-90 underline hover:scale-105 transition-transform duration-300"
             >
               View Details
@@ -415,7 +411,7 @@ export default function SummaryReport() {
                   <span className="text-gray-800 font-medium">{item.name}</span>
                   <span className="text-gray-600 font-semibold">
                     ₹{item.net.toLocaleString()}
-                    {selectedOption !== "vouher" &&(
+                    {selectedOption !== "vouher" && (
                       <span
                         className={`ml-2 ${
                           item.net < 0
@@ -425,7 +421,7 @@ export default function SummaryReport() {
                       >
                         {item.net < 0 ? "CR" : "DR"}
                       </span>
-                    ) }
+                    )}
                   </span>
                 </div>
               ))}
