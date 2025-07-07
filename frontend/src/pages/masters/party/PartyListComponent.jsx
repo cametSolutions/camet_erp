@@ -45,15 +45,23 @@ function PartyListComponent({ deleteHandler = () => {}, isVoucher = false }) {
       return "receipt";
     } else if (location.pathname === "/sUsers/searchPartyPayment") {
       return "payment";
-    } else if (location.pathname === "/sUsers/searchPartySales") {
+    } else if (location.pathname === "/sUsers/searchPartysales" || location.pathname === "/sUsers/searchPartyvanSale") {
       return "sale";
+    } else if (location.pathname === "/sUsers/searchPartysaleOrder") {
+      return "saleOrder";
+    } else if (location.pathname === "/sUsers/searchPartypurchase") {
+      return "purchase";
+    } else if (location.pathname === "/sUsers/searchPartycreditNote") {
+      return "creditNote";
+    } else if (location.pathname === "/sUsers/searchPartydebitNote") {
+      return "debitNote";
     } else {
-      return "sale";
+      return "";
     }
   };
 
   const allowAlteration = (accountGroupName) => {
-    console.log(accountGroupName);
+  
 
     if (
       accountGroupName === "Sundry Debtors" ||
@@ -76,6 +84,8 @@ function PartyListComponent({ deleteHandler = () => {}, isVoucher = false }) {
     window.addEventListener("resize", calculateHeight);
     return () => window.removeEventListener("resize", calculateHeight);
   }, []);
+
+  console.log(getVoucherType());
 
   // Fetch data function
   const fetchParties = useCallback(
@@ -192,9 +202,7 @@ function PartyListComponent({ deleteHandler = () => {}, isVoucher = false }) {
       dispatch(addPartyInAccountingVouchers(el));
 
       navigate(-1, { replace: true });
-    } 
-    
-    else {
+    } else {
       //// dispatch to the correct redux state
       dispatch(addParty(el));
       dispatch(addBillToParty(el));

@@ -19,8 +19,45 @@ const secondaryUserSchema = new mongoose.Schema(
           type: mongoose.Schema.Types.ObjectId,
           ref: "Organization",
         },
-        selectedGodowns: { type: Array },
-        selectedPriceLevels: { type: Array },
+        selectedGodowns: [
+          {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Godown",
+          },
+        ],
+        selectedPriceLevels: [
+          {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "PriceLevel",
+          },
+        ],
+        selectedVanSaleGodowns: [
+          {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Godown",
+          },
+        ],
+
+        selectedVoucherSeries: [
+          {
+            voucherType: { type: String },
+            selectedSeriesIds: [
+              {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "VoucherSeries",
+              },
+            ],
+          },
+        ],
+
+        selectedSubGroups: [
+          {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "SubGroup",
+          },
+        ],
+       
+        selectedVanSaleSubGroups: { type: Array },
         salesConfiguration: { type: Object },
         salesOrderConfiguration: { type: Object },
         receiptConfiguration: { type: Object },
@@ -31,8 +68,7 @@ const secondaryUserSchema = new mongoose.Schema(
         creditNoteConfiguration: { type: Object },
         debitNoteConfiguration: { type: Object },
         vanSale: { type: Boolean },
-        selectedVanSaleGodowns: { type: Array },
-        selectedVanSaleSubGroups: { type: Array },
+
         orderNumber: { type: Number },
         salesNumber: { type: Number },
         purchaseNumber: { type: Number },
