@@ -1,5 +1,11 @@
 /* eslint-disable react/jsx-key */
 import { TbBrandGoogle, TbTags, TbListDetails } from "react-icons/tb";
+import { MdOutlineBedroomChild } from "react-icons/md";
+import { IoRestaurantOutline, IoPersonAddOutline } from "react-icons/io5";
+import { LuBedSingle } from "react-icons/lu";
+import { FiLayers } from "react-icons/fi";
+import { GrClipboard } from "react-icons/gr";
+import { FaFingerprint } from "react-icons/fa";
 import TitleDiv from "../../../../../components/common/TitleDiv";
 import SettingsCard from "../../../../../components/common/SettingsCard";
 import { useSelector } from "react-redux";
@@ -9,6 +15,13 @@ const StockItemSettings = () => {
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
   const settingsOptions = [
+      (industry === 7 || industry === 6 && {
+        title: "Room Creation",
+        description: "Create different room types for better room organization",
+        icon: <GrClipboard />,
+        to: "/sUsers/roomList",
+        active: true,
+      }),
     {
       title:
         industry === 6 || industry === 7 ? "Room Type" : "Brand Management",
@@ -16,7 +29,7 @@ const StockItemSettings = () => {
         industry === 6 || industry === 7
           ? "Manage your rooms name effectively"
           : "Manage your product brands effectively",
-      icon: <TbBrandGoogle />,
+      icon: <MdOutlineBedroomChild />,
       to: "/sUsers/brand",
       active: true,
     },
@@ -27,7 +40,7 @@ const StockItemSettings = () => {
         industry === 6 || industry === 7
           ? "Organize your rooms by bed type"
           : "Organize your products by category",
-      icon: <TbTags />,
+      icon: <LuBedSingle />,
       to: "/sUsers/category",
       active: true,
     },
@@ -40,7 +53,7 @@ const StockItemSettings = () => {
         industry === 6 || industry === 7
           ? "Define room floor for better room organization"
           : "Define subcategories for better product organization",
-      icon: <TbListDetails />,
+      icon: <FiLayers />,
       to: "/sUsers/subcategory",
       active: true,
     },
@@ -49,7 +62,7 @@ const StockItemSettings = () => {
           {
             title: "Additional pax",
             description: "Manage additional pax for better room organization",
-            icon: <TbListDetails />,
+            icon: <IoPersonAddOutline />,
             to: "/sUsers/addAdditionalPax",
             active: true,
           },
@@ -60,25 +73,18 @@ const StockItemSettings = () => {
             to: "/sUsers/visitOfPurpose",
             active: true,
           },
-            {
+          {
             title: "ID Proof",
             description: "ID Proof for better customer organization",
-            icon: <TbListDetails />,
+            icon: <FaFingerprint />,
             to: "/sUsers/idProof",
             active: true,
           },
-             {
+          {
             title: "Food Plan",
             description: "Food Plan for better organization",
-            icon: <TbListDetails />,
-            to:  '/sUsers/foodPlan',
-            active: true,
-          },
-              {
-            title: "Room",
-            description: "Food Plan for better organization",
-            icon: <TbListDetails />,
-            to:  '/sUsers/foodPlan',
+            icon: <IoRestaurantOutline />,
+            to: "/sUsers/foodPlan",
             active: true,
           },
         ]

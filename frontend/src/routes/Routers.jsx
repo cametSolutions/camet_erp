@@ -131,6 +131,7 @@ import AddWarrantyCard from '@/pages/secUsers/settilngs/dataEntry/invoiceSetting
 import EditWarrantyCard from '@/pages/secUsers/settilngs/dataEntry/invoiceSettings/WarrantyCard/EditWarrantyCard '
 import ConfigureRetailer from '@/pages/masters/secondaryUsers/RetailerConfiguration/ConfigureRetailer'
 import AllocateCompany from '@/pages/masters/secondaryUsers/RetailerConfiguration/AllocateCompany'
+import BookingPage from '@/pages/Hotel/Pages/BookingPage'
 
 const Routers = () => {
   return (
@@ -393,6 +394,7 @@ const Routers = () => {
         <Route path= '/sUsers/roomRegistration' element={<RoomRegistration />} />
         <Route path= '/sUsers/roomList' element={<RoomList />} />
         <Route path= '/sUsers/editRoom' element={<EditRoom />} />
+        <Route path= '/sUsers/bookingPage' element={<BookingPage />} />
         
     </Routes>
   )

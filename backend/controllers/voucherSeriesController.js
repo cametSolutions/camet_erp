@@ -46,7 +46,8 @@ export const getSeriesByVoucher = async (req, res) => {
   try {
     const { voucherType, excludeSeriesId } = req.query;
     const cmp_id = req.params.cmp_id;
-
+    console.log(voucherType);
+console.log(cmp_id);
     if (!voucherType || !cmp_id) {
       return res
         .status(400)

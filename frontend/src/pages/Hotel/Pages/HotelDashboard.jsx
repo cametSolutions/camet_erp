@@ -83,54 +83,80 @@ const HotelDashboard = () => {
     acc[room.type].push(room);
     return acc;
   }, {});
- 
+
   const navigate = useNavigate();
 
-  const setSelectedRoom = (room) => {};
+  const setSelectedRoom = () => {};
   return (
     <div className="min-h-screen bg-slate-900 relative overflow-hidden p-3 ">
       <AnimatedBackground />
-
       <div className=" mx-auto relative z-10">
         {/* Heading and Legend */}
         <div>
-          <div className="bg-[#0B1D34] flex p-2  ">
-            <h3 className="font-bold text-blue-400 flex items-center gap-4">
-              <BedDouble className="w-5 h-5 text-xl text-cyan-400" />
-              Room Status Overview
-            </h3>
-            <button
-              className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold p-1 rounded ml-auto "
-              onClick={() => {
-                navigate("/sUsers/roomList");
-              }}
-            >
-              Create Room
-            </button>
+          <div className="bg-[#0B1D34] flex flex-col md:flex-row p-2 gap-2 md:gap-0">
+            <div>
+              <h3 className="font-bold text-blue-400 flex items-center gap-2 text-base md:text-lg">
+                <BedDouble className="w-5 h-5 text-cyan-400" />
+                Room Status Overview
+              </h3>
+            </div>
+
+            <div className="md:ml-auto flex flex-col sm:flex-row gap-2 mt-2 md:mt-0">
+              <button
+                className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold px-3 py-1 rounded text-sm"
+                onClick={() => navigate("/sUsers/bookingPage")}
+              >
+                Room Booking
+              </button>
+              <button
+                className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold px-3 py-1 rounded text-sm"
+                onClick={() => navigate("/sUsers/partyList")}
+              >
+                New Guest
+              </button>
+            </div>
           </div>
+
           <div className="flex flex-wrap gap-4  pt-6 border-t border-white/20">
             {[
-              { label: "Vacant", color: "from-emerald-500 to-teal-600" , count: 24},
-              { label: "Occupied", color: "from-orange-500 to-red-600" , count: 11 },
-              { label: "Booked", color: "from-red-500 to-pink-600" ,count: 16  },
-              { label: "Dirty", color: "from-yellow-500 to-orange-600" ,count: 21 },
-              { label: "Blocked", color: "from-gray-500 to-slate-800",count: 2 },
+              {
+                label: "Vacant",
+                color: "from-emerald-500 to-teal-600",
+                count: 24,
+              },
+              {
+                label: "Occupied",
+                color: "from-orange-500 to-red-600",
+                count: 11,
+              },
+              { label: "Booked", color: "from-red-500 to-pink-600", count: 16 },
+              {
+                label: "Dirty",
+                color: "from-yellow-500 to-orange-600",
+                count: 21,
+              },
+              {
+                label: "Blocked",
+                color: "from-gray-500 to-slate-800",
+                count: 2,
+              },
             ].map((status, i) => (
               <div key={i} className="flex items-center gap-2">
                 <div
                   className={`w-7 h-6 rounded bg-gradient-to-r ${status.color} text-center `}
-                > <p className="text-white">{status.count}</p></div>
+                >
+                  {" "}
+                  <p className="text-white">{status.count}</p>
+                </div>
                 <span className="text-gray-300 text-sm">{status.label}</span>
               </div>
             ))}
-             <div  className="flex items-center gap-2 ml-auto">
-            </div>
+            <div className="flex items-center gap-2 ml-auto"></div>
           </div>
-          
         </div>
 
         {/* Room Grid */}
-        {Object.entries(grouped).map(([type, rooms], sectionIndex) => (
+        {Object.entries(grouped).map(([type, rooms]) => (
           <div key={type} className="mt-6">
             <h2 className="text-white text-lg font-semibold mb-2">
               {type} Rooms

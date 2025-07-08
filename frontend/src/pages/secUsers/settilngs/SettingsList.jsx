@@ -15,7 +15,7 @@ const Settings = () => {
 
   const settingsOptions = [
     {
-      title: industry === 6 || industry === 7 ? "ROOM TYPE" : "STOCK ITEM",
+      title: industry === 6 || industry === 7 ? "HOTEL MANAGEMENT" : "STOCK ITEM",
       description: "Configure your stock item",
       icon: <HiTemplate />,
       to: "/sUsers/StockItem",
