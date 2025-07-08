@@ -22,7 +22,7 @@ function SalesSummaryTable() {
   // const [selectedSerialNumber,setselectedSerialNumber]=
   const location = useLocation()
   const dispatch = useDispatch()
-  const { summaryType } = location.state
+  const { summaryType="Sales Summary" } = location.state||{}
   const isAdmin =
     JSON.parse(localStorage.getItem("sUserData")).role === "admin"
       ? true
@@ -42,7 +42,6 @@ function SalesSummaryTable() {
     (state) => state.serialNumber.selectedSerialNumber
   )
   let filterKeys = []
-
   if (summaryType?.toLowerCase().includes("sale")) {
     filterKeys = ["allType", "sale", "vanSale", "creditNote"]
   } else if (summaryType?.toLowerCase().includes("purchase")) {
@@ -339,7 +338,7 @@ function SalesSummaryTable() {
             sale: [],
             saleAmount: 0
           }
-        
+
           item.items.map((it) => {
             if (it?.hasGodownOrBatch) {
               if (isGodownOnly(it)) {
@@ -364,7 +363,7 @@ function SalesSummaryTable() {
                       itemName: it.product_name,
                       batch: items?.batch,
                       groupName: it?.brand?.brand, //brandname
-                      categoryName: it?.category.category, //categoryname
+                      categoryName: it?.category?.category, //categoryname
                       quantity: items?.count,
                       rate: items?.selectedPriceRate,
                       discount: items?.discountAmount,
@@ -767,6 +766,9 @@ function SalesSummaryTable() {
                 })
               }
             } else {
+              if (!h.brand) {
+                return
+              }
               const saleObject = {
                 groupName: h?.brand?.brand,
                 groupId: h?.brand?._id,
@@ -936,6 +938,9 @@ function SalesSummaryTable() {
                 })
               }
             } else {
+              if (!h.category) {
+                return
+              }
               const saleObject = {
                 categoryName: h?.category?.category,
                 categoryId: h?.category?._id,
@@ -1127,7 +1132,7 @@ function SalesSummaryTable() {
             sale: [],
             saleAmount: 0
           }
-         
+
           item.items.map((it) => {
             if (it?.hasGodownOrBatch) {
               if (isGodownOnly(it)) {
@@ -1153,7 +1158,7 @@ function SalesSummaryTable() {
                       batch: items?.batch,
                       partyName: item?.party?.partyName,
                       groupName: it?.brand?.brand, //brandname
-                      categoryName: it?.category.category, //categoryname
+                      categoryName: it?.category?.category, //categoryname
                       quantity: items?.count,
                       rate: items?.selectedPriceRate,
                       discount: items?.discountAmount,
