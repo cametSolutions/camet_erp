@@ -1,75 +1,75 @@
 /* eslint-disable no-prototype-builtins */
-import { useState, useEffect, useMemo } from "react"
-import { useLocation } from "react-router-dom"
-import { useQuery } from "@tanstack/react-query"
-import api from "@/api/api"
-import TitleDiv from "../../../../components/common/TitleDiv"
-import SummmaryDropdown from "../../../../components/Filters/SummaryDropdown"
-import SelectDate from "../../../../components/Filters/SelectDate"
-import { useDispatch, useSelector } from "react-redux"
+import { useState, useEffect, useMemo } from "react";
+import { useLocation } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import api from "@/api/api";
+import TitleDiv from "../../../../components/common/TitleDiv";
+import SummmaryDropdown from "../../../../components/Filters/SummaryDropdown";
+import SelectDate from "../../../../components/Filters/SelectDate";
+import { useDispatch, useSelector } from "react-redux";
 // import { setSelectedVoucher } from "slices/filterSlices/voucherType"
-import { setSelectedVoucher } from "../../../../../../frontend/slices/filterSlices/voucherType"
-import { setSelectedSerialNumber } from "../../../../../../frontend/slices/filterSlices/serialNumberFilter"
-import VoucherTypeFilter from "@/components/Filters/VoucherTypeFilter"
-import useFetch from "../../../../customHook/useFetch"
-import CustomBarLoader from "../../../../components/common/CustomBarLoader"
+import { setSelectedVoucher } from "../../../../../../frontend/slices/filterSlices/voucherType";
+import { setSelectedSerialNumber } from "../../../../../../frontend/slices/filterSlices/serialNumberFilter";
+import VoucherTypeFilter from "@/components/Filters/VoucherTypeFilter";
+import useFetch from "../../../../customHook/useFetch";
+import CustomBarLoader from "../../../../components/common/CustomBarLoader";
 // import * as XLSX from "xlsx"
-import * as XLSX from "xlsx-js-style"
-import { RiFileExcel2Fill } from "react-icons/ri"
+import * as XLSX from "xlsx-js-style";
+import { RiFileExcel2Fill } from "react-icons/ri";
 function SalesSummaryTable() {
-  const [summaryReport, setSummaryReport] = useState([])
-  const [summary, setSummary] = useState([])
+  const [summaryReport, setSummaryReport] = useState([]);
+  const [summary, setSummary] = useState([]);
   // const [selectedSerialNumber,setselectedSerialNumber]=
-  const location = useLocation()
-  const dispatch = useDispatch()
-  const { summaryType="Sales Summary" } = location.state||{}
+  const location = useLocation();
+  const dispatch = useDispatch();
+  const { summaryType = "Sales Summary" } = location.state || {};
   const isAdmin =
     JSON.parse(localStorage.getItem("sUserData")).role === "admin"
       ? true
-      : false
-  const { start, end } = useSelector((state) => state.date)
+      : false;
+  const { start, end } = useSelector((state) => state.date);
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
-  )
+  );
   const selectedSecondaryUser = useSelector(
     (state) => state?.userFilter?.selectedUser
-  )
-  const voucherType = useSelector((state) => state.voucherType.selectedVoucher)
+  );
+  const voucherType = useSelector((state) => state.voucherType.selectedVoucher);
   const selectedOption = useSelector(
     (state) => state.summaryFilter.selectedOption
-  )
+  );
   const serialNumber = useSelector(
     (state) => state.serialNumber.selectedSerialNumber
-  )
-  let filterKeys = []
+  );
+  let filterKeys = [];
   if (summaryType?.toLowerCase().includes("sale")) {
-    filterKeys = ["allType", "sale", "vanSale", "creditNote"]
+    filterKeys = ["allType", "sale", "vanSale", "creditNote"];
   } else if (summaryType?.toLowerCase().includes("purchase")) {
-    filterKeys = ["allType", "purchase", "debitNote"]
+    filterKeys = ["allType", "purchase", "debitNote"];
   } else if (summaryType.toLowerCase().includes("order")) {
-    filterKeys = ["saleOrder"]
+    filterKeys = ["saleOrder"];
   }
   const salesummaryUrl = useMemo(() => {
     if (start && end && voucherType.value !== "all") {
-      return `/api/sUsers/salesSummary/${cmp_id}?startOfDayParam=${start}&endOfDayParam=${end}&selectedVoucher=${voucherType.value}&summaryType=${summaryType}`
+      return `/api/sUsers/salesSummary/${cmp_id}?startOfDayParam=${start}&endOfDayParam=${end}&selectedVoucher=${voucherType.value}&summaryType=${summaryType}`;
     }
-    return null // Or return an empty string if preferred
-  }, [start, end, cmp_id, voucherType.value])
+    return null; // Or return an empty string if preferred
+  }, [start, end, cmp_id, voucherType.value]);
   const { data: serialNumberList } = useQuery({
     queryKey: ["serialNumbers", cmp_id, voucherType.value],
     queryFn: async () => {
       const res = await api.get(
         `/api/sUsers/getSeriesByVoucher/${cmp_id}?voucherType=${voucherType.value}`,
         { withCredentials: true } // 👈 Include cookies)
-      )
-      return res.data
+      );
+      return res.data;
     },
     enabled:
       !!cmp_id && !!voucherType.value && voucherType.title !== "All Vouchers",
     // voucherType.value !== "allType",
     staleTime: 30000,
-    retry: false
-  })
+    retry: false,
+  });
   const { data: voucherwisesummary = [], isFetching: voucherFetching } =
     useQuery({
       queryKey: [
@@ -80,7 +80,7 @@ function SalesSummaryTable() {
         end,
         serialNumber.value,
         summaryType,
-        serialNumber.value
+        serialNumber.value,
       ],
       queryFn: async () => {
         const res = await api.get(
@@ -90,8 +90,8 @@ function SalesSummaryTable() {
             selectedSecondaryUser?._id || ""
           }&summaryType=${summaryType}&serialNumber=${serialNumber.value}`,
           { withCredentials: true }
-        )
-        return res.data
+        );
+        return res.data;
       },
       enabled:
         !!cmp_id &&
@@ -100,46 +100,46 @@ function SalesSummaryTable() {
         selectedOption === "voucher",
 
       staleTime: 30000,
-      retry: false
-    })
+      retry: false,
+    });
   const {
     data: salesummaryData,
-    loading
+    loading,
     // error: Error,
-  } = useFetch(salesummaryUrl)
+  } = useFetch(salesummaryUrl);
   useEffect(() => {
     if (voucherType.title === "All Vouchers") {
       if (
         summaryType === "Sales Summary" ||
         summaryType === "Purchase Summary"
       ) {
-        dispatch(setSelectedVoucher({ title: "All", value: "allType" }))
+        dispatch(setSelectedVoucher({ title: "All", value: "allType" }));
       } else if (summaryType === "Order Summary") {
         dispatch(
           setSelectedVoucher({ title: "Sale Order", value: "saleOrder" })
-        )
+        );
       }
     }
-  }, [])
+  }, []);
 
   useEffect(() => {
     if (salesummaryData && salesummaryData?.flattenedResults) {
       if (serialNumber.value !== "all") {
         const filteredserieslist = salesummaryData.flattenedResults.filter(
           (item) => item.series_id === serialNumber.value
-        )
-        setSummary(filteredserieslist)
+        );
+        setSummary(filteredserieslist);
       } else {
-        setSummary(salesummaryData.flattenedResults)
+        setSummary(salesummaryData.flattenedResults);
       }
     }
-  }, [salesummaryData, cmp_id, serialNumber])
+  }, [salesummaryData, cmp_id, serialNumber]);
   useEffect(() => {
     if (summary && summary.length > 0) {
       // setSelectedIndex(null);
-      handleFilter(selectedOption)
+      handleFilter(selectedOption);
     }
-  }, [summary, selectedOption])
+  }, [summary, selectedOption]);
 
   /// calculate tax
   const calculateTaxAndPrice = (
@@ -151,13 +151,13 @@ function SalesSummaryTable() {
   ) => {
     const basePrice = isTaxInclusive
       ? Number(((itemPrice * count) / (1 + igst / 100)).toFixed(2))
-      : Number(itemPrice * count).toFixed(2)
+      : Number(itemPrice * count).toFixed(2);
 
-    const discountedPrice = Number((basePrice - (discount || 0)).toFixed(2))
-    const taxAmount = Number(((discountedPrice * igst) / 100).toFixed(2))
+    const discountedPrice = Number((basePrice - (discount || 0)).toFixed(2));
+    const taxAmount = Number(((discountedPrice * igst) / 100).toFixed(2));
 
-    return { basePrice, taxAmount }
-  }
+    return { basePrice, taxAmount };
+  };
 
   /// checking godownOnly
   const isGodownOnly = (product) => {
@@ -165,11 +165,11 @@ function SalesSummaryTable() {
       product.GodownList.every((item) => item.godown_id) &&
       product.GodownList.every((item) => !item.hasOwnProperty("batch"))
     ) {
-      return true
+      return true;
     } else {
-      false
+      false;
     }
-  }
+  };
   ////  process clubbing of godown
   const processGodownMerging = (item, saleObject, sale) => {
     // Initialize aggregation variables
@@ -179,49 +179,49 @@ function SalesSummaryTable() {
       totalIndividualTotal: 0,
       totalBasePrice: 0,
       totalTaxAmount: 0,
-      rate: 0
-    }
+      rate: 0,
+    };
 
     item.GodownList.forEach((items) => {
       if (items.added) {
         // Sum quantity, discount, and individual total
-        aggregation.totalQuantity += items?.count || 0
-        aggregation.totalDiscount += items?.discountAmount || 0
-        aggregation.totalIndividualTotal += items?.individualTotal || 0
-        aggregation.rate = items?.selectedPriceRate
+        aggregation.totalQuantity += items?.count || 0;
+        aggregation.totalDiscount += items?.discountAmount || 0;
+        aggregation.totalIndividualTotal += items?.individualTotal || 0;
+        aggregation.rate = items?.selectedPriceRate;
 
         // Calculate base price
-        let basePrice, taxAmount
+        let basePrice, taxAmount;
         if (item.isTaxInclusive) {
           basePrice = Number(
             (
               (items?.selectedPriceRate * items?.count) /
               (1 + item?.igst / 100)
             ).toFixed(2)
-          )
+          );
 
           const discountedPrice = Number(
             (basePrice - (items?.discountAmount || 0)).toFixed(2)
-          )
+          );
 
           taxAmount = Number(
             ((discountedPrice * items.igstValue) / 100).toFixed(2)
-          )
+          );
         } else {
-          basePrice = items.selectedPriceRate * items?.count
+          basePrice = items.selectedPriceRate * items?.count;
 
           const discountedPrice = Number(
             (basePrice - (items?.discount || 0)).toFixed(2)
-          )
+          );
 
-          taxAmount = Number(((discountedPrice * item.igst) / 100).toFixed(2))
+          taxAmount = Number(((discountedPrice * item.igst) / 100).toFixed(2));
         }
 
         // Sum base price and tax amount
-        aggregation.totalBasePrice += basePrice
-        aggregation.totalTaxAmount += taxAmount
+        aggregation.totalBasePrice += basePrice;
+        aggregation.totalTaxAmount += taxAmount;
       }
-    })
+    });
 
     // Use aggregation results as needed
     saleObject.sale.push({
@@ -242,24 +242,24 @@ function SalesSummaryTable() {
       taxPercentage: item?.igst,
       taxAmount: aggregation?.totalTaxAmount,
       netAmount: aggregation?.totalIndividualTotal,
-      amount: aggregation?.totalBasePrice
-    })
-    return saleObject.sale
-  }
+      amount: aggregation?.totalBasePrice,
+    });
+    return saleObject.sale;
+  };
   const handleFilter = (option) => {
-    let check = []
+    let check = [];
     // let arr = []
     if (option === "Ledger") {
       summary.map((item) => {
         let existingParty = check?.find((data) => {
-          return data?.partyId === item?.party?._id
-        })
+          return data?.partyId === item?.party?._id;
+        });
 
         if (existingParty) {
           item?.items?.map((it) => {
             if (it?.hasGodownOrBatch) {
               if (isGodownOnly(it)) {
-                processGodownMerging(it, existingParty, item)
+                processGodownMerging(it, existingParty, item);
               } else {
                 it.GodownList?.map((items) => {
                   if (items?.added) {
@@ -269,7 +269,7 @@ function SalesSummaryTable() {
                       items?.count,
                       items?.igstValue,
                       items?.discountAmount
-                    )
+                    );
 
                     const newSale = {
                       billnumber:
@@ -288,13 +288,13 @@ function SalesSummaryTable() {
                       taxPercentage: items?.igstValue,
                       taxAmount: taxAmount,
                       netAmount: items?.individualTotal,
-                      amount: basePrice
-                    }
-                    existingParty.saleAmount += items?.individualTotal
+                      amount: basePrice,
+                    };
+                    existingParty.saleAmount += items?.individualTotal;
                     // Push the new sale entry to the sale array
-                    existingParty?.sale?.push(newSale)
+                    existingParty?.sale?.push(newSale);
                   }
-                })
+                });
               }
             } else {
               it.GodownList?.map((items) => {
@@ -304,7 +304,7 @@ function SalesSummaryTable() {
                   items?.count,
                   items?.igstValue,
                   items?.discountAmount
-                )
+                );
 
                 const newSale = {
                   billnumber:
@@ -322,27 +322,27 @@ function SalesSummaryTable() {
                   taxPercentage: items?.igstValue,
                   taxAmount: taxAmount,
                   netAmount: items?.individualTotal,
-                  amount: basePrice
-                }
+                  amount: basePrice,
+                };
 
-                existingParty.saleAmount += items?.individualTotal
-                existingParty?.sale?.push(newSale)
-              })
+                existingParty.saleAmount += items?.individualTotal;
+                existingParty?.sale?.push(newSale);
+              });
             }
-          })
+          });
         } else {
           const saleObject = {
             partyName: item?.party?.partyName,
             partyId: item?.party?._id,
             seriesId: item.series_id,
             sale: [],
-            saleAmount: 0
-          }
+            saleAmount: 0,
+          };
 
           item.items.map((it) => {
             if (it?.hasGodownOrBatch) {
               if (isGodownOnly(it)) {
-                processGodownMerging(it, saleObject, item)
+                processGodownMerging(it, saleObject, item);
               } else {
                 it?.GodownList?.map((items) => {
                   if (items?.added) {
@@ -352,7 +352,7 @@ function SalesSummaryTable() {
                       items?.count,
                       items?.igstValue,
                       items?.discountAmount
-                    )
+                    );
                     const newSale = {
                       billnumber:
                         item?.salesNumber ||
@@ -370,14 +370,14 @@ function SalesSummaryTable() {
                       taxPercentage: items?.igstValue,
                       taxAmount: taxAmount,
                       netAmount: items?.individualTotal,
-                      amount: basePrice
-                    }
-                    saleObject.saleAmount += items?.individualTotal || 0
+                      amount: basePrice,
+                    };
+                    saleObject.saleAmount += items?.individualTotal || 0;
 
                     // Push the new sale entry to the sale array
-                    saleObject?.sale?.push(newSale)
+                    saleObject?.sale?.push(newSale);
                   }
-                })
+                });
               }
             } else {
               it.GodownList.map((items) => {
@@ -387,7 +387,7 @@ function SalesSummaryTable() {
                   items?.count,
                   items?.igstValue,
                   items?.discountAmount
-                )
+                );
 
                 const a = {
                   billnumber:
@@ -405,31 +405,31 @@ function SalesSummaryTable() {
                   taxPercentage: items?.igstValue,
                   taxAmount: taxAmount,
                   netAmount: items?.individualTotal,
-                  amount: basePrice
-                }
+                  amount: basePrice,
+                };
 
-                saleObject.saleAmount += items?.individualTotal
-                saleObject?.sale?.push(a)
-              })
+                saleObject.saleAmount += items?.individualTotal;
+                saleObject?.sale?.push(a);
+              });
             }
-          })
-          check.push(saleObject)
+          });
+          check.push(saleObject);
         }
-      })
-      setSummaryReport(check)
+      });
+      setSummaryReport(check);
     } else if (option === "Stock Item") {
       summary.map((item) => {
         item.items.map((h) => {
           if (h?.product_name) {
             let existingParty = check.find((data) => {
-              return data.itemName === h.product_name
-            })
+              return data.itemName === h.product_name;
+            });
             if (existingParty) {
               if (h.hasGodownOrBatch) {
                 if (
                   isGodownOnly(h) // Ensure no item has batch
                 ) {
-                  processGodownMerging(h, existingParty, item)
+                  processGodownMerging(h, existingParty, item);
                 } else {
                   h.GodownList.map((items) => {
                     if (items.added) {
@@ -439,7 +439,7 @@ function SalesSummaryTable() {
                         items?.count,
                         items?.igstValue,
                         items?.discountAmount
-                      )
+                      );
                       const newSale = {
                         billnumber:
                           item?.salesNumber ||
@@ -458,14 +458,14 @@ function SalesSummaryTable() {
                         taxPercentage: items?.igstValue,
                         taxAmount: taxAmount,
                         netAmount: items?.individualTotal,
-                        amount: basePrice
-                      }
+                        amount: basePrice,
+                      };
                       // existingParty.saleAmount += items?.individualTotal;
 
                       // Push the new sale entry to the sale array
-                      existingParty.sale.push(newSale)
+                      existingParty.sale.push(newSale);
                     }
-                  })
+                  });
                 }
               } else {
                 h.GodownList.map((items) => {
@@ -475,7 +475,7 @@ function SalesSummaryTable() {
                     items?.count,
                     items?.igstValue,
                     items?.discountAmount
-                  )
+                  );
 
                   const a = {
                     billnumber:
@@ -494,24 +494,24 @@ function SalesSummaryTable() {
                     taxPercentage: items?.igstValue,
                     taxAmount: taxAmount,
                     netAmount: items?.individualTotal,
-                    amount: basePrice
-                  }
+                    amount: basePrice,
+                  };
 
-                  existingParty.sale.push(a)
-                })
+                  existingParty.sale.push(a);
+                });
               }
             } else {
               const saleObject = {
                 itemName: h?.product_name,
                 seriesId: item.series_id,
                 sale: [],
-                saleAmount: 0
-              }
+                saleAmount: 0,
+              };
               if (h.hasGodownOrBatch) {
                 if (
                   isGodownOnly(h) // Ensure no item has batch
                 ) {
-                  processGodownMerging(h, saleObject, item)
+                  processGodownMerging(h, saleObject, item);
                   // const aggregation = {
                   //   totalQuantity: 0,
                   //   totalDiscount: 0,
@@ -595,7 +595,7 @@ function SalesSummaryTable() {
                         items?.count,
                         items?.igstValue,
                         items?.discountAmount
-                      )
+                      );
 
                       // let pamount;
                       // let ptax;
@@ -635,15 +635,15 @@ function SalesSummaryTable() {
                         taxPercentage: items?.igstValue,
                         taxAmount: taxAmount,
                         netAmount: items?.individualTotal,
-                        amount: basePrice
-                      }
+                        amount: basePrice,
+                      };
                       // Add the individual total to the sale amount
-                      saleObject.saleAmount += items?.individualTotal
+                      saleObject.saleAmount += items?.individualTotal;
 
                       // Push the new sale entry to the sale array
-                      saleObject.sale.push(newSale)
+                      saleObject.sale.push(newSale);
                     }
-                  })
+                  });
                 }
               } else {
                 h.GodownList.map((items) => {
@@ -653,7 +653,7 @@ function SalesSummaryTable() {
                     items?.count,
                     items?.igstValue,
                     items?.discountAmount
-                  )
+                  );
                   const a = {
                     billnumber:
                       item?.salesNumber ||
@@ -671,31 +671,31 @@ function SalesSummaryTable() {
                     taxPercentage: items?.igstValue,
                     taxAmount: taxAmount,
                     netAmount: items?.individualTotal,
-                    amount: basePrice
-                  }
-                  saleObject.saleAmount += items?.individualTotal
-                  saleObject.sale.push(a)
-                })
+                    amount: basePrice,
+                  };
+                  saleObject.saleAmount += items?.individualTotal;
+                  saleObject.sale.push(a);
+                });
               }
 
-              check.push(saleObject)
+              check.push(saleObject);
             }
           }
-        })
-      })
-      setSummaryReport(check)
+        });
+      });
+      setSummaryReport(check);
     } else if (option === "Stock Group") {
       summary.map((item) => {
         item.items.map((h) => {
           if (h?.brand?.brand) {
             let existingParty = check?.find((data) => {
-              return data?.groupId === h?.brand?._id
-            })
+              return data?.groupId === h?.brand?._id;
+            });
 
             if (existingParty) {
               if (h?.hasGodownOrBatch) {
                 if (isGodownOnly(h)) {
-                  processGodownMerging(h, existingParty, item)
+                  processGodownMerging(h, existingParty, item);
                 } else {
                   h.GodownList.map((items) => {
                     if (items.added) {
@@ -705,7 +705,7 @@ function SalesSummaryTable() {
                         items?.count,
                         items?.igstValue,
                         items?.discountAmount
-                      )
+                      );
                       const newSale = {
                         billnumber:
                           item?.salesNumber ||
@@ -723,15 +723,15 @@ function SalesSummaryTable() {
                         taxPercentage: items?.igstValue,
                         taxAmount: taxAmount,
                         netAmount: items?.individualTotal,
-                        amount: basePrice
-                      }
+                        amount: basePrice,
+                      };
 
-                      existingParty.saleAmount += items?.individualTotal
+                      existingParty.saleAmount += items?.individualTotal;
 
                       // Push the new sale entry to the sale array
-                      existingParty?.sale?.push(newSale)
+                      existingParty?.sale?.push(newSale);
                     }
-                  })
+                  });
                 }
               } else {
                 h.GodownList.map((items) => {
@@ -741,7 +741,7 @@ function SalesSummaryTable() {
                     items?.count,
                     items?.igstValue,
                     items?.discountAmount
-                  )
+                  );
                   const a = {
                     billnumber:
                       item?.salesNumber ||
@@ -758,27 +758,27 @@ function SalesSummaryTable() {
                     taxPercentage: items?.igstValue,
                     taxAmount: taxAmount,
                     netAmount: items?.individualTotal,
-                    amount: basePrice
-                  }
+                    amount: basePrice,
+                  };
 
-                  existingParty.saleAmount += items?.individualTotal
-                  existingParty?.sale?.push(a)
-                })
+                  existingParty.saleAmount += items?.individualTotal;
+                  existingParty?.sale?.push(a);
+                });
               }
             } else {
               if (!h.brand) {
-                return
+                return;
               }
               const saleObject = {
                 groupName: h?.brand?.brand,
                 groupId: h?.brand?._id,
                 seriesId: item.series_id,
                 sale: [],
-                saleAmount: 0
-              }
+                saleAmount: 0,
+              };
               if (h.hasGodownOrBatch) {
                 if (isGodownOnly(h)) {
-                  processGodownMerging(h, saleObject, item)
+                  processGodownMerging(h, saleObject, item);
                 } else {
                   h.GodownList.map((items) => {
                     if (items.added) {
@@ -788,7 +788,7 @@ function SalesSummaryTable() {
                         items?.count,
                         h?.igst,
                         items?.discount
-                      )
+                      );
                       const newSale = {
                         billnumber:
                           item?.salesNumber ||
@@ -806,16 +806,16 @@ function SalesSummaryTable() {
                         taxPercentage: items?.igstValue,
                         taxAmount: taxAmount,
                         netAmount: items?.individualTotal,
-                        amount: basePrice
-                      }
+                        amount: basePrice,
+                      };
 
                       // Add the individual total to the sale amount
-                      saleObject.saleAmount += items?.individualTotal
+                      saleObject.saleAmount += items?.individualTotal;
 
                       // Push the new sale entry to the sale array
-                      saleObject?.sale?.push(newSale)
+                      saleObject?.sale?.push(newSale);
                     }
-                  })
+                  });
                 }
               } else {
                 h.GodownList.map((items) => {
@@ -825,7 +825,7 @@ function SalesSummaryTable() {
                     items?.count,
                     items?.igstValue,
                     items?.discountAmount
-                  )
+                  );
                   const a = {
                     billnumber:
                       item?.salesNumber ||
@@ -843,29 +843,29 @@ function SalesSummaryTable() {
                     taxPercentage: items?.igstValue,
                     taxAmount: taxAmount,
                     netAmount: items?.individualTotal,
-                    amount: basePrice
-                  }
-                  saleObject.saleAmount += items?.individualTotal
-                  saleObject?.sale?.push(a)
-                })
+                    amount: basePrice,
+                  };
+                  saleObject.saleAmount += items?.individualTotal;
+                  saleObject?.sale?.push(a);
+                });
               }
-              check?.push(saleObject)
+              check?.push(saleObject);
             }
           }
-        })
-      })
-      setSummaryReport(check)
+        });
+      });
+      setSummaryReport(check);
     } else if (option === "Stock Category") {
       summary.map((item) => {
         item?.items?.map((h) => {
           if (h?.brand?.brand) {
             let existingParty = check?.find((data) => {
-              return data.categoryId === h?.category?._id
-            })
+              return data.categoryId === h?.category?._id;
+            });
             if (existingParty) {
               if (h.hasGodownOrBatch) {
                 if (isGodownOnly(h)) {
-                  processGodownMerging(h, existingParty, item)
+                  processGodownMerging(h, existingParty, item);
                 } else {
                   h.GodownList.map((items) => {
                     if (items.added) {
@@ -875,7 +875,7 @@ function SalesSummaryTable() {
                         items?.count,
                         items?.igstValue,
                         items?.discountAmount
-                      )
+                      );
                       const newSale = {
                         billnumber:
                           item?.salesNumber ||
@@ -894,15 +894,15 @@ function SalesSummaryTable() {
                         taxPercentage: items?.igstValue,
                         taxAmount: taxAmount,
                         netAmount: items?.individualTotal,
-                        amount: basePrice
-                      }
+                        amount: basePrice,
+                      };
 
-                      existingParty.saleAmount += items?.individualTotal
+                      existingParty.saleAmount += items?.individualTotal;
 
                       // Push the new sale entry to the sale array
-                      existingParty.sale.push(newSale)
+                      existingParty.sale.push(newSale);
                     }
-                  })
+                  });
                 }
               } else {
                 h.GodownList.map((items) => {
@@ -912,7 +912,7 @@ function SalesSummaryTable() {
                     items?.count,
                     items?.igstValue,
                     items?.discountAmount
-                  )
+                  );
                   const a = {
                     billnumber:
                       item?.salesNumber ||
@@ -930,27 +930,27 @@ function SalesSummaryTable() {
                     taxPercentage: items?.igstValue,
                     taxAmount: taxAmount,
                     netAmount: items?.individualTotal,
-                    amount: basePrice
-                  }
+                    amount: basePrice,
+                  };
 
-                  existingParty.saleAmount += items?.individualTotal
-                  existingParty.sale.push(a)
-                })
+                  existingParty.saleAmount += items?.individualTotal;
+                  existingParty.sale.push(a);
+                });
               }
             } else {
               if (!h.category) {
-                return
+                return;
               }
               const saleObject = {
                 categoryName: h?.category?.category,
                 categoryId: h?.category?._id,
                 seriesId: item.series_id,
                 sale: [],
-                saleAmount: 0
-              }
+                saleAmount: 0,
+              };
               if (h.hasGodownOrBatch) {
                 if (isGodownOnly(h)) {
-                  processGodownMerging(h, saleObject, item)
+                  processGodownMerging(h, saleObject, item);
                 } else {
                   h.GodownList.map((items) => {
                     if (items.added) {
@@ -960,7 +960,7 @@ function SalesSummaryTable() {
                         items?.count,
                         items?.igstValue,
                         items?.discountAmount
-                      )
+                      );
 
                       const newSale = {
                         billnumber:
@@ -980,16 +980,16 @@ function SalesSummaryTable() {
                         taxPercentage: items?.igstValue,
                         taxAmount: taxAmount,
                         netAmount: items?.individualTotal,
-                        amount: basePrice
-                      }
+                        amount: basePrice,
+                      };
 
                       // Add the individual total to the sale amount
-                      saleObject.saleAmount += items?.individualTotal
+                      saleObject.saleAmount += items?.individualTotal;
 
                       // Push the new sale entry to the sale array
-                      saleObject?.sale?.push(newSale)
+                      saleObject?.sale?.push(newSale);
                     }
-                  })
+                  });
                 }
               } else {
                 h.GodownList.map((items) => {
@@ -999,7 +999,7 @@ function SalesSummaryTable() {
                     items?.count,
                     items?.igst,
                     items?.discountAmount
-                  )
+                  );
 
                   const a = {
                     billnumber:
@@ -1018,19 +1018,19 @@ function SalesSummaryTable() {
                     taxPercentage: items?.igstValue,
                     taxAmount: taxAmount,
                     netAmount: items?.individualTotal,
-                    amount: basePrice
-                  }
-                  saleObject.saleAmount += items?.individualTotal
-                  saleObject?.sale?.push(a)
-                })
+                    amount: basePrice,
+                  };
+                  saleObject.saleAmount += items?.individualTotal;
+                  saleObject?.sale?.push(a);
+                });
               }
 
-              check.push(saleObject)
+              check.push(saleObject);
             }
           }
-        })
-      })
-      setSummaryReport(check)
+        });
+      });
+      setSummaryReport(check);
     } else if (selectedOption === "voucher") {
       summary.map((item) => {
         let existingParty = check?.find((data) => {
@@ -1039,14 +1039,14 @@ function SalesSummaryTable() {
             item?.crediNoteNumber ||
             item?.debitNoteNumber ||
             item?.purchaseNumber
-          )
-        })
+          );
+        });
 
         if (existingParty) {
           item?.items?.map((it) => {
             if (it?.hasGodownOrBatch) {
               if (isGodownOnly(it)) {
-                processGodownMerging(it, existingParty, item)
+                processGodownMerging(it, existingParty, item);
               } else {
                 it.GodownList?.map((items) => {
                   if (items?.added) {
@@ -1056,7 +1056,7 @@ function SalesSummaryTable() {
                       items?.count,
                       items?.igstValue,
                       items?.discountAmount
-                    )
+                    );
 
                     const newSale = {
                       billnumber:
@@ -1076,13 +1076,13 @@ function SalesSummaryTable() {
                       taxPercentage: items?.igstValue,
                       taxAmount: taxAmount,
                       netAmount: items?.individualTotal,
-                      amount: basePrice
-                    }
-                    existingParty.saleAmount += items?.individualTotal
+                      amount: basePrice,
+                    };
+                    existingParty.saleAmount += items?.individualTotal;
                     // Push the new sale entry to the sale array
-                    existingParty?.sale?.push(newSale)
+                    existingParty?.sale?.push(newSale);
                   }
-                })
+                });
               }
             } else {
               it.GodownList?.map((items) => {
@@ -1092,7 +1092,7 @@ function SalesSummaryTable() {
                   items?.count,
                   items?.igstValue,
                   items?.discountAmount
-                )
+                );
 
                 const newSale = {
                   billnumber:
@@ -1111,14 +1111,14 @@ function SalesSummaryTable() {
                   taxPercentage: items?.igstValue,
                   taxAmount: taxAmount,
                   netAmount: items?.individualTotal,
-                  amount: basePrice
-                }
+                  amount: basePrice,
+                };
 
-                existingParty.saleAmount += items?.individualTotal
-                existingParty?.sale?.push(newSale)
-              })
+                existingParty.saleAmount += items?.individualTotal;
+                existingParty?.sale?.push(newSale);
+              });
             }
-          })
+          });
         } else {
           const saleObject = {
             partyName: item?.party?.partyName,
@@ -1130,13 +1130,13 @@ function SalesSummaryTable() {
               item?.debitNoteNumber,
             seriesId: item.series_id,
             sale: [],
-            saleAmount: 0
-          }
+            saleAmount: 0,
+          };
 
           item.items.map((it) => {
             if (it?.hasGodownOrBatch) {
               if (isGodownOnly(it)) {
-                processGodownMerging(it, saleObject, item)
+                processGodownMerging(it, saleObject, item);
               } else {
                 it?.GodownList?.map((items) => {
                   if (items?.added) {
@@ -1146,7 +1146,7 @@ function SalesSummaryTable() {
                       items?.count,
                       items?.igstValue,
                       items?.discountAmount
-                    )
+                    );
                     const newSale = {
                       billnumber:
                         item?.salesNumber ||
@@ -1165,14 +1165,14 @@ function SalesSummaryTable() {
                       taxPercentage: items?.igstValue,
                       taxAmount: taxAmount,
                       netAmount: items?.individualTotal,
-                      amount: basePrice
-                    }
-                    saleObject.saleAmount += items?.individualTotal || 0
+                      amount: basePrice,
+                    };
+                    saleObject.saleAmount += items?.individualTotal || 0;
 
                     // Push the new sale entry to the sale array
-                    saleObject?.sale?.push(newSale)
+                    saleObject?.sale?.push(newSale);
                   }
-                })
+                });
               }
             } else {
               it.GodownList.map((items) => {
@@ -1182,7 +1182,7 @@ function SalesSummaryTable() {
                   items?.count,
                   items?.igstValue,
                   items?.discountAmount
-                )
+                );
 
                 const a = {
                   billnumber:
@@ -1201,37 +1201,37 @@ function SalesSummaryTable() {
                   taxPercentage: items?.igstValue,
                   taxAmount: taxAmount,
                   netAmount: items?.individualTotal,
-                  amount: basePrice
-                }
+                  amount: basePrice,
+                };
 
-                saleObject.saleAmount += items?.individualTotal
-                saleObject?.sale?.push(a)
-              })
+                saleObject.saleAmount += items?.individualTotal;
+                saleObject?.sale?.push(a);
+              });
             }
-          })
-          check.push(saleObject)
+          });
+          check.push(saleObject);
         }
-      })
-      setSummaryReport(check)
+      });
+      setSummaryReport(check);
     }
-  }
+  };
   const exportToExcel = () => {
-    if (!summaryReport || summaryReport.length === 0) return
+    if (!summaryReport || summaryReport.length === 0) return;
 
     // Function to format date
     const formatDate = (dateString) => {
       return dateString
         ? new Date(dateString).toISOString().split("T")[0]
-        : "N/A"
-    }
+        : "N/A";
+    };
 
     // Function to format numbers
     const formatNumber = (number) => {
-      return number ? Number(number).toFixed(2) : "0.00"
-    }
+      return number ? Number(number).toFixed(2) : "0.00";
+    };
 
     // Prepare worksheet data
-    const worksheetData = []
+    const worksheetData = [];
 
     // Add headers based on selectedOption
     const headers = [
@@ -1249,9 +1249,9 @@ function SalesSummaryTable() {
       "Amount",
       "Tax%",
       "Tax Amount",
-      "Net Amount"
-    ]
-    worksheetData.push(headers)
+      "Net Amount",
+    ];
+    worksheetData.push(headers);
 
     // Add data rows
     summaryReport.forEach((record) => {
@@ -1324,7 +1324,7 @@ function SalesSummaryTable() {
                   ? saleItem.categoryName
                   : selectedOption === "voucher"
                   ? saleItem.categoryName
-                  : ""
+                  : "",
               ]
             : []),
 
@@ -1335,24 +1335,24 @@ function SalesSummaryTable() {
           formatNumber(saleItem.amount),
           saleItem.taxPercentage,
           formatNumber(saleItem.taxAmount),
-          formatNumber(saleItem.netAmount)
-        ]
-        worksheetData.push(row)
-      })
+          formatNumber(saleItem.netAmount),
+        ];
+        worksheetData.push(row);
+      });
 
       // Add total row for each group
-      const totalRow = new Array(14).fill("")
-      totalRow[0] = `Total for ${getMainHeader(selectedOption)}`
-      totalRow[13] = formatNumber(record.saleAmount)
-      worksheetData.push(totalRow)
+      const totalRow = new Array(14).fill("");
+      totalRow[0] = `Total for ${getMainHeader(selectedOption)}`;
+      totalRow[13] = formatNumber(record.saleAmount);
+      worksheetData.push(totalRow);
 
       // Add empty row for separation
-      worksheetData.push(new Array(14).fill(""))
-    })
+      worksheetData.push(new Array(14).fill(""));
+    });
 
     // Create workbook and worksheet
-    const wb = XLSX.utils.book_new()
-    const ws = XLSX.utils.aoa_to_sheet(worksheetData)
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(worksheetData);
 
     // Add column widths
     const colWidths = [
@@ -1369,113 +1369,113 @@ function SalesSummaryTable() {
       { wch: 12 }, // Amount
       { wch: 8 }, // Tax%
       { wch: 12 }, // Tax Amount
-      { wch: 12 } // Net Amount
-    ]
-    ws["!cols"] = colWidths
+      { wch: 12 }, // Net Amount
+    ];
+    ws["!cols"] = colWidths;
     // 🎨 Define styles
     const headerStyle = {
       font: { bold: true, color: { rgb: "FFFFFF" } },
       fill: { fgColor: { rgb: "4F81BD" } }, // header background color
-      alignment: { horizontal: "center", vertical: "center" }
-    }
+      alignment: { horizontal: "center", vertical: "center" },
+    };
     // 🎨 Apply styles to header row
     headers.forEach((header, idx) => {
-      const cellAddress = XLSX.utils.encode_cell({ r: 0, c: idx })
+      const cellAddress = XLSX.utils.encode_cell({ r: 0, c: idx });
       if (ws[cellAddress]) {
-        ws[cellAddress].s = headerStyle
+        ws[cellAddress].s = headerStyle;
       }
-    })
+    });
     const contentStyle = {
-      alignment: { horizontal: "center", vertical: "center" }
-    }
+      alignment: { horizontal: "center", vertical: "center" },
+    };
 
     // 🎨 Apply styles to content rows
-    const range = XLSX.utils.decode_range(ws["!ref"])
+    const range = XLSX.utils.decode_range(ws["!ref"]);
     for (let R = 1; R <= range.e.r; ++R) {
       for (let C = 0; C <= range.e.c; ++C) {
-        const cellAddress = XLSX.utils.encode_cell({ r: R, c: C })
+        const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
         if (ws[cellAddress]) {
-          ws[cellAddress].s = contentStyle
+          ws[cellAddress].s = contentStyle;
         }
       }
     }
 
     // Add the worksheet to workbook
-    XLSX.utils.book_append_sheet(wb, ws, "Sales Summary")
+    XLSX.utils.book_append_sheet(wb, ws, "Sales Summary");
 
     // Generate Excel file
     XLSX.writeFile(
       wb,
       `Sales_Summary_${selectedOption}_${formatDate(new Date())}.xlsx`
-    )
-  }
+    );
+  };
 
   // Helper functions for header names
   function getMainHeader(selectedOption) {
     switch (selectedOption) {
       case "Ledger":
-        return "Party Name"
+        return "Party Name";
       case "Stock Group":
-        return "Group Name"
+        return "Group Name";
       case "Stock Category":
-        return "Category Name"
+        return "Category Name";
       case "Stock Item":
-        return "Item Name"
+        return "Item Name";
       case "voucher":
-        return "Voucher Series"
+        return "Voucher Series";
       default:
-        return ""
+        return "";
     }
   }
 
   function getSecondaryHeader(selectedOption) {
     switch (selectedOption) {
       case "Ledger":
-        return "Item Name"
+        return "Item Name";
       case "Stock Group":
-        return "Category Name"
+        return "Category Name";
       case "Stock Category":
-        return "Group Name"
+        return "Group Name";
       case "Stock Item":
-        return "Party Name"
+        return "Party Name";
       case "voucher":
-        return "Party Name"
+        return "Party Name";
       default:
-        return ""
+        return "";
     }
   }
 
   function getTertiaryHeader(selectedOption) {
     switch (selectedOption) {
       case "Ledger":
-        return "Category Name"
+        return "Category Name";
       case "Stock Group":
-        return "Party Name"
+        return "Party Name";
       case "Stock Category":
-        return "Item Name"
+        return "Item Name";
       case "Stock Item":
-        return "Group Name"
+        return "Group Name";
       case "voucher":
-        return "Item Name"
+        return "Item Name";
       default:
-        return ""
+        return "";
     }
   }
 
   function getQuaternaryHeader(selectedOption) {
     switch (selectedOption) {
       case "Ledger":
-        return "Group Name"
+        return "Group Name";
       case "Stock Group":
-        return "Item Name"
+        return "Item Name";
       case "Stock Category":
-        return "Party Name"
+        return "Party Name";
       case "Stock Item":
-        return "Category Name"
+        return "Category Name";
       case "voucher":
-        return "Group Name"
+        return "Group Name";
       default:
-        return ""
+        return "";
     }
   }
   return (
@@ -1499,18 +1499,18 @@ function SalesSummaryTable() {
           {voucherType.value !== "allType" && serialNumberList && (
             <select
               onChange={(e) => {
-                const selectedId = e.target.value
+                const selectedId = e.target.value;
                 const selectedItem = serialNumberList?.series?.find(
                   (item) => item._id === selectedId
-                )
+                );
 
                 dispatch(
                   setSelectedSerialNumber({
                     title: selectedItem?.seriesName || "All SerialNumber",
-                    value: selectedId
+                    value: selectedId,
                   })
-                )
-                setSummaryReport([])
+                );
+                setSummaryReport([]);
               }}
               value={serialNumber.value}
               className="appearance-none border border-white rounded-md  px-4 py-2 pr-8 shadow-inner focus:outline-none cursor-pointer  pl-5 min-w-[150px]"
@@ -1566,17 +1566,20 @@ function SalesSummaryTable() {
                       ? "Party Name"
                       : "Party Name"}
                   </th>
-                  <th className="p-2 font-semibold text-gray-600">
-                    {selectedOption === "Ledger"
-                      ? "Item Name"
-                      : selectedOption === "Stock Group"
-                      ? "Category Name"
-                      : selectedOption === "Stock Category"
-                      ? "Group Name"
-                      : selectedOption === "Stock Item"
-                      ? "Party Name"
-                      : "Item Name"}
-                  </th>
+
+                  {selectedOption === "voucher" && (
+                    <th className="p-2 font-semibold text-gray-600">
+                      {selectedOption === "Ledger"
+                        ? "Item Name"
+                        : selectedOption === "Stock Group"
+                        ? "Category Name"
+                        : selectedOption === "Stock Category"
+                        ? "Group Name"
+                        : selectedOption === "Stock Item"
+                        ? "Party Name"
+                        : "Item Name"}
+                    </th>
+                  )}
                   <th className="p-2 font-semibold text-gray-600">
                     {selectedOption === "Ledger"
                       ? "Category Name"
@@ -1674,17 +1677,20 @@ function SalesSummaryTable() {
                             ? saleItem?.partyName
                             : saleItem?.partyName}
                         </td>
-                        <td className="px-1 py-2 text-gray-800 text-xs cursor-pointer text-nowrap">
-                          {selectedOption === "Ledger"
-                            ? saleItem?.itemName
-                            : selectedOption === "Stock Group"
-                            ? saleItem?.categoryName
-                            : selectedOption === "Stock Category"
-                            ? saleItem?.groupName
-                            : selectedOption === "Stock Item"
-                            ? saleItem?.partyName
-                            : saleItem?.itemName}
-                        </td>
+                        {selectedOption === "voucher" && (
+                          <td className="px-1 py-2 text-gray-800 text-xs cursor-pointer text-nowrap">
+                            {selectedOption === "Ledger"
+                              ? saleItem?.itemName
+                              : selectedOption === "Stock Group"
+                              ? saleItem?.categoryName
+                              : selectedOption === "Stock Category"
+                              ? saleItem?.groupName
+                              : selectedOption === "Stock Item"
+                              ? saleItem?.partyName
+                              : saleItem?.itemName}
+                          </td>
+                        )}
+
                         <td className="px-1 py-2 text-gray-800 text-xs cursor-pointer">
                           {selectedOption === "Ledger"
                             ? saleItem?.categoryName
@@ -1748,6 +1754,6 @@ function SalesSummaryTable() {
         )
       )}
     </div>
-  )
+  );
 }
-export default SalesSummaryTable
+export default SalesSummaryTable;
