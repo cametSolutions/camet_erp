@@ -92,8 +92,8 @@ const TransactionTable = ({
         "Van Sale": `${baseRoute}/vanSaleDetails/${id}`,
         Purchase: `${baseRoute}/purchaseDetails/${id}`,
         "Stock Transfer": `${baseRoute}/stockTransferDetails/${id}`,
-        "Credit Note": `${baseRoute}/creditDetails/${id}`,
-        "Debit Note": `${baseRoute}/debitDetails/${id}`,
+        "Credit Note": `${baseRoute}/creditNoteDetails/${id}`,
+        "Debit Note": `${baseRoute}/debitNoteDetails/${id}`,
         default: `${baseRoute}/saleOrderDetails/${id}`,
       };
       return routes[type] || routes.default;
