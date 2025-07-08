@@ -1490,6 +1490,7 @@ function SalesSummaryTable() {
         />
         {/* <button onClick={()=>{exportToExcel(summaryReport,selectedOption)}}>convet</button> */}
         <SelectDate />
+        <hr />
         <section className="shadow-lg bg-white">
           <VoucherTypeFilter filterKeys={filterKeys} />
         </section>
@@ -1620,7 +1621,7 @@ function SalesSummaryTable() {
                     {partyIndex !== 0 && (
                       <tr>
                         <td
-                          colSpan={14}
+                          colSpan={15}
                           className="h-1 bg-gray-300" // Adds a gray row for visual separation
                         />
                       </tr>
