@@ -479,6 +479,9 @@ export const updateTallyData = async (
     
     return;
   }
+
+  console.log("get herreee");
+  
   try {
     const billData = {
       Primary_user_id: Primary_user_id,
@@ -933,7 +936,6 @@ export const updateOutstandingBalance = async ({
   }
 
   // Calculate new bill balance
-
   let newBillBalance;
   if (
     newVoucherData?.paymentSplittingData &&
@@ -963,25 +965,55 @@ export const updateOutstandingBalance = async ({
         Number(newVoucherData?.lastAmount || 0)
     ) + diffBillValue || 0;
 
-  // Delete existing outstanding record
-  if (matchedOutStanding?._id) {
-    await TallyData.findByIdAndDelete(matchedOutStanding._id).session(session);
-  }
+  let updatedTallyData;
 
-  const updatedTallyData = await updateTallyData(
-    orgId,
-    voucherNumber,
-    existingVoucher._id,
-    existingVoucher.Primary_user_id,
-    party,
-    newVoucherData?.lastAmount,
-    secondaryMobile,
-    session,
-    valueToUpdateInTally,
-    selectedDate,
-    existingVoucher?.voucherType,
-    classification
-  );
+  if (matchedOutStanding?._id) {
+    // Update existing document to preserve _id
+    updatedTallyData = await TallyData.findByIdAndUpdate(
+      matchedOutStanding._id,
+      {
+        party_id: existingVoucher?.party?._id,
+        cmp_id: orgId,
+        billId: existingVoucher?._id.toString(),
+        bill_pending_amt: valueToUpdateInTally,
+        lastAmount: newVoucherData?.lastAmount,
+        voucherNumber: voucherNumber,
+        primaryUserId: existingVoucher.Primary_user_id,
+        party: party,
+        secondaryMobile: secondaryMobile,
+        selectedDate: selectedDate,
+        voucherType: existingVoucher?.voucherType,
+        classification: classification,
+        createdBy: createdBy,
+        transactionType: transactionType,
+        updatedAt: new Date(),
+      },
+      { 
+        new: true, // Return updated document
+        session: session 
+      }
+    );
+  }
+  
+  // else {
+  //   // Create new document only if it doesn't exist
+  //   updatedTallyData = await updateTallyData(
+  //     orgId,
+  //     voucherNumber,
+  //     existingVoucher._id,
+  //     existingVoucher.Primary_user_id,
+  //     party,
+  //     newVoucherData?.lastAmount,
+  //     secondaryMobile,
+  //     session,
+  //     valueToUpdateInTally,
+  //     selectedDate,
+  //     existingVoucher?.voucherType,
+  //     classification
+  //   );
+  // }
+
+  return updatedTallyData;
 };
 
 export const saveSettlementData = async (
