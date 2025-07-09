@@ -48,7 +48,7 @@ const DashboardSummary = () => {
       setSummaryData([
         {
           title: "Sales - Credit Note",
-          to: "/sUsers/salesSummary",
+          to: "/sUsers/summaryReport",
           value: sales,
           icon: icons.sales,
           summaryType: "Sales Summary",
@@ -57,7 +57,7 @@ const DashboardSummary = () => {
           title: "Purchase - Debit Note",
           value: purchases,
           icon: icons.purchases,
-          to: "/sUsers/salesSummary",
+          to: "/sUsers/summaryReport",
           summaryType: "Purchase Summary",
         },
         {
