@@ -6,7 +6,9 @@ import CustomBarLoader from "@/components/common/CustomBarLoader";
 import HeaderTile from "@/pages/voucher/voucherCreation/HeaderTile";
 import { formatVoucherType } from "/utils/formatVoucherType";
 import CustomerSearchInputBox from "./customerSearchInPutBox";
-
+import TimeSelector from "./TimeSelector";
+import AvailableRooms from "./AvailableRooms";
+import AdditionalPaxDetails from "./additionalPaxDetails";
 function BookingForm({ isLoading, setIsLoading }) {
   const [voucherNumber, setVoucherNumber] = useState("");
   const [selectedParty, setSelectedParty] = useState("");
@@ -15,9 +17,23 @@ function BookingForm({ isLoading, setIsLoading }) {
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
 
+  const today = new Date();
+  const arrivalDate = today.toISOString().split("T")[0];
+
+  const checkOutDateObj = new Date(today);
+  checkOutDateObj.setDate(today.getDate() + 1); // Add 1 day
+  const checkOutDate = checkOutDateObj.toISOString().split("T")[0];
+
   const [formData, setFormData] = useState({
-    bookingDate: new Date().toISOString().split("T")[0],
+    bookingDate: arrivalDate,
     bookingNumber: "",
+    arrivalDate: arrivalDate,
+    arrivalTime: "",
+    checkOutDate: checkOutDate,
+    selectedRoomId: "",
+    checkOutTime: "",
+    stayDays: 1,
+    bookingType: "offline",
     bedType: "",
     roomFloor: "",
     unit: "",
@@ -30,7 +46,27 @@ function BookingForm({ isLoading, setIsLoading }) {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (name === "stayDays") {
+      console.log("stayDays", value);
+      const arrival = new Date(formData.arrivalDate); // '2025-07-09'
+      const stayDays = parseInt(value); // assume value = 2
+
+      if (!isNaN(stayDays)) {
+        const checkout = new Date(arrival);
+        checkout.setDate(arrival.getDate() + stayDays);
+
+        // Format checkout date to 'YYYY-MM-DD'
+        const formattedCheckout = checkout.toISOString().split("T")[0];
+
+        setFormData({
+          ...formData,
+          stayDays: value,
+          checkOutDate: formattedCheckout,
+        });
+      }
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   const fetchData = useCallback(async () => {
@@ -75,12 +111,36 @@ function BookingForm({ isLoading, setIsLoading }) {
   const handleSelection = (selectedParty) => {
     setSelectedParty(selectedParty);
     console.log(selectedParty);
-    setFormData((prev) => ({ ...prev,
+    if (!selectedParty) {
+      setFormData((prev) => ({
+        ...prev,
+        customerId: "",
+        country: "",
+        state: "",
+        pinCode: "",
+        detailedAddress: "",
+      }));
+      return;
+    }
+    setFormData((prev) => ({
+      ...prev,
+      customerId: selectedParty._id,
       country: selectedParty.country,
       state: selectedParty.state,
       pinCode: selectedParty.pin,
-      detailedAddress: selectedParty.billingAddress
-     }));
+      detailedAddress: selectedParty.billingAddress,
+    }));
+  };
+
+  const handleAvailableRoomSelection = (selectedRoom) => {
+    setFormData((prev) => ({ ...prev, selectedRoomId: selectedRoom?._id }));
+  };
+  const handleArrivalTimeChange = (time) => {
+    setFormData((prev) => ({ ...prev, arrivalTime: time }));
+  };
+
+  const handleCheckOutTimeChange = (time) => {
+    setFormData((prev) => ({ ...prev, checkOutTime: time }));
   };
 
   const submitHandler = () => {
@@ -88,6 +148,7 @@ function BookingForm({ isLoading, setIsLoading }) {
     console.log("Form submitted:", formData);
   };
 
+  console.log(formData);
   return (
     <>
       {isLoading ? (
@@ -178,53 +239,95 @@ function BookingForm({ isLoading, setIsLoading }) {
               <div className="w-full lg:w-6/12 px-4">
                 <div className="relative w-full mb-3">
                   <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                    Room Floor
+                    Arrival Date
+                  </label>
+                  <input
+                    type="date"
+                    name="arrivalDate"
+                    value={formData.arrivalDate}
+                    onChange={handleChange}
+                    className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                  />
+                </div>
+              </div>
+              <div className="w-full lg:w-6/12 px-4">
+                <div className="relative w-full mb-3">
+                  <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                    Arrival Time
+                  </label>
+                  <TimeSelector onTimeChange={handleArrivalTimeChange} />
+                </div>
+              </div>
+              <div className="w-full lg:w-6/12 px-4">
+                <div className="relative w-full mb-3">
+                  <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                    Stay Days
+                  </label>
+                  <input
+                    type="number"
+                    name="stayDays"
+                    value={formData.stayDays}
+                    onChange={handleChange}
+                    className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                  />
+                </div>
+              </div>
+              <div className="w-full lg:w-6/12 px-4">
+                <div className="relative w-full mb-3">
+                  <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                    Check Out Date
+                  </label>
+                  <input
+                    type="date"
+                    name="checkOutDate"
+                    value={formData.checkOutDate}
+                    onChange={handleChange}
+                    className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                  />
+                </div>
+              </div>
+              <div className="w-full lg:w-6/12 px-4">
+                <div className="relative w-full mb-3">
+                  <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                    Check Out Time
+                  </label>
+                  <TimeSelector onTimeChange={handleCheckOutTimeChange} />
+                </div>
+              </div>
+
+              {/* Booking Type */}
+              <div className="w-full lg:w-6/12 px-4">
+                <div className="relative w-full mb-3">
+                  <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                    Booking Type
                   </label>
                   <select
-                    name="roomFloor"
-                    value={formData.roomFloor}
+                    name="bookingType"
+                    value={formData.bookingType}
                     onChange={handleChange}
                     className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                   >
-                    <option value="">Select Room Floor</option>
+                    <option value="offline">Offline Booking</option>
+                    <option value="online">Online Booking</option>
                   </select>
                 </div>
               </div>
 
-              {/* Unit */}
+              {/* Available Rooms */}
               <div className="w-full lg:w-6/12 px-4">
                 <div className="relative w-full mb-3">
                   <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                    Unit
+                    Available Rooms
                   </label>
-                  <select
-                    name="unit"
-                    value={formData.unit}
-                    onChange={handleChange}
-                    className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                  >
-                    <option value="">Select a unit</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* HSN */}
-              <div className="w-full lg:w-6/12 px-4">
-                <div className="relative w-full mb-3">
-                  <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                    HSN
-                  </label>
-                  <select
-                    name="hsn"
-                    value={formData.hsn}
-                    onChange={handleChange}
-                    className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                  >
-                    <option value="">Select a hsn</option>
-                  </select>
+                  <AvailableRooms
+                    onSelect={handleAvailableRoomSelection}
+                    selectedParty={selectedParty}
+                    placeholder="Search customers..."
+                  />
                 </div>
               </div>
             </div>
+            <AdditionalPaxDetails cmp_id={cmp_id} />
 
             {/* Save Button */}
             <div className="flex justify-end">
