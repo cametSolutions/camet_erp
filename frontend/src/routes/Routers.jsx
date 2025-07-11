@@ -123,7 +123,7 @@ import AddWarrantyCard from '@/pages/secUsers/settilngs/dataEntry/invoiceSetting
 import EditWarrantyCard from '@/pages/secUsers/settilngs/dataEntry/invoiceSettings/WarrantyCard/EditWarrantyCard '
 import ConfigureRetailer from '@/pages/masters/secondaryUsers/RetailerConfiguration/ConfigureRetailer'
 import AllocateCompany from '@/pages/masters/secondaryUsers/RetailerConfiguration/AllocateCompany'
-import AllocatePriceLevel from '@/pages/masters/secondaryUsers/RetailerConfiguration/AllocatePricelevel'
+import AllocatePriceLevel from '@/pages/masters/secondaryUsers/RetailerConfiguration/AllocatePriceLevel'
 import AllocateGodown from '@/pages/masters/secondaryUsers/RetailerConfiguration/AllocateGodown'
 import AllocationSeriesList from '@/pages/masters/secondaryUsers/RetailerConfiguration/AllocationSeriesList'
 import AllocateVoucherSeries from '@/pages/masters/secondaryUsers/RetailerConfiguration/AllocateVoucherSeries'

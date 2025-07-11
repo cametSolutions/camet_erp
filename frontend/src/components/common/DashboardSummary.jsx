@@ -21,7 +21,7 @@ const DashboardSummary = () => {
   const cmp_id = useSelector(
     (state) => state?.secSelectedOrganization?.secSelectedOrg?._id
   );
-console.log(cmp_id)
+  console.log(cmp_id);
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const {
@@ -48,14 +48,17 @@ console.log(cmp_id)
       setSummaryData([
         {
           title: "Sales - Credit Note",
-          to: "/sUsers/salesSummary",
+          to: "/sUsers/summaryReport",
           value: sales,
           icon: icons.sales,
+          summaryType: "Sales Summary",
         },
         {
           title: "Purchase - Debit Note",
           value: purchases,
           icon: icons.purchases,
+          to: "/sUsers/summaryReport",
+          summaryType: "Purchase Summary",
         },
         {
           title: "Receipt",
@@ -96,7 +99,7 @@ console.log(cmp_id)
   }, [data]);
 
   const handleLinkClick = useCallback(
-    (path, value) => {
+    (path, value,summaryType="") => {
       if (path) {
         if (value === "Outstanding Payables") {
           dispatch(addTab("payables"));
@@ -104,8 +107,8 @@ console.log(cmp_id)
         } else if (value === "Outstanding Receivables") {
           dispatch(addTab("receivables"));
           navigate(path);
-        }else{
-          navigate(path)
+        } else {
+          navigate(path,{state:{summaryType:summaryType}});
         }
       }
     },
@@ -123,7 +126,7 @@ console.log(cmp_id)
       ) : (
         summaryData.map((item, index) => (
           <div
-            onClick={() => handleLinkClick(item?.to, item?.title)}
+            onClick={() => handleLinkClick(item?.to, item?.title, item?.summaryType)}
             key={index}
             className="p-4 flex items-center gap-5 bg-gray-100 mb-2 border-b shadow-md cursor-pointer hover:bg-slate-100 hover:translate-x-[1px] transition-all"
           >

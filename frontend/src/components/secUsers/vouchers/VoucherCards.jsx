@@ -242,7 +242,7 @@ const VoucherCards = ({ tab }) => {
       navigate(item.to, {
         state: {
           voucherType: item.voucherType,
-          summaryType: item.summaryType
+          summaryType: item?.summaryType
         }
       })
     } else {
