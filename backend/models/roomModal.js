@@ -21,17 +21,17 @@ const roomSchema = new mongoose.Schema({
   },
   roomType: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "brand",
+    ref: "Brand",
     required: true,
   },
   bedType: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "category",
+    ref: "Category",
     required: true,
   },
   roomFloor: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "subCategory",
+    ref: "Subcategory",
     required: true,
   },
   hsnCode: {
