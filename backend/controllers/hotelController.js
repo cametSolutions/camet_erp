@@ -619,6 +619,69 @@ export const getRooms = async (req, res) => {
   }
 };
 
+// Helper function to extract request parameters
+
+
+// Helper function to send room response
+
+// Main controller function
+
+
+
+
+export const getAllRooms = async (req, res) => {
+  try {
+    const { cmp_id } = req.params;
+    
+    // Validate company ID
+    if (!cmp_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Company ID is required"
+      });
+    }
+
+    // Validate if cmp_id is a valid ObjectId
+    if (!mongoose.Types.ObjectId.isValid(cmp_id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid Company ID format"
+      });
+    }
+
+    // Fetch all rooms for the company
+    const rooms = await roomModal.find({
+      cmp_id: cmp_id, // MongoDB will automatically cast valid ObjectId strings
+    })
+    .populate('cmp_id', 'name') // Populate organization details
+    .populate('roomType') // Populate from brand collection
+    .populate('roomFloor') // Populate from subCategory collection  
+    .populate('bedType') // Populate from category collection
+    .populate('priceLevel.priceLevel', 'name') // Populate price level details
+    .sort({ roomName: 1 }) // Sort by room name (roomNumber doesn't exist in schema)
+    .lean(); // Use lean() for better performance
+
+    return res.status(200).json({
+      success: true,
+      message: "Rooms fetched successfully",
+      data: {
+        rooms
+      }
+    });
+
+  } catch (error) {
+    console.error("Error in getAllRooms:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error, try again!",
+      data: []
+    });
+  }
+};
+
+
+
+
 
 // function used to edit room details
 
