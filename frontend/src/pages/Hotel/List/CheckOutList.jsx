@@ -306,14 +306,7 @@ const CheckoutList = () => {
     setEndDate('');
   };
 
-  const setQuickDateFilter = (days) => {
-    const today = new Date();
-    const pastDate = new Date(today);
-    pastDate.setDate(today.getDate() - days);
-    
-    setStartDate(pastDate.toISOString().split('T')[0]);
-    setEndDate(today.toISOString().split('T')[0]);
-  };
+ 
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">

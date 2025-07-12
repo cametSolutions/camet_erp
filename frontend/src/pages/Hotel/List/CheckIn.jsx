@@ -212,18 +212,18 @@ const CheckInList = () => {
     const matchesFilter = filterType === 'All' || checkIn.bookingType === filterType;
     let matchesDate = true;
     if (startDate && endDate) {
-      const arrivalDate = new Date(checkout.arrivalDate);
+      const arrivalDate = new Date(checkIn.arrivalDate);
       const start = new Date(startDate);
       const end = new Date(endDate);
       // Check if arrival date is between start and end date (inclusive)
       matchesDate = arrivalDate >= start && arrivalDate <= end;
     } else if (startDate) {
-      const arrivalDate = new Date(checkout.arrivalDate);
+      const arrivalDate = new Date(checkIn.arrivalDate);
       const start = new Date(startDate);
       // Show arrivals from start date onwards
       matchesDate = arrivalDate >= start;
     } else if (endDate) {
-      const arrivalDate = new Date(checkout.arrivalDate);
+      const arrivalDate = new Date(checkIn.arrivalDate);
       const end = new Date(endDate);
       // Show arrivals up to end date
       matchesDate = arrivalDate <= end;
@@ -247,14 +247,7 @@ const CheckInList = () => {
   };
 
 
-  const setQuickDateFilter = (days) => {
-    const today = new Date();
-    const pastDate = new Date(today);
-    pastDate.setDate(today.getDate() - days);
-    
-    setStartDate(pastDate.toISOString().split('T')[0]);
-    setEndDate(today.toISOString().split('T')[0]);
-  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-full mx-auto">
