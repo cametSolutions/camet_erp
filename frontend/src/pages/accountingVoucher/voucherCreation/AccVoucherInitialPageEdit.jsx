@@ -38,7 +38,6 @@ function AccVoucherInitialPageEdit() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  console.log(location);
 
   // ///////////////////  redux details /////////////////////
   const cmp_id = useSelector(
