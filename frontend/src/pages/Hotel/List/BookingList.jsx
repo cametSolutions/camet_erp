@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calendar, Search, Filter, Download } from 'lucide-react';
+import { Calendar, Search, Filter, Download,CalendarDays } from 'lucide-react';
 
 const BookingList = () => {
   // Sample booking data
@@ -113,12 +113,33 @@ const BookingList = () => {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('All');
-
+const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const filteredBookings = bookings.filter(booking => {
     const matchesSearch = booking.guestName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          booking.bookingNo.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = filterType === 'All' || booking.bookingType === filterType;
-    return matchesSearch && matchesFilter;
+  
+    let matchesDate = true;
+    if (startDate && endDate) {
+      const arrivalDate = new Date(checkout.arrivalDate);
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      // Check if arrival date is between start and end date (inclusive)
+      matchesDate = arrivalDate >= start && arrivalDate <= end;
+    } else if (startDate) {
+      const arrivalDate = new Date(checkout.arrivalDate);
+      const start = new Date(startDate);
+      // Show arrivals from start date onwards
+      matchesDate = arrivalDate >= start;
+    } else if (endDate) {
+      const arrivalDate = new Date(checkout.arrivalDate);
+      const end = new Date(endDate);
+      // Show arrivals up to end date
+      matchesDate = arrivalDate <= end;
+    }
+    
+    return matchesSearch && matchesFilter && matchesDate;
   });
 
   const formatCurrency = (amount) => {
@@ -129,6 +150,21 @@ const BookingList = () => {
     return new Date(dateString).toLocaleDateString('en-IN');
   };
 
+
+    const clearDateFilter = () => {
+    setStartDate('');
+    setEndDate('');
+  };
+
+
+  const setQuickDateFilter = (days) => {
+    const today = new Date();
+    const pastDate = new Date(today);
+    pastDate.setDate(today.getDate() - days);
+    
+    setStartDate(pastDate.toISOString().split('T')[0]);
+    setEndDate(today.toISOString().split('T')[0]);
+  };
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-full mx-auto">
@@ -139,15 +175,7 @@ const BookingList = () => {
               <Calendar className="text-blue-600" />
               Hotel Booking Table
             </h1>
-            <div className="flex items-center gap-4">
-              <div className="text-sm text-gray-500">
-                Total Bookings: {filteredBookings.length}
-              </div>
-              <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2 transition-colors">
-                <Download size={16} />
-                Export
-              </button>
-            </div>
+           
           </div>
 
           {/* Search and Filter */}
@@ -175,6 +203,58 @@ const BookingList = () => {
               </select>
             </div>
           </div>
+
+           <div className="border-t pt-4">
+                                  <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                                    <div className="flex items-center gap-2">
+                                      <CalendarDays className="h-4 w-4 text-gray-500" />
+                                      <span className="text-sm font-medium text-gray-700">Filter by Arrival Date:</span>
+                                    </div>
+                                    
+                                    <div className="flex flex-col sm:flex-row gap-2">
+                                      <div className="flex items-center gap-2">
+                                        <label className="text-sm text-gray-600">From:</label>
+                                        <input
+                                          type="date"
+                                          value={startDate}
+                                          onChange={(e) => setStartDate(e.target.value)}
+                                          className="px-3 py-1 border rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                                        />
+                                      </div>
+                                      
+                                      <div className="flex items-center gap-2">
+                                        <label className="text-sm text-gray-600">To:</label>
+                                        <input
+                                          type="date"
+                                          value={endDate}
+                                          onChange={(e) => setEndDate(e.target.value)}
+                                          className="px-3 py-1 border rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                                        />
+                                      </div>
+                                    </div>
+                                    
+                                    <div className="flex gap-2">
+                                     
+                                      <button
+                                        onClick={clearDateFilter}
+                                        className="px-3 py-1 bg-gray-100 text-gray-800 text-xs rounded-lg hover:bg-gray-200 transition-colors"
+                                      >
+                                        Clear
+                                      </button>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Active Filters Display */}
+                                  {(startDate || endDate) && (
+                                    <div className="mt-2 text-sm text-gray-600">
+                                      <span className="font-medium">Active Date Filter: </span>
+                                      <span>Showing arrivals </span>
+                                      {startDate && <span>from {formatDate(startDate)} </span>}
+                                      {endDate && <span>to {formatDate(endDate)}</span>}
+                                      <span className="ml-2 text-blue-600">({filteredCheckouts.length} records found)</span>
+                                    </div>
+                                  )}
+                                </div>
         </div>
 
         {/* Table */}

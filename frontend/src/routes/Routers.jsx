@@ -135,6 +135,8 @@ import BookingPage from '@/pages/Hotel/Pages/BookingPage'
 import CheckInPage from '@/pages/Hotel/Pages/CheckInPage'
 import CheckOut from '@/pages/Hotel/Pages/CheckOut' 
 import BookingList from '@/pages/Hotel/List/BookingList'
+import CheckInList from '@/pages/Hotel/List/CheckIn'
+import CheckOutList from '@/pages/Hotel/List/CheckOutList'
 const Routers = () => {
   return (
     <Routes>
@@ -399,7 +401,9 @@ const Routers = () => {
         <Route path= '/sUsers/bookingPage' element={<BookingPage />} />
         <Route path= '/sUsers/checkInPage' element={<CheckInPage />} />
         <Route path= '/sUsers/checkOut' element={<CheckOut />} />
-<Route Path='/BookingList' element={<BookingList/>}/>
+<Route path='/BookingList' element={<BookingList/>}/>
+<Route path='/CheckInList' element={<CheckInList/>}/>
+<Route path='/CheckOutList' element={<CheckOutList/>}/>
     </Routes>
   )
 }
