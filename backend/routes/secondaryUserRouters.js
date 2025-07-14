@@ -53,10 +53,15 @@ import { addBankEntry, addCash, editBankEntry, editCash, findSourceBalance, find
 import { addAditionalCharge, deleteAdditionalCharge, EditAditionalCharge, fetchAdditionalCharges, fetchSingleAdditionalCharge } from '../controllers/additionalChargeContoller.js';
 import { createVoucherSeries, getSeriesByVoucher, deleteVoucherSeriesById, editVoucherSeriesById, makeTheSeriesAsCurrentlySelected } from '../controllers/voucherSeriesController.js';
 
-router.post('/login', login)
-router.post('/sendOtp', sendOtp)
-router.post('/submitOtp', submitOtp)
-router.post('/resetPassword', resetPassword)
+//hotel controller
+import {saveAdditionalPax , getAdditionalPax ,updateAdditionalPax , deleteAdditionalPax,saveVisitOfPurpose,getVisitOfPurpose,
+    updateVisitOfPurpose,deleteVisitOfPurpose,saveIdProof,getIdProof,updateIdProof , deleteIdProof, saveFoodPlan , getFoodPlan
+    ,updateFoodPlan,deleteFoodPlan,addRoom,getRooms,editRoom ,deleteRoom,getAllRooms,roomBooking} from '../controllers/hotelController.js'
+
+router.post('/login',login)
+router.post('/sendOtp',sendOtp)
+router.post('/submitOtp',submitOtp)
+router.post('/resetPassword',resetPassword)
 
 router.post('/logout', authSecondary, secondaryIsBlocked, logout)
 router.get('/getSecUserData', authSecondary, secondaryIsBlocked, getSecUserData)
@@ -289,6 +294,30 @@ router.post('/convertPrimaryToSecondary', convertPrimaryToSecondary)
 router.post('/createAccountGroups', createAccountGroups)
 router.post('/addAccountGroupIdToParties', addAccountGroupIdToParties)
 router.post('/addAccountGroupIdToOutstanding', addAccountGroupIdToOutstanding)
+
+//// Hostel routes
+router.post('/saveAdditionalPax/:cmp_id',authSecondary,saveAdditionalPax)
+router.get('/getAdditionalPax/:cmp_id',authSecondary,getAdditionalPax)
+router.put('/updateAdditionalPax/:cmp_id',authSecondary,updateAdditionalPax)
+router.delete('/deleteAdditionalPax/:cmp_id/:id',authSecondary,deleteAdditionalPax)
+router.post('/saveVisitOfPurpose/:cmp_id',authSecondary,saveVisitOfPurpose)
+router.get('/getVisitOfPurpose/:cmp_id',authSecondary,getVisitOfPurpose)
+router.put('/updateVisitOfPurpose/:cmp_id',authSecondary,updateVisitOfPurpose)
+router.delete('/deleteVisitOfPurpose/:cmp_id/:id',authSecondary,deleteVisitOfPurpose)
+router.post('/saveIdProof/:cmp_id',authSecondary,saveIdProof)
+router.get('/getIdProof/:cmp_id',authSecondary,getIdProof)
+router.put('/updateIdProof/:cmp_id',authSecondary,updateIdProof)
+router.delete('/deleteIDProof/:cmp_id/:id',authSecondary,deleteIdProof)
+router.post('/saveFoodPlan/:cmp_id',authSecondary,saveFoodPlan)
+router.get('/getFoodPlan/:cmp_id',authSecondary,getFoodPlan)
+router.put('/updateFoodPlan/:cmp_id',authSecondary,updateFoodPlan)
+router.delete('/deleteFoodPlan/:cmp_id/:id',authSecondary,deleteFoodPlan)
+router.post("/addRoom/:cmp_id",authSecondary,addRoom)
+router.get("/getRooms/:cmp_id",authSecondary,getRooms)
+router.post("/editRoom/:cmp_id/:id",authSecondary,editRoom)
+router.delete('/deleteRoom/:id',authSecondary,secondaryIsBlocked,deleteRoom)
+router.get('/getAllRooms/:cmp_id',authSecondary,secondaryIsBlocked,getAllRooms)
+router.post('/roomBooking/:cmp_id',authSecondary,secondaryIsBlocked,roomBooking)
 
 
 

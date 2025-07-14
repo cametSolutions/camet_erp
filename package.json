@@ -27,6 +27,7 @@
     "number-to-words": "^1.2.4",
     "react-datepicker": "^6.9.0",
     "react-qr-code": "^2.0.12",
+    "react-time-picker": "^7.0.0",
     "react-to-print": "^2.15.1",
     "react-tooltip": "^5.26.3",
     "react-window": "^1.8.10"

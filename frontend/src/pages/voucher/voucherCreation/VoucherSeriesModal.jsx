@@ -41,6 +41,7 @@ function VoucherSeriesModal({
     selectedVoucherSeriesForEdit: selectedVoucherSeriesForEditFromCommon,
     mode: modeFromCommonVoucher,
   } = useSelector((state) => state.commonVoucherSlice);
+  
   const {
     voucherSeries: voucherSeriesFromCommonAccVoucher,
     selectedVoucherSeries: selectedVoucherSeriesFromAccounting,

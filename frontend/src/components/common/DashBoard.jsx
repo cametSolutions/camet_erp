@@ -22,7 +22,7 @@ function DashBoard({
 }) {
   const [tab, setTab] = useState("transactions")
 
-  
+  console.log(org)
 
   return (
     <div className="overflow-hidden h-screen">
@@ -59,6 +59,7 @@ function DashBoard({
             receiptTotal={receiptTotal}
             handleLinkClick={handleLinkClick}
             userType={type}
+            organization={org}
           />
           {/* tiles */}
 

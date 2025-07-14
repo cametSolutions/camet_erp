@@ -137,6 +137,10 @@ export const extractRequestParams = (req) => {
   /// to sale if it is sales
    const voucherType = req.query.voucherType ==="sales" ? "sale" : req.query.voucherType || "all" ;
 
+  /// in configuration sales is saved as sale,by mistake,so we need to convert it
+  /// to sale if it is sales
+   const type = req.query.type 
+
    
 
   return {
@@ -151,6 +155,7 @@ export const extractRequestParams = (req) => {
     limit,
     skip: limit > 0 ? (page - 1) * limit : 0,
     voucherType,
+    type
   };
 };
 

@@ -118,6 +118,14 @@ import VoucherSeriesForm from '@/pages/secUsers/settilngs/dataEntry/voucherSetti
 import VoucherSeriesList from '@/pages/secUsers/settilngs/dataEntry/voucherSettings/voucherSeries/VoucherSeriesList'
 import EditItemVoucher from '@/pages/voucher/voucherCreation/EditItemVoucher'
 import WarrantyCard from '@/pages/voucher/voucherPdf/warrantyCard/WarrantyCard'
+import HotelDashboard from '@/pages/Hotel/Pages/HotelDashboard'
+import AddAdditionalPax from '@/pages/Hotel/Pages/AddAdditionalPax' 
+import VisitOfPurpose from '@/pages/Hotel/Pages/VisitOfPurpose'
+import IdProof from '@/pages/Hotel/Pages/IdProof'
+import FoodPlan from '@/pages/Hotel/Pages/FoodPlan'
+import RoomRegistration from '@/pages/Hotel/Pages/RoomRegistration'
+import RoomList from '@/pages/Hotel/Pages/RoomList'
+import EditRoom from '@/pages/Hotel/Pages/EditRoom'
 import WarrantyCardList from '@/pages/secUsers/settilngs/dataEntry/invoiceSettings/WarrantyCard/WarrantyCardList'
 import AddWarrantyCard from '@/pages/secUsers/settilngs/dataEntry/invoiceSettings/WarrantyCard/AddWarrantyCard'
 import EditWarrantyCard from '@/pages/secUsers/settilngs/dataEntry/invoiceSettings/WarrantyCard/EditWarrantyCard '
@@ -129,6 +137,12 @@ import AllocationSeriesList from '@/pages/masters/secondaryUsers/RetailerConfigu
 import AllocateVoucherSeries from '@/pages/masters/secondaryUsers/RetailerConfiguration/AllocateVoucherSeries'
 import AllocateSubGroup from '@/pages/masters/secondaryUsers/RetailerConfiguration/AllocateSubGroup'
 
+import BookingPage from '@/pages/Hotel/Pages/BookingPage'
+import CheckInPage from '@/pages/Hotel/Pages/CheckInPage'
+import CheckOut from '@/pages/Hotel/Pages/CheckOut' 
+import BookingList from '@/pages/Hotel/List/BookingList'
+import CheckInList from '@/pages/Hotel/List/CheckIn'
+import CheckOutList from '@/pages/Hotel/List/CheckOutList'
 const Routers = () => {
   return (
     <Routes>
@@ -139,6 +153,7 @@ const Routers = () => {
         <Route path='/sUsers/transaction' element={<ProtectedSecRoute><Transaction /></ProtectedSecRoute>}></Route>
         {/* <Route path='/sUsers/receiptDetails/:id' element={<ProtectedSecRoute><SecReceptionDetails/></ProtectedSecRoute>}></Route> */}
         <Route path='/sUsers/dashboard' element={<ProtectedSecRoute><DashboardSec/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/hotelDashBoard' element={<ProtectedSecRoute><HotelDashboard/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/invoice' element={<ProtectedSecRoute><VoucherInitalPage/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/searchPartysaleOrder' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/partyList' element={<ProtectedSecRoute><PartyListSecondary/></ProtectedSecRoute>}></Route>
@@ -387,6 +402,22 @@ const Routers = () => {
         <Route path='/errorPage' element={<ErrorPage />} />
         <Route path='/serverError' element={<ServerError />} />
         <Route path='/sUsers/demo' element={<ProtectedSecRoute><Demo/></ProtectedSecRoute>}></Route>
+
+
+        {/* Hotel route */}
+        <Route path='/sUsers/addAdditionalPax' element={<AddAdditionalPax />} />
+        <Route path= '/sUsers/visitOfPurpose' element={<VisitOfPurpose />} />
+        <Route path= '/sUsers/idProof' element={<IdProof />} />
+        <Route path= '/sUsers/foodPlan' element={<FoodPlan />} />
+        <Route path= '/sUsers/roomRegistration' element={<RoomRegistration />} />
+        <Route path= '/sUsers/roomList' element={<RoomList />} />
+        <Route path= '/sUsers/editRoom' element={<EditRoom />} />
+        <Route path= '/sUsers/bookingPage' element={<BookingPage />} />
+        <Route path= '/sUsers/checkInPage' element={<CheckInPage />} />
+        <Route path= '/sUsers/checkOut' element={<CheckOut />} />
+        <Route path='/BookingList' element={<BookingList/>}/>
+        <Route path='/CheckInList' element={<CheckInList/>}/>
+        <Route path='/CheckOutList' element={<CheckOutList/>}/>
     </Routes>
   )
 }

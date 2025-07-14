@@ -30,6 +30,7 @@ function HeaderTile({
   addSelectedVoucherSeries,
   number,
   selectedVoucherSeriesFromRedux = {}, // Default to null if not provided
+  tab
 }) {
   const [isSeriesModalOpen, setIsSeriesModalOpen] = useState(false);
   const [selectedSeries, setSelectedSeries] = useState(null);
@@ -100,7 +101,7 @@ function HeaderTile({
             />
           </div>
         </div>
-
+{tab !== "booking" && (
         <div className="">
           <div className="flex gap-5 items-center">
             <div className="hidden sm:block">
@@ -136,7 +137,9 @@ function HeaderTile({
             </div>
           </div>
         </div>
+           )}
       </div>
+           
 
       {/* Voucher Series Modal */}
       <VoucherSeriesModal
