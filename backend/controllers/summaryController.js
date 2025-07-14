@@ -63,7 +63,7 @@ export const getSummary = async (req, res) => {
         ]
       },
       'order summary': {
-       
+
         saleorder: [
           { model: invoiceModel, billField: 'orderNumber' }
         ]
@@ -109,7 +109,7 @@ export const getSummary = async (req, res) => {
         // fallback if needed
         groupId = { itemName: "$items.product_name" };
     }
-  
+
 
     for (const { model, billField } of selectedModels) {
 
@@ -164,6 +164,10 @@ export const getSummary = async (req, res) => {
                   discountAmount: "$items.GodownList.discountAmount",
                   igstValue: "$items.GodownList.igstValue",
                   igstAmount: "$items.GodownList.igstAmount",
+                  cessValue: "$items.GodownList.cessValue",
+                  cessAmount: "$items.GodownList.cessAmount",
+                  addtionalCess: "$items.GodownList.addlCessValue",
+                  addtionalCessAmount: "$items.GodownList.additionalCessAmount",
                   individualTotal: "$items.GodownList.individualTotal",
                   taxableAmount: "$items.GodownList.taxableAmount"
                 }
@@ -212,7 +216,7 @@ export const getSummary = async (req, res) => {
           sale: []
         });
       }
-
+      const ratevalue = record.godownList[0].rate / record.godownList[0].count
       const partySummary = groupedByParty.get(partyId);
       if (isGodown) {
 
@@ -223,9 +227,13 @@ export const getSummary = async (req, res) => {
         partySummary.sale.push({
           ...record.itemMeta,
           quantity: record.godownList.reduce((q, g) => q + g.count, 0),
-          rate: Number((record.godownList[0].rate / record.godownList[0].count).toFixed(2)),
+          rate: (Math.round(ratevalue * 100) / 100).toFixed(2),
           discount: record.godownList.reduce((d, g) => d + g.discountAmount, 0),
           taxPercentage: record.godownList[0].igstValue,
+          cessPercentage: record.godownList[0].cessValue,
+          cessAmount: record.godownList[0].cessAmount,
+          addtlnCess: record.godownList[0].addtionalCess,
+          addtnlnCessAmount: record.godownList[0].addtionalCessAmount,
           taxAmount: record.godownList.reduce((a, b) => a + b.igstAmount, 0),
           partyName: record.godownList[0].partyName,
           gstNo: record.gstNo,
@@ -244,9 +252,13 @@ export const getSummary = async (req, res) => {
             ...record.itemMeta,
             batch: g.batch,
             quantity: g.count,
-            rate: g.count ? Number((g.rate / g.count).toFixed(2)) : 0,
+            rate:(Math.round(ratevalue * 100) / 100).toFixed(2),
             discount: g.discountAmount,
             taxPercentage: g.igstValue,
+            cessPercentage: g.cessValue,
+            cessAmount: g.cessAmount,
+            addtlnCess: g.addtionalCess,
+            addtnlnCessAmount: g.addtionalCessAmount,
             partyName: g.partyName,
             taxAmount: g.igstAmount,
             netAmount: g.individualTotal,
@@ -265,7 +277,7 @@ export const getSummary = async (req, res) => {
     const grouped = new Map()
     for (const record of result) {
       const partyId = record._id.toString()
-      const types = selectedOption === "Ledger" ? "partyName" : selectedOption === "Stock Category" ? "categoryName" : selectedOption === "Stock Group" ? "groupName" : "itemName"
+      const types = selectedOption === "Ledger" ? "partyName" : selectedOption === "Stock Category" ? "categoryName" : selectedOption === "Stock Group" ? "groupName" : selectedOption === "Stock Item" ? "itemName" : "voucherSeries"
       if (!grouped.has(partyId)) {
         grouped.set(partyId, {
           _id: record._id,

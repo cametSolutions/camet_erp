@@ -125,8 +125,6 @@ function SalesSummaryTable() {
   useEffect(() => {
     if (salesummaryData && salesummaryData?.mergedsummary) {
       if (serialNumber.value !== "all") {
-
-
         const filteredserieslist = salesummaryData.mergedsummary.filter(
           (item) => item.seriesID === serialNumber.value
         )
@@ -136,10 +134,8 @@ function SalesSummaryTable() {
       }
     }
   }, [salesummaryData, cmp_id, serialNumber])
-
   const exportToExcel = () => {
     if (!summaryReport || summaryReport.length === 0) return
-
     // Function to format date
     const formatDate = (dateString) => {
       return dateString
@@ -171,6 +167,10 @@ function SalesSummaryTable() {
       "Amount",
       "Tax%",
       "Tax Amount",
+      "Cess%",
+      "Cess Amount",
+      "AddtlnCess",
+      "AddtlnCessAmt",
       "Net Amount"
     ]
     worksheetData.push(headers)
@@ -189,11 +189,11 @@ function SalesSummaryTable() {
             : selectedOption === "Stock Item"
             ? record.itemName
             : selectedOption === "voucher"
-            ? record.vocherSeries
+            ? record.voucherSeries
             : "",
 
           ...(selectedOption !== "voucher" ? [saleItem.billnumber] : []),
-          formatDate(saleItem.billDate),
+          saleItem.billDate,
 
           // Secondary column based on selectedOption
           selectedOption === "Ledger"
@@ -257,6 +257,10 @@ function SalesSummaryTable() {
           formatNumber(saleItem.amount),
           saleItem.taxPercentage,
           formatNumber(saleItem.taxAmount),
+          saleItem.cessPercentage,
+          saleItem.cessAmount,
+          saleItem.addtlnCess,
+          saleItem.addtnlnCessAmount,
           formatNumber(saleItem.netAmount)
         ]
         worksheetData.push(row)
@@ -416,7 +420,7 @@ function SalesSummaryTable() {
           <VoucherTypeFilter filterKeys={filterKeys} />
         </section>
         <div className="flex justify-between lg:justify-between gap-5 px-2 lg:gap-0  bg-white  border-t shadow-lg">
-          <SummmaryDropdown/>
+          <SummmaryDropdown />
           {voucherType.value !== "allType" && serialNumberList && (
             <select
               onChange={(e) => {
@@ -535,6 +539,14 @@ function SalesSummaryTable() {
                   <th className="p-2 font-semibold text-gray-600">
                     Tax Amount
                   </th>
+                  <th className="p-2 font-semibold text-gray-600">Cess%</th>
+                  <th className="p-2 font-semibold text-gray-600">
+                    Cess Amount
+                  </th>
+                  <th className="p-2 font-semibold text-gray-600">Add.Cess</th>
+                  <th className="p-2 font-semibold text-gray-600">
+                    Add.Cess.Amt
+                  </th>
                   <th className="p-2 font-semibold text-gray-600">
                     Net Amount
                   </th>
@@ -547,7 +559,7 @@ function SalesSummaryTable() {
                     {partyIndex !== 0 && (
                       <tr>
                         <td
-                          colSpan={16}
+                          colSpan={20}
                           className="h-1 bg-gray-300" // Adds a gray row for visual separation
                         />
                       </tr>
@@ -658,6 +670,18 @@ function SalesSummaryTable() {
                         </td>
                         <td className="px-1 py-2 text-gray-800 text-xs cursor-pointer">
                           {Number(saleItem?.taxAmount).toFixed(2)}
+                        </td>
+                        <td className="px-1 py-2 text-gray-800 text-xs cursor-pointer">
+                          {saleItem?.cessPercentage}
+                        </td>
+                        <td className="px-1 py-2 text-gray-800 text-xs cursor-pointer">
+                          {Number(saleItem?.cessAmount).toFixed(2)}
+                        </td>
+                        <td className="px-1 py-2 text-gray-800 text-xs cursor-pointer">
+                          {Number(saleItem?.addtlnCess).toFixed(2)}
+                        </td>
+                        <td className="px-1 py-2 text-gray-800 text-xs cursor-pointer">
+                          {Number(saleItem?.addtnlnCessAmount).toFixed(2)}
                         </td>
                         <td className="px-1 py-2 text-gray-800 text-xs cursor-pointer">
                           {saleItem?.netAmount}
