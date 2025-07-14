@@ -5,7 +5,6 @@ import api from "@/api/api";
 import CustomBarLoader from "@/components/common/CustomBarLoader";
 import HeaderTile from "@/pages/voucher/voucherCreation/HeaderTile";
 import { formatVoucherType } from "/utils/formatVoucherType";
-import CustomerSearchInputBox from "./customerSearchInPutBox";
 
 function CheckOutForm({isLoading,setIsLoading}) {
   const[voucherNumber,setVoucherNumber] = useState("");
