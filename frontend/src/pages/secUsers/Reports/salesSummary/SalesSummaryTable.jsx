@@ -70,6 +70,7 @@ function SalesSummaryTable() {
     staleTime: 30000,
     retry: false
   })
+  console.log(summaryReport)
   const { data: voucherwisesummary = [], isFetching: voucherFetching } =
     useQuery({
       queryKey: [
@@ -122,6 +123,7 @@ function SalesSummaryTable() {
       }
     }
   }, [])
+  console.log(summaryReport)
   useEffect(() => {
     if (salesummaryData && salesummaryData?.mergedsummary) {
       if (serialNumber.value !== "all") {
@@ -160,6 +162,8 @@ function SalesSummaryTable() {
       getTertiaryHeader(selectedOption),
       getQuaternaryHeader(selectedOption),
       ...(selectedOption === "voucher" ? ["Category Name"] : []),
+      "Gst No",
+      "Hsn",
       "Batch",
       "Quantity",
       "Rate",
@@ -181,87 +185,89 @@ function SalesSummaryTable() {
         const row = [
           // Main identifier based on selectedOption
           selectedOption === "Ledger"
-            ? record.partyName
+            ? record?.partyName
             : selectedOption === "Stock Group"
-            ? record.groupName
+            ? record?.groupName
             : selectedOption === "Stock Category"
-            ? record.categoryName
+            ? record?.categoryName
             : selectedOption === "Stock Item"
-            ? record.itemName
+            ? record?.itemName
             : selectedOption === "voucher"
-            ? record.voucherSeries
+            ? record?.voucherSeries
             : "",
 
-          ...(selectedOption !== "voucher" ? [saleItem.billnumber] : []),
-          saleItem.billDate,
+          ...(selectedOption !== "voucher" ? [saleItem?.billnumber] : []),
+          saleItem?.billDate,
 
           // Secondary column based on selectedOption
           selectedOption === "Ledger"
-            ? saleItem.itemName
+            ? saleItem?.itemName
             : selectedOption === "Stock Group"
-            ? saleItem.categoryName
+            ? saleItem?.categoryName
             : selectedOption === "Stock Category"
-            ? saleItem.groupName
+            ? saleItem?.groupName
             : selectedOption === "Stock Item"
-            ? saleItem.partyName
+            ? saleItem?.partyName
             : selectedOption === "voucher"
-            ? saleItem.partyName
+            ? saleItem?.partyName
             : "",
 
           // Tertiary column based on selectedOption
           selectedOption === "Ledger"
-            ? saleItem.categoryName || "Nill"
+            ? saleItem?.categoryName || "l"
             : selectedOption === "Stock Group"
-            ? saleItem.partyName
+            ? saleItem?.partyName
             : selectedOption === "Stock Category"
-            ? saleItem.itemName
+            ? saleItem?.itemName
             : selectedOption === "Stock Item"
-            ? saleItem.groupName || "Nill"
+            ? saleItem?.groupName || ""
             : selectedOption === "voucher"
-            ? saleItem.itemName
+            ? saleItem?.itemName
             : "",
 
           // Quaternary column based on selectedOption
           selectedOption === "Ledger"
-            ? saleItem.groupName || "Nill"
+            ? saleItem?.groupName || ""
             : selectedOption === "Stock Group"
-            ? saleItem.itemName
+            ? saleItem?.itemName
             : selectedOption === "Stock Category"
-            ? saleItem.partyName
+            ? saleItem?.partyName
             : selectedOption === "Stock Item"
-            ? saleItem.categoryName || "Nill"
+            ? saleItem?.categoryName || ""
             : selectedOption === "voucher"
-            ? saleItem.groupName || "Nill"
+            ? saleItem?.groupName || ""
             : "",
           //if voucher,insert extra column before batch
           ...(selectedOption === "voucher"
             ? [
                 selectedOption === "Ledger"
-                  ? saleItem.groupName || "Nill"
+                  ? saleItem?.groupName || ""
                   : selectedOption === "Stock Group"
-                  ? saleItem.itemName
+                  ? saleItem?.itemName
                   : selectedOption === "Stock Category"
-                  ? saleItem.partyName
+                  ? saleItem?.partyName
                   : selectedOption === "Stock Item"
-                  ? saleItem.categoryName || "Nill"
+                  ? saleItem?.categoryName || ""
                   : selectedOption === "voucher"
-                  ? saleItem.categoryName || "Nill"
+                  ? saleItem?.categoryName || ""
                   : ""
               ]
             : []),
+          saleItem?.gstNo,
+          saleItem?.hsn,
 
-          saleItem.batch || "",
-          saleItem.quantity,
+          saleItem?.batch || "",
+          saleItem?.quantity,
           saleItem.rate,
-          formatNumber(saleItem.discount),
-          formatNumber(saleItem.amount),
+          formatNumber(saleItem?.discount),
+          formatNumber(saleItem?.amount),
           saleItem.taxPercentage,
-          formatNumber(saleItem.taxAmount),
-          saleItem.cessPercentage,
-          saleItem.cessAmount,
-          saleItem.addtlnCess,
-          saleItem.addtnlnCessAmount,
-          formatNumber(saleItem.netAmount)
+          formatNumber(saleItem?.taxAmount),
+          saleItem?.cessPercentage,
+          saleItem?.cessAmount,
+          saleItem?.addtlnCess,
+          saleItem?.addtnlnCessAmount,
+          formatNumber(saleItem?.netAmount)
         ]
         worksheetData.push(row)
       })
@@ -575,17 +581,8 @@ function SalesSummaryTable() {
                             className="px-1 py-2 text-gray-800 font-bold text-xs cursor-pointer border text-nowrap"
                             rowSpan={party.sale.length} // Merge rows for the same party
                           >
-                            {selectedOption === "Ledger"
-                              ? party?.partyName
-                              : selectedOption === "Stock Group"
-                              ? party?.groupName
-                              : selectedOption === "Stock Category"
-                              ? party?.categoryName
-                              : selectedOption === "Stock Item"
-                              ? party?.itemName
-                              : selectedOption === "voucher"
-                              ? saleItem.billnumber
-                              : ""}
+                           
+                            {party.itemType}
                           </td>
                         ) : null}
                         {selectedOption !== "voucher" && (
@@ -645,13 +642,13 @@ function SalesSummaryTable() {
                             : saleItem?.categoryName}
                         </td>
                         <td className="px-1 py-2 text-gray-800 text-xs cursor-pointer">
-                          {saleItem?.gstNo || "Nill"}
+                          {saleItem?.gstNo || ""}
                         </td>
                         <td className="px-1 py-2 text-gray-800 text-xs cursor-pointer">
-                          {saleItem?.hsn || "Nill"}
+                          {saleItem?.hsn || ""}
                         </td>
                         <td className="px-1 py-2 text-gray-800 text-xs cursor-pointer">
-                          {saleItem?.batch || "Nill"}
+                          {saleItem?.batch || ""}
                         </td>
                         <td className="px-1 py-2 text-gray-800 text-xs cursor-pointer">
                           {saleItem?.quantity}

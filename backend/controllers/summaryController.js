@@ -203,21 +203,21 @@ export const getSummary = async (req, res) => {
     const groupedByParty = new Map();
 
     for (const record of mergedResults) {
-      const partyId = (selectedOption === "Ledger" ? record._id.partyName : selectedOption === "Stock Item" ? record._id.itemName : selectedOption === "Stock Category" ? record._id.categoryName : selectedOption === "Stock Group" ? record._id.groupName : record._id.voucherSeries).toString();
+      const filtername = (selectedOption === "Ledger" ? record._id.partyName : selectedOption === "Stock Item" ? record._id.itemName : selectedOption === "Stock Category" ? record._id.categoryName : selectedOption === "Stock Group" ? record._id.groupName : record._id.voucherSeries).toString();//fot grouping same items
 
       const isGodown = isGodownOnly(record.godownList);
       const itemType = selectedOption === "Ledger" ? "partyName" : selectedOption === "Stock Category" ? "categoryName" : selectedOption === "Stock Group" ? "groupName" : "itemName"
-      if (!groupedByParty.has(partyId)) {
-        groupedByParty.set(partyId, {
-          _id: partyId,
-          [itemType]: selectedOption === "Ledger" ? record.partyName : selectedOption === "Stock Category" ? record.categoryName : selectedOption === "Stock Group" ? record.groupName : record._id.itemName,
+      if (!groupedByParty.has(filtername)) {
+        groupedByParty.set(filtername, {
+
+          itemType: filtername,///filteration type
           saleAmount: 0,
           seriesID: record.seriesid,
           sale: []
         });
       }
       const ratevalue = record.godownList[0].rate / record.godownList[0].count
-      const partySummary = groupedByParty.get(partyId);
+      const partySummary = groupedByParty.get(filtername);
       if (isGodown) {
 
         // if godownOnly, merge as one entry
@@ -227,7 +227,7 @@ export const getSummary = async (req, res) => {
         partySummary.sale.push({
           ...record.itemMeta,
           quantity: record.godownList.reduce((q, g) => q + g.count, 0),
-          rate: (Math.round(ratevalue * 100) / 100).toFixed(2),
+          rate: (Math.round(ratevalue * 100) / 100).toFixed(2),//math.round for getting gettting rounded value like 2.246 get as 2.25
           discount: record.godownList.reduce((d, g) => d + g.discountAmount, 0),
           taxPercentage: record.godownList[0].igstValue,
           cessPercentage: record.godownList[0].cessValue,
@@ -252,7 +252,7 @@ export const getSummary = async (req, res) => {
             ...record.itemMeta,
             batch: g.batch,
             quantity: g.count,
-            rate:(Math.round(ratevalue * 100) / 100).toFixed(2),
+            rate: (Math.round(ratevalue * 100) / 100).toFixed(2),///math.round for getting 2.435 gets 2.44
             discount: g.discountAmount,
             taxPercentage: g.igstValue,
             cessPercentage: g.cessValue,
@@ -272,16 +272,14 @@ export const getSummary = async (req, res) => {
         }
       }
     }
-
-    const result = Array.from(groupedByParty.values())
+    const result = Array.from(groupedByParty.values())//for converting to array 
     const grouped = new Map()
     for (const record of result) {
-      const partyId = record._id.toString()
-      const types = selectedOption === "Ledger" ? "partyName" : selectedOption === "Stock Category" ? "categoryName" : selectedOption === "Stock Group" ? "groupName" : selectedOption === "Stock Item" ? "itemName" : "voucherSeries"
+      const partyId = record.itemType
       if (!grouped.has(partyId)) {
         grouped.set(partyId, {
-          _id: record._id,
-          [types]: selectedOption === "Ledger" ? record._id : selectedOption === "Stock Category" ? record._id : selectedOption === "Stock Group" ? record._id : record._id,
+
+          itemType: partyId,
           seriesID: record.seriesID,
           saleAmount: 0,
           sale: []
@@ -366,6 +364,7 @@ export const getSummaryReport = async (req, res) => {
 
     // Handle special case for "sale" which should include both sale and vanSale
     let modelsToQuery = [];
+    //alltype is only for sale and purchase 
     if (voucherType === "allType") {
       if (summaryType === "Sales Summary") {
         modelsToQuery = [...summaryTypeMap.sale, ...summaryTypeMap.vanSale, ...summaryTypeMap.creditNote]
