@@ -6,6 +6,7 @@ function SummaryDropdown({
   bgColor = "#ffff",
   textColor = "#6b7280",
   hoverColor,
+  border="1px solid #d1d5db",
   ...props
 }) {
   const [option, setOption] = useState("Ledger")
@@ -20,26 +21,24 @@ function SummaryDropdown({
   }, [selectedOption])
 
   return (
-    <div className="">
+    <div >
       <select
         {...props}
         onMouseEnter={() => setIsHover(true)}
         onMouseLeave={() => setIsHover(false)}
         style={{
           backgroundColor: isHover ? hoverColor : bgColor,
+          border: border,
           color: textColor
         }}
         className="
         appearance-none    
-        border border-white 
         rounded-md           
         px-4 py-2           
         pr-8                 
         shadow-inner          
         focus:outline-none   
-        focus:ring-2         
         transition-colors    
-        
         cursor-pointer   
       "
         value={option}

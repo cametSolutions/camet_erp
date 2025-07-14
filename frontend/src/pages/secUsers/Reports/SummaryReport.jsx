@@ -19,7 +19,7 @@ export default function SummaryReport() {
   // const navigate = useNavigate()
   const location = useLocation()
   const dispatch = useDispatch()
-  const navigate=useNavigate();
+  const navigate = useNavigate()
   const { summaryType } = location.state
   const { start, end } = useSelector((state) => state.date)
 
@@ -53,9 +53,12 @@ export default function SummaryReport() {
 
   useEffect(() => {
     if (voucherType.title === "All Vouchers") {
-      if (summaryType === "Sales Summary"||summaryType ==="Purchase Summary") {
+      if (
+        summaryType === "Sales Summary" ||
+        summaryType === "Purchase Summary"
+      ) {
         dispatch(setSelectedVoucher({ title: "All", value: "allType" }))
-      }  else if (summaryType === "Order Summary") {
+      } else if (summaryType === "Order Summary") {
         dispatch(
           setSelectedVoucher({ title: "Sale Order", value: "saleOrder" })
         )
@@ -109,10 +112,8 @@ export default function SummaryReport() {
       return res.data
     },
     enabled:
-      !!cmp_id &&
-      !!voucherType.value &&
-      voucherType.title !== "All Vouchers",
-      // voucherType.value !== "allType",
+      !!cmp_id && !!voucherType.value && voucherType.title !== "All Vouchers",
+    // voucherType.value !== "allType",
     staleTime: 30000,
     retry: false
   })
@@ -277,10 +278,9 @@ export default function SummaryReport() {
   // Handle navigation to summary details page
   const handleNavigate = () => {
     navigate("/sUsers/salesSummaryDetails", {
-      state: { summaryType,serialNumber:serialNumber.value,serialNumberList }
+      state: { summaryType, serialNumber: serialNumber.value, serialNumberList }
     })
   }
-
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -305,6 +305,7 @@ export default function SummaryReport() {
                 bgColor="#219ebc"
                 textColor="#fff"
                 hoverColor="#1f7fb8"
+                border="1px solid white"
               />
             </section>
             {voucherType.value !== "allType" && (
@@ -341,26 +342,22 @@ export default function SummaryReport() {
               {selectedOption !== "voucher" ? (
                 <span>
                   ₹{totalAmount?.toLocaleString()}{" "}
-                  <span
-                   
-                  >
-                    {totalAmount < 0 ? "CR" :totalAmount > 0 ? "DR" : ""}
+                  <span>
+                    {totalAmount < 0 ? "CR" : totalAmount > 0 ? "DR" : ""}
                   </span>
                 </span>
               ) : (
                 <span>
                   ₹{voucherSum?.toLocaleString()}{" "}
-                  <span
-                  
-                  >
-                    {voucherSum < 0 ? "CR" : voucherSum > 0 ? "DR" : "" }
+                  <span>
+                    {voucherSum < 0 ? "CR" : voucherSum > 0 ? "DR" : ""}
                   </span>
                 </span>
               )}
             </h2>
             <p className="text-sm mt-4 font-semibold opacity-90">
-              {new Date(start).toLocaleDateString('en-GB')} -{" "}
-              {new Date(end).toLocaleDateString('en-GB')}
+              {new Date(start).toLocaleDateString("en-GB")} -{" "}
+              {new Date(end).toLocaleDateString("en-GB")}
             </p>
             <button
               onClick={handleNavigate}
