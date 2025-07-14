@@ -8,7 +8,7 @@ import { formatVoucherType } from "/utils/formatVoucherType";
 import CustomerSearchInputBox from "./CustomerSearchInPutBox";
 import TimeSelector from "./TimeSelector";
 import AvailableRooms from "./AvailableRooms";
-import AdditionalPaxDetails from "./additionalPaxDetails";
+import AdditionalPaxDetails from "./AdditionalPaxDetails";
 import FoodPlanComponent from "./FoodPlanComponent";
 import useFetch from "@/customHook/useFetch";
 
