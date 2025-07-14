@@ -9,7 +9,7 @@ import useFetch from "@/customHook/useFetch";
 import Swal from "sweetalert2";
 function FoodPlan() {
   const [loading, setLoading] = useState(false);
-  const [additionalPaxData, setAdditionalPaxData] = useState([]);
+  const [foodPlanData, setFoodPlanData] = useState([]);
   let organization = useSelector(
     (state) => state?.secSelectedOrganization?.secSelectedOrg
   );
@@ -19,7 +19,7 @@ function FoodPlan() {
   );
   useEffect(() => {
     if (data) {
-      setAdditionalPaxData(data?.data);
+      setFoodPlanData(data?.data);
     }
   }, [data]);
 
@@ -119,7 +119,7 @@ function FoodPlan() {
           tab={"Food Plan"}
           handleLoader={handleLoader}
           sendToParent={handleSubmit}
-          displayData={additionalPaxData}
+          displayData={foodPlanData}
           loading={loading}
           handleDelete={handleDelete}
         />
