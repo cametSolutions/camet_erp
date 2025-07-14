@@ -86,11 +86,7 @@ export const getSeriesByVoucher = async (req, res) => {
       configuration?.selectedVoucherSeries &&
       configuration?.selectedVoucherSeries.length > 0
     ) {
-      console.log(
-        "selectedVoucherSeries",
-        configuration?.selectedVoucherSeries
-      );
-      console.log("voucherType", voucherType);
+    
 
       const selectedSeriesIds =
         configuration?.selectedVoucherSeries?.filter(
