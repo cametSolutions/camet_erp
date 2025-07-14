@@ -184,17 +184,7 @@ function SalesSummaryTable() {
       record.sale.forEach((saleItem) => {
         const row = [
           // Main identifier based on selectedOption
-          selectedOption === "Ledger"
-            ? record?.partyName
-            : selectedOption === "Stock Group"
-            ? record?.groupName
-            : selectedOption === "Stock Category"
-            ? record?.categoryName
-            : selectedOption === "Stock Item"
-            ? record?.itemName
-            : selectedOption === "voucher"
-            ? record?.voucherSeries
-            : "",
+          record.itemType,
 
           ...(selectedOption !== "voucher" ? [saleItem?.billnumber] : []),
           saleItem?.billDate,
