@@ -387,7 +387,12 @@ export const getProductSubDetails = async (req, res) => {
   try {
     const { orgId } = req.params;
     const { type } = req.query; // 'type' can be 'brand', 'category', 'subcategory', 'godown', or 'pricelevel'
+    const restrict=req.query.restrict==="true"?true:false;
     const Primary_user_id = req.pUserId || req.owner;
+    const secondaryUser = await SecondaryUser.findById(req.sUserId);
+    const configuration = secondaryUser.configurations.find(
+      (config) => config?.organization?.toString() === orgId
+    );
 
     let data;
 
@@ -418,6 +423,14 @@ export const getProductSubDetails = async (req, res) => {
           cmp_id: orgId,
           Primary_user_id: Primary_user_id,
         });
+
+        if (configuration?.selectedGodowns.length > 0 && restrict) {
+          console.log(data);
+          data = data.filter((godown) =>
+            configuration.selectedGodowns.includes(godown._id)
+          );
+        }
+
         break;
       case "pricelevel":
         data = await PriceLevel.find({
@@ -579,8 +592,6 @@ export const getProducts = async (req, res) => {
     // Extract and validate request parameters
     const params = extractRequestParams(req);
 
-    
-
     // Validate secondary user exists
     const secUser = await SecondaryUser.findById(params.Secondary_user_id);
     if (!secUser) {
@@ -632,9 +643,6 @@ export const getProducts = async (req, res) => {
       filter,
       params
     );
-
-
-    
 
     // Transform products according to business rules
     const transformedProducts = transformProducts(products, {

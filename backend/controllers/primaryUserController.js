@@ -380,7 +380,10 @@ export const getSecUserDetails = async (req, res) => {
   try {
     const secId = req.params.id;
 
-    const secUserDetails = await SecondaryUser.findById(secId);
+    const secUserDetails = await SecondaryUser.findById(secId).populate({
+      path: "organization",
+      select: "_id name",
+    });
 
     if (!secUserDetails) {
       return res
@@ -860,7 +863,6 @@ export const fetchConfigurationCurrentNumber = async (req, res) => {
 
 export const allocateCompany = async (req, res) => {
   try {
-
     const { userId, selectedCompanies } = req.body;
 
     const secUser = await SecondaryUser.findById(userId);
@@ -869,31 +871,127 @@ export const allocateCompany = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    secUser.organization=[...selectedCompanies];
+    secUser.organization = [...selectedCompanies];
     const result = await secUser.save();
 
     const updatedUser = await SecondaryUser.findById(userId).populate({
       path: "organization",
-      select: "_id name",});
+      select: "_id name",
+    });
 
     if (result) {
-      return res
-        .status(200)
-        .json({ success: true, message: "User configuration is successful",data:updatedUser });
-        
+      return res.status(200).json({
+        success: true,
+        message: "User configuration is successful",
+        data: updatedUser,
+      });
     } else {
       return res
         .status(400)
         .json({ success: false, message: "User configuration failed" });
     }
-
-    
   } catch (error) {
-     console.error(error);
+    console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
   }
+};
 
+// @desc  allocating PriceLevels
+// route put/api/sUsers/allocatePriceLevel
+
+export const allocateSubDetails = async (req, res) => {
+  try {
+    const { subDetail, voucherType } = req.query;
+    const { userId, selectedItems, selectedCompany } = req.body;
+    const cmp_id = req.params.cmp_id;
+
+    const allowedSubDetails = [
+      "selectedPriceLevels",
+      "selectedGodowns",
+      "selectedVanSaleGodowns",
+      "selectedVoucherSeries",
+      "selectedSubGroups",
+    ]; // example
+    if (!allowedSubDetails.includes(subDetail)) {
+      return res.status(400).json({ message: "Invalid subDetail" });
+    }
+
+    const secUser = await SecondaryUser.findById(userId);
+    if (!secUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const configuration = secUser.configurations.find((item) =>
+      item.organization.equals(cmp_id)
+    );
+
+    //// for voucher series the structure is different
+if (subDetail === "selectedVoucherSeries" && voucherType) {
+  if (!configuration) {
+    const newConfiguration = {
+      organization: selectedCompany,
+      selectedVoucherSeries: [
+        {
+          voucherType,
+          selectedSeriesIds: selectedItems,
+        },
+      ],
+    };
+    secUser.configurations.push(newConfiguration);
+  } else {
+    if (!configuration.selectedVoucherSeries) {
+      configuration.selectedVoucherSeries = [];
+    }
+
+    const existingSeries = configuration.selectedVoucherSeries.find(
+      (item) => item.voucherType === voucherType
+    );
+
+    if (existingSeries) {
+      existingSeries.selectedSeriesIds = selectedItems;
+    } else {
+      configuration.selectedVoucherSeries.push({
+        voucherType,
+        selectedSeriesIds: selectedItems,
+      });
+    }
+  }
+
+  const result = await secUser.save();
+  return res.status(result ? 200 : 400).json({
+    success: !!result,
+    message: result
+      ? "User configuration is successful"
+      : "User configuration failed",
+  });
 }
 
 
+    if (!configuration) {
+      /// create one
 
+      const newConfiguration = {
+        organization: selectedCompany,
+        [subDetail]: selectedItems,
+      };
+      secUser.configurations.push(newConfiguration);
+    } else {
+      const existingConfiguration = secUser.configurations.find((item) =>
+        item.organization.equals(cmp_id)
+      );
+      existingConfiguration[subDetail] = selectedItems;
+    }
+
+    const result = await secUser.save();
+
+    return res.status(result ? 200 : 400).json({
+      success: !!result,
+      message: result
+        ? "User configuration is successful"
+        : "User configuration failed",
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};

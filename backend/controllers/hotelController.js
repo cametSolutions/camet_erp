@@ -5,6 +5,7 @@ import {
   FoodPlan,
 } from "../models/hotelSubMasterModal.js";
 
+import Booking from "../models/bookingModal.js";
 import hsnModel from "../models/hsnModel.js";
 import roomModal from "../models/roomModal.js";
 import {buildDatabaseFilterForRoom , sendRoomResponse ,fetchRoomsFromDatabase} from "../helpers/hotelHelper.js"
@@ -608,6 +609,7 @@ export const getRooms = async (req, res) => {
   try {
     const params = extractRequestParams(req);
     const filter = buildDatabaseFilterForRoom(params);
+    console.log("fill",filter);
     const {rooms,totalRooms} = await fetchRoomsFromDatabase(filter, params);
     const sendRoomResponseData = sendRoomResponse(res, rooms, totalRooms, params);
   } catch (error) {
@@ -774,3 +776,28 @@ export const deleteRoom = async (req, res) => {
   }
 };
 
+
+// function used for room booking
+
+export const roomBooking = async (req, res) => {
+  try {
+    const bookingData = req.body;
+    const orgId = req.params.orgId;
+    let voucherNumber = await generateVoucherNumber(
+        await generateVoucherNumber(orgId, voucherType, series_id, session ))
+  
+    if (!bookingData.bookingNumber || !bookingData.arrivalDate) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+    const newBooking = new Booking(bookingData);
+    const savedBooking = await newBooking.save();
+
+    res.status(201).json({
+      message: "Booking saved successfully",
+      data: savedBooking,
+    });
+  } catch (error) {
+    console.error("Error saving booking:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};

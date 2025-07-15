@@ -131,6 +131,12 @@ import AddWarrantyCard from '@/pages/secUsers/settilngs/dataEntry/invoiceSetting
 import EditWarrantyCard from '@/pages/secUsers/settilngs/dataEntry/invoiceSettings/WarrantyCard/EditWarrantyCard '
 import ConfigureRetailer from '@/pages/masters/secondaryUsers/RetailerConfiguration/ConfigureRetailer'
 import AllocateCompany from '@/pages/masters/secondaryUsers/RetailerConfiguration/AllocateCompany'
+import AllocatePriceLevel from '@/pages/masters/secondaryUsers/RetailerConfiguration/AllocatePriceLevel'
+import AllocateGodown from '@/pages/masters/secondaryUsers/RetailerConfiguration/AllocateGodown'
+import AllocationSeriesList from '@/pages/masters/secondaryUsers/RetailerConfiguration/AllocationSeriesList'
+import AllocateVoucherSeries from '@/pages/masters/secondaryUsers/RetailerConfiguration/AllocateVoucherSeries'
+import AllocateSubGroup from '@/pages/masters/secondaryUsers/RetailerConfiguration/AllocateSubGroup'
+
 import BookingPage from '@/pages/Hotel/Pages/BookingPage'
 import CheckInPage from '@/pages/Hotel/Pages/CheckInPage'
 import CheckOut from '@/pages/Hotel/Pages/CheckOut' 
@@ -149,7 +155,7 @@ const Routers = () => {
         <Route path='/sUsers/dashboard' element={<ProtectedSecRoute><DashboardSec/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/hotelDashBoard' element={<ProtectedSecRoute><HotelDashboard/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/invoice' element={<ProtectedSecRoute><VoucherInitalPage/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/searchParty' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/searchPartysaleOrder' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/partyList' element={<ProtectedSecRoute><PartyListSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/addParty' element={<ProtectedSecRoute><AddPartySecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/productList' element={<ProtectedSecRoute><ProductListSecondary/></ProtectedSecRoute>}></Route>
@@ -170,6 +176,7 @@ const Routers = () => {
 
         <Route path='/sUsers/sales' element={<ProtectedSecRoute><VoucherInitialPage/></ProtectedSecRoute>}></Route>
          <Route path='/sUsers/searchPartySales' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route>
+         <Route path='/sUsers/searchPartyvanSale' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/addItemSales' element={<ProtectedSecRoute><VoucherAddCount/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editItemVoucher/:id/:index' element={<ProtectedSecRoute><EditItemVoucher/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/salesDetails/:id' element={<ProtectedSecRoute><VoucherDetails/></ProtectedSecRoute>}></Route>
@@ -371,6 +378,13 @@ const Routers = () => {
       <Route path='/sUsers/configureSecondaryUser/:id/:userId/:cmp_name' element={<ProtectedSecRoute><ConfigureSecondaryUser/></ProtectedSecRoute>}></Route>
       <Route path='/sUsers/configureUser/:userId' element={<ProtectedSecRoute><ConfigureRetailer/></ProtectedSecRoute>}></Route>
       <Route path='/sUsers/allocateCompany' element={<ProtectedSecRoute><AllocateCompany/></ProtectedSecRoute>}></Route>
+      <Route path='/sUsers/allocatePriceLevel' element={<ProtectedSecRoute><AllocatePriceLevel/></ProtectedSecRoute>}></Route>
+      <Route path='/sUsers/allocateGodown' element={<ProtectedSecRoute><AllocateGodown/></ProtectedSecRoute>}></Route>
+      <Route path='/sUsers/allocateVanSaleGodown' element={<ProtectedSecRoute><AllocateGodown/></ProtectedSecRoute>}></Route>
+      <Route path='/sUsers/allocateSeries' element={<ProtectedSecRoute><AllocationSeriesList/></ProtectedSecRoute>}></Route>
+      <Route path='/sUsers/allocateSeries/:voucherType' element={<ProtectedSecRoute><AllocateVoucherSeries/></ProtectedSecRoute>}></Route>
+      <Route path='/sUsers/allocateSubGroups' element={<ProtectedSecRoute><AllocateSubGroup/></ProtectedSecRoute>}></Route>
+
 
       {/* outstanding  */}
       <Route path='/sUsers/outstandingSummary' element={<ProtectedSecRoute><OutstandingSummary/></ProtectedSecRoute>}></Route>
@@ -401,9 +415,9 @@ const Routers = () => {
         <Route path= '/sUsers/bookingPage' element={<BookingPage />} />
         <Route path= '/sUsers/checkInPage' element={<CheckInPage />} />
         <Route path= '/sUsers/checkOut' element={<CheckOut />} />
-<Route path='/BookingList' element={<BookingList/>}/>
-<Route path='/CheckInList' element={<CheckInList/>}/>
-<Route path='/CheckOutList' element={<CheckOutList/>}/>
+        <Route path='/BookingList' element={<BookingList/>}/>
+        <Route path='/CheckInList' element={<CheckInList/>}/>
+        <Route path='/CheckOutList' element={<CheckOutList/>}/>
     </Routes>
   )
 }

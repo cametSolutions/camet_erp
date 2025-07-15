@@ -14,20 +14,13 @@ import { BsFillBuildingsFill } from "react-icons/bs";
 import { TbLivePhoto } from "react-icons/tb";
 import { CgUnblock } from "react-icons/cg";
 import { SlUserFollow } from "react-icons/sl";
-
-
-
-
-
-
-
 function AdminSidebar({ onTabChange }) {
   const [showSidebar, setShowSidebar] = useState(false);
   const [admin, setAdmin] = useState({});
   const [tab, setTab] = useState("addOrganizations");
   const navigate = useNavigate();
   const dispatch=useDispatch()
-
+console.log("Hff")
   const [expandedSections, setExpandedSections] = useState({
     pUsers: false,
     organizationList: false,

@@ -53,6 +53,7 @@ function RoomRegisterComponent({ pageName, optionsData, sendToParent , editData}
   };
 
   const handleLevelChange = (index, value) => {
+    console.log(value);
     const updatedRows = [...priceLevelRows];
     updatedRows[index].priceLevel = value;
     setPriceLevelRows(updatedRows);

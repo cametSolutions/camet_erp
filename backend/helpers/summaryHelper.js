@@ -7,53 +7,7 @@ export const aggregateSummary = async (
   serialNumber
 ) => {
   try {
-    // const results = await model.aggregate([{ $match: matchCriteria }]);
-
-    // // Add type to each result to identify its source if not already included in projection
-    // if (!results[0]?.sourceType) {
-    //   return results.map((item) => ({
-    //     ...item,
-    //     sourceType: type,
-    //   }));
-    // }
-
-    // return results;
-    // const results = await model.aggregate([{ $match: matchCriteria }]);
-    // const results = await model.aggregate([
-    //   { $match: matchCriteria },
-    //   { $unwind: "$items" },
-    //   {
-    //     $lookup: {
-    //       from: "brands",
-    //       localField: "items.brand",
-    //       foreignField: "_id",
-    //       as: "brandLookup"
-    //     }
-    //   },
-    //   {
-    //     $set: {
-    //       "items.brand": { $arrayElemAt: ["$brandLookup", 0] }
-    //     }
-    //   },
-    //   { $unset: "brandLookup" }, // remove temporary field
-    //   {
-    //     $group: {
-    //       _id: "$_id",
-    //       doc: { $first: "$$ROOT" },
-    //       items: { $push: "$items" }
-    //     }
-    //   },
-    //   {
-    //     $set: {
-    //       "doc.items": "$items"
-    //     }
-    //   },
-    //   {
-    //     $replaceRoot: {
-    //       newRoot: "$doc"
-    //     }
-    //   }
-    // ]);
+    
     const results = await model.aggregate([
       { $match: matchCriteria },
 
@@ -111,6 +65,7 @@ export const aggregateSummary = async (
         }
       }
     ]);
+    // return results
 
     // Add type to each result to identify its source if not already included in projection
     if (results && results.length && !results[0]?.sourceType) {
@@ -220,7 +175,7 @@ export const aggregateSummary = async (
               isCredit: sale.voucherType === "creditNote" || sale.voucherType === "debitNote",
               transactions: []
             }
-          
+
             // Update total
             existing.total += item.total || 0
 
@@ -303,3 +258,4 @@ export const aggregateSummary = async (
     return [];
   }
 };
+

@@ -6,6 +6,10 @@ export const buildDatabaseFilterForRoom = (params) => {
     cmp_id: params.cmp_id,
     primary_user_id: params.Primary_user_id,
   };
+  console.log("params.type",params);
+  if(params?.type !== "All"){
+    filter.roomType = params.type;
+  }
 
   // Add search functionality if search term is provided
   if (params.searchTerm) {
@@ -18,10 +22,9 @@ export const buildDatabaseFilterForRoom = (params) => {
 };
 
 export const fetchRoomsFromDatabase = async (filter, params) => {
+
   // Count total products matching the filter for pagination
   const totalRooms = await roomModal.countDocuments(filter);
-console.log(totalRooms);
-console.log(filter)
   // Build query with pagination
   let query = roomModal.find(filter);
 
@@ -32,7 +35,7 @@ console.log(filter)
 
   // Execute query with population and sorting
   const rooms = await query
-    .sort({ roomName: 1 })
+    .sort({ roomName: 1 }).populate('priceLevel.priceLevel');
 
   return { rooms,totalRooms };
 };

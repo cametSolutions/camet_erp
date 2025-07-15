@@ -140,7 +140,7 @@ function VoucherInitialPage() {
       // Configuration Number
       if (voucherSeriesFromRedux === null && voucherTypeFromRedux) {
         apiRequests.configNumberRequest = await api.get(
-          `/api/sUsers/getSeriesByVoucher/${cmp_id}?voucherType=${voucherTypeFromRedux}`,
+          `/api/sUsers/getSeriesByVoucher/${cmp_id}?voucherType=${voucherTypeFromRedux}&restrict=true`,
           { withCredentials: true }
         );
       } else {
@@ -183,50 +183,19 @@ function VoucherInitialPage() {
         if (isMounted.current && voucherSeriesFromRedux === null) {
           dispatch(addVoucherSeries(configData.series));
         }
-
-        // console.log(configData);
-
-        // if ( isMounted.current) {
-        //   const voucherNumber = configData.configurationNumber;
-        //   setVoucherNumber(voucherNumber);
-        //   dispatch(addVoucherNumber(voucherNumber));
-        // } else {
-        //   const { configDetails, configurationNumber } = configData;
-        //   if (configDetails) {
-        //     const { widthOfNumericalPart, prefixDetails, suffixDetails } =
-        //       configDetails;
-        //     const paddedNumber = configurationNumber
-        //       .toString()
-        //       .padStart(widthOfNumericalPart, 0);
-        //     const finalOrderNumber = [
-        //       prefixDetails,
-        //       paddedNumber,
-        //       suffixDetails,
-        //     ]
-        //       .filter(Boolean)
-        //       .join("/");
-        //     setVoucherNumber(finalOrderNumber);
-        //     if (isMounted.current) {
-        //       dispatch(addVoucherNumber(finalOrderNumber));
-        //     }
-        //   } else {
-        //     setVoucherNumber(configurationNumber);
-        //     dispatch(addVoucherNumber(configurationNumber));
-        //   }
-        // }
       }
 
       // Process Godowns data if requested
       if (
         responses.godownsRequest &&
-        voucherType === "vanSale" &&
+        voucherTypeFromRedux === "vanSale" &&
         Object.keys(vanSaleGodownFromRedux).length === 0 &&
         isMounted.current
       ) {
         const godownsData = responses.godownsRequest.data;
 
-        if (godownsData?.data === null) {
-          navigate("/sUsers/selectVouchers");
+        if (godownsData?.data?.length === 0) {
+          navigate("/sUsers/selectVouchers", { replace: true });
           toast.error("No godown is configured");
           return;
         }
@@ -392,7 +361,8 @@ function VoucherInitialPage() {
       setSubmitLoading(false);
     }
   };
-
+console.log(
+"PPPPPPPPPPPPP")
   return (
     <div className="mb-14 sm:mb-0">
       <div className="flex-1 bg-slate-100 h -screen ">
@@ -430,7 +400,7 @@ function VoucherInitialPage() {
               party={party}
               dispatch={dispatch}
               removeParty={removeParty}
-              link="/sUsers/searchPartySales"
+              link={`/sUsers/searchParty${voucherTypeFromRedux}`}
               linkBillTo="/sUsers/billToSales"
               convertedFrom={convertedFrom}
             />

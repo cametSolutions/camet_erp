@@ -13,7 +13,6 @@ const SalesSummary = () => {
   const navigate = useNavigate()
 const location=useLocation()
   const { summaryType } = location.state
-console.log(summaryType)
   const { start, end } = useSelector((state) => state.date)
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
@@ -230,6 +229,7 @@ console.log(summaryData)
         <section className="shadow-lg border-b">
           <SelectDate />
         </section>
+    
 
         {loading && (
           <section className="w-full">

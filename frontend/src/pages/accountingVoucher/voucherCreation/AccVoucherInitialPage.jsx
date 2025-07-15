@@ -68,7 +68,7 @@ function AccVoucherInitialPage() {
         setLoading(true);
         try {
           const res = await api.get(
-            `/api/sUsers/getSeriesByVoucher/${cmp_id}/?voucherType=${voucherType}`,
+            `/api/sUsers/getSeriesByVoucher/${cmp_id}/?voucherType=${voucherType}&restrict=true`,
 
             {
               withCredentials: true,
