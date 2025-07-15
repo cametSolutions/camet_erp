@@ -455,7 +455,6 @@ export const handleOrganizationApprove = async (req, res) => {
 
   try {
     const organization = await Organization.findById(orgId).populate("owner");
-    console.log("org", organization);
 
     if (!organization) {
       return res.status(404).json({ error: "organization not found" });
@@ -468,16 +467,19 @@ export const handleOrganizationApprove = async (req, res) => {
     );
 
     // Check if the update was successful
-    if (update.nModified === 0) {
+    if (update.modifiedCount === 0) {
       return res.status(400).json({ error: "Approval failed" });
     }
 
+    // Send email only if organization was not approved before (now being approved)
     if (organization.isApproved === false) {
       const transporter = nodemailer.createTransport({
         service: "gmail",
         auth: {
           user: "solutions@camet.in",
-          pass: "gerjssfiitsgidaq",
+          pass: "gerj ssfi itsg idaq",
+          // user: "sreerajvijay1997@gmail.com",
+          // pass: "upid wczw hrzy hgis",
         },
       });
 
@@ -488,17 +490,23 @@ export const handleOrganizationApprove = async (req, res) => {
         text: `Dear ${organization.owner.userName},\n\nGreetings from Camet IT Solutions!\n\nWe are delighted to inform you that your registration with Camet IT Solutions has been successfully completed, and your approval for the company ${organization.name} is now confirmed.\n\nHere are your account details:\n\n- User ID: ${organization.owner._id}\n- Company ID: ${organization._id}\n\nWith these credentials, you now have access to the resources and services provided by Camet IT Solutions. We trust that you will find our offerings beneficial for your professional needs.\n\nShould you have any questions or require assistance, please feel free to reach out to our support team at solutions@camet.in or contact us directly at  9072632602.\n\nThank you for choosing Camet IT Solutions. We look forward to serving you and supporting your success in the future.\n\nBest regards,\n\nCAMET IT SOLUTIONS LLP\n2nd Floor, 5/215 A9, Puliyana Building\nFactory Road, North Kalamassery\nErnakulam Pincode : 683104\nContact No. 9072632602\nEmail ID : solutions@camet.in`,
       };
 
-      transporter.sendMail(mailOptions, function (error, info) {
-        if (error) {
-          console.log(error);
-          return res.status(500).json({ error: "Error sending email" });
-        } else {
-          console.log("Email Sent:" + info.response);
-        }
-      });
+      // Use Promise-based approach or proper callback handling
+      try {
+        const info = await transporter.sendMail(mailOptions);
+        console.log("Email Sent:" + info.response);
+        res.status(200).json({ message: "organization Status changed and email sent" });
+      } catch (emailError) {
+        console.log("Email error:", emailError);
+        res.status(200).json({ 
+          message: "organization Status changed but email failed to send",
+          emailError: emailError.message 
+        });
+      }
+    } else {
+      // Organization was approved before, now being unapproved
+      res.status(200).json({ message: "organization Status changed" });
     }
 
-    res.status(200).json({ message: "organization Status changed" });
   } catch (error) {
     console.error("Error:", error);
     res.status(500).json({ error: "Internal server error" });
