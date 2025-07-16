@@ -68,13 +68,22 @@ const receiptSchema = new mongoose.Schema(
     // Bill data with references
     billData: [
       {
-        billNo: { type: String, required: true },
-        billId: {
+
+        /// id of the outstanding
+        _id: {
           type: mongoose.Schema.Types.ObjectId,
           ref: "Tally",
           required: true,
         },
-        billDate: { type: String, required: true },
+        bill_no: { type: String, required: true },
+
+        /// id of the source of the outstanding
+        billId: {
+          type: mongoose.Schema.Types.ObjectId,
+
+          required: true,
+        },
+        bill_date: { type: Date, required: true },
         billPending_amt: { type: Number, required: true },
         source: { type: String, required: true },
         settledAmount: { type: Number, required: true },
@@ -115,9 +124,10 @@ const receiptSchema = new mongoose.Schema(
 );
 
 // 1. Primary unique identifier (receiptNumber per company)
-receiptSchema.index({ cmp_id: 1, series_id: 1, receiptNumber: 1 },  { unique: true, name: "unique_receipt_number_per_series" });
-
-
+receiptSchema.index(
+  { cmp_id: 1, series_id: 1, receiptNumber: 1 },
+  { unique: true, name: "unique_receipt_number_per_series" }
+);
 
 // 3. Most common query pattern (company + date sorting)
 receiptSchema.index({ cmp_id: 1, date: -1 });
@@ -132,20 +142,23 @@ receiptSchema.index({ cmp_id: 1, Secondary_user_id: 1 });
 receiptSchema.index({ cmp_id: 1, serialNumber: -1 });
 
 // 7. User-level document sequences (alternative to index #2 if needed)
-receiptSchema.index({ 
-  cmp_id: 1, 
-  Secondary_user_id: 1, 
-  userLevelSerialNumber: -1 
+receiptSchema.index({
+  cmp_id: 1,
+  Secondary_user_id: 1,
+  userLevelSerialNumber: -1,
 });
 
 // NEW INDEX: For fast validation of usedSeriesNumber existence
-receiptSchema.index({ 
-  cmp_id: 1, 
-  series_id: 1, 
-  usedSeriesNumber: 1 
-}, { 
-  name: "series_number_validation_idx",
-  background: true 
-});
+receiptSchema.index(
+  {
+    cmp_id: 1,
+    series_id: 1,
+    usedSeriesNumber: 1,
+  },
+  {
+    name: "series_number_validation_idx",
+    background: true,
+  }
+);
 
 export default mongoose.model("Receipt", receiptSchema);

@@ -424,7 +424,7 @@ export const fetchOutstandingDetails = async (req, res) => {
     })
       .sort({ bill_date: 1 })
       .select(
-        "bill_no billId bill_date bill_pending_amt source bill_date classification"
+        "_id bill_no billId bill_date bill_pending_amt source bill_date classification"
       );
 
     if (outstandings) {

@@ -9,6 +9,7 @@ import bankModel from "../models/bankModel.js";
 import partyModel from "../models/partyModel.js";
 import mongoose from "mongoose";
 import invoiceModel from "../models/invoiceModel.js";
+import { processAdvancePayments, processAdvanceReceipts } from "./receiptHelper.js";
 
 export const checkForNumberExistence = async (
   model,
@@ -385,7 +386,7 @@ export const createSaleRecord = async (
       voucherType,
       series_id,
       usedSeriesNumber,
-      note
+      note,
     } = req.body;
 
     const Primary_user_id = req.owner;
@@ -468,17 +469,16 @@ export const updateTallyData = async (
   voucherType,
   classification
 ) => {
-
-  
   if (
     party.accountGroupName !== "Sundry Debtors" &&
     party.accountGroupName !== "Sundry Creditors"
   ) {
-
     console.log("Invalid account group, skipping Tally update");
-    
+
     return;
   }
+
+
   try {
     const billData = {
       Primary_user_id: Primary_user_id,
@@ -543,16 +543,13 @@ export const revertSaleStockUpdates = async (items, session) => {
       );
 
       const productBalanceStock = parseFloat(product.balance_stock);
-
-      console.log("productBalanceStock saleble", productBalanceStock);
-      console.log("itemCount", itemCount);
+    
 
       const newBalanceStock = truncateToNDecimals(
         productBalanceStock + itemCount,
         3
       );
 
-      console.log("newBalanceStock", newBalanceStock);
 
       // Update product balance stock
       await productModel.updateOne(
@@ -582,7 +579,6 @@ export const revertSaleStockUpdates = async (items, session) => {
                 3
               );
 
-              console.log("new GodownStock b", newGodownStock);
 
               await productModel.updateOne(
                 { _id: product._id, "GodownList.batch": godown.batch },
@@ -599,7 +595,6 @@ export const revertSaleStockUpdates = async (items, session) => {
                 g.godown.toString() == godown.godownMongoDbId
             );
 
-            console.log("godownIndex gb", godownIndex);
 
             if (godownIndex !== -1 && godownCount && godownCount > 0) {
               const currentGodownStock =
@@ -608,7 +603,6 @@ export const revertSaleStockUpdates = async (items, session) => {
                 currentGodownStock + godownCount,
                 3
               );
-              console.log("new GodownStock", newGodownStock);
 
               await productModel.updateOne(
                 { _id: product._id },
@@ -633,7 +627,6 @@ export const revertSaleStockUpdates = async (items, session) => {
               (g) => g.godown.toString() == godown.godownMongoDbId
             );
 
-            console.log("godownIndex g only", godownIndex);
 
             if (godownIndex !== -1 && godownCount && godownCount > 0) {
               const currentGodownStock =
@@ -643,7 +636,6 @@ export const revertSaleStockUpdates = async (items, session) => {
                 3
               );
 
-              console.log("new GodownStock g only", newGodownStock);
 
               await productModel.updateOne(
                 {
@@ -663,7 +655,6 @@ export const revertSaleStockUpdates = async (items, session) => {
       } else {
         product.GodownList = product.GodownList.map((godown) => {
           const currentGodownStock = Number(godown.balance_stock) || 0;
-          console.log("currentGodownStock", currentGodownStock);
 
           const currentGodown = item?.GodownList[0];
 
@@ -675,7 +666,6 @@ export const revertSaleStockUpdates = async (items, session) => {
             Number(currentGodownStock) + Number(godownCount),
             3
           );
-          console.log("new GodownStock nothing", newGodownStock);
 
           return { ...godown, balance_stock: newGodownStock };
         });
@@ -908,6 +898,7 @@ export const revertPaymentSplittingDataInSources = async (
   }
 };
 
+// Main function - updated version
 export const updateOutstandingBalance = async ({
   existingVoucher,
   newVoucherData,
@@ -933,7 +924,6 @@ export const updateOutstandingBalance = async ({
   }
 
   // Calculate new bill balance
-
   let newBillBalance;
   if (
     newVoucherData?.paymentSplittingData &&
@@ -947,6 +937,8 @@ export const updateOutstandingBalance = async ({
   // Calculate difference in bill value
   const diffBillValue = Number(newBillBalance) - Number(oldBillBalance);
 
+  console.log(diffBillValue, "diffBillValue");
+
   // Find existing outstanding record
   const matchedOutStanding = await TallyData.findOne({
     party_id: existingVoucher?.party?._id,
@@ -954,35 +946,107 @@ export const updateOutstandingBalance = async ({
     billId: existingVoucher?._id.toString(),
   }).session(session);
 
-  console.log("matchedOutStanding", matchedOutStanding);
+  // If newBillBalance < oldBillBalance => create advance receipts and payments
+  if (newBillBalance < oldBillBalance) {
+    const appliedReceipts = matchedOutStanding?.appliedReceipts;
+    const appliedPayments = matchedOutStanding?.appliedPayments;
+    const totalAdvanceAmount = oldBillBalance - newBillBalance;
 
-  // Calculate value to update in tally
-  const valueToUpdateInTally =
-    Number(
-      matchedOutStanding?.bill_pending_amt ||
-        Number(newVoucherData?.lastAmount || 0)
-    ) + diffBillValue || 0;
+    console.log(`Processing advances for amount: ${totalAdvanceAmount}`);
 
-  // Delete existing outstanding record
-  if (matchedOutStanding?._id) {
-    await TallyData.findByIdAndDelete(matchedOutStanding._id).session(session);
+    let updatedAppliedReceipts = appliedReceipts || [];
+    let updatedAppliedPayments = appliedPayments || [];
+
+    // Process advance receipts
+    if (appliedReceipts?.length > 0) {
+      const receiptsResult = await processAdvanceReceipts(
+        appliedReceipts,
+        totalAdvanceAmount,
+        orgId,
+        existingVoucher,
+        party,
+        secondaryMobile,
+        session
+      );
+
+      updatedAppliedReceipts = receiptsResult.updatedAppliedReceipts;
+
+      console.log("updatedAppliedReceipts", updatedAppliedReceipts);
+      
+      console.log(`Remaining after processing receipts: ${receiptsResult.remainingAmount}`);
+    }
+
+    // Process advance payments
+    if (appliedPayments?.length > 0) {
+      const paymentsResult = await processAdvancePayments(
+        appliedPayments,
+        totalAdvanceAmount,
+        orgId,
+        existingVoucher,
+        party,
+        secondaryMobile,
+        session
+      );
+
+      updatedAppliedPayments = paymentsResult.updatedAppliedPayments;
+      console.log(`Remaining after processing payments: ${paymentsResult.remainingAmount}`);
+    }
+
+    // Update the matchedOutStanding with updated arrays
+    if (matchedOutStanding?._id) {
+      await TallyData.findByIdAndUpdate(
+        matchedOutStanding._id,
+        {
+          appliedReceipts: updatedAppliedReceipts,
+          appliedPayments: updatedAppliedPayments,
+          updatedAt: new Date(),
+        },
+        { session }
+      );
+      console.log('Updated appliedReceipts and appliedPayments arrays');
+    }
   }
 
-  const updatedTallyData = await updateTallyData(
-    orgId,
-    voucherNumber,
-    existingVoucher._id,
-    existingVoucher.Primary_user_id,
-    party,
-    newVoucherData?.lastAmount,
-    secondaryMobile,
-    session,
-    valueToUpdateInTally,
-    selectedDate,
-    existingVoucher?.voucherType,
-    classification
+  // Calculate value to update in tally
+  const valueToUpdateInTally = Number(
+    (matchedOutStanding?.bill_pending_amt || 0) + diffBillValue
   );
+
+  let updatedTallyData;
+
+  if (matchedOutStanding?._id) {
+    // Update existing document to preserve _id
+    updatedTallyData = await TallyData.findByIdAndUpdate(
+      matchedOutStanding._id,
+      {
+        party_id: existingVoucher?.party?._id,
+        cmp_id: orgId,
+        billId: existingVoucher?._id.toString(),
+        bill_amount: newBillBalance,
+        bill_pending_amt: valueToUpdateInTally,
+        voucherNumber: voucherNumber,
+        primaryUserId: existingVoucher.Primary_user_id,
+        party: party,
+        secondaryMobile: secondaryMobile,
+        selectedDate: selectedDate,
+        voucherType: existingVoucher?.voucherType,
+        classification: classification,
+        createdBy: createdBy,
+        transactionType: transactionType,
+        updatedAt: new Date(),
+      },
+      {
+        new: true, // Return updated document
+        session: session,
+      }
+    );
+
+    // console.log("updatedTallyData", updatedTallyData);
+  }
+  
+  return updatedTallyData;
 };
+
 
 export const saveSettlementData = async (
   party,
