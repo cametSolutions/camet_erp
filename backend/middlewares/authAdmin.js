@@ -3,10 +3,7 @@ import jwt from "jsonwebtoken";
 export const authAdmin = async (req, res, next) => {
   let token;
 
-  console.log(req.cookies);
-
   token = req.cookies.jwt_admin;
-  console.log(token);
 
   if (!token) {
     return res
@@ -14,8 +11,10 @@ export const authAdmin = async (req, res, next) => {
       .json({ success: false, message: "No token, authorization denied" });
   }
   try {
-    const decodedToken = await jwt.verify(token, process.env.JWT_SECRET_KEY_ADMIN);
-    console.log(decodedToken);
+    const decodedToken = await jwt.verify(
+      token,
+      process.env.JWT_SECRET_KEY_ADMIN
+    );
     req.adminId = decodedToken.userId;
     next();
   } catch (error) {
