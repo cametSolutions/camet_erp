@@ -62,17 +62,25 @@ const paymentSchema = new mongoose.Schema(
 
     // Bill data with references
     billData: [
-      {
-        billNo: { type: String, required: true },
-        billId: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "Tally",
-          required: true,
+        {
+          _id: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Tally",
+            required: true,
+          },
+          bill_no: { type: String, required: true },
+          billId: {
+            type: mongoose.Schema.Types.ObjectId,
+  
+            required: true,
+          },
+          bill_date: { type: String, required: true },
+          billPending_amt: { type: Number, required: true },
+          source: { type: String, required: true },
+          settledAmount: { type: Number, required: true },
+          remainingAmount: { type: Number, required: true },
         },
-        settledAmount: { type: Number, required: true },
-        remainingAmount: { type: Number, required: true },
-      },
-    ],
+      ],
 
     totalBillAmount: { type: Number, required: true },
     enteredAmount: { type: Number, required: true },

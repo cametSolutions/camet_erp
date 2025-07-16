@@ -6,6 +6,7 @@ import {
   setTotalBillAmount,
 } from "../../../../slices/voucherSlices/commonAccountingVoucherSlice";
 import OutstandingLIstComponent from "./OutstandingLIstComponent";
+import { LogIn } from "lucide-react";
 
 ///format the amount
 
@@ -55,13 +56,19 @@ function OutstandingListOfAccVoucher() {
                 (bill.settledAmount || 0) +
                 (updatedOutstandingList[index]?.bill_pending_amt || 0),
             };
+
+
+            console.log("updatedOutstandingList[index]", updatedOutstandingList[index]);
+            
           } else {
+
+         
             // Bill doesn't exist, add at beginning
             updatedOutstandingList.unshift({
               _id: bill._id,
               billId: bill.billId,
-              bill_no: bill.billNo,
-              bill_date: bill.billDate,
+              bill_no: bill.bill_no,
+              bill_date: bill.bill_date,
               bill_pending_amt: bill.settledAmount || 0,
               classification: "Dr",
               source: bill.source || "sales",

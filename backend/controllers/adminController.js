@@ -476,10 +476,8 @@ export const handleOrganizationApprove = async (req, res) => {
       const transporter = nodemailer.createTransport({
         service: "gmail",
         auth: {
-          user: "solutions@camet.in",
-          pass: "gerj ssfi itsg idaq",
-          // user: "sreerajvijay1997@gmail.com",
-          // pass: "upid wczw hrzy hgis",
+          user: process.env.NODE_MAILER_EMAIL,
+          pass: process.env.NODE_MAILER_APP_PASSWORD,
         },
       });
 
