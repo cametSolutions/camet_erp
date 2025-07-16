@@ -47,7 +47,7 @@ function BookingPage() {
               },
             ]}
           />
-          <BookingForm handleSubmit={handleSubmit} />
+          <BookingForm handleSubmit={handleSubmit} setIsLoading={setLoading} />
         </div>
       )}
     </>

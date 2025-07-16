@@ -82,7 +82,7 @@ const ProductSubDetailsForm = ({ tab, handleLoader, isHotel }) => {
       ...(isHotel && { price }),
     };
 
-console.log(formData);
+    console.log(formData);
     try {
       setLoading(true);
       handleLoader(true);
@@ -171,15 +171,15 @@ console.log(formData);
   };
 
   const handleEdit = async (id, value, data) => {
-    if(tab === "bedType"){
-      console.log(data)
-      setValue(data?.category)
-    }else if(tab === "roomFloor"){
-      setValue(data?.subcategory)
-    }else if (isHotel && tab === "roomType"){
-      setPrice(data?.roomRent)
-      setValue(data?.brand)
-    }else{
+    if (tab === "bedType") {
+      console.log(data);
+      setValue(data?.category);
+    } else if (tab === "roomFloor") {
+      setValue(data?.subcategory);
+    } else if (isHotel && tab === "roomType") {
+      setPrice(data?.roomRent);
+      setValue(data?.brand);
+    } else {
       setValue(value);
     }
     if (tab === "godown") {
@@ -203,7 +203,7 @@ console.log(formData);
 
   // Edit subdetails
   const editSubDetails = async (id, data) => {
-      const formData = {
+    const formData = {
       [tab]: value,
       ...(isHotel && { price }),
     };
@@ -211,7 +211,7 @@ console.log(formData);
     try {
       setLoading(true);
       handleLoader(true);
-      console.log(tab)
+      console.log(tab);
       const res = await api.put(
         `/api/${user}/editProductSubDetails/${orgId}/${id}?type=${tab}`,
         formData,
@@ -230,8 +230,6 @@ console.log(formData);
       handleLoader(false);
     }
   };
-
-  console.log(data)
 
   return (
     <div className={`${loading ? "opacity-50 animate-pulse" : ""} `}>
@@ -293,21 +291,31 @@ console.log(formData);
       </div>
 
       <section className="overflow-y-scroll h-[calc(100vh-273px)] px-4 scrollbar-thin ">
-        <div className="mt-2">
+        <div className="mt-2 w-full">
           {data?.length > 0 && !loading ? (
             data.map((el) => (
               <div
                 key={el._id}
                 className="flex items-center justify-between border-t-0 align-middle  whitespace-nowrap p-4 mb-2 border-b cursor-pointer hover:bg-slate-100 hover:translate-y-[1px]"
               >
-                <div className=" px-6 text-left text-wrap text-blueGray-700 text-sm font-bold text-gray-500">
-                  {el[tab] ? el[tab] : el?.brand ? el?.brand : el?.category ? el?.category : el.subcategory}
+                <div className=" px-6 text-left text-wrap text-blueGray-700 text-sm font-bold text-gray-500 w-1/3">
+                  {el[tab]
+                    ? el[tab]
+                    : el?.brand
+                    ? el?.brand
+                    : el?.category
+                    ? el?.category
+                    : el.subcategory}
                 </div>
-
-                <div className="flex items-center gap-12 text-xs">
+                {el?.roomRent && (
+                  <div className=" px-6 text-left text-wrap text-blueGray-700 text-sm font-bold text-gray-500 w-1/3">
+                    {el?.roomRent}
+                  </div>
+                )}
+                <div className="flex items-end gap-12 text-xs w-1/3 justify-end">
                   <div className=" cursor-pointer text-center flex justify-center ">
                     <p
-                      onClick={() => handleEdit(el._id, el[tab] ,el)}
+                      onClick={() => handleEdit(el._id, el[tab], el)}
                       className="text-blue-500"
                     >
                       <FaEdit size={15} />

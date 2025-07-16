@@ -8,7 +8,7 @@ function FoodPlanComponent({
   sendDataToParent,
   setDisplayFoodPlan,
   selectedRoomId,
-  
+  formData,
 }) {
   const [foodPlan, setFoodPlan] = useState([
     { foodPlanId: "", foodPlan: "", rate: 0 },
@@ -35,6 +35,22 @@ function FoodPlanComponent({
       sendDataToParent(filteredData);
     }
   }, [foodPlan]);
+
+  // useEffect used to manage the already selected values
+  useEffect(() => {
+    if (
+      formData?.foodPlan?.length > 0 &&
+      selectedRoomId &&
+      formData.foodPlan !== []
+    ) {
+      let filteredData = formData.foodPlan?.filter(
+        (item) => item.roomId == selectedRoomId
+      );
+      if (filteredData.length > 0 && filteredData !== []) {
+        setFoodPlan(filteredData);
+      }
+    }
+  }, [selectedRoomId]);
   const handlePaxChange = (index, value) => {
     let specificData = foodPlanData?.find((item) => item._id === value);
     console.log(selectedRoomId);
@@ -68,7 +84,6 @@ function FoodPlanComponent({
     setFoodPlan([...foodPlan, { foodPlanId: "", foodPlan: "", rate: 0 }]);
   };
 
-
   return (
     <div className="">
       <div className="relative w-full rounded-xl bg-white shadow-lg border">
@@ -79,12 +94,20 @@ function FoodPlanComponent({
           >
             Food Plan
           </button>
-          <button
-            className="ml-auto px-4 py-2 text-sm font-semibold text-white bg-black rounded-md hover:bg-gray-800 transition-all duration-200"
-            onClick={() => setDisplayFoodPlan(false)}
-          >
-          Save
-          </button>
+                  <div className="ml-auto flex gap-2">
+            <button
+              className="ml-auto px-4 py-2 text-sm font-semibold text-white bg-black rounded-md hover:bg-gray-800 transition-all duration-200"
+             onClick={() => setDisplayFoodPlan(false)}
+            >
+              Save
+            </button>
+            <button
+              className="ml-auto px-4 py-2 text-sm font-semibold text-white bg-yellow-500 rounded-md hover:bg-gray-800 transition-all duration-200"
+               onClick={() => setDisplayFoodPlan(false)}
+            >
+              Cancel
+            </button>
+          </div>
         </div>
 
         <div className="px-6 py-4">

@@ -34,17 +34,9 @@ const roomSchema = new mongoose.Schema({
     ref: "Subcategory",
     required: true,
   },
-  hsnCode: {
-    type: String,
-  },
-  cgst: {
-    type: Number,
-  },
-  sgst: {
-    type: Number,
-  },
-  igst: {
-    type: Number,
+  hsn: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Hsn",
   },
   unit: {
     type: String,
@@ -53,14 +45,16 @@ const roomSchema = new mongoose.Schema({
   room_master_id: {
     type: String,
   },
-  priceLevel :[{
-    priceLevel:{
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "PriceLevel",
+  priceLevel: [
+    {
+      priceLevel: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "PriceLevel",
+      },
+      priceRate: {
+        type: Number,
+      },
     },
-    priceRate :{
-      type: Number
-    }
-  }]
+  ],
 });
 export default mongoose.model("Room", roomSchema);

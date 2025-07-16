@@ -24,8 +24,10 @@ function BookingForm({ isLoading, setIsLoading, handleSubmit }) {
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
-console.log(cmp_id)
-  const { data, loading } = useFetch(`/api/sUsers/getProductSubDetails/${cmp_id}?type=roomType`);
+  console.log(cmp_id);
+  const { data, loading } = useFetch(
+    `/api/sUsers/getProductSubDetails/${cmp_id}?type=roomType`
+  );
 
   useEffect(() => {
     console.log(data);
@@ -69,6 +71,27 @@ console.log(cmp_id)
   // handle change function used to update form data
   const handleChange = (e) => {
     const { name, value } = e.target;
+    if (name === "arrivalDate") {
+
+      const checkout = new Date(value); // this is the arrivalDate
+
+      if (formData.stayDays) {
+        checkout.setDate(checkout.getDate() + Number(formData.stayDays)); 
+      } else {
+        checkout.setDate(checkout.getDate() + 1); // ✅ use `checkout`
+      }
+
+      const formattedCheckout = checkout.toISOString().split("T")[0];
+
+      setFormData((prev) => ({
+        ...prev,
+        checkOutDate: formattedCheckout,
+        arrivalDate: value,
+      }));
+
+      return
+    }
+
     if (name == "checkOutDate") {
       const arrivalDate = new Date(formData.arrivalDate);
       const checkOutDate = new Date(value);
@@ -160,13 +183,12 @@ console.log(cmp_id)
       Number(formData?.roomTotal || 0) +
       Number(formData?.foodPlanTotal || 0) +
       Number(formData?.paxTotal || 0);
-    console.log(subtotal);
 
     if (subtotal > 0 && formData.discountAmount !== "") {
       const newPercentage = (Number(formData.discountAmount) / subtotal) * 100;
       setFormData((prev) => ({
         ...prev,
-        discountPercentage: newPercentage.toFixed(2),
+        discountPercentage: newPercentage,
         grandTotal: (subtotal - Number(formData.discountAmount)).toFixed(2),
         totalAmount: subtotal.toFixed(2),
       }));
@@ -257,7 +279,6 @@ console.log(cmp_id)
       priceLevelId: selectedRoom?.priceLevel[0]?.pricelevel?._id,
       priceLevelRate: selectedRoom?.priceLevel[0]?.priceRate,
     }));
-    setPriceLevel(selectedRoom?.priceLevel);
   };
 
   // handle change function used to update arrival and checkout time
@@ -662,6 +683,7 @@ console.log(cmp_id)
                     sendDataToParent={handleAdditionalPaxDetails}
                     setDisplayAdditionalPax={setDisplayAdditionalPax}
                     selectedRoomId={selectedRoomId}
+                    formData={formData}
                   />
                 </div>
               </div>
@@ -674,6 +696,7 @@ console.log(cmp_id)
                     sendDataToParent={handleFoodPlanData}
                     setDisplayFoodPlan={setDisplayFoodPlan}
                     selectedRoomId={selectedRoomId}
+                    formData={formData}
                   />
                 </div>
               </div>
