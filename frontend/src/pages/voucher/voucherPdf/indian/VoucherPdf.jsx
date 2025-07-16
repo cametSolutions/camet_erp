@@ -1,6 +1,5 @@
 /* eslint-disable react/prop-types */
 import React, { useEffect, useState } from "react";
-
 import { useSelector } from "react-redux";
 import numberToWords from "number-to-words";
 import VoucherPdfFooter from "./VoucherPdfFooter";
