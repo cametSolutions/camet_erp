@@ -8,6 +8,7 @@ function AdditionalPaxDetails({
   sendDataToParent,
   setDisplayAdditionalPax,
   selectedRoomId,
+  formData,
 }) {
   const [additionalPax, setAdditionalPax] = useState([
     { paxID: "", paxName: 0, rate: "" },
@@ -25,6 +26,23 @@ function AdditionalPaxDetails({
       toast.error(error.response?.data?.message || "An error occurred");
     }
   }, [error]);
+
+  // useEffect used to manage the already selected values
+  useEffect(() => {
+    console.log(formData);
+    if (
+      formData?.additionalPaxDetails?.length > 0 &&
+      selectedRoomId &&
+      formData.additionalPaxDetails !== []
+    ) {
+      let filteredData = formData.additionalPaxDetails?.filter(
+        (item) => item.roomId == selectedRoomId
+      );
+      if (filteredData.length > 0 && filteredData !== []) {
+        setAdditionalPax(filteredData);
+      }
+    }
+  }, [selectedRoomId]);
 
   useEffect(() => {
     if (additionalPax.length > 0) {
@@ -79,12 +97,20 @@ function AdditionalPaxDetails({
           >
             Pax
           </button>
-          <button
-            className="ml-auto px-4 py-2 text-sm font-semibold text-white bg-black rounded-md hover:bg-gray-800 transition-all duration-200"
-            onClick={() => setDisplayAdditionalPax(false)}
-          >
-            Save
-          </button>
+          <div className="ml-auto flex gap-2">
+            <button
+              className="ml-auto px-4 py-2 text-sm font-semibold text-white bg-black rounded-md hover:bg-gray-800 transition-all duration-200"
+              onClick={() => setDisplayAdditionalPax(false)}
+            >
+              Save
+            </button>
+            <button
+              className="ml-auto px-4 py-2 text-sm font-semibold text-white bg-yellow-500 rounded-md hover:bg-gray-800 transition-all duration-200"
+              onClick={() => setDisplayAdditionalPax(false)}
+            >
+              Cancel
+            </button>
+          </div>
         </div>
 
         <div className="px-6 py-4">

@@ -51,7 +51,7 @@ const RoomSubDetailsManagement = ({
     setPrice("");
     setEdit({ id: "", enabled: false });
   };
-  console.log(displayData);
+  console.log(tab);
   return (
     <div className={`${loading ? "opacity-50 animate-pulse" : ""}`}>
       <div className="flex flex-col justify-center sticky top-0 z-10">
@@ -66,7 +66,7 @@ const RoomSubDetailsManagement = ({
             value={value}
             onChange={(e) => setValue(e.target.value)}
           />
-          {(tab == "additionalPax" || tab == "Food Plan") && (
+          {(tab == "Additional pax" || tab == "Food Plan") && (
             <input
               type="number"
               placeholder={`Enter your ${tab} price`}
@@ -108,7 +108,7 @@ const RoomSubDetailsManagement = ({
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
                     {tab}
                   </th>
-                  {(tab == "Additional Pax" || tab == "Food Plan") && (
+                  {(tab == "Additional pax" || tab == "Food Plan") && (
                     <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
                       Amount
                     </th>
@@ -131,7 +131,7 @@ const RoomSubDetailsManagement = ({
                           ? el?.additionalPaxName
                           : el?.visitOfPurpose ? el?.visitOfPurpose : el.idProof ? el.idProof : el?.foodPlan}
                       </td>
-                      {(tab == "Additional Pax" || tab == "Food Plan") && (
+                      {(tab == "Additional pax" || tab == "Food Plan") && (
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {el?.amount}
                         </td>
