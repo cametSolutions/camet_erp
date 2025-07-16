@@ -191,7 +191,6 @@ export const revertTallyUpdates = async (
     }
 
     // Process updates one at a time instead of bulk
-    // Process updates one at a time instead of bulk
     for (const doc of tallyDataToRevert) {
       const settledAmount = billSettledAmountMap.get(doc.billId);
       await TallyData.updateOne(
