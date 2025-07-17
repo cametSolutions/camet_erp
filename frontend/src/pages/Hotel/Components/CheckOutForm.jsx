@@ -1,6 +1,7 @@
 import {useState,useCallback,useEffect} from "react";
 import { useSelector }  from "react-redux";
 import { toast } from "react-toastify";
+import {useNavigate} from "react-router-dom";
 import api from "@/api/api";
 import CustomBarLoader from "@/components/common/CustomBarLoader";
 import HeaderTile from "@/pages/voucher/voucherCreation/HeaderTile";
@@ -10,8 +11,9 @@ function CheckOutForm({isLoading,setIsLoading}) {
   const[voucherNumber,setVoucherNumber] = useState("");
   const[selectedParty,setSelectedParty] = useState("");
   const[errors,setErrors] = useState({});
+  
   const[touched,setTouched] = useState({});
-
+const navigate=useNavigate();
   const cmp_id = useSelector((state) => state.secSelectedOrganization.secSelectedOrg._id);
   const[formData,setFormData] = useState({ 
     Date: new Date().toISOString().split("T")[0],
@@ -298,7 +300,7 @@ function CheckOutForm({isLoading,setIsLoading}) {
     } finally {
       setIsLoading(false);
     }
-  }, [cmp_id]);
+  }, [cmp_id,setIsLoading]);
 
   useEffect(() => {
     fetchData();
@@ -425,6 +427,17 @@ function CheckOutForm({isLoading,setIsLoading}) {
         <CustomBarLoader />
       ) : (
         <>
+          <div className="flex items-center justify-end gap-2 text-sm text-gray-600 mt-4 mr-4  ml-4">
+                      <div className="flex items-center gap-1">
+                      <button
+                        className="px-2 py-2 gap-3 rounded-lg bg-[#012a4a] text-white"
+                        onClick={() => navigate('/CheckOutList')}
+                      >
+                        View List
+                      </button>
+        
+                      </div>
+                    </div>
           <div className="flex-auto px-4 lg:px-10 py-10 pt-4">
             <div className="flex flex-wrap">
               {/* 1. Date */}

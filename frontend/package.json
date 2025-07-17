@@ -29,6 +29,7 @@
     "date-fns": "^3.6.0",
     "dayjs": "^1.11.10",
     "decimal.js": "^10.4.3",
+    "framer-motion": "^12.23.6",
     "html2canvas": "^1.4.1",
     "html2pdf.js": "^0.10.3",
     "html5-qrcode": "^2.3.8",

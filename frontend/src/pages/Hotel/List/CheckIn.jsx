@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Calendar, Search, Filter, UserCheck, Clock, MapPin,CalendarDays } from 'lucide-react';
-
+import { useNavigate } from 'react-router-dom';
+import TitleDiv from '@/components/common/TitleDiv';
 const CheckInList = () => {
+ 
   // Sample check-in data with all required fields
   const [checkIns] = useState([
     {
@@ -251,46 +253,16 @@ const CheckInList = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-full mx-auto">
+        <TitleDiv
+                        title="Check In List"
+                        from="/sUsers/hotelDashBoard"
+                    />
         {/* Header */}
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-2">
-              <UserCheck className="text-green-600" />
-              Hotel Check-in List
-            </h1>
-            <div className="flex items-center gap-4 text-sm text-gray-600">
-              <div className="flex items-center gap-1">
-                <Calendar className="h-4 w-4" />
-                <span>Total Check-ins: {filteredCheckIns.length}</span>
-              </div>
-            </div>
-          </div>
+         
 
           {/* Search and Filter */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search by guest name, voucher number, or room number..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-              />
-            </div>
-            <div className="relative">
-              <Filter className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <select
-                value={filterType}
-                onChange={(e) => setFilterType(e.target.value)}
-                className="pl-10 pr-8 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-              >
-                <option value="All">All Types</option>
-                <option value="Online Booking">Online Booking</option>
-                <option value="Office Line Booking">Office Line Booking</option>
-              </select>
-            </div>
-          </div>
+      
              <div className="border-t pt-4">
                         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
                           <div className="flex items-center gap-2">
@@ -329,6 +301,18 @@ const CheckInList = () => {
                               Clear
                             </button>
                           </div>
+                           <div className="relative">
+              <Filter className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+                className="pl-10 pr-8 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              >
+                <option value="All">All Types</option>
+                <option value="Online Booking">Online Booking</option>
+                <option value="Office Line Booking">Office Line Booking</option>
+              </select>
+            </div>
                         </div>
                         
                         {/* Active Filters Display */}

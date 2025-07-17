@@ -143,6 +143,7 @@ import CheckOut from '@/pages/Hotel/Pages/CheckOut'
 import BookingList from '@/pages/Hotel/List/BookingList'
 import CheckInList from '@/pages/Hotel/List/CheckIn'
 import CheckOutList from '@/pages/Hotel/List/CheckOutList'
+import RestaurantDashboard from '@/pages/Restuarant/Pages/RestaurantDashboard'
 const Routers = () => {
   return (
     <Routes>
@@ -154,6 +155,7 @@ const Routers = () => {
         {/* <Route path='/sUsers/receiptDetails/:id' element={<ProtectedSecRoute><SecReceptionDetails/></ProtectedSecRoute>}></Route> */}
         <Route path='/sUsers/dashboard' element={<ProtectedSecRoute><DashboardSec/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/hotelDashBoard' element={<ProtectedSecRoute><HotelDashboard/></ProtectedSecRoute>}></Route>
+         <Route path='/sUsers/RestaurantDashboard' element={<ProtectedSecRoute><RestaurantDashboard/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/invoice' element={<ProtectedSecRoute><VoucherInitalPage/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/searchPartysaleOrder' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/partyList' element={<ProtectedSecRoute><PartyListSecondary/></ProtectedSecRoute>}></Route>
@@ -418,6 +420,7 @@ const Routers = () => {
         <Route path='/BookingList' element={<BookingList/>}/>
         <Route path='/CheckInList' element={<CheckInList/>}/>
         <Route path='/CheckOutList' element={<CheckOutList/>}/>
+
     </Routes>
   )
 }
