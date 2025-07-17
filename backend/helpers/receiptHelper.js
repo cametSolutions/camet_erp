@@ -142,6 +142,7 @@ export const createOutstandingWithAdvanceAmount = async (
   sourceName,
   classification
 ) => {
+
   try {
     const billData = {
       Primary_user_id,
@@ -474,12 +475,8 @@ export const processAdvanceReceipts = async (
   secondaryMobile,
   session
 ) => {
-
-  
   let currentRemainingAmount = remainingAdvanceAmount;
   const updatedAppliedReceipts = [...appliedReceipts];
-
-
 
   // LIFO: loop through in reverse
   for (
@@ -490,7 +487,7 @@ export const processAdvanceReceipts = async (
     const receipt = appliedReceipts[i];
 
     console.log("receipt", receipt);
-    
+
     const { receiptNumber, settledAmount, date, _id } = receipt;
 
     const advanceAmount = Math.min(settledAmount, currentRemainingAmount);
@@ -522,15 +519,13 @@ export const processAdvanceReceipts = async (
 
       // Partial amount used, update the settled amount
       updatedAppliedReceipts[i] = {
-     ...(receipt.toObject?.() || receipt), //// Convert to plain object
+        ...(receipt.toObject?.() || receipt), //// Convert to plain object
         settledAmount: settledAmount - advanceAmount,
       };
     }
   }
 
-
   console.log("updatedAppliedReceipts from helper", updatedAppliedReceipts);
-  
 
   return {
     remainingAmount: currentRemainingAmount,
