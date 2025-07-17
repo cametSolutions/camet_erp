@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 import { useState } from "react";
-import { Bell, Menu, User, Settings, LogOut, Shield } from "lucide-react";
+import { Bell, Menu, User, Settings, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -13,7 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-function AdminHeader({ sidebarOpen, onToggleSidebar }) {
+function AdminHeader({  onToggleSidebar }) {
   const [showNotifications, setShowNotifications] = useState(false);
 
   const notifications = [
@@ -23,7 +23,7 @@ function AdminHeader({ sidebarOpen, onToggleSidebar }) {
   ];
 
   return (
-    <header className="bg-[#222437]/25 backdrop-blur-sm border-b border-gray-200/60 h-16 flex items-center justify-between px-6 sticky top-0 z-40">
+    <header className="bg-white shadow-lg backdrop-blur-sm border-b border-gray-200/60 h-16 flex items-center justify-between px-6 sticky top-0 z-40">
       {/* Left side - Mobile menu button and title */}
       <div className="flex items-center gap-4">
         <Button

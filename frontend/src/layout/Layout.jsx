@@ -21,6 +21,9 @@ const Layout = ({ children }) => {
     }
   };
 
+
+  const isAdmin = location.pathname.includes("/admin/");
+
   
 
   const renderSidebar = () => {
@@ -33,8 +36,7 @@ const Layout = ({ children }) => {
       );
     } else if (location.pathname.includes("/sUsers/")) {
       return <SidebarSec showBar={showSidebar} handleToggleSidebar={handleToggleSidebar} />;
-    } else if (location.pathname.includes("/admin/")) {
-      console.log("Rendering Admin Sidebar");
+    } else if (isAdmin) {
       
       return (
         <AdminSidebar
@@ -47,7 +49,7 @@ const Layout = ({ children }) => {
   };
 
   const renderHeader = () => {
-    if (location.pathname.includes("/admin/")) {
+    if (isAdmin) {
       return <AdminHeader title="Admin Dashboard" />;
     }
     return null;
@@ -59,7 +61,7 @@ const Layout = ({ children }) => {
         {renderSidebar()}
         <div className="flex-1 flex flex-col min-w-0">
           {renderHeader()}
-          <main className="flex-1 overflow-y-auto overflow-x-auto">
+          <main className={`${isAdmin ? "bg-slate-100" : ""}  flex-1 overflow-y-auto overflow-x-auto`}>
             {children}
             <Outlet />
           </main>
