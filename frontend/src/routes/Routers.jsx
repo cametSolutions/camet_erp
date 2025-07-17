@@ -418,6 +418,9 @@ const Routers = () => {
         <Route path='/BookingList' element={<BookingList/>}/>
         <Route path='/CheckInList' element={<CheckInList/>}/>
         <Route path='/CheckOutList' element={<CheckOutList/>}/>
+
+
+        {/* admin Routes */}
     </Routes>
   )
 }
