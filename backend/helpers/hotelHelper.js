@@ -7,7 +7,7 @@ export const buildDatabaseFilterForRoom = (params) => {
     primary_user_id: params.Primary_user_id,
   };
   console.log("params.type",params);
-  if(params?.type !== "All"){
+  if(params?.type && params?.type !== "All"){
     filter.roomType = params.type;
   }
 
@@ -26,7 +26,8 @@ export const fetchRoomsFromDatabase = async (filter, params) => {
   // Count total products matching the filter for pagination
   const totalRooms = await roomModal.countDocuments(filter);
   // Build query with pagination
-  let query = roomModal.find(filter);
+  let query = roomModal.find(filter).populate("hsn")
+  .populate("roomType")
 
   // Apply pagination if limit is specified
   if (params?.limit > 0) {

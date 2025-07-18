@@ -11,7 +11,7 @@ function RoomRegisterComponent({ pageName, optionsData, sendToParent , editData}
     roomType: "",
     bedType: "",
     roomFloor: "",
-    unit: "",
+    unit: "DAY",
     hsn: "",
   });
   useEffect(() => {
@@ -74,7 +74,7 @@ function RoomRegisterComponent({ pageName, optionsData, sendToParent , editData}
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (name === "roomName") {
-      setRoomData({ ...roomData, roomName: value.trim() });
+      setRoomData({ ...roomData, roomName: value});
     } else {
       setRoomData({ ...roomData, [name]: value });
     }

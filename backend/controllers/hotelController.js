@@ -574,11 +574,7 @@ export const addRoom = async (req, res) => {
       roomType: formData.roomType,
       bedType: formData.bedType,
       roomFloor: formData.roomFloor,
-      hsnCode: correspondingHsn.hsn,
-      cgst: correspondingHsn.cgstRate,
-      sgst: correspondingHsn.sgstUtgstRate,
-      igst: correspondingHsn.igstRate,
-      unit: formData.unit,
+      hsn: formData.hsn,
       priceLevel: tableData,
     });
 
@@ -609,8 +605,9 @@ export const getRooms = async (req, res) => {
   try {
     const params = extractRequestParams(req);
     const filter = buildDatabaseFilterForRoom(params);
-    console.log("fill",filter);
+    console.log("filter",filter)
     const {rooms,totalRooms} = await fetchRoomsFromDatabase(filter, params);
+    console.log("rooms",rooms);
     const sendRoomResponseData = sendRoomResponse(res, rooms, totalRooms, params);
   } catch (error) {
     console.error("Error in getProducts:", error);
@@ -715,10 +712,7 @@ export const editRoom = async (req, res) => {
           roomType: formData.roomType,
           bedType: formData.bedType,
           roomFloor: formData.roomFloor,
-          hsnCode: correspondingHsn.hsn,
-          cgst: correspondingHsn.cgstRate,
-          sgst: correspondingHsn.sgstUtgstRate,
-          igst: correspondingHsn.igstRate,
+          hsn: formData.hsn,
           unit: formData.unit,
           priceLevel: tableData,
         },
