@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Calendar, Search, Filter, UserX, Clock, MapPin, CreditCard, History, CalendarDays } from 'lucide-react';
-
+import { useNavigate } from 'react-router-dom';
+import TitleDiv from '@/components/common/TitleDiv';
 const CheckoutList = () => {
+  const navigate=useNavigate()
   // Sample checkout data with all required fields
   const [checkouts] = useState([
     {
@@ -306,59 +308,23 @@ const CheckoutList = () => {
     setEndDate('');
   };
 
-  const setQuickDateFilter = (days) => {
-    const today = new Date();
-    const pastDate = new Date(today);
-    pastDate.setDate(today.getDate() - days);
-    
-    setStartDate(pastDate.toISOString().split('T')[0]);
-    setEndDate(today.toISOString().split('T')[0]);
-  };
+ 
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-full mx-auto">
         {/* Header */}
+
+        <TitleDiv
+          title="Check Out List"
+          from="/sUsers/hotelDashBoard"
+                            />
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-2">
-              <UserX className="text-red-600" />
-              Hotel Checkout List
-            </h1>
-            <div className="flex items-center gap-4 text-sm text-gray-600">
-              <div className="flex items-center gap-1">
-                <Calendar className="h-4 w-4" />
-                <span>Total Checkouts: {filteredCheckouts.length}</span>
-              </div>
-            </div>
-          </div>
+         
 
           {/* Search and Filter */}
-          <div className="flex flex-col gap-4 mb-6">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search by guest name, checkout number, or room number..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                />
-              </div>
-              <div className="relative">
-                <Filter className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <select
-                  value={filterType}
-                  onChange={(e) => setFilterType(e.target.value)}
-                  className="pl-10 pr-8 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                >
-                  <option value="All">All Types</option>
-                  <option value="Online Booking">Online Booking</option>
-                  <option value="Office Line Booking">Office Line Booking</option>
-                </select>
-              </div>
-            </div>
+          
+          
             
             {/* Date Filter Section */}
             <div className="border-t pt-4">
@@ -399,6 +365,18 @@ const CheckoutList = () => {
                     Clear
                   </button>
                 </div>
+                 <div className="relative">
+                <Filter className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <select
+                  value={filterType}
+                  onChange={(e) => setFilterType(e.target.value)}
+                  className="pl-10 pr-8 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                >
+                  <option value="All">All Types</option>
+                  <option value="Online Booking">Online Booking</option>
+                  <option value="Office Line Booking">Office Line Booking</option>
+                </select>
+              </div>
               </div>
               
               {/* Active Filters Display */}
@@ -412,7 +390,7 @@ const CheckoutList = () => {
                 </div>
               )}
             </div>
-          </div>
+          
         </div>
 
         {/* Table */}

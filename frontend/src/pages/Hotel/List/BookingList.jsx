@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { Calendar, Search, Filter, Download,CalendarDays } from 'lucide-react';
-
+import { useNavigate } from 'react-router-dom';
+import TitleDiv from '@/components/common/TitleDiv';
 const BookingList = () => {
+      const navigate=useNavigate()
   // Sample booking data
   const [bookings] = useState([
+
     {
       id: 1,
       date: '2024-07-10',
@@ -122,18 +125,18 @@ const [startDate, setStartDate] = useState('');
   
     let matchesDate = true;
     if (startDate && endDate) {
-      const arrivalDate = new Date(checkout.arrivalDate);
+      const arrivalDate = new Date(booking.arrivalDate);
       const start = new Date(startDate);
       const end = new Date(endDate);
       // Check if arrival date is between start and end date (inclusive)
       matchesDate = arrivalDate >= start && arrivalDate <= end;
     } else if (startDate) {
-      const arrivalDate = new Date(checkout.arrivalDate);
+      const arrivalDate = new Date(booking.arrivalDate);
       const start = new Date(startDate);
       // Show arrivals from start date onwards
       matchesDate = arrivalDate >= start;
     } else if (endDate) {
-      const arrivalDate = new Date(checkout.arrivalDate);
+      const arrivalDate = new Date(booking.arrivalDate);
       const end = new Date(endDate);
       // Show arrivals up to end date
       matchesDate = arrivalDate <= end;
@@ -157,52 +160,21 @@ const [startDate, setStartDate] = useState('');
   };
 
 
-  const setQuickDateFilter = (days) => {
-    const today = new Date();
-    const pastDate = new Date(today);
-    pastDate.setDate(today.getDate() - days);
-    
-    setStartDate(pastDate.toISOString().split('T')[0]);
-    setEndDate(today.toISOString().split('T')[0]);
-  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-full mx-auto">
+
+        <TitleDiv
+                                title="Booking List"
+                                from="/sUsers/hotelDashBoard"
+                            />
         {/* Header */}
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-2">
-              <Calendar className="text-blue-600" />
-              Hotel Booking Table
-            </h1>
-           
-          </div>
+         
 
           {/* Search and Filter */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search by guest name or booking number..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-            <div className="relative">
-              <Filter className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <select
-                value={filterType}
-                onChange={(e) => setFilterType(e.target.value)}
-                className="pl-10 pr-8 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="All">All Types</option>
-                <option value="Online Booking">Online Booking</option>
-                <option value="Office Line Booking">Office Line Booking</option>
-              </select>
-            </div>
-          </div>
+          
 
            <div className="border-t pt-4">
                                   <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
@@ -242,6 +214,18 @@ const [startDate, setStartDate] = useState('');
                                         Clear
                                       </button>
                                     </div>
+                                     <div className="relative">
+              <Filter className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+                className="pl-10 pr-8 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="All">All Types</option>
+                <option value="Online Booking">Online Booking</option>
+                <option value="Office Line Booking">OffLine Booking</option>
+              </select>
+            </div>
                                   </div>
                                   
                                   {/* Active Filters Display */}
@@ -251,7 +235,7 @@ const [startDate, setStartDate] = useState('');
                                       <span>Showing arrivals </span>
                                       {startDate && <span>from {formatDate(startDate)} </span>}
                                       {endDate && <span>to {formatDate(endDate)}</span>}
-                                      <span className="ml-2 text-blue-600">({filteredCheckouts.length} records found)</span>
+                                     
                                     </div>
                                   )}
                                 </div>
