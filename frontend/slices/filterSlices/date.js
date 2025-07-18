@@ -6,7 +6,6 @@ const utcMidnight = new Date(
 // → a Date object at 00:00 UTC of today
 
 const isoUtcMidnight = utcMidnight.toISOString();
-console.log(isoUtcMidnight)
 
 const initialState = {
   start:isoUtcMidnight,

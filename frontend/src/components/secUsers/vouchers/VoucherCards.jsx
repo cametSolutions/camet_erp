@@ -203,6 +203,13 @@ const popular = [
     to: "/sUsers/Inventory",
     active: true,
     subtitle: "Manage inventory records"
+  },
+  {
+    title: "Stock Register Summary",
+    icon: stockRegister,
+    to: "/sUsers/InventoryDetails",
+    active: true,
+    subtitle: "Manage inventory details"
   }
 ]
 
@@ -213,7 +220,7 @@ const VoucherCards = ({ tab }) => {
 
   const [selectedTab, setSelectedTab] = useState(null)
   const navigate = useNavigate()
- 
+
   useEffect(() => {
     if (tab === "sales") {
       setSelectedTab(salesTiles)
@@ -228,7 +235,6 @@ const VoucherCards = ({ tab }) => {
   }, [tab])
 
   const handleNavigate = (item) => {
-    console.log(item)
 
     if (item.active) {
       if (
