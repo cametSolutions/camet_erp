@@ -1028,12 +1028,13 @@ export const updateOutstandingBalance = async ({
         primaryUserId: existingVoucher.Primary_user_id,
         party: party,
         secondaryMobile: secondaryMobile,
-        selectedDate: selectedDate,
         voucherType: existingVoucher?.voucherType,
         classification: classification,
         createdBy: createdBy,
         transactionType: transactionType,
         updatedAt: new Date(),
+        bill_date: new Date(selectedDate),
+        bill_due_date: new Date(selectedDate),
       },
       {
         new: true, // Return updated document

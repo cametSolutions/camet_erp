@@ -418,13 +418,13 @@ export const getReceiptDetails = async (req, res) => {
     });
 
     // Determine cancellation status
-    let isCancellationAllowed = true;
+    let isEditable = true;
     if (advanceReceipt?.appliedPayments?.length > 0) {
-      isCancellationAllowed = false;
+      isEditable = false;
     }
 
     // Attach the field
-    receipt.cancellationAllowed = isCancellationAllowed;
+    receipt.isEditable = isEditable;
 
     return res.status(200).json({
       receipt: receipt,

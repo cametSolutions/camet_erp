@@ -23,11 +23,18 @@ export default function VoucherDetailsActionButtons({
     isEditable,
     isConverted = false,
     voucherType,
-    cancellationAllowed=true
+    cancellationAllowed = true,
   } = data || {};
 
   const handleEditClick = () => {
     if (!voucherType) return;
+
+    if (isEditable !== undefined && isEditable === false) {
+      window.alert(
+        "You can't edit this voucher since it has been used to generate receipts or payments"
+      );
+      return;
+    }
 
     navigate(`/sUsers/edit${voucherType}/${_id}`, {
       state: {
@@ -80,15 +87,15 @@ export default function VoucherDetailsActionButtons({
     >
       {/* some redux data is persisted in redux store so to remove it */}
       <RemoveReduxData />
-      
+
       {/* Share Dialog Component */}
-      <ShareFormatSelector 
-        open={shareDialogOpen} 
+      <ShareFormatSelector
+        open={shareDialogOpen}
         setOpen={setShareDialogOpen}
         voucherId={_id}
         voucherType={voucherType}
       />
-      
+
       <div className="flex justify-center space-x-8">
         <CancelButton
           id={_id}

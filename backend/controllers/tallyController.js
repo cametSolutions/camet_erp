@@ -20,48 +20,50 @@ import accountGroupModel from "../models/accountGroup.js";
 
 export const saveDataFromTally = async (req, res) => {
   try {
-    const { data, partyIds } = await req.body
+    const { data, partyIds } = await req.body;
 
-    if(!data || !partyIds) {
+    if (!data || !partyIds) {
       return res.status(400).json({
         success: false,
-        message: "Invalid json structure"
-      })
+        message: "Invalid json structure",
+      });
     }
- 
 
-    const partyIdValues = partyIds.map(p => p.partyId)
+    const partyIdValues = partyIds.map((p) => p.partyId);
 
     const { Primary_user_id, cmp_id } = data[0];
 
-
     const query = {
       Primary_user_id: {
-        $in: [
-          Primary_user_id,
-          new mongoose.Types.ObjectId(Primary_user_id)
-        ]
+        $in: [Primary_user_id, new mongoose.Types.ObjectId(Primary_user_id)],
       },
       cmp_id: {
-        $in: [
-          cmp_id,
-          new mongoose.Types.ObjectId(cmp_id)
-        ]
+        $in: [cmp_id, new mongoose.Types.ObjectId(cmp_id)],
       },
-      party_master_id: { $in: partyIdValues }
-    }
-    const matchedParties = await partyModel.find(query,
+      party_master_id: { $in: partyIdValues },
+    };
+    const matchedParties = await partyModel
+      .find(
+        query,
 
-      { _id: 1, party_master_id: 1 }
-    ).lean();
-    const matchedAccountGrp = await AccountGroup.find({ Primary_user_id, cmp_id })
-    const accntgrpMap = Object.fromEntries(matchedAccountGrp.map(item => [item.accountGroup_id, item._id]))
-    const matchedSubGrp = await subGroupModel.find({ Primary_user_id, cmp_id })
-    const subGrpMap = Object.fromEntries(matchedSubGrp.map(item => [item.subGroup_id, item._id]))
+        { _id: 1, party_master_id: 1 }
+      )
+      .lean();
+    const matchedAccountGrp = await AccountGroup.find({
+      Primary_user_id,
+      cmp_id,
+    });
+    const accntgrpMap = Object.fromEntries(
+      matchedAccountGrp.map((item) => [item.accountGroup_id, item._id])
+    );
+    const matchedSubGrp = await subGroupModel.find({ Primary_user_id, cmp_id });
+    const subGrpMap = Object.fromEntries(
+      matchedSubGrp.map((item) => [item.subGroup_id, item._id])
+    );
 
     const partyIdMap = Object.fromEntries(
-      matchedParties.map(item => [item.party_master_id, item._id])
-    )
+      matchedParties.map((item) => [item.party_master_id, item._id])
+    );
     const deleted = await TallyData.deleteMany({ Primary_user_id, cmp_id });
 
     if (deleted.deletedCount > 0) {
@@ -72,7 +74,7 @@ export const saveDataFromTally = async (req, res) => {
     const concurrencyLimit = 100;
     const results = [];
 
-    for (let i = 0;i < data.length;i += concurrencyLimit) {
+    for (let i = 0; i < data.length; i += concurrencyLimit) {
       const chunk = data.slice(i, i + concurrencyLimit);
       //promise.allsettled used instead of promise.all that this ensures that if any item has an error, only that specific item won't be saved left of the items saved promise.all wont do like this.
       const chunkResults = await Promise.allSettled(
@@ -82,21 +84,25 @@ export const saveDataFromTally = async (req, res) => {
             //   dataItem.billId = dataItem.bill_no;
             // }
             if (!dataItem.billId) {
-              throw new Error(`Missing billId`)
+              throw new Error(`Missing billId`);
             }
             if (!dataItem.bill_no) {
-              throw new Error(`Missing bill_no`)
+              throw new Error(`Missing bill_no`);
             }
             if (!dataItem.bill_amount) {
-              throw new Error(`Missing bill_amount`)
+              throw new Error(`Missing bill_amount`);
             }
             if (!dataItem.bill_pending_amt) {
-              throw new Error(`Missing bill_pending_amt`)
+              throw new Error(`Missing bill_pending_amt`);
             }
             if (!dataItem.Primary_user_id) {
               throw new Error("Missing Primary_user_id");
-            } else if (!mongoose.Types.ObjectId.isValid(dataItem.Primary_user_id)) {
-              throw new Error(`Invalid Primary_user_id: ${dataItem.Primary_user_id}`);
+            } else if (
+              !mongoose.Types.ObjectId.isValid(dataItem.Primary_user_id)
+            ) {
+              throw new Error(
+                `Invalid Primary_user_id: ${dataItem.Primary_user_id}`
+              );
             }
             if (!dataItem.cmp_id) {
               throw new Error("Missing cmp_id");
@@ -104,29 +110,37 @@ export const saveDataFromTally = async (req, res) => {
               throw new Error(`Invalid cmp_id: ${dataItem.cmp_id}`);
             }
             if (!dataItem.bill_date) {
-              throw new Error(`Missing bill_date`)
+              throw new Error(`Missing bill_date`);
             } else if (!/^\d{4}-\d{2}-\d{2}$/.test(dataItem.bill_date)) {
-              throw new Error(`Invalid bill_date format:${dataItem.bill_date}`)
+              throw new Error(`Invalid bill_date format:${dataItem.bill_date}`);
             }
             if (!dataItem.bill_due_date) {
-              throw new Error(`Missing bill_due_date`)
+              throw new Error(`Missing bill_due_date`);
             } else if (!/^\d{4}-\d{2}-\d{2}$/.test(dataItem.bill_due_date)) {
-              throw new Error(`Invalid bill_due_date format:${dataItem.bill_due_date}`)
+              throw new Error(
+                `Invalid bill_due_date format:${dataItem.bill_due_date}`
+              );
             }
 
-            const { party_id, accountGroup_id, subGroup_id =null,subGroup=null, ...resdata } = dataItem;
+            const {
+              party_id,
+              accountGroup_id,
+              subGroup_id = null,
+              subGroup = null,
+              ...resdata
+            } = dataItem;
             if (!party_id) {
               throw new Error(`Missing party_id`);
             }
             if (!partyIdMap[party_id]) {
-              throw new Error(`Invalid party_id`)
+              throw new Error(`Invalid party_id`);
             }
 
             if (!accountGroup_id) {
               throw new Error(`Missing accountGroup_id`);
             }
             if (!accntgrpMap[accountGroup_id]) {
-              throw new Error(`Invalid accountGroup_id`)
+              throw new Error(`Invalid accountGroup_id`);
             }
 
             if (subGroup_id && !subGrpMap[subGroup_id]) {
@@ -142,11 +156,15 @@ export const saveDataFromTally = async (req, res) => {
             if (subGroup_id && subGrpMap[subGroup_id]) {
               baseData.subGroup = subGrpMap[subGroup_id];
             }
-           
+
             const doc = new TallyData(baseData);
             return await doc.save();
           } catch (error) {
-            throw { dataItem, error: error.message || error, userMessage: getUserFriendlyMessage(error.message, dataItem) };
+            throw {
+              dataItem,
+              error: error.message || error,
+              userMessage: getUserFriendlyMessage(error.message, dataItem),
+            };
           }
         })
       );
@@ -168,16 +186,14 @@ export const saveDataFromTally = async (req, res) => {
         failed.length === 0
           ? "All data saved successfully"
           : failed.length === data.length
-            ? "All data failed to save"
-            : "Partial save completed",
+          ? "All data failed to save"
+          : "Partial save completed",
       savedCount: successful.length,
       failedCount: failed.length,
       failedItems: failed, // Includes both the dataItem and the error
     };
 
     return res.status(failed.length > 0 ? 207 : 201).json(response);
-
-
   } catch (error) {
     console.error("Error:", error);
     res.status(500).json({ error: "Internal server error" });
@@ -305,10 +321,10 @@ export const saveProductsFromTally = async (req, res) => {
           reason: !product.cmp_id
             ? "Missing cmp_id"
             : !product.Primary_user_id
-              ? "Missing Primary_user_id"
-              : !product.product_master_id
-                ? "Missing product_master_id"
-                : "Missing product_name",
+            ? "Missing Primary_user_id"
+            : !product.product_master_id
+            ? "Missing product_master_id"
+            : "Missing product_name",
         });
         continue;
       }
@@ -374,9 +390,9 @@ export const saveProductsFromTally = async (req, res) => {
           : [],
         subcategoryIds.length > 0
           ? Subcategory.find({
-            subcategory_id: { $in: subcategoryIds },
-            cmp_id,
-          })
+              subcategory_id: { $in: subcategoryIds },
+              cmp_id,
+            })
           : [],
         productModel.find({
           product_master_id: { $in: existingProductIds },
@@ -448,7 +464,7 @@ export const saveProductsFromTally = async (req, res) => {
     // Execute batches
     let processedCount = 0;
 
-    for (let i = 0;i < operations.length;i += BATCH_SIZE) {
+    for (let i = 0; i < operations.length; i += BATCH_SIZE) {
       const batchOps = operations.slice(i, i + BATCH_SIZE);
       const batchPromises = [];
 
@@ -674,43 +690,44 @@ export const updateStock = async (req, res) => {
         });
 
         if (productData) {
-          // If product exists, we need to merge godowns
-          const existingGodowns = productData.GodownList || [];
-          const newGodowns = data.godowns;
+          const existingGodowns = Array.isArray(productData.GodownList)
+            ? productData.GodownList
+            : [];
+          const newGodowns = Array.isArray(data.godowns) ? data.godowns : [];
 
-          // Create a map of existing godowns by their ID for faster lookup
-          const existingGodownMap = {};
-          existingGodowns.forEach((g) => {
-            if (g.godown) {
-              existingGodownMap[g.godown.toString()] = true;
-            }
+          // Build lookup map from existing
+          const existingMap = new Map();
+          existingGodowns.forEach((g, idx) => {
+            const key = godownBatchKey(g.godown, g.batch);
+            existingMap.set(key, idx);
           });
 
-          // Create array with all godowns
-          let mergedGodowns = [...existingGodowns];
+          // Start with a shallow copy so we keep original objects unless replaced
+          const mergedGodowns = [...existingGodowns];
 
-          // Add new godowns, replacing any that have the same godown ID
-          for (const newGodown of newGodowns) {
-            if (newGodown.godown) {
-              const godownId = newGodown.godown.toString();
+          for (const ng of newGodowns) {
+            if (!ng?.godown) continue;
 
-              // Check if this godown exists
-              if (existingGodownMap[godownId]) {
-                // Replace existing godown with the same ID
-                const index = mergedGodowns.findIndex(
-                  (g) => g.godown && g.godown.toString() === godownId
-                );
-                if (index !== -1) {
-                  mergedGodowns[index] = newGodown;
-                }
-              } else {
-                // Add new godown
-                mergedGodowns.push(newGodown);
-              }
+            const key = godownBatchKey(ng.godown, ng.batch);
+
+            // Normalize date strings to Date
+            const normalizedGodown = {
+              ...ng,
+              mfgdt: ng.mfgdt ? new Date(ng.mfgdt) : undefined,
+              expdt: ng.expdt ? new Date(ng.expdt) : undefined,
+            };
+
+            if (existingMap.has(key)) {
+              // replace entry at that index
+              const i = existingMap.get(key);
+              mergedGodowns[i] = normalizedGodown;
+            } else {
+              // new unique (godown,batch) combo → push
+              existingMap.set(key, mergedGodowns.length);
+              mergedGodowns.push(normalizedGodown);
             }
           }
 
-          // Update product with merged godowns
           await productModel.updateOne(
             {
               product_master_id: productId,
@@ -747,7 +764,7 @@ export const updateStock = async (req, res) => {
     } else {
       // For pushStock=false, use the original bulk operation logic
       // Process in chunks to avoid overwhelming MongoDB
-      for (let i = 0;i < productIds.length;i += chunkSize) {
+      for (let i = 0; i < productIds.length; i += chunkSize) {
         const chunk = productIds.slice(i, i + chunkSize);
 
         const bulkOps = chunk.map((productMasterId) => {
@@ -841,6 +858,13 @@ export const updateStock = async (req, res) => {
 
 // @desc for updating priceLevels of product
 // route GET/api/tally/master/item/updatePriceLevels
+
+const normBatch = (b) => (typeof b === "string" ? b.trim() : b || "");
+const godownBatchKey = (g, b) => {
+  const gid = g?.toString?.() ?? String(g);
+  const batch = normBatch(b);
+  return batch ? `${gid}__${batch}` : gid; // fallback: godown-only match if no batch
+};
 
 export const updatePriceLevels = async (req, res) => {
   try {
@@ -983,15 +1007,17 @@ export const updatePriceLevels = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: `Processed ${Object.keys(productsToUpdate).length
-        } products. Updated: ${result.modifiedCount}`,
+      message: `Processed ${
+        Object.keys(productsToUpdate).length
+      } products. Updated: ${result.modifiedCount}`,
 
       modifiedProducts: modificationSummary,
       totalRecordsProcessed: Object.keys(productsToUpdate).length,
       ...(skippedItems.length > 0 && { skippedItems }),
       ...(modificationSummary.length < Object.keys(productsToUpdate).length && {
-        note: `Showing summary for first ${modificationSummary.length} of ${Object.keys(productsToUpdate).length
-          } products.`,
+        note: `Showing summary for first ${modificationSummary.length} of ${
+          Object.keys(productsToUpdate).length
+        } products.`,
       }),
     });
   } catch (error) {
@@ -1001,8 +1027,8 @@ export const updatePriceLevels = async (req, res) => {
       error.name === "ValidationError"
         ? 400
         : error.name === "MongoError" || error.name === "MongoServerError"
-          ? 503
-          : 500;
+        ? 503
+        : 500;
 
     return res.status(status).json({
       success: false,
@@ -1010,8 +1036,8 @@ export const updatePriceLevels = async (req, res) => {
         status === 400
           ? "Validation error"
           : status === 503
-            ? "Database error"
-            : "An error occurred while updating price levels",
+          ? "Database error"
+          : "An error occurred while updating price levels",
       error: error.message,
     });
   }
@@ -1103,7 +1129,7 @@ export const savePartyFromTally = async (req, res) => {
       if (validParties.length > 0) {
         // Insert in batches of 500 to avoid overwhelming the database
         const batchSize = 500;
-        for (let i = 0;i < validParties.length;i += batchSize) {
+        for (let i = 0; i < validParties.length; i += batchSize) {
           const batch = validParties.slice(i, i + batchSize);
           const result = await partyModel.insertMany(batch, { session });
           savedParty = savedParty.concat(result);
@@ -1204,7 +1230,7 @@ export const addAccountGroups = async (req, res) => {
     const results = {
       successful: [],
       failed: [],
-      skipped: []
+      skipped: [],
     };
 
     // Process each account group
@@ -1216,7 +1242,7 @@ export const addAccountGroups = async (req, res) => {
         if (uniqueGroups.has(key)) {
           results.skipped.push({
             accountGroup_id: group.accountGroup_id,
-            reason: "Duplicate in request"
+            reason: "Duplicate in request",
           });
           return;
         }
@@ -1224,13 +1250,15 @@ export const addAccountGroups = async (req, res) => {
 
         try {
           // Convert Primary_user_id to ObjectId if it's a string
-          if (typeof group.Primary_user_id === 'string') {
-            group.Primary_user_id = new mongoose.Types.ObjectId(group.Primary_user_id);
+          if (typeof group.Primary_user_id === "string") {
+            group.Primary_user_id = new mongoose.Types.ObjectId(
+              group.Primary_user_id
+            );
           }
 
           // First check if an account group with this ID already exists
           const existingGroup = await AccountGroup.findOne({
-            accountGroup_id: group.accountGroup_id
+            accountGroup_id: group.accountGroup_id,
           });
 
           if (existingGroup) {
@@ -1240,14 +1268,14 @@ export const addAccountGroups = async (req, res) => {
               group,
               {
                 new: true,
-                runValidators: true
+                runValidators: true,
               }
             );
 
             results.successful.push({
               accountGroup_id: group.accountGroup_id,
               _id: updatedGroup._id,
-              isNew: false
+              isNew: false,
             });
           } else {
             // Create a new document
@@ -1257,14 +1285,17 @@ export const addAccountGroups = async (req, res) => {
             results.successful.push({
               accountGroup_id: group.accountGroup_id,
               _id: newGroup._id,
-              isNew: true
+              isNew: true,
             });
           }
         } catch (error) {
-          console.error(`Error processing account group ${group.accountGroup_id}:`, error);
+          console.error(
+            `Error processing account group ${group.accountGroup_id}:`,
+            error
+          );
           results.failed.push({
             accountGroup_id: group.accountGroup_id,
-            error: error.message || "Unknown error"
+            error: error.message || "Unknown error",
           });
         }
       })
@@ -1277,15 +1308,15 @@ export const addAccountGroups = async (req, res) => {
         total: accountGroupsToSave.length,
         successful: results.successful.length,
         failed: results.failed.length,
-        skipped: results.skipped.length
+        skipped: results.skipped.length,
       },
-      results
+      results,
     });
   } catch (error) {
     console.error("Error in addAccountGroups:", error);
     res.status(500).json({
       error: "Internal server error",
-      message: error.message
+      message: error.message,
     });
   }
 };
@@ -1307,7 +1338,7 @@ export const addSubGroups = async (req, res) => {
     const results = {
       successful: [],
       failed: [],
-      skipped: []
+      skipped: [],
     };
 
     // Process each subgroup
@@ -1319,7 +1350,7 @@ export const addSubGroups = async (req, res) => {
         if (uniqueSubGroups.has(key)) {
           results.skipped.push({
             subGroup_id: subGroup.subGroup_id,
-            reason: "Duplicate in request"
+            reason: "Duplicate in request",
           });
           return;
         }
@@ -1327,8 +1358,10 @@ export const addSubGroups = async (req, res) => {
 
         try {
           // Convert Primary_user_id to ObjectId if it's a string
-          if (typeof subGroup.Primary_user_id === 'string') {
-            subGroup.Primary_user_id = new mongoose.Types.ObjectId(subGroup.Primary_user_id);
+          if (typeof subGroup.Primary_user_id === "string") {
+            subGroup.Primary_user_id = new mongoose.Types.ObjectId(
+              subGroup.Primary_user_id
+            );
           }
 
           // Find corresponding accountGroup
@@ -1341,7 +1374,7 @@ export const addSubGroups = async (req, res) => {
           if (!accountGroup) {
             results.failed.push({
               subGroup_id: subGroup.subGroup_id,
-              error: `Account group not found with ID: ${subGroup.accountGroup_id}`
+              error: `Account group not found with ID: ${subGroup.accountGroup_id}`,
             });
             return;
           }
@@ -1350,7 +1383,7 @@ export const addSubGroups = async (req, res) => {
 
           // First check if a subgroup with this ID already exists
           const existingSubGroup = await subGroupModel.findOne({
-            subGroup_id: subGroup.subGroup_id
+            subGroup_id: subGroup.subGroup_id,
           });
 
           let savedSubGroup;
@@ -1362,14 +1395,14 @@ export const addSubGroups = async (req, res) => {
               subGroup,
               {
                 new: true,
-                runValidators: true
+                runValidators: true,
               }
             );
 
             results.successful.push({
               subGroup_id: subGroup.subGroup_id,
               _id: savedSubGroup._id,
-              isNew: false
+              isNew: false,
             });
           } else {
             // Create a new document
@@ -1379,14 +1412,17 @@ export const addSubGroups = async (req, res) => {
             results.successful.push({
               subGroup_id: subGroup.subGroup_id,
               _id: savedSubGroup._id,
-              isNew: true
+              isNew: true,
             });
           }
         } catch (error) {
-          console.error(`Error processing subgroup ${subGroup.subGroup_id}:`, error);
+          console.error(
+            `Error processing subgroup ${subGroup.subGroup_id}:`,
+            error
+          );
           results.failed.push({
             subGroup_id: subGroup.subGroup_id,
-            error: error.message || "Unknown error"
+            error: error.message || "Unknown error",
           });
         }
       })
@@ -1399,15 +1435,15 @@ export const addSubGroups = async (req, res) => {
         total: subGroupsToSave.length,
         successful: results.successful.length,
         failed: results.failed.length,
-        skipped: results.skipped.length
+        skipped: results.skipped.length,
       },
-      results
+      results,
     });
   } catch (error) {
     console.error("Error in addSubGroups:", error);
     res.status(500).json({
       error: "Internal server error",
-      message: error.message
+      message: error.message,
     });
   }
 };
@@ -1672,8 +1708,9 @@ export const addGodowns = async (req, res) => {
           await Godown.findByIdAndUpdate(existingItem._id, item);
           results.push({
             success: true,
-            message: `Godown updated successfully${item.defaultGodown ? " (maintained as default)" : ""
-              }`,
+            message: `Godown updated successfully${
+              item.defaultGodown ? " (maintained as default)" : ""
+            }`,
             data: item,
           });
         } else {
@@ -1688,8 +1725,9 @@ export const addGodowns = async (req, res) => {
           await newItem.save();
           results.push({
             success: true,
-            message: `Godown added successfully${item.defaultGodown ? " (set as default)" : ""
-              }`,
+            message: `Godown added successfully${
+              item.defaultGodown ? " (set as default)" : ""
+            }`,
             data: newItem,
           });
         }
@@ -1729,7 +1767,6 @@ export const addGodowns = async (req, res) => {
 // // @desc for giving invoices to tally
 // // route GET/api/tally/giveInvoice
 export const giveInvoice = async (req, res) => {
-
   console.log("haii");
 
   const cmp_id = req.params.cmp_id;
@@ -1752,7 +1789,7 @@ export const giveSales = async (req, res) => {
 export const giveVanSales = async (req, res) => {
   const cmp_id = req.params.cmp_id;
   const serialNumber = req.params.SNo;
-  const userId = req.query.userId
+  const userId = req.query.userId;
   return fetchData("vanSales", cmp_id, serialNumber, res, userId);
 };
 
