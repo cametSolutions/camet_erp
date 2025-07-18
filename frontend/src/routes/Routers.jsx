@@ -113,6 +113,7 @@ import OutstandingListOfAccVoucher from '@/pages/accountingVoucher/voucherCreati
 import AccVoucherDetails from '@/pages/accountingVoucher/voucherDetails/AccVoucherDetails'
 import AccVoucherInitialPageEdit from '@/pages/accountingVoucher/voucherCreation/AccVoucherInitialPageEdit'
 import StockRegister from '@/pages/voucherReports/stockRegister/StockRegister'
+import StockRegisterDetails from '@/pages/voucherReports/stockRegister/StockRegisterDetails'
 import VoucherSeriesSettings from '@/pages/secUsers/settilngs/dataEntry/voucherSettings/VoucherSeriesSettings'
 import VoucherSeriesForm from '@/pages/secUsers/settilngs/dataEntry/voucherSettings/voucherSeries/VoucherSeriesForm'
 import VoucherSeriesList from '@/pages/secUsers/settilngs/dataEntry/voucherSettings/voucherSeries/VoucherSeriesList'
@@ -158,6 +159,7 @@ const Routers = () => {
         <Route path='/sUsers/editAdditionalCharge/:id' element={<ProtectedSecRoute><AdditionalChargesSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/OrderConfigurations' element={<ProtectedSecRoute><OrderConfigurationsSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/Inventory' element={<ProtectedSecRoute><StockRegister/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/InventoryDetails' element={<ProtectedSecRoute><StockRegisterDetails/></ProtectedSecRoute>}></Route>
 
         <Route path='/sUsers/sales' element={<ProtectedSecRoute><VoucherInitialPage/></ProtectedSecRoute>}></Route>
          <Route path='/sUsers/searchPartySales' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route>

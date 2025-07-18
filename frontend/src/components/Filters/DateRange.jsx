@@ -30,8 +30,7 @@ const DateRange = () => {
   const [customEndDate, setCustomEndDate] = useState("")
 
   const submitHandler = (rangeName, start, end) => {
-    console.log(start)
-    console.log(end)
+ 
     const newstart = new Date(start)
     const newend = new Date(end)
     const startdate = new Date(
@@ -54,7 +53,6 @@ const DateRange = () => {
         0
       )
     )
-    console.log(startdate.toISOString(), enddate.toISOString())
     dispatch(
       addDate({
         rangeName,

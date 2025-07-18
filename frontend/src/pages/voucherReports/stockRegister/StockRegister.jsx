@@ -170,6 +170,7 @@ function StockRegister() {
   };
 
   const Row = ({ index, style }) => {
+console.log(index)
     if (!isItemLoaded(index)) {
       return (
         <div
@@ -187,6 +188,7 @@ function StockRegister() {
         </div>
       );
     }
+console.log(products)
     const el = products[index];
     const adjustedStyle = {
       ...style,
@@ -302,10 +304,10 @@ function StockRegister() {
       </>
     );
   };
-
+console.log(page)
   return (
     <>
-      <div className="  h-[calc(100vh-10px)] overflow-hidden ">
+      <div className="h-[calc(100vh-10px)] overflow-hidden ">
         <TitleDiv loading={loader} title="Stock Register" />
         <SearchBar onType={searchData} />
         <hr />

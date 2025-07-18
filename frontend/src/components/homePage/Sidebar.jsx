@@ -28,7 +28,6 @@ import { MdOutlineInventory } from "react-icons/md";
 import Header from "../common/sidebar/Header";
 
 function Sidebar({ TAB, showBar }) {
-console.log("h")
   const [showSidebar, setShowSidebar] = useState(false);
   const [userData, setUserData] = useState({});
   const [dropdown, setDropdown] = useState(false);
@@ -342,7 +341,6 @@ console.log("h")
       [section]: !prevSections[section],
     }));
   };
-console.log(navItems)
   return (
     <div ref={sidebarRef} className="relative">
       {loader && (

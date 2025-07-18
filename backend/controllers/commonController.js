@@ -38,6 +38,7 @@ export const transactions = async (req, res) => {
     ignore = "", // New parameter for collections to ignore
     selectedSecondaryUser,
   } = req.query;
+console.log("sissss",todayOnly)
 
   const isAdmin = req.query.isAdmin === "true" ? true : false;
 
