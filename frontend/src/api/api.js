@@ -2,6 +2,7 @@ import axios from "axios";
 import Swal from "sweetalert2";
 
 let baseUrl;
+
 const ENV = import.meta.env.VITE_ENV;
 if (ENV === "development") {
   baseUrl = "http://localhost:7000";
