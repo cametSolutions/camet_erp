@@ -74,7 +74,7 @@ function AddAmountTile({ process = "add" }) {
             </p>
             <p className="text-xs md:text-md font-semibold mr-1">
               Remaining Amount
-              <span className="text-red-500"> ₹ {remainingAmount}</span>
+              <span className="text-red-500"> ₹ {remainingAmount.toFixed(2)}</span>
             </p>
           </section>
         </div>
