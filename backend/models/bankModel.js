@@ -19,7 +19,7 @@ const BankDetailsSchema = new mongoose.Schema({
   ac_no: { type: String },
   ifsc: { type: String },
   swift_code: { type: String },
-  bank_name: { type: String, required: true },
+  bank_name: { type: String },
   branch: { type: String },
   bank_opening: { type: Number, default: 0 },
   upi_id: { type: String },
@@ -56,11 +56,38 @@ const BankDetailsSchema = new mongoose.Schema({
   ],
 });
 
-// Indexes for efficient queries
-BankDetailsSchema.index({
-  "settlements.created_at": 1,
-  "settlements.voucherType": 1,
+// 1. Compound index for main queries (most important)
+BankDetailsSchema.index({ 
+  cmp_id: 1, 
+  Primary_user_id: 1 
+}, { 
+  name: "main_query_index",
+  background: true 
 });
-BankDetailsSchema.index({ cmp_id: 1, "settlements.created_at": 1 });
+
+// 2. Unique constraint to prevent duplicates
+BankDetailsSchema.index({ 
+  cmp_id: 1, 
+  Primary_user_id: 1, 
+  bank_ledname: 1 ,
+  bank_id: 1
+}, { 
+  unique: true,
+  name: "unique_bank_per_company_user",
+  background: true 
+});
+
+// / === SEARCH & LOOKUP INDEXES ===
+
+// 3. Text search index for bank names and details
+BankDetailsSchema.index({
+  bank_ledname: "text",
+  bank_name: "text",
+  acholder_name: "text",
+  ac_no: "text"
+}, {
+  name: "bank_search_index",
+  background: true
+});
 
 export default mongoose.model("BankDetails", BankDetailsSchema);
