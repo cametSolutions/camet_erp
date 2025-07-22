@@ -153,9 +153,9 @@ export default function SelectBankModal({ showModal = true, setShowModal }) {
                         <div className="flex items-center gap-2">
                           <FaUniversity size={14} className="text-gray-400" />
                           <span>
-                            {bank?.bank_name?.length > 35
-                              ? bank?.bank_name?.substring(0, 35) + "..."
-                              : bank?.bank_name}
+                            {bank?.bank_ledname?.length > 35
+                              ? bank?.bank_ledname?.substring(0, 35) + "..."
+                              : bank?.bank_ledname}
                           </span>
                         </div>
                       </SelectItem>

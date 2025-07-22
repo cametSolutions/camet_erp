@@ -166,7 +166,7 @@ function VoucherPdfFooter({
           Object?.keys(selectedBank)?.length > 0 ? (
             <>
               <div className="text-gray-500 font-semibold text-[10px] ">
-                Bank Name: {selectedBank?.bank_name}
+                Bank Name: {selectedBank?.bank_name || selectedBank?.bank_ledname || "N/A"}
               </div>
               <div className="text-gray-500 font-semibold text-[10px] leading-4">
                 IFSC Code: {selectedBank?.ifsc}
