@@ -1591,7 +1591,7 @@ export const getBankAndCashSources = async (req, res) => {
           cmp_id,
           bank_ledname: { $nin: [null, "null"] },
           bank_id: { $exists: true },
-          bank_name: { $nin: [null, "null"] },
+          // bank_name: { $nin: [null, "null"] },
         })
         .select({ bank_ledname: 1, bank_id: 1, bank_name: 1 }),
 
