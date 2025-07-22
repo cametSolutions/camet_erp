@@ -44,7 +44,7 @@ function SourceListComponent({ data, submitHandler, source, loading }) {
       >
         <BsBank2 />
         <p className="font-bold text-sm">
-          {source === "cash" ? el?.cash_ledname : el?.bank_name}
+          {source === "cash" ? el?.cash_ledname : el?.bank_ledname}
         </p>
       </div>
     );

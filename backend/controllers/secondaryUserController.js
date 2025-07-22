@@ -357,6 +357,7 @@ export const fetchBanks = async (req, res) => {
           bank_name: 1,
           bank_ledname: 1,
           ifsc: 1,
+          upi_id: 1,
           ac_no: 1,
           branch: 1,
           _id: 1,
