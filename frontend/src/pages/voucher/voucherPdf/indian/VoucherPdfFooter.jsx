@@ -4,6 +4,7 @@ import useFetch from "@/customHook/useFetch";
 import TaxTable from "../../../../components/common/table/TaxTable";
 import { useEffect } from "react";
 import { useState } from "react";
+import QRCode from "react-qr-code";
 
 function VoucherPdfFooter({
   bank,
@@ -29,6 +30,39 @@ function VoucherPdfFooter({
       setSelectedBank(bankData?.data?.find((bankApi) => bankApi?._id === bank));
     }
   }, [bankData, bank]);
+
+  // Generate proper UPI payment URL
+  const generateUPIQRValue = () => {
+    if (!selectedBank?.upi_id || !data?.finalAmount) {
+      return ""; // Return empty if required data is missing
+    }
+
+    const amount = parseFloat(data.finalAmount);
+    if (isNaN(amount) || amount <= 0) {
+      return ""; // Invalid amount
+    }
+
+    // Proper UPI payment URL format
+    const upiUrl = new URL('upi://pay');
+    upiUrl.searchParams.append('pa', selectedBank.upi_id); // Payee Address
+    upiUrl.searchParams.append('am', amount.toFixed(2)); // Amount (2 decimal places)
+    
+    // Optional parameters you might want to add
+    if (org?.name) {
+      upiUrl.searchParams.append('pn', org.name); // Payee Name
+    }
+    
+    if (data?.voucherNumber) {
+      upiUrl.searchParams.append('tn', `Invoice: ${data.voucherNumber}`); // Transaction Note
+    }
+    
+    upiUrl.searchParams.append('cu', 'INR'); // Currency
+    
+    return upiUrl.toString();
+  };
+
+  const qrValue = generateUPIQRValue();
+ // Debug log
 
   return (
     <div className="mb-5">
@@ -132,7 +166,7 @@ function VoucherPdfFooter({
           Object?.keys(selectedBank)?.length > 0 ? (
             <>
               <div className="text-gray-500 font-semibold text-[10px] ">
-                Bank Name: {selectedBank?.bank_name}
+                Bank Name: {selectedBank?.bank_name || selectedBank?.bank_ledname || "N/A"}
               </div>
               <div className="text-gray-500 font-semibold text-[10px] leading-4">
                 IFSC Code: {selectedBank?.ifsc}
@@ -143,26 +177,32 @@ function VoucherPdfFooter({
               <div className="text-gray-500 font-semibold text-[10px] leading-4">
                 Branch: {selectedBank?.branch}
               </div>
-              {/* <div
-          style={{
-            height: "auto",
-            margin: "0",
-            marginTop: "10px",
-            maxWidth: 64,
-            width: "100%",
-          }}
-        >
-          <QRCode
-            size={250}
-            style={{
-              height: "auto",
-              maxWidth: "100%",
-              width: "100%",
-            }}
-            value={`upi:pay?pa=${bank?.upi_id}&am=${data?.finalAmount}`}
-            viewBox={`0 0 256 256`}
-          />
-        </div> */}
+              
+              {/* Fixed QR Code Section */}
+              {selectedBank?.upi_id && qrValue && (
+                <div
+                  style={{
+                    height: "auto",
+                    margin: "0",
+                    marginTop: "10px",
+                    maxWidth: 64,
+                    width: "100%",
+                  }}
+                >
+                  <QRCode
+                    size={256} // Fixed size for better scanning
+                    style={{
+                      height: "auto",
+                      maxWidth: "100%",
+                      width: "100%",
+                    }}
+                    value={qrValue}
+                    viewBox="0 0 256 256"
+                    level="M" // Error correction level (L, M, Q, H)
+                  />
+          
+                </div>
+              )}
             </>
           ) : (
             <div className="text-gray-500 font-semibold text-[10px] leading-5"></div>
@@ -188,7 +228,7 @@ function VoucherPdfFooter({
                 <p key={index}>
                   <span className="font-bold">{index + 1}.</span> {term}
                 </p>
-              ))}
+                ))}
             </div>
           </div>
         )}

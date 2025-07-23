@@ -256,7 +256,6 @@ function AccVoucherInitialPage() {
         withCredentials: true,
       });
 
-      console.log(res.data);
       toast.success(res.data.message);
 
       navigate(`/sUsers/${voucherType}/details/${res?.data?.data._id}`);
