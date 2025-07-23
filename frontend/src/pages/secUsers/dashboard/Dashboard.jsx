@@ -2,12 +2,12 @@
 /* eslint-disable react/no-unknown-property */
 import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
-import api from "../../api/api";
+import api from "../../../api/api";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { useSidebar } from "../../layout/Layout";
-import DashBoard from "../../components/common/DashBoard";
-import RemoveReduxData from "../../components/secUsers/RemoveReduxData";
+import { useSidebar } from "../../../layout/Layout";
+import RemoveReduxData from "../../../components/secUsers/RemoveReduxData";
+import DashBoardLayout from "./DashboardLayout";
 
 function Dashboard() {
   const [data, setData] = useState([]);
@@ -81,7 +81,7 @@ function Dashboard() {
   return (
     <div>
       <RemoveReduxData />
-      <DashBoard
+      <DashBoardLayout
         handleToggleSidebar={handleToggleSidebar}
         filteredData={filteredData}
         org={org}

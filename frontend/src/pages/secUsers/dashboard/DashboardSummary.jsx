@@ -1,9 +1,9 @@
 import { useNavigate } from "react-router-dom";
-import useFetch from "../../customHook/useFetch";
+import useFetch from "../../../customHook/useFetch";
 import { useDispatch, useSelector } from "react-redux";
 import { useEffect, useState, useCallback, memo } from "react";
-import { icons } from "./icons/DashboardIcons.jsx";
-import { addTab } from "../../../slices/tallyDataSlice.js";
+import { icons } from "../../../components/common/icons/DashboardIcons.jsx";
+import { addTab } from "../../../../slices/tallyDataSlice.js";
 // import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const SkeletonItem = () => (

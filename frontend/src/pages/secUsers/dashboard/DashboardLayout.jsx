@@ -1,16 +1,16 @@
 /* eslint-disable react/no-unescaped-entities */
 /* eslint-disable react/prop-types */
-import DashboardTransaction from "./DashboardTransaction"
+import DashboardTransaction from "../../../components/common/DashboardTransaction";
 import { FaCaretDown } from "react-icons/fa"
 import { CiCalendarDate } from "react-icons/ci"
 import { IoReorderThreeSharp } from "react-icons/io5"
-import DashboardCard from "../../components/homePage/DashboardCardPrimary"
+import DashboardCard from "../../../components/homePage/DashboardCardPrimary"
 import DashboardSummary from "./DashboardSummary"
 import { useState } from "react"
-import TransactionSkeleton from "./TransactionSkeleton"
-import NotFound from "../../assets/images/space.png"
+import TransactionSkeleton from "../../../components/common/TransactionSkeleton"
+import NotFound from "../../../assets/images/space.png"
 
-function DashBoard({
+function DashBoardLayout({
   handleToggleSidebar,
   filteredData,
   org,
@@ -22,7 +22,6 @@ function DashBoard({
 }) {
   const [tab, setTab] = useState("transactions")
 
-  console.log(org)
 
   return (
     <div className="overflow-hidden h-screen">
@@ -170,4 +169,4 @@ function DashBoard({
   )
 }
 
-export default DashBoard
+export default DashBoardLayout
