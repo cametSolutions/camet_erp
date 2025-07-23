@@ -33,17 +33,15 @@ const DashboardSummary = () => {
   useEffect(() => {
     if (data) {
       const {
-        data: {
-          sales,
-          purchases,
-          saleOrders,
-          receipts,
-          payments,
-          cashOrBank,
-          outstandingPayables,
-          outstandingReceivables,
-        },
-      } = data;
+        sales = [],
+        purchases = [],
+        saleOrders = [],
+        receipts = [],
+        payments = [],
+        cashOrBank = [],
+        outstandingPayables = [],
+        outstandingReceivables = [],
+      } = data || {};
 
       setSummaryData([
         {
@@ -99,7 +97,7 @@ const DashboardSummary = () => {
   }, [data]);
 
   const handleLinkClick = useCallback(
-    (path, value,summaryType="") => {
+    (path, value, summaryType = "") => {
       if (path) {
         if (value === "Outstanding Payables") {
           dispatch(addTab("payables"));
@@ -108,7 +106,7 @@ const DashboardSummary = () => {
           dispatch(addTab("receivables"));
           navigate(path);
         } else {
-          navigate(path,{state:{summaryType:summaryType}});
+          navigate(path, { state: { summaryType: summaryType } });
         }
       }
     },
@@ -126,7 +124,9 @@ const DashboardSummary = () => {
       ) : (
         summaryData.map((item, index) => (
           <div
-            onClick={() => handleLinkClick(item?.to, item?.title, item?.summaryType)}
+            onClick={() =>
+              handleLinkClick(item?.to, item?.title, item?.summaryType)
+            }
             key={index}
             className="p-4 flex items-center gap-5 bg-gray-100 mb-2 border-b shadow-md cursor-pointer hover:bg-slate-100 hover:translate-x-[1px] transition-all"
           >
