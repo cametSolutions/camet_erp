@@ -6,29 +6,22 @@ export const taxCalculator = (
 ) => {
   const { hsnDetails } = data;
 
-
-  const reducedAdditionalPaxAmount =
-    formData?.additionalPaxDetails?.reduce((acc, item) => {
-      if (item.roomId === taxCalculationRoomId) {
-        return acc + Number(item.rate);
-      }
-      return acc;
+  const reducedAdditionalPaxAmount =  formData?.additionalPaxDetails?.reduce((acc, item) => {
+      return item.roomId === taxCalculationRoomId ? acc + Number(item.rate) : acc;
     }, 0) || 0;
 
   const reducedFoodPlanAmount =
     formData?.foodPlan?.reduce((acc, item) => {
-      if (item.roomId === taxCalculationRoomId) {
-        return acc + Number(item.rate);
-      }
-      return acc;
+      return item.roomId === taxCalculationRoomId ? acc + Number(item.rate) : acc;
     }, 0) || 0;
+console.log(data?.hsnDetails?.rows)
 
   const totalAmount =
     Number(data?.totalAmount || 0) +
     reducedAdditionalPaxAmount +
     reducedFoodPlanAmount;
-
-  for (const item of hsnDetails.rows) {
+console.log(totalAmount)
+  for (const item of hsnDetails?.rows || []) {
     const taxSlab = getApplicableTaxSlab(item, totalAmount);
     if (taxSlab) {
       const taxRate = taxSlab.igstRate;
@@ -46,8 +39,8 @@ export const taxCalculator = (
     }
   }
 
-  // No matching tax slab found
-  const defaultTaxRate = hsnDetails.igstRate || 0;
+  // No slab matched — use default rate
+  const defaultTaxRate = hsnDetails?.igstRate ?? 0;
   const defaultTaxAmount = (totalAmount * defaultTaxRate) / 100;
   const amountWithTax = inclusive
     ? totalAmount + defaultTaxAmount
