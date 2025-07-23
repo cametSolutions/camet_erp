@@ -13,7 +13,7 @@ function SourceListComponent({ data, submitHandler, source, loading }) {
     const calculateHeight = () => {
       const headerHeight = document.querySelector("header")?.offsetHeight || 0;
       const windowHeight = window.innerHeight;
-      setListHeight(windowHeight - headerHeight);
+      setListHeight((windowHeight - headerHeight)-60);
     };
 
     calculateHeight();
