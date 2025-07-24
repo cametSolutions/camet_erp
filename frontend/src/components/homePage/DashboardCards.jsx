@@ -28,7 +28,7 @@ const DashboardCards = ({
   organization,
 }) => {
   const cmp_id = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg._id
+    (state) => state?.secSelectedOrganization.secSelectedOrg?._id
   );
 
   // React Query to fetch dashboard counts

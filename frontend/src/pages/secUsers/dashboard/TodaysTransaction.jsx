@@ -7,7 +7,7 @@ import NotFound from "../../../assets/images/space.png";
 
 function TodaysTransaction() {
   const cmp_id = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg?._id
+    (state) => state.secSelectedOrganization?.secSelectedOrg?._id
   );
 
   const isAdmin =
