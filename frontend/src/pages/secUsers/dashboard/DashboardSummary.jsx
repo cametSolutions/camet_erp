@@ -1,9 +1,11 @@
 import { useNavigate } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch, 
+  // useSelector
+ } from "react-redux";
 import { useEffect, useState, useCallback, memo } from "react";
 import { icons } from "../../../components/common/icons/DashboardIcons.jsx";
 import { addTab } from "../../../../slices/tallyDataSlice.js";
-import { useQuery } from "@tanstack/react-query";
+// import { useQuery } from "@tanstack/react-query";
 // import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const SkeletonItem = () => (
@@ -18,9 +20,9 @@ const SkeletonItem = () => (
 
 const DashboardSummary = () => {
   const [summaryData, setSummaryData] = useState([]);
-  const cmp_id = useSelector(
-    (state) => state?.secSelectedOrganization?.secSelectedOrg?._id
-  );
+  // const cmp_id = useSelector(
+  //   (state) => state?.secSelectedOrganization?.secSelectedOrg?._id
+  // );
   const navigate = useNavigate();
   const dispatch = useDispatch();
   // const {

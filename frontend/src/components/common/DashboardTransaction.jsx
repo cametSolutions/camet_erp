@@ -28,15 +28,15 @@ const DashboardTransaction = ({ filteredData, from }) => {
   const getNavigationPath = useMemo(
     () => (type, id) => {
       const routes = {
-        Receipt: `sUsers/receipt/details/${id}`,
-        Payment: `sUsers/payment/details/${id}`,
-        "Tax Invoice": `sUsers/salesDetails/${id}`,
-        "Van Sale": `sUsers/vanSaleDetails/${id}`,
-        Purchase: `sUsers/purchaseDetails/${id}`,
-        "Stock Transfer": `sUsers/stockTransferDetails/${id}`,
-        "Credit Note": `sUsers/creditNoteDetails/${id}`,
-        "Debit Note": `sUsers/debitNoteDetails/${id}`,
-        default: `sUsers/saleOrderDetails/${id}`,
+        Receipt: `/sUsers/receipt/details/${id}`,
+        Payment: `/sUsers/payment/details/${id}`,
+        "Tax Invoice": `/sUsers/salesDetails/${id}`,
+        "Van Sale": `/sUsers/vanSaleDetails/${id}`,
+        Purchase: `/sUsers/purchaseDetails/${id}`,
+        "Stock Transfer": `/sUsers/stockTransferDetails/${id}`,
+        "Credit Note": `/sUsers/creditNoteDetails/${id}`,
+        "Debit Note": `/sUsers/debitNoteDetails/${id}`,
+        default: `/sUsers/saleOrderDetails/${id}`,
       };
       return routes[type] || routes.default;
     },
