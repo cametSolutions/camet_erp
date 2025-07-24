@@ -219,7 +219,6 @@ function AccVoucherInitialPage() {
       }
       if (
         !formData.paymentDetails.bank_ledname ||
-        !formData.paymentDetails.bank_name ||
         !formData.paymentDetails._id
       ) {
         setSubmitLoading(false);
@@ -230,7 +229,6 @@ function AccVoucherInitialPage() {
     if (formData.paymentMethod === "Online") {
       if (
         !formData.paymentDetails.bank_ledname ||
-        !formData.paymentDetails.bank_name ||
         !formData.paymentDetails._id
       ) {
         setSubmitLoading(false);

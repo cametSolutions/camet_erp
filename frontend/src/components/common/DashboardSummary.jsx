@@ -21,26 +21,25 @@ const DashboardSummary = () => {
   const cmp_id = useSelector(
     (state) => state?.secSelectedOrganization?.secSelectedOrg?._id
   );
-  console.log(cmp_id);
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const {
     data,
-    error,
+    // error,
     loading: isLoading,
   } = useFetch(`/api/sUsers/getDashboardSummary/${cmp_id}`);
 
   useEffect(() => {
     if (data) {
       const {
-        sales = [],
-        purchases = [],
-        saleOrders = [],
-        receipts = [],
-        payments = [],
-        cashOrBank = [],
-        outstandingPayables = [],
-        outstandingReceivables = [],
+        sales = 0,
+        purchases = 0,
+        saleOrders = 0,
+        receipts = 0,
+        payments = 0,
+        cashOrBank = 0,
+        outstandingPayables = 0,
+        outstandingReceivables = 0,
       } = data || {};
 
       setSummaryData([
@@ -134,7 +133,7 @@ const DashboardSummary = () => {
             <div>
               <p className="text-xs font-bold text-gray-500">
                 {" "}
-                ₹ {item?.value}
+                ₹ {item?.value || 0}
               </p>
               <p className="text-gray-500 font-semibold text-sm mt-1">
                 {item.title}
