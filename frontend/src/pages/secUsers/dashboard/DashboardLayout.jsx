@@ -1,14 +1,15 @@
 /* eslint-disable react/no-unescaped-entities */
 /* eslint-disable react/prop-types */
 import DashboardTransaction from "../../../components/common/DashboardTransaction";
-import { FaCaretDown } from "react-icons/fa"
-import { CiCalendarDate } from "react-icons/ci"
-import { IoReorderThreeSharp } from "react-icons/io5"
-import DashboardCard from "../../../components/homePage/DashboardCardPrimary"
-import DashboardSummary from "./DashboardSummary"
-import { useState } from "react"
-import TransactionSkeleton from "../../../components/common/TransactionSkeleton"
-import NotFound from "../../../assets/images/space.png"
+import { FaCaretDown } from "react-icons/fa";
+import { CiCalendarDate } from "react-icons/ci";
+import { IoReorderThreeSharp } from "react-icons/io5";
+import DashboardCard from "../../../components/homePage/DashboardCardPrimary";
+import DashboardSummary from "./DashboardSummary";
+import { useState } from "react";
+import TransactionSkeleton from "../../../components/common/TransactionSkeleton";
+import NotFound from "../../../assets/images/space.png";
+import TodaysTransaction from "./TodaysTransaction";
 
 function DashBoardLayout({
   handleToggleSidebar,
@@ -18,10 +19,9 @@ function DashBoardLayout({
   handleLinkClick,
   type,
   from,
-  loader
+  loader,
 }) {
-  const [tab, setTab] = useState("transactions")
-
+  const [tab, setTab] = useState("transactions");
 
   return (
     <div className="overflow-hidden h-screen">
@@ -123,11 +123,12 @@ function DashBoardLayout({
                 </p>
               </div>
             ) : (
-              <DashboardTransaction
-                filteredData={filteredData}
-                userType={type}
-                from={from}
-              />
+              <TodaysTransaction />
+              // <DashboardTransaction
+              //   filteredData={filteredData}
+              //   userType={type}
+              //   from={from}
+              // />
             )}
           </div>
           <div className="w-1/2">
@@ -166,7 +167,7 @@ function DashBoardLayout({
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default DashBoardLayout
+export default DashBoardLayout;
