@@ -36,7 +36,8 @@ const DashboardCards = ({
     queryKey: ['dashboardCounts', cmp_id],
     queryFn: () => fetchDashboardCounts(cmp_id),
     enabled: !!cmp_id, // Only run query if cmp_id exists
-    staleTime: 10 * 60 * 1000, // 10 minutes
+    staleTime:  15*60*1000, // 15 minutes
+    refetchInterval:15*60*1000, // Refetch every 15 minutes
     retry: 1,
     refetchOnWindowFocus: false,
     // cacheTime: 10 * 60 * 1000, // 10 minutes

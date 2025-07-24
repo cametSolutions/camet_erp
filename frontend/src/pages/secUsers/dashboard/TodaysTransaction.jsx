@@ -4,7 +4,6 @@ import TransactionSkeleton from "@/components/common/TransactionSkeleton";
 import { useQuery } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
 import NotFound from "../../../assets/images/space.png";
-import { LoaderCircle } from "lucide-react";
 
 function TodaysTransaction() {
   const cmp_id = useSelector(

@@ -3,7 +3,7 @@
 import { FaCaretDown } from "react-icons/fa";
 import { CiCalendarDate } from "react-icons/ci";
 import { IoReorderThreeSharp } from "react-icons/io5";
-import DashboardCard from "../../../components/homePage/DashboardCardPrimary";
+import DashboardCard from "../../../components/homePage/DashboardCards";
 import DashboardSummary from "./DashboardSummary";
 import { useState } from "react";
 import TodaysTransaction from "./TodaysTransaction";
