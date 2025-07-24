@@ -43,26 +43,26 @@ function VoucherPdfFooter({
     }
 
     // Proper UPI payment URL format
-    const upiUrl = new URL('upi://pay');
-    upiUrl.searchParams.append('pa', selectedBank.upi_id); // Payee Address
-    upiUrl.searchParams.append('am', amount.toFixed(2)); // Amount (2 decimal places)
-    
+    const upiUrl = new URL("upi://pay");
+    upiUrl.searchParams.append("pa", selectedBank.upi_id); // Payee Address
+    upiUrl.searchParams.append("am", amount.toFixed(2)); // Amount (2 decimal places)
+
     // Optional parameters you might want to add
     if (org?.name) {
-      upiUrl.searchParams.append('pn', org.name); // Payee Name
+      upiUrl.searchParams.append("pn", org.name); // Payee Name
     }
-    
+
     if (data?.voucherNumber) {
-      upiUrl.searchParams.append('tn', `Invoice: ${data.voucherNumber}`); // Transaction Note
+      upiUrl.searchParams.append("tn", `Invoice: ${data.voucherNumber}`); // Transaction Note
     }
-    
-    upiUrl.searchParams.append('cu', 'INR'); // Currency
-    
+
+    upiUrl.searchParams.append("cu", "INR"); // Currency
+
     return upiUrl.toString();
   };
 
   const qrValue = generateUPIQRValue();
- // Debug log
+  // Debug log
 
   return (
     <div className="mb-5">
@@ -162,11 +162,12 @@ function VoucherPdfFooter({
       <div className="flex justify-between my-1 ">
         <div className=" w-1/2">
           {configurations?.showBankDetails &&
-          bank &&
+          selectedBank &&
           Object?.keys(selectedBank)?.length > 0 ? (
             <>
               <div className="text-gray-500 font-semibold text-[10px] ">
-                Bank Name: {selectedBank?.bank_name || selectedBank?.bank_ledname || "N/A"}
+                Bank Name:{" "}
+                {selectedBank?.bank_name || selectedBank?.bank_ledname || "N/A"}
               </div>
               <div className="text-gray-500 font-semibold text-[10px] leading-4">
                 IFSC Code: {selectedBank?.ifsc}
@@ -177,7 +178,7 @@ function VoucherPdfFooter({
               <div className="text-gray-500 font-semibold text-[10px] leading-4">
                 Branch: {selectedBank?.branch}
               </div>
-              
+
               {/* Fixed QR Code Section */}
               {selectedBank?.upi_id && qrValue && (
                 <div
@@ -200,7 +201,6 @@ function VoucherPdfFooter({
                     viewBox="0 0 256 256"
                     level="M" // Error correction level (L, M, Q, H)
                   />
-          
                 </div>
               )}
             </>
@@ -228,7 +228,7 @@ function VoucherPdfFooter({
                 <p key={index}>
                   <span className="font-bold">{index + 1}.</span> {term}
                 </p>
-                ))}
+              ))}
             </div>
           </div>
         )}
