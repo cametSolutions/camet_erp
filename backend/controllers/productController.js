@@ -295,7 +295,6 @@ export const addProductSubDetails = async (req, res) => {
     const company = await OragnizationModel.findOne({ _id: orgId });
     const generatedId = new mongoose.Types.ObjectId();
     
-    console.log(key);
     switch (key) {
       case "brand":
       case "roomType":
