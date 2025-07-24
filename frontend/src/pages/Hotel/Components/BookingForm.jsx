@@ -20,18 +20,16 @@ function BookingForm({ isLoading, setIsLoading, handleSubmit }) {
   const [selectedRoomId, setSelectedRoomId] = useState("");
   const [displayAdditionalPax, setDisplayAdditionalPax] = useState(false);
   const [roomType, setRoomType] = useState([]);
-const navigate=useNavigate()
+  const navigate = useNavigate();
   // used to get organization id from redux
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
-  console.log(cmp_id);
   const { data, loading } = useFetch(
     `/api/sUsers/getProductSubDetails/${cmp_id}?type=roomType`
   );
 
   useEffect(() => {
-    console.log(data);
     if (data) {
       setRoomType(data?.data);
     }
@@ -73,11 +71,10 @@ const navigate=useNavigate()
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (name === "arrivalDate") {
-
       const checkout = new Date(value); // this is the arrivalDate
 
       if (formData.stayDays) {
-        checkout.setDate(checkout.getDate() + Number(formData.stayDays)); 
+        checkout.setDate(checkout.getDate() + Number(formData.stayDays));
       } else {
         checkout.setDate(checkout.getDate() + 1); // ✅ use `checkout`
       }
@@ -90,7 +87,7 @@ const navigate=useNavigate()
         arrivalDate: value,
       }));
 
-      return
+      return;
     }
 
     if (name == "checkOutDate") {
@@ -180,10 +177,8 @@ const navigate=useNavigate()
 
   // Replace your existing useEffect with this improved version
   useEffect(() => {
-    const subtotal =
-      Number(formData?.roomTotal || 0) +
-      Number(formData?.foodPlanTotal || 0) +
-      Number(formData?.paxTotal || 0);
+    console.log("formData", formData);
+    const subtotal = formData?.selectedRooms?.reduce((acc, item) => acc + Number(item.amountAfterTax), 0) || 0
 
     if (subtotal > 0 && formData.discountAmount !== "") {
       const newPercentage = (Number(formData.discountAmount) / subtotal) * 100;
@@ -334,7 +329,7 @@ const navigate=useNavigate()
       foodPlanTotal: totalAmount,
     }));
   };
-
+console.log(formData);
   // function used to store additional pax details
   const selectedRoomData = (id, to) => {
     if (to == "addPax") {
@@ -380,7 +375,6 @@ const navigate=useNavigate()
         <CustomBarLoader />
       ) : (
         <>
-       
           <>
             <HeaderTile
               title={formatVoucherType("Booking")}
@@ -391,17 +385,16 @@ const navigate=useNavigate()
               }
               tab="booking"
             />
- <div className="flex items-center justify-end gap-2 text-sm text-gray-600 mt-4 mr-4  ml-4">
-                      <div className="flex items-center gap-1">
-                      <button
-                        className="px-2 py-2 gap-3 rounded-lg bg-[#012a4a] text-white"
-                        onClick={() => navigate('/BookingList')}
-                      >
-                        View List
-                      </button>
-        
-                      </div>
-                    </div>
+            <div className="flex items-center justify-end gap-2 text-sm text-gray-600 mt-4 mr-4  ml-4">
+              <div className="flex items-center gap-1">
+                <button
+                  className="px-2 py-2 gap-3 rounded-lg bg-[#012a4a] text-white"
+                  onClick={() => navigate("/BookingList")}
+                >
+                  View List
+                </button>
+              </div>
+            </div>
             <div className="flex-auto px-4 lg:px-10 py-10 pt-4">
               <div className="flex flex-wrap">
                 {/* Booking Number */}

@@ -21,29 +21,26 @@ const DashboardSummary = () => {
   const cmp_id = useSelector(
     (state) => state?.secSelectedOrganization?.secSelectedOrg?._id
   );
-  console.log(cmp_id);
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const {
     data,
-    error,
+    // error,
     loading: isLoading,
   } = useFetch(`/api/sUsers/getDashboardSummary/${cmp_id}`);
 
   useEffect(() => {
     if (data) {
       const {
-        data: {
-          sales,
-          purchases,
-          saleOrders,
-          receipts,
-          payments,
-          cashOrBank,
-          outstandingPayables,
-          outstandingReceivables,
-        },
-      } = data;
+        sales = 0,
+        purchases = 0,
+        saleOrders = 0,
+        receipts = 0,
+        payments = 0,
+        cashOrBank = 0,
+        outstandingPayables = 0,
+        outstandingReceivables = 0,
+      } = data || {};
 
       setSummaryData([
         {
@@ -99,7 +96,7 @@ const DashboardSummary = () => {
   }, [data]);
 
   const handleLinkClick = useCallback(
-    (path, value,summaryType="") => {
+    (path, value, summaryType = "") => {
       if (path) {
         if (value === "Outstanding Payables") {
           dispatch(addTab("payables"));
@@ -108,7 +105,7 @@ const DashboardSummary = () => {
           dispatch(addTab("receivables"));
           navigate(path);
         } else {
-          navigate(path,{state:{summaryType:summaryType}});
+          navigate(path, { state: { summaryType: summaryType } });
         }
       }
     },
@@ -126,7 +123,9 @@ const DashboardSummary = () => {
       ) : (
         summaryData.map((item, index) => (
           <div
-            onClick={() => handleLinkClick(item?.to, item?.title, item?.summaryType)}
+            onClick={() =>
+              handleLinkClick(item?.to, item?.title, item?.summaryType)
+            }
             key={index}
             className="p-4 flex items-center gap-5 bg-gray-100 mb-2 border-b shadow-md cursor-pointer hover:bg-slate-100 hover:translate-x-[1px] transition-all"
           >
@@ -134,7 +133,7 @@ const DashboardSummary = () => {
             <div>
               <p className="text-xs font-bold text-gray-500">
                 {" "}
-                ₹ {item?.value}
+                ₹ {item?.value || 0}
               </p>
               <p className="text-gray-500 font-semibold text-sm mt-1">
                 {item.title}

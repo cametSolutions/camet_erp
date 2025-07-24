@@ -125,6 +125,7 @@ const validDateFormData = () => {
       (item) => item.priceLevel !== ""
     );
     console.log("newPriceLevelRows", newPriceLevelRows);
+    console.log("roomData", roomData);
     sendToParent(roomData, newPriceLevelRows);
   };
   
