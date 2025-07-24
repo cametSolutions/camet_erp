@@ -4,7 +4,10 @@ import { adminLogin ,logout,getAdminData,getPrimaryUsers,
     handlePrimaryApprove,handlePrimaryBlock,handleSecondaryBlock,
     getOrganizationsAdmin,getOrganizations,fetchSecondaryUsers,
     handleSubscription,handleSms,handleWhatsApp,handleOrganizationApprove,handlePrimaryDelete,
-    handleCompanyDelete,
+    handleCompanyDelete,  getPrimaryUserProfileById,
+  updatePrimaryUserStatus,
+  updateOrganizationStatus,
+  updateSecondaryUserStatus,updateUserCapacity ,
     syncIndexes} from '../controllers/adminController.js';
 import { authAdmin } from '../middlewares/authAdmin.js';
 
@@ -27,5 +30,11 @@ router.delete('/deleteCompanyData/:cmp_id',authAdmin,handleCompanyDelete);
 router.post('/syncIndexes',syncIndexes);
 
 
+router.get('/getPrimaryUserProfileById/:userId',authAdmin, getPrimaryUserProfileById);
 
+// Update status routes - note the correct paths matching frontend
+router.patch('/updatePrimaryUserStatus/:userId', authAdmin,updatePrimaryUserStatus);
+router.patch('/updateOrganizationStatus/:organizationId',authAdmin, updateOrganizationStatus);
+router.patch('/updateSecondaryUserStatus/:secondaryUserId',authAdmin, updateSecondaryUserStatus);
+router.patch('/updateUserCapacity/:userId', authAdmin, updateUserCapacity);
 export default router

@@ -132,7 +132,7 @@ function DashBoard({
             )}
           </div>
           <div className="w-1/2">
-            <DashboardSummary />
+            {/* <DashboardSummary /> */}
           </div>
         </div>
 
@@ -161,7 +161,7 @@ function DashBoard({
             </div>
           ) : (
             <div className="">
-              <DashboardSummary />
+              {/* <DashboardSummary /> */}
             </div>
           )}
         </div>

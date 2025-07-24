@@ -1,11 +1,21 @@
 import axios from "axios";
 import Swal from "sweetalert2";
 
+let baseUrl;
+const ENV = import.meta.env.VITE_ENV;
+
+if (ENV === "development") {
+  baseUrl = "http://localhost:7000";
+} else if (ENV === "erp") {
+  baseUrl = "https://www.erp.camet.in/";
+} else if (ENV === "testing") {
+  baseUrl = "https://www.erptest.camet.in/";
+} else if (ENV === "app") {
+  baseUrl = "https://www.app.camet.in/";
+}
+
 const api = axios.create({
-  baseURL: "http://localhost:7000",
-  // baseURL:"https://www.erp.camet.in/"
-  // baseURL:"https://www.erptest.camet.in/"
-  // baseURL:"https://www.app.camet.in/"
+  baseURL: baseUrl
 });
 
 api.interceptors.response.use(

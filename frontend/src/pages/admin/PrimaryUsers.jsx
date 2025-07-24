@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "../../api/api";
 import dayjs from "dayjs";
+import { useNavigate } from "react-router-dom"; // Add this import
 import SecUserPopup from "../../components/admin/SecUserPopup";
 import { RingLoader } from "react-spinners";
 import { 
@@ -37,7 +38,7 @@ function PrimaryUsers() {
   const [isVisible, setIsVisible] = useState(false);
 
   const queryClient = useQueryClient();
-
+  const navigate = useNavigate(); 
   // Fetch primary users data using TanStack Query
   const { data: usersData, isLoading, error } = useQuery({
     queryKey: ['primaryUsers'],
@@ -62,6 +63,10 @@ function PrimaryUsers() {
       return () => clearTimeout(timer);
     }
   }, [isLoading, usersData]);
+  const handleUserCardClick = (userId) => {
+    console.log("User ID:", userId);
+    navigate(`/admin/profile/${userId}`);
+  };
 
   // Calculate stats for the overview section
   const getOverviewStats = () => {
@@ -432,6 +437,7 @@ function PrimaryUsers() {
                 }`}
                 onMouseEnter={() => setHoveredCard(user._id)}
                 onMouseLeave={() => setHoveredCard(null)}
+                 onClick={() => handleUserCardClick(user._id)} // Add click handler
                 style={{
                   animationDelay: `${index * 0.1}s`,
                   transitionDelay: `${index * 0.05}s`
