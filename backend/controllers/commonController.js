@@ -259,7 +259,7 @@ export const transactions = async (req, res) => {
 
    
     } else {
-      return res.status(404).json({ message: "Transactions not found"});
+      return res.status(200).json({ message: "Transactions not found",data: { combined: [], totalTransactionAmount: 0 } });
     }
   } catch (error) {
     console.error(error);

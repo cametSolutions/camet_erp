@@ -18,12 +18,21 @@ import { useLocation, useNavigate } from "react-router-dom";
 import TitleDiv from "../../../components/common/TitleDiv";
 import FooterButton from "../../voucher/voucherCreation/FooterButton";
 import { formatVoucherType } from "../../../../utils/formatVoucherType";
+import { useQueryClient } from "@tanstack/react-query";
+
 
 function AccVoucherInitialPage() {
   // ////////////////dispatch
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
+  const queryClient = useQueryClient();
+
+    //// check if the user is admin
+  const isAdmin =
+    JSON.parse(localStorage.getItem("sUserData")).role === "admin"
+      ? true
+      : false;
 
   // ///////////////////  redux details /////////////////////
   const cmp_id = useSelector(
@@ -258,6 +267,9 @@ function AccVoucherInitialPage() {
 
       navigate(`/sUsers/${voucherType}/details/${res?.data?.data._id}`);
       dispatch(removeAll());
+       queryClient.invalidateQueries({
+        queryKey: ["todaysTransaction", cmp_id, isAdmin],
+      });
     } catch (error) {
       toast.error(error.response?.data?.message || "An error occurred.");
       console.log(error);

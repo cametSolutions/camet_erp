@@ -21,6 +21,7 @@ import {
     addPartyOpening,
     getPartyOpening,
     editPartyOpening,
+    fetchDashboardCounts,
 
 } from "../controllers/secondaryUserController.js"
 
@@ -258,6 +259,7 @@ router.get('/getOutstandingSummary/:cmp_id', authSecondary, secondaryIsBlocked, 
 
 /// dashboard summary
 router.get('/getDashboardSummary/:cmp_id', authSecondary, secondaryIsBlocked, companyAuthentication, getDashboardSummary)
+router.get('/fetchDashboardCounts/:cmp_id', authSecondary, secondaryIsBlocked, companyAuthentication, fetchDashboardCounts)
 /// get account groups
 router.get('/getAccountGroups/:cmp_id', authSecondary, secondaryIsBlocked, companyAuthentication, getAccountGroups)
 /// sub groups
