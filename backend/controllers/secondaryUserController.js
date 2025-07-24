@@ -64,6 +64,7 @@ import bankModel from "../models/bankModel.js";
 import cashModel from "../models/cashModel.js";
 import receiptModel from "../models/receiptModel.js";
 import paymentModel from "../models/paymentModel.js";
+import partyModel from "../models/partyModel.js";
 
 // @desc Login secondary user
 // route POST/api/sUsers/login
@@ -2184,6 +2185,43 @@ export const getPartyOpening = async (req, res) => {
     res.status(500).json({
       message: "Internal server error",
       error: error.message,
+    });
+  }
+};
+
+
+// @desc   Get dashboard counts for products and customers
+// @route  GET /api/sUsers/getDashboardCounts/:cmp_id
+export const fetchDashboardCounts = async (req, res) => {
+  try {
+    const { cmp_id } = req.params;
+
+    if (!cmp_id) {
+      return res.status(400).json({
+        success: false,
+        message: 'Company ID is required'
+      });
+    }
+
+    const [productCount, customerCount] = await Promise.all([
+      productModel.countDocuments({ cmp_id: cmp_id }),
+      partyModel.countDocuments({ cmp_id: cmp_id })
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        productCount: productCount || 0,
+        customerCount: customerCount || 0,
+        cmp_id
+      }
+    });
+
+  } catch (error) {
+    console.error('Error fetching dashboard counts:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
     });
   }
 };

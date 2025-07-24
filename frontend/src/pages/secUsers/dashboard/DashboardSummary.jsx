@@ -1,9 +1,9 @@
 import { useNavigate } from "react-router-dom";
-import useFetch from "../../../customHook/useFetch";
 import { useDispatch, useSelector } from "react-redux";
 import { useEffect, useState, useCallback, memo } from "react";
 import { icons } from "../../../components/common/icons/DashboardIcons.jsx";
 import { addTab } from "../../../../slices/tallyDataSlice.js";
+import { useQuery } from "@tanstack/react-query";
 // import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const SkeletonItem = () => (
@@ -23,77 +23,91 @@ const DashboardSummary = () => {
   );
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const {
-    data,
-    // error,
-    loading: isLoading,
-  } = useFetch(`/api/sUsers/getDashboardSummary/${cmp_id}`);
+  // const {
+  //   data,
+  //   // error,
+  //   loading: isLoading,
+  // } = useFetch(`/api/sUsers/getDashboardSummary/${cmp_id}`);
+
+  // const {data={}}=useQuery({
+  //   queryKey: ["getDashboardSummary", cmp_id],
+  //   queryFn: () =>
+  //     fetch(`/api/sUsers/getDashboardSumary/${cmp_id}`).then((res) =>
+  //       res.json()
+  //     ),
+  //     enabled: !!cmp_id,
+  // })
+
+  // console.log("data", data);
+
+
+
 
   useEffect(() => {
-    if (data) {
-      const {
-        sales = 0,
-        purchases = 0,
-        saleOrders = 0,
-        receipts = 0,
-        payments = 0,
-        cashOrBank = 0,
-        outstandingPayables = 0,
-        outstandingReceivables = 0,
-      } = data || {};
+    // if (data) {
+      // const {
+      //   sales = 0,
+      //   purchases = 0,
+      //   saleOrders = 0,
+      //   receipts = 0,
+      //   payments = 0,
+      //   cashOrBank = 0,
+      //   outstandingPayables = 0,
+      //   outstandingReceivables = 0,
+      // } = data || {};
 
       setSummaryData([
         {
           title: "Sales - Credit Note",
           to: "/sUsers/summaryReport",
-          value: sales,
+          value: 0,
           icon: icons.sales,
           summaryType: "Sales Summary",
         },
         {
           title: "Purchase - Debit Note",
-          value: purchases,
+          value: 0,
           icon: icons.purchases,
           to: "/sUsers/summaryReport",
           summaryType: "Purchase Summary",
         },
         {
           title: "Receipt",
-          value: receipts,
+          value: 0,
           icon: icons.receipts,
         },
         {
           title: "Payment",
-          value: payments,
+          value: 0,
           icon: icons.payments,
         },
         {
           title: "Outstanding Receivables",
-          value: outstandingReceivables,
+          value: 0,
           to: "/sUsers/outstanding",
           icon: icons.outstandingReceivables,
         },
         {
           title: "Outstanding Payables",
-          value: outstandingPayables,
+          value: 0,
           to: "/sUsers/outstanding",
           icon: icons.outstandingPayables,
         },
         {
           title: "Cash/Bank Balance",
-          value: cashOrBank,
+          value: 0,
           to: "/sUsers/balancePage",
           icon: icons.cashOrBank,
         },
         {
           title: "Sale Order",
-          value: saleOrders,
+          value: 0,
           icon: icons.saleOrders,
           to: "/sUsers/orderSummary",
         },
       ]);
-    }
-  }, [data]);
+    // }
+  }, []);
 
   const handleLinkClick = useCallback(
     (path, value, summaryType = "") => {
@@ -113,8 +127,9 @@ const DashboardSummary = () => {
   );
 
   return (
+    // <div></div>
     <div className="shadow-lg rounded-lg px-3 py-4 w-full z-10 h-[calc(100vh-277px)] overflow-y-scroll scrollbar-thin">
-      {isLoading ? (
+      {!summaryData ? (
         <>
           {Array.from({ length: 7 }, (_, index) => (
             <SkeletonItem key={index} />
