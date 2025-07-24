@@ -28,12 +28,20 @@ import AdditionalChargesTile from "./AdditionalChargesTile";
 import { formatVoucherType } from "../../../../utils/formatVoucherType";
 import AddGodownTile from "./AddGodownTile";
 import AddNoteTile from "./AddNoteTile";
+import { useQueryClient } from "@tanstack/react-query";
 
 function VoucherInitialPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
   const isMounted = useRef(true);
+  const queryClient = useQueryClient();
+
+  //// check if the user is admin
+  const isAdmin =
+    JSON.parse(localStorage.getItem("sUserData")).role === "admin"
+      ? true
+      : false;
 
   // to find the current voucher
   const getVoucherType = () => {
@@ -354,6 +362,9 @@ function VoucherInitialPage() {
         state: { from: location?.state?.from || "null" },
       });
       dispatch(removeAll());
+      queryClient.invalidateQueries({
+        queryKey: ["todaysTransaction", cmp_id, isAdmin],
+      });
     } catch (error) {
       toast.error(error.response?.data?.message || "Error creating sale");
       console.log(error);
@@ -361,8 +372,6 @@ function VoucherInitialPage() {
       setSubmitLoading(false);
     }
   };
-console.log(
-"PPPPPPPPPPPPP")
   return (
     <div className="mb-14 sm:mb-0">
       <div className="flex-1 bg-slate-100 h -screen ">
