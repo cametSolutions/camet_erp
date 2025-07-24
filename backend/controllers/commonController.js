@@ -38,7 +38,6 @@ export const transactions = async (req, res) => {
     ignore = "", // New parameter for collections to ignore
     selectedSecondaryUser,
   } = req.query;
-console.log("sissss",todayOnly)
 
   const isAdmin = req.query.isAdmin === "true" ? true : false;
 
@@ -523,7 +522,6 @@ export const updateMissingBillIds = async (req, res) => {
     });
     results.total = outstandingDocs.length;
 
-    // console.log("Total documents to process:", outstandingDocs.length);
 
     // Create a map for model lookup with corresponding bill number fields
     const modelConfig = {
@@ -577,12 +575,10 @@ export const updateMissingBillIds = async (req, res) => {
       try {
         const sourceType = doc.source?.toLowerCase()?.trim();
 
-        // console.log(`Processing document with bill_no: ${ doc.bill_no }, source: ${ sourceType } `);
 
         const config = modelConfig[sourceType];
 
         if (!config || !config.models?.length) {
-          // console.log(`Invalid source type: ${ sourceType } `);
           results.failed++;
           results.errors.push({
             bill_no: doc.bill_no,
@@ -602,7 +598,6 @@ export const updateMissingBillIds = async (req, res) => {
             cmp_id: doc.cmp_id,
           };
 
-          // console.log(`Searching in ${ modelConfig.type } with query: `, query);
 
           const foundDoc = await modelConfig.model.findOne(query);
           if (foundDoc) {

@@ -384,7 +384,6 @@ export const editPayment = async (req, res) => {
         );
     }
 
-    // console.log(payment);
 
     await session.commitTransaction();
     session.endSession();
