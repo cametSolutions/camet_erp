@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-const now=new Date()
+const now = new Date()
 const utcMidnight = new Date(
   Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0)
 );
@@ -8,9 +8,10 @@ const utcMidnight = new Date(
 const isoUtcMidnight = utcMidnight.toISOString();
 
 const initialState = {
-  start:isoUtcMidnight,
+  start: isoUtcMidnight,
   end: isoUtcMidnight,
   title: "Today",
+  initial: false
 };
 
 export const dateSlice = createSlice({
@@ -21,7 +22,8 @@ export const dateSlice = createSlice({
 
       (state.title = action.payload.rangeName),
         (state.start = action.payload.start),
-        (state.end = action.payload.end);
+        (state.end = action.payload.end),
+        (state.initial = action.payload.initial)
     },
     removeAll: (state) => {
       Object.assign(state, initialState);

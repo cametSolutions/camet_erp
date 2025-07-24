@@ -32,7 +32,6 @@ export const getSummary = async (req, res) => {
       ...dateFilter,
       cmp_id: companyObjectId,
     };
-console.log("mmaaaaaaaaaaaaaaaa",matchCriteria)
     const config = {
       'sales summary': {
         alltype: [
