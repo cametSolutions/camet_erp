@@ -53,7 +53,7 @@ function TodaysTransaction() {
       )}
 
       {!isLoading && data?.length === 0 && !error ? (
-        <div className="h-[calc(100vh-301px)] flex justify-center flex-col items-center mb-10">
+        <div className="h-[calc(100vh-301px)] flex justify-center flex-col items-center ">
           <img className="h-12 w-12" src={NotFound} alt="" />
           <p className="text-xs font-bold text-gray-500 mt-2">
             {" "}
@@ -61,7 +61,9 @@ function TodaysTransaction() {
           </p>
         </div>
       ) : (
-        !error && <DashboardTransaction filteredData={data} from="dashboard" />
+        <div className="mb-24 sm:mb-20 md:mb-3">
+          {!error && <DashboardTransaction filteredData={data} from="dashboard" />}
+        </div>
       )}
     </div>
   );
