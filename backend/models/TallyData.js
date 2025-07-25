@@ -61,48 +61,64 @@ const tallySchema = new mongoose.Schema(
   }
 );
 
-/// **PRIMARY INDEXES** - Most important for query performance 
 
-// 1. Compound index for tenant-based queries (most common pattern)
+// ============= CRITICAL TALLY INDEXES FOR YOUR PARTYLIST QUERY =============
+
+// **MOST IMPORTANT** - For your outstanding amount aggregation
+tallySchema.index(
+  { 
+    cmp_id: 1, 
+    Primary_user_id: 1, 
+    party_id: 1, 
+    isCancelled: 1, 
+    classification: 1 
+  },
+  { 
+    name: "tally_outstanding_main_idx", 
+    background: true 
+  }
+);
+
+// **SECONDARY** - For receipt/payment voucher filtering
+tallySchema.index(
+  { 
+    cmp_id: 1, 
+    Primary_user_id: 1, 
+    isCancelled: 1, 
+    source: 1 
+  },
+  { 
+    name: "tally_source_filter_idx", 
+    background: true 
+  }
+);
+
+// **AGGREGATION OPTIMIZATION** - For your $group operations
+tallySchema.index(
+  { 
+    party_id: 1, 
+    bill_pending_amt: 1, 
+    bill_date: -1 
+  },
+  { 
+    name: "tally_aggregation_idx", 
+    background: true 
+  }
+);
+
+// Keep your existing indexes but add these optimizations
 tallySchema.index({ Primary_user_id: 1, cmp_id: 1 });
-
-// 2. Party-specific queries within company context
 tallySchema.index({ cmp_id: 1, party_id: 1 });
-
-// 3. Account group filtering within company
 tallySchema.index({ cmp_id: 1, accountGroup: 1 });
-
-// **SECONDARY INDEXES** - For specific lookup scenarios
-
-// 4. Unique bill identification (sparse index since billId can be null)
 tallySchema.index({ cmp_id: 1, billId: 1 }, { sparse: true });
-
-// 5. Bill number lookup within company
 tallySchema.index({ cmp_id: 1, bill_no: 1 });
-
-// 6. SubGroup filtering (sparse since subGroup is optional)
 tallySchema.index({ cmp_id: 1, subGroup: 1 }, { sparse: true });
-
-// **ADDITIONAL USEFUL INDEXES** - Based on common query patterns
-
-// 7. Date-based queries for reporting
 tallySchema.index({ cmp_id: 1, bill_date: -1 });
-
-// 8. Due date queries for pending bills
 tallySchema.index({ cmp_id: 1, bill_due_date: 1 });
-
-// 9. Outstanding amounts filtering
 tallySchema.index({ cmp_id: 1, bill_pending_amt: 1 });
-
-// 10. Active bills (not cancelled)
 tallySchema.index({ cmp_id: 1, isCancelled: 1 });
 
-// 11. Text search on party names (if needed)
-// tallySchema.index({ party_name: "text" });
-
-// **PERFORMANCE OPTIMIZATION INDEXES**
-
-// 12. Comprehensive query index for dashboard-type queries
+// **COMPOUND INDEX FOR COMPLEX QUERIES**
 tallySchema.index({
   Primary_user_id: 1,
   cmp_id: 1,
@@ -111,12 +127,13 @@ tallySchema.index({
   bill_date: -1,
 });
 
-// 13. Party outstanding summary queries
+// **PARTY OUTSTANDING SUMMARY** - Optimized for your aggregation
 tallySchema.index({
   cmp_id: 1,
   party_id: 1,
   isCancelled: 1,
   bill_pending_amt: 1,
+  bill_date: -1
 });
 
 // Create a Mongoose model based on the schema

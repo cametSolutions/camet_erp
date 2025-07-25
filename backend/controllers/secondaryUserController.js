@@ -64,6 +64,7 @@ import bankModel from "../models/bankModel.js";
 import cashModel from "../models/cashModel.js";
 import receiptModel from "../models/receiptModel.js";
 import paymentModel from "../models/paymentModel.js";
+import partyModel from "../models/partyModel.js";
 
 // @desc Login secondary user
 // route POST/api/sUsers/login
@@ -357,6 +358,7 @@ export const fetchBanks = async (req, res) => {
           bank_name: 1,
           bank_ledname: 1,
           ifsc: 1,
+          upi_id: 1,
           ac_no: 1,
           branch: 1,
           _id: 1,
@@ -1590,7 +1592,7 @@ export const getBankAndCashSources = async (req, res) => {
           cmp_id,
           bank_ledname: { $nin: [null, "null"] },
           bank_id: { $exists: true },
-          bank_name: { $nin: [null, "null"] },
+          // bank_name: { $nin: [null, "null"] },
         })
         .select({ bank_ledname: 1, bank_id: 1, bank_name: 1 }),
 
@@ -2183,6 +2185,43 @@ export const getPartyOpening = async (req, res) => {
     res.status(500).json({
       message: "Internal server error",
       error: error.message,
+    });
+  }
+};
+
+
+// @desc   Get dashboard counts for products and customers
+// @route  GET /api/sUsers/getDashboardCounts/:cmp_id
+export const fetchDashboardCounts = async (req, res) => {
+  try {
+    const { cmp_id } = req.params;
+
+    if (!cmp_id) {
+      return res.status(400).json({
+        success: false,
+        message: 'Company ID is required'
+      });
+    }
+
+    const [productCount, customerCount] = await Promise.all([
+      productModel.countDocuments({ cmp_id: cmp_id }),
+      partyModel.countDocuments({ cmp_id: cmp_id })
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        productCount: productCount || 0,
+        customerCount: customerCount || 0,
+        cmp_id
+      }
+    });
+
+  } catch (error) {
+    console.error('Error fetching dashboard counts:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
     });
   }
 };

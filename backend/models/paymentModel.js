@@ -62,25 +62,24 @@ const paymentSchema = new mongoose.Schema(
 
     // Bill data with references
     billData: [
-        {
-          _id: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "Tally",
-            required: true,
-          },
-          bill_no: { type: String, required: true },
-          billId: {
-            type: mongoose.Schema.Types.ObjectId,
-  
-            required: true,
-          },
-          bill_date: { type: String, required: true },
-          billPending_amt: { type: Number, required: true },
-          source: { type: String, required: true },
-          settledAmount: { type: Number, required: true },
-          remainingAmount: { type: Number, required: true },
+      {
+        /// id of the outstanding
+        _id: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Tally",
+          required: true,
         },
-      ],
+        bill_no: { type: String, required: true },
+
+        /// id of the source of the outstanding
+        billId: { type: String, required: true },
+        bill_date: { type: Date, required: true },
+        billPending_amt: { type: Number, required: true },
+        source: { type: String },
+        settledAmount: { type: Number, required: true },
+        remainingAmount: { type: Number, required: true },
+      },
+    ],
 
     totalBillAmount: { type: Number, required: true },
     enteredAmount: { type: Number, required: true },
@@ -115,9 +114,10 @@ const paymentSchema = new mongoose.Schema(
 );
 
 // 1. Primary unique identifier (paymentNumber per company)
-paymentSchema.index({ cmp_id: 1, series_id: 1, paymentNumber: 1 },  { unique: true, name: "unique_payment_number_per_series" });
-
-
+paymentSchema.index(
+  { cmp_id: 1, series_id: 1, paymentNumber: 1 },
+  { unique: true, name: "unique_payment_number_per_series" }
+);
 
 // 3. Most common query pattern (company + date sorting)
 paymentSchema.index({ cmp_id: 1, date: -1 });
@@ -132,20 +132,23 @@ paymentSchema.index({ cmp_id: 1, Secondary_user_id: 1 });
 paymentSchema.index({ cmp_id: 1, serialNumber: -1 });
 
 // 7. User-level document sequences (alternative to index #2 if needed)
-paymentSchema.index({ 
-  cmp_id: 1, 
-  Secondary_user_id: 1, 
-  userLevelSerialNumber: -1 
+paymentSchema.index({
+  cmp_id: 1,
+  Secondary_user_id: 1,
+  userLevelSerialNumber: -1,
 });
 
 // NEW INDEX: For fast validation of usedSeriesNumber existence
-paymentSchema.index({ 
-  cmp_id: 1, 
-  series_id: 1, 
-  usedSeriesNumber: 1 
-}, { 
-  name: "series_number_validation_idx",
-  background: true 
-});
+paymentSchema.index(
+  {
+    cmp_id: 1,
+    series_id: 1,
+    usedSeriesNumber: 1,
+  },
+  {
+    name: "series_number_validation_idx",
+    background: true,
+  }
+);
 
 export default mongoose.model("Payment", paymentSchema);

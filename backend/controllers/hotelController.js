@@ -573,6 +573,7 @@ export const addRoom = async (req, res) => {
       roomName: formData.roomName,
       roomType: formData.roomType,
       bedType: formData.bedType,
+      unit: formData.unit,
       roomFloor: formData.roomFloor,
       hsn: formData.hsn,
       priceLevel: tableData,

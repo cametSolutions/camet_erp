@@ -85,7 +85,6 @@ function PartyListComponent({ deleteHandler = () => {}, isVoucher = false }) {
     return () => window.removeEventListener("resize", calculateHeight);
   }, []);
 
-  console.log(getVoucherType());
 
   // Fetch data function
   const fetchParties = useCallback(
