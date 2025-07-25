@@ -11,7 +11,7 @@ function TodaysTransaction() {
   );
 
   const isAdmin =
-    JSON.parse(localStorage.getItem("sUserData")).role === "admin";
+    JSON.parse(localStorage?.getItem("sUserData"))?.role === "admin";
 
   const fetchTodaysTransactions = async () => {
     const res = await api.get(
@@ -53,7 +53,7 @@ function TodaysTransaction() {
       )}
 
       {!isLoading && data?.length === 0 && !error ? (
-        <div className="h-[calc(100vh-301px)] flex justify-center flex-col items-center">
+        <div className="h-[calc(100vh-301px)] flex justify-center flex-col items-center mb-10">
           <img className="h-12 w-12" src={NotFound} alt="" />
           <p className="text-xs font-bold text-gray-500 mt-2">
             {" "}
