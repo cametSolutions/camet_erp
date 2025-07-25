@@ -28,7 +28,6 @@ import OrderConfigurationsSecondary from '../pages/secUsers/OrderConfigurationsS
 // inventory 
 // import SalesSecondary from '../pages/secUsers/SalesSecondary'
 import SearchParty from '../pages/secUsers/SearchParty'
-import ConfigureSecondaryUser from '../pages/masters/secondaryUsers/ConfigureSecondaryUser'
 // Error Page
 import ErrorPage from '../pages/errorPages/Notfound'
 import Notfound from '../pages/errorPages/Notfound'
@@ -379,7 +378,6 @@ const Routers = () => {
       <Route path='/sUsers/retailers' element={<ProtectedSecRoute><RetailersList/></ProtectedSecRoute>}></Route>
       <Route path='/sUsers/addSecUsers' element={<ProtectedSecRoute><AddSecUsers/></ProtectedSecRoute>}></Route>
       <Route path='/sUsers/editUser/:id' element={<ProtectedSecRoute><EditSecUsers/></ProtectedSecRoute>}></Route>
-      <Route path='/sUsers/configureSecondaryUser/:id/:userId/:cmp_name' element={<ProtectedSecRoute><ConfigureSecondaryUser/></ProtectedSecRoute>}></Route>
       <Route path='/sUsers/configureUser/:userId' element={<ProtectedSecRoute><ConfigureRetailer/></ProtectedSecRoute>}></Route>
       <Route path='/sUsers/allocateCompany' element={<ProtectedSecRoute><AllocateCompany/></ProtectedSecRoute>}></Route>
       <Route path='/sUsers/allocatePriceLevel' element={<ProtectedSecRoute><AllocatePriceLevel/></ProtectedSecRoute>}></Route>

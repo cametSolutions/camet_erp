@@ -188,7 +188,7 @@ export const login = async (req, res) => {
 // route GET/api/pUsers/addSecUsers
 export const addSecUsers = async (req, res) => {
   try {
-    const { name, mobile, email, password, selectedOrg } = req.body;
+    const { name, mobile, email, password } = req.body;
     const pUserId = req.owner;
 
     const userExists = await SecondaryUser.findOne({ email });
@@ -204,7 +204,6 @@ export const addSecUsers = async (req, res) => {
       mobile,
       email,
       password,
-      organization: selectedOrg,
       primaryUser: pUserId,
     });
 

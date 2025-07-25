@@ -3,18 +3,14 @@ import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { FaRegEye } from "react-icons/fa";
 import { IoMdEyeOff } from "react-icons/io";
-import { Link } from "react-router-dom";
 import api from "../../../api/api";
 import { useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { IoIosSettings } from "react-icons/io";
 import TitleDiv from "../TitleDiv";
 
 function SecUserCreationForm({ submitHandler, tab = "add" }) {
-  const [organizations, setOrganizations] = useState([]);
   const [name, setName] = useState("");
   const [mobile, setMobile] = useState("");
-  const [selectedOrg, setSelectedOrg] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -34,11 +30,10 @@ function SecUserCreationForm({ submitHandler, tab = "add" }) {
             withCredentials: true,
           });
 
-          const { name, email, mobile, password, organization } = res.data.data;
+          const { name, email, mobile, password } = res.data.data;
           setName(name);
           setEmail(email);
           setMobile(mobile);
-          setSelectedOrg(organization);
           setOldPassword(password);
         } catch (error) {
           console.log(error);
@@ -48,45 +43,17 @@ function SecUserCreationForm({ submitHandler, tab = "add" }) {
     }
   }, []);
 
-  useEffect(() => {
-    const fetchOrganizations = async () => {
-      try {
-        const res = await api.get("/api/sUsers/getOrganizations", {
-          withCredentials: true,
-        });
 
-        setOrganizations(res.data.organizationData);
-      } catch (error) {
-        console.log(error);
-        toast.error(error.response.data.message);
-      }
-    };
-
-    fetchOrganizations();
-  }, []);
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
-  };
-
-  const handleCheckboxChange = (orgId) => {
-    // Check if the organization is already selected
-    if (selectedOrg.includes(orgId)) {
-      // Remove it from the selected organizations
-      setSelectedOrg((prevSelected) =>
-        prevSelected.filter((id) => id !== orgId)
-      );
-    } else {
-      // Add it to the selected organizations
-      setSelectedOrg((prevSelected) => [...prevSelected, orgId]);
-    }
   };
 
 
   const onSubmitHandler = async (e) => {
     e.preventDefault();
 
-    if (!name || !mobile || !selectedOrg || !email) {
+    if (!name || !mobile  || !email) {
       toast.error("All fields must be filled");
       return;
     }
@@ -101,10 +68,6 @@ function SecUserCreationForm({ submitHandler, tab = "add" }) {
       return;
     }
 
-    if (selectedOrg.length < 1) {
-      toast.error("Select at least an OrganiZation");
-      return;
-    }
 
     if (!/^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/.test(email)) {
       toast.error("Invalid email address");
@@ -118,7 +81,6 @@ function SecUserCreationForm({ submitHandler, tab = "add" }) {
           password
         )
       ) {
-        console.log("one");
 
         toast.error(
           "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character"
@@ -147,7 +109,6 @@ function SecUserCreationForm({ submitHandler, tab = "add" }) {
       name,
       mobile,
       email,
-      selectedOrg,
       password,
     };
 
@@ -274,63 +235,6 @@ function SecUserCreationForm({ submitHandler, tab = "add" }) {
                     </div>
                   </div>
 
-                  <div className="w-full px-4 mt-1 ">
-                    <hr className="mt-6 border-b-1 border-blueGray-300 mb-7" />
-                    <div className="relative w-full mb-3">
-                      <label
-                        className="block uppercase text-blueGray-600 text-xs font-bold mb-4"
-                        htmlFor="grid-password"
-                      >
-                        Companies
-                      </label>
-                      <div className="space-y-2">
-                        {organizations.length > 0 ? (
-                          organizations.map((item, index) => (
-                            <div key={index} className="flex justify-between">
-                              {/* <button type="button" className="bg-purple-500 p-1.5 py-1 text-white mr-2 rounded-md text-xs">Configure</button> */}
-                              <div className="flex items-center">
-                                <input
-                                  type="checkbox"
-                                  id={`organizationCheckbox${index}`}
-                                  value={item._id}
-                                  checked={selectedOrg.includes(item._id)}
-                                  onChange={(e) =>
-                                    handleCheckboxChange(e.target.value)
-                                  }
-                                  className="mr-2"
-                                />
-                                <label
-                                  htmlFor={`organizationCheckbox${index}`}
-                                  className="text-blueGray-600"
-                                >
-                                  {item.name}
-                                </label>
-                              </div>
-                              {/* <button
-                                  type="button"
-                                  className="bg-purple-400 p-1.5 py-1 text-white mr-2 rounded-md text-xs"
-                                >
-                                  Configure
-                                </button> */}
-
-                              {selectedOrg.includes(item._id) &&
-                                tab == "edit" && (
-                                  <Link
-                                    to={`/sUsers/configureSecondaryUser/${item._id}/${id}/${item.name}`}
-                                  >
-                                    <IoIosSettings className="cursor-pointer" />
-                                  </Link>
-                                )}
-                            </div>
-                          ))
-                        ) : (
-                          <p className="text-blueGray-600">
-                            No organization added
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
                 </form>
               </div>
             </div>
