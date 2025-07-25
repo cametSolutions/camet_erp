@@ -3,6 +3,7 @@ import PrimaryUsers from "../models/primaryUserModel.js";
 import generateAdminToken from "../utils/generateAdminToken.js";
 import Organization from "../models/OragnizationModel.js";
 import SecondaryUser from "../models/secondaryUserModel.js";
+
 import TallyData from "../models/TallyData.js";
 import Banks from "../models/bankModel.js";
 import BanksOd from "../models/bankOdModel.js";
@@ -33,6 +34,7 @@ import vanSaleModel from "../models/vanSaleModel.js";
 import TransactionModel from "../models/TransactionModel.js";
 import mongoose from "mongoose";
 
+import { ObjectId } from 'mongodb';
 // @desc Login Admin
 // route POST/api/admin/login
 export const adminLogin = async (req, res) => {
@@ -718,3 +720,337 @@ export const syncIndexes = async (req, res) => {
   }
 };
 
+ // Add this import at the top of your admin controller file
+
+
+// Fixed getPrimaryUserProfileById function
+export const getPrimaryUserProfileById = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    console.log("Fetching profile for userId:", userId);
+
+    // Validate user ID
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'User ID is required'
+      });
+    }
+
+    // Fetch primary user details
+    const primaryUser = await PrimaryUsers.findById(userId)
+      .select('userName email mobile subscription createdAt updatedAt sms whatsApp isBlocked  isApproved role')
+      .lean();
+
+    if (!primaryUser) {
+      return res.status(404).json({
+        success: false,
+        message: 'Primary user not found'
+      });
+    }
+
+    // Fetch organization details for this user
+    const organization = await Organization.find({ owner: userId })
+      .select('name place type industry isBlocked isApproved createdAt')
+      .lean();
+      console.log('organization',organization)
+
+    // Fetch secondary users for this primary user
+    const secondaryUsers = await SecondaryUser.find({ primaryUser: userId })
+      .select('name email mobile isBlocked createdAt')
+      .lean();
+
+    // Prepare response data to match frontend expectations
+    const responseData = {
+      primaryUser: {
+        id: primaryUser._id,
+        name: primaryUser.userName,
+        email: primaryUser.email,
+        phoneNumber: primaryUser.mobile,
+        subscriptionType: primaryUser.subscription,
+        createdAt: primaryUser.createdAt,
+        expiredAt: primaryUser.updatedAt,
+        sms: primaryUser.sms || false,
+        whatsApp: primaryUser.whatsApp || false,
+        isBlocked: primaryUser.isBlocked || false,
+        isApproved: primaryUser.isApproved || false
+      },
+      organization: organization.map(org=> ({
+        id: org._id,
+        name: org.name,
+        place: org.place,
+        type: org.type,
+        industry: org.industry,
+        isBlocked: org.isBlocked || false,
+        isApproved: org.isApproved || false,
+        createdAt: org.createdAt
+    })),
+      secondaryUsers: secondaryUsers.map(user => ({
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        mobile: user.mobile,
+      
+        isBlocked: user.isBlocked || false,
+        createdAt: user.createdAt
+      }))
+    };
+
+    res.status(200).json(responseData);
+
+  } catch (error) {
+    console.error('Error fetching primary user profile by ID:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+// Add these new mutation endpoints to match frontend expectations
+
+// Update Primary User Status
+export const updatePrimaryUserStatus = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { field, value } = req.body;
+
+    const allowedFields = ['sms', 'whatsApp', 'isBlocked', 'isApproved', 'subscriptionType'];
+    
+    if (!allowedFields.includes(field)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid field specified'
+      });
+    }
+
+    // Validate subscriptionType values
+    if (field === 'subscriptionType') {
+      if (!['yearly', 'monthly'].includes(value)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid subscription type. Must be "yearly" for yearly or "monthly" for monthly'
+        });
+      }
+    }
+
+    // Validate boolean fields
+    if (['sms', 'whatsApp', 'isBlocked', 'isApproved'].includes(field)) {
+      if (typeof value !== 'boolean') {
+        return res.status(400).json({
+          success: false,
+          message: `${field} must be a boolean value`
+        });
+      }
+    }
+
+    const update = await PrimaryUsers.updateOne(
+      { _id: userId },
+      { $set: { [field]: value } }
+    );
+
+    if (update.matchedCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `User ${field} status updated successfully`
+    });
+
+  } catch (error) {
+    console.error('Error updating primary user status:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+};
+// Update Organization Status
+export const updateOrganizationStatus = async (req, res) => {
+  try {
+    const  {organizationId } = req.params;
+    const { field, value } = req.body;
+console.log('organizationId',organizationId)
+    const allowedFields = ['isBlocked', 'isApproved'];
+    if (!allowedFields.includes(field)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid field specified'
+      });
+    }
+
+    const update = await Organization.updateOne(
+      { _id: organizationId },
+      { $set: { [field]: value } }
+    );
+
+    if (update.matchedCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Organization not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Organization ${field} status updated successfully`
+    });
+
+  } catch (error) {
+    console.error('Error updating organization status:', error);
+    
+    // Handle invalid ObjectId error from MongoDB
+    if (error.name === 'CastError') {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid organization ID format'
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+};
+
+// Update Secondary User Status
+export const updateSecondaryUserStatus = async (req, res) => {
+  try {
+    const { secondaryUserId } = req.params;
+    const { field, value } = req.body;
+console.log('secondaryUserId',secondaryUserId)
+    const allowedFields = [ 'isBlocked'];
+    if (!allowedFields.includes(field)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid field specified'
+      });
+    }
+
+    const update = await SecondaryUser.updateOne(
+      { _id: secondaryUserId },
+      { $set: { [field]: value } }
+    );
+
+    if (update.matchedCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Secondary user not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Secondary user ${field} status updated successfully`
+    });
+
+  } catch (error) {
+    console.error('Error updating secondary user status:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+};
+
+// Single controller to update user capacity limits (both organization and secondary user)
+export const updateUserCapacity = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { field, value } = req.body;
+
+    console.log('Updating capacity:', { userId, field, value });
+
+    // Validate userId
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid user ID format'
+      });
+    }
+
+    // Validate field - only allow these two fields
+    const allowedFields = ['organizationLimit', 'secondaryUserLimit'];
+    if (!allowedFields.includes(field)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid field. Allowed fields: organizationLimit, secondaryUserLimit'
+      });
+    }
+
+    // Validate value
+    const numericValue = parseInt(value, 10);
+    if (isNaN(numericValue) || numericValue < 1 || numericValue > 100) {
+      return res.status(400).json({
+        success: false,
+        message: 'Value must be a number between 1 and 100'
+      });
+    }
+
+    // Find and update user
+    const user = await PrimaryUsers.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Store old value for logging
+    const oldValue = user[field];
+
+    // Update the specific field
+    user[field] = numericValue;
+    
+    // Save the user
+    const updatedUser = await user.save();
+
+    // Log the update for audit purposes
+    console.log(`Updated ${field} for user ${userId}: ${oldValue} → ${numericValue}`);
+
+    // Determine field name for response
+    const fieldDisplayName = field === 'organizationLimit' ? 'Organization' : 'Secondary User';
+
+    // Return success response
+    res.status(200).json({
+      success: true,
+      message: `${fieldDisplayName} limit updated successfully`,
+      data: {
+        userId: updatedUser._id,
+        userName: updatedUser.userName,
+        field: field,
+        oldValue: oldValue,
+        newValue: updatedUser[field],
+        organizationLimit: updatedUser.organizationLimit,
+        secondaryUserLimit: updatedUser.secondaryUserLimit,
+        updatedAt: updatedUser.updatedAt
+      }
+    });
+
+  } catch (error) {
+    console.error('Error updating user capacity:', error);
+    
+    // Handle mongoose validation errors
+    if (error.name === 'ValidationError') {
+      const validationErrors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        message: 'Validation error',
+        errors: validationErrors
+      });
+    }
+
+    // Handle other errors
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error while updating capacity',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong'
+    });
+  }
+};

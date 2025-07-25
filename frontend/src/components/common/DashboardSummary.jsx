@@ -30,18 +30,20 @@ const DashboardSummary = () => {
     loading: isLoading,
   } = useFetch(`/api/sUsers/getDashboardSummary/${cmp_id}`);
 
+  console.log(data)
+
   useEffect(() => {
     if (data) {
       const {
         data: {
-          sales,
-          purchases,
-          saleOrders,
-          receipts,
-          payments,
-          cashOrBank,
-          outstandingPayables,
-          outstandingReceivables,
+          sales=[],
+          purchases=[],
+          saleOrders=[],
+          receipts=[],
+          payments=[],
+          cashOrBank=[],
+          outstandingPayables=[],
+          outstandingReceivables=[],
         },
       } = data;
 

@@ -4,6 +4,7 @@ import primaryUsers from './routes/primaryUserRoutes.js'
 import secondaryUsers from './routes/secondaryUserRouters.js'
 import admin from './routes/adminRoute.js'
 import tally from './routes/tallyRoute.js'
+
 import connectDB from "./config/db.js";
 import cors from 'cors'
 import cookieParser from "cookie-parser";
@@ -35,6 +36,7 @@ app.use("/api/pUsers",primaryUsers)
 app.use("/api/sUsers",secondaryUsers)
 app.use("/api/admin",admin)
 app.use("/api/tally",tally)
+
 
 if(process.env.NODE_ENV==="production"){
   console.log(process.env.NODE_ENV);
