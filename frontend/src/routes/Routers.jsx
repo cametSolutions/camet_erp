@@ -144,6 +144,7 @@ import BookingList from '@/pages/Hotel/List/BookingList'
 import CheckInList from '@/pages/Hotel/List/CheckIn'
 import CheckOutList from '@/pages/Hotel/List/CheckOutList'
 import RestaurantDashboard from '@/pages/Restuarant/Pages/RestaurantDashboard'
+import LetterHeadUploadPage from '@/pages/secUsers/settilngs/PrintConfiguration/LetterHeadUploadPage'
 const Routers = () => {
   return (
     <Routes>
@@ -361,6 +362,7 @@ const Routers = () => {
         <Route path='/sUsers/printConfiguration' element={<ProtectedSecRoute><PrintConfiguration/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/saleOrderPrintConfiguration' element={<ProtectedSecRoute><SaleOrderPrintConfiguration/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/salePrintConfiguration' element={<ProtectedSecRoute><SalePrintConfiguration/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/sale/upLoadLetterHead' element={<ProtectedSecRoute><LetterHeadUploadPage/></ProtectedSecRoute>}></Route>
 
       {/* order pending */}
       <Route path='/sUsers/orderPending/partyList' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route>
