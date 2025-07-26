@@ -1,9 +1,9 @@
-import React from "react";
-import { User, Mail, Phone, Calendar, Shield, Loader2 } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import ToggleSwitch from "./ToggleSwitch";
+import React, { useState } from "react";
+import { User, Mail, Phone, Calendar, Shield, Loader2, Crown, Clock } from "lucide-react";
 
 const PrimaryUserComponent = ({ primaryUser, onToggle, onSubscriptionToggle, isLoading }) => {
+  const [localLoading, setLocalLoading] = useState(false);
+
   // Helper function to get user initials for avatar
   const getInitials = (name) => {
     if (!name) return "?";
@@ -20,39 +20,134 @@ const PrimaryUserComponent = ({ primaryUser, onToggle, onSubscriptionToggle, isL
     });
   };
 
-  // Subscription Toggle Component
+  // Enhanced Toggle Switch Component
+  const ToggleSwitch = ({ enabled, onToggle, label, loading = false, variant = 'default' }) => {
+    const getVariantStyles = () => {
+      switch (variant) {
+        case 'danger':
+          return enabled 
+            ? 'bg-gradient-to-r from-red-500 to-red-600 focus:ring-red-500' 
+            : 'bg-slate-300 focus:ring-slate-400';
+        case 'success':
+          return enabled 
+            ? 'bg-gradient-to-r from-green-500 to-green-600 focus:ring-green-500' 
+            : 'bg-slate-300 focus:ring-slate-400';
+        default:
+          return enabled 
+            ? 'bg-gradient-to-r from-blue-500 to-blue-600 focus:ring-blue-500' 
+            : 'bg-slate-300 focus:ring-slate-400';
+      }
+    };
+
+    return (
+      <div className="flex flex-col space-y-2">
+        <span className="text-sm font-medium text-slate-700">{label}</span>
+        <button
+          onClick={onToggle}
+          disabled={loading}
+          className={`relative w-12 h-6 rounded-full p-1 transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+            getVariantStyles()
+          } ${loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:shadow-lg'}`}
+        >
+          <div
+            className={`w-4 h-4 rounded-full bg-white shadow-md transform transition-all duration-300 ease-in-out flex items-center justify-center ${
+              enabled ? 'translate-x-6' : 'translate-x-0'
+            }`}
+          >
+            {loading && (
+              <Loader2 className="w-2 h-2 animate-spin text-slate-600" />
+            )}
+          </div>
+        </button>
+      </div>
+    );
+  };
+
+  // Enhanced Subscription Toggle Component
   const SubscriptionToggle = ({ subscriptionType, onToggle, loading = false }) => {
     const isYearly = subscriptionType === 'yearly';
     
+    const handleSubscriptionToggle = async () => {
+      if (loading) return;
+      
+      setLocalLoading(true);
+      try {
+        // Call the parent's subscription toggle handler with the user ID
+        await onToggle(primaryUser._id || primaryUser.id, isYearly ? 'monthly' : 'yearly');
+      } catch (error) {
+        console.error('Error toggling subscription:', error);
+      } finally {
+        setLocalLoading(false);
+      }
+    };
+    
     return (
-      <div className="flex items-center space-x-3">
-        <Shield size={20} className="text-gray-500" />
-        <div className="flex-1">
-          <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">Subscription</p>
-          <div className="flex items-center space-x-3 mt-1">
-            <span className={`text-lg font-semibold transition-colors ${!isYearly ? 'text-gray-800' : 'text-gray-400'}`}>
+      <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-green-100 to-blue-100 rounded-xl flex items-center justify-center">
+              <Shield className="w-5 h-5 text-green-600" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-slate-800">Subscription Plan</p>
+              <p className="text-xs text-slate-500">Billing frequency</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <span className={`text-sm font-medium transition-colors duration-200 ${
+              !isYearly ? 'text-slate-800' : 'text-slate-400'
+            }`}>
               Monthly
             </span>
+            
             <button
-              onClick={onToggle}
-              disabled={loading}
-              className={`w-12 h-6 rounded-full p-1 transition-colors duration-200 ease-in-out relative ${
-                isYearly ? 'bg-green-500' : 'bg-blue-500'
-              } ${loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+              onClick={handleSubscriptionToggle}
+              disabled={loading || localLoading}
+              className={`relative w-14 h-7 rounded-full p-1 transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                isYearly 
+                  ? 'bg-gradient-to-r from-green-500 to-emerald-500 focus:ring-green-500' 
+                  : 'bg-gradient-to-r from-blue-500 to-cyan-500 focus:ring-blue-500'
+              } ${(loading || localLoading) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:shadow-lg'}`}
             >
               <div
-                className={`w-4 h-4 rounded-full bg-white shadow-md transform transition-transform duration-200 ease-in-out ${
-                  isYearly ? 'translate-x-6' : 'translate-x-0'
+                className={`w-5 h-5 rounded-full bg-white shadow-md transform transition-all duration-300 ease-in-out flex items-center justify-center ${
+                  isYearly ? 'translate-x-7' : 'translate-x-0'
                 }`}
-              />
-              {loading && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Loader2 className="w-3 h-3 animate-spin text-white" />
-                </div>
-              )}
+              >
+                {(loading || localLoading) && (
+                  <Loader2 className="w-3 h-3 animate-spin text-slate-600" />
+                )}
+              </div>
+              
+              {/* Subscription type indicator */}
+              <div className={`absolute inset-0 flex items-center justify-center pointer-events-none ${
+                (loading || localLoading) ? 'opacity-0' : 'opacity-100'
+              } transition-opacity duration-200`}>
+                <span className="text-xs font-bold text-white">
+                  {isYearly ? 'Y' : 'M'}
+                </span>
+              </div>
             </button>
-            <span className={`text-lg font-semibold transition-colors ${isYearly ? 'text-gray-800' : 'text-gray-400'}`}>
+            
+            <span className={`text-sm font-medium transition-colors duration-200 ${
+              isYearly ? 'text-slate-800' : 'text-slate-400'
+            }`}>
               Yearly
+            </span>
+          </div>
+        </div>
+        
+        {/* Subscription benefits indicator */}
+        <div className="mt-3 pt-3 border-t border-slate-100">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-slate-500">Current plan:</span>
+            <span className={`font-semibold px-2 py-1 rounded-full ${
+              isYearly 
+                ? 'text-green-700 bg-green-100' 
+                : 'text-blue-700 bg-blue-100'
+            }`}>
+              {isYearly ? 'Yearly (Save 20%)' : 'Monthly'}
             </span>
           </div>
         </div>
@@ -60,97 +155,201 @@ const PrimaryUserComponent = ({ primaryUser, onToggle, onSubscriptionToggle, isL
     );
   };
 
+  // Avatar component
+  const Avatar = ({ className, children }) => (
+    <div className={`rounded-full overflow-hidden ${className}`}>
+      {children}
+    </div>
+  );
+
+  const AvatarImage = ({ src, className }) => (
+    <img src={src} alt="Avatar" className={`w-full h-full object-cover ${className}`} />
+  );
+
+  const AvatarFallback = ({ className, children }) => (
+    <div className={`w-full h-full flex items-center justify-center ${className}`}>
+      {children}
+    </div>
+  );
+
+  // Status badge component
+  const StatusBadge = ({ label, value, type = 'default' }) => {
+    const getStatusColor = () => {
+      if (type === 'approval') {
+        return value ? 'bg-green-100 text-green-800 border-green-200' : 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      }
+      if (type === 'blocked') {
+        return value ? 'bg-red-100 text-red-800 border-red-200' : 'bg-green-100 text-green-800 border-green-200';
+      }
+      return value ? 'bg-blue-100 text-blue-800 border-blue-200' : 'bg-slate-100 text-slate-600 border-slate-200';
+    };
+
+    return (
+      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor()}`}>
+        {value ? (type === 'blocked' ? 'Blocked' : 'Active') : (type === 'approval' ? 'Pending' : 'Inactive')}
+      </span>
+    );
+  };
+
+  // Sample data for demonstration
+ 
+
+  // Use sample data if no primaryUser is provided
+  const user = primaryUser ;
+
   return (
-    <div className="p-8 border-b border-gray-200">
-      <div className="flex justify-center items-center mb-6 bg-gradient-to-br from-blue-500 to-purple-600">
-        <Avatar className="h-16 w-18 transition-all duration-500">
-          <AvatarImage 
-            src="https://i.pinimg.com/736x/8b/16/7a/8b167af653c2399dd93b952a48740620.jpg" 
-            className="transition-all duration-300 hover:scale-110"
-          />
-          <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold transition-all duration-300 group-hover:from-blue-600 group-hover:to-purple-700">
-            {getInitials(primaryUser?.name)}
-          </AvatarFallback>
-        </Avatar>
-      </div>
-      
-      <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-100">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <div className="space-y-4">
-            <div className="flex items-center space-x-3">
-              <User size={20} className="text-gray-500" />
-              <div>
-                <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">Name</p>
-                <p className="text-lg font-semibold text-gray-800">{primaryUser?.name || "N/A"}</p>
-              </div>
+    <div className="relative overflow-hidden">
+      {/* Header with gradient background */}
+      <div className="bg-gradient-to-br from-blue-600 via-blue-700 to-purple-700 px-3 pt-3 pb-5">
+        <div className="flex items-center justify-center mb-6">
+          <div className="relative group">
+            <Avatar className="h-20 w-20 ring-4 ring-white/20 transition-all duration-500 group-hover:ring-white/40">
+              <AvatarImage 
+                src="https://i.pinimg.com/736x/8b/16/7a/8b167af653c2399dd93b952a48740620.jpg" 
+                className="transition-all duration-300 group-hover:scale-110"
+              />
+              <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-bold text-xl">
+                {getInitials(user?.name)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="absolute -top-1 -right-1 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center shadow-lg">
+              <Crown className="w-3 h-3 text-yellow-800" />
             </div>
-            <div className="flex items-center space-x-3">
-              <Mail size={20} className="text-gray-500" />
-              <div>
-                <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">Email</p>
-                <p className="text-lg font-semibold text-gray-800">{primaryUser?.email || "N/A"}</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-3">
-              <Phone size={20} className="text-gray-500" />
-              <div>
-                <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">Phone</p>
-                <p className="text-lg font-semibold text-gray-800">{primaryUser?.phoneNumber || "N/A"}</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="space-y-4">
-            <div className="flex items-center space-x-3">
-              <Calendar size={20} className="text-gray-500" />
-              <div>
-                <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">Created</p>
-                <p className="text-lg font-semibold text-gray-800">{formatDate(primaryUser?.createdAt)}</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-3">
-              <Calendar size={20} className="text-gray-500" />
-              <div>
-                <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">Expires</p>
-                <p className="text-lg font-semibold text-gray-800">{formatDate(primaryUser?.expiredAt)}</p>
-              </div>
-            </div>
-            <SubscriptionToggle
-              subscriptionType={primaryUser?.subscriptionType}
-              onToggle={onSubscriptionToggle}
-              loading={isLoading}
-            />
           </div>
         </div>
-        
-        {/* Toggle Controls */}
-        <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between space-x-6">
-            <ToggleSwitch
-              enabled={primaryUser?.sms || false}
-              onToggle={() => onToggle('primaryUser', null, 'sms', primaryUser?.sms)}
-              label="SMS"
-              loading={isLoading}
-            />
-          
-<ToggleSwitch
-  enabled={primaryUser?.whatsApp}
-  onToggle={() => onToggle('primaryUser', null, 'whatsApp', primaryUser?.whatsApp)} // Changed 'whatsapp' to 'whatsApp'
-  label="WhatsApp"
-  loading={isLoading}
-/>
-            <ToggleSwitch
-              enabled={!primaryUser?.isBlocked}
-              onToggle={() => onToggle('primaryUser', null, 'isBlocked', primaryUser?.isBlocked)}
-              label="isBlocked"
-              loading={isLoading}
-            />
-            <ToggleSwitch
-              enabled={primaryUser?.isApproved || false}
-              onToggle={() => onToggle('primaryUser', null, 'isApproved', primaryUser?.isApproved)}
-              label="isApproved"
-              loading={isLoading}
-            />
+
+        <div className="text-center text-white">
+          <h2 className="text-2xl font-bold mb-2">{user?.name || "Unknown User"}</h2>
+          <p className="text-blue-100 mb-4">{user?.email || "No email provided"}</p>
+          <div className="flex items-center justify-center gap-4">
+            <StatusBadge label="Approved" value={user?.isApproved} type="approval" />
+            <StatusBadge label="Status" value={!user?.isBlocked} type="blocked" />
+          </div>
+        </div>
+      </div>
+
+      {/* Main content with overlap */}
+      <div className="px-8 -mt-8 pb-8">
+        <div className="bg-white rounded-2xl shadow-xl border border-slate-200/60 overflow-hidden">
+          {/* User Information Grid */}
+          <div className="p-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+              {/* Left Column - Basic Info */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl">
+                  <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                    <User className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Full Name</p>
+                    <p className="text-lg font-semibold text-slate-800">{user?.name || "N/A"}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl">
+                  <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+                    <Mail className="w-5 h-5 text-green-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Email Address</p>
+                    <p className="text-lg font-semibold text-slate-800 break-all">{user?.email || "N/A"}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl">
+                  <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
+                    <Phone className="w-5 h-5 text-purple-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Phone Number</p>
+                    <p className="text-lg font-semibold text-slate-800">{user?.phoneNumber || "N/A"}</p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Right Column - Dates & Subscription */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl">
+                  <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
+                    <Calendar className="w-5 h-5 text-orange-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Account Created</p>
+                    <p className="text-lg font-semibold text-slate-800">{formatDate(user?.createdAt)}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl">
+                  <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center">
+                    <Clock className="w-5 h-5 text-red-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Subscription Expires</p>
+                    <p className="text-lg font-semibold text-slate-800">{formatDate(user?.expiredAt)}</p>
+                  </div>
+                </div>
+
+                {/* Subscription Toggle */}
+                <SubscriptionToggle
+                  subscriptionType={user?.subscriptionType}
+                  onToggle={onSubscriptionToggle || ((id, type) => console.log(`Toggle subscription for ${id} to ${type}`))}
+                  loading={isLoading || localLoading}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Toggle Controls Section */}
+          <div className="border-t border-slate-200 bg-slate-50/50 p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-8 h-8 bg-slate-600 rounded-lg flex items-center justify-center">
+                <Shield className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <h4 className="text-lg font-semibold text-slate-800">User Permissions</h4>
+                <p className="text-sm text-slate-600">Manage user access and communication settings</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                <ToggleSwitch
+                  enabled={user?.sms || false}
+                  onToggle={() => onToggle && onToggle('primaryUser', null, 'sms', user?.sms)}
+                  label="SMS Notifications"
+                  loading={isLoading}
+                />
+              </div>
+
+              <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                <ToggleSwitch
+                  enabled={user?.whatsApp || false}
+                  onToggle={() => onToggle && onToggle('primaryUser', null, 'whatsApp', user?.whatsApp)}
+                  label="WhatsApp"
+                  loading={isLoading}
+                />
+              </div>
+
+              <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                <ToggleSwitch
+                  enabled={user?.isBlocked || false}
+                  onToggle={() => onToggle && onToggle('primaryUser', null, 'isBlocked', user?.isBlocked)}
+                  label="Block User"
+                  loading={isLoading}
+                  variant="danger"
+                />
+              </div>
+
+              <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                <ToggleSwitch
+                  enabled={user?.isApproved || false}
+                  onToggle={() => onToggle && onToggle('primaryUser', null, 'isApproved', user?.isApproved)}
+                  label="Approved"
+                  loading={isLoading}
+                  variant="success"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>

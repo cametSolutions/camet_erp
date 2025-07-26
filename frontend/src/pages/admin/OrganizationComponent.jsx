@@ -78,7 +78,7 @@ const OrganizationComponent = ({ organizations, onToggle, isLoading }) => {
           <div className="flex space-x-4">
             <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 flex-1">
               <ToggleSwitch
-                enabled={!org.isBlocked}
+                enabled={org.isBlocked}
                 onToggle={() => onToggle('organization', org.id, 'isBlocked', org.isBlocked)}
                 label="Active"
                 loading={isLoading}

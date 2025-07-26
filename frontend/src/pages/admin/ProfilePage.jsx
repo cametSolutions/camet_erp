@@ -142,6 +142,7 @@ const ProfileCard = () => {
     } catch (error) {
       console.error('Capacity update failed:', error);
     }
+    console.log(capacityMutation)
   }, [capacityMutation]);
 
   // Handle toggle changes
@@ -231,7 +232,7 @@ const ProfileCard = () => {
   }
 
   const { primaryUser, organization, secondaryUsers } = data || {};
-  
+  console.log(primaryUser)
   return (
     <div className="w-full bg-white rounded-2xl shadow-xl overflow-hidden">
       {/* Primary User Section */}
@@ -246,84 +247,89 @@ const ProfileCard = () => {
      <div className="p-8 pt-0 border-b border-gray-200">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Capacity Settings</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Organization Capacity Dropdown */}
-          <div className="space-y-2">
-            <label htmlFor="org-capacity" className="block text-sm font-medium text-gray-700">
-              Organization Member Limit
-            </label>
-            <select
-              id="org-capacity"
-              value={primaryUser?.organizationLimit || ''}
-              onChange={(e) => handleCapacityChange('organizationLimit', e.target.value)}
-              disabled={capacityMutation.isPending}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
-            >
-              <option value="">Select capacity...</option>
-              {capacityOptions.map((num) => (
-                <option key={num} value={num}>
-                  {num} {num === 1 ? 'member' : 'members'}
-                </option>
-              ))}
-            </select>
-            {capacityMutation.isPending && (
-              <div className="flex items-center text-sm text-gray-500">
-                <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                Updating...
-              </div>
-            )}
-          </div>
+         
+<div className="space-y-2">
+  <label htmlFor="org-capacity" className="block text-sm font-medium text-gray-700">
+    Organization Member Limit
+  </label>
+  <select
+    id="org-capacity"
+    value={ capacityMutation?.data?.data?.organizationLimit || ''}
+    onChange={(e) => handleCapacityChange('organizationLimit', e.target.value)}
+    disabled={capacityMutation.isPending}
+    className={`w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed ${
+      capacityMutation?.data?.data?.organizationLimit ? 'text-gray-900 font-medium' : 'text-gray-500'
+    }`}
+  >
+    <option value="" disabled className="text-gray-500">
+      {primaryUser?.organizationLimit 
+        ? `Selected: ${primaryUser.organizationLimit} ${primaryUser.organizationLimit === 1 ? 'organization' : 'organizations'}`
+        : 'Select organization capacity...'
+      }
+    </option>
+    {capacityOptions.map((num) => (
+      <option key={num} value={num} className="text-gray-900">
+        {num} {num === 1 ? 'organization' : 'organizations'}
+        {primaryUser?.organizationLimit === num && ' (Current)'}
+      </option>
+    ))}
+  </select>
+  {primaryUser?.organizationLimit && (
+    <div className="text-xs text-blue-600 font-medium bg-blue-50 px-2 py-1 rounded">
+      ✓ Organization limit set to: {primaryUser.organizationLimit} out of 100 maximum
+    </div>
+  )}
+  {capacityMutation.isPending && (
+    <div className="flex items-center text-sm text-orange-600">
+      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+      Updating organization capacity...
+    </div>
+  )}
+</div>
 
-          {/* Secondary User Capacity Dropdown */}
-          <div className="space-y-2">
-            <label htmlFor="secondary-capacity" className="block text-sm font-medium text-gray-700">
-              Secondary User Limit
-            </label>
-            <select
-              id="secondary-capacity"
-              value={primaryUser?.secondaryUserLimit || ''}
-              onChange={(e) => handleCapacityChange('secondaryUserLimit', e.target.value)}
-              disabled={capacityMutation.isPending}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
-            >
-              <option value="">Select capacity...</option>
-              {capacityOptions.map((num) => (
-                <option key={num} value={num}>
-                  {num} {num === 1 ? 'user' : 'users'}
-                </option>
-              ))}
-            </select>
-            {capacityMutation.isPending && (
-              <div className="flex items-center text-sm text-gray-500">
-                <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                Updating...
-              </div>
-            )}
-          </div>
-        </div>
-
+{/* Secondary User Capacity Dropdown */}
+<div className="space-y-2">
+  <label htmlFor="secondary-capacity" className="block text-sm font-medium text-gray-700">
+    Secondary User Limit
+  </label>
+  <select
+    id="secondary-capacity"
+    value={ capacityMutation?.data?.data?.secondaryUserLimit || ''}
+    onChange={(e) => handleCapacityChange('secondaryUserLimit', e.target.value)}
+    disabled={capacityMutation.isPending}
+    className={`w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed ${
+     capacityMutation?.data?.data?.secondaryUserLimit ? 'text-gray-900 font-medium' : 'text-gray-500'
+    }`}
+  >
+    <option value="" disabled className="text-gray-500">
+      {primaryUser?.secondaryUserLimit 
+        ? `Selected: ${primaryUser.secondaryUserLimit} ${primaryUser.secondaryUserLimit === 1 ? 'user' : 'users'}`
+        : 'Select secondary user capacity...'
+      }
+    </option>
+    {capacityOptions.map((num) => (
+      <option key={num} value={num} className="text-gray-900">
+        {num} {num === 1 ? 'user' : 'users'}
+        {primaryUser?.secondaryUserLimit === num && ' (Current)'}
+      </option>
+    ))}
+  </select>
+  {primaryUser?.secondaryUserLimit && (
+    <div className="text-xs text-purple-600 font-medium bg-purple-50 px-2 py-1 rounded">
+      ✓ Secondary user limit set to: {primaryUser.secondaryUserLimit} out of 100 maximum
+    </div>
+  )}
+  {capacityMutation.isPending && (
+    <div className="flex items-center text-sm text-orange-600">
+      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+      Updating secondary user capacity...
+    </div>
+  )}
+</div>
         {/* Current Usage Display */}
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-blue-700">Current Organizations</span>
-              <span className="text-lg font-bold text-blue-900">
-                {Array.isArray(organization) ? organization.length : (organization ? 1 : 0)}
-                {primaryUser?.organizationLimit && ` / ${primaryUser.organizationLimit}`}
-              </span>
-            </div>
-          </div>
-          
-          <div className="bg-purple-50 p-4 rounded-lg">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-purple-700">Current Secondary Users</span>
-              <span className="text-lg font-bold text-purple-900">
-                {secondaryUsers?.length || 0}
-                {primaryUser?.secondaryUserLimit && ` / ${primaryUser.secondaryUserLimit}`}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
+     
+</div>
+      
 
       {/* Tab Navigation */}
       <div className="p-8 pt-6">
@@ -375,6 +381,9 @@ const ProfileCard = () => {
         </div>
       </div>
     </div>
+    </div>
+
+    
   );
 };
 
