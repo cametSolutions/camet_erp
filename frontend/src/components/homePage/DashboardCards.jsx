@@ -148,7 +148,7 @@ const DashboardCards = ({
                   <div
                     className={`absolute -top-2 -right-2 ${card.notificationColor} text-white text-xs font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5 shadow-md border-2 border-white`}
                   >
-                    {card.notificationCount > 99 ? '99+' : card.notificationCount}
+                    {card.notificationCount}
                   </div>
                 )}
                 

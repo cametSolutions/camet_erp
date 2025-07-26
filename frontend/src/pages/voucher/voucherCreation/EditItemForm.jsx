@@ -1067,7 +1067,7 @@ function EditItemForm({ ItemsFromRedux, from, taxInclusive = false, loading }) {
                       >
                         <path
                           strokeLinecap="round"
-                          SrokeLinejoin="round"
+                          strokeLinejoin="round"
                           strokeWidth="2"
                           d="M6 18L18 6M6 6l12 12"
                         ></path>
