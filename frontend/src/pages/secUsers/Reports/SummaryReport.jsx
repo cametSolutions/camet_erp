@@ -65,11 +65,7 @@ export default function SummaryReport() {
       }
     }
   }, [])
-  // const normalizedStart = useMemo(
-  //   () => startOfDay(start).toISOString(),
-  //   [start]
-  // )
-  // const normalizedEnd = useMemo(() => endOfDay(end).toISOString(), [end])
+ 
   const { data: voucherwisesummary = [], isFetching: voucherFetching } =
     useQuery({
       queryKey: [

@@ -34,12 +34,12 @@ export const getstockDetails = async (req, res) => {
         productModel.find({ cmp_id: companyObjectId }).populate({
             path: 'GodownList.godown',
             select: 'godown'
-        }),
-        purchaseModel.find(matchCriteria),
-        creditNoteModel.find(matchCriteria),
-        salesModel.find(matchCriteria),
-        vanSaleModel.find(matchCriteria),
-        debitNoteModel.find(matchCriteria)])
+        }).populate({ path: 'category', select: 'category' }).populate({ path: 'brand', select: 'brand' }),
+        purchaseModel.find(matchCriteria).populate({ path: 'items.brand', select: 'brand' }).populate({ path: 'items.category', select: 'category' }),
+        creditNoteModel.find(matchCriteria).populate({ path: 'items.brand', select: 'brand' }).populate({ path: 'items.category', select: 'category' }),
+        salesModel.find(matchCriteria).populate({ path: 'items.brand', select: 'brand' }).populate({ path: 'items.category', select: 'category' }),
+        vanSaleModel.find(matchCriteria).populate({ path: 'items.brand', select: 'brand' }).populate({ path: 'items.category', select: 'category' }),
+        debitNoteModel.find(matchCriteria).populate({ path: 'items.brand', select: 'brand' }).populate({ path: 'items.category', select: 'category' })])
     const alldocs = [...purchase.map(d => ({ ...d.toObject(), voucherType: 'purchase' })),
     ...creditNote.map(d => ({ ...d.toObject(), voucherType: 'creditNote' })),
     ...sales.map(d => ({ ...d.toObject(), voucherType: 'sales' })),
@@ -62,6 +62,8 @@ export const getstockDetails = async (req, res) => {
                         if (!itemStats[product_name]) {
                             itemStats[product_name] = {
                                 itemName: product_name,
+                                brand: item?.brand?.brand,
+                                category: item?.category?.category,
                                 inward: { quantity: 0, amount: 0 },
                                 outward: { quantity: 0, amount: 0 },
                                 opening: { quantity: 0, rate: 0, amount: 0 },
@@ -83,6 +85,8 @@ export const getstockDetails = async (req, res) => {
                         if (!itemStats[product_name]) {
                             itemStats[product_name] = {
                                 itemName: product_name,
+                                brand: item?.brand?.brand,
+                                category: item?.category?.category,
                                 inward: { quantity: 0, amount: 0 },
                                 outward: { quantity: 0, amount: 0 },
                                 opening: { quantity: 0, rate: 0, amount: 0 },
@@ -138,14 +142,16 @@ export const getstockDetails = async (req, res) => {
             for (const it of item.GodownList) {
                 if (it.added) {
                     const { count } = it
-                    const key = `${item.product_name}|${it.batch || "Primary Batch"}|${it.godown || ""}`;
+                    const key = `${item.product_name}|${it.batch || "Primary Batch"}|${it?.godown}`;
 
                     if (doc.date >= b) {
                         if (!mapped[key]) {
                             mapped[key] = {
                                 itemName: item.product_name,
                                 batch: it?.batch || "Pimary Batch",
-                                godown: it?.godown || "",
+                                godown: it?.godown,
+                                category: it?.category?.category,
+                                brand: it?.brand?.brand,
 
                                 inward: { quantity: 0, amount: 0 },
                                 outward: { quantity: 0, amount: 0 },
@@ -173,8 +179,9 @@ export const getstockDetails = async (req, res) => {
                             mapped[key] = {
                                 itemName: item.product_name,
                                 batch: it?.batch || "Primary Batch",
-                                godown: it?.godown || "",
-
+                                godown: it?.godown,
+                                category: it?.category?.category,
+                                brand: it?.brand?.brand,
                                 inward: { quantity: 0, amount: 0 },
                                 outward: { quantity: 0, amount: 0 },
                                 inwardsome: { quantity: 0, rate: 0, amount: 0 },
@@ -216,11 +223,14 @@ export const getstockDetails = async (req, res) => {
 
     }
     const mappedArray = Object.values(mapped);
+
     product.forEach((it) => {
         let target = individualArray.find(ie => ie.itemName === it.product_name)
         if (!target) {
             target = {
                 itemName: it.product_name,
+                brand: it?.brand?.brand || null,
+                category: it?.category?.category || null,
                 inward: { quantity: 0, amount: 0, rate: 0 },
                 outward: { quantity: 0, amount: 0, rate: 0 },
                 opening: { quantity: 0, rate: 0, amount: 0 },
@@ -248,29 +258,50 @@ export const getstockDetails = async (req, res) => {
 
             }, { sum: 0, individualOpening: 0 });
 
-            target.opening.amount = result.sum * ((target.inwardsome.quantity - target.outwardsome.quantity) + result.individualOpening)
+
             target.opening.quantity = (target.inwardsome.quantity - target.outwardsome.quantity) + result.individualOpening
-            target.opening.rate = target.opening.amount / target.opening.quantity
+            target.opening.rate = result.sum
+            target.opening.amount = target.opening.rate * target.opening.quantity
+
+            target.closing.quantity = (target.inward.quantity - target.outward.quantity) + target.opening.quantity
+            target.closing.rate = target.opening.rate
+            target.closing.amount = target.closing.quantity * target.closing.rate
 
         } else {
-            const individualOpening = it.GodownList.reduce((acc, godownItem) => {
+            const result = it.GodownList.reduce((acc, godownItem) => {
+                const cost = godownItem?.purchase_cost ?? it.purchase_cost
                 const open = godownItem?.opening ?? 0
-                return acc + open
-            }, 0)
-            // fall back to old logic
-            target.opening.amount = (it.purchase_cost * it.GodownList.length) * ((target.inwardsome.quantity - target.outwardsome.quantity) + individualOpening)
-            target.opening.quantity = (target.inwardsome.quantity - target.outwardsome.quantity) + individualOpening
-            target.opening.rate = target.opening.amount / target.opening.quantity
+                acc.sum += cost
+                acc.individualOpening += open
+                return acc
 
+
+            }, { sum: 0, individualOpening: 0 })
+            // fall back to old logic
+
+
+            target.opening.quantity = (target.inwardsome.quantity - target.outwardsome.quantity) + result.individualOpening
+            target.opening.rate = result.sum
+            target.opening.amount = target.opening.rate * target.opening.quantity
+
+            target.closing.quantity = (target.inward.quantity - target.outward.quantity) + target.opening.quantity
+            target.closing.rate = target.opening.rate
+
+            target.closing.amount = target.closing.quantity * target.closing.rate
 
         }
+
         it.GodownList.forEach((item) => {
-            const keyToFind = Object.keys(mapped).find(k => k === `${it.product_name}|${item?.batch || "Primary Batch"}|${item?.godown?.godown || ""}`)
+
+            const keyToFind = Object.keys(mapped).find(k => k === `${it.product_name}|${item?.batch || "Primary Batch"}|${item?.godown?.godown}`)
             let individuaTtarget = mapped[keyToFind]
             if (!individuaTtarget) {
                 individuaTtarget = {
                     itemName: it.product_name,
-                    batch: it?.batch || "Primary Batch",
+                    batch: item?.batch || "Primary Batch",
+                    category: item?.category?.category,
+                    brand: item?.brand?.brand,
+                    godown: item?.godown?.godown,
                     inward: { quantity: 0, amount: 0, rate: 0 },
                     outward: { quantity: 0, amount: 0, rate: 0 },
                     opening: { quantity: 0, rate: 0, amount: 0 },
@@ -280,40 +311,15 @@ export const getstockDetails = async (req, res) => {
                 };
                 mappedArray.push(individuaTtarget);
             }
+            individuaTtarget.opening.quantity = (individuaTtarget.inwardsome.quantity - individuaTtarget.outwardsome.quantity) + (item?.opening ?? 0)
 
-            // check if any godownItem has purchase_cost
-            const hasPurchaseCostInGodownsForMappedArray = it.GodownList.some(
-                godownItem => godownItem.purchase_cost != null
-            );
-
-            if (hasPurchaseCostInGodownsForMappedArray) {
-                // sum up purchase_cost from each godown
-                const result = it.GodownList.reduce((acc, godownItem) => {
-                    const cost = godownItem?.purchase_cost ?? it.purchase_cost
-                    const open = godownItem?.opening ?? 0
-                    acc.sum += cost
-                    acc.individualOpening += open
-                    return acc
+            individuaTtarget.opening.rate = item?.purchase_cost ?? it.purchase_cost
+            individuaTtarget.opening.amount = individuaTtarget.opening.rate * individuaTtarget.opening.quantity
 
 
-                }, { sum: 0, individualOpening: 0 });
-
-                individuaTtarget.opening.amount = result.sum * ((target.inwardsome.quantity - target.outwardsome.quantity) + result.individualOpening)
-                individuaTtarget.opening.quantity = (target.inwardsome.quantity - target.outwardsome.quantity) + result.individualOpening
-                individuaTtarget.opening.rate = target.opening.amount / target.opening.quantity
-
-            } else {
-                const individualOpening = it.GodownList.reduce((acc, godownItem) => {
-                    const open = godownItem?.opening ?? 0
-                    return acc + open
-                }, 0)
-                // fall back to old logic
-                individuaTtarget.opening.amount = (it.purchase_cost * it.GodownList.length) * ((target.inwardsome.quantity - target.outwardsome.quantity) + individualOpening)
-                individuaTtarget.opening.quantity = (target.inwardsome.quantity - target.outwardsome.quantity) + individualOpening
-                individuaTtarget.opening.rate = target.opening.amount / target.opening.quantity
-
-
-            }
+            individuaTtarget.closing.quantity = (individuaTtarget.inward.quantity - individuaTtarget.outward.quantity) + individuaTtarget.opening.quantity
+            individuaTtarget.closing.rate = target.opening.rate
+            individuaTtarget.closing.amount = individuaTtarget.closing.rate * individuaTtarget.closing.quantity
 
         })
 
