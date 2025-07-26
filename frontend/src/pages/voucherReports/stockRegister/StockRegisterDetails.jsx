@@ -170,15 +170,15 @@ export default function StockRegisterDetails() {
 
   useEffect(() => {
     if (data) {
-      setindividualArray(data.result.individualArray)
+      setindividualArray(data?.result?.individualArray)
       const uniqueBrands = [
         ...new Set(
-          data.result.individualArray.map((p) => p.brand).filter((b) => b) // removes null, undefined, empty string
+          data?.result?.individualArray.map((p) => p.brand).filter((b) => b) // removes null, undefined, empty string
         )
       ]
       const uniqueCategory = [
         ...new Set(
-          data.result.individualArray.map((p) => p.category).filter((b) => b)
+          data?.result?.individualArray.map((p) => p.category).filter((b) => b)
         )
       ]
       setBrand(uniqueBrands)
@@ -190,24 +190,24 @@ export default function StockRegisterDetails() {
  
   useEffect(() => {
     if (selectedBrand === "All" && selectedCategory !== "All") {
-      const filtredData = data.result.individualArray.filter(
+      const filtredData = data?.result?.individualArray.filter(
         (item) => item.category === selectedCategory
       )
    
       setindividualArray(filtredData)
     } else if (selectedBrand === "All" && selectedCategory === "All") {
-      const filteredData = data.result.individualArray
+      const filteredData = data?.result?.individualArray
       setindividualArray(filteredData)
     } else if (selectedBrand !== "All" && selectedCategory === "All") {
-      const filteredData = data.result.individualArray.filter(
+      const filteredData = data?.result?.individualArray?.filter(
         (item) => item.brand === selectedBrand
       )
     
       setindividualArray(filteredData)
     } else if (selectedBrand !== "All" && selectedCategory !== "All") {
-      const filteredData = data.result.individualArray.filter(
+      const filteredData = data?.result?.individualArray?.filter(
         (item) =>
-          item.brand === selectedBrand && item.category === selectedCategory
+          item?.brand === selectedBrand && item?.category === selectedCategory
       )
       setindividualArray(filteredData)
     }
@@ -216,10 +216,10 @@ export default function StockRegisterDetails() {
  
   
   const exportToExcel = () => {
-    if (!individualArray || individualArray.length === 0) return
+    if (!individualArray || individualArray?.length === 0) return
 
     const formatDate = (dateString) =>
-      dateString ? new Date(dateString).toISOString().split("T")[0] : "N/A"
+      dateString ? new Date(dateString).toISOString()?.split("T")[0] : "N/A"
 
     const headerRow1 = [
       "Item",
