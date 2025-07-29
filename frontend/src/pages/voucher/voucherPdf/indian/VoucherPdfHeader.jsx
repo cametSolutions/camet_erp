@@ -23,7 +23,6 @@ function VoucherPdfHeader({
     }
   };
 
-
   /// to get voucher number title name
   const getTitleNumber = () => {
     if (!voucherType) return "";
@@ -61,10 +60,19 @@ function VoucherPdfHeader({
 
   return (
     <div>
+
+        {configurations?.letterHeadUrl && configurations?.showLetterHead && (
+        <img className="" src={configurations?.letterHeadUrl} alt="" />
+      )}
+      {configurations?.printTitle && (
+        <div className="font-bold text-sm md:text-xl mb-2  text-center">
+          {configurations?.printTitle || ""}
+        </div>
+      )}
       <div>
         <div className="bg-gray-500 h-2 w-full mt-1"></div>
         <div className="flex items-center justify-between bg-gray-300 px-3 py-1">
-          <div className="text-xs md:text-sm">
+          <div className="text-xs md:text-sm ">
             {getTitleNumber()} : {data?.[getVoucherNumber()]}
           </div>
           <div className="text-xs md:text-sm">
@@ -72,6 +80,8 @@ function VoucherPdfHeader({
           </div>
         </div>
       </div>
+
+    
       {configurations?.showCompanyDetails && (
         <>
           <div className="flex items-center border-t-2 py-2">
