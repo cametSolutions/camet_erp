@@ -1,10 +1,7 @@
 import TitleDiv from "../../../../components/common/TitleDiv";
 import SettingsCard from "../../../../components/common/SettingsCard";
 import { 
-  Users, 
-  Save, 
   Percent, 
-  Info, 
   FileText,
   Image,
   Hash,
@@ -59,11 +56,21 @@ const SalePrintConfiguration = () => {
           dbField: "showCompanyDetails",
         },
         {
+          title: "Show Letterhead",
+          description: "Show company letterhead on invoices",
+          icon: <Building2 />,
+          to: "/sUsers/EnableCompanyDetails",
+          active: true,
+          toggle: true,
+          toggleValue: saleConfigurations.showLetterHead || false,
+          dbField: "showLetterHead",
+        },
+        {
           title: "Company Logo & Letterhead",
           description: "Upload company logo and letterhead image",
           icon: <Image />,
           to: "/sUsers/sale/upLoadLetterHead",
-          active: true,
+          active: saleConfigurations.showLetterHead || false,
           toggle: false,
           modal: false,
           dbField: "companyLogo",
