@@ -15,7 +15,8 @@ import {
   Tag,
   Package,
   Type,
-  Coins
+  Coins,
+  ImagePlus
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
@@ -58,7 +59,7 @@ const SalePrintConfiguration = () => {
         {
           title: "Show Letterhead",
           description: "Show company letterhead on invoices",
-          icon: <Building2 />,
+          icon: <Image />,
           to: "/sUsers/EnableCompanyDetails",
           active: true,
           toggle: true,
@@ -68,7 +69,7 @@ const SalePrintConfiguration = () => {
         {
           title: "Company Logo & Letterhead",
           description: "Upload company logo and letterhead image",
-          icon: <Image />,
+          icon: <ImagePlus />,
           to: "/sUsers/sale/upLoadLetterHead",
           active: saleConfigurations.showLetterHead || false,
           toggle: false,
