@@ -66,7 +66,7 @@ const DashboardTransaction = ({ filteredData, from }) => {
         <div
           key={_id || index}
           onClick={() => handleTransactionClick(type, _id)}
-          className="w-full    bg-white cursor-pointer rounded-sm shadow-lg border border-gray-100 flex flex-col justify-between px-4 transition-all duration-150 transform hover:translate-x-[2px] ease-in-out"
+          className="w-full     bg-white cursor-pointer rounded-sm shadow-lg border border-gray-100 flex flex-col justify-between px-4 transition-all duration-150 transform hover:translate-x-[2px] ease-in-out"
         >
           <div className="flex w-full items-center">
             <div className="w-3/4">

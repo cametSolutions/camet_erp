@@ -451,87 +451,149 @@ function VoucherPdf({ data, org, contentToPrint, bank, tab }) {
                           )}
                         </tr>
 
+                        {/* Product description row - show if description available and batch disabled */}
+                        {el?.GodownList?.[0]?.description &&
+                          !el?.batchEnabled && (
+                            <tr className="bg-white text-[8px]">
+                              <td></td>
+                              <td className="pl-1 text-gray-600 max-w-4 ">
+                                {el.GodownList[0].description}
+                              </td>
+                              {/* Empty cells for other columns */}
+                              {configurations?.showHsn && <td></td>}
+                              {configurations?.showTaxPercentage && <td></td>}
+                              {configurations?.showTaxPercentage && <td></td>}
+                              {configurations?.showQuantity && <td></td>}
+                              {configurations?.showRate && <td></td>}
+                              {configurations?.showDiscount && <td></td>}
+                              <td></td>
+                              {configurations?.showStockWiseTaxAmount && (
+                                <td></td>
+                              )}
+                              {configurations?.showStockWiseTaxAmount && (
+                                <td></td>
+                              )}
+                              {configurations?.showStockWiseAmount && <td></td>}
+                            </tr>
+                          )}
+
                         {/* godown or batch */}
                         {el.hasGodownOrBatch &&
                           el.GodownList.map((godownOrBatch, idx) => {
                             return godownOrBatch.added &&
-                              godownOrBatch.batch ? (
-                              <tr key={idx} className={`bg-white text-[9px] `}>
-                                <td> </td>
-                                <td className="">
-                                  {godownOrBatch.batch && (
-                                    <p className="ml-1.5  ">
-                                      Batch: {godownOrBatch?.batch}
-                                    </p>
-                                  )}
-                                </td>
-                                {configurations?.showHsn && (
-                                  <td className=" text-black text-right pr-2  text-[8px]"></td>
-                                )}
-
-                                {configurations?.showTaxPercentage && (
-                                  <td className=" text-black text-right pr-2  text-[8px]"></td>
-                                )}
-                                {configurations?.showTaxPercentage && (
-                                  <td className=" text-black text-right pr-2  text-[8px]">
-                                    {/* {el?.cess} & {el?.addl_cess}/{el.unit} */}
-                                  </td>
-                                )}
-
-                                {configurations?.showQuantity && (
-                                  <td className="  flex justify-end pr-2">
-                                    {godownOrBatch?.count} {el?.unit}
-                                  </td>
-                                )}
-                                {configurations?.showRate && (
-                                  <td className="  text-end pr-2">
-                                    {/* {findRate(
-                                      godownOrBatch?.selectedPriceRate,
-                                      el.isTaxInclusive,
-                                      el.igst
-                                    )} */}
-
-                                    {godownOrBatch?.selectedPriceRate || 0}
-                                  </td>
-                                )}
-
-                                {configurations?.showDiscount && (
-                                  <td className=" text-black text-right pr-2">
-                                    {getDiscountDisplay(
-                                      el,
-                                      configurations,
-                                      "godownOrBatchWise",
-                                      idx
+                              godownOrBatch.batch &&
+                              el?.batchEnabled ? (
+                              <React.Fragment key={idx}>
+                                <tr className={`bg-white text-[9px] `}>
+                                  <td> </td>
+                                  <td className="">
+                                    {godownOrBatch.batch && (
+                                      <p className="ml-1.5  ">
+                                        Batch: {godownOrBatch?.batch}
+                                      </p>
                                     )}
                                   </td>
-                                )}
-
-                                <td className=" text-black text-right pr-2 text-nowrap">
-                                  {el?.hasGodownOrBatch ? (
-                                    godownOrBatch?.taxableAmount
-                                  ) : (
-                                    <td></td>
+                                  {configurations?.showHsn && (
+                                    <td className=" text-black text-right pr-2  text-[8px]"></td>
                                   )}
-                                </td>
 
-                                {configurations?.showStockWiseTaxAmount && (
-                                  <td className="  text-end pr-2">
-                                    {godownOrBatch?.igstAmount || 0}
-                                  </td>
-                                )}
-                                {configurations?.showStockWiseTaxAmount && (
-                                  <td className="  text-end pr-2">
-                                    {godownOrBatch?.totalCessAmount || 0}
-                                    {}
-                                  </td>
-                                )}
+                                  {configurations?.showTaxPercentage && (
+                                    <td className=" text-black text-right pr-2  text-[8px]"></td>
+                                  )}
+                                  {configurations?.showTaxPercentage && (
+                                    <td className=" text-black text-right pr-2  text-[8px]">
+                                      {/* {el?.cess} & {el?.addl_cess}/{el.unit} */}
+                                    </td>
+                                  )}
 
-                                {configurations?.showStockWiseAmount && (
-                                  <td className=" text-end pr-1">
-                                    <p>{godownOrBatch.individualTotal ?? 0}</p>
+                                  {configurations?.showQuantity && (
+                                    <td className="  flex justify-end pr-2">
+                                      {godownOrBatch?.count} {el?.unit}
+                                    </td>
+                                  )}
+                                  {configurations?.showRate && (
+                                    <td className="  text-end pr-2">
+                                      {/* {findRate(
+                                        godownOrBatch?.selectedPriceRate,
+                                        el.isTaxInclusive,
+                                        el.igst
+                                      )} */}
+
+                                      {godownOrBatch?.selectedPriceRate || 0}
+                                    </td>
+                                  )}
+
+                                  {configurations?.showDiscount && (
+                                    <td className=" text-black text-right pr-2">
+                                      {getDiscountDisplay(
+                                        el,
+                                        configurations,
+                                        "godownOrBatchWise",
+                                        idx
+                                      )}
+                                    </td>
+                                  )}
+
+                                  <td className=" text-black text-right pr-2 text-nowrap">
+                                    {el?.hasGodownOrBatch ? (
+                                      godownOrBatch?.taxableAmount
+                                    ) : (
+                                      <td></td>
+                                    )}
                                   </td>
+
+                                  {configurations?.showStockWiseTaxAmount && (
+                                    <td className="  text-end pr-2">
+                                      {godownOrBatch?.igstAmount || 0}
+                                    </td>
+                                  )}
+                                  {configurations?.showStockWiseTaxAmount && (
+                                    <td className="  text-end pr-2">
+                                      {godownOrBatch?.totalCessAmount || 0}
+                                      {}
+                                    </td>
+                                  )}
+
+                                  {configurations?.showStockWiseAmount && (
+                                    <td className=" text-end pr-1">
+                                      <p>
+                                        {godownOrBatch.individualTotal ?? 0}
+                                      </p>
+                                    </td>
+                                  )}
+                                </tr>
+
+                                {/* Description row for batch - show under batch */}
+                                {godownOrBatch?.description && (
+                                  <tr className="bg-white text-[9px]">
+                                    <td></td>
+                                    <td className="pl-2 text-gray-600 text-[8px] max-w-4 ">
+                                      {godownOrBatch.description}
+                                    </td>
+                                    {/* Empty cells for other columns */}
+                                    {configurations?.showHsn && <td></td>}
+                                    {configurations?.showTaxPercentage && (
+                                      <td></td>
+                                    )}
+                                    {configurations?.showTaxPercentage && (
+                                      <td></td>
+                                    )}
+                                    {configurations?.showQuantity && <td></td>}
+                                    {configurations?.showRate && <td></td>}
+                                    {configurations?.showDiscount && <td></td>}
+                                    <td></td>
+                                    {configurations?.showStockWiseTaxAmount && (
+                                      <td></td>
+                                    )}
+                                    {configurations?.showStockWiseTaxAmount && (
+                                      <td></td>
+                                    )}
+                                    {configurations?.showStockWiseAmount && (
+                                      <td></td>
+                                    )}
+                                  </tr>
                                 )}
-                              </tr>
+                              </React.Fragment>
                             ) : null;
                           })}
                       </React.Fragment>

@@ -140,7 +140,7 @@ function AddItemTile({
                                 className="flex justify-between items-center mt-5 flex-1 "
                               >
                                 <div className="w-3/5 md:w-2/5 font-semibold text-gray-500 text-xs flex flex-col gap-2">
-                                  {godownOrBatch.batch ? (
+                                  {godownOrBatch.batch && el?.batchEnabled ? (
                                     <div className="flex justify-between">
                                       <p className="text-nowrap text-violet-500 text-bold">
                                         Batch: {godownOrBatch.batch}
