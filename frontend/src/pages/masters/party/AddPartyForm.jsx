@@ -6,7 +6,6 @@ import { statesData } from "../../../../constants/states.js";
 import { countries } from "../../../../constants/countries.js";
 import useFetch from "../../../customHook/useFetch.jsx";
 
-
 function AddPartyForm({
   submitHandler,
   partyDetails = {},
@@ -31,6 +30,7 @@ function AddPartyForm({
   const [country, setCountry] = useState("India");
   const [state, setState] = useState("Kerala");
   const [pin, setPin] = useState("");
+  const [isHotelAgent, setIsHotelAgent] = useState(false); 
 
   const selectedOrganization = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
@@ -44,7 +44,6 @@ function AddPartyForm({
   );
 
   const validAccountGroups = ["Sundry Creditors", "Sundry Debtors"];
-
 
   useEffect(() => {
     const loading = accountGroupLoading || subGroupLoading;
@@ -71,6 +70,7 @@ function AddPartyForm({
         country,
         state,
         pin,
+        isHotelAgent
       } = partyDetails;
 
       setAccountGroup(accountGroup?._id);
@@ -89,6 +89,7 @@ function AddPartyForm({
       setCountry(country);
       setState(state);
       setPin(pin);
+      setIsHotelAgent(isHotelAgent);
     }
   }, [partyDetails]);
 
@@ -144,6 +145,7 @@ function AddPartyForm({
       state,
       pin,
       subGroup,
+      isHotelAgent
     };
 
     submitHandler(formData);
@@ -166,6 +168,7 @@ function AddPartyForm({
                 <h6 className="text-blueGray-400 text-sm mt-3 mb-6 font-bold uppercase">
                   Add New Party Details
                 </h6>
+
                 <div className="flex flex-wrap">
                   <div className="w-full lg:w-6/12 px-4">
                     <div className="relative w-full mb-3">
@@ -273,6 +276,25 @@ function AddPartyForm({
                       />
                     </div>
                   </div>
+                  {(selectedOrganization?.industry == 6 || selectedOrganization?.industry == 7) && (
+                      <div className="w-full lg:w-6/12 px-4">
+                        <div className="relative w-full mb-3">
+                          <label
+                            className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+                            htmlFor="hotel-agent"
+                          >
+                            Hotel Agent
+                          </label>
+                          <input
+                            type="checkbox"
+                            id="hotel-agent"
+                            checked={isHotelAgent}
+                            onChange={(e) => setIsHotelAgent(e.target.checked)}
+                            className="form-checkbox h-5 w-5 text-blue-600"
+                          />
+                        </div>
+                      </div>
+                    )}
                 </div>
 
                 <div className="flex flex-wrap">

@@ -175,7 +175,7 @@ const HotelDashboard = () => {
             </button>
             <button
               className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold px-3 py-1 rounded text-sm"
-              onClick={() => navigate("/sUsers/checkOut")}
+              onClick={() => navigate("/sUsers/checkInList")}
             >
               Check Out
             </button>

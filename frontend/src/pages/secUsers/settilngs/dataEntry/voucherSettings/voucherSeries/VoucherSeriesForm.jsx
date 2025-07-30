@@ -24,6 +24,7 @@ const VoucherSeriesForm = () => {
   const navigate = useNavigate();
 
   const { from: voucherType, series = {}, mode = "add" } = location.state;
+  console.log(voucherType)
 
   useEffect(() => {
     if (mode === "edit") {

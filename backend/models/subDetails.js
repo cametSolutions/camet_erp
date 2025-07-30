@@ -19,6 +19,7 @@ const brandSchema = new mongoose.Schema({
 const categorySchema = new mongoose.Schema({
   category: { type: String, required: true },
   category_id: { type: String, required: true, index: true }, // Add index: true here
+  under: { type: String},
   cmp_id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Organization",

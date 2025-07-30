@@ -1,6 +1,6 @@
 import SettingsCard from "@/components/common/SettingsCard";
 import TitleDiv from "@/components/common/TitleDiv";
-
+import { GiStorkDelivery } from "react-icons/gi";
 import {
   TbFileInvoice,
   TbShoppingCart,
@@ -88,6 +88,14 @@ const VoucherSeriesSettings = () => {
       to: "/sUsers/voucherSeriesList",
       active: true,
       from: "stockTransfer",
+    },
+     {
+      title: "Delivery Notes",
+      description: "Configure voucher series for Delivery Notes",
+      icon: <GiStorkDelivery />,
+      to: "/sUsers/voucherSeriesList",
+      active: true,
+      from: "deliveryNote",
     },
   ];
 

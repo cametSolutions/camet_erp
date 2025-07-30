@@ -8,6 +8,7 @@ import api from "@/api/api";
 function CustomerSearchInputBox({ 
   onSelect = () => {}, 
   placeholder = "Search and select a party...",
+  isAgent=false,
   selectedParty = null,
   className = "",
   disabled = false 
@@ -43,7 +44,7 @@ function CustomerSearchInputBox({
     setError(null);
     try {
       const res = await api.get(`/api/sUsers/PartyList/${cmp_id}`, {
-        params: { page: pageNum, limit: PAGE_SIZE, search: searchTerm, voucher: getVoucherType() },
+        params: { page: pageNum, limit: PAGE_SIZE, search: searchTerm, voucher: getVoucherType(),isAgent:isAgent },
         withCredentials: true,
       });
       const newParties = res.data.partyList;
@@ -55,7 +56,7 @@ function CustomerSearchInputBox({
     } finally {
       setLoading(false);
     }
-  }, [cmp_id, location.pathname]);
+  }, [cmp_id, location.pathname ]);
 
   const handleSearch = useCallback((term) => {
     setSearch(term);

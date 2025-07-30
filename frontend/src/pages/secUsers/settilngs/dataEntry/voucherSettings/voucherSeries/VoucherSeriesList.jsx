@@ -18,6 +18,8 @@ function VoucherSeriesList() {
   const navigate = useNavigate();
 
   const voucherType = location?.state?.from;
+ 
+
 
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id

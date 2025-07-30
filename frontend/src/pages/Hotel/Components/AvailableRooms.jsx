@@ -5,8 +5,9 @@ import { useLocation } from "react-router-dom";
 import api from "@/api/api";
 import { Users, Utensils, Trash2 } from "lucide-react";
 import { taxCalculator } from "../Helper/taxCalculator";
+import { GrFormAdd } from "react-icons/gr";
 
-
+// Reorganized & corrected AvailableRooms component with improved tax logic
 function AvailableRooms({
   onSelect = () => {},
   placeholder = "Search and select a party...",
@@ -16,6 +17,7 @@ function AvailableRooms({
   selectedRoomData,
   sendToParent,
   formData,
+  selectedRoomId,
 }) {
   const [rooms, setRooms] = useState([]);
   const [search, setSearch] = useState("");
@@ -27,16 +29,64 @@ function AvailableRooms({
   const [hasMore, setHasMore] = useState(true);
   const [bookings, setBookings] = useState([]);
   const [totalAmount, setTotalAmount] = useState(0);
-  const [taxCalculationRoomId, setTaxCalculationRoomId] = useState(null);
   const [pendingRoomId, setPendingRoomId] = useState(null);
+  const [pendingRoomQueue, setPendingRoomQueue] = useState([]);
 
   const debounceTimerRef = useRef(null);
   const dropdownRef = useRef(null);
   const PAGE_SIZE = 50;
 
+  useEffect(() => {
+    
+    if (formData?.selectedRooms?.length > 0) {
+      setBookings(formData?.selectedRooms);
+    }
+  }, [formData?.selectedRooms]);
+
+  useEffect(() => {
+    if (!formData?.additionalPaxDetails && !formData?.foodPlan) return;
+    if (!selectedRoomId) return;
+    const bookingData = bookings?.find(
+      (item) => item.roomId === selectedRoomId
+    );
+
+    const recalculateTax = async () => {
+      if (bookingData) {
+        const taxCalculation = await calculateTax(bookingData);
+        setBookings((prev) =>
+          prev.map((b) => (b.roomId === selectedRoomId ? taxCalculation : b))
+        );
+      }
+    };
+
+    recalculateTax();
+  }, [formData?.additionalPaxDetails, formData?.foodPlan, selectedRoomId]);
+
+useEffect(() => {
+  console.log(formData?.bookingType);
+  if (!formData?.bookingType) return;
+
+  const handleBookingTypeChange = async () => {
+    if (bookings?.length > 0) {
+      const updatedBookings = await Promise.all(
+        bookings.map(async (booking) => {
+          const taxCalculation = await calculateTax(booking);
+          return taxCalculation;
+        })
+      );
+      console.log("updatedBookings", updatedBookings);
+      setBookings(updatedBookings);
+    }
+  };
+
+  handleBookingTypeChange();
+}, [formData?.bookingType]);
+
+
   const { _id: cmp_id, configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
+
   const location = useLocation();
 
   const fetchRooms = useCallback(
@@ -49,7 +99,7 @@ function AvailableRooms({
             page: pageNum,
             limit: PAGE_SIZE,
             search: searchTerm,
-            type: formData?.roomType ? formData?.roomType : "All",
+            type: formData?.roomType || "All",
           },
           withCredentials: true,
         });
@@ -58,7 +108,7 @@ function AvailableRooms({
         setHasMore(newRooms.length === PAGE_SIZE);
       } catch (err) {
         console.error(err);
-        setError("Failed to load customers.");
+        setError("Failed to load rooms.");
       } finally {
         setLoading(false);
       }
@@ -66,87 +116,199 @@ function AvailableRooms({
     [cmp_id, location.pathname, formData?.roomType]
   );
 
-  console.log("selectedRoomData", formData);
-
-  // Helper function to recalculate booking totals
   const recalculateBookingTotals = useCallback((booking) => {
-    const baseAmount = Number(booking.priceLevelRate || 0) * Number(booking.stayDays || 0);
+    const baseAmount =
+      Number(booking.priceLevelRate || 0) * Number(booking.stayDays || 0);
     return {
       ...booking,
       totalAmount: baseAmount,
     };
   }, []);
 
-  // useEffect used to fetch calculate the room details
-useEffect(() => {
-  const calculateTax = async () => {
-    if (!pendingRoomId) return;
+  const calculateTax = useCallback(
+    async (booking) => {
+      if (!booking) return booking;
+      const updatedRoom = recalculateBookingTotals(booking);
+      try {
+        const taxResponse = await taxCalculator(
+          updatedRoom,
+          configurations[0]?.addRateWithTax?.sale,
+          formData,
+          booking.roomId
+        );
 
-    const selectedRoom = bookings.find(item => item.roomId === pendingRoomId);
-    if (!selectedRoom) return;
+        return {
+          ...updatedRoom,
+          amountAfterTax: taxResponse?.amountWithTax || updatedRoom.totalAmount,
+          amountWithOutTax: taxResponse?.amountWithOutTax,
+          taxPercentage: taxResponse?.taxRate || 0,
+          foodPlanTaxRate: taxResponse?.foodPlanTaxRate || 0,
+          additionalPaxAmount: taxResponse?.additionalPaxAmount || 0,
+          foodPlanAmount: taxResponse?.foodPlanAmount || 0,
+          taxAmount: taxResponse?.taxAmount || 0,
+          additionalPaxAmountWithTax:
+            taxResponse?.additionalPaxAmountWithTax || 0,
+          additionalPaxAmountWithOutTax:
+            taxResponse?.additionalPaxAmountWithOutTax || 0,
+          foodPlanAmountWithTax: taxResponse?.foodPlanAmountWithTax || 0,
+          foodPlanAmountWithOutTax: taxResponse?.foodPlanAmountWithOutTax || 0,
+          baseAmount: taxResponse?.baseAmount || 0,
+          baseAmountWithTax: taxResponse?.baseAmountWithTax || 0,
+        };
+      } catch (err) {
+        console.error("Tax calculation failed:", err);
+        return {
+          ...updatedRoom,
+          amountAfterTax: updatedRoom.totalAmount,
+          taxPercentage: 0,
+          additionalPaxAmount: 0,
+          foodPlanAmount: 0,
+        };
+      }
+    },
+    [formData, configurations, recalculateBookingTotals]
+  );
 
-    const updatedRoom = recalculateBookingTotals(selectedRoom);
+  useEffect(() => {
+    if (pendingRoomQueue.length === 0) return;
 
-    const taxResponse = await taxCalculator(
-      updatedRoom,
-      configurations[0]?.addRateWithTax?.saleOrder,
-      formData,
-      pendingRoomId
-    );
+    const roomIdToUpdate = pendingRoomQueue[0];
+    const roomToUpdate = bookings.find((b) => b.roomId === roomIdToUpdate);
 
-    if (taxResponse) {
-      setBookings(prev =>
-        prev.map(booking => {
-          if (booking.roomId === pendingRoomId) {
-            const recalculatedBooking = recalculateBookingTotals(booking);
-            return {
-              ...recalculatedBooking,
-              amountAfterTax: taxResponse.amountWithTax || recalculatedBooking.totalAmount,
-              taxPercentage: taxResponse.taxRate || 0,
-              additionalPaxAmount: taxResponse.additionalPaxAmount || 0,
-              foodPlanAmount: taxResponse.foodPlanAmount || 0,
-            };
-          }
-          return booking;
-        })
-      );
+    if (!roomToUpdate) {
+      setPendingRoomQueue((prev) => prev.slice(1));
+      return;
     }
 
-    setPendingRoomId(null); // Reset after calculation
-  };
+    let isMounted = true;
 
-  calculateTax();
-}, [bookings, pendingRoomId, configurations, formData, recalculateBookingTotals]);
+    (async () => {
+      const updated = await calculateTax(roomToUpdate);
+      if (!isMounted) return;
+      setBookings((prev) =>
+        prev.map((b) => (b.roomId === roomIdToUpdate ? updated : b))
+      );
+      setPendingRoomQueue((prev) => prev.slice(1));
+    })();
 
+    return () => {
+      isMounted = false;
+    };
+  }, [pendingRoomQueue, bookings]);
 
-  // // useEffect used to calculate the total amount
   useEffect(() => {
     if (bookings.length > 0) {
-      let total = bookings.reduce((acc, curr) => {
-        return acc + Number(curr.amountAfterTax || curr.totalAmount || 0);
-      }, 0);
-
+      const total = bookings.reduce(
+        (acc, b) => acc + Number(b.amountAfterTax || b.totalAmount || 0),
+        0
+      );
       setTotalAmount(total);
       sendToParent(bookings, total);
-      console.log(pendingRoomId);
-      if (pendingRoomId) {
-        setTaxCalculationRoomId(pendingRoomId);
-        setPendingRoomId(null);
-      }
     } else {
       setTotalAmount(0);
       sendToParent([], 0);
     }
-  }, [bookings,pendingRoomId]);
+  }, [bookings]);
+
+  const handlePriceLevelChange = (e, roomId) => {
+    const selectedLevelId = e.target.value;
+    setBookings((prev) =>
+      prev.map((booking) => {
+        if (booking.roomId !== roomId) return booking;
+        const level = booking.priceLevel.find((p) => p._id === selectedLevelId);
+        const newRate = level?.priceRate || booking.roomType?.roomRent || 0;
+        return {
+          ...booking,
+          selectedPriceLevel: selectedLevelId,
+          priceLevelRate: newRate,
+          totalAmount: Number(booking.stayDays || 0) * Number(newRate),
+        };
+      })
+    );
+    // setPendingRoomId(roomId);
+  };
+
+  const handleDaysChange = (e, roomId) => {
+    const newDays = Number(e.target.value) || 0;
+    setBookings((prev) =>
+      prev.map((b) =>
+        b.roomId === roomId
+          ? { ...b, stayDays: newDays, totalAmount: newDays * b.priceLevelRate }
+          : b
+      )
+    );
+ setPendingRoomQueue((prev) =>
+      prev.includes(roomId) ? prev : [...prev, roomId]
+    );
+  };
+
+  const handlePriceLevelRateChange = (e, roomId) => {
+    const newRate = e.target.value;
+    console.log(newRate);
+    setBookings((prev) =>
+      prev.map((b) =>
+        b.roomId === roomId
+          ? { ...b, priceLevelRate: newRate, totalAmount: newRate * b.stayDays }
+          : b
+      )
+    );
+    setPendingRoomQueue((prev) =>
+      prev.includes(roomId) ? prev : [...prev, roomId]
+    );
+  };
+
+  const handlePaxChange = (e, roomId) => {
+    const newPax = Number(e.target.value) || 0;
+    setBookings((prev) =>
+      prev.map((b) => (b.roomId === roomId ? { ...b, pax: newPax } : b))
+    );
+    setPendingRoomId(roomId);
+  };
+
+  const handleDelete = (roomId) => {
+    setBookings((prev) => prev.filter((b) => b.roomId !== roomId));
+  };
+
+  const handleSelect = async (room) => {
+    const defaultRate =
+      room?.priceLevel[0]?.priceRate || room?.roomType?.roomRent || 0;
+    const stayDays = formData?.stayDays || 1;
+    console.log(room);
+    let booking = {
+      roomId: room._id,
+      roomName: room.roomName,
+      priceLevel: room.priceLevel || [],
+      selectedPriceLevel: room.priceLevel[0]?.priceLevel?._id || room.roomType?._id,
+      roomType: room.roomType,
+      pax: 2,
+      priceLevelRate: defaultRate,
+      stayDays,
+      hsnDetails: room.hsn,
+      totalAmount: defaultRate * stayDays,
+    };
+    booking = await calculateTax(booking);
+    setBookings((prev) =>
+      prev.some((b) => b.roomId === booking.roomId) ? prev : [...prev, booking]
+    );
+    setSelectedValue(room);
+    setIsOpen(false);
+    setSearch("");
+    onSelect(room);
+  };
+
+  const handleClear = (e) => {
+    e.stopPropagation();
+    setSelectedValue(null);
+    setSearch("");
+    onSelect(null);
+  };
 
   const handleSearch = useCallback(
     (term) => {
       setSearch(term);
       setPage(1);
       clearTimeout(debounceTimerRef.current);
-      debounceTimerRef.current = setTimeout(() => {
-        fetchRooms(1, term);
-      }, 300);
+      debounceTimerRef.current = setTimeout(() => fetchRooms(1, term), 300);
     },
     [fetchRooms]
   );
@@ -164,64 +326,6 @@ useEffect(() => {
     if (scrollHeight - scrollTop <= clientHeight + 50) loadMore();
   };
 
-  const handleSelect = async (party) => {
-    const defaultRate = party?.priceLevel[0]?.priceRate || party?.roomType?.roomRent || 0;
-    const stayDays = formData.stayDays || 1;
-    
-    let bookingObject = {
-      roomId: party._id,
-      roomName: party.roomName,
-      priceLevel: party?.priceLevel || [],
-      selectedPriceLevel: party?.priceLevel[0]?._id || party?.roomType?._id,
-      roomType: party?.roomType,
-      pax: 2,
-      priceLevelRate: defaultRate,
-      stayDays: stayDays,
-      hsnDetails: party.hsn,
-      totalAmount: Number(defaultRate) * Number(stayDays),
-    };
-
-    try {
-      let taxResponse = await taxCalculator(
-        bookingObject,
-        configurations[0]?.addRateWithTax?.saleOrder,
-        formData
-      );
-      
-      bookingObject.amountAfterTax = taxResponse?.amountWithTax || bookingObject.totalAmount;
-      bookingObject.taxPercentage = taxResponse?.taxRate || 0;
-      bookingObject.additionalPaxAmount = taxResponse?.additionalPaxAmount || 0;
-      bookingObject.foodPlanAmount = taxResponse?.foodPlanAmount || 0;
-    } catch (error) {
-      console.error("Tax calculation failed:", error);
-      bookingObject.amountAfterTax = bookingObject.totalAmount;
-      bookingObject.taxPercentage = 0;
-      bookingObject.additionalPaxAmount = 0;
-      bookingObject.foodPlanAmount = 0;
-    }
-
-    setBookings((prev) => {
-      const alreadyExists = prev?.some(
-        (booking) => booking.roomId === bookingObject.roomId
-      );
-      if (alreadyExists) return prev;
-      return [...prev, bookingObject];
-    });
-    console.log(bookings);
-
-    setSelectedValue(party);
-    setIsOpen(false);
-    setSearch("");
-    onSelect(party);
-  };
-
-  const handleClear = (e) => {
-    e.stopPropagation();
-    setSelectedValue(null);
-    setSearch("");
-    onSelect(null);
-  };
-
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -232,132 +336,12 @@ useEffect(() => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    setSelectedValue(selectedParty);
-  }, [selectedParty]);
-
+  useEffect(() => setSelectedValue(selectedParty), [selectedParty]);
   useEffect(() => {
     if (cmp_id) fetchRooms(1);
   }, [cmp_id, fetchRooms]);
-
   useEffect(() => () => clearTimeout(debounceTimerRef.current), []);
 
-  // function used to update total amount based on priceLevel
-  const handlePriceLevelChange = async (e, roomId) => {
-    let data = bookings.find((item) => item.roomId === roomId);
-    if (data) {
-      const selectedPriceLevel = e.target.value;
-      let newRate;
-      
-      // Find the selected price level rate
-      if (selectedPriceLevel === data?.roomType?._id) {
-        newRate = data?.roomType?.roomRent || 0;
-      } else {
-        const selectedLevel = data.priceLevel.find((item) => item?._id === selectedPriceLevel);
-        newRate = selectedLevel?.priceRate || data?.roomType?.roomRent || 0;
-      }
-
-      setBookings((prev) => {
-        const updatedBookings = prev.map((booking) => {
-          if (booking.roomId === roomId) {
-            const updatedBooking = {
-              ...booking,
-              selectedPriceLevel: selectedPriceLevel,
-              priceLevelRate: newRate,
-              totalAmount: Number(booking?.stayDays || 0) * Number(newRate),
-            };
-            return updatedBooking;
-          }
-          return booking;
-        });
-        return updatedBookings;
-      });
-
-      setPendingRoomId(roomId);
-    }
-  };
-
-  // function used to handle stay days
-  const handleDaysChange = (e, roomId) => {
-    let data = bookings.find((item) => item.roomId === roomId);
-    if (data) {
-      const newDays = Number(e.target.value) || 0;
-      
-      setBookings((prev) => {
-        const updatedBookings = prev.map((booking) => {
-          if (booking.roomId === roomId) {
-            return {
-              ...booking,
-              stayDays: newDays,
-              totalAmount: Number(booking?.priceLevelRate || 0) * newDays,
-            };
-          }
-          return booking;
-        });
-        console.log(updatedBookings);
-        return updatedBookings;
-      });
-    }
-      setPendingRoomId(roomId);
-  };
-
-  const handlePriceLevelRateChange = (e, roomId) => {
-    let data = bookings.find((item) => item.roomId === roomId);
-    if (data) {
-      const newRate = Number(e.target.value) || "";
-      console.log(newRate);
-      setBookings((prev) => {
-        const updatedBookings = prev.map((booking) => {
-          if (booking.roomId === roomId) {
-            return {
-              ...booking,
-              priceLevelRate: newRate,
-              totalAmount: Number(booking?.stayDays || 0) * newRate,
-            };
-          }
-          return booking;
-        });
-
-        return updatedBookings;
-      });
-    }
-          setPendingRoomId(roomId);
-  };
-
-  const handlePaxChange = (e, roomId) => {
-    let data = bookings.find((item) => item.roomId === roomId);
-    if (data) {
-      const newPax = Number(e.target.value) || 0;
-      
-      setBookings((prev) => {
-        const updatedBookings = prev.map((booking) => {
-          if (booking.roomId === roomId) {
-            return {
-              ...booking,
-              pax: newPax,
-            };
-          }
-          return booking;
-        });
-
-        return updatedBookings;
-      });
-    }
-    // Trigger tax recalculation when pax changes as it might affect additional charges
-        setPendingRoomId(roomId);
-  };
-
-  // function used to delete room from table
-  const handleDelete = (roomId) => {
-    setBookings((prev) => {
-      const updatedBookings = prev.filter(
-        (booking) => booking.roomId !== roomId
-      );
-      return updatedBookings;
-    });
-  };
-
-  console.log(formData);
 
   return (
     <>
@@ -492,12 +476,10 @@ useEffect(() => {
                     <td className="px-4 py-3 whitespace-nowrap text-center font-medium text-blue-600">
                       {index + 1}
                     </td>
-
                     <td className="px-4 py-3 whitespace-nowrap text-center font-medium text-emerald-600 flex-1 ">
                       <p>{booking.roomName}</p>
                       <p className="text-red-500">{booking.roomType?.brand}</p>
                     </td>
-
                     <td className="px-4 py-3 whitespace-nowrap ">
                       {booking.priceLevel && booking.priceLevel.length > 0 ? (
                         <select
@@ -512,7 +494,8 @@ useEffect(() => {
                               key={priceLevel?._id}
                               value={priceLevel?._id}
                             >
-                              {priceLevel?.priceLevel?.pricelevel || priceLevel?.pricelevel}
+                              {priceLevel?.priceLevel?.pricelevel ||
+                                priceLevel?.pricelevel}
                             </option>
                           ))}
                           {booking?.roomType && (
@@ -525,11 +508,10 @@ useEffect(() => {
                         <p className="text-red-500">No Price Level</p>
                       )}
                     </td>
-
                     <td className="px-4 py-3 whitespace-nowrap">
                       <input
                         type="number"
-                        value={booking.priceLevelRate }
+                        value={booking.priceLevelRate}
                         onChange={(e) =>
                           handlePriceLevelRateChange(e, booking.roomId)
                         }
@@ -538,7 +520,6 @@ useEffect(() => {
                         className="w-24 px-3 py-2 border border-red-300 rounded-md font-medium text-red-600 bg-red-50 text-sm text-center focus:outline-none focus:ring-2 focus:ring-red-500 transition-all duration-200"
                       />
                     </td>
-
                     <td className="px-4 py-3 whitespace-nowrap">
                       <input
                         type="number"
@@ -557,17 +538,33 @@ useEffect(() => {
                         className="w-28 px-3 py-2 border border-emerald-300 rounded-md font-bold text-emerald-600 bg-emerald-50 text-sm text-center focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-200"
                       />
                     </td>
+                    <td className="px-4 py-3 whitespace-nowrap flex-1">
+                      <div className="flex flex-col items-center">
+                        {/* Amount with Tax */}
+                        <span className="w-28 px-3 py-2 border border-emerald-300 rounded-md font-bold text-emerald-600 bg-emerald-50 text-sm text-center">
+                          ₹{Number(booking.totalAmount || 0).toFixed(2)}{" "}
+                        </span>
 
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <span className="w-28 px-3 py-2 border border-emerald-300 rounded-md font-bold text-emerald-600 bg-emerald-50 text-sm text-center inline-block">
-                        {Number(booking.totalAmount || 0).toFixed(2)}
-                      </span>
+                        {/* Amount without Tax */}
+                        {configurations[0]?.addRateWithTax?.sale && (
+                          <span className="px-3   text-gray-700 text-xs text-center">
+                            ₹
+                            {(
+                              Number(booking.totalAmount || 0) /
+                              (1 + (booking.taxPercentage || 0) / 100)
+                            ).toFixed(2) } (Exc)
+                          </span>
+                        )}
+                      </div>
                     </td>
+
                     <td className="px-4 py-3 whitespace-nowrap text-emerald-600 font-bold text-center">
                       {Number(booking.taxPercentage || 0).toFixed(1)}%
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-emerald-600 font-bold text-center">
-                      {Number(booking.amountAfterTax || booking.totalAmount || 0).toFixed(2)}
+                      {Number(
+                        booking.amountAfterTax || booking.totalAmount || 0
+                      ).toFixed(2)}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-emerald-600 font-bold text-center">
                       {formData?.additionalPaxDetails?.reduce((acc, item) => {
@@ -597,7 +594,11 @@ useEffect(() => {
                             <Users className="w-4 h-4 mr-1" />
                             Add Pax
                           </button>
-                          <p>{Number(booking?.additionalPaxAmount || 0).toFixed(2)}</p>
+                          <p>
+                            {Number(
+                              booking?.additionalPaxAmountWithOutTax || 0
+                            ).toFixed(2)}
+                          </p>
                         </div>
                         <div className="text-center font-bold text-blue-700">
                           <button
@@ -610,7 +611,11 @@ useEffect(() => {
                             <Utensils className="w-4 h-4 mr-1" />
                             Food Plan
                           </button>
-                          <p>{Number(booking?.foodPlanAmount || 0).toFixed(2)}</p>
+                          <p>
+                            {Number(
+                              booking?.foodPlanAmountWithOutTax || 0
+                            ).toFixed(2)}
+                          </p>
                         </div>
                         <div className="text-center">
                           <button
@@ -627,7 +632,10 @@ useEffect(() => {
                   </tr>
                 ))}
                 <tr className="bg-gray-100 font-bold">
-                  <td colSpan={6} className="px-4 py-3 text-right font-bold text-gray-700">
+                  <td
+                    colSpan={6}
+                    className="px-4 py-3 text-right font-bold text-gray-700"
+                  >
                     Total Amount:
                   </td>
                   <td className="px-4 py-3 text-center font-bold text-blue-700">
@@ -640,7 +648,9 @@ useEffect(() => {
                         <span>Pax ₹{Number(formData.paxTotal).toFixed(2)}</span>
                       )}
                       {formData?.foodPlanTotal && (
-                        <span>Food ₹{Number(formData.foodPlanTotal).toFixed(2)}</span>
+                        <span>
+                          Food ₹{Number(formData.foodPlanTotal).toFixed(2)}
+                        </span>
                       )}
                     </div>
                   </td>

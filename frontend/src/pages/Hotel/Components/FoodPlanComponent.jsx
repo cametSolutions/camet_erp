@@ -40,20 +40,18 @@ function FoodPlanComponent({
   useEffect(() => {
     if (
       formData?.foodPlan?.length > 0 &&
-      selectedRoomId &&
-      formData.foodPlan !== []
+      selectedRoomId 
     ) {
       let filteredData = formData.foodPlan?.filter(
         (item) => item.roomId == selectedRoomId
       );
-      if (filteredData.length > 0 && filteredData !== []) {
+      if (filteredData.length > 0 ) {
         setFoodPlan(filteredData);
       }
     }
   }, [selectedRoomId]);
   const handlePaxChange = (index, value) => {
     let specificData = foodPlanData?.find((item) => item._id === value);
-    console.log(selectedRoomId);
     const updatedRows = [...foodPlan];
     updatedRows[index].foodPlan = specificData.foodPlan;
     updatedRows[index].foodPlanId = specificData._id;

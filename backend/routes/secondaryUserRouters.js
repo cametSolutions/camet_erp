@@ -57,7 +57,8 @@ import { createVoucherSeries, getSeriesByVoucher, deleteVoucherSeriesById, editV
 //hotel controller
 import {saveAdditionalPax , getAdditionalPax ,updateAdditionalPax , deleteAdditionalPax,saveVisitOfPurpose,getVisitOfPurpose,
     updateVisitOfPurpose,deleteVisitOfPurpose,saveIdProof,getIdProof,updateIdProof , deleteIdProof, saveFoodPlan , getFoodPlan
-    ,updateFoodPlan,deleteFoodPlan,addRoom,getRooms,editRoom ,deleteRoom,getAllRooms,roomBooking} from '../controllers/hotelController.js'
+    ,updateFoodPlan,deleteFoodPlan,addRoom,getRooms,editRoom ,deleteRoom,getAllRooms,roomBooking,getBookings,deleteBooking,updateBooking,
+fetchAdvanceDetails} from '../controllers/hotelController.js'
 
 router.post('/login',login)
 router.post('/sendOtp',sendOtp)
@@ -300,7 +301,7 @@ router.post('/addAccountGroupIdToOutstanding', addAccountGroupIdToOutstanding)
 //// Hostel routes
 router.post('/saveAdditionalPax/:cmp_id',authSecondary,saveAdditionalPax)
 router.get('/getAdditionalPax/:cmp_id',authSecondary,getAdditionalPax)
-router.put('/updateAdditionalPax/:cmp_id',authSecondary,updateAdditionalPax)
+router.put('/updateAdditionalPax',authSecondary,updateAdditionalPax)
 router.delete('/deleteAdditionalPax/:cmp_id/:id',authSecondary,deleteAdditionalPax)
 router.post('/saveVisitOfPurpose/:cmp_id',authSecondary,saveVisitOfPurpose)
 router.get('/getVisitOfPurpose/:cmp_id',authSecondary,getVisitOfPurpose)
@@ -319,8 +320,11 @@ router.get("/getRooms/:cmp_id",authSecondary,getRooms)
 router.post("/editRoom/:cmp_id/:id",authSecondary,editRoom)
 router.delete('/deleteRoom/:id',authSecondary,secondaryIsBlocked,deleteRoom)
 router.get('/getAllRooms/:cmp_id',authSecondary,secondaryIsBlocked,getAllRooms)
-router.post('/roomBooking/:cmp_id',authSecondary,secondaryIsBlocked,roomBooking)
-
+router.post('/saveData/:cmp_id',authSecondary,secondaryIsBlocked,roomBooking)
+router.get('/getBookings/:cmp_id',authSecondary,secondaryIsBlocked,getBookings)
+router.delete('/deleteBooking/:id',authSecondary,secondaryIsBlocked,deleteBooking)
+router.put('/updateRoomBooking/:id',authSecondary,secondaryIsBlocked,updateBooking)
+router.get('/getBookingAdvanceData/:id',authSecondary,secondaryIsBlocked,fetchAdvanceDetails)
 
 
 

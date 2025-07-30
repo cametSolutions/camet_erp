@@ -1,25 +1,68 @@
-import {useState} from "react";
-import CustomBarLoader from "@/components/common/CustomBarLoader";
-import TitleDiv from "@/components/common/TitleDiv";
-import CheckOutForm from "../Components/CheckOutForm";
-
-function CheckOut() {
-    const [loading, setLoading] = useState(false);
-    const handleSubmit = async () => {};
-    return (
-        <>
-            {loading ? (
-                <CustomBarLoader />
-            ) : (
-                <div className="">
-                    <TitleDiv
-                        title="Check Out"
-                        from="/sUsers/hotelDashBoard"
-                    />
-                    <CheckOutForm />
-                </div>
-            )}
-        </>
-    );
-}
+ import { useState, useRef } from "react";
+ import CustomBarLoader from "@/components/common/CustomBarLoader";
+ import TitleDiv from "@/components/common/TitleDiv";
+ import BookingForm from "../Components/BookingForm";
+ import { toast } from "react-toastify";
+ import api from "@/api/api";
+ import { useSelector } from "react-redux";
+ import { useNavigate } from "react-router-dom";
+ 
+ function CheckOut() {
+   const navigate = useNavigate();
+   const isSubmittingRef = useRef(false);
+   const [loading, setLoading] = useState(false);
+   const organization = useSelector(
+     (state) => state?.secSelectedOrganization?.secSelectedOrg
+   );
+   const handleSubmit = async (data) => {
+     try {
+       let response = await api.post(
+         `/api/sUsers/saveData/${organization._id}`,
+         { data: data, modal: "checkOut" },
+         { withCredentials: true }
+       );
+       if (response?.data?.success) {
+         toast.success(response?.data?.message);
+         navigate("/sUsers/hotelDashBoard");
+       }
+       isSubmittingRef.current = false;
+     } catch (error) {
+       console.log(error);
+       toast.error(error?.response?.data?.message);
+       isSubmittingRef.current = false;
+     }
+   };
+ 
+   return (
+     <>
+       {loading ? (
+         <CustomBarLoader />
+       ) : (
+         <div className="">
+           <TitleDiv
+             title="Check In"
+             from="/sUsers/hotelDashBoard"
+             dropdownContents={[
+               {
+                 title: "New Guest",
+                 to: "/sUsers/partyList",
+               },
+               {
+                 title: "Check In List",
+                 to: "/sUsers/checkOutList",
+               },
+             ]}
+           />
+           <BookingForm
+             handleSubmit={handleSubmit}
+             setIsLoading={setLoading}
+             isSubmittingRef={isSubmittingRef}
+             isFor="sales"
+           />
+         </div>
+       )}
+     </>
+   );
+ }
  export default CheckOut;
+ 

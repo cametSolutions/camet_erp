@@ -145,6 +145,7 @@ import BookingList from '@/pages/Hotel/List/BookingList'
 import CheckInList from '@/pages/Hotel/List/CheckIn'
 import CheckOutList from '@/pages/Hotel/List/CheckOutList'
 import RestaurantDashboard from '@/pages/Restuarant/Pages/RestaurantDashboard'
+import EditBooking from '@/pages/Hotel/Pages/EditBooking'
 const Routers = () => {
   return (
     <Routes>
@@ -409,19 +410,20 @@ const Routers = () => {
 
 
         {/* Hotel route */}
-        <Route path='/sUsers/addAdditionalPax' element={<AddAdditionalPax />} />
-        <Route path= '/sUsers/visitOfPurpose' element={<VisitOfPurpose />} />
-        <Route path= '/sUsers/idProof' element={<IdProof />} />
-        <Route path= '/sUsers/foodPlan' element={<FoodPlan />} />
-        <Route path= '/sUsers/roomRegistration' element={<RoomRegistration />} />
-        <Route path= '/sUsers/roomList' element={<RoomList />} />
-        <Route path= '/sUsers/editRoom' element={<EditRoom />} />
-        <Route path= '/sUsers/bookingPage' element={<BookingPage />} />
-        <Route path= '/sUsers/checkInPage' element={<CheckInPage />} />
-        <Route path= '/sUsers/checkOut' element={<CheckOut />} />
-        <Route path='/BookingList' element={<BookingList/>}/>
-        <Route path='/CheckInList' element={<CheckInList/>}/>
-        <Route path='/CheckOutList' element={<CheckOutList/>}/>
+          <Route path='/sUsers/addAdditionalPax' element={<ProtectedSecRoute> <AddAdditionalPax /></ProtectedSecRoute>} />
+          <Route path= '/sUsers/visitOfPurpose' element={<ProtectedSecRoute><VisitOfPurpose /></ProtectedSecRoute>} />
+          <Route path= '/sUsers/idProof' element={<ProtectedSecRoute><IdProof /></ProtectedSecRoute>} />
+        <Route path= '/sUsers/foodPlan' element={<ProtectedSecRoute><FoodPlan /></ProtectedSecRoute>} />
+        <Route path= '/sUsers/roomRegistration' element={<ProtectedSecRoute><RoomRegistration /></ProtectedSecRoute>} />
+        <Route path= '/sUsers/roomList' element={<ProtectedSecRoute><RoomList /></ProtectedSecRoute>} />
+        <Route path= '/sUsers/editRoom' element={<ProtectedSecRoute><EditRoom /></ProtectedSecRoute>} />
+        <Route path= '/sUsers/bookingPage' element={<ProtectedSecRoute><BookingPage /></ProtectedSecRoute>} />
+        <Route path= '/sUsers/checkInPage' element={<ProtectedSecRoute><CheckInPage /></ProtectedSecRoute>} />
+        <Route path= '/sUsers/checkOut' element={<ProtectedSecRoute><CheckOut /></ProtectedSecRoute>} />
+        <Route path='/sUsers/BookingList' element={<ProtectedSecRoute><BookingList/></ProtectedSecRoute>}/>
+        <Route path='/sUsers/checkInList' element={<ProtectedSecRoute><BookingList/></ProtectedSecRoute>}/>
+        <Route path='/sUsers/CheckOutList' element={<ProtectedSecRoute><CheckOutList/></ProtectedSecRoute>}/>
+        <Route path='/sUsers/EditBooking' element={<ProtectedSecRoute><EditBooking /></ProtectedSecRoute>} />
 
     </Routes>
   )

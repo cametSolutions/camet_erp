@@ -5,11 +5,21 @@ import {
   FoodPlan,
 } from "../models/hotelSubMasterModal.js";
 
-import Booking from "../models/bookingModal.js";
 import hsnModel from "../models/hsnModel.js";
 import roomModal from "../models/roomModal.js";
-import {buildDatabaseFilterForRoom , sendRoomResponse ,fetchRoomsFromDatabase} from "../helpers/hotelHelper.js"
-import {extractRequestParams} from "../helpers/productHelper.js"
+import { Booking, CheckIn, CheckOut } from "../models/bookingModal.js";
+import advanceModal from "../models/advanceModal.js";
+import {
+  buildDatabaseFilterForRoom,
+  sendRoomResponse,
+  fetchRoomsFromDatabase,
+  buildDatabaseFilterForBooking,
+  fetchBookingsFromDatabase,
+  sendBookingsResponse,
+  extractRequestParamsForBookings,
+} from "../helpers/hotelHelper.js";
+import { extractRequestParams } from "../helpers/productHelper.js";
+import { generateVoucherNumber } from "../helpers/voucherHelper.js";
 import mongoose from "mongoose";
 const { ObjectId } = mongoose.Types;
 
@@ -78,11 +88,8 @@ export const getAdditionalPax = async (req, res) => {
 export const updateAdditionalPax = async (req, res) => {
   try {
     const { additionalPaxName, amount, id } = req.body;
-    console.log(req.body);
-    const { cmp_id } = req.params;
-
     const updatedPax = await AdditionalPax.findOneAndUpdate(
-      { id, cmp_id },
+      { _id: id },
       {
         $set: {
           additionalPaxName,
@@ -606,10 +613,15 @@ export const getRooms = async (req, res) => {
   try {
     const params = extractRequestParams(req);
     const filter = buildDatabaseFilterForRoom(params);
-    console.log("filter",filter)
-    const {rooms,totalRooms} = await fetchRoomsFromDatabase(filter, params);
-    console.log("rooms",rooms);
-    const sendRoomResponseData = sendRoomResponse(res, rooms, totalRooms, params);
+    console.log("filter", filter);
+    const { rooms, totalRooms } = await fetchRoomsFromDatabase(filter, params);
+    console.log("rooms", rooms);
+    const sendRoomResponseData = sendRoomResponse(
+      res,
+      rooms,
+      totalRooms,
+      params
+    );
   } catch (error) {
     console.error("Error in getProducts:", error);
     return res.status(500).json({
@@ -621,23 +633,19 @@ export const getRooms = async (req, res) => {
 
 // Helper function to extract request parameters
 
-
 // Helper function to send room response
 
 // Main controller function
 
-
-
-
 export const getAllRooms = async (req, res) => {
   try {
     const { cmp_id } = req.params;
-    
+
     // Validate company ID
     if (!cmp_id) {
       return res.status(400).json({
         success: false,
-        message: "Company ID is required"
+        message: "Company ID is required",
       });
     }
 
@@ -645,43 +653,39 @@ export const getAllRooms = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(cmp_id)) {
       return res.status(400).json({
         success: false,
-        message: "Invalid Company ID format"
+        message: "Invalid Company ID format",
       });
     }
 
     // Fetch all rooms for the company
-    const rooms = await roomModal.find({
-      cmp_id: cmp_id, // MongoDB will automatically cast valid ObjectId strings
-    })
-    .populate('cmp_id', 'name') // Populate organization details
-    .populate('roomType') // Populate from brand collection
-    .populate('roomFloor') // Populate from subCategory collection  
-    .populate('bedType') // Populate from category collection
-    .populate('priceLevel.priceLevel', 'name') // Populate price level details
-    .sort({ roomName: 1 }) // Sort by room name (roomNumber doesn't exist in schema)
-    .lean(); // Use lean() for better performance
+    const rooms = await roomModal
+      .find({
+        cmp_id: cmp_id, // MongoDB will automatically cast valid ObjectId strings
+      })
+      .populate("cmp_id", "name") // Populate organization details
+      .populate("roomType") // Populate from brand collection
+      .populate("roomFloor") // Populate from subCategory collection
+      .populate("bedType") // Populate from category collection
+      .populate("priceLevel.priceLevel", "name") // Populate price level details
+      .sort({ roomName: 1 }) // Sort by room name (roomNumber doesn't exist in schema)
+      .lean(); // Use lean() for better performance
 
     return res.status(200).json({
       success: true,
       message: "Rooms fetched successfully",
       data: {
-        rooms
-      }
+        rooms,
+      },
     });
-
   } catch (error) {
     console.error("Error in getAllRooms:", error);
     return res.status(500).json({
       success: false,
       message: "Internal server error, try again!",
-      data: []
+      data: [],
     });
   }
 };
-
-
-
-
 
 // function used to edit room details
 
@@ -736,13 +740,14 @@ export const editRoom = async (req, res) => {
     // Step 6: Abort on error
     await session.abortTransaction();
 
-    res.status(500).json({ message: "Internal Server Error", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Internal Server Error", error: error.message });
   } finally {
     // Step 7: Always end the session
     session.endSession();
   }
 };
-
 
 // function used to delete room
 
@@ -771,28 +776,195 @@ export const deleteRoom = async (req, res) => {
   }
 };
 
-
 // function used for room booking
-
 export const roomBooking = async (req, res) => {
+  const session = await Booking.startSession();
   try {
-    const bookingData = req.body;
-    const orgId = req.params.orgId;
-    let voucherNumber = await generateVoucherNumber(
-        await generateVoucherNumber(orgId, voucherType, series_id, session ))
-  
-    if (!bookingData.bookingNumber || !bookingData.arrivalDate) {
+    const bookingData = req.body?.data;
+    const isFor = req.body?.modal;
+    const orgId = req.params.cmp_id;
+
+    if (!bookingData.arrivalDate) {
       return res.status(400).json({ message: "Missing required fields" });
     }
-    const newBooking = new Booking(bookingData);
-    const savedBooking = await newBooking.save();
+
+    let selectedModal;
+    let voucherType;
+    if (isFor === "bookingPage") {
+      selectedModal = Booking;
+      voucherType = "saleOrder";
+    } else if (isFor === "checkIn") {
+      selectedModal = CheckIn;
+      voucherType = "deliveryNote";
+    }
+
+    const series_id = bookingData.voucherId || null;
+    let savedBooking;
+
+    // Start the transaction
+    await session.withTransaction(async () => {
+      // Generate voucher number with session
+      const bookingNumber = await generateVoucherNumber(
+        orgId,
+        voucherType,
+        series_id,
+        session
+      );
+
+      // Attach generated voucher details
+      bookingData.voucherNumber = bookingNumber?.voucherNumber;
+      bookingData.voucherId = series_id;
+
+      // Save booking
+      const newBooking = new selectedModal({
+        cmp_id: orgId,
+        Primary_user_id: req.pUserId || req.owner,
+        Secondary_user_id: req.sUserId,
+        ...bookingData,
+      });
+      savedBooking = await newBooking.save({ session });
+
+      // If there's an advance, save it too
+      if (bookingData.advanceAmount && bookingData.advanceAmount > 0) {
+        const advanceObject = new advanceModal({
+          cmp_id: orgId,
+          primary_user_id: req.pUserId || req.owner,
+          secondary_user_id: req.sUserId,
+          booking_id: savedBooking._id,
+          advanceVoucherNumber: `${bookingData.voucherNumber}Adv:1`,
+          advanceAmount: bookingData.advanceAmount,
+          advanceDate: new Date(),
+        });
+
+        await advanceObject.save({ session });
+      }
+    });
 
     res.status(201).json({
+      success: true,
       message: "Booking saved successfully",
-      data: savedBooking,
     });
   } catch (error) {
     console.error("Error saving booking:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
+    });
+  } finally {
+    await session.endSession();
+  }
+};
+
+// function used to fetch booking list
+export const getBookings = async (req, res) => {
+  try {
+    const params = extractRequestParamsForBookings(req);
+    const filter = buildDatabaseFilterForBooking(params);
+    console.log("filter", filter);
+    const { bookings, totalBookings } = await fetchBookingsFromDatabase(
+      filter,
+      params
+    );
+    console.log("bookings", bookings);
+    const sendRoomResponseData = sendBookingsResponse(
+      res,
+      bookings,
+      totalBookings,
+      params
+    );
+  } catch (error) {
+    console.error("Error in getProducts:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error, try again!",
+    });
+  }
+};
+
+// function used to delete booking details
+export const deleteBooking = async (req, res) => {
+  try {
+    const bookingId = req.params.id;
+    const deletedBooking = await Booking.findByIdAndDelete(bookingId);
+    if (deletedBooking) {
+      return res.status(200).json({
+        success: true,
+        message: "Booking deleted successfully",
+      });
+    } else {
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found",
+      });
+    }
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error, try again!",
+    });
+  }
+};
+
+// function used to update booking details
+export const updateBooking = async (req, res) => {
+  const session = await Booking.startSession();
+
+  try {
+    const bookingData = req.body;
+    const bookingId = req.params.id; // Corrected this line
+
+    if (!bookingData.arrivalDate) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    await session.withTransaction(async () => {
+      await Booking.findByIdAndUpdate(
+        bookingId,
+        { $set: bookingData },
+        { new: true, session }
+      );
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Booking updated successfully",
+    });
+  } catch (error) {
+    console.error("Error updating booking", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
+    });
+  } finally {
+    await session.endSession();
+  }
+};
+
+// function used to fetch booking advance details
+
+export const fetchAdvanceDetails = async (req, res) => {
+  try {
+    const bookingId = req.params.id;
+    const advanceDetails = await advanceModal.find({ booking_id: bookingId });
+    if (advanceDetails) {
+      return res.status(200).json({
+        success: true,
+        message: "Advance details fetched successfully",
+        data: advanceDetails,
+      });
+    } else {
+      return res.status(404).json({
+        success: false,
+        message: "Advance details not found",
+      });
+    }
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch advance details",
+    });
   }
 };
