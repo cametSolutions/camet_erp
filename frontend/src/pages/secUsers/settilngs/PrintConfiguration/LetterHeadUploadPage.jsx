@@ -165,15 +165,8 @@ const LogoUploadPage = () => {
 
       // queryClient.invalidateQueries(["letterHead", voucherType]);
     },
-    onError: async (error, { cloudinaryData }) => {
+    onError: async (error) => {
       console.error("Error uploading letter head to backend:", error);
-
-      // Delete the uploaded image from Cloudinary since backend save failed
-      if (cloudinaryData && cloudinaryData.public_id) {
-        console.log("Deleting image from Cloudinary due to backend failure...");
-        await deleteImageFromCloudinary(cloudinaryData.public_id);
-      }
-
       // Set error message based on the error response
       let errorMessage =
         "Failed to save logo to database. Image has been removed from storage.";

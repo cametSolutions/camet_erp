@@ -4,7 +4,8 @@ import OragnizationModel from "../models/OragnizationModel.js";
 import productModel from "../models/productModel.js";
 import WarrantyCard from "../models/warranyCardModel.js";
 import { Godown } from "../models/subDetails.js";
-import { v2 as cloudinary } from "cloudinary"; // Make sure cloudinary is imported
+import { v2 as cloudinary } from "cloudinary";
+import { deleteImageFromCloudinary } from "../utils/cloudinary.js";
 
 /**
  * @desc  add email configuration for a company
@@ -902,9 +903,10 @@ export const createWarrantyCard = async (req, res) => {
       termsAndConditions,
       customerCareInfo,
       customerCareNo,
+      imageUrl,
+      imagePublicId,
     } = req.body;
 
-    console.log(warrantyYears);
 
     if (warrantyYears === null) body.warrantyYears = 0;
     if (warrantyMonths === null) body.warrantyMonths = 0;
@@ -934,6 +936,8 @@ export const createWarrantyCard = async (req, res) => {
       customerCareNo,
       cmp_id,
       Primary_user_id,
+      imageUrl,
+      imagePublicId,
     });
 
     res.status(201).json({
@@ -942,6 +946,12 @@ export const createWarrantyCard = async (req, res) => {
       message: "Warranty card created successfully",
     });
   } catch (error) {
+    const { imagePublicId } = req.body;
+    console.error("Error creating warranty card:", error);
+    if (imagePublicId) {
+      await deleteImageFromCloudinary(imagePublicId);
+    }
+
     res.status(400).json({
       success: false,
       message: "Bad Request",
@@ -997,7 +1007,16 @@ export const updateWarrantyCard = async (req, res) => {
       termsAndConditions,
       customerCareInfo,
       customerCareNo,
+      imageUrl,
+      imagePublicId,
     } = req.body;
+
+    if (
+      warrantyCard?.imagePublicId &&
+      warrantyCard?.imagePublicId !== imagePublicId
+    ) {
+      await deleteImageFromCloudinary(warrantyCard?.imagePublicId);
+    }
 
     // Update fields
     warrantyCard.name = name || warrantyCard.name;
@@ -1014,6 +1033,8 @@ export const updateWarrantyCard = async (req, res) => {
       customerCareInfo || warrantyCard.customerCareInfo;
     warrantyCard.customerCareNo = customerCareNo || warrantyCard.customerCareNo;
     warrantyCard.updatedBy = req.user?.id; // Set if you have authentication
+    warrantyCard.imageUrl = imageUrl || warrantyCard.imageUrl;
+    warrantyCard.imagePublicId = imagePublicId || warrantyCard.imagePublicId;
 
     const updatedWarrantyCard = await warrantyCard.save();
 
@@ -1045,6 +1066,12 @@ export const deleteWarrantyCard = async (req, res) => {
       });
     }
 
+    //// Delete image from cloudinary
+
+    if (warrantyCard?.imagePublicId) {
+      await deleteImageFromCloudinary(warrantyCard?.imagePublicId);
+    }
+
     await WarrantyCard.findByIdAndDelete(req.params.id);
 
     res.status(200).json({
@@ -1072,12 +1099,6 @@ cloudinary.config({
 export const uploadLetterHead = async (req, res) => {
   const cmp_id = req?.params?.cmp_id;
   const { type, voucher, letterHeadUrl, cloudinaryPublicId } = req?.body;
-
-  console.log("Cloudinary configuration:", {
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
-  });
 
   try {
     // Validate required fields
