@@ -41,7 +41,7 @@ const DashboardCards = ({
       {
         icon: restaurantImg,
         subtitle: "Restaurant Management",
-        link: "/sUsers/hotelDashBoard",
+        link: "/sUsers/RestaurantDashboard",
       },
       {
         icon: vouchers,
