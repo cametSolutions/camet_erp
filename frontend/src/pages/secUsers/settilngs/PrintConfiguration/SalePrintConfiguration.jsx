@@ -1,22 +1,36 @@
 import TitleDiv from "../../../../components/common/TitleDiv";
 import SettingsCard from "../../../../components/common/SettingsCard";
-import { FiUsers, FiSave, FiPercent, FiInfo, FiFileText } from "react-icons/fi";
-import { GiBank } from "react-icons/gi";
-import { RiMoneyDollarCircleFill, RiStockFill } from "react-icons/ri";
-import { MdOutlineAttachMoney } from "react-icons/md";
+import { 
+  Percent, 
+  FileText,
+  Image,
+  Hash,
+  TrendingUp,
+  DollarSign,
+  Layers,
+  Calculator,
+  Building2,
+  Landmark,
+  BarChart3,
+  Tag,
+  Package,
+  Type,
+  Coins,
+  ImagePlus
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import api from "../../../../api/api";
 import { toast } from "react-toastify";
 import { updateConfiguration } from "../../../../../slices/secSelectedOrgSlice";
 import { useDispatch } from "react-redux";
-import { MdTitle } from "react-icons/md";
 import PrintTitleModal from "./PrintTitleModal";
-import { FaDollarSign } from "react-icons/fa";
+import LogoUploadModal from "./LogoUploadModal";
 
 const SalePrintConfiguration = () => {
   const [settings, setSettings] = useState([]);
   const [printTitleModal, setPrintTitleModal] = useState(false);
+  const [logoUploadModal, setLogoUploadModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const dispatch = useDispatch();
 
@@ -34,8 +48,8 @@ const SalePrintConfiguration = () => {
       setSettings([
         {
           title: "Print Title",
-          description: "Update ",
-          icon: <MdTitle />,
+          description: "Update print title for invoices",
+          icon: <Type />,
           to: "/sUsers/EnableCompanyDetails",
           active: true,
           toggle: false,
@@ -43,9 +57,30 @@ const SalePrintConfiguration = () => {
           dbField: "showCompanyDetails",
         },
         {
+          title: "Show Letterhead",
+          description: "Show company letterhead on invoices",
+          icon: <Image />,
+          to: "/sUsers/EnableCompanyDetails",
+          active: true,
+          toggle: true,
+          toggleValue: saleConfigurations.showLetterHead || false,
+          dbField: "showLetterHead",
+        },
+        {
+          title: "Company Logo & Letterhead",
+          description: "Upload company logo and letterhead image",
+          icon: <ImagePlus />,
+          to: "/sUsers/sale/upLoadLetterHead",
+          active: saleConfigurations.showLetterHead || false,
+          toggle: false,
+          modal: false,
+          dbField: "companyLogo",
+          modalType: "logo"
+        },
+        {
           title: "Enable Company Details",
-          description: "Enable company details",
-          icon: <FiSave />,
+          description: "Show company information on invoices",
+          icon: <Building2 />,
           to: "/sUsers/EnableCompanyDetails",
           active: true,
           toggle: true,
@@ -54,8 +89,8 @@ const SalePrintConfiguration = () => {
         },
         {
           title: "Enable Discount Column",
-          description: "Enable discount for parties",
-          icon: <FiPercent />,
+          description: "Show discount column for line items",
+          icon: <Percent />,
           to: "/sUsers/enableDiscount",
           active: true,
           toggle: true,
@@ -64,9 +99,8 @@ const SalePrintConfiguration = () => {
         },
         {
           title: "Enable Discount Amount",
-          description:
-            "Show discount amount and hide percentage in the invoice",
-          icon: <FaDollarSign />,
+          description: "Show discount amount instead of percentage",
+          icon: <DollarSign />,
           to: "/sUsers/enableDiscount",
           active: saleConfigurations?.showDiscount,
           toggle: true,
@@ -75,8 +109,8 @@ const SalePrintConfiguration = () => {
         },
         {
           title: "Enable HSN",
-          description: "Enable HSN for parties",
-          icon: <FiInfo />,
+          description: "Show HSN codes for products",
+          icon: <Hash />,
           to: "/sUsers/enableHSN",
           active: true,
           toggle: true,
@@ -85,8 +119,8 @@ const SalePrintConfiguration = () => {
         },
         {
           title: "Enable Tax Percentage",
-          description: "Enable tax percentage for parties",
-          icon: <FiFileText />,
+          description: "Display tax percentage on invoices",
+          icon: <Percent />,
           to: "/sUsers/enableTaxPercentage",
           active: true,
           toggle: true,
@@ -95,9 +129,8 @@ const SalePrintConfiguration = () => {
         },
         {
           title: "Enable Incl. Tax Rate",
-          description:
-            "Enable Inclusive tax rate, This will hide tax amount column in invoice",
-          icon: <RiStockFill />,
+          description: "Show inclusive tax rate (hides tax amount column)",
+          icon: <Calculator />,
           to: "/sUsers/EnableStockWiseTaxAmount",
           active: true,
           toggle: true,
@@ -106,8 +139,8 @@ const SalePrintConfiguration = () => {
         },
         {
           title: "Enable Tax Analysis",
-          description: "Enable tax analysis for parties",
-          icon: <FiFileText />,
+          description: "Show detailed tax breakdown",
+          icon: <BarChart3 />,
           to: "/sUsers/enableTaxAnalysis",
           active: true,
           toggle: true,
@@ -116,8 +149,8 @@ const SalePrintConfiguration = () => {
         },
         {
           title: "Enable Stock wise Tax Amount",
-          description: "Enable Stock wise  tax amount",
-          icon: <RiMoneyDollarCircleFill />,
+          description: "Show tax amount for each stock item",
+          icon: <Layers />,
           to: "/sUsers/EnableTaxAmount",
           active: true,
           toggle: true,
@@ -125,9 +158,9 @@ const SalePrintConfiguration = () => {
           dbField: "showStockWiseTaxAmount",
         },
         {
-          title: "Enable Teams & Conditions",
-          description: "Enable teams & conditions for parties",
-          icon: <FiUsers />,
+          title: "Enable Terms & Conditions",
+          description: "Show terms and conditions on invoices",
+          icon: <FileText />,
           to: "/sUsers/enableTeamsConditions",
           active: true,
           toggle: true,
@@ -136,8 +169,8 @@ const SalePrintConfiguration = () => {
         },
         {
           title: "Enable Bank Details",
-          description: "Enable bank details for parties",
-          icon: <GiBank />,
+          description: "Show bank account information",
+          icon: <Landmark />,
           to: "/sUsers/enableBankDetails",
           active: true,
           toggle: true,
@@ -146,8 +179,8 @@ const SalePrintConfiguration = () => {
         },
         {
           title: "Enable Tax Amount",
-          description: "Enable tax amount",
-          icon: <MdOutlineAttachMoney />,
+          description: "Display total tax amount",
+          icon: <Calculator />,
           to: "/sUsers/EnableTaxAmount",
           active: true,
           toggle: true,
@@ -155,9 +188,9 @@ const SalePrintConfiguration = () => {
           dbField: "showTaxAmount",
         },
         {
-          title: "Enable Rate ",
-          description: "Enable rate for product",
-          icon: <MdOutlineAttachMoney />,
+          title: "Enable Rate",
+          description: "Show unit rate for products",
+          icon: <Tag />,
           to: "/sUsers/EnableTaxAmount",
           active: true,
           toggle: true,
@@ -165,9 +198,9 @@ const SalePrintConfiguration = () => {
           dbField: "showRate",
         },
         {
-          title: "Enable Quantity ",
-          description: "Enable quantity for product",
-          icon: <MdOutlineAttachMoney />,
+          title: "Enable Quantity",
+          description: "Display product quantities",
+          icon: <Package />,
           to: "/sUsers/EnableTaxAmount",
           active: true,
           toggle: true,
@@ -175,9 +208,9 @@ const SalePrintConfiguration = () => {
           dbField: "showQuantity",
         },
         {
-          title: "Enable Stock Wise Amount  ",
-          description: "Enable stock wise amount for product",
-          icon: <MdOutlineAttachMoney />,
+          title: "Enable Stock Wise Amount",
+          description: "Show amount for each stock item",
+          icon: <TrendingUp />,
           to: "/sUsers/EnableTaxAmount",
           active: true,
           toggle: true,
@@ -186,8 +219,8 @@ const SalePrintConfiguration = () => {
         },
         {
           title: "Enable NET Amount",
-          description: "Enable net amount for product",
-          icon: <MdOutlineAttachMoney />,
+          description: "Display net total amount",
+          icon: <Coins />,
           to: "/sUsers/EnableTaxAmount",
           active: true,
           toggle: true,
@@ -254,6 +287,43 @@ const SalePrintConfiguration = () => {
     }
   };
 
+  const saveCompanyLogo = async (imageFile) => {
+    const formData = new FormData();
+    formData.append('logo', imageFile);
+    formData.append('type', 'printConfiguration');
+    formData.append('voucher', 'sale');
+
+    try {
+      setLoading(true);
+      const res = await api.put(
+        `/api/sUsers/updateConfiguration/${cmp_id}`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+          withCredentials: true,
+        }
+      );
+      dispatch(updateConfiguration(res?.data?.data));
+      localStorage.setItem("secOrg", JSON.stringify(res.data.data));
+      toast.success("Company logo updated successfully");
+    } catch (error) {
+      toast.error(error.response.data.message);
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleModalOpen = (modalType) => {
+    if (modalType === "logo") {
+      setLogoUploadModal(true);
+    } else {
+      setPrintTitleModal(true);
+    }
+  };
+
   return (
     <div className="bg-white">
       <TitleDiv
@@ -269,13 +339,22 @@ const SalePrintConfiguration = () => {
         data={saleConfigurations}
         loading={loading}
       />
+
+      <LogoUploadModal
+        isOpen={logoUploadModal}
+        onClose={() => setLogoUploadModal(false)}
+        onSubmit={saveCompanyLogo}
+        loading={loading}
+        currentLogo={saleConfigurations?.companyLogo}
+      />
+
       <div className="space-y-4 b-white p-4 mx-1">
         {settings.map((option, index) => (
           <SettingsCard
             option={option}
             index={index}
             key={index}
-            modalHandler={() => setPrintTitleModal(true)}
+            modalHandler={() => handleModalOpen(option.modalType)}
             handleToggleChangeFromParent={handleToggleChange}
           />
         ))}

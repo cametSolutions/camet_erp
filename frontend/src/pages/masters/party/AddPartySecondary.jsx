@@ -8,16 +8,16 @@ import TitleDiv from "@/components/common/TitleDiv";
 import { useState } from "react";
 import { addParty as addPartyInCommonVouchers } from "../../../../slices/voucherSlices/commonVoucherSlice";
 import { addParty as addPartyInAccountingVouchers } from "../../../../slices/voucherSlices/commonAccountingVoucherSlice";
+import { useQueryClient } from "@tanstack/react-query";
 
 function AddPartySecondary() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
+  const queryClient = useQueryClient();
 
   const from = location.state?.from;
-
-  console.log("AddPartySecondary location state:", location.state);
 
   const companyId = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
@@ -36,9 +36,9 @@ function AddPartySecondary() {
       });
 
       toast.success(res.data.message);
-      console.log("AddPartySecondary response:", res?.data?.result);
-
-      console.log(from);
+      queryClient.invalidateQueries({
+        queryKey: ["dashboardCounts", companyId],
+      });
 
       if (from) {
         if (from === "accountingVoucher") {
@@ -48,7 +48,7 @@ function AddPartySecondary() {
         }
         navigate(-2, { replace: true });
       } else {
-        navigate("/sUsers/partylist");
+        navigate("/sUsers/partylist", { replace: true });
       }
     } catch (error) {
       toast.error(error.response.data.message);

@@ -1,192 +1,411 @@
+import React from "react"
 import TitleDiv from "@/components/common/TitleDiv"
+import * as XLSX from "xlsx-js-style"
+import { RiFileExcel2Fill } from "react-icons/ri"
 import SelectDate from "@/components/Filters/SelectDate"
-import dayjs from "dayjs" // or use native Date
+import { PropagateLoader } from "react-spinners"
 import { useQuery } from "@tanstack/react-query"
 import api from "@/api/api"
 import { useEffect, useState } from "react"
-import {
-  format,
-  // startOfToday,
-  subDays,
-  startOfWeek,
-  endOfWeek,
-  startOfMonth,
-  endOfMonth,
-  startOfQuarter,
-  endOfQuarter,
-  subMonths,
-  startOfYear,
-  endOfYear,
-  parseISO
-} from "date-fns"
 import { useSelector, useDispatch } from "react-redux"
 import { addDate } from "../../../../slices/filterSlices/date"
+
 export default function StockRegisterDetails() {
+  const [mappedArray, setmappedArray] = useState([])
+  const [tenure, setTenure] = useState({
+    start: "",
+    end: ""
+  })
+  const [brand, setBrand] = useState([])
+  const [selectedBrand, setSelectedBrand] = useState("All")
+  const [selectedCategory, setSelectedCategory] = useState("All")
+  const [category, setCategory] = useState([])
+  const [individualArray, setindividualArray] = useState([])
   const dispatch = useDispatch()
-  const { start, end } = useSelector((state) => state.date)
+  const [selectedItemName, setSelectedItemName] = useState(null)
+
+  const { start, end, initial, title } = useSelector((state) => state.date)
+
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   )
-  const isNotToday = (dateStr) => {
-    const date = new Date(dateStr)
 
-    const now = new Date()
-
-    // Get only YYYY-MM-DD for both, ignoring time & tz
-    const dateUTC = date.toISOString().split("T")[0]
-    const nowUTC = now.toISOString().split("T")[0]
-
-    return dateUTC !== nowUTC
-  }
-  const { data } = useQuery({
+  const { data, isFetching, isLoading } = useQuery({
     queryKey: ["stockRegister", cmp_id, start, end],
     queryFn: async () => {
       const res = await api.get(
-        `/api/sUsers/stockregisterSummary/${cmp_id}?start=${start}&end=${end}`,
+        `/api/sUsers/stockregisterSummary/${cmp_id}?start=${start}&end=${end}&title=${title}&tenureStart=${tenure.start}&tenureEnd=${tenure.end}`,
         { withCredentials: true }
       )
       return res.data
     },
     enabled:
-      !!cmp_id && !!start && !!end && isNotToday(start) && isNotToday(end),
+      !!cmp_id &&
+      !!start &&
+      !!tenure &&
+      !!tenure.start !== "" &&
+      tenure.end !== "",
     staleTime: 30000,
     retry: false
   })
-  const today = dayjs().format("YYYY-MM-DD")
-  console.log(today)
-  console.log(data)
-  console.log(start)
-  console.log(end)
-  const getRangeDates = (rangeType) => {
-    let startDate, endDate
-    switch (rangeType) {
-      case "Today":
-        // Use a function that gets the current date at midnight in UTC
-        const today = new Date()
-        startDate = new Date(
-          Date.UTC(
-            today.getUTCFullYear(),
-            today.getUTCMonth(),
-            today.getUTCDate(),
-            0,
-            0,
-            0,
-            0
-          )
-        )
-        endDate = new Date(
-          Date.UTC(
-            today.getUTCFullYear(),
-            today.getUTCMonth(),
-            today.getUTCDate(),
-            0,
-            0,
-            0,
-            0
-          )
-        )
-        break
-
-      case "Yesterday":
-        startDate = endDate = subDays(new Date(), 1)
-        break
-      case "This Week":
-        startDate = startOfWeek(new Date(), { weekStartsOn: 1 })
-        endDate = endOfWeek(new Date(), { weekStartsOn: 1 })
-        break
-      case "Last Week":
-        startDate = startOfWeek(subDays(new Date(), 7), { weekStartsOn: 1 })
-        endDate = endOfWeek(subDays(new Date(), 7), { weekStartsOn: 1 })
-        break
-      case "Last 7 Days":
-        startDate = subDays(new Date(), 6)
-        endDate = new Date()
-        break
-      case "This Month":
-        startDate = startOfMonth(new Date())
-        endDate = endOfMonth(new Date())
-        break
-      case "Last Month":
-        startDate = startOfMonth(subMonths(new Date(), 1))
-        endDate = endOfMonth(subMonths(new Date(), 1))
-        break
-      case "Last 30 Days":
-        startDate = subDays(new Date(), 29)
-        endDate = new Date()
-        break
-      case "This Quarter":
-        startDate = startOfQuarter(new Date())
-        endDate = endOfQuarter(new Date())
-        break
-      case "Last Quarter":
-        startDate = startOfQuarter(subMonths(new Date(), 3))
-        endDate = endOfQuarter(subMonths(new Date(), 3))
-        break
-      case "Current Financial Year":
-        startDate = new Date(new Date().getFullYear(), 3, 1)
-        endDate = new Date(new Date().getFullYear() + 1, 2, 31)
-        break
-      case "Previous Financial Year":
-        startDate = new Date(new Date().getFullYear() - 1, 3, 1)
-        endDate = new Date(new Date().getFullYear(), 2, 31)
-        break
-      case "Last Year":
-        startDate = startOfYear(subMonths(new Date(), 12))
-        endDate = endOfYear(subMonths(new Date(), 12))
-        break
-      default:
-        startDate = endDate = new Date()
-    }
-
-    return { start: startDate, end: endDate }
-  }
-  console.log(start)
   useEffect(() => {
-    const { start, end } = getRangeDates("Current Financial Year")
-    const newstart = new Date(start)
-    const newend = new Date(end)
-    const startdate = new Date(
-      Date.UTC(
-        newstart.getFullYear(),
-        newstart.getMonth(),
-        newstart.getDate(),
-        0,
-        0,
-        0
+    if (!initial) {
+      const newstart = new Date(new Date().getFullYear(), 3, 1)
+      const newend = new Date(new Date().getFullYear() + 1, 2, 31)
+
+      const startdate = new Date(
+        Date.UTC(
+          newstart.getFullYear(),
+          newstart.getMonth(),
+          newstart.getDate(),
+          0,
+          0,
+          0
+        )
       )
-    )
-    const enddate = new Date(
-      Date.UTC(
-        newend.getFullYear(),
-        newend.getMonth(),
-        newend.getDate(),
-        0,
-        0,
-        0
+      const enddate = new Date(
+        Date.UTC(
+          newend.getFullYear(),
+          newend.getMonth(),
+          newend.getDate(),
+          0,
+          0,
+          0
+        )
       )
-    )
-    console.log(start)
-    console.log(end)
-    dispatch(
-      addDate({
-        rangeName: "Current Financial Year",
+      dispatch(
+        addDate({
+          rangeName: "Current Financial Year",
+          start: startdate.toISOString(),
+          end: enddate.toISOString(),
+          initial: true
+        })
+      )
+    }
+  }, [])
+  useEffect(() => {
+    if (
+      title !== "Current Financial Year" &&
+      title !== "Previous Financial Year" &&
+      title !== "Last Year" &&
+      initial
+    ) {
+      const newstart = new Date(new Date(start).getFullYear(), 3, 1)
+
+      const startdate = new Date(
+        Date.UTC(
+          newstart.getFullYear(),
+          newstart.getMonth(),
+          newstart.getDate(),
+          0,
+          0,
+          0
+        )
+      )
+
+      setTenure({
+        start: startdate.toISOString(),
+        end: end
+      })
+    } else if (title === "Current Financial Year" && initial) {
+      const newstart = new Date(new Date().getFullYear() - 1, 3, 1)
+
+      const newend = new Date(new Date().getFullYear() + 1, 2, 31)
+
+      const startdate = new Date(
+        Date.UTC(
+          newstart.getFullYear(),
+          newstart.getMonth(),
+          newstart.getDate(),
+          0,
+          0,
+          0
+        )
+      )
+      const enddate = new Date(
+        Date.UTC(
+          newend.getFullYear(),
+          newend.getMonth(),
+          newend.getDate(),
+          0,
+          0,
+          0
+        )
+      )
+      setTenure({
         start: startdate.toISOString(),
         end: enddate.toISOString()
       })
-    )
-  }, [start])
+    } else if (title === "Previous Financial Year" && initial) {
+      const newstart = new Date(new Date().getFullYear() - 2, 3, 1)
+      const newend = new Date(new Date().getFullYear(), 2, 31)
+      const startdate = new Date(
+        Date.UTC(
+          newstart.getFullYear(),
+          newstart.getMonth(),
+          newstart.getDate(),
+          0,
+          0,
+          0
+        )
+      )
+      const enddate = new Date(
+        Date.UTC(
+          newend.getFullYear(),
+          newend.getMonth(),
+          newend.getDate(),
+          0,
+          0,
+          0
+        )
+      )
+      setTenure({
+        start: startdate.toISOString(),
+        end: enddate.toISOString()
+      })
+    } else if (title === "Last Year") {
+      console.log("H")
+    }
+  }, [initial])
+
+  useEffect(() => {
+    if (data) {
+      setindividualArray(data?.result?.individualArray)
+      const uniqueBrands = [
+        ...new Set(
+          data?.result?.individualArray.map((p) => p.brand).filter((b) => b) // removes null, undefined, empty string
+        )
+      ]
+      const uniqueCategory = [
+        ...new Set(
+          data?.result?.individualArray.map((p) => p.category).filter((b) => b)
+        )
+      ]
+      setBrand(uniqueBrands)
+      setCategory(uniqueCategory)
+
+      setmappedArray(data.result.mappedArray)
+    }
+  }, [data])
+ 
+  useEffect(() => {
+    if (selectedBrand === "All" && selectedCategory !== "All") {
+      const filtredData = data?.result?.individualArray.filter(
+        (item) => item.category === selectedCategory
+      )
+   
+      setindividualArray(filtredData)
+    } else if (selectedBrand === "All" && selectedCategory === "All") {
+      const filteredData = data?.result?.individualArray
+      setindividualArray(filteredData)
+    } else if (selectedBrand !== "All" && selectedCategory === "All") {
+      const filteredData = data?.result?.individualArray?.filter(
+        (item) => item.brand === selectedBrand
+      )
+    
+      setindividualArray(filteredData)
+    } else if (selectedBrand !== "All" && selectedCategory !== "All") {
+      const filteredData = data?.result?.individualArray?.filter(
+        (item) =>
+          item?.brand === selectedBrand && item?.category === selectedCategory
+      )
+      setindividualArray(filteredData)
+    }
+
+  }, [selectedBrand, selectedCategory])
+ 
+  
+  const exportToExcel = () => {
+    if (!individualArray || individualArray?.length === 0) return
+
+    const formatDate = (dateString) =>
+      dateString ? new Date(dateString).toISOString()?.split("T")[0] : "N/A"
+
+    const headerRow1 = [
+      "Item",
+      "Opening",
+      "",
+      "",
+      "Inward",
+      "",
+      "",
+      "Outward",
+      "",
+      "",
+      "Closing",
+      "",
+      ""
+    ]
+
+    const headerRow2 = [
+      "",
+      "Quantity",
+      "Rate",
+      "Amount",
+      "Quantity",
+      "Rate",
+      "Amount",
+      "Quantity",
+      "Rate",
+      "Amount",
+      "Quantity",
+      "Rate",
+      "Amount"
+    ]
+
+    const worksheetData = [headerRow1, headerRow2]
+
+    individualArray.forEach((record) => {
+      const row = [
+        record.itemName,
+        record.opening.quantity,
+        record.opening.rate,
+        record.opening.amount,
+        record.inward.quantity,
+        record.inward.rate,
+        record.inward.amount,
+        record.outward.quantity,
+        record.outward.rate,
+        record.outward.amount,
+        record.closing.quantity,
+        record.closing.rate,
+        record.closing.amount
+      ]
+      worksheetData.push(row)
+    })
+
+    const wb = XLSX.utils.book_new()
+    const ws = XLSX.utils.aoa_to_sheet(worksheetData)
+
+    // Merge cells for grouped headers
+    ws["!merges"] = [
+      { s: { r: 0, c: 0 }, e: { r: 1, c: 0 } },
+      { s: { r: 0, c: 1 }, e: { r: 0, c: 3 } },
+      { s: { r: 0, c: 4 }, e: { r: 0, c: 6 } },
+      { s: { r: 0, c: 7 }, e: { r: 0, c: 9 } },
+      { s: { r: 0, c: 10 }, e: { r: 0, c: 12 } }
+    ]
+
+    // Column widths
+    const colWidths = worksheetData[1].map((_, colIdx) => {
+      let maxLen = 10
+      worksheetData.forEach((row) => {
+        const val = row[colIdx]
+        if (val !== null && val !== undefined) {
+          const str = val.toString()
+          if (str.length > maxLen) maxLen = str.length
+        }
+      })
+      return { wch: maxLen + 2 }
+    })
+    ws["!cols"] = colWidths
+
+    // Define border
+    const borderAll = {
+      top: { style: "thin", color: { rgb: "000000" } },
+      bottom: { style: "thin", color: { rgb: "000000" } },
+      left: { style: "thin", color: { rgb: "000000" } },
+      right: { style: "thin", color: { rgb: "000000" } }
+    }
+
+    // Header style
+    const headerStyle = {
+      font: { bold: true, color: { rgb: "FFFFFF" } },
+      fill: { fgColor: { rgb: "336287" } },
+      alignment: { horizontal: "center", vertical: "center" },
+      border: borderAll
+    }
+
+    // Content style
+    const contentStyle = {
+      alignment: { horizontal: "center", vertical: "center" },
+      border: borderAll
+    }
+
+    // Apply styles to header rows
+    for (let R = 0; R <= 1; R++) {
+      for (let C = 0; C < worksheetData[0].length; C++) {
+        const cellRef = XLSX.utils.encode_cell({ r: R, c: C })
+        if (ws[cellRef]) {
+          ws[cellRef].s = headerStyle
+        }
+      }
+    }
+
+    // Apply styles to content rows
+    const range = XLSX.utils.decode_range(ws["!ref"])
+    for (let R = 2; R <= range.e.r; ++R) {
+      for (let C = 0; C <= range.e.c; ++C) {
+        const cellRef = XLSX.utils.encode_cell({ r: R, c: C })
+        if (ws[cellRef]) {
+          ws[cellRef].s = contentStyle
+        }
+      }
+    }
+
+    XLSX.utils.book_append_sheet(wb, ws, "Stock Summary")
+    XLSX.writeFile(wb, `Stock_Summary_Report_${formatDate(new Date())}.xlsx`)
+  }
+
   return (
     <div className="h-[calc(100vh-10px)] overflow-hidden">
-      <TitleDiv title="Stock Details" />
+      {/* <TitleDiv title="Stock Details" /> */}
+      <TitleDiv
+        title="Stock Details"
+      
+        rightSideContent={<RiFileExcel2Fill size={20} />}
+        rightSideContentOnClick={exportToExcel}
+      />
       <SelectDate />
-      <div className="px-3 rounded-md">
+
+      <div className="flex justify-between mx-3 border border-gray-100 shadow-xl px-3 pb-2 gap-4">
+        {/* Brand Select */}
+        <div className="flex flex-col">
+          <label htmlFor="brand" className="text-sm font-medium mb-1">
+            Brand
+          </label>
+          <select
+            id="brand"
+            onChange={(e) => setSelectedBrand(e.target.value)}
+            className="outline-none shadow-md p-1 px-2 min-w-[120px]"
+          >
+            <option value="All">All</option>
+            {brand.map((item) => (
+              <option key={item} value={item}>
+                {item}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Another Select */}
+        <div className="flex flex-col">
+          <label htmlFor="another" className="text-sm font-medium mb-1">
+            Category
+          </label>
+          <select
+            id="category"
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="outline-none shadow-md p-1 px-2 min-w-[120px]"
+          >
+            <option value="All">All</option>
+            {category.map((item) => (
+              <option key={item} value={item}>
+                {item}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div className="px-3 rounded-md overflow-auto">
         <table className="w-full min-w-max border-collapse text-sm rounded-md">
           {/* <thead className={`sticky top-0 z-20 bg-white}> */}
           <thead className="text-sm sticky top-0 z-20 bg-[rgb(51,98,135)] rounded-md shadow-xl text-white">
             <tr>
               <th
                 rowSpan="2"
-                className="border border-gray-400 p-2 sticky left-0 z-20 bg-[rgb(51,98,135)]"
+                className="border border-gray-400"
 
                 // className={`border border-gray-300 p-2 sticky ${ !modalOpen&&left-0  z-10 }bg-gray-100`}
               >
@@ -195,10 +414,10 @@ export default function StockRegisterDetails() {
               <th colSpan="3" className="border  border-gray-400 p-1">
                 Opening
               </th>
-              <th colSpan="3" className="border border-gray-400 p-1 ">
+              <th colSpan="3" className="border border-gray-400 p-1">
                 Inward
               </th>
-              <th colSpan="3" className="border border-gray-400 p-2">
+              <th colSpan="3" className="border border-gray-400 p-1">
                 Outward
               </th>
 
@@ -208,368 +427,128 @@ export default function StockRegisterDetails() {
             </tr>
             <tr>
               <th className="border border-gray-400 p-1">Quantity</th>
-              <th className="border  border-gray-400 p-2">Rate</th>
-              <th className="border  border-gray-400 p-2">Amount</th>
+              <th className="border  border-gray-400 p-1">Rate</th>
+              <th className="border  border-gray-400 p-1">Amount</th>
               <th className="border border-gray-400 p-1">Quantity</th>
-              <th className="border  border-gray-400 p-2">Rate</th>
-              <th className="border  border-gray-400 p-2">Amount</th>
+              <th className="border  border-gray-400 p-1">Rate</th>
+              <th className="border  border-gray-400 p-1">Amount</th>
               <th className="border border-gray-400 p-1">Quantity</th>
-              <th className="border  border-gray-400 p-2">Rate</th>
-              <th className="border  border-gray-400 p-2">Amount</th>
+              <th className="border  border-gray-400 p-1">Rate</th>
+              <th className="border  border-gray-400 p-1">Amount</th>
               <th className="border border-gray-400 p-1">Quantity</th>
-              <th className="border  border-gray-400 p-2">Rate</th>
-              <th className="border  border-gray-400 p-2">Amount</th>
+              <th className="border  border-gray-400 p-1">Rate</th>
+              <th className="border  border-gray-400 p-1">Amount</th>
             </tr>
           </thead>
-          <tbody>
-            {/* {Object.entries(attendee.attendancedates).map(
-              ([date, details], idx) => {
-                const currentDate = new Date(date)
-                const isSunday = currentDate.getDay() === 0 // 0 represents Sunday
-                const isHolidayAbsent = holiday.some((holy) => {
-                  if (holy.date !== date) return false
-                  const matchedItem = attendee.attendancedates[holy.date]
-                  if (!matchedItem) return false
-
-                  const notMarkedEmpty = matchedItem.notMarked === ""
-                  const hasLeave =
-                    matchedItem.compensatoryLeave !== "" ||
-                    matchedItem.casualLeave !== "" ||
-                    matchedItem.otherLeave !== "" ||
-                    matchedItem.privileageLeave !== ""
-                  const notMarkedOne = matchedItem.notMarked === 1
-
-                  return (notMarkedEmpty && hasLeave) || notMarkedOne
-                })
-
-                const isSundayAbsent = sundays.some((sunday) => {
-                  const matched = date === sunday
-
-                  if (!matched) return false
-                  if (matched) {
-                    const matchedItem = attendee.attendancedates[date]
-                    const notMarkedEmpty = matchedItem.notMarked === ""
-                    const hasLeave =
-                      matchedItem.compensatoryLeave !== "" ||
-                      matchedItem.casualLeave !== "" ||
-                      matchedItem.otherLeave !== "" ||
-                      matchedItem.privileageLeave !== ""
-                    const notMarkedOne = matchedItem.notMarked === 1
-
-                    return (notMarkedEmpty && hasLeave) || notMarkedOne
-                  }
-                })
-
-                const holidayName =
-                  holiday.find((h) => h.date === date)?.holyname || null
-
-                const highlightClass =
-                  isSundayAbsent || isHolidayAbsent
-                    ? "bg-red-500"
-                    : "bg-green-300" // Light green background
-
-                return (
-                  <tr key={idx} className="hover:bg-gray-50 text-center">
-                    <td className="border border-gray-400 p-2 sticky left-0 bg-white">
-                      {date}
+          <tbody className="text-center">
+            {individualArray && individualArray.length > 0 ? (
+              individualArray.map((row) => (
+                <React.Fragment key={row.itemName}>
+                  <tr
+                    onClick={() =>
+                      setSelectedItemName((prev) =>
+                        prev === row.itemName ? null : row.itemName
+                      )
+                    }
+                    className="cursor-pointer hover:bg-gray-100"
+                  >
+                    {/* Item Name */}
+                    <td className="border p-1  bg-white text-left">
+                      {row.itemName}
                     </td>
-                    <td
-                      className="border border-gray-400 p-2 hover:cursor-pointer"
-                      onClick={() => {
-                        if (user?.role === "Admin") {
-                          handleAttendance(
-                            date,
-                            "Attendance",
-                            details?.inTime,
-                            details?.outTime
-                          )
-                        }
-                      }}
-                    >
-                      {details?.inTime || "-"}
+
+                    {/* Opening */}
+                    <td className="border p-1">{row.opening.quantity}</td>
+                    <td className="border p-1">
+                      {row.opening.rate?.toFixed?.(2) || "-"}
                     </td>
-                    <td
-                      className="border border-gray-400 p-2 hover:cursor-pointer"
-                      onClick={() => {
-                        if (user?.role === "Admin") {
-                          handleAttendance(
-                            date,
-                            "Attendance",
-                            details?.inTime,
-                            details?.outTime
-                          )
-                        }
-                      }}
-                    >
-                      {details?.outTime || "-"}
+                    <td className="border p-1">{row.opening.amount}</td>
+
+                    {/* Inward */}
+                    <td className="border p-1">{row.inward.quantity}</td>
+                    <td className="border p-1">
+                      {row.inward.rate?.toFixed?.(2) || "-"}
                     </td>
-                    {isSunday || holidayName ? (
-                      <>
-                        <td
-                          onClick={() => {
-                            if (user?.role === "Admin") {
-                              handleLeave(
-                                date,
-                                "Leave",
+                    <td className="border p-1">{row.inward.amount}</td>
 
-                                details?.leaveDetails,
-                                "casual Leave"
-                              )
-                            }
-                          }}
-                          className={` p-2 text-center hover:cursor-pointer border border-r-0 border-gray-400 text-white font-semibold ${highlightClass}`}
-                        >
-                          {details?.casualLeave}
-                        </td>
-                        <td
-                          onClick={() => {
-                            if (user?.role === "Admin") {
-                              handleLeave(
-                                date,
-                                "Leave",
-
-                                details?.leaveDetails,
-                                "privileage Leave"
-                              )
-                            }
-                          }}
-                          className={` p-2 text-center hover:cursor-pointer border border-r-0 border-l-0 border-gray-400 text-white font-semibold ${highlightClass}`}
-                        >
-                          {details?.privileageLeave}
-                        </td>
-                        <td
-                          onClick={() => {
-                            if (user?.role === "Admin") {
-                              handleLeave(
-                                date,
-                                "Leave",
-
-                                details?.leaveDetails,
-                                "compensatory Leave"
-                              )
-                            }
-                          }}
-                          className={` p-2 text-center hover:cursor-pointer border border-l-0 border-r-0 border-gray-400 text-white font-semibold ${highlightClass}`}
-                        >
-                          {details?.compensatoryLeave}
-                        </td>
-                        <td
-                          onClick={() => {
-                            if (user?.role === "Admin") {
-                              handleLeave(
-                                date,
-                                "Leave",
-
-                                details?.leaveDetails,
-                                "other Leave"
-                              )
-                            }
-                          }}
-                          className={` p-2 text-center hover:cursor-pointer border border-l-0 border-r-0 border-gray-400 text-white font-semibold ${highlightClass}`}
-                        >
-                          {details?.otherLeave}
-                        </td>
-                        <td
-                          className={`p-2  border font-bold border-r-0 border-l-0 border-gray-400 ${highlightClass}`}
-                        >
-                          {isSunday ? "SUNDAY" : holidayName}
-                        </td>
-                        <td
-                          className={`p-2 text-white  border border-r-0 border-l-0 border-gray-400 ${highlightClass}`}
-                        ></td>
-                        <td
-                          className={`p-2  border border-l-0 border-gray-400 ${highlightClass}`}
-                        >
-                          {details.notMarked}
-                        </td>
-                      </>
-                    ) : (
-                      <>
-                        <td
-                          className="border border-gray-400  hover:cursor-pointer p-2 "
-                          onClick={() => {
-                            if (user?.role === "Admin") {
-                              const leaveFields = [
-                                { key: "casualLeave", label: "Casual Leave" },
-                                {
-                                  key: "compensatoryLeave",
-                                  label: "Compensatory Leave"
-                                },
-                                {
-                                  key: "privileageLeave",
-                                  label: "Privileage Leave"
-                                },
-                                { key: "otherLeave", label: "Other Leave" }
-                              ]
-
-                              const leaves = leaveFields
-                                .filter(({ key }) => details?.[key])
-                                .map(({ key, label }) => ({
-                                  type: label,
-                                  value: details[key]
-                                }))
-                              handleLeave(
-                                date,
-                                "Leave",
-
-                                details?.leaveDetails,
-                                "casual Leave"
-                              )
-                            }
-                          }}
-                        >
-                          {details?.casualLeave || "-"}
-                        </td>
-                        <td
-                          className="border border-gray-400 p-2  hover:cursor-pointer"
-                          onClick={() => {
-                            if (user?.role === "Admin") {
-                              handleLeave(
-                                date,
-                                "Leave",
-
-                                details?.leaveDetails,
-                                "privileage Leave"
-                              )
-                            }
-                          }}
-                        >
-                          {details?.privileageLeave || "-"}
-                        </td>
-                        <td
-                          className="border border-gray-400 p-2  hover:cursor-pointer"
-                          onClick={() => {
-                            if (user?.role === "Admin") {
-                              handleLeave(
-                                date,
-                                "Leave",
-
-                                details?.leaveDetails,
-                                "compensatory Leave"
-                              )
-                            }
-                          }}
-                        >
-                          {details?.compensatoryLeave || "-"}
-                        </td>
-                        <td
-                          className="border border-gray-400 p-2 hover:cursor-pointer"
-                          onClick={() => {
-                            if (user?.role === "Admin") {
-                              handleLeave(
-                                date,
-                                "Leave",
-
-                                details?.leaveDetails,
-                                "other Leave"
-                              )
-                            }
-                          }}
-                        >
-                          {details?.otherLeave || "-"}
-                        </td>
-                        <td className="border border-gray-400 p-2">
-                          {details?.early ? `${details.early} minutes` : "-"}
-                        </td>
-                        <td className="border border-gray-400 p-2">
-                          {details?.late ? `${details.late} minutes` : "-"}
-                        </td>
-                        <td className="border border-gray-400 p-2 ">
-                          {details?.notMarked}
-                        </td>
-                      </>
-                    )}
-
-                    <td
-                      className="border border-gray-400 p-2 hover:cursor-pointer"
-                      onClick={() => {
-                        if (
-                          user?.role === "Admin" &&
-                          details.onsite.length > 0
-                        ) {
-                          handleOnsite(
-                            date,
-                            "Onsite",
-                            details?.onsite?.[0]?.onsiteType,
-
-                            details?.onsite?.[0]?.halfDayperiod,
-
-                            details?.onsite?.[0]?.description
-                          )
-                        }
-                      }}
-                    >
-                      {details?.onsite?.[0]?.place || "-"}
+                    {/* Outward */}
+                    <td className="border p-1">{row.outward.quantity}</td>
+                    <td className="border p-1">
+                      {row.outward.rate?.toFixed?.(2) || "-"}
                     </td>
-                    <td
-                      className="border border-gray-400 p-2 hover:cursor-pointer"
-                      onClick={() => {
-                        if (
-                          user?.role === "Admin" &&
-                          details.onsite.length > 0
-                        ) {
-                          handleOnsite(
-                            date,
-                            "Onsite",
-                            details?.onsite?.[0]?.onsiteType,
+                    <td className="border p-1">{row.outward.amount}</td>
 
-                            details?.onsite?.[0]?.halfDayperiod,
-
-                            details?.onsite?.[0]?.description
-                          )
-                        }
-                      }}
-                    >
-                      {details?.onsite?.[0]?.siteName || "-"}
+                    {/* Closing */}
+                    <td className="border p-1">{row.closing.quantity}</td>
+                    <td className="border p-1">
+                      {row.closing.rate?.toFixed?.(2) || "-"}
                     </td>
-                    <td
-                      className="border border-gray-400 p-2 hover:cursor-pointer"
-                      onClick={() => {
-                        if (
-                          user?.role === "Admin" &&
-                          details.onsite.length > 0
-                        ) {
-                          handleOnsite(
-                            date,
-                            "Onsite",
-                            details?.onsite?.[0]?.onsiteType,
-
-                            details?.onsite?.[0]?.halfDayperiod,
-
-                            details?.onsite?.[0]?.description
-                          )
-                        }
-                      }}
-                    >
-                      {details?.onsite?.[0]?.onsiteType || "-"}
-                    </td>
-                    <td
-                      className="border border-gray-400 p-2 hover:cursor-pointer"
-                      onClick={() => {
-                        if (
-                          user?.role === "Admin" &&
-                          details.onsite.length > 0
-                        ) {
-                          handleOnsite(
-                            date,
-                            "Onsite",
-                            details?.onsite?.[0]?.onsiteType,
-
-                            details?.onsite?.[0]?.halfDayperiod,
-
-                            details?.onsite?.[0]?.description
-                          )
-                        }
-                      }}
-                    >
-                      {details?.onsite?.[0]?.onsiteType === "Half Day"
-                        ? details?.onsite?.[0].halfDayPeriod
-                        : "-"}
-                    </td>
+                    <td className="border p-1">{row.closing.amount}</td>
                   </tr>
-                )
-              }
-            )} */}
+
+                  {/* if this row is expanded, show mapped rows */}
+                  {selectedItemName === row.itemName &&
+                    mappedArray
+                      .filter((m) => m.itemName === row.itemName)
+                      .map((m, idx) => (
+                        <tr
+                          key={`${m.itemName}-${idx}`}
+                          className="bg-yellow-200"
+                        >
+                          {/* indent & show batch + godown */}
+                          <td className="border p-1 pl-4">
+                            ({m.batch} | {m.godown})
+                          </td>
+
+                          {/* Opening */}
+                          <td className="border p-1">{m.opening.quantity}</td>
+                          <td className="border p-1">
+                            {m.opening.rate?.toFixed?.(2) || "-"}
+                          </td>
+                          <td className="border p-1">{m.opening.amount}</td>
+
+                          {/* Inward */}
+                          <td className="border p-1">{m.inward.quantity}</td>
+                          <td className="border p-1">
+                            {m.inward.rate?.toFixed?.(2) || "-"}
+                          </td>
+                          <td className="border p-1">{m.inward.amount}</td>
+
+                          {/* Outward */}
+                          <td className="border p-1">{m.outward.quantity}</td>
+                          <td className="border p-1">
+                            {m.outward.rate?.toFixed?.(2) || "-"}
+                          </td>
+                          <td className="border p-1">{m.outward.amount}</td>
+
+                          {/* Closing */}
+                          <td className="border p-1">{m.closing.quantity}</td>
+                          <td className="border p-1">
+                            {m.closing.rate?.toFixed?.(2) || "-"}
+                          </td>
+                          <td className="border p-1">{m.closing.amount}</td>
+                        </tr>
+                      ))}
+                </React.Fragment>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={13} className="text-center p-2">
+                  <div className="flex justify-center items-center">
+                    {isFetching ? (
+                      <PropagateLoader
+                        color="#3b82f6"
+                        size={10}
+                        speedMultiplier={1}
+                        className="mb-3"
+                      />
+                    ) : (
+                      <div>No Data found</div>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

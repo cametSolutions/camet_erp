@@ -7,6 +7,8 @@ import { useNavigate } from "react-router-dom";
 import AddProductForm from "./AddProductsForm";
 import TitleDiv from "@/components/common/TitleDiv";
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+
 
 function AddProductSecondary() {
   const [loading, setLoading] = useState(false);
@@ -44,6 +46,7 @@ function AddProductSecondary() {
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const submitHandler = async (formData) => {
     try {
@@ -56,7 +59,10 @@ function AddProductSecondary() {
       });
 
       toast.success(res.data.message);
-      navigate(-1);
+      queryClient.invalidateQueries({
+        queryKey: ["dashboardCounts", orgId],
+      });
+      navigate(-1,{ replace: true });
     } catch (error) {
       toast.error(error.response.data.message);
       console.log(error);

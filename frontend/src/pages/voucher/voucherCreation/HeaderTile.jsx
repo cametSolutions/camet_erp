@@ -1,20 +1,24 @@
 /* eslint-disable react/prop-types */
-import { useState } from "react";
+import { useState, forwardRef } from "react";
 import { IoIosAddCircle } from "react-icons/io";
 import { MdDateRange } from "react-icons/md";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import VoucherSeriesModal from "./VoucherSeriesModal";
 
-// Custom input component for the date picker
-const CustomInput = ({ onClick }) => (
+// Custom input component for the date picker - wrapped with forwardRef
+const CustomInput = forwardRef(({ onClick }, ref) => (
   <div
+    ref={ref}
     className="flex items-center cursor-pointer hover:text-violet-500 transition-colors"
     onClick={onClick}
   >
     <MdDateRange className="text-gray-500 hover:text-violet-500 text-xl cursor-pointer mt-1" />
   </div>
-);
+));
+
+// Add display name for better debugging
+CustomInput.displayName = 'CustomInput';
 
 function HeaderTile({
   title,

@@ -21,6 +21,7 @@ import {
     addPartyOpening,
     getPartyOpening,
     editPartyOpening,
+    fetchDashboardCounts,
 
 } from "../controllers/secondaryUserController.js"
 
@@ -37,7 +38,7 @@ import { createPayment, cancelPayment, editPayment, getPaymentDetails } from '..
 import { createInvoice, editInvoice, cancelSalesOrder, PartyListWithOrderPending, getInvoiceDetails } from '../controllers/saleOrderController.js';
 import { createStockTransfer, editStockTransfer, cancelStockTransfer, getStockTransferDetails } from '../controllers/stockTransferController.js';
 import { addBankPaymentDetails } from '../../frontend/slices/payment.js';
-import { addEmailConfiguration, getConfiguration, getBarcodeList, addBarcodeData, editBarcodeData, deleteBarcode, getSingleBarcodeData, getPrintingConfiguration, updateConfiguration, getDespatchTitles, updateDespatchTitles, getTermsAndConditions, updateTermsAndConditions, updateBankAccount, updateShipToConfiguration, updateFirstLayerConfiguration, createWarrantyCard, getWarrantyCards, updateWarrantyCard, deleteWarrantyCard, updateCommonToggleConfiguration } from '../controllers/settingsController.js';
+import { addEmailConfiguration, getConfiguration, getBarcodeList, addBarcodeData, editBarcodeData, deleteBarcode, getSingleBarcodeData, getPrintingConfiguration, updateConfiguration, getDespatchTitles, updateDespatchTitles, getTermsAndConditions, updateTermsAndConditions, updateBankAccount, updateShipToConfiguration, updateFirstLayerConfiguration, createWarrantyCard, getWarrantyCards, updateWarrantyCard, deleteWarrantyCard, updateCommonToggleConfiguration, uploadLetterHead } from '../controllers/settingsController.js';
 import { updateSecondaryUserConfiguration } from '../helpers/saleOrderHelper.js';
 import { addAccountGroupIdToOutstanding, addAccountGroupIdToParties, convertPrimaryToSecondary, createAccountGroups, updateDateFieldsByCompany, updateSalesItemUnitFields, updateUnitFields } from '../controllers/testingController.js';
 import { authPrimary } from '../middlewares/authPrimaryUsers.js';
@@ -203,6 +204,7 @@ router.delete('/getSingleBarcodeData/:id/:cmp_id', authSecondary, secondaryIsBlo
 ///// printing configuration 
 router.get('/getPrintingConfiguration/:cmp_id', authSecondary, secondaryIsBlocked, companyAuthentication, getPrintingConfiguration)
 router.put('/updateConfiguration/:cmp_id', authSecondary, secondaryIsBlocked, companyAuthentication, updateConfiguration)
+router.put('/uploadLetterHead/:cmp_id', authSecondary, secondaryIsBlocked, companyAuthentication, uploadLetterHead)
 
 //// despatch details title configuration
 router.get('/getDespatchTitles/:cmp_id', authSecondary, secondaryIsBlocked, companyAuthentication, getDespatchTitles)
@@ -259,6 +261,7 @@ router.get('/getOutstandingSummary/:cmp_id', authSecondary, secondaryIsBlocked, 
 
 /// dashboard summary
 router.get('/getDashboardSummary/:cmp_id', authSecondary, secondaryIsBlocked, companyAuthentication, getDashboardSummary)
+router.get('/fetchDashboardCounts/:cmp_id', authSecondary, secondaryIsBlocked, companyAuthentication, fetchDashboardCounts)
 /// get account groups
 router.get('/getAccountGroups/:cmp_id', authSecondary, secondaryIsBlocked, companyAuthentication, getAccountGroups)
 /// sub groups

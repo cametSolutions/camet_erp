@@ -1,13 +1,12 @@
 /* eslint-disable react/no-unescaped-entities */
 /* eslint-disable react/no-unknown-property */
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useSelector } from "react-redux";
-import api from "../../api/api";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { useSidebar } from "../../layout/Layout";
-import DashBoard from "../../components/common/DashBoard";
-import RemoveReduxData from "../../components/secUsers/RemoveReduxData";
+import { useSidebar } from "../../../layout/Layout";
+import RemoveReduxData from "../../../components/secUsers/RemoveReduxData";
+import DashBoardLayout from "./DashboardLayout";
 
 function Dashboard() {
   const [data, setData] = useState([]);
@@ -19,38 +18,36 @@ function Dashboard() {
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
 
-  const isAdmin =
-    JSON.parse(localStorage.getItem("sUserData")).role === "admin"
-      ? true
-      : false;
+
+      
 
 
   const { handleToggleSidebar } = useSidebar();
-  useEffect(() => {
-    if (org) {
-      const fetchTransactions = async () => {
-        setLoader(true);
-        try {
-          const res = await api.get(
-            `/api/sUsers/transactions/${org._id}?todayOnly=true&isAdmin=${isAdmin}`,
-            {
-              withCredentials: true,
-            }
-          );
+  // useEffect(() => {
+  //   if (org) {
+  //     const fetchTransactions = async () => {
+  //       setLoader(true);
+  //       try {
+  //         const res = await api.get(
+  //           `/api/sUsers/transactions/${org._id}?todayOnly=true&isAdmin=${isAdmin}`,
+  //           {
+  //             withCredentials: true,
+  //           }
+  //         );
 
-          setData(res.data.data.combined);
+  //         setData(res.data.data.combined);
 
-          // dispatch(addData(res.data.outstandingData));
-        } catch (error) {
-          console.log(error);
-          setData([]);
-        } finally {
-          setLoader(false);
-        }
-      };
-      fetchTransactions();
-    }
-  }, [org]);
+  //         // dispatch(addData(res.data.outstandingData));
+  //       } catch (error) {
+  //         console.log(error);
+  //         setData([]);
+  //       } finally {
+  //         setLoader(false);
+  //       }
+  //     };
+  //     fetchTransactions();
+  //   }
+  // }, [org]);
 
   const today = new Date();
   // Filter data based on today's date
@@ -81,7 +78,7 @@ function Dashboard() {
   return (
     <div>
       <RemoveReduxData />
-      <DashBoard
+      <DashBoardLayout
         handleToggleSidebar={handleToggleSidebar}
         filteredData={filteredData}
         org={org}

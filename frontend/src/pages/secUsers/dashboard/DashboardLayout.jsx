@@ -1,28 +1,21 @@
 /* eslint-disable react/no-unescaped-entities */
 /* eslint-disable react/prop-types */
-import DashboardTransaction from "./DashboardTransaction"
-import { FaCaretDown } from "react-icons/fa"
-import { CiCalendarDate } from "react-icons/ci"
-import { IoReorderThreeSharp } from "react-icons/io5"
-import DashboardCard from "../../components/homePage/DashboardCardPrimary"
-import DashboardSummary from "./DashboardSummary"
-import { useState } from "react"
-import TransactionSkeleton from "./TransactionSkeleton"
-import NotFound from "../../assets/images/space.png"
+import { FaCaretDown } from "react-icons/fa";
+import { CiCalendarDate } from "react-icons/ci";
+import { IoReorderThreeSharp } from "react-icons/io5";
+import DashboardCard from "../../../components/homePage/DashboardCards";
+import DashboardSummary from "./DashboardSummary";
+import { useState } from "react";
+import TodaysTransaction from "./TodaysTransaction";
 
-function DashBoard({
+function DashBoardLayout({
   handleToggleSidebar,
-  filteredData,
   org,
   receiptTotal,
   handleLinkClick,
   type,
-  from,
-  loader
 }) {
-  const [tab, setTab] = useState("transactions")
-
-  console.log(org)
+  const [tab, setTab] = useState("transactions");
 
   return (
     <div className="overflow-hidden h-screen">
@@ -113,23 +106,7 @@ function DashBoard({
 
         <div className=" w-full hidden sm:flex ">
           <div className="w-1/2 h-[calc(100vh-290px)] overflow-y-scroll scrollbar-thin mt-2 ">
-            {loader ? (
-              <TransactionSkeleton />
-            ) : filteredData.length === 0 ? (
-              <div className="h-[calc(100vh-301px)] flex justify-center flex-col items-center">
-                <img className="h-16 w-16" src={NotFound} alt="" />
-                <p className="text-xs font-bold text-gray-500 mt-1">
-                  {" "}
-                  No Transactions
-                </p>
-              </div>
-            ) : (
-              <DashboardTransaction
-                filteredData={filteredData}
-                userType={type}
-                from={from}
-              />
-            )}
+            <TodaysTransaction />
           </div>
           <div className="w-1/2">
             <DashboardSummary />
@@ -140,24 +117,8 @@ function DashBoard({
 
         <div className=" w-full sm:hidden  ">
           {tab === "transactions" ? (
-            <div className=" h-[calc(100vh-301px)] overflow-y-scroll scrollbar-thin mt-2 ">
-              {loader ? (
-                <TransactionSkeleton />
-              ) : filteredData.length === 0 ? (
-                <div className="h-[calc(100vh-301px)] flex justify-center flex-col items-center">
-                  <img className="h-12 w-12" src={NotFound} alt="" />
-                  <p className="text-xs font-bold text-gray-500 mt-2">
-                    {" "}
-                    No Transactions
-                  </p>
-                </div>
-              ) : (
-                <DashboardTransaction
-                  filteredData={filteredData}
-                  userType={type}
-                  from={from}
-                />
-              )}
+            <div className="w-full h-[calc(100vh-290px)] overflow-y-scroll scrollbar-thin mt-2 ">
+              <TodaysTransaction />
             </div>
           ) : (
             <div className="">
@@ -167,7 +128,7 @@ function DashBoard({
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default DashBoard
+export default DashBoardLayout;

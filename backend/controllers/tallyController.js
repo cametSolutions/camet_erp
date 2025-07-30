@@ -1844,7 +1844,6 @@ export const addGodowns = async (req, res) => {
 // // @desc for giving invoices to tally
 // // route GET/api/tally/giveInvoice
 export const giveInvoice = async (req, res) => {
-  console.log("haii");
 
   const cmp_id = req.params.cmp_id;
   const serialNumber = req.params.SNo;
