@@ -61,6 +61,17 @@ const warrantyCardSchema = new mongoose.Schema(
       default: "",
     },
 
+    imageUrl: {
+      type: String,
+      default: null,
+   
+    },
+    imagePublicId: {
+      type: String,
+      default: null,
+     
+    },
+
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

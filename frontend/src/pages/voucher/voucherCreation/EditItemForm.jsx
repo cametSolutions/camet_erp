@@ -268,11 +268,13 @@ function EditItemForm({ ItemsFromRedux, from, taxInclusive = false, loading }) {
   useEffect(() => {
     setItem(selectedItem[0]);
 
+    
+
     if (selectedItem) {
       setNewPrice(selectedGodown?.selectedPriceRate || 0);
       setQuantity(selectedGodown?.count || 1);
       setDescription(selectedGodown?.description || "");
-      setWarrantyCard(selectedGodown?.warrantyCard?._id || null);
+      setWarrantyCard(selectedGodown?.warrantyCard || null);
 
       if (enableActualAndBilledQuantity) {
         setActualQuantity(
