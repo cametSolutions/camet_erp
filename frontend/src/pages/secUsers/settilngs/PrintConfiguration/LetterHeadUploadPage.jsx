@@ -16,7 +16,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { useDispatch, useSelector } from "react-redux";
 import uploadImageToCloudinary, {
-  deleteImageFromCloudinary,
 } from "../../../../../utils/uploadCloudinary";
 import { updateConfiguration } from "../../../../../slices/secSelectedOrgSlice";
 
@@ -140,20 +139,20 @@ const LogoUploadPage = () => {
     };
   };
 
-  /**
-   * Get container-relative coordinates
-   * @param {Event} e - Event object
-   * @param {HTMLElement} container - Container element
-   * @returns {Object} Relative coordinates {x, y}
-   */
-  const getRelativeCoordinates = (e, container) => {
-    const coords = getEventCoordinates(e);
-    const rect = container.getBoundingClientRect();
-    return {
-      x: coords.x - rect.left,
-      y: coords.y - rect.top,
-    };
-  };
+  // /**
+  //  * Get container-relative coordinates
+  //  * @param {Event} e - Event object
+  //  * @param {HTMLElement} container - Container element
+  //  * @returns {Object} Relative coordinates {x, y}
+  //  */
+  // const getRelativeCoordinates = (e, container) => {
+  //   const coords = getEventCoordinates(e);
+  //   const rect = container.getBoundingClientRect();
+  //   return {
+  //     x: coords.x - rect.left,
+  //     y: coords.y - rect.top,
+  //   };
+  // };
 
   // ===============================
   // API FUNCTIONS
