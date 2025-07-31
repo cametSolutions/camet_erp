@@ -86,9 +86,7 @@ const LogoUploadPage = () => {
     );
 
   const existingLetterHeadUrl = existingLetterHead?.letterHeadUrl;
-  const publicId = existingLetterHead?.letterHeadPublicId || null;
 
-  console.log("Existing Letter Head URL:", publicId);
 
   useEffect(() => {
     if (existingLetterHeadUrl) {
@@ -165,7 +163,6 @@ const LogoUploadPage = () => {
      * @param {Object} cloudinaryData - Cloudinary response data for cleanup
      */
     uploadLetterHead: async (formData, cloudinaryData) => {
-      console.log(formData);
 
       try {
         const response = await api.put(
@@ -523,7 +520,7 @@ const LogoUploadPage = () => {
    * Handle crop box start event (mouse down or touch start)
    */
   const handleCropBoxStart = (e) => {
-    e.preventDefault();
+    // e.preventDefault();
     e.stopPropagation();
     
     const coords = getEventCoordinates(e);
@@ -547,7 +544,7 @@ const LogoUploadPage = () => {
    * Handle resize handle start event
    */
   const handleResizeStart = (e) => {
-    e.preventDefault();
+    // e.preventDefault();
     e.stopPropagation();
     
     const coords = getEventCoordinates(e);
