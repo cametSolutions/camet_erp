@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 const brandSchema = new mongoose.Schema({
   brand: { type: String, required: true },
   roomRent: { type: Number },
+ 
   brand_id: { type: String, required: true, index: true }, // Add index: true here
   cmp_id: {
     type: mongoose.Schema.Types.ObjectId,
@@ -18,6 +19,7 @@ const brandSchema = new mongoose.Schema({
 
 const categorySchema = new mongoose.Schema({
   category: { type: String, required: true },
+  under:{type:String},
   category_id: { type: String, required: true, index: true }, // Add index: true here
   cmp_id: {
     type: mongoose.Schema.Types.ObjectId,
@@ -33,6 +35,7 @@ const categorySchema = new mongoose.Schema({
 
 const subcategorySchema = new mongoose.Schema({
   subcategory: { type: String, required: true },
+  under:{type:String},
   subcategory_id: { type: String, required: true, index: true }, // Add index: true here
   cmp_id: {
     type: mongoose.Schema.Types.ObjectId,
