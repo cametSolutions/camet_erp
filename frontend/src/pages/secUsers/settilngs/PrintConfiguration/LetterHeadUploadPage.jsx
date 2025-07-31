@@ -39,6 +39,7 @@ const LogoUploadPage = () => {
   const [isResizing, setIsResizing] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [imageUploadLoading, setImageUploadLoading] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   // Image processing states
   const [cropBox, setCropBox] = useState({
@@ -85,24 +86,74 @@ const LogoUploadPage = () => {
       (config) => config.voucher === voucherType
     );
 
-    const existingLetterHeadUrl= existingLetterHead.letterHeadUrl;
-    const publicId = existingLetterHead.letterHeadPublicId || null;
+  const existingLetterHeadUrl = existingLetterHead?.letterHeadUrl;
+  const publicId = existingLetterHead?.letterHeadPublicId || null;
 
-    console.log("Existing Letter Head URL:", publicId);
+  console.log("Existing Letter Head URL:", publicId);
+
+  useEffect(() => {
+    if (existingLetterHeadUrl) {
+      setPreviewUrl(existingLetterHeadUrl);
+    }
+  }, [existingLetterHeadUrl]);
+
+  // Detect mobile device
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768 || 'ontouchstart' in window);
+    };
     
-
-
-    useEffect(() => {
-      if (existingLetterHeadUrl) {
-        setPreviewUrl(existingLetterHeadUrl);
-      }
-    }, [existingLetterHeadUrl]);
-    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Get selected organization ID
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
+
+  // ===============================
+  // UTILITY FUNCTIONS FOR TOUCH/MOUSE
+  // ===============================
+
+  /**
+   * Get coordinates from mouse or touch event
+   * @param {Event} e - Mouse or touch event
+   * @returns {Object} Coordinates {x, y}
+   */
+  const getEventCoordinates = (e) => {
+    if (e.touches && e.touches.length > 0) {
+      return {
+        x: e.touches[0].clientX,
+        y: e.touches[0].clientY,
+      };
+    } else if (e.changedTouches && e.changedTouches.length > 0) {
+      return {
+        x: e.changedTouches[0].clientX,
+        y: e.changedTouches[0].clientY,
+      };
+    }
+    return {
+      x: e.clientX,
+      y: e.clientY,
+    };
+  };
+
+  /**
+   * Get container-relative coordinates
+   * @param {Event} e - Event object
+   * @param {HTMLElement} container - Container element
+   * @returns {Object} Relative coordinates {x, y}
+   */
+  const getRelativeCoordinates = (e, container) => {
+    const coords = getEventCoordinates(e);
+    const rect = container.getBoundingClientRect();
+    return {
+      x: coords.x - rect.left,
+      y: coords.y - rect.top,
+    };
+  };
 
   // ===============================
   // API FUNCTIONS
@@ -466,56 +517,98 @@ const LogoUploadPage = () => {
   };
 
   // ===============================
-  // CROP INTERACTION FUNCTIONS
+  // ENHANCED CROP INTERACTION FUNCTIONS WITH TOUCH SUPPORT
   // ===============================
 
   /**
-   * Handle crop box mouse down event for dragging
+   * Handle crop box start event (mouse down or touch start)
    */
-  const handleCropBoxMouseDown = (e) => {
-    e.preventDefault();
-    setIsDragging(true);
-    setDragStart({
-      x: e.clientX - cropBox.x,
-      y: e.clientY - cropBox.y,
-    });
-  };
-
-  /**
-   * Handle resize handle mouse down event
-   */
-  const handleResizeMouseDown = (e) => {
+  const handleCropBoxStart = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsResizing(true);
+    
+    const coords = getEventCoordinates(e);
+    const container = cropContainerRef.current;
+    if (!container) return;
+
+    const rect = container.getBoundingClientRect();
+    const relativeCoords = {
+      x: coords.x - rect.left,
+      y: coords.y - rect.top,
+    };
+
+    setIsDragging(true);
     setDragStart({
-      x: e.clientX,
-      y: e.clientY,
+      x: relativeCoords.x - cropBox.x,
+      y: relativeCoords.y - cropBox.y,
     });
   };
 
   /**
-   * Handle image mouse down event for dragging
+   * Handle resize handle start event
    */
-  const handleImageMouseDown = (e) => {
+  const handleResizeStart = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const coords = getEventCoordinates(e);
+    setIsResizing(true);
+    setDragStart({
+      x: coords.x,
+      y: coords.y,
+    });
+  };
+
+  /**
+   * Handle image start event for dragging
+   */
+  const handleImageStart = (e) => {
+    // Don't handle if clicking on crop box or resize handle
     if (
       e.target.classList.contains("crop-box") ||
-      e.target.classList.contains("resize-handle")
+      e.target.classList.contains("resize-handle") ||
+      e.target.closest(".crop-box")
     ) {
       return;
     }
+    
     e.preventDefault();
+    
+    const coords = getEventCoordinates(e);
+    const container = cropContainerRef.current;
+    if (!container) return;
+
+    const rect = container.getBoundingClientRect();
+    const relativeCoords = {
+      x: coords.x - rect.left,
+      y: coords.y - rect.top,
+    };
+
     setIsDragging(true);
     setDragStart({
-      x: e.clientX - imagePosition.x,
-      y: e.clientY - imagePosition.y,
+      x: relativeCoords.x - imagePosition.x,
+      y: relativeCoords.y - imagePosition.y,
     });
   };
 
   /**
-   * Handle mouse move event for dragging and resizing
+   * Handle move event (mouse move or touch move)
    */
-  const handleMouseMove = (e) => {
+  const handleMove = (e) => {
+    e.preventDefault();
+    
+    if (!isDragging && !isResizing) return;
+
+    const coords = getEventCoordinates(e);
+    const container = cropContainerRef.current;
+    if (!container) return;
+
+    const rect = container.getBoundingClientRect();
+    const relativeCoords = {
+      x: coords.x - rect.left,
+      y: coords.y - rect.top,
+    };
+
     if (isDragging && !isResizing) {
       // Check if we're dragging the crop box or the image
       if (
@@ -528,14 +621,14 @@ const LogoUploadPage = () => {
           0,
           Math.min(
             CROP_CONTAINER_WIDTH - cropBox.width,
-            e.clientX - dragStart.x
+            relativeCoords.x - dragStart.x
           )
         );
         const newY = Math.max(
           0,
           Math.min(
             CROP_CONTAINER_HEIGHT - cropBox.height,
-            e.clientY - dragStart.y
+            relativeCoords.y - dragStart.y
           )
         );
 
@@ -546,15 +639,15 @@ const LogoUploadPage = () => {
         }));
       } else {
         // Dragging image
-        const newX = e.clientX - dragStart.x;
-        const newY = e.clientY - dragStart.y;
+        const newX = relativeCoords.x - dragStart.x;
+        const newY = relativeCoords.y - dragStart.y;
 
         setImagePosition({ x: newX, y: newY });
       }
     } else if (isResizing) {
       // Resizing crop box
-      const deltaX = e.clientX - dragStart.x;
-      const deltaY = e.clientY - dragStart.y;
+      const deltaX = coords.x - dragStart.x;
+      const deltaY = coords.y - dragStart.y;
 
       const newWidth = Math.max(
         50,
@@ -571,14 +664,16 @@ const LogoUploadPage = () => {
         height: newHeight,
       }));
 
-      setDragStart({ x: e.clientX, y: e.clientY });
+      setDragStart({ x: coords.x, y: coords.y });
     }
   };
 
   /**
-   * Handle mouse up event to end dragging/resizing
+   * Handle end event (mouse up or touch end)
    */
-  const handleMouseUp = () => {
+  const handleEnd = (e) => {
+    e.preventDefault();
+    
     if (isDragging || isResizing) {
       setIsDragging(false);
       setIsResizing(false);
@@ -604,8 +699,6 @@ const LogoUploadPage = () => {
    * Handle logo upload with validation and error handling
    */
   const handleUpload = async () => {
-
-    
     // Validate file selection
     if (!selectedFile) {
       setErrors(["Please select an image first"]);
@@ -657,9 +750,8 @@ const LogoUploadPage = () => {
       console.error("Error uploading to Cloudinary:", error);
       setErrors(["Failed to upload image to Cloudinary. Please try again."]);
       return;
-    }finally{
-       setImageUploadLoading(false);
-        
+    } finally {
+      setImageUploadLoading(false);
     }
   };
 
@@ -685,15 +777,30 @@ const LogoUploadPage = () => {
   // ===============================
 
   /**
-   * Handle mouse events for dragging and resizing
+   * Handle interaction events for dragging and resizing - BOTH MOUSE AND TOUCH
    */
   useEffect(() => {
     if (isDragging || isResizing) {
+      // Mouse events
+      const handleMouseMove = (e) => handleMove(e);
+      const handleMouseUp = (e) => handleEnd(e);
+      
+      // Touch events
+      const handleTouchMove = (e) => handleMove(e);
+      const handleTouchEnd = (e) => handleEnd(e);
+
+      // Add event listeners
       document.addEventListener("mousemove", handleMouseMove);
       document.addEventListener("mouseup", handleMouseUp);
+      document.addEventListener("touchmove", handleTouchMove, { passive: false });
+      document.addEventListener("touchend", handleTouchEnd);
+
       return () => {
+        // Remove event listeners
         document.removeEventListener("mousemove", handleMouseMove);
         document.removeEventListener("mouseup", handleMouseUp);
+        document.removeEventListener("touchmove", handleTouchMove);
+        document.removeEventListener("touchend", handleTouchEnd);
       };
     }
   }, [isDragging, isResizing, dragStart, cropBox, imagePosition, imageScale]);
@@ -702,17 +809,15 @@ const LogoUploadPage = () => {
   // COMPONENT RENDER
   // ===============================
 
-  
-
   return (
     <div className="bg-white min-h-screen">
       <TitleDiv title="Letter Head Upload" />
-      <div className="max-w-6xl mx-auto p-6 space-y-8">
+      <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-6 md:space-y-8">
         {/* Error Display */}
         {errors.length > 0 && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4">
             <div className="flex items-start space-x-3">
-              <AlertCircle size={20} className="text-red-500 mt-0.5" />
+              <AlertCircle size={20} className="text-red-500 mt-0.5 flex-shrink-0" />
               <div>
                 <h3 className="text-red-800 font-medium mb-2">
                   Upload Errors:
@@ -731,7 +836,7 @@ const LogoUploadPage = () => {
         {isPortrait && imageData && (
           <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
             <div className="flex items-start space-x-3">
-              <RotateCw size={20} className="text-orange-500 mt-0.5" />
+              <RotateCw size={20} className="text-orange-500 mt-0.5 flex-shrink-0" />
               <div>
                 <h3 className="text-orange-800 font-medium mb-2">
                   Portrait Image Detected
@@ -746,7 +851,7 @@ const LogoUploadPage = () => {
           </div>
         )}
 
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 md:gap-8">
           {/* Upload Section */}
           <div className="xl:col-span-1 space-y-6">
             <h3 className="text-lg font-medium text-gray-900">
@@ -784,7 +889,7 @@ const LogoUploadPage = () => {
                 <div>
                   <p className="text-gray-900 font-medium">Upload Logo</p>
                   <p className="text-gray-600 text-sm mt-1">
-                    Drag & drop or click to browse
+                    {isMobile ? "Tap to browse" : "Drag & drop or click to browse"}
                   </p>
                 </div>
                 <div className="text-xs text-gray-500">
@@ -797,24 +902,24 @@ const LogoUploadPage = () => {
             {selectedFile && (
               <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                 <div className="flex items-start space-x-3">
-                  <div className="p-2 bg-green-100 rounded-lg">
+                  <div className="p-2 bg-green-100 rounded-lg flex-shrink-0">
                     <Image size={16} className="text-green-600" />
                   </div>
-                  <div className="flex-1">
-                    <p className="text-green-800 font-medium text-sm">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-green-800 font-medium text-sm truncate">
                       {selectedFile.name}
                     </p>
                     <div className="text-xs text-green-700 mt-1 space-y-1">
                       <div>Size: {formatFileSize(selectedFile.size)}</div>
                       <div>
-                        Crop area: {cropBox.width}×{cropBox.height}px
+                        Crop area: {Math.round(cropBox.width)}×{Math.round(cropBox.height)}px
                       </div>
                       <div className="font-medium">✓ Ready to upload</div>
                     </div>
                   </div>
                   <button
                     onClick={handleRemoveLogo}
-                    className="p-1 text-red-500 hover:text-red-700 hover:bg-red-100 rounded transition-colors"
+                    className="p-1 text-red-500 hover:text-red-700 hover:bg-red-100 rounded transition-colors flex-shrink-0"
                   >
                     <Trash2 size={14} />
                   </button>
@@ -825,7 +930,7 @@ const LogoUploadPage = () => {
 
           {/* Crop Interface */}
           {showCropper && imageData && (
-            <div className="xl:col-span-1 space-y-6">
+            <div className="xl:col-span-1 space-y-6 max-w-full">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-medium text-gray-900">
                   Crop Your Image
@@ -833,17 +938,17 @@ const LogoUploadPage = () => {
                 <div className="flex items-center space-x-2">
                   <button
                     onClick={() => handleZoom(-0.1)}
-                    className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                    className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors touch-manipulation"
                     title="Zoom Out"
                   >
                     <ZoomOut size={16} />
                   </button>
-                  <span className="text-sm text-gray-600 px-2">
+                  <span className="text-sm text-gray-600 px-2 min-w-[60px] text-center">
                     {Math.round(imageScale * 100)}%
                   </span>
                   <button
                     onClick={() => handleZoom(0.1)}
-                    className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                    className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors touch-manipulation"
                     title="Zoom In"
                   >
                     <ZoomIn size={16} />
@@ -854,12 +959,15 @@ const LogoUploadPage = () => {
               <div className="bg-gray-50 rounded-lg p-4">
                 <div
                   ref={cropContainerRef}
-                  className="relative bg-gray-200 rounded-lg overflow-hidden cursor-move"
+                  className="relative bg-gray-200 rounded-lg overflow-hidden select-none mx-auto"
                   style={{
-                    width: `${CROP_CONTAINER_WIDTH}px`,
-                    height: `${CROP_CONTAINER_HEIGHT}px`,
+                    width: `${Math.min(CROP_CONTAINER_WIDTH, window.innerWidth - 80)}px`,
+                    height: `${Math.min(CROP_CONTAINER_HEIGHT, (window.innerWidth - 80) * 0.75)}px`,
+                    touchAction: 'none',
+                    userSelect: 'none',
                   }}
-                  onMouseDown={handleImageMouseDown}
+                  onMouseDown={handleImageStart}
+                  onTouchStart={handleImageStart}
                 >
                   {/* Image */}
                   <img
@@ -877,27 +985,63 @@ const LogoUploadPage = () => {
 
                   {/* Crop Box */}
                   <div
-                    className="crop-box absolute border-2 border-blue-500 bg-blue-500/10 cursor-move"
+                    className="crop-box absolute border-2 border-blue-500 bg-blue-500/10 select-none"
                     style={{
                       left: `${cropBox.x}px`,
                       top: `${cropBox.y}px`,
                       width: `${cropBox.width}px`,
                       height: `${cropBox.height}px`,
+                      cursor: isDragging ? 'grabbing' : 'grab',
+                      touchAction: 'none',
                     }}
-                    onMouseDown={handleCropBoxMouseDown}
+                    onMouseDown={handleCropBoxStart}
+                    onTouchStart={handleCropBoxStart}
                   >
-                    {/* Resize Handle */}
+                    {/* Resize Handle - Made larger for mobile */}
                     <div
-                      className="resize-handle absolute bottom-0 right-0 w-4 h-4 bg-blue-500 cursor-se-resize"
-                      onMouseDown={handleResizeMouseDown}
+                      className="resize-handle absolute bottom-0 right-0 bg-blue-500 select-none"
+                      style={{
+                        width: isMobile ? '20px' : '16px',
+                        height: isMobile ? '20px' : '16px',
+                        cursor: isResizing ? 'se-resize' : 'se-resize',
+                        touchAction: 'none',
+                      }}
+                      onMouseDown={handleResizeStart}
+                      onTouchStart={handleResizeStart}
                     >
-                      <div className="absolute bottom-1 right-1 w-2 h-2 border-r-2 border-b-2 border-white"></div>
+                      <div 
+                        className="absolute border-r-2 border-b-2 border-white"
+                        style={{
+                          bottom: isMobile ? '4px' : '2px',
+                          right: isMobile ? '4px' : '2px',
+                          width: isMobile ? '10px' : '8px',
+                          height: isMobile ? '10px' : '8px',
+                        }}
+                      ></div>
                     </div>
 
-                    {/* Corner indicators */}
-                    <div className="absolute top-0 left-0 w-2 h-2 bg-blue-500"></div>
-                    <div className="absolute top-0 right-0 w-2 h-2 bg-blue-500"></div>
-                    <div className="absolute bottom-0 left-0 w-2 h-2 bg-blue-500"></div>
+                    {/* Corner indicators - Made larger for mobile */}
+                    <div 
+                      className="absolute top-0 left-0 bg-blue-500"
+                      style={{
+                        width: isMobile ? '8px' : '6px',
+                        height: isMobile ? '8px' : '6px',
+                      }}
+                    ></div>
+                    <div 
+                      className="absolute top-0 right-0 bg-blue-500"
+                      style={{
+                        width: isMobile ? '8px' : '6px',
+                        height: isMobile ? '8px' : '6px',
+                      }}
+                    ></div>
+                    <div 
+                      className="absolute bottom-0 left-0 bg-blue-500"
+                      style={{
+                        width: isMobile ? '8px' : '6px',
+                        height: isMobile ? '8px' : '6px',
+                      }}
+                    ></div>
                   </div>
 
                   {/* Overlay for areas outside crop box */}
@@ -913,7 +1057,7 @@ const LogoUploadPage = () => {
                       style={{
                         top: `${cropBox.y + cropBox.height}px`,
                         height: `${
-                          CROP_CONTAINER_HEIGHT - cropBox.y - cropBox.height
+                          Math.min(CROP_CONTAINER_HEIGHT, (window.innerWidth - 80) * 0.75) - cropBox.y - cropBox.height
                         }px`,
                       }}
                     ></div>
@@ -934,7 +1078,7 @@ const LogoUploadPage = () => {
                         top: `${cropBox.y}px`,
                         left: `${cropBox.x + cropBox.width}px`,
                         width: `${
-                          CROP_CONTAINER_WIDTH - cropBox.x - cropBox.width
+                          Math.min(CROP_CONTAINER_WIDTH, window.innerWidth - 80) - cropBox.x - cropBox.width
                         }px`,
                         height: `${cropBox.height}px`,
                       }}
@@ -944,16 +1088,16 @@ const LogoUploadPage = () => {
 
                 <div className="mt-4 text-sm text-gray-600 space-y-2">
                   <div className="flex items-center space-x-2">
-                    <Move size={14} />
-                    <span>Drag the blue box to select crop area</span>
+                    <Move size={14} className="flex-shrink-0" />
+                    <span>{isMobile ? "Touch and drag the blue box to select crop area" : "Drag the blue box to select crop area"}</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Crop size={14} />
-                    <span>Drag the corner handle to resize</span>
+                    <Crop size={14} className="flex-shrink-0" />
+                    <span>{isMobile ? "Touch and drag the corner handle to resize" : "Drag the corner handle to resize"}</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Image size={14} />
-                    <span>Drag outside the box to move the image</span>
+                    <Image size={14} className="flex-shrink-0" />
+                    <span>{isMobile ? "Touch and drag outside the box to move the image" : "Drag outside the box to move the image"}</span>
                   </div>
                 </div>
               </div>
@@ -974,7 +1118,6 @@ const LogoUploadPage = () => {
                     </p>
                     <div className="border rounded overflow-hidden">
                       <img
-                        // src={ previewUrl ?? URL.createObjectURL(selectedFile) }
                         src={selectedFile ? URL.createObjectURL(selectedFile) : previewUrl}
                         alt="Banner Preview"
                         className="w-full h-auto object-cover"
@@ -1012,7 +1155,7 @@ const LogoUploadPage = () => {
             <button
               onClick={handleUpload}
               disabled={letterHeadUploadMutation.isPending || imageUploadLoading}
-              className="w-full bg-pink-600 py-2 rounded-md text-white font-semibold flex items-center justify-center space-x-2 hover:bg-pink-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-pink-600 py-3 md:py-2 rounded-md text-white font-semibold flex items-center justify-center space-x-2 hover:bg-pink-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation text-base md:text-sm"
             >
               {(letterHeadUploadMutation.isPending || imageUploadLoading) ? (
                 <>
