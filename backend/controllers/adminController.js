@@ -22,6 +22,10 @@ import purchaseModel from "../models/purchaseModel.js";
 import salesModel from "../models/salesModel.js";
 import stockTransferModel from "../models/stockTransferModel.js";
 import OragnizationModel from "../models/OragnizationModel.js";
+import BarcodeModel from "../models/barcodeModel.js";
+import SubgroupModel from "../models/subGroup.js";
+import VoucherSeriesModel from "../models/VoucherSeriesModel.js";
+import warrantyCardModel from "../models/warranyCardModel.js";
 import {
   Brand,
   Category,
@@ -492,19 +496,20 @@ export const handleOrganizationApprove = async (req, res) => {
       try {
         const info = await transporter.sendMail(mailOptions);
         console.log("Email Sent:" + info.response);
-        res.status(200).json({ message: "organization Status changed and email sent" });
+        res
+          .status(200)
+          .json({ message: "organization Status changed and email sent" });
       } catch (emailError) {
         console.log("Email error:", emailError);
-        res.status(200).json({ 
+        res.status(200).json({
           message: "organization Status changed but email failed to send",
-          emailError: emailError.message 
+          emailError: emailError.message,
         });
       }
     } else {
       // Organization was approved before, now being unapproved
       res.status(200).json({ message: "organization Status changed" });
     }
-
   } catch (error) {
     console.error("Error:", error);
     res.status(500).json({ error: "Internal server error" });
@@ -598,92 +603,107 @@ export const handleCompanyDelete = async (req, res) => {
   const companyId = req.params.cmp_id;
 
   try {
-    // Check if company exists first 
+    // Check if company exists first
     const company = await OragnizationModel.findById(companyId);
     if (!company) {
       return res.status(404).json({ error: "Company not found" });
     }
 
     const deletionResults = await Promise.all([
+      AccountGroup.deleteMany({ cmp_id: companyId }),
+      additionalChargesModel.deleteMany({ cmp_id: companyId }),
       Banks.deleteMany({ cmp_id: companyId }),
       BanksOd.deleteMany({ cmp_id: companyId }),
+      BarcodeModel.deleteMany({ cmp_id: companyId }),
+      Brand.deleteMany({ cmp_id: companyId }),
       Cash.deleteMany({ cmp_id: companyId }),
-      AccountGroup.deleteMany({ cmp_id: companyId }),
+      Category.deleteMany({ cmp_id: companyId }),
       CreditNote.deleteMany({ cmp_id: companyId }),
       DebitNote.deleteMany({ cmp_id: companyId }),
-      Receipt.deleteMany({ cmp_id: companyId }),
-      Payment.deleteMany({ cmp_id: companyId }),
-      TallyData.deleteMany({ cmp_id: companyId }),
-      additionalChargesModel.deleteMany({ cmp_id: companyId }),
-      hsnModel.deleteMany({ cmp_id: companyId }),
+      Godown.deleteMany({ cmp_id: companyId }),
+      hsnModel.deleteMany({ cpm_id: companyId }), 
       invoiceModel.deleteMany({ cmp_id: companyId }),
       partyModel.deleteMany({ cmp_id: companyId }),
+      Payment.deleteMany({ cmp_id: companyId }),
+      PriceLevel.deleteMany({ cmp_id: companyId }),
       productModel.deleteMany({ cmp_id: companyId }),
       purchaseModel.deleteMany({ cmp_id: companyId }),
+      Receipt.deleteMany({ cmp_id: companyId }),
       salesModel.deleteMany({ cmp_id: companyId }),
       stockTransferModel.deleteMany({ cmp_id: companyId }),
-      Brand.deleteMany({ cmp_id: companyId }),
-      Category.deleteMany({ cmp_id: companyId }),
       Subcategory.deleteMany({ cmp_id: companyId }),
-      Godown.deleteMany({ cmp_id: companyId }),
-      PriceLevel.deleteMany({ cmp_id: companyId }),
+      SubgroupModel.deleteMany({ cmp_id: companyId }),
+      TallyData.deleteMany({ cmp_id: companyId }),
       vanSaleModel.deleteMany({ cmp_id: companyId }),
-      TransactionModel.deleteMany({ cmp_id: companyId }), // Fixed: using companyId instead of organizationIds
+      TransactionModel.deleteMany({ cmp_id: companyId }), 
+      VoucherSeriesModel.deleteMany({ cmp_id: companyId }),
+      warrantyCardModel.deleteMany({ cmp_id: companyId }),
     ]);
 
     const [
+      accountGroupResult,
+      additionalChargesResult,
       banksResult,
       banksOdResult,
+      barcodeResult,
+      brandResult,
       cashResult,
-      accountGroupResult,
+      categoryResult,
       creditNoteResult,
       debitNoteResult,
-      receiptResult,
-      paymentResult,
-      tallyDataResult,
-      additionalChargesResult,
+      godownResult,
       hsnResult,
       invoiceResult,
       partyResult,
+      paymentResult,
+      priceLevelResult,
       productResult,
       purchaseResult,
+      receiptResult,
       salesResult,
       stockTransferResult,
-      brandResult,
-      categoryResult,
       subcategoryResult,
-      godownResult,
-      priceLevelResult,
+      subgroupResult,
+      tallyDataResult,
       vanSaleResult,
       transactionResult,
+      voucherSeriesResult,
+      warrantyCardResult,
     ] = deletionResults;
 
     const deletionCounts = {
+      accountGroups: accountGroupResult.deletedCount,
+      additionalCharges: additionalChargesResult.deletedCount,
       banks: banksResult.deletedCount,
       banksOd: banksOdResult.deletedCount,
+      barcodes: barcodeResult.deletedCount,
+      brands: brandResult.deletedCount,
       cash: cashResult.deletedCount,
-      accountGroups: accountGroupResult.deletedCount,
+      categories: categoryResult.deletedCount,
       creditNotes: creditNoteResult.deletedCount,
       debitNotes: debitNoteResult.deletedCount,
-      receipts: receiptResult.deletedCount,
-      payments: paymentResult.deletedCount,
-      tallyData: tallyDataResult.deletedCount,
-      additionalCharges: additionalChargesResult.deletedCount,
+      godowns: godownResult.deletedCount,
       hsn: hsnResult.deletedCount,
       invoices: invoiceResult.deletedCount,
       parties: partyResult.deletedCount,
+      payments: paymentResult.deletedCount,
+      priceLevels: priceLevelResult.deletedCount,
       products: productResult.deletedCount,
       purchases: purchaseResult.deletedCount,
+      receipts: receiptResult.deletedCount,
       sales: salesResult.deletedCount,
       stockTransfers: stockTransferResult.deletedCount,
-      brands: brandResult.deletedCount,
-      categories: categoryResult.deletedCount,
       subcategories: subcategoryResult.deletedCount,
-      godowns: godownResult.deletedCount,
-      priceLevels: priceLevelResult.deletedCount,
+      subgroups: subgroupResult.deletedCount,
+      tallyData: tallyDataResult.deletedCount,
       vanSales: vanSaleResult.deletedCount,
       transactions: transactionResult.deletedCount,
+      voucherSeries: voucherSeriesResult.deletedCount,
+      warrantyCards: warrantyCardResult.deletedCount,
     };
+
+    // Finally delete the company itself
+    await OragnizationModel.findByIdAndDelete(companyId);
 
     res.status(200).json({
       message: "Company and associated data deleted successfully",
@@ -695,6 +715,128 @@ export const handleCompanyDelete = async (req, res) => {
   }
 };
 
+/// @desc get company data count
+// route GET/api/admin/getCompanyDataCount/:cmp_id
+
+
+export const getCompanyDataCount = async (req, res) => {
+  const companyId = req.params.cmp_id;
+
+  try {
+    // Check if company exists first
+    const company = await OragnizationModel.findById(companyId);
+    if (!company) {
+      return res.status(404).json({ error: "Company not found" });
+    }
+
+    const countResults = await Promise.all([
+      AccountGroup.countDocuments({ cmp_id: companyId }),
+      additionalChargesModel.countDocuments({ cmp_id: companyId }),
+      Banks.countDocuments({ cmp_id: companyId }),
+      BanksOd.countDocuments({ cmp_id: companyId }),
+      BarcodeModel.countDocuments({ cmp_id: companyId }),
+      Brand.countDocuments({ cmp_id: companyId }),
+      Cash.countDocuments({ cmp_id: companyId }),
+      Category.countDocuments({ cmp_id: companyId }),
+      CreditNote.countDocuments({ cmp_id: companyId }),
+      DebitNote.countDocuments({ cmp_id: companyId }),
+      Godown.countDocuments({ cmp_id: companyId }),
+      hsnModel.countDocuments({ cpm_id: companyId }),
+      invoiceModel.countDocuments({ cmp_id: companyId }),
+      partyModel.countDocuments({ cmp_id: companyId }),
+      Payment.countDocuments({ cmp_id: companyId }),
+      PriceLevel.countDocuments({ cmp_id: companyId }),
+      productModel.countDocuments({ cmp_id: companyId }),
+      purchaseModel.countDocuments({ cmp_id: companyId }),
+      Receipt.countDocuments({ cmp_id: companyId }),
+      salesModel.countDocuments({ cmp_id: companyId }),
+      stockTransferModel.countDocuments({ cmp_id: companyId }),
+      Subcategory.countDocuments({ cmp_id: companyId }),
+      SubgroupModel.countDocuments({ cmp_id: companyId }),
+      TallyData.countDocuments({ cmp_id: companyId }),
+      vanSaleModel.countDocuments({ cmp_id: companyId }),
+      TransactionModel.countDocuments({ cmp_id: companyId }), 
+      VoucherSeriesModel.countDocuments({ cmp_id: companyId }),
+      warrantyCardModel.countDocuments({ cmp_id: companyId }),
+    ]);
+
+    const [
+      accountGroupCount,
+      additionalChargesCount,
+      banksCount,
+      banksOdCount,
+      barcodeCount,
+      brandCount,
+      cashCount,
+      categoryCount,
+      creditNoteCount,
+      debitNoteCount,
+      godownCount,
+      hsnCount,
+      invoiceCount,
+      partyCount,
+      paymentCount,
+      priceLevelCount,
+      productCount,
+      purchaseCount,
+      receiptCount,
+      salesCount,
+      stockTransferCount,
+      subcategoryCount,
+      subgroupCount,
+      tallyDataCount,
+      vanSaleCount,
+      transactionCount,
+      voucherSeriesCount,
+      warrantyCardCount,
+    ] = countResults;
+
+    const documentCounts = {
+      accountGroups: accountGroupCount,
+      additionalCharges: additionalChargesCount,
+      banks: banksCount,
+      banksOd: banksOdCount,
+      barcodes: barcodeCount,
+      brands: brandCount,
+      cash: cashCount,
+      categories: categoryCount,
+      creditNotes: creditNoteCount,
+      debitNotes: debitNoteCount,
+      godowns: godownCount,
+      hsn: hsnCount,
+      invoices: invoiceCount,
+      parties: partyCount,
+      payments: paymentCount,
+      priceLevels: priceLevelCount,
+      products: productCount,
+      purchases: purchaseCount,
+      receipts: receiptCount,
+      sales: salesCount,
+      stockTransfers: stockTransferCount,
+      subcategories: subcategoryCount,
+      subgroups: subgroupCount,
+      tallyData: tallyDataCount,
+      vanSales: vanSaleCount,
+      transactions: transactionCount,
+      voucherSeries: voucherSeriesCount,
+      warrantyCards: warrantyCardCount,
+    };
+
+    // Calculate total documents
+    const totalDocuments = Object.values(documentCounts).reduce((sum, count) => sum + count, 0);
+
+    res.status(200).json({
+      message: "Company data count retrieved successfully",
+      companyId: companyId,
+      companyName: company.name || "N/A",
+      totalDocuments: totalDocuments,
+      documentCounts: documentCounts,
+    });
+  } catch (error) {
+    console.error("Error getting company data count:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
 
 // @desc to sync all indexes
 // route POST/api/admin/syncIndexes
@@ -703,7 +845,6 @@ export const syncIndexes = async (req, res) => {
   try {
     const modelNames = mongoose.modelNames(); // Gets all registered model names
     console.log(modelNames);
-    
 
     for (const name of modelNames) {
       const model = mongoose.model(name);
@@ -714,7 +855,8 @@ export const syncIndexes = async (req, res) => {
     res.status(200).json({ message: "All indexes synced successfully" });
   } catch (error) {
     console.error("Index sync error:", error);
-    res.status(500).json({ message: "Index sync failed", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Index sync failed", error: error.message });
   }
 };
-
