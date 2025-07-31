@@ -1,11 +1,30 @@
 import express from 'express'
 const router = express.Router();
-import { adminLogin ,logout,getAdminData,getPrimaryUsers,
-    handlePrimaryApprove,handlePrimaryBlock,handleSecondaryBlock,
-    getOrganizationsAdmin,getOrganizations,fetchSecondaryUsers,
-    handleSubscription,handleSms,handleWhatsApp,handleOrganizationApprove,handlePrimaryDelete,
-    handleCompanyDelete,
-    syncIndexes} from '../controllers/adminController.js';
+import {
+  adminLogin,
+  logout,
+  getAdminData,
+  getPrimaryUsers,
+  handlePrimaryApprove,
+  handlePrimaryBlock,
+  handleSecondaryBlock,
+  getOrganizationsAdmin,
+  getOrganizations,
+  fetchSecondaryUsers,
+  handleSubscription,
+  handleSms,
+  handleWhatsApp,
+  handleOrganizationApprove,
+  handlePrimaryDelete,
+  handleCompanyDelete,
+  getCompanyDataCount,
+  getPrimaryUserProfileById,
+  updatePrimaryUserStatus,
+  updateOrganizationStatus,
+  updateSecondaryUserStatus,
+  updateUserCapacity,
+  syncIndexes,
+} from "../controllers/adminController.js";
 import { authAdmin } from '../middlewares/authAdmin.js';
 
 router.post('/adminLogin',adminLogin);
@@ -24,8 +43,15 @@ router.post('/handleSms/:id',authAdmin,handleSms);
 router.post('/handleWhatsApp/:id',authAdmin,handleWhatsApp);
 router.post('/handleOrganizationApprove/:id',authAdmin,handleOrganizationApprove);
 router.delete('/deleteCompanyData/:cmp_id',authAdmin,handleCompanyDelete);
+router.get('/getCompanyDataCount/:cmp_id',authAdmin,getCompanyDataCount);
 router.post('/syncIndexes',syncIndexes);
 
 
+router.get('/getPrimaryUserProfileById/:userId',authAdmin, getPrimaryUserProfileById);
 
+// Update status routes - note the correct paths matching frontend
+router.patch('/updatePrimaryUserStatus/:userId', authAdmin,updatePrimaryUserStatus);
+router.patch('/updateOrganizationStatus/:organizationId',authAdmin, updateOrganizationStatus);
+router.patch('/updateSecondaryUserStatus/:secondaryUserId',authAdmin, updateSecondaryUserStatus);
+router.patch('/updateUserCapacity/:userId', authAdmin, updateUserCapacity);
 export default router

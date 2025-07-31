@@ -1,3 +1,4 @@
+import restaurantModels from "../models/restaurantModels.js";
 import roomModal from "../models/roomModal.js";
 
 // helper function used to add search concept with room
@@ -7,14 +8,12 @@ export const buildDatabaseFilterForRoom = (params) => {
     primary_user_id: params.Primary_user_id,
   };
   console.log("params.type",params);
-  if(params?.type && params?.type !== "All"){
-    filter.roomType = params.type;
-  }
+ 
 
   // Add search functionality if search term is provided
   if (params.searchTerm) {
     filter.$or = [
-      { roomName: { $regex: params.searchTerm, $options: "i" } },
+      { itemName: { $regex: params.searchTerm, $options: "i" } },
     ];
   }
 
@@ -24,10 +23,10 @@ export const buildDatabaseFilterForRoom = (params) => {
 export const fetchRoomsFromDatabase = async (filter, params) => {
 
   // Count total products matching the filter for pagination
-  const totalRooms = await roomModal.countDocuments(filter);
+  const totalItems = await restaurantModels.countDocuments(filter);
   // Build query with pagination
-  let query = roomModal.find(filter).populate("hsn")
-  .populate("roomType")
+  let query = restaurantModels.find(filter).populate("hsn")
+  
 
   // Apply pagination if limit is specified
   if (params?.limit > 0) {
@@ -35,23 +34,23 @@ export const fetchRoomsFromDatabase = async (filter, params) => {
   }
 
   // Execute query with population and sorting
-  const rooms = await query
-    .sort({ roomName: 1 }).populate('priceLevel.priceLevel');
+  const items = await query
+    .sort({ itemName: 1 }).populate('priceLevel.priceLevel');
 
-  return { rooms,totalRooms };
+  return { items,totalItems };
 };
 
 
-export const sendRoomResponse = (res, rooms, totalRooms, params) => {
-  console.log(rooms?.length);
-  if (rooms && rooms.length > 0) {
+export const sendRoomResponse = (res, items, totalItems, params) => {
+  console.log(items?.length);
+  if (items && items.length > 0) {
     return res.status(200).json({
-      roomData: rooms,
+      roomData: items,
       pagination: {
-        total: totalRooms,
+        total: totalItems,
         page: params.page,
         limit: params.limit,
-        hasMore: params.skip + rooms.length < totalRooms,
+        hasMore: params.skip + rooms.length < totalItems,
       },
       message: "Rooms fetched successfully",
     });

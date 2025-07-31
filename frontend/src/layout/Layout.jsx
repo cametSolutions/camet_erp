@@ -4,6 +4,7 @@ import { Outlet } from "react-router-dom";
 import Sidebar from "../components/homePage/Sidebar";
 import SidebarSec from "../components/secUsers/SidebarSec";
 import AdminSidebar from "../components/admin/AdminSidebar";
+import AdminHeader from "../components/admin/AdminHeader";
 import { createContext, useState, useContext } from "react";
 
 const SidebarContext = createContext();
@@ -20,6 +21,11 @@ const Layout = ({ children }) => {
     }
   };
 
+
+  const isAdmin = location.pathname.includes("/admin/");
+
+  
+
   const renderSidebar = () => {
     if (location.pathname.includes("/pUsers/")) {
       return (
@@ -29,9 +35,9 @@ const Layout = ({ children }) => {
         />
       );
     } else if (location.pathname.includes("/sUsers/")) {
-      return <SidebarSec   showBar={showSidebar}
-      handleToggleSidebar={handleToggleSidebar} />;
-    } else if (location.pathname.includes("/admin/")) {
+      return <SidebarSec showBar={showSidebar} handleToggleSidebar={handleToggleSidebar} />;
+    } else if (isAdmin) {
+      
       return (
         <AdminSidebar
           showBar={showSidebar}
@@ -41,21 +47,25 @@ const Layout = ({ children }) => {
     }
     return null;
   };
+
+  const renderHeader = () => {
+    if (isAdmin) {
+      return <AdminHeader title="Admin Dashboard" />;
+    }
+    return null;
+  };
+
   return (
     <SidebarContext.Provider value={{ showSidebar, handleToggleSidebar }}>
-      <div
-        //  style={{
-        //   scrollbarWidth: "thin",
-        //   scrollbarColor: "transparent transparent",
-        // }}
-       className="flex h-screen ">
+      <div className="flex h-screen w-screen overflow-hidden"> 
         {renderSidebar()}
-        <main
-       
-         className="flex-1 h-screen overflow-y-scroll">
-          {children}
-          <Outlet />
-        </main>
+        <div className="flex-1 flex flex-col min-w-0">
+          {renderHeader()}
+          <main className={`${isAdmin ? "bg-slate-100" : ""}  flex-1 overflow-y-auto overflow-x-auto`}>
+            {children}
+            <Outlet />
+          </main>
+        </div>
       </div>
     </SidebarContext.Provider>
   );

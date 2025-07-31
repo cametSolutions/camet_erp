@@ -7,23 +7,27 @@ import Register from "./pages/primaryUsers/Register";
 import ForgotPasswordPrimary from "./pages/primaryUsers/ForgotPasswordPrimary";
 import Otp from "./pages/primaryUsers/Otp";
 import ResetPassword from "./pages/primaryUsers/ResetPassword";
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, useLocation } from "react-router-dom";
 import AdminLogin from "./pages/admin/AdminLogin";
-import ProtectedAdmin from "./routes/ProtectedAdmin";
 import ForgotPasswordSec from "./pages/secUsers/ForgotPasswordSec";
-import AdminHome from "./pages/admin/AdminHome";
 import OtpSec from "./pages/secUsers/OtpSec";
 import ResetPasswordSec from "./pages/secUsers/ResetPasswordSec";
 import ServerError from "./pages/errorPages/ServerError";
 import ErrorPage from "./pages/errorPages/Notfound";
 import LoginSecondary from "./pages/secUsers/LoginSecondary";
 import LoginPrimary from "./pages/primaryUsers/LoginPrimary";
+import AdminRoutes from "./routes/AdminRoutes"; // ✅ create this
 
 export default function App() {
+  const location = useLocation();
+
+  // Check if current path includes "admin"
+  const isAdminPath = location.pathname.startsWith("/admin");
+
   return (
     <>
       <Routes>
-        {/* Routes without Layout */}
+        {/* Common routes without layout */}
         <Route path="/" element={<LoginSecondary />} />
         <Route path="/notFound" element={<Notfound />} />
         <Route path="/pUsers/register" element={<Register />} />
@@ -35,15 +39,6 @@ export default function App() {
         <Route path="/pUsers/otp" element={<Otp />} />
         <Route path="/pUsers/resetPassword" element={<ResetPassword />} />
         <Route path="/admin/login" element={<AdminLogin />} />
-        <Route
-          path="/admin/home"
-          element={
-            <ProtectedAdmin>
-              <AdminHome />
-            </ProtectedAdmin>
-          }
-        />
-        {/* sec users */}
         <Route path="/sUsers/login" element={<LoginSecondary />} />
         <Route path="/sUsers/forgotPassword" element={<ForgotPasswordSec />} />
         <Route path="/sUsers/otp" element={<OtpSec />} />
@@ -51,13 +46,19 @@ export default function App() {
         <Route path="/errorPage" element={<ErrorPage />} />
         <Route path="/serverError" element={<ServerError />} />
 
-        {/* Routes with Layout */}
+        {/* Conditionally render route sets */}
         <Route
           path="*"
           element={
-            <Layout>
-              <Routers />
-            </Layout>
+            isAdminPath ? (
+              <Layout>
+                <AdminRoutes />
+              </Layout> // ✅ Admin routes with layout
+            ) : (
+              <Layout>
+                <Routers />
+              </Layout>
+            )
           }
         />
       </Routes>

@@ -12,7 +12,19 @@ const primaryUserSchema = new mongoose.Schema(
     whatsApp: { type: Boolean, default: false },
     isBlocked: { type: Boolean, default: false },
     isApproved: { type: Boolean, default: true },
-    otp:{type:Number}
+    otp:{type:Number},
+     organizationLimit: { 
+      type: Number, 
+      min: 1, 
+      max: 100, 
+      default: 10 // Default limit of 10 organizations
+    },
+    secondaryUserLimit: { 
+      type: Number, 
+      min: 1, 
+      max: 100, 
+      default: 5 // Default limit of 5 secondary users
+    }
   },
   {
     timestamps: true,

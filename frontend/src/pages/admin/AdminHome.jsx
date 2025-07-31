@@ -18,9 +18,7 @@ const AdminHome = () => {
 
   return (
     <div className="flex">
-      <div className="overflow-y-hidden z-50" style={{ height: "100vh" }}>
-        <AdminSidebar onTabChange={handleTabChange} />
-      </div>
+
 
       <div className="flex-1 overflow-x-auto">
         {tab === "pUsers" && <PrimaryUsers    />}
