@@ -1,19 +1,24 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable react/no-unknown-property */
 import { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { FaHome } from "react-icons/fa";
 import { FaAngleRight } from "react-icons/fa";
 import { IoMdPower } from "react-icons/io";
 import CametAdminHead from "../sidebar/CametAdminHead";
+import LogoutModal from "../common/modal/LogoutModal";
+import api from "@/api/api";
+import { toast } from "react-toastify";
 
 function AdminSidebar({ showBar }) {
   const [showSidebar, setShowSidebar] = useState(false);
   const [open, setOpen] = useState(false);
   const selectedTab = localStorage.getItem("selectedSecondatSidebarTab");
   const [tab, setTab] = useState(selectedTab);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const sidebarRef = useRef(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -37,12 +42,30 @@ function AdminSidebar({ showBar }) {
     },
   ];
 
-  const handleLogout = () => {
-    // Add your logout logic here
-    console.log("Logging out...");
-    // Example: Clear localStorage, redirect to login, etc.
-    localStorage.removeItem("selectedSecondatSidebarTab");
-    // window.location.href = "/login";
+  const handleLogoutConfirm = async () => {
+    try {
+      const res = await api.post(
+        "/api/admin/logout",
+        {},
+        {
+          withCredentials: true,
+        }
+      );
+      toast.success(res.data.message);
+      localStorage.removeItem("adminData");
+      navigate("/admin/login");
+    } catch (error) {
+      console.error(error);
+      toast.error(
+        error.response?.data?.message || "An error occurred during logout"
+      );
+    } finally {
+      setShowLogoutModal(false);
+    }
+  };
+
+  const handleLogoutCancel = () => {
+    setShowLogoutModal(false);
   };
 
   useEffect(() => {
@@ -75,11 +98,7 @@ function AdminSidebar({ showBar }) {
         <Link to={item.to}>
           <span
             onClick={() => {
-              if (item.tab === "logout") {
-                handleLogout();
-              } else {
-                handleSidebarItemClick(item.tab);
-              }
+             handleSidebarItemClick(item.tab);
             }}
             className={`${
               tab === item.tab
@@ -129,7 +148,7 @@ function AdminSidebar({ showBar }) {
   const LogoutButton = () => {
     return (
       <div
-        onClick={handleLogout}
+        onClick={() => setShowLogoutModal(true)}
         className="flex items-center w-full py-2 mt-3 transition-all duration-300 transform text-[13.5px] h-10 text-red-400 hover:bg-red-900 hover:text-red-300 cursor-pointer"
       >
         {open ? (
@@ -218,6 +237,14 @@ function AdminSidebar({ showBar }) {
           </div>
         </div>
       </div>
+
+      {/* Logout Confirmation Modal */}
+      <LogoutModal
+        open={showLogoutModal}
+        onOpenChange={setShowLogoutModal}
+        onConfirm={handleLogoutConfirm}
+        onCancel={handleLogoutCancel}
+      />
     </div>
   );
 }

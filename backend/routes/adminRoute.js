@@ -27,7 +27,7 @@ import {
 } from "../controllers/adminController.js";
 import { authAdmin } from '../middlewares/authAdmin.js';
 
-router.post('/adminLogin',adminLogin);
+router.post('/login',adminLogin);
 router.post('/logout',logout);
 router.get('/getAdminData',authAdmin,getAdminData);
 router.get('/getPrimaryUsers',authAdmin,getPrimaryUsers);
