@@ -10,12 +10,17 @@ import Pagination from "../../components/common/Pagination";
 import { useLocation } from "react-router-dom";
 import { setSecSelectedOrganization } from "../../../slices/secSelectedOrgSlice";
 
-const ProductSubDetailsForm = ({ tab, handleLoader, isHotel,isRestaurants= false }) => {
+const ProductSubDetailsForm = ({ tab, handleLoader, isHotel,isRestaurants= false,categoriesData  }) => {
   const [value, setValue] = useState("");
   const [price, setPrice] = useState("");
   const [data, setData] = useState([]);
   const [reload, setReload] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState("");
+const [categories, setCategories] = useState([]);
+
+console.log(categoriesData)
+
 
   const [edit, setEdit] = useState({
     id: "",
@@ -24,7 +29,7 @@ const ProductSubDetailsForm = ({ tab, handleLoader, isHotel,isRestaurants= false
 
   const location = useLocation();
   const dispatch = useDispatch();
-
+ 
   // Call useSelector hooks unconditionally
   const selectedOrgId = useSelector(
     (state) => state?.setSelectedOrganization?.selectedOrg?._id
@@ -48,6 +53,8 @@ const ProductSubDetailsForm = ({ tab, handleLoader, isHotel,isRestaurants= false
     getSubDetails();
     setValue("");
     setPrice("");
+    setCategories('');
+     setEdit({ id: "", enabled: false });
   }, [reload]);
 
   useEffect(() => {
@@ -75,12 +82,13 @@ console.log(tab)
       handleLoader(false);
     }
   };
-
+console.log(data)
   const handleSubmit = async (value) => {
     const formData = {
       [tab]: value,
       ...(isHotel && { price }),
       ...(isRestaurants && { under:"restaurant" }),
+       ...(tab === "foodItems" && { category: setCategories }),
     };
 
     console.log(formData);
@@ -171,7 +179,7 @@ console.log(tab)
     }
   };
 
-  const handleEdit = async (id, value, data) => {
+  const handleEdit = async (id, value, data,categoriesData) => {
     if (tab === "bedType") {
       console.log(data);
       setValue(data?.category);
@@ -195,6 +203,9 @@ console.log(tab)
         });
         return;
       }
+      if (tab === "foodItems") {
+    setCategories(categoriesData.category || "");
+  }
     }
     setEdit({
       id,
@@ -207,6 +218,7 @@ console.log(tab)
     const formData = {
       [tab]: value,
       ...(isHotel && { price }),
+      ...(tab === "foodItems" && { category: setCategories }),
     };
 
     try {
@@ -231,7 +243,7 @@ console.log(tab)
       handleLoader(false);
     }
   };
-
+console.log(data)
   return (
     <div className={`${loading ? "opacity-50 animate-pulse" : ""} `}>
       <div className="flex flex-col justify-center  sticky top-0 z-10 ">
@@ -276,7 +288,21 @@ console.log(tab)
               }}
               onChange={(e) => setPrice(e.target.value)}
             />
-          )}
+          )}{tab === "foodItems" && (
+  <select
+    value={categories}
+    onChange={(e) => setCategories(e.target.value)}
+    className="w-4/6 sm:w-2/6 p-1 border border-gray-300 rounded-full mt-3"
+  >
+    <option value="">Select Category</option>
+    {categoriesData.map((cat) => (
+      <option key={cat._id} value={cat.category}>
+        {cat.category}
+      </option>
+    ))}
+  </select>
+)}
+
           <button
             onClick={
               edit?.enabled

@@ -554,10 +554,12 @@ export const editProductSubDetails = async (req, res) => {
         Model = Brand;
         break;
       case "bedType":
+        case "Regional Food Category":
       case "category":
         Model = Category;
         break;
       case "roomFloor":
+        case 'foodItems':
       case "subcategory":
         Model = Subcategory;
         break;
@@ -587,7 +589,13 @@ export const editProductSubDetails = async (req, res) => {
       result = await Model.updateOne(queryConditions, {
         category: req.body.bedType,
       });
-    } else {
+     } else if (type === "Regional Food Category") {
+        result= await Model.updateOne(queryConditions,{
+          category:req.body.categories,
+        })
+      }
+      
+     else {
       result = await Model.updateOne(queryConditions, updateOperation);
     }
 

@@ -1346,6 +1346,59 @@ export const getAllSubDetails = async (req, res) => {
   }
 };
 
+
+//function used ot fetch data for hotel and restrurent
+export const getAllSubDetailsBasedUnder = async (req, res) => {
+  try {
+    console.log(req.params)
+    console.log(req.query)
+    const cmp_id = req.params.orgId;
+    const under =req.query.under
+    const Primary_user_id = req.owner;
+    if (!cmp_id || !Primary_user_id) {
+      console.log(
+        "cmp_id and Primary_user_id are required in getAllSubDetails "
+      );
+      return;
+    }
+
+    const [brands, categories, subcategories, godowns, priceLevels] =
+      await Promise.all([
+        Brand.find({ cmp_id, Primary_user_id }).select("_id brand"),
+        Category.find({ cmp_id, Primary_user_id,under:under }).select("_id category"),
+        Subcategory.find({ cmp_id, Primary_user_id ,under:under }).select("_id subcategory"),
+        Godown.find({ cmp_id, Primary_user_id,under:under }).select(
+          "_id godown defaultGodown"
+        ),
+        PriceLevel.find({ cmp_id, Primary_user_id }).select("_id pricelevel"),
+      ]);
+
+    const result = {
+      brands: brands.map((b) => ({ _id: b._id, name: b.brand })),
+      categories: categories.map((c) => ({ _id: c._id, name: c.category })),
+      subcategories: subcategories.map((s) => ({
+        _id: s._id,
+        name: s.subcategory,
+      })),
+      godowns: godowns.map((g) => ({
+        _id: g._id,
+        name: g.godown,
+        defaultGodown: g.defaultGodown,
+      })),
+      priceLevels: priceLevels.map((p) => ({ _id: p._id, name: p.pricelevel })),
+    };
+
+    res.status(200).json({
+      message: "All subdetails retrieved successfully",
+      data: result,
+    });
+  } catch (error) {
+    console.error("Error in getAllSubDetails:", error);
+    res
+      .status(500)
+      .json({ message: "An error occurred while fetching the subdetails" });
+  }
+};
 // @desc to fetch godowns
 // route get/api/sUsers/fetchGodowns
 
