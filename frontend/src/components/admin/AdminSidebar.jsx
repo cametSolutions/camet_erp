@@ -8,7 +8,7 @@ import { IoMdPower } from "react-icons/io";
 import CametAdminHead from "../sidebar/CametAdminHead";
 import LogoutModal from "../common/modal/LogoutModal";
 import api from "@/api/api";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 function AdminSidebar({ showBar }) {
   const [showSidebar, setShowSidebar] = useState(false);
