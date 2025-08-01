@@ -48,6 +48,14 @@ const StockItem = () => {
         to: "/sUsers/stockItemSettings",
         active: true,
       },
+       {
+        title: industry === 6 || industry === 7 ? "Restuarent  Management" : "Stock Item Filter",
+        description:
+          "Filters only show product creation window if it's enabled",
+        icon: <FiSettings />,
+        to: "/sUsers/restuarentSettings",
+        active: true,
+      },
       {
         title: "Add Location",
         description: "Add location tracking for all vouchers",

@@ -130,7 +130,7 @@ function VoucherPdfFooterNonIndian({
       <div className="flex justify-between my-1 ">
         <div className=" w-1/2">
           {configurations?.showBankDetails &&
-          bank &&
+          selectedBank &&
           Object?.keys(selectedBank)?.length > 0 ? (
             <>
               <div className="text-gray-500 font-semibold text-[10px] ">

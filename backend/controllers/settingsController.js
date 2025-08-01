@@ -4,6 +4,8 @@ import OragnizationModel from "../models/OragnizationModel.js";
 import productModel from "../models/productModel.js";
 import WarrantyCard from "../models/warranyCardModel.js";
 import { Godown } from "../models/subDetails.js";
+import { v2 as cloudinary } from "cloudinary";
+import { deleteImageFromCloudinary } from "../utils/cloudinary.js";
 
 /**
  * @desc  add email configuration for a company
@@ -312,13 +314,37 @@ export const updateConfiguration = async (req, res) => {
       });
     }
 
+    // Prepare update object for the main field
+    let updateObject = {
+      [`configurations.0.${type}.$[voucher].${title}`]: checked,
+    };
+
+    // Handle mutual exclusivity for showCompanyDetails and showLetterHead
+    if (
+      voucher === "sale" &&
+      type === "printConfiguration" &&
+      (title === "showCompanyDetails" || title === "showLetterHead") &&
+      checked === true
+    ) {
+      // If setting showCompanyDetails to true, set showLetterHead to false
+      if (title === "showCompanyDetails") {
+        updateObject[
+          `configurations.0.${type}.$[voucher].showLetterHead`
+        ] = false;
+      }
+      // If setting showLetterHead to true, set showCompanyDetails to false
+      else if (title === "showLetterHead") {
+        updateObject[
+          `configurations.0.${type}.$[voucher].showCompanyDetails`
+        ] = false;
+      }
+    }
+
     // Existing functionality for updating based on `title` and `checked`
     const updatedCompany = await OragnizationModel.findByIdAndUpdate(
       cmp_id,
       {
-        $set: {
-          [`configurations.0.${type}.$[voucher].${title}`]: checked,
-        },
+        $set: updateObject,
       },
       {
         new: true,
@@ -877,10 +903,10 @@ export const createWarrantyCard = async (req, res) => {
       termsAndConditions,
       customerCareInfo,
       customerCareNo,
+      imageUrl,
+      imagePublicId,
     } = req.body;
 
-    console.log(warrantyYears);
-    
 
     if (warrantyYears === null) body.warrantyYears = 0;
     if (warrantyMonths === null) body.warrantyMonths = 0;
@@ -910,6 +936,8 @@ export const createWarrantyCard = async (req, res) => {
       customerCareNo,
       cmp_id,
       Primary_user_id,
+      imageUrl,
+      imagePublicId,
     });
 
     res.status(201).json({
@@ -918,6 +946,12 @@ export const createWarrantyCard = async (req, res) => {
       message: "Warranty card created successfully",
     });
   } catch (error) {
+    const { imagePublicId } = req.body;
+    console.error("Error creating warranty card:", error);
+    if (imagePublicId) {
+      await deleteImageFromCloudinary(imagePublicId);
+    }
+
     res.status(400).json({
       success: false,
       message: "Bad Request",
@@ -973,7 +1007,16 @@ export const updateWarrantyCard = async (req, res) => {
       termsAndConditions,
       customerCareInfo,
       customerCareNo,
+      imageUrl,
+      imagePublicId,
     } = req.body;
+
+    if (
+      warrantyCard?.imagePublicId &&
+      warrantyCard?.imagePublicId !== imagePublicId
+    ) {
+      await deleteImageFromCloudinary(warrantyCard?.imagePublicId);
+    }
 
     // Update fields
     warrantyCard.name = name || warrantyCard.name;
@@ -990,6 +1033,8 @@ export const updateWarrantyCard = async (req, res) => {
       customerCareInfo || warrantyCard.customerCareInfo;
     warrantyCard.customerCareNo = customerCareNo || warrantyCard.customerCareNo;
     warrantyCard.updatedBy = req.user?.id; // Set if you have authentication
+    warrantyCard.imageUrl = imageUrl || warrantyCard.imageUrl;
+    warrantyCard.imagePublicId = imagePublicId || warrantyCard.imagePublicId;
 
     const updatedWarrantyCard = await warrantyCard.save();
 
@@ -1021,6 +1066,12 @@ export const deleteWarrantyCard = async (req, res) => {
       });
     }
 
+    //// Delete image from cloudinary
+
+    if (warrantyCard?.imagePublicId) {
+      await deleteImageFromCloudinary(warrantyCard?.imagePublicId);
+    }
+
     await WarrantyCard.findByIdAndDelete(req.params.id);
 
     res.status(200).json({
@@ -1032,6 +1083,172 @@ export const deleteWarrantyCard = async (req, res) => {
       success: false,
       message: "Server Error",
       error: error.message,
+    });
+  }
+};
+
+/// @desc  Upload letter head image for a company
+/// @route POST /api/settings/uploadLetterHead/:cmp_id
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+export const uploadLetterHead = async (req, res) => {
+  const cmp_id = req?.params?.cmp_id;
+  const { type, voucher, letterHeadUrl, cloudinaryPublicId } = req?.body;
+
+  try {
+    // Validate required fields
+    if (!type || !voucher) {
+      return res.status(400).json({
+        success: false,
+        message: "Type and voucher are required fields",
+      });
+    }
+
+    // Check if letterHeadUrl URL and cloudinaryPublicId are provided
+    if (!letterHeadUrl || !cloudinaryPublicId) {
+      return res.status(400).json({
+        success: false,
+        message: "Letter head file URL and Cloudinary public ID are required",
+      });
+    }
+
+    // Find the company
+    const company = await OragnizationModel.findById(cmp_id).lean();
+    if (!company) {
+      return res.status(404).json({
+        success: false,
+        message: "Company not found",
+      });
+    }
+
+    // Check if configuration exists
+    const configuration = company.configurations[0];
+    if (!configuration) {
+      return res.status(404).json({
+        success: false,
+        message: "Configuration not found",
+      });
+    }
+
+    const selectedConfiguration = configuration[type];
+    if (!selectedConfiguration) {
+      return res.status(404).json({
+        success: false,
+        message: "Print configuration not found",
+      });
+    }
+
+    // Find the specific voucher to check for existing letterHeadPublicId
+    const existingVoucher = selectedConfiguration.find(
+      (v) => v.voucher === voucher
+    );
+    let oldPublicId = null;
+
+    if (existingVoucher && existingVoucher.letterHeadPublicId) {
+      oldPublicId = existingVoucher.letterHeadPublicId;
+      console.log(`Found existing letterhead to delete: ${oldPublicId}`);
+    }
+
+    // Delete old letterhead from Cloudinary if it exists
+    if (oldPublicId && oldPublicId !== cloudinaryPublicId) {
+      try {
+        await cloudinary.uploader.destroy(oldPublicId, {
+          cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+          api_key: process.env.CLOUDINARY_API_KEY,
+          api_secret: process.env.CLOUDINARY_API_SECRET,
+        });
+        console.log(
+          `Successfully deleted old letterhead from Cloudinary: ${oldPublicId}`
+        );
+      } catch (deleteError) {
+        console.error(
+          "Error deleting old letterhead from Cloudinary:",
+          deleteError
+        );
+        // Continue with the update even if deletion fails
+        // The old image will remain in Cloudinary but won't be referenced
+      }
+    }
+
+    // Update the organization with the new letter head URL
+    const updatedCompany = await OragnizationModel.findByIdAndUpdate(
+      cmp_id,
+      {
+        $set: {
+          [`configurations.0.${type}.$[voucher].letterHeadUrl`]: letterHeadUrl,
+          [`configurations.0.${type}.$[voucher].letterHeadPublicId`]:
+            cloudinaryPublicId,
+          [`configurations.0.${type}.$[voucher].letterHeadUploadedAt`]:
+            new Date(),
+        },
+      },
+      {
+        new: true,
+        arrayFilters: [{ "voucher.voucher": voucher }],
+      }
+    );
+
+    // Check if the update was successful
+    if (!updatedCompany) {
+      // If database update failed, delete the newly uploaded file from Cloudinary
+      try {
+        await cloudinary.uploader.destroy(cloudinaryPublicId);
+        console.log(
+          `Deleted new file from Cloudinary due to DB update failure: ${cloudinaryPublicId}`
+        );
+      } catch (deleteError) {
+        console.error("Error deleting new file from Cloudinary:", deleteError);
+      }
+
+      return res.status(500).json({
+        success: false,
+        message: "Failed to update company configuration",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Letter head uploaded successfully",
+      data: updatedCompany,
+    });
+  } catch (error) {
+    console.error("Letter head upload error:", error);
+
+    // If any error occurs, delete the newly uploaded file from Cloudinary
+    if (cloudinaryPublicId) {
+      try {
+        await cloudinary.uploader.destroy(cloudinaryPublicId);
+        console.log(
+          `Deleted new file from Cloudinary due to error: ${cloudinaryPublicId}`
+        );
+      } catch (deleteError) {
+        console.error("Error deleting new file from Cloudinary:", deleteError);
+      }
+    }
+
+    // Handle specific MongoDB errors
+    if (error.name === "ValidationError") {
+      return res.status(400).json({
+        success: false,
+        message: `Validation error: ${error.message}`,
+      });
+    }
+
+    if (error.name === "CastError") {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid company ID format",
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "Internal server error while uploading letter head",
     });
   }
 };

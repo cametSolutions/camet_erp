@@ -273,11 +273,7 @@ function VoucherPdf({ data, org, contentToPrint, bank, tab }) {
           className="pdf-content rounded-lg px-3 max-w-3xl mx-auto md:block"
         >
           <div className="pdf-page">
-            {configurations?.printTitle && (
-              <div className="font-bold text-sm md:text-xl mb-2 mt-6">
-                {configurations?.printTitle || ""}
-              </div>
-            )}
+           
             <VoucherPdfHeader
               configurations={configurations}
               data={data}

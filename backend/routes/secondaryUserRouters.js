@@ -38,7 +38,7 @@ import { createPayment, cancelPayment, editPayment, getPaymentDetails } from '..
 import { createInvoice, editInvoice, cancelSalesOrder, PartyListWithOrderPending, getInvoiceDetails } from '../controllers/saleOrderController.js';
 import { createStockTransfer, editStockTransfer, cancelStockTransfer, getStockTransferDetails } from '../controllers/stockTransferController.js';
 import { addBankPaymentDetails } from '../../frontend/slices/payment.js';
-import { addEmailConfiguration, getConfiguration, getBarcodeList, addBarcodeData, editBarcodeData, deleteBarcode, getSingleBarcodeData, getPrintingConfiguration, updateConfiguration, getDespatchTitles, updateDespatchTitles, getTermsAndConditions, updateTermsAndConditions, updateBankAccount, updateShipToConfiguration, updateFirstLayerConfiguration, createWarrantyCard, getWarrantyCards, updateWarrantyCard, deleteWarrantyCard, updateCommonToggleConfiguration } from '../controllers/settingsController.js';
+import { addEmailConfiguration, getConfiguration, getBarcodeList, addBarcodeData, editBarcodeData, deleteBarcode, getSingleBarcodeData, getPrintingConfiguration, updateConfiguration, getDespatchTitles, updateDespatchTitles, getTermsAndConditions, updateTermsAndConditions, updateBankAccount, updateShipToConfiguration, updateFirstLayerConfiguration, createWarrantyCard, getWarrantyCards, updateWarrantyCard, deleteWarrantyCard, updateCommonToggleConfiguration, uploadLetterHead } from '../controllers/settingsController.js';
 import { updateSecondaryUserConfiguration } from '../helpers/saleOrderHelper.js';
 import { addAccountGroupIdToOutstanding, addAccountGroupIdToParties, convertPrimaryToSecondary, createAccountGroups, updateDateFieldsByCompany, updateSalesItemUnitFields, updateUnitFields } from '../controllers/testingController.js';
 import { authPrimary } from '../middlewares/authPrimaryUsers.js';
@@ -59,7 +59,7 @@ import { createVoucherSeries, getSeriesByVoucher, deleteVoucherSeriesById, editV
 import {saveAdditionalPax , getAdditionalPax ,updateAdditionalPax , deleteAdditionalPax,saveVisitOfPurpose,getVisitOfPurpose,
     updateVisitOfPurpose,deleteVisitOfPurpose,saveIdProof,getIdProof,updateIdProof , deleteIdProof, saveFoodPlan , getFoodPlan
     ,updateFoodPlan,deleteFoodPlan,addRoom,getRooms,editRoom ,deleteRoom,getAllRooms,roomBooking} from '../controllers/hotelController.js'
-
+ import {addItem,getItems} from '../controllers/restaurantController.js'
 router.post('/login',login)
 router.post('/sendOtp',sendOtp)
 router.post('/submitOtp',submitOtp)
@@ -203,6 +203,7 @@ router.delete('/getSingleBarcodeData/:id/:cmp_id', authSecondary, secondaryIsBlo
 ///// printing configuration 
 router.get('/getPrintingConfiguration/:cmp_id', authSecondary, secondaryIsBlocked, companyAuthentication, getPrintingConfiguration)
 router.put('/updateConfiguration/:cmp_id', authSecondary, secondaryIsBlocked, companyAuthentication, updateConfiguration)
+router.put('/uploadLetterHead/:cmp_id', authSecondary, secondaryIsBlocked, companyAuthentication, uploadLetterHead)
 
 //// despatch details title configuration
 router.get('/getDespatchTitles/:cmp_id', authSecondary, secondaryIsBlocked, companyAuthentication, getDespatchTitles)
@@ -322,8 +323,8 @@ router.post("/editRoom/:cmp_id/:id",authSecondary,editRoom)
 router.delete('/deleteRoom/:id',authSecondary,secondaryIsBlocked,deleteRoom)
 router.get('/getAllRooms/:cmp_id',authSecondary,secondaryIsBlocked,getAllRooms)
 router.post('/roomBooking/:cmp_id',authSecondary,secondaryIsBlocked,roomBooking)
-
-
+router.post('/addItem/:cmp_id', authSecondary,addItem)
+router.get('/getItems/:cmp_id', authSecondary,getItems)
 
 
 export default router

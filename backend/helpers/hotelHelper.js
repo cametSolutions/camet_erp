@@ -43,7 +43,7 @@ export const fetchRoomsFromDatabase = async (filter, params) => {
 
 
 export const sendRoomResponse = (res, rooms, totalRooms, params) => {
-  console.log(rooms.length);
+  console.log(rooms?.length);
   if (rooms && rooms.length > 0) {
     return res.status(200).json({
       roomData: rooms,

@@ -310,6 +310,17 @@ export const addProductSubDetails = async (req, res) => {
           }),
         };
         break;
+      case "Regional Food Category":
+        Model = Category;
+        dataToSave = {
+          _id: generatedId,
+          category: subDetails[key],
+          category_id: generatedId,
+          cmp_id: orgId,
+          Primary_user_id: req.pUserId || req.owner,
+          under: "restaurant",
+        };
+        break;
       case "bedType":
       case "category":
         Model = Category;
@@ -322,6 +333,7 @@ export const addProductSubDetails = async (req, res) => {
         };
         break;
       case "roomFloor":
+      case "foodItems":
       case "subcategory":
         Model = Subcategory;
         dataToSave = {
@@ -331,6 +343,7 @@ export const addProductSubDetails = async (req, res) => {
           subcategory_id: generatedId,
           cmp_id: orgId,
           Primary_user_id: req.pUserId || req.owner,
+          under: "restaurant",
         };
         break;
       case "godown":
@@ -386,7 +399,7 @@ export const getProductSubDetails = async (req, res) => {
   try {
     const { orgId } = req.params;
     const { type } = req.query; // 'type' can be 'brand', 'category', 'subcategory', 'godown', or 'pricelevel'
-    const restrict=req.query.restrict==="true"?true:false;
+    const restrict = req.query.restrict === "true" ? true : false;
     const Primary_user_id = req.pUserId || req.owner;
     const secondaryUser = await SecondaryUser.findById(req.sUserId);
     const configuration = secondaryUser.configurations.find(
@@ -410,7 +423,22 @@ export const getProductSubDetails = async (req, res) => {
           Primary_user_id: Primary_user_id,
         });
         break;
+      case "Regional Food Category":
+        data = await Category.find({
+          cmp_id: orgId,
+          Primary_user_id: Primary_user_id,
+          under: "restaurant",
+        });
+        break;
+           case "foodItems":
+        data = await Subcategory.find({
+          cmp_id: orgId,
+          Primary_user_id: Primary_user_id,
+          under: "restaurant",
+        });
+        break;
       case "roomFloor":
+      case "group":
       case "subcategory":
         data = await Subcategory.find({
           cmp_id: orgId,
@@ -661,7 +689,6 @@ export const getProducts = async (req, res) => {
     });
   }
 };
-
 
 // // @desc getting product list
 // // route get/api/pUsers/
