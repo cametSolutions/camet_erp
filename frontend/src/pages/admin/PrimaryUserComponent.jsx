@@ -1,41 +1,85 @@
-import React, { useState } from "react";
-import { User, Mail, Phone, Calendar, Shield, Loader2, Crown, Clock } from "lucide-react";
+/* eslint-disable react/prop-types */
+import  { useState } from "react";
+import {
+  User,
+  Mail,
+  Phone,
+  Calendar,
+  Shield,
+  Loader2,
+  Crown,
+  Clock,
+} from "lucide-react";
 
-const PrimaryUserComponent = ({ primaryUser, onToggle, onSubscriptionToggle, isLoading }) => {
+const PrimaryUserComponent = ({
+  primaryUser,
+  onToggle,
+  onSubscriptionToggle,
+  isLoading,
+}) => {
   const [localLoading, setLocalLoading] = useState(false);
 
   // Helper function to get user initials for avatar
   const getInitials = (name) => {
     if (!name) return "?";
-    return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
   };
 
   // Helper function to format date
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
+  // Helper function to calculate expiration date based on creation date and subscription type
+  const calculateExpirationDate = (createdAt, subscriptionType) => {
+    if (!createdAt) return null;
+    
+    const creationDate = new Date(createdAt);
+    const expirationDate = new Date(creationDate);
+    
+    // Add time based on subscription type
+    if (subscriptionType === "yearly") {
+      expirationDate.setFullYear(expirationDate.getFullYear() + 1);
+    } else {
+      // Default to monthly if not yearly
+      expirationDate.setMonth(expirationDate.getMonth() + 1);
+    }
+    
+    return expirationDate;
+  };
+
   // Enhanced Toggle Switch Component
-  const ToggleSwitch = ({ enabled, onToggle, label, loading = false, variant = 'default' }) => {
+  const ToggleSwitch = ({
+    enabled,
+    onToggle,
+    label,
+    loading = false,
+    variant = "default",
+  }) => {
     const getVariantStyles = () => {
       switch (variant) {
-        case 'danger':
-          return enabled 
-            ? 'bg-gradient-to-r from-red-500 to-red-600 focus:ring-red-500' 
-            : 'bg-slate-300 focus:ring-slate-400';
-        case 'success':
-          return enabled 
-            ? 'bg-gradient-to-r from-green-500 to-green-600 focus:ring-green-500' 
-            : 'bg-slate-300 focus:ring-slate-400';
+        case "danger":
+          return enabled
+            ? "bg-gradient-to-r from-red-500 to-red-600 focus:ring-red-500"
+            : "bg-slate-300 focus:ring-slate-400";
+        case "success":
+          return enabled
+            ? "bg-gradient-to-r from-green-500 to-green-600 focus:ring-green-500"
+            : "bg-slate-300 focus:ring-slate-400";
         default:
-          return enabled 
-            ? 'bg-gradient-to-r from-blue-500 to-blue-600 focus:ring-blue-500' 
-            : 'bg-slate-300 focus:ring-slate-400';
+          return enabled
+            ? "bg-gradient-to-r from-blue-500 to-blue-600 focus:ring-blue-500"
+            : "bg-slate-300 focus:ring-slate-400";
       }
     };
 
@@ -45,13 +89,15 @@ const PrimaryUserComponent = ({ primaryUser, onToggle, onSubscriptionToggle, isL
         <button
           onClick={onToggle}
           disabled={loading}
-          className={`relative w-12 h-6 rounded-full p-1 transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-            getVariantStyles()
-          } ${loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:shadow-lg'}`}
+          className={`relative w-12 h-6 rounded-full p-1 transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 ${getVariantStyles()} ${
+            loading
+              ? "opacity-50 cursor-not-allowed"
+              : "cursor-pointer hover:shadow-lg"
+          }`}
         >
           <div
             className={`w-4 h-4 rounded-full bg-white shadow-md transform transition-all duration-300 ease-in-out flex items-center justify-center ${
-              enabled ? 'translate-x-6' : 'translate-x-0'
+              enabled ? "translate-x-6" : "translate-x-0"
             }`}
           >
             {loading && (
@@ -64,23 +110,30 @@ const PrimaryUserComponent = ({ primaryUser, onToggle, onSubscriptionToggle, isL
   };
 
   // Enhanced Subscription Toggle Component
-  const SubscriptionToggle = ({ subscriptionType, onToggle, loading = false }) => {
-    const isYearly = subscriptionType === 'yearly';
-    
+  const SubscriptionToggle = ({
+    subscriptionType,
+    onToggle,
+    loading = false,
+  }) => {
+    const isYearly = subscriptionType === "yearly";
+
     const handleSubscriptionToggle = async () => {
       if (loading) return;
-      
+
       setLocalLoading(true);
       try {
         // Call the parent's subscription toggle handler with the user ID
-        await onToggle(primaryUser._id || primaryUser.id, isYearly ? 'monthly' : 'yearly');
+        await onToggle(
+          primaryUser._id || primaryUser.id,
+          isYearly ? "monthly" : "yearly"
+        );
       } catch (error) {
-        console.error('Error toggling subscription:', error);
+        console.error("Error toggling subscription:", error);
       } finally {
         setLocalLoading(false);
       }
     };
-    
+
     return (
       <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
         <div className="flex items-center justify-between">
@@ -89,65 +142,79 @@ const PrimaryUserComponent = ({ primaryUser, onToggle, onSubscriptionToggle, isL
               <Shield className="w-5 h-5 text-green-600" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-slate-800">Subscription Plan</p>
+              <p className="text-sm font-semibold text-slate-800">
+                Subscription Plan
+              </p>
               <p className="text-xs text-slate-500">Billing frequency</p>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-3">
-            <span className={`text-sm font-medium transition-colors duration-200 ${
-              !isYearly ? 'text-slate-800' : 'text-slate-400'
-            }`}>
+            <span
+              className={`text-sm font-medium transition-colors duration-200 ${
+                !isYearly ? "text-slate-800" : "text-slate-400"
+              }`}
+            >
               Monthly
             </span>
-            
+
             <button
               onClick={handleSubscriptionToggle}
               disabled={loading || localLoading}
               className={`relative w-14 h-7 rounded-full p-1 transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-                isYearly 
-                  ? 'bg-gradient-to-r from-green-500 to-emerald-500 focus:ring-green-500' 
-                  : 'bg-gradient-to-r from-blue-500 to-cyan-500 focus:ring-blue-500'
-              } ${(loading || localLoading) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:shadow-lg'}`}
+                isYearly
+                  ? "bg-gradient-to-r from-green-500 to-emerald-500 focus:ring-green-500"
+                  : "bg-gradient-to-r from-blue-500 to-cyan-500 focus:ring-blue-500"
+              } ${
+                loading || localLoading
+                  ? "opacity-50 cursor-not-allowed"
+                  : "cursor-pointer hover:shadow-lg"
+              }`}
             >
               <div
                 className={`w-5 h-5 rounded-full bg-white shadow-md transform transition-all duration-300 ease-in-out flex items-center justify-center ${
-                  isYearly ? 'translate-x-7' : 'translate-x-0'
+                  isYearly ? "translate-x-7" : "translate-x-0"
                 }`}
               >
                 {(loading || localLoading) && (
                   <Loader2 className="w-3 h-3 animate-spin text-slate-600" />
                 )}
               </div>
-              
+
               {/* Subscription type indicator */}
-              <div className={`absolute inset-0 flex items-center justify-center pointer-events-none ${
-                (loading || localLoading) ? 'opacity-0' : 'opacity-100'
-              } transition-opacity duration-200`}>
-                <span className="text-xs font-bold text-white">
-                  {isYearly ? 'Y' : 'M'}
-                </span>
+              <div
+                className={`absolute inset-0 flex items-center justify-center pointer-events-none ${
+                  loading || localLoading ? "opacity-0" : "opacity-100"
+                } transition-opacity duration-200`}
+              >
+                {/* <span className="text-xs font-bold text-white mx-2">
+                  {isYearly ? "Y" : "M"}
+                </span> */}
               </div>
             </button>
-            
-            <span className={`text-sm font-medium transition-colors duration-200 ${
-              isYearly ? 'text-slate-800' : 'text-slate-400'
-            }`}>
+
+            <span
+              className={`text-sm font-medium transition-colors duration-200 ${
+                isYearly ? "text-slate-800" : "text-slate-400"
+              }`}
+            >
               Yearly
             </span>
           </div>
         </div>
-        
+
         {/* Subscription benefits indicator */}
         <div className="mt-3 pt-3 border-t border-slate-100">
           <div className="flex items-center justify-between text-xs">
             <span className="text-slate-500">Current plan:</span>
-            <span className={`font-semibold px-2 py-1 rounded-full ${
-              isYearly 
-                ? 'text-green-700 bg-green-100' 
-                : 'text-blue-700 bg-blue-100'
-            }`}>
-              {isYearly ? 'Yearly (Save 20%)' : 'Monthly'}
+            <span
+              className={`font-semibold px-2 py-1 rounded-full ${
+                isYearly
+                  ? "text-green-700 bg-green-100"
+                  : "text-blue-700 bg-blue-100"
+              }`}
+            >
+              {isYearly ? "Yearly " : "Monthly"}
             </span>
           </div>
         </div>
@@ -163,49 +230,74 @@ const PrimaryUserComponent = ({ primaryUser, onToggle, onSubscriptionToggle, isL
   );
 
   const AvatarImage = ({ src, className }) => (
-    <img src={src} alt="Avatar" className={`w-full h-full object-cover ${className}`} />
+    <img
+      src={src}
+      alt="Avatar"
+      className={`w-full h-full object-cover ${className}`}
+    />
   );
 
   const AvatarFallback = ({ className, children }) => (
-    <div className={`w-full h-full flex items-center justify-center ${className}`}>
+    <div
+      className={`w-full h-full flex items-center justify-center ${className}`}
+    >
       {children}
     </div>
   );
 
   // Status badge component
-  const StatusBadge = ({ label, value, type = 'default' }) => {
+  // eslint-disable-next-line no-unused-vars
+  const StatusBadge = ({ label, value, type = "default" }) => {
     const getStatusColor = () => {
-      if (type === 'approval') {
-        return value ? 'bg-green-100 text-green-800 border-green-200' : 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      if (type === "approval") {
+        return value
+          ? "bg-green-100 text-green-800 border-green-200"
+          : "bg-yellow-100 text-yellow-800 border-yellow-200";
       }
-      if (type === 'blocked') {
-        return value ? 'bg-red-100 text-red-800 border-red-200' : 'bg-green-100 text-green-800 border-green-200';
+      if (type === "blocked") {
+        return !value
+          ? "bg-red-100 text-red-800 border-red-200"
+          : "bg-green-100 text-green-800 border-green-200";
       }
-      return value ? 'bg-blue-100 text-blue-800 border-blue-200' : 'bg-slate-100 text-slate-600 border-slate-200';
+      return value
+        ? "bg-blue-100 text-blue-800 border-blue-200"
+        : "bg-slate-100 text-slate-600 border-slate-200";
     };
 
+    
+
     return (
-      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor()}`}>
-        {value ? (type === 'blocked' ? 'Blocked' : 'Active') : (type === 'approval' ? 'Pending' : 'Inactive')}
+      <span
+        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor()}`}
+      >
+
+        {type === "approval" ? value === true ? "Approved" : "Pending" : value === true ? "Active" : "Inactive"}
+
+     
       </span>
     );
   };
 
   // Sample data for demonstration
- 
 
   // Use sample data if no primaryUser is provided
-  const user = primaryUser ;
+  const user = primaryUser;
 
   return (
     <div className="relative overflow-hidden">
       {/* Header with gradient background */}
-      <div className="bg-gradient-to-br from-blue-600 via-blue-700 to-purple-700 px-3 pt-3 pb-5">
-        <div className="flex items-center justify-center mb-6">
+      <div
+        style={{
+          backgroundImage: `url("https://images.pexels.com/photos/12686992/pexels-photo-12686992.jpeg")`,
+        }}
+        className=" relative px-3  py-12 bg-cover bg-center"
+      >
+        <div className="absolute inset-0 bg-black/2"></div>
+        <div className="flex items-center justify-center mb-6 z-10">
           <div className="relative group">
             <Avatar className="h-20 w-20 ring-4 ring-white/20 transition-all duration-500 group-hover:ring-white/40">
-              <AvatarImage 
-                src="https://i.pinimg.com/736x/8b/16/7a/8b167af653c2399dd93b952a48740620.jpg" 
+              <AvatarImage
+                src="https://i.pinimg.com/736x/8b/16/7a/8b167af653c2399dd93b952a48740620.jpg"
                 className="transition-all duration-300 group-hover:scale-110"
               />
               <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-bold text-xl">
@@ -218,18 +310,30 @@ const PrimaryUserComponent = ({ primaryUser, onToggle, onSubscriptionToggle, isL
           </div>
         </div>
 
-        <div className="text-center text-white">
-          <h2 className="text-2xl font-bold mb-2">{user?.name || "Unknown User"}</h2>
-          <p className="text-blue-100 mb-4">{user?.email || "No email provided"}</p>
+        <div className="text-center text-white relative z-20">
+          <h2 className="text-2xl font-bold mb-2">
+            {user?.name || "Unknown User"}
+          </h2>
+          <p className="mb-4">
+            {user?.email || "No email provided"}
+          </p>
           <div className="flex items-center justify-center gap-4">
-            <StatusBadge label="Approved" value={user?.isApproved} type="approval" />
-            <StatusBadge label="Status" value={!user?.isBlocked} type="blocked" />
+            <StatusBadge
+              label="Approved"
+              value={user?.isApproved}
+              type="approval"
+            />
+            <StatusBadge
+              label="Status"
+              value={!user?.isBlocked}
+              type="blocked"
+            />
           </div>
         </div>
       </div>
 
       {/* Main content with overlap */}
-      <div className="px-8 -mt-8 pb-8">
+      <div className="px-8 -mt-8 pb-8 relative z-50">
         <div className="bg-white rounded-2xl shadow-xl border border-slate-200/60 overflow-hidden">
           {/* User Information Grid */}
           <div className="p-6">
@@ -241,8 +345,12 @@ const PrimaryUserComponent = ({ primaryUser, onToggle, onSubscriptionToggle, isL
                     <User className="w-5 h-5 text-blue-600" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Full Name</p>
-                    <p className="text-lg font-semibold text-slate-800">{user?.name || "N/A"}</p>
+                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                      Full Name
+                    </p>
+                    <p className="text-lg font-semibold text-slate-800">
+                      {user?.name || "N/A"}
+                    </p>
                   </div>
                 </div>
 
@@ -251,8 +359,12 @@ const PrimaryUserComponent = ({ primaryUser, onToggle, onSubscriptionToggle, isL
                     <Mail className="w-5 h-5 text-green-600" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Email Address</p>
-                    <p className="text-lg font-semibold text-slate-800 break-all">{user?.email || "N/A"}</p>
+                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                      Email Address
+                    </p>
+                    <p className="text-lg font-semibold text-slate-800 break-all">
+                      {user?.email || "N/A"}
+                    </p>
                   </div>
                 </div>
 
@@ -261,12 +373,16 @@ const PrimaryUserComponent = ({ primaryUser, onToggle, onSubscriptionToggle, isL
                     <Phone className="w-5 h-5 text-purple-600" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Phone Number</p>
-                    <p className="text-lg font-semibold text-slate-800">{user?.phoneNumber || "N/A"}</p>
+                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                      Phone Number
+                    </p>
+                    <p className="text-lg font-semibold text-slate-800">
+                      {user?.phoneNumber || "N/A"}
+                    </p>
                   </div>
                 </div>
               </div>
-              
+
               {/* Right Column - Dates & Subscription */}
               <div className="space-y-4">
                 <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl">
@@ -274,8 +390,12 @@ const PrimaryUserComponent = ({ primaryUser, onToggle, onSubscriptionToggle, isL
                     <Calendar className="w-5 h-5 text-orange-600" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Account Created</p>
-                    <p className="text-lg font-semibold text-slate-800">{formatDate(user?.createdAt)}</p>
+                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                      Account Created
+                    </p>
+                    <p className="text-lg font-semibold text-slate-800">
+                      {formatDate(user?.createdAt)}
+                    </p>
                   </div>
                 </div>
 
@@ -284,15 +404,23 @@ const PrimaryUserComponent = ({ primaryUser, onToggle, onSubscriptionToggle, isL
                     <Clock className="w-5 h-5 text-red-600" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Subscription Expires</p>
-                    <p className="text-lg font-semibold text-slate-800">{formatDate(user?.expiredAt)}</p>
+                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                      Subscription Expires
+                    </p>
+                    <p className="text-lg font-semibold text-slate-800">
+                      {calculateExpirationDate(user?.createdAt, user?.subscriptionType) ? formatDate(calculateExpirationDate(user?.createdAt, user?.subscriptionType)) : "N/A"}
+                    </p>
                   </div>
                 </div>
 
                 {/* Subscription Toggle */}
                 <SubscriptionToggle
                   subscriptionType={user?.subscriptionType}
-                  onToggle={onSubscriptionToggle || ((id, type) => console.log(`Toggle subscription for ${id} to ${type}`))}
+                  onToggle={
+                    onSubscriptionToggle ||
+                    ((id, type) =>
+                      console.log(`Toggle subscription for ${id} to ${type}`))
+                  }
                   loading={isLoading || localLoading}
                 />
               </div>
@@ -306,8 +434,12 @@ const PrimaryUserComponent = ({ primaryUser, onToggle, onSubscriptionToggle, isL
                 <Shield className="w-4 h-4 text-white" />
               </div>
               <div>
-                <h4 className="text-lg font-semibold text-slate-800">User Permissions</h4>
-                <p className="text-sm text-slate-600">Manage user access and communication settings</p>
+                <h4 className="text-lg font-semibold text-slate-800">
+                  User Permissions
+                </h4>
+                <p className="text-sm text-slate-600">
+                  Manage user access and communication settings
+                </p>
               </div>
             </div>
 
@@ -315,7 +447,9 @@ const PrimaryUserComponent = ({ primaryUser, onToggle, onSubscriptionToggle, isL
               <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
                 <ToggleSwitch
                   enabled={user?.sms || false}
-                  onToggle={() => onToggle && onToggle('primaryUser', null, 'sms', user?.sms)}
+                  onToggle={() =>
+                    onToggle && onToggle("primaryUser", null, "sms", user?.sms)
+                  }
                   label="SMS Notifications"
                   loading={isLoading}
                 />
@@ -324,7 +458,10 @@ const PrimaryUserComponent = ({ primaryUser, onToggle, onSubscriptionToggle, isL
               <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
                 <ToggleSwitch
                   enabled={user?.whatsApp || false}
-                  onToggle={() => onToggle && onToggle('primaryUser', null, 'whatsApp', user?.whatsApp)}
+                  onToggle={() =>
+                    onToggle &&
+                    onToggle("primaryUser", null, "whatsApp", user?.whatsApp)
+                  }
                   label="WhatsApp"
                   loading={isLoading}
                 />
@@ -333,7 +470,10 @@ const PrimaryUserComponent = ({ primaryUser, onToggle, onSubscriptionToggle, isL
               <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
                 <ToggleSwitch
                   enabled={user?.isBlocked || false}
-                  onToggle={() => onToggle && onToggle('primaryUser', null, 'isBlocked', user?.isBlocked)}
+                  onToggle={() =>
+                    onToggle &&
+                    onToggle("primaryUser", null, "isBlocked", user?.isBlocked)
+                  }
                   label="Block User"
                   loading={isLoading}
                   variant="danger"
@@ -343,7 +483,15 @@ const PrimaryUserComponent = ({ primaryUser, onToggle, onSubscriptionToggle, isL
               <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
                 <ToggleSwitch
                   enabled={user?.isApproved || false}
-                  onToggle={() => onToggle && onToggle('primaryUser', null, 'isApproved', user?.isApproved)}
+                  onToggle={() =>
+                    onToggle &&
+                    onToggle(
+                      "primaryUser",
+                      null,
+                      "isApproved",
+                      user?.isApproved
+                    )
+                  }
                   label="Approved"
                   loading={isLoading}
                   variant="success"

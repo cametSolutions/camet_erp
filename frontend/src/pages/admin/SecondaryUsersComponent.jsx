@@ -1,5 +1,5 @@
-import React from "react";
-import { Users } from "lucide-react";
+/* eslint-disable react/prop-types */
+import { Users, Mail, Phone } from "lucide-react";
 import ToggleSwitch from "./ToggleSwitch";
 
 const SecondaryUsersComponent = ({ secondaryUsers, onToggle, isLoading }) => {
@@ -13,13 +13,13 @@ const SecondaryUsersComponent = ({ secondaryUsers, onToggle, isLoading }) => {
   const UserAvatar = ({ user, size = "lg" }) => {
     const sizeClasses = {
       sm: "w-12 h-12 text-sm",
-      md: "w-16 h-16 text-lg",
-      lg: "w-20 h-20 text-xl",
-      xl: "w-24 h-24 text-2xl"
+      md: "w-14 h-14 text-base",
+      lg: "w-16 h-16 text-lg",
+      xl: "w-20 h-20 text-xl"
     };
     
     return (
-      <div className={`${sizeClasses[size]} rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold shadow-lg border-4 border-white`}>
+      <div className={`${sizeClasses[size]} rounded-full bg-gray-600 flex items-center justify-center text-white font-bold`}>
         {getInitials(user?.name)}
       </div>
     );
@@ -27,56 +27,82 @@ const SecondaryUsersComponent = ({ secondaryUsers, onToggle, isLoading }) => {
 
   if (!secondaryUsers?.length) {
     return (
-      <div className="text-center py-8">
+      <div className="text-center py-12">
         <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-        <p className="text-gray-500 text-lg">No secondary users found</p>
+        <h3 className="text-lg font-medium text-gray-900 mb-2">No secondary users found</h3>
+        <p className="text-gray-500">Secondary users will appear here when added.</p>
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4">
-      {secondaryUsers.map((user, index) => (
-        <div key={user.id} className="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
-          <div className="flex items-center space-x-4">
-            <UserAvatar user={user} size="sm" />
-            <div>
-              <p className="font-semibold text-gray-800">{user.name}</p>
-              <p className="text-sm text-gray-500">{user.email}</p>
-              {user.mobile && <p className="text-sm text-gray-500">{user.mobile}</p>}
+    <div className="space-y-4">
+      
+
+      {/* Users list */}
+      <div className="space-y-3">
+        {secondaryUsers.map((user, index) => (
+          <div 
+            key={user.id} 
+            className="bg-white border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors"
+          >
+            <div className="flex items-center justify-between">
+              {/* User info section */}
+              <div className="flex items-center space-x-4 flex-1">
+                <UserAvatar user={user} size="md" />
+                
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <h3 className="font-medium text-gray-900 truncate">{user.name}</h3>
+                    <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${
+                      user?.isBlocked 
+                        ? 'bg-red-50 text-red-700 border border-red-200' 
+                        : 'bg-green-50 text-green-700 border border-green-200'
+                    }`}>
+                      {user?.isBlocked ? 'Blocked' : 'Active'}
+                    </span>
+                  </div>
+                  
+                  <div className="space-y-1">
+                    {user.email && (
+                      <div className="flex items-center space-x-2 text-sm text-gray-600">
+                        <Mail className="w-4 h-4 text-gray-400" />
+                        <span className="truncate">{user.email}</span>
+                      </div>
+                    )}
+                    {user.mobile && (
+                      <div className="flex items-center space-x-2 text-sm text-gray-600">
+                        <Phone className="w-4 h-4 text-gray-400" />
+                        <span>{user.mobile}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Controls section */}
+              <div className="flex items-center ml-4">
+           
+                <ToggleSwitch
+                  enabled={Boolean(!user.isBlocked)}
+                  onToggle={() => {
+                    onToggle('secondaryUser', index, 'isBlocked', user.isBlocked);
+                  }}
+                  // label="isBlocked"
+                  loading={isLoading}
+                />
+              </div>
             </div>
+
+            {/* Loading overlay */}
+            {isLoading && (
+              <div className="absolute inset-0 bg-white bg-opacity-50 flex items-center justify-center rounded-lg">
+                <div className="w-5 h-5 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin" />
+              </div>
+            )}
           </div>
-          <div className="flex items-center space-x-4">
-             {/* <ToggleSwitch
-                enabled={Boolean(user.sms)} // Ensure boolean
-                onToggle={() => {
-                  console.log('SMS toggle clicked for user:', user.id, 'current value:', user.sms);
-                  onToggle('secondaryUser', index, 'sms', user.sms);
-                }}
-                label="SMS"
-                loading={isLoading}
-              />
-              <ToggleSwitch
-                enabled={Boolean(user.whatsapp)} // Ensure boolean
-                onToggle={() => {
-                  console.log('WhatsApp toggle clicked for user:', user.id, 'current value:', user.whatsapp);
-                  onToggle('secondaryUser', index, 'whatsapp', user.whatsapp);
-                }}
-                label="WhatsApp"
-                loading={isLoading}
-              /> */}
-              <ToggleSwitch
-                enabled={Boolean(user.isBlocked)} // Ensure boolean and invert logic
-                onToggle={() => {
-                  console.log('Active toggle clicked for user:', user.id, 'current isBlocked:', user.isBlocked);
-                  onToggle('secondaryUser', index, 'isBlocked', user.isBlocked);
-                }}
-                label="isBlocked"
-                loading={isLoading}
-              />
-          </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 };

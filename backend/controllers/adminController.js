@@ -38,7 +38,8 @@ import vanSaleModel from "../models/vanSaleModel.js";
 import TransactionModel from "../models/TransactionModel.js";
 import mongoose from "mongoose";
 
-import { ObjectId } from 'mongodb';
+import { ObjectId } from "mongodb";
+import { sendOrganizationApprovalEmail } from "./adminHelper.js";
 // @desc Login Admin
 // route POST/api/admin/login
 export const adminLogin = async (req, res) => {
@@ -58,7 +59,6 @@ export const adminLogin = async (req, res) => {
     //   );
 
     const isPasswordMatch = (await admin.password) === password;
-    console.log(isPasswordMatch);
 
     if (!isPasswordMatch) {
       return res.status(400).json({ message: "Invalid email or password" });
@@ -280,243 +280,180 @@ export const handlePrimaryDelete = async (req, res) => {
 // @desc handle block of primary user
 // route POST/api/admin/handlePrimaryBlock
 
-export const handlePrimaryBlock = async (req, res) => {
-  const userId = req.params.id;
+// export const handlePrimaryBlock = async (req, res) => {
+//   const userId = req.params.id;
 
-  try {
-    const user = await PrimaryUsers.findById(userId);
-    console.log("user", user);
+//   try {
+//     const user = await PrimaryUsers.findById(userId);
+//     console.log("user", user);
 
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
+//     if (!user) {
+//       return res.status(404).json({ error: "User not found" });
+//     }
 
-    // Update the user's approval status
-    const update = await PrimaryUsers.updateOne(
-      { _id: userId },
-      { $set: { isBlocked: !user.isBlocked } }
-    );
+//     // Update the user's approval status
+//     const update = await PrimaryUsers.updateOne(
+//       { _id: userId },
+//       { $set: { isBlocked: !user.isBlocked } }
+//     );
 
-    // Check if the update was successful
-    if (update.nModified === 0) {
-      return res
-        .status(400)
-        .json({ error: "Failed to update user block status" });
-    }
+//     // Check if the update was successful
+//     if (update.nModified === 0) {
+//       return res
+//         .status(400)
+//         .json({ error: "Failed to update user block status" });
+//     }
 
-    res.status(200).json({ message: "User block status updated successfully" });
-  } catch (error) {
-    console.error("Error:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-};
+//     res.status(200).json({ message: "User block status updated successfully" });
+//   } catch (error) {
+//     console.error("Error:", error);
+//     res.status(500).json({ error: "Internal server error" });
+//   }
+// };
 
 // @desc handle block of secondary user
 // route POST/api/admin/handleSecondaryBlock
-export const handleSecondaryBlock = async (req, res) => {
-  const userId = req.params.id;
+// export const handleSecondaryBlock = async (req, res) => {
+//   const userId = req.params.id;
 
-  try {
-    const user = await SecondaryUser.findById(userId);
-    console.log("user", user);
+//   try {
+//     const user = await SecondaryUser.findById(userId);
+//     console.log("user", user);
 
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
+//     if (!user) {
+//       return res.status(404).json({ error: "User not found" });
+//     }
 
-    // Update the user's approval status
-    const update = await SecondaryUser.updateOne(
-      { _id: userId },
-      { $set: { isBlocked: !user.isBlocked } }
-    );
+//     // Update the user's approval status
+//     const update = await SecondaryUser.updateOne(
+//       { _id: userId },
+//       { $set: { isBlocked: !user.isBlocked } }
+//     );
 
-    // Check if the update was successful
-    if (update.nModified === 0) {
-      return res
-        .status(400)
-        .json({ error: "Failed to update user block status" });
-    }
+//     // Check if the update was successful
+//     if (update.nModified === 0) {
+//       return res
+//         .status(400)
+//         .json({ error: "Failed to update user block status" });
+//     }
 
-    res.status(200).json({ message: "User block status updated successfully" });
-  } catch (error) {
-    console.error("Error:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-};
+//     res.status(200).json({ message: "User block status updated successfully" });
+//   } catch (error) {
+//     console.error("Error:", error);
+//     res.status(500).json({ error: "Internal server error" });
+//   }
+// };
 
 // @desc handle subscription of primary user
 // route POST/api/admin/handleSubscription
 
-export const handleSubscription = async (req, res) => {
-  const userId = req.params.id;
+// export const handleSubscription = async (req, res) => {
+//   const userId = req.params.id;
 
-  try {
-    const user = await PrimaryUsers.findById(userId);
-    console.log("user", user);
+//   try {
+//     const user = await PrimaryUsers.findById(userId);
+//     console.log("user", user);
 
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
+//     if (!user) {
+//       return res.status(404).json({ error: "User not found" });
+//     }
 
-    let newSubscription =
-      user.subscription === "monthly" ? "yearly" : "monthly";
+//     let newSubscription =
+//       user.subscription === "monthly" ? "yearly" : "monthly";
 
-    // Update the user's approval status
-    const update = await PrimaryUsers.updateOne(
-      { _id: userId },
-      { $set: { subscription: newSubscription } }
-    );
+//     // Update the user's approval status
+//     const update = await PrimaryUsers.updateOne(
+//       { _id: userId },
+//       { $set: { subscription: newSubscription } }
+//     );
 
-    // Check if the update was successful
-    if (update.nModified === 0) {
-      return res
-        .status(400)
-        .json({ error: "Failed to update user subscription status" });
-    }
+//     // Check if the update was successful
+//     if (update.nModified === 0) {
+//       return res
+//         .status(400)
+//         .json({ error: "Failed to update user subscription status" });
+//     }
 
-    res
-      .status(200)
-      .json({ message: "User subscription status updated successfully" });
-  } catch (error) {
-    console.error("Error:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-};
+//     res
+//       .status(200)
+//       .json({ message: "User subscription status updated successfully" });
+//   } catch (error) {
+//     console.error("Error:", error);
+//     res.status(500).json({ error: "Internal server error" });
+//   }
+// };
 
 // @desc handle sms provision of primary user
 // route POST/api/admin/handleSms
 
-export const handleSms = async (req, res) => {
-  const userId = req.params.id;
+// export const handleSms = async (req, res) => {
+//   const userId = req.params.id;
 
-  try {
-    const user = await PrimaryUsers.findById(userId);
-    console.log("user", user);
+//   try {
+//     const user = await PrimaryUsers.findById(userId);
+//     console.log("user", user);
 
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
+//     if (!user) {
+//       return res.status(404).json({ error: "User not found" });
+//     }
 
-    // Update the user's approval status
-    const update = await PrimaryUsers.updateOne(
-      { _id: userId },
-      { $set: { sms: !user.sms } }
-    );
+//     // Update the user's approval status
+//     const update = await PrimaryUsers.updateOne(
+//       { _id: userId },
+//       { $set: { sms: !user.sms } }
+//     );
 
-    // Check if the update was successful
-    if (update.nModified === 0) {
-      return res
-        .status(400)
-        .json({ error: "Failed to update user sms status" });
-    }
+//     // Check if the update was successful
+//     if (update.nModified === 0) {
+//       return res
+//         .status(400)
+//         .json({ error: "Failed to update user sms status" });
+//     }
 
-    res.status(200).json({ message: "User sms status updated successfully" });
-  } catch (error) {
-    console.error("Error:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-};
+//     res.status(200).json({ message: "User sms status updated successfully" });
+//   } catch (error) {
+//     console.error("Error:", error);
+//     res.status(500).json({ error: "Internal server error" });
+//   }
+// };
 
 // @desc handle whatsApp provision of primary user
 // route POST/api/admin/handleWhatsApp
 
-export const handleWhatsApp = async (req, res) => {
-  const userId = req.params.id;
+// export const handleWhatsApp = async (req, res) => {
+//   const userId = req.params.id;
 
-  try {
-    const user = await PrimaryUsers.findById(userId);
-    console.log("user", user);
+//   try {
+//     const user = await PrimaryUsers.findById(userId);
+//     console.log("user", user);
 
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
+//     if (!user) {
+//       return res.status(404).json({ error: "User not found" });
+//     }
 
-    // Update the user's approval status
-    const update = await PrimaryUsers.updateOne(
-      { _id: userId },
-      { $set: { whatsApp: !user.whatsApp } }
-    );
+//     // Update the user's approval status
+//     const update = await PrimaryUsers.updateOne(
+//       { _id: userId },
+//       { $set: { whatsApp: !user.whatsApp } }
+//     );
 
-    // Check if the update was successful
-    if (update.nModified === 0) {
-      return res
-        .status(400)
-        .json({ error: "Failed to update user whatsApp status" });
-    }
+//     // Check if the update was successful
+//     if (update.nModified === 0) {
+//       return res
+//         .status(400)
+//         .json({ error: "Failed to update user whatsApp status" });
+//     }
 
-    res
-      .status(200)
-      .json({ message: "User whatsApp status updated successfully" });
-  } catch (error) {
-    console.error("Error:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-};
+//     res
+//       .status(200)
+//       .json({ message: "User whatsApp status updated successfully" });
+//   } catch (error) {
+//     console.error("Error:", error);
+//     res.status(500).json({ error: "Internal server error" });
+//   }
+// };
 
-// @desc handle approval of organization
-// route POST/api/admin/handleOrganizationApprove
 
-export const handleOrganizationApprove = async (req, res) => {
-  const orgId = req.params.id;
-
-  try {
-    const organization = await Organization.findById(orgId).populate("owner");
-
-    if (!organization) {
-      return res.status(404).json({ error: "organization not found" });
-    }
-
-    // Update the user's approval status
-    const update = await Organization.updateOne(
-      { _id: orgId },
-      { $set: { isApproved: !organization.isApproved } }
-    );
-
-    // Check if the update was successful
-    if (update.modifiedCount === 0) {
-      return res.status(400).json({ error: "Approval failed" });
-    }
-
-    // Send email only if organization was not approved before (now being approved)
-    if (organization.isApproved === false) {
-      const transporter = nodemailer.createTransport({
-        service: "gmail",
-        auth: {
-          user: process.env.NODE_MAILER_EMAIL,
-          pass: process.env.NODE_MAILER_APP_PASSWORD,
-        },
-      });
-
-      const mailOptions = {
-        from: "solutions@camet.in",
-        to: `${organization.email}`,
-        subject: "Welcome to Camet IT Solutions - Registration Success",
-        text: `Dear ${organization.owner.userName},\n\nGreetings from Camet IT Solutions!\n\nWe are delighted to inform you that your registration with Camet IT Solutions has been successfully completed, and your approval for the company ${organization.name} is now confirmed.\n\nHere are your account details:\n\n- User ID: ${organization.owner._id}\n- Company ID: ${organization._id}\n\nWith these credentials, you now have access to the resources and services provided by Camet IT Solutions. We trust that you will find our offerings beneficial for your professional needs.\n\nShould you have any questions or require assistance, please feel free to reach out to our support team at solutions@camet.in or contact us directly at  9072632602.\n\nThank you for choosing Camet IT Solutions. We look forward to serving you and supporting your success in the future.\n\nBest regards,\n\nCAMET IT SOLUTIONS LLP\n2nd Floor, 5/215 A9, Puliyana Building\nFactory Road, North Kalamassery\nErnakulam Pincode : 683104\nContact No. 9072632602\nEmail ID : solutions@camet.in`,
-      };
-
-      // Use Promise-based approach or proper callback handling
-      try {
-        const info = await transporter.sendMail(mailOptions);
-        console.log("Email Sent:" + info.response);
-        res
-          .status(200)
-          .json({ message: "organization Status changed and email sent" });
-      } catch (emailError) {
-        console.log("Email error:", emailError);
-        res.status(200).json({
-          message: "organization Status changed but email failed to send",
-          emailError: emailError.message,
-        });
-      }
-    } else {
-      // Organization was approved before, now being unapproved
-      res.status(200).json({ message: "organization Status changed" });
-    }
-  } catch (error) {
-    console.error("Error:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-};
 
 // @desc get all organizations
 // route POST/api/admin/getOrganizationsAdmin
@@ -623,7 +560,7 @@ export const handleCompanyDelete = async (req, res) => {
       CreditNote.deleteMany({ cmp_id: companyId }),
       DebitNote.deleteMany({ cmp_id: companyId }),
       Godown.deleteMany({ cmp_id: companyId }),
-      hsnModel.deleteMany({ cpm_id: companyId }), 
+      hsnModel.deleteMany({ cpm_id: companyId }),
       invoiceModel.deleteMany({ cmp_id: companyId }),
       partyModel.deleteMany({ cmp_id: companyId }),
       Payment.deleteMany({ cmp_id: companyId }),
@@ -637,7 +574,7 @@ export const handleCompanyDelete = async (req, res) => {
       SubgroupModel.deleteMany({ cmp_id: companyId }),
       TallyData.deleteMany({ cmp_id: companyId }),
       vanSaleModel.deleteMany({ cmp_id: companyId }),
-      TransactionModel.deleteMany({ cmp_id: companyId }), 
+      TransactionModel.deleteMany({ cmp_id: companyId }),
       VoucherSeriesModel.deleteMany({ cmp_id: companyId }),
       warrantyCardModel.deleteMany({ cmp_id: companyId }),
     ]);
@@ -720,7 +657,6 @@ export const handleCompanyDelete = async (req, res) => {
 /// @desc get company data count
 // route GET/api/admin/getCompanyDataCount/:cmp_id
 
-
 export const getCompanyDataCount = async (req, res) => {
   const companyId = req.params.cmp_id;
 
@@ -757,7 +693,7 @@ export const getCompanyDataCount = async (req, res) => {
       SubgroupModel.countDocuments({ cmp_id: companyId }),
       TallyData.countDocuments({ cmp_id: companyId }),
       vanSaleModel.countDocuments({ cmp_id: companyId }),
-      TransactionModel.countDocuments({ cmp_id: companyId }), 
+      TransactionModel.countDocuments({ cmp_id: companyId }),
       VoucherSeriesModel.countDocuments({ cmp_id: companyId }),
       warrantyCardModel.countDocuments({ cmp_id: companyId }),
     ]);
@@ -825,7 +761,10 @@ export const getCompanyDataCount = async (req, res) => {
     };
 
     // Calculate total documents
-    const totalDocuments = Object.values(documentCounts).reduce((sum, count) => sum + count, 0);
+    const totalDocuments = Object.values(documentCounts).reduce(
+      (sum, count) => sum + count,
+      0
+    );
 
     res.status(200).json({
       message: "Company data count retrieved successfully",
@@ -863,44 +802,43 @@ export const syncIndexes = async (req, res) => {
   }
 };
 
- // Add this import at the top of your admin controller file
-
+// Add this import at the top of your admin controller file
 
 // Fixed getPrimaryUserProfileById function
 export const getPrimaryUserProfileById = async (req, res) => {
   try {
     const { userId } = req.params;
-    console.log("Fetching profile for userId:", userId);
 
     // Validate user ID
     if (!userId) {
       return res.status(400).json({
         success: false,
-        message: 'User ID is required'
+        message: "User ID is required",
       });
     }
 
     // Fetch primary user details
     const primaryUser = await PrimaryUsers.findById(userId)
-      .select('userName email mobile subscription createdAt updatedAt sms whatsApp isBlocked  isApproved role')
+      .select(
+        "userName email mobile subscription createdAt updatedAt sms whatsApp isBlocked  isApproved role"
+      )
       .lean();
 
     if (!primaryUser) {
       return res.status(404).json({
         success: false,
-        message: 'Primary user not found'
+        message: "Primary user not found",
       });
     }
 
     // Fetch organization details for this user
     const organization = await Organization.find({ owner: userId })
-      .select('name place type industry isBlocked isApproved createdAt')
+      .select("name place type industry isBlocked isApproved createdAt logo")
       .lean();
-      console.log('organization',organization)
 
     // Fetch secondary users for this primary user
     const secondaryUsers = await SecondaryUser.find({ primaryUser: userId })
-      .select('name email mobile isBlocked createdAt')
+      .select("name email mobile isBlocked createdAt")
       .lean();
 
     // Prepare response data to match frontend expectations
@@ -916,9 +854,9 @@ export const getPrimaryUserProfileById = async (req, res) => {
         sms: primaryUser.sms || false,
         whatsApp: primaryUser.whatsApp || false,
         isBlocked: primaryUser.isBlocked || false,
-        isApproved: primaryUser.isApproved || false
+        isApproved: primaryUser.isApproved || false,
       },
-      organization: organization.map(org=> ({
+      organization: organization.map((org) => ({
         id: org._id,
         name: org.name,
         place: org.place,
@@ -926,27 +864,27 @@ export const getPrimaryUserProfileById = async (req, res) => {
         industry: org.industry,
         isBlocked: org.isBlocked || false,
         isApproved: org.isApproved || false,
-        createdAt: org.createdAt
-    })),
-      secondaryUsers: secondaryUsers.map(user => ({
+        createdAt: org.createdAt,
+        logo: org.logo,
+      })),
+      secondaryUsers: secondaryUsers.map((user) => ({
         id: user._id,
         name: user.name,
         email: user.email,
         mobile: user.mobile,
-      
+
         isBlocked: user.isBlocked || false,
-        createdAt: user.createdAt
-      }))
+        createdAt: user.createdAt,
+      })),
     };
 
     res.status(200).json(responseData);
-
   } catch (error) {
-    console.error('Error fetching primary user profile by ID:', error);
+    console.error("Error fetching primary user profile by ID:", error);
     res.status(500).json({
       success: false,
-      message: 'Internal server error',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      message: "Internal server error",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 };
@@ -959,34 +897,43 @@ export const updatePrimaryUserStatus = async (req, res) => {
     const { userId } = req.params;
     const { field, value } = req.body;
 
-    const allowedFields = ['sms', 'whatsApp', 'isBlocked', 'isApproved', 'subscriptionType'];
-    
+    const allowedFields = [
+      "sms",
+      "whatsApp",
+      "isBlocked",
+      "isApproved",
+      "subscription",
+    ];
+
     if (!allowedFields.includes(field)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid field specified'
+        message: "Invalid field specified",
       });
     }
 
     // Validate subscriptionType values
-    if (field === 'subscriptionType') {
-      if (!['yearly', 'monthly'].includes(value)) {
+    if (field === "subscription") {
+      if (!["yearly", "monthly"].includes(value)) {
         return res.status(400).json({
           success: false,
-          message: 'Invalid subscription type. Must be "yearly" for yearly or "monthly" for monthly'
+          message:
+            'Invalid subscription type. Must be "yearly" for yearly or "monthly" for monthly',
         });
       }
     }
 
     // Validate boolean fields
-    if (['sms', 'whatsApp', 'isBlocked', 'isApproved'].includes(field)) {
-      if (typeof value !== 'boolean') {
+    if (["sms", "whatsApp", "isBlocked", "isApproved"].includes(field)) {
+      if (typeof value !== "boolean") {
         return res.status(400).json({
           success: false,
-          message: `${field} must be a boolean value`
+          message: `${field} must be a boolean value`,
         });
       }
     }
+
+    console.log(field, value);
 
     const update = await PrimaryUsers.updateOne(
       { _id: userId },
@@ -996,35 +943,55 @@ export const updatePrimaryUserStatus = async (req, res) => {
     if (update.matchedCount === 0) {
       return res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: "User not found",
       });
     }
 
     res.status(200).json({
       success: true,
-      message: `User ${field} status updated successfully`
+      message: `User ${field} status updated successfully`,
     });
-
   } catch (error) {
-    console.error('Error updating primary user status:', error);
+    console.error("Error updating primary user status:", error);
     res.status(500).json({
       success: false,
-      message: 'Internal server error'
+      message: "Internal server error",
     });
   }
 };
 // Update Organization Status
 export const updateOrganizationStatus = async (req, res) => {
   try {
-    const  {organizationId } = req.params;
+    const { organizationId } = req.params;
     const { field, value } = req.body;
-console.log('organizationId',organizationId)
-    const allowedFields = ['isBlocked', 'isApproved'];
+    const allowedFields = ["isBlocked", "isApproved"];
+    
     if (!allowedFields.includes(field)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid field specified'
+        message: "Invalid field specified",
       });
+    }
+
+    // Get organization data before update if we need to send approval email
+    let organization = null;
+    if (field === "isApproved" && value === true) {
+      organization = await Organization.findById(organizationId).populate("owner");
+      
+      if (!organization) {
+        return res.status(404).json({
+          success: false,
+          message: "Organization not found",
+        });
+      }
+
+      // Check if organization is already approved to avoid sending duplicate emails
+      if (organization.isApproved === true) {
+        return res.status(200).json({
+          success: true,
+          message: "Organization is already approved",
+        });
+      }
     }
 
     const update = await Organization.updateOne(
@@ -1035,29 +1002,46 @@ console.log('organizationId',organizationId)
     if (update.matchedCount === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Organization not found'
+        message: "Organization not found",
       });
+    }
+
+    // Send approval email if the field is isApproved and value is true
+    if (field === "isApproved" && value === true && organization) {
+      const emailResult = await sendOrganizationApprovalEmail(organization);
+      
+      if (emailResult.success) {
+        return res.status(200).json({
+          success: true,
+          message: "Organization approved successfully and email sent",
+        });
+      } else {
+        return res.status(200).json({
+          success: true,
+          message: "Organization approved successfully but email failed to send",
+          emailError: emailResult.error,
+        });
+      }
     }
 
     res.status(200).json({
       success: true,
-      message: `Organization ${field} status updated successfully`
+      message: `Organization ${field} status updated successfully`,
     });
-
   } catch (error) {
-    console.error('Error updating organization status:', error);
-    
+    console.error("Error updating organization status:", error);
+
     // Handle invalid ObjectId error from MongoDB
-    if (error.name === 'CastError') {
+    if (error.name === "CastError") {
       return res.status(400).json({
         success: false,
-        message: 'Invalid organization ID format'
+        message: "Invalid organization ID format",
       });
     }
-    
+
     res.status(500).json({
       success: false,
-      message: 'Internal server error'
+      message: "Internal server error",
     });
   }
 };
@@ -1067,12 +1051,12 @@ export const updateSecondaryUserStatus = async (req, res) => {
   try {
     const { secondaryUserId } = req.params;
     const { field, value } = req.body;
-console.log('secondaryUserId',secondaryUserId)
-    const allowedFields = [ 'isBlocked'];
+    console.log("secondaryUserId", secondaryUserId);
+    const allowedFields = ["isBlocked"];
     if (!allowedFields.includes(field)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid field specified'
+        message: "Invalid field specified",
       });
     }
 
@@ -1084,20 +1068,19 @@ console.log('secondaryUserId',secondaryUserId)
     if (update.matchedCount === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Secondary user not found'
+        message: "Secondary user not found",
       });
     }
 
     res.status(200).json({
       success: true,
-      message: `Secondary user ${field} status updated successfully`
+      message: `Secondary user ${field} status updated successfully`,
     });
-
   } catch (error) {
-    console.error('Error updating secondary user status:', error);
+    console.error("Error updating secondary user status:", error);
     res.status(500).json({
       success: false,
-      message: 'Internal server error'
+      message: "Internal server error",
     });
   }
 };
@@ -1108,22 +1091,23 @@ export const updateUserCapacity = async (req, res) => {
     const { userId } = req.params;
     const { field, value } = req.body;
 
-    console.log('Updating capacity:', { userId, field, value });
+    console.log("Updating capacity:", { userId, field, value });
 
     // Validate userId
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid user ID format'
+        message: "Invalid user ID format",
       });
     }
 
     // Validate field - only allow these two fields
-    const allowedFields = ['organizationLimit', 'secondaryUserLimit'];
+    const allowedFields = ["organizationLimit", "secondaryUserLimit"];
     if (!allowedFields.includes(field)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid field. Allowed fields: organizationLimit, secondaryUserLimit'
+        message:
+          "Invalid field. Allowed fields: organizationLimit, secondaryUserLimit",
       });
     }
 
@@ -1132,7 +1116,7 @@ export const updateUserCapacity = async (req, res) => {
     if (isNaN(numericValue) || numericValue < 1 || numericValue > 100) {
       return res.status(400).json({
         success: false,
-        message: 'Value must be a number between 1 and 100'
+        message: "Value must be a number between 1 and 100",
       });
     }
 
@@ -1141,7 +1125,7 @@ export const updateUserCapacity = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: "User not found",
       });
     }
 
@@ -1150,15 +1134,18 @@ export const updateUserCapacity = async (req, res) => {
 
     // Update the specific field
     user[field] = numericValue;
-    
+
     // Save the user
     const updatedUser = await user.save();
 
     // Log the update for audit purposes
-    console.log(`Updated ${field} for user ${userId}: ${oldValue} → ${numericValue}`);
+    console.log(
+      `Updated ${field} for user ${userId}: ${oldValue} → ${numericValue}`
+    );
 
     // Determine field name for response
-    const fieldDisplayName = field === 'organizationLimit' ? 'Organization' : 'Secondary User';
+    const fieldDisplayName =
+      field === "organizationLimit" ? "Organization" : "Secondary User";
 
     // Return success response
     res.status(200).json({
@@ -1172,28 +1159,32 @@ export const updateUserCapacity = async (req, res) => {
         newValue: updatedUser[field],
         organizationLimit: updatedUser.organizationLimit,
         secondaryUserLimit: updatedUser.secondaryUserLimit,
-        updatedAt: updatedUser.updatedAt
-      }
+        updatedAt: updatedUser.updatedAt,
+      },
     });
-
   } catch (error) {
-    console.error('Error updating user capacity:', error);
-    
+    console.error("Error updating user capacity:", error);
+
     // Handle mongoose validation errors
-    if (error.name === 'ValidationError') {
-      const validationErrors = Object.values(error.errors).map(err => err.message);
+    if (error.name === "ValidationError") {
+      const validationErrors = Object.values(error.errors).map(
+        (err) => err.message
+      );
       return res.status(400).json({
         success: false,
-        message: 'Validation error',
-        errors: validationErrors
+        message: "Validation error",
+        errors: validationErrors,
       });
     }
 
     // Handle other errors
     res.status(500).json({
       success: false,
-      message: 'Internal server error while updating capacity',
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong'
+      message: "Internal server error while updating capacity",
+      error:
+        process.env.NODE_ENV === "development"
+          ? error.message
+          : "Something went wrong",
     });
   }
 };
