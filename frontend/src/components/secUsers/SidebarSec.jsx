@@ -29,18 +29,7 @@ import { GrInfo } from "react-icons/gr";
 import { IoMdPower } from "react-icons/io";
 import { BsFillBuildingsFill } from "react-icons/bs";
 import { SlUserFollow } from "react-icons/sl";
-
-// shadcn/ui components
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import LogoutModal from "../common/modal/LogoutModal";
 
 function SidebarSec({ showBar }) {
   const [showSidebar, setShowSidebar] = useState(false);
@@ -478,32 +467,13 @@ function SidebarSec({ showBar }) {
       </div>
 
       {/* Logout Confirmation Modal */}
-      <AlertDialog open={showLogoutModal} onOpenChange={setShowLogoutModal}>
-        <AlertDialogContent className="bg-gray-900 border-gray-700">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-white">
-              Are you sure?
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-gray-300">
-              You want to logout! This action will end your current session.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel
-              onClick={handleLogoutCancel}
-              className="bg-gray-700 text-white hover:bg-gray-600 border-gray-600"
-            >
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleLogoutConfirm}
-              className="bg-red-600 hover:bg-red-700 text-white"
-            >
-              Yes, logout!
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <LogoutModal
+        open={showLogoutModal}
+        onOpenChange={setShowLogoutModal}
+        onConfirm={handleLogoutConfirm}
+        onCancel={handleLogoutCancel}
+      />
+  
     </div>
   );
 }
