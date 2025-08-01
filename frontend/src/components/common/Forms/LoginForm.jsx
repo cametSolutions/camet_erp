@@ -4,12 +4,14 @@
 /* eslint-disable react/no-unknown-property */
 import { RiLoginCircleFill } from "react-icons/ri";
 import { useEffect, useState } from "react";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { PropagateLoader } from "react-spinners";
 import api from "../../../api/api";
 import { FaRegEye } from "react-icons/fa";
 import { IoMdEyeOff } from "react-icons/io";
 import { useNavigate, Link } from "react-router-dom";
+import Footer from "../footer/Footer";
+
 function LoginForm({ user }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -76,11 +78,9 @@ function LoginForm({ user }) {
   };
 
   return (
-    <div
-      className="bg-gray-100 font-[sans-serif]"
-      // style={backgroundStyle}
-    >
-      <div className="min-h-screen flex flex-col items-center justify-center py-6 px-4">
+    <div className="bg-white font-[sans-serif] min-h-screen flex flex-col">
+      {/* Main content container with flex-grow to push footer down */}
+      <div className="flex-grow flex flex-col items-center justify-center py-6 px-4">
         <div className="max-w-md w-full">
           <div className="p-8 rounded-sm bg-white shadow-xl">
             <RiLoginCircleFill
@@ -224,6 +224,9 @@ function LoginForm({ user }) {
           </div>
         </div>
       </div>
+
+      {/* Footer at the bottom */}
+      <Footer user={user} />
     </div>
   );
 }
