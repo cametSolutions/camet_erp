@@ -127,24 +127,36 @@ export const login = async (req, res) => {
 export const getSecUserData = async (req, res) => {
   const userId = req.sUserId;
   try {
-    const userData = await SecondaryUser.findById(userId).populate({
-      path: "organization",
-      // select: "_id name",
-    });
+    // Populate organization fully
+    const userData = await SecondaryUser.findById(userId)
+      .populate({
+        path: "organization", // Assuming this is an array, otherwise remove [.0]
+      })
+      .lean(); // Use .lean() for easier manipulation
 
-    if (userData) {
-      return res
-        .status(200)
-        .json({ message: "secondaryUSerData fetched", data: { userData } });
-    } else {
+    if (!userData) {
       return res
         .status(404)
         .json({ message: "secondaryUSerData not found", data: { userData } });
     }
+
+    // If 'organization' is an array 
+    if (Array.isArray(userData.organization)) {
+      userData.organization = userData.organization.map(
+        (org, idx) =>
+          idx === 0
+            ? org // keep full data for first since it is selected as default company selected when user logged in ,so full details must be stored in local storage
+            : { _id: org._id, name: org.name } // keep only _id and name for the rest
+      );
+    } 
+
+    return res
+      .status(200)
+      .json({ message: "secondaryUSerData fetched", data: { userData } });
   } catch (error) {
     return res
       .status(500)
-      .json({ status: false, message: "internal sever error" });
+      .json({ status: false, message: "internal server error" });
   }
 };
 
@@ -734,8 +746,6 @@ export const fetchFilters = async (req, res) => {
       (config) => config?.organization?.toString() === cmp_id
     )?.selectedPriceLevels;
 
-    
-
     //// if configuredPriceLevels is empty, then return all price levels
     let filteredPriceLevels = priceLevels || [];
     if (configuredPriceLevels && configuredPriceLevels?.length > 0) {
@@ -1276,9 +1286,7 @@ export const findGodownsNames = async (req, res) => {
       !configuration.selectedVanSaleGodowns ||
       configuration.selectedVanSaleGodowns.length === 0
     ) {
-      return res
-        .status(200)
-        .json({message: "No godowns found", data: [] });
+      return res.status(200).json({ message: "No godowns found", data: [] });
     }
 
     const firstGodown = configuration.selectedVanSaleGodowns[0];
@@ -1294,7 +1302,6 @@ export const findGodownsNames = async (req, res) => {
     res.status(500).json({ message: "Internal server error", data: null });
   }
 };
-
 
 // @desc get brands, categories, subcategories, godowns, priceLevels
 // route get/api/sUsers/getAllSubDetails
@@ -2189,7 +2196,6 @@ export const getPartyOpening = async (req, res) => {
   }
 };
 
-
 // @desc   Get dashboard counts for products and customers
 // @route  GET /api/sUsers/getDashboardCounts/:cmp_id
 export const fetchDashboardCounts = async (req, res) => {
@@ -2199,13 +2205,13 @@ export const fetchDashboardCounts = async (req, res) => {
     if (!cmp_id) {
       return res.status(400).json({
         success: false,
-        message: 'Company ID is required'
+        message: "Company ID is required",
       });
     }
 
     const [productCount, customerCount] = await Promise.all([
       productModel.countDocuments({ cmp_id: cmp_id }),
-      partyModel.countDocuments({ cmp_id: cmp_id })
+      partyModel.countDocuments({ cmp_id: cmp_id }),
     ]);
 
     res.status(200).json({
@@ -2213,15 +2219,14 @@ export const fetchDashboardCounts = async (req, res) => {
       data: {
         productCount: productCount || 0,
         customerCount: customerCount || 0,
-        cmp_id
-      }
+        cmp_id,
+      },
     });
-
   } catch (error) {
-    console.error('Error fetching dashboard counts:', error);
+    console.error("Error fetching dashboard counts:", error);
     res.status(500).json({
       success: false,
-      message: 'Internal server error'
+      message: "Internal server error",
     });
   }
 };

@@ -10,16 +10,19 @@ function CompanyFilter({ setLoading }) {
 
   const dispatch = useDispatch();
 
-  const { data, loading, error } = useFetch(`/api/sUsers/getSecUserData`);
+  const { data, loading, error } = useFetch(`/api/sUsers/getOrganizations?basicDetails=true`);
 
   useEffect(() => {
-    setCompanies(data?.data?.userData?.organization || []);
+    setCompanies(data?.organizationData || []);
     if (loading) {
       setLoading(true);
     } else {
       setLoading(false);
     }
   }, [data, loading]);
+
+  console.log(data);
+  
 
   const handleSelectChange = (event) => {
     const selectedCompanyId = event.target.value;
