@@ -30,7 +30,7 @@ function AdminSidebar({ showBar }) {
 
   const navItems = [
     {
-      to: "/sUsers/dashboard",
+      to: "/admin/home",
       tab: "dash",
       icon: <FaHome />,
       label: "Home",

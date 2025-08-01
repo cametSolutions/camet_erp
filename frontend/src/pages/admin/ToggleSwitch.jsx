@@ -1,4 +1,4 @@
-import React from 'react';
+/* eslint-disable react/prop-types */
 import { Loader2 } from 'lucide-react';
 
 const ToggleSwitch = ({ 
@@ -88,7 +88,7 @@ const ToggleSwitch = ({
       </div>
       
       {/* Status indicator */}
-      <div className="flex items-center justify-end">
+      {/* <div className="flex items-center justify-end">
         <span className={`text-xs font-medium px-2 py-1 rounded-full transition-colors duration-200 ${
           enabled 
             ? variant === 'danger' 
@@ -100,7 +100,7 @@ const ToggleSwitch = ({
         }`}>
           {loading ? 'Updating...' : enabled ? 'Enabled' : 'Disabled'}
         </span>
-      </div>
+      </div> */}
     </div>
   );
 };
