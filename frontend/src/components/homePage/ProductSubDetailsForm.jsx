@@ -10,7 +10,7 @@ import Pagination from "../../components/common/Pagination";
 import { useLocation } from "react-router-dom";
 import { setSecSelectedOrganization } from "../../../slices/secSelectedOrgSlice";
 
-const ProductSubDetailsForm = ({ tab, handleLoader, isHotel }) => {
+const ProductSubDetailsForm = ({ tab, handleLoader, isHotel,isRestaurants= false }) => {
   const [value, setValue] = useState("");
   const [price, setPrice] = useState("");
   const [data, setData] = useState([]);
@@ -55,7 +55,7 @@ const ProductSubDetailsForm = ({ tab, handleLoader, isHotel }) => {
       setEdit(false);
     }
   }, [value]);
-
+console.log(tab)
   const getSubDetails = async (data) => {
     try {
       setLoading(true);
@@ -80,6 +80,7 @@ const ProductSubDetailsForm = ({ tab, handleLoader, isHotel }) => {
     const formData = {
       [tab]: value,
       ...(isHotel && { price }),
+      ...(isRestaurants && { under:"restaurant" }),
     };
 
     console.log(formData);

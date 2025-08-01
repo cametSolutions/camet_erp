@@ -31,8 +31,11 @@ const WarrantyCard = () => {
             godown?.added === true && godown?.batch && godown?.warrantyCard
         );
 
+        
+
         // Create a separate product entry for each batch
         addedBatches?.forEach((godown) => {
+                  
           const {
             warrantyYears,
             warrantyMonths,
@@ -40,6 +43,8 @@ const WarrantyCard = () => {
             termsAndConditions,
             customerCareInfo,
             customerCareNo,
+            imageUrl,
+            
           } = godown.warrantyCard;
 
           products?.push({
@@ -54,6 +59,7 @@ const WarrantyCard = () => {
             termsAndConditions,
             customerCareInfo,
             customerCareNo,
+            imageUrl,
             warrantyPeriodFrom: date,
             warrantyPeriodTo: getFutureDate({
               years: warrantyYears,
@@ -153,6 +159,9 @@ const WarrantyCard = () => {
       });
   };
 
+  console.log("productData", productData);
+  
+
   return (
     <div>
       <TitleDiv
@@ -192,9 +201,9 @@ const WarrantyCard = () => {
                   }}
                 >
                   {/* Header with Logo */}
-                  {logo && (
+                  {( item.imageUrl  || logo) && (
                     <div className=" flex justify-center text-center mb-6 ">
-                      <img src={logo} className="w-20 h-20" />
+                      <img src={item.imageUrl || logo} className="w-20 h-20" />
                     </div>
                   )}
 

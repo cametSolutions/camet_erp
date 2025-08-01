@@ -27,11 +27,22 @@ import { LuTimerReset } from "react-icons/lu";
 import { SiHelpscout } from "react-icons/si";
 import { GrInfo } from "react-icons/gr";
 import { IoMdPower } from "react-icons/io";
-import Swal from "sweetalert2";
 import { BsFillBuildingsFill } from "react-icons/bs";
 import { SlUserFollow } from "react-icons/sl";
 
-function SidebarSec({  showBar }) {
+// shadcn/ui components
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+
+function SidebarSec({ showBar }) {
   const [showSidebar, setShowSidebar] = useState(false);
   const [userData, setUserData] = useState({});
   const [dropdown, setDropdown] = useState(false);
@@ -40,6 +51,7 @@ function SidebarSec({  showBar }) {
   const [companies, setCompanies] = useState([]);
   const [role, setRole] = useState("user");
   const [open, setOpen] = useState(true);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const selectedTab = localStorage.getItem("selectedSecondatSidebarTab");
 
   const [tab, setTab] = useState(selectedTab);
@@ -63,6 +75,7 @@ function SidebarSec({  showBar }) {
       document.removeEventListener("click", handleClickOutside, true);
     };
   }, [sidebarRef, setShowSidebar]);
+
   const navItems = [
     {
       to: "/sUsers/dashboard",
@@ -70,12 +83,6 @@ function SidebarSec({  showBar }) {
       icon: <FaHome />,
       label: "Home",
     },
-    // {
-    //   to: "/sUsers/settings",
-    //   tab: "settings",
-    //   icon: <IoMdSettings />,
-    //   label: "Settings",
-    // },
   ];
 
   if (role === "admin") {
@@ -109,6 +116,7 @@ function SidebarSec({  showBar }) {
       label: "Reset Password",
     },
   ];
+
   const supportItems = [
     {
       to: "/sUsers/dashboard",
@@ -121,12 +129,6 @@ function SidebarSec({  showBar }) {
       tab: "About",
       icon: <GrInfo />,
       label: "About",
-    },
-    {
-      to: "#",
-      tab: "logout",
-      icon: <IoMdPower />,
-      label: "Log Out",
     },
   ];
 
@@ -153,13 +155,11 @@ function SidebarSec({  showBar }) {
       const { userData } = res.data.data;
 
       setUserData(userData);
-
       setCompanies(userData?.organization);
-
       setRole(userData?.role || "user");
+      
       if (!prevOrg) {
         setOrg(userData?.organization[0]);
-
         dispatch(setSecSelectedOrganization(userData?.organization[0]));
       } else {
         setOrg(prevOrg);
@@ -170,9 +170,6 @@ function SidebarSec({  showBar }) {
   }, [prevOrg, dispatch]);
 
   useEffect(() => {
-    // if (!userData || !userData.name) {
-    //   getUserData();
-    // }
     getUserData();
   }, [refreshOrganizations]);
 
@@ -205,38 +202,35 @@ function SidebarSec({  showBar }) {
     localStorage.removeItem("SecondaryTransactionStartDate");
   };
 
-  const handleLogout = async () => {
-    Swal.fire({
-      title: "Are you sure?",
-      text: "You want to logout!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      cancelButtonText: "Cancel",
-      confirmButtonText: "Yes, logout!",
-    }).then(async (result) => {
-      if (result.isConfirmed) {
-        try {
-          const res = await api.post(
-            "/api/sUsers/logout",
-            {},
-            {
-              withCredentials: true,
-            }
-          );
-          toast.success(res.data.message);
-          localStorage.removeItem("sUserData");
-          dispatch(removeSecSelectedOrg());
-          navigate("/sUsers/login");
-        } catch (error) {
-          console.error(error);
-          toast.error(
-            error.response?.data?.message || "An error occurred during logout"
-          );
+  const handleLogoutClick = () => {
+    setShowLogoutModal(true);
+  };
+
+  const handleLogoutConfirm = async () => {
+    try {
+      const res = await api.post(
+        "/api/sUsers/logout",
+        {},
+        {
+          withCredentials: true,
         }
-      }
-    });
+      );
+      toast.success(res.data.message);
+      localStorage.removeItem("sUserData");
+      dispatch(removeSecSelectedOrg());
+      navigate("/sUsers/login");
+    } catch (error) {
+      console.error(error);
+      toast.error(
+        error.response?.data?.message || "An error occurred during logout"
+      );
+    } finally {
+      setShowLogoutModal(false);
+    }
+  };
+
+  const handleLogoutCancel = () => {
+    setShowLogoutModal(false);
   };
 
   const handleDropDownchange = (el) => {
@@ -261,12 +255,11 @@ function SidebarSec({  showBar }) {
   }) => {
     return (
       <>
-      
         <Link to={item.to}>
           <span
             onClick={() => {
               if (item.tab === "logout") {
-                handleLogout();
+                handleLogoutClick();
               } else {
                 handleSidebarItemClick(item.tab);
               }
@@ -323,6 +316,7 @@ function SidebarSec({  showBar }) {
           <RingLoader color="#1c14a0" />
         </div>
       )}
+      
       <div
         className={`${
           showSidebar
@@ -332,12 +326,7 @@ function SidebarSec({  showBar }) {
           open ? "w-64" : "w-28"
         } transition-all duration-700 ease-in-out flex flex-col h-screen p-1 bg-[#0b1d34] overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-track-[#0B1D34] scrollbar-thumb-[#30435e]`}
         style={{
-          //   scrollbarWidth: "thin",
-          // scrollbarColor: "gray #0B1D34",
-          transitionProperty: "width, transform", // Add width transition explicitly
-          // '::-webkit-scrollbar': {
-          //   width: '1px'
-          // }
+          transitionProperty: "width, transform",
         }}
       >
         {/* company head */}
@@ -347,81 +336,135 @@ function SidebarSec({  showBar }) {
           setOpen={setOpen}
         />
 
-        {/* <Popover/> */}
-
         {/* user profile section */}
-
         <ProfileSection
           org={org}
           userData={userData}
           handleDropDownchange={handleDropDownchange}
-          handleLogout={handleLogout}
+          handleLogout={handleLogoutClick}
           open={open}
         />
 
-        <div
-          className={`flex flex-col   flex-1  my-3  ${
-            !open ? "items-center  mt-1" : "mt-9"
-          } `}
-        >
-          <p className="text-sm text-gray-400 px-4">Menu</p>
+        {/* Main content area - this will take up remaining space */}
+        <div className="flex flex-col flex-1 my-3">
+          <div className={`flex flex-col ${!open ? "items-center mt-1" : "mt-9"}`}>
+            <p className={`text-sm text-gray-400 ${open ? "px-4" : "text-center"}`}>Menu</p>
 
-          {/* my accounts */}
-          <nav>
-            {navItems.map((item, index) => (
-              <div key={index}>
-                <SidebarCard
-                  item={item}
-                  tab={tab}
-                  // expandedSections={expandedSections}
-                  handleSidebarItemClick={handleSidebarItemClick}
-                />
-              </div>
-            ))}
-          </nav>
+            {/* my accounts */}
+            <nav>
+              {navItems.map((item, index) => (
+                <div key={index}>
+                  <SidebarCard
+                    item={item}
+                    tab={tab}
+                    handleSidebarItemClick={handleSidebarItemClick}
+                  />
+                </div>
+              ))}
+            </nav>
 
-          {/* security items */}
-          <p className="text-sm text-gray-400 mt-7 px-4">Security</p>
+            {/* security items */}
+            <p className={`text-sm text-gray-400 mt-7 ${open ? "px-4" : "text-center"}`}>Security</p>
 
-          <nav>
-            {securityItems.map((item, index) => (
-              <div key={index}>
-                <SidebarCard
-                  item={item}
-                  tab={tab}
-                  // expandedSections={expandedSections}
-                  handleSidebarItemClick={handleSidebarItemClick}
-                />
-              </div>
-            ))}
-          </nav>
+            <nav>
+              {securityItems.map((item, index) => (
+                <div key={index}>
+                  <SidebarCard
+                    item={item}
+                    tab={tab}
+                    handleSidebarItemClick={handleSidebarItemClick}
+                  />
+                </div>
+              ))}
+            </nav>
 
-          {/* suport items */}
-          <p className="text-sm text-gray-400 mt-7 px-4">Support</p>
+            {/* support items - removed logout from here */}
+            <p className={`text-sm text-gray-400 mt-7 ${open ? "px-4" : "text-center"}`}>Support</p>
 
-          <nav>
-            {supportItems.map((item, index) => (
-              <div key={index}>
-                <SidebarCard
-                  item={item}
-                  tab={tab}
-                  // expandedSections={expandedSections}
-                  handleSidebarItemClick={handleSidebarItemClick}
-                />
-              </div>
-            ))}
-          </nav>
+            <nav>
+              {supportItems.map((item, index) => (
+                <div key={index}>
+                  <SidebarCard
+                    item={item}
+                    tab={tab}
+                    handleSidebarItemClick={handleSidebarItemClick}
+                  />
+                </div>
+              ))}
+            </nav>
+          </div>
+        </div>
+
+        {/* Bottom section - Logout and Version - Always at bottom */}
+        <div className={`mt-auto flex flex-col ${!open ? "items-center" : ""}`}>
+          {/* Logout button */}
+          <div className="mb-2 w-full">
+            <span
+              onClick={handleLogoutClick}
+              className={`${
+                tab === "logout"
+                  ? `text-blue-500 ${
+                      open ? "border-r-2 border-blue-500 bg-gray-800" : ""
+                    }`
+                  : "text-gray-400 bg-slate-800 hover:text-white"
+              } flex items-center w-full py-2 transition-all duration-300 transform text-[13.5px] h-10 cursor-pointer ${
+                open && "pl-5"
+              }`}
+            >
+              {open ? (
+                <div className="flex items-center justify-between w-full ">
+                  <div className="flex items-center ">
+                    <span className="text-lg text-red-500"><IoMdPower /></span>
+                    <span className=" transition-all mx-4 font-medium origin-left duration-500 ease-in-out">
+                      Log Out
+                    </span>
+                  </div>
+                  {/* <span className="mx-4 font-medium ">
+                    <FaAngleRight />
+                  </span> */}
+                </div>
+              ) : (
+                <div className="flex justify-center text-lg w-full text-red-500"><IoMdPower /></div>
+              )}
+            </span>
+          </div>
 
           {/* version */}
-          <hr className="mt-4 mb-2 border mx-2 border-gray-700" />
-
-          <div className="flex flex-col items-center px-4 bg-slate-800 py-1 ">
-            <h3 className="text-[10px] text-gray-400  tracking-widest">
+          <hr className="mb-2 border mx-2 border-gray-700" />
+          
+          <div className="flex flex-col items-center px-4 bg-gray-700 py-1">
+            <h3 className="text-[10px] text-gray-400 tracking-widest text-center">
               Version 0.0.4
             </h3>
           </div>
         </div>
       </div>
+
+      {/* Logout Confirmation Modal */}
+      <AlertDialog open={showLogoutModal} onOpenChange={setShowLogoutModal}>
+        <AlertDialogContent className="bg-gray-900 border-gray-700">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-300">
+              You want to logout! This action will end your current session.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel 
+              onClick={handleLogoutCancel}
+              className="bg-gray-700 text-white hover:bg-gray-600 border-gray-600"
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleLogoutConfirm}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Yes, logout!
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

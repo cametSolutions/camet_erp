@@ -37,6 +37,7 @@ import ServerError from '../pages/errorPages/ServerError'
 
 import AddBrand from '../pages/masters/product/productSubDetails/AddBrand'
 import AddCategory from '../pages/masters/product/productSubDetails/AddCategory'
+import AddRestuarentCategory from '@/pages/masters/product/productSubDetails/AddRestuarentCategory'
 import AddSubCategory from '../pages/masters/product/productSubDetails/AddSubCategory'
 import AddGodown from '../pages/masters/product/productSubDetails/AddGodown'
 import AddPriceLevel from '../pages/masters/product/productSubDetails/AddPriceLevel'
@@ -136,7 +137,7 @@ import AllocateGodown from '@/pages/masters/secondaryUsers/RetailerConfiguration
 import AllocationSeriesList from '@/pages/masters/secondaryUsers/RetailerConfiguration/AllocationSeriesList'
 import AllocateVoucherSeries from '@/pages/masters/secondaryUsers/RetailerConfiguration/AllocateVoucherSeries'
 import AllocateSubGroup from '@/pages/masters/secondaryUsers/RetailerConfiguration/AllocateSubGroup'
-
+import RestuarentSettings from '@/pages/secUsers/settilngs/stockItem/stockItemSettings/RestuarentSettings'
 import BookingPage from '@/pages/Hotel/Pages/BookingPage'
 import CheckInPage from '@/pages/Hotel/Pages/CheckInPage'
 import CheckOut from '@/pages/Hotel/Pages/CheckOut' 
@@ -144,6 +145,11 @@ import BookingList from '@/pages/Hotel/List/BookingList'
 import CheckInList from '@/pages/Hotel/List/CheckIn'
 import CheckOutList from '@/pages/Hotel/List/CheckOutList'
 import RestaurantDashboard from '@/pages/Restuarant/Pages/RestaurantDashboard'
+import LetterHeadUploadPage from '@/pages/secUsers/settilngs/PrintConfiguration/LetterHeadUploadPage'
+import KotPage from '@/pages/Restuarant/Pages/KotPage'
+import AddSubRestuarentCategory from '@/pages/masters/product/productSubDetails/AddsubRestuarentCategory'
+import ItemRegistration from '@/pages/Restuarant/Pages/ItemRegistration'
+import ItemList from '@/pages/Restuarant/Pages/ItemList'
 const Routers = () => {
   return (
     <Routes>
@@ -266,10 +272,11 @@ const Routers = () => {
         {/* we are using the same page of primary to avoid page repetition */}
         <Route path='/sUsers/brand' element={<ProtectedSecRoute><AddBrand/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/category' element={<ProtectedSecRoute><AddCategory/></ProtectedSecRoute>}></Route> 
+        <Route path='/sUsers/AddRestuarentCategory' element={<ProtectedSecRoute><AddRestuarentCategory/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/subcategory' element={<ProtectedSecRoute><AddSubCategory/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/godown' element={<ProtectedSecRoute><AddGodown/></ProtectedSecRoute>}></Route> 
         <Route path='/sUsers/pricelevel' element={<ProtectedSecRoute><AddPriceLevel/></ProtectedSecRoute>}></Route>
-
+<Route path='/sUsers/AddSubRestuarentCategory' element={<ProtectedSecRoute><AddSubRestuarentCategory/></ProtectedSecRoute>}></Route>
 
       {/* hsn */}
         {/* we are using the same page of primary to avoid page repetition */}
@@ -331,6 +338,7 @@ const Routers = () => {
         <Route path='/sUsers/dataEntrySettings' element={<ProtectedSecRoute><DateEntrySettings/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/OutstandingSettings' element={<ProtectedSecRoute><OutstandingSettings/></ProtectedSecRoute>}></Route>
         {/* stock item settings */}
+        <Route path='/sUsers/restuarentSettings' element={<ProtectedSecRoute><RestuarentSettings/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/StockItemSettings' element={<ProtectedSecRoute><StockItemSettings/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/barcodeList' element={<ProtectedSecRoute><BarcodeList/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/barcodeCreationDetails' element={<ProtectedSecRoute><BarcodeCreationDetails/></ProtectedSecRoute>}></Route>
@@ -361,6 +369,7 @@ const Routers = () => {
         <Route path='/sUsers/printConfiguration' element={<ProtectedSecRoute><PrintConfiguration/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/saleOrderPrintConfiguration' element={<ProtectedSecRoute><SaleOrderPrintConfiguration/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/salePrintConfiguration' element={<ProtectedSecRoute><SalePrintConfiguration/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/sale/upLoadLetterHead' element={<ProtectedSecRoute><LetterHeadUploadPage/></ProtectedSecRoute>}></Route>
 
       {/* order pending */}
       <Route path='/sUsers/orderPending/partyList' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route>
@@ -412,7 +421,9 @@ const Routers = () => {
         <Route path= '/sUsers/idProof' element={<IdProof />} />
         <Route path= '/sUsers/foodPlan' element={<FoodPlan />} />
         <Route path= '/sUsers/roomRegistration' element={<RoomRegistration />} />
+        <Route path= '/sUsers/itemRegistration' element={<ItemRegistration />} />
         <Route path= '/sUsers/roomList' element={<RoomList />} />
+        <Route path= '/sUsers/itemList' element={<ItemList />} />
         <Route path= '/sUsers/editRoom' element={<EditRoom />} />
         <Route path= '/sUsers/bookingPage' element={<BookingPage />} />
         <Route path= '/sUsers/checkInPage' element={<CheckInPage />} />
@@ -420,6 +431,7 @@ const Routers = () => {
         <Route path='/BookingList' element={<BookingList/>}/>
         <Route path='/CheckInList' element={<CheckInList/>}/>
         <Route path='/CheckOutList' element={<CheckOutList/>}/>
+<Route path='/KotPage' element={<KotPage/>}/>
 
     </Routes>
   )

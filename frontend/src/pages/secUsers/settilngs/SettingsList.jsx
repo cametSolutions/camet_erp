@@ -21,6 +21,7 @@ const Settings = () => {
       to: "/sUsers/StockItem",
       active: true,
     },
+   
     {
       title: "PARTIES",
       description: "Configure your Parties",
