@@ -78,14 +78,10 @@ const receiptSchema = new mongoose.Schema(
         bill_no: { type: String, required: true },
 
         /// id of the source of the outstanding
-        billId: {
-          type: mongoose.Schema.Types.ObjectId,
-
-          required: true,
-        },
+        billId: { type: String, required: true },
         bill_date: { type: Date, required: true },
         billPending_amt: { type: Number, required: true },
-        source: { type: String, required: true },
+        source: { type: String },
         settledAmount: { type: Number, required: true },
         remainingAmount: { type: Number, required: true },
       },

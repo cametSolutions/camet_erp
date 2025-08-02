@@ -31,12 +31,22 @@ import { useLocation, useNavigate } from "react-router-dom";
 import TitleDiv from "../../../components/common/TitleDiv";
 import FooterButton from "../../voucher/voucherCreation/FooterButton";
 import { formatVoucherType } from "../../../../utils/formatVoucherType";
+import { useQueryClient } from "@tanstack/react-query";
+
 
 function AccVoucherInitialPageEdit() {
   // ////////////////dispatch
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
+  const queryClient = useQueryClient();
+
+  
+  //// check if the user is admin
+  const isAdmin =
+    JSON.parse(localStorage.getItem("sUserData")).role === "admin"
+      ? true
+      : false;
 
 
   // ///////////////////  redux details /////////////////////
@@ -303,7 +313,6 @@ function AccVoucherInitialPageEdit() {
       }
       if (
         !formData.paymentDetails.bank_ledname ||
-        !formData.paymentDetails.bank_name ||
         !formData.paymentDetails._id
       ) {
         setSubmitLoading(false);
@@ -314,7 +323,6 @@ function AccVoucherInitialPageEdit() {
     if (formData.paymentMethod === "Online") {
       if (
         !formData.paymentDetails.bank_ledname ||
-        !formData.paymentDetails.bank_name ||
         !formData.paymentDetails._id
       ) {
         setSubmitLoading(false);
@@ -344,13 +352,15 @@ function AccVoucherInitialPageEdit() {
         }
       );
 
-      console.log(res.data);
       toast.success(res.data.message);
 
       navigate(
         `/sUsers/${voucherTypeFromRedux}/details/${res?.data?.data._id}`
       );
       dispatch(removeAll());
+         queryClient.invalidateQueries({
+        queryKey: ["todaysTransaction", cmp_id, isAdmin],
+      });
     } catch (error) {
       toast.error(error.response?.data?.message || "An error occurred.");
       console.log(error);

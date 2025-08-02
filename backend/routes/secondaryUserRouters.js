@@ -21,7 +21,8 @@ import {
     addPartyOpening,
     getPartyOpening,
     editPartyOpening,
-    getAllSubDetailsBasedUnder
+    getAllSubDetailsBasedUnder,
+    fetchDashboardCounts,
 
 } from "../controllers/secondaryUserController.js"
 
@@ -38,7 +39,7 @@ import { createPayment, cancelPayment, editPayment, getPaymentDetails } from '..
 import { createInvoice, editInvoice, cancelSalesOrder, PartyListWithOrderPending, getInvoiceDetails } from '../controllers/saleOrderController.js';
 import { createStockTransfer, editStockTransfer, cancelStockTransfer, getStockTransferDetails } from '../controllers/stockTransferController.js';
 import { addBankPaymentDetails } from '../../frontend/slices/payment.js';
-import { addEmailConfiguration, getConfiguration, getBarcodeList, addBarcodeData, editBarcodeData, deleteBarcode, getSingleBarcodeData, getPrintingConfiguration, updateConfiguration, getDespatchTitles, updateDespatchTitles, getTermsAndConditions, updateTermsAndConditions, updateBankAccount, updateShipToConfiguration, updateFirstLayerConfiguration, createWarrantyCard, getWarrantyCards, updateWarrantyCard, deleteWarrantyCard, updateCommonToggleConfiguration } from '../controllers/settingsController.js';
+import { addEmailConfiguration, getConfiguration, getBarcodeList, addBarcodeData, editBarcodeData, deleteBarcode, getSingleBarcodeData, getPrintingConfiguration, updateConfiguration, getDespatchTitles, updateDespatchTitles, getTermsAndConditions, updateTermsAndConditions, updateBankAccount, updateShipToConfiguration, updateFirstLayerConfiguration, createWarrantyCard, getWarrantyCards, updateWarrantyCard, deleteWarrantyCard, updateCommonToggleConfiguration, uploadLetterHead } from '../controllers/settingsController.js';
 import { updateSecondaryUserConfiguration } from '../helpers/saleOrderHelper.js';
 import { addAccountGroupIdToOutstanding, addAccountGroupIdToParties, convertPrimaryToSecondary, createAccountGroups, updateDateFieldsByCompany, updateSalesItemUnitFields, updateUnitFields } from '../controllers/testingController.js';
 import { authPrimary } from '../middlewares/authPrimaryUsers.js';
@@ -58,8 +59,10 @@ import { createVoucherSeries, getSeriesByVoucher, deleteVoucherSeriesById, editV
 //hotel controller
 import {saveAdditionalPax , getAdditionalPax ,updateAdditionalPax , deleteAdditionalPax,saveVisitOfPurpose,getVisitOfPurpose,
     updateVisitOfPurpose,deleteVisitOfPurpose,saveIdProof,getIdProof,updateIdProof , deleteIdProof, saveFoodPlan , getFoodPlan
-    ,updateFoodPlan,deleteFoodPlan,addRoom,getRooms,editRoom ,deleteRoom,getAllRooms,roomBooking} from '../controllers/hotelController.js'
- import {addItem,getAllItems,getCategories} from '../controllers/restaurantController.js'
+    ,updateFoodPlan,deleteFoodPlan,addRoom,getRooms,editRoom ,deleteRoom,getAllRooms,roomBooking,getBookings,deleteBooking,updateBooking,
+fetchAdvanceDetails} from '../controllers/hotelController.js'
+import {addItem,getAllItems,getCategories} from '../controllers/restaurantController.js'
+
 router.post('/login',login)
 router.post('/sendOtp',sendOtp)
 router.post('/submitOtp',submitOtp)
@@ -204,6 +207,7 @@ router.delete('/getSingleBarcodeData/:id/:cmp_id', authSecondary, secondaryIsBlo
 ///// printing configuration 
 router.get('/getPrintingConfiguration/:cmp_id', authSecondary, secondaryIsBlocked, companyAuthentication, getPrintingConfiguration)
 router.put('/updateConfiguration/:cmp_id', authSecondary, secondaryIsBlocked, companyAuthentication, updateConfiguration)
+router.put('/uploadLetterHead/:cmp_id', authSecondary, secondaryIsBlocked, companyAuthentication, uploadLetterHead)
 
 //// despatch details title configuration
 router.get('/getDespatchTitles/:cmp_id', authSecondary, secondaryIsBlocked, companyAuthentication, getDespatchTitles)
@@ -260,6 +264,7 @@ router.get('/getOutstandingSummary/:cmp_id', authSecondary, secondaryIsBlocked, 
 
 /// dashboard summary
 router.get('/getDashboardSummary/:cmp_id', authSecondary, secondaryIsBlocked, companyAuthentication, getDashboardSummary)
+router.get('/fetchDashboardCounts/:cmp_id', authSecondary, secondaryIsBlocked, companyAuthentication, fetchDashboardCounts)
 /// get account groups
 router.get('/getAccountGroups/:cmp_id', authSecondary, secondaryIsBlocked, companyAuthentication, getAccountGroups)
 /// sub groups
@@ -302,7 +307,7 @@ router.post('/addAccountGroupIdToOutstanding', addAccountGroupIdToOutstanding)
 //// Hostel routes
 router.post('/saveAdditionalPax/:cmp_id',authSecondary,saveAdditionalPax)
 router.get('/getAdditionalPax/:cmp_id',authSecondary,getAdditionalPax)
-router.put('/updateAdditionalPax/:cmp_id',authSecondary,updateAdditionalPax)
+router.put('/updateAdditionalPax',authSecondary,updateAdditionalPax)
 router.delete('/deleteAdditionalPax/:cmp_id/:id',authSecondary,deleteAdditionalPax)
 router.post('/saveVisitOfPurpose/:cmp_id',authSecondary,saveVisitOfPurpose)
 router.get('/getVisitOfPurpose/:cmp_id',authSecondary,getVisitOfPurpose)
@@ -325,6 +330,12 @@ router.post('/roomBooking/:cmp_id',authSecondary,secondaryIsBlocked,roomBooking)
 router.post('/addItem/:cmp_id', authSecondary,addItem)
 router.get('/getAllItems/:cmp_id', authSecondary,getAllItems)
 router.get('/categories/:cpm_id',authSecondary,getCategories)
+router.post('/saveData/:cmp_id',authSecondary,secondaryIsBlocked,roomBooking)
+router.get('/getBookings/:cmp_id',authSecondary,secondaryIsBlocked,getBookings)
+router.delete('/deleteBooking/:id',authSecondary,secondaryIsBlocked,deleteBooking)
+router.put('/updateRoomBooking/:id',authSecondary,secondaryIsBlocked,updateBooking)
+router.get('/getBookingAdvanceData/:id',authSecondary,secondaryIsBlocked,fetchAdvanceDetails)
+
 
 
 export default router

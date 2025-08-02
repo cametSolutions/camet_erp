@@ -211,37 +211,114 @@ export const addBankData = async (req, res) => {
       });
     }
 
-    const { Primary_user_id, cmp_id } = bankDetailsArray[0];
+    // Validate Primary_user_id and cmp_id from first item or request
+    const { Primary_user_id, cmp_id } = bankDetailsArray[0] || {};
+    
+    if (!Primary_user_id || !cmp_id) {
+      return res.status(400).json({
+        status: false,
+        message: "Primary_user_id and cmp_id are required",
+      });
+    }
 
     // Delete all existing banks for this user and company
     await BankDetailsModel.deleteMany({ Primary_user_id, cmp_id });
 
-    // Check for duplicate bank_id within the incoming data
-    const uniqueBankDetails = [];
-    const seenBankIds = new Set();
+    // Process and validate bank details
+    const validBankDetails = [];
+    const skippedItems = [];
 
-    for (const bankDetail of bankDetailsArray) {
-      if (!seenBankIds.has(bankDetail.bank_id)) {
-        seenBankIds.add(bankDetail.bank_id);
-        uniqueBankDetails.push(bankDetail);
+    for (let i = 0; i < bankDetailsArray.length; i++) {
+      const bankDetail = bankDetailsArray[i];
+      const itemIndex = i + 1;
+
+      // Check for required fields
+      const missingFields = [];
+      if (!bankDetail.Primary_user_id) missingFields.push('Primary_user_id');
+      if (!bankDetail.cmp_id) missingFields.push('cmp_id');
+      if (!bankDetail.bank_ledname) missingFields.push('bank_ledname');
+
+      if (missingFields.length > 0) {
+        skippedItems.push({
+          item: itemIndex,
+          reason: `Missing required fields: ${missingFields.join(', ')}`,
+          data: bankDetail
+        });
+        continue;
       }
+
+      // Add to valid items
+      validBankDetails.push(bankDetail);
     }
 
-    // Insert all unique bank details at once
-    await BankDetailsModel.insertMany(uniqueBankDetails);
+    let insertedCount = 0;
+    
+    // Insert valid bank details
+    if (validBankDetails.length > 0) {
+      const insertResult = await BankDetailsModel.insertMany(validBankDetails, { 
+        ordered: false // Continue inserting even if some fail
+      });
+      insertedCount = insertResult.length;
+    }
 
-    return res.status(200).json({
+    // Prepare response with detailed counts
+    const response = {
       status: true,
-      message: "Bank data added successfully",
-    });
+      message: "Bank data processing completed",
+      summary: {
+        totalReceived: bankDetailsArray.length,
+        successCount: insertedCount,
+        skippedCount: skippedItems.length
+      }
+    };
+
+    // Add skipped items details if any
+    if (skippedItems.length > 0) {
+      response.skippedItems = skippedItems;
+      response.skippedReasons = {
+        missingRequiredFields: skippedItems.filter(item => 
+          item.reason.includes('Missing required fields')
+        ).length,
+        other: skippedItems.length - skippedItems.filter(item => 
+          item.reason.includes('Missing required fields')
+        ).length
+      };
+    }
+
+    // Set appropriate status code
+    const statusCode = insertedCount > 0 ? 200 : (skippedItems.length === bankDetailsArray.length ? 400 : 207);
+    
+    return res.status(statusCode).json(response);
+
   } catch (error) {
-    console.error(error);
+    console.error('Error in addBankData:', error);
+    
+    // Handle specific MongoDB errors
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        status: false,
+        message: "Validation error in bank data",
+        error: error.message
+      });
+    }
+    
+    if (error.code === 11000) { // Duplicate key error
+      return res.status(400).json({
+        status: false,
+        message: "Duplicate bank data detected",
+        error: error.message
+      });
+    }
+
     return res.status(500).json({
       status: false,
       message: "Internal server error",
+      ...(process.env.NODE_ENV === 'development' && { error: error.message })
     });
   }
 };
+
+
 
 export const addCashData = async (req, res) => {
   try {
@@ -1767,7 +1844,6 @@ export const addGodowns = async (req, res) => {
 // // @desc for giving invoices to tally
 // // route GET/api/tally/giveInvoice
 export const giveInvoice = async (req, res) => {
-  console.log("haii");
 
   const cmp_id = req.params.cmp_id;
   const serialNumber = req.params.SNo;

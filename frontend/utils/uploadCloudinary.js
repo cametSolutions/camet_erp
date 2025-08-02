@@ -20,4 +20,16 @@ const uploadImageToCloudinary = async (file) => {
   return data;
 };
 
-export default uploadImageToCloudinary
+export default uploadImageToCloudinary;
+
+export const deleteImageFromCloudinary = async (publicId) => {
+  try {
+    const response = await api.delete(`/api/cloudinary/delete/${publicId}`, {
+      withCredentials: true,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error deleting from Cloudinary:", error);
+    throw error;
+  }
+};

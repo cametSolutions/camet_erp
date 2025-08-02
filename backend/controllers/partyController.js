@@ -10,16 +10,20 @@ import TallyData from "../models/TallyData.js";
 export const PartyList = async (req, res) => {
   const { cmp_id } = req.params;
   const { owner: Primary_user_id, sUserId: secUserId } = req;
-
-  const { voucher, page = 1, limit = 20, search = "" } = req.query;
-
+  const {
+    voucher,
+    page = 1,
+    limit = 20,
+    search = "",
+    isAgent = false,
+  } = req.query;
+  console.log(isAgent);
   try {
-    // Pagination setup
     const pageNum = parseInt(page);
     const pageSize = parseInt(limit);
     const skip = (pageNum - 1) * pageSize;
 
-    // Get secondary user first to check configurations
+    // Get secondary user configuration
     const secUser = await secondaryUserModel.findById(secUserId);
     if (!secUser) {
       return res.status(404).json({ message: "Secondary user not found" });
@@ -30,180 +34,168 @@ export const PartyList = async (req, res) => {
     );
     const vanSaleConfig = configuration?.vanSale || false;
 
-    // Build search query
-    let searchQuery = {};
-    if (search) {
-      const regex = new RegExp(search, "i");
-
-      searchQuery = {
-        $or: [
-          { partyName: regex },
-          { mobileNumber: typeof search === "string" ? regex : undefined },
-        ].filter(Boolean), // removes undefined if any
-      };
-    }
-
-    // Build base query
-    let query = {
+    // Build optimized base query
+    let baseQuery = {
       cmp_id: new mongoose.Types.ObjectId(cmp_id),
       Primary_user_id,
-      ...searchQuery,
     };
 
-    // Add subgroup filter to the initial query if needed
-
-    console.log("voucher", voucher);
-    
-    if (
-      voucher === "sale" &&
-      configuration &&
-      configuration.selectedSubGroups?.length > 0
-    ) {
-      
-      // Convert string IDs to ObjectIds 
-      const subGroupObjectIds = configuration.selectedSubGroups.map(id => 
-        typeof id === 'string' ? new mongoose.Types.ObjectId(id) : id
+    // Add subgroup filter early to reduce document set
+    if (voucher === "sale" && configuration?.selectedSubGroups?.length > 0) {
+      const subGroupObjectIds = configuration.selectedSubGroups.map((id) =>
+        typeof id === "string" ? new mongoose.Types.ObjectId(id) : id
       );
-      
-      query.subGroup = {
-        $in: subGroupObjectIds,
-      };
+      baseQuery.subGroup = { $in: subGroupObjectIds };
     }
 
-    // Create the aggregation pipeline
-    const aggregationPipeline = [
-      { $match: query },
+    if (isAgent === "true" || isAgent === true) {
+      console.log("Filtering by Hotel Agent");
+      baseQuery.isHotelAgent = true;
+    }
 
-      // Lookup for accountGroup
-      {
-        $lookup: {
-          from: "accountgroups",
-          localField: "accountGroup",
-          foreignField: "_id",
-          as: "accountGroupData",
-        },
-      },
-      {
-        $unwind: {
-          path: "$accountGroupData",
-          preserveNullAndEmptyArrays: true,
-        },
-      },
+    // Build search query
+    if (search) {
+      const regex = new RegExp(search, "i");
+      baseQuery.$or = [{ partyName: regex }, { mobileNumber: regex }];
+    }
 
-      // Lookup for subGroup
+    // OPTIMIZATION 1: Use facet for count and data in single aggregation
+    const facetPipeline = [
+      { $match: baseQuery },
       {
-        $lookup: {
-          from: "subgroups",
-          localField: "subGroup",
-          foreignField: "_id",
-          as: "subGroupData",
+        $facet: {
+          // Get total count
+          // totalCount: [{ $count: "count" }],
+
+          // Get paginated data with lookups
+          paginatedResults: [
+            { $skip: skip },
+            { $limit: pageSize },
+
+            // OPTIMIZATION 2: Lookup only after pagination
+            {
+              $lookup: {
+                from: "accountgroups",
+                localField: "accountGroup",
+                foreignField: "_id",
+                as: "accountGroupData",
+                pipeline: [
+                  { $project: { accountGroup: 1, _id: 1 } }, // Only select needed fields
+                ],
+              },
+            },
+            {
+              $lookup: {
+                from: "subgroups",
+                localField: "subGroup",
+                foreignField: "_id",
+                as: "subGroupData",
+                pipeline: [
+                  { $project: { subGroup: 1, _id: 1, subGroup_id: 1 } },
+                ],
+              },
+            },
+
+            // OPTIMIZATION 3: Simplified projection
+            {
+              $project: {
+                _id: 1,
+                partyName: 1,
+                party_master_id: 1,
+                billingAddress: 1,
+                shippingAddress: 1,
+                mobileNumber: 1,
+                gstNo: 1,
+                emailID: 1,
+                pin: 1,
+                country: 1,
+                state: 1,
+                accountGroup: 1,
+                subGroup: 1,
+                accountGroupName: {
+                  $arrayElemAt: ["$accountGroupData.accountGroup", 0],
+                },
+                accountGroup_id: { $arrayElemAt: ["$accountGroupData._id", 0] },
+                subGroupName: { $arrayElemAt: ["$subGroupData.subGroup", 0] },
+                subGroup_id: { $arrayElemAt: ["$subGroupData._id", 0] },
+                subGroup_tally_id: {
+                  $arrayElemAt: ["$subGroupData.subGroup_id", 0],
+                },
+              },
+            },
+          ],
         },
-      },
-      { 
-        $unwind: { 
-          path: "$subGroupData", 
-          preserveNullAndEmptyArrays: true 
-        } 
       },
     ];
 
-    // Get total count for pagination using the same filters
-    const countPipeline = [...aggregationPipeline, { $count: "total" }];
-    const countResult = await partyModel.aggregate(countPipeline);
-    const totalCount = countResult.length > 0 ? countResult[0].total : 0;
+    const [facetResult] = await partyModel.aggregate(facetPipeline);
+    // const totalCount = facetResult.totalCount[0]?.count || 0;
+    const partyList = facetResult.paginatedResults;
 
-    //   pagination and projection to the main pipeline
-    aggregationPipeline.push(
-      { $skip: skip },
-      { $limit: pageSize },
-      // Flatten fields
-      {
-        $project: {
-          _id: 1,
-          partyName: 1,
-          party_master_id: 1,
-          billingAddress: 1,
-          shippingAddress: 1,
-          mobileNumber: 1,
-          gstNo: 1,
-          emailID: 1,
-          pin: 1,
-          country: 1,
-          state: 1,
-          accountGroupName: "$accountGroupData.accountGroup",
-          accountGroup_id: "$accountGroupData._id",
-          subGroupName: "$subGroupData.subGroup",
-          subGroup_id: "$subGroupData._id",
-          subGroup_tally_id: "$subGroupData.subGroup_id",
-        },
+    // OPTIMIZATION 4: Batch outstanding data query with better indexing
+    let partyListWithOutstanding = partyList;
+
+    if (partyList.length > 0) {
+      // Determine source match criteria
+      let sourceMatch = {};
+      if (voucher === "receipt") {
+        sourceMatch = { classification: "Dr" };
+      } else if (voucher === "payment") {
+        sourceMatch = { classification: "Cr" };
+      } else if (voucher === "opening") {
+        sourceMatch = { source: "opening" };
       }
-    );
 
-    // Execute the aggregation
-    const partyList = await partyModel.aggregate(aggregationPipeline);
+      const partyIds = partyList.map((party) => party._id);
 
+      // OPTIMIZATION 5: Optimized outstanding data aggregation
+      const partyOutstandingData = await TallyData.aggregate([
+        {
+          $match: {
+            cmp_id: new mongoose.Types.ObjectId(cmp_id),
+            Primary_user_id: Primary_user_id,
+            isCancelled: false,
+            party_id: { $in: partyIds },
+            ...sourceMatch,
+          },
+        },
+        {
+          $group: {
+            _id: "$party_id",
+            totalOutstanding: { $sum: "$bill_pending_amt" },
+            latestBillDate: { $max: "$bill_date" },
+          },
+        },
+      ]);
 
-    // Determine the source values to match based on the voucher type
-    let sourceMatch = {};
-    if (voucher === "receipt") {
-      sourceMatch = { classification: "Dr" };
-    } else if (voucher === "payment") {
-      sourceMatch = { classification: "Cr" };
-    } else if (voucher === "opening") {
-      sourceMatch = { source: "opening" };
+      // OPTIMIZATION 6: Use Map for O(1) lookup instead of find()
+      const outstandingMap = new Map();
+      partyOutstandingData.forEach((item) => {
+        outstandingMap.set(String(item._id), {
+          totalOutstanding: item.totalOutstanding,
+          latestBillDate: item.latestBillDate,
+        });
+      });
+
+      partyListWithOutstanding = partyList.map((party) => {
+        const outstandingData = outstandingMap.get(String(party._id));
+        return {
+          ...party,
+          totalOutstanding: outstandingData?.totalOutstanding || 0,
+          latestBillDate: outstandingData?.latestBillDate || null,
+        };
+      });
     }
-
-    // Get outstanding data for these specific parties
-    const partyIds = partyList.map((party) => party?._id);
-
-    const partyOutstandingData = await TallyData.aggregate([
-      {
-        $match: {
-          cmp_id: new mongoose.Types.ObjectId(cmp_id),
-          Primary_user_id: Primary_user_id,
-          isCancelled: false,
-          party_id: { $in: partyIds },
-          ...sourceMatch,
-        },
-      },
-      {
-        $group: {
-          _id: "$party_id",
-          totalOutstanding: { $sum: "$bill_pending_amt" },
-          latestBillDate: { $max: "$bill_date" },
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          party_id: "$_id",
-          totalOutstanding: 1,
-          latestBillDate: 1,
-        },
-      },
-    ]);
-
-    const partyListWithOutstanding = partyList.map((party) => {
-      const outstandingData = partyOutstandingData.find(
-        (item) => String(item.party_id) === String(party?._id)
-      );
-
-      return {
-        ...party,
-        totalOutstanding: outstandingData?.totalOutstanding || 0,
-        latestBillDate: outstandingData?.latestBillDate || null,
-      };
-    });
 
     res.status(200).json({
       message: "Parties fetched",
       partyList: partyListWithOutstanding,
       vanSale: vanSaleConfig,
       pagination: {
-        total: totalCount,
+        // total: totalCount,
         page: pageNum,
         limit: pageSize,
-        totalPages: Math.ceil(totalCount / pageSize),
+        // totalPages: Math.ceil(totalCount / pageSize),
       },
     });
   } catch (error) {
@@ -274,10 +266,10 @@ export const addParty = async (req, res) => {
     // Get the newly created party with lookups (same as PartyList,because we are also creating party directly form voucher)
     if (result) {
       const aggregationPipeline = [
-        { 
-          $match: { 
-            _id: new mongoose.Types.ObjectId(result._id) 
-          } 
+        {
+          $match: {
+            _id: new mongoose.Types.ObjectId(result._id),
+          },
         },
 
         // Lookup for accountGroup
@@ -305,11 +297,11 @@ export const addParty = async (req, res) => {
             as: "subGroupData",
           },
         },
-        { 
-          $unwind: { 
-            path: "$subGroupData", 
-            preserveNullAndEmptyArrays: true 
-          } 
+        {
+          $unwind: {
+            path: "$subGroupData",
+            preserveNullAndEmptyArrays: true,
+          },
         },
 
         // Project to match PartyList format
@@ -337,12 +329,12 @@ export const addParty = async (req, res) => {
             subGroup_id: "$subGroupData._id",
             subGroup_tally_id: "$subGroupData.subGroup_id",
           },
-        }
+        },
       ];
 
       // Execute the aggregation to get party with lookups
       const partyWithLookups = await partyModel.aggregate(aggregationPipeline);
-      
+
       const newParty = partyWithLookups[0] || result;
 
       return res.status(200).json({

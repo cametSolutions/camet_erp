@@ -230,7 +230,7 @@ function RoomList() {
               </div>
               <div className="flex gap-2">
                 <p className="text-gray-500">Tax :</p>
-                <p className="text-gray-500">{`${el?.igst} %`}</p>
+                <p className="text-gray-500">{`${el?.igst ? el?.igst : 0} %`}</p>
               </div>
             </div>
           </div>

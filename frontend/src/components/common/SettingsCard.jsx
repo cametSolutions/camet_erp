@@ -2,7 +2,6 @@
 import { IoSettings } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 import ToggleButton from "./buttons/ToggleButton";
-import { data } from "autoprefixer";
 
 function SettingsCard({
   option,

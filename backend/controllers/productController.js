@@ -295,8 +295,6 @@ export const addProductSubDetails = async (req, res) => {
     const company = await OragnizationModel.findOne({ _id: orgId });
     const generatedId = new mongoose.Types.ObjectId();
 
-    console.log("kkkkkkkkkkkkkkkkkkkkkkkkkkkk", key);
-    console.log(key === "Regional Food Category");
     switch (key) {
       case "brand":
       case "roomType":
@@ -335,13 +333,23 @@ export const addProductSubDetails = async (req, res) => {
         };
         break;
       case "roomFloor":
-      case "foodItems":
       case "subcategory":
         Model = Subcategory;
         dataToSave = {
           _id: generatedId,
           subcategory: subDetails[key],
-          categoryId: subDetails.categoryId,
+          subcategory_id: generatedId,
+          cmp_id: orgId,
+          Primary_user_id: req.pUserId || req.owner,
+        };
+        break;
+
+      case "foodItems":
+        Model = Subcategory;
+        dataToSave = {
+          _id: generatedId,
+          subcategory: subDetails[key],
+          category_id: subDetails.category_id,
           subcategory_id: generatedId,
           cmp_id: orgId,
           Primary_user_id: req.pUserId || req.owner,
@@ -432,7 +440,7 @@ export const getProductSubDetails = async (req, res) => {
           under: "restaurant",
         });
         break;
-           case "foodItems":
+      case "foodItems":
         data = await Subcategory.find({
           cmp_id: orgId,
           Primary_user_id: Primary_user_id,
@@ -501,10 +509,12 @@ export const deleteProductSubDetails = async (req, res) => {
         break;
       case "bedType":
       case "category":
+      case "Regional Food Category":
         Model = Category;
         break;
       case "roomFloor":
       case "subcategory":
+      case "foodItems":
         Model = Subcategory;
         break;
       case "godown":
@@ -554,12 +564,12 @@ export const editProductSubDetails = async (req, res) => {
         Model = Brand;
         break;
       case "bedType":
-        case "Regional Food Category":
+      case "Regional Food Category":
       case "category":
         Model = Category;
         break;
       case "roomFloor":
-        case 'foodItems':
+      case "foodItems":
       case "subcategory":
         Model = Subcategory;
         break;
@@ -589,13 +599,16 @@ export const editProductSubDetails = async (req, res) => {
       result = await Model.updateOne(queryConditions, {
         category: req.body.bedType,
       });
-     } else if (type === "Regional Food Category") {
-        result= await Model.updateOne(queryConditions,{
-          category:req.body.categories,
-        })
-      }
-      
-     else {
+    } else if (type === "Regional Food Category") {
+      result = await Model.updateOne(queryConditions, {
+        category: req.body["Regional Food Category"],
+      });
+    } else if (type === "foodItems"){
+      result = await Model.updateOne(queryConditions, {
+        subcategory: req.body["foodItems"],
+        category_id: req.body["category_id"],
+      });
+    } else {
       result = await Model.updateOne(queryConditions, updateOperation);
     }
 

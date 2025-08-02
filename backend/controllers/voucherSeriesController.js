@@ -140,6 +140,7 @@ export const createVoucherSeries = async (req, res) => {
     "stockTransfer",
     "receipt",
     "payment",
+    "deliveryNote"
   ];
 
   if (!voucherTypes.includes(voucherType)) {

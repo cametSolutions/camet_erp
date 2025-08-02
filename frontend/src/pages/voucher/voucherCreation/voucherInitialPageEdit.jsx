@@ -38,12 +38,20 @@ import AdditionalChargesTile from "./AdditionalChargesTile";
 import { formatVoucherType } from "../../../../utils/formatVoucherType";
 import AddGodownTile from "./AddGodownTile";
 import AddNoteTile from "./AddNoteTile";
+import { useQueryClient } from "@tanstack/react-query";
 
 function VoucherInitialPageEdit() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
   const isMounted = useRef(true);
+  const queryClient = useQueryClient();
+
+  //// check if the user is admin
+  const isAdmin =
+    JSON.parse(localStorage.getItem("sUserData")).role === "admin"
+      ? true
+      : false;
 
   // Redux selectors
   const { _id: cmp_id } = useSelector(
@@ -164,8 +172,6 @@ function VoucherInitialPageEdit() {
       stockTransferToGodown: stockTransferToGodownFromState = {},
       note: noteFromState,
     } = location.state.data || {};
-
-    
 
     try {
       if (voucherIdFromState) {
@@ -288,7 +294,6 @@ function VoucherInitialPageEdit() {
 
       //// store the note in redux from state
       if (noteFromState && noteFromRedux === null) {
-        
         dispatch(addNote(noteFromState));
       }
 
@@ -434,7 +439,6 @@ function VoucherInitialPageEdit() {
         };
       }
 
-
       const res = await api.post(
         `/api/sUsers/edit${voucherTypeFromRedux}/${voucherId}?vanSale=${
           voucherTypeFromRedux === "vanSale" ? true : false
@@ -448,6 +452,9 @@ function VoucherInitialPageEdit() {
 
       toast.success(res.data.message);
       dispatch(removeAll());
+      queryClient.invalidateQueries({
+        queryKey: ["todaysTransaction", cmp_id, isAdmin],
+      });
       setTimeout(() => {
         navigate(
           `/sUsers/${voucherTypeFromRedux}Details/${res.data.data._id}`,

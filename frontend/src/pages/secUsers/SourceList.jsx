@@ -41,7 +41,7 @@ function SourceList() {
 
       try {
         const res = await api.get(
-          `api/sUsers/getBankAndCashSources/${cmp_id}`,
+          `/api/sUsers/getBankAndCashSources/${cmp_id}`,
           {
             withCredentials: true,
           }
@@ -63,8 +63,8 @@ function SourceList() {
         } else {
           const filteredBanks = apiData?.banks?.filter(
             (bank) =>
-              bank.bank_name &&
-              bank.bank_name !== "null" &&
+              // bank.bank_name &&
+              // bank.bank_name !== "null" &&
               bank.bank_ledname &&
               bank.bank_ledname !== "null"
           );

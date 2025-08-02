@@ -44,7 +44,7 @@ const tab = "foodItems";
 console.log(categoriesData)
   return (
     <div className="flex-1 h-screen overflow-y-hidden ">
-      <TitleDiv title={"foodItems"} from="/sUsers/stockItemSettings" loading={loading} />
+      <TitleDiv title={"foodItems"}  from="/sUsers/restuarentSettings" loading={loading} />
       
       <ProductSubDetailsForm
         tab="foodItems"

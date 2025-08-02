@@ -28,9 +28,7 @@ const DateRange = () => {
   const [showCustomPicker, setShowCustomPicker] = useState(false)
   const [customStartDate, setCustomStartDate] = useState("")
   const [customEndDate, setCustomEndDate] = useState("")
-
   const submitHandler = (rangeName, start, end) => {
- 
     const newstart = new Date(start)
     const newend = new Date(end)
     const startdate = new Date(
@@ -57,7 +55,8 @@ const DateRange = () => {
       addDate({
         rangeName,
         start: startdate.toISOString(),
-        end: enddate.toISOString()
+        end: enddate.toISOString(),
+        initial: true
       })
     )
     navigate(-1)

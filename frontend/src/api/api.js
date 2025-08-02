@@ -2,7 +2,9 @@ import axios from "axios";
 import Swal from "sweetalert2";
 
 let baseUrl;
+
 const ENV = import.meta.env.VITE_ENV;
+
 
 if (ENV === "development") {
   baseUrl = "http://localhost:7000";
@@ -14,9 +16,13 @@ if (ENV === "development") {
   baseUrl = "https://www.app.camet.in/";
 }
 
+console.log(`Base URL: ${baseUrl}`);
+
+
 const api = axios.create({
   baseURL: baseUrl
 });
+
 
 api.interceptors.response.use(
   function (response) {

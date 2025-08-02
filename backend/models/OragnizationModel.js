@@ -117,6 +117,10 @@ const organizationSchema = new mongoose.Schema(
             showQuantity: { type: Boolean, default: true },
             showStockWiseAmount: { type: Boolean, default: true },
             showNetAmount: { type: Boolean, default: true },
+            showLetterHead: { type: Boolean, default: false },
+            letterHeadUrl: { type: String,default:null },
+            letterHeadPublicId: { type: String ,default:null},
+            letterHeadUploadedAt: { type: Date ,default:null},
           },
         ],
 

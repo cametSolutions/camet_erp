@@ -7,7 +7,7 @@ import PaymentSec from '../pages/secUsers/Payment'
 import ProtectedSecRoute from './ProtectedSecRoute'
 import Transaction from '../pages/voucherReports/DayBook/Transaction'
 import EditOrg from '../pages/masters/organization/EditOrg'
-import DashboardSec from '../pages/secUsers/Dashboard'
+import DashboardSec from '../pages/secUsers/dashboard/Dashboard'
 import Hsn from '../pages/masters/hsn/Hsn'
 import Demo from '../pages/secUsers/Demo'
 import RetailersList from '../pages/masters/secondaryUsers/RetailersList'
@@ -28,7 +28,6 @@ import OrderConfigurationsSecondary from '../pages/secUsers/OrderConfigurationsS
 // inventory 
 // import SalesSecondary from '../pages/secUsers/SalesSecondary'
 import SearchParty from '../pages/secUsers/SearchParty'
-import ConfigureSecondaryUser from '../pages/masters/secondaryUsers/ConfigureSecondaryUser'
 // Error Page
 import ErrorPage from '../pages/errorPages/Notfound'
 import Notfound from '../pages/errorPages/Notfound'
@@ -148,8 +147,9 @@ import CheckOutList from '@/pages/Hotel/List/CheckOutList'
 import RestaurantDashboard from '@/pages/Restuarant/Pages/RestaurantDashboard'
 import KotPage from '@/pages/Restuarant/Pages/kotPage'
 import AddSubRestuarentCategory from '@/pages/masters/product/productSubDetails/AddsubRestuarentCategory'
-import ItemRegistration from '@/pages/Restuarant/Pages/ItemRegistration'
-import ItemList from '@/pages/Restuarant/Pages/ItemList'
+import EditBooking from '@/pages/Hotel/Pages/EditBooking'
+import LetterHeadUploadPage from '@/pages/secUsers/settilngs/PrintConfiguration/LetterHeadUploadPage'
+import EditChecking from '@/pages/Hotel/Pages/EditChecking'
 const Routers = () => {
   return (
     <Routes>
@@ -369,6 +369,7 @@ const Routers = () => {
         <Route path='/sUsers/printConfiguration' element={<ProtectedSecRoute><PrintConfiguration/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/saleOrderPrintConfiguration' element={<ProtectedSecRoute><SaleOrderPrintConfiguration/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/salePrintConfiguration' element={<ProtectedSecRoute><SalePrintConfiguration/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/sale/upLoadLetterHead' element={<ProtectedSecRoute><LetterHeadUploadPage/></ProtectedSecRoute>}></Route>
 
       {/* order pending */}
       <Route path='/sUsers/orderPending/partyList' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route>
@@ -386,7 +387,6 @@ const Routers = () => {
       <Route path='/sUsers/retailers' element={<ProtectedSecRoute><RetailersList/></ProtectedSecRoute>}></Route>
       <Route path='/sUsers/addSecUsers' element={<ProtectedSecRoute><AddSecUsers/></ProtectedSecRoute>}></Route>
       <Route path='/sUsers/editUser/:id' element={<ProtectedSecRoute><EditSecUsers/></ProtectedSecRoute>}></Route>
-      <Route path='/sUsers/configureSecondaryUser/:id/:userId/:cmp_name' element={<ProtectedSecRoute><ConfigureSecondaryUser/></ProtectedSecRoute>}></Route>
       <Route path='/sUsers/configureUser/:userId' element={<ProtectedSecRoute><ConfigureRetailer/></ProtectedSecRoute>}></Route>
       <Route path='/sUsers/allocateCompany' element={<ProtectedSecRoute><AllocateCompany/></ProtectedSecRoute>}></Route>
       <Route path='/sUsers/allocatePriceLevel' element={<ProtectedSecRoute><AllocatePriceLevel/></ProtectedSecRoute>}></Route>
@@ -416,22 +416,23 @@ const Routers = () => {
 
 
         {/* Hotel route */}
-        <Route path='/sUsers/addAdditionalPax' element={<AddAdditionalPax />} />
-        <Route path= '/sUsers/visitOfPurpose' element={<VisitOfPurpose />} />
-        <Route path= '/sUsers/idProof' element={<IdProof />} />
-        <Route path= '/sUsers/foodPlan' element={<FoodPlan />} />
-        <Route path= '/sUsers/roomRegistration' element={<RoomRegistration />} />
-        <Route path= '/sUsers/itemRegistration' element={<ItemRegistration />} />
-        <Route path= '/sUsers/roomList' element={<RoomList />} />
-        <Route path= '/sUsers/itemList' element={<ItemList />} />
-        <Route path= '/sUsers/editRoom' element={<EditRoom />} />
-        <Route path= '/sUsers/bookingPage' element={<BookingPage />} />
-        <Route path= '/sUsers/checkInPage' element={<CheckInPage />} />
-        <Route path= '/sUsers/checkOut' element={<CheckOut />} />
-        <Route path='/BookingList' element={<BookingList/>}/>
-        <Route path='/CheckInList' element={<CheckInList/>}/>
-        <Route path='/CheckOutList' element={<CheckOutList/>}/>
-<Route path='/KotPage' element={<KotPage/>}/>
+        <Route path='/sUsers/addAdditionalPax' element={<ProtectedSecRoute> <AddAdditionalPax /></ProtectedSecRoute>} />
+        <Route path= '/sUsers/visitOfPurpose' element={<ProtectedSecRoute><VisitOfPurpose /></ProtectedSecRoute>} />
+        <Route path= '/sUsers/idProof' element={<ProtectedSecRoute><IdProof /></ProtectedSecRoute>} />
+        <Route path= '/sUsers/foodPlan' element={<ProtectedSecRoute><FoodPlan /></ProtectedSecRoute>} />
+        <Route path= '/sUsers/roomRegistration' element={<ProtectedSecRoute><RoomRegistration /></ProtectedSecRoute>} />
+        <Route path= '/sUsers/roomList' element={<ProtectedSecRoute><RoomList /></ProtectedSecRoute>} />
+        <Route path= '/sUsers/editRoom' element={<ProtectedSecRoute><EditRoom /></ProtectedSecRoute>} />
+        <Route path= '/sUsers/bookingPage' element={<ProtectedSecRoute><BookingPage /></ProtectedSecRoute>} />
+        <Route path= '/sUsers/checkInPage' element={<ProtectedSecRoute><CheckInPage /></ProtectedSecRoute>} />
+        <Route path= '/sUsers/checkOutPage' element={<ProtectedSecRoute><CheckOut /></ProtectedSecRoute>} />
+        <Route path='/sUsers/BookingList' element={<ProtectedSecRoute><BookingList/></ProtectedSecRoute>}/>
+        <Route path='/sUsers/checkInList' element={<ProtectedSecRoute><BookingList/></ProtectedSecRoute>}/>
+        <Route path='/sUsers/CheckOutList' element={<ProtectedSecRoute><BookingList/></ProtectedSecRoute>}/>
+        <Route path='/sUsers/EditBooking' element={<ProtectedSecRoute><EditBooking /></ProtectedSecRoute>} />
+        <Route path='/sUsers/EditChecking' element={<ProtectedSecRoute><EditChecking /></ProtectedSecRoute>} />
+
+        <Route path='/KotPage' element={<KotPage/>}/>
 
     </Routes>
   )
