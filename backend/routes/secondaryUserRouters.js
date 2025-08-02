@@ -21,6 +21,7 @@ import {
     addPartyOpening,
     getPartyOpening,
     editPartyOpening,
+    getAllSubDetailsBasedUnder,
     fetchDashboardCounts,
 
 } from "../controllers/secondaryUserController.js"
@@ -58,8 +59,10 @@ import { createVoucherSeries, getSeriesByVoucher, deleteVoucherSeriesById, editV
 //hotel controller
 import {saveAdditionalPax , getAdditionalPax ,updateAdditionalPax , deleteAdditionalPax,saveVisitOfPurpose,getVisitOfPurpose,
     updateVisitOfPurpose,deleteVisitOfPurpose,saveIdProof,getIdProof,updateIdProof , deleteIdProof, saveFoodPlan , getFoodPlan
-    ,updateFoodPlan,deleteFoodPlan,addRoom,getRooms,editRoom ,deleteRoom,getAllRooms,roomBooking} from '../controllers/hotelController.js'
- import {addItem,getItems} from '../controllers/restaurantController.js'
+    ,updateFoodPlan,deleteFoodPlan,addRoom,getRooms,editRoom ,deleteRoom,getAllRooms,roomBooking,getBookings,deleteBooking,updateBooking,
+fetchAdvanceDetails} from '../controllers/hotelController.js'
+import {addItem,getAllItems,getCategories} from '../controllers/restaurantController.js'
+
 router.post('/login',login)
 router.post('/sendOtp',sendOtp)
 router.post('/submitOtp',submitOtp)
@@ -118,6 +121,7 @@ router.get('/getPurchaseDetails/:id', authSecondary, secondaryIsBlocked, getPurc
 router.post('/editsales/:id', authSecondary, secondaryIsBlocked, editSale)
 router.post('/editvanSale/:id', authSecondary, secondaryIsBlocked, editSale)
 router.get("/getAllSubDetails/:orgId", authSecondary, secondaryIsBlocked, getAllSubDetails)
+router.get("/getAllSubDetailsBasedUnder/:orgId", authSecondary, secondaryIsBlocked, getAllSubDetailsBasedUnder)
 router.get("/fetchGodowns/:cmp_id", authSecondary, secondaryIsBlocked, fetchGodowns)
 router.post("/createStockTransfer", authSecondary, secondaryIsBlocked, createStockTransfer)
 router.get("/getStockTransferDetails/:id", authSecondary, secondaryIsBlocked, getStockTransferDetails)
@@ -303,7 +307,7 @@ router.post('/addAccountGroupIdToOutstanding', addAccountGroupIdToOutstanding)
 //// Hostel routes
 router.post('/saveAdditionalPax/:cmp_id',authSecondary,saveAdditionalPax)
 router.get('/getAdditionalPax/:cmp_id',authSecondary,getAdditionalPax)
-router.put('/updateAdditionalPax/:cmp_id',authSecondary,updateAdditionalPax)
+router.put('/updateAdditionalPax',authSecondary,updateAdditionalPax)
 router.delete('/deleteAdditionalPax/:cmp_id/:id',authSecondary,deleteAdditionalPax)
 router.post('/saveVisitOfPurpose/:cmp_id',authSecondary,saveVisitOfPurpose)
 router.get('/getVisitOfPurpose/:cmp_id',authSecondary,getVisitOfPurpose)
@@ -324,7 +328,14 @@ router.delete('/deleteRoom/:id',authSecondary,secondaryIsBlocked,deleteRoom)
 router.get('/getAllRooms/:cmp_id',authSecondary,secondaryIsBlocked,getAllRooms)
 router.post('/roomBooking/:cmp_id',authSecondary,secondaryIsBlocked,roomBooking)
 router.post('/addItem/:cmp_id', authSecondary,addItem)
-router.get('/getItems/:cmp_id', authSecondary,getItems)
+router.get('/getAllItems/:cmp_id', authSecondary,getAllItems)
+router.get('/categories/:cpm_id',authSecondary,getCategories)
+router.post('/saveData/:cmp_id',authSecondary,secondaryIsBlocked,roomBooking)
+router.get('/getBookings/:cmp_id',authSecondary,secondaryIsBlocked,getBookings)
+router.delete('/deleteBooking/:id',authSecondary,secondaryIsBlocked,deleteBooking)
+router.put('/updateRoomBooking/:id',authSecondary,secondaryIsBlocked,updateBooking)
+router.get('/getBookingAdvanceData/:id',authSecondary,secondaryIsBlocked,fetchAdvanceDetails)
+
 
 
 export default router

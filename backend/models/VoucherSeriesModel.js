@@ -29,6 +29,7 @@ const VoucherSeriesSchema = new mongoose.Schema(
         "stockTransfer",
         "receipt",
         "payment",
+        "deliveryNote"
       ],
     },
     series: [SeriesSchema],

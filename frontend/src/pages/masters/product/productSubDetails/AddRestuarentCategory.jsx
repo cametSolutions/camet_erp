@@ -17,14 +17,12 @@ function AddRestuarentCategory() {
       <div className="flex-1  ">
         <TitleDiv
           title={ [6, 7].includes(organization?.industry) ? " Regional Food Category" :"Add Category"}
-          from="/sUsers/stockItemSettings"
+          from="/sUsers/restuarentSettings"
           loading={loading}
         />
 
         <ProductSubDetailsForm
-          tab={
-            [6, 7].includes(organization?.industry) ? "Regional Food Category" : "category"
-          }
+          tab="Regional Food Category"
           handleLoader={handleLoader}
           isRestaurants={true}
         />

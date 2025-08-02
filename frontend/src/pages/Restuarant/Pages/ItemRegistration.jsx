@@ -19,9 +19,12 @@ function ItemRegistration() {
       setLoading(true);
 
       const subDetailsPromise = api.get(
-        `/api/sUsers/getAllSubDetails/${orgId}`,
+        `/api/sUsers/getAllSubDetailsBasedUnder/${orgId}`,
         {
           withCredentials: true,
+          params: {
+            under: "restaurant",
+          },
         }
       );
       const hsnResPromise = api.get(`/api/sUsers/fetchHsn/${orgId}`, {
@@ -38,7 +41,7 @@ function ItemRegistration() {
 
       setOptionsData((prev) => ({
         ...prev,
-       
+
         category: categories,
         subcategory: subcategories,
         priceLevel: priceLevels,
@@ -68,7 +71,7 @@ function ItemRegistration() {
           withCredentials: true,
         }
       );
-      toast.success("Room Added Successfully");
+      toast.success("Food Item Added Successfully");
       navigate("/sUsers/itemList");
     } catch (error) {
       console.error("Failed to add room:", error);
@@ -81,7 +84,6 @@ function ItemRegistration() {
       {loading ? (
         <CustomBarLoader />
       ) : (
-
         <div className="">
           <TitleDiv
             loading={loading}
@@ -89,7 +91,7 @@ function ItemRegistration() {
             from="/sUsers/itemList"
           />
           <ItemRegisterComponent
-            pageName="food item Registration"
+            pageName="Food item Registration"
             optionsData={optionData}
             sendToParent={handleSubmit}
           />
