@@ -12,6 +12,7 @@ import AvailableRooms from "./AvailableRooms";
 import AdditionalPaxDetails from "./AdditionalPaxDetails";
 import FoodPlanComponent from "./FoodPlanComponent";
 import useFetch from "@/customHook/useFetch";
+import { number } from "framer-motion";
 
 function BookingForm({
   isLoading,
@@ -19,7 +20,7 @@ function BookingForm({
   handleSubmit,
   editData,
   isSubmittingRef,
-  isFor
+  isFor,
 }) {
   const [voucherNumber, setVoucherNumber] = useState("");
   const [selectedParty, setSelectedParty] = useState("");
@@ -35,7 +36,7 @@ function BookingForm({
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
-  const { data ,loading } = useFetch(
+  const { data, loading } = useFetch(
     `/api/sUsers/getProductSubDetails/${cmp_id}?type=roomType`
   );
 
@@ -45,7 +46,7 @@ function BookingForm({
     }
   }, [data]);
 
-    const { data: visitOfPurposeData ,loading:visitOfPurposeLoading } = useFetch(
+  const { data: visitOfPurposeData, loading: visitOfPurposeLoading } = useFetch(
     `/api/sUsers/getVisitOfPurpose/${cmp_id}`
   );
 
@@ -54,8 +55,6 @@ function BookingForm({
       setVisitOfPurpose(visitOfPurposeData?.data);
     }
   }, [visitOfPurposeData]);
-
-
 
   const today = new Date();
   const arrivalDate = today.toISOString().split("T")[0];
@@ -89,16 +88,19 @@ function BookingForm({
     totalAdvance: 0,
     foodPlan: [],
     grandTotal: 0,
+    previousAdvance: 0,
   });
 
   useEffect(() => {
     if (editData) {
+      console.log(editData?.advanceAmount);
       setSelectedParty(editData?.customerId);
       setHotelAgent(editData?.agentId);
       setVoucherNumber(editData?.voucherNumber);
       setFormData((prev) => ({
         ...prev,
         country: editData?.country,
+        customerId: editData?.customerId?._id,
         state: editData?.state,
         pinCode: editData?.pinCode,
         detailedAddress: editData?.detailedAddress,
@@ -114,14 +116,21 @@ function BookingForm({
         foodPlan: editData?.foodPlan,
         paxTotal: editData?.paxTotal,
         foodPlanTotal: editData?.foodPlanTotal,
-        advanceAmount: 0,
         discountPercentage: editData?.discountPercentage || 0,
         discountAmount: editData?.discountAmount || 0,
-        totalAdvance: editData?.totalAdvance,
-        visitOfPurpose: editData?.visitOfPurpose
+        totalAdvance: editData?.totalAdvance || 0,
+        visitOfPurpose: editData?.visitOfPurpose,
+        voucherId: editData?.voucherId,
+        customerName: editData?.customerId?.partyName,
+        accountGroup: editData?.customerId?.accountGroup,
+        balanceToPay: editData?.balanceToPay,
+        advanceAmount: editData?.advanceAmount,
+        previousAdvance: editData?.previousAdvance || 0,
       }));
     }
   }, [editData]);
+
+  console.log(editData?.totalAdvance);
 
   // handle change function used to update form data
   const handleChange = (e) => {
@@ -192,7 +201,7 @@ function BookingForm({
       [name]: value,
     }));
   };
-
+  console.log(isFor);
 
   // function used to get voucher number with the help of useCallback
   const fetchData = useCallback(async () => {
@@ -201,11 +210,10 @@ function BookingForm({
         `/api/sUsers/getSeriesByVoucher/${cmp_id}?voucherType=${isFor}`,
         { withCredentials: true }
       );
-
+console.log(response.data);
       if (response.data) {
         const specificSeries = response.data.series?.find(
-          (item) =>
-            item.currentlySelected === true
+          (item) => item.currentlySelected === true
         );
 
         if (specificSeries) {
@@ -236,7 +244,7 @@ function BookingForm({
 
   // useEffect used to get voucher number
   useEffect(() => {
-    if (!editData) {
+    if (!editData || isFor == "deliveryNote" || isFor == "sales") {
       fetchData();
     }
   }, [fetchData]);
@@ -260,7 +268,7 @@ function BookingForm({
           totalAmount: subtotal.toFixed(2),
           balanceToPay:
             (subtotal - Number(formData.discountAmount)).toFixed(2) -
-            Number(formData.advanceAmount || 0),
+            Number(formData.totalAdvance || 0),
         }));
       }
     }, 1000);
@@ -310,27 +318,114 @@ function BookingForm({
     }
   };
 
+  // const handleAdvanceAmountChange = (e) => {
+  //   const { value } = e.target;
+  //   if (
+  //     value >
+  //     Number(formData.grandTotal) - Number(editData.previousAdvance)
+  //   ) {
+  //     setErrorObject((prev) => ({
+  //       ...prev,
+  //       advanceAmount: "Advance amount should be less than grand total",
+  //     }));
+  //     return;
+  //   } else {
+  //     setErrorObject((prev) => ({
+  //       ...prev,
+  //       advanceAmount: "",
+  //     }));
+  //   }
+  //   if (
+  //     Number(value) <= Number(formData.grandTotal) &&
+  //     isFor == "deliveryNote"
+  //   ) {
+  //     setFormData((prev) => ({
+  //       ...prev,
+  //       advanceAmount: value,
+  //       balanceToPay: (
+  //         Number(formData.grandTotal) -
+  //         Number(editData?.previousAdvance) -
+  //         Number(value)
+  //       ).toFixed(2),
+  //       totalAdvance: Number(value) + editData.previousAdvance,
+  //     }));
+
+  //     setErrorObject((prev) => ({
+  //       ...prev,
+  //       advanceAmount: "",
+  //     }));
+  //     return;
+  //   } else if (isFor == "sales") {
+  //     setFormData((prev) => ({
+  //       ...prev,
+  //       advanceAmount: value,
+  //       balanceToPay: (
+  //         Number(formData.grandTotal) -
+  //         Number(editData?.previousAdvance) -
+  //         Number(value)
+  //       ).toFixed(2),
+  //       totalAdvance: Number(value) + Number(editData.previousAdvance),
+  //     }));
+  //   } else if (Number(value) <= Number(formData.grandTotal)) {
+  //     setFormData((prev) => ({
+  //       ...prev,
+  //       advanceAmount: value,
+  //       balanceToPay: (Number(formData.grandTotal) - Number(value)).toFixed(2),
+  //       totalAdvance: Number(value),
+  //     }));
+
+  //     setErrorObject((prev) => ({
+  //       ...prev,
+  //       advanceAmount: "",
+  //     }));
+  //     return;
+  //   } else {
+  //     setErrorObject((prev) => ({
+  //       ...prev,
+  //       advanceAmount: "Advance amount should be less than grand total",
+  //     }));
+  //   }
+  // };
+
   const handleAdvanceAmountChange = (e) => {
     const { value } = e.target;
-    if (Number(value) <= Number(formData.grandTotal)) {
+    const advanceAmount = Number(value);
+    const previousAdvance = Number(editData?.previousAdvance || 0);
+    const grandTotal = Number(formData?.grandTotal || 0);
+    const totalAdvance = advanceAmount + previousAdvance;
+    const maxAllowed = grandTotal - previousAdvance;
+
+    // Validation: Advance should not exceed allowed maximum
+    if (advanceAmount > maxAllowed) {
+      setErrorObject((prev) => ({
+        ...prev,
+        advanceAmount:
+          "Advance amount should be less than or equal to grand total",
+      }));
+      return;
+    }
+
+    // Clear error
+    setErrorObject((prev) => ({
+      ...prev,
+      advanceAmount: "",
+    }));
+
+    // Handle different conditions based on `isFor`
+    if (isFor === "deliveryNote" || isFor === "sales") {
       setFormData((prev) => ({
         ...prev,
         advanceAmount: value,
-        balanceToPay: (Number(formData.grandTotal) - Number(value)).toFixed(2),
-        ...(editData?.totalAdvance
-          ? { totalAdvance: Number(value) + editData?.totalAdvance }
-          : {}),
+        balanceToPay: (grandTotal - previousAdvance - advanceAmount).toFixed(2),
+        totalAdvance: totalAdvance,
       }));
-
-      setErrorObject((prev) => ({
-        ...prev,
-        advanceAmount: "",
-      }));
-      return;
     } else {
-      setErrorObject((prev) => ({
+      // For other cases (like walk-in or generic)
+      setFormData((prev) => ({
         ...prev,
-        advanceAmount: "Advance amount should be less than grand total",
+        advanceAmount: value,
+        balanceToPay: (grandTotal - advanceAmount).toFixed(2),
+        totalAdvance: advanceAmount,
       }));
     }
   };
@@ -351,8 +446,10 @@ function BookingForm({
     }
     setFormData((prev) => ({
       ...prev,
+      customerName: selectedParty.partyName,
       customerId: selectedParty._id,
       country: selectedParty.country,
+      accountGroup: selectedParty?.accountGroup,
       state: selectedParty.state,
       pinCode: selectedParty.pin,
       detailedAddress: selectedParty.billingAddress,
@@ -477,11 +574,9 @@ function BookingForm({
     handleSubmit(payload);
   };
 
-
-
   return (
     <>
-      {(isLoading || visitOfPurposeLoading || loading) ? (
+      {isLoading || visitOfPurposeLoading || loading ? (
         <CustomBarLoader />
       ) : (
         <>
@@ -796,7 +891,7 @@ function BookingForm({
                 <div className="w-full lg:w-6/12 px-4">
                   <div className="relative w-full mb-3">
                     <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                      Advance Amount
+                      {isFor == "sales" ? "Amount" : "Advance Amount"}
                     </label>
                     <input
                       type="number"
@@ -816,12 +911,25 @@ function BookingForm({
                 <div className="w-full lg:w-6/12 px-4">
                   <div className="relative w-full mb-3">
                     <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                      Previous Advance
+                    </label>
+                    <input
+                      type="number"
+                      readOnly
+                      value={formData?.previousAdvance}
+                      className="text-red-500 border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                    />
+                  </div>
+                </div>
+                <div className="w-full lg:w-6/12 px-4">
+                  <div className="relative w-full mb-3">
+                    <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
                       Total given advance
                     </label>
                     <input
                       type="number"
                       readOnly
-                      value={formData?.totalAdvance}
+                      value={Number(formData?.totalAdvance)}
                       className="text-red-500 border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                     />
                   </div>

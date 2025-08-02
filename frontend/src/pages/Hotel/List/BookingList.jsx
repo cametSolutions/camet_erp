@@ -95,7 +95,6 @@ function BookingList() {
         );
 
         if (pageNumber === 1) {
-          console.log(res);
           setBookings(res?.data?.bookingData);
         } else {
           setBookings((prevBookings) => [
@@ -232,9 +231,7 @@ function BookingList() {
         </div>
       );
     }
-
     const el = bookings[index];
-    console.log("element", el);
     if (!el) return null;
 
     const adjustedStyle = {
@@ -251,21 +248,35 @@ function BookingList() {
       >
         <div className="flex">
           <p className="font-bold text-sm">{el?.voucherNumber}</p>
-          <button
-            // onClick={onCheckOut}
-            className="bg-black hover:bg-blue-400 text-white font-semibold py-1 px-2 rounded shadow-md transition duration-300 ml-auto"
-          >
-            Check Out
-          </button>
-          {/* <FaSignInAlt
-            className="font-bold text-sm ml-auto"
-            title="Check In"
-            onClick={() =>
-              navigate("/sUsers/EditBooking", {
-                state: el,
-              })
-            }
-          /> */}
+          {((location.pathname === "/sUsers/bookingList" &&
+            el?.status != "checkIn") ||
+           (el?.status != "checkOut" && location.pathname === "/sUsers/checkInList")) && (
+            <button
+              onClick={() => {
+                if (location.pathname === "/sUsers/checkInList") {
+                  navigate(`/sUsers/checkOutPage`, {
+                    state: { bookingData: el },
+                  });
+                } else {
+                  navigate(`/sUsers/checkInPage`, {
+                    state: { bookingData: el },
+                  });
+                }
+              }}
+              className="bg-black hover:bg-blue-400 text-white font-semibold py-1 px-2 rounded shadow-md transition duration-300 ml-auto"
+            >
+              {location.pathname === "/sUsers/checkInList"
+                ? "Check Out"
+                : "Check In"}
+            </button>
+          )}
+          {(el?.status == "checkIn" &&
+            location.pathname === "/sUsers/bookingList") ||  (el?.status == "checkOut" &&
+            location.pathname == "/sUsers/checkInList")  && (
+              <button className="bg-green-600 hover:bg-green-400 text-white font-semibold py-1 px-2 rounded shadow-md transition duration-300 ml-auto">
+            {location.pathname == "/sUsers/checkInList" ? "CheckedOut" : "Admitted"}   
+              </button>
+            )}
         </div>
         <hr className="mt-4" />
         <div className="flex justify-between items-center w-full gap-3 mt-4 text-sm">
@@ -283,39 +294,55 @@ function BookingList() {
               </div>
             </div>
           </div>
-
-          <div className="flex items-center">
-            <div
-              className={` 
+          {(el?.status != "checkIn" &&
+            location.pathname == "/sUsers/bookingList") ||
+          (el?.status != "checkOut" &&
+            location.pathname == "/sUsers/checkInList") ? (
+            <div className="flex items-center">
+              <div
+                className={` 
                 flex gap-3 px-4`}
-            >
-              <FaSignInAlt
-                title="Check In"
-                onClick={() =>
-                  navigate("/sUsers/EditBooking", {
-                    state: el,
-                  })
-                }
-              />
-              <FaEdit
-                title="Edit booking details"
-                className="text-blue-500"
-                onClick={() =>
-                  navigate("/sUsers/editBooking", {
-                    state: el,
-                  })
-                }
-              />
+              >
+                {/* <FaSignInAlt
+                    title="Check In"
+                    onClick={() =>
+                      navigate("/sUsers/EditBooking", {
+                        state: el,
+                      })
+                    }
+                  /> */}
+                <FaEdit
+                  title="Edit booking details"
+                  className="text-blue-500"
+                  onClick={() => {
+                    if (location.pathname === "/sUsers/bookingList") {
+                      navigate("/sUsers/editBooking", {
+                        state: el,
+                      });
+                    } else if (location.pathname === "/sUsers/checkInList") {
+                      navigate("/sUsers/editChecking", {
+                        state: el,
+                      });
+                    } else {
+                      navigate("/sUsers/editChecking", {
+                        state: el,
+                      });
+                    }
+                  }}
+                />
 
-              <MdDelete
-                title="Delete booking details"
-                onClick={() => {
-                  handleDelete(el._id);
-                }}
-                className="text-red-500"
-              />
+                <MdDelete
+                  title="Delete booking details"
+                  onClick={() => {
+                    handleDelete(el._id);
+                  }}
+                  className="text-red-500"
+                />
+              </div>
             </div>
-          </div>
+          ) : (
+            <></>
+          )}
         </div>
       </div>
     );
@@ -327,11 +354,22 @@ function BookingList() {
         <div className="sticky top-0 z-20">
           <TitleDiv
             loading={loader}
-            title="Hotel Bookings"
+            title={
+              location.pathname === "/sUsers/checkInList"
+                ? "Hotel Check In List "
+                : location.pathname === "/sUsers/bookingList"
+                ? "Hotel Booking List"
+                : "Hotel Check Out List"
+            }
             dropdownContents={[
               {
                 title: "Add Booking",
-                to: "/sUsers/bookingRegistration",
+                to:
+                  location.pathname === "/sUsers/checkInList"
+                    ? "/sUsers/checkInPage"
+                    : location.pathname === "/sUsers/bookingList"
+                    ? "/sUsers/bookingPage"
+                    : "/sUsers/checkInPage",
               },
             ]}
           />

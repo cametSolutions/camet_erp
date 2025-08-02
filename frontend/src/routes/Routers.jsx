@@ -146,6 +146,7 @@ import CheckOutList from '@/pages/Hotel/List/CheckOutList'
 import RestaurantDashboard from '@/pages/Restuarant/Pages/RestaurantDashboard'
 import EditBooking from '@/pages/Hotel/Pages/EditBooking'
 import LetterHeadUploadPage from '@/pages/secUsers/settilngs/PrintConfiguration/LetterHeadUploadPage'
+import EditChecking from '@/pages/Hotel/Pages/EditChecking'
 const Routers = () => {
   return (
     <Routes>
@@ -419,11 +420,12 @@ const Routers = () => {
         <Route path= '/sUsers/editRoom' element={<ProtectedSecRoute><EditRoom /></ProtectedSecRoute>} />
         <Route path= '/sUsers/bookingPage' element={<ProtectedSecRoute><BookingPage /></ProtectedSecRoute>} />
         <Route path= '/sUsers/checkInPage' element={<ProtectedSecRoute><CheckInPage /></ProtectedSecRoute>} />
-        <Route path= '/sUsers/checkOut' element={<ProtectedSecRoute><CheckOut /></ProtectedSecRoute>} />
+        <Route path= '/sUsers/checkOutPage' element={<ProtectedSecRoute><CheckOut /></ProtectedSecRoute>} />
         <Route path='/sUsers/BookingList' element={<ProtectedSecRoute><BookingList/></ProtectedSecRoute>}/>
         <Route path='/sUsers/checkInList' element={<ProtectedSecRoute><BookingList/></ProtectedSecRoute>}/>
         <Route path='/sUsers/CheckOutList' element={<ProtectedSecRoute><BookingList/></ProtectedSecRoute>}/>
         <Route path='/sUsers/EditBooking' element={<ProtectedSecRoute><EditBooking /></ProtectedSecRoute>} />
+        <Route path='/sUsers/EditChecking' element={<ProtectedSecRoute><EditChecking /></ProtectedSecRoute>} />
 
     </Routes>
   )

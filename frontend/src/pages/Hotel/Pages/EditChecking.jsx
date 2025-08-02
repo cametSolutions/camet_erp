@@ -1,4 +1,4 @@
-import { useEffect, useState ,useRef} from "react";
+import { useEffect, useState, useRef } from "react";
 import CustomBarLoader from "@/components/common/CustomBarLoader";
 import TitleDiv from "@/components/common/TitleDiv";
 import BookingForm from "../Components/BookingForm";
@@ -7,60 +7,43 @@ import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import api from "@/api/api";
 import { useLocation } from "react-router-dom";
-import useFetch from "@/customHook/useFetch";
-function EditBooking() {
+function EditChecking() {
   const isSubmittingRef = useRef(false);
   const location = useLocation();
-  const organization = useSelector(
-    (state) => state?.secSelectedOrganization?.secSelectedOrg
-  );
-  const editingData = location?.state;
+  const editData = location?.state;
   const [loading, setLoading] = useState(false);
-  const [editData, setEditData] = useState(editingData);
   const navigate = useNavigate();
-  useEffect(() => {
-    if(editingData){
-      setEditData(editingData)
-    }
-  },[editingData])
-  const { data, loading: advanceLoading } = useFetch(
-    `/api/sUsers/getBookingAdvanceData/${editData._id}`    
-  );
+
 
   useEffect(() => {
-    if (data) {
-      let totalAdvance = data?.data?.reduce((acc, curr) => {
-        return curr?.source == "Booking" && acc + Number(curr.bill_amount || 0);
-      }, 0);
-      if (totalAdvance > 0) {
-        setEditData((prev) => ({
-          ...prev,
-          totalAdvance: totalAdvance,
-          advanceAmount: totalAdvance
-        }))
+    if (editData) {
+      editData.previousAdvance = Number(
+        editData?.bookingId?.advanceAmount || 0
+      );
+      editData.totalAdvance =
+        Number(editData?.bookingId?.advanceAmount || 0) +
+        Number(editData?.advanceAmount || 0);
     }
-    }
-  }, [data]);
+  }, [editData]);
+
 
   const handleSubmit = async (data) => {
+    console.log(data)
     try {
       let response = await api.put(
         `/api/sUsers/updateRoomBooking/${editData._id}`,
-        {data:data, modal:"Booking"},
+        {data : data, modal:"checkIn"},
         { withCredentials: true }
       );
       if (response?.data?.success) {
         toast.success(response?.data?.message);
-        navigate("/sUsers/bookingList");
+        navigate("/sUsers/checkInList");
       }
     } catch (error) {
       console.log(error);
       toast.error(error?.response?.data?.message);
     }
   };
-
-  console.log(editData?.bookingId)
-
   return (
     <>
       {loading && advanceLoading ? (
@@ -68,7 +51,7 @@ function EditBooking() {
       ) : (
         <div className="">
           <TitleDiv
-            title="Room Booking"
+            title="Edit Checking"
             from="/sUsers/hotelDashBoard"
             dropdownContents={[
               {
@@ -84,6 +67,7 @@ function EditBooking() {
             setIsLoading={setLoading}
             editData={editData}
             isSubmittingRef={isSubmittingRef}
+            isFor={"deliveryNote"}
           />
         </div>
       )}
@@ -91,4 +75,4 @@ function EditBooking() {
   );
 }
 
-export default EditBooking;
+export default EditChecking;

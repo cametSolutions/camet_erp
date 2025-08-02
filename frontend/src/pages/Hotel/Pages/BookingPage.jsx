@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import api from "@/api/api";
+
 function BookingPage() {
   const isSubmittingRef = useRef(false);
   const organization = useSelector(
@@ -14,7 +15,6 @@ function BookingPage() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate()
   const handleSubmit = async (data) => {
-    console.log(data);
     try {
       let response = await api.post(
         `/api/sUsers/saveData/${organization._id}`,

@@ -1,28 +1,47 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import CustomBarLoader from "@/components/common/CustomBarLoader";
 import TitleDiv from "@/components/common/TitleDiv";
 import BookingForm from "../Components/BookingForm";
 import { toast } from "react-toastify";
 import api from "@/api/api";
 import { useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
-
+import { useNavigate, useLocation } from "react-router-dom";
+import useFetch from "@/customHook/useFetch";
 function CheckInPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const bookingData = location?.state?.bookingData;
   const isSubmittingRef = useRef(false);
   const [loading, setLoading] = useState(false);
   const organization = useSelector(
     (state) => state?.secSelectedOrganization?.secSelectedOrg
   );
+  useEffect(() => {
+    if (bookingData) {
+      bookingData.previousAdvance = Number(bookingData?.advanceAmount || 0);
+      bookingData.totalAdvance = Number(bookingData?.advanceAmount || 0);
+      bookingData.advanceAmount = 0;
+    }
+  }, [bookingData]);
+
   const handleSubmit = async (data) => {
+    let updatedData;
+    if (bookingData) {
+      updatedData = { ...data, bookingId: bookingData._id };
+    } else {
+      updatedData = data;
+    }
+
+    console.log(updatedData._id);
+
     try {
       let response = await api.post(
         `/api/sUsers/saveData/${organization._id}`,
-        { data: data, modal: "checkIn" },
+        { data: updatedData, modal: "checkIn" },
         { withCredentials: true }
       );
       if (response?.data?.success) {
-        toast.success(response?.data?.message);
+        toast.success("Check In Successfully");
         navigate("/sUsers/hotelDashBoard");
       }
       isSubmittingRef.current = false;
@@ -58,6 +77,7 @@ function CheckInPage() {
             setIsLoading={setLoading}
             isSubmittingRef={isSubmittingRef}
             isFor="deliveryNote"
+            editData={bookingData}
           />
         </div>
       )}

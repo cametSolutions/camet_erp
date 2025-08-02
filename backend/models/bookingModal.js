@@ -113,6 +113,7 @@ const bookingSchema = new mongoose.Schema(
     balanceToPay: String,
     grandTotal: String,
     customerId: { type: mongoose.Schema.Types.ObjectId, ref: "Party" },
+    customerName:String,
     mobileNumber: String,
     roomType: { type: mongoose.Schema.Types.ObjectId, ref: "RoomType" },
     visitOfPurpose:{ type: mongoose.Schema.Types.ObjectId,ref: "VisitOfPurpose"},
@@ -123,6 +124,10 @@ const bookingSchema = new mongoose.Schema(
     foodPlanTotal: Number,
     paxTotal: Number,
     agentId: { type: mongoose.Schema.Types.ObjectId, ref: "Party" },
+    bookingId: { type: mongoose.Schema.Types.ObjectId, ref: "Booking" },
+    checkInId: { type: mongoose.Schema.Types.ObjectId, ref: "CheckIn" },
+    status: String,
+
   },
   { timestamps: true }
 );

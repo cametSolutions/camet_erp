@@ -3,9 +3,11 @@ import { Booking, CheckIn, CheckOut } from "../models/bookingModal.js";
 import mongoose from "mongoose";
 // helper function used to add search concept with room
 export const buildDatabaseFilterForRoom = (params) => {
+  console.log("params", params);
   const filter = {
     cmp_id: params.cmp_id,
     primary_user_id: params.Primary_user_id,
+
   };
   console.log("params.type", params);
   if (params?.type && params?.type !== "All") {
@@ -97,7 +99,8 @@ export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
         .populate("customerId")
         .populate("agentId")
         .populate("selectedRooms.selectedPriceLevel")
-        .sort({ arrivalDate: 1 })
+        .populate('bookingId')
+        .sort({ createdAt: -1 })
         .skip(limit > 0 ? skip : 0)
         .limit(limit > 0 ? limit : 0),
       selectedModal.countDocuments(filter),

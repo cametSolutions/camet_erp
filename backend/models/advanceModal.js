@@ -20,10 +20,15 @@ const roomSchema = new mongoose.Schema({
     ref: "Booking",
     required: true,
   },
-  advanceVoucherNumber: {
-    type: String,
+  checkIn_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "CheckIn",
     required: true,
   },
+  // advanceVoucherNumber: {
+  //   type: String,
+  //   required: true,
+  // },
   advanceAmount: {
     type: Number,
     required: true,
