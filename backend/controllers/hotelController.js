@@ -1029,8 +1029,18 @@ export const updateBooking = async (req, res) => {
 export const fetchAdvanceDetails = async (req, res) => {
   try {
     const bookingId = req.params.id;
-    const advanceDetails = await TallyData.find({ billId: bookingId });
-    console.log(advanceDetails);
+    const type = req.query?.type;
+    let advanceDetails = null;
+    if(type == "CheckOut"){
+      let checkInData = await CheckIn.findOne({ _id: bookingId });
+      if(checkInData){
+      let bookingSideAdvanceDetails = await TallyData.find({ billId: checkInData.bookingId });
+      let checkInSideAdvanceDetails = await TallyData.find({ billId: bookingId });
+      advanceDetails = [...bookingSideAdvanceDetails, ...checkInSideAdvanceDetails];
+    }
+  }else{
+     advanceDetails = await TallyData.find({ billId: bookingId });
+    }
     if (advanceDetails) {
       return res.status(200).json({
         success: true,
@@ -1043,7 +1053,8 @@ export const fetchAdvanceDetails = async (req, res) => {
         message: "Advance details not found",
       });
     }
-  } catch (error) {
+  
+ } catch (error) {
     res.status(500).json({
       success: false,
       message: "Failed to fetch advance details",
