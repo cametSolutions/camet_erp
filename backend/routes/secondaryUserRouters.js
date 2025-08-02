@@ -59,7 +59,7 @@ import { createVoucherSeries, getSeriesByVoucher, deleteVoucherSeriesById, editV
 import {saveAdditionalPax , getAdditionalPax ,updateAdditionalPax , deleteAdditionalPax,saveVisitOfPurpose,getVisitOfPurpose,
     updateVisitOfPurpose,deleteVisitOfPurpose,saveIdProof,getIdProof,updateIdProof , deleteIdProof, saveFoodPlan , getFoodPlan
     ,updateFoodPlan,deleteFoodPlan,addRoom,getRooms,editRoom ,deleteRoom,getAllRooms,roomBooking} from '../controllers/hotelController.js'
- import {addItem,getAllItems,getCategories} from '../controllers/restaurantController.js'
+ import {addItem,getAllItems,getItems,getCategories} from '../controllers/restaurantController.js'
 router.post('/login',login)
 router.post('/sendOtp',sendOtp)
 router.post('/submitOtp',submitOtp)
@@ -325,6 +325,6 @@ router.post('/roomBooking/:cmp_id',authSecondary,secondaryIsBlocked,roomBooking)
 router.post('/addItem/:cmp_id', authSecondary,addItem)
 router.get('/getAllItems/:cmp_id', authSecondary,getAllItems)
 router.get('/categories/:cpm_id',authSecondary,getCategories)
-
+router.get('/getItems/:cmp_id',authSecondary,getItems)
 
 export default router

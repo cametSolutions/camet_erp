@@ -35,7 +35,7 @@ const RestaurantPOS = () => {
   const [selectedCuisine, setSelectedCuisine] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedSubcategory, setSelectedSubcategory] = useState("");
-
+const[hoveredCuisine,setHoveredCuisine] = useState("");
   const [orderItems, setOrderItems] = useState([]);
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -57,7 +57,25 @@ const RestaurantPOS = () => {
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
 
-  
+  const gradientClasses = [
+  "bg-gradient-to-r from-pink-400 to-red-500",
+  "bg-gradient-to-r from-green-400 to-blue-500",
+  "bg-gradient-to-r from-yellow-400 to-orange-500",
+  "bg-gradient-to-r from-purple-400 to-pink-500",
+  "bg-gradient-to-r from-cyan-400 to-teal-500",
+  "bg-gradient-to-r from-indigo-400 to-blue-600",
+];
+
+const subcategoryIcons = {
+  Pizza: "🍕",
+  noodles: "🍜",
+  Burger: "🍔",
+  Salad: "🥗",
+  Dessert: "🍰",
+  Drinks: "🥤",
+  Default: "🍽️",
+};
+
   const [customerDetails, setCustomerDetails] = useState({
     name: "",
     phone: "",
@@ -403,52 +421,39 @@ const RestaurantPOS = () => {
       </div>
 
       {/* Cuisine Categories */}
-      <div className="bg-white border-b border-gray-200 p-4">
-        <div className="flex flex-wrap gap-3 text-xs">
-          {cuisines.map((cuisine) => (
-            <button
-              key={cuisine._id}
-              onClick={() => handleCategorySelect(cuisine.name)}
-              style={{
-                backgroundColor:
-                  selectedCuisine === cuisine.name ? cuisine.color : "#f3f4f6",
-                color: selectedCuisine === cuisine.name ? "#fff" : "#374151",
-                transform:
-                  selectedCuisine === cuisine.name
-                    ? "translateY(-2px)"
-                    : "translateY(0)",
-              }}
-              className={`
-              group relative flex items-center space-x-2 px-4 py-2 rounded-lg font-medium 
-              transition-all duration-300 ease-out
-              hover:shadow-lg hover:scale-105 hover:-translate-y-1
-              active:scale-95 active:translate-y-0
-              overflow-hidden
-              ${
-                selectedCuisine === cuisine.name
-                  ? "shadow-lg"
-                  : "hover:bg-gray-200"
-              }
-            `}
-            >
-              <div
-                className="absolute inset-0 transition-all duration-300 ease-out transform translate-x-full group-hover:translate-x-0 opacity-0 group-hover:opacity-20"
-                style={{ backgroundColor: cuisine.color }}
-              />
-              <span className="text-xl transition-transform duration-200 group-hover:scale-110 group-hover:rotate-12 relative z-10">
-                {cuisine.icon}
-              </span>
-              <span className="relative z-10 transition-all duration-200 group-hover:tracking-wide">
-                {cuisine.name}
-              </span>
-              <div
-                className="absolute inset-0 rounded-lg opacity-0 group-active:opacity-30 group-active:animate-ping transition-opacity duration-150"
-                style={{ backgroundColor: cuisine.color }}
-              />
-            </button>
-          ))}
-        </div>
-      </div>
+    <div className="bg-white border-b border-gray-200 p-4">
+  <div className="flex flex-wrap gap-2 text-xs">
+    {cuisines.map((cuisine) => (
+      <button
+        key={cuisine._id}
+        onClick={() => handleCategorySelect(cuisine.name)}
+        onMouseEnter={() => setHoveredCuisine(cuisine.name)}
+        onMouseLeave={() => setHoveredCuisine(null)}
+        style={{
+          background: hoveredCuisine === cuisine.name
+            ? "linear-gradient(135deg, #a7f3d0, #10b981)"
+            : "linear-gradient(135deg, #34d399, #059669)",
+          color: selectedCuisine === cuisine.name ? "#1F2937" : "#ffffff",
+          transform: selectedCuisine === cuisine.name ? "translateY(-2px)" : "none",
+          boxShadow: selectedCuisine === cuisine.name
+            ? "0 4px 14px rgba(0, 0, 0, 0.2)"
+            : "0 2px 6px rgba(0, 0, 0, 0.1)",
+          transition: "all 0.25s ease-in-out",
+        }}
+        className={`
+          group relative flex items-center gap-2 px-4 py-2 rounded-xl font-medium 
+          hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-green-400 
+          active:scale-95 cursor-pointer duration-300 transform
+          backdrop-blur-sm bg-opacity-90
+        `}
+      >
+        <span className="text-lg drop-shadow-sm">{cuisine.icon}</span>
+        <span className="text-sm tracking-wide select-none">{cuisine.name}</span>
+      </button>
+    ))}
+  </div>
+</div>
+
 
       {/* Main Content */}
       <div className="flex-1 flex">
@@ -475,27 +480,37 @@ const RestaurantPOS = () => {
             )}
           </div>
 
-          <div className="p-4">
-            {!selectedCuisine ? (
-              <div className="text-xs text-gray-400">Please select a category above</div>
-            ) : filteredSubcategories.length === 0 ? (
-              <div className="text-xs text-gray-400">No subcategories available</div>
-            ) : (
-              filteredSubcategories.map((subcategory) => (
-                <button
-                  key={subcategory._id}
-                  onClick={() => handleSubcategorySelect(subcategory.name)}
-                  className={`w-full text-left p-2 mb-1 rounded-md font-medium transition-all duration-200 flex items-center space-x-2 hover:scale-103 hover:translate-x-1 ${
-                    selectedSubcategory === subcategory.name
-                      ? "bg-green-600 text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  <span className="text-xs">{subcategory.name}</span>
-                </button>
-              ))
-            )}
-          </div>
+<div className="p-4">
+  {!selectedCuisine ? (
+    <div className="text-sm text-gray-400 text-center py-4 italic">
+      🍽️ Please select a category above
+    </div>
+  ) : filteredSubcategories.length === 0 ? (
+    <div className="text-sm text-gray-400 text-center py-4 italic">
+      🚫 No subcategories available
+    </div>
+  ) : (
+    filteredSubcategories.map((subcategory, index) => {
+      const icon = subcategoryIcons[subcategory.name] || subcategoryIcons.Default;
+      const gradient = gradientClasses[index % gradientClasses.length];
+
+      return (
+        <button
+          key={subcategory._id}
+          onClick={() => handleSubcategorySelect(subcategory.name)}
+          className={`w-full text-left px-3 py-1.5 mb-2 rounded-md font-medium transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md transform hover:scale-[1.02] hover:translate-x-1 
+            ${selectedSubcategory === subcategory.name ? "text-white" : "text-white/90"}
+            ${gradient}`}
+        >
+          <span className="text-base">{icon}</span>
+          <span className="text-xs capitalize tracking-wide">{subcategory.name}</span>
+        </button>
+      );
+    })
+  )}
+</div>
+
+
         </div>
 
         {/* Main Content Area */}
@@ -624,12 +639,7 @@ const RestaurantPOS = () => {
                             
                             {/* Rating and Time */}
                             <div className="flex items-center justify-between text-xs text-gray-500">
-                              <div className="flex items-center space-x-1">
-                                <div className="flex items-center space-x-1 bg-green-50 px-2 py-1 rounded-full">
-                                  <Star className="w-3 h-3 text-yellow-500 fill-current" />
-                                  <span className="font-medium text-gray-700">{item.rating || '4.5'}</span>
-                                </div>
-                              </div>
+                             
                               <div className="flex items-center space-x-1 text-gray-400">
                                 <Clock className="w-3 h-3" />
                                 <span>{item.time || '15-20 min'}</span>
@@ -638,11 +648,7 @@ const RestaurantPOS = () => {
                           </div>
 
                           {/* Category Badge */}
-                          <div className="mb-3">
-                            <span className="inline-block bg-gray-100 text-gray-600 px-2 py-1 rounded-md text-xs font-medium">
-                              {subcategories.find(sub => sub._id === item.sub_category)?.name || 'Category'}
-                            </span>
-                          </div>
+                        
 
                           {/* Price Section */}
                           <div className="flex items-center justify-between">
