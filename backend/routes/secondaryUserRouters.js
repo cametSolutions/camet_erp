@@ -61,7 +61,7 @@ import {saveAdditionalPax , getAdditionalPax ,updateAdditionalPax , deleteAdditi
     updateVisitOfPurpose,deleteVisitOfPurpose,saveIdProof,getIdProof,updateIdProof , deleteIdProof, saveFoodPlan , getFoodPlan
     ,updateFoodPlan,deleteFoodPlan,addRoom,getRooms,editRoom ,deleteRoom,getAllRooms,roomBooking,getBookings,deleteBooking,updateBooking,
 fetchAdvanceDetails} from '../controllers/hotelController.js'
-import {addItem,getAllItems,getCategories} from '../controllers/restaurantController.js'
+import {addItem,getAllItems,getItems,getCategories} from '../controllers/restaurantController.js'
 
 router.post('/login',login)
 router.post('/sendOtp',sendOtp)
@@ -337,5 +337,6 @@ router.put('/updateRoomBooking/:id',authSecondary,secondaryIsBlocked,updateBooki
 router.get('/getBookingAdvanceData/:id',authSecondary,secondaryIsBlocked,fetchAdvanceDetails)
 
 
+router.get('/getItems/:cmp_id',authSecondary,getItems)
 
 export default router

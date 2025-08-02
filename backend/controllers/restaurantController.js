@@ -82,7 +82,25 @@ export const addItem = async (req, res) => {
 };
 
 // Get Items Controller
+export const getItems = async (req, res) => {
+ try {
+    const params = extractRequestParams(req);
+    const filter = buildDatabaseFilterForRoom(params);
+    console.log("filter", filter);
+    
+    const { items, totalItems } = await fetchRoomsFromDatabase(filter, params);
+    console.log("items", items);
+    
+    const sendItemResponseData = sendRoomResponse(res, items, totalItems, params);
 
+} catch (error) {
+    console.error("Error in getItems:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error, try again!",
+    });
+  }
+};
 // Assuming you have ProductModel imported correctly
 // import ProductModel from '../models/ProductModel'; (adjust path as needed)
 
