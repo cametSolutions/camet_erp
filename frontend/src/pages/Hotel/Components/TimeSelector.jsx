@@ -18,6 +18,8 @@ const TimeSelector = ({
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${period}`;
   };
 
+  console.log(initialTime)
+
   const defaultTime = initialTime || getCurrentTime();
   
   const [isEditing, setIsEditing] = useState(false);

@@ -43,6 +43,7 @@ const partySchema = new mongoose.Schema({
   creditLimit: { type: String },
   openingBalanceType: { type: String },
   openingBalanceAmount: { type: Number },
+  isHotelAgent: { type: Boolean, default: false },
 });
 
 // / ============= CRITICAL PARTY INDEXES =============
