@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 import React, { useEffect } from "react";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import useFetch from "../../../../../customHook/useFetch";
 import { useSelector } from "react-redux";
 import { BarLoader } from "react-spinners";

@@ -1,4 +1,4 @@
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import api from "../../../api/api";
 import { useLocation } from "react-router-dom";
 import { useNavigate } from "react-router-dom";

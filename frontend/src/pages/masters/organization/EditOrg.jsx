@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../../../api/api.js";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { useParams, useNavigate } from "react-router-dom";
 import AddOrgForm from "../../../components/homePage/AddOrgForm.jsx";
 import { useDispatch } from "react-redux";

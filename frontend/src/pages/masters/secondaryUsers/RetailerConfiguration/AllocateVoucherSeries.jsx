@@ -11,7 +11,7 @@ import {
 } from "react-icons/hi";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import api from "@/api/api.js";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import {
   Select,

@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import api from "../../../api/api";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { useNavigate, useParams } from "react-router-dom";
 import AddProductForm from "./AddProductsForm";
 import TitleDiv from "@/components/common/TitleDiv";

@@ -4,7 +4,7 @@
 import { IoMdAdd } from "react-icons/io";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 function AddAmountTile({ process = "add" }) {
   const navigate = useNavigate();

@@ -3,7 +3,7 @@
 /* eslint-disable react/prop-types */
 import { useState } from "react";
 import { MdCancel } from "react-icons/md";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import api from "../../api/api";
 
 // Import Shadcn UI components

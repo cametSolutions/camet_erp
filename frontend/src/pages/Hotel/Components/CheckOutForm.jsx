@@ -1,6 +1,6 @@
 import {useState,useCallback,useEffect} from "react";
 import { useSelector }  from "react-redux";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import {useNavigate} from "react-router-dom";
 import api from "@/api/api";
 import CustomBarLoader from "@/components/common/CustomBarLoader";

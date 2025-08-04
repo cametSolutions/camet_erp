@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import api from "../../../../api/api";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { removeAll } from "../../../../../slices/invoiceSecondary";

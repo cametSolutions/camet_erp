@@ -11,7 +11,7 @@ import {
 } from "../../../../../../../slices/barcodeSlice";
 import { useDispatch } from "react-redux";
 import api from "../../../../../../api/api";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import Swal from "sweetalert2";
 function BarcodeList() {
   const [data, setData] = useState([]);

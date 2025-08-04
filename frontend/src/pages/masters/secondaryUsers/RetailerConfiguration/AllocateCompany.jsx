@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { HiOfficeBuilding, HiCheck, HiX, HiSparkles } from "react-icons/hi";
 import { useLocation, useNavigate } from "react-router-dom";
 import api from "@/api/api.js";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { useSelector } from "react-redux";
 import { useQuery, useMutation } from "@tanstack/react-query";
 

@@ -2,8 +2,8 @@ import ReactDOM from "react-dom/client";
 import App from "./App.jsx";
 import "./index.css";
 import { BrowserRouter } from "react-router-dom";
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+// import { ToastContainer } from "sonner";
+// import "sonner/dist/ReactToastify.css";
 import { store } from "../app/store.js";
 import { Provider } from "react-redux";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
@@ -13,25 +13,27 @@ import { Toaster } from "sonner";
 const queryClient = new QueryClient();
 ReactDOM.createRoot(document.getElementById("root")).render(
   <BrowserRouter>
-    <ToastContainer
+    {/* <ToastContainer
       theme="dark"
       position="top-right"
       autoClose={3000}
       closeOnClick
       pauseOnHover={true}
-    />
+    /> */}
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
         <App />
 
         {/* this is from sonner */}
-        <Toaster 
-        theme="dark" 
-        visibleToasts={1} 
-        offset={16} 
-        position="top-right"
-        swipeDirections={["left", "right"]}
-         />
+        <Toaster
+          theme="dark"
+          visibleToasts={1}
+          offset={16}
+          position="top-right"
+          swipeDirections={["left", "right"]}
+          duration={1500}
+      
+        />
         {/* <ReactQueryDevtools initialIsOpen={false} /> */}
       </QueryClientProvider>
     </Provider>

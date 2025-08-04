@@ -1,7 +1,7 @@
 import TitleDiv from "@/components/common/TitleDiv";
 import { WarrantyCardForm } from "./WarrantyCardForm ";
 import api from "@/api/api";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { useState } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../../../api/api";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { FaEdit, FaPhone } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import { removeAll } from "../../../../slices/invoice";

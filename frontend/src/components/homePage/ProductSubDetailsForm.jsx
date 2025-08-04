@@ -2,7 +2,7 @@
 /* eslint-disable react/prop-types */
 import { useEffect, useState } from "react";
 import { FaEdit, FaTrash } from "react-icons/fa";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import api from "../../api/api";
 import Swal from "sweetalert2";
 import { useDispatch, useSelector } from "react-redux";

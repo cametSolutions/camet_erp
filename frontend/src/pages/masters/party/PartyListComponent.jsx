@@ -6,7 +6,7 @@ import { Link } from "react-router-dom";
 import { FixedSizeList as List } from "react-window";
 import InfiniteLoader from "react-window-infinite-loader";
 import CallIcon from "../../../components/common/CallIcon";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import api from "@/api/api";
 import CustomBarLoader from "../../../components/common/CustomBarLoader";
 import SearchBar from "../../../components/common/SearchBar";

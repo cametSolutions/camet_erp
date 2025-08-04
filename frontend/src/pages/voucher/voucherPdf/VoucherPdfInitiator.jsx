@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from "react";
 import api from "../../../api/api";
 import { useLocation, useParams } from "react-router-dom";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import VoucherPdf from "./indian/VoucherPdf";

@@ -4,7 +4,7 @@ import { MdPeopleAlt } from "react-icons/md";
 import { FaChevronDown } from "react-icons/fa";
 import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
 // Custom components

@@ -5,7 +5,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { formatVoucherType } from "../../../../../../../utils/formatVoucherType";
 import api from "@/api/api";
 import { useSelector } from "react-redux";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 // Mock TitleDiv component
 

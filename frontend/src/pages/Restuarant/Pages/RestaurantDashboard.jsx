@@ -26,7 +26,7 @@ import {
   Bed,
   ArrowLeft,
 } from "lucide-react";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { useSelector } from "react-redux";
 import api from "@/api/api";
 import { motion } from "framer-motion";
