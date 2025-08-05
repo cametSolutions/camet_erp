@@ -632,7 +632,7 @@ export const getRooms = async (req, res) => {
 export const getAllRooms = async (req, res) => {
   try {
     const { cmp_id } = req.params;
-    const selectedDate= req.query.selectedData
+    const selectedDate = req.query.selectedData;
 
     // Validate company ID
     if (!cmp_id) {
@@ -651,7 +651,7 @@ export const getAllRooms = async (req, res) => {
     }
 
     // if(selectedDate){
-      
+
     // }
 
     // Fetch all rooms for the company
@@ -811,7 +811,7 @@ export const roomBooking = async (req, res) => {
       under = "CheckIn";
     } else {
       console.log("bookingData", bookingData);
-    if (bookingData?.checkInId) {
+      if (bookingData?.checkInId) {
         let updateBookingData = await CheckIn.findByIdAndUpdate(
           bookingData.checkInId,
           { status: "checkOut" },
@@ -1030,16 +1030,48 @@ export const fetchAdvanceDetails = async (req, res) => {
   try {
     const bookingId = req.params.id;
     const type = req.query?.type;
+    console.log("type", type);
+    console.log("bookingId", bookingId);
     let advanceDetails = null;
-    if(type == "CheckOut"){
-      let checkInData = await CheckIn.findOne({ _id: bookingId });
-      if(checkInData){
-      let bookingSideAdvanceDetails = await TallyData.find({ billId: checkInData.bookingId });
-      let checkInSideAdvanceDetails = await TallyData.find({ billId: bookingId });
-      advanceDetails = [...bookingSideAdvanceDetails, ...checkInSideAdvanceDetails];
-    }
-  }else{
-     advanceDetails = await TallyData.find({ billId: bookingId });
+    if (type == "EditCheckOut") {
+      let checkOutData = await CheckOut.findOne({ _id: bookingId });
+      if (checkOutData) {
+        let checkInData = await CheckIn.findOne({
+          _id: checkOutData.checkInId,
+        });
+        let bookingSideAdvanceDetails = await TallyData.find({
+          billId: checkInData.bookingId,
+        });
+        let checkInSideAdvanceDetails = await TallyData.find({
+          billId: checkInData._id,
+        });
+        let checkOutSideAdvanceDetails = await TallyData.find({
+          billId: checkOutData._id,
+        })
+        advanceDetails = [
+          ...bookingSideAdvanceDetails,
+          ...checkInSideAdvanceDetails,
+          ...checkOutSideAdvanceDetails,
+        ];
+      }
+    } else if (type == "EditChecking") {
+       let checkInData = await CheckIn.findOne({
+          _id: bookingId,
+        });
+        if(checkInData){
+          let bookingSideAdvanceDetails = await TallyData.find({
+            billId: checkInData.bookingId,
+          })
+          let checkInSideAdvanceDetails = await TallyData.find({
+            billId: checkInData._id,
+          })
+          advanceDetails = [
+            ...bookingSideAdvanceDetails,
+            ...checkInSideAdvanceDetails,
+          ];
+        }
+    } else {
+      advanceDetails = await TallyData.find({ billId: bookingId });
     }
     if (advanceDetails) {
       return res.status(200).json({
@@ -1053,8 +1085,7 @@ export const fetchAdvanceDetails = async (req, res) => {
         message: "Advance details not found",
       });
     }
-  
- } catch (error) {
+  } catch (error) {
     res.status(500).json({
       success: false,
       message: "Failed to fetch advance details",

@@ -152,6 +152,7 @@ import AddSubRestuarentCategory from '@/pages/masters/product/productSubDetails/
 // import ItemList from '@/pages/Restuarant/Pages/ItemList'
 import EditBooking from '@/pages/Hotel/Pages/EditBooking'
 import EditChecking from '@/pages/Hotel/Pages/EditChecking'
+import EditCheckOut from '@/pages/Hotel/Pages/EditCheckOut'
 const Routers = () => {
   return (
     <Routes>
@@ -433,6 +434,7 @@ const Routers = () => {
         <Route path='/sUsers/CheckOutList' element={<ProtectedSecRoute><BookingList/></ProtectedSecRoute>}/>
         <Route path='/sUsers/EditBooking' element={<ProtectedSecRoute><EditBooking /></ProtectedSecRoute>} />
         <Route path='/sUsers/EditChecking' element={<ProtectedSecRoute><EditChecking /></ProtectedSecRoute>} />
+         <Route path='/sUsers/EditCheckOut' element={<ProtectedSecRoute><EditCheckOut /></ProtectedSecRoute>} />
 
         <Route path='/KotPage' element={<KotPage/>}/>
 
