@@ -22,16 +22,17 @@ function ItemRegisterComponent({ pageName, optionsData, sendToParent, editData }
 
   useEffect(() => {
     if (editData) {
+      console.log(editData)
       setRoomData({
-        itemName: editData.itemName,
-        foodCategory: editData.foodCategory,
-        foodType: editData.foodType,
+        itemName: editData. product_name,
+        foodCategory: editData.category,
+        foodType: editData.sub_category,
         unit: editData.unit,
         hsn: optionsData?.hsn?.find((hsn) => hsn.hsn == editData.hsnCode)?._id,
-        imageUrl: editData.imageUrl || "", // Set existing image URL
+        imageUrl: editData.product_image || "", // Set existing image URL
       });
       console.log(editData);
-      setPriceLevelRows(editData.priceLevel);
+      setPriceLevelRows(editData.Priceleveles);
       
       // Set image preview for existing data
       if (editData.imageUrl) {
@@ -293,7 +294,6 @@ function ItemRegisterComponent({ pageName, optionsData, sendToParent, editData }
                 Food Category
               </label>
               <select
-                type="text"
                 value={roomData.foodCategory}
                 className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                 name="foodCategory"
