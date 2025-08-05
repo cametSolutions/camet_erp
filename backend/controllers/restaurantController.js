@@ -172,7 +172,7 @@ export const updateItem = async (req, res) => {
   const session = await mongoose.startSession();
 
   try {
-    const { id } = req.params;
+ 
     const { formData, tableData } = req.body;
 
     session.startTransaction();
@@ -187,12 +187,8 @@ export const updateItem = async (req, res) => {
     }
 
     // Update item
-    const updatedItem = await Item.findOneAndUpdate(
-      {
-        _id: id,
-        cmp_id: req.params.cmp_id,
-        primary_user_id: req.pUserId || req.owner,
-      },
+    const updatedItem = await product.findOneAndUpdate(
+     { _id: req.params.id, cmp_id: req.params.cmp_id },
       {
         itemName: formData.itemName,
         foodCategory: formData.foodCategory,
@@ -242,14 +238,9 @@ export const updateItem = async (req, res) => {
 // Delete Item Controller
 export const deleteItem = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { itemId } = req.params.id;
 
-    const deletedItem = await Item.findOneAndDelete({
-      _id: id,
-      cmp_id: req.params.cmp_id,
-      primary_user_id: req.pUserId || req.owner,
-    });
-
+    const deletedItem = await product.findOneAndDelete(itemId);
     if (!deletedItem) {
       return res.status(404).json({
         success: false,
