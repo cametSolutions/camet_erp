@@ -294,7 +294,6 @@ export const addProductSubDetails = async (req, res) => {
     /// add godownEnabled tag to company
     const company = await OragnizationModel.findOne({ _id: orgId });
     const generatedId = new mongoose.Types.ObjectId();
-
     switch (key) {
       case "brand":
       case "roomType":

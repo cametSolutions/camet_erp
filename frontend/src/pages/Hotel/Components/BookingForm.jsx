@@ -21,6 +21,7 @@ function BookingForm({
   editData,
   isSubmittingRef,
   isFor,
+  outStanding=[]
 }) {
   const [voucherNumber, setVoucherNumber] = useState("");
   const [selectedParty, setSelectedParty] = useState("");
@@ -318,74 +319,7 @@ console.log(response.data);
     }
   };
 
-  // const handleAdvanceAmountChange = (e) => {
-  //   const { value } = e.target;
-  //   if (
-  //     value >
-  //     Number(formData.grandTotal) - Number(editData.previousAdvance)
-  //   ) {
-  //     setErrorObject((prev) => ({
-  //       ...prev,
-  //       advanceAmount: "Advance amount should be less than grand total",
-  //     }));
-  //     return;
-  //   } else {
-  //     setErrorObject((prev) => ({
-  //       ...prev,
-  //       advanceAmount: "",
-  //     }));
-  //   }
-  //   if (
-  //     Number(value) <= Number(formData.grandTotal) &&
-  //     isFor == "deliveryNote"
-  //   ) {
-  //     setFormData((prev) => ({
-  //       ...prev,
-  //       advanceAmount: value,
-  //       balanceToPay: (
-  //         Number(formData.grandTotal) -
-  //         Number(editData?.previousAdvance) -
-  //         Number(value)
-  //       ).toFixed(2),
-  //       totalAdvance: Number(value) + editData.previousAdvance,
-  //     }));
 
-  //     setErrorObject((prev) => ({
-  //       ...prev,
-  //       advanceAmount: "",
-  //     }));
-  //     return;
-  //   } else if (isFor == "sales") {
-  //     setFormData((prev) => ({
-  //       ...prev,
-  //       advanceAmount: value,
-  //       balanceToPay: (
-  //         Number(formData.grandTotal) -
-  //         Number(editData?.previousAdvance) -
-  //         Number(value)
-  //       ).toFixed(2),
-  //       totalAdvance: Number(value) + Number(editData.previousAdvance),
-  //     }));
-  //   } else if (Number(value) <= Number(formData.grandTotal)) {
-  //     setFormData((prev) => ({
-  //       ...prev,
-  //       advanceAmount: value,
-  //       balanceToPay: (Number(formData.grandTotal) - Number(value)).toFixed(2),
-  //       totalAdvance: Number(value),
-  //     }));
-
-  //     setErrorObject((prev) => ({
-  //       ...prev,
-  //       advanceAmount: "",
-  //     }));
-  //     return;
-  //   } else {
-  //     setErrorObject((prev) => ({
-  //       ...prev,
-  //       advanceAmount: "Advance amount should be less than grand total",
-  //     }));
-  //   }
-  // };
 
   const handleAdvanceAmountChange = (e) => {
     const { value } = e.target;
@@ -965,6 +899,13 @@ console.log(response.data);
 
               {/* Save Button */}
               <div className="flex justify-end">
+                 <button
+                  className="bg-pink-500 mt-4 ml-4 w-20 text-white active:bg-pink-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none mr-1 ease-linear transition-all duration-150 transform hover:scale-105"
+                  type="button"
+                  onClick={submitHandler}
+                >
+                  {editData ? "Update" : "Save"}
+                </button>
                 <button
                   className="bg-pink-500 mt-4 ml-4 w-20 text-white active:bg-pink-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none mr-1 ease-linear transition-all duration-150 transform hover:scale-105"
                   type="button"

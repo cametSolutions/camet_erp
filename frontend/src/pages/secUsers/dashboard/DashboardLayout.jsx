@@ -109,7 +109,7 @@ function DashBoardLayout({
             <TodaysTransaction />
           </div>
           <div className="w-1/2">
-            {/* <DashboardSummary /> */}
+            <DashboardSummary />
           </div>
         </div>
 
@@ -122,7 +122,7 @@ function DashBoardLayout({
             </div>
           ) : (
             <div className="">
-              {/* <DashboardSummary /> */}
+              <DashboardSummary />
             </div>
           )}
         </div>

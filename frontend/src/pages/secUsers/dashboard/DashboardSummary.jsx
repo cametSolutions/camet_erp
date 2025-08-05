@@ -45,7 +45,6 @@ const DashboardSummary = () => {
 
 
 
-  console.log(data)
 
   useEffect(() => {
     // if (data) {

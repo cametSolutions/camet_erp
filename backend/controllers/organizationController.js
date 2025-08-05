@@ -164,11 +164,23 @@ export const addOrganizations = async (req, res) => {
 
 export const getOrganizations = async (req, res) => {
   const userId = new mongoose.Types.ObjectId(req.owner);
+  const basicDetails = req.query.basicDetails === "true";
   try {
-    const organizations = await Organization.find({ owner: userId }).populate(
-      "configurations.bank"
-    );
-    if (organizations) {
+    let organizationsQuery = Organization.find({ owner: userId });
+    
+    // Populate only if full details requested
+    if (!basicDetails) {
+      organizationsQuery = organizationsQuery.populate("configurations.bank");
+    }
+
+    // Select limited fields if only basicDetails are requested
+    if (basicDetails) {
+      organizationsQuery = organizationsQuery.select('name');
+    }
+
+    const organizations = await organizationsQuery.exec();
+
+    if (organizations && organizations.length > 0) {
       return res.status(200).json({
         organizationData: organizations,
         message: "Organization fetched",
@@ -180,12 +192,12 @@ export const getOrganizations = async (req, res) => {
     }
   } catch (error) {
     console.log(error);
-
     return res
       .status(500)
       .json({ success: false, message: "Internal server error, try again!" });
   }
 };
+
 
 // @desc get organization detail foe edit
 // route GET/api/pUsers/getOrganizations
