@@ -15,7 +15,7 @@ const ProductSubDetailsForm = ({
   handleLoader,
   isHotel,
   isRestaurants = false,
-  categoriesData,
+  categoriesData = [],
 }) => {
   const [value, setValue] = useState("");
   const [price, setPrice] = useState("");
@@ -348,9 +348,9 @@ const ProductSubDetailsForm = ({
                     {el?.roomRent}
                   </div>
                 )}
-                  {el?.category_id && (
+                  {(el?.category_id && categoriesData.length > 0) && (
                   <div className=" px-6 text-left text-wrap text-blueGray-700 text-sm font-bold text-gray-500 w-1/3">
-                    {categoriesData.find((cat) => cat._id === el?.category_id)?.category}
+                    {categoriesData?.find((cat) => cat._id === el?.category_id)?.category}
                   </div>
                 )}
                 <div className="flex items-end gap-12 text-xs w-1/3 justify-end">

@@ -35,12 +35,12 @@ const RestaurantPOS = () => {
   const [selectedCuisine, setSelectedCuisine] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedSubcategory, setSelectedSubcategory] = useState("");
-
+const[hoveredCuisine,setHoveredCuisine] = useState("");
   const [orderItems, setOrderItems] = useState([]);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [items, setItems] = useState([]);
-  
+  const[data,setData]= useState([]);
   const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [loader, setLoader] = useState(false);
@@ -57,7 +57,23 @@ const RestaurantPOS = () => {
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
 
-  
+  const gradientClasses = [
+"bg-gradient-to-br from-blue-500 to-blue-700",
+ 
+];
+
+const subcategoryIcons = {
+  Pizza: "🍕",
+  noodles: "🍜",
+  Burger: "🍔",
+  Salad: "🥗",
+  Dessert: "🍰",
+  Drinks: "🥤",
+  Snacks: "🍟",
+  Biriyani: "🍲",
+  Default: "🍽️",
+};
+
   const [customerDetails, setCustomerDetails] = useState({
     name: "",
     phone: "",
@@ -95,7 +111,7 @@ const RestaurantPOS = () => {
 
       const { categories, subcategories, priceLevels } =
         subDetailsRes.data.data;
-
+        console.log(subcategories)
       setOptionsData((prev) => ({
         ...prev,
         category: categories,
@@ -106,7 +122,7 @@ const RestaurantPOS = () => {
 
       // Set the first category as default if available
       if (categories && categories.length > 0) {
-        setSelectedCuisine(categories[0].name);
+        setSelectedCuisine({categoryId:categories[0]._id,categoryName:categories[0].name});
       }
     } catch (error) {
       console.error("Failed to fetch data:", error);
@@ -115,6 +131,9 @@ const RestaurantPOS = () => {
       setLoading(false);
     }
   }, [cmp_id]);
+
+
+  console.log(optionData?.subcategory)
 
   useEffect(() => {
     fetchAllData();
@@ -140,6 +159,7 @@ const RestaurantPOS = () => {
         
         // Store all items
         const allItems = res?.data?.items || [];
+        
         
         // Filter items based on selected subcategory
         if (selectedSubcategory && !searchTerm) {
@@ -179,14 +199,59 @@ const RestaurantPOS = () => {
   console.log("Items:", items);
   console.log("Option Data:", optionData);
 
+
+
+const getFilteredItems = () => {
+  let items = filteredItems;
+
+  if (selectedCuisine) {
+    items = items.filter((item) => item.category === selectedCuisine);
+  }
+
+  if (selectedSubcategory) {
+    items = items.filter((item) => item.subcategory === selectedSubcategory);
+  }
+
+  if (searchTerm.trim() !== "") {
+    const term = searchTerm.toLowerCase();
+    items = items.filter((item) => 
+      item.name.toLowerCase().includes(term) ||
+      item.subcategoryName?.toLowerCase().includes(term) // assumes you have subcategoryName
+    );
+  }
+
+  return items;
+};
+
+
   const cuisines = optionData?.category || [];
   const subcategories = optionData?.subcategory || [];
+console.log(data)
 
-  // Get selected category ID
-  const getSelectedCategoryId = () => {
-    const selectedCat = cuisines.find(cat => cat.name === selectedCuisine);
-    return selectedCat?._id || '';
-  };
+  //   const getSubDetails = async (data) => {
+  //      try {
+  //        setLoading(true);
+  //        handleLoader(true);
+  //        const res = await api.get(
+  //          `/api/${user}/getProductSubDetails/${orgId}?type=${tab}`,
+  //          {
+  //            withCredentials: true,
+  //          }
+  //        );
+  //        setData(res?.data?.data);
+  //      } catch (error) {
+  //        console.log(error);
+  //        toast.error(error.response.data.message);
+  //      } finally {
+  //        setLoading(false);
+  //        handleLoader(false);
+  //      }
+  //    };
+  // // Get selected category ID
+  // const getSelectedCategoryId = () => {
+  //   const selectedCat = cuisines.find(cat => cat.name === selectedCuisine);
+  //   return selectedCat?._id || '';
+  // };
 
   // Get selected subcategory ID  
   const getSelectedSubcategoryId = () => {
@@ -195,13 +260,12 @@ const RestaurantPOS = () => {
   };
 
   // Filter subcategories based on selected category
-  const getFilteredSubcategories = () => {
-    if (!selectedCuisine) return [];
-    
-    // For now, show all subcategories since we don't have category relationship in subcategories
-    // You can implement category-specific filtering based on your business logic later
-    return subcategories;
-  };
+const getFilteredSubcategories = () => {
+  if (!selectedCuisine) return [];
+
+  // Return full subcategory items that match the selected category
+  return subcategories.filter(item => item.category === selectedCuisine?.categoryId );
+};
 
   const filteredSubcategories = getFilteredSubcategories();
   const menuItems = items || [];
@@ -252,8 +316,13 @@ const RestaurantPOS = () => {
     return orderItems.reduce((total, item) => total + item.quantity, 0);
   };
 
-  const handleCategorySelect = (categoryName) => {
-    setSelectedCuisine(categoryName);
+  const handleCategorySelect = (category,name) => {
+    let newObject = {
+      categoryId:category,
+      categoryName:name,
+
+    }
+    setSelectedCuisine(newObject);
     setSelectedCategory("");
     setSelectedSubcategory("");
     setItems([]);
@@ -261,8 +330,9 @@ const RestaurantPOS = () => {
   };
 
   const handleSubcategorySelect = (subcategoryName) => {
+    console.log(subcategoryName)
     setSelectedSubcategory(subcategoryName);
-    setSelectedCategory(subcategoryName);
+
   };
 
   const handleBackToCategories = () => {
@@ -359,6 +429,7 @@ const RestaurantPOS = () => {
     );
   };
 
+
   const getOrderTypeDisplay = (type) => {
     const typeMap = {
       "dine-in": "Dine In",
@@ -369,8 +440,11 @@ const RestaurantPOS = () => {
     return typeMap[type] || type;
   };
 
+  const VISIBLE_COUNT = 8;
+const visibleItems = menuItems.slice(0, VISIBLE_COUNT);
+
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col">
+    <div className="h-screen  overflow-hidden  bg-gray-100 flex flex-col">
       {/* Header */}
       <div className="bg-[#0b1d34] text-white p-4">
         <div className="flex items-center justify-between">
@@ -403,57 +477,48 @@ const RestaurantPOS = () => {
       </div>
 
       {/* Cuisine Categories */}
-      <div className="bg-white border-b border-gray-200 p-4">
-        <div className="flex flex-wrap gap-3 text-xs">
-          {cuisines.map((cuisine) => (
-            <button
-              key={cuisine._id}
-              onClick={() => handleCategorySelect(cuisine.name)}
-              style={{
-                backgroundColor:
-                  selectedCuisine === cuisine.name ? cuisine.color : "#f3f4f6",
-                color: selectedCuisine === cuisine.name ? "#fff" : "#374151",
-                transform:
-                  selectedCuisine === cuisine.name
-                    ? "translateY(-2px)"
-                    : "translateY(0)",
-              }}
-              className={`
-              group relative flex items-center space-x-2 px-4 py-2 rounded-lg font-medium 
-              transition-all duration-300 ease-out
-              hover:shadow-lg hover:scale-105 hover:-translate-y-1
-              active:scale-95 active:translate-y-0
-              overflow-hidden
-              ${
-                selectedCuisine === cuisine.name
-                  ? "shadow-lg"
-                  : "hover:bg-gray-200"
-              }
-            `}
-            >
-              <div
-                className="absolute inset-0 transition-all duration-300 ease-out transform translate-x-full group-hover:translate-x-0 opacity-0 group-hover:opacity-20"
-                style={{ backgroundColor: cuisine.color }}
-              />
-              <span className="text-xl transition-transform duration-200 group-hover:scale-110 group-hover:rotate-12 relative z-10">
-                {cuisine.icon}
-              </span>
-              <span className="relative z-10 transition-all duration-200 group-hover:tracking-wide">
-                {cuisine.name}
-              </span>
-              <div
-                className="absolute inset-0 rounded-lg opacity-0 group-active:opacity-30 group-active:animate-ping transition-opacity duration-150"
-                style={{ backgroundColor: cuisine.color }}
-              />
-            </button>
-          ))}
-        </div>
-      </div>
+<div className="bg-white border-b border-gray-200 p-4">
+  <div className="flex flex-wrap gap-2 text-xs">
+    {cuisines.map((cuisine) => (
+      <button
+        key={cuisine._id}
+        onClick={() => handleCategorySelect(cuisine._id, cuisine.name)}
+        onMouseEnter={() => setHoveredCuisine(cuisine.name)}
+        onMouseLeave={() => setHoveredCuisine(null)}
+        style={{
+          background: hoveredCuisine === cuisine.name
+            ? "linear-gradient(135deg, #60a5fa, #3b82f6)"  // Light blue hover
+            : selectedCuisine?.categoryName === cuisine.name
+            ? "linear-gradient(135deg, #93c5fd, #60a5fa)"  // Selected state - lighter blue
+            : "linear-gradient(135deg, #3b82f6, #1e40af)",  // Default state - primary blue
+          color: selectedCuisine?.categoryName === cuisine.name ? "#1e40af" : "#ffffff",
+          transform: selectedCuisine?.categoryName === cuisine.name ? "translateY(-2px)" : "none",
+          boxShadow: selectedCuisine?.categoryName === cuisine.name
+            ? "0 4px 14px rgba(59, 130, 246, 0.4)"  // Blue shadow
+            : hoveredCuisine === cuisine.name
+            ? "0 6px 16px rgba(59, 130, 246, 0.3)"  // Hover shadow
+            : "0 2px 6px rgba(0, 0, 0, 0.1)",
+          transition: "all 0.25s ease-in-out",
+        }}
+        className={`
+          group relative flex items-center gap-2 px-4 py-2 rounded-xl font-medium 
+          hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-400 
+          active:scale-95 cursor-pointer duration-300 transform
+          backdrop-blur-sm bg-opacity-90
+        `}
+      >
+        <span className="text-lg drop-shadow-sm">{cuisine.icon}</span>
+        <span className="text-sm tracking-wide select-none">{cuisine.name}</span>
+      </button>
+    ))}
+  </div>
+</div>
+
 
       {/* Main Content */}
-      <div className="flex-1 flex">
+      <div className="flex-1 flex min-h-0">
         {/* Left Sidebar - Categories/Subcategories */}
-        <div className="w-64 bg-white shadow-lg">
+        <div className="w-44 bg-white shadow-lg h-full flex flex-col min-h-0">
           <div className="p-4 border-b border-gray-200">
             <div className="flex items-center justify-between">
               <h2 className="text-xs font-bold text-gray-800">
@@ -470,36 +535,46 @@ const RestaurantPOS = () => {
             </div>
             {selectedCuisine && (
               <div className="text-xs text-gray-500 mt-1">
-                Category: {selectedCuisine}
+                Category: {selectedCuisine?.categoryName}
               </div>
             )}
           </div>
 
-          <div className="p-4">
-            {!selectedCuisine ? (
-              <div className="text-xs text-gray-400">Please select a category above</div>
-            ) : filteredSubcategories.length === 0 ? (
-              <div className="text-xs text-gray-400">No subcategories available</div>
-            ) : (
-              filteredSubcategories.map((subcategory) => (
-                <button
-                  key={subcategory._id}
-                  onClick={() => handleSubcategorySelect(subcategory.name)}
-                  className={`w-full text-left p-2 mb-1 rounded-md font-medium transition-all duration-200 flex items-center space-x-2 hover:scale-103 hover:translate-x-1 ${
-                    selectedSubcategory === subcategory.name
-                      ? "bg-green-600 text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  <span className="text-xs">{subcategory.name}</span>
-                </button>
-              ))
-            )}
-          </div>
+<div className="p-4">
+  {!selectedCuisine ? (
+    <div className="text-sm text-gray-400 text-center py-4 italic">
+      🍽️ Please select a category above
+    </div>
+  ) : filteredSubcategories.length === 0 ? (
+    <div className="text-sm text-gray-400 text-center py-4 italic">
+      🚫 No subcategories available
+    </div>
+  ) : (
+    filteredSubcategories.map((subcategory, index) => {
+      const icon = subcategoryIcons[subcategory.name] || subcategoryIcons.Default;
+      const gradient = gradientClasses[index % gradientClasses.length];
+
+      return (
+        <button
+          key={subcategory._id}
+          onClick={() => handleSubcategorySelect(subcategory.name)}
+          className={`w-full text-left px-3 py-1.5 mb-2 rounded-md font-medium transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md transform hover:scale-[1.02] hover:translate-x-1 
+            ${selectedSubcategory === subcategory.name ? "text-black" : "text-black"}
+          ${gradient} `}
+        >
+          <span className="text-base">{icon}</span>
+          <span className="text-xs capitalize tracking-wide">{subcategory.name}</span>
+        </button>
+      );
+    })
+  )}
+</div>
+
+
         </div>
 
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col">
           {/* Search Bar */}
           <div className="p-4 bg-white border-b border-gray-200">
             <div className="relative">
@@ -509,7 +584,7 @@ const RestaurantPOS = () => {
                 placeholder={`Search items...${selectedSubcategory ? ` in ${selectedSubcategory}` : ''}`}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>  
           </div>
@@ -535,7 +610,7 @@ const RestaurantPOS = () => {
             ) : loader ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
                   <p className="text-gray-500">Loading items...</p>
                 </div>
               </div>
@@ -543,7 +618,7 @@ const RestaurantPOS = () => {
               <>
                 <div className="mb-4">
                   <h3 className="text-xs font-semibold text-gray-800">
-                    {selectedCuisine} - {selectedSubcategory || 'Search Results'} ({menuItems.length} items)
+                    {selectedCuisine?.categoryName} - {selectedSubcategory || 'Search Results'} ({menuItems.length} items)
                   </h3>
                 </div>
                 
@@ -561,8 +636,8 @@ const RestaurantPOS = () => {
                     </div>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-4 gap-4">
-                    {menuItems.map((item, index) => (
+                  <div className="grid grid-cols-4 gap-2 max-h-['500px'] overflow-auto"  >
+                    {visibleItems.map((item, index) => (
                       <motion.div
                         key={item._id}
                         initial={{ opacity: 0, y: 20 }}
@@ -588,7 +663,7 @@ const RestaurantPOS = () => {
                           {/* Quick Add Button */}
                           <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
                             <div className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg hover:bg-white hover:scale-110 transition-all duration-200">
-                              <Plus className="w-4 h-4 text-green-600" />
+                              <Plus className="w-4 h-4 text-blue-600" />
                             </div>
                           </div>
 
@@ -596,7 +671,7 @@ const RestaurantPOS = () => {
                           <div className="absolute top-3 left-3">
                             <div className={`px-2 py-1 rounded-full text-xs font-medium ${
                               item.balance_stock > 0 
-                                ? 'bg-green-100 text-green-800 border border-green-200' 
+                                ? 'bg-blue-100 text-blue-800 border border-blue-200' 
                                 : 'bg-red-100 text-red-800 border border-red-200'
                             }`}>
                               {item.balance_stock > 0 ? 'In Stock' : 'Out of Stock'}
@@ -618,18 +693,13 @@ const RestaurantPOS = () => {
                         <div className="p-4">
                           {/* Title and Rating */}
                           <div className="mb-3">
-                            <h3 className="font-bold text-gray-900 text-sm mb-1 line-clamp-2 group-hover:text-green-700 transition-colors duration-200">
+                            <h3 className="font-bold text-gray-900 text-sm mb-1 line-clamp-2 group-hover:text-blue-700 transition-colors duration-200">
                               {item.product_name}
                             </h3>
                             
                             {/* Rating and Time */}
                             <div className="flex items-center justify-between text-xs text-gray-500">
-                              <div className="flex items-center space-x-1">
-                                <div className="flex items-center space-x-1 bg-green-50 px-2 py-1 rounded-full">
-                                  <Star className="w-3 h-3 text-yellow-500 fill-current" />
-                                  <span className="font-medium text-gray-700">{item.rating || '4.5'}</span>
-                                </div>
-                              </div>
+                             
                               <div className="flex items-center space-x-1 text-gray-400">
                                 <Clock className="w-3 h-3" />
                                 <span>{item.time || '15-20 min'}</span>
@@ -637,17 +707,10 @@ const RestaurantPOS = () => {
                             </div>
                           </div>
 
-                          {/* Category Badge */}
-                          <div className="mb-3">
-                            <span className="inline-block bg-gray-100 text-gray-600 px-2 py-1 rounded-md text-xs font-medium">
-                              {subcategories.find(sub => sub._id === item.sub_category)?.name || 'Category'}
-                            </span>
-                          </div>
-
                           {/* Price Section */}
                           <div className="flex items-center justify-between">
                             <div className="flex flex-col">
-                              <span className="text-lg font-bold text-green-600">
+                              <span className="text-lg font-bold text-blue-600">
                                 ₹{item.Priceleveles?.[0]?.pricerate || item.price || 0}
                               </span>
                               {item.Priceleveles?.[0]?.priceDisc > 0 && (
@@ -656,14 +719,11 @@ const RestaurantPOS = () => {
                                 </span>
                               )}
                             </div>
-
-                            {/* Add to Cart Button */}
-                           
                           </div>
                         </div>
 
                         {/* Hover Border Effect */}
-                        <div className="absolute inset-0 border-2 border-transparent group-hover:border-green-200 rounded-xl transition-colors duration-300 pointer-events-none"></div>
+                        <div className="absolute inset-0 border-2 border-transparent group-hover:border-blue-200 rounded-xl transition-colors duration-300 pointer-events-none"></div>
                         
                         {/* Shine Effect */}
                         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
@@ -679,15 +739,15 @@ const RestaurantPOS = () => {
         </div>
 
         {/* Order Summary Sidebar */}
-        <div className="w-80 bg-white border-l border-gray-200 flex flex-col">
+        <div className="w-80 bg-white border-l border-gray-200 flex flex-col min-h-0 h-full">
           <div className="p-4 border-b border-gray-200">
             <h3 className="text-lg font-bold text-gray-800 flex items-center">
-              <ShoppingCart className="w-5 h-5 mr-2 text-green-600" />
+              <ShoppingCart className="w-5 h-5 mr-2 text-blue-600" />
               Order Summary ({getTotalItems()})
             </h3>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4">
+          <div className="flex-1 overflow-y-auto  min-h-0 p-4">
             {orderItems.length === 0 ? (
               <p className="text-gray-500 text-center py-8">
                 No items in order
@@ -709,7 +769,7 @@ const RestaurantPOS = () => {
                     </div>
                     <div className="flex items-center space-x-2">
                       <button
-                        className="bg-green-500 text-white w-6 h-6 flex items-center justify-center rounded-full hover:scale-105 active:scale-95 transition-transform"
+                        className="bg-blue-500 text-white w-6 h-6 flex items-center justify-center rounded-full hover:bg-blue-600 hover:scale-105 active:scale-95 transition-all duration-200"
                         onClick={() =>
                           updateQuantity(item._id, item.quantity + 1)
                         }
@@ -721,7 +781,7 @@ const RestaurantPOS = () => {
                         {item.quantity}
                       </span>
                       <button
-                        className="bg-green-500 text-white w-6 h-6 flex items-center justify-center rounded-full hover:scale-105 active:scale-95 transition-transform"
+                        className="bg-blue-500 text-white w-6 h-6 flex items-center justify-center rounded-full hover:bg-blue-600 hover:scale-105 active:scale-95 transition-all duration-200"
                         onClick={() =>
                           updateQuantity(item._id, item.quantity - 1)
                         }
@@ -739,7 +799,7 @@ const RestaurantPOS = () => {
           <div className="p-4 border-t border-gray-200">
             <div className="flex justify-between items-center mb-3">
               <span className="text-lg font-semibold text-gray-700">Total</span>
-              <span className="text-xl font-bold text-green-600">
+              <span className="text-xl font-bold text-blue-600">
                 ₹{getTotalAmount()}
               </span>
             </div>
@@ -751,7 +811,7 @@ const RestaurantPOS = () => {
                   onClick={() => setOrderType("dine-in")}
                   className={`flex flex-col items-center p-2 rounded-md border transition-colors text-xs ${
                     orderType === "dine-in"
-                      ? "border-green-500 bg-green-50 text-green-700"
+                      ? "border-blue-500 bg-blue-50 text-blue-700"
                       : "border-gray-200 hover:border-gray-300"
                   }`}
                 >
@@ -762,7 +822,7 @@ const RestaurantPOS = () => {
                   onClick={() => setOrderType("takeaway")}
                   className={`flex flex-col items-center p-2 rounded-md border transition-colors text-xs ${
                     orderType === "takeaway"
-                      ? "border-green-500 bg-green-50 text-green-700"
+                      ? "border-blue-500 bg-blue-50 text-blue-700"
                       : "border-gray-200 hover:border-gray-300"
                   }`}
                 >
@@ -773,7 +833,7 @@ const RestaurantPOS = () => {
                   onClick={() => setOrderType("delivery")}
                   className={`flex flex-col items-center p-2 rounded-md border transition-colors text-xs ${
                     orderType === "delivery"
-                      ? "border-green-500 bg-green-50 text-green-700"
+                      ? "border-blue-500 bg-blue-50 text-blue-700"
                       : "border-gray-200 hover:border-gray-300"
                   }`}
                 >
@@ -784,7 +844,7 @@ const RestaurantPOS = () => {
                   onClick={() => setOrderType("roomService")}
                   className={`flex flex-col items-center p-2 rounded-md border transition-colors text-xs ${
                     orderType === "roomService"
-                      ? "border-green-500 bg-green-50 text-green-700"
+                      ? "border-blue-500 bg-blue-50 text-blue-700"
                       : "border-gray-200 hover:border-gray-300"
                   }`}
                 >
@@ -797,7 +857,7 @@ const RestaurantPOS = () => {
             {/* Action Buttons */}
             <div className="flex space-x-2">
               <button
-                className="flex-1 bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition-all duration-200 disabled:opacity-50 text-sm hover:scale-105 active:scale-95"
+                className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-all duration-200 disabled:opacity-50 text-sm hover:scale-105 active:scale-95"
                 disabled={orderItems.length === 0}
                 onClick={handlePlaceOrder}
               >
@@ -806,7 +866,7 @@ const RestaurantPOS = () => {
 
               {orderType !== "dine-in" && (
                 <button
-                  className="bg-green-700 text-white px-4 py-3 rounded-lg font-semibold hover:bg-green-800 transition-all duration-200 disabled:opacity-50 flex items-center hover:scale-105 active:scale-95"
+                  className="bg-blue-700 text-white px-4 py-3 rounded-lg font-semibold hover:bg-blue-800 transition-all duration-200 disabled:opacity-50 flex items-center hover:scale-105 active:scale-95"
                   disabled={orderItems.length === 0}
                   onClick={handleProceedToPay}
                 >
@@ -834,20 +894,20 @@ const RestaurantPOS = () => {
 
             {/* Order Type Display */}
             <div className="mb-4">
-              <div className="flex items-center justify-center p-3 bg-gray-100 rounded-lg">
+              <div className="flex items-center justify-center p-3 bg-blue-50 rounded-lg border border-blue-200">
                 {orderType === "dine-in" && (
-                  <Home className="w-5 h-5 mr-2 text-green-600" />
+                  <Home className="w-5 h-5 mr-2 text-blue-600" />
                 )}
                 {orderType === "takeaway" && (
                   <Package className="w-5 h-5 mr-2 text-blue-600" />
                 )}
                 {orderType === "delivery" && (
-                  <Car className="w-5 h-5 mr-2 text-orange-600" />
+                  <Car className="w-5 h-5 mr-2 text-blue-600" />
                 )}
                 {orderType === "roomService" && (
-                  <Bed className="w-5 h-5 mr-2 text-purple-600" />
+                  <Bed className="w-5 h-5 mr-2 text-blue-600" />
                 )}
-                <span className="text-sm font-medium text-gray-700">
+                <span className="text-sm font-medium text-blue-700">
                   {getOrderTypeDisplay(orderType)} Order
                 </span>
               </div>
@@ -869,7 +929,7 @@ const RestaurantPOS = () => {
                         tableNumber: e.target.value,
                       })
                     }
-                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
               )}
@@ -889,7 +949,7 @@ const RestaurantPOS = () => {
                           roomno: e.target.value,
                         })
                       }
-                      className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                      className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                   <div>
@@ -905,7 +965,7 @@ const RestaurantPOS = () => {
                           guestName: e.target.value,
                         })
                       }
-                      className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                      className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                 </>
@@ -926,7 +986,7 @@ const RestaurantPOS = () => {
                           name: e.target.value,
                         })
                       }
-                      className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                      className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                   <div>
@@ -942,7 +1002,7 @@ const RestaurantPOS = () => {
                           phone: e.target.value,
                         })
                       }
-                      className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                      className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                   {orderType === "delivery" && (
@@ -959,7 +1019,7 @@ const RestaurantPOS = () => {
                             address: e.target.value,
                           })
                         }
-                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       ></textarea>
                     </div>
                   )}
@@ -971,7 +1031,7 @@ const RestaurantPOS = () => {
             <div className="flex justify-end">
               <button
                 onClick={generateKOT}
-                className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md text-sm font-semibold transition-all duration-200 hover:scale-105 active:scale-95"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md text-sm font-semibold transition-all duration-200 hover:scale-105 active:scale-95"
               >
                 Confirm KOT
               </button>
@@ -1000,8 +1060,8 @@ const RestaurantPOS = () => {
               </button>
             </div>
 
-            <div className="mb-4 p-3 bg-green-50 rounded-lg border border-green-200">
-              <div className="flex items-center text-green-700">
+            <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="flex items-center text-blue-700">
                 <Check className="w-5 h-5 mr-2" />
                 <span className="text-sm font-medium">
                   KOT #{orderNumber - 1} has been sent to kitchen!
@@ -1019,7 +1079,7 @@ const RestaurantPOS = () => {
                   onClick={() => setPaymentMethod("cash")}
                   className={`flex flex-col items-center p-4 rounded-lg border-2 transition-colors ${
                     paymentMethod === "cash"
-                      ? "border-green-500 bg-green-50 text-green-700"
+                      ? "border-blue-500 bg-blue-50 text-blue-700"
                       : "border-gray-200 hover:border-gray-300"
                   }`}
                 >
@@ -1030,7 +1090,7 @@ const RestaurantPOS = () => {
                   onClick={() => setPaymentMethod("card")}
                   className={`flex flex-col items-center p-4 rounded-lg border-2 transition-colors ${
                     paymentMethod === "card"
-                      ? "border-green-500 bg-green-50 text-green-700"
+                      ? "border-blue-500 bg-blue-50 text-blue-700"
                       : "border-gray-200 hover:border-gray-300"
                   }`}
                 >
@@ -1089,7 +1149,7 @@ const RestaurantPOS = () => {
               </div>
               <div className="border-t border-gray-200 pt-3 mt-3 flex justify-between font-semibold text-gray-800">
                 <span>Total Amount</span>
-                <span className="text-lg">
+                <span className="text-lg text-blue-600">
                   ₹
                   {orders.find((order) => order.id === orderNumber - 1)
                     ?.total || 0}
