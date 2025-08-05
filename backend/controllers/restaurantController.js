@@ -269,10 +269,11 @@ export const deleteItem = async (req, res) => {
 export const getCategories = async (req, res) => {
   try {
     const { under } = req.query;
-
+    const cpm_id = req.params.cpm_id;
     // Build filter conditionally
     const filter = {};
     if (under) filter.under = under;
+    if(cpm_id) filter.cmp_id = cpm_id
 
     const categories = await Category.find(filter).select("-__v"); // omit __v if you want
 
