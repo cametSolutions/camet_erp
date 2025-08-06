@@ -30,8 +30,8 @@ api.interceptors.response.use(
   },
   function (error) {
     if (
-      error.response.config.url === "/api/sUsers/getSecUserData" ||
-      error.response.data.is_blocked
+      error?.response?.config?.url === "/api/sUsers/getSecUserData" ||
+      error?.response?.data?.is_blocked
     ) {
       showSwalAlert(
         "Your Account is Blocked",
@@ -40,8 +40,8 @@ api.interceptors.response.use(
         "sUserData"
       );
     } else if (
-      error.response.config.url === "/api/pUsers/getPrimaryUserData" ||
-      error.response.data.is_blocked
+      error?.response?.config?.url === "/api/pUsers/getPrimaryUserData" ||
+      error?.response?.data?.is_blocked
     ) {
       showSwalAlert(
         "Your Account is Blocked",

@@ -22,6 +22,7 @@ import {
   addAdvanceAmount,
   addRemainingAmount,
   addBillData,
+  addReceiptId,
 } from "../../../../slices/voucherSlices/commonAccountingVoucherSlice";
 import AddPartyTile from "../../voucher/voucherCreation/AddPartyTile";
 import AddAmountTile from "../../../components/secUsers/main/AddAmountTile";
@@ -111,6 +112,7 @@ function AccVoucherInitialPageEdit() {
     setLoading(true);
     const voucherNumberTitle = getVoucherNumberTitle();
     const {
+      _id: receiptIdFromLocation,
       [voucherNumberTitle]: voucherNumberFromLocation,
       party: partyFromLocation,
       paymentDetails: paymentDetailsFromLocation,
@@ -123,6 +125,11 @@ function AccVoucherInitialPageEdit() {
       paymentMethod: paymentMethodFromLocation,
       note: noteFromLocation,
     } = location?.state?.data || {};
+
+    //// set receipt id
+    if (receiptIdFromLocation) {
+      dispatch(addReceiptId(receiptIdFromLocation));
+    }
 
     ///// set voucher number
     if (voucherNumberFromLocation && voucherNumberRedux === "") {

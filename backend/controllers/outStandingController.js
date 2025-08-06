@@ -400,49 +400,89 @@ export const fetchOutstandingTotal = async (req, res) => {
  * @access Public
  */
 
+/**
+ * GET /api/outstanding/:party_id/:cmp_id
+ *        ?voucher=receipt|payment
+ *        &voucherId=<billId>
+ *
+ * • If voucherId is NOT supplied → return open items that match the
+ *   voucher-type classification (Dr for receipt, Cr for payment).
+ * • If voucherId IS supplied      → always include that specific invoice
+ *   (by billId) **even when its classification is different**,
+ *   while still filtering the rest by classification.
+ */
 export const fetchOutstandingDetails = async (req, res) => {
-  const partyId = req.params.party_id;
-  const cmp_id = req.params.cmp_id;
-  const voucher = req.query.voucher;
+  const { party_id: partyId, cmp_id: cmpId } = req.params;
+  const { voucher, voucherId } = req.query;
 
-  let sourceMatch = {};
-  if (voucher === "receipt") {
-    sourceMatch = { classification: "Dr" };
-  } else if (voucher === "payment") {
-    sourceMatch = { classification: "Cr" };
-  }
+  /* -----------------------------------------------------------
+     1. Determine classification needed for the list requested.
+        (Dr = sales/outstanding for receipts, Cr = purchase for payments)
+  ----------------------------------------------------------- */
+  const classificationFilter =
+    voucher === "receipt"
+      ? { classification: "Dr" }
+      : voucher === "payment"
+      ? { classification: "Cr" }
+      : {};
 
+  /* -----------------------------------------------------------
+     2. Build the Mongo query:
+        • Always scope by party / company / active.
+        • bill_pending_amt > 0           → open invoices.
+        • billId === voucherId (string)  → the invoice user is working on.
+        • Classification applies ONLY to the open-invoice branch,
+          not to the explicit voucherId branch.
+  ----------------------------------------------------------- */
+  const baseMatch = {
+    party_id: new mongoose.Types.ObjectId(partyId),
+    cmp_id: cmpId,
+    isCancelled: false,
+  };
 
-  
+  const query = voucherId
+    ? {
+        ...baseMatch,
+        $or: [
+          // invoices that are still open AND match the voucher type
+          { ...classificationFilter, bill_pending_amt: { $gt: 0 } },
+          // the invoice referenced by the voucherId (forced include)
+          { billId: voucherId.toString() },
+        ],
+      }
+    : {
+        ...baseMatch,
+        ...classificationFilter,
+        bill_pending_amt: { $gt: 0 },
+      };
+
   try {
-    const outstandings = await TallyData.find({
-      party_id: new mongoose.Types.ObjectId(partyId),
-      cmp_id: cmp_id,
-      bill_pending_amt: { $gt: 0 },
-      isCancelled: false,
-      ...sourceMatch,
-    })
+    const outstandings = await TallyData.find(query)
       .sort({ bill_date: 1 })
       .select(
-        "_id bill_no billId bill_date bill_pending_amt source bill_date classification"
-      );
+        "_id bill_no billId bill_date bill_pending_amt source classification"
+      )
+      .lean();
 
-    if (outstandings) {
-      return res.status(200).json({
-        totalOutstandingAmount: outstandings.reduce(
-          (total, out) => total + out.bill_pending_amt,
-          0
-        ),
-        outstandings: outstandings,
-        message: "outstandings fetched",
-      });
-    } else {
+    if (!outstandings.length) {
       return res
         .status(404)
         .json({ message: "No outstandings were found for user" });
     }
+
+    const totalOutstandingAmount = outstandings.reduce(
+      (sum, o) => sum + (o.bill_pending_amt > 0 ? o.bill_pending_amt : 0),
+      0
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Outstandings fetched",
+      totalOutstandingAmount,
+      outstandings,
+    });
   } catch (error) {
-    console.log(error);
+    console.error(error);
     return res
       .status(500)
       .json({ success: false, message: "Internal server error, try again!" });

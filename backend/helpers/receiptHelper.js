@@ -209,7 +209,6 @@ export const createOutstandingWithAdvanceAmount = async (
         { upsert: true, new: true, session }
       );
 
-      console.log(`Created new advance for ${sourceName}:`, tallyUpdate);
       return tallyUpdate;
     }
   } catch (error) {

@@ -6,7 +6,6 @@ import {
   setTotalBillAmount,
 } from "../../../../slices/voucherSlices/commonAccountingVoucherSlice";
 import OutstandingLIstComponent from "./OutstandingLIstComponent";
-import { LogIn } from "lucide-react";
 
 ///format the amount
 
@@ -23,6 +22,7 @@ function OutstandingListOfAccVoucher() {
     party,
     totalBillAmount,
     mode,
+    _id:ReceiptIdFromRedux
   } = useSelector((state) => state.commonAccountingVoucherSlice);
 
   const [data, setData] = useState(outstandingFromRedux);
@@ -33,7 +33,7 @@ function OutstandingListOfAccVoucher() {
   ////find the outstanding with latest remaining amount
   const { data: apiData, loading } = useFetch(
     outstandingFromRedux.length === 0 &&
-      `/api/sUsers/fetchOutstandingDetails/${party?._id}/${cmp_id}?voucher=${voucherType}`
+      `/api/sUsers/fetchOutstandingDetails/${party?._id}/${cmp_id}?voucher=${voucherType}&voucherId=${ReceiptIdFromRedux}`
   );
 
   useEffect(() => {
@@ -42,7 +42,11 @@ function OutstandingListOfAccVoucher() {
       let updatedOutstandingList = [...outstandings];
       let updatedTotalOutstanding = totalOutstandingAmount;
 
+
+
       if (mode === "edit" && Array.isArray(billDataFromRedux)) {
+
+        
         billDataFromRedux.forEach((bill) => {
           const index = updatedOutstandingList.findIndex(
             (item) => item.billId === bill.billId
@@ -57,19 +61,19 @@ function OutstandingListOfAccVoucher() {
                 (updatedOutstandingList[index]?.bill_pending_amt || 0),
             };
 
-
-            console.log("updatedOutstandingList[index]", updatedOutstandingList[index]);
-            
+            console.log(
+              "updatedOutstandingList[index]",
+              updatedOutstandingList[index]
+            );
           } else {
 
-         
             // Bill doesn't exist, add at beginning
             updatedOutstandingList.unshift({
               _id: bill._id,
               billId: bill.billId,
               bill_no: bill.bill_no,
               bill_date: bill.bill_date,
-              bill_pending_amt: bill.settledAmount || 0,
+              bill_pending_amt: bill.bill_pending_amt || 0,
               classification: "Dr",
               source: bill.source || "sales",
             });
@@ -89,12 +93,16 @@ function OutstandingListOfAccVoucher() {
       dispatch(addOutstandings(updatedOutstandingList));
       dispatch(setTotalBillAmount(updatedTotalOutstanding));
     } else {
+
+      console.log("haii");
+      console.log(billDataFromRedux);
+
+      
       // Fallback to redux values
-      setData(outstandingFromRedux);
-      setTotal(totalBillAmount);
+      setData(billDataFromRedux || []);
+      setTotal(totalBillAmount || 0);
     }
   }, [apiData, mode]);
-
 
   return (
     <OutstandingLIstComponent

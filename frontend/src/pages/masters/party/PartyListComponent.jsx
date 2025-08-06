@@ -314,14 +314,14 @@ function PartyListComponent({ deleteHandler = () => {}, isVoucher = false }) {
             <p className="font-bold text-sm truncate">{el?.partyName}</p>
             <p className="font-medium text-gray-500 text-sm">Customer</p>
           </div>
-          {el?.totalOutstanding && el?.totalOutstanding > 0 && (
+          {el?.totalOutstanding && el?.totalOutstanding > 0 ? (
             <section>
               <p className="font-medium text-gray-500 text-md mr-3 flex items-center gap-2">
                 <IoMdArrowDown color="green" />
-                {formatAmount(el?.totalOutstanding)}
+                {formatAmount(el?.totalOutstanding || 0)}
               </p>
             </section>
-          )}
+          ):0}
         </div>
       </div>
     );

@@ -4,7 +4,7 @@ import { MdPeopleAlt } from "react-icons/md";
 import { FaChevronDown } from "react-icons/fa";
 import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { toast } from "sonner";
+import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 
 // Custom components
@@ -19,18 +19,42 @@ import { addSettlementData } from "../../../../slices/voucherSlices/commonAccoun
 /**
  * Outstanding List Component
  * Handles bill selection and settlement calculation for payment processing
- * 
+ *
  * @param {boolean} loading - Loading state indicator
  * @param {Array} data - Array of outstanding bills
  * @param {number} total - Total outstanding amount
  * @param {Object} party - Party information (name, mobile number)
  */
 function OutstandingLIstComponent({ loading, data, total, party }) {
-  
+  // ============================================================================
+  // UTILITY FUNCTIONS (moved to top for better organization)
+  // ============================================================================
+
+  /**
+   * Check if a bill is an advance type
+   * @param {string} source - Bill source type
+   * @returns {boolean} True if bill is advance type
+   */
+  const isAdvanceBill = (source) => {
+    return source === "advanceReceipt" || source === "advancePayment";
+  };
+
+  /**
+   * Filter bills by type
+   * @param {Array} bills - Array of bills
+   * @param {boolean} isAdvance - Whether to get advance bills or regular bills
+   * @returns {Array} Filtered bills array
+   */
+  const filterBills = (bills, isAdvance) => {
+    return (
+      bills?.filter((bill) => isAdvanceBill(bill?.source) === isAdvance) || []
+    );
+  };
+
   // ============================================================================
   // REDUX STATE MANAGEMENT
   // ============================================================================
-  
+
   /**
    * Extract saved data from Redux store
    * - enteredAmount: Previously entered payment amount
@@ -49,6 +73,10 @@ function OutstandingLIstComponent({ loading, data, total, party }) {
   // ============================================================================
   // COMPONENT STATE INITIALIZATION
   // ============================================================================
+
+  // Filter bills into regular and advance types
+  const regularBills = filterBills(data, false);
+  const advanceBills = filterBills(data, true);
 
   /**
    * Selected bills tracking
@@ -112,7 +140,8 @@ function OutstandingLIstComponent({ loading, data, total, party }) {
   /**
    * Calculate settlement amounts based on FIFO logic
    * Distributes entered amount across selected bills in order of selection
-   * 
+   * Only processes regular bills (non-advance bills)
+   *
    * @param {Set} selectedBillsSet - Set of selected bill IDs
    * @param {Array} billOrder - Array of bill IDs in selection order
    * @param {number} amount - Total amount to distribute
@@ -122,20 +151,22 @@ function OutstandingLIstComponent({ loading, data, total, party }) {
     const settlements = new Map();
     let remainingAmount = amount;
 
-    // Process bills in selection order (FIFO)
+    // Process only regular bills in selection order (FIFO)
     billOrder.forEach((billId) => {
       if (selectedBillsSet.has(billId)) {
-        const bill = data.find((b) => b?._id === billId);
-        const billAmount = parseFloat(bill?.bill_pending_amt);
-        
-        if (remainingAmount > 0) {
-          // Settle minimum of bill amount or remaining amount
-          const settlementAmount = Math.min(billAmount, remainingAmount);
-          settlements.set(billId, settlementAmount);
-          remainingAmount -= settlementAmount;
-        } else {
-          // No remaining amount to settle
-          settlements.set(billId, 0);
+        const bill = regularBills.find((b) => b?._id === billId);
+        if (bill) {
+          const billAmount = parseFloat(bill?.bill_pending_amt);
+
+          if (remainingAmount > 0) {
+            // Settle minimum of bill amount or remaining amount
+            const settlementAmount = Math.min(billAmount, remainingAmount);
+            settlements.set(billId, settlementAmount);
+            remainingAmount -= settlementAmount;
+          } else {
+            // No remaining amount to settle
+            settlements.set(billId, 0);
+          }
         }
       }
     });
@@ -174,35 +205,52 @@ function OutstandingLIstComponent({ loading, data, total, party }) {
    * 3. Clearing data when amount is invalid
    */
   useEffect(() => {
-    if (data && data.length > 0) {
-      
+    if (regularBills && regularBills.length > 0) {
+      console.log("billDataFromRedux", billDataFromRedux);
+      console.log("isInitialLoad", isInitialLoad);
+      console.log("hasUserTyped", hasUserTyped);
+      console.log("enteredAmount", enteredAmount);
+
       // SCENARIO 1: Initial load with saved Redux data
       if (isInitialLoad && billDataFromRedux?.length > 0) {
-        // Restore previously saved state
-        const newSelectedBills = new Set(
-          billDataFromRedux.map((bill) => bill._id)
-        );
-        const newSelectionOrder = billDataFromRedux.map((bill) => bill._id);
-        const savedSettlements = new Map(
-          billDataFromRedux.map((bill) => [bill._id, bill.settledAmount])
+        // Filter only regular bills from saved data
+        const regularBillDataFromRedux = billDataFromRedux.filter(
+          (bill) => !isAdvanceBill(bill.source)
         );
 
-        setSelectedBills(newSelectedBills);
-        setSelectionOrder(newSelectionOrder);
-        setBillSettlements(savedSettlements);
+        if (regularBillDataFromRedux.length > 0) {
+          // Restore previously saved state
+          const newSelectedBills = new Set(
+            regularBillDataFromRedux.map((bill) => bill._id)
+          );
+          const newSelectionOrder = regularBillDataFromRedux.map(
+            (bill) => bill._id
+          );
+          const savedSettlements = new Map(
+            regularBillDataFromRedux.map((bill) => [
+              bill._id,
+              bill.settledAmount,
+            ])
+          );
+
+          setSelectedBills(newSelectedBills);
+          setSelectionOrder(newSelectionOrder);
+          setBillSettlements(savedSettlements);
+        }
+
         setEnteredAmount(enteredAmountFromRedux || 0);
         setAdvanceAmount(advanceAmountFromRedux || 0);
         setIsInitialLoad(false);
       }
-      
+
       // SCENARIO 2: Fresh FIFO calculation after user input
       else if (hasUserTyped && enteredAmount > 0) {
         const newSelectedBills = new Set();
         const newSelectionOrder = [];
         let remainingAmount = enteredAmount;
 
-        // Auto-select bills using FIFO until amount is exhausted
-        for (const bill of data) {
+        // Auto-select regular bills using FIFO until amount is exhausted
+        for (const bill of regularBills) {
           const billAmount = parseFloat(bill.bill_pending_amt);
           if (remainingAmount > 0) {
             newSelectedBills.add(bill._id);
@@ -225,7 +273,7 @@ function OutstandingLIstComponent({ loading, data, total, party }) {
         setBillSettlements(settlements);
         setAdvanceAmount(newAdvanceAmount);
       }
-      
+
       // SCENARIO 3: Clear everything when amount is invalid
       else if (enteredAmount <= 0) {
         setSelectedBills(new Set());
@@ -234,10 +282,16 @@ function OutstandingLIstComponent({ loading, data, total, party }) {
         setAdvanceAmount(0);
       }
     } else {
-      // No bills available - treat entire amount as advance
+      // No regular bills available - treat entire amount as advance
       setAdvanceAmount(enteredAmount);
     }
-  }, [enteredAmount, data, isInitialLoad, hasUserTyped, billDataFromRedux]);
+  }, [
+    enteredAmount,
+    regularBills,
+    isInitialLoad,
+    hasUserTyped,
+    billDataFromRedux,
+  ]);
 
   // ============================================================================
   // EVENT HANDLERS
@@ -256,11 +310,16 @@ function OutstandingLIstComponent({ loading, data, total, party }) {
 
   /**
    * Handle individual bill selection/deselection
+   * Only works for regular bills (non-advance bills)
    * Manages bill selection state and recalculates settlements
-   * 
+   *
    * @param {string} billId - ID of the bill to toggle
    */
   const handleBillSelection = (billId) => {
+    // Only allow selection of regular bills
+    const bill = regularBills.find((b) => b._id === billId);
+    if (!bill) return;
+
     const newSelectedBills = new Set(selectedBills);
     const newSelectionOrder = [...selectionOrder];
 
@@ -276,7 +335,7 @@ function OutstandingLIstComponent({ loading, data, total, party }) {
       if (isAmountFullySettled()) {
         return; // Prevent selection if amount is already fully allocated
       }
-      
+
       // Add to selection
       newSelectedBills.add(billId);
       if (!newSelectionOrder.includes(billId)) {
@@ -309,12 +368,16 @@ function OutstandingLIstComponent({ loading, data, total, party }) {
     // Format selected bills data for next step
     const formattedData = formatSelectedBillsData();
 
-    // Calculate summary amounts
+    // Calculate summary amounts (only for regular bills)
+    const regularTotal = regularBills.reduce(
+      (sum, bill) => sum + parseFloat(bill.bill_pending_amt),
+      0
+    );
     const settledAmount = formattedData.reduce(
       (total, bill) => total + bill.settledAmount,
       0
     );
-    const remainingAmount = total - settledAmount;
+    const remainingAmount = regularTotal - settledAmount;
 
     // Prepare settlement data for Redux
     const settlementData = {
@@ -337,12 +400,13 @@ function OutstandingLIstComponent({ loading, data, total, party }) {
   /**
    * Format selected bills data for next step processing
    * Creates standardized bill objects with settlement information
-   * 
+   * Only includes regular bills (non-advance bills)
+   *
    * @returns {Array} Array of formatted bill objects
    */
   const formatSelectedBillsData = () => {
     return Array.from(selectedBills)?.map((billId) => {
-      const bill = data?.find((b) => b?._id === billId);
+      const bill = regularBills?.find((b) => b?._id === billId);
       const settledAmount = billSettlements?.get(billId) || 0;
       const billAmount = parseFloat(bill.bill_pending_amt);
 
@@ -351,7 +415,7 @@ function OutstandingLIstComponent({ loading, data, total, party }) {
         bill_no: bill?.bill_no,
         billId: bill?.billId,
         bill_date: bill?.bill_date,
-        billPending_amt: Number(billAmount?.toFixed(2)),
+        bill_pending_amt: Number(billAmount?.toFixed(2)),
         source: bill?.source,
         settledAmount: Number(settledAmount?.toFixed(2)),
         remainingAmount: Number((billAmount - settledAmount)?.toFixed(2)),
@@ -360,8 +424,117 @@ function OutstandingLIstComponent({ loading, data, total, party }) {
   };
 
   // ============================================================================
+  // RENDER HELPER FUNCTIONS
+  // ============================================================================
+
+  /**
+   * Render advance bill component (read-only display)
+   */
+  const renderAdvanceBill = (bill, index) => {
+    const billAmount = parseFloat(bill.bill_pending_amt) || 0;
+
+    return (
+      <div
+        key={`advance-${index}`}
+        className="h-[110px] rounded-md shadow-xl border border-blue-300 bg-blue-50 flex justify-between px-4 opacity-80"
+      >
+        {/* Bill information section */}
+        <div className="h-full px-2 py-8 lg:p-6 w-[200px] md:w-[180px] lg:w-[300px] relative">
+          <div className="flex items-center gap-2">
+            {/* No checkbox for advance bills */}
+            <div className="w-8 h-7 flex items-center justify-center bg-gray-700">
+              <span className="text-white font-bold text-xs">ADV</span>
+            </div>
+            <div className="flex flex-col items-start gap-1 ml-2">
+              <p className="font-bold text-gray-700 text-[12px]">
+                #{bill.bill_no}
+              </p>
+              <p className="text-xs font-semibold text-violet-600">
+                {dayjs(bill.bill_date).format("DD/MM/YYYY")}
+              </p>
+              <p className="text-xs font-semibold text-black">
+                #{camelToNormalCase(bill?.source)}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Bill amount section */}
+        <div className="font-semibold h-full p-2 lg:p-6 w-[150px] md:w-[180px] lg:w-[300px] flex justify-center items-end relative flex-col">
+          <div className="flex-col justify-center text-end">
+            <p className="text-sm font-bold text-green-600">
+              ₹{formatAmount(billAmount)}
+            </p>
+            <p className="text-[10px] text-blue-500 font-semibold">
+              Advance Amount
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  /**
+   * Render regular bill component (with selection functionality)
+   */
+  const renderRegularBill = (bill, index) => {
+    const billAmount = parseFloat(bill.bill_pending_amt) || 0;
+    const isSelected = selectedBills.has(bill._id);
+    const settledAmount = isSelected ? billSettlements.get(bill._id) || 0 : 0;
+    const remainingBillAmount = Math.max(0, billAmount - settledAmount);
+
+    return (
+      <div
+        key={`regular-${index}`}
+        className={`h-[110px] rounded-md shadow-xl border border-gray-300 flex justify-between px-4 transition-all duration-150 transform hover:translate-x-1 ease-in-out overflow-y-auto`}
+      >
+        {/* Bill information section */}
+        <div className="h-full px-2 py-8 lg:p-6 w-[200px] md:w-[180px] lg:w-[300px] relative">
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              onChange={() => handleBillSelection(bill._id)}
+              checked={isSelected}
+              className="w-7 h-7 cursor-pointer"
+            />
+            <div className="flex flex-col items-start gap-1 ml-2">
+              <p className="font-bold text-gray-700 text-[12px]">
+                #{bill.bill_no}
+              </p>
+              <p className="text-xs font-semibold text-violet-600">
+                {dayjs(bill.bill_date).format("DD/MM/YYYY")}
+              </p>
+              <p className="text-xs font-semibold text-gray-500">
+                #{camelToNormalCase(bill?.source)}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Bill amount section */}
+        <div className="font-semibold h-full p-2 lg:p-6 w-[150px] md:w-[180px] lg:w-[300px] flex justify-center items-end relative flex-col">
+          <div className="flex-col justify-center text-end">
+            <p className="text-sm font-bold text-gray-600">
+              ₹{formatAmount(billAmount)}
+            </p>
+            <p className="text-[12px] text-green-500">
+              ₹{formatAmount(settledAmount)} Settled
+            </p>
+            <p className="text-[12px] text-red-500">
+              ₹{formatAmount(remainingBillAmount)} Remaining
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // ============================================================================
   // RENDER
   // ============================================================================
+
+  console.log("Regular bills:", regularBills);
+  console.log("Advance bills:", advanceBills);
 
   return (
     <>
@@ -431,12 +604,21 @@ function OutstandingLIstComponent({ loading, data, total, party }) {
           <div className="bg-white px-4 py-2 pb-3 rounded-md flex gap-2 justify-between flex-wrap">
             <div className="flex gap-2 items-center">
               <p className="text-[11px] font-bold">
-                # Selected Bills ({selectedBills.size}/{data.length})
+                # Selected Bills ({selectedBills.size}/{regularBills.length})
+                {advanceBills.length > 0 && (
+                  <span className="text-blue-600 ml-2">
+                    + {advanceBills.length} Advance
+                  </span>
+                )}
               </p>
               <FaChevronDown />
             </div>
-            {/* Show advance amount if applicable */}
-            {advanceAmount > 0 && (
+            {/* 
+              Show advance amount ONLY if:
+              1. There is an advance amount > 0
+              2. AND there are NO advance bills visible in the list
+            */}
+            {advanceAmount > 0 && advanceBills.length === 0 && (
               <p className="text-[11px] text-gray-600 font-bold">
                 # Advance Amount:{" "}
                 <span className="text-violet-500">
@@ -450,59 +632,11 @@ function OutstandingLIstComponent({ loading, data, total, party }) {
 
       {/* BILLS LIST SECTION - Scrollable list of outstanding bills */}
       <div className="grid grid-cols-1 gap-1 mt-2 text-center px-2 overflow-x-hidden pb-5">
-        {data?.map((bill, index) => {
-          const billAmount = parseFloat(bill.bill_pending_amt) || 0;
-          const isSelected = selectedBills.has(bill._id);
-          const settledAmount = isSelected
-            ? billSettlements.get(bill._id) || 0
-            : 0;
-          const remainingBillAmount = Math.max(0, billAmount - settledAmount);
+        {/* Render advance bills first (read-only) */}
+        {advanceBills.map((bill, index) => renderAdvanceBill(bill, index))}
 
-          return (
-            <div
-              key={index}
-              className={`h-[110px] rounded-md shadow-xl border border-gray-300 flex justify-between px-4 transition-all duration-150 transform hover:translate-x-1 ease-in-out overflow-y-auto`}
-            >
-              {/* Bill information section */}
-              <div className="h-full px-2 py-8 lg:p-6 w-[200px] md:w-[180px] lg:w-[300px] relative">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    onChange={() => handleBillSelection(bill._id)}
-                    checked={isSelected}
-                    className="w-7 h-7 cursor-pointer"
-                  />
-                  <div className="flex flex-col items-start gap-1 ml-2">
-                    <p className="font-bold text-gray-700 text-[12px]">
-                      #{bill.bill_no}
-                    </p>
-                    <p className="text-xs font-semibold text-violet-600">
-                      {dayjs(bill.bill_date).format("DD/MM/YYYY")}
-                    </p>
-                    <p className="text-xs font-semibold text-gray-500">
-                      #{camelToNormalCase(bill?.source)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Bill amount section */}
-              <div className="font-semibold h-full p-2 lg:p-6 w-[150px] md:w-[180px] lg:w-[300px] flex justify-center items-end relative flex-col">
-                <div className="flex-col justify-center text-end">
-                  <p className="text-sm font-bold text-gray-600">
-                    ₹{formatAmount(billAmount)}
-                  </p>
-                  <p className="text-[12px] text-green-500">
-                    ₹{formatAmount(settledAmount)} Settled
-                  </p>
-                  <p className="text-[12px] text-red-500">
-                    ₹{formatAmount(remainingBillAmount)} Remaining
-                  </p>
-                </div>
-              </div>
-            </div>
-          );
-        })}
+        {/* Render regular bills with selection functionality */}
+        {regularBills.map((bill, index) => renderRegularBill(bill, index))}
 
         {/* Mobile next button - Fixed at bottom on mobile devices */}
         <div
