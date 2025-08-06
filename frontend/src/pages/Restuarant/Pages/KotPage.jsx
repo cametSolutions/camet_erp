@@ -360,10 +360,10 @@ const OrdersDashboard = () => {
                           {userRole === "reception" && (
                             <div className="text-right min-w-[50px]">
                               <div className="font-bold text-xs text-gray-900">
-                                ${item.price.toFixed(2)}
+                                 ₹{item.price.toFixed(2)}
                               </div>
                               <div className="text-xs text-gray-500">
-                                ${(item.price * item.quantity).toFixed(2)}
+                                 ₹{(item.price * item.quantity).toFixed(2)}
                               </div>
                             </div>
                           )}
@@ -402,7 +402,7 @@ const OrdersDashboard = () => {
                       Total Amount
                     </span>
                     <span className="text-sm font-bold text-green-900">
-                      ${order.total.toFixed(2)}
+                       ₹{order.total.toFixed(2)}
                     </span>
                   </div>
                 </div>

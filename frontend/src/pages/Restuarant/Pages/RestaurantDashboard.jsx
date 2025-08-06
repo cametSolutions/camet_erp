@@ -26,6 +26,8 @@ import {
   Bed,
   ArrowLeft,
 } from "lucide-react";
+import woodImage from '../../../assets/images/wood.jpeg'; // Adjust the path as needed
+
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
 import api from "@/api/api";
@@ -59,7 +61,10 @@ const RestaurantPOS = () => {
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
 
-  const gradientClasses = ["bg-gradient-to-br from-blue-500 to-blue-700"];
+  const gradientClasses = [
+"bg-gradient-to-r from-[#10b981] to-[#059669]",
+ 
+];
 
   const subcategoryIcons = {
     Pizza: "🍕",
@@ -457,21 +462,21 @@ const RestaurantPOS = () => {
   return (
     <div className="h-screen  overflow-hidden  bg-gray-100 flex flex-col">
       {/* Header */}
-      <div className="bg-[#0b1d34] text-white p-4">
+      <div className="bg-gradient-to-r from-slate-800 to-slate-900 text-white p-4 shadow-lg">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">
+          <h1 className="text-2xl font-bold  flex items-center gap-2">
             🍽️ Restaurant Management System
           </h1>
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <Clock className="w-5 h-5" />
-              <span className="text-sm">
+          <div className="flex items-center space-x-6">
+            <div className="flex items-center space-x-2 bg-white/10 rounded-lg px-3 py-1">
+              <Clock className="w-4 h-4" />
+              <span className="text-xs font-medium">
                 {currentTime.toLocaleTimeString()}
               </span>
             </div>
-            <div className="flex items-center space-x-2">
-              <Users className="w-5 h-5" />
-              <span className="text-sm">
+            <div className="flex items-center space-x-2 bg-white/10 rounded-lg px-3 py-1">
+              <Users className="w-4 h-4" />
+              <span className="text-xs font-medium">
                 {orderType === "dine-in"
                   ? `Table ${customerDetails.tableNumber}`
                   : orderType === "roomService"
@@ -491,58 +496,40 @@ const RestaurantPOS = () => {
       </div>
 
       {/* Cuisine Categories */}
-      <div className="bg-white border-b border-gray-200 p-4">
-        <div className="flex flex-wrap gap-2 text-xs">
-          {cuisines.map((cuisine) => (
+<div className="bg-white border-b border-gray-200 p-2 shadow-sm">
+  <div className="flex flex-wrap gap-2 text-xs">
+    {cuisines.map((cuisine, index) => (
             <button
               key={cuisine._id}
               onClick={() => handleCategorySelect(cuisine._id, cuisine.name)}
               onMouseEnter={() => setHoveredCuisine(cuisine.name)}
               onMouseLeave={() => setHoveredCuisine(null)}
-              style={{
-                background:
-                  hoveredCuisine === cuisine.name
-                    ? "linear-gradient(135deg, #60a5fa, #3b82f6)" // Light blue hover
-                    : selectedCuisine?.categoryName === cuisine.name
-                    ? "linear-gradient(135deg, #93c5fd, #60a5fa)" // Selected state - lighter blue
-                    : "linear-gradient(135deg, #3b82f6, #1e40af)", // Default state - primary blue
-                color:
-                  selectedCuisine?.categoryName === cuisine.name
-                    ? "#1e40af"
-                    : "#ffffff",
-                transform:
-                  selectedCuisine?.categoryName === cuisine.name
-                    ? "translateY(-2px)"
-                    : "none",
-                boxShadow:
-                  selectedCuisine?.categoryName === cuisine.name
-                    ? "0 4px 14px rgba(59, 130, 246, 0.4)" // Blue shadow
-                    : hoveredCuisine === cuisine.name
-                    ? "0 6px 16px rgba(59, 130, 246, 0.3)" // Hover shadow
-                    : "0 2px 6px rgba(0, 0, 0, 0.1)",
-                transition: "all 0.25s ease-in-out",
-              }}
               className={`
-          group relative flex items-center gap-2 px-4 py-2 rounded-xl font-medium 
-          hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-400 
-          active:scale-95 cursor-pointer duration-300 transform
-          backdrop-blur-sm bg-opacity-90
-        `}
+                group relative flex items-center gap-2 px-3 py-2 rounded-xl font-medium 
+                transition-all duration-300 transform hover:scale-105 active:scale-95
+                ${gradientClasses[index % gradientClasses.length]}
+                ${selectedCuisine?.categoryName === cuisine.name 
+                  ? 'ring-2 ring-offset-2 ring-gray-400 shadow-lg scale-105' 
+                  : 'hover:shadow-lg'
+                }
+                text-white shadow-md
+              `}
             >
-              <span className="text-lg drop-shadow-sm">{cuisine.icon}</span>
-              <span className="text-sm tracking-wide select-none">
+              <span className="text-sm drop-shadow-sm">{cuisine.icon}</span>
+              <span className="text-xs font-semibold tracking-wide select-none">
                 {cuisine.name}
               </span>
             </button>
           ))}
-        </div>
-      </div>
+  </div>
+</div>
+
 
       {/* Main Content */}
       <div className="flex-1 flex min-h-0">
         {/* Left Sidebar - Categories/Subcategories */}
-        <div className="w-44 bg-white shadow-lg h-full flex flex-col min-h-0">
-          <div className="p-4 border-b border-gray-200">
+        <div className="w-48 bg-white shadow-lg h-full flex flex-col min-h-0 border-r">
+          <div className="p-4 border-b border-gray-200 bg-gray-50">
             <div className="flex items-center justify-between">
               <h2 className="text-xs font-bold text-gray-800">
                 {selectedSubcategory ? "Items" : "Subcategories"}
@@ -550,46 +537,40 @@ const RestaurantPOS = () => {
               {selectedSubcategory && (
                 <button
                   onClick={handleBackToCategories}
-                  className="text-blue-600 hover:text-blue-800 transition-colors"
+                  className="text-[#10b981] hover:text-blue-800 transition-colors"
                 >
                   <ArrowLeft className="w-4 h-4" />
                 </button>
               )}
             </div>
             {selectedCuisine && (
-              <div className="text-xs text-gray-500 mt-1">
+              <div className="text-xs text-gray-500 mt-1 mt-1 font-medium">
                 Category: {selectedCuisine?.categoryName}
               </div>
             )}
           </div>
 
-          <div className="p-4">
-            {!selectedCuisine ? (
-              <div className="text-sm text-gray-400 text-center py-4 italic">
-                🍽️ Please select a category above
-              </div>
-            ) : filteredSubcategories.length === 0 ? (
-              <div className="text-sm text-gray-400 text-center py-4 italic">
-                🚫 No subcategories available
-              </div>
-            ) : (
-              filteredSubcategories.map((subcategory, index) => {
-                const icon =
-                  subcategoryIcons[subcategory.name] ||
-                  subcategoryIcons.Default;
-                const gradient =
-                  gradientClasses[index % gradientClasses.length];
+<div className="p-4 flex-1 overflow-y-auto">
+  {!selectedCuisine ? (
+    <div className="text-sm text-gray-400 text-center py-4 italic">
+      🍽️ Please select a category above
+    </div>
+  ) : filteredSubcategories.length === 0 ? (
+    <div className="text-sm text-gray-400 text-center py-4 italic">
+       <Filter className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+      🚫 No subcategories available
+    </div>
+  ) : (
+    filteredSubcategories.map((subcategory, index) => {
+      const icon = subcategoryIcons[subcategory.name] || subcategoryIcons.Default;
+      const gradient = gradientClasses[index % gradientClasses.length];
 
-                return (
-                  <button
-                    key={subcategory._id}
-                    onClick={() => handleSubcategorySelect(subcategory.name)}
-                    className={`w-full text-left px-3 py-1.5 mb-2 rounded-md font-medium transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md transform hover:scale-[1.02] hover:translate-x-1 
-            ${
-              selectedSubcategory === subcategory.name
-                ? "text-black"
-                : "text-black"
-            }
+      return (
+        <button
+          key={subcategory._id}
+          onClick={() => handleSubcategorySelect(subcategory.name)}
+          className={`w-full text-left px-3 py-1.5 mb-2 rounded-md font-medium transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md transform hover:scale-[1.02] hover:translate-x-1 
+            ${selectedSubcategory === subcategory.name ? "text-white" : "text-white"}
           ${gradient} `}
                   >
                     <span className="text-base">{icon}</span>
@@ -608,7 +589,7 @@ const RestaurantPOS = () => {
           {/* Search Bar */}
           <div className="p-4 bg-white border-b border-gray-200">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3 h-3" />
               <input
                 type="text"
                 placeholder={`Search items...${
@@ -616,13 +597,13 @@ const RestaurantPOS = () => {
                 }`}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-6 pr-2 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
           </div>
 
           {/* Menu Items Grid */}
-          <div className="flex-1 p-4">
+          <div className="flex-1 p-4 overflow-y-auto">
             {!selectedCuisine ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center text-gray-500">
@@ -657,15 +638,13 @@ const RestaurantPOS = () => {
             ) : (
               <>
                 <div className="mb-4">
-                  <h3 className="text-xs font-semibold text-gray-800">
-                    {selectedCuisine?.categoryName} -{" "}
-                    {selectedSubcategory || "Search Results"} (
-                    {menuItems.length} items)
+                  <h3 className="text-xs font-semibold text-[#10b981]">
+                    {selectedCuisine?.categoryName} - {selectedSubcategory || 'Search Results'} ({menuItems.length} items)
                   </h3>
                 </div>
 
                 {menuItems.length === 0 ? (
-                  <div className="flex items-center justify-center h-64">
+                  <div className="flex items-center justify-center h-35">
                     <div className="text-center text-gray-500">
                       <Search className="w-16 h-16 mx-auto mb-4 text-gray-300" />
                       <h3 className="text-lg font-medium mb-2">
@@ -679,14 +658,15 @@ const RestaurantPOS = () => {
                     </div>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-4 gap-2 max-h-['500px'] overflow-auto">
-                    {visibleItems.map((item, index) => (
+                <div className="grid grid-cols-5 gap-4 auto-rows-max ">
+
+                    {menuItems.map((item, index) => (
                       <motion.div
                         key={item._id}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.3, delay: index * 0.05 }}
-                        className="group relative bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-[1.02] active:scale-95"
+                        className="group relative bg-white  rounded-xl shadow-sm overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-[1.02] active:scale-95"
                         onClick={() => addToOrder(item)}
                       >
                         {/* Image Container with Overlay Effects */}
@@ -710,22 +690,18 @@ const RestaurantPOS = () => {
                           {/* Quick Add Button */}
                           <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
                             <div className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg hover:bg-white hover:scale-110 transition-all duration-200">
-                              <Plus className="w-4 h-4 text-blue-600" />
+                              <Plus className="w-4 h-4 text-[#10b981]" />
                             </div>
                           </div>
 
                           {/* Stock Status Badge */}
                           <div className="absolute top-3 left-3">
-                            <div
-                              className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                item.balance_stock > 0
-                                  ? "bg-blue-100 text-blue-800 border border-blue-200"
-                                  : "bg-red-100 text-red-800 border border-red-200"
-                              }`}
-                            >
-                              {item.balance_stock > 0
-                                ? "In Stock"
-                                : "Out of Stock"}
+                            <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              item.balance_stock > 0 
+                                ? 'bg-blue-100 text-[#10b981] border border-blue-200' 
+                                : 'bg-red-100 text-red-800 border border-red-200'
+                            }`}>
+                              {item.balance_stock > 0 ? 'In Stock' : 'Out of Stock'}
                             </div>
                           </div>
 
@@ -744,13 +720,14 @@ const RestaurantPOS = () => {
                         <div className="p-4">
                           {/* Title and Rating */}
                           <div className="mb-3">
-                            <h3 className="font-bold text-gray-900 text-sm mb-1 line-clamp-2 group-hover:text-blue-700 transition-colors duration-200">
+                            <h3 className="font-bold text-[#10b981]text-sm mb-1 line-clamp-2 group-hover:text-blue-700 transition-colors duration-200">
                               {item.product_name}
                             </h3>
 
                             {/* Rating and Time */}
                             <div className="flex items-center justify-between text-xs text-gray-500">
-                              <div className="flex items-center space-x-1 text-gray-400">
+                             
+                              <div className="flex items-center space-x-1 text-[#10b981]">
                                 <Clock className="w-3 h-3" />
                                 <span>{item.time || "15-20 min"}</span>
                               </div>
@@ -760,11 +737,8 @@ const RestaurantPOS = () => {
                           {/* Price Section */}
                           <div className="flex items-center justify-between">
                             <div className="flex flex-col">
-                              <span className="text-lg font-bold text-blue-600">
-                                ₹
-                                {item.Priceleveles?.[0]?.pricerate ||
-                                  item.price ||
-                                  0}
+                              <span className="text-lg font-bold text-[#10b981]">
+                                ₹{item.Priceleveles?.[0]?.pricerate || item.price || 0}
                               </span>
                               {item.Priceleveles?.[0]?.priceDisc > 0 && (
                                 <span className="text-xs text-gray-400 line-through">
@@ -794,10 +768,10 @@ const RestaurantPOS = () => {
         </div>
 
         {/* Order Summary Sidebar */}
-        <div className="w-80 bg-white border-l border-gray-200 flex flex-col min-h-0 h-full">
-          <div className="p-4 border-b border-gray-200">
-            <h3 className="text-lg font-bold text-gray-800 flex items-center">
-              <ShoppingCart className="w-5 h-5 mr-2 text-blue-600" />
+        <div className="w-80 bg-white border-l border-gray-200 flex flex-col min-h-0 h-full shadow-lg">
+          <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-emerald-50 to-teal-50">
+            <h3 className="text-lg font-bold text-[#10b981] flex items-center">
+              <ShoppingCart className="w-5 h-5 mr-2 text-[#10b981]" />
               Order Summary ({getTotalItems()})
             </h3>
           </div>
@@ -824,7 +798,7 @@ const RestaurantPOS = () => {
                     </div>
                     <div className="flex items-center space-x-2">
                       <button
-                        className="bg-blue-500 text-white w-6 h-6 flex items-center justify-center rounded-full hover:bg-blue-600 hover:scale-105 active:scale-95 transition-all duration-200"
+                        className="bg-[#10b981] text-white w-6 h-6 flex items-center justify-center rounded-full hover:bg-blue-600 hover:scale-105 active:scale-95 transition-all duration-200"
                         onClick={() =>
                           updateQuantity(item._id, item.quantity + 1)
                         }
@@ -836,7 +810,7 @@ const RestaurantPOS = () => {
                         {item.quantity}
                       </span>
                       <button
-                        className="bg-blue-500 text-white w-6 h-6 flex items-center justify-center rounded-full hover:bg-blue-600 hover:scale-105 active:scale-95 transition-all duration-200"
+                        className="bg-[#10b981] text-white w-6 h-6 flex items-center justify-center rounded-full hover:bg-blue-600 hover:scale-105 active:scale-95 transition-all duration-200"
                         onClick={() =>
                           updateQuantity(item._id, item.quantity - 1)
                         }
@@ -854,19 +828,19 @@ const RestaurantPOS = () => {
           <div className="p-4 border-t border-gray-200">
             <div className="flex justify-between items-center mb-3">
               <span className="text-lg font-semibold text-gray-700">Total</span>
-              <span className="text-xl font-bold text-blue-600">
+              <span className="text-xl font-bold text-[#10b981]">
                 ₹{getTotalAmount()}
               </span>
             </div>
 
             {/* Order Type Selection */}
-            <div className="mb-3">
+            <div className="mb-2">
               <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={() => setOrderType("dine-in")}
-                  className={`flex flex-col items-center p-2 rounded-md border transition-colors text-xs ${
+                  className={`flex flex-col items-center h-10 rounded-md border transition-colors text-xs ${
                     orderType === "dine-in"
-                      ? "border-blue-500 bg-blue-50 text-blue-700"
+                      ? "border-[#10b981] bg-blue-50 text-[#10b981]"
                       : "border-gray-200 hover:border-gray-300"
                   }`}
                 >
@@ -875,9 +849,9 @@ const RestaurantPOS = () => {
                 </button>
                 <button
                   onClick={() => setOrderType("takeaway")}
-                  className={`flex flex-col items-center p-2 rounded-md border transition-colors text-xs ${
+                  className={`flex flex-col items-center   h-12 rounded-md border transition-colors text-xs ${
                     orderType === "takeaway"
-                      ? "border-blue-500 bg-blue-50 text-blue-700"
+                      ? "border-[#10b981] bg-blue-50 text-[#10b981]"
                       : "border-gray-200 hover:border-gray-300"
                   }`}
                 >
@@ -886,9 +860,9 @@ const RestaurantPOS = () => {
                 </button>
                 <button
                   onClick={() => setOrderType("delivery")}
-                  className={`flex flex-col items-center p-2 rounded-md border transition-colors text-xs ${
+                  className={`flex flex-col items-center   h-10 rounded-md border transition-colors text-xs ${
                     orderType === "delivery"
-                      ? "border-blue-500 bg-blue-50 text-blue-700"
+                      ? "border-[#10b981] bg-blue-50 text-[#10b981]"
                       : "border-gray-200 hover:border-gray-300"
                   }`}
                 >
@@ -897,9 +871,9 @@ const RestaurantPOS = () => {
                 </button>
                 <button
                   onClick={() => setOrderType("roomService")}
-                  className={`flex flex-col items-center p-2 rounded-md border transition-colors text-xs ${
+                  className={`flex flex-col items-center   h-10 rounded-md border transition-colors text-xs ${
                     orderType === "roomService"
-                      ? "border-blue-500 bg-blue-50 text-blue-700"
+                      ? "border-[#10b981] bg-blue-50 text-[#10b981]"
                       : "border-gray-200 hover:border-gray-300"
                   }`}
                 >
@@ -912,7 +886,7 @@ const RestaurantPOS = () => {
             {/* Action Buttons */}
             <div className="flex space-x-2">
               <button
-                className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-all duration-200 disabled:opacity-50 text-sm hover:scale-105 active:scale-95"
+                className="flex-1 bg-[#10b981] text-white py-3 rounded-lg font-semibold hover:bg-[#151e31] transition-all duration-200 disabled:opacity-50 text-sm hover:scale-105 active:scale-95"
                 disabled={orderItems.length === 0}
                 onClick={handlePlaceOrder}
               >
@@ -921,7 +895,7 @@ const RestaurantPOS = () => {
 
               {/* {orderType !== "dine-in" && (
                 <button
-                  className="bg-blue-700 text-white px-4 py-3 rounded-lg font-semibold hover:bg-blue-800 transition-all duration-200 disabled:opacity-50 flex items-center hover:scale-105 active:scale-95"
+                  className="bg-[#10b981] text-white px-4 py-3 rounded-lg font-semibold hover:bg-[#151e31] transition-all duration-200 disabled:opacity-50 flex items-center hover:scale-105 active:scale-95"
                   disabled={orderItems.length === 0}
                   onClick={handleProceedToPay}
                 >
@@ -951,18 +925,18 @@ const RestaurantPOS = () => {
             <div className="mb-4">
               <div className="flex items-center justify-center p-3 bg-blue-50 rounded-lg border border-blue-200">
                 {orderType === "dine-in" && (
-                  <Home className="w-5 h-5 mr-2 text-blue-600" />
+                  <Home className="w-5 h-5 mr-2 text-[#10b981]" />
                 )}
                 {orderType === "takeaway" && (
-                  <Package className="w-5 h-5 mr-2 text-blue-600" />
+                  <Package className="w-5 h-5 mr-2 text-[#10b981]" />
                 )}
                 {orderType === "delivery" && (
-                  <Car className="w-5 h-5 mr-2 text-blue-600" />
+                  <Car className="w-5 h-5 mr-2 text-[#10b981]" />
                 )}
                 {orderType === "roomService" && (
-                  <Bed className="w-5 h-5 mr-2 text-blue-600" />
+                  <Bed className="w-5 h-5 mr-2 text-[#10b981]" />
                 )}
-                <span className="text-sm font-medium text-blue-700">
+                <span className="text-sm font-medium text-[#10b981]">
                   {getOrderTypeDisplay(orderType)} Order
                 </span>
               </div>
@@ -1086,7 +1060,7 @@ const RestaurantPOS = () => {
             <div className="flex justify-end">
               <button
                 onClick={generateKOT}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md text-sm font-semibold transition-all duration-200 hover:scale-105 active:scale-95"
+                className="bg-[#10b981] hover:bg-blue-700 text-white px-6 py-2 rounded-md text-sm font-semibold transition-all duration-200 hover:scale-105 active:scale-95"
               >
                 Confirm KOT
               </button>
