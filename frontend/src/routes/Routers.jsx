@@ -155,6 +155,7 @@ import EditChecking from '@/pages/Hotel/Pages/EditChecking'
 import ItemList from '@/pages/Restuarant/Pages/itemList'
 import EditItem from '@/pages/Restuarant/Pages/EditItem'
 import ItemRegistration from '@/pages/Restuarant/Pages/ItemRegistration'
+import KOTPrintFormat from '@/pages/Restuarant/Pages/KotPrint'
 const Routers = () => {
   return (
     <Routes>
@@ -440,6 +441,7 @@ const Routers = () => {
         <Route path='/KotPage' element={<KotPage/>}/>
         <Route path='/sUsers/editItem' element={<ProtectedSecRoute><EditItem /></ProtectedSecRoute>} />
 <Route path='/sUsers/itemRegistration' element ={<ProtectedSecRoute><ItemRegistration /></ProtectedSecRoute>} />
+<Route path='/sUsers/KotPrint' element={<ProtectedSecRoute><KOTPrintFormat /></ProtectedSecRoute>} />
     </Routes>
   )
 }
