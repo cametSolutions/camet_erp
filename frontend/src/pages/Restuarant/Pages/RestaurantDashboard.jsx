@@ -30,17 +30,19 @@ import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
 import api from "@/api/api";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 const RestaurantPOS = () => {
   const [selectedCuisine, setSelectedCuisine] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedSubcategory, setSelectedSubcategory] = useState("");
-const[hoveredCuisine,setHoveredCuisine] = useState("");
+  const [hoveredCuisine, setHoveredCuisine] = useState("");
   const [orderItems, setOrderItems] = useState([]);
+  const navigate = useNavigate();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [items, setItems] = useState([]);
-  const[data,setData]= useState([]);
+  const [data, setData] = useState([]);
   const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [loader, setLoader] = useState(false);
@@ -52,27 +54,24 @@ const[hoveredCuisine,setHoveredCuisine] = useState("");
   const [loading, setLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [optionData, setOptionsData] = useState({});
- 
+
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
 
-  const gradientClasses = [
-"bg-gradient-to-br from-blue-500 to-blue-700",
- 
-];
+  const gradientClasses = ["bg-gradient-to-br from-blue-500 to-blue-700"];
 
-const subcategoryIcons = {
-  Pizza: "🍕",
-  noodles: "🍜",
-  Burger: "🍔",
-  Salad: "🥗",
-  Dessert: "🍰",
-  Drinks: "🥤",
-  Snacks: "🍟",
-  Biriyani: "🍲",
-  Default: "🍽️",
-};
+  const subcategoryIcons = {
+    Pizza: "🍕",
+    noodles: "🍜",
+    Burger: "🍔",
+    Salad: "🥗",
+    Dessert: "🍰",
+    Drinks: "🥤",
+    Snacks: "🍟",
+    Biriyani: "🍲",
+    Default: "🍽️",
+  };
 
   const [customerDetails, setCustomerDetails] = useState({
     name: "",
@@ -111,7 +110,6 @@ const subcategoryIcons = {
 
       const { categories, subcategories, priceLevels } =
         subDetailsRes.data.data;
-        console.log(subcategories)
       setOptionsData((prev) => ({
         ...prev,
         category: categories,
@@ -122,7 +120,10 @@ const subcategoryIcons = {
 
       // Set the first category as default if available
       if (categories && categories.length > 0) {
-        setSelectedCuisine({categoryId:categories[0]._id,categoryName:categories[0].name});
+        setSelectedCuisine({
+          categoryId: categories[0]._id,
+          categoryName: categories[0].name,
+        });
       }
     } catch (error) {
       console.error("Failed to fetch data:", error);
@@ -132,8 +133,7 @@ const subcategoryIcons = {
     }
   }, [cmp_id]);
 
-
-  console.log(optionData?.subcategory)
+  console.log(optionData?.subcategory);
 
   useEffect(() => {
     fetchAllData();
@@ -151,30 +151,35 @@ const subcategoryIcons = {
 
         console.log("Fetching all items with params:", params.toString());
 
-        const res = await api.get(`/api/sUsers/getAllItems/${cmp_id}?${params}`, {
-          withCredentials: true,
-        });
+        const res = await api.get(
+          `/api/sUsers/getAllItems/${cmp_id}?${params}`,
+          {
+            withCredentials: true,
+          }
+        );
 
         console.log("Items API Response:", res.data);
-        
+
         // Store all items
         const allItems = res?.data?.items || [];
-        
-        
+
         // Filter items based on selected subcategory
         if (selectedSubcategory && !searchTerm) {
           const selectedSubcatId = getSelectedSubcategoryId();
-          const filteredItems = allItems.filter(item => 
-            item.sub_category === selectedSubcatId
+          const filteredItems = allItems.filter(
+            (item) => item.sub_category === selectedSubcatId
           );
-          console.log("Filtered items for subcategory:", selectedSubcategory, filteredItems);
+          console.log(
+            "Filtered items for subcategory:",
+            selectedSubcategory,
+            filteredItems
+          );
           setItems(filteredItems);
         } else {
           setItems(allItems);
         }
-        
+
         setHasMore(false);
-       
       } catch (error) {
         console.log("Error fetching items:", error);
         setHasMore(false);
@@ -199,34 +204,32 @@ const subcategoryIcons = {
   console.log("Items:", items);
   console.log("Option Data:", optionData);
 
+  const getFilteredItems = () => {
+    let items = filteredItems;
 
+    if (selectedCuisine) {
+      items = items.filter((item) => item.category === selectedCuisine);
+    }
 
-const getFilteredItems = () => {
-  let items = filteredItems;
+    if (selectedSubcategory) {
+      items = items.filter((item) => item.subcategory === selectedSubcategory);
+    }
 
-  if (selectedCuisine) {
-    items = items.filter((item) => item.category === selectedCuisine);
-  }
+    if (searchTerm.trim() !== "") {
+      const term = searchTerm.toLowerCase();
+      items = items.filter(
+        (item) =>
+          item.name.toLowerCase().includes(term) ||
+          item.subcategoryName?.toLowerCase().includes(term) // assumes you have subcategoryName
+      );
+    }
 
-  if (selectedSubcategory) {
-    items = items.filter((item) => item.subcategory === selectedSubcategory);
-  }
-
-  if (searchTerm.trim() !== "") {
-    const term = searchTerm.toLowerCase();
-    items = items.filter((item) => 
-      item.name.toLowerCase().includes(term) ||
-      item.subcategoryName?.toLowerCase().includes(term) // assumes you have subcategoryName
-    );
-  }
-
-  return items;
-};
-
+    return items;
+  };
 
   const cuisines = optionData?.category || [];
   const subcategories = optionData?.subcategory || [];
-console.log(data)
+  console.log(data);
 
   //   const getSubDetails = async (data) => {
   //      try {
@@ -253,19 +256,23 @@ console.log(data)
   //   return selectedCat?._id || '';
   // };
 
-  // Get selected subcategory ID  
+  // Get selected subcategory ID
   const getSelectedSubcategoryId = () => {
-    const selectedSubcat = subcategories.find(subcat => subcat.name === selectedSubcategory);
-    return selectedSubcat?._id || '';
+    const selectedSubcat = subcategories.find(
+      (subcat) => subcat.name === selectedSubcategory
+    );
+    return selectedSubcat?._id || "";
   };
 
   // Filter subcategories based on selected category
-const getFilteredSubcategories = () => {
-  if (!selectedCuisine) return [];
+  const getFilteredSubcategories = () => {
+    if (!selectedCuisine) return [];
 
-  // Return full subcategory items that match the selected category
-  return subcategories.filter(item => item.category === selectedCuisine?.categoryId );
-};
+    // Return full subcategory items that match the selected category
+    return subcategories.filter(
+      (item) => item.category === selectedCuisine?.categoryId
+    );
+  };
 
   const filteredSubcategories = getFilteredSubcategories();
   const menuItems = items || [];
@@ -316,12 +323,11 @@ const getFilteredSubcategories = () => {
     return orderItems.reduce((total, item) => total + item.quantity, 0);
   };
 
-  const handleCategorySelect = (category,name) => {
+  const handleCategorySelect = (category, name) => {
     let newObject = {
-      categoryId:category,
-      categoryName:name,
-
-    }
+      categoryId: category,
+      categoryName: name,
+    };
     setSelectedCuisine(newObject);
     setSelectedCategory("");
     setSelectedSubcategory("");
@@ -330,9 +336,8 @@ const getFilteredSubcategories = () => {
   };
 
   const handleSubcategorySelect = (subcategoryName) => {
-    console.log(subcategoryName)
+    console.log(subcategoryName);
     setSelectedSubcategory(subcategoryName);
-
   };
 
   const handleBackToCategories = () => {
@@ -377,24 +382,31 @@ const getFilteredSubcategories = () => {
       paymentMethod: orderType === "dine-in" ? null : paymentMethod,
     };
 
+    try {
+      api.post(`/api/sUsers/generateKOT/${cmp_id}`, newOrder, {
+        withCredentials: true,
+      });
+    } catch (error) {
+      console.log(error);
+      toast.error(error.response.data.message);
+    }
+
     setOrders([...orders, newOrder]);
     setOrderItems([]);
     setOrderNumber(orderNumber + 1);
     setShowKOTModal(false);
 
     if (orderType === "dine-in") {
-      alert(`KOT #${orderNumber} generated and sent to kitchen!`);
       setCustomerDetails({
         name: "",
         phone: "",
         address: "",
         tableNumber: "10",
       });
+      toast.success("KOT generated successfully!");
     } else {
-      alert(
-        `KOT #${orderNumber} generated and sent to kitchen! Please proceed to payment.`
-      );
-      setShowPaymentModal(true);
+      toast.success("KOT generated successfully!");
+      // setShowPaymentModal(true);
     }
   };
 
@@ -429,7 +441,6 @@ const getFilteredSubcategories = () => {
     );
   };
 
-
   const getOrderTypeDisplay = (type) => {
     const typeMap = {
       "dine-in": "Dine In",
@@ -441,7 +452,7 @@ const getFilteredSubcategories = () => {
   };
 
   const VISIBLE_COUNT = 8;
-const visibleItems = menuItems.slice(0, VISIBLE_COUNT);
+  const visibleItems = menuItems.slice(0, VISIBLE_COUNT);
 
   return (
     <div className="h-screen  overflow-hidden  bg-gray-100 flex flex-col">
@@ -468,7 +479,10 @@ const visibleItems = menuItems.slice(0, VISIBLE_COUNT);
                   : getOrderTypeDisplay(orderType)}
               </span>
             </div>
-            <div className="flex items-center space-x-2">
+            <div
+              className="flex items-center space-x-2 hover:cursor-pointer"
+              onClick={() => navigate("/sUsers/KotPage")}
+            >
               <Receipt className="w-5 h-5" />
               <span className="text-sm">Orders: {orders.length}</span>
             </div>
@@ -477,43 +491,52 @@ const visibleItems = menuItems.slice(0, VISIBLE_COUNT);
       </div>
 
       {/* Cuisine Categories */}
-<div className="bg-white border-b border-gray-200 p-4">
-  <div className="flex flex-wrap gap-2 text-xs">
-    {cuisines.map((cuisine) => (
-      <button
-        key={cuisine._id}
-        onClick={() => handleCategorySelect(cuisine._id, cuisine.name)}
-        onMouseEnter={() => setHoveredCuisine(cuisine.name)}
-        onMouseLeave={() => setHoveredCuisine(null)}
-        style={{
-          background: hoveredCuisine === cuisine.name
-            ? "linear-gradient(135deg, #60a5fa, #3b82f6)"  // Light blue hover
-            : selectedCuisine?.categoryName === cuisine.name
-            ? "linear-gradient(135deg, #93c5fd, #60a5fa)"  // Selected state - lighter blue
-            : "linear-gradient(135deg, #3b82f6, #1e40af)",  // Default state - primary blue
-          color: selectedCuisine?.categoryName === cuisine.name ? "#1e40af" : "#ffffff",
-          transform: selectedCuisine?.categoryName === cuisine.name ? "translateY(-2px)" : "none",
-          boxShadow: selectedCuisine?.categoryName === cuisine.name
-            ? "0 4px 14px rgba(59, 130, 246, 0.4)"  // Blue shadow
-            : hoveredCuisine === cuisine.name
-            ? "0 6px 16px rgba(59, 130, 246, 0.3)"  // Hover shadow
-            : "0 2px 6px rgba(0, 0, 0, 0.1)",
-          transition: "all 0.25s ease-in-out",
-        }}
-        className={`
+      <div className="bg-white border-b border-gray-200 p-4">
+        <div className="flex flex-wrap gap-2 text-xs">
+          {cuisines.map((cuisine) => (
+            <button
+              key={cuisine._id}
+              onClick={() => handleCategorySelect(cuisine._id, cuisine.name)}
+              onMouseEnter={() => setHoveredCuisine(cuisine.name)}
+              onMouseLeave={() => setHoveredCuisine(null)}
+              style={{
+                background:
+                  hoveredCuisine === cuisine.name
+                    ? "linear-gradient(135deg, #60a5fa, #3b82f6)" // Light blue hover
+                    : selectedCuisine?.categoryName === cuisine.name
+                    ? "linear-gradient(135deg, #93c5fd, #60a5fa)" // Selected state - lighter blue
+                    : "linear-gradient(135deg, #3b82f6, #1e40af)", // Default state - primary blue
+                color:
+                  selectedCuisine?.categoryName === cuisine.name
+                    ? "#1e40af"
+                    : "#ffffff",
+                transform:
+                  selectedCuisine?.categoryName === cuisine.name
+                    ? "translateY(-2px)"
+                    : "none",
+                boxShadow:
+                  selectedCuisine?.categoryName === cuisine.name
+                    ? "0 4px 14px rgba(59, 130, 246, 0.4)" // Blue shadow
+                    : hoveredCuisine === cuisine.name
+                    ? "0 6px 16px rgba(59, 130, 246, 0.3)" // Hover shadow
+                    : "0 2px 6px rgba(0, 0, 0, 0.1)",
+                transition: "all 0.25s ease-in-out",
+              }}
+              className={`
           group relative flex items-center gap-2 px-4 py-2 rounded-xl font-medium 
           hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-400 
           active:scale-95 cursor-pointer duration-300 transform
           backdrop-blur-sm bg-opacity-90
         `}
-      >
-        <span className="text-lg drop-shadow-sm">{cuisine.icon}</span>
-        <span className="text-sm tracking-wide select-none">{cuisine.name}</span>
-      </button>
-    ))}
-  </div>
-</div>
-
+            >
+              <span className="text-lg drop-shadow-sm">{cuisine.icon}</span>
+              <span className="text-sm tracking-wide select-none">
+                {cuisine.name}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* Main Content */}
       <div className="flex-1 flex min-h-0">
@@ -540,53 +563,62 @@ const visibleItems = menuItems.slice(0, VISIBLE_COUNT);
             )}
           </div>
 
-<div className="p-4">
-  {!selectedCuisine ? (
-    <div className="text-sm text-gray-400 text-center py-4 italic">
-      🍽️ Please select a category above
-    </div>
-  ) : filteredSubcategories.length === 0 ? (
-    <div className="text-sm text-gray-400 text-center py-4 italic">
-      🚫 No subcategories available
-    </div>
-  ) : (
-    filteredSubcategories.map((subcategory, index) => {
-      const icon = subcategoryIcons[subcategory.name] || subcategoryIcons.Default;
-      const gradient = gradientClasses[index % gradientClasses.length];
+          <div className="p-4">
+            {!selectedCuisine ? (
+              <div className="text-sm text-gray-400 text-center py-4 italic">
+                🍽️ Please select a category above
+              </div>
+            ) : filteredSubcategories.length === 0 ? (
+              <div className="text-sm text-gray-400 text-center py-4 italic">
+                🚫 No subcategories available
+              </div>
+            ) : (
+              filteredSubcategories.map((subcategory, index) => {
+                const icon =
+                  subcategoryIcons[subcategory.name] ||
+                  subcategoryIcons.Default;
+                const gradient =
+                  gradientClasses[index % gradientClasses.length];
 
-      return (
-        <button
-          key={subcategory._id}
-          onClick={() => handleSubcategorySelect(subcategory.name)}
-          className={`w-full text-left px-3 py-1.5 mb-2 rounded-md font-medium transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md transform hover:scale-[1.02] hover:translate-x-1 
-            ${selectedSubcategory === subcategory.name ? "text-black" : "text-black"}
+                return (
+                  <button
+                    key={subcategory._id}
+                    onClick={() => handleSubcategorySelect(subcategory.name)}
+                    className={`w-full text-left px-3 py-1.5 mb-2 rounded-md font-medium transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md transform hover:scale-[1.02] hover:translate-x-1 
+            ${
+              selectedSubcategory === subcategory.name
+                ? "text-black"
+                : "text-black"
+            }
           ${gradient} `}
-        >
-          <span className="text-base">{icon}</span>
-          <span className="text-xs capitalize tracking-wide">{subcategory.name}</span>
-        </button>
-      );
-    })
-  )}
-</div>
-
-
+                  >
+                    <span className="text-base">{icon}</span>
+                    <span className="text-xs capitalize tracking-wide">
+                      {subcategory.name}
+                    </span>
+                  </button>
+                );
+              })
+            )}
+          </div>
         </div>
 
         {/* Main Content Area */}
-      <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col">
           {/* Search Bar */}
           <div className="p-4 bg-white border-b border-gray-200">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
                 type="text"
-                placeholder={`Search items...${selectedSubcategory ? ` in ${selectedSubcategory}` : ''}`}
+                placeholder={`Search items...${
+                  selectedSubcategory ? ` in ${selectedSubcategory}` : ""
+                }`}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
-            </div>  
+            </div>
           </div>
 
           {/* Menu Items Grid */}
@@ -595,16 +627,24 @@ const visibleItems = menuItems.slice(0, VISIBLE_COUNT);
               <div className="flex items-center justify-center h-full">
                 <div className="text-center text-gray-500">
                   <Package className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                  <h3 className="text-lg font-medium mb-2">Select a Category</h3>
-                  <p className="text-sm">Choose a category above to view subcategories</p>
+                  <h3 className="text-lg font-medium mb-2">
+                    Select a Category
+                  </h3>
+                  <p className="text-sm">
+                    Choose a category above to view subcategories
+                  </p>
                 </div>
               </div>
             ) : !selectedSubcategory && !searchTerm ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center text-gray-500">
                   <Filter className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                  <h3 className="text-lg font-medium mb-2">Select a Subcategory</h3>
-                  <p className="text-sm">Choose a subcategory from the sidebar to view items</p>
+                  <h3 className="text-lg font-medium mb-2">
+                    Select a Subcategory
+                  </h3>
+                  <p className="text-sm">
+                    Choose a subcategory from the sidebar to view items
+                  </p>
                 </div>
               </div>
             ) : loader ? (
@@ -618,25 +658,28 @@ const visibleItems = menuItems.slice(0, VISIBLE_COUNT);
               <>
                 <div className="mb-4">
                   <h3 className="text-xs font-semibold text-gray-800">
-                    {selectedCuisine?.categoryName} - {selectedSubcategory || 'Search Results'} ({menuItems.length} items)
+                    {selectedCuisine?.categoryName} -{" "}
+                    {selectedSubcategory || "Search Results"} (
+                    {menuItems.length} items)
                   </h3>
                 </div>
-                
+
                 {menuItems.length === 0 ? (
                   <div className="flex items-center justify-center h-64">
                     <div className="text-center text-gray-500">
                       <Search className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                      <h3 className="text-lg font-medium mb-2">No Items Found</h3>
+                      <h3 className="text-lg font-medium mb-2">
+                        No Items Found
+                      </h3>
                       <p className="text-sm">
-                        {searchTerm 
+                        {searchTerm
                           ? `No items found matching "${searchTerm}"`
-                          : `No items available in ${selectedSubcategory}`
-                        }
+                          : `No items available in ${selectedSubcategory}`}
                       </p>
                     </div>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-4 gap-2 max-h-['500px'] overflow-auto"  >
+                  <div className="grid grid-cols-4 gap-2 max-h-['500px'] overflow-auto">
                     {visibleItems.map((item, index) => (
                       <motion.div
                         key={item._id}
@@ -648,18 +691,22 @@ const visibleItems = menuItems.slice(0, VISIBLE_COUNT);
                       >
                         {/* Image Container with Overlay Effects */}
                         <div className="relative h-40 overflow-hidden">
-                          <img 
-                            src={item.product_image || 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=300&h=200&fit=crop'} 
+                          <img
+                            src={
+                              item.product_image ||
+                              "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=300&h=200&fit=crop"
+                            }
                             alt={item.product_name}
                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                             onError={(e) => {
-                              e.target.src = 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=300&h=200&fit=crop';
+                              e.target.src =
+                                "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=300&h=200&fit=crop";
                             }}
                           />
-                          
+
                           {/* Gradient Overlay */}
                           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                          
+
                           {/* Quick Add Button */}
                           <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
                             <div className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg hover:bg-white hover:scale-110 transition-all duration-200">
@@ -669,12 +716,16 @@ const visibleItems = menuItems.slice(0, VISIBLE_COUNT);
 
                           {/* Stock Status Badge */}
                           <div className="absolute top-3 left-3">
-                            <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              item.balance_stock > 0 
-                                ? 'bg-blue-100 text-blue-800 border border-blue-200' 
-                                : 'bg-red-100 text-red-800 border border-red-200'
-                            }`}>
-                              {item.balance_stock > 0 ? 'In Stock' : 'Out of Stock'}
+                            <div
+                              className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                item.balance_stock > 0
+                                  ? "bg-blue-100 text-blue-800 border border-blue-200"
+                                  : "bg-red-100 text-red-800 border border-red-200"
+                              }`}
+                            >
+                              {item.balance_stock > 0
+                                ? "In Stock"
+                                : "Out of Stock"}
                             </div>
                           </div>
 
@@ -696,13 +747,12 @@ const visibleItems = menuItems.slice(0, VISIBLE_COUNT);
                             <h3 className="font-bold text-gray-900 text-sm mb-1 line-clamp-2 group-hover:text-blue-700 transition-colors duration-200">
                               {item.product_name}
                             </h3>
-                            
+
                             {/* Rating and Time */}
                             <div className="flex items-center justify-between text-xs text-gray-500">
-                             
                               <div className="flex items-center space-x-1 text-gray-400">
                                 <Clock className="w-3 h-3" />
-                                <span>{item.time || '15-20 min'}</span>
+                                <span>{item.time || "15-20 min"}</span>
                               </div>
                             </div>
                           </div>
@@ -711,11 +761,16 @@ const visibleItems = menuItems.slice(0, VISIBLE_COUNT);
                           <div className="flex items-center justify-between">
                             <div className="flex flex-col">
                               <span className="text-lg font-bold text-blue-600">
-                                ₹{item.Priceleveles?.[0]?.pricerate || item.price || 0}
+                                ₹
+                                {item.Priceleveles?.[0]?.pricerate ||
+                                  item.price ||
+                                  0}
                               </span>
                               {item.Priceleveles?.[0]?.priceDisc > 0 && (
                                 <span className="text-xs text-gray-400 line-through">
-                                  ₹{(item.Priceleveles[0].pricerate + item.Priceleveles[0].priceDisc)}
+                                  ₹
+                                  {item.Priceleveles[0].pricerate +
+                                    item.Priceleveles[0].priceDisc}
                                 </span>
                               )}
                             </div>
@@ -724,7 +779,7 @@ const visibleItems = menuItems.slice(0, VISIBLE_COUNT);
 
                         {/* Hover Border Effect */}
                         <div className="absolute inset-0 border-2 border-transparent group-hover:border-blue-200 rounded-xl transition-colors duration-300 pointer-events-none"></div>
-                        
+
                         {/* Shine Effect */}
                         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
                           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
@@ -864,7 +919,7 @@ const visibleItems = menuItems.slice(0, VISIBLE_COUNT);
                 {orderType === "dine-in" ? "Place Order" : "Place Order"}
               </button>
 
-              {orderType !== "dine-in" && (
+              {/* {orderType !== "dine-in" && (
                 <button
                   className="bg-blue-700 text-white px-4 py-3 rounded-lg font-semibold hover:bg-blue-800 transition-all duration-200 disabled:opacity-50 flex items-center hover:scale-105 active:scale-95"
                   disabled={orderItems.length === 0}
@@ -872,7 +927,7 @@ const visibleItems = menuItems.slice(0, VISIBLE_COUNT);
                 >
                   <ArrowRight className="w-4 h-4" />
                 </button>
-              )}
+              )} */}
             </div>
           </div>
         </div>
@@ -1160,7 +1215,8 @@ const visibleItems = menuItems.slice(0, VISIBLE_COUNT);
               <div className="flex justify-end space-x-2 mt-4">
                 <button
                   onClick={() => setShowPaymentModal(false)}
-                  className="px-4 py-2 rounded-md bg-gray-200 hover:bg-gray-300 text-sm font-medium text-gray-700">
+                  className="px-4 py-2 rounded-md bg-gray-200 hover:bg-gray-300 text-sm font-medium text-gray-700"
+                >
                   Cancel
                 </button>
                 <button
