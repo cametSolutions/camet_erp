@@ -32,17 +32,19 @@ import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
 import api from "@/api/api";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 const RestaurantPOS = () => {
   const [selectedCuisine, setSelectedCuisine] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedSubcategory, setSelectedSubcategory] = useState("");
-const[hoveredCuisine,setHoveredCuisine] = useState("");
+  const [hoveredCuisine, setHoveredCuisine] = useState("");
   const [orderItems, setOrderItems] = useState([]);
+  const navigate = useNavigate();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [items, setItems] = useState([]);
-  const[data,setData]= useState([]);
+  const [allItems, setAllItems] = useState([]); // Store all items
   const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [loader, setLoader] = useState(false);
@@ -54,27 +56,26 @@ const[hoveredCuisine,setHoveredCuisine] = useState("");
   const [loading, setLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [optionData, setOptionsData] = useState({});
- 
+
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
 
   const gradientClasses = [
-"bg-gradient-to-r from-[#10b981] to-[#059669]",
- 
-];
+    "bg-gradient-to-r from-[#10b981] to-[#059669]",
+  ];
 
-const subcategoryIcons = {
-  Pizza: "🍕",
-  noodles: "🍜",
-  Burger: "🍔",
-  Salad: "🥗",
-  Dessert: "🍰",
-  Drinks: "🥤",
-  Snacks: "🍟",
-  Biriyani: "🍲",
-  Default: "🍽️",
-};
+  const subcategoryIcons = {
+    Pizza: "🍕",
+    noodles: "🍜",
+    Burger: "🍔",
+    Salad: "🥗",
+    Dessert: "🍰",
+    Drinks: "🥤",
+    Snacks: "🍟",
+    Biriyani: "🍲",
+    Default: "🍽️",
+  };
 
   const [customerDetails, setCustomerDetails] = useState({
     name: "",
@@ -88,6 +89,14 @@ const subcategoryIcons = {
   });
   const [orders, setOrders] = useState([]);
   const [orderNumber, setOrderNumber] = useState(1001);
+
+  // Update current time every second
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const fetchAllData = useCallback(async () => {
     try {
@@ -113,7 +122,6 @@ const subcategoryIcons = {
 
       const { categories, subcategories, priceLevels } =
         subDetailsRes.data.data;
-        console.log(subcategories)
       setOptionsData((prev) => ({
         ...prev,
         category: categories,
@@ -124,25 +132,11 @@ const subcategoryIcons = {
 
       // Set the first category as default if available
       if (categories && categories.length > 0) {
-         const defaultCategory = {
-    categoryId: categories[0]._id,
-    categoryName: categories[0].name,
-  };
-        setSelectedCuisine(defaultCategory);
-         setSelectedCategory(""); // Optional: you can remove if unused
-  setSearchTerm("");
-
-  const subcatsForCategory = subDetailsRes.data.data.subcategories.filter(
-    (sub) => sub.category === defaultCategory.categoryId
-  );
-
-  if (subcatsForCategory.length > 0) {
-    setSelectedSubcategory(subcatsForCategory[0].name); // Automatically select 1st subcategory
-  } else {
-    setSelectedSubcategory("");
-  }
-}
-      
+        setSelectedCuisine({
+          categoryId: categories[0]._id,
+          categoryName: categories[0].name,
+        });
+      }
     } catch (error) {
       console.error("Failed to fetch data:", error);
       toast.error(error.response?.data?.message || "Failed to load data");
@@ -151,120 +145,125 @@ const subcategoryIcons = {
     }
   }, [cmp_id]);
 
-
-  console.log(optionData?.subcategory)
-
   useEffect(() => {
     fetchAllData();
   }, [fetchAllData]);
 
-  // Fetch ALL items first, then filter on frontend
-  const fetchAllItems = useCallback(
-    async (searchTerm = "") => {
-      setIsLoading(true);
-      setLoader(true);
-      try {
-        const params = new URLSearchParams();
-        if (searchTerm) params.append("search", searchTerm);
-        params.append("under", "restaurant");
+  // Fetch ALL items on component mount
+  const fetchAllItems = useCallback(async () => {
+    setIsLoading(true);
+    setLoader(true);
+    try {
+      const params = new URLSearchParams();
+      params.append("under", "restaurant");
 
-        console.log("Fetching all items with params:", params.toString());
+      console.log("Fetching all items with params:", params.toString());
 
-        const res = await api.get(`/api/sUsers/getAllItems/${cmp_id}?${params}`, {
+      const res = await api.get(
+        `/api/sUsers/getAllItems/${cmp_id}?${params}`,
+        {
           withCredentials: true,
-        });
-
-        console.log("Items API Response:", res.data);
-        
-        // Store all items
-        const allItems = res?.data?.items || [];
-        
-        
-        // Filter items based on selected subcategory
-        if (selectedSubcategory && !searchTerm) {
-          const selectedSubcatId = getSelectedSubcategoryId();
-          const filteredItems = allItems.filter(item => 
-            item.sub_category === selectedSubcatId
-          );
-          console.log("Filtered items for subcategory:", selectedSubcategory, filteredItems);
-          setItems(filteredItems);
-        } else {
-          setItems(allItems);
         }
-        
-        setHasMore(false);
-       
-      } catch (error) {
-        console.log("Error fetching items:", error);
-        setHasMore(false);
-        setItems([]);
-      } finally {
-        setIsLoading(false);
-        setLoader(false);
-      }
-    },
-    [cmp_id, selectedSubcategory]
-  );
+      );
 
-  // Fetch items when subcategory or search term changes
-  useEffect(() => {
-    if (selectedSubcategory || searchTerm) {
-      fetchAllItems(searchTerm);
-    } else {
+      console.log("Items API Response:", res.data);
+
+      // Store all items
+      const fetchedItems = res?.data?.items || [];
+      setAllItems(fetchedItems);
+      setItems(fetchedItems); // Show all items initially
+
+      setHasMore(false);
+    } catch (error) {
+      console.log("Error fetching items:", error);
+      setHasMore(false);
+      setAllItems([]);
       setItems([]);
+    } finally {
+      setIsLoading(false);
+      setLoader(false);
     }
-  }, [fetchAllItems, selectedSubcategory, searchTerm]);
+  }, [cmp_id]);
 
-  console.log("Items:", items);
-  console.log("Option Data:", optionData);
+  // Fetch all items on component mount
+  useEffect(() => {
+    fetchAllItems();
+  }, [fetchAllItems]);
 
+  // Filter items based on subcategory and search term
+  useEffect(() => {
+    let filteredItems = [...allItems];
 
+    // Filter by subcategory if selected
+    if (selectedSubcategory) {
+      const selectedSubcatId = getSelectedSubcategoryId();
+      filteredItems = filteredItems.filter(
+        (item) => item.sub_category === selectedSubcatId
+      );
+    }
 
+    // Filter by search term
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase().trim();
+      filteredItems = filteredItems.filter(item =>
+        item.product_name.toLowerCase().includes(searchLower) ||
+        (item.description && item.description.toLowerCase().includes(searchLower)) ||
+        (item.tags && item.tags.some(tag => tag.toLowerCase().includes(searchLower)))
+      );
+    }
 
+    setItems(filteredItems);
+  }, [allItems, selectedSubcategory, searchTerm]);
 
+  const searchTimeoutRef = useRef(null);
+  const handleSearchChange = (value) => {
+    setSearchTerm(value);
+    
+    // Clear previous timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    
+    // Set new timeout for debounced search
+    searchTimeoutRef.current = setTimeout(() => {
+      console.log("Search term:", value);
+    }, 300); // 300ms debounce
+  };
+
+  // Clear search function
+  const clearSearch = () => {
+    setSearchTerm("");
+  };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const cuisines = optionData?.category || [];
   const subcategories = optionData?.subcategory || [];
-console.log(data)
 
-  //   const getSubDetails = async (data) => {
-  //      try {
-  //        setLoading(true);
-  //        handleLoader(true);
-  //        const res = await api.get(
-  //          `/api/${user}/getProductSubDetails/${orgId}?type=${tab}`,
-  //          {
-  //            withCredentials: true,
-  //          }
-  //        );
-  //        setData(res?.data?.data);
-  //      } catch (error) {
-  //        console.log(error);
-  //        toast.error(error.response.data.message);
-  //      } finally {
-  //        setLoading(false);
-  //        handleLoader(false);
-  //      }
-  //    };
-  // // Get selected category ID
-  // const getSelectedCategoryId = () => {
-  //   const selectedCat = cuisines.find(cat => cat.name === selectedCuisine);
-  //   return selectedCat?._id || '';
-  // };
-
-  // Get selected subcategory ID  
+  // Get selected subcategory ID
   const getSelectedSubcategoryId = () => {
-    const selectedSubcat = subcategories.find(subcat => subcat.name === selectedSubcategory);
-    return selectedSubcat?._id || '';
+    const selectedSubcat = subcategories.find(
+      (subcat) => subcat.name === selectedSubcategory
+    );
+    return selectedSubcat?._id || "";
   };
 
   // Filter subcategories based on selected category
-const getFilteredSubcategories = () => {
-  if (!selectedCuisine) return [];
+  const getFilteredSubcategories = () => {
+    if (!selectedCuisine) return [];
 
-  // Return full subcategory items that match the selected category
-  return subcategories.filter(item => item.category === selectedCuisine?.categoryId );
-};
+    // Return full subcategory items that match the selected category
+    return subcategories.filter(
+      (item) => item.category === selectedCuisine?.categoryId
+    );
+  };
 
   const filteredSubcategories = getFilteredSubcategories();
   const menuItems = items || [];
@@ -315,29 +314,26 @@ const getFilteredSubcategories = () => {
     return orderItems.reduce((total, item) => total + item.quantity, 0);
   };
 
-  const handleCategorySelect = (category,name) => {
+  const handleCategorySelect = (category, name) => {
     let newObject = {
-      categoryId:category,
-      categoryName:name,
-
-    }
+      categoryId: category,
+      categoryName: name,
+    };
     setSelectedCuisine(newObject);
     setSelectedCategory("");
-    setSelectedSubcategory("");
-    setItems([]);
-    setSearchTerm("");
+    setSelectedSubcategory(""); // Clear subcategory when category changes
+    setSearchTerm(""); // Clear search when category changes
   };
 
   const handleSubcategorySelect = (subcategoryName) => {
-    console.log(subcategoryName)
+    console.log(subcategoryName);
     setSelectedSubcategory(subcategoryName);
-
+    setSearchTerm(""); // Clear search when subcategory is selected
   };
 
   const handleBackToCategories = () => {
     setSelectedSubcategory("");
     setSelectedCategory("");
-    setItems([]);
     setSearchTerm("");
   };
 
@@ -376,24 +372,30 @@ const getFilteredSubcategories = () => {
       paymentMethod: orderType === "dine-in" ? null : paymentMethod,
     };
 
+    try {
+      api.post('/api/sUsers/generateKOT/${cmp_id}', newOrder, {
+        withCredentials: true,
+      });
+    } catch (error) {
+      console.log(error);
+      toast.error(error.response.data.message);
+    }
+
     setOrders([...orders, newOrder]);
     setOrderItems([]);
     setOrderNumber(orderNumber + 1);
     setShowKOTModal(false);
 
     if (orderType === "dine-in") {
-      alert(`KOT #${orderNumber} generated and sent to kitchen!`);
       setCustomerDetails({
         name: "",
         phone: "",
         address: "",
         tableNumber: "10",
       });
+      toast.success("KOT generated successfully!");
     } else {
-      alert(
-        `KOT #${orderNumber} generated and sent to kitchen! Please proceed to payment.`
-      );
-      setShowPaymentModal(true);
+      toast.success("KOT generated successfully!");
     }
   };
 
@@ -428,7 +430,6 @@ const getFilteredSubcategories = () => {
     );
   };
 
-
   const getOrderTypeDisplay = (type) => {
     const typeMap = {
       "dine-in": "Dine In",
@@ -439,14 +440,12 @@ const getFilteredSubcategories = () => {
     return typeMap[type] || type;
   };
 
-  
-
   return (
-    <div className="h-screen  overflow-hidden  bg-gray-100 flex flex-col">
+    <div className="h-screen overflow-hidden bg-gray-100 flex flex-col">
       {/* Header */}
       <div className="bg-gradient-to-r from-slate-800 to-slate-900 text-white p-4 shadow-lg">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold  flex items-center gap-2">
+          <h1 className="text-2xl font-bold flex items-center gap-2">
             🍽️ Restaurant Management System
           </h1>
           <div className="flex items-center space-x-6">
@@ -460,24 +459,27 @@ const getFilteredSubcategories = () => {
               <Users className="w-4 h-4" />
               <span className="text-xs font-medium">
                 {orderType === "dine-in"
-                  ? `Table ${customerDetails.tableNumber}`
+                  ?` Table ${customerDetails.tableNumber}`
                   : orderType === "roomService"
                   ? `Room ${roomDetails.roomno || "---"}`
                   : getOrderTypeDisplay(orderType)}
               </span>
             </div>
-            <div className="flex items-center space-x-2 bg-white/10 rounded-lg px-3 py-1">
-              <Receipt className="w-4 h-4" />
-              <span className="text-sm font-medium">Orders: {orders.length}</span>
+            <div
+              className="flex items-center space-x-2 hover:cursor-pointer"
+              onClick={() => navigate("/sUsers/KotPage")}
+            >
+              <Receipt className="w-5 h-5" />
+              <span className="text-sm">Orders: {orders.length}</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* Cuisine Categories */}
-<div className="bg-white border-b border-gray-200 p-2 shadow-sm">
-  <div className="flex flex-wrap gap-2 text-xs">
-    {cuisines.map((cuisine, index) => (
+      <div className="bg-white border-b border-gray-200 p-2 shadow-sm">
+        <div className="flex flex-wrap gap-2 text-xs">
+          {cuisines.map((cuisine, index) => (
             <button
               key={cuisine._id}
               onClick={() => handleCategorySelect(cuisine._id, cuisine.name)}
@@ -500,9 +502,8 @@ const getFilteredSubcategories = () => {
               </span>
             </button>
           ))}
-  </div>
-</div>
-
+        </div>
+      </div>
 
       {/* Main Content */}
       <div className="flex-1 flex min-h-0">
@@ -523,81 +524,83 @@ const getFilteredSubcategories = () => {
               )}
             </div>
             {selectedCuisine && (
-              <div className="text-xs text-gray-500 mt-1 mt-1 font-medium">
+              <div className="text-xs text-gray-500 mt-1 font-medium">
                 Category: {selectedCuisine?.categoryName}
               </div>
             )}
           </div>
 
-<div className="p-4 flex-1 overflow-y-auto">
-  {!selectedCuisine ? (
-    <div className="text-sm text-gray-400 text-center py-4 italic">
-      🍽️ Please select a category above
-    </div>
-  ) : filteredSubcategories.length === 0 ? (
-    <div className="text-sm text-gray-400 text-center py-4 italic">
-       <Filter className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-      🚫 No subcategories available
-    </div>
-  ) : (
-    filteredSubcategories.map((subcategory, index) => {
-      const icon = subcategoryIcons[subcategory.name] || subcategoryIcons.Default;
-      const gradient = gradientClasses[index % gradientClasses.length];
+          <div className="p-4 flex-1 overflow-y-auto">
+            {!selectedCuisine ? (
+              <div className="text-sm text-gray-400 text-center py-4 italic">
+                🍽️ Please select a category above
+              </div>
+            ) : filteredSubcategories.length === 0 ? (
+              <div className="text-sm text-gray-400 text-center py-4 italic">
+                <Filter className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                🚫 No subcategories available
+              </div>
+            ) : (
+              filteredSubcategories.map((subcategory, index) => {
+                const icon = subcategoryIcons[subcategory.name] || subcategoryIcons.Default;
+                const gradient = gradientClasses[index % gradientClasses.length];
 
-      return (
-        <button
-          key={subcategory._id}
-          onClick={() => handleSubcategorySelect(subcategory.name)}
-          className={`w-full text-left px-3 py-1.5 mb-2 rounded-md font-medium transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md transform hover:scale-[1.02] hover:translate-x-1 
-            ${selectedSubcategory === subcategory.name ? "text-white" : "text-white"}
-          ${gradient} `}
-        >
-          <span className="text-base">{icon}</span>
-          <span className="text-xs capitalize tracking-wide">{subcategory.name}</span>
-        </button>
-      );
-    })
-  )}
-</div>
-
-
+                return (
+                  <button
+                    key={subcategory._id}
+                    onClick={() => handleSubcategorySelect(subcategory.name)}
+                    className={`w-full text-left px-3 py-1.5 mb-2 rounded-md font-medium transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md transform hover:scale-[1.02] hover:translate-x-1 
+                      ${selectedSubcategory === subcategory.name ? "text-white" : "text-white"}
+                    ${gradient} `}
+                  >
+                    <span className="text-base">{icon}</span>
+                    <span className="text-xs capitalize tracking-wide">
+                      {subcategory.name}
+                    </span>
+                  </button>
+                );
+              })
+            )}
+          </div>
         </div>
 
         {/* Main Content Area */}
-      <div className="flex-1 flex flex-col">
-          {/* Search Bar */}
+        <div className="flex-1 flex flex-col">
+          {/* Enhanced Search Bar */}
           <div className="p-4 bg-white border-b border-gray-200">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3 h-3" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <input
                 type="text"
                 placeholder={`Search items...${selectedSubcategory ? ` in ${selectedSubcategory}` : ''}`}
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-6 pr-2 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                onChange={(e) => handleSearchChange(e.target.value)}
+                className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#10b981] focus:border-transparent text-sm"
               />
-            </div>  
+              {searchTerm && (
+                <button
+                  onClick={clearSearch}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+            
+            {/* Search Results Info */}
+            {searchTerm && (
+              <div className="mt-2 text-xs text-gray-500">
+                {menuItems.length > 0
+                  ? `Found ${menuItems.length} item${menuItems.length !== 1 ? 's' : ''} for "${searchTerm}"`
+                  : `No items found for "${searchTerm}"`
+                }
+              </div>
+            )}
           </div>
 
           {/* Menu Items Grid */}
           <div className="flex-1 p-4 overflow-y-auto">
-            {!selectedCuisine ? (
-              <div className="flex items-center justify-center h-full">
-                <div className="text-center text-gray-500">
-                  <Package className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                  <h3 className="text-lg font-medium mb-2">Select a Category</h3>
-                  <p className="text-sm">Choose a category above to view subcategories</p>
-                </div>
-              </div>
-            ) : !selectedSubcategory && !searchTerm ? (
-              <div className="flex items-center justify-center h-full">
-                <div className="text-center text-gray-500">
-                  <Filter className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                  <h3 className="text-lg font-medium mb-2">Select a Subcategory</h3>
-                  <p className="text-sm">Choose a subcategory from the sidebar to view items</p>
-                </div>
-              </div>
-            ) : loader ? (
+            {loader ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
@@ -608,49 +611,61 @@ const getFilteredSubcategories = () => {
               <>
                 <div className="mb-4">
                   <h3 className="text-xs font-semibold text-[#10b981]">
-                    {selectedCuisine?.categoryName} - {selectedSubcategory || 'Search Results'} ({menuItems.length} items)
+                    {selectedSubcategory 
+                      ? `${selectedCuisine?.categoryName} - ${selectedSubcategory} (${menuItems.length} items)`
+                      : searchTerm 
+                        ? `Search Results (${menuItems.length} items)`
+                        : `All Items (${menuItems.length} items)`
+                    }
                   </h3>
                 </div>
-                
+
                 {menuItems.length === 0 ? (
-                  <div className="flex items-center justify-center h-35">
+                  <div className="flex items-center justify-center h-64">
                     <div className="text-center text-gray-500">
                       <Search className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                      <h3 className="text-lg font-medium mb-2">No Items Found</h3>
+                      <h3 className="text-lg font-medium mb-2">
+                        No Items Found
+                      </h3>
                       <p className="text-sm">
-                        {searchTerm 
+                        {searchTerm
                           ? `No items found matching "${searchTerm}"`
-                          : `No items available in ${selectedSubcategory}`
+                          : selectedSubcategory
+                            ? `No items available in ${selectedSubcategory}`
+                            : "No items available"
                         }
                       </p>
                     </div>
                   </div>
                 ) : (
-                <div className="grid grid-cols-5 gap-4 auto-rows-max ">
-
+                  <div className="grid grid-cols-5 gap-4 auto-rows-max">
                     {menuItems.map((item, index) => (
                       <motion.div
                         key={item._id}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.3, delay: index * 0.05 }}
-                        className="group relative bg-white  rounded-xl shadow-sm overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-[1.02] active:scale-95"
+                        className="group relative bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-[1.02] active:scale-95"
                         onClick={() => addToOrder(item)}
                       >
                         {/* Image Container with Overlay Effects */}
                         <div className="relative h-40 overflow-hidden">
-                          <img 
-                            src={item.product_image || 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=300&h=200&fit=crop'} 
+                          <img
+                            src={
+                              item.product_image ||
+                              "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=300&h=200&fit=crop"
+                            }
                             alt={item.product_name}
                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                             onError={(e) => {
-                              e.target.src = 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=300&h=200&fit=crop';
+                              e.target.src =
+                                "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=300&h=200&fit=crop";
                             }}
                           />
-                          
+
                           {/* Gradient Overlay */}
                           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                          
+
                           {/* Quick Add Button */}
                           <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
                             <div className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg hover:bg-white hover:scale-110 transition-all duration-200">
@@ -684,16 +699,15 @@ const getFilteredSubcategories = () => {
                         <div className="p-4">
                           {/* Title and Rating */}
                           <div className="mb-3">
-                            <h3 className="font-bold text-[#10b981]text-sm mb-1 line-clamp-2 group-hover:text-blue-700 transition-colors duration-200">
+                            <h3 className="font-bold text-[#10b981] text-sm mb-1 line-clamp-2 group-hover:text-blue-700 transition-colors duration-200">
                               {item.product_name}
                             </h3>
-                            
+
                             {/* Rating and Time */}
                             <div className="flex items-center justify-between text-xs text-gray-500">
-                             
                               <div className="flex items-center space-x-1 text-[#10b981]">
                                 <Clock className="w-3 h-3" />
-                                <span>{item.time || '15-20 min'}</span>
+                                <span>{item.time || "15-20 min"}</span>
                               </div>
                             </div>
                           </div>
@@ -706,7 +720,9 @@ const getFilteredSubcategories = () => {
                               </span>
                               {item.Priceleveles?.[0]?.priceDisc > 0 && (
                                 <span className="text-xs text-gray-400 line-through">
-                                  ₹{(item.Priceleveles[0].pricerate + item.Priceleveles[0].priceDisc)}
+                                  ₹
+                                  {item.Priceleveles[0].pricerate +
+                                    item.Priceleveles[0].priceDisc}
                                 </span>
                               )}
                             </div>
@@ -715,7 +731,7 @@ const getFilteredSubcategories = () => {
 
                         {/* Hover Border Effect */}
                         <div className="absolute inset-0 border-2 border-transparent group-hover:border-blue-200 rounded-xl transition-colors duration-300 pointer-events-none"></div>
-                        
+
                         {/* Shine Effect */}
                         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
                           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
@@ -738,7 +754,7 @@ const getFilteredSubcategories = () => {
             </h3>
           </div>
 
-          <div className="flex-1 overflow-y-auto  min-h-0 p-4">
+          <div className="flex-1 overflow-y-auto min-h-0 p-4">
             {orderItems.length === 0 ? (
               <p className="text-gray-500 text-center py-8">
                 No items in order
@@ -855,7 +871,7 @@ const getFilteredSubcategories = () => {
                 {orderType === "dine-in" ? "Place Order" : "Place Order"}
               </button>
 
-              {orderType !== "dine-in" && (
+              {/* {orderType !== "dine-in" && (
                 <button
                   className="bg-[#10b981] text-white px-4 py-3 rounded-lg font-semibold hover:bg-[#151e31] transition-all duration-200 disabled:opacity-50 flex items-center hover:scale-105 active:scale-95"
                   disabled={orderItems.length === 0}
@@ -863,7 +879,7 @@ const getFilteredSubcategories = () => {
                 >
                   <ArrowRight className="w-4 h-4" />
                 </button>
-              )}
+              )} */}
             </div>
           </div>
         </div>
@@ -1151,7 +1167,8 @@ const getFilteredSubcategories = () => {
               <div className="flex justify-end space-x-2 mt-4">
                 <button
                   onClick={() => setShowPaymentModal(false)}
-                  className="px-4 py-2 rounded-md bg-gray-200 hover:bg-gray-300 text-sm font-medium text-gray-700">
+                  className="px-4 py-2 rounded-md bg-gray-200 hover:bg-gray-300 text-sm font-medium text-gray-700"
+                >
                   Cancel
                 </button>
                 <button

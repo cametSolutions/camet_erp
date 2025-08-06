@@ -250,36 +250,43 @@ function BookingList() {
           <p className="font-bold text-sm">{el?.voucherNumber}</p>
           {((location.pathname === "/sUsers/bookingList" &&
             el?.status != "checkIn") ||
-           (el?.status != "checkOut" && location.pathname === "/sUsers/checkInList" ) ||
-            (Number(el?.balanceToPay) > 0 && location.pathname === "/sUsers/checkOutList" ) ) && (
-          <button
-            onClick={() => {
-              if (location.pathname === "/sUsers/checkInList") {
-                navigate(`/sUsers/checkOutPage`, {
-                  state: { bookingData: el },
-                });
-              } else {
-                navigate(`/sUsers/checkInPage`, {
-                  state: { bookingData: el },
-                });
-              }
-            }}
-            className="bg-black hover:bg-blue-400 text-white font-semibold py-1 px-2 rounded shadow-md transition duration-300 ml-auto"
-          >
-            {location.pathname === "/sUsers/checkInList"
-              ? "Check Out"
-              : "Check In"}
-          </button>
-           )}
-          {(el?.status == "checkIn" &&
+            (el?.status != "checkOut" &&
+              location.pathname === "/sUsers/checkInList") ||
+            (Number(el?.balanceToPay) > 0 &&
+              location.pathname === "/sUsers/checkOutList")) && (
+            <button
+              onClick={() => {
+                if (location.pathname === "/sUsers/checkOutList" && el.checkInId) {
+                  navigate(`/sUsers/EditCheckOut`, {
+                    state: el,
+                  });
+                } else {
+                  navigate(`/sUsers/CheckOutPage`, {
+                    state: { bookingData: el },
+                  });
+                }
+              }}
+              className="bg-black hover:bg-blue-400 text-white font-semibold py-1 px-2 rounded shadow-md transition duration-300 ml-auto"
+            >
+              {location.pathname === "/sUsers/checkInList"
+                ? "Check Out"
+                : location.pathname === "/sUsers/checkOutList"
+                ? "Close"
+                : "Check In"}
+            </button>
+          )}
+          {((el?.status === "checkIn" &&
             location.pathname === "/sUsers/bookingList") ||
-            (el?.status == "checkOut" &&  location.pathname == "/sUsers/checkInList") ||  (Number(el?.balanceToPay) <= 0 && location.pathname === "/sUsers/checkOutList" ) && (
-                <button className="bg-green-600 hover:bg-green-400 text-white font-semibold py-1 px-2 rounded shadow-md transition duration-300 ml-auto">
-                  {location.pathname == "/sUsers/checkInList"
-                    ? "CheckedOut"
-                    : "Admitted"}
-                </button>
-              )}
+            (el?.status === "checkOut" &&
+              location.pathname === "/sUsers/checkInList") ||
+            (Number(el?.balanceToPay) <= 0 &&
+              location.pathname === "/sUsers/checkOutList")) && (
+            <button className="bg-green-600 hover:bg-green-400 text-white font-semibold py-1 px-2 rounded shadow-md transition duration-300 ml-auto">
+              {location.pathname === "/sUsers/checkInList"
+                ? "CheckedOut"
+                : "Admitted"}
+            </button>
+          )}
         </div>
         <hr className="mt-4" />
         <div className="flex justify-between items-center w-full gap-3 mt-4 text-sm">

@@ -152,10 +152,11 @@ import AddSubRestuarentCategory from '@/pages/masters/product/productSubDetails/
 // import ItemList from '@/pages/Restuarant/Pages/ItemList'
 import EditBooking from '@/pages/Hotel/Pages/EditBooking'
 import EditChecking from '@/pages/Hotel/Pages/EditChecking'
+import EditCheckOut from '@/pages/Hotel/Pages/EditCheckOut'
 import ItemList from '@/pages/Restuarant/Pages/itemList'
 import EditItem from '@/pages/Restuarant/Pages/EditItem'
 import ItemRegistration from '@/pages/Restuarant/Pages/ItemRegistration'
-import KOTPrintFormat from '@/pages/Restuarant/Pages/KotPrint'
+
 const Routers = () => {
   return (
     <Routes>
@@ -437,11 +438,12 @@ const Routers = () => {
         <Route path='/sUsers/CheckOutList' element={<ProtectedSecRoute><BookingList/></ProtectedSecRoute>}/>
         <Route path='/sUsers/EditBooking' element={<ProtectedSecRoute><EditBooking /></ProtectedSecRoute>} />
         <Route path='/sUsers/EditChecking' element={<ProtectedSecRoute><EditChecking /></ProtectedSecRoute>} />
-         <Route path='/sUsers/itemList'  element={<ProtectedSecRoute><ItemList /></ProtectedSecRoute>} />
-        <Route path='/KotPage' element={<KotPage/>}/>
+        <Route path='/sUsers/EditCheckOut' element={<ProtectedSecRoute><EditCheckOut /></ProtectedSecRoute>} />
+        <Route path='/sUsers/itemList'  element={<ProtectedSecRoute><ItemList /></ProtectedSecRoute>} />
+        <Route path='/sUsers/KotPage' element={<ProtectedSecRoute><KotPage/></ProtectedSecRoute>}/>
         <Route path='/sUsers/editItem' element={<ProtectedSecRoute><EditItem /></ProtectedSecRoute>} />
 <Route path='/sUsers/itemRegistration' element ={<ProtectedSecRoute><ItemRegistration /></ProtectedSecRoute>} />
-<Route path='/sUsers/KotPrint' element={<ProtectedSecRoute><KOTPrintFormat /></ProtectedSecRoute>} />
+
     </Routes>
   )
 }

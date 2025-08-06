@@ -17,6 +17,7 @@ function EditBooking() {
   const editingData = location?.state;
   const [loading, setLoading] = useState(false);
   const [editData, setEditData] = useState(editingData);
+  const [outStanding, setOutStanding] = useState([]);
   const navigate = useNavigate();
   useEffect(() => {
     if(editingData){
@@ -24,11 +25,11 @@ function EditBooking() {
     }
   },[editingData])
   const { data, loading: advanceLoading } = useFetch(
-    `/api/sUsers/getBookingAdvanceData/${editData._id}`    
+    `/api/sUsers/getBookingAdvanceData/${editData?._id}?type=${"EditBooking"}`
   );
-
   useEffect(() => {
     if (data) {
+      setOutStanding(data?.data);
       let totalAdvance = data?.data?.reduce((acc, curr) => {
         return curr?.source == "Booking" && acc + Number(curr.bill_amount || 0);
       }, 0);
@@ -84,6 +85,7 @@ function EditBooking() {
             setIsLoading={setLoading}
             editData={editData}
             isSubmittingRef={isSubmittingRef}
+            outStanding={outStanding}
           />
         </div>
       )}
