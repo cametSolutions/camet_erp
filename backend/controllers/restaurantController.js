@@ -3,6 +3,8 @@ import Item from "../models/restaurantModels.js"; // Adjust path as needed
 import hsnModel from "../models/hsnModel.js";
 import product from "../models/productModel.js";
 import { Category } from "../models/subDetails.js"; // Adjust path as needed
+import kotModal from "../models/kotModal.js";
+import { generateVoucherNumber } from "../helpers/voucherHelper.js";
 
 // Helper functions (you may need to create these or adjust based on your existing ones)
 import {
@@ -11,6 +13,7 @@ import {
   fetchRoomsFromDatabase,
 } from "../helpers/restaurantHelper.js";
 import { extractRequestParams } from "../helpers/productHelper.js";
+import VoucherSeriesModel from "../models/VoucherSeriesModel.js";
 // Add Item Controller
 export const addItem = async (req, res) => {
   const session = await mongoose.startSession(); // Step 1: Start session
@@ -44,7 +47,7 @@ export const addItem = async (req, res) => {
       Secondary_user_id: req.sUserId,
       cmp_id: req.params.cmp_id,
       product_name: formData.itemName,
-       product_image: formData.imageUrl?.secure_url || "", // Add image URL
+      product_image: formData.imageUrl?.secure_url || "", // Add image URL
       category: formData.foodCategory,
       sub_category: formData.foodType,
       unit: formData.unit,
@@ -83,17 +86,21 @@ export const addItem = async (req, res) => {
 
 // Get Items Controller
 export const getItems = async (req, res) => {
- try {
+  try {
     const params = extractRequestParams(req);
     const filter = buildDatabaseFilterForRoom(params);
     console.log("filter", filter);
-    
+
     const { items, totalItems } = await fetchRoomsFromDatabase(filter, params);
     console.log("items", items);
-    
-    const sendItemResponseData = sendRoomResponse(res, items, totalItems, params);
 
-} catch (error) {
+    const sendItemResponseData = sendRoomResponse(
+      res,
+      items,
+      totalItems,
+      params
+    );
+  } catch (error) {
     console.error("Error in getItems:", error);
     return res.status(500).json({
       success: false,
@@ -172,7 +179,6 @@ export const updateItem = async (req, res) => {
   const session = await mongoose.startSession();
 
   try {
- 
     const { formData, tableData } = req.body;
 
     session.startTransaction();
@@ -188,7 +194,7 @@ export const updateItem = async (req, res) => {
 
     // Update item
     const updatedItem = await product.findOneAndUpdate(
-     { _id: req.params.id, cmp_id: req.params.cmp_id },
+      { _id: req.params.id, cmp_id: req.params.cmp_id },
       {
         itemName: formData.itemName,
         foodCategory: formData.foodCategory,
@@ -264,8 +270,6 @@ export const deleteItem = async (req, res) => {
 
 // controllers/categoryController.js
 
-
-
 export const getCategories = async (req, res) => {
   try {
     const { under } = req.query;
@@ -273,7 +277,7 @@ export const getCategories = async (req, res) => {
     // Build filter conditionally
     const filter = {};
     if (under) filter.under = under;
-    if(cpm_id) filter.cmp_id = cpm_id
+    if (cpm_id) filter.cmp_id = cpm_id;
 
     const categories = await Category.find(filter).select("-__v"); // omit __v if you want
 
@@ -286,6 +290,108 @@ export const getCategories = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Internal server error while fetching categories",
+    });
+  }
+};
+
+// function used to generate kot
+export const generateKot = async (req, res) => {
+  const session = await mongoose.startSession();
+
+  try {
+    session.startTransaction();
+
+    const cmp_id = req.params.cmp_id;
+
+    // Find voucher series inside the session
+    const voucherData = await VoucherSeriesModel.findOne(
+      { voucherType: "memoRandom", cmp_id: cmp_id },
+      null,
+      { session }
+    );
+
+    if (!voucherData) {
+      throw new Error("Voucher series not found for memoRandom");
+    }
+
+    // Generate voucher number using the session
+    const kotNumber = await generateVoucherNumber(
+      cmp_id,
+      "memoRandom",
+      voucherData.series[0]._id.toString(),
+      session
+    );
+
+    // Prepare the KOT data
+    const kotData = {
+      voucherNumber: kotNumber?.voucherNumber,
+      primary_user_id: req.pUserId || req.owner,
+      secondary_user_id: req.sUserId,
+      cmp_id: cmp_id,
+      items: req.body.items,
+      type: req.body.type,
+      customer: req.body.customer,
+      tableNumber: req.body.customer?.tableNumber,
+      total: req.body.total,
+      createdAt: new Date(),
+      status: req.body.status || "pending",
+      paymentMethod: req.body.paymentMethod,
+    };
+
+    // // Create the KOT document inside the transaction
+    const kot = await kotModal.create([kotData], { session });
+
+    // Commit the transaction
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(200).json({
+      success: true,
+      data: kot[0], // create with array returns an array
+    });
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+
+    console.error("Error generating KOT:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error while generating KOT",
+      error: error.message,
+    });
+  }
+};
+
+// get all kot 
+export const getKot = async (req, res) => {
+  try {
+    const kot = await kotModal.find({ cmp_id: req.params.cmp_id })
+    res.status(200).json({
+      success: true,
+      data: kot,
+    });
+  } catch (error) {
+    console.error("Error fetching KOT:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error while fetching KOT",
+    });
+  }
+};
+
+// function used to update kot
+export const updateKotStatus = async (req, res) => {
+  try {
+    const kot = await kotModal.updateOne({ _id: req.params.cmp_id }, req.body)
+    res.status(200).json({
+      success: true,
+      data: kot,
+    });
+  } catch (error) {
+    console.error("Error updating KOT:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error while updating KOT",
     });
   }
 };

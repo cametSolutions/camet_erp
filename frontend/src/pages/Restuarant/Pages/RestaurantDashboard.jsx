@@ -32,17 +32,19 @@ import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
 import api from "@/api/api";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 const RestaurantPOS = () => {
   const [selectedCuisine, setSelectedCuisine] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedSubcategory, setSelectedSubcategory] = useState("");
-const[hoveredCuisine,setHoveredCuisine] = useState("");
+  const [hoveredCuisine, setHoveredCuisine] = useState("");
   const [orderItems, setOrderItems] = useState([]);
+  const navigate = useNavigate();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [items, setItems] = useState([]);
-  const[data,setData]= useState([]);
+  const [data, setData] = useState([]);
   const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [loader, setLoader] = useState(false);
@@ -54,7 +56,7 @@ const[hoveredCuisine,setHoveredCuisine] = useState("");
   const [loading, setLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [optionData, setOptionsData] = useState({});
- 
+
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
@@ -64,17 +66,17 @@ const[hoveredCuisine,setHoveredCuisine] = useState("");
  
 ];
 
-const subcategoryIcons = {
-  Pizza: "🍕",
-  noodles: "🍜",
-  Burger: "🍔",
-  Salad: "🥗",
-  Dessert: "🍰",
-  Drinks: "🥤",
-  Snacks: "🍟",
-  Biriyani: "🍲",
-  Default: "🍽️",
-};
+  const subcategoryIcons = {
+    Pizza: "🍕",
+    noodles: "🍜",
+    Burger: "🍔",
+    Salad: "🥗",
+    Dessert: "🍰",
+    Drinks: "🥤",
+    Snacks: "🍟",
+    Biriyani: "🍲",
+    Default: "🍽️",
+  };
 
   const [customerDetails, setCustomerDetails] = useState({
     name: "",
@@ -113,7 +115,6 @@ const subcategoryIcons = {
 
       const { categories, subcategories, priceLevels } =
         subDetailsRes.data.data;
-        console.log(subcategories)
       setOptionsData((prev) => ({
         ...prev,
         category: categories,
@@ -124,25 +125,11 @@ const subcategoryIcons = {
 
       // Set the first category as default if available
       if (categories && categories.length > 0) {
-         const defaultCategory = {
-    categoryId: categories[0]._id,
-    categoryName: categories[0].name,
-  };
-        setSelectedCuisine(defaultCategory);
-         setSelectedCategory(""); // Optional: you can remove if unused
-  setSearchTerm("");
-
-  const subcatsForCategory = subDetailsRes.data.data.subcategories.filter(
-    (sub) => sub.category === defaultCategory.categoryId
-  );
-
-  if (subcatsForCategory.length > 0) {
-    setSelectedSubcategory(subcatsForCategory[0].name); // Automatically select 1st subcategory
-  } else {
-    setSelectedSubcategory("");
-  }
-}
-      
+        setSelectedCuisine({
+          categoryId: categories[0]._id,
+          categoryName: categories[0].name,
+        });
+      }
     } catch (error) {
       console.error("Failed to fetch data:", error);
       toast.error(error.response?.data?.message || "Failed to load data");
@@ -151,8 +138,7 @@ const subcategoryIcons = {
     }
   }, [cmp_id]);
 
-
-  console.log(optionData?.subcategory)
+  console.log(optionData?.subcategory);
 
   useEffect(() => {
     fetchAllData();
@@ -170,30 +156,35 @@ const subcategoryIcons = {
 
         console.log("Fetching all items with params:", params.toString());
 
-        const res = await api.get(`/api/sUsers/getAllItems/${cmp_id}?${params}`, {
-          withCredentials: true,
-        });
+        const res = await api.get(
+          `/api/sUsers/getAllItems/${cmp_id}?${params}`,
+          {
+            withCredentials: true,
+          }
+        );
 
         console.log("Items API Response:", res.data);
-        
+
         // Store all items
         const allItems = res?.data?.items || [];
-        
-        
+
         // Filter items based on selected subcategory
         if (selectedSubcategory && !searchTerm) {
           const selectedSubcatId = getSelectedSubcategoryId();
-          const filteredItems = allItems.filter(item => 
-            item.sub_category === selectedSubcatId
+          const filteredItems = allItems.filter(
+            (item) => item.sub_category === selectedSubcatId
           );
-          console.log("Filtered items for subcategory:", selectedSubcategory, filteredItems);
+          console.log(
+            "Filtered items for subcategory:",
+            selectedSubcategory,
+            filteredItems
+          );
           setItems(filteredItems);
         } else {
           setItems(allItems);
         }
-        
+
         setHasMore(false);
-       
       } catch (error) {
         console.log("Error fetching items:", error);
         setHasMore(false);
@@ -218,14 +209,32 @@ const subcategoryIcons = {
   console.log("Items:", items);
   console.log("Option Data:", optionData);
 
+  const getFilteredItems = () => {
+    let items = filteredItems;
 
+    if (selectedCuisine) {
+      items = items.filter((item) => item.category === selectedCuisine);
+    }
 
+    if (selectedSubcategory) {
+      items = items.filter((item) => item.subcategory === selectedSubcategory);
+    }
 
+    if (searchTerm.trim() !== "") {
+      const term = searchTerm.toLowerCase();
+      items = items.filter(
+        (item) =>
+          item.name.toLowerCase().includes(term) ||
+          item.subcategoryName?.toLowerCase().includes(term) // assumes you have subcategoryName
+      );
+    }
 
+    return items;
+  };
 
   const cuisines = optionData?.category || [];
   const subcategories = optionData?.subcategory || [];
-console.log(data)
+  console.log(data);
 
   //   const getSubDetails = async (data) => {
   //      try {
@@ -252,19 +261,23 @@ console.log(data)
   //   return selectedCat?._id || '';
   // };
 
-  // Get selected subcategory ID  
+  // Get selected subcategory ID
   const getSelectedSubcategoryId = () => {
-    const selectedSubcat = subcategories.find(subcat => subcat.name === selectedSubcategory);
-    return selectedSubcat?._id || '';
+    const selectedSubcat = subcategories.find(
+      (subcat) => subcat.name === selectedSubcategory
+    );
+    return selectedSubcat?._id || "";
   };
 
   // Filter subcategories based on selected category
-const getFilteredSubcategories = () => {
-  if (!selectedCuisine) return [];
+  const getFilteredSubcategories = () => {
+    if (!selectedCuisine) return [];
 
-  // Return full subcategory items that match the selected category
-  return subcategories.filter(item => item.category === selectedCuisine?.categoryId );
-};
+    // Return full subcategory items that match the selected category
+    return subcategories.filter(
+      (item) => item.category === selectedCuisine?.categoryId
+    );
+  };
 
   const filteredSubcategories = getFilteredSubcategories();
   const menuItems = items || [];
@@ -315,12 +328,11 @@ const getFilteredSubcategories = () => {
     return orderItems.reduce((total, item) => total + item.quantity, 0);
   };
 
-  const handleCategorySelect = (category,name) => {
+  const handleCategorySelect = (category, name) => {
     let newObject = {
-      categoryId:category,
-      categoryName:name,
-
-    }
+      categoryId: category,
+      categoryName: name,
+    };
     setSelectedCuisine(newObject);
     setSelectedCategory("");
     setSelectedSubcategory("");
@@ -329,9 +341,8 @@ const getFilteredSubcategories = () => {
   };
 
   const handleSubcategorySelect = (subcategoryName) => {
-    console.log(subcategoryName)
+    console.log(subcategoryName);
     setSelectedSubcategory(subcategoryName);
-
   };
 
   const handleBackToCategories = () => {
@@ -376,24 +387,31 @@ const getFilteredSubcategories = () => {
       paymentMethod: orderType === "dine-in" ? null : paymentMethod,
     };
 
+    try {
+      api.post(`/api/sUsers/generateKOT/${cmp_id}`, newOrder, {
+        withCredentials: true,
+      });
+    } catch (error) {
+      console.log(error);
+      toast.error(error.response.data.message);
+    }
+
     setOrders([...orders, newOrder]);
     setOrderItems([]);
     setOrderNumber(orderNumber + 1);
     setShowKOTModal(false);
 
     if (orderType === "dine-in") {
-      alert(`KOT #${orderNumber} generated and sent to kitchen!`);
       setCustomerDetails({
         name: "",
         phone: "",
         address: "",
         tableNumber: "10",
       });
+      toast.success("KOT generated successfully!");
     } else {
-      alert(
-        `KOT #${orderNumber} generated and sent to kitchen! Please proceed to payment.`
-      );
-      setShowPaymentModal(true);
+      toast.success("KOT generated successfully!");
+      // setShowPaymentModal(true);
     }
   };
 
@@ -428,7 +446,6 @@ const getFilteredSubcategories = () => {
     );
   };
 
-
   const getOrderTypeDisplay = (type) => {
     const typeMap = {
       "dine-in": "Dine In",
@@ -439,7 +456,8 @@ const getFilteredSubcategories = () => {
     return typeMap[type] || type;
   };
 
-  
+  const VISIBLE_COUNT = 8;
+  const visibleItems = menuItems.slice(0, VISIBLE_COUNT);
 
   return (
     <div className="h-screen  overflow-hidden  bg-gray-100 flex flex-col">
@@ -466,9 +484,12 @@ const getFilteredSubcategories = () => {
                   : getOrderTypeDisplay(orderType)}
               </span>
             </div>
-            <div className="flex items-center space-x-2 bg-white/10 rounded-lg px-3 py-1">
-              <Receipt className="w-4 h-4" />
-              <span className="text-sm font-medium">Orders: {orders.length}</span>
+            <div
+              className="flex items-center space-x-2 hover:cursor-pointer"
+              onClick={() => navigate("/sUsers/KotPage")}
+            >
+              <Receipt className="w-5 h-5" />
+              <span className="text-sm">Orders: {orders.length}</span>
             </div>
           </div>
         </div>
@@ -551,32 +572,34 @@ const getFilteredSubcategories = () => {
           className={`w-full text-left px-3 py-1.5 mb-2 rounded-md font-medium transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md transform hover:scale-[1.02] hover:translate-x-1 
             ${selectedSubcategory === subcategory.name ? "text-white" : "text-white"}
           ${gradient} `}
-        >
-          <span className="text-base">{icon}</span>
-          <span className="text-xs capitalize tracking-wide">{subcategory.name}</span>
-        </button>
-      );
-    })
-  )}
-</div>
-
-
+                  >
+                    <span className="text-base">{icon}</span>
+                    <span className="text-xs capitalize tracking-wide">
+                      {subcategory.name}
+                    </span>
+                  </button>
+                );
+              })
+            )}
+          </div>
         </div>
 
         {/* Main Content Area */}
-      <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col">
           {/* Search Bar */}
           <div className="p-4 bg-white border-b border-gray-200">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3 h-3" />
               <input
                 type="text"
-                placeholder={`Search items...${selectedSubcategory ? ` in ${selectedSubcategory}` : ''}`}
+                placeholder={`Search items...${
+                  selectedSubcategory ? ` in ${selectedSubcategory}` : ""
+                }`}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-6 pr-2 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
-            </div>  
+            </div>
           </div>
 
           {/* Menu Items Grid */}
@@ -585,16 +608,24 @@ const getFilteredSubcategories = () => {
               <div className="flex items-center justify-center h-full">
                 <div className="text-center text-gray-500">
                   <Package className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                  <h3 className="text-lg font-medium mb-2">Select a Category</h3>
-                  <p className="text-sm">Choose a category above to view subcategories</p>
+                  <h3 className="text-lg font-medium mb-2">
+                    Select a Category
+                  </h3>
+                  <p className="text-sm">
+                    Choose a category above to view subcategories
+                  </p>
                 </div>
               </div>
             ) : !selectedSubcategory && !searchTerm ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center text-gray-500">
                   <Filter className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                  <h3 className="text-lg font-medium mb-2">Select a Subcategory</h3>
-                  <p className="text-sm">Choose a subcategory from the sidebar to view items</p>
+                  <h3 className="text-lg font-medium mb-2">
+                    Select a Subcategory
+                  </h3>
+                  <p className="text-sm">
+                    Choose a subcategory from the sidebar to view items
+                  </p>
                 </div>
               </div>
             ) : loader ? (
@@ -611,17 +642,18 @@ const getFilteredSubcategories = () => {
                     {selectedCuisine?.categoryName} - {selectedSubcategory || 'Search Results'} ({menuItems.length} items)
                   </h3>
                 </div>
-                
+
                 {menuItems.length === 0 ? (
                   <div className="flex items-center justify-center h-35">
                     <div className="text-center text-gray-500">
                       <Search className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                      <h3 className="text-lg font-medium mb-2">No Items Found</h3>
+                      <h3 className="text-lg font-medium mb-2">
+                        No Items Found
+                      </h3>
                       <p className="text-sm">
-                        {searchTerm 
+                        {searchTerm
                           ? `No items found matching "${searchTerm}"`
-                          : `No items available in ${selectedSubcategory}`
-                        }
+                          : `No items available in ${selectedSubcategory}`}
                       </p>
                     </div>
                   </div>
@@ -639,18 +671,22 @@ const getFilteredSubcategories = () => {
                       >
                         {/* Image Container with Overlay Effects */}
                         <div className="relative h-40 overflow-hidden">
-                          <img 
-                            src={item.product_image || 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=300&h=200&fit=crop'} 
+                          <img
+                            src={
+                              item.product_image ||
+                              "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=300&h=200&fit=crop"
+                            }
                             alt={item.product_name}
                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                             onError={(e) => {
-                              e.target.src = 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=300&h=200&fit=crop';
+                              e.target.src =
+                                "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=300&h=200&fit=crop";
                             }}
                           />
-                          
+
                           {/* Gradient Overlay */}
                           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                          
+
                           {/* Quick Add Button */}
                           <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
                             <div className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg hover:bg-white hover:scale-110 transition-all duration-200">
@@ -687,13 +723,13 @@ const getFilteredSubcategories = () => {
                             <h3 className="font-bold text-[#10b981]text-sm mb-1 line-clamp-2 group-hover:text-blue-700 transition-colors duration-200">
                               {item.product_name}
                             </h3>
-                            
+
                             {/* Rating and Time */}
                             <div className="flex items-center justify-between text-xs text-gray-500">
                              
                               <div className="flex items-center space-x-1 text-[#10b981]">
                                 <Clock className="w-3 h-3" />
-                                <span>{item.time || '15-20 min'}</span>
+                                <span>{item.time || "15-20 min"}</span>
                               </div>
                             </div>
                           </div>
@@ -706,7 +742,9 @@ const getFilteredSubcategories = () => {
                               </span>
                               {item.Priceleveles?.[0]?.priceDisc > 0 && (
                                 <span className="text-xs text-gray-400 line-through">
-                                  ₹{(item.Priceleveles[0].pricerate + item.Priceleveles[0].priceDisc)}
+                                  ₹
+                                  {item.Priceleveles[0].pricerate +
+                                    item.Priceleveles[0].priceDisc}
                                 </span>
                               )}
                             </div>
@@ -715,7 +753,7 @@ const getFilteredSubcategories = () => {
 
                         {/* Hover Border Effect */}
                         <div className="absolute inset-0 border-2 border-transparent group-hover:border-blue-200 rounded-xl transition-colors duration-300 pointer-events-none"></div>
-                        
+
                         {/* Shine Effect */}
                         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
                           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
@@ -855,7 +893,7 @@ const getFilteredSubcategories = () => {
                 {orderType === "dine-in" ? "Place Order" : "Place Order"}
               </button>
 
-              {orderType !== "dine-in" && (
+              {/* {orderType !== "dine-in" && (
                 <button
                   className="bg-[#10b981] text-white px-4 py-3 rounded-lg font-semibold hover:bg-[#151e31] transition-all duration-200 disabled:opacity-50 flex items-center hover:scale-105 active:scale-95"
                   disabled={orderItems.length === 0}
@@ -863,7 +901,7 @@ const getFilteredSubcategories = () => {
                 >
                   <ArrowRight className="w-4 h-4" />
                 </button>
-              )}
+              )} */}
             </div>
           </div>
         </div>
@@ -1151,7 +1189,8 @@ const getFilteredSubcategories = () => {
               <div className="flex justify-end space-x-2 mt-4">
                 <button
                   onClick={() => setShowPaymentModal(false)}
-                  className="px-4 py-2 rounded-md bg-gray-200 hover:bg-gray-300 text-sm font-medium text-gray-700">
+                  className="px-4 py-2 rounded-md bg-gray-200 hover:bg-gray-300 text-sm font-medium text-gray-700"
+                >
                   Cancel
                 </button>
                 <button
