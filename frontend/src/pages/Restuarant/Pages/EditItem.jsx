@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from "react";
-import ItemRegisterComponent from "../Components/ItemRegisterComponent";
+import ItemRegisterComponent from "../components/ItemRegisterComponent";
 import api from "@/api/api";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";

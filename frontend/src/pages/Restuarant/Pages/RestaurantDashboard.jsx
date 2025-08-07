@@ -48,7 +48,7 @@ const RestaurantPOS = () => {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [items, setItems] = useState([]);
-  const [data, setData] = useState([]);
+  const [allItems, setAllItems] = useState([]); // Store all items
   const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [loader, setLoader] = useState(false);
@@ -70,7 +70,9 @@ const RestaurantPOS = () => {
   );
   console.log(companyName);
 
-  const gradientClasses = ["bg-gradient-to-r from-[#10b981] to-[#059669]"];
+  const gradientClasses = [
+    "bg-gradient-to-r from-[#10b981] to-[#059669]",
+  ];
 
   const subcategoryIcons = {
     Pizza: "🍕",
@@ -96,6 +98,14 @@ const RestaurantPOS = () => {
   });
   const [orders, setOrders] = useState([]);
   const [orderNumber, setOrderNumber] = useState(1001);
+
+  // Update current time every second
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const fetchAllData = useCallback(async () => {
     try {
@@ -148,67 +158,41 @@ const RestaurantPOS = () => {
     fetchAllData();
   }, [fetchAllData]);
 
-  // Fetch ALL items first, then filter on frontend
-  const fetchAllItems = useCallback(
-    async (searchTerm = "") => {
-      setIsLoading(true);
-      setLoader(true);
-      try {
-        const params = new URLSearchParams();
-        if (searchTerm) params.append("search", searchTerm);
-        params.append("under", "restaurant");
+  // Fetch ALL items on component mount
+  const fetchAllItems = useCallback(async () => {
+    setIsLoading(true);
+    setLoader(true);
+    try {
+      const params = new URLSearchParams();
+      params.append("under", "restaurant");
 
-        console.log("Fetching all items with params:", params.toString());
+      console.log("Fetching all items with params:", params.toString());
 
-        const res = await api.get(
-          `/api/sUsers/getAllItems/${cmp_id}?${params}`,
-          {
-            withCredentials: true,
-          }
-        );
-
-        console.log("Items API Response:", res.data);
-
-        // Store all items
-        const allItems = res?.data?.items || [];
-
-        // Filter items based on selected subcategory
-        if (selectedSubcategory && !searchTerm) {
-          const selectedSubcatId = getSelectedSubcategoryId();
-          const filteredItems = allItems.filter(
-            (item) => item.sub_category === selectedSubcatId
-          );
-          console.log(
-            "Filtered items for subcategory:",
-            selectedSubcategory,
-            filteredItems
-          );
-          setItems(filteredItems);
-        } else {
-          setItems(allItems);
+      const res = await api.get(
+        `/api/sUsers/getAllItems/${cmp_id}?${params}`,
+        {
+          withCredentials: true,
         }
+      );
 
-        setHasMore(false);
-      } catch (error) {
-        console.log("Error fetching items:", error);
-        setHasMore(false);
-        setItems([]);
-      } finally {
-        setIsLoading(false);
-        setLoader(false);
-      }
-    },
-    [cmp_id, selectedSubcategory]
-  );
+      console.log("Items API Response:", res.data);
 
-  // Fetch items when subcategory or search term changes
-  useEffect(() => {
-    if (selectedSubcategory || searchTerm) {
-      fetchAllItems(searchTerm);
-    } else {
+      // Store all items
+      const fetchedItems = res?.data?.items || [];
+      setAllItems(fetchedItems);
+      setItems(fetchedItems); // Show all items initially
+
+      setHasMore(false);
+    } catch (error) {
+      console.log("Error fetching items:", error);
+      setHasMore(false);
+      setAllItems([]);
       setItems([]);
+    } finally {
+      setIsLoading(false);
+      setLoader(false);
     }
-  }, [fetchAllItems, selectedSubcategory, searchTerm]);
+  }, [cmp_id]);
 
   const {
     data: roomBookingData,
@@ -243,57 +227,62 @@ const RestaurantPOS = () => {
   console.log("Items:", items);
   console.log("Option Data:", optionData);
 
-  const getFilteredItems = () => {
-    let items = filteredItems;
+  // Filter items based on subcategory and search term
+  useEffect(() => {
+    let filteredItems = [...allItems];
 
-    if (selectedCuisine) {
-      items = items.filter((item) => item.category === selectedCuisine);
-    }
-
+    // Filter by subcategory if selected
     if (selectedSubcategory) {
-      items = items.filter((item) => item.subcategory === selectedSubcategory);
-    }
-
-    if (searchTerm.trim() !== "") {
-      const term = searchTerm.toLowerCase();
-      items = items.filter(
-        (item) =>
-          item.name.toLowerCase().includes(term) ||
-          item.subcategoryName?.toLowerCase().includes(term) // assumes you have subcategoryName
+      const selectedSubcatId = getSelectedSubcategoryId();
+      filteredItems = filteredItems.filter(
+        (item) => item.sub_category === selectedSubcatId
       );
     }
 
-    return items;
+    // Filter by search term
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase().trim();
+      filteredItems = filteredItems.filter(item =>
+        item.product_name.toLowerCase().includes(searchLower) ||
+        (item.description && item.description.toLowerCase().includes(searchLower)) ||
+        (item.tags && item.tags.some(tag => tag.toLowerCase().includes(searchLower)))
+      );
+    }
+
+    setItems(filteredItems);
+  }, [allItems, selectedSubcategory, searchTerm]);
+
+  const searchTimeoutRef = useRef(null);
+  const handleSearchChange = (value) => {
+    setSearchTerm(value);
+    
+    // Clear previous timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    
+    // Set new timeout for debounced search
+    searchTimeoutRef.current = setTimeout(() => {
+      console.log("Search term:", value);
+    }, 300); // 300ms debounce
   };
+
+  // Clear search function
+  const clearSearch = () => {
+    setSearchTerm("");
+  };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const cuisines = optionData?.category || [];
   const subcategories = optionData?.subcategory || [];
-  console.log(data);
-
-  //   const getSubDetails = async (data) => {
-  //      try {
-  //        setLoading(true);
-  //        handleLoader(true);
-  //        const res = await api.get(
-  //          `/api/${user}/getProductSubDetails/${orgId}?type=${tab}`,
-  //          {
-  //            withCredentials: true,
-  //          }
-  //        );
-  //        setData(res?.data?.data);
-  //      } catch (error) {
-  //        console.log(error);
-  //        toast.error(error.response.data.message);
-  //      } finally {
-  //        setLoading(false);
-  //        handleLoader(false);
-  //      }
-  //    };
-  // // Get selected category ID
-  // const getSelectedCategoryId = () => {
-  //   const selectedCat = cuisines.find(cat => cat.name === selectedCuisine);
-  //   return selectedCat?._id || '';
-  // };
 
   // Get selected subcategory ID
   const getSelectedSubcategoryId = () => {
@@ -369,20 +358,19 @@ const RestaurantPOS = () => {
     };
     setSelectedCuisine(newObject);
     setSelectedCategory("");
-    setSelectedSubcategory("");
-    setItems([]);
-    setSearchTerm("");
+    setSelectedSubcategory(""); // Clear subcategory when category changes
+    setSearchTerm(""); // Clear search when category changes
   };
 
   const handleSubcategorySelect = (subcategoryName) => {
     console.log(subcategoryName);
     setSelectedSubcategory(subcategoryName);
+    setSearchTerm(""); // Clear search when subcategory is selected
   };
 
   const handleBackToCategories = () => {
     setSelectedSubcategory("");
     setSelectedCategory("");
-    setItems([]);
     setSearchTerm("");
   };
 
@@ -458,7 +446,6 @@ const RestaurantPOS = () => {
       toast.success("KOT generated successfully!");
     } else {
       toast.success("KOT generated successfully!");
-      // setShowPaymentModal(true);
     }
   };
 
@@ -521,11 +508,11 @@ const RestaurantPOS = () => {
   console.log(roomData);
 
   return (
-    <div className="h-screen  overflow-hidden  bg-gray-100 flex flex-col">
+    <div className="h-screen overflow-hidden bg-gray-100 flex flex-col">
       {/* Header */}
       <div className="bg-gradient-to-r from-slate-800 to-slate-900 text-white p-4 shadow-lg">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold  flex items-center gap-2">
+          <h1 className="text-2xl font-bold flex items-center gap-2">
             🍽️ Restaurant Management System
           </h1>
           <div className="flex items-center space-x-6">
@@ -539,7 +526,7 @@ const RestaurantPOS = () => {
               <Users className="w-4 h-4" />
               <span className="text-xs font-medium">
                 {orderType === "dine-in"
-                  ? `Table ${customerDetails.tableNumber}`
+                  ?` Table ${customerDetails.tableNumber}`
                   : orderType === "roomService"
                   ? `Room ${roomDetails.roomno || "---"}`
                   : getOrderTypeDisplay(orderType)}
@@ -605,7 +592,7 @@ const RestaurantPOS = () => {
               )}
             </div>
             {selectedCuisine && (
-              <div className="text-xs text-gray-500 mt-1 mt-1 font-medium">
+              <div className="text-xs text-gray-500 mt-1 font-medium">
                 Category: {selectedCuisine?.categoryName}
               </div>
             )}
@@ -623,23 +610,16 @@ const RestaurantPOS = () => {
               </div>
             ) : (
               filteredSubcategories.map((subcategory, index) => {
-                const icon =
-                  subcategoryIcons[subcategory.name] ||
-                  subcategoryIcons.Default;
-                const gradient =
-                  gradientClasses[index % gradientClasses.length];
+                const icon = subcategoryIcons[subcategory.name] || subcategoryIcons.Default;
+                const gradient = gradientClasses[index % gradientClasses.length];
 
                 return (
                   <button
                     key={subcategory._id}
                     onClick={() => handleSubcategorySelect(subcategory.name)}
                     className={`w-full text-left px-3 py-1.5 mb-2 rounded-md font-medium transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md transform hover:scale-[1.02] hover:translate-x-1 
-            ${
-              selectedSubcategory === subcategory.name
-                ? "text-white"
-                : "text-white"
-            }
-          ${gradient} `}
+                      ${selectedSubcategory === subcategory.name ? "text-white" : "text-white"}
+                    ${gradient} `}
                   >
                     <span className="text-base">{icon}</span>
                     <span className="text-xs capitalize tracking-wide">
@@ -654,49 +634,41 @@ const RestaurantPOS = () => {
 
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col">
-          {/* Search Bar */}
+          {/* Enhanced Search Bar */}
           <div className="p-4 bg-white border-b border-gray-200">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3 h-3" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <input
                 type="text"
-                placeholder={`Search items...${
-                  selectedSubcategory ? ` in ${selectedSubcategory}` : ""
-                }`}
+                placeholder={`Search items...${selectedSubcategory ? ` in ${selectedSubcategory}` : ''}`}
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-6 pr-2 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                onChange={(e) => handleSearchChange(e.target.value)}
+                className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#10b981] focus:border-transparent text-sm"
               />
+              {searchTerm && (
+                <button
+                  onClick={clearSearch}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
+            
+            {/* Search Results Info */}
+            {searchTerm && (
+              <div className="mt-2 text-xs text-gray-500">
+                {menuItems.length > 0
+                  ? `Found ${menuItems.length} item${menuItems.length !== 1 ? 's' : ''} for "${searchTerm}"`
+                  : `No items found for "${searchTerm}"`
+                }
+              </div>
+            )}
           </div>
 
           {/* Menu Items Grid */}
           <div className="flex-1 p-4 overflow-y-auto">
-            {!selectedCuisine ? (
-              <div className="flex items-center justify-center h-full">
-                <div className="text-center text-gray-500">
-                  <Package className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                  <h3 className="text-lg font-medium mb-2">
-                    Select a Category
-                  </h3>
-                  <p className="text-sm">
-                    Choose a category above to view subcategories
-                  </p>
-                </div>
-              </div>
-            ) : !selectedSubcategory && !searchTerm ? (
-              <div className="flex items-center justify-center h-full">
-                <div className="text-center text-gray-500">
-                  <Filter className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                  <h3 className="text-lg font-medium mb-2">
-                    Select a Subcategory
-                  </h3>
-                  <p className="text-sm">
-                    Choose a subcategory from the sidebar to view items
-                  </p>
-                </div>
-              </div>
-            ) : loader ? (
+            {loader ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
@@ -707,14 +679,17 @@ const RestaurantPOS = () => {
               <>
                 <div className="mb-4">
                   <h3 className="text-xs font-semibold text-[#10b981]">
-                    {selectedCuisine?.categoryName} -{" "}
-                    {selectedSubcategory || "Search Results"} (
-                    {menuItems.length} items)
+                    {selectedSubcategory 
+                      ? `${selectedCuisine?.categoryName} - ${selectedSubcategory} (${menuItems.length} items)`
+                      : searchTerm 
+                        ? `Search Results (${menuItems.length} items)`
+                        : `All Items (${menuItems.length} items)`
+                    }
                   </h3>
                 </div>
 
                 {menuItems.length === 0 ? (
-                  <div className="flex items-center justify-center h-35">
+                  <div className="flex items-center justify-center h-64">
                     <div className="text-center text-gray-500">
                       <Search className="w-16 h-16 mx-auto mb-4 text-gray-300" />
                       <h3 className="text-lg font-medium mb-2">
@@ -723,19 +698,22 @@ const RestaurantPOS = () => {
                       <p className="text-sm">
                         {searchTerm
                           ? `No items found matching "${searchTerm}"`
-                          : `No items available in ${selectedSubcategory}`}
+                          : selectedSubcategory
+                            ? `No items available in ${selectedSubcategory}`
+                            : "No items available"
+                        }
                       </p>
                     </div>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-5 gap-4 auto-rows-max ">
+                  <div className="grid grid-cols-5 gap-4 auto-rows-max">
                     {menuItems.map((item, index) => (
                       <motion.div
                         key={item._id}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.3, delay: index * 0.05 }}
-                        className="group relative bg-white  rounded-xl shadow-sm overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-[1.02] active:scale-95"
+                        className="group relative bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-[1.02] active:scale-95"
                         onClick={() => addToOrder(item)}
                       >
                         {/* Image Container with Overlay Effects */}
@@ -793,7 +771,7 @@ const RestaurantPOS = () => {
                         <div className="p-4">
                           {/* Title and Rating */}
                           <div className="mb-3">
-                            <h3 className="font-bold text-[#10b981]text-sm mb-1 line-clamp-2 group-hover:text-blue-700 transition-colors duration-200">
+                            <h3 className="font-bold text-[#10b981] text-sm mb-1 line-clamp-2 group-hover:text-blue-700 transition-colors duration-200">
                               {item.product_name}
                             </h3>
 
@@ -851,7 +829,7 @@ const RestaurantPOS = () => {
             </h3>
           </div>
 
-          <div className="flex-1 overflow-y-auto  min-h-0 p-4">
+          <div className="flex-1 overflow-y-auto min-h-0 p-4">
             {orderItems.length === 0 ? (
               <p className="text-gray-500 text-center py-8">
                 No items in order
@@ -1268,3 +1246,4 @@ const RestaurantPOS = () => {
 };
 
 export default RestaurantPOS;
+``

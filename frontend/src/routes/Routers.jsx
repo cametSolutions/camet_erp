@@ -153,9 +153,10 @@ import AddSubRestuarentCategory from '@/pages/masters/product/productSubDetails/
 import EditBooking from '@/pages/Hotel/Pages/EditBooking'
 import EditChecking from '@/pages/Hotel/Pages/EditChecking'
 import EditCheckOut from '@/pages/Hotel/Pages/EditCheckOut'
-import ItemList from '@/pages/Restuarant/Pages/itemList'
+import ItemList from '@/pages/Restuarant/Pages/ItemList'
 import EditItem from '@/pages/Restuarant/Pages/EditItem'
 import ItemRegistration from '@/pages/Restuarant/Pages/ItemRegistration'
+
 const Routers = () => {
   return (
     <Routes>
@@ -441,7 +442,8 @@ const Routers = () => {
         <Route path='/sUsers/itemList'  element={<ProtectedSecRoute><ItemList /></ProtectedSecRoute>} />
         <Route path='/sUsers/KotPage' element={<ProtectedSecRoute><KotPage/></ProtectedSecRoute>}/>
         <Route path='/sUsers/editItem' element={<ProtectedSecRoute><EditItem /></ProtectedSecRoute>} />
-        <Route path='/sUsers/itemRegistration' element ={<ProtectedSecRoute><ItemRegistration /></ProtectedSecRoute>} />
+<Route path='/sUsers/itemRegistration' element ={<ProtectedSecRoute><ItemRegistration /></ProtectedSecRoute>} />
+
     </Routes>
   )
 }
