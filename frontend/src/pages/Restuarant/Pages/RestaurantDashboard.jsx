@@ -65,6 +65,10 @@ const RestaurantPOS = () => {
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
+  const companyName = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg?.name
+  );
+  console.log(companyName);
 
   const gradientClasses = ["bg-gradient-to-r from-[#10b981] to-[#059669]"];
 
@@ -508,7 +512,7 @@ const RestaurantPOS = () => {
       createdAt: new Date(),
     };
 
-    generateAndPrintKOT(orderData, true, false);
+    generateAndPrintKOT(orderData, true, false , companyName );
   };
 
   const VISIBLE_COUNT = 8;

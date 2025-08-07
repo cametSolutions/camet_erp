@@ -1,5 +1,6 @@
 
 import jsPDF from 'jspdf';
+import { useSelector } from 'react-redux';
 
 export const generateKitchenOrderTicket = (orderData, restaurantName = 'ABC RESTAURANT') => {
   // Validate required data
