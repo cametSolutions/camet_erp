@@ -363,10 +363,10 @@ export const generateKot = async (req, res) => {
   }
 };
 
-// get all kot 
+// get all kot
 export const getKot = async (req, res) => {
   try {
-    const kot = await kotModal.find({ cmp_id: req.params.cmp_id })
+    const kot = await kotModal.find({ cmp_id: req.params.cmp_id });
     res.status(200).json({
       success: true,
       data: kot,
@@ -383,7 +383,7 @@ export const getKot = async (req, res) => {
 // function used to update kot
 export const updateKotStatus = async (req, res) => {
   try {
-    const kot = await kotModal.updateOne({ _id: req.params.cmp_id }, req.body)
+    const kot = await kotModal.updateOne({ _id: req.params.cmp_id }, req.body);
     res.status(200).json({
       success: true,
       data: kot,
@@ -397,7 +397,6 @@ export const updateKotStatus = async (req, res) => {
   }
 };
 
-
 // function used to fetch room data based on room booking
 export const getRoomDataForRestaurant = async (req, res) => {
   try {
@@ -407,9 +406,11 @@ export const getRoomDataForRestaurant = async (req, res) => {
     const allData = await CheckIn.find({ cmp_id: req.params.cmp_id });
 
     // Filter in JS
-    const filtered = allData.filter(doc => {
+    const filtered = allData.filter((doc) => {
       const arrivalDateTime = new Date(`${doc.arrivalDate} ${doc.arrivalTime}`);
-      const checkOutDateTime = new Date(`${doc.checkOutDate} ${doc.checkOutTime}`);
+      const checkOutDateTime = new Date(
+        `${doc.checkOutDate} ${doc.checkOutTime}`
+      );
 
       return arrivalDateTime <= now && now <= checkOutDateTime;
     });
@@ -427,3 +428,27 @@ export const getRoomDataForRestaurant = async (req, res) => {
   }
 };
 
+// function used to update kot data
+
+export const updateKotPayment = async (req, res) => {
+  try {
+    let kotId = req.params.id;
+    let paymentMethod = req.body.paymentMethod;
+    const kot = await kotModal.updateOne(
+      { _id: kotId },
+      { paymentMethod: paymentMethod, paymentCompleted: true }
+    );
+    console.log(kotId);
+    console.log(paymentMethod);
+    res.status(200).json({
+      success: true,
+      data: kot,
+    });
+  } catch (error) {
+    console.error("Error updating KOT:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error while updating KOT",
+    });
+  }
+};

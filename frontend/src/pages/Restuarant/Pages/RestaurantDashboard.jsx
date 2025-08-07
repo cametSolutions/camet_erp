@@ -34,7 +34,10 @@ import api from "@/api/api";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import useFetch from "@/customHook/useFetch";
-
+import {
+  generateAndPrintKOT,
+  generateAndPrintBill,
+} from "../Helper/kotPrintHelper";
 const RestaurantPOS = () => {
   const [selectedCuisine, setSelectedCuisine] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -62,6 +65,10 @@ const RestaurantPOS = () => {
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
+  const companyName = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg?.name
+  );
+  console.log(companyName);
 
   const gradientClasses = [
     "bg-gradient-to-r from-[#10b981] to-[#059669]",
@@ -377,16 +384,15 @@ const RestaurantPOS = () => {
     setShowPaymentModal(true);
   };
 
-  const generateKOT = () => {
+  const generateKOT = async () => {
     let orderCustomerDetails = {};
 
     if (orderType === "dine-in") {
-      orderCustomerDetails = { 
+      orderCustomerDetails = {
         tableNumber: customerDetails.tableNumber,
         name: roomDetails.customerName,
         phone: roomDetails.mobileNumber,
-
-       };
+      };
     } else if (orderType === "roomService") {
       orderCustomerDetails = {
         roomNumber: roomDetails.roomno,
@@ -406,12 +412,20 @@ const RestaurantPOS = () => {
       status: "pending",
       paymentMethod: orderType === "dine-in" ? null : paymentMethod,
     };
-    console.log(newOrder)
+    console.log(newOrder);
 
     try {
-      api.post('/api/sUsers/generateKOT/${cmp_id}', newOrder, {
-        withCredentials: true,
-      });
+      let response = await api.post(
+        `/api/sUsers/generateKOT/${cmp_id}`,
+        newOrder,
+        {
+          withCredentials: true,
+        }
+      );
+      console.log(response);
+      if (response.data?.success) {
+        handleKotPrint(response.data?.data);
+      }
     } catch (error) {
       console.log(error);
       toast.error(error.response.data.message);
@@ -475,6 +489,23 @@ const RestaurantPOS = () => {
     };
     return typeMap[type] || type;
   };
+
+  const handleKotPrint = (data) => {
+    console.log(data);
+    const orderData = {
+      kotNo: data?.voucherNumber,
+      tableNo: data?.tableNumber,
+      items: data?.items,
+      createdAt: new Date(),
+    };
+
+    generateAndPrintKOT(orderData, true, false , companyName );
+  };
+
+  const VISIBLE_COUNT = 8;
+  const visibleItems = menuItems.slice(0, VISIBLE_COUNT);
+
+  console.log(roomData);
 
   return (
     <div className="h-screen overflow-hidden bg-gray-100 flex flex-col">
@@ -987,9 +1018,10 @@ const RestaurantPOS = () => {
                         setRoomDetails({
                           ...roomDetails,
                           roomno: e.target.value,
-                          guestName:roomData.find((room) => room._id === e.target.value)?.customerName
+                          guestName: roomData.find(
+                            (room) => room._id === e.target.value
+                          )?.customerName,
                         })
-                        
                       }
                       className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
@@ -1120,7 +1152,7 @@ const RestaurantPOS = () => {
             </div>
 
             {/* Payment Method Selection */}
-            {/* <div className="mb-4">
+      {/* <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Payment Method
               </label>
@@ -1150,8 +1182,8 @@ const RestaurantPOS = () => {
               </div>
             </div> */}
 
-            {/* Order Summary */}
-            {/* <div className="bg-gray-50 p-3 rounded-lg mb-4">
+      {/* Order Summary */}
+      {/* <div className="bg-gray-50 p-3 rounded-lg mb-4">
               <h3 className="text-sm font-semibold text-gray-700 mb-2">
                 Order Summary - KOT #{orderNumber - 1}
               </h3>
@@ -1206,8 +1238,8 @@ const RestaurantPOS = () => {
                 </span>
               </div>
             </div> */}
-          {/* </motion.div> */}
-        {/* </div> */}
+      {/* </motion.div> */}
+      {/* </div> */}
       {/* )} */}
     </div>
   );
