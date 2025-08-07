@@ -70,9 +70,7 @@ const RestaurantPOS = () => {
   );
   console.log(companyName);
 
-  const gradientClasses = [
-    "bg-gradient-to-r from-[#10b981] to-[#059669]",
-  ];
+  const gradientClasses = ["bg-gradient-to-r from-[#10b981] to-[#059669]"];
 
   const subcategoryIcons = {
     Pizza: "🍕",
@@ -168,12 +166,9 @@ const RestaurantPOS = () => {
 
       console.log("Fetching all items with params:", params.toString());
 
-      const res = await api.get(
-        `/api/sUsers/getAllItems/${cmp_id}?${params}`,
-        {
-          withCredentials: true,
-        }
-      );
+      const res = await api.get(`/api/sUsers/getAllItems/${cmp_id}?${params}`, {
+        withCredentials: true,
+      });
 
       console.log("Items API Response:", res.data);
 
@@ -193,6 +188,10 @@ const RestaurantPOS = () => {
       setLoader(false);
     }
   }, [cmp_id]);
+
+  useEffect(() => {
+    fetchAllItems();
+  }, [fetchAllItems]);
 
   const {
     data: roomBookingData,
@@ -242,10 +241,13 @@ const RestaurantPOS = () => {
     // Filter by search term
     if (searchTerm.trim()) {
       const searchLower = searchTerm.toLowerCase().trim();
-      filteredItems = filteredItems.filter(item =>
-        item.product_name.toLowerCase().includes(searchLower) ||
-        (item.description && item.description.toLowerCase().includes(searchLower)) ||
-        (item.tags && item.tags.some(tag => tag.toLowerCase().includes(searchLower)))
+      filteredItems = filteredItems.filter(
+        (item) =>
+          item.product_name.toLowerCase().includes(searchLower) ||
+          (item.description &&
+            item.description.toLowerCase().includes(searchLower)) ||
+          (item.tags &&
+            item.tags.some((tag) => tag.toLowerCase().includes(searchLower)))
       );
     }
 
@@ -255,12 +257,12 @@ const RestaurantPOS = () => {
   const searchTimeoutRef = useRef(null);
   const handleSearchChange = (value) => {
     setSearchTerm(value);
-    
+
     // Clear previous timeout
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
     }
-    
+
     // Set new timeout for debounced search
     searchTimeoutRef.current = setTimeout(() => {
       console.log("Search term:", value);
@@ -499,7 +501,7 @@ const RestaurantPOS = () => {
       createdAt: new Date(),
     };
 
-    generateAndPrintKOT(orderData, true, false , companyName );
+    generateAndPrintKOT(orderData, true, false, companyName);
   };
 
   const VISIBLE_COUNT = 8;
@@ -526,7 +528,7 @@ const RestaurantPOS = () => {
               <Users className="w-4 h-4" />
               <span className="text-xs font-medium">
                 {orderType === "dine-in"
-                  ?` Table ${customerDetails.tableNumber}`
+                  ? ` Table ${customerDetails.tableNumber}`
                   : orderType === "roomService"
                   ? `Room ${roomDetails.roomno || "---"}`
                   : getOrderTypeDisplay(orderType)}
@@ -610,15 +612,22 @@ const RestaurantPOS = () => {
               </div>
             ) : (
               filteredSubcategories.map((subcategory, index) => {
-                const icon = subcategoryIcons[subcategory.name] || subcategoryIcons.Default;
-                const gradient = gradientClasses[index % gradientClasses.length];
+                const icon =
+                  subcategoryIcons[subcategory.name] ||
+                  subcategoryIcons.Default;
+                const gradient =
+                  gradientClasses[index % gradientClasses.length];
 
                 return (
                   <button
                     key={subcategory._id}
                     onClick={() => handleSubcategorySelect(subcategory.name)}
                     className={`w-full text-left px-3 py-1.5 mb-2 rounded-md font-medium transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md transform hover:scale-[1.02] hover:translate-x-1 
-                      ${selectedSubcategory === subcategory.name ? "text-white" : "text-white"}
+                      ${
+                        selectedSubcategory === subcategory.name
+                          ? "text-white"
+                          : "text-white"
+                      }
                     ${gradient} `}
                   >
                     <span className="text-base">{icon}</span>
@@ -640,7 +649,9 @@ const RestaurantPOS = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <input
                 type="text"
-                placeholder={`Search items...${selectedSubcategory ? ` in ${selectedSubcategory}` : ''}`}
+                placeholder={`Search items...${
+                  selectedSubcategory ? ` in ${selectedSubcategory}` : ""
+                }`}
                 value={searchTerm}
                 onChange={(e) => handleSearchChange(e.target.value)}
                 className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#10b981] focus:border-transparent text-sm"
@@ -654,14 +665,15 @@ const RestaurantPOS = () => {
                 </button>
               )}
             </div>
-            
+
             {/* Search Results Info */}
             {searchTerm && (
               <div className="mt-2 text-xs text-gray-500">
                 {menuItems.length > 0
-                  ? `Found ${menuItems.length} item${menuItems.length !== 1 ? 's' : ''} for "${searchTerm}"`
-                  : `No items found for "${searchTerm}"`
-                }
+                  ? `Found ${menuItems.length} item${
+                      menuItems.length !== 1 ? "s" : ""
+                    } for "${searchTerm}"`
+                  : `No items found for "${searchTerm}"`}
               </div>
             )}
           </div>
@@ -679,12 +691,11 @@ const RestaurantPOS = () => {
               <>
                 <div className="mb-4">
                   <h3 className="text-xs font-semibold text-[#10b981]">
-                    {selectedSubcategory 
+                    {selectedSubcategory
                       ? `${selectedCuisine?.categoryName} - ${selectedSubcategory} (${menuItems.length} items)`
-                      : searchTerm 
-                        ? `Search Results (${menuItems.length} items)`
-                        : `All Items (${menuItems.length} items)`
-                    }
+                      : searchTerm
+                      ? `Search Results (${menuItems.length} items)`
+                      : `All Items (${menuItems.length} items)`}
                   </h3>
                 </div>
 
@@ -699,21 +710,20 @@ const RestaurantPOS = () => {
                         {searchTerm
                           ? `No items found matching "${searchTerm}"`
                           : selectedSubcategory
-                            ? `No items available in ${selectedSubcategory}`
-                            : "No items available"
-                        }
+                          ? `No items available in ${selectedSubcategory}`
+                          : "No items available"}
                       </p>
                     </div>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-5 gap-4 auto-rows-max">
+                  <div className="grid grid-cols-5 gap-4 auto-rows-fr">
                     {menuItems.map((item, index) => (
                       <motion.div
                         key={item._id}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.3, delay: index * 0.05 }}
-                        className="group relative bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-[1.02] active:scale-95"
+                        className="group relative  bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-[1.02] active:scale-95"
                         onClick={() => addToOrder(item)}
                       >
                         {/* Image Container with Overlay Effects */}
@@ -742,7 +752,7 @@ const RestaurantPOS = () => {
                           </div>
 
                           {/* Stock Status Badge */}
-                          <div className="absolute top-3 left-3">
+                          {/* <div className="absolute top-3 left-3">
                             <div
                               className={`px-2 py-1 rounded-full text-xs font-medium ${
                                 item.balance_stock > 0
@@ -754,7 +764,7 @@ const RestaurantPOS = () => {
                                 ? "In Stock"
                                 : "Out of Stock"}
                             </div>
-                          </div>
+                          </div> */}
 
                           {/* Popular Badge */}
                           {(item.rating > 4.3 || Math.random() > 0.7) && (
@@ -771,7 +781,10 @@ const RestaurantPOS = () => {
                         <div className="p-4">
                           {/* Title and Rating */}
                           <div className="mb-3">
-                            <h3 className="font-bold text-[#10b981] text-sm mb-1 line-clamp-2 group-hover:text-blue-700 transition-colors duration-200">
+                            <h3
+                              className="font-bold text-[#10b981] text-sm mb-1 truncate  group-hover:text-blue-700 transition-colors duration-200 "
+                              title={item.product_name} // optional, shows full name on hover
+                            >
                               {item.product_name}
                             </h3>
 
@@ -785,7 +798,7 @@ const RestaurantPOS = () => {
                           </div>
 
                           {/* Price Section */}
-                          <div className="flex items-center justify-between">
+                          <div className="flex justify-between items-center">
                             <div className="flex flex-col">
                               <span className="text-lg font-bold text-[#10b981]">
                                 ₹
@@ -1246,4 +1259,4 @@ const RestaurantPOS = () => {
 };
 
 export default RestaurantPOS;
-``
+``;
