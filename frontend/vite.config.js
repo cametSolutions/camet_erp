@@ -1,4 +1,4 @@
-// import { defineConfig } from 'vite'
+import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
@@ -31,10 +31,7 @@ export default defineConfig({
           }
         ]
       },
-      // FIX: Add workbox configuration to handle your large bundle
       workbox: {
-        // Keep default 2MB limit instead of increasing to 6MB
-        // Your lazy loading should solve the bundle size issue
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -64,47 +61,24 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src') // Fix: Use path.resolve for better compatibility
+      '@': path.resolve(__dirname, './src')
     }
   },
-  // ADD: Build optimization with code splitting
   build: {
     rollupOptions: {
       output: {
         manualChunks: {
-          // Split vendor libraries
           'react-vendor': ['react', 'react-dom'],
           'router-vendor': ['react-router-dom'],
-          'ui-vendor': ['@mui/material', '@emotion/react', '@emotion/styled'], // If you use Material-UI
-          // Split your large modules
           'restaurant-pages': [
             './src/pages/Restuarant/Pages/RestaurantDashboard',
             './src/pages/Restuarant/Pages/KotPage', // Your thermal printer page
             './src/pages/Restuarant/Pages/ItemList',
             './src/pages/Restuarant/Pages/ItemRegistration'
-          ],
-          'hotel-pages': [
-            './src/pages/Hotel/Pages/HotelDashboard',
-            './src/pages/Hotel/Pages/BookingPage',
-            './src/pages/Hotel/Pages/CheckInPage'
-          ],
-          'voucher-pages': [
-            './src/pages/voucher/voucherCreation/voucherInitialPage',
-            './src/pages/voucher/voucherDetails/VoucherDetails'
-          ],
-          'reports-pages': [
-            './src/pages/secUsers/Reports',
-            './src/pages/voucherReports/PartyStatement/PartyStatement'
           ]
         }
       }
     },
-    // Optimize chunk size warnings
-    chunkSizeWarningLimit: 1000 // Increase to 1000KB to avoid warnings
-  },
-  // OPTIONAL: Add server configuration for development
-  server: {
-    port: 3000,
-    open: true
+    chunkSizeWarningLimit: 1000
   }
 })
