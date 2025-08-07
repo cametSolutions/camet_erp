@@ -153,7 +153,7 @@ import AddSubRestuarentCategory from '@/pages/masters/product/productSubDetails/
 import EditBooking from '@/pages/Hotel/Pages/EditBooking'
 import EditChecking from '@/pages/Hotel/Pages/EditChecking'
 import EditCheckOut from '@/pages/Hotel/Pages/EditCheckOut'
-import ItemList from '@/pages/Restuarant/Pages/ItemList'
+import ItemList from '@/pages/Restuarant/Pages/itemList'
 import EditItem from '@/pages/Restuarant/Pages/EditItem'
 import ItemRegistration from '@/pages/Restuarant/Pages/ItemRegistration'
 
