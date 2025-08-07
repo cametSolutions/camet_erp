@@ -124,6 +124,9 @@ function VoucherPdf({ data, org, contentToPrint, bank, tab }) {
 
   let address;
 
+  console.log(address);
+  
+
   
 
   if (
