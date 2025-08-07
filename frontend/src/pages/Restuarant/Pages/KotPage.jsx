@@ -12,13 +12,18 @@ import {
   MdPrint,
 } from "react-icons/md";
 import api from "@/api/api";
-
+import { motion } from "framer-motion";
+import { Check, CreditCard, X, Banknote } from "lucide-react";
+import CustomerSearchInputBox from "@/pages/Hotel/Components/CustomerSearchInPutBox";
 const OrdersDashboard = () => {
   const [activeFilter, setActiveFilter] = useState("pending");
   const [searchQuery, setSearchQuery] = useState("");
   const [userRole, setUserRole] = useState("kitchen");
   const [orders, setOrders] = useState([]);
   const [loader, setLoader] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [selectedDataForPayment, setSelectedDataForPayment] = useState({});
 
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
@@ -50,14 +55,14 @@ const OrdersDashboard = () => {
     },
     ready_to_serve: {
       label: "Ready to Serve",
-      bgColor: "bg-green-100",
+      bgColor: "bg-gray-100",
       textColor: "text-green-800",
       iconColor: "bg-green-600",
       order: 3,
     },
     completed: {
       label: "Completed",
-      bgColor: "bg-gray-100",
+      bgColor: "bg-green-200",
       textColor: "text-gray-800",
       iconColor: "bg-gray-600",
       order: 4,
@@ -77,14 +82,20 @@ const OrdersDashboard = () => {
   // Filter orders based on active filter
   const getFilteredOrders = () => {
     let filtered = orders;
-    console.log("filtered", activeFilter);
     // Filter by status
-    if (activeFilter == "pending") {
-      console.log(filtered[0]?.status);
+    if (activeFilter == "pending" && userRole !== "kitchen") {
       filtered = filtered.filter((order) =>
-        ["pending", "cooking", "ready_to_serve"].includes(order.status)
+        ["pending", "cooking", "ready_to_serve", "completed"].includes(
+          order.status
+        )
       );
-    } else if (activeFilter === "Completed") {
+    } else if (activeFilter == "pending") {
+      filtered = filtered.filter((order) =>
+        ["pending", "cooking", "ready_to_serve"].includes(
+          order.status
+        )
+      );
+    } else if (activeFilter === "completed") {
       filtered = filtered.filter((order) => order.status === "completed");
     }
 
@@ -155,6 +166,11 @@ const OrdersDashboard = () => {
     }
   };
 
+  // function used to show payment popup
+  const handleProceedToPay = () => {
+    setShowPaymentModal(true);
+  };
+
   const MenuIcon = () => (
     <svg
       className="w-4 h-4 text-gray-600"
@@ -196,6 +212,11 @@ const OrdersDashboard = () => {
   }, []);
 
   const filteredOrders = getFilteredOrders();
+
+  const handleSavePayment = () => {
+    // Add your logic to save the payment details here
+    setShowPaymentModal(false);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -257,7 +278,7 @@ const OrdersDashboard = () => {
         {filteredOrders.map((order) => {
           const currentStatusConfig = statusConfig[order.status];
           const availableStatuses = getAvailableStatuses(order.status);
-          console.log(availableStatuses);
+          
 
           return (
             <div
@@ -360,10 +381,10 @@ const OrdersDashboard = () => {
                           {userRole === "reception" && (
                             <div className="text-right min-w-[50px]">
                               <div className="font-bold text-xs text-gray-900">
-                                 ₹{item.price.toFixed(2)}
+                                ₹{item.price.toFixed(2)}
                               </div>
                               <div className="text-xs text-gray-500">
-                                 ₹{(item.price * item.quantity).toFixed(2)}
+                                ₹{(item.price * item.quantity).toFixed(2)}
                               </div>
                             </div>
                           )}
@@ -402,7 +423,7 @@ const OrdersDashboard = () => {
                       Total Amount
                     </span>
                     <span className="text-sm font-bold text-green-900">
-                       ₹{order.total.toFixed(2)}
+                      ₹{order.total.toFixed(2)}
                     </span>
                   </div>
                 </div>
@@ -445,10 +466,16 @@ const OrdersDashboard = () => {
 
               {/* Action Buttons */}
               {userRole === "reception" && (
-                <div className="p-3 pt-0 flex gap-2 flex-shrink-0">
-                  <button className="flex-1 group px-3 py-1.5 bg-white text-emerald-700 border border-emerald-200 rounded-lg text-xs font-semibold hover:bg-emerald-50 hover:border-emerald-300 transition-all duration-200 hover:scale-105 flex items-center justify-center gap-1">
+                <div className="p-3 pt-2 flex gap-2 flex-shrink-0 ">
+                  <button
+                    onClick={() => {
+                      setShowPaymentModal(true);
+                      setSelectedDataForPayment(order);
+                    }}
+                    className="flex-1 group px-3 py-1.5 bg-white text-emerald-700 border border-emerald-200 rounded-lg text-xs font-semibold hover:bg-emerald-50 hover:border-emerald-300 transition-all duration-200 hover:scale-105 flex items-center justify-center gap-1"
+                  >
                     <MdVisibility className="w-3 h-3 group-hover:rotate-12 transition-transform duration-200" />
-                    Details
+                    Pay
                   </button>
                   <button className="flex-1 group px-3 py-1.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg text-xs font-semibold hover:from-blue-600 hover:to-blue-700 transition-all duration-200 hover:scale-105 flex items-center justify-center gap-1">
                     <MdPrint className="w-3 h-3 group-hover:rotate-12 transition-transform duration-200" />
@@ -460,7 +487,148 @@ const OrdersDashboard = () => {
           );
         })}
       </div>
+      {showPaymentModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-white rounded-lg p-6 max-w-md w-full mx-4"
+          >
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-gray-800">
+                Payment Processing
+              </h2>
+              <button
+                onClick={() => setShowPaymentModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
 
+            <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="flex items-center text-blue-700">
+                <Check className="w-5 h-5 mr-2" />
+                <span className="text-sm font-medium">
+                  KOT #{selectedDataForPayment?.voucherNumber}
+                </span>
+              </div>
+            </div>
+
+            {/* Payment Method Selection */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Payment Method
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => setPaymentMethod("cash")}
+                  className={`flex flex-col items-center p-4 rounded-lg border-2 transition-colors ${
+                    paymentMethod === "cash"
+                      ? "border-blue-500 bg-blue-50 text-blue-700"
+                      : "border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  <Banknote className="w-8 h-8 mb-2" />
+                  <span className="text-sm font-medium">Cash</span>
+                </button>
+                <button
+                  onClick={() => setPaymentMethod("card")}
+                  className={`flex flex-col items-center p-4 rounded-lg border-2 transition-colors ${
+                    paymentMethod === "card"
+                      ? "border-blue-500 bg-blue-50 text-blue-700"
+                      : "border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  <CreditCard className="w-8 h-8 mb-2" />
+                  <span className="text-sm font-medium">Online Payment</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Order Summary */}
+            <div className="bg-gray-50 p-3 rounded-lg mb-4">
+              <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                Order No - {selectedDataForPayment?.voucherNumber}
+              </h3>
+              <div className="space-y-2">
+                {selectedDataForPayment?.type === "dine-in" && (
+                  <>
+                    <div className="flex justify-between text-sm">
+                      <span>Table Number:</span>
+                      <span className="font-medium">
+                        {selectedDataForPayment?.tableNumber}
+                      </span>
+                    </div>
+                  </>
+                )}
+                {selectedDataForPayment?.type !== "roomService" ||
+                  (selectedDataForPayment?.type !== "dine-in" && (
+                    <>
+                      <div className="flex justify-between text-sm">
+                        <span>Customer:</span>
+                        <span className="font-medium">
+                          {selectedDataForPayment?.customer.name}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>Phone:</span>
+                        <span className="font-medium">
+                          {selectedDataForPayment?.customer?.phone}
+                        </span>
+                      </div>
+                    </>
+                  ))}
+                {selectedDataForPayment?.type === "delivery" && (
+                  <div className="flex justify-between text-sm">
+                    <span>Address:</span>
+                    <span className="font-medium text-right max-w-48">
+                      {selectedDataForPayment?.customer?.address}
+                    </span>
+                  </div>
+                )}
+                {selectedDataForPayment?.type === "roomService" && (
+                  <>
+                    <div className="flex justify-between text-sm">
+                      <span>Room No:</span>
+                      <span className="font-medium text-right max-w-48">
+                        {selectedDataForPayment?.roomDetails?.roomno}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span>Guest Name:</span>
+                      <span className="font-medium text-right max-w-48">
+                        {selectedDataForPayment?.roomDetails?.guestName}
+                      </span>
+                    </div>
+                  </>
+                )}
+              </div>
+              <div className="border-t border-gray-200 pt-3 mt-3 flex justify-between font-semibold text-gray-800">
+                <span>Total Amount</span>
+                <span className="text-lg text-blue-600">
+                  ₹{selectedDataForPayment?.total}
+                </span>
+              </div>
+              <div className="flex gap-2 mt-2">
+                <button
+                  onClick={() => {
+                    handleSavePayment();
+                  }}
+                  className="flex-1 group px-3 py-1.5 bg-white text-emerald-700 border border-emerald-200 rounded-lg text-xs font-semibold hover:bg-emerald-50 hover:border-emerald-300 transition-all duration-200 hover:scale-105 flex items-center justify-center gap-1"
+                >
+                  <MdVisibility className="w-3 h-3 group-hover:rotate-12 transition-transform duration-200" />
+                  Save Payment
+                </button>
+                <button className="flex-1 group px-3 py-1.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg text-xs font-semibold hover:from-blue-600 hover:to-blue-700 transition-all duration-200 hover:scale-105 flex items-center justify-center gap-1">
+                  <MdPrint className="w-3 h-3 group-hover:rotate-12 transition-transform duration-200" />
+                  Print
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
       {/* Empty State */}
       {filteredOrders.length === 0 && (
         <div className="flex flex-col items-center justify-center py-12">
