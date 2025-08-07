@@ -216,7 +216,7 @@ function BookingForm({
       console.log(response.data);
       if (response.data) {
         const specificSeries = response.data.series?.find(
-          (item) => item.currentlySelected === true
+          (item) => item.currentlySelected === true 
         );
 
         if (specificSeries) {
