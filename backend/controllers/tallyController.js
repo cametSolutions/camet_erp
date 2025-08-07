@@ -1123,14 +1123,31 @@ export const updatePriceLevels = async (req, res) => {
 // @desc for saving parties/costumers from tally
 // route GET/api/tally/giveTransaction
 
+
 export const savePartyFromTally = async (req, res) => {
   try {
+    // Log function call with Indian time
+    const indianTime = new Date().toLocaleString("en-IN", {
+      timeZone: "Asia/Kolkata",
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true
+    });
+    console.log(`savePartyFromTally called at Indian time: ${indianTime}`);
+
     const partyToSave = req?.body?.data;
 
     // Check if partyToSave is defined and has elements
     if (!partyToSave || partyToSave.length === 0) {
+      console.log("No data provided for savePartyFromTally");
       return res.status(400).json({ error: "No data provided" });
     }
+
+    console.log(`Processing ${partyToSave.length} parties`);
 
     // Extract primary user id and company id from the first product
     const { Primary_user_id, cmp_id } = partyToSave[0];
@@ -1154,22 +1171,47 @@ export const savePartyFromTally = async (req, res) => {
       subGroups.map((group) => [group.subGroup_id, group._id])
     );
 
+
     // Process parties in memory for efficiency
     // Use object instead of Set for faster lookups with potentially large datasets
     const processedPartyMasterIds = {};
 
     const validParties = [];
+    const skippedParties = [];
+
     for (const party of partyToSave) {
       // Skip entries without party_master_id or already processed entries
-      if (
-        !party.party_master_id ||
-        processedPartyMasterIds[party.party_master_id]
-      ) {
+      if (!party.party_master_id) {
+        skippedParties.push({
+          party_master_id: party.party_master_id || 'N/A',
+          reason: "Missing party_master_id",
+        });
+        continue;
+      }
+
+      if (processedPartyMasterIds[party.party_master_id]) {
+        skippedParties.push({
+          party_master_id: party.party_master_id,
+          reason: "Duplicate party_master_id in request",
+        });
         continue;
       }
 
       // Skip if required account mappings are missing
       if (party.accountGroup_id && !accountGroupMap[party.accountGroup_id]) {
+        skippedParties.push({
+          party_master_id: party.party_master_id,
+          reason: `Account group not found with ID: ${party.accountGroup_id}`,
+        });
+        continue;
+      }
+
+      // Skip if sub group is not matched
+      if (party.subGroup_id && !subGroupMap[party.subGroup_id]) {
+        skippedParties.push({
+          party_master_id: party.party_master_id,
+          reason: `Sub group not found with ID: ${party.subGroup_id}`,
+        });
         continue;
       }
 
@@ -1215,10 +1257,14 @@ export const savePartyFromTally = async (req, res) => {
 
       await session.commitTransaction();
 
+      // Log final results
+      console.log(`savePartyFromTally completed - Added: ${validParties.length} docs, Skipped: ${skippedParties.length} docs`);
+
       res.status(201).json({
         message: "Party saved successfully",
         processedCount: validParties.length,
         skippedCount: partyToSave.length - validParties.length,
+        skippedParties: skippedParties,
       });
     } catch (error) {
       // If an error occurs, abort the transaction
@@ -1295,12 +1341,28 @@ export const saveAdditionalChargesFromTally = async (req, res) => {
 
 export const addAccountGroups = async (req, res) => {
   try {
+    // Log function call with Indian time
+    const indianTime = new Date().toLocaleString("en-IN", {
+      timeZone: "Asia/Kolkata",
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true
+    });
+    console.log(`addAccountGroups called at Indian time: ${indianTime}`);
+
     const accountGroupsToSave = req?.body?.data;
 
     // Validate data
     if (!accountGroupsToSave || accountGroupsToSave.length === 0) {
+      console.log("No data provided for addAccountGroups");
       return res.status(400).json({ error: "No data provided" });
     }
+
+    console.log(`Processing ${accountGroupsToSave.length} account groups`);
 
     // Track processed and failed operations
     const uniqueGroups = new Map();
@@ -1378,6 +1440,9 @@ export const addAccountGroups = async (req, res) => {
       })
     );
 
+    // Log final results
+    console.log(`addAccountGroups completed - Added: ${results.successful.length} docs, Failed: ${results.failed.length} docs, Skipped: ${results.skipped.length} docs`);
+
     // Return detailed response
     res.status(201).json({
       message: "Account groups processing completed",
@@ -1403,12 +1468,28 @@ export const addAccountGroups = async (req, res) => {
 
 export const addSubGroups = async (req, res) => {
   try {
+    // Log function call with Indian time
+    const indianTime = new Date().toLocaleString("en-IN", {
+      timeZone: "Asia/Kolkata",
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true
+    });
+    console.log(`addSubGroups called at Indian time: ${indianTime}`);
+
     const subGroupsToSave = req?.body?.data;
 
     // Validate data
     if (!subGroupsToSave || subGroupsToSave.length === 0) {
+      console.log("No data provided for addSubGroups");
       return res.status(400).json({ error: "No data provided" });
     }
+
+    console.log(`Processing ${subGroupsToSave.length} sub groups`);
 
     // Track processed and failed operations
     const uniqueSubGroups = new Map();
@@ -1504,6 +1585,9 @@ export const addSubGroups = async (req, res) => {
         }
       })
     );
+
+    // Log final results
+    console.log(`addSubGroups completed - Added: ${results.successful.length} docs, Failed: ${results.failed.length} docs, Skipped: ${results.skipped.length} docs`);
 
     // Return detailed response
     res.status(201).json({
