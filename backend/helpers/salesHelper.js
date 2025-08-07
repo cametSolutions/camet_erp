@@ -1049,7 +1049,7 @@ export const updateOutstandingBalance = async ({
 };
 
 
-export const saveSettlementData = async (
+export const  saveSettlementData = async (
   party,
   orgId,
   paymentMethod,
