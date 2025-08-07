@@ -28,21 +28,21 @@ function AdditionalPaxDetails({
   }, [error]);
 
   // useEffect used to manage the already selected values
-  useEffect(() => {
-    console.log(formData);
-    if (
-      formData?.additionalPaxDetails?.length > 0 &&
-      selectedRoomId &&
-      formData.additionalPaxDetails !== []
-    ) {
-      let filteredData = formData.additionalPaxDetails?.filter(
-        (item) => item.roomId == selectedRoomId
-      );
-      if (filteredData.length > 0 && filteredData !== []) {
-        setAdditionalPax(filteredData);
-      }
-    }
-  }, [selectedRoomId]);
+  // useEffect(() => {
+  //   console.log(formData);
+  //   if (
+  //     formData?.additionalPaxDetails?.length > 0 &&
+  //     selectedRoomId &&
+  //     formData.additionalPaxDetails !== []
+  //   ) {
+  //     let filteredData = formData.additionalPaxDetails?.filter(
+  //       (item) => item.roomId == selectedRoomId
+  //     );
+  //     if (filteredData.length > 0 && filteredData !== []) {
+  //       setAdditionalPax(filteredData);
+  //     }
+  //   }
+  // }, [selectedRoomId]);
 
   useEffect(() => {
     if (additionalPax.length > 0) {

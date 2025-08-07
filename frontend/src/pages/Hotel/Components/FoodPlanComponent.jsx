@@ -37,20 +37,21 @@ function FoodPlanComponent({
   }, [foodPlan]);
 
   // useEffect used to manage the already selected values
-  useEffect(() => {
-    if (
-      formData?.foodPlan?.length > 0 &&
-      selectedRoomId &&
-      formData.foodPlan !== []
-    ) {
-      let filteredData = formData.foodPlan?.filter(
-        (item) => item.roomId == selectedRoomId
-      );
-      if (filteredData.length > 0 && filteredData !== []) {
-        setFoodPlan(filteredData);
-      }
-    }
-  }, [selectedRoomId]);
+  // useEffect(() => {
+  //   if (
+  //     formData?.foodPlan?.length > 0 &&
+  //     selectedRoomId &&
+  //     formData.foodPlan !== []
+  //   ) {
+  //     let filteredData = formData.foodPlan?.filter(
+  //       (item) => item.roomId == selectedRoomId
+  //     );
+  //     if (filteredData.length > 0 && filteredData !== []) {
+  //       setFoodPlan(filteredData);
+  //     }
+  //   }
+  // }, [selectedRoomId]);
+
   const handlePaxChange = (index, value) => {
     let specificData = foodPlanData?.find((item) => item._id === value);
     console.log(selectedRoomId);
