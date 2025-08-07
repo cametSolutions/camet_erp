@@ -256,7 +256,12 @@ function BookingList() {
               location.pathname === "/sUsers/checkOutList")) && (
             <button
               onClick={() => {
-                if (location.pathname === "/sUsers/checkOutList" && el.checkInId) {
+                if(location.pathname == "/sUsers/bookingList") {
+                  navigate(`/sUsers/checkInPage`, {
+                    state: {bookingData:el} ,
+                  });
+                }
+                else if (location.pathname === "/sUsers/checkOutList" && el.checkInId) {
                   navigate(`/sUsers/EditCheckOut`, {
                     state: el,
                   });

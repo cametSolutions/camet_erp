@@ -26,13 +26,14 @@ import {
   Bed,
   ArrowLeft,
 } from "lucide-react";
-import woodImage from '../../../assets/images/wood.jpeg'; // Adjust the path as needed
+import woodImage from "../../../assets/images/wood.jpeg"; // Adjust the path as needed
 
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
 import api from "@/api/api";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import useFetch from "@/customHook/useFetch";
 
 const RestaurantPOS = () => {
   const [selectedCuisine, setSelectedCuisine] = useState("");
@@ -56,6 +57,7 @@ const RestaurantPOS = () => {
   const [loading, setLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [optionData, setOptionsData] = useState({});
+  const [roomData, setRoomData] = useState({});
 
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
@@ -185,10 +187,38 @@ const RestaurantPOS = () => {
     }
   }, [cmp_id]);
 
-  // Fetch all items on component mount
+  const {
+    data: roomBookingData,
+    loading: roomLoading,
+    error,
+  } = useFetch(`/api/sUsers/getRoomBasedOnBooking/${cmp_id}`);
+
   useEffect(() => {
-    fetchAllItems();
-  }, [fetchAllItems]);
+    if (roomBookingData) {
+      console.log(roomBookingData);
+      const getRooms = roomBookingData?.data?.flatMap((room) => {
+        return (
+          room?.selectedRooms?.map((selectedRoom) => ({
+            ...selectedRoom,
+            customerName: room?.customerName,
+            mobileNumber: room?.mobileNumber,
+          })) || []
+        );
+      });
+
+      setRoomData(getRooms);
+    }
+  }, [roomBookingData]);
+
+  useEffect((error) => {
+    if (error) {
+      toast.error(error.response?.data?.message || "Failed to load data");
+    }
+  });
+
+  console.log("Room Data:", roomData);
+  console.log("Items:", items);
+  console.log("Option Data:", optionData);
 
   // Filter items based on subcategory and search term
   useEffect(() => {
@@ -351,7 +381,12 @@ const RestaurantPOS = () => {
     let orderCustomerDetails = {};
 
     if (orderType === "dine-in") {
-      orderCustomerDetails = { tableNumber: customerDetails.tableNumber };
+      orderCustomerDetails = { 
+        tableNumber: customerDetails.tableNumber,
+        name: roomDetails.customerName,
+        phone: roomDetails.mobileNumber,
+
+       };
     } else if (orderType === "roomService") {
       orderCustomerDetails = {
         roomNumber: roomDetails.roomno,
@@ -371,6 +406,7 @@ const RestaurantPOS = () => {
       status: "pending",
       paymentMethod: orderType === "dine-in" ? null : paymentMethod,
     };
+    console.log(newOrder)
 
     try {
       api.post('/api/sUsers/generateKOT/${cmp_id}', newOrder, {
@@ -489,9 +525,10 @@ const RestaurantPOS = () => {
                 group relative flex items-center gap-2 px-3 py-2 rounded-xl font-medium 
                 transition-all duration-300 transform hover:scale-105 active:scale-95
                 ${gradientClasses[index % gradientClasses.length]}
-                ${selectedCuisine?.categoryName === cuisine.name 
-                  ? 'ring-2 ring-offset-2 ring-gray-400 shadow-lg scale-105' 
-                  : 'hover:shadow-lg'
+                ${
+                  selectedCuisine?.categoryName === cuisine.name
+                    ? "ring-2 ring-offset-2 ring-gray-400 shadow-lg scale-105"
+                    : "hover:shadow-lg"
                 }
                 text-white shadow-md
               `}
@@ -675,12 +712,16 @@ const RestaurantPOS = () => {
 
                           {/* Stock Status Badge */}
                           <div className="absolute top-3 left-3">
-                            <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              item.balance_stock > 0 
-                                ? 'bg-blue-100 text-[#10b981] border border-blue-200' 
-                                : 'bg-red-100 text-red-800 border border-red-200'
-                            }`}>
-                              {item.balance_stock > 0 ? 'In Stock' : 'Out of Stock'}
+                            <div
+                              className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                item.balance_stock > 0
+                                  ? "bg-blue-100 text-[#10b981] border border-blue-200"
+                                  : "bg-red-100 text-red-800 border border-red-200"
+                              }`}
+                            >
+                              {item.balance_stock > 0
+                                ? "In Stock"
+                                : "Out of Stock"}
                             </div>
                           </div>
 
@@ -716,7 +757,10 @@ const RestaurantPOS = () => {
                           <div className="flex items-center justify-between">
                             <div className="flex flex-col">
                               <span className="text-lg font-bold text-[#10b981]">
-                                ₹{item.Priceleveles?.[0]?.pricerate || item.price || 0}
+                                ₹
+                                {item.Priceleveles?.[0]?.pricerate ||
+                                  item.price ||
+                                  0}
                               </span>
                               {item.Priceleveles?.[0]?.priceDisc > 0 && (
                                 <span className="text-xs text-gray-400 line-through">
@@ -870,16 +914,6 @@ const RestaurantPOS = () => {
               >
                 {orderType === "dine-in" ? "Place Order" : "Place Order"}
               </button>
-
-              {/* {orderType !== "dine-in" && (
-                <button
-                  className="bg-[#10b981] text-white px-4 py-3 rounded-lg font-semibold hover:bg-[#151e31] transition-all duration-200 disabled:opacity-50 flex items-center hover:scale-105 active:scale-95"
-                  disabled={orderItems.length === 0}
-                  onClick={handleProceedToPay}
-                >
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              )} */}
             </div>
           </div>
         </div>
@@ -947,18 +981,27 @@ const RestaurantPOS = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Room Number
                     </label>
-                    <input
-                      type="text"
-                      value={roomDetails.roomno}
+                    <select
+                      value={roomDetails._id}
                       onChange={(e) =>
                         setRoomDetails({
                           ...roomDetails,
                           roomno: e.target.value,
+                          guestName:roomData.find((room) => room._id === e.target.value)?.customerName
                         })
+                        
                       }
                       className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                    >
+                      <option value="">Select a room</option>
+                      {roomData?.map((room) => (
+                        <option value={room._id} key={room._id}>
+                          {room?.roomName} , {room?.customerName}
+                        </option>
+                      ))}
+                    </select>
                   </div>
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Guest Name
@@ -1048,7 +1091,7 @@ const RestaurantPOS = () => {
       )}
 
       {/* Payment Modal */}
-      {showPaymentModal && (
+      {/* {showPaymentModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
@@ -1077,7 +1120,7 @@ const RestaurantPOS = () => {
             </div>
 
             {/* Payment Method Selection */}
-            <div className="mb-4">
+            {/* <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Payment Method
               </label>
@@ -1105,10 +1148,10 @@ const RestaurantPOS = () => {
                   <span className="text-sm font-medium">Card</span>
                 </button>
               </div>
-            </div>
+            </div> */}
 
             {/* Order Summary */}
-            <div className="bg-gray-50 p-3 rounded-lg mb-4">
+            {/* <div className="bg-gray-50 p-3 rounded-lg mb-4">
               <h3 className="text-sm font-semibold text-gray-700 mb-2">
                 Order Summary - KOT #{orderNumber - 1}
               </h3>
@@ -1162,29 +1205,13 @@ const RestaurantPOS = () => {
                     ?.total || 0}
                 </span>
               </div>
-
-              {/* Process Payment Button */}
-              <div className="flex justify-end space-x-2 mt-4">
-                <button
-                  onClick={() => setShowPaymentModal(false)}
-                  className="px-4 py-2 rounded-md bg-gray-200 hover:bg-gray-300 text-sm font-medium text-gray-700"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={processPayment}
-                  className="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-sm font-medium text-white flex items-center space-x-2"
-                >
-                  <CreditCard className="w-4 h-4" />
-                  <span>Process Payment</span>
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      )}
+            </div> */}
+          {/* </motion.div> */}
+        {/* </div> */}
+      {/* )} */}
     </div>
   );
 };
 
 export default RestaurantPOS;
+``

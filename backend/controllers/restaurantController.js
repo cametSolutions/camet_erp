@@ -14,6 +14,7 @@ import {
 } from "../helpers/restaurantHelper.js";
 import { extractRequestParams } from "../helpers/productHelper.js";
 import VoucherSeriesModel from "../models/VoucherSeriesModel.js";
+import { CheckIn } from "../models/bookingModal.js";
 // Add Item Controller
 export const addItem = async (req, res) => {
   const session = await mongoose.startSession(); // Step 1: Start session
@@ -395,3 +396,34 @@ export const updateKotStatus = async (req, res) => {
     });
   }
 };
+
+
+// function used to fetch room data based on room booking
+export const getRoomDataForRestaurant = async (req, res) => {
+  try {
+    const now = new Date();
+
+    // Get all records for that cmp_id
+    const allData = await CheckIn.find({ cmp_id: req.params.cmp_id });
+
+    // Filter in JS
+    const filtered = allData.filter(doc => {
+      const arrivalDateTime = new Date(`${doc.arrivalDate} ${doc.arrivalTime}`);
+      const checkOutDateTime = new Date(`${doc.checkOutDate} ${doc.checkOutTime}`);
+
+      return arrivalDateTime <= now && now <= checkOutDateTime;
+    });
+
+    res.status(200).json({
+      success: true,
+      data: filtered,
+    });
+  } catch (error) {
+    console.error("Error fetching room data:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error while fetching room data",
+    });
+  }
+};
+
