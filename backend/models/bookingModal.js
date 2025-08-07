@@ -36,7 +36,7 @@ const hsnDetailsSchema = new mongoose.Schema({
 const selectedRoomSchema = new mongoose.Schema({
   roomId: { type: mongoose.Schema.Types.ObjectId, ref: "Room" },
   roomName: String,
-  priceLevel: [String],
+  priceLevel: [{}],
   selectedPriceLevel: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "PriceLevel",

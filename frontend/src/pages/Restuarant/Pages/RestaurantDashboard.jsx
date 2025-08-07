@@ -193,7 +193,9 @@ const RestaurantPOS = () => {
       setLoader(false);
     }
   }, [cmp_id]);
-
+ useEffect(() => {
+  fetchAllItems();
+ },[fetchAllItems]);
   const {
     data: roomBookingData,
     loading: roomLoading,
