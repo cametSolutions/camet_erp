@@ -438,6 +438,8 @@ export const updateKotPayment = async (req, res) => {
       { _id: kotId },
       { paymentMethod: paymentMethod, paymentCompleted: true }
     );
+    console.log(kotId);
+    console.log(paymentMethod);
     res.status(200).json({
       success: true,
       data: kot,

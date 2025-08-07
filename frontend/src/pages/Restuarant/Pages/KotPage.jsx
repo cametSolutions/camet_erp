@@ -14,7 +14,7 @@ import {
 import api from "@/api/api";
 import { motion } from "framer-motion";
 import { Check, CreditCard, X, Banknote } from "lucide-react";
-import CustomerSearchInputBox from "@/pages/Hotel/Components/CustomerSearchInPutBox";
+
 const OrdersDashboard = () => {
   const [activeFilter, setActiveFilter] = useState("pending");
   const [searchQuery, setSearchQuery] = useState("");
@@ -166,10 +166,6 @@ const OrdersDashboard = () => {
     }
   };
 
-  // function used to show payment popup
-  const handleProceedToPay = () => {
-    setShowPaymentModal(true);
-  };
 
   const MenuIcon = () => (
     <svg
@@ -240,9 +236,14 @@ const OrdersDashboard = () => {
             error.response?.data || error.message
           );
       }
+    handlePrint(id);
     // Add your logic to save the payment details here
     setShowPaymentModal(false);
   };
+
+  const handlePrint=()=>{
+
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
