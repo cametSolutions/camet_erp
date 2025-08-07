@@ -69,6 +69,10 @@ const kotSchema = new mongoose.Schema({
   paymentMethod: {
     type: String,
   },
+  paymentCompleted: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 export default mongoose.model("Kot", kotSchema);

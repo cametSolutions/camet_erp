@@ -213,7 +213,33 @@ const OrdersDashboard = () => {
 
   const filteredOrders = getFilteredOrders();
 
-  const handleSavePayment = () => {
+  const handleSavePayment = async (id) => {
+        try {
+          const response = await api.put(
+            `/api/sUsers/updateKotPayment/${id}`,
+            {paymentMethod:paymentMethod },
+            { withCredentials: true }
+          );
+          // Check if the response was successful
+          if (response.status === 200 || response.status === 201) {
+            // Update the local state with the new status
+            setOrders((prevOrders) =>
+              prevOrders.map((order) =>
+                order._id === id
+                  ? { ...order, paymentMethod: data.paymentMethod ,  }
+                  : order
+              )
+            );
+            setLoader(false);
+          } else {
+            console.error("Failed to update backend:", response.data || response);
+          }
+        } catch (error) {
+          console.error(
+            "Error updating order status:",
+            error.response?.data || error.message
+          );
+      }
     // Add your logic to save the payment details here
     setShowPaymentModal(false);
   };
@@ -613,16 +639,12 @@ const OrdersDashboard = () => {
               <div className="flex gap-2 mt-2">
                 <button
                   onClick={() => {
-                    handleSavePayment();
+                    handleSavePayment(selectedDataForPayment?._id);
                   }}
-                  className="flex-1 group px-3 py-1.5 bg-white text-emerald-700 border border-emerald-200 rounded-lg text-xs font-semibold hover:bg-emerald-50 hover:border-emerald-300 transition-all duration-200 hover:scale-105 flex items-center justify-center gap-1"
+                  className=" flex-1 group px-3 py-1.5 bg-white text-emerald-700 border border-emerald-200 rounded-lg text-xs font-semibold hover:bg-emerald-50 hover:border-emerald-300 transition-all duration-200 hover:scale-105 flex items-center justify-center gap-1"
                 >
                   <MdVisibility className="w-3 h-3 group-hover:rotate-12 transition-transform duration-200" />
-                  Save Payment
-                </button>
-                <button className="flex-1 group px-3 py-1.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg text-xs font-semibold hover:from-blue-600 hover:to-blue-700 transition-all duration-200 hover:scale-105 flex items-center justify-center gap-1">
-                  <MdPrint className="w-3 h-3 group-hover:rotate-12 transition-transform duration-200" />
-                  Print
+                  Processed
                 </button>
               </div>
             </div>
