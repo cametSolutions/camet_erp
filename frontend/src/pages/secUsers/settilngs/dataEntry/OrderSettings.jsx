@@ -81,7 +81,7 @@ const OrderSettings = () => {
           to: "/invoiceSettings/enableShipToBill",
           toggleValue: enableShipTo["saleOrder"] || false,
           dbField: "enableShipTo",
-          active: false,
+          active: true,
           toggle: true,
         },
         {
@@ -128,7 +128,7 @@ const OrderSettings = () => {
         url = "updateCommonToggleConfiguration";
         break;
       case "enableShipTo":
-        url = "/updateShipToConfiguration";
+        url = "/updateCommonToggleConfiguration";
         break;
 
       default:
@@ -144,7 +144,7 @@ const OrderSettings = () => {
 
     let body = {};
 
-    if (data?.title === "showDescription" || data?.title === "addRateWithTax") {
+    if (data?.title === "showDescription" || data?.title === "addRateWithTax" || data?.title === "enableShipTo") {
       body = {
         configField: data?.title,
         voucher: "saleOrder",

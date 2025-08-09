@@ -124,11 +124,16 @@ function VoucherPdf({ data, org, contentToPrint, bank, tab }) {
 
   let address;
 
+  console.log(address);
+  
+
+  
+
   if (
-    party?.newBillToShipTo &&
-    Object.keys(party?.newBillToShipTo).length > 0
+    party?.newAddress &&
+    Object.keys(party?.newAddress).length > 0
   ) {
-    address = party?.newBillToShipTo;
+    address = party?.newAddress;
   } else {
     if (party) {
       const {
