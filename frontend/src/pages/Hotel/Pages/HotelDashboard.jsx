@@ -161,7 +161,7 @@ const handleRoomAction = async (action) => {
 
   if (action === "dirty" || action === "blocked") {
     try {
-      await api.put(`/api/Susers/updateStatus/${selectedRoomData._id}`, {
+      await api.post(`/api/Susers/updateStatus/${selectedRoomData._id}`, {
         status: action
       }, { withCredentials: true });
 

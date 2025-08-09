@@ -345,7 +345,7 @@ router.put('/updateKotStatus/:cmp_id',authSecondary,secondaryIsBlocked,updateKot
 router.get('/getRoomBasedOnBooking/:cmp_id',authSecondary,secondaryIsBlocked,getRoomDataForRestaurant)
 router.put("/updateKotPayment/:id",authSecondary,secondaryIsBlocked,updateKotPayment)
 router.get('/getAllRoomsWithStatus/:cmp_id',authSecondary,getAllRoomsWithStatusForDate)
-router.put("/updateStatus/:id", authSecondary,updateRoomStatus);
+router.post("/updateStatus/:id", authSecondary,updateRoomStatus);
 // Route to get detailed booking information for a specific room and date
 
 export default router
