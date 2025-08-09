@@ -15,7 +15,7 @@ const cashSchema = new mongoose.Schema({
     ref: "PrimaryUser",
     required: true,
   },
-  cash_id: { type: String },
+  cash_id: { type: String , required: true},
   cash_grpname: { type: String },
   cash_childgrpname: { type: String },
   cash_opening: { type: Number, default: 0 },

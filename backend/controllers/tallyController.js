@@ -6,7 +6,7 @@ import productModel from "../models/productModel.js";
 import AccountGroup from "../models/accountGroup.js";
 import subGroupModel from "../models/subGroup.js";
 import AdditionalCharges from "../models/additionalChargesModel.js";
-import { fetchData } from "../helpers/tallyHelper.js";
+import { fetchData, getApiLogs } from "../helpers/tallyHelper.js";
 import { getUserFriendlyMessage } from "../helpers/getUserFreindlyMessage.js";
 import mongoose from "mongoose";
 import {
@@ -200,10 +200,12 @@ export const saveDataFromTally = async (req, res) => {
   }
 };
 
+//// add bank data
 export const addBankData = async (req, res) => {
   try {
     const bankDetailsArray = req.body.bankdetails;
 
+    // Basic validation for bank details array
     if (!bankDetailsArray || !bankDetailsArray.length) {
       return res.status(400).json({
         status: false,
@@ -211,9 +213,9 @@ export const addBankData = async (req, res) => {
       });
     }
 
-    // Validate Primary_user_id and cmp_id from first item or request
+    // Extract and validate required IDs from first item
     const { Primary_user_id, cmp_id } = bankDetailsArray[0] || {};
-    
+
     if (!Primary_user_id || !cmp_id) {
       return res.status(400).json({
         status: false,
@@ -221,12 +223,14 @@ export const addBankData = async (req, res) => {
       });
     }
 
-    // Delete all existing banks for this user and company
-    await BankDetailsModel.deleteMany({ Primary_user_id, cmp_id });
+    // Find and log company information
+    getApiLogs(cmp_id, "Bank Data");
 
-    // Process and validate bank details
+    // Process each bank detail item
     const validBankDetails = [];
     const skippedItems = [];
+    let insertedCount = 0;
+    let updatedCount = 0;
 
     for (let i = 0; i < bankDetailsArray.length; i++) {
       const bankDetail = bankDetailsArray[i];
@@ -234,96 +238,128 @@ export const addBankData = async (req, res) => {
 
       // Check for required fields
       const missingFields = [];
-      if (!bankDetail.Primary_user_id) missingFields.push('Primary_user_id');
-      if (!bankDetail.cmp_id) missingFields.push('cmp_id');
-      if (!bankDetail.bank_ledname) missingFields.push('bank_ledname');
+      if (!bankDetail.Primary_user_id) missingFields.push("Primary_user_id");
+      if (!bankDetail.cmp_id) missingFields.push("cmp_id");
+      if (!bankDetail.bank_ledname) missingFields.push("bank_ledname");
+      if (!bankDetail.bank_id) missingFields.push("bank_id");
 
+      // Skip item if missing required fields
       if (missingFields.length > 0) {
         skippedItems.push({
           item: itemIndex,
-          reason: `Missing required fields: ${missingFields.join(', ')}`,
-          data: bankDetail
+          reason: `Missing required fields: ${missingFields.join(", ")}`,
+          data: bankDetail,
         });
         continue;
       }
 
-      // Add to valid items
-      validBankDetails.push(bankDetail);
+      try {
+        // Check if bank detail already exists based on unique combination
+        const existingBankDetail = await BankDetailsModel.findOne({
+          Primary_user_id: bankDetail.Primary_user_id,
+          cmp_id: bankDetail.cmp_id,
+          bank_id: bankDetail.bank_id,
+        });
+
+        if (existingBankDetail) {
+          // Update existing record
+          await BankDetailsModel.findByIdAndUpdate(
+            existingBankDetail._id,
+            bankDetail,
+            { new: true }
+          );
+          updatedCount++;
+        } else {
+          // Insert new record
+          await BankDetailsModel.create(bankDetail);
+          insertedCount++;
+        }
+
+        validBankDetails.push(bankDetail);
+      } catch (itemError) {
+        // Handle individual item processing errors
+        skippedItems.push({
+          item: itemIndex,
+          reason: `Processing error: ${itemError.message}`,
+          data: bankDetail,
+        });
+      }
     }
 
-    let insertedCount = 0;
-    
-    // Insert valid bank details
-    if (validBankDetails.length > 0) {
-      const insertResult = await BankDetailsModel.insertMany(validBankDetails, { 
-        ordered: false // Continue inserting even if some fail
-      });
-      insertedCount = insertResult.length;
-    }
-
-    // Prepare response with detailed counts
+    // Prepare response with detailed summary
     const response = {
       status: true,
       message: "Bank data processing completed",
       summary: {
         totalReceived: bankDetailsArray.length,
-        successCount: insertedCount,
-        skippedCount: skippedItems.length
-      }
+        insertedCount: insertedCount,
+        updatedCount: updatedCount,
+        successCount: insertedCount + updatedCount,
+        skippedCount: skippedItems.length,
+      },
     };
 
-    // Add skipped items details if any
+    // Add skipped items details if any exist
     if (skippedItems.length > 0) {
       response.skippedItems = skippedItems;
       response.skippedReasons = {
-        missingRequiredFields: skippedItems.filter(item => 
-          item.reason.includes('Missing required fields')
+        missingRequiredFields: skippedItems.filter((item) =>
+          item.reason.includes("Missing required fields")
         ).length,
-        other: skippedItems.length - skippedItems.filter(item => 
-          item.reason.includes('Missing required fields')
-        ).length
+        processingErrors: skippedItems.filter((item) =>
+          item.reason.includes("Processing error")
+        ).length,
       };
     }
 
-    // Set appropriate status code
-    const statusCode = insertedCount > 0 ? 200 : (skippedItems.length === bankDetailsArray.length ? 400 : 207);
-    
-    return res.status(statusCode).json(response);
+    // Set appropriate HTTP status code
+    const totalSuccess = insertedCount + updatedCount;
+    const statusCode =
+      totalSuccess > 0
+        ? 200
+        : skippedItems.length === bankDetailsArray.length
+        ? 400
+        : 207;
 
+    console.log("response", response?.summary);
+    return res.status(statusCode).json(response);
   } catch (error) {
-    console.error('Error in addBankData:', error);
-    
-    // Handle specific MongoDB errors
-    if (error.name === 'ValidationError') {
+    console.error("Error in addBankData:", error);
+
+    // Handle specific MongoDB validation errors
+    if (error.name === "ValidationError") {
       return res.status(400).json({
         status: false,
         message: "Validation error in bank data",
-        error: error.message
-      });
-    }
-    
-    if (error.code === 11000) { // Duplicate key error
-      return res.status(400).json({
-        status: false,
-        message: "Duplicate bank data detected",
-        error: error.message
+        error: error.message,
       });
     }
 
+    // Handle duplicate key errors
+    if (error.code === 11000) {
+      return res.status(400).json({
+        status: false,
+        message: "Duplicate bank data detected",
+        error: error.message,
+      });
+    }
+
+    // Handle general server errors
     return res.status(500).json({
       status: false,
       message: "Internal server error",
-      ...(process.env.NODE_ENV === 'development' && { error: error.message })
+      ...(process.env.NODE_ENV === "development" && { error: error.message }),
     });
   }
 };
 
-
+/// add Cash Data
 
 export const addCashData = async (req, res) => {
   try {
     const cashDetailsArray = req.body.cashdetails;
 
+    // Basic validation for cash details array
     if (!cashDetailsArray || !cashDetailsArray.length) {
       return res.status(400).json({
         status: false,
@@ -331,34 +367,142 @@ export const addCashData = async (req, res) => {
       });
     }
 
-    const { Primary_user_id, cmp_id } = cashDetailsArray[0];
+    // Extract and validate required IDs from first item
+    const { Primary_user_id, cmp_id } = cashDetailsArray[0] || {};
 
-    // Delete all existing cash entries for this user and company
-    await CashModel.deleteMany({ Primary_user_id, cmp_id });
+    if (!Primary_user_id || !cmp_id) {
+      return res.status(400).json({
+        status: false,
+        message: "Primary_user_id and cmp_id are required",
+      });
+    }
 
-    // Check for duplicate cash_id within the incoming data
-    const uniqueCashDetails = [];
-    const seenCashIds = new Set();
+    // Find and log company information
+    getApiLogs(cmp_id, "Cash Data");
 
-    for (const cashDetail of cashDetailsArray) {
-      if (!seenCashIds.has(cashDetail.cash_id)) {
-        seenCashIds.add(cashDetail.cash_id);
-        uniqueCashDetails.push(cashDetail);
+    // Process each cash detail item
+    const validCashDetails = [];
+    const skippedItems = [];
+    let insertedCount = 0;
+    let updatedCount = 0;
+
+    for (let i = 0; i < cashDetailsArray.length; i++) {
+      const cashDetail = cashDetailsArray[i];
+      const itemIndex = i + 1;
+
+      // Check for required fields
+      const missingFields = [];
+      if (!cashDetail.Primary_user_id) missingFields.push("Primary_user_id");
+      if (!cashDetail.cmp_id) missingFields.push("cmp_id");
+      if (!cashDetail.cash_id) missingFields.push("cash_id");
+      if (!cashDetail.cash_ledname) missingFields.push("cash_ledname");
+
+      // Skip item if missing required fields
+      if (missingFields.length > 0) {
+        skippedItems.push({
+          item: itemIndex,
+          reason: `Missing required fields: ${missingFields.join(", ")}`,
+          data: cashDetail,
+        });
+        continue;
+      }
+
+      try {
+        // Check if cash detail already exists based on unique combination
+        const existingCashDetail = await CashModel.findOne({
+          Primary_user_id: cashDetail.Primary_user_id,
+          cmp_id: cashDetail.cmp_id,
+          cash_id: cashDetail.cash_id,
+        });
+
+        if (existingCashDetail) {
+          // Update existing record
+          await CashModel.findByIdAndUpdate(
+            existingCashDetail._id,
+            cashDetail,
+            { new: true }
+          );
+          updatedCount++;
+        } else {
+          // Insert new record
+          await CashModel.create(cashDetail);
+          insertedCount++;
+        }
+
+        validCashDetails.push(cashDetail);
+      } catch (itemError) {
+        // Handle individual item processing errors
+        skippedItems.push({
+          item: itemIndex,
+          reason: `Processing error: ${itemError.message}`,
+          data: cashDetail,
+        });
       }
     }
 
-    // Insert all unique cash details at once
-    await CashModel.insertMany(uniqueCashDetails);
-
-    return res.status(200).json({
+    // Prepare response with detailed summary
+    const response = {
       status: true,
-      message: "Cash data added successfully",
-    });
+      message: "Cash data processing completed",
+      summary: {
+        totalReceived: cashDetailsArray.length,
+        insertedCount: insertedCount,
+        updatedCount: updatedCount,
+        successCount: insertedCount + updatedCount,
+        skippedCount: skippedItems.length,
+      },
+    };
+
+    // Add skipped items details if any exist
+    if (skippedItems.length > 0) {
+      response.skippedItems = skippedItems;
+      response.skippedReasons = {
+        missingRequiredFields: skippedItems.filter((item) =>
+          item.reason.includes("Missing required fields")
+        ).length,
+        processingErrors: skippedItems.filter((item) =>
+          item.reason.includes("Processing error")
+        ).length,
+      };
+    }
+
+    // Set appropriate HTTP status code
+    const totalSuccess = insertedCount + updatedCount;
+    const statusCode =
+      totalSuccess > 0
+        ? 200
+        : skippedItems.length === cashDetailsArray.length
+        ? 400
+        : 207;
+
+    console.log("response", response?.summary);
+    return res.status(statusCode).json(response);
   } catch (error) {
-    console.error(error);
+    console.error("Error in addCashData:", error);
+
+    // Handle specific MongoDB validation errors
+    if (error.name === "ValidationError") {
+      return res.status(400).json({
+        status: false,
+        message: "Validation error in cash data",
+        error: error.message,
+      });
+    }
+
+    // Handle duplicate key errors
+    if (error.code === 11000) {
+      return res.status(400).json({
+        status: false,
+        message: "Duplicate cash data detected",
+        error: error.message,
+      });
+    }
+
+    // Handle general server errors
     return res.status(500).json({
       status: false,
       message: "Internal server error",
+      ...(process.env.NODE_ENV === "development" && { error: error.message }),
     });
   }
 };
@@ -1297,105 +1441,173 @@ export const addAccountGroups = async (req, res) => {
   try {
     const accountGroupsToSave = req?.body?.data;
 
-    // Validate data
+    // Basic validation for account groups array
     if (!accountGroupsToSave || accountGroupsToSave.length === 0) {
-      return res.status(400).json({ error: "No data provided" });
+      return res.status(400).json({
+        status: false,
+        message: "No account groups data provided",
+      });
     }
+
+    // Extract and validate required IDs from first item
+    const { Primary_user_id, cmp_id } = accountGroupsToSave[0] || {};
+
+    if (!Primary_user_id || !cmp_id) {
+      return res.status(400).json({
+        status: false,
+        message: "Primary_user_id and cmp_id are required",
+      });
+    }
+
+    // Find and log company information
+    getApiLogs(cmp_id, "Account Groups Data");
 
     // Track processed and failed operations
     const uniqueGroups = new Map();
-    const results = {
-      successful: [],
-      failed: [],
-      skipped: [],
-    };
+    const skippedItems = [];
+    let insertedCount = 0;
+    let updatedCount = 0;
 
     // Process each account group
-    await Promise.all(
-      accountGroupsToSave.map(async (group) => {
-        const key = `${group.cmp_id}-${group.accountGroup_id}-${group.Primary_user_id}`;
+    for (let i = 0; i < accountGroupsToSave.length; i++) {
+      const group = accountGroupsToSave[i];
+      const itemIndex = i + 1;
+      const key = `${group.cmp_id}-${group.accountGroup_id}-${group.Primary_user_id}`;
 
-        // Skip duplicate records in the request
-        if (uniqueGroups.has(key)) {
-          results.skipped.push({
-            accountGroup_id: group.accountGroup_id,
-            reason: "Duplicate in request",
-          });
-          return;
-        }
-        uniqueGroups.set(key, true);
+      // Skip duplicate records in the request
+      if (uniqueGroups.has(key)) {
+        skippedItems.push({
+          item: itemIndex,
+          reason: "Duplicate in request",
+          data: { accountGroup_id: group.accountGroup_id },
+        });
+        continue;
+      }
+      uniqueGroups.set(key, true);
 
-        try {
-          // Convert Primary_user_id to ObjectId if it's a string
-          if (typeof group.Primary_user_id === "string") {
-            group.Primary_user_id = new mongoose.Types.ObjectId(
-              group.Primary_user_id
-            );
-          }
+      // Check for required fields
+      const missingFields = [];
+      if (!group.Primary_user_id) missingFields.push("Primary_user_id");
+      if (!group.cmp_id) missingFields.push("cmp_id");
+      if (!group.accountGroup_id) missingFields.push("accountGroup_id");
 
-          // First check if an account group with this ID already exists
-          const existingGroup = await AccountGroup.findOne({
-            accountGroup_id: group.accountGroup_id,
-            cmp_id:group?.cmp_id,
-            Primary_user_id: group?.Primary_user_id,
-          });
+      // Skip item if missing required fields
+      if (missingFields.length > 0) {
+        skippedItems.push({
+          item: itemIndex,
+          reason: `Missing required fields: ${missingFields.join(", ")}`,
+          data: { accountGroup_id: group.accountGroup_id },
+        });
+        continue;
+      }
 
-          if (existingGroup) {
-            // Update the existing document
-            const updatedGroup = await AccountGroup.findByIdAndUpdate(
-              existingGroup._id,
-              group,
-              {
-                new: true,
-                runValidators: true,
-              }
-            );
-
-            results.successful.push({
-              accountGroup_id: group.accountGroup_id,
-              _id: updatedGroup._id,
-              isNew: false,
-            });
-          } else {
-            // Create a new document
-            const newGroup = new AccountGroup(group);
-            await newGroup.save();
-
-            results.successful.push({
-              accountGroup_id: group.accountGroup_id,
-              _id: newGroup._id,
-              isNew: true,
-            });
-          }
-        } catch (error) {
-          console.error(
-            `Error processing account group ${group.accountGroup_id}:`,
-            error
+      try {
+        // Convert Primary_user_id to ObjectId if it's a string
+        if (typeof group.Primary_user_id === "string") {
+          group.Primary_user_id = new mongoose.Types.ObjectId(
+            group.Primary_user_id
           );
-          results.failed.push({
-            accountGroup_id: group.accountGroup_id,
-            error: error.message || "Unknown error",
-          });
         }
-      })
-    );
 
-    // Return detailed response
-    res.status(201).json({
+        // First check if an account group with this ID already exists
+        const existingGroup = await AccountGroup.findOne({
+          accountGroup_id: group.accountGroup_id,
+          cmp_id: group?.cmp_id,
+          Primary_user_id: group?.Primary_user_id,
+        });
+
+        if (existingGroup) {
+          // Update the existing document
+          await AccountGroup.findByIdAndUpdate(existingGroup._id, group, {
+            new: true,
+            runValidators: true,
+          });
+          updatedCount++;
+        } else {
+          // Create a new document
+          const newGroup = new AccountGroup(group);
+          await newGroup.save();
+          insertedCount++;
+        }
+      } catch (itemError) {
+        console.error(
+          `Error processing account group ${group.accountGroup_id}:`,
+          itemError
+        );
+        skippedItems.push({
+          item: itemIndex,
+          reason: `Processing error: ${itemError.message}`,
+          data: { accountGroup_id: group.accountGroup_id },
+        });
+      }
+    }
+
+    // Prepare response with detailed summary
+    const response = {
+      status: true,
       message: "Account groups processing completed",
       summary: {
-        total: accountGroupsToSave.length,
-        successful: results.successful.length,
-        failed: results.failed.length,
-        skipped: results.skipped.length,
+        totalReceived: accountGroupsToSave.length,
+        insertedCount: insertedCount,
+        updatedCount: updatedCount,
+        successCount: insertedCount + updatedCount,
+        skippedCount: skippedItems.length,
       },
-      results,
-    });
+    };
+
+    // Add skipped items details if any exist
+    if (skippedItems.length > 0) {
+      response.skippedItems = skippedItems;
+      response.skippedReasons = {
+        missingRequiredFields: skippedItems.filter((item) =>
+          item.reason.includes("Missing required fields")
+        ).length,
+        duplicateInRequest: skippedItems.filter((item) =>
+          item.reason.includes("Duplicate in request")
+        ).length,
+        processingErrors: skippedItems.filter((item) =>
+          item.reason.includes("Processing error")
+        ).length,
+      };
+    }
+
+    // Set appropriate HTTP status code
+    const totalSuccess = insertedCount + updatedCount;
+    const statusCode =
+      totalSuccess > 0
+        ? 200
+        : skippedItems.length === accountGroupsToSave.length
+        ? 400
+        : 207;
+
+    console.log("Account Groups Response:", response?.summary);
+    return res.status(statusCode).json(response);
   } catch (error) {
     console.error("Error in addAccountGroups:", error);
-    res.status(500).json({
-      error: "Internal server error",
-      message: error.message,
+
+    // Handle specific MongoDB validation errors
+    if (error.name === "ValidationError") {
+      return res.status(400).json({
+        status: false,
+        message: "Validation error in account groups data",
+        error: error.message,
+      });
+    }
+
+    // Handle duplicate key errors
+    if (error.code === 11000) {
+      return res.status(400).json({
+        status: false,
+        message: "Duplicate account groups data detected",
+        error: error.message,
+      });
+    }
+
+    // Handle general server errors
+    return res.status(500).json({
+      status: false,
+      message: "Internal server error",
+      ...(process.env.NODE_ENV === "development" && { error: error.message }),
     });
   }
 };
@@ -1407,129 +1619,202 @@ export const addSubGroups = async (req, res) => {
   try {
     const subGroupsToSave = req?.body?.data;
 
-    // Validate data
+    // Basic validation for sub groups array
     if (!subGroupsToSave || subGroupsToSave.length === 0) {
-      return res.status(400).json({ error: "No data provided" });
+      return res.status(400).json({
+        status: false,
+        message: "No sub groups data provided",
+      });
     }
+
+    // Extract and validate required IDs from first item
+    const { Primary_user_id, cmp_id } = subGroupsToSave[0] || {};
+
+    if (!Primary_user_id || !cmp_id) {
+      return res.status(400).json({
+        status: false,
+        message: "Primary_user_id and cmp_id are required",
+      });
+    }
+
+    // Find and log company information
+    getApiLogs(cmp_id, "Sub Groups Data");
 
     // Track processed and failed operations
     const uniqueSubGroups = new Map();
-    const results = {
-      successful: [],
-      failed: [],
-      skipped: [],
-    };
+    const skippedItems = [];
+    let insertedCount = 0;
+    let updatedCount = 0;
 
     // Process each subgroup
-    await Promise.all(
-      subGroupsToSave.map(async (subGroup) => {
-        const key = `${subGroup.cmp_id}-${subGroup.subGroup_id}-${subGroup.Primary_user_id}`;
+    for (let i = 0; i < subGroupsToSave.length; i++) {
+      const subGroup = subGroupsToSave[i];
+      const itemIndex = i + 1;
+      const key = `${subGroup.cmp_id}-${subGroup.subGroup_id}-${subGroup.Primary_user_id}`;
 
-        // Skip duplicate records in the request
-        if (uniqueSubGroups.has(key)) {
-          results.skipped.push({
-            subGroup_id: subGroup.subGroup_id,
-            reason: "Duplicate in request",
-          });
-          return;
-        }
-        uniqueSubGroups.set(key, true);
+      // Skip duplicate records in the request
+      if (uniqueSubGroups.has(key)) {
+        skippedItems.push({
+          item: itemIndex,
+          reason: "Duplicate in request",
+          data: { subGroup_id: subGroup.subGroup_id },
+        });
+        continue;
+      }
+      uniqueSubGroups.set(key, true);
 
-        try {
-          // Convert Primary_user_id to ObjectId if it's a string
-          if (typeof subGroup.Primary_user_id === "string") {
-            subGroup.Primary_user_id = new mongoose.Types.ObjectId(
-              subGroup.Primary_user_id
-            );
-          }
+      // Check for required fields
+      const missingFields = [];
+      if (!subGroup.Primary_user_id) missingFields.push("Primary_user_id");
+      if (!subGroup.cmp_id) missingFields.push("cmp_id");
+      if (!subGroup.subGroup_id) missingFields.push("subGroup_id");
+      if (!subGroup.accountGroup_id) missingFields.push("accountGroup_id");
 
-          // Find corresponding accountGroup
-          const accountGroup = await AccountGroup.findOne({
-            cmp_id: subGroup.cmp_id,
-            accountGroup_id: subGroup.accountGroup_id,
-            Primary_user_id: subGroup.Primary_user_id,
-          });
+      // Skip item if missing required fields
+      if (missingFields.length > 0) {
+        skippedItems.push({
+          item: itemIndex,
+          reason: `Missing required fields: ${missingFields.join(", ")}`,
+          data: { subGroup_id: subGroup.subGroup_id },
+        });
+        continue;
+      }
 
-          if (!accountGroup) {
-            results.failed.push({
-              subGroup_id: subGroup.subGroup_id,
-              error: `Account group not found with ID: ${subGroup.accountGroup_id}`,
-            });
-            return;
-          }
-
-          subGroup.accountGroup = accountGroup._id;
-
-          // First check if a subgroup with this ID already exists
-          const existingSubGroup = await subGroupModel.findOne({
-            subGroup_id: subGroup.subGroup_id,
-            cmp_id:subGroup?.cmp_id,
-             Primary_user_id: subGroup.Primary_user_id,
-
-          });
-
-          let savedSubGroup;
-
-          if (existingSubGroup) {
-            // Update the existing document
-            savedSubGroup = await subGroupModel.findByIdAndUpdate(
-              existingSubGroup._id,
-              subGroup,
-              {
-                new: true,
-                runValidators: true,
-              }
-            );
-
-            results.successful.push({
-              subGroup_id: subGroup.subGroup_id,
-              _id: savedSubGroup._id,
-              isNew: false,
-            });
-          } else {
-            // Create a new document
-            const newSubGroup = new subGroupModel(subGroup);
-            savedSubGroup = await newSubGroup.save();
-
-            results.successful.push({
-              subGroup_id: subGroup.subGroup_id,
-              _id: savedSubGroup._id,
-              isNew: true,
-            });
-          }
-        } catch (error) {
-          console.error(
-            `Error processing subgroup ${subGroup.subGroup_id}:`,
-            error
+      try {
+        // Convert Primary_user_id to ObjectId if it's a string
+        if (typeof subGroup.Primary_user_id === "string") {
+          subGroup.Primary_user_id = new mongoose.Types.ObjectId(
+            subGroup.Primary_user_id
           );
-          results.failed.push({
-            subGroup_id: subGroup.subGroup_id,
-            error: error.message || "Unknown error",
-          });
         }
-      })
-    );
 
-    // Return detailed response
-    res.status(201).json({
+        // Find corresponding accountGroup
+        const accountGroup = await AccountGroup.findOne({
+          cmp_id: subGroup.cmp_id,
+          accountGroup_id: subGroup.accountGroup_id,
+          Primary_user_id: subGroup.Primary_user_id,
+        });
+
+        if (!accountGroup) {
+          skippedItems.push({
+            item: itemIndex,
+            reason: `Account group not found with ID: ${subGroup.accountGroup_id}`,
+            data: { subGroup_id: subGroup.subGroup_id },
+          });
+          continue;
+        }
+
+        subGroup.accountGroup = accountGroup._id;
+
+        // First check if a subgroup with this ID already exists
+        const existingSubGroup = await subGroupModel.findOne({
+          subGroup_id: subGroup.subGroup_id,
+          cmp_id: subGroup?.cmp_id,
+          Primary_user_id: subGroup.Primary_user_id,
+        });
+
+        if (existingSubGroup) {
+          // Update the existing document
+          await subGroupModel.findByIdAndUpdate(
+            existingSubGroup._id,
+            subGroup,
+            {
+              new: true,
+              runValidators: true,
+            }
+          );
+          updatedCount++;
+        } else {
+          // Create a new document
+          const newSubGroup = new subGroupModel(subGroup);
+          await newSubGroup.save();
+          insertedCount++;
+        }
+      } catch (itemError) {
+        console.error(
+          `Error processing subgroup ${subGroup.subGroup_id}:`,
+          itemError
+        );
+        skippedItems.push({
+          item: itemIndex,
+          reason: `Processing error: ${itemError.message}`,
+          data: { subGroup_id: subGroup.subGroup_id },
+        });
+      }
+    }
+
+    // Prepare response with detailed summary
+    const response = {
+      status: true,
       message: "Sub-groups processing completed",
       summary: {
-        total: subGroupsToSave.length,
-        successful: results.successful.length,
-        failed: results.failed.length,
-        skipped: results.skipped.length,
+        totalReceived: subGroupsToSave.length,
+        insertedCount: insertedCount,
+        updatedCount: updatedCount,
+        successCount: insertedCount + updatedCount,
+        skippedCount: skippedItems.length,
       },
-      results,
-    });
+    };
+
+    // Add skipped items details if any exist
+    if (skippedItems.length > 0) {
+      response.skippedItems = skippedItems;
+      response.skippedReasons = {
+        missingRequiredFields: skippedItems.filter((item) =>
+          item.reason.includes("Missing required fields")
+        ).length,
+        duplicateInRequest: skippedItems.filter((item) =>
+          item.reason.includes("Duplicate in request")
+        ).length,
+        accountGroupNotFound: skippedItems.filter((item) =>
+          item.reason.includes("Account group not found")
+        ).length,
+        processingErrors: skippedItems.filter((item) =>
+          item.reason.includes("Processing error")
+        ).length,
+      };
+    }
+
+    // Set appropriate HTTP status code
+    const totalSuccess = insertedCount + updatedCount;
+    const statusCode =
+      totalSuccess > 0
+        ? 200
+        : skippedItems.length === subGroupsToSave.length
+        ? 400
+        : 207;
+
+    console.log("Sub Groups Response:", response?.summary);
+    return res.status(statusCode).json(response);
   } catch (error) {
     console.error("Error in addSubGroups:", error);
-    res.status(500).json({
-      error: "Internal server error",
-      message: error.message,
+
+    // Handle specific MongoDB validation errors
+    if (error.name === "ValidationError") {
+      return res.status(400).json({
+        status: false,
+        message: "Validation error in sub groups data",
+        error: error.message,
+      });
+    }
+
+    // Handle duplicate key errors
+    if (error.code === 11000) {
+      return res.status(400).json({
+        status: false,
+        message: "Duplicate sub groups data detected",
+        error: error.message,
+      });
+    }
+
+    // Handle general server errors
+    return res.status(500).json({
+      status: false,
+      message: "Internal server error",
+      ...(process.env.NODE_ENV === "development" && { error: error.message }),
     });
   }
 };
-
 // @desc for saving subDetails of products from tally
 // route GET/api/tally/addSubDetails
 
@@ -1575,6 +1860,17 @@ export const addSubDetails = async (req, res) => {
     // Arrays to track items
     const results = [];
     const skippedItems = [];
+
+    const { Primary_user_id, cmp_id } = req?.body?.data[0] || {};
+
+    if (!Primary_user_id || !cmp_id) {
+      return res.status(400).json({
+        status: false,
+        message: "Primary_user_id and cmp_id are required",
+      });
+    }
+
+    getApiLogs(cmp_id, nameField);
 
     // Process each item in the data array
     for (const item of data) {
@@ -1674,18 +1970,23 @@ export const addSubDetails = async (req, res) => {
     const failureCount = results.length - successCount;
     const skippedCount = skippedItems.length;
 
+    const counts = {
+      success: successCount,
+      failed: failureCount,
+      skipped: skippedCount,
+    };
+
+    console.log(`${nameField} response`, counts);
+
     return res.status(200).json({
       success: true,
       message: `Added/Updated ${successCount} items, Failed ${failureCount} items, Skipped ${skippedCount} items`,
       results,
       skipped: skippedItems,
-      counts: {
-        success: successCount,
-        failed: failureCount,
-        skipped: skippedCount,
-      },
+      counts,
     });
   } catch (error) {
+    console.error("Error processing request:", error);
     return res.status(500).json({
       success: false,
       message: `Error processing request: ${error.message}`,
@@ -1849,7 +2150,6 @@ export const addGodowns = async (req, res) => {
 // // @desc for giving invoices to tally
 // // route GET/api/tally/giveInvoice
 export const giveInvoice = async (req, res) => {
-
   const cmp_id = req.params.cmp_id;
   const serialNumber = req.params.SNo;
   return fetchData("invoices", cmp_id, serialNumber, res);
