@@ -199,9 +199,9 @@ const RestaurantPOS = () => {
     }
   }, [cmp_id]);
 
-  useEffect(() => {
-    fetchAllItems();
-  }, [fetchAllItems]);
+ useEffect(() => {
+  fetchAllItems();
+ },[fetchAllItems]);
 
   const {
     data: roomBookingData,

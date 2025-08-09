@@ -11,28 +11,31 @@ dotenv.config();
 export default defineConfig({
   plugins: [
     react(),
-    VitePWA(
-      { 
-        registerType: 'autoUpdate', 
-        manifest: {
-          name: 'Camet ERP',
-          short_name: 'Camet ERP',
-          description: 'Camet collection app',
-          theme_color: '#451952',
-          icons: [
-            {
-              src: 'play_store_64.png',
-              sizes: '64x64',
-              type: 'image/png'
-            },
-            {
-              src: 'play_store_512.png',
-              sizes: '512x512',
-              type: 'image/png'
-            }
-          ]
-        }
-      })
+    VitePWA({
+      registerType: 'autoUpdate', 
+      manifest: {
+        name: 'Camet ERP',
+        short_name: 'Camet ERP',
+        description: 'Camet collection app',
+        theme_color: '#451952',
+        icons: [
+          {
+            src: 'play_store_64.png',
+            sizes: '64x64',
+            type: 'image/png'
+          },
+          {
+            src: 'play_store_512.png',
+            sizes: '512x512',
+            type: 'image/png'
+          }
+        ]
+      },
+      // ADD THIS: Configure workbox for your 5.05MB bundle
+      workbox: {
+        maximumFileSizeToCacheInBytes: 6000000 // 6MB - accommodates your large bundle
+      }
+    })
   ],
   resolve: {
     alias: {
