@@ -77,7 +77,7 @@ const RestaurantPOS = () => {
     (state) => state.secSelectedOrganization.secSelectedOrg?.name
   );
 
-  const gradientClasses = ["bg-gradient-to-r from-[#10b981] to-[#059669]"];
+  const gradientClasses = ["bg-gradient-to-r from-blue-400 to-blue-600"];
 
   const subcategoryIcons = {
     Pizza: "🍕",
@@ -392,6 +392,7 @@ const RestaurantPOS = () => {
       orderCustomerDetails = {
         roomNumber: roomDetails.roomno,
         guestName: roomDetails.guestName,
+        CheckInNumber:roomDetails
       };
     } else {
       orderCustomerDetails = { ...customerDetails };
@@ -718,7 +719,7 @@ const RestaurantPOS = () => {
             ) : (
               <>
                 <div className="mb-4">
-                  <h3 className="text-sm font-semibold text-[#10b981]">
+                  <h3 className="text-sm font-semibold text-[#4688f3]">
                     {selectedSubcategory
                       ? `${selectedCuisine?.categoryName} - ${selectedSubcategory} (${menuItems.length} items)`
                       : searchTerm
@@ -775,7 +776,7 @@ const RestaurantPOS = () => {
                           {/* Quick Add Button */}
                           <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
                             <div className="bg-white/90 backdrop-blur-sm rounded-full p-1.5 shadow-lg hover:bg-white hover:scale-110 transition-all duration-200">
-                              <Plus className="w-3 h-3 md:w-4 md:h-4 text-[#10b981]" />
+                              <Plus className="w-3 h-3 md:w-4 md:h-4 text-[#4688f3]" />
                             </div>
                           </div>
 
@@ -795,7 +796,7 @@ const RestaurantPOS = () => {
                           {/* Title and Rating */}
                           <div className="mb-2">
                             <h3
-                              className="font-bold text-[#10b981] text-xs md:text-sm mb-1 line-clamp-2 group-hover:text-blue-700 transition-colors duration-200"
+                              className="font-bold text-[#4688f3] text-xs md:text-sm mb-1 line-clamp-2 group-hover:text-blue-700 transition-colors duration-200"
                               title={item.product_name}
                             >
                               {item.product_name}
@@ -803,7 +804,7 @@ const RestaurantPOS = () => {
 
                             {/* Rating and Time */}
                             <div className="flex items-center justify-between text-xs text-gray-500">
-                              <div className="flex items-center space-x-1 text-[#10b981]">
+                              <div className="flex items-center space-x-1 text-[#4688f3]">
                                 <Clock className="w-2 h-2 md:w-3 md:h-3" />
                                 <span className="text-xs">{item.time || "15-20 min"}</span>
                               </div>
@@ -813,7 +814,7 @@ const RestaurantPOS = () => {
                           {/* Price Section */}
                           <div className="flex justify-between items-center">
                             <div className="flex flex-col">
-                              <span className="text-sm md:text-base font-bold text-[#10b981]">
+                              <span className="text-sm md:text-base font-bold text-[#4688f3]">
                                 ₹{item.Priceleveles?.[0]?.pricerate || item.price || 0}
                               </span>
                               {item.Priceleveles?.[0]?.priceDisc > 0 && (
@@ -856,8 +857,8 @@ const RestaurantPOS = () => {
         `}>
           <div className="p-3 md:p-4 border-b border-gray-200 bg-gradient-to-r from-emerald-50 to-teal-50">
             <div className="flex items-center justify-between">
-              <h3 className="text-base md:text-lg font-bold text-[#10b981] flex items-center">
-                <ShoppingCart className="w-4 h-4 md:w-5 md:h-5 mr-2 text-[#10b981]" />
+              <h3 className="text-base md:text-lg font-bold text-[#4688f3] flex items-center">
+                <ShoppingCart className="w-4 h-4 md:w-5 md:h-5 mr-2 text-[#4688f3]" />
                 <span className="hidden sm:inline">Order Summary</span>
                 <span className="sm:hidden">Cart</span> ({getTotalItems()})
               </h3>
@@ -892,13 +893,13 @@ const RestaurantPOS = () => {
                       <p className="text-xs text-gray-500 mb-2">
                         ₹{item.price || item.selling_price} x {item.quantity}
                       </p>
-                      <p className="text-sm font-bold text-[#10b981]">
+                      <p className="text-sm font-bold text-[#4688f3]">
                         ₹{(item.price || item.selling_price) * item.quantity}
                       </p>
                     </div>
                     <div className="flex flex-col items-center space-y-2">
                       <button
-                        className="bg-[#10b981] text-white w-7 h-7 flex items-center justify-center rounded-full hover:bg-blue-600 hover:scale-105 active:scale-95 transition-all duration-200"
+                        className="bg-[#4688f3] text-white w-7 h-7 flex items-center justify-center rounded-full hover:bg-blue-600 hover:scale-105 active:scale-95 transition-all duration-200"
                         onClick={() => updateQuantity(item._id, item.quantity + 1)}
                       >
                         <Plus className="w-3 h-3" />
@@ -909,7 +910,7 @@ const RestaurantPOS = () => {
                       </span>
                       
                       <button
-                        className="bg-[#10b981] text-white w-7 h-7 flex items-center justify-center rounded-full hover:bg-blue-600 hover:scale-105 active:scale-95 transition-all duration-200"
+                        className="bg-[#4688f3] text-white w-7 h-7 flex items-center justify-center rounded-full hover:bg-blue-600 hover:scale-105 active:scale-95 transition-all duration-200"
                         onClick={() => updateQuantity(item._id, item.quantity - 1)}
                       >
                         <Minus className="w-3 h-3" />
@@ -925,7 +926,7 @@ const RestaurantPOS = () => {
           <div className="p-3 md:p-4 border-t border-gray-200">
             <div className="flex justify-between items-center mb-4">
               <span className="text-lg font-semibold text-gray-700">Total</span>
-              <span className="text-xl font-bold text-[#10b981]">
+              <span className="text-xl font-bold text-[#4688f3]">
                 ₹{getTotalAmount()}
               </span>
             </div>
@@ -937,7 +938,7 @@ const RestaurantPOS = () => {
                   onClick={() => setOrderType("dine-in")}
                   className={`flex flex-col items-center justify-center h-14 md:h-12 rounded-md border transition-colors text-xs ${
                     orderType === "dine-in"
-                      ? "border-[#10b981] bg-blue-50 text-[#10b981]"
+                      ? "border-[#4688f3] bg-blue-50 text-[#4688f3]"
                       : "border-gray-200 hover:border-gray-300"
                   }`}
                 >
@@ -948,7 +949,7 @@ const RestaurantPOS = () => {
                   onClick={() => setOrderType("takeaway")}
                   className={`flex flex-col items-center justify-center h-14 md:h-12 rounded-md border transition-colors text-xs ${
                     orderType === "takeaway"
-                      ? "border-[#10b981] bg-blue-50 text-[#10b981]"
+                      ? "border-[#4688f3] bg-blue-50 text-[#4688f3]"
                       : "border-gray-200 hover:border-gray-300"
                   }`}
                 >
@@ -959,7 +960,7 @@ const RestaurantPOS = () => {
                   onClick={() => setOrderType("delivery")}
                   className={`flex flex-col items-center justify-center h-14 md:h-12 rounded-md border transition-colors text-xs ${
                     orderType === "delivery"
-                      ? "border-[#10b981] bg-blue-50 text-[#10b981]"
+                      ? "border-[#4688f3] bg-blue-50 text-[#4688f3]"
                       : "border-gray-200 hover:border-gray-300"
                   }`}
                 >
@@ -970,7 +971,7 @@ const RestaurantPOS = () => {
                   onClick={() => setOrderType("roomService")}
                   className={`flex flex-col items-center justify-center h-14 md:h-12 rounded-md border transition-colors text-xs ${
                     orderType === "roomService"
-                      ? "border-[#10b981] bg-blue-50 text-[#10b981]"
+                      ? "border-[#4688f3] bg-blue-50 text-[#4688f3]"
                       : "border-gray-200 hover:border-gray-300"
                   }`}
                 >
@@ -983,7 +984,7 @@ const RestaurantPOS = () => {
             {/* Action Buttons */}
             <div className="flex space-x-2">
               <button
-                className="flex-1 bg-[#10b981] text-white py-3 rounded-lg font-semibold hover:bg-[#0f8f6b] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm hover:scale-105 active:scale-95"
+                className="flex-1 bg-[#4688f3] text-white py-3 rounded-lg font-semibold hover:bg-[#0f8f6b] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm hover:scale-105 active:scale-95"
                 disabled={orderItems.length === 0}
                 onClick={handlePlaceOrder}
               >
@@ -1012,18 +1013,18 @@ const RestaurantPOS = () => {
             <div className="mb-4">
               <div className="flex items-center justify-center p-3 bg-blue-50 rounded-lg border border-blue-200">
                 {orderType === "dine-in" && (
-                  <Home className="w-5 h-5 mr-2 text-[#10b981]" />
+                  <Home className="w-5 h-5 mr-2 text-[#4688f3]" />
                 )}
                 {orderType === "takeaway" && (
-                  <Package className="w-5 h-5 mr-2 text-[#10b981]" />
+                  <Package className="w-5 h-5 mr-2 text-[#4688f3]" />
                 )}
                 {orderType === "delivery" && (
-                  <Car className="w-5 h-5 mr-2 text-[#10b981]" />
+                  <Car className="w-5 h-5 mr-2 text-[#4688f3]" />
                 )}
                 {orderType === "roomService" && (
-                  <Bed className="w-5 h-5 mr-2 text-[#10b981]" />
+                  <Bed className="w-5 h-5 mr-2 text-[#4688f3]" />
                 )}
-                <span className="text-sm font-medium text-[#10b981]">
+                <span className="text-sm font-medium text-[#4688f3]">
                   {getOrderTypeDisplay(orderType)} Order
                 </span>
               </div>

@@ -154,6 +154,10 @@ const handleRoomAction = async (action) => {
     navigate("/sUsers/bookingPage", { state: { room: selectedRoomData } });
     return;
   }
+   if (action === "CheckIn") {
+    navigate("/sUsers/checkInPage", { state: { room: selectedRoomData } });
+    return;
+  }
 
   if (action === "dirty" || action === "blocked") {
     try {
@@ -437,6 +441,7 @@ useEffect(() => {
       >
         <option value="" disabled>Choose...</option>
         <option value="booking">Booking</option>
+        <option value="CheckIn">CheckIn</option>
         <option value="dirty">Mark as Dirty</option>
         <option value="blocked">Mark as Blocked</option>
       </select>
@@ -470,7 +475,7 @@ useEffect(() => {
  <div
   key={room._id}
   style={{ animationDelay: `${index * 0.05}s` }}
-  className={`animate-slide-in rounded-lg p-2  bg-gradient-to-r ${statusColors[room.status] || "from-gray-500 to-slate-800"}`}
+  className={`animate-slide-in rounded-lg p-2  || "from-gray-500 to-slate-800"}`}
   onClick={() => setSelectedRoom(room)}
 >
   <RoomStatus
@@ -481,6 +486,7 @@ useEffect(() => {
     onClick={() => setSelectedRoom(room)}
   />
 </div>
+
 
 
                   ))}
