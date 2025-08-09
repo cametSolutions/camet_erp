@@ -14,6 +14,7 @@ import {
 import api from "@/api/api";
 import { motion } from "framer-motion";
 import { Check, CreditCard, X, Banknote } from "lucide-react";
+import { generateAndPrintKOT } from "@/pages/Restuarant/Helper/kotPrintHelper";
 
 const OrdersDashboard = () => {
   const [activeFilter, setActiveFilter] = useState("pending");
@@ -25,9 +26,18 @@ const OrdersDashboard = () => {
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [selectedDataForPayment, setSelectedDataForPayment] = useState({});
 
-  const cmp_id = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg._id
-  );
+  const [paymentMode, setPaymentMode] = useState("single"); // "single" or "split"
+  const [cashAmount, setCashAmount] = useState(0);
+  const [onlineAmount, setOnlineAmount] = useState(0);
+  const [paymentError, setPaymentError] = useState("");
+  const [selectedCash, setSelectedCash] = useState("");
+  const [selectedBank, setSelectedBank] = useState("");
+  const [cashOrBank, setCashOrBank] = useState({});
+
+const { _id: cmp_id, name: companyName } = useSelector(
+  (state) => state.secSelectedOrganization.secSelectedOrg
+);
+
 
   const { data, loading } = useFetch(`/api/sUsers/getKotData/${cmp_id}`);
 
@@ -36,6 +46,22 @@ const OrdersDashboard = () => {
       setOrders(data?.data);
     }
   }, [data]);
+
+  const { data: paymentTypeData } = useFetch(
+    `/api/sUsers/getPaymentType/${cmp_id}`
+  );
+  useEffect(() => {
+    if (paymentTypeData) {
+      const { bankDetails, cashDetails } = paymentTypeData?.data;
+      setCashOrBank(paymentTypeData?.data);
+      if (bankDetails && bankDetails.length > 0) {
+        setSelectedBank(bankDetails[0]);
+      }
+      if (cashDetails && cashDetails.length > 0) {
+        setSelectedCash(cashDetails[0]);
+      }
+    }
+  }, [paymentTypeData]);
 
   // Status configuration
   const statusConfig = {
@@ -82,42 +108,26 @@ const OrdersDashboard = () => {
   // Filter orders based on active filter
   const getFilteredOrders = () => {
     let filtered = orders;
-    
-    // Filter by status based on the button clicked and user role
-    if (activeFilter === "All") {
-      if (userRole === "kitchen") {
-        // Kitchen: Show all orders except completed
-        filtered = filtered.filter((order) =>
-          ["pending", "cooking", "ready_to_serve"].includes(order.status)
-        );
-      } else {
-        // Reception: Show all orders including completed
-        filtered = filtered.filter((order) =>
-          ["pending", "cooking", "ready_to_serve", "completed"].includes(order.status)
-        );
-      }
-    } else if (activeFilter === "On Process") {
-      // Show orders that are in progress (pending, cooking, ready_to_serve)
+    // Filter by status
+    if (activeFilter == "pending" && userRole !== "kitchen") {
       filtered = filtered.filter((order) =>
-        ["cooking", ].includes(order.status)
+        ["pending", "cooking", "ready_to_serve", "completed"].includes(
+          order.status
+        )
       );
-    } else if (activeFilter === "Completed") {
-      if (userRole === "kitchen") {
-        // Kitchen: No completed orders to show, return empty array
-       filtered = filtered.filter((order) =>
-        ["ready_to_serve"].includes(order.status)
+    } else if (activeFilter == "pending") {
+      filtered = filtered.filter((order) =>
+        ["pending", "cooking", "ready_to_serve"].includes(order.status)
       );
-      } else {
-        // Reception: Show only completed orders
-        filtered = filtered.filter((order) => order.status === "completed");
-      }
+    } else if (activeFilter === "completed") {
+      filtered = filtered.filter((order) => order.status === "completed");
     }
 
     // Filter by search query
     if (searchQuery) {
       filtered = filtered.filter(
         (order) =>
-          order?.customer?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          order.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
           order.id.toString().includes(searchQuery) ||
           order.items.some((item) =>
             item.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -128,15 +138,6 @@ const OrdersDashboard = () => {
     return filtered;
   };
 
-  // const getAvatarColorClass = (color) => {
-  //   const colors = {
-  //     teal: "bg-teal-600",
-  //     green: "bg-green-500",
-  //     orange: "bg-orange-500",
-  //     yellow: "bg-yellow-400 text-black",
-  //   };
-  //   return colors[color] || "bg-gray-400";
-  // };
   const handleStatusChange = async (orderId, currentStatus) => {
     setLoader(true);
     let updatedStatus;
@@ -180,6 +181,18 @@ const OrdersDashboard = () => {
     }
   };
 
+  // function used to perform print  with kot
+  const handleKotPrint = (data) => {
+    console.log(data);
+    const orderData = {
+      kotNo: data?.voucherNumber,
+      tableNo: data?.tableNumber,
+      items: data?.items,
+      createdAt: data?.createdAt,
+    };
+
+    generateAndPrintKOT(orderData, true, false, companyName);
+  };
 
   const MenuIcon = () => (
     <svg
@@ -224,40 +237,47 @@ const OrdersDashboard = () => {
   const filteredOrders = getFilteredOrders();
 
   const handleSavePayment = async (id) => {
-        try {
-          const response = await api.put(
-            `/api/sUsers/updateKotPayment/${id}`,
-            {paymentMethod:paymentMethod },
-            { withCredentials: true }
-          );
-          // Check if the response was successful
-          if (response.status === 200 || response.status === 201) {
-            // Update the local state with the new status
-            setOrders((prevOrders) =>
-              prevOrders.map((order) =>
-                order._id === id
-                  ? { ...order, paymentMethod: data.paymentMethod ,  }
-                  : order
-              )
-            );
-            setLoader(false);
-          } else {
-            console.error("Failed to update backend:", response.data || response);
-          }
-        } catch (error) {
-          console.error(
-            "Error updating order status:",
-            error.response?.data || error.message
-          );
+    let paymentDetails = {
+      cashAmount: cashAmount,
+      onlineAmount: onlineAmount,
+      selectedCash: selectedCash,
+      selectedBank: selectedBank,
+    };
+    console.log(paymentDetails);
+    try {
+      const response = await api.put(
+        `/api/sUsers/updateKotPayment/${cmp_id}/${id}`,
+        { paymentMethod: paymentMethod, paymentDetails: paymentDetails },
+        { withCredentials: true }
+      );
+      // Check if the response was successful
+      if (response.status === 200 || response.status === 201) {
+        // Update the local state with the new status
+        setOrders((prevOrders) =>
+          prevOrders.map((order) =>
+            order._id === id
+              ? { ...order, paymentMethod: data.paymentMethod }
+              : order
+          )
+        );
+        setLoader(false);
+      } else {
+        console.error("Failed to update backend:", response.data || response);
       }
+    } catch (error) {
+      console.error(
+        "Error updating order status:",
+        error.response?.data || error.message
+      );
+    }
     handlePrint(id);
     // Add your logic to save the payment details here
     setShowPaymentModal(false);
   };
 
-  const handlePrint=()=>{
+  const handlePrint = () => {};
 
-  }
+  console.log(cashOrBank);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -319,7 +339,6 @@ const OrdersDashboard = () => {
         {filteredOrders.map((order) => {
           const currentStatusConfig = statusConfig[order.status];
           const availableStatuses = getAvailableStatuses(order.status);
-          
 
           return (
             <div
@@ -518,9 +537,12 @@ const OrdersDashboard = () => {
                     <MdVisibility className="w-3 h-3 group-hover:rotate-12 transition-transform duration-200" />
                     Pay
                   </button>
-                  <button className="flex-1 group px-3 py-1.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg text-xs font-semibold hover:from-blue-600 hover:to-blue-700 transition-all duration-200 hover:scale-105 flex items-center justify-center gap-1">
+                  <button
+                    className="flex-1 group px-3 py-1.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg text-xs font-semibold hover:from-blue-600 hover:to-blue-700 transition-all duration-200 hover:scale-105 flex items-center justify-center gap-1"
+                    onClick={() => handleKotPrint(order)}
+                  >
                     <MdPrint className="w-3 h-3 group-hover:rotate-12 transition-transform duration-200" />
-                    Print
+                    Kot Print
                   </button>
                 </div>
               )}
@@ -533,21 +555,31 @@ const OrdersDashboard = () => {
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="bg-white rounded-lg p-6 max-w-md w-full mx-4"
+            className="bg-white rounded-lg p-4 max-w-lg w-full mx-4 max-h-[95vh] overflow-y-auto"
           >
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-gray-800">
+            <div className="flex justify-between items-center mb-3">
+              <h2 className="text-lg font-bold text-gray-800">
                 Payment Processing
               </h2>
               <button
-                onClick={() => setShowPaymentModal(false)}
+                onClick={() => {
+                  setShowPaymentModal(false);
+                  setPaymentMode("single");
+                  setCashAmount(0);
+                  setOnlineAmount(0);
+                  setPaymentError("");
+                  // Reset split payment selections
+                  setSelectedCash("");
+                  setSelectedBank("");
+                }}
                 className="text-gray-400 hover:text-gray-600"
               >
                 <X className="w-6 h-6" />
               </button>
             </div>
 
-            <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+            {/* KOT Section */}
+            <div className="mb-3 p-2 bg-blue-50 rounded-lg border border-blue-200">
               <div className="flex items-center text-blue-700">
                 <Check className="w-5 h-5 mr-2" />
                 <span className="text-sm font-medium">
@@ -556,72 +588,325 @@ const OrdersDashboard = () => {
               </div>
             </div>
 
-            {/* Payment Method Selection */}
-            <div className="mb-4">
+            {/* Payment Mode Selection */}
+            <div className="mb-3">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Payment Method
+                Payment Mode
               </label>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="flex gap-2 mb-3">
                 <button
-                  onClick={() => setPaymentMethod("cash")}
-                  className={`flex flex-col items-center p-4 rounded-lg border-2 transition-colors ${
-                    paymentMethod === "cash"
+                  onClick={() => {
+                    setPaymentMode("single");
+                    setCashAmount(0);
+                    setOnlineAmount(0);
+                    setPaymentError("");
+                    // Reset split payment selections
+                    setSelectedCash("");
+                    setSelectedBank("");
+                  }}
+                  className={`flex-1 px-3 py-2 rounded-lg border-2 text-xs font-medium transition-colors ${
+                    paymentMode === "single"
                       ? "border-blue-500 bg-blue-50 text-blue-700"
                       : "border-gray-200 hover:border-gray-300"
                   }`}
                 >
-                  <Banknote className="w-8 h-8 mb-2" />
-                  <span className="text-sm font-medium">Cash</span>
+                  Single Payment
                 </button>
                 <button
-                  onClick={() => setPaymentMethod("card")}
-                  className={`flex flex-col items-center p-4 rounded-lg border-2 transition-colors ${
-                    paymentMethod === "card"
+                  onClick={() => {
+                    setPaymentMode("split");
+                    setPaymentError("");
+                  }}
+                  className={`flex-1 px-3 py-2 rounded-lg border-2 text-xs font-medium transition-colors ${
+                    paymentMode === "split"
                       ? "border-blue-500 bg-blue-50 text-blue-700"
                       : "border-gray-200 hover:border-gray-300"
                   }`}
                 >
-                  <CreditCard className="w-8 h-8 mb-2" />
-                  <span className="text-sm font-medium">Online Payment</span>
+                  Split Payment
                 </button>
               </div>
             </div>
 
-            {/* Order Summary */}
-            <div className="bg-gray-50 p-3 rounded-lg mb-4">
-              <h3 className="text-sm font-semibold text-gray-700 mb-2">
-                Order No - {selectedDataForPayment?.voucherNumber}
-              </h3>
-              <div className="space-y-2">
-                {selectedDataForPayment?.type === "dine-in" && (
-                  <>
-                    <div className="flex justify-between text-sm">
-                      <span>Table Number:</span>
-                      <span className="font-medium">
-                        {selectedDataForPayment?.tableNumber}
+            {/* Single Payment Method Selection */}
+            {paymentMode === "single" && (
+              <div className="mb-3">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Payment Method
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => setPaymentMethod("cash")}
+                    className={`flex flex-col items-center p-3 rounded-lg border-2 transition-colors ${
+                      paymentMethod === "cash"
+                        ? "border-blue-500 bg-blue-50 text-blue-700"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    <Banknote className="w-6 h-6 mb-1" />
+                    <span className="text-xs font-medium">Cash</span>
+                  </button>
+                  <button
+                    onClick={() => setPaymentMethod("card")}
+                    className={`flex flex-col items-center p-3 rounded-lg border-2 transition-colors ${
+                      paymentMethod === "card"
+                        ? "border-blue-500 bg-blue-50 text-blue-700"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    <CreditCard className="w-6 h-6 mb-1" />
+                    <span className="text-xs font-medium">Online Payment</span>
+                  </button>
+                </div>
+
+                {/* Cash Payment Dropdown */}
+                {paymentMethod === "cash" && (
+                  <div className="mt-3">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Select Cash
+                    </label>
+                    <select
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      value={selectedCash}
+                      onChange={(e) => setSelectedCash(e.target.value)}
+                    >
+                      {cashOrBank?.cashDetails?.map((cashier) => (
+                        <option key={cashier._id} value={cashier._id}>
+                          {cashier.cash_ledname}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Online Payment Dropdown */}
+                {paymentMethod === "card" && (
+                  <div className="mt-3">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Select Bank/Payment Method
+                    </label>
+                    <select
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      value={selectedBank}
+                      onChange={(e) => setSelectedBank(e.target.value)}
+                    >
+                      <option value="" disabled>
+                        Select Payment Method
+                      </option>
+                      {cashOrBank?.bankDetails?.map((cashier) => (
+                        <option key={cashier._id} value={cashier._id}>
+                          {cashier.bank_ledname}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Split Payment Amount Inputs */}
+            {paymentMode === "split" && (
+              <div className="mb-3">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Split Payment Amounts
+                </label>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1 w-16">
+                      <Banknote className="w-4 h-4 text-gray-600" />
+                      <span className="text-xs font-medium">Cash:</span>
+                    </div>
+                    <div className="flex-1">
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                          ₹
+                        </span>
+                        <input
+                          type="number"
+                          value={cashAmount}
+                          onChange={(e) => {
+                            if (
+                              Number(e.target.value) +
+                                Number(onlineAmount || 0) <=
+                              Number(selectedDataForPayment?.total)
+                            ) {
+                              setCashAmount(e.target.value);
+                              setPaymentError("");
+                              return;
+                            } else {
+                              setPaymentError(
+                                "Sum of cash and online amount should be less than or equal to order total."
+                              );
+                            }
+                          }}
+                          className="w-full pl-6 pr-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                          placeholder="0.00"
+                          min="0"
+                          step="0.01"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Cash Payment Dropdown - Show when cash amount > 0 */}
+                  {cashAmount > 0 && (
+                    <div className="ml-20">
+                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                        Select Cash
+                      </label>
+                      <select
+                        className="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
+                        value={selectedCash}
+                        onChange={(e) => setSelectedCash(e.target.value)}
+                      >
+                        <option value="" disabled>
+                          Select Cash
+                        </option>
+                        {cashOrBank?.cashDetails?.map((cashier) => (
+                          <option key={cashier._id} value={cashier._id}>
+                            {cashier.cash_ledname}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1 w-16">
+                      <CreditCard className="w-4 h-4 text-gray-600" />
+                      <span className="text-xs font-medium">Online:</span>
+                    </div>
+                    <div className="flex-1">
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                          ₹
+                        </span>
+                        <input
+                          type="number"
+                          value={onlineAmount}
+                          onChange={(e) => {
+                            if (
+                              Number(e.target.value) + Number(cashAmount) <=
+                              Number(selectedDataForPayment?.total)
+                            ) {
+                              setOnlineAmount(e.target.value);
+                              setPaymentError("");
+                              return;
+                            } else {
+                              setPaymentError(
+                                "Sum of cash and online amount should be less than or equal to order total."
+                              );
+                            }
+                          }}
+                          className="w-full pl-6 pr-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                          placeholder="0.00"
+                          min="0"
+                          step="0.01"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Online Payment Dropdown - Show when online amount > 0 */}
+                  {onlineAmount > 0 && (
+                    <div className="ml-20">
+                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                        Select Bank
+                      </label>
+                      <select
+                        className="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
+                        value={selectedBank}
+                        onChange={(e) => setSelectedBank(e.target.value)}
+                      >
+                        <option value="" disabled>
+                          Select Bank
+                        </option>
+                        {cashOrBank?.bankDetails?.map((cashier) => (
+                          <option key={cashier._id} value={cashier._id}>
+                            {cashier.bank_ledname}
+                          </option>
+                        ))}
+                        <option value="hdfc">HDFC Bank</option>
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Payment Summary for Split */}
+                  <div className="bg-gray-50 p-2 rounded-lg border">
+                    <div className="flex justify-between text-xs text-gray-600 mb-1">
+                      <span>Total Entered:</span>
+                      <span>
+                        ₹
+                        {(
+                          parseFloat(cashAmount || 0) +
+                          parseFloat(onlineAmount || 0)
+                        ).toFixed(2)}
                       </span>
                     </div>
-                  </>
+                    <div className="flex justify-between text-xs font-medium">
+                      <span>Order Total:</span>
+                      <span>₹{selectedDataForPayment?.total}</span>
+                    </div>
+                    {parseFloat(cashAmount || 0) +
+                      parseFloat(onlineAmount || 0) !==
+                      selectedDataForPayment?.total && (
+                      <div className="flex justify-between text-xs text-amber-600 mt-1">
+                        <span>Difference:</span>
+                        <span>
+                          ₹
+                          {(
+                            selectedDataForPayment?.total -
+                            (parseFloat(cashAmount || 0) +
+                              parseFloat(onlineAmount || 0))
+                          ).toFixed(2)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Error Message */}
+            {paymentError && (
+              <div className="mb-3 p-2 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-600 text-xs">{paymentError}</p>
+              </div>
+            )}
+
+            {/* Order Summary */}
+            <div className="bg-gray-50 p-3 rounded-lg">
+              <h3 className="text-xs font-semibold text-gray-700 mb-2">
+                Order No - {selectedDataForPayment?.voucherNumber}
+              </h3>
+              <div className="space-y-1">
+                {selectedDataForPayment?.type === "dine-in" && (
+                  <div className="flex justify-between text-xs">
+                    <span>Table Number:</span>
+                    <span className="font-medium">
+                      {selectedDataForPayment?.tableNumber}
+                    </span>
+                  </div>
                 )}
-                {selectedDataForPayment?.type !== "roomService" ||
-                  (selectedDataForPayment?.type !== "dine-in" && (
+                {selectedDataForPayment?.type !== "roomService" &&
+                  selectedDataForPayment?.type !== "dine-in" && (
                     <>
-                      <div className="flex justify-between text-sm">
+                      <div className="flex justify-between text-xs">
                         <span>Customer:</span>
                         <span className="font-medium">
                           {selectedDataForPayment?.customer.name}
                         </span>
                       </div>
-                      <div className="flex justify-between text-sm">
+                      <div className="flex justify-between text-xs">
                         <span>Phone:</span>
                         <span className="font-medium">
                           {selectedDataForPayment?.customer?.phone}
                         </span>
                       </div>
                     </>
-                  ))}
+                  )}
                 {selectedDataForPayment?.type === "delivery" && (
-                  <div className="flex justify-between text-sm">
+                  <div className="flex justify-between text-xs">
                     <span>Address:</span>
                     <span className="font-medium text-right max-w-48">
                       {selectedDataForPayment?.customer?.address}
@@ -630,13 +915,13 @@ const OrdersDashboard = () => {
                 )}
                 {selectedDataForPayment?.type === "roomService" && (
                   <>
-                    <div className="flex justify-between text-sm">
+                    <div className="flex justify-between text-xs">
                       <span>Room No:</span>
                       <span className="font-medium text-right max-w-48">
                         {selectedDataForPayment?.roomDetails?.roomno}
                       </span>
                     </div>
-                    <div className="flex justify-between text-sm">
+                    <div className="flex justify-between text-xs">
                       <span>Guest Name:</span>
                       <span className="font-medium text-right max-w-48">
                         {selectedDataForPayment?.roomDetails?.guestName}
@@ -645,9 +930,9 @@ const OrdersDashboard = () => {
                   </>
                 )}
               </div>
-              <div className="border-t border-gray-200 pt-3 mt-3 flex justify-between font-semibold text-gray-800">
-                <span>Total Amount</span>
-                <span className="text-lg text-blue-600">
+              <div className="border-t border-gray-200 pt-2 mt-2 flex justify-between font-semibold text-gray-800">
+                <span className="text-sm">Total Amount</span>
+                <span className="text-base text-blue-600">
                   ₹{selectedDataForPayment?.total}
                 </span>
               </div>
@@ -656,16 +941,17 @@ const OrdersDashboard = () => {
                   onClick={() => {
                     handleSavePayment(selectedDataForPayment?._id);
                   }}
-                  className=" flex-1 group px-3 py-1.5 bg-white text-emerald-700 border border-emerald-200 rounded-lg text-xs font-semibold hover:bg-emerald-50 hover:border-emerald-300 transition-all duration-200 hover:scale-105 flex items-center justify-center gap-1"
+                  className="flex-1 group px-3 py-1.5 bg-white text-emerald-700 border border-emerald-200 rounded-lg text-xs font-semibold hover:bg-emerald-50 hover:border-emerald-300 transition-all duration-200 hover:scale-105 flex items-center justify-center gap-1"
                 >
                   <MdVisibility className="w-3 h-3 group-hover:rotate-12 transition-transform duration-200" />
-                  Processed
+                  Process Payment
                 </button>
               </div>
             </div>
           </motion.div>
         </div>
       )}
+
       {/* Empty State */}
       {filteredOrders.length === 0 && (
         <div className="flex flex-col items-center justify-center py-12">

@@ -61,7 +61,8 @@ import {saveAdditionalPax , getAdditionalPax ,updateAdditionalPax , deleteAdditi
     updateVisitOfPurpose,deleteVisitOfPurpose,saveIdProof,getIdProof,updateIdProof , deleteIdProof, saveFoodPlan , getFoodPlan
     ,updateFoodPlan,deleteFoodPlan,addRoom,getRooms,editRoom ,deleteRoom,getAllRooms,roomBooking,getBookings,deleteBooking,updateBooking,
 fetchAdvanceDetails,getAllRoomsWithStatusForDate,updateRoomStatus} from '../controllers/hotelController.js'
-import {addItem,getAllItems,getItems,getCategories,deleteItem,updateItem,generateKot,getKot,updateKotStatus,getRoomDataForRestaurant,updateKotPayment} from '../controllers/restaurantController.js'
+import {addItem,getAllItems,getItems,getCategories,deleteItem,updateItem,generateKot,getKot,updateKotStatus,
+    getRoomDataForRestaurant,updateKotPayment,getPaymentType} from '../controllers/restaurantController.js'
 
 router.post('/login',login)
 router.post('/sendOtp',sendOtp)
@@ -337,7 +338,7 @@ router.put('/updateRoomBooking/:id',authSecondary,secondaryIsBlocked,updateBooki
 router.get('/getBookingAdvanceData/:id',authSecondary,secondaryIsBlocked,fetchAdvanceDetails)
 router.post('/generateKOT/:cmp_id',authSecondary,secondaryIsBlocked,generateKot)
 
-router.put('/editItem/:cmp_id/:id',authSecondary,updateItem)
+router.post('/editItem/:cmp_id/:id',authSecondary,updateItem)
 router.get('/getItems/:cmp_id',authSecondary,getItems)
 router.delete('/deleteItem/:id',authSecondary,deleteItem)
 router.get('/getKotData/:cmp_id',authSecondary,secondaryIsBlocked,getKot)
@@ -346,6 +347,8 @@ router.get('/getRoomBasedOnBooking/:cmp_id',authSecondary,secondaryIsBlocked,get
 router.put("/updateKotPayment/:id",authSecondary,secondaryIsBlocked,updateKotPayment)
 router.get('/getAllRoomsWithStatus/:cmp_id',authSecondary,getAllRoomsWithStatusForDate)
 router.post("/updateStatus/:id", authSecondary,updateRoomStatus);
+router.get("/getPaymentType/:cmp_id",authSecondary,secondaryIsBlocked, getPaymentType)
+router.get("/getSeriesByVoucherForSaleAndReceipt/:cmp_id",authSecondary,secondaryIsBlocked)
 // Route to get detailed booking information for a specific room and date
 
 export default router
