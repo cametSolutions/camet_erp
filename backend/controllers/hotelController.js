@@ -1092,3 +1092,118 @@ export const fetchAdvanceDetails = async (req, res) => {
     });
   }
 };
+
+
+// Backend API Controller - getRoomsWithDateStatus.js
+
+
+
+
+export const getAllRoomsWithStatusForDate = async (req, res) => {
+  const { cmp_id } = req.params;
+  const { selectedDate } = req.query; // expected format: "YYYY-MM-DD"
+
+  try {
+    // 1. Fetch all rooms for the company
+    const allRooms = await roomModal.find({ cmp_id })
+     .populate("cmp_id", "name") // Populate organization details
+      .populate("roomType") // Populate from brand collection
+      .populate("roomFloor") // Populate from subCategory collection
+      .populate("bedType") // Populate from category collection
+      .populate("priceLevel.priceLevel", "name") // Populate price level details
+      .sort({ roomName: 1 }) // Sort by room name (roomNumber doesn't exist in schema)
+      .lean();
+
+    // 2. Bookings: status NOT 'checkIn' AND date overlaps selectedDate
+    const bookings = await Booking.find({
+      cmp_id,
+      status: { $ne: "checkIn" }, // skip check-ins, only pre-arrival bookings
+      arrivalDate: { $lte: selectedDate },
+      checkOutDate: { $gte: selectedDate }
+    }).select("selectedRooms");
+
+    // 3. CheckIns: status NOT 'checkOut' AND date overlaps selectedDate
+    const checkins = await CheckIn.find({
+      cmp_id,
+      status: { $ne: "checkOut" }, // skip already checked out
+      arrivalDate: { $lte: selectedDate },
+      checkOutDate: { $gte: selectedDate }
+    }).select("selectedRooms");
+
+    // --- Collect booked room IDs
+    const bookedRoomIds = new Set();
+    for (const booking of bookings) {
+      for (const selRoom of booking.selectedRooms) {
+        if (selRoom.roomId) {
+          bookedRoomIds.add(selRoom.roomId.toString());
+        }
+      }
+    }
+
+    // --- Collect occupied room IDs
+    const occupiedRoomIds = new Set();
+    for (const checkin of checkins) {
+      for (const selRoom of checkin.selectedRooms) {
+        if (selRoom.roomId) {
+          occupiedRoomIds.add(selRoom.roomId.toString());
+        }
+      }
+    }
+
+    // --- Mark each room's status
+    const roomsWithStatus = allRooms.map((room) => {
+      let status = "vacant";
+      if (occupiedRoomIds.has(room._id.toString())) {
+        status = "occupied";
+      } else if (bookedRoomIds.has(room._id.toString())) {
+        status = "booked";
+      }
+      return { ...room, status };
+    });
+
+    return res.json({ success: true, rooms: roomsWithStatus });
+
+  } catch (error) {
+    console.error("Error getting rooms with status:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch rooms",
+      error: error.message,
+    });
+  }
+};
+
+
+
+// Update room status
+export const updateRoomStatus = async (req, res) => {
+  try {
+    const { id } = req.params; // Get room ID from URL
+    const { status } = req.body; // Get status from request body
+
+    // Validate status
+    const validStatuses = [ "dirty", "blocked", ];
+    if (!status || !validStatuses.includes(status)) {
+      return res.status(400).json({ message: "Invalid or missing status" });
+    }
+
+    // Find room by ID and update
+    const updatedRoom = await roomModal.findByIdAndUpdate(
+      id,
+      { status },
+      { new: true } // Return updated room
+    );
+
+    if (!updatedRoom) {
+      return res.status(404).json({ message: "Room not found" });
+    }
+
+    res.json({
+      message: "Room status updated successfully",
+      room: updatedRoom
+    });
+  } catch (error) {
+    console.error("Error updating room status:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};

@@ -60,9 +60,9 @@ import { createVoucherSeries, getSeriesByVoucher, deleteVoucherSeriesById, editV
 import {saveAdditionalPax , getAdditionalPax ,updateAdditionalPax , deleteAdditionalPax,saveVisitOfPurpose,getVisitOfPurpose,
     updateVisitOfPurpose,deleteVisitOfPurpose,saveIdProof,getIdProof,updateIdProof , deleteIdProof, saveFoodPlan , getFoodPlan
     ,updateFoodPlan,deleteFoodPlan,addRoom,getRooms,editRoom ,deleteRoom,getAllRooms,roomBooking,getBookings,deleteBooking,updateBooking,
-fetchAdvanceDetails} from '../controllers/hotelController.js'
-import {addItem,getAllItems,getItems,getCategories,deleteItem,updateItem,generateKot,getKot
-    ,updateKotStatus,getRoomDataForRestaurant,updateKotPayment,getPaymentType} from '../controllers/restaurantController.js'
+fetchAdvanceDetails,getAllRoomsWithStatusForDate,updateRoomStatus} from '../controllers/hotelController.js'
+import {addItem,getAllItems,getItems,getCategories,deleteItem,updateItem,generateKot,getKot,updateKotStatus,
+    getRoomDataForRestaurant,updateKotPayment,getPaymentType} from '../controllers/restaurantController.js'
 
 router.post('/login',login)
 router.post('/sendOtp',sendOtp)
@@ -344,7 +344,11 @@ router.delete('/deleteItem/:id',authSecondary,deleteItem)
 router.get('/getKotData/:cmp_id',authSecondary,secondaryIsBlocked,getKot)
 router.put('/updateKotStatus/:cmp_id',authSecondary,secondaryIsBlocked,updateKotStatus)
 router.get('/getRoomBasedOnBooking/:cmp_id',authSecondary,secondaryIsBlocked,getRoomDataForRestaurant)
-router.put("/updateKotPayment/:cmp_id/:id",authSecondary,secondaryIsBlocked,updateKotPayment)
+router.put("/updateKotPayment/:id",authSecondary,secondaryIsBlocked,updateKotPayment)
+router.get('/getAllRoomsWithStatus/:cmp_id',authSecondary,getAllRoomsWithStatusForDate)
+router.post("/updateStatus/:id", authSecondary,updateRoomStatus);
 router.get("/getPaymentType/:cmp_id",authSecondary,secondaryIsBlocked, getPaymentType)
 router.get("/getSeriesByVoucherForSaleAndReceipt/:cmp_id",authSecondary,secondaryIsBlocked)
+// Route to get detailed booking information for a specific room and date
+
 export default router
