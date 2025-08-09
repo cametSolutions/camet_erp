@@ -1172,3 +1172,38 @@ export const getAllRoomsWithStatusForDate = async (req, res) => {
     });
   }
 };
+
+
+
+// Update room status
+export const updateRoomStatus = async (req, res) => {
+  try {
+    const { id } = req.params; // Get room ID from URL
+    const { status } = req.body; // Get status from request body
+
+    // Validate status
+    const validStatuses = [ "dirty", "blocked", ];
+    if (!status || !validStatuses.includes(status)) {
+      return res.status(400).json({ message: "Invalid or missing status" });
+    }
+
+    // Find room by ID and update
+    const updatedRoom = await roomModal.findByIdAndUpdate(
+      id,
+      { status },
+      { new: true } // Return updated room
+    );
+
+    if (!updatedRoom) {
+      return res.status(404).json({ message: "Room not found" });
+    }
+
+    res.json({
+      message: "Room status updated successfully",
+      room: updatedRoom
+    });
+  } catch (error) {
+    console.error("Error updating room status:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};

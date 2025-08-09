@@ -157,7 +157,7 @@ const handleRoomAction = async (action) => {
 
   if (action === "dirty" || action === "blocked") {
     try {
-      await api.put(`/api/rooms/updateStatus/${selectedRoomData._id}`, {
+      await api.put(`/api/Susers/updateStatus/${selectedRoomData._id}`, {
         status: action
       }, { withCredentials: true });
 
@@ -201,10 +201,15 @@ const handleRoomAction = async (action) => {
     return counts;
   };
 
- const setSelectedRoom = (room) => {
+const setSelectedRoom = (room) => {
+  // Prevent popup for occupied rooms
+  if (room.status === "occupied") {
+    return;
+  }
   setSelectedRoomData(room);
   setShowRoomModal(true);
 };
+
 
 
 useEffect(() => {
@@ -419,7 +424,7 @@ useEffect(() => {
         </div>
 {showRoomModal && selectedRoomData && (
   <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-    <div className="bg-red-300 p-6 rounded-lg shadow-lg w-80">
+    <div className="bg-slate-800 p-6 rounded-lg shadow-lg w-80">
       <h2 className="text-lg font-bold text-white mb-4">
         Room: {selectedRoomData.roomName}
       </h2>
@@ -462,20 +467,22 @@ useEffect(() => {
                 </h2>
                 <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
                   {rooms.map((room, index) => (
-                    <div
-                      key={room._id}
-                      style={{ animationDelay: `${index * 0.05}s` }}
-                       className={`animate-slide-in rounded-lg p-2 bg-gradient-to-r ${statusColors[room.status] || "from-gray-500 to-slate-800"}`}
+ <div
+  key={room._id}
+  style={{ animationDelay: `${index * 0.05}s` }}
+  className={`animate-slide-in rounded-lg p-2  bg-gradient-to-r ${statusColors[room.status] || "from-gray-500 to-slate-800"}`}
+  onClick={() => setSelectedRoom(room)}
+>
+  <RoomStatus
+    {...room}
+    room={room.roomName}
+    name={room.roomName}
+    status={room.status}
     onClick={() => setSelectedRoom(room)}
-  >
-                      <RoomStatus
-                        {...room}
-                        room={room.roomName} // Pass roomName as 'room' prop
-                        name={room.roomName} // Also pass as 'name' in case RoomStatus expects it
-                        onClick={() => setSelectedRoom(room)}
-                          // statusColor={statusColors[room.status] || "from-gray-500 to-slate-800"} // fallback color
-                      />
-                    </div>
+  />
+</div>
+
+
                   ))}
                 </div>
               </div>

@@ -47,7 +47,7 @@ const RoomStatus = ({ room, status, guest, checkIn, checkOut, onClick, type }) =
       onClick={onClick}
       className={`
         relative overflow-hidden rounded-xl cursor-pointer w-full
-        bg-gradient-to-br ${style.bg}
+        // bg-gradient-to-br ${style.bg}
         border-2 ${style.border}
         transform transition-all duration-300 
         hover:scale-105 hover:rotate-1
