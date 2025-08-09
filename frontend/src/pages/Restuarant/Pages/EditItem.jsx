@@ -77,7 +77,7 @@ function EditItem() {
           withCredentials: true,
         }
       );
-      toast.success("item Added Successfully");
+      toast.success("Food Item Added Successfully");
       navigate("/sUsers/itemList");
     } catch (error) {
       console.error("Failed to add room:", error);

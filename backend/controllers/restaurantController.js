@@ -5,6 +5,11 @@ import product from "../models/productModel.js";
 import { Category } from "../models/subDetails.js"; // Adjust path as needed
 import kotModal from "../models/kotModal.js";
 import { generateVoucherNumber } from "../helpers/voucherHelper.js";
+import salesModel from "../models/salesModel.js";
+import TallyData from "../models/TallyData.js";
+import receiptModel from "../models/receiptModel.js";
+import bankModel from "../models/bankModel.js";
+import cashModel from "../models/cashModel.js";
 
 // Helper functions (you may need to create these or adjust based on your existing ones)
 import {
@@ -15,6 +20,7 @@ import {
 import { extractRequestParams } from "../helpers/productHelper.js";
 import VoucherSeriesModel from "../models/VoucherSeriesModel.js";
 import { CheckIn } from "../models/bookingModal.js";
+import { response } from "express";
 // Add Item Controller
 export const addItem = async (req, res) => {
   const session = await mongoose.startSession(); // Step 1: Start session
@@ -203,7 +209,7 @@ export const updateItem = async (req, res) => {
         unit: formData.unit,
         hsn: formData.hsn,
         hsnCode: correspondingHsn.hsn,
-        priceLevel: tableData,
+        Priceleveles: tableData,
         updatedAt: new Date(),
       },
       {
@@ -433,22 +439,66 @@ export const getRoomDataForRestaurant = async (req, res) => {
 export const updateKotPayment = async (req, res) => {
   try {
     let kotId = req.params.id;
+    let cmp_id = req.params.cmp_id;
     let paymentMethod = req.body.paymentMethod;
-    const kot = await kotModal.updateOne(
-      { _id: kotId },
-      { paymentMethod: paymentMethod, paymentCompleted: true }
-    );
-    console.log(kotId);
+    let paymentDetails = req.body?.paymentDetails;
+    if (paymentDetails?.cashAmount > 0 && paymentDetails?.onlineAmount > 0) {
+      paymentMethod = "mixed";
+    }
     console.log(paymentMethod);
-    res.status(200).json({
-      success: true,
-      data: kot,
-    });
+    console.log(paymentDetails);
+    console.log(kotId);
+    console.log(cmp_id);
+    const SaleVoucher = await VoucherSeriesModel.findOne({
+      cmp_id: cmp_id,
+      voucherType: "sales",
+    })
+
+    console.log(SaleVoucher);
+    let specificVoucherSeries = SaleVoucher?.series.find(
+      (series) => series.under === "restaurant"
+    );
+
+    console.log(specificVoucherSeries);
+
+    // const saveSales = await salesModel.create({
+    //   date : new Date(),
+    //   cmp_id : cmp_id,
+    //   selectedDate : new Date().toLocaleDateString(),
+    //   voucherType:{}
+    // });
+    // const kot = await kotModal.updateOne(
+    //   { _id: kotId },
+    //   { paymentMethod: paymentMethod, paymentCompleted: true }
+    // );
+    // console.log(kotId);
+    // console.log(paymentMethod);
+    // res.status(200).json({
+    //   success: true,
+    //   data: kot,
+    // });
   } catch (error) {
     console.error("Error updating KOT:", error);
     res.status(500).json({
       success: false,
       message: "Internal server error while updating KOT",
+    });
+  }
+};
+// function used to fetch bank and cash online details
+export const getPaymentType = async (req, res) => {
+  try {
+    const bankDetails = await bankModel.find({ cmp_id: req.params.cmp_id });
+    const cashDetails = await cashModel.find({ cmp_id: req.params.cmp_id });
+    const paymentBelongsTo = { bankDetails, cashDetails };
+    res.status(200).json({
+      success: true,
+      data: paymentBelongsTo,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Internal server error while fetching bank and cash details",
     });
   }
 };
