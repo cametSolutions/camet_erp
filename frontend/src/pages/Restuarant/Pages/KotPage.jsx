@@ -82,28 +82,42 @@ const OrdersDashboard = () => {
   // Filter orders based on active filter
   const getFilteredOrders = () => {
     let filtered = orders;
-    // Filter by status
-    if (activeFilter == "pending" && userRole !== "kitchen") {
+    
+    // Filter by status based on the button clicked and user role
+    if (activeFilter === "All") {
+      if (userRole === "kitchen") {
+        // Kitchen: Show all orders except completed
+        filtered = filtered.filter((order) =>
+          ["pending", "cooking", "ready_to_serve"].includes(order.status)
+        );
+      } else {
+        // Reception: Show all orders including completed
+        filtered = filtered.filter((order) =>
+          ["pending", "cooking", "ready_to_serve", "completed"].includes(order.status)
+        );
+      }
+    } else if (activeFilter === "On Process") {
+      // Show orders that are in progress (pending, cooking, ready_to_serve)
       filtered = filtered.filter((order) =>
-        ["pending", "cooking", "ready_to_serve", "completed"].includes(
-          order.status
-        )
+        ["cooking", ].includes(order.status)
       );
-    } else if (activeFilter == "pending") {
-      filtered = filtered.filter((order) =>
-        ["pending", "cooking", "ready_to_serve"].includes(
-          order.status
-        )
+    } else if (activeFilter === "Completed") {
+      if (userRole === "kitchen") {
+        // Kitchen: No completed orders to show, return empty array
+       filtered = filtered.filter((order) =>
+        ["ready_to_serve"].includes(order.status)
       );
-    } else if (activeFilter === "completed") {
-      filtered = filtered.filter((order) => order.status === "completed");
+      } else {
+        // Reception: Show only completed orders
+        filtered = filtered.filter((order) => order.status === "completed");
+      }
     }
 
     // Filter by search query
     if (searchQuery) {
       filtered = filtered.filter(
         (order) =>
-          order.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          order?.customer?.toLowerCase().includes(searchQuery.toLowerCase()) ||
           order.id.toString().includes(searchQuery) ||
           order.items.some((item) =>
             item.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -114,15 +128,15 @@ const OrdersDashboard = () => {
     return filtered;
   };
 
-  const getAvatarColorClass = (color) => {
-    const colors = {
-      teal: "bg-teal-600",
-      green: "bg-green-500",
-      orange: "bg-orange-500",
-      yellow: "bg-yellow-400 text-black",
-    };
-    return colors[color] || "bg-gray-400";
-  };
+  // const getAvatarColorClass = (color) => {
+  //   const colors = {
+  //     teal: "bg-teal-600",
+  //     green: "bg-green-500",
+  //     orange: "bg-orange-500",
+  //     yellow: "bg-yellow-400 text-black",
+  //   };
+  //   return colors[color] || "bg-gray-400";
+  // };
   const handleStatusChange = async (orderId, currentStatus) => {
     setLoader(true);
     let updatedStatus;
