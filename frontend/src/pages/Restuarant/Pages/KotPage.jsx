@@ -19,7 +19,7 @@ import { generateAndPrintKOT } from "@/pages/Restuarant/Helper/kotPrintHelper";
 const OrdersDashboard = () => {
   const [activeFilter, setActiveFilter] = useState("pending");
   const [searchQuery, setSearchQuery] = useState("");
-  const [userRole, setUserRole] = useState("kitchen");
+  const [userRole, setUserRole] = useState("reception");
   const [orders, setOrders] = useState([]);
   const [loader, setLoader] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -230,7 +230,7 @@ const { _id: cmp_id, name: companyName } = useSelector(
   useEffect(() => {
     // In real implementation, get this from props, context, or URL params
     const urlParams = new URLSearchParams(window.location.search);
-    const role = urlParams.get("role") || "kitchen";
+    const role = urlParams.get("role") || "reception";
     setUserRole(role);
   }, []);
 
@@ -295,8 +295,8 @@ const { _id: cmp_id, name: companyName } = useSelector(
               onChange={(e) => setUserRole(e.target.value)}
               className="px-2 py-1 border border-gray-300 rounded text-sm"
             >
-              <option value="kitchen">Kitchen</option>
               <option value="reception">Reception</option>
+              <option value="kitchen">Kitchen</option>
             </select>
           </div>
         </div>

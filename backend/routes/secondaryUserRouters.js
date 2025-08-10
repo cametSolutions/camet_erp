@@ -344,7 +344,7 @@ router.delete('/deleteItem/:id',authSecondary,deleteItem)
 router.get('/getKotData/:cmp_id',authSecondary,secondaryIsBlocked,getKot)
 router.put('/updateKotStatus/:cmp_id',authSecondary,secondaryIsBlocked,updateKotStatus)
 router.get('/getRoomBasedOnBooking/:cmp_id',authSecondary,secondaryIsBlocked,getRoomDataForRestaurant)
-router.put("/updateKotPayment/:id",authSecondary,secondaryIsBlocked,updateKotPayment)
+router.put("/updateKotPayment/:cmp_id/:id",authSecondary,secondaryIsBlocked,updateKotPayment)
 router.get('/getAllRoomsWithStatus/:cmp_id',authSecondary,getAllRoomsWithStatusForDate)
 router.post("/updateStatus/:id", authSecondary,updateRoomStatus);
 router.get("/getPaymentType/:cmp_id",authSecondary,secondaryIsBlocked, getPaymentType)

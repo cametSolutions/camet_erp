@@ -437,54 +437,103 @@ export const getRoomDataForRestaurant = async (req, res) => {
 // function used to update kot data
 
 export const updateKotPayment = async (req, res) => {
+  const session = await mongoose.startSession();
+
   try {
-    let kotId = req.params.id;
-    let cmp_id = req.params.cmp_id;
-    let paymentMethod = req.body.paymentMethod;
-    let paymentDetails = req.body?.paymentDetails;
-    if (paymentDetails?.cashAmount > 0 && paymentDetails?.onlineAmount > 0) {
-      paymentMethod = "mixed";
-    }
-    console.log(paymentMethod);
-    console.log(paymentDetails);
-    console.log(kotId);
-    console.log(cmp_id);
-    const SaleVoucher = await VoucherSeriesModel.findOne({
-      cmp_id: cmp_id,
-      voucherType: "sales",
-    })
+    await session.withTransaction(async () => {
+      const kotId = req.params.id;
+      const cmp_id = req.params.cmp_id;
+      let paymentMethod = req.body.paymentMethod;
+      const paymentDetails = req.body?.paymentDetails;
 
-    console.log(SaleVoucher);
-    let specificVoucherSeries = SaleVoucher?.series.find(
-      (series) => series.under === "restaurant"
-    );
+      if (paymentDetails?.cashAmount > 0 && paymentDetails?.onlineAmount > 0) {
+        paymentMethod = "mixed";
+      }
 
-    console.log(specificVoucherSeries);
+      console.log(paymentMethod, paymentDetails, kotId, cmp_id);
 
-    // const saveSales = await salesModel.create({
-    //   date : new Date(),
-    //   cmp_id : cmp_id,
-    //   selectedDate : new Date().toLocaleDateString(),
-    //   voucherType:{}
-    // });
-    // const kot = await kotModal.updateOne(
-    //   { _id: kotId },
-    //   { paymentMethod: paymentMethod, paymentCompleted: true }
-    // );
-    // console.log(kotId);
-    // console.log(paymentMethod);
-    // res.status(200).json({
-    //   success: true,
-    //   data: kot,
-    // });
+      // 1) Get the sales voucher
+      const SaleVoucher = await VoucherSeriesModel.findOne({
+        cmp_id: cmp_id,
+        voucherType: "sales",
+      }).session(session);
+
+      if (!SaleVoucher) {
+        throw new Error("Sale voucher not found");
+      }
+
+      // 2) Find the specific series
+      const specificVoucherSeries = SaleVoucher.series.find(
+        (series) => series.under === "restaurant"
+      );
+
+      if (!specificVoucherSeries) {
+        throw new Error("No 'restaurant' voucher series found");
+      }
+
+      // 3) Generate voucher number (make sure this function uses session internally)
+      const saleNumber = await generateVoucherNumber(
+        cmp_id,
+        "sales",
+        specificVoucherSeries._id.toString(),
+        session
+      );
+
+      console.log("Generated Sale Number:", saleNumber);
+
+      // 4) Example of saving sales
+      const saveSales = await salesModel.create(
+          {
+            date: new Date(),
+            voucherType: "sales",
+            serialNumber: saleNumber?.usedSeriesNumber,
+            userLevelSerialNumber: saleNumber?.usedSeriesNumber,
+            salesNumber: saleNumber?.voucherNumber,
+            series_id: specificVoucherSeries._id.toString(),
+            usedSeriesNumber: saleNumber?.currentNumber,
+            Primary_user_id: req.pUserId || req.owner,
+            cmp_id: cmp_id,
+            secondary_user_id: req.sUserId,
+            party: 
+
+
+            cmp_id: cmp_id,
+            selectedDate: new Date().toLocaleDateString(),
+            voucherType: saleNumber?.voucherNumber,
+
+          },
+        { session }
+      );
+
+      // // 5) Update KOT payment status
+      // const kot = await kotModal.updateOne(
+      //   { _id: kotId },
+      //   { paymentMethod: paymentMethod, paymentCompleted: true },
+      //   { session }
+      // );
+
+      // console.log("KOT updated:", kot);
+
+      // res.status(200).json({
+      //   success: true,
+      //   data: {
+      //     saleNumber,
+      //     salesRecord: saveSales,
+      //     kotUpdate: kot,
+      //   },
+      // });
+    });
   } catch (error) {
     console.error("Error updating KOT:", error);
     res.status(500).json({
       success: false,
-      message: "Internal server error while updating KOT",
+      message: error.message || "Internal server error while updating KOT",
     });
+  } finally {
+    await session.endSession();
   }
 };
+
 // function used to fetch bank and cash online details
 export const getPaymentType = async (req, res) => {
   try {
