@@ -156,7 +156,7 @@ import EditCheckOut from '@/pages/Hotel/Pages/EditCheckOut'
 import ItemList from '@/pages/Restuarant/Pages/ItemList'
 import EditItem from '@/pages/Restuarant/Pages/EditItem'
 import ItemRegistration from '@/pages/Restuarant/Pages/ItemRegistration'
-
+import TableMaster from '@/pages/Restuarant/Masters/TableMaster'
 const Routers = () => {
   return (
     <Routes>
@@ -443,7 +443,7 @@ const Routers = () => {
         <Route path='/sUsers/KotPage' element={<ProtectedSecRoute><KotPage/></ProtectedSecRoute>}/>
         <Route path='/sUsers/editItem' element={<ProtectedSecRoute><EditItem /></ProtectedSecRoute>} />
 <Route path='/sUsers/itemRegistration' element ={<ProtectedSecRoute><ItemRegistration /></ProtectedSecRoute>} />
-
+<Route path='/sUsers/TableMaster' element={<ProtectedSecRoute><TableMaster /></ProtectedSecRoute>} />
     </Routes>
   )
 }

@@ -159,23 +159,27 @@ const handleRoomAction = async (action) => {
     return;
   }
 
-  if (action === "dirty" || action === "blocked") {
+   if (["dirty", "blocked"].includes(action)) {
     try {
-      await api.post(`/api/Susers/updateStatus/${selectedRoomData._id}`, {
-        status: action
-      }, { withCredentials: true });
-
+      const res = await api.put(
+        `/api/sUsers/updateStatus/${selectedRoomData._id}`,
+        { status: action },
+        { withCredentials: true }
+      );
+       
       // Update status locally so UI updates instantly
-      setRooms((prev) =>
-        prev.map((room) =>
-          room._id === selectedRoomData._id ? { ...room, status: action } : room
-        )
-      );
-      setFilteredRooms((prev) =>
-        prev.map((room) =>
-          room._id === selectedRoomData._id ? { ...room, status: action } : room
-        )
-      );
+const updatedRoom = res.data.room;
+setRooms(prev =>
+  prev.map(room =>
+    room._id === updatedRoom._id ? { ...room, status: updatedRoom.status } : room
+  )
+);
+setFilteredRooms(prev =>
+  prev.map(room =>
+    room._id === updatedRoom._id ? { ...room, status: updatedRoom.status } : room
+  )
+);
+setShowRoomModal(false);
 
       setShowRoomModal(false);
     } catch (error) {

@@ -13,6 +13,7 @@ import cashModel from "../models/cashModel.js";
 import Party from "../models/partyModel.js";
 import { saveSettlementData } from "../helpers/salesHelper.js";
 
+import Table from "../models/TableModel.js";
 // Helper functions (you may need to create these or adjust based on your existing ones)
 import {
   buildDatabaseFilterForRoom,
@@ -910,6 +911,59 @@ export const getSalePrintData = async (req, res) => {
       message: "Internal server error while fetching sales details",
       error: error.message
     });
+
+  }
+}
+// controllers/tableController.js
+
+
+export const saveTableNumber = async (req, res) => {
+  try {
+    const { cmp_id } = req.params;
+    const { tableNumber } = req.body;
+
+    if (!tableNumber) {
+      return res.status(400).json({ message: "Table number is required" });
+    }
+
+ 
+    const newTable = new Table({
+   
+      cmp_id,
+      tableNumber,
+    });
+
+    await newTable.save();
+
+    res.status(201).json({
+      message: "Table number saved successfully",
+      table: newTable
+    });
+  } catch (error) {
+    console.error("Error saving table number:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+ 
+
+export const getTables = async (req, res) => {
+  try {
+    const { cmp_id } = req.params;
+
+    if (!cmp_id) {
+      return res.status(400).json({ success: false, message: "Company ID is required" });
+    }
+
+    // Fetch tables filtered by company ID from database
+    const tables = await Table.find({ companyId: cmp_id }).sort({ tableNumber: 1 });
+
+    res.status(200).json({
+      success: true,
+      tables, // array of table documents with fields like _id, tableNumber etc.
+    });
+  } catch (error) {
+    console.error('Error fetching tables:', error);
+    res.status(500).json({ success: false, message: 'Server error getting tables' });
   }
 };
 
