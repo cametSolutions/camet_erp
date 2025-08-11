@@ -7,9 +7,12 @@ import kotModal from "../models/kotModal.js";
 import { generateVoucherNumber } from "../helpers/voucherHelper.js";
 import salesModel from "../models/salesModel.js";
 import TallyData from "../models/TallyData.js";
-import receiptModel from "../models/receiptModel.js";
+import Receipt from "../models/receiptModel.js";
 import bankModel from "../models/bankModel.js";
 import cashModel from "../models/cashModel.js";
+import Party from "../models/partyModel.js";
+import { saveSettlementData } from "../helpers/salesHelper.js";
+
 import Table from "../models/TableModel.js";
 // Helper functions (you may need to create these or adjust based on your existing ones)
 import {
@@ -21,6 +24,7 @@ import { extractRequestParams } from "../helpers/productHelper.js";
 import VoucherSeriesModel from "../models/VoucherSeriesModel.js";
 import { CheckIn } from "../models/bookingModal.js";
 import { response } from "express";
+import receiptModel from "../models/receiptModel.js";
 // Add Item Controller
 export const addItem = async (req, res) => {
   const session = await mongoose.startSession(); // Step 1: Start session
@@ -436,55 +440,433 @@ export const getRoomDataForRestaurant = async (req, res) => {
 
 // function used to update kot data
 
+// export const updateKotPayment = async (req, res) => {
+//   const session = await mongoose.startSession();
+
+//   try {
+//     await session.withTransaction(async () => {
+//       const kotId = req.params.id;
+//       const cmp_id = req.params.cmp_id;
+//       let paymentMethod = req.body.paymentMethod;
+//       const paymentDetails = req.body?.paymentDetails;
+//       const kotData = req.body?.selectedKotData;
+//       let paymentCompleted = false;
+
+//       if (paymentDetails?.cashAmount > 0 && paymentDetails?.onlineAmount > 0) {
+//         paymentMethod = "mixed";
+//       }
+
+//       console.log(paymentMethod, paymentDetails, kotId, cmp_id);
+
+//       // 1) Get the sales voucher
+//       const SaleVoucher = await VoucherSeriesModel.findOne({
+//         cmp_id: cmp_id,
+//         voucherType: "sales",
+//       }).session(session);
+
+//       if (!SaleVoucher) {
+//         throw new Error("Sale voucher not found");
+//       }
+
+//       // 2) Find the specific series
+//       const specificVoucherSeries = SaleVoucher.series.find(
+//         (series) => series.under === "restaurant"
+//       );
+
+//       if (!specificVoucherSeries) {
+//         throw new Error("No 'restaurant' voucher series found");
+//       }
+
+//       // 3) Generate voucher number (make sure this function uses session internally)
+//       const saleNumber = await generateVoucherNumber(
+//         cmp_id,
+//         "sales",
+//         specificVoucherSeries._id.toString(),
+//         session
+//       );
+
+//       let selectedParty;
+//       if (paymentDetails?.paymentMode == "single") {
+//         paymentCompleted = true;
+//         if (Number(paymentDetails?.cashAmount) > 0) {
+//           selectedParty = await Party.findOne({
+//             cmp_id: cmp_id,
+//             partyName: paymentDetails?.selectedCash?.cash_ledname,
+//           }).session(session);
+//         }
+//         if (Number(paymentDetails?.onlineAmount) > 0) {
+//           selectedParty = await Party.findOne({
+//             cmp_id: cmp_id,
+//             partyName: paymentDetails?.selectedBank?.bank_ledname,
+//           }).session(session);
+//         }
+//       } else {
+//         if (
+//           Number(paymentDetails?.cashAmount) +
+//             Number(paymentDetails?.onlineAmount) >=
+//           kotData?.total
+//         ) {
+//           paymentCompleted = true;
+//         }
+//       }
+
+//       console.log("Generated Sale Number:", saleNumber);
+//       console.log("party", selectedParty);
+
+//       // 4) Example of saving sales
+//       const savedVoucherData = await salesModel.create(
+//         {
+//           date: new Date(),
+//           selectedDate: new Date().toLocaleDateString(),
+//           voucherType: "sales",
+//           serialNumber: saleNumber?.usedSeriesNumber,
+//           userLevelSerialNumber: saleNumber?.usedSeriesNumber,
+//           salesNumber: saleNumber?.voucherNumber,
+//           series_id: specificVoucherSeries._id.toString(),
+//           usedSeriesNumber: saleNumber?.currentNumber,
+//           Primary_user_id: req.pUserId || req.owner,
+//           kotId: kotData?._id,
+//           cmp_id: cmp_id,
+//           secondary_user_id: req.sUserId,
+//           party: selectedParty,
+//           items: kotData?.items,
+//           address: kotData?.customer,
+//           finalAmount: kotData?.total,
+//           paymentSplittingData: {},
+//         },
+//         { session }
+//       );
+//       let paidAmount =
+//         Number(paymentDetails?.cashAmount || 0) +
+//         Number(paymentDetails?.onlineAmount || 0);
+//       let pendingAmount =
+//         Number(kotData?.total || 0) - Number(paymentDetails?.paidAmount || 0);
+// if(pendingAmount > 0){
+//       let createOutStanding = await TallyData.create(
+//         {
+//           Primary_user_id: req.pUserId || req.owner,
+//           cmp_id: cmp_id,
+//           party_id: selectedParty?._id,
+//           party_name: selectedParty?.partyName,
+//           mobile_no: selectedParty?.mobileNumber,
+//           bill_date: new Date(),
+//           bill_no: savedVoucherData?.salesNumber,
+//           billId: savedVoucherData._id,
+//           bill_amount: Number(kotData?.total || 0),
+//           bill_pending_amt: pendingAmount,
+//           accountGroup: selectedParty.accountGroup,
+//           user_id: req.sUserId,
+//           advanceAmount: paidAmount,
+//           advanceDate: new Date(),
+//           classification: "Cr",
+//           source: "sales",
+//         },
+//         { session }
+//       );
+//     }
+//       if (paymentDetails?.paymentMode == "single") {
+//         ///save settlement data
+//         await saveSettlementData(
+//           selectedParty,
+//           cmp_id,
+//           "normal sale",
+//           "sale",
+//           savedVoucherData?.salesNumber,
+//           savedVoucherData._id,
+//           paidAmount,
+//           updateData?.date,
+//           selectedParty?.partyName,
+//           session
+//         );
+//       } else {
+//         await saveSettlementData(
+//           selectedParty,
+//           cmp_id,
+//           "normal sale",
+//           "sale",
+//           savedVoucherData?.salesNumber,
+//           savedVoucherData._id,
+//           Number(paymentDetails?.cashAmount || 0),
+//           updateData?.date,
+//           selectedParty?.partyName,
+//           session
+//         );
+//         ///save settlement data
+//         await saveSettlementData(
+//           selectedParty,
+//           cmp_id,
+//           "normal sale",
+//           "sale",
+//           savedVoucherData?.salesNumber,
+//           savedVoucherData._id,
+//           Number(paymentDetails?.onlineAmount || 0),
+//           updateData?.date,
+//           selectedParty?.partyName,
+//           session
+//         );
+//       }
+
+//       // 5) Update KOT payment status
+//       const kot = await kotModal.updateOne(
+//         { _id: kotId },
+//         { paymentMethod: paymentMethod, paymentCompleted: paymentCompleted },
+//         { session }
+//       );
+
+//       console.log("KOT updated:", kot);
+
+//       // res.status(200).json({
+//       //   success: true,
+//       //   data: {
+//       //     saleNumber,
+//       //     salesRecord: saveSales,
+//       //     kotUpdate: kot,
+//       //   },
+//       // });
+//     });
+//   } catch (error) {
+//     console.error("Error updating KOT:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: error.message || "Internal server error while updating KOT",
+//     });
+//   } finally {
+//     await session.endSession();
+//   }
+// };
+
 export const updateKotPayment = async (req, res) => {
+  const session = await mongoose.startSession();
+
   try {
-    let kotId = req.params.id;
-    let cmp_id = req.params.cmp_id;
-    let paymentMethod = req.body.paymentMethod;
-    let paymentDetails = req.body?.paymentDetails;
-    if (paymentDetails?.cashAmount > 0 && paymentDetails?.onlineAmount > 0) {
-      paymentMethod = "mixed";
-    }
-    console.log(paymentMethod);
-    console.log(paymentDetails);
-    console.log(kotId);
-    console.log(cmp_id);
-    const SaleVoucher = await VoucherSeriesModel.findOne({
-      cmp_id: cmp_id,
-      voucherType: "sales",
-    })
+    await session.withTransaction(async () => {
+      const { id: kotId, cmp_id } = req.params;
+      let {
+        paymentMethod,
+        paymentDetails,
+        selectedKotData: kotData,
+      } = req.body;
+      let paymentCompleted = false;
 
-    console.log(SaleVoucher);
-    let specificVoucherSeries = SaleVoucher?.series.find(
-      (series) => series.under === "restaurant"
-    );
+      // Determine payment method
+      if (paymentDetails?.cashAmount > 0 && paymentDetails?.onlineAmount > 0) {
+        paymentMethod = "mixed";
+      }
 
-    console.log(specificVoucherSeries);
+      // 1) Fetch sales voucher series
+      const SaleVoucher = await VoucherSeriesModel.findOne({
+        cmp_id,
+        voucherType: "sales",
+      }).session(session);
 
-    // const saveSales = await salesModel.create({
-    //   date : new Date(),
-    //   cmp_id : cmp_id,
-    //   selectedDate : new Date().toLocaleDateString(),
-    //   voucherType:{}
-    // });
-    // const kot = await kotModal.updateOne(
-    //   { _id: kotId },
-    //   { paymentMethod: paymentMethod, paymentCompleted: true }
-    // );
-    // console.log(kotId);
-    // console.log(paymentMethod);
-    // res.status(200).json({
-    //   success: true,
-    //   data: kot,
-    // });
+      if (!SaleVoucher) throw new Error("Sale voucher not found");
+
+      // 2) Get 'restaurant' voucher series
+      const specificVoucherSeries = SaleVoucher.series.find(
+        (series) => series.under === "restaurant"
+      );
+      if (!specificVoucherSeries)
+        throw new Error("No 'restaurant' voucher series found");
+
+      // 3) Generate voucher number
+      const saleNumber = await generateVoucherNumber(
+        cmp_id,
+        "sales",
+        specificVoucherSeries._id.toString(),
+        session
+      );
+
+      // 4) Determine selected party and payment completion
+      let selectedParty;
+      const cashAmt = Number(paymentDetails?.cashAmount || 0);
+      const onlineAmt = Number(paymentDetails?.onlineAmount || 0);
+
+      if (paymentDetails?.paymentMode === "single") {
+        paymentCompleted = true;
+        if (cashAmt > 0) {
+          selectedParty = await Party.findOne({
+            cmp_id,
+            partyName: paymentDetails?.selectedCash?.cash_ledname,
+          }).populate("accountGroup").session(session)
+        } else if (onlineAmt > 0) {
+          selectedParty = await Party.findOne({
+            cmp_id,
+            partyName: paymentDetails?.selectedBank?.bank_ledname,
+          }).populate("accountGroup").session(session)
+        }
+      } else {
+        selectedParty = await Party.findOne({
+          cmp_id,
+          partyName: paymentDetails?.selectedCash?.cash_ledname,
+        }).populate("accountGroup").session(session);
+        if (cashAmt + onlineAmt >= kotData?.total) {
+          paymentCompleted = true;
+        }
+      }
+
+      console.log("selectedParty", selectedParty);
+
+      let paymentSplittingData = {
+        cashAmount: cashAmt,
+        onlineAmount: onlineAmt,
+        selectedCash: paymentDetails?.selectedCash,
+        selectedBank: paymentDetails?.selectedBank,
+        paymentMode: paymentDetails?.paymentMode,
+      };
+
+      let party = {
+        _id: selectedParty._id,
+        partyName: selectedParty.partyName,
+        accountGroup_id: selectedParty.accountGroup?._id, // already ObjectId
+        accountGroupName: selectedParty.accountGroup?.accountGroup,
+        subGroup_id: selectedParty.subGroup_id || null,
+        subGroupName: selectedParty.subGroupName || null,
+        mobileNumber: selectedParty.mobileNumber || null,
+        country: selectedParty.country || null,
+        state: selectedParty.state || null,
+        pin: selectedParty.pin || null,
+        emailID: selectedParty.emailID || null,
+        gstNo: selectedParty.gstNo || null,
+        party_master_id: selectedParty.party_master_id || null,
+        billingAddress: selectedParty.billingAddress || null,
+        shippingAddress: selectedParty.shippingAddress || null,
+        accountGroup: selectedParty.accountGroup?.toString() || null,
+        totalOutstanding: selectedParty.totalOutstanding || 0,
+        latestBillDate: selectedParty.latestBillDate || null,
+        newAddress: selectedParty.newAddress || {},
+      };
+      // 5) Save sales voucher
+      const savedVoucherData = await salesModel.create(
+        [
+          {
+            date: new Date(),
+            selectedDate: new Date().toLocaleDateString(),
+            voucherType: "sales",
+            serialNumber: saleNumber.usedSeriesNumber,
+            userLevelSerialNumber: saleNumber.usedSeriesNumber,
+            salesNumber: saleNumber.voucherNumber,
+            series_id: specificVoucherSeries._id.toString(),
+            usedSeriesNumber: saleNumber.usedSeriesNumber,
+            Primary_user_id: req.pUserId || req.owner,
+            kotId: kotData?._id,
+            cmp_id,
+            secondary_user_id: req.sUserId,
+            party,
+            partyAccount: selectedParty.accountGroup?.accountGroup,
+
+            items: kotData?.items,
+            address: kotData?.customer,
+            finalAmount: kotData?.total,
+            paymentSplittingData: paymentSplittingData,
+          },
+        ],
+        { session }
+      );
+
+      // 6) Handle outstanding balance
+      const paidAmount = cashAmt + onlineAmt;
+      const pendingAmount = Number(kotData?.total || 0) - paidAmount;
+
+      if (pendingAmount > 0) {
+        await TallyData.create(
+          [
+            {
+              Primary_user_id: req.pUserId || req.owner,
+              cmp_id,
+              party_id: selectedParty?._id,
+              party_name: selectedParty?.partyName,
+              mobile_no: selectedParty?.mobileNumber,
+              bill_date: new Date(),
+              bill_no: savedVoucherData[0]?.salesNumber,
+              billId: savedVoucherData[0]?._id,
+              bill_amount: kotData?.total || 0,
+              bill_pending_amt: pendingAmount,
+              accountGroup: selectedParty?.accountGroup,
+              user_id: req.sUserId,
+              advanceAmount: paidAmount,
+              advanceDate: new Date(),
+              classification: "Cr",
+              source: "sales",
+            },
+          ],
+          { session }
+        );
+      }
+
+      // 7) Save settlement data
+      if (paymentDetails?.paymentMode === "single") {
+        await saveSettlementData(
+          party,
+          cmp_id,
+          "normal sale",
+          "sale",
+          savedVoucherData[0]?.salesNumber,
+          savedVoucherData[0]?._id,
+          paidAmount,
+          new Date(),
+          selectedParty?.partyName,
+          session
+        );
+      } else {
+        // Cash part
+        if (cashAmt > 0) {
+          await saveSettlementData(
+            selectedParty,
+            cmp_id,
+            "normal sale",
+            "sale",
+            savedVoucherData[0]?.salesNumber,
+            savedVoucherData[0]?._id,
+            cashAmt,
+            new Date(),
+            selectedParty?.partyName,
+            session
+          );
+        }
+        // Online part
+        if (onlineAmt > 0) {
+          await saveSettlementData(
+            selectedParty,
+            cmp_id,
+            "normal sale",
+            "sale",
+            savedVoucherData[0]?.salesNumber,
+            savedVoucherData[0]?._id,
+            onlineAmt,
+            new Date(),
+            selectedParty?.partyName,
+            session
+          );
+        }
+      }
+
+      // 8) Update KOT payment status
+      await kotModal.updateOne(
+        { _id: kotId },
+        { paymentMethod, paymentCompleted },
+        { session }
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "KOT payment updated successfully",
+        data: {
+          saleNumber,
+          salesRecord: savedVoucherData[0],
+        },
+      });
+    });
   } catch (error) {
     console.error("Error updating KOT:", error);
     res.status(500).json({
       success: false,
-      message: "Internal server error while updating KOT",
+      message: error.message || "Internal server error while updating KOT",
     });
+  } finally {
+    await session.endSession();
   }
 };
+
 // function used to fetch bank and cash online details
 export const getPaymentType = async (req, res) => {
   try {
@@ -502,6 +884,36 @@ export const getPaymentType = async (req, res) => {
     });
   }
 };
+
+
+// function used to fetch sale data for print
+export const getSalePrintData = async (req, res) => {
+  try {
+    const salesData = await salesModel.findOne({
+      cmp_id: req.params.cmp_id,
+      kotId: req.params.kotId
+    });
+
+    if (!salesData) {
+      return res.status(404).json({
+        success: false,
+        message: "No sales record found"
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: salesData
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Internal server error while fetching sales details",
+      error: error.message
+    });
+
+  }
+}
 // controllers/tableController.js
 
 
