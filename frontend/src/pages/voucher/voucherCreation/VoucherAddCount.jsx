@@ -150,7 +150,7 @@ function VoucherAddCount() {
         const currentPageNumber = currentReduxState.page;
 
         // Use cached data from Redux if available for this page
-        if (currentPageNumber >= pageNumber && currentProducts.length > 0) {
+        if (currentPageNumber >= pageNumber && currentProducts?.length > 0) {
           setItems(currentProducts);
           setHasMore(hasMoreFromRedux);
           processItemsWithRedux();
@@ -265,7 +265,7 @@ function VoucherAddCount() {
     const currentReduxState = store.getState().commonVoucherSlice;
     const itemsFromRedux = currentReduxState?.items || [];
     const productsFromRedux = currentReduxState?.products || [];
-    if (itemsFromRedux.length > 0) {
+    if (itemsFromRedux?.length > 0) {
       const reduxItemIds = itemsFromRedux.map((item) => item?._id);
       const processedItems = productsFromRedux.map((product) => {
         // Skip items not in Redux (not selected by user)
@@ -587,7 +587,7 @@ function VoucherAddCount() {
   };
 
   const addSelectedRate = (pricelevel) => {
-    if (!items || items.length === 0) return;
+    if (!items || items?.length === 0) return;
 
     const updatedItems = items.map((item) => {
       const newPriceRate =
@@ -785,7 +785,7 @@ function VoucherAddCount() {
   //// Handling barcode scanned products
 
   const handleBarcodeScanProducts = (searchResult) => {
-    if (searchResult.length === 0) {
+    if (searchResult?.length === 0) {
       return;
     }
 
@@ -889,7 +889,7 @@ function VoucherAddCount() {
         listRef={listRef}
       />
 
-      {items.length > 0 && !loader && (
+      {items?.length > 0 && !loader && (
         <div className=" sticky bottom-0 bg-white  w-full flex justify-center p-3 border-t h-[70px] z-50 ">
           <button
             onClick={() => navigate(-1)}
