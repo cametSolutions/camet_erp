@@ -59,7 +59,7 @@ export default function OutStandingModal({ showModal, onClose, outStanding }) {
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Mobile</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Bill Date</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Amount</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Pending</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Paid Amount</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Source</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Status</th>
                 </tr>
@@ -124,7 +124,7 @@ export default function OutStandingModal({ showModal, onClose, outStanding }) {
               <div className="text-sm text-gray-600">
                 <span className="font-medium">Total:</span> {items.length} bills • 
                 Amount: <span className="font-semibold text-gray-900">{formatCurrency(totalAmount)}</span> • 
-                Pending: <span className={`font-semibold ${totalPending > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                Paid Amount: <span className={`font-semibold ${totalPending > 0 ? 'text-red-600' : 'text-green-600'}`}>
                   {formatCurrency(totalPending)}
                 </span>
               </div>

@@ -1188,11 +1188,15 @@ export const updateRoomStatus = async (req, res) => {
     }
 
     // Find room by ID and update
-    const updatedRoom = await roomModal.findByIdAndUpdate(
-      id,
-      { status },
-      { new: true } // Return updated room
-    );
+const updatedRoom = await roomModal.findByIdAndUpdate(
+  id,
+  { status },
+  { new: true }
+)
+.populate("roomType")
+.populate("bedType")
+.populate("roomFloor");
+
 
     if (!updatedRoom) {
       return res.status(404).json({ message: "Room not found" });
