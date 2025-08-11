@@ -1271,13 +1271,26 @@ export const savePartyFromTally = async (req, res) => {
   try {
     const partyToSave = req?.body?.data;
 
-    // Check if partyToSave is defined and has elements
+    // Basic validation for party array
     if (!partyToSave || partyToSave.length === 0) {
-      return res.status(400).json({ error: "No data provided" });
+      return res.status(400).json({
+        status: false,
+        message: "No party data provided",
+      });
     }
 
-    // Extract primary user id and company id from the first product
-    const { Primary_user_id, cmp_id } = partyToSave[0];
+    // Extract and validate required IDs from first item
+    const { Primary_user_id, cmp_id } = partyToSave[0] || {};
+
+    if (!Primary_user_id || !cmp_id) {
+      return res.status(400).json({
+        status: false,
+        message: "Primary_user_id and cmp_id are required",
+      });
+    }
+
+    // Find and log company information
+    getApiLogs(cmp_id, "Party Data");
 
     // Fetch account groups and sub-groups in parallel
     const [accountGroups, subGroups] = await Promise.all([
@@ -1298,82 +1311,189 @@ export const savePartyFromTally = async (req, res) => {
       subGroups.map((group) => [group.subGroup_id, group._id])
     );
 
-    // Process parties in memory for efficiency
-    // Use object instead of Set for faster lookups with potentially large datasets
+    // Track processed and failed operations
     const processedPartyMasterIds = {};
+    const skippedItems = [];
+    let insertedCount = 0;
+    let updatedCount = 0;
 
-    const validParties = [];
-    for (const party of partyToSave) {
-      // Skip entries without party_master_id or already processed entries
-      if (
-        !party.party_master_id ||
-        processedPartyMasterIds[party.party_master_id]
-      ) {
+    // Process each party
+    for (let i = 0; i < partyToSave.length; i++) {
+      const party = partyToSave[i];
+      const itemIndex = i + 1;
+
+      // Check for required fields
+      const missingFields = [];
+      if (!party.Primary_user_id) missingFields.push("Primary_user_id");
+      if (!party.cmp_id) missingFields.push("cmp_id");
+      if (!party.party_master_id) missingFields.push("party_master_id");
+
+      // Skip item if missing required fields
+      if (missingFields.length > 0) {
+        skippedItems.push({
+          item: itemIndex,
+          reason: `Missing required fields: ${missingFields.join(", ")}`,
+          data: { party_master_id: party.party_master_id || "N/A" },
+        });
         continue;
       }
 
-      // Skip if required account mappings are missing
+      // Skip duplicate party_master_id in the request
+      if (processedPartyMasterIds[party.party_master_id]) {
+        skippedItems.push({
+          item: itemIndex,
+          reason: "Duplicate party_master_id in request",
+          data: { party_master_id: party.party_master_id },
+        });
+        continue;
+      }
+
+      // Skip if required account group mapping is missing
       if (party.accountGroup_id && !accountGroupMap[party.accountGroup_id]) {
+        skippedItems.push({
+          item: itemIndex,
+          reason: `Account group not found with ID: ${party.accountGroup_id}`,
+          data: { party_master_id: party.party_master_id },
+        });
+        continue;
+      }
+
+      // Skip if required sub group mapping is missing
+      if (party.subGroup_id && !subGroupMap[party.subGroup_id]) {
+        skippedItems.push({
+          item: itemIndex,
+          reason: `Sub group not found with ID: ${party.subGroup_id}`,
+          data: { party_master_id: party.party_master_id },
+        });
         continue;
       }
 
       // Mark as processed
       processedPartyMasterIds[party.party_master_id] = true;
 
-      // Create a new object instead of modifying the original to avoid reference issues
-      const partyToInsert = { ...party };
+      try {
+        // Create a new object instead of modifying the original
+        const partyToProcess = { ...party };
 
-      // Enhance party with ObjectId references
-      if (partyToInsert.accountGroup_id) {
-        partyToInsert.accountGroup =
-          accountGroupMap[partyToInsert.accountGroup_id];
-      }
-
-      if (partyToInsert.subGroup_id && subGroupMap[partyToInsert.subGroup_id]) {
-        partyToInsert.subGroup = subGroupMap[partyToInsert.subGroup_id];
-      }
-
-      validParties.push(partyToInsert);
-    }
-
-    // Batch operations for better performance
-    // Use sessions to ensure atomicity
-    const session = await mongoose.startSession();
-    session.startTransaction();
-
-    try {
-      // Delete all existing parties in one operation
-      await partyModel.deleteMany({ Primary_user_id, cmp_id }, { session });
-
-      // Batch insert all valid parties
-      let savedParty = [];
-      if (validParties.length > 0) {
-        // Insert in batches of 500 to avoid overwhelming the database
-        const batchSize = 500;
-        for (let i = 0; i < validParties.length; i += batchSize) {
-          const batch = validParties.slice(i, i + batchSize);
-          const result = await partyModel.insertMany(batch, { session });
-          savedParty = savedParty.concat(result);
+        // Enhance party with ObjectId references
+        if (partyToProcess.accountGroup_id) {
+          partyToProcess.accountGroup = accountGroupMap[partyToProcess.accountGroup_id];
         }
+
+        if (partyToProcess.subGroup_id && subGroupMap[partyToProcess.subGroup_id]) {
+          partyToProcess.subGroup = subGroupMap[partyToProcess.subGroup_id];
+        }
+
+        // Check if party already exists
+        const existingParty = await partyModel.findOne({
+          party_master_id: party.party_master_id,
+          cmp_id: party.cmp_id,
+          Primary_user_id: party.Primary_user_id,
+        });
+
+        if (existingParty) {
+          // Update the existing party
+          await partyModel.findByIdAndUpdate(
+            existingParty._id,
+            partyToProcess,
+            {
+              new: true,
+              runValidators: true,
+            }
+          );
+          updatedCount++;
+        } else {
+          // Create a new party
+          const newParty = new partyModel(partyToProcess);
+          await newParty.save();
+          insertedCount++;
+        }
+      } catch (itemError) {
+        console.error(
+          `Error processing party ${party.party_master_id}:`,
+          itemError
+        );
+        skippedItems.push({
+          item: itemIndex,
+          reason: `Processing error: ${itemError.message}`,
+          data: { party_master_id: party.party_master_id },
+        });
       }
-
-      await session.commitTransaction();
-
-      res.status(201).json({
-        message: "Party saved successfully",
-        processedCount: validParties.length,
-        skippedCount: partyToSave.length - validParties.length,
-      });
-    } catch (error) {
-      // If an error occurs, abort the transaction
-      await session.abortTransaction();
-      throw error;
-    } finally {
-      session.endSession();
     }
+
+    // Prepare response with detailed summary
+    const response = {
+      status: true,
+      message: "Party processing completed",
+      summary: {
+        totalReceived: partyToSave.length,
+        insertedCount: insertedCount,
+        updatedCount: updatedCount,
+        successCount: insertedCount + updatedCount,
+        skippedCount: skippedItems.length,
+      },
+    };
+
+    // Add skipped items details if any exist
+    if (skippedItems.length > 0) {
+      response.skippedItems = skippedItems;
+      response.skippedReasons = {
+        missingRequiredFields: skippedItems.filter((item) =>
+          item.reason.includes("Missing required fields")
+        ).length,
+        duplicateInRequest: skippedItems.filter((item) =>
+          item.reason.includes("Duplicate party_master_id in request")
+        ).length,
+        accountGroupNotFound: skippedItems.filter((item) =>
+          item.reason.includes("Account group not found")
+        ).length,
+        subGroupNotFound: skippedItems.filter((item) =>
+          item.reason.includes("Sub group not found")
+        ).length,
+        processingErrors: skippedItems.filter((item) =>
+          item.reason.includes("Processing error")
+        ).length,
+      };
+    }
+
+    // Set appropriate HTTP status code
+    const totalSuccess = insertedCount + updatedCount;
+    const statusCode =
+      totalSuccess > 0
+        ? 200
+        : skippedItems.length === partyToSave.length
+        ? 400
+        : 207;
+
+    console.log("Party Response:", response?.summary);
+    return res.status(statusCode).json(response);
   } catch (error) {
-    console.error("Error:", error);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("Error in savePartyFromTally:", error);
+
+    // Handle specific MongoDB validation errors
+    if (error.name === "ValidationError") {
+      return res.status(400).json({
+        status: false,
+        message: "Validation error in party data",
+        error: error.message,
+      });
+    }
+
+    // Handle duplicate key errors
+    if (error.code === 11000) {
+      return res.status(400).json({
+        status: false,
+        message: "Duplicate party data detected",
+        error: error.message,
+      });
+    }
+
+    // Handle general server errors
+    return res.status(500).json({
+      status: false,
+      message: "Internal server error",
+      ...(process.env.NODE_ENV === "development" && { error: error.message }),
+    });
   }
 };
 
@@ -1384,53 +1504,153 @@ export const saveAdditionalChargesFromTally = async (req, res) => {
   try {
     const additionalChargesToSave = req?.body?.data;
 
-    // Check if additionalChargesToSave is defined and has elements
+    // Basic validation for additional charges array
     if (!additionalChargesToSave || additionalChargesToSave.length === 0) {
-      return res.status(400).json({ error: "No data provided" });
+      return res.status(400).json({
+        status: false,
+        message: "No additional charges data provided",
+      });
     }
 
-    // Extract primary user id and company id from the first additional charge
-    const { Primary_user_id, cmp_id } = additionalChargesToSave[0];
+    // Extract and validate required IDs from first item
+    const { Primary_user_id, cmp_id } = additionalChargesToSave[0] || {};
 
-    // Delete existing documents with the same primary user id and company id
-    await AdditionalCharges.deleteMany({ Primary_user_id, cmp_id });
+    if (!Primary_user_id || !cmp_id) {
+      return res.status(400).json({
+        status: false,
+        message: "Primary_user_id and cmp_id are required",
+      });
+    }
 
-    // Loop through each additional charge to save
-    const savedAdditionalCharges = await Promise.all(
-      additionalChargesToSave.map(async (charge) => {
+    // Find and log company information
+    getApiLogs(cmp_id, "Additional Charges Data");
+
+    // Track processed and failed operations
+    const skippedItems = [];
+    let insertedCount = 0;
+    let updatedCount = 0;
+
+    // Process each additional charge
+    for (let i = 0; i < additionalChargesToSave.length; i++) {
+      const charge = additionalChargesToSave[i];
+      const itemIndex = i + 1;
+
+      // Check for required fields
+      const missingFields = [];
+      if (!charge.Primary_user_id) missingFields.push("Primary_user_id");
+      if (!charge.cmp_id) missingFields.push("cmp_id");
+      if (!charge.name) missingFields.push("name");
+      if (!charge.master_id) missingFields.push("master_id");
+
+      // Skip item if missing required fields
+      if (missingFields.length > 0) {
+        skippedItems.push({
+          item: itemIndex,
+          reason: `Missing required fields: ${missingFields.join(", ")}`,
+          data: { name: charge.name || "N/A" },
+        });
+        continue;
+      }
+
+      try {
         // Check if the additional charge already exists
         const existingCharge = await AdditionalCharges.findOne({
           cmp_id: charge.cmp_id,
-          name: charge.name,
           Primary_user_id: charge.Primary_user_id,
+          master_id: charge.master_id,
         });
 
-        // If the additional charge doesn't exist, create a new one; otherwise, update it
-        if (!existingCharge) {
-          const newCharge = new AdditionalCharges(charge);
-          return await newCharge.save();
-        } else {
+        if (existingCharge) {
           // Update the existing additional charge
-          return await AdditionalCharges.findOneAndUpdate(
-            {
-              cmp_id: charge.cmp_id,
-              name: charge.name,
-              Primary_user_id: charge.Primary_user_id,
-            },
+          await AdditionalCharges.findByIdAndUpdate(
+            existingCharge._id,
             charge,
-            { new: true }
+            { new: true, runValidators: true }
           );
+          updatedCount++;
+        } else {
+          // Create a new additional charge
+          const newCharge = new AdditionalCharges(charge);
+          await newCharge.save();
+          insertedCount++;
         }
-      })
-    );
+      } catch (itemError) {
+        console.error(
+          `Error processing additional charge ${charge.name}:`,
+          itemError
+        );
+        skippedItems.push({
+          item: itemIndex,
+          reason: `Processing error: ${itemError.message}`,
+          data: { name: charge.name || "N/A" },
+        });
+      }
+    }
 
-    res.status(201).json({
-      message: "Additional charges saved successfully",
-      savedAdditionalCharges,
-    });
+    // Prepare response with detailed summary
+    const response = {
+      status: true,
+      message: "Additional charges processing completed",
+      summary: {
+        totalReceived: additionalChargesToSave.length,
+        insertedCount: insertedCount,
+        updatedCount: updatedCount,
+        successCount: insertedCount + updatedCount,
+        skippedCount: skippedItems.length,
+      },
+    };
+
+    // Add skipped items details if any exist
+    if (skippedItems.length > 0) {
+      response.skippedItems = skippedItems;
+      response.skippedReasons = {
+        missingRequiredFields: skippedItems.filter((item) =>
+          item.reason.includes("Missing required fields")
+        ).length,
+        processingErrors: skippedItems.filter((item) =>
+          item.reason.includes("Processing error")
+        ).length,
+      };
+    }
+
+    // Set appropriate HTTP status code
+    const totalSuccess = insertedCount + updatedCount;
+    const statusCode =
+      totalSuccess > 0
+        ? 200
+        : skippedItems.length === additionalChargesToSave.length
+        ? 400
+        : 207;
+
+    console.log("Additional Charges Response:", response?.summary);
+    return res.status(statusCode).json(response);
   } catch (error) {
-    console.error("Error:", error);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("Error in saveAdditionalChargesFromTally:", error);
+
+    // Handle specific MongoDB validation errors
+    if (error.name === "ValidationError") {
+      return res.status(400).json({
+        status: false,
+        message: "Validation error in additional charges data",
+        error: error.message,
+      });
+    }
+
+    // Handle duplicate key errors
+    if (error.code === 11000) {
+      return res.status(400).json({
+        status: false,
+        message: "Duplicate additional charges data detected",
+        error: error.message,
+      });
+    }
+
+    // Handle general server errors
+    return res.status(500).json({
+      status: false,
+      message: "Internal server error",
+      ...(process.env.NODE_ENV === "development" && { error: error.message }),
+    });
   }
 };
 
@@ -2005,6 +2225,18 @@ export const addGodowns = async (req, res) => {
       });
     }
 
+    // Extract and validate required IDs from first item
+    const { Primary_user_id, cmp_id } = data[0] || {};
+
+    if (!Primary_user_id || !cmp_id) {
+      return res.status(400).json({
+        status: false,
+        message: "Primary_user_id and cmp_id are required",
+      });
+    }
+
+    getApiLogs(cmp_id, "godown");
+
     // Arrays to track items
     const results = [];
     const skippedItems = [];
@@ -2128,16 +2360,20 @@ export const addGodowns = async (req, res) => {
     const failureCount = results.length - successCount;
     const skippedCount = skippedItems.length;
 
+    const counts = {
+      success: successCount,
+      failed: failureCount,
+      skipped: skippedCount,
+    };
+
+    console.log("godown response", counts);
+
     return res.status(200).json({
       success: true,
       message: `Added/Updated ${successCount} items, Failed ${failureCount} items, Skipped ${skippedCount} items`,
       results,
       skipped: skippedItems,
-      counts: {
-        success: successCount,
-        failed: failureCount,
-        skipped: skippedCount,
-      },
+      counts,
     });
   } catch (error) {
     return res.status(500).json({

@@ -384,7 +384,10 @@ function VoucherAddCount() {
 
         // purchase does not need the price level ,it is manually typed
 
-        if (voucherTypeFromRedux === "purchase" || voucherTypeFromRedux === "stockTransfer") {
+        if (
+          voucherTypeFromRedux === "purchase" ||
+          voucherTypeFromRedux === "stockTransfer"
+        ) {
           defaultPriceLevel = {
             _id: null,
             name: null,
@@ -393,7 +396,9 @@ function VoucherAddCount() {
           defaultPriceLevel = priceLevels[0];
         }
 
-        dispatch(setPriceLevel(defaultPriceLevel));
+        if (selectedPriceLevelFromRedux === "") {
+          dispatch(setPriceLevel(defaultPriceLevel));
+        }
 
         setPricesLoaded(true);
         setLoader(false);

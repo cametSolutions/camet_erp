@@ -256,7 +256,7 @@ export const editSale = async (req, res) => {
         party,
         despatchDetails,
         items,
-        priceLevel: priceLevelFromRedux,
+        selectedPriceLevel: priceLevelFromRedux,
         additionalCharges: additionalChargesFromRedux,
         note,
         finalAmount: lastAmount,

@@ -26,6 +26,7 @@ import {
   addSelectedVoucherSeriesForEdit,
   addNote,
   addIsNoteOpen,
+  setPriceLevel,
 } from "../../../../slices/voucherSlices/commonVoucherSlice";
 import DespatchDetails from "./DespatchDetails";
 import HeaderTile from "./HeaderTile";
@@ -171,7 +172,10 @@ function VoucherInitialPageEdit() {
       _id: voucherIdFromState,
       stockTransferToGodown: stockTransferToGodownFromState = {},
       note: noteFromState,
+      selectedPriceLevel: selectedPriceLevelFromState,
     } = location.state.data || {};
+
+    
 
     try {
       if (voucherIdFromState) {
@@ -296,6 +300,14 @@ function VoucherInitialPageEdit() {
       if (noteFromState && noteFromRedux === null) {
         dispatch(addNote(noteFromState));
       }
+
+
+      //// price level
+      if (selectedPriceLevelFromState && priceLevelFromRedux === "") {
+        dispatch(setPriceLevel(selectedPriceLevelFromState));
+      }
+
+
 
       // Configuration Number
       if (voucherSeriesFromRedux === null && voucherTypeFromRedux) {

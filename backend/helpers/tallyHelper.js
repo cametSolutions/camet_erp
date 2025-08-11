@@ -192,11 +192,10 @@ export const fetchData = async (type, cmp_id, serialNumber, res, userId) => {
 };
 
 export const getApiLogs = async (cmp_id, dataName) => {
+  const company = await OrganizationModel.findById(cmp_id)
+    .lean()
+    .select("name");
 
- 
-  const company = await  OrganizationModel.findById(cmp_id).lean().select("name");
-  console.log("company", company);
-  
   const currentTime = new Date();
   const standardTime = currentTime.toISOString();
   const indianTime = currentTime.toLocaleString("en-IN", {
@@ -211,6 +210,6 @@ export const getApiLogs = async (cmp_id, dataName) => {
   console.log(
     `${dataName} added By ${
       company.name || "N/A"
-    } company at standard time ${standardTime} and indian time ${indianTime}`
+    }  (${cmp_id}) company at standard time ${standardTime} and indian time ${indianTime}`
   );
 };
