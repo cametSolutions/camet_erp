@@ -795,6 +795,9 @@ export const updateStock = async (req, res) => {
     // Extract common company and user IDs
     const { cmp_id, Primary_user_id } = req.body.data.ItemGodowndetails[0];
 
+    ///logs
+    getApiLogs(cmp_id, "updateStock");
+
     if (!cmp_id || !Primary_user_id) {
       return res.status(400).json({
         success: false,
@@ -1043,14 +1046,19 @@ export const updateStock = async (req, res) => {
         updated_godown_count: data.godowns.length,
       }));
 
-    return res.status(200).json({
-      success: true,
-      message: `Successfully processed ${productIds.length} products with pushStock=${pushStock}. Updated: ${totalStats.modifiedCount}, Added: ${totalStats.upsertedCount}`,
-      modifiedProducts: modificationSummary,
+    const counts = {
       totalRecordsProcessed: productIds.length,
       godownsMapped: Object.keys(godownMapping).length,
       godownsNotFound: missingGodownIds.length > 0 ? missingGodownIds : [],
       skippedItems: skippedItems.length > 0 ? skippedItems : undefined,
+    };
+
+    console.log("Update Stock Response: ", counts);
+
+    return res.status(200).json({
+      success: true,
+      message: `Successfully processed ${productIds.length} products with pushStock=${pushStock}. Updated: ${totalStats.modifiedCount}, Added: ${totalStats.upsertedCount}`,
+      counts,
       mode: pushStock ? "merge" : "replace",
       ...(modificationSummary.length < productIds.length && {
         note: `Showing summary for first ${modificationSummary.length} of ${productIds.length} products.`,
