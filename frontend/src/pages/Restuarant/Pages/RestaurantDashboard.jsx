@@ -27,6 +27,7 @@ import {
   Bed,
   ArrowLeft,
 } from "lucide-react";
+import { MdTableBar } from "react-icons/md";
 
 import woodImage from "../../../assets/images/wood.jpeg"; // Adjust the path as needed
 
@@ -100,6 +101,7 @@ const RestaurantPOS = () => {
   const [roomDetails, setRoomDetails] = useState({
     roomno: "",
     guestName: "",
+    CheckInNumber:'',
   });
   const [orders, setOrders] = useState([]);
   const [orderNumber, setOrderNumber] = useState(1001);
@@ -212,11 +214,13 @@ const RestaurantPOS = () => {
   useEffect(() => {
     if (roomBookingData) {
       const getRooms = roomBookingData?.data?.flatMap((room) => {
+        console.log(roomBookingData)
         return (
           room?.selectedRooms?.map((selectedRoom) => ({
             ...selectedRoom,
             customerName: room?.customerName,
             mobileNumber: room?.mobileNumber,
+              voucherNumber: room?.voucherNumber,
           })) || []
         );
       });
@@ -389,10 +393,12 @@ const RestaurantPOS = () => {
         phone: roomDetails.mobileNumber,
       };
     } else if (orderType === "roomService") {
+         console.log(roomDetails)
       orderCustomerDetails = {
+     
         roomNumber: roomDetails.roomno,
         guestName: roomDetails.guestName,
-        CheckInNumber:roomDetails
+        CheckInNumber:roomDetails.CheckInNumber
       };
     } else {
       orderCustomerDetails = { ...customerDetails };
@@ -457,6 +463,7 @@ const RestaurantPOS = () => {
       setRoomDetails({
         roomno: "",
         guestName: "",
+        CheckInNumber: "",
       });
     } else {
       setCustomerDetails({
@@ -494,7 +501,7 @@ const RestaurantPOS = () => {
 
     generateAndPrintKOT(orderData, true, false, companyName);
   };
-
+console.log(roomData)
   return (
     <div className="h-screen overflow-hidden bg-gray-100 flex flex-col">
       {/* Header */}
@@ -1057,25 +1064,28 @@ const RestaurantPOS = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Room Number
                     </label>
-                    <select
-                      value={roomDetails._id}
-                      onChange={(e) => {
-                        const selectedRoom = roomData.find(room => room._id === e.target.value);
-                        setRoomDetails({
-                          ...roomDetails,
-                          roomno: selectedRoom?.roomName || e.target.value,
-                          guestName: selectedRoom?.customerName || "",
-                        });
-                      }}
-                      className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                    >
-                      <option value="">Select a room</option>
-                      {roomData?.map((room) => (
-                        <option value={room._id} key={room._id}>
-                          {room?.roomName} - {room?.customerName}
-                        </option>
-                      ))}
-                    </select>
+                  <select
+  value={roomDetails._id}
+  onChange={(e) => {
+    const selectedRoom = roomData.find(room => room._id === e.target.value);
+    setRoomDetails({
+      ...roomDetails,
+      _id: selectedRoom?._id || "",
+      roomno: selectedRoom?.roomName || "",
+      guestName: selectedRoom?.customerName || "",
+      CheckInNumber: selectedRoom?.voucherNumber || "" // ✅ BIND HERE
+    });
+  }}
+  className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+>
+  <option value="">Select a room</option>
+  {roomData?.map((room) => (
+    <option value={room._id} key={room._id}>
+      {room?.roomName} - {room?.customerName} - {room?.voucherNumber}
+    </option>
+  ))}
+</select>
+
                   </div>
 
                   <div>
@@ -1094,6 +1104,20 @@ const RestaurantPOS = () => {
                       className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                     />
                   </div>
+<div>
+  <label className="block text-sm font-medium text-gray-700 mb-2">
+    Check-In Number
+  </label>
+  <input
+    type="text"
+    value={roomDetails.CheckInNumber || ""}
+    readOnly
+    className="w-full p-3 border border-gray-300 rounded-md bg-gray-100 text-black text-sm"
+  />
+</div>
+
+
+
                 </>
               )}
 

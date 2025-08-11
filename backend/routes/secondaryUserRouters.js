@@ -62,7 +62,8 @@ import {saveAdditionalPax , getAdditionalPax ,updateAdditionalPax , deleteAdditi
     ,updateFoodPlan,deleteFoodPlan,addRoom,getRooms,editRoom ,deleteRoom,getAllRooms,roomBooking,getBookings,deleteBooking,updateBooking,
 fetchAdvanceDetails,getAllRoomsWithStatusForDate,updateRoomStatus} from '../controllers/hotelController.js'
 import {addItem,getAllItems,getItems,getCategories,deleteItem,updateItem,generateKot,getKot,updateKotStatus,
-    getRoomDataForRestaurant,updateKotPayment,getPaymentType} from '../controllers/restaurantController.js'
+    getRoomDataForRestaurant,updateKotPayment,getPaymentType,saveTableNumber} from '../controllers/restaurantController.js'
+import { AuthMechanism } from 'mongodb';
 
 router.post('/login',login)
 router.post('/sendOtp',sendOtp)
@@ -346,9 +347,11 @@ router.put('/updateKotStatus/:cmp_id',authSecondary,secondaryIsBlocked,updateKot
 router.get('/getRoomBasedOnBooking/:cmp_id',authSecondary,secondaryIsBlocked,getRoomDataForRestaurant)
 router.put("/updateKotPayment/:id",authSecondary,secondaryIsBlocked,updateKotPayment)
 router.get('/getAllRoomsWithStatus/:cmp_id',authSecondary,getAllRoomsWithStatusForDate)
-router.post("/updateStatus/:id", authSecondary,updateRoomStatus);
+router.put("/updateStatus/:id", authSecondary,updateRoomStatus);
 router.get("/getPaymentType/:cmp_id",authSecondary,secondaryIsBlocked, getPaymentType)
 router.get("/getSeriesByVoucherForSaleAndReceipt/:cmp_id",authSecondary,secondaryIsBlocked)
+router.post("/Table/:cmp_id",authSecondary, saveTableNumber)
+
 // Route to get detailed booking information for a specific room and date
 
 export default router

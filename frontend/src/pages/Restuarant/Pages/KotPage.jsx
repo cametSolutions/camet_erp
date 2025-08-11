@@ -96,14 +96,16 @@ const { _id: cmp_id, name: companyName } = useSelector(
   };
 
   // Available status transitions for kitchen
-  const getAvailableStatuses = (currentStatus) => {
-    const transitions = {
-      pending: ["pending"],
-      cooking: ["cooking"],
-      ready_to_serve: ["ready_to_serve"],
-    };
-    return transitions[currentStatus] || [];
+ const getAvailableStatuses = (currentStatus) => {
+  const transitions = {
+    pending: ["cooking"], // forward only from pending
+    cooking: ["pending", "ready_to_serve"], // backward to pending, forward to ready_to_serve
+    ready_to_serve: ["cooking", "completed"], // backward to cooking, forward to completed
+    completed: ["ready_to_serve"], // only backward
   };
+  return transitions[currentStatus] || [];
+};
+
 
   // Filter orders based on active filter
   const getFilteredOrders = () => {
@@ -138,48 +140,37 @@ const { _id: cmp_id, name: companyName } = useSelector(
     return filtered;
   };
 
-  const handleStatusChange = async (orderId, currentStatus) => {
-    setLoader(true);
-    let updatedStatus;
+ const handleStatusChange = async (orderId, newStatus) => {
+  setLoader(true);
 
-    // Determine next status
-    if (currentStatus === "pending") {
-      updatedStatus = "cooking";
-    } else if (currentStatus === "cooking") {
-      updatedStatus = "ready_to_serve";
+  try {
+    const response = await api.put(
+      `/api/sUsers/updateKotStatus/${orderId}`,
+      { status: newStatus },
+      { withCredentials: true }
+    );
+
+    if (response.status === 200 || response.status === 201) {
+      setOrders((prevOrders) =>
+        prevOrders.map((order) =>
+          order._id === orderId
+            ? { ...order, status: newStatus, statusType: newStatus }
+            : order
+        )
+      );
     } else {
-      updatedStatus = "completed";
+      console.error("Failed to update backend:", response.data || response);
     }
+  } catch (error) {
+    console.error(
+      "Error updating order status:",
+      error.response?.data || error.message
+    );
+  } finally {
+    setLoader(false);
+  }
+};
 
-    try {
-      // Send update request to backend
-      const response = await api.put(
-        `/api/sUsers/updateKotStatus/${orderId}`,
-        { status: updatedStatus },
-        { withCredentials: true }
-      );
-
-      // Check if the response was successful
-      if (response.status === 200 || response.status === 201) {
-        // Update the local state with the new status
-        setOrders((prevOrders) =>
-          prevOrders.map((order) =>
-            order._id === orderId
-              ? { ...order, status: updatedStatus, statusType: updatedStatus }
-              : order
-          )
-        );
-        setLoader(false);
-      } else {
-        console.error("Failed to update backend:", response.data || response);
-      }
-    } catch (error) {
-      console.error(
-        "Error updating order status:",
-        error.response?.data || error.message
-      );
-    }
-  };
 
   // function used to perform print  with kot
   const handleKotPrint = (data) => {
@@ -496,7 +487,7 @@ const { _id: cmp_id, name: companyName } = useSelector(
                     <MdRefresh
                       className={`w-3 h-3 text-orange-600 ${
                         loader ? "animate-spin" : ""
-                      }`}
+                      }`}userRole 
                     />
                     <span className="text-xs font-semibold text-orange-800">
                       Update Status
