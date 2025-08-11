@@ -570,6 +570,8 @@ export const saveProductsFromTally = async (req, res) => {
     const cmp_id = validProducts[0].cmp_id;
     const Primary_user_id = validProducts[0].Primary_user_id;
 
+    getApiLogs(cmp_id, "Product Data(base)");
+
     // Find default godown - critical operation
     const defaultGodown = await Godown.findOne({ cmp_id, defaultGodown: true });
 
@@ -744,14 +746,18 @@ export const saveProductsFromTally = async (req, res) => {
       }
     }
 
+    const counts = {
+      success: results.success.length,
+      failure: results.failure.length,
+      skipped: results.skipped.length,
+      total: productsToSave.length,
+    };
+
+    console.log("Product Base Response", counts);
+
     res.status(201).json({
       message: "Products processing completed",
-      counts: {
-        success: results.success.length,
-        failure: results.failure.length,
-        skipped: results.skipped.length,
-        total: productsToSave.length,
-      },
+      counts,
       skipped: results.skipped,
     });
   } catch (error) {
@@ -1377,10 +1383,14 @@ export const savePartyFromTally = async (req, res) => {
 
         // Enhance party with ObjectId references
         if (partyToProcess.accountGroup_id) {
-          partyToProcess.accountGroup = accountGroupMap[partyToProcess.accountGroup_id];
+          partyToProcess.accountGroup =
+            accountGroupMap[partyToProcess.accountGroup_id];
         }
 
-        if (partyToProcess.subGroup_id && subGroupMap[partyToProcess.subGroup_id]) {
+        if (
+          partyToProcess.subGroup_id &&
+          subGroupMap[partyToProcess.subGroup_id]
+        ) {
           partyToProcess.subGroup = subGroupMap[partyToProcess.subGroup_id];
         }
 
