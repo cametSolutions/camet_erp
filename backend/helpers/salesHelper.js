@@ -1062,6 +1062,8 @@ export const saveSettlementData = async (
   session
 ) => {
   try {
+
+    console?.log("party", party);
     const accountGroup = party?.accountGroupName;
 
     if (!accountGroup) {

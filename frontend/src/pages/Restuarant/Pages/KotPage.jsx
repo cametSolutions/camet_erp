@@ -15,6 +15,7 @@ import api from "@/api/api";
 import { motion } from "framer-motion";
 import { Check, CreditCard, X, Banknote } from "lucide-react";
 import { generateAndPrintKOT } from "@/pages/Restuarant/Helper/kotPrintHelper";
+import VoucherPdf from "@/pages/voucher/voucherPdf/indian/VoucherPdf";
 
 const OrdersDashboard = () => {
   const [activeFilter, setActiveFilter] = useState("pending");
@@ -34,10 +35,18 @@ const OrdersDashboard = () => {
   const [selectedBank, setSelectedBank] = useState("");
   const [cashOrBank, setCashOrBank] = useState({});
 
-const { _id: cmp_id, name: companyName } = useSelector(
-  (state) => state.secSelectedOrganization.secSelectedOrg
-);
+  // state used for showing pdf print
 
+  const [showSalePrint, setShowSalePrint] = useState(false);
+  const [salePrintData, setSalePrintData] = useState(null);
+
+  const { _id: cmp_id, name: companyName } = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg
+  );
+
+  const organization = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg
+  );
 
   const { data, loading } = useFetch(`/api/sUsers/getKotData/${cmp_id}`);
 
@@ -234,20 +243,57 @@ const { _id: cmp_id, name: companyName } = useSelector(
     setUserRole(role);
   }, []);
 
+  useEffect(() => {
+    if(salePrintData){
+      console.log(salePrintData);
+      setShowSalePrint(true)
+    }
+   
+  }, [salePrintData]);
+
   const filteredOrders = getFilteredOrders();
 
   const handleSavePayment = async (id) => {
-    let paymentDetails = {
-      cashAmount: cashAmount,
-      onlineAmount: onlineAmount,
-      selectedCash: selectedCash,
-      selectedBank: selectedBank,
-    };
-    console.log(paymentDetails);
+    console.log(paymentMode);
+    console.log(paymentMethod);
+    let paymentDetails;
+    if (paymentMode == "single") {
+      if (paymentMethod == "cash") {
+        paymentDetails = {
+          cashAmount: selectedDataForPayment?.total,
+          onlineAmount: onlineAmount,
+          selectedCash: selectedCash,
+          selectedBank: selectedBank,
+          paymentMode: paymentMode,
+        };
+      } else {
+        paymentDetails = {
+          cashAmount: cashAmount,
+          onlineAmount: selectedDataForPayment?.total,
+          selectedCash: selectedCash,
+          selectedBank: selectedBank,
+          paymentMode: paymentMode,
+        };
+      }
+    } else {
+      paymentDetails = {
+        cashAmount: cashAmount,
+        onlineAmount: onlineAmount,
+        selectedCash: selectedCash,
+        selectedBank: selectedBank,
+        paymentMode: paymentMode,
+      };
+    }
+
+    console.log(selectedDataForPayment);
     try {
       const response = await api.put(
         `/api/sUsers/updateKotPayment/${cmp_id}/${id}`,
-        { paymentMethod: paymentMethod, paymentDetails: paymentDetails },
+        {
+          paymentMethod: paymentMethod,
+          paymentDetails: paymentDetails,
+          selectedKotData: selectedDataForPayment,
+        },
         { withCredentials: true }
       );
       // Check if the response was successful
@@ -270,16 +316,27 @@ const { _id: cmp_id, name: companyName } = useSelector(
         error.response?.data || error.message
       );
     }
-    handlePrint(id);
+    // handlePrintData(id);
     // Add your logic to save the payment details here
     setShowPaymentModal(false);
   };
 
-  const handlePrint = () => {};
+  const handlePrintData = async (kotId) => {
+    try {
+      let saleData = await api.get(
+        `/api/sUsers/getSalePrintData/${cmp_id}/${kotId}`,
+        { withCredentials: true }
+      );
+      setSalePrintData(saleData?.data?.data);
+      
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   console.log(cashOrBank);
 
-  return (
+  return !showSalePrint ? (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white px-4 py-3 border-b border-gray-200 flex justify-between items-center">
@@ -529,13 +586,17 @@ const { _id: cmp_id, name: companyName } = useSelector(
                 <div className="p-3 pt-2 flex gap-2 flex-shrink-0 ">
                   <button
                     onClick={() => {
-                      setShowPaymentModal(true);
-                      setSelectedDataForPayment(order);
+                      if (order?.paymentCompleted) {
+                        handlePrintData(order._id);
+                      } else {
+                        setShowPaymentModal(true);
+                        setSelectedDataForPayment(order);
+                      }
                     }}
                     className="flex-1 group px-3 py-1.5 bg-white text-emerald-700 border border-emerald-200 rounded-lg text-xs font-semibold hover:bg-emerald-50 hover:border-emerald-300 transition-all duration-200 hover:scale-105 flex items-center justify-center gap-1"
                   >
                     <MdVisibility className="w-3 h-3 group-hover:rotate-12 transition-transform duration-200" />
-                    Pay
+                    {!order?.paymentCompleted ? "Pay" : "Print"}
                   </button>
                   <button
                     className="flex-1 group px-3 py-1.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg text-xs font-semibold hover:from-blue-600 hover:to-blue-700 transition-all duration-200 hover:scale-105 flex items-center justify-center gap-1"
@@ -616,6 +677,11 @@ const { _id: cmp_id, name: companyName } = useSelector(
                   onClick={() => {
                     setPaymentMode("split");
                     setPaymentError("");
+                    setCashAmount(0);
+                    setOnlineAmount(0);
+                    // Reset single payment selection
+                    setSelectedCash("");
+                    setSelectedBank("");
                   }}
                   className={`flex-1 px-3 py-2 rounded-lg border-2 text-xs font-medium transition-colors ${
                     paymentMode === "split"
@@ -688,7 +754,10 @@ const { _id: cmp_id, name: companyName } = useSelector(
                     <select
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                       value={selectedBank}
-                      onChange={(e) => setSelectedBank(e.target.value)}
+                      onChange={(e) => {
+                        setSelectedBank(e.target.value);
+                        // setSelectedCash
+                      }}
                     >
                       <option value="" disabled>
                         Select Payment Method
@@ -964,6 +1033,14 @@ const { _id: cmp_id, name: companyName } = useSelector(
         </div>
       )}
     </div>
+  ) : (
+    <VoucherPdf
+      data={salePrintData}
+      org={organization}
+      // bank={bank}
+      userType="secondaryUser"
+      tab="sales"
+    />
   );
 };
 
