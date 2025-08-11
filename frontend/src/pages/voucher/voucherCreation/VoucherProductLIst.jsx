@@ -138,7 +138,7 @@ export default function VoucherProductList({
         const processedItem = {
           ...item,
           GodownList:
-            item.GodownList.length === 1 &&
+            item.GodownList?.length === 1 &&
             item.GodownList[0].balance_stock === 0 &&
             !item.GodownList[0].batch &&
             !item.GodownList[0].godown_id
@@ -383,7 +383,7 @@ export default function VoucherProductList({
       if (
         itemIndex === -1 ||
         !Array.isArray(updatedItems[itemIndex].GodownList) ||
-        index >= updatedItems[itemIndex].GodownList.length
+        index >= updatedItems[itemIndex].GodownList?.length
       ) {
         // setLoadingIndex(null); // reset loader index even on failure
         return;
@@ -446,7 +446,7 @@ export default function VoucherProductList({
    * Check if an item at a specific index is loaded
    */
   const isItemLoaded = (index) => {
-    return index < displayedItems.length;
+    return index < displayedItems?.length;
   };
 
   /**
@@ -535,12 +535,12 @@ function isVanSaleWithSingleGodown(item) {
                 } max-w-1/2`}
               >
                 {el?.hasGodownOrBatch
-                  ? el?.product_name.length < 30
+                  ? el?.product_name?.length < 30
                     ? el?.product_name
-                    : el?.product_name.slice(0, 50) + "..."
-                  : el?.product_name.length < 30
+                    : el?.product_name?.slice(0, 50) + "..."
+                  : el?.product_name?.length < 30
                   ? el?.product_name
-                  : el?.product_name.slice(0, 30) + "..."}
+                  : el?.product_name?.slice(0, 30) + "..."}
                 {/* {el?.product_name} */}
               </p>
               {(el?.hasGodownOrBatch  && !isVanSaleWithSingleGodown(el)) && (
@@ -743,7 +743,7 @@ function isVanSaleWithSingleGodown(item) {
 
   return (
     <div>
-      {items.length === 0 && !loader ? (
+      {items?.length === 0 && !loader ? (
         <div className="bg-white p-4 py-2 pb-6 mt-7 flex justify-center items-center rounded-sm cursor-pointer  ">
           <p>No products available</p>
         </div>
@@ -752,7 +752,7 @@ function isVanSaleWithSingleGodown(item) {
           <div className="relative">
             <InfiniteLoader
               isItemLoaded={isItemLoaded}
-              itemCount={hasMore && !isScanOn ? items.length + 1 : items.length}
+              itemCount={hasMore && !isScanOn ? items?.length + 1 : items?.length}
               loadMoreItems={loadMoreItems}
               threshold={10}
             >
@@ -767,7 +767,7 @@ function isVanSaleWithSingleGodown(item) {
                   className="z-0"
                   height={listHeight}
                   itemCount={
-                    hasMore && !isScanOn ? items.length + 1 : items.length
+                    hasMore && !isScanOn ? items?.length + 1 : items?.length
                   }
                   itemSize={getItemSize}
                   width="100%"
@@ -777,7 +777,7 @@ function isVanSaleWithSingleGodown(item) {
                     visibleStartIndex,
                     visibleStopIndex,
                   }) => {
-                    if (visibleStopIndex >= items.length - 1) {
+                    if (visibleStopIndex >= items?.length - 1) {
                       loadMoreItems();
                     }
                   }}
