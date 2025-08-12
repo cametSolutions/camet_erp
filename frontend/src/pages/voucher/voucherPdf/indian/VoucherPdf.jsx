@@ -7,6 +7,7 @@ import VoucherPdfHeader from "./VoucherPdfHeader";
 import { defaultPrintSettings } from "../../../../../utils/defaultConfigurations";
 
 function VoucherPdf({ data, org, contentToPrint, bank, tab }) {
+  console.log("data", data);
   const [subTotal, setSubTotal] = useState("");
   const [additinalCharge, setAdditinalCharge] = useState("");
   const [inWords, setInWords] = useState("");
@@ -255,6 +256,8 @@ function VoucherPdf({ data, org, contentToPrint, bank, tab }) {
 
     return null;
   }
+
+  console.log(data?.items)
 
   return (
     <div>
