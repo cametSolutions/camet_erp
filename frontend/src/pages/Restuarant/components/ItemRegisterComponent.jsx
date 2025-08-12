@@ -5,8 +5,9 @@ import { MdPlaylistAdd, MdDelete, MdCloudUpload, MdImage } from "react-icons/md"
 import uploadImageToCloudinary from "../../../../utils/uploadCloudinary";
 
 function ItemRegisterComponent({ pageName, optionsData, sendToParent, editData }) {
+  console.log("editData",editData);
   const [priceLevelRows, setPriceLevelRows] = useState([
-    { priceLevel: "", priceRate: "" },
+    { pricelevel: "", pricerate: "" },
   ]);
   const [roomData, setRoomData] = useState({
     itemName: "",
@@ -21,6 +22,8 @@ function ItemRegisterComponent({ pageName, optionsData, sendToParent, editData }
   const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
+    console.log(editData);
+    console.log("optionsData",optionsData);
     if (editData) {
       console.log(editData)
       setRoomData({
@@ -28,11 +31,15 @@ function ItemRegisterComponent({ pageName, optionsData, sendToParent, editData }
         foodCategory: editData.category,
         foodType: editData.sub_category,
         unit: editData.unit,
-        hsn: optionsData?.hsn?.find((hsn) => hsn.hsn == editData.hsnCode)?._id,
+        hsn: optionsData?.hsn?.find((hsn) => hsn._id == editData.hsn_code)?._id,
         imageUrl: editData.product_image || "", // Set existing image URL
       });
-      console.log(editData);
-      setPriceLevelRows(editData.Priceleveles);
+      let updatedPriceLevel = editData.Priceleveles.map((item) => ({
+        pricelevel: item.pricelevel,
+        pricerate: item.pricerate,
+      }))
+      console.log("updatedPriceLevel",updatedPriceLevel)
+      setPriceLevelRows(updatedPriceLevel);
       
       // Set image preview for existing data
       if (editData.imageUrl) {
@@ -40,6 +47,8 @@ function ItemRegisterComponent({ pageName, optionsData, sendToParent, editData }
       }
     }
   }, [editData]);
+
+  console.log("roomData",roomData)
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -100,7 +109,7 @@ function ItemRegisterComponent({ pageName, optionsData, sendToParent, editData }
     const lastRow = priceLevelRows[priceLevelRows.length - 1];
 
     // Check if fields are filled
-    if (!lastRow?.priceLevel || !lastRow?.priceRate) {
+    if (!lastRow?.pricelevel || !lastRow?.pricerate) {
       toast.error("Add Level name and Rate");
       return;
     }
@@ -108,7 +117,7 @@ function ItemRegisterComponent({ pageName, optionsData, sendToParent, editData }
     // Check for duplicate pricelevel
     const isDuplicate = priceLevelRows
       .slice(0, -1) // exclude the last row being added
-      .some((row) => row.priceLevel === lastRow.priceLevel);
+      .some((row) => row.pricelevel === lastRow.pricelevel);
 
     if (isDuplicate) {
       toast.error("This price level already exists");
@@ -116,25 +125,25 @@ function ItemRegisterComponent({ pageName, optionsData, sendToParent, editData }
     }
 
     // Add new row if everything is valid
-    setPriceLevelRows([...priceLevelRows, { priceLevel: "", priceRate: "" }]);
+    setPriceLevelRows([...priceLevelRows, { pricelevel: "", pricerate: "" }]);
   };
 
   const handleLevelChange = (index, value) => {
     console.log(value);
     const updatedRows = [...priceLevelRows];
-    updatedRows[index].priceLevel = value;
+    updatedRows[index].pricelevel = value;
     setPriceLevelRows(updatedRows);
   };
 
   const handleRateChange = (index, value) => {
     const updatedRows = [...priceLevelRows];
-    updatedRows[index].priceRate = value;
+    updatedRows[index].pricerate = value;
     setPriceLevelRows(updatedRows);
   };
 
   const handleDeleteRow = (pricelevelId) => {
     setPriceLevelRows((prev) =>
-      prev.filter((row) => row.priceLevel !== pricelevelId)
+      prev.filter((row) => row.pricelevel !== pricelevelId)
     );
   };
 
@@ -190,7 +199,7 @@ function ItemRegisterComponent({ pageName, optionsData, sendToParent, editData }
       return;
     }
     let newPriceLevelRows = priceLevelRows.filter(
-      (item) => item.priceLevel !== ""
+      (item) => item.pricelevel !== ""
     );
     console.log("newPriceLevelRows", newPriceLevelRows);
     sendToParent(roomData, newPriceLevelRows);
@@ -417,7 +426,7 @@ function ItemRegisterComponent({ pageName, optionsData, sendToParent, editData }
                         {/* Level Name Dropdown */}
                         <td className="px-4 py-2 border-r">
                           <select
-                            value={row?.priceLevel}
+                            value={row?.pricelevel}
                             onChange={(e) =>
                               handleLevelChange(index, e.target.value)
                             }
@@ -440,7 +449,7 @@ function ItemRegisterComponent({ pageName, optionsData, sendToParent, editData }
                         <td className="px-4 border-r">
                           <input
                             type="number"
-                            value={row?.priceRate}
+                            value={row?.pricerate}
                             onChange={(e) =>
                               handleRateChange(index, e.target.value)
                             }
@@ -455,7 +464,7 @@ function ItemRegisterComponent({ pageName, optionsData, sendToParent, editData }
                         {/* Delete Button */}
                         <td className="px-4 sm:px-10 py-2">
                           <button
-                            onClick={() => handleDeleteRow(row?.priceLevel)}
+                            onClick={() => handleDeleteRow(row?.pricelevel)}
                             className="text-red-600 hover:text-red-800"
                           >
                             <MdDelete />

@@ -1,18 +1,18 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
-import path from 'path'
-import dotenv from 'dotenv'
+
+import dotenv from 'dotenv';
 
 // Load environment variables from .env file
-dotenv.config()
+dotenv.config();
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'autoUpdate', 
       manifest: {
         name: 'Camet ERP',
         short_name: 'Camet ERP',
@@ -31,54 +31,15 @@ export default defineConfig({
           }
         ]
       },
+      // ADD THIS: Configure workbox for your 5.05MB bundle
       workbox: {
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'google-fonts-cache',
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
-              }
-            }
-          },
-          {
-            urlPattern: /\.(?:png|gif|jpg|jpeg|svg)$/,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'images-cache',
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
-              }
-            }
-          }
-        ]
+        maximumFileSizeToCacheInBytes: 6000000 // 6MB - accommodates your large bundle
       }
     })
   ],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src')
+      '@': '/src', // Ensure alias is set up for '@/'
     }
   },
-  build: {
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom'],
-          'router-vendor': ['react-router-dom'],
-          'restaurant-pages': [
-            './src/pages/Restuarant/Pages/RestaurantDashboard',
-            './src/pages/Restuarant/Pages/KotPage', // Your thermal printer page
-            './src/pages/Restuarant/Pages/ItemList',
-            './src/pages/Restuarant/Pages/ItemRegistration'
-          ]
-        }
-      }
-    },
-    chunkSizeWarningLimit: 1000
-  }
 })

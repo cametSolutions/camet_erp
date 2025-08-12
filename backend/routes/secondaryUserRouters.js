@@ -62,7 +62,7 @@ import {saveAdditionalPax , getAdditionalPax ,updateAdditionalPax , deleteAdditi
     ,updateFoodPlan,deleteFoodPlan,addRoom,getRooms,editRoom ,deleteRoom,getAllRooms,roomBooking,getBookings,deleteBooking,updateBooking,
 fetchAdvanceDetails,getAllRoomsWithStatusForDate,updateRoomStatus} from '../controllers/hotelController.js'
 import {addItem,getAllItems,getItems,getCategories,deleteItem,updateItem,generateKot,getKot,updateKotStatus,
-    getRoomDataForRestaurant,updateKotPayment,getPaymentType,saveTableNumber,getTables,deleteTable} from '../controllers/restaurantController.js'
+    getRoomDataForRestaurant,updateKotPayment,getPaymentType,saveTableNumber,getSalePrintData,updateTable,getTables,deleteTable} from '../controllers/restaurantController.js'
 
 
 router.post('/login',login)
@@ -356,7 +356,7 @@ router.get('/getTable/:cmp_id',authSecondary, getTables);
 // DELETE /api/sUsers/Table/:id - Delete a specific table
 router.delete('/deleteTable/:id', authSecondary,deleteTable);
 
-// router.get("/getSalePrintData/:cmp_id/:kotId",authSecondary,secondaryIsBlocked,getSalePrintData)
+router.get("/getSalePrintData/:cmp_id/:kotId",authSecondary,secondaryIsBlocked,getSalePrintData)
 
 // Route to get detailed booking information for a specific room and date
 
