@@ -13,6 +13,7 @@ import { FaShareAlt } from "react-icons/fa";
 import html2pdf from "html2pdf.js";
 import MobilePdfViewer from "./MobilePdfViewer"; // Import the new wrapper
 
+
 function VoucherPdfInitiator() {
   const [data, setData] = useState([]);
   const { id } = useParams();
@@ -51,6 +52,8 @@ function VoucherPdfInitiator() {
     voucherType = "sales";
     params.vanSale = true;
   }
+
+  console.log(voucherType)
 
   useEffect(() => {
     const getTransactionDetails = async () => {

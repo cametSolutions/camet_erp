@@ -31,7 +31,7 @@ function ItemRegisterComponent({ pageName, optionsData, sendToParent, editData }
         foodCategory: editData.category,
         foodType: editData.sub_category,
         unit: editData.unit,
-        hsn: optionsData?.hsn?.find((hsn) => hsn._id == editData.hsn_code)?._id,
+        hsn: editData.hsn_code,
         imageUrl: editData.product_image || "", // Set existing image URL
       });
       let updatedPriceLevel = editData.Priceleveles.map((item) => ({
@@ -151,10 +151,13 @@ function ItemRegisterComponent({ pageName, optionsData, sendToParent, editData }
     const { name, value } = e.target;
     if (name === "roomName") {
       setRoomData({ ...roomData, roomName: value });
+    }else if(name === "hsn"){
+      let selectedHsn = optionsData?.hsn?.find((hsn) => hsn.hsn== value)
+      setRoomData({ ...roomData, cgst: selectedHsn?.cgstRate, sgst: selectedHsn?.sgstUtgstRate, igst: selectedHsn?.igstRate, hsn: selectedHsn?.hsn });
     } else {
       setRoomData({ ...roomData, [name]: value });
     }
-  };
+  }; 
 
   const isNonEmptyString = (value) =>
     typeof value === "string" && value.trim() !== "";
@@ -385,7 +388,7 @@ function ItemRegisterComponent({ pageName, optionsData, sendToParent, editData }
               >
                 <option value="">Select a hsn</option>
                 {optionsData?.hsn?.map((el, index) => (
-                  <option key={index} value={el?._id}>
+                  <option key={index} value={el?.hsn }>
                     {el?.hsn}
                   </option>
                 ))}
