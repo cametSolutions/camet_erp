@@ -44,6 +44,8 @@ const initialState = {
   warrantyCardsList: null,
   note: null,
   isNoteOpen: false,
+  paymentSplittingData: null,
+
 };
 
 export const commonVoucherSlice = createSlice({
@@ -476,6 +478,10 @@ export const commonVoucherSlice = createSlice({
     addIsNoteOpen: (state, action) => {
       state.isNoteOpen = action.payload;
     },
+
+    addPaymentSplits: (state, action) => {
+      state.paymentSplittingData = action.payload;
+    },
   },
 });
 
@@ -538,6 +544,7 @@ export const {
   addWarrantyCardsList,
   addNote,
   addIsNoteOpen,
+  addPaymentSplits
 } = commonVoucherSlice.actions;
 
 export default commonVoucherSlice.reducer;

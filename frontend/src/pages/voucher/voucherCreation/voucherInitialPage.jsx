@@ -29,6 +29,7 @@ import { formatVoucherType } from "../../../../utils/formatVoucherType";
 import AddGodownTile from "./AddGodownTile";
 import AddNoteTile from "./AddNoteTile";
 import { useQueryClient } from "@tanstack/react-query";
+import ReceiveAmount from "./ReceiveAmount";
 
 function VoucherInitialPage() {
   const dispatch = useDispatch();
@@ -444,6 +445,8 @@ function VoucherInitialPage() {
             setOpenAdditionalTile={setOpenAdditionalTile}
             openAdditionalTile={openAdditionalTile}
           />
+
+          {totalAmount > 0 && <ReceiveAmount />}
 
           <AddNoteTile
             noteFromRedux={noteFromRedux}

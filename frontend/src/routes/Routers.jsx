@@ -63,7 +63,6 @@ import SummaryReport from '@/pages/secUsers/Reports/SummaryReport'
 import PartyFilterList from '../components/Filters/party/PartyFilterList'
 import StatusFilterList from '../components/Filters/status/StatusFilterList'
 import OrderSummary from '../pages/secUsers/Reports/orderSummary/OrderSummary'
-import PaymentSplitting from '../components/secUsers/main/paymentSplitting/PaymentSplitting'
 import BalancePage from '../pages/masters/cashOrBank/BalancePage'
 import BalanceDetails from '../pages/masters/cashOrBank/BalanceDetails'
 import SourceList from '../pages/secUsers/SourceList'
@@ -152,6 +151,7 @@ import AddSubRestuarentCategory from '@/pages/masters/product/productSubDetails/
 // import ItemList from '@/pages/Restuarant/Pages/ItemList'
 import EditBooking from '@/pages/Hotel/Pages/EditBooking'
 import EditChecking from '@/pages/Hotel/Pages/EditChecking'
+import PaymentSplitting from '@/pages/voucher/voucherCreation/PaymentSplitting'
 const Routers = () => {
   return (
     <Routes>
@@ -199,7 +199,7 @@ const Routers = () => {
         <Route path='/sUsers/shareSalesWarrantyCard/:id' element={<ProtectedSecRoute><WarrantyCard/></ProtectedSecRoute>}></Route> 
 
         <Route path='/sUsers/sales/paymentSplitting' element={<ProtectedSecRoute><PaymentSplitting/></ProtectedSecRoute>}></Route> 
-        <Route path='/sUsers/editSale/:id/paymentSplitting' element={<ProtectedSecRoute><PaymentSplitting/></ProtectedSecRoute>}></Route> 
+        {/* <Route path='/sUsers/editSale/:id/paymentSplitting' element={<ProtectedSecRoute><PaymentSplitting/></ProtectedSecRoute>}></Route>  */}
        
        
        {/* purchase */}

@@ -226,7 +226,7 @@ export default function AdditionalChargesTile({
 
                           {row?.taxPercentage !== "" && (
                             <div className="ml-3 text-[9px] text-gray-400">
-                              GST @ {row?.taxPercentage} %
+                              GST @ {row?.taxPercentage || 0} %
                             </div>
                           )}
                         </td>
@@ -274,8 +274,8 @@ export default function AdditionalChargesTile({
                           {row?.taxPercentage !== "" && row.value !== "" && (
                             <div className="ml-3 text-[9.5px] text-gray-400 mt-2">
                               With tax : ₹{" "}
-                              {(parseFloat(row?.value) *
-                                (100 + parseFloat(row.taxPercentage))) /
+                              {(parseFloat(row?.value || 0) *
+                                (100 + parseFloat(row.taxPercentage || 0))) /
                                 100}{" "}
                             </div>
                           )}
@@ -293,17 +293,17 @@ export default function AdditionalChargesTile({
               </div>
             </div>
           ) : (
-            <div className=" flex justify-end items-center  font-semibold gap-1 text-violet-500 cursor-pointer pr-4">
-              <div
-                onClick={() => {
-                  setOpenAdditionalTile(true);
-                }}
-                className="flex items-center"
-              >
-                <IoMdAdd className="text-lg sm:text-xl" />
-                <p className="text-xs ml-1 sm:text-base">Additional Charges</p>
+              <div className=" flex justify-end items-center  font-semibold gap-1 text-violet-500 cursor-pointer pr-4">
+                <div
+                  onClick={() => {
+                    setOpenAdditionalTile(true);
+                  }}
+                  className="flex items-center"
+                >
+                  <IoMdAdd className="text-lg sm:text-xl" />
+                  <p className="text-xs ml-1 sm:text-base">Additional Charges</p>
+                </div>
               </div>
-            </div>
           )}
         </div>
       )}
