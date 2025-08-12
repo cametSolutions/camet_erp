@@ -28,7 +28,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { MdTableBar } from "react-icons/md";
-
+import TableSelection from "../Pages/TableSelection";
 import woodImage from "../../../assets/images/wood.jpeg"; // Adjust the path as needed
 
 import { toast } from "react-toastify";
@@ -49,12 +49,13 @@ const RestaurantPOS = () => {
   const [hoveredCuisine, setHoveredCuisine] = useState("");
   const [orderItems, setOrderItems] = useState([]);
   const navigate = useNavigate();
-  
+const [showFullTableSelection, setShowFullTableSelection] = useState(false);
+
   // Mobile responsive states
   const [isMobile, setIsMobile] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
   const [showOrderSummary, setShowOrderSummary] = useState(false);
-  
+
   const [searchTerm, setSearchTerm] = useState("");
   const [items, setItems] = useState([]);
   const [allItems, setAllItems] = useState([]);
@@ -101,7 +102,7 @@ const RestaurantPOS = () => {
   const [roomDetails, setRoomDetails] = useState({
     roomno: "",
     guestName: "",
-    CheckInNumber:'',
+    CheckInNumber: "",
   });
   const [orders, setOrders] = useState([]);
   const [orderNumber, setOrderNumber] = useState(1001);
@@ -111,10 +112,10 @@ const RestaurantPOS = () => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
-    
+
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   // Update current time every second
@@ -201,9 +202,9 @@ const RestaurantPOS = () => {
     }
   }, [cmp_id]);
 
- useEffect(() => {
-  fetchAllItems();
- },[fetchAllItems]);
+  useEffect(() => {
+    fetchAllItems();
+  }, [fetchAllItems]);
 
   const {
     data: roomBookingData,
@@ -214,13 +215,13 @@ const RestaurantPOS = () => {
   useEffect(() => {
     if (roomBookingData) {
       const getRooms = roomBookingData?.data?.flatMap((room) => {
-        console.log(roomBookingData)
+        console.log(roomBookingData);
         return (
           room?.selectedRooms?.map((selectedRoom) => ({
             ...selectedRoom,
             customerName: room?.customerName,
             mobileNumber: room?.mobileNumber,
-              voucherNumber: room?.voucherNumber,
+            voucherNumber: room?.voucherNumber,
           })) || []
         );
       });
@@ -373,32 +374,38 @@ const RestaurantPOS = () => {
     setSearchTerm("");
   };
 
-  const handlePlaceOrder = () => {
-    if (orderItems.length === 0) return;
-    setShowKOTModal(true);
-  };
+const handlePlaceOrder = () => {
+  if (orderItems.length === 0) return;
+
+  if (orderType === "dine-in") {
+    console.log(showFullTableSelection)
+    setShowFullTableSelection(true); // show full-page table selection
+  } else {
+    setShowKOTModal(true); // keep normal KOT flow for others
+  }
+};
+
 
   const handleProceedToPay = () => {
     if (orderItems.length === 0) return;
     setShowPaymentModal(true);
   };
 
-  const generateKOT = async () => {
-    let orderCustomerDetails = {};
+  const generateKOT = async (selectedTableNumber) => {
+    console.log(selectedTableNumber)
+    let orderCustomerDetails = { ...customerDetails, tableNumber: selectedTableNumber};
 
     if (orderType === "dine-in") {
       orderCustomerDetails = {
-        tableNumber: customerDetails.tableNumber,
-        name: roomDetails.customerName,
-        phone: roomDetails.mobileNumber,
+        tableNumber: selectedTableNumber,
+      
       };
     } else if (orderType === "roomService") {
-         console.log(roomDetails)
+      console.log(roomDetails);
       orderCustomerDetails = {
-     
         roomNumber: roomDetails.roomno,
         guestName: roomDetails.guestName,
-        CheckInNumber:roomDetails.CheckInNumber
+        CheckInNumber: roomDetails.CheckInNumber,
       };
     } else {
       orderCustomerDetails = { ...customerDetails };
@@ -501,7 +508,7 @@ const RestaurantPOS = () => {
 
     generateAndPrintKOT(orderData, true, false, companyName);
   };
-console.log(roomData)
+  console.log(showFullTableSelection);
   return (
     <div className="h-screen overflow-hidden bg-gray-100 flex flex-col">
       {/* Header */}
@@ -516,7 +523,10 @@ console.log(roomData)
               <MenuIcon className="w-5 h-5" />
             </button>
             <h1 className="text-lg md:text-2xl font-bold flex items-center gap-2">
-              🍽️ <span className="hidden sm:inline">Restaurant Management System</span>
+              🍽️{" "}
+              <span className="hidden sm:inline">
+                Restaurant Management System
+              </span>
               <span className="sm:hidden">RMS</span>
             </h1>
           </div>
@@ -529,13 +539,16 @@ console.log(roomData)
             </div>
             <div className="flex items-center space-x-2 bg-white/10 rounded-lg px-2 md:px-3 py-1">
               <Users className="w-3 h-3 md:w-4 md:h-4" />
-              <span className="text-xs font-medium">
-                {orderType === "dine-in"
-                  ? ` Table ${customerDetails.tableNumber}`
-                  : orderType === "roomService"
-                  ? `Room ${roomDetails.roomno || "---"}`
-                  : getOrderTypeDisplay(orderType)}
-              </span>
+                <span
+      className="text-xs font-medium cursor-pointer text-blue-600 underline"
+      onClick={() => navigate("/sUsers/TableSelection")}
+    >
+      {orderType === "dine-in"
+        ? `Table ${customerDetails.tableNumber}`
+        : orderType === "roomService"
+        ? `Room ${roomDetails.roomno || "---"}`
+        : getOrderTypeDisplay(orderType)}
+    </span>
             </div>
             <div
               className="flex items-center space-x-2 hover:cursor-pointer"
@@ -543,7 +556,8 @@ console.log(roomData)
             >
               <Receipt className="w-4 h-4 md:w-5 md:h-5" />
               <span className="text-xs md:text-sm">
-                <span className="hidden sm:inline">Orders: </span>{orders.length}
+                <span className="hidden sm:inline">Orders: </span>
+                {orders.length}
               </span>
             </div>
             {/* Mobile cart button */}
@@ -593,18 +607,30 @@ console.log(roomData)
       <div className="flex-1 flex min-h-0 relative">
         {/* Mobile Sidebar Overlay */}
         {isMobile && showSidebar && (
-          <div 
+          <div
             className="fixed inset-0 bg-black bg-opacity-50 z-40"
             onClick={() => setShowSidebar(false)}
           />
         )}
 
         {/* Left Sidebar - Categories/Subcategories */}
-        <div className={`
-          ${isMobile ? 'fixed left-0 top-0 bottom-0 z-50 transform transition-transform duration-300' : 'relative'} 
-          ${isMobile && showSidebar ? 'translate-x-0' : isMobile ? '-translate-x-full' : 'translate-x-0'}
+        <div
+          className={`
+          ${
+            isMobile
+              ? "fixed left-0 top-0 bottom-0 z-50 transform transition-transform duration-300"
+              : "relative"
+          } 
+          ${
+            isMobile && showSidebar
+              ? "translate-x-0"
+              : isMobile
+              ? "-translate-x-full"
+              : "translate-x-0"
+          }
           w-72 md:w-48 bg-white shadow-lg h-full flex flex-col min-h-0 border-r
-        `}>
+        `}
+        >
           <div className="p-4 border-b border-gray-200 bg-gray-50">
             <div className="flex items-center justify-between">
               <h2 className="text-sm md:text-sm font-bold text-gray-800">
@@ -792,7 +818,9 @@ console.log(roomData)
                             <div className="absolute bottom-2 left-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
                               <div className="bg-orange-500 text-white px-1.5 py-0.5 rounded-full text-xs font-medium flex items-center space-x-1">
                                 <TrendingUp className="w-2 h-2 md:w-3 md:h-3" />
-                                <span className="hidden sm:inline text-xs">Popular</span>
+                                <span className="hidden sm:inline text-xs">
+                                  Popular
+                                </span>
                               </div>
                             </div>
                           )}
@@ -813,7 +841,9 @@ console.log(roomData)
                             <div className="flex items-center justify-between text-xs text-gray-500">
                               <div className="flex items-center space-x-1 text-[#4688f3]">
                                 <Clock className="w-2 h-2 md:w-3 md:h-3" />
-                                <span className="text-xs">{item.time || "15-20 min"}</span>
+                                <span className="text-xs">
+                                  {item.time || "15-20 min"}
+                                </span>
                               </div>
                             </div>
                           </div>
@@ -822,11 +852,16 @@ console.log(roomData)
                           <div className="flex justify-between items-center">
                             <div className="flex flex-col">
                               <span className="text-sm md:text-base font-bold text-[#4688f3]">
-                                ₹{item.Priceleveles?.[0]?.pricerate || item.price || 0}
+                                ₹
+                                {item.Priceleveles?.[0]?.pricerate ||
+                                  item.price ||
+                                  0}
                               </span>
                               {item.Priceleveles?.[0]?.priceDisc > 0 && (
                                 <span className="text-xs text-gray-400 line-through">
-                                  ₹{item.Priceleveles[0].pricerate + item.Priceleveles[0].priceDisc}
+                                  ₹
+                                  {item.Priceleveles[0].pricerate +
+                                    item.Priceleveles[0].priceDisc}
                                 </span>
                               )}
                             </div>
@@ -851,17 +886,29 @@ console.log(roomData)
 
         {/* Order Summary Sidebar - Desktop always visible, Mobile modal */}
         {isMobile && showOrderSummary && (
-          <div 
+          <div
             className="fixed inset-0 bg-black bg-opacity-50 z-50"
             onClick={() => setShowOrderSummary(false)}
           />
         )}
-        
-        <div className={`
-          ${isMobile ? 'fixed right-0 top-0 bottom-0 z-50 transform transition-transform duration-300' : 'relative'}
-          ${isMobile && showOrderSummary ? 'translate-x-0' : isMobile ? 'translate-x-full' : 'translate-x-0'}
+
+        <div
+          className={`
+          ${
+            isMobile
+              ? "fixed right-0 top-0 bottom-0 z-50 transform transition-transform duration-300"
+              : "relative"
+          }
+          ${
+            isMobile && showOrderSummary
+              ? "translate-x-0"
+              : isMobile
+              ? "translate-x-full"
+              : "translate-x-0"
+          }
           w-full sm:w-80 md:w-80 lg:w-80 bg-white border-l border-gray-200 flex flex-col min-h-0 h-full shadow-lg
-        `}>
+        `}
+        >
           <div className="p-3 md:p-4 border-b border-gray-200 bg-gradient-to-r from-emerald-50 to-teal-50">
             <div className="flex items-center justify-between">
               <h3 className="text-base md:text-lg font-bold text-[#4688f3] flex items-center">
@@ -907,7 +954,9 @@ console.log(roomData)
                     <div className="flex flex-col items-center space-y-2">
                       <button
                         className="bg-[#4688f3] text-white w-7 h-7 flex items-center justify-center rounded-full hover:bg-blue-600 hover:scale-105 active:scale-95 transition-all duration-200"
-                        onClick={() => updateQuantity(item._id, item.quantity + 1)}
+                        onClick={() =>
+                          updateQuantity(item._id, item.quantity + 1)
+                        }
                       >
                         <Plus className="w-3 h-3" />
                       </button>
@@ -915,10 +964,12 @@ console.log(roomData)
                       <span className="text-sm font-medium min-w-[24px] text-center bg-white px-2 py-1 rounded border">
                         {item.quantity}
                       </span>
-                      
+
                       <button
                         className="bg-[#4688f3] text-white w-7 h-7 flex items-center justify-center rounded-full hover:bg-blue-600 hover:scale-105 active:scale-95 transition-all duration-200"
-                        onClick={() => updateQuantity(item._id, item.quantity - 1)}
+                        onClick={() =>
+                          updateQuantity(item._id, item.quantity - 1)
+                        }
                       >
                         <Minus className="w-3 h-3" />
                       </button>
@@ -1001,13 +1052,40 @@ console.log(roomData)
           </div>
         </div>
       </div>
+{showFullTableSelection && (
+  <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50">
+    {/* Modal Box */}
+    <div className="bg-white rounded-lg shadow-lg w-full max-w-3xl max-h-[90vh] overflow-auto relative">
+      
+      {/* Close Button */}
+      <button
+        onClick={() => setShowFullTableSelection(false)}
+        className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-2xl font-bold"
+      >
+        ×
+      </button>
+
+      {/* Modal Content */}
+      <div className="p-4 ">
+        <TableSelection
+           onTableSelect={(table) => {
+   
+  generateKOT(table.tableNumber);
+  }}
+        />
+      </div>
+    </div>
+  </div>
+)}
 
       {/* KOT Modal - Enhanced for mobile */}
       {showKOTModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg p-4 md:p-6 max-w-md w-full mx-4 transform transition-all duration-300 scale-100 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg md:text-xl font-bold text-gray-800">KOT Details</h2>
+              <h2 className="text-lg md:text-xl font-bold text-gray-800">
+                KOT Details
+              </h2>
               <button
                 onClick={() => setShowKOTModal(false)}
                 className="text-gray-400 hover:text-gray-600 transition-colors p-1"
@@ -1037,26 +1115,12 @@ console.log(roomData)
               </div>
             </div>
 
+
+
+                
             {/* Customer Details Input */}
             <div className="space-y-4 mb-6">
-              {orderType === "dine-in" && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Table Number
-                  </label>
-                  <input
-                    type="text"
-                    value={customerDetails.tableNumber}
-                    onChange={(e) =>
-                      setCustomerDetails({
-                        ...customerDetails,
-                        tableNumber: e.target.value,
-                      })
-                    }
-                    className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                  />
-                </div>
-              )}
+             
 
               {orderType === "roomService" && (
                 <>
@@ -1064,28 +1128,30 @@ console.log(roomData)
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Room Number
                     </label>
-                  <select
-  value={roomDetails._id}
-  onChange={(e) => {
-    const selectedRoom = roomData.find(room => room._id === e.target.value);
-    setRoomDetails({
-      ...roomDetails,
-      _id: selectedRoom?._id || "",
-      roomno: selectedRoom?.roomName || "",
-      guestName: selectedRoom?.customerName || "",
-      CheckInNumber: selectedRoom?.voucherNumber || "" // ✅ BIND HERE
-    });
-  }}
-  className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
->
-  <option value="">Select a room</option>
-  {roomData?.map((room) => (
-    <option value={room._id} key={room._id}>
-      {room?.roomName} - {room?.customerName} - {room?.voucherNumber}
-    </option>
-  ))}
-</select>
-
+                    <select
+                      value={roomDetails._id}
+                      onChange={(e) => {
+                        const selectedRoom = roomData.find(
+                          (room) => room._id === e.target.value
+                        );
+                        setRoomDetails({
+                          ...roomDetails,
+                          _id: selectedRoom?._id || "",
+                          roomno: selectedRoom?.roomName || "",
+                          guestName: selectedRoom?.customerName || "",
+                          CheckInNumber: selectedRoom?.voucherNumber || "", 
+                        });
+                      }}
+                      className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    >
+                      <option value="">Select a room</option>
+                      {roomData?.map((room) => (
+                        <option value={room._id} key={room._id}>
+                          {room?.roomName} - {room?.customerName} -{" "}
+                          {room?.voucherNumber}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   <div>
@@ -1104,20 +1170,17 @@ console.log(roomData)
                       className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                     />
                   </div>
-<div>
-  <label className="block text-sm font-medium text-gray-700 mb-2">
-    Check-In Number
-  </label>
-  <input
-    type="text"
-    value={roomDetails.CheckInNumber || ""}
-    readOnly
-    className="w-full p-3 border border-gray-300 rounded-md bg-gray-100 text-black text-sm"
-  />
-</div>
-
-
-
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Check-In Number
+                    </label>
+                    <input
+                      type="text"
+                      value={roomDetails.CheckInNumber || ""}
+                      readOnly
+                      className="w-full p-3 border border-gray-300 rounded-md bg-gray-100 text-black text-sm"
+                    />
+                  </div>
                 </>
               )}
 
