@@ -157,6 +157,7 @@ import ItemList from '@/pages/Restuarant/Pages/ItemList'
 import EditItem from '@/pages/Restuarant/Pages/EditItem'
 import ItemRegistration from '@/pages/Restuarant/Pages/ItemRegistration'
 import TableMaster from '@/pages/Restuarant/Masters/TableMaster'
+import TableSelection from '@/pages/Restuarant/Pages/TableSelection'
 const Routers = () => {
   return (
     <Routes>
@@ -444,6 +445,7 @@ const Routers = () => {
         <Route path='/sUsers/editItem' element={<ProtectedSecRoute><EditItem /></ProtectedSecRoute>} />
 <Route path='/sUsers/itemRegistration' element ={<ProtectedSecRoute><ItemRegistration /></ProtectedSecRoute>} />
 <Route path='/sUsers/TableMaster' element={<ProtectedSecRoute><TableMaster /></ProtectedSecRoute>} />
+<Route path='/sUsers/TableSelection' element={<ProtectedSecRoute><TableSelection/></ProtectedSecRoute>}/>
     </Routes>
   )
 }
