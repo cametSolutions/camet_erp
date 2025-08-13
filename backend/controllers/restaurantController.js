@@ -365,6 +365,18 @@ export const generateKot = async (req, res) => {
     // // Create the KOT document inside the transaction
     const kot = await kotModal.create([kotData], { session });
 
+
+      if (kotData.tableNumber) {
+      const tableUpdate = await Table.findOneAndUpdate(
+        { cmp_id, tableNumber: kotData.tableNumber },
+        { $set: { status: "occupied" } },
+        { new: true, session }
+      );
+
+      if (!tableUpdate) {
+        throw new Error(`Table ${kotData.tableNumber} not found for company ${cmp_id}`);
+      }
+    }
     // Commit the transaction
     await session.commitTransaction();
     session.endSession();
@@ -936,7 +948,7 @@ export const getSalePrintData = async (req, res) => {
 export const saveTableNumber = async (req, res) => {
   try {
     const { cmp_id } = req.params;
-    const { tableNumber } = req.body;
+    const { tableNumber,status } = req.body;
 
     if (!tableNumber) {
       return res.status(400).json({ message: "Table number is required" });
@@ -945,6 +957,7 @@ export const saveTableNumber = async (req, res) => {
     const newTable = new Table({
       cmp_id,
       tableNumber,
+        status: status || "available",
     });
 
     await newTable.save();
@@ -983,5 +996,166 @@ export const getTables = async (req, res) => {
     res
       .status(500)
       .json({ success: false, message: "Server error getting tables" });
+  }
+};
+
+export const updateTable = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { tableNumber } = req.body;
+
+    if (!id) {
+      return res.status(400).json({ success: false, message: "Table ID is required" });
+    }
+
+    if (!tableNumber) {
+      return res.status(400).json({ success: false, message: "Table number is required" });
+    }
+
+    // Check if table exists
+    const existingTable = await Table.findById(id);
+    if (!existingTable) {
+      return res.status(404).json({ success: false, message: "Table not found" });
+    }
+
+    // Check if the new table number already exists for this company (excluding current table)
+    const duplicateTable = await Table.findOne({
+      companyId: existingTable.companyId,
+      tableNumber: tableNumber.trim(),
+      _id: { $ne: id }
+    });
+
+    if (duplicateTable) {
+      return res.status(409).json({ 
+        success: false, 
+        message: "Table number already exists" 
+      });
+    }
+
+    // Update table
+    const updatedTable = await Table.findByIdAndUpdate(
+      id,
+      { 
+        tableNumber: tableNumber.trim(),
+        updatedAt: new Date()
+      },
+      { new: true, runValidators: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Table updated successfully",
+      table: updatedTable
+    });
+  } catch (error) {
+    console.error('Error updating table:', error);
+    
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Validation error',
+        errors: error.errors 
+      });
+    }
+    
+    if (error.name === 'CastError') {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid table ID format' 
+      });
+    }
+
+    res.status(500).json({ success: false, message: 'Server error updating table' });
+  }
+};
+
+// DELETE - Delete a table
+export const deleteTable = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({ success: false, message: "Table ID is required" });
+    }
+
+    // Check if table exists
+    const existingTable = await Table.findById(id);
+    if (!existingTable) {
+      return res.status(404).json({ success: false, message: "Table not found" });
+    }
+
+    // Optional: Check if table is currently in use (has active orders, reservations, etc.)
+    // const hasActiveOrders = await Order.findOne({ tableId: id, status: 'active' });
+    // if (hasActiveOrders) {
+    //   return res.status(409).json({ 
+    //     success: false, 
+    //     message: "Cannot delete table with active orders" 
+    //   });
+    // }
+
+    // Delete table
+    await Table.findByIdAndDelete(id);
+
+    res.status(200).json({
+      success: true,
+      message: "Table deleted successfully"
+    });
+  } catch (error) {
+    console.error('Error deleting table:', error);
+    
+    if (error.name === 'CastError') {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid table ID format' 
+      });
+    }
+
+    res.status(500).json({ success: false, message: 'Server error deleting table' });
+  }
+};
+export const updateTableStatus = async (req, res) => {
+  try {
+    const { cmp_id } = req.params;
+    const { tableNumber, status } = req.body;
+
+    if (!tableNumber || !status) {
+      return res.status(400).json({ message: "Table number and status are required" });
+    }
+
+    const table = await Table.findOneAndUpdate(
+      { cmp_id, tableNumber },
+      { $set: { status } },
+      { new: true }
+    );
+
+    if (!table) {
+      return res.status(404).json({ message: "Table not found" });
+    }
+
+    res.json({ message: "Table status updated", table });
+  } catch (error) {
+    console.error("Error updating table status:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+export const getKotDataByTable = async (req, res) => {
+  try {
+    const { cmp_id } = req.params;
+    const { tableNumber,status } = req.query;
+
+    const filter = { cmp_id };
+    if (tableNumber) {
+      filter.tableNumber = tableNumber;
+      
+    }
+if (status) {
+  filter.status = status;
+}
+
+    const kots = await kotModal.find(filter).sort({ createdAt: -1 });
+    res.json({ success: true, data: kots });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };

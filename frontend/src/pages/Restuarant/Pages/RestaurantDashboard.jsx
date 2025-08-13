@@ -51,7 +51,8 @@ const RestaurantPOS = () => {
   const [hoveredCuisine, setHoveredCuisine] = useState("");
   const [orderItems, setOrderItems] = useState([]);
   const navigate = useNavigate();
-  const [showFullTableSelection, setShowFullTableSelection] = useState(false);
+  const [refreshTables, setRefreshTables] = useState(null);
+const [showFullTableSelection, setShowFullTableSelection] = useState(false);
 
   // Mobile responsive states
   const [isMobile, setIsMobile] = useState(false);
@@ -156,6 +157,9 @@ const RestaurantPOS = () => {
     return () => clearInterval(timer);
   }, []);
 
+
+
+  
   const fetchAllData = useCallback(async () => {
     try {
       setLoading(true);
@@ -426,13 +430,10 @@ const RestaurantPOS = () => {
     setShowPaymentModal(true);
   };
 
-  const generateKOT = async (selectedTableNumber) => {
+  const generateKOT = async (selectedTableNumber,tableStatus) => {
     console.log(selectedTableNumber);
     let updatedItems = [];
-    let orderCustomerDetails = {
-      ...customerDetails,
-      tableNumber: selectedTableNumber,
-    };
+      let orderCustomerDetails = { ...customerDetails, tableNumber: selectedTableNumber,tableStatus};
     console.log("orderItems", orderItems);
     updatedItems = orderItems.map((item) => {
       return {
@@ -462,10 +463,10 @@ const RestaurantPOS = () => {
       updatedItems,
       configurations[0]?.addRateWithTax?.sale
     );
-
     if (orderType === "dine-in") {
       orderCustomerDetails = {
         tableNumber: selectedTableNumber,
+      tableStatus
       };
     } else if (orderType === "roomService") {
       console.log(roomDetails);
@@ -475,7 +476,7 @@ const RestaurantPOS = () => {
         CheckInNumber: roomDetails.CheckInNumber,
       };
     } else {
-      orderCustomerDetails = { ...customerDetails };
+      orderCustomerDetails = { ...customerDetails,tableStatus };
     }
 
     console.log("orderCustomerDetails", orderItems);
@@ -503,7 +504,15 @@ const RestaurantPOS = () => {
       );
       if (response.data?.success) {
         handleKotPrint(response.data?.data);
-      }
+          await api.put(`/api/sUsers/updateTableStatus/${cmp_id}`, {
+        tableNumber: selectedTableNumber,
+        status: "occupied"
+      }, { withCredentials: true });
+
+      // Refresh tables in UI
+      fetchTables();
+    }
+      
     } catch (error) {
       console.log(error);
       toast.error(error.response.data.message);
@@ -1171,11 +1180,43 @@ const RestaurantPOS = () => {
             </div>
           </div>
         </div>
-        {showFullTableSelection && (
-          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50">
-            {/* Modal Box */}
-            <div className="bg-white rounded-lg shadow-lg w-full max-w-3xl max-h-[90vh] overflow-auto relative">
-              {/* Close Button */}
+      </div>
+{showFullTableSelection && (
+  <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50">
+    {/* Modal Box */}
+    <div className="bg-white rounded-lg shadow-lg w-full max-w-3xl max-h-[90vh] overflow-auto relative">
+      
+      {/* Close Button */}
+      <button
+        onClick={() => setShowFullTableSelection(false)}
+        className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-2xl font-bold"
+      >
+        ×
+      </button>
+
+      {/* Modal Content */}
+      <div className="p-4 ">
+       <TableSelection
+                showKOTs={false} 
+  onTableSelect={(table) => {
+    generateKOT(table.tableNumber, table.status);
+      setShowFullTableSelection(false);
+  }}
+/>
+
+      </div>
+    </div>
+  </div>
+)}
+
+      {/* KOT Modal - Enhanced for mobile */}
+      {showKOTModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-4 md:p-6 max-w-md w-full mx-4 transform transition-all duration-300 scale-100 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg md:text-xl font-bold text-gray-800">
+                KOT Details
+              </h2>
               <button
                 onClick={() => setShowFullTableSelection(false)}
                 className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-2xl font-bold"
@@ -1195,6 +1236,7 @@ const RestaurantPOS = () => {
               </div>
             </div>
           </div>
+        </div>
         )}
 
         {/* KOT Modal - Enhanced for mobile */}
@@ -1389,9 +1431,10 @@ const RestaurantPOS = () => {
             overflow: hidden;
           }
         `}</style>
-      </div>
+      
     </>
   );
 };
 
 export default RestaurantPOS;
+

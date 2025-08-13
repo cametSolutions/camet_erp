@@ -45,6 +45,10 @@ const kotSchema = new mongoose.Schema({
       type: String,
       trim: true,
     },
+    status:{
+      type:String,
+      trim:true,
+    },
   },
   tableNumber: {
     type: String,
