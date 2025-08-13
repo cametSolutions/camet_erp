@@ -352,6 +352,18 @@ export const generateKot = async (req, res) => {
     // // Create the KOT document inside the transaction
     const kot = await kotModal.create([kotData], { session });
 
+
+      if (kotData.tableNumber) {
+      const tableUpdate = await Table.findOneAndUpdate(
+        { cmp_id, tableNumber: kotData.tableNumber },
+        { $set: { status: "occupied" } },
+        { new: true, session }
+      );
+
+      if (!tableUpdate) {
+        throw new Error(`Table ${kotData.tableNumber} not found for company ${cmp_id}`);
+      }
+    }
     // Commit the transaction
     await session.commitTransaction();
     session.endSession();
@@ -920,7 +932,7 @@ export const getSalePrintData = async (req, res) => {
 export const saveTableNumber = async (req, res) => {
   try {
     const { cmp_id } = req.params;
-    const { tableNumber } = req.body;
+    const { tableNumber,status } = req.body;
 
     if (!tableNumber) {
       return res.status(400).json({ message: "Table number is required" });
@@ -931,6 +943,7 @@ export const saveTableNumber = async (req, res) => {
    
       cmp_id,
       tableNumber,
+        status: status || "available",
     });
 
     await newTable.save();
@@ -1079,5 +1092,51 @@ export const deleteTable = async (req, res) => {
     }
 
     res.status(500).json({ success: false, message: 'Server error deleting table' });
+  }
+};
+export const updateTableStatus = async (req, res) => {
+  try {
+    const { cmp_id } = req.params;
+    const { tableNumber, status } = req.body;
+
+    if (!tableNumber || !status) {
+      return res.status(400).json({ message: "Table number and status are required" });
+    }
+
+    const table = await Table.findOneAndUpdate(
+      { cmp_id, tableNumber },
+      { $set: { status } },
+      { new: true }
+    );
+
+    if (!table) {
+      return res.status(404).json({ message: "Table not found" });
+    }
+
+    res.json({ message: "Table status updated", table });
+  } catch (error) {
+    console.error("Error updating table status:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+export const getKotDataByTable = async (req, res) => {
+  try {
+    const { cmp_id } = req.params;
+    const { tableNumber,status } = req.query;
+
+    const filter = { cmp_id };
+    if (tableNumber) {
+      filter.tableNumber = tableNumber;
+      
+    }
+if (status) {
+  filter.status = status;
+}
+
+    const kots = await kotModal.find(filter).sort({ createdAt: -1 });
+    res.json({ success: true, data: kots });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
