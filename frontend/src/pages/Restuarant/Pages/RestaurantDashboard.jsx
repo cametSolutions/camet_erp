@@ -27,6 +27,7 @@ import {
   Bed,
   ArrowLeft,
 } from "lucide-react";
+import { CiCircleList } from "react-icons/ci";
 import { MdTableBar } from "react-icons/md";
 import TableSelection from "../Pages/TableSelection";
 import woodImage from "../../../assets/images/wood.jpeg"; // Adjust the path as needed
@@ -41,6 +42,7 @@ import {
   generateAndPrintKOT,
   generateAndPrintBill,
 } from "../Helper/kotPrintHelper";
+import { taxCalculatorForRestaurant } from "@/pages/Hotel/Helper/taxCalculator";
 
 const RestaurantPOS = () => {
   const [selectedCuisine, setSelectedCuisine] = useState("");
@@ -71,12 +73,18 @@ const [showFullTableSelection, setShowFullTableSelection] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [optionData, setOptionsData] = useState({});
   const [roomData, setRoomData] = useState({});
+  const [showPriceLevelSelect, setShowPriceLevelSelect] = useState(false);
+  const [priceLevelData, setPriceLevelData] = useState([]);
+  const [selectedPriceLevel, setSelectedPriceLevel] = useState(null);
 
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
   const companyName = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg?.name
+  );
+  const { configurations } = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg
   );
 
   const gradientClasses = ["bg-gradient-to-r from-blue-400 to-blue-600"];
@@ -117,6 +125,28 @@ const [showFullTableSelection, setShowFullTableSelection] = useState(false);
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
+
+  useEffect(() => {
+    fetchPriceList();
+  }, []);
+
+  const fetchPriceList = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get(
+        `/api/sUsers/getProductSubDetails/${cmp_id}?type=${"pricelevel"}`,
+        {
+          withCredentials: true,
+        }
+      );
+      setPriceLevelData(res?.data?.data);
+    } catch (error) {
+      console.log(error);
+      toast.error(error.response.data.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Update current time every second
   useEffect(() => {
@@ -318,7 +348,13 @@ const [showFullTableSelection, setShowFullTableSelection] = useState(false);
         )
       );
     } else {
-      const price = item.Priceleveles?.[0]?.pricerate || item.price || 0;
+      const price = selectedPriceLevel
+        ? Number(
+            item.Priceleveles?.find((pl) => pl.pricelevel == selectedPriceLevel)
+              ?.pricerate || 0
+          )
+        : Number(item.Priceleveles?.[0]?.pricerate);
+      console.log("price", price);
       setOrderItems([...orderItems, { ...item, quantity: 1, price: price }]);
     }
   };
@@ -394,7 +430,38 @@ const handlePlaceOrder = () => {
   const generateKOT = async (selectedTableNumber) => {
     console.log(selectedTableNumber)
     let orderCustomerDetails = { ...customerDetails, tableNumber: selectedTableNumber};
+    console.log("orderItems", orderItems);
+    updatedItems = orderItems.map((item) => {
+      return {
+        ...item,
+        GodownList: item.GodownList.map((g, index) =>
+          index === 0
+            ? {
+                ...g,
+                selectedPriceRate: item?.price,
+                godown_id: g?._id,
+                defaultGodown: true,
+                mfgdt: new Date(),
+                expdt: new Date(),
+                warrantyCard: g?.warrantyCard,
+                added: true,
+                count: item?.quantity,
+                actualCount: item?.quantity,
+                
+              }
+            : g
+        ),
+        hasGodownOrBatch: false,
+        totalCount: item?.quantity,
+        totalActualCount: item?.quantity,
 
+      };
+    });
+    let finalProductData = await taxCalculatorForRestaurant(
+      updatedItems,
+      configurations[0]?.addRateWithTax?.sale
+    );
+  
     if (orderType === "dine-in") {
       orderCustomerDetails = {
         tableNumber: selectedTableNumber,
@@ -411,9 +478,13 @@ const handlePlaceOrder = () => {
       orderCustomerDetails = { ...customerDetails };
     }
 
+    console.log("orderCustomerDetails", orderItems);
+
+    console.log("orderCustomerDetails", finalProductData);
+
     const newOrder = {
       id: orderNumber,
-      items: [...orderItems],
+      items: [...finalProductData],
       type: orderType,
       customer: orderCustomerDetails,
       total: getTotalAmount(),
@@ -505,12 +576,51 @@ const handlePlaceOrder = () => {
       items: data?.items,
       createdAt: new Date(),
     };
-
     generateAndPrintKOT(orderData, true, false, companyName);
   };
-  console.log(showFullTableSelection);
+
+  const handleSelectedPriceLevel = (value) => {
+    setShowPriceLevelSelect(false);
+    setSelectedPriceLevel(value);
+  };
+
+  
+
+
   return (
-    <div className="h-screen overflow-hidden bg-gray-100 flex flex-col">
+    <>
+      {showPriceLevelSelect && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 z-50">
+          <div className="bg-slate-800 p-6 rounded-lg shadow-lg w-80">
+            <h2 className="text-lg font-bold text-white mb-4">
+              {/* Room: {selectedRoomData.roomName} */}
+            </h2>
+
+            <label className="text-gray-300 mb-2 block">Select Action:</label>
+            <select
+              className="w-full bg-slate-700 text-white border border-gray-600 rounded px-2 py-1 mb-4"
+              onChange={(e) => handleSelectedPriceLevel(e.target.value)}
+              defaultValue=""
+            >
+              <option value="" disabled>
+                Choose...
+              </option>
+              {priceLevelData.map((level) => (
+                <option value={level._id}>{level.pricelevel}</option>
+              ))}
+            </select>
+
+            <button
+              onClick={() => setShowPriceLevelSelect(false)}
+              className="mt-2 bg-red-500 hover:bg-red-600 text-white px-4 py-1 rounded"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+     <div className="h-screen overflow-hidden bg-gray-100 flex flex-col">
       {/* Header */}
       <div className="bg-gradient-to-r from-slate-800 to-slate-900 text-white p-2 md:p-4 shadow-lg">
         <div className="flex items-center justify-between">
@@ -1067,12 +1177,14 @@ const handlePlaceOrder = () => {
 
       {/* Modal Content */}
       <div className="p-4 ">
-        <TableSelection
-           onTableSelect={(table) => {
-   
-  generateKOT(table.tableNumber);
+       <TableSelection
+                showKOTs={false} 
+  onTableSelect={(table) => {
+    generateKOT(table.tableNumber, table.status);
+      setShowFullTableSelection(false);
   }}
-        />
+/>
+
       </div>
     </div>
   </div>
@@ -1276,6 +1388,7 @@ const handlePlaceOrder = () => {
         }
       `}</style>
     </div>
+    </>
   );
 };
 

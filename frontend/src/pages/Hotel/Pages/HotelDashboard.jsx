@@ -5,14 +5,15 @@ import AnimatedBackground from "../Components/AnimatedBackground";
 import RoomStatus from "../Components/RoomStatus";
 import { useNavigate } from "react-router-dom";
 import api from "@/api/api";
+import useFetch from "@/customHook/useFetch";
 
 const HotelDashboard = () => {
   const [rooms, setRooms] = useState([]);
   const [filteredRooms, setFilteredRooms] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [loader, setLoader] = useState(false);
-const [showRoomModal, setShowRoomModal] = useState(false);
-const [selectedRoomData, setSelectedRoomData] = useState(null);
+  const [showRoomModal, setShowRoomModal] = useState(false);
+  const [selectedRoomData, setSelectedRoomData] = useState(null);
 
   // Filter states
   const [roomTypes, setRoomTypes] = useState([]);
@@ -34,52 +35,58 @@ const [selectedRoomData, setSelectedRoomData] = useState(null);
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
   const [selectedDate, setSelectedDate] = useState(() => {
-  const today = new Date();
-  return today.toISOString().split("T")[0]; // format YYYY-MM-DD
-});
+    const today = new Date();
+    return today.toISOString().split("T")[0]; // format YYYY-MM-DD
+  });
 
+  
 
   // Fetch all rooms
- const fetchRooms = useCallback(async (date) => {
-  setIsLoading(true);
-  setLoader(true);
-  
-  try {
-    const res = await api.get(`/api/sUsers/getAllRoomsWithStatus/${cmp_id}`, {
-      params: { selectedDate: date },
-      withCredentials: true,
-    });
-    const roomsData = res.data.rooms || [];
-    setRooms(roomsData);
-    setFilteredRooms(roomsData);
+  const fetchRooms = useCallback(
+    async (date) => {
+      setIsLoading(true);
+      setLoader(true);
 
-    // Extract filter options
-     const uniqueRoomTypes = [
-        ...new Set(
-          roomsData.map((room) => room.roomType?.brand).filter(Boolean)
-        ),
-      ];
-      const uniqueFloorTypes = [
-        ...new Set(
-          roomsData.map((room) => room.roomFloor?.subcategory).filter(Boolean)
-        ),
-      ];
-      const uniqueBedTypes = [
-        ...new Set(
-          roomsData.map((room) => room.bedType?.category).filter(Boolean)
-        ),
-      ];
- setRoomTypes(uniqueRoomTypes);
-      setFloorTypes(uniqueFloorTypes);
-      setBedTypes(uniqueBedTypes);
+      try {
+        const res = await api.get(
+          `/api/sUsers/getAllRoomsWithStatus/${cmp_id}`,
+          {
+            params: { selectedDate: date },
+            withCredentials: true,
+          }
+        );
+        const roomsData = res.data.rooms || [];
+        setRooms(roomsData);
+        setFilteredRooms(roomsData);
 
-  } catch (error) {
-    console.log("Error fetching rooms:", error);
-  } finally {
-    setIsLoading(false);
-    setLoader(false);
-  }
-}, [cmp_id]);
+        // Extract filter options
+        const uniqueRoomTypes = [
+          ...new Set(
+            roomsData.map((room) => room.roomType?.brand).filter(Boolean)
+          ),
+        ];
+        const uniqueFloorTypes = [
+          ...new Set(
+            roomsData.map((room) => room.roomFloor?.subcategory).filter(Boolean)
+          ),
+        ];
+        const uniqueBedTypes = [
+          ...new Set(
+            roomsData.map((room) => room.bedType?.category).filter(Boolean)
+          ),
+        ];
+        setRoomTypes(uniqueRoomTypes);
+        setFloorTypes(uniqueFloorTypes);
+        setBedTypes(uniqueBedTypes);
+      } catch (error) {
+        console.log("Error fetching rooms:", error);
+      } finally {
+        setIsLoading(false);
+        setLoader(false);
+      }
+    },
+    [cmp_id]
+  );
 
   // Filter rooms based on selected filters
   const applyFilters = useCallback(() => {
@@ -139,56 +146,57 @@ const [selectedRoomData, setSelectedRoomData] = useState(null);
     }, {});
   };
 
-
   const statusColors = {
-  vacant: "from-emerald-500 to-teal-600",  // green gradient
-  booked: "from-red-500 to-pink-600",      // red/pink gradient
-  occupied: "from-orange-500 to-red-600",  // orange/red gradient
-  dirty: "from-yellow-500 to-orange-600",
-  blocked: "from-gray-500 to-slate-800",
-};
-const handleRoomAction = async (action) => {
-  if (!selectedRoomData) return;
+    vacant: "from-emerald-500 to-teal-600", // green gradient
+    booked: "from-red-500 to-pink-600", // red/pink gradient
+    occupied: "from-orange-500 to-red-600", // orange/red gradient
+    dirty: "from-yellow-500 to-orange-600",
+    blocked: "from-gray-500 to-slate-800",
+  };
+  const handleRoomAction = async (action) => {
+    if (!selectedRoomData) return;
 
-  if (action === "booking") {
-    navigate("/sUsers/bookingPage", { state: { room: selectedRoomData } });
-    return;
-  }
-   if (action === "CheckIn") {
-    navigate("/sUsers/checkInPage", { state: { room: selectedRoomData } });
-    return;
-  }
-
-   if (["dirty", "blocked"].includes(action)) {
-    try {
-      const res = await api.put(
-        `/api/sUsers/updateStatus/${selectedRoomData._id}`,
-        { status: action },
-        { withCredentials: true }
-      );
-       
-      // Update status locally so UI updates instantly
-const updatedRoom = res.data.room;
-setRooms(prev =>
-  prev.map(room =>
-    room._id === updatedRoom._id ? { ...room, status: updatedRoom.status } : room
-  )
-);
-setFilteredRooms(prev =>
-  prev.map(room =>
-    room._id === updatedRoom._id ? { ...room, status: updatedRoom.status } : room
-  )
-);
-setShowRoomModal(false);
-
-      setShowRoomModal(false);
-    } catch (error) {
-      console.error("Error updating room status:", error);
+    if (action === "booking") {
+      navigate("/sUsers/bookingPage", { state: { room: selectedRoomData } });
+      return;
     }
-  }
-};
+    if (action === "CheckIn") {
+      navigate("/sUsers/checkInPage", { state: { room: selectedRoomData } });
+      return;
+    }
 
+    if (["dirty", "blocked"].includes(action)) {
+      try {
+        const res = await api.put(
+          `/api/sUsers/updateStatus/${selectedRoomData._id}`,
+          { status: action },
+          { withCredentials: true }
+        );
 
+        // Update status locally so UI updates instantly
+        const updatedRoom = res.data.room;
+        setRooms((prev) =>
+          prev.map((room) =>
+            room._id === updatedRoom._id
+              ? { ...room, status: updatedRoom.status }
+              : room
+          )
+        );
+        setFilteredRooms((prev) =>
+          prev.map((room) =>
+            room._id === updatedRoom._id
+              ? { ...room, status: updatedRoom.status }
+              : room
+          )
+        );
+        setShowRoomModal(false);
+
+        setShowRoomModal(false);
+      } catch (error) {
+        console.error("Error updating room status:", error);
+      }
+    }
+  };
 
   // Calculate status counts
   const getStatusCounts = () => {
@@ -209,21 +217,18 @@ setShowRoomModal(false);
     return counts;
   };
 
-const setSelectedRoom = (room) => {
-  // Prevent popup for occupied rooms
-  if (room.status === "occupied") {
-    return;
-  }
-  setSelectedRoomData(room);
-  setShowRoomModal(true);
-};
+  const setSelectedRoom = (room) => {
+    // Prevent popup for occupied rooms
+    if (room.status === "occupied") {
+      return;
+    }
+    setSelectedRoomData(room);
+    setShowRoomModal(true);
+  };
 
-
-
-useEffect(() => {
-  fetchRooms(selectedDate);
-}, [fetchRooms, selectedDate]);
-
+  useEffect(() => {
+    fetchRooms(selectedDate);
+  }, [fetchRooms, selectedDate]);
 
   useEffect(() => {
     applyFilters();
@@ -279,17 +284,19 @@ useEffect(() => {
             </button>
           </div>
         </div>
-<div className="mb-4">
-  <label htmlFor="selectedDate" className="text-gray-300 mr-2">Select Date:</label>
-  <input
-    type="date"
-    id="selectedDate"
-    value={selectedDate}
-    onChange={(e) => setSelectedDate(e.target.value)}
-    className="bg-slate-700 text-white border border-gray-600 rounded px-2 py-1 text-sm"
-    max={new Date().toISOString().split("T")[0]} // Optional: max date today
-  />
-</div>
+        <div className="mb-4">
+          <label htmlFor="selectedDate" className="text-gray-300 mr-2">
+            Select Date:
+          </label>
+          <input
+            type="date"
+            id="selectedDate"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className="bg-slate-700 text-white border border-gray-600 rounded px-2 py-1 text-sm"
+            max={new Date().toISOString().split("T")[0]} // Optional: max date today
+          />
+        </div>
 
         {/* Filters Section */}
         {showFilters && (
@@ -430,35 +437,37 @@ useEffect(() => {
             </div>
           ))}
         </div>
-{showRoomModal && selectedRoomData && (
-  <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-    <div className="bg-slate-800 p-6 rounded-lg shadow-lg w-80">
-      <h2 className="text-lg font-bold text-white mb-4">
-        Room: {selectedRoomData.roomName}
-      </h2>
-      
-      <label className="text-gray-300 mb-2 block">Select Action:</label>
-      <select
-        className="w-full bg-slate-700 text-white border border-gray-600 rounded px-2 py-1 mb-4"
-        onChange={(e) => handleRoomAction(e.target.value)}
-        defaultValue=""
-      >
-        <option value="" disabled>Choose...</option>
-        <option value="booking">Booking</option>
-        <option value="CheckIn">CheckIn</option>
-        <option value="dirty">Mark as Dirty</option>
-        <option value="blocked">Mark as Blocked</option>
-      </select>
+        {showRoomModal && selectedRoomData && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60 z-50">
+            <div className="bg-slate-800 p-6 rounded-lg shadow-lg w-80">
+              <h2 className="text-lg font-bold text-white mb-4">
+                Room: {selectedRoomData.roomName}
+              </h2>
 
-      <button
-        onClick={() => setShowRoomModal(false)}
-        className="mt-2 bg-red-500 hover:bg-red-600 text-white px-4 py-1 rounded"
-      >
-        Close
-      </button>
-    </div>
-  </div>
-)}
+              <label className="text-gray-300 mb-2 block">Select Action:</label>
+              <select
+                className="w-full bg-slate-700 text-white border border-gray-600 rounded px-2 py-1 mb-4"
+                onChange={(e) => handleRoomAction(e.target.value)}
+                defaultValue=""
+              >
+                <option value="" disabled>
+                  Choose...
+                </option>
+                <option value="booking">Booking</option>
+                <option value="CheckIn">CheckIn</option>
+                <option value="dirty">Mark as Dirty</option>
+                <option value="blocked">Mark as Blocked</option>
+              </select>
+
+              <button
+                onClick={() => setShowRoomModal(false)}
+                className="mt-2 bg-red-500 hover:bg-red-600 text-white px-4 py-1 rounded"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Loading State */}
         {loader && (
@@ -476,23 +485,20 @@ useEffect(() => {
                 </h2>
                 <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
                   {rooms.map((room, index) => (
- <div
-  key={room._id}
-  style={{ animationDelay: `${index * 0.05}s` }}
-  className={`animate-slide-in rounded-lg p-2  || "from-gray-500 to-slate-800"}`}
-  onClick={() => setSelectedRoom(room)}
->
-  <RoomStatus
-    {...room}
-    room={room.roomName}
-    name={room.roomName}
-    status={room.status}
-    onClick={() => setSelectedRoom(room)}
-  />
-</div>
-
-
-
+                    <div
+                      key={room._id}
+                      style={{ animationDelay: `${index * 0.05}s` }}
+                      className={`animate-slide-in rounded-lg p-2  || "from-gray-500 to-slate-800"}`}
+                      onClick={() => setSelectedRoom(room)}
+                    >
+                      <RoomStatus
+                        {...room}
+                        room={room.roomName}
+                        name={room.roomName}
+                        status={room.status}
+                        onClick={() => setSelectedRoom(room)}
+                      />
+                    </div>
                   ))}
                 </div>
               </div>

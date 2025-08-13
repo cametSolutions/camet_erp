@@ -128,6 +128,7 @@ useEffect(() => {
   const calculateTax = useCallback(
     async (booking) => {
       if (!booking) return booking;
+      
       const updatedRoom = recalculateBookingTotals(booking);
       try {
         const taxResponse = await taxCalculator(
