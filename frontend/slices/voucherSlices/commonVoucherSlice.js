@@ -46,6 +46,7 @@ const initialState = {
   isNoteOpen: false,
   paymentSplittingData: null,
 
+  isScanOn:null
 };
 
 export const commonVoucherSlice = createSlice({
@@ -481,6 +482,8 @@ export const commonVoucherSlice = createSlice({
 
     addPaymentSplits: (state, action) => {
       state.paymentSplittingData = action.payload;
+    updateIsScanOn: (state, action) => {
+      state.isScanOn = action.payload;
     },
   },
 });
@@ -545,6 +548,7 @@ export const {
   addNote,
   addIsNoteOpen,
   addPaymentSplits
+  updateIsScanOn
 } = commonVoucherSlice.actions;
 
 export default commonVoucherSlice.reducer;
