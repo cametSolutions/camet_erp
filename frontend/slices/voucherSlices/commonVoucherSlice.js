@@ -44,6 +44,7 @@ const initialState = {
   warrantyCardsList: null,
   note: null,
   isNoteOpen: false,
+  isScanOn:null
 };
 
 export const commonVoucherSlice = createSlice({
@@ -476,6 +477,9 @@ export const commonVoucherSlice = createSlice({
     addIsNoteOpen: (state, action) => {
       state.isNoteOpen = action.payload;
     },
+    updateIsScanOn: (state, action) => {
+      state.isScanOn = action.payload;
+    },
   },
 });
 
@@ -538,6 +542,7 @@ export const {
   addWarrantyCardsList,
   addNote,
   addIsNoteOpen,
+  updateIsScanOn
 } = commonVoucherSlice.actions;
 
 export default commonVoucherSlice.reducer;
