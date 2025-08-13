@@ -14,6 +14,7 @@ import Party from "../models/partyModel.js";
 import { saveSettlementData } from "../helpers/salesHelper.js";
 
 import Table from "../models/TableModel.js";
+import { Godown } from "../models/subDetails.js";
 // Helper functions (you may need to create these or adjust based on your existing ones)
 import {
   buildDatabaseFilterForRoom,
@@ -36,22 +37,28 @@ export const addItem = async (req, res) => {
 
     // Step 3: Fetch HSN data inside the session
     const correspondingHsn = await hsnModel
-      .findOne({ _id: formData.hsn })
+      .findOne({ hsn: formData.hsn })
       .session(session);
     if (!correspondingHsn) {
       await session.abortTransaction();
       return res.status(400).json({ message: "HSN data missing" });
     }
 
-    const updatedTable = tableData.map((item) => {
-      const { priceRate, ...rest } = item;
-      return {
-        ...rest,
-        pricerate: priceRate,
-      };
-    });
+    let godown = await Godown.findOne({ cmp_id: req.params.cmp_id }).session(
+      session
+    );
 
-    console.log(updatedTable);
+    if (!godown) {
+      await session.abortTransaction();
+      return res.status(400).json({ message: "godown data missing" });
+    }
+
+    let godownObject = {
+      godown: godown._id,
+      balance_stock: 0,
+      batch: "Primary Batch",
+    };
+
     // Step 4: Create Item document
     const newItem = new product({
       Primary_user_id: req.pUserId || req.owner,
@@ -63,8 +70,12 @@ export const addItem = async (req, res) => {
       sub_category: formData.foodType,
       unit: formData.unit,
       hsn_code: formData.hsn,
+      cgst: formData.cgst,
+      sgst: formData.sgst,
+      igst: formData.igst,
       // hsnCode: correspondingHsn.hsn, // Store HSN code for easier access
-      Priceleveles: updatedTable,
+      Priceleveles: tableData,
+      GodownList: godownObject,
     });
 
     // Step 5: Save using session
@@ -196,7 +207,7 @@ export const updateItem = async (req, res) => {
 
     // Verify HSN exists
     const correspondingHsn = await hsnModel
-      .findOne({ _id: formData.hsn })
+      .findOne({ hsn: formData.hsn })
       .session(session);
     if (!correspondingHsn) {
       await session.abortTransaction();
@@ -211,8 +222,10 @@ export const updateItem = async (req, res) => {
         foodCategory: formData.foodCategory,
         foodType: formData.foodType,
         unit: formData.unit,
-        hsn: formData.hsn,
-        hsnCode: correspondingHsn.hsn,
+        hsn_code: formData.hsn,
+        cgst: formData.cgst,
+        sgst: formData.sgst,
+        igst: formData.igst,
         Priceleveles: tableData,
         updatedAt: new Date(),
       },
@@ -699,18 +712,24 @@ export const updateKotPayment = async (req, res) => {
           selectedParty = await Party.findOne({
             cmp_id,
             partyName: paymentDetails?.selectedCash?.cash_ledname,
-          }).populate("accountGroup").session(session)
+          })
+            .populate("accountGroup")
+            .session(session);
         } else if (onlineAmt > 0) {
           selectedParty = await Party.findOne({
             cmp_id,
             partyName: paymentDetails?.selectedBank?.bank_ledname,
-          }).populate("accountGroup").session(session)
+          })
+            .populate("accountGroup")
+            .session(session);
         }
       } else {
         selectedParty = await Party.findOne({
           cmp_id,
           partyName: paymentDetails?.selectedCash?.cash_ledname,
-        }).populate("accountGroup").session(session);
+        })
+          .populate("accountGroup")
+          .session(session);
         if (cashAmt + onlineAmt >= kotData?.total) {
           paymentCompleted = true;
         }
@@ -897,37 +916,34 @@ export const getPaymentType = async (req, res) => {
   }
 };
 
-
 // function used to fetch sale data for print
 export const getSalePrintData = async (req, res) => {
   try {
     const salesData = await salesModel.findOne({
       cmp_id: req.params.cmp_id,
-      kotId: req.params.kotId
+      kotId: req.params.kotId,
     });
 
     if (!salesData) {
       return res.status(404).json({
         success: false,
-        message: "No sales record found"
+        message: "No sales record found",
       });
     }
 
     res.status(200).json({
       success: true,
-      data: salesData
+      data: salesData,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
       message: "Internal server error while fetching sales details",
-      error: error.message
+      error: error.message,
     });
-
   }
-}
+};
 // controllers/tableController.js
-
 
 export const saveTableNumber = async (req, res) => {
   try {
@@ -938,9 +954,7 @@ export const saveTableNumber = async (req, res) => {
       return res.status(400).json({ message: "Table number is required" });
     }
 
- 
     const newTable = new Table({
-   
       cmp_id,
       tableNumber,
         status: status || "available",
@@ -950,33 +964,38 @@ export const saveTableNumber = async (req, res) => {
 
     res.status(201).json({
       message: "Table number saved successfully",
-      table: newTable
+      table: newTable,
     });
   } catch (error) {
     console.error("Error saving table number:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
- 
 
 export const getTables = async (req, res) => {
   try {
     const { cmp_id } = req.params;
 
     if (!cmp_id) {
-      return res.status(400).json({ success: false, message: "Company ID is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Company ID is required" });
     }
 
     // Fetch tables filtered by company ID from database
-    const tables = await Table.find({ cmp_id: cmp_id }).sort({ tableNumber: 1 });
-console.log("table",tables)
+    const tables = await Table.find({ companyId: cmp_id }).sort({
+      tableNumber: 1,
+    });
+
     res.status(200).json({
       success: true,
       tables, // array of table documents with fields like _id, tableNumber etc.
     });
   } catch (error) {
-    console.error('Error fetching tables:', error);
-    res.status(500).json({ success: false, message: 'Server error getting tables' });
+    console.error("Error fetching tables:", error);
+    res
+      .status(500)
+      .json({ success: false, message: "Server error getting tables" });
   }
 };
 

@@ -351,10 +351,10 @@ router.post("/updateStatus/:id", authSecondary,updateRoomStatus);
 router.get("/getPaymentType/:cmp_id",authSecondary,secondaryIsBlocked, getPaymentType)
 router.get("/getSeriesByVoucherForSaleAndReceipt/:cmp_id",authSecondary,secondaryIsBlocked)
 router.post("/Table/:cmp_id",authSecondary, saveTableNumber)
-router.put('/updateTable/:id', authSecondary,updateTable);
+// router.put('/updateTable/:id', authSecondary,updateTable);
 router.get('/getTable/:cmp_id',authSecondary, getTables);
 // DELETE /api/sUsers/Table/:id - Delete a specific table
-router.delete('/deleteTable/:id', authSecondary,deleteTable);
+// router.delete('/deleteTable/:id', authSecondary,deleteTable);
 
 router.get("/getSalePrintData/:cmp_id/:kotId",authSecondary,secondaryIsBlocked,getSalePrintData)
 router.put('/updateTableStatus/:cmp_id',authSecondary,updateTableStatus )
