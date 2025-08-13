@@ -44,9 +44,19 @@ const initialState = {
   warrantyCardsList: null,
   note: null,
   isNoteOpen: false,
-  paymentSplittingData: null,
-
-  isScanOn:null
+  paymentSplittingData: [
+    { type: "Cash", amount: "", ref_id: "", ref_collection: "Cash" },
+    { type: "upi", amount: "", ref_id: "", ref_collection: "BankDetails" },
+    { type: "cheque", amount: "", ref_id: "", ref_collection: "BankDetails" },
+    {
+      type: "credit",
+      amount: "",
+      ref_id: "",
+      ref_collection: "Party",
+      reference_name: "",
+    },
+  ],
+  isScanOn: null,
 };
 
 export const commonVoucherSlice = createSlice({
@@ -482,6 +492,43 @@ export const commonVoucherSlice = createSlice({
 
     addPaymentSplits: (state, action) => {
       state.paymentSplittingData = action.payload;
+    },
+    addCreditInPaymentSplit: (state, action) => {
+      const { reference_name, ref_id } = action.payload;
+
+      // Ensure paymentSplittingData exists and is an array
+      if (
+        !state.paymentSplittingData ||
+        !Array.isArray(state.paymentSplittingData)
+      ) {
+        return;
+      }
+
+      // Find the index of the credit payment split
+      const creditIndex = state.paymentSplittingData.findIndex(
+        (el) => el.type === "credit"
+      );
+
+      if (creditIndex !== -1) {
+        // Update the existing credit entry
+        state.paymentSplittingData[creditIndex] = {
+          ...state.paymentSplittingData[creditIndex],
+          ref_id: ref_id,
+          reference_name: reference_name,
+        };
+      } else {
+        // If no credit entry exists, create one
+        const updatedData = {
+          type: "credit",
+          amount: "",
+          ref_id: ref_id,
+          ref_collection: "Party",
+          reference_name: reference_name,
+        };
+        state.paymentSplittingData.push(updatedData);
+      }
+    },
+
     updateIsScanOn: (state, action) => {
       state.isScanOn = action.payload;
     },
@@ -547,8 +594,9 @@ export const {
   addWarrantyCardsList,
   addNote,
   addIsNoteOpen,
-  addPaymentSplits
-  updateIsScanOn
+  addPaymentSplits,
+  updateIsScanOn,
+  addCreditInPaymentSplit
 } = commonVoucherSlice.actions;
 
 export default commonVoucherSlice.reducer;
