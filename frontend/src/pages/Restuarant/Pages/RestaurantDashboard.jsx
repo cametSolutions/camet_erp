@@ -49,6 +49,7 @@ const RestaurantPOS = () => {
   const [hoveredCuisine, setHoveredCuisine] = useState("");
   const [orderItems, setOrderItems] = useState([]);
   const navigate = useNavigate();
+  const [refreshTables, setRefreshTables] = useState(null);
 const [showFullTableSelection, setShowFullTableSelection] = useState(false);
 
   // Mobile responsive states
@@ -126,6 +127,9 @@ const [showFullTableSelection, setShowFullTableSelection] = useState(false);
     return () => clearInterval(timer);
   }, []);
 
+
+
+  
   const fetchAllData = useCallback(async () => {
     try {
       setLoading(true);
@@ -391,14 +395,14 @@ const handlePlaceOrder = () => {
     setShowPaymentModal(true);
   };
 
-  const generateKOT = async (selectedTableNumber) => {
+  const generateKOT = async (selectedTableNumber,tableStatus) => {
     console.log(selectedTableNumber)
-    let orderCustomerDetails = { ...customerDetails, tableNumber: selectedTableNumber};
+    let orderCustomerDetails = { ...customerDetails, tableNumber: selectedTableNumber,tableStatus};
 
     if (orderType === "dine-in") {
       orderCustomerDetails = {
         tableNumber: selectedTableNumber,
-      
+      tableStatus
       };
     } else if (orderType === "roomService") {
       console.log(roomDetails);
@@ -408,7 +412,7 @@ const handlePlaceOrder = () => {
         CheckInNumber: roomDetails.CheckInNumber,
       };
     } else {
-      orderCustomerDetails = { ...customerDetails };
+      orderCustomerDetails = { ...customerDetails,tableStatus };
     }
 
     const newOrder = {
@@ -432,7 +436,15 @@ const handlePlaceOrder = () => {
       );
       if (response.data?.success) {
         handleKotPrint(response.data?.data);
-      }
+          await api.put(`/api/sUsers/updateTableStatus/${cmp_id}`, {
+        tableNumber: selectedTableNumber,
+        status: "occupied"
+      }, { withCredentials: true });
+
+      // Refresh tables in UI
+      fetchTables();
+    }
+      
     } catch (error) {
       console.log(error);
       toast.error(error.response.data.message);
@@ -1067,12 +1079,14 @@ const handlePlaceOrder = () => {
 
       {/* Modal Content */}
       <div className="p-4 ">
-        <TableSelection
-           onTableSelect={(table) => {
-   
-  generateKOT(table.tableNumber);
+       <TableSelection
+                showKOTs={false} 
+  onTableSelect={(table) => {
+    generateKOT(table.tableNumber, table.status);
+      setShowFullTableSelection(false);
   }}
-        />
+/>
+
       </div>
     </div>
   </div>
@@ -1280,3 +1294,4 @@ const handlePlaceOrder = () => {
 };
 
 export default RestaurantPOS;
+
