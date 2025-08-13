@@ -62,7 +62,7 @@ import {saveAdditionalPax , getAdditionalPax ,updateAdditionalPax , deleteAdditi
     ,updateFoodPlan,deleteFoodPlan,addRoom,getRooms,editRoom ,deleteRoom,getAllRooms,roomBooking,getBookings,deleteBooking,updateBooking,
 fetchAdvanceDetails,getAllRoomsWithStatusForDate,updateRoomStatus} from '../controllers/hotelController.js'
 import {addItem,getAllItems,getItems,getCategories,deleteItem,updateItem,generateKot,getKot,updateKotStatus,
-    getRoomDataForRestaurant,updateKotPayment,getPaymentType,saveTableNumber,getSalePrintData,updateTable,getTables,deleteTable} from '../controllers/restaurantController.js'
+    getRoomDataForRestaurant,updateKotPayment,getPaymentType,saveTableNumber,getSalePrintData,getTables} from '../controllers/restaurantController.js'
 
 
 router.post('/login',login)
@@ -351,10 +351,10 @@ router.post("/updateStatus/:id", authSecondary,updateRoomStatus);
 router.get("/getPaymentType/:cmp_id",authSecondary,secondaryIsBlocked, getPaymentType)
 router.get("/getSeriesByVoucherForSaleAndReceipt/:cmp_id",authSecondary,secondaryIsBlocked)
 router.post("/Table/:cmp_id",authSecondary, saveTableNumber)
-router.put('/updateTable/:id', authSecondary,updateTable);
+// router.put('/updateTable/:id', authSecondary,updateTable);
 router.get('/getTable/:cmp_id',authSecondary, getTables);
 // DELETE /api/sUsers/Table/:id - Delete a specific table
-router.delete('/deleteTable/:id', authSecondary,deleteTable);
+// router.delete('/deleteTable/:id', authSecondary,deleteTable);
 
 router.get("/getSalePrintData/:cmp_id/:kotId",authSecondary,secondaryIsBlocked,getSalePrintData)
 
