@@ -428,6 +428,7 @@ const RestaurantPOS = () => {
 
   const generateKOT = async (selectedTableNumber) => {
     console.log(selectedTableNumber);
+    let updatedItems = [];
     let orderCustomerDetails = {
       ...customerDetails,
       tableNumber: selectedTableNumber,
@@ -892,7 +893,7 @@ const RestaurantPOS = () => {
                       </div>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4 auto-rows-fr">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4 auto-rows-fr">
                       {menuItems.map((item, index) => (
                         <motion.div
                           key={item._id}
@@ -965,19 +966,21 @@ const RestaurantPOS = () => {
                             {/* Price Section */}
                             <div className="flex justify-between items-center">
                               <div className="flex flex-col">
-                                <span className="text-sm md:text-base font-bold text-[#4688f3]">
+                                {/* <span className="text-sm md:text-base font-bold text-[#4688f3]">
                                   ₹
                                   {item.Priceleveles?.[0]?.pricerate ||
                                     item.price ||
                                     0}
+                                </span> */}
+                                <span className="text-sm md:text-base font-bold text-[#4688f3]">
+                                  ₹
+                                  {selectedPriceLevel
+                                    ? item.Priceleveles?.find(
+                                        (pl) =>
+                                          pl.pricelevel == selectedPriceLevel
+                                      )?.pricerate || 0
+                                    : item.Priceleveles?.[0]?.pricerate}
                                 </span>
-                                {item.Priceleveles?.[0]?.priceDisc > 0 && (
-                                  <span className="text-xs text-gray-400 line-through">
-                                    ₹
-                                    {item.Priceleveles[0].pricerate +
-                                      item.Priceleveles[0].priceDisc}
-                                  </span>
-                                )}
                               </div>
                             </div>
                           </div>
@@ -1059,10 +1062,10 @@ const RestaurantPOS = () => {
                           {item.product_name}
                         </h4>
                         <p className="text-xs text-gray-500 mb-2">
-                          ₹{item.price || item.selling_price} x {item.quantity}
+                          ₹{item.price } x {item.quantity}
                         </p>
                         <p className="text-sm font-bold text-[#4688f3]">
-                          ₹{(item.price || item.selling_price) * item.quantity}
+                          ₹{(item.price ) * item.quantity}
                         </p>
                       </div>
                       <div className="flex flex-col items-center space-y-2">
