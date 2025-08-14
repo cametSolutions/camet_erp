@@ -2,6 +2,7 @@
 import { IoIosArrowDown, IoMdAdd } from "react-icons/io";
 import { MdCancel } from "react-icons/md";
 import { Link } from "react-router-dom";
+import { resetPaymentSplit } from "../../../../slices/voucherSlices/commonVoucherSlice";
 
 function AddItemTile({
   items,
@@ -56,11 +57,15 @@ function AddItemTile({
                 <p className="text-xs sm:text-md">Items ({items.length})</p>
               </div>
 
-              <Link
+              <div
                 className={` ${
                   convertedFrom.length > 0 && "pointer-events-none"
                 }  `}
-                to={urlToAddItem}
+                // to={urlToAddItem}
+                onClick={() => {
+                  navigate(urlToAddItem);
+                  dispatch(resetPaymentSplit());
+                }}
               >
                 <div
                   className={` ${
@@ -70,7 +75,7 @@ function AddItemTile({
                   <IoMdAdd className="text-lg sm:text-2xl" />
                   <p className="text-xs sm:text-md">Add Item</p>
                 </div>
-              </Link>
+              </div>
             </div>
             {items.map((el, index) => (
               <div key={index}>
@@ -79,6 +84,7 @@ function AddItemTile({
                     <div
                       onClick={() => {
                         dispatch(removeItem(el?._id));
+                        dispatch(resetPaymentSplit());
                       }}
                       className="text-gray-500 text-sm cursor-pointer"
                     >
@@ -132,6 +138,8 @@ function AddItemTile({
                                       idx: idx,
                                     })
                                   );
+
+                                  dispatch(resetPaymentSplit());
                                 }}
                                 className="text-gray-500 text-sm cursor-pointer"
                               />
@@ -250,12 +258,9 @@ function AddItemTile({
                         <div className="flex items-center gap-2">
                           <p
                             onClick={() => {
-                              navigate(
-                                `${urlToEditItem}/${el._id}/null`,
-                                {
-                                  state: { from: "sales" },
-                                }
-                              );
+                              navigate(`${urlToEditItem}/${el._id}/null`, {
+                                state: { from: "sales" },
+                              });
                             }}
                             className={` ${
                               convertedFrom.length > 0 &&

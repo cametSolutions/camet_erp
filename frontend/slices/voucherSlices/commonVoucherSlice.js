@@ -21,7 +21,6 @@ const initialState = {
   selectedPriceLevel: "",
   additionalCharges: [],
   allAdditionalCharges: [],
-  finalAmount: 0,
   persistScrollId: "",
   brand: "",
   category: "",
@@ -57,6 +56,11 @@ const initialState = {
     },
   ],
   isScanOn: null,
+  subTotal: 0,
+  totalAdditionalCharges: 0,
+  totalWithAdditionalCharges: 0,
+  totalPaymentSplits: 0,
+  finalAmount: 0,
 };
 
 export const commonVoucherSlice = createSlice({
@@ -201,6 +205,9 @@ export const commonVoucherSlice = createSlice({
     },
     setFinalAmount: (state, action) => {
       state.finalAmount = action.payload;
+    },
+    setTotalAfterAdditionalCharges: (state, action) => {
+      state.totalAfterAdditionalCharges = action.payload;
     },
 
     saveId: (state, action) => {
@@ -491,7 +498,27 @@ export const commonVoucherSlice = createSlice({
     },
 
     addPaymentSplits: (state, action) => {
-      state.paymentSplittingData = action.payload;
+      console.log(action.payload);
+
+      const { changeFinalAmount, paymentSplits, totalPaymentSplits } =
+        action.payload;
+
+      state.paymentSplittingData = paymentSplits;
+      state.totalPaymentSplits = totalPaymentSplits;
+
+      if (changeFinalAmount) {
+        const total = paymentSplits?.reduce(
+          (acc, curr) => acc + parseInt(curr?.amount || 0),
+          0
+        );
+
+        console.log(total);
+
+        state.totalAfterPaymentSplit = Number(
+          state.totalAfterAdditionalCharges - total
+        );
+        console.log(state.finalAmount);
+      }
     },
     addCreditInPaymentSplit: (state, action) => {
       const { reference_name, ref_id } = action.payload;
@@ -531,6 +558,41 @@ export const commonVoucherSlice = createSlice({
 
     updateIsScanOn: (state, action) => {
       state.isScanOn = action.payload;
+    },
+
+    updateTotalValue: (state, action) => {
+      const { field, value } = action.payload;
+      if (field in state) {
+        state[field] = value;
+      }
+
+      // Always recalc dependent values
+      state.totalWithAdditionalCharges =
+        state.subTotal + (state.totalAdditionalCharges || 0);
+
+      state.finalAmount =
+        state.totalWithAdditionalCharges - (state.totalPaymentSplits || 0);
+    },
+
+    resetPaymentSplit: (state) => {
+      state.totalPaymentSplits = 0;
+      state.paymentSplittingData = [
+        { type: "Cash", amount: "", ref_id: "", ref_collection: "Cash" },
+        { type: "upi", amount: "", ref_id: "", ref_collection: "BankDetails" },
+        {
+          type: "cheque",
+          amount: "",
+          ref_id: "",
+          ref_collection: "BankDetails",
+        },
+        {
+          type: "credit",
+          amount: "",
+          ref_id: "",
+          ref_collection: "Party",
+          reference_name: "",
+        },
+      ];
     },
   },
 });
@@ -596,7 +658,10 @@ export const {
   addIsNoteOpen,
   addPaymentSplits,
   updateIsScanOn,
-  addCreditInPaymentSplit
+  addCreditInPaymentSplit,
+  setTotalAfterAdditionalCharges,
+  updateTotalValue,
+  resetPaymentSplit,
 } = commonVoucherSlice.actions;
 
 export default commonVoucherSlice.reducer;

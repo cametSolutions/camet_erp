@@ -1,11 +1,15 @@
 import { useEffect, useState } from "react";
 import { ChevronDown, CircleDot } from "lucide-react";
 import TitleDiv from "@/components/common/TitleDiv";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/api/api";
 import { truncateText } from "../../../../../backend/utils/textHelpers";
+import {
+  addPaymentSplits,
+  updateTotalValue,
+} from "../../../../slices/voucherSlices/commonVoucherSlice";
 
 // API function to fetch BankDetails and Cash sources
 const fetchBankAndCashSources = async (cmp_id) => {
@@ -21,10 +25,16 @@ const fetchBankAndCashSources = async (cmp_id) => {
 function PaymentSplitting() {
   // Store payment splits in the required format directly
   const [paymentSplits, setPaymentSplits] = useState([
-    { type: 'Cash', amount: '', ref_id: '', ref_collection: 'Cash' },
-    { type: 'upi', amount: '', ref_id: '', ref_collection: 'BankDetails' },
-    { type: 'cheque', amount: '', ref_id: '', ref_collection: 'BankDetails' },
-    { type: 'credit', amount: '', ref_id: '', ref_collection: 'Party',reference_name:"" },
+    { type: "Cash", amount: "", ref_id: "", ref_collection: "Cash" },
+    { type: "upi", amount: "", ref_id: "", ref_collection: "BankDetails" },
+    { type: "cheque", amount: "", ref_id: "", ref_collection: "BankDetails" },
+    {
+      type: "credit",
+      amount: "",
+      ref_id: "",
+      ref_collection: "Party",
+      reference_name: "",
+    },
   ]);
 
   // Payment mode display information
@@ -38,13 +48,16 @@ function PaymentSplitting() {
   console.log("Payment Splits:", paymentSplits);
 
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const { _id: cmp_id } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
 
-  const { finalAmount: finalAmountFromRedux, paymentSplittingData } =
-    useSelector((state) => state.commonVoucherSlice);
+  const {
+    totalWithAdditionalCharges: totalWithAdditionalCharges,
+    paymentSplittingData,
+  } = useSelector((state) => state.commonVoucherSlice);
 
   // Fetch BankDetails and Cash sources using TanStack Query
   const {
@@ -55,15 +68,23 @@ function PaymentSplitting() {
     queryKey: ["bankAndCashSources", cmp_id],
     queryFn: () => fetchBankAndCashSources(cmp_id),
     enabled: !!cmp_id,
+    refetchOnWindowFocus: false,
+    staleTime: 1000 * 60,
   });
 
   console.log(paymentSplittingData);
 
   useEffect(() => {
-    if (!finalAmountFromRedux) {
+    if (!totalWithAdditionalCharges) {
       navigate(-1, { replace: true });
     }
-  }, [finalAmountFromRedux, navigate]);
+  }, [totalWithAdditionalCharges, navigate]);
+
+  useEffect(() => {
+    if (paymentSplittingData) {
+      setPaymentSplits(paymentSplittingData);
+    }
+  }, [paymentSplittingData]);
 
   // Calculate total amount from payment splits
   const totalAmount = paymentSplits.reduce((sum, split) => {
@@ -71,27 +92,53 @@ function PaymentSplitting() {
     return sum + amount;
   }, 0);
 
-  const balanceAmount = finalAmountFromRedux - totalAmount;
+  const balanceAmount = totalWithAdditionalCharges - totalAmount;
 
   const handleAmountChange = (type, amount) => {
+    const numericAmount = parseFloat(amount) || 0;
+    
+    // Calculate current total excluding this payment type
+    const currentTotalExcludingThis = paymentSplits
+      .filter(split => split.type !== type)
+      .reduce((sum, split) => sum + (parseFloat(split.amount) || 0), 0);
+    
+    // Check if adding this amount would exceed the total
+    if (currentTotalExcludingThis + numericAmount > totalWithAdditionalCharges) {
+      // Set amount to remaining balance
+      const remainingBalance = totalWithAdditionalCharges - currentTotalExcludingThis;
+      amount = remainingBalance > 0 ? remainingBalance.toString() : "";
+    }
+
     setPaymentSplits((prev) =>
-      prev.map((split) => 
-        split.type === type ? { ...split, amount } : split
-      )
+      prev.map((split) => (split.type === type ? { ...split, amount } : split))
     );
   };
 
   const handleSourceChange = (type, ref_id) => {
     setPaymentSplits((prev) =>
-      prev.map((split) => 
-        split.type === type ? { ...split, ref_id } : split
-      )
+      prev.map((split) => {
+        if (split.type === type) {
+          // If ref_id is being cleared, also clear the amount
+          if (!ref_id) {
+            return { ...split, ref_id, amount: "" };
+          }
+          return { ...split, ref_id };
+        }
+        return split;
+      })
     );
   };
 
   const handleNavigateToPartyList = () => {
+    console.log(paymentSplits);
 
-    
+    const data = {
+      changeFinalAmount: false,
+      paymentSplits: paymentSplits,
+    };
+
+    dispatch(addPaymentSplits(data));
+
     // Navigate to Party list component
     navigate("/sUsers/searchPartysales", {
       state: { from: "paymentSplitting" },
@@ -103,8 +150,6 @@ function PaymentSplitting() {
     if (!sourcesData) return [];
 
     const { banks = [], cashs = [] } = sourcesData;
-
-    console.log(banks, cashs);
 
     switch (type) {
       case "Cash":
@@ -125,22 +170,50 @@ function PaymentSplitting() {
 
   // Get valid payment splits (with amount > 0 and ref_id selected)
   const getValidPaymentSplits = () => {
-    return paymentSplits.filter(split => 
-      split.amount && 
-      parseFloat(split.amount) > 0 && 
-      split.ref_id
-    );
+    return paymentSplits.map((split) => {
+      const requiredKeys = ["amount", "ref_id"]; // Only these must be filled
+      const hasValue = requiredKeys.some(
+        (key) => split[key] && split[key].toString().trim() !== ""
+      );
+      const allFilled = requiredKeys.every(
+        (key) => split[key] && split[key].toString().trim() !== ""
+      );
+
+      if (hasValue && !allFilled) {
+        // Clear amount and ref_id, and reference_name if credit
+        return {
+          ...split,
+          amount: "",
+          ref_id: "",
+          ...(split.type === "credit" ? { reference_name: "" } : {}),
+        };
+      }
+
+      return split;
+    });
   };
 
   const handleSavePaymentSplit = () => {
     const validSplits = getValidPaymentSplits();
-    console.log("Valid Payment Splits for saving:", validSplits);
-    
-    // Here you can make API call to save the data
-    // The data is already in the required format
-    // Example: savePaymentSplits(validSplits);
-    
-    alert("Payment splits saved! Check console for data.");
+    const data = {
+      changeFinalAmount: true,
+      paymentSplits: validSplits,
+      totalPaymentSplits: totalAmount,
+    };
+    dispatch(addPaymentSplits(data));
+    dispatch(
+      updateTotalValue({ field: "totalPaymentSplits", value: totalAmount })
+    );
+
+    navigate("/sUsers/sales", { replace: true });
+  };
+
+  // Helper function to check if amount input should be disabled
+  const isAmountInputDisabled = (split) => {
+    if (split.type === "credit") {
+      return !split.ref_id || split.ref_id === "";
+    }
+    return !split.ref_id || split.ref_id === "";
   };
 
   return (
@@ -187,12 +260,19 @@ function PaymentSplitting() {
 
                   <div className="col-span-4 flex items-center">
                     {split.type === "credit" ? (
-                      paymentSplittingData.find((item)=>item?.type=="credit").ref_id !== "" ? (
-                        <span 
+                      paymentSplittingData?.find(
+                        (item) => item?.type == "credit"
+                      )?.ref_id !== "" ? (
+                        <span
                           onClick={handleNavigateToPartyList}
                           className="text-sm font-medium w-full p-2 border rounded-md border-gray-300 cursor-pointer"
                         >
-                          {truncateText(paymentSplittingData?.sourceName, 20)}
+                          {truncateText(
+                            paymentSplittingData.find(
+                              (item) => item?.type == "credit"
+                            )?.reference_name,
+                            20
+                          )}
                         </span>
                       ) : (
                         <button
@@ -238,7 +318,13 @@ function PaymentSplitting() {
                           handleAmountChange(split.type, e.target.value)
                         }
                         placeholder="0.00"
-                        className="no-focus-box w-full pl-8 pr-3 py-2 border rounded-md text-sm transition-all duration-200 border-gray-300 hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                        disabled={isAmountInputDisabled(split)}
+                        className={`no-focus-box w-full pl-8 pr-3 py-2 border rounded-md text-sm transition-all duration-200 ${
+                          isAmountInputDisabled(split)
+                            ? "bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed"
+                            : "border-gray-300 hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                        }`}
+                        max={totalWithAdditionalCharges}
                       />
                     </div>
                   </div>
@@ -258,7 +344,7 @@ function PaymentSplitting() {
                 <div className="text-right">
                   <p className="text-sm text-gray-600 mb-1">Total Amount</p>
                   <p className="font-bold text-gray-900">
-                    ₹{finalAmountFromRedux || 0}
+                    ₹{totalWithAdditionalCharges || 0}
                   </p>
                 </div>
               </div>

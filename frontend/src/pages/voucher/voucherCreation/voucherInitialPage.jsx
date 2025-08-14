@@ -16,6 +16,8 @@ import {
   addVoucherSeries,
   addNote,
   addIsNoteOpen,
+  updateTotalValue,
+  resetPaymentSplit,
 } from "../../../../slices/voucherSlices/commonVoucherSlice";
 import DespatchDetails from "./DespatchDetails";
 import HeaderTile from "./HeaderTile";
@@ -127,6 +129,10 @@ function VoucherInitialPage() {
   const subTotal = useMemo(() => {
     return items.reduce((acc, curr) => acc + (parseFloat(curr.total) || 0), 0);
   }, [items]);
+
+  useEffect(() => {
+    dispatch(updateTotalValue({ field: "subTotal", value: subTotal }));
+  }, [subTotal]);
 
   // API calls wrapped in promises
   const fetchData = useCallback(async () => {
@@ -250,6 +256,7 @@ function VoucherInitialPage() {
       toast.error("Select a from godown first");
       return;
     }
+    dispatch(resetPaymentSplit());
     navigate("/sUsers/addItemSales");
   };
 
@@ -373,6 +380,7 @@ function VoucherInitialPage() {
       setSubmitLoading(false);
     }
   };
+
   return (
     <div className="mb-14 sm:mb-0">
       <div className="flex-1 bg-slate-100 h -screen ">

@@ -8,13 +8,13 @@ import {
   addAdditionalCharges,
   removeAdditionalCharge,
   deleteRow,
-  setFinalAmount,
+  updateTotalValue,
+  resetPaymentSplit,
 } from "../../../../slices/voucherSlices/commonVoucherSlice";
 import { toast } from "react-toastify";
 
 export default function AdditionalChargesTile({
   type,
-  subTotal,
   setOpenAdditionalTile,
   openAdditionalTile,
 }) {
@@ -125,6 +125,7 @@ export default function AdditionalChargesTile({
     newRows[index] = updatedRow;
     setRows(newRows);
     dispatch(addAdditionalCharges({ index, row: updatedRow }));
+    dispatch(resetPaymentSplit())
   };
 
   const actionChange = (index, value) => {
@@ -139,10 +140,12 @@ export default function AdditionalChargesTile({
     const newRows = rows.filter((_, i) => i !== index); // Create a new array without the deleted row
     setRows(newRows);
     dispatch(deleteRow(index)); // You need to create an action to handle row deletion in Redux
+    dispatch(resetPaymentSplit(index)); // You need to create an action to handle row deletion in Redux
   };
 
   const cancelHandler = () => {
     dispatch(removeAdditionalCharge());
+    dispatch(resetPaymentSplit());
     setOpenAdditionalTile(false);
     setRows([
       {
@@ -164,11 +167,16 @@ export default function AdditionalChargesTile({
 
   // eslint-disable-next-line no-unused-vars
   const totalAmount = useMemo(() => {
-    const totalAmountNotRounded =
-      parseFloat(subTotal) + (additionalChargesTotal || 0) || 0;
+    // const totalAmountNotRounded =
+    //   parseFloat(subTotalFromRedux || 0) + (additionalChargesTotal || 0) || 0;
 
-    dispatch(setFinalAmount(Math.round(totalAmountNotRounded * 100) / 100));
-  }, [subTotal, additionalChargesTotal]);
+    dispatch(
+      updateTotalValue({
+        field: "totalAdditionalCharges",
+        value: Number(parseInt(additionalChargesTotal || 0).toFixed(2)),
+      })
+    );
+  }, [additionalChargesTotal]);
 
   return (
     <>
@@ -293,17 +301,17 @@ export default function AdditionalChargesTile({
               </div>
             </div>
           ) : (
-              <div className=" flex justify-end items-center  font-semibold gap-1 text-violet-500 cursor-pointer pr-4">
-                <div
-                  onClick={() => {
-                    setOpenAdditionalTile(true);
-                  }}
-                  className="flex items-center"
-                >
-                  <IoMdAdd className="text-lg sm:text-xl" />
-                  <p className="text-xs ml-1 sm:text-base">Additional Charges</p>
-                </div>
+            <div className=" flex justify-end items-center  font-semibold gap-1 text-violet-500 cursor-pointer pr-4">
+              <div
+                onClick={() => {
+                  setOpenAdditionalTile(true);
+                }}
+                className="flex items-center"
+              >
+                <IoMdAdd className="text-lg sm:text-xl" />
+                <p className="text-xs ml-1 sm:text-base">Additional Charges</p>
               </div>
+            </div>
           )}
         </div>
       )}

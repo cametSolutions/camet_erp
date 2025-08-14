@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { MdModeEditOutline } from "react-icons/md";
 import { useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
-import { updateItem } from "../../../../slices/voucherSlices/commonVoucherSlice";
+import { resetPaymentSplit, updateItem } from "../../../../slices/voucherSlices/commonVoucherSlice";
 import { useDispatch } from "react-redux";
 import TitleDiv from "@/components/common/TitleDiv";
 import DatePicker from "react-datepicker";
@@ -706,6 +706,7 @@ function EditItemForm({ ItemsFromRedux, from, taxInclusive = false, loading }) {
 
     // Uncomment these lines when ready to dispatch the action
     dispatch(updateItem({ item: updatedItem, moveToTop: false }));
+    dispatch(resetPaymentSplit());
     navigate(-1, { replace: true });
   };
 
