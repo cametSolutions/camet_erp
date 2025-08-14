@@ -98,6 +98,7 @@ function VoucherInitialPage() {
     selectedVoucherSeries: selectedVoucherSeriesFromRedux,
     note: noteFromRedux,
     isNoteOpen: isNoteOpenFromRedux,
+    paymentSplittingData: paymentSplittingDataFromRedux,
   } = useSelector((state) => state.commonVoucherSlice);
 
   const getApiEndPoint = () => {
@@ -345,8 +346,13 @@ function VoucherInitialPage() {
           priceLevelFromRedux,
           additionalChargesFromRedux,
           selectedGodownDetails: vanSaleGodownFromRedux,
+          paymentSplittingData: paymentSplittingDataFromRedux,
         };
       }
+
+
+      console.log(formData);
+      
 
       const endPoint = getApiEndPoint();
       let params = {};

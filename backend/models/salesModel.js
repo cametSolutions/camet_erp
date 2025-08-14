@@ -2,6 +2,33 @@ import mongoose from "mongoose";
 import { convertToUTCMidnight } from "../utils/dateHelpers.js";
 const { Schema } = mongoose;
 
+// Payment Splitting Schema
+const paymentSplitSchema = new Schema(
+  {
+    type: {
+      type: String,
+      required: true,
+      enum: ["cash", "upi", "cheque", "credit"],
+    },
+    amount: { type: Number, default: 0 },
+    ref_id: {
+      type: Schema.Types.ObjectId,
+      refPath: "paymentSplittingData.ref_collection",
+      default: null,
+    },
+    ref_collection: {
+      type: String,
+      required: true,
+      enum: ["Cash", "BankDetails", "Party"],
+    },
+    reference_name: {
+      type: String,
+      default: "", // Only relevant for credit
+    },
+  },
+  { _id: false }
+);
+
 const salesSchema = new Schema(
   {
     date: {
@@ -120,7 +147,11 @@ const salesSchema = new Schema(
               set: convertToUTCMidnight,
             },
             description: { type: String },
-            warrantyCard: { type: Schema.Types.ObjectId, ref: "WarrantyCard", default: null, },
+            warrantyCard: {
+              type: Schema.Types.ObjectId,
+              ref: "WarrantyCard",
+              default: null,
+            },
             selectedPriceRate: { type: Number },
             added: { type: Boolean },
             count: { type: Number },
@@ -220,12 +251,30 @@ const salesSchema = new Schema(
         finalValue: { type: Number },
       },
     ],
-    
 
     note: { type: String },
 
     finalAmount: { type: Number, required: true },
-    paymentSplittingData: { type: Object },
+    paymentSplittingData: {
+      type: [paymentSplitSchema],
+      default: [
+        { type: "Cash", amount: 0, ref_id: null, ref_collection: "Cash" },
+        { type: "upi", amount: 0, ref_id: null, ref_collection: "BankDetails" },
+        {
+          type: "cheque",
+          amount: 0,
+          ref_id: null,
+          ref_collection: "BankDetails",
+        },
+        {
+          type: "credit",
+          amount: 0,
+          ref_id: null,
+          ref_collection: "Party",
+          reference_name: "",
+        },
+      ],
+    },
     isCancelled: { type: Boolean, default: false },
   },
   {

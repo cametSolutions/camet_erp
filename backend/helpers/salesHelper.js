@@ -9,7 +9,10 @@ import bankModel from "../models/bankModel.js";
 import partyModel from "../models/partyModel.js";
 import mongoose from "mongoose";
 import invoiceModel from "../models/invoiceModel.js";
-import { processAdvancePayments, processAdvanceReceipts } from "./receiptHelper.js";
+import {
+  processAdvancePayments,
+  processAdvanceReceipts,
+} from "./receiptHelper.js";
 
 export const checkForNumberExistence = async (
   model,
@@ -462,7 +465,7 @@ export const updateTallyData = async (
   Primary_user_id,
   party,
   lastAmount,
-  secondaryMobile,
+  secondaryMobile,gi
   session,
   valueToUpdateInTally,
   selectedDate,
@@ -477,7 +480,6 @@ export const updateTallyData = async (
 
     return;
   }
-
 
   try {
     const billData = {
@@ -543,13 +545,11 @@ export const revertSaleStockUpdates = async (items, session) => {
       );
 
       const productBalanceStock = parseFloat(product.balance_stock);
-    
 
       const newBalanceStock = truncateToNDecimals(
         productBalanceStock + itemCount,
         3
       );
-
 
       // Update product balance stock
       await productModel.updateOne(
@@ -579,7 +579,6 @@ export const revertSaleStockUpdates = async (items, session) => {
                 3
               );
 
-
               await productModel.updateOne(
                 { _id: product._id, "GodownList.batch": godown.batch },
                 {
@@ -594,7 +593,6 @@ export const revertSaleStockUpdates = async (items, session) => {
                 g.batch === godown.batch &&
                 g.godown.toString() == godown.godownMongoDbId
             );
-
 
             if (godownIndex !== -1 && godownCount && godownCount > 0) {
               const currentGodownStock =
@@ -627,7 +625,6 @@ export const revertSaleStockUpdates = async (items, session) => {
               (g) => g.godown.toString() == godown.godownMongoDbId
             );
 
-
             if (godownIndex !== -1 && godownCount && godownCount > 0) {
               const currentGodownStock =
                 product.GodownList[godownIndex].balance_stock || 0;
@@ -635,7 +632,6 @@ export const revertSaleStockUpdates = async (items, session) => {
                 currentGodownStock + godownCount,
                 3
               );
-
 
               await productModel.updateOne(
                 {
@@ -693,29 +689,35 @@ export const savePaymentSplittingDataInSources = async (
   type,
   createdAt,
   partyName,
-  session
+  session,
+  selectedDate,
+  voucherType,
+  
 ) => {
   try {
-    if (!paymentSplittingData?.splittingData?.length) {
-      throw new Error("Invalid payment splitting data");
-    }
-
     const updates = await Promise.all(
-      paymentSplittingData.splittingData.map(async (item) => {
-        const mode = item.mode;
+      paymentSplittingData?.map(async (item) => {
+        const mode = item.type;
         let selectedModel =
           mode === "cash"
             ? cashModel
-            : mode === "online" || mode === "cheque"
+            : mode === "upi" || mode === "cheque"
             ? bankModel
             : null;
 
         // Handle credit mode
         if (mode === "credit") {
-          const party = await partyModel.findOne({
-            party_master_id: item.sourceId,
-            cmp_id: orgId,
-          });
+          const party = await partyModel
+            .findOne({
+              _id: item.ref_id || null,
+              cmp_id: orgId,
+            })
+            .populate({ path: "accountGroup", select: "accountGroup" })
+            .lean();
+
+          party.accountGroupName = party.accountGroup.accountGroup;
+
+          console.log("party", party);
 
           // console.log("party", party);
 
@@ -733,6 +735,8 @@ export const savePaymentSplittingDataInSources = async (
             secondaryMobile,
             session,
             item.amount,
+            selectedDate,
+            voucherType,
             "paymentSplitting"
           );
 
@@ -757,7 +761,7 @@ export const savePaymentSplittingDataInSources = async (
 
         const query = {
           cmp_id: orgId,
-          _id: item.sourceId,
+          _id: item.ref_id,
           // ...(mode === "cash"
           //   ? { _id: item.sourceId }
           //   : { _id: item.sourceId }),
@@ -972,8 +976,10 @@ export const updateOutstandingBalance = async ({
       updatedAppliedReceipts = receiptsResult.updatedAppliedReceipts;
 
       console.log("updatedAppliedReceipts", updatedAppliedReceipts);
-      
-      console.log(`Remaining after processing receipts: ${receiptsResult.remainingAmount}`);
+
+      console.log(
+        `Remaining after processing receipts: ${receiptsResult.remainingAmount}`
+      );
     }
 
     // Process advance payments
@@ -989,7 +995,9 @@ export const updateOutstandingBalance = async ({
       );
 
       updatedAppliedPayments = paymentsResult.updatedAppliedPayments;
-      console.log(`Remaining after processing payments: ${paymentsResult.remainingAmount}`);
+      console.log(
+        `Remaining after processing payments: ${paymentsResult.remainingAmount}`
+      );
     }
 
     // Update the matchedOutStanding with updated arrays
@@ -1003,7 +1011,7 @@ export const updateOutstandingBalance = async ({
         },
         { session }
       );
-      console.log('Updated appliedReceipts and appliedPayments arrays');
+      console.log("Updated appliedReceipts and appliedPayments arrays");
     }
   }
 
@@ -1044,12 +1052,11 @@ export const updateOutstandingBalance = async ({
 
     // console.log("updatedTallyData", updatedTallyData);
   }
-  
+
   return updatedTallyData;
 };
 
-
-export const  saveSettlementData = async (
+export const saveSettlementData = async (
   party,
   orgId,
   paymentMethod,

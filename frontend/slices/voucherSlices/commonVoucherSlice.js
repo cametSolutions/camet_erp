@@ -44,13 +44,13 @@ const initialState = {
   note: null,
   isNoteOpen: false,
   paymentSplittingData: [
-    { type: "Cash", amount: "", ref_id: "", ref_collection: "Cash" },
-    { type: "upi", amount: "", ref_id: "", ref_collection: "BankDetails" },
-    { type: "cheque", amount: "", ref_id: "", ref_collection: "BankDetails" },
+    { type: "cash", amount: "", ref_id: null, ref_collection: "Cash" },
+    { type: "upi", amount: "", ref_id: null, ref_collection: "BankDetails" },
+    { type: "cheque", amount: "", ref_id: null, ref_collection: "BankDetails" },
     {
       type: "credit",
       amount: "",
-      ref_id: "",
+      ref_id: null,
       ref_collection: "Party",
       reference_name: "",
     },
@@ -577,18 +577,18 @@ export const commonVoucherSlice = createSlice({
     resetPaymentSplit: (state) => {
       state.totalPaymentSplits = 0;
       state.paymentSplittingData = [
-        { type: "Cash", amount: "", ref_id: "", ref_collection: "Cash" },
-        { type: "upi", amount: "", ref_id: "", ref_collection: "BankDetails" },
+        { type: "cash", amount: "", ref_id:null, ref_collection: "Cash" },
+        { type: "upi", amount: "", ref_id:null, ref_collection: "BankDetails" },
         {
           type: "cheque",
           amount: "",
-          ref_id: "",
+          ref_id:null,
           ref_collection: "BankDetails",
         },
         {
           type: "credit",
           amount: "",
-          ref_id: "",
+          ref_id:null,
           ref_collection: "Party",
           reference_name: "",
         },

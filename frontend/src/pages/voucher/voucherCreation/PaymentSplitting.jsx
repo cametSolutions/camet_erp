@@ -25,9 +25,9 @@ const fetchBankAndCashSources = async (cmp_id) => {
 function PaymentSplitting() {
   // Store payment splits in the required format directly
   const [paymentSplits, setPaymentSplits] = useState([
-    { type: "Cash", amount: "", ref_id: "", ref_collection: "Cash" },
-    { type: "upi", amount: "", ref_id: "", ref_collection: "BankDetails" },
-    { type: "cheque", amount: "", ref_id: "", ref_collection: "BankDetails" },
+    { type: "cash", amount: "", ref_id: null, ref_collection: "Cash" },
+    { type: "upi", amount: "", ref_id: null, ref_collection: "BankDetails" },
+    { type: "cheque", amount: "", ref_id: null, ref_collection: "BankDetails" },
     {
       type: "credit",
       amount: "",
@@ -39,13 +39,12 @@ function PaymentSplitting() {
 
   // Payment mode display information
   const paymentModeInfo = {
-    Cash: { title: "Cash", model: "Cash" },
+    cash: { title: "Cash", model: "Cash" },
     upi: { title: "NEFT/UPI", model: "BankDetails" },
     cheque: { title: "Cheque", model: "BankDetails" },
     credit: { title: "Credit", model: "Party" },
   };
 
-  console.log("Payment Splits:", paymentSplits);
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -152,7 +151,7 @@ function PaymentSplitting() {
     const { banks = [], cashs = [] } = sourcesData;
 
     switch (type) {
-      case "Cash":
+      case "cash":
         return cashs.map((Cash) => ({
           value: Cash.cash_id || Cash._id,
           label: Cash.cash_ledname,
@@ -211,9 +210,9 @@ function PaymentSplitting() {
   // Helper function to check if amount input should be disabled
   const isAmountInputDisabled = (split) => {
     if (split.type === "credit") {
-      return !split.ref_id || split.ref_id === "";
+      return !split.ref_id || split.ref_id === null;
     }
-    return !split.ref_id || split.ref_id === "";
+    return !split.ref_id || split.ref_id === null;
   };
 
   return (
@@ -246,15 +245,15 @@ function PaymentSplitting() {
               </div>
 
               {/* Payment Rows */}
-              {paymentSplits.map((split) => (
+              {paymentSplits?.map((split) => (
                 <div
-                  key={split.type}
+                  key={split?.type}
                   className="grid grid-cols-12 gap-6 py-5 border-b border-gray-50 last:border-b-0 hover:bg-gray-25 transition-colors duration-150"
                 >
                   <div className="col-span-4 flex items-center gap-3">
                     <CircleDot size={15} className="" />
                     <span className="font-medium text-gray-900">
-                      {paymentModeInfo[split.type].title}
+                      {paymentModeInfo[split?.type]?.title}
                     </span>
                   </div>
 
@@ -262,7 +261,7 @@ function PaymentSplitting() {
                     {split.type === "credit" ? (
                       paymentSplittingData?.find(
                         (item) => item?.type == "credit"
-                      )?.ref_id !== "" ? (
+                      )?.ref_id !== null ? (
                         <span
                           onClick={handleNavigateToPartyList}
                           className="text-sm font-medium w-full p-2 border rounded-md border-gray-300 cursor-pointer"
