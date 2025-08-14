@@ -975,6 +975,7 @@ export const saveTableNumber = async (req, res) => {
 export const getTables = async (req, res) => {
   try {
     const { cmp_id } = req.params;
+    console.log("ids:",cmp_id)
 
     if (!cmp_id) {
       return res
@@ -983,10 +984,9 @@ export const getTables = async (req, res) => {
     }
 
     // Fetch tables filtered by company ID from database
-    const tables = await Table.find({ companyId: cmp_id }).sort({
-      tableNumber: 1,
-    });
+    const tables = await Table.find({ cmp_id: cmp_id })
 
+    console.log("tables",tables)
     res.status(200).json({
       success: true,
       tables, // array of table documents with fields like _id, tableNumber etc.

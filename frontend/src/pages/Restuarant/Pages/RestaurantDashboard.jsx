@@ -665,13 +665,16 @@ const [showFullTableSelection, setShowFullTableSelection] = useState(false);
               </div>
               <div className="flex items-center space-x-2 bg-white/10 rounded-lg px-2 md:px-3 py-1">
                 <Users className="w-3 h-3 md:w-4 md:h-4" />
-                <span className="text-xs font-medium">
-                  {orderType === "dine-in"
-                    ? ` Table ${customerDetails.tableNumber}`
-                    : orderType === "roomService"
-                    ? `Room ${roomDetails.roomno || "---"}`
-                    : getOrderTypeDisplay(orderType)}
-                </span>
+                   <span
+                className="text-xs font-medium cursor-pointer text-blue-600 underline"
+                onClick={() => navigate("/sUsers/TableSelection")}
+              >
+                {orderType === "dine-in"
+                  ? `Table ${customerDetails.tableNumber}`
+                  : orderType === "roomService"
+                  ? `Room ${roomDetails.roomno || "---"}`
+                  : getOrderTypeDisplay(orderType)}
+              </span>
               </div>
               <div
                 className="flex items-center space-x-2 hover:cursor-pointer"
