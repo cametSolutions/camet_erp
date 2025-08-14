@@ -1295,3 +1295,4 @@ const handlePlaceOrder = () => {
 
 export default RestaurantPOS;
 
+9495467616
