@@ -1336,6 +1336,8 @@ export const addAccountGroups = async (req, res) => {
           // First check if an account group with this ID already exists
           const existingGroup = await AccountGroup.findOne({
             accountGroup_id: group.accountGroup_id,
+            cmp_id:group?.cmp_id,
+            Primary_user_id: group?.Primary_user_id,
           });
 
           if (existingGroup) {
@@ -1461,6 +1463,9 @@ export const addSubGroups = async (req, res) => {
           // First check if a subgroup with this ID already exists
           const existingSubGroup = await subGroupModel.findOne({
             subGroup_id: subGroup.subGroup_id,
+            cmp_id:subGroup?.cmp_id,
+             Primary_user_id: subGroup.Primary_user_id,
+
           });
 
           let savedSubGroup;
