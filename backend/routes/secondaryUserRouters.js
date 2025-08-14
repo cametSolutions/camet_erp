@@ -353,7 +353,7 @@ router.get("/getSeriesByVoucherForSaleAndReceipt/:cmp_id",authSecondary,secondar
 router.post("/Table/:cmp_id",authSecondary, saveTableNumber)
 router.put('/updateTable/:id', authSecondary,updateTable);
 router.get('/getTable/:cmp_id',authSecondary, getTables);
-// DELETE /api/sUsers/Table/:id - Delete a specific table
+
 router.delete('/deleteTable/:id', authSecondary,deleteTable);
 
 router.get("/getSalePrintData/:cmp_id/:kotId",authSecondary,secondaryIsBlocked,getSalePrintData)
