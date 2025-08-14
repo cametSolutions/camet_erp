@@ -45,7 +45,17 @@ const restuarentSettings = () => {
       to: "/sUsers/itemList",
       active: true,
     },
-   
+   {
+      title:
+        industry === 6 || industry === 7 ? "Table Master" : "Group Management",
+      description:
+        industry === 6 || industry === 7
+          ? "Manage your Table Entrys here"
+          : "Manage your Table Addition here",
+      icon:<MdFoodBank />,
+      to: "/sUsers/TableMaster",
+      active: true,
+    },
     
   ];
 

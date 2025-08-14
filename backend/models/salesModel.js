@@ -40,6 +40,10 @@ const salesSchema = new Schema(
       ref: "User",
       required: true,
     },
+    kotId: {
+      type: Schema.Types.ObjectId,
+      ref: "Kot",
+    },
     cmp_id: { type: Schema.Types.ObjectId, ref: "Company", required: true },
     Secondary_user_id: { type: Schema.Types.ObjectId, ref: "User" },
     selectedGodownDetails: {
@@ -120,7 +124,11 @@ const salesSchema = new Schema(
               set: convertToUTCMidnight,
             },
             description: { type: String },
-            warrantyCard: { type: Schema.Types.ObjectId, ref: "WarrantyCard", default: null, },
+            warrantyCard: {
+              type: Schema.Types.ObjectId,
+              ref: "WarrantyCard",
+              default: null,
+            },
             selectedPriceRate: { type: Number },
             added: { type: Boolean },
             count: { type: Number },
@@ -220,7 +228,6 @@ const salesSchema = new Schema(
         finalValue: { type: Number },
       },
     ],
-    
 
     note: { type: String },
 

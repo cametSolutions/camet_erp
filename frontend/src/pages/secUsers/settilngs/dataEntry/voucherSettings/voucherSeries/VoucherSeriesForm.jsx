@@ -20,14 +20,20 @@ const VoucherSeriesForm = () => {
   });
   const [errors, setErrors] = useState({});
 
+  let organization = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg
+  );
+
+
   const location = useLocation();
   const navigate = useNavigate();
 
   const { from: voucherType, series = {}, mode = "add" } = location.state;
-  console.log(voucherType)
+  console.log(voucherType);
 
   useEffect(() => {
     if (mode === "edit") {
+      console.log(series);
       setFormData((prev) => ({
         ...prev,
         seriesName: series.seriesName || "",
@@ -35,6 +41,7 @@ const VoucherSeriesForm = () => {
         suffix: series.suffix || "",
         currentNumber: series.currentNumber || "1",
         widthOfNumericalPart: series.widthOfNumericalPart || "1",
+        under: series?.under,
       }));
     }
   }, [mode, series]);
@@ -91,51 +98,52 @@ const VoucherSeriesForm = () => {
     return `${prefix || ""}${paddedNumber}${suffix || ""}`;
   };
 
-const onSubmit = async (e) => {
-  e.preventDefault();
+  const onSubmit = async (e) => {
+    e.preventDefault();
 
-  if (!validateForm()) return;
+    if (!validateForm()) return;
 
-  setLoading(true);
+    setLoading(true);
 
-  let payload = {};
-  let url = "";
-  let method = "post"; // default is POST
+    let payload = {};
+    let url = "";
+    let method = "post"; // default is POST
 
-  if (mode === "add") {
-    payload = {
-      voucherType: voucherType,
-      newSeries: formData,
-    };
-    url = `/api/sUsers/createVoucherSeries/${cmp_id}`;
-  } else {
-    payload = {
-      seriesId: series._id,
-      updatedSeries: formData,
-    };
-    url = `/api/sUsers/editVoucherSeriesById/${cmp_id}`;
-    method = "put";
-  }
+    if (mode === "add") {
+      payload = {
+        voucherType: voucherType,
+        newSeries: formData,
+      };
+      url = `/api/sUsers/createVoucherSeries/${cmp_id}`;
+    } else {
+      payload = {
+        seriesId: series._id,
+        updatedSeries: formData,
+      };
+      url = `/api/sUsers/editVoucherSeriesById/${cmp_id}`;
+      method = "put";
+    }
 
-  try {
-    console.log("Submitting:", payload);
+    try {
+      console.log("Submitting:", payload);
 
-    await api[method](url, payload, { withCredentials: true });
+      await api[method](url, payload, { withCredentials: true });
 
-    toast.success(`Series ${mode === "add" ? "created" : "updated"} successfully`);
+      toast.success(
+        `Series ${mode === "add" ? "created" : "updated"} successfully`
+      );
 
-    navigate("/sUsers/voucherSeriesList", {
-      state: { from: voucherType },
-      replace: true,
-    });
-  } catch (err) {
-    console.error("Error submitting form", err);
-    toast.error(err?.response?.data?.message || "Failed to submit");
-  } finally {
-    setLoading(false);
-  }
-};
-
+      navigate("/sUsers/voucherSeriesList", {
+        state: { from: voucherType },
+        replace: true,
+      });
+    } catch (err) {
+      console.error("Error submitting form", err);
+      toast.error(err?.response?.data?.message || "Failed to submit");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <>
@@ -386,6 +394,108 @@ const onSubmit = async (e) => {
                     </p>
                   )}
                 </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-slate-700">
+                    Current Number
+                    <span className="text-red-500 ml-1">*</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      value={formData.currentNumber}
+                      onChange={(e) =>
+                        handleInputChange("currentNumber", e.target.value)
+                      }
+                      className={`w-full px-4 py-3 border rounded-sm focus:ring-2 focus:ring-blue-500 transition-colors placeholder-slate-400 no-focus-box ${
+                        errors.currentNumber
+                          ? "border-red-300 focus:border-red-500 focus:ring-red-500"
+                          : "border-slate-300 focus:border-blue-500"
+                      }`}
+                      placeholder="Enter starting number"
+                    />
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                      <svg
+                        className="w-4 h-4 text-slate-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                  {errors.currentNumber && (
+                    <p className="text-red-500 text-sm flex items-center gap-1">
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      {errors.currentNumber}
+                    </p>
+                  )}
+                </div>
+                {(organization?.industry == 6 ||
+                  organization?.industry == 7 ) && (
+                    <div className="space-y-2">
+                      <label className="block text-sm font-semibold text-slate-700">
+                        Under
+                        <span className="text-red-500 ml-1">*</span>
+                      </label>
+                      <div className="relative">
+                        <select
+                          type="number"
+                          value={formData.under}
+                          onChange={(e) =>
+                            handleInputChange("under", e.target.value)
+                          }
+                          className={`w-full px-4 py-3 border rounded-sm focus:ring-2 focus:ring-blue-500 transition-colors placeholder-slate-400  no-focus-box ${
+                            errors.under
+                              ? "border-red-300 focus:border-red-500 focus:ring-red-500"
+                              : "border-slate-300 focus:border-blue-500"
+                          }`}
+                          placeholder="E.g., 4 for 0001"
+                        >
+                          <option value="">Select Under</option>
+                          <option value="hotel">Hotel</option>
+                          <option value="restaurant">Restaurant</option>
+                        </select>
+                      </div>
+                      {errors.under && (
+                        <p className="text-red-500 text-sm flex items-center gap-1">
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                          {errors.widthOfNumericalPart}
+                        </p>
+                      )}
+                    </div>
+                  )}
               </div>
 
               {/* Live Preview Section */}
