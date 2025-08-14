@@ -4,21 +4,33 @@ import {
   Minus,
   ShoppingCart,
   Search,
+  Star,
   Clock,
   Users,
   TrendingUp,
   Filter,
+  Menu,
   X,
   MenuIcon,
   Receipt,
   Home,
   Package,
   Car,
+  Printer,
+  Check,
+  CreditCard,
+  Banknote,
+  ArrowRight,
+  Mic,
+  MicOff,
+  Volume2,
   Bed,
   ArrowLeft,
 } from "lucide-react";
 import { CiCircleList } from "react-icons/ci";
+import { MdTableBar } from "react-icons/md";
 import TableSelection from "../Pages/TableSelection";
+import woodImage from "../../../assets/images/wood.jpeg"; // Adjust the path as needed
 
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
@@ -28,12 +40,15 @@ import { useNavigate } from "react-router-dom";
 import useFetch from "@/customHook/useFetch";
 import {
   generateAndPrintKOT,
+  generateAndPrintBill,
 } from "../Helper/kotPrintHelper";
 import { taxCalculatorForRestaurant } from "@/pages/Hotel/Helper/taxCalculator";
 
 const RestaurantPOS = () => {
   const [selectedCuisine, setSelectedCuisine] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedSubcategory, setSelectedSubcategory] = useState("");
+  const [hoveredCuisine, setHoveredCuisine] = useState("");
   const [orderItems, setOrderItems] = useState([]);
   const navigate = useNavigate();
   const [refreshTables, setRefreshTables] = useState(null);
@@ -53,6 +68,7 @@ const [showFullTableSelection, setShowFullTableSelection] = useState(false);
 
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showKOTModal, setShowKOTModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [orderType, setOrderType] = useState("dine-in");
   const [loading, setLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("cash");
@@ -226,6 +242,7 @@ const [showFullTableSelection, setShowFullTableSelection] = useState(false);
 
   const {
     data: roomBookingData,
+    loading: roomLoading,
     error,
   } = useFetch(`/api/sUsers/getRoomBasedOnBooking/${cmp_id}`);
 
@@ -379,6 +396,7 @@ const [showFullTableSelection, setShowFullTableSelection] = useState(false);
       categoryName: name,
     };
     setSelectedCuisine(newObject);
+    setSelectedCategory("");
     setSelectedSubcategory("");
     setSearchTerm("");
     if (isMobile) setShowSidebar(true);
@@ -392,6 +410,7 @@ const [showFullTableSelection, setShowFullTableSelection] = useState(false);
 
   const handleBackToCategories = () => {
     setSelectedSubcategory("");
+    setSelectedCategory("");
     setSearchTerm("");
   };
 
@@ -406,7 +425,10 @@ const [showFullTableSelection, setShowFullTableSelection] = useState(false);
     }
   };
 
-
+  const handleProceedToPay = () => {
+    if (orderItems.length === 0) return;
+    setShowPaymentModal(true);
+  };
 
   const generateKOT = async (selectedTableNumber,tableStatus) => {
     console.log(selectedTableNumber);
@@ -486,6 +508,9 @@ const [showFullTableSelection, setShowFullTableSelection] = useState(false);
         tableNumber: selectedTableNumber,
         status: "occupied"
       }, { withCredentials: true });
+
+      // Refresh tables in UI
+      fetchTables();
     }
       
     } catch (error) {
@@ -509,6 +534,38 @@ const [showFullTableSelection, setShowFullTableSelection] = useState(false);
     } else {
       toast.success("KOT generated successfully!");
     }
+  };
+
+  const processPayment = () => {
+    const updatedOrders = orders.map((order) =>
+      order.id === orderNumber - 1
+        ? { ...order, status: "paid", paymentMethod: paymentMethod }
+        : order
+    );
+
+    setOrders(updatedOrders);
+    setShowPaymentModal(false);
+
+    if (orderType === "roomService") {
+      setRoomDetails({
+        roomno: "",
+        guestName: "",
+        CheckInNumber: "",
+      });
+    } else {
+      setCustomerDetails({
+        name: "",
+        phone: "",
+        address: "",
+        tableNumber: customerDetails.tableNumber,
+      });
+    }
+
+    alert(
+      `Payment of ₹${
+        orders.find((order) => order.id === orderNumber - 1)?.total || 0
+      } processed successfully via ${paymentMethod}!`
+    );
   };
 
   const getOrderTypeDisplay = (type) => {
@@ -608,13 +665,16 @@ const [showFullTableSelection, setShowFullTableSelection] = useState(false);
               </div>
               <div className="flex items-center space-x-2 bg-white/10 rounded-lg px-2 md:px-3 py-1">
                 <Users className="w-3 h-3 md:w-4 md:h-4" />
-                <span className="text-xs font-medium">
-                  {orderType === "dine-in"
-                    ? ` Table ${customerDetails.tableNumber}`
-                    : orderType === "roomService"
-                    ? `Room ${roomDetails.roomno || "---"}`
-                    : getOrderTypeDisplay(orderType)}
-                </span>
+                   <span
+                className="text-xs font-medium cursor-pointer text-blue-600 underline"
+                onClick={() => navigate("/sUsers/TableSelection")}
+              >
+                {orderType === "dine-in"
+                  ? `Table ${customerDetails.tableNumber}`
+                  : orderType === "roomService"
+                  ? `Room ${roomDetails.roomno || "---"}`
+                  : getOrderTypeDisplay(orderType)}
+              </span>
               </div>
               <div
                 className="flex items-center space-x-2 hover:cursor-pointer"
@@ -646,6 +706,8 @@ const [showFullTableSelection, setShowFullTableSelection] = useState(false);
               <button
                 key={cuisine._id}
                 onClick={() => handleCategorySelect(cuisine._id, cuisine.name)}
+                onMouseEnter={() => setHoveredCuisine(cuisine.name)}
+                onMouseLeave={() => setHoveredCuisine(null)}
                 className={`
                 group relative flex items-center gap-2 px-3 py-2 rounded-xl font-medium 
                 transition-all duration-300 transform hover:scale-105 active:scale-95
