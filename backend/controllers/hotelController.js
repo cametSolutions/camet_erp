@@ -1152,7 +1152,7 @@ export const getAllRoomsWithStatusForDate = async (req, res) => {
 
     // --- Mark each room's status
     const roomsWithStatus = allRooms.map((room) => {
-      let status = "vacant";
+      let status = room?.status;
       if (occupiedRoomIds.has(room._id.toString())) {
         status = "occupied";
       } else if (bookedRoomIds.has(room._id.toString())) {
@@ -1181,22 +1181,33 @@ export const updateRoomStatus = async (req, res) => {
     const { id } = req.params; // Get room ID from URL
     const { status } = req.body; // Get status from request body
 
+    console.log("Updating room status:", { id, status }); // Debug log
+
+    // Validate room ID
+    if (!id) {
+      return res.status(400).json({ message: "Room ID is required" });
+    }
+
     // Validate status
-    const validStatuses = [ "dirty", "blocked", ];
+    const validStatuses = ["vacant", "booked", "occupied", "dirty", "blocked"];
     if (!status || !validStatuses.includes(status)) {
-      return res.status(400).json({ message: "Invalid or missing status" });
+      return res.status(400).json({ 
+        message: "Invalid or missing status", 
+        validStatuses 
+      });
     }
 
     // Find room by ID and update
-const updatedRoom = await roomModal.findByIdAndUpdate(
-  id,
-  { status },
-  { new: true }
-)
-.populate("roomType")
-.populate("bedType")
-.populate("roomFloor");
+    const updatedRoom = await roomModal.findByIdAndUpdate(
+      id,
+      { status },
+      { new: true, runValidators: true }
+    )
+    .populate("roomType")
+    .populate("bedType")
+    .populate("roomFloor");
 
+    console.log("Room found and updated:", updatedRoom); // Debug log
 
     if (!updatedRoom) {
       return res.status(404).json({ message: "Room not found" });
@@ -1206,8 +1217,13 @@ const updatedRoom = await roomModal.findByIdAndUpdate(
       message: "Room status updated successfully",
       room: updatedRoom
     });
+    
   } catch (error) {
     console.error("Error updating room status:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ 
+      message: "Server error", 
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 };

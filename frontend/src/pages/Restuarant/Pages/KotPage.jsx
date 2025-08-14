@@ -15,7 +15,7 @@ import api from "@/api/api";
 import { motion } from "framer-motion";
 import { Check, CreditCard, X, Banknote } from "lucide-react";
 import { generateAndPrintKOT } from "@/pages/Restuarant/Helper/kotPrintHelper";
-import VoucherPdf from "@/pages/voucher/voucherPdf/indian/VoucherPdf";
+import { useNavigate } from "react-router-dom";
 
 const OrdersDashboard = () => {
   const [activeFilter, setActiveFilter] = useState("pending");
@@ -37,8 +37,8 @@ const OrdersDashboard = () => {
 
   // state used for showing pdf print
 
-  const [showSalePrint, setShowSalePrint] = useState(false);
   const [salePrintData, setSalePrintData] = useState(null);
+  const navigate = useNavigate()
 
   const { _id: cmp_id, name: companyName } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
@@ -236,8 +236,7 @@ const OrdersDashboard = () => {
 
   useEffect(() => {
     if(salePrintData){
-      console.log(salePrintData);
-      setShowSalePrint(true)
+      navigate(`/sUsers/sharesales/${salePrintData._id}`);
     }
    
   }, [salePrintData]);
@@ -324,10 +323,7 @@ const OrdersDashboard = () => {
       console.log(error);
     }
   };
-
-  console.log(cashOrBank);
-
-  return !showSalePrint ? (
+  return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white px-4 py-3 border-b border-gray-200 flex justify-between items-center">
@@ -1024,15 +1020,7 @@ const OrdersDashboard = () => {
         </div>
       )}
     </div>
-  ) : (
-    <VoucherPdf
-      data={salePrintData}
-      org={organization}
-      // bank={bank}
-      userType="secondaryUser"
-      tab="sales"
-    />
-  );
+  )
 };
 
 export default OrdersDashboard;

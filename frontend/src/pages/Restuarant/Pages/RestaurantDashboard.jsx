@@ -27,6 +27,7 @@ import {
   Bed,
   ArrowLeft,
 } from "lucide-react";
+import { CiCircleList } from "react-icons/ci";
 import { MdTableBar } from "react-icons/md";
 import TableSelection from "../Pages/TableSelection";
 import woodImage from "../../../assets/images/wood.jpeg"; // Adjust the path as needed
@@ -41,6 +42,7 @@ import {
   generateAndPrintKOT,
   generateAndPrintBill,
 } from "../Helper/kotPrintHelper";
+import { taxCalculatorForRestaurant } from "@/pages/Hotel/Helper/taxCalculator";
 
 const RestaurantPOS = () => {
   const [selectedCuisine, setSelectedCuisine] = useState("");
@@ -72,12 +74,18 @@ const [showFullTableSelection, setShowFullTableSelection] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [optionData, setOptionsData] = useState({});
   const [roomData, setRoomData] = useState({});
+  const [showPriceLevelSelect, setShowPriceLevelSelect] = useState(false);
+  const [priceLevelData, setPriceLevelData] = useState([]);
+  const [selectedPriceLevel, setSelectedPriceLevel] = useState(null);
 
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
   const companyName = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg?.name
+  );
+  const { configurations } = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg
   );
 
   const gradientClasses = ["bg-gradient-to-r from-blue-400 to-blue-600"];
@@ -118,6 +126,28 @@ const [showFullTableSelection, setShowFullTableSelection] = useState(false);
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
+
+  useEffect(() => {
+    fetchPriceList();
+  }, []);
+
+  const fetchPriceList = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get(
+        `/api/sUsers/getProductSubDetails/${cmp_id}?type=${"pricelevel"}`,
+        {
+          withCredentials: true,
+        }
+      );
+      setPriceLevelData(res?.data?.data);
+    } catch (error) {
+      console.log(error);
+      toast.error(error.response.data.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Update current time every second
   useEffect(() => {
@@ -322,7 +352,13 @@ const [showFullTableSelection, setShowFullTableSelection] = useState(false);
         )
       );
     } else {
-      const price = item.Priceleveles?.[0]?.pricerate || item.price || 0;
+      const price = selectedPriceLevel
+        ? Number(
+            item.Priceleveles?.find((pl) => pl.pricelevel == selectedPriceLevel)
+              ?.pricerate || 0
+          )
+        : Number(item.Priceleveles?.[0]?.pricerate);
+      console.log("price", price);
       setOrderItems([...orderItems, { ...item, quantity: 1, price: price }]);
     }
   };
@@ -378,17 +414,16 @@ const [showFullTableSelection, setShowFullTableSelection] = useState(false);
     setSearchTerm("");
   };
 
-const handlePlaceOrder = () => {
-  if (orderItems.length === 0) return;
+  const handlePlaceOrder = () => {
+    if (orderItems.length === 0) return;
 
-  if (orderType === "dine-in") {
-    console.log(showFullTableSelection)
-    setShowFullTableSelection(true); // show full-page table selection
-  } else {
-    setShowKOTModal(true); // keep normal KOT flow for others
-  }
-};
-
+    if (orderType === "dine-in") {
+      console.log(showFullTableSelection);
+      setShowFullTableSelection(true); // show full-page table selection
+    } else {
+      setShowKOTModal(true); // keep normal KOT flow for others
+    }
+  };
 
   const handleProceedToPay = () => {
     if (orderItems.length === 0) return;
@@ -396,9 +431,38 @@ const handlePlaceOrder = () => {
   };
 
   const generateKOT = async (selectedTableNumber,tableStatus) => {
-    console.log(selectedTableNumber)
-    let orderCustomerDetails = { ...customerDetails, tableNumber: selectedTableNumber,tableStatus};
-
+    console.log(selectedTableNumber);
+    let updatedItems = [];
+      let orderCustomerDetails = { ...customerDetails, tableNumber: selectedTableNumber,tableStatus};
+    console.log("orderItems", orderItems);
+    updatedItems = orderItems.map((item) => {
+      return {
+        ...item,
+        GodownList: item.GodownList.map((g, index) =>
+          index === 0
+            ? {
+                ...g,
+                selectedPriceRate: item?.price,
+                godown_id: g?._id,
+                defaultGodown: true,
+                mfgdt: new Date(),
+                expdt: new Date(),
+                warrantyCard: g?.warrantyCard,
+                added: true,
+                count: item?.quantity,
+                actualCount: item?.quantity,
+              }
+            : g
+        ),
+        hasGodownOrBatch: false,
+        totalCount: item?.quantity,
+        totalActualCount: item?.quantity,
+      };
+    });
+    let finalProductData = await taxCalculatorForRestaurant(
+      updatedItems,
+      configurations[0]?.addRateWithTax?.sale
+    );
     if (orderType === "dine-in") {
       orderCustomerDetails = {
         tableNumber: selectedTableNumber,
@@ -415,9 +479,13 @@ const handlePlaceOrder = () => {
       orderCustomerDetails = { ...customerDetails,tableStatus };
     }
 
+    console.log("orderCustomerDetails", orderItems);
+
+    console.log("orderCustomerDetails", finalProductData);
+
     const newOrder = {
       id: orderNumber,
-      items: [...orderItems],
+      items: [...finalProductData],
       type: orderType,
       customer: orderCustomerDetails,
       total: getTotalAmount(),
@@ -517,83 +585,130 @@ const handlePlaceOrder = () => {
       items: data?.items,
       createdAt: new Date(),
     };
-
     generateAndPrintKOT(orderData, true, false, companyName);
   };
-  console.log(showFullTableSelection);
+
+  const handleSelectedPriceLevel = (value) => {
+    setShowPriceLevelSelect(false);
+    setSelectedPriceLevel(value);
+  };
+
   return (
-    <div className="h-screen overflow-hidden bg-gray-100 flex flex-col">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-slate-800 to-slate-900 text-white p-2 md:p-4 shadow-lg">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            {/* Mobile menu button */}
+    <>
+      {showPriceLevelSelect && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 z-50">
+          <div className="bg-slate-800 p-6 rounded-lg shadow-lg w-80">
+            <h2 className="text-lg font-bold text-white mb-4">
+              {/* Room: {selectedRoomData.roomName} */}
+            </h2>
+
+            <label className="text-gray-300 mb-2 block">Select Action:</label>
+            <select
+              className="w-full bg-slate-700 text-white border border-gray-600 rounded px-2 py-1 mb-4"
+              onChange={(e) => handleSelectedPriceLevel(e.target.value)}
+              defaultValue=""
+            >
+              <option value="" disabled>
+                Choose...
+              </option>
+              {priceLevelData.map((level) => (
+                <option value={level._id}>{level.pricelevel}</option>
+              ))}
+            </select>
+
             <button
-              className="md:hidden p-1 hover:bg-white/10 rounded"
-              onClick={() => setShowSidebar(!showSidebar)}
+              onClick={() => setShowPriceLevelSelect(false)}
+              className="mt-2 bg-red-500 hover:bg-red-600 text-white px-4 py-1 rounded"
             >
-              <MenuIcon className="w-5 h-5" />
-            </button>
-            <h1 className="text-lg md:text-2xl font-bold flex items-center gap-2">
-              🍽️{" "}
-              <span className="hidden sm:inline">
-                Restaurant Management System
-              </span>
-              <span className="sm:hidden">RMS</span>
-            </h1>
-          </div>
-          <div className="flex items-center space-x-2 md:space-x-6">
-            <div className="hidden sm:flex items-center space-x-2 bg-white/10 rounded-lg px-2 md:px-3 py-1">
-              <Clock className="w-3 h-3 md:w-4 md:h-4" />
-              <span className="text-xs font-medium">
-                {currentTime.toLocaleTimeString()}
-              </span>
-            </div>
-            <div className="flex items-center space-x-2 bg-white/10 rounded-lg px-2 md:px-3 py-1">
-              <Users className="w-3 h-3 md:w-4 md:h-4" />
-                <span
-      className="text-xs font-medium cursor-pointer text-blue-600 underline"
-      onClick={() => navigate("/sUsers/TableSelection")}
-    >
-      {orderType === "dine-in"
-        ? `Table ${customerDetails.tableNumber}`
-        : orderType === "roomService"
-        ? `Room ${roomDetails.roomno || "---"}`
-        : getOrderTypeDisplay(orderType)}
-    </span>
-            </div>
-            <div
-              className="flex items-center space-x-2 hover:cursor-pointer"
-              onClick={() => navigate("/sUsers/KotPage")}
-            >
-              <Receipt className="w-4 h-4 md:w-5 md:h-5" />
-              <span className="text-xs md:text-sm">
-                <span className="hidden sm:inline">Orders: </span>
-                {orders.length}
-              </span>
-            </div>
-            {/* Mobile cart button */}
-            <button
-              className="md:hidden bg-white/10 rounded-lg px-2 py-1 flex items-center space-x-1"
-              onClick={() => setShowOrderSummary(true)}
-            >
-              <ShoppingCart className="w-4 h-4" />
-              <span className="text-xs">{getTotalItems()}</span>
+              Close
             </button>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Cuisine Categories - Horizontal scroll on mobile */}
-      <div className="bg-white border-b border-gray-200 p-2 shadow-sm">
-        <div className="flex gap-2 text-xs overflow-x-auto scrollbar-hide pb-2">
-          {cuisines.map((cuisine, index) => (
-            <button
-              key={cuisine._id}
-              onClick={() => handleCategorySelect(cuisine._id, cuisine.name)}
-              onMouseEnter={() => setHoveredCuisine(cuisine.name)}
-              onMouseLeave={() => setHoveredCuisine(null)}
-              className={`
+      <div className="h-screen overflow-hidden bg-gray-100 flex flex-col">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-slate-800 to-slate-900 text-white p-2 md:p-4 shadow-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {/* Mobile menu button */}
+              <button
+                className="md:hidden p-1 hover:bg-white/10 rounded"
+                onClick={() => setShowSidebar(!showSidebar)}
+              >
+                <MenuIcon className="w-5 h-5" />
+              </button>
+              <h1 className="text-lg md:text-2xl font-bold flex items-center gap-2">
+                🍽️{" "}
+                <span className="hidden sm:inline">
+                  Restaurant Management System
+                </span>
+                <span className="sm:hidden">RMS</span>
+              </h1>
+            </div>
+            <div className="flex items-center space-x-2 md:space-x-6">
+              <div className="hidden sm:flex items-center space-x-2 bg-white/10 rounded-lg px-2 md:px-3 py-1">
+                <CiCircleList className="w-3 h-3 md:w-4 md:h-4" />
+                <button
+                  className="text-xs font-medium"
+                  onClick={() => setShowPriceLevelSelect(true)}
+                >
+                  {" "}
+                  PriceLevel
+                </button>
+              </div>
+              <div className="hidden sm:flex items-center space-x-2 bg-white/10 rounded-lg px-2 md:px-3 py-1">
+                <Clock className="w-3 h-3 md:w-4 md:h-4" />
+                <span className="text-xs font-medium">
+                  {currentTime.toLocaleTimeString()}
+                </span>
+              </div>
+              <div className="flex items-center space-x-2 bg-white/10 rounded-lg px-2 md:px-3 py-1">
+                <Users className="w-3 h-3 md:w-4 md:h-4" />
+                   <span
+                className="text-xs font-medium cursor-pointer text-blue-600 underline"
+                onClick={() => navigate("/sUsers/TableSelection")}
+              >
+                {orderType === "dine-in"
+                  ? `Table ${customerDetails.tableNumber}`
+                  : orderType === "roomService"
+                  ? `Room ${roomDetails.roomno || "---"}`
+                  : getOrderTypeDisplay(orderType)}
+              </span>
+              </div>
+              <div
+                className="flex items-center space-x-2 hover:cursor-pointer"
+                onClick={() => navigate("/sUsers/KotPage")}
+              >
+                <Receipt className="w-4 h-4 md:w-5 md:h-5" />
+                <span className="text-xs md:text-sm">
+                  <span className="hidden sm:inline">Orders: </span>
+                  {orders.length}
+                </span>
+              </div>
+              {/* Mobile cart button */}
+              <button
+                className="md:hidden bg-white/10 rounded-lg px-2 py-1 flex items-center space-x-1"
+                onClick={() => setShowOrderSummary(true)}
+              >
+                <ShoppingCart className="w-4 h-4" />
+                <span className="text-xs">{getTotalItems()}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Cuisine Categories - Horizontal scroll on mobile */}
+        {/* Cuisine Categories - Horizontal scroll on mobile */}
+        <div className="bg-white border-b border-gray-200 p-2 shadow-sm">
+          <div className="flex gap-2 text-xs overflow-x-auto scrollbar-hide pb-2">
+            {cuisines.map((cuisine, index) => (
+              <button
+                key={cuisine._id}
+                onClick={() => handleCategorySelect(cuisine._id, cuisine.name)}
+                onMouseEnter={() => setHoveredCuisine(cuisine.name)}
+                onMouseLeave={() => setHoveredCuisine(null)}
+                className={`
                 group relative flex items-center gap-2 px-3 py-2 rounded-xl font-medium 
                 transition-all duration-300 transform hover:scale-105 active:scale-95
                 whitespace-nowrap flex-shrink-0 min-w-max
@@ -605,29 +720,29 @@ const handlePlaceOrder = () => {
                 }
                 text-white shadow-md
               `}
-            >
-              <span className="text-sm drop-shadow-sm">{cuisine.icon}</span>
-              <span className="text-xs font-semibold tracking-wide select-none">
-                {cuisine.name}
-              </span>
-            </button>
-          ))}
+              >
+                <span className="text-sm drop-shadow-sm">{cuisine.icon}</span>
+                <span className="text-xs font-semibold tracking-wide select-none">
+                  {cuisine.name}
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="flex-1 flex min-h-0 relative">
-        {/* Mobile Sidebar Overlay */}
-        {isMobile && showSidebar && (
+        {/* Main Content */}
+        <div className="flex-1 flex min-h-0 relative">
+          {/* Mobile Sidebar Overlay */}
+          {isMobile && showSidebar && (
+            <div
+              className="fixed inset-0 bg-black bg-opacity-50 z-40"
+              onClick={() => setShowSidebar(false)}
+            />
+          )}
+
+          {/* Left Sidebar - Categories/Subcategories */}
           <div
-            className="fixed inset-0 bg-black bg-opacity-50 z-40"
-            onClick={() => setShowSidebar(false)}
-          />
-        )}
-
-        {/* Left Sidebar - Categories/Subcategories */}
-        <div
-          className={`
+            className={`
           ${
             isMobile
               ? "fixed left-0 top-0 bottom-0 z-50 transform transition-transform duration-300"
@@ -642,270 +757,272 @@ const handlePlaceOrder = () => {
           }
           w-72 md:w-48 bg-white shadow-lg h-full flex flex-col min-h-0 border-r
         `}
-        >
-          <div className="p-4 border-b border-gray-200 bg-gray-50">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm md:text-sm font-bold text-gray-800">
-                {selectedSubcategory ? "Items" : "Subcategories"}
-              </h2>
-              <div className="flex items-center gap-2">
-                {selectedSubcategory && (
-                  <button
-                    onClick={handleBackToCategories}
-                    className="text-[#10b981] hover:text-blue-800 transition-colors"
-                  >
-                    <ArrowLeft className="w-4 h-4" />
-                  </button>
-                )}
-                {isMobile && (
-                  <button
-                    onClick={() => setShowSidebar(false)}
-                    className="text-gray-500 hover:text-gray-700"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                )}
+          >
+            <div className="p-4 border-b border-gray-200 bg-gray-50">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm md:text-sm font-bold text-gray-800">
+                  {selectedSubcategory ? "Items" : "Subcategories"}
+                </h2>
+                <div className="flex items-center gap-2">
+                  {selectedSubcategory && (
+                    <button
+                      onClick={handleBackToCategories}
+                      className="text-[#10b981] hover:text-blue-800 transition-colors"
+                    >
+                      <ArrowLeft className="w-4 h-4" />
+                    </button>
+                  )}
+                  {isMobile && (
+                    <button
+                      onClick={() => setShowSidebar(false)}
+                      className="text-gray-500 hover:text-gray-700"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  )}
+                </div>
               </div>
+              {selectedCuisine && (
+                <div className="text-xs text-gray-500 mt-1 font-medium">
+                  Category: {selectedCuisine?.categoryName}
+                </div>
+              )}
             </div>
-            {selectedCuisine && (
-              <div className="text-xs text-gray-500 mt-1 font-medium">
-                Category: {selectedCuisine?.categoryName}
-              </div>
-            )}
-          </div>
 
-          <div className="p-4 flex-1 overflow-y-auto">
-            {!selectedCuisine ? (
-              <div className="text-sm text-gray-400 text-center py-4 italic">
-                🍽️ Please select a category above
-              </div>
-            ) : filteredSubcategories.length === 0 ? (
-              <div className="text-sm text-gray-400 text-center py-4 italic">
-                <Filter className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                🚫 No subcategories available
-              </div>
-            ) : (
-              filteredSubcategories.map((subcategory, index) => {
-                const icon =
-                  subcategoryIcons[subcategory.name] ||
-                  subcategoryIcons.Default;
-                const gradient =
-                  gradientClasses[index % gradientClasses.length];
+            <div className="p-4 flex-1 overflow-y-auto">
+              {!selectedCuisine ? (
+                <div className="text-sm text-gray-400 text-center py-4 italic">
+                  🍽️ Please select a category above
+                </div>
+              ) : filteredSubcategories.length === 0 ? (
+                <div className="text-sm text-gray-400 text-center py-4 italic">
+                  <Filter className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                  🚫 No subcategories available
+                </div>
+              ) : (
+                filteredSubcategories.map((subcategory, index) => {
+                  const icon =
+                    subcategoryIcons[subcategory.name] ||
+                    subcategoryIcons.Default;
+                  const gradient =
+                    gradientClasses[index % gradientClasses.length];
 
-                return (
-                  <button
-                    key={subcategory._id}
-                    onClick={() => handleSubcategorySelect(subcategory.name)}
-                    className={`w-full text-left px-3 py-2 mb-2 rounded-md font-medium transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md transform hover:scale-[1.02] hover:translate-x-1 
+                  return (
+                    <button
+                      key={subcategory._id}
+                      onClick={() => handleSubcategorySelect(subcategory.name)}
+                      className={`w-full text-left px-3 py-2 mb-2 rounded-md font-medium transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md transform hover:scale-[1.02] hover:translate-x-1 
                       ${
                         selectedSubcategory === subcategory.name
                           ? "text-white"
                           : "text-white"
                       }
                     ${gradient} `}
-                  >
-                    <span className="text-base">{icon}</span>
-                    <span className="text-sm capitalize tracking-wide">
-                      {subcategory.name}
-                    </span>
-                  </button>
-                );
-              })
-            )}
+                    >
+                      <span className="text-base">{icon}</span>
+                      <span className="text-sm capitalize tracking-wide">
+                        {subcategory.name}
+                      </span>
+                    </button>
+                  );
+                })
+              )}
+            </div>
           </div>
-        </div>
 
-        {/* Main Content Area */}
-        <div className="flex-1 flex flex-col">
-          {/* Enhanced Search Bar */}
-          <div className="p-3 md:p-4 bg-white border-b border-gray-200">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <input
-                type="text"
-                placeholder={`Search items...${
-                  selectedSubcategory ? ` in ${selectedSubcategory}` : ""
-                }`}
-                value={searchTerm}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                className="w-full pl-10 pr-12 py-2 md:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#10b981] focus:border-transparent text-sm"
-              />
+          {/* Main Content Area */}
+          <div className="flex-1 flex flex-col">
+            {/* Enhanced Search Bar */}
+            <div className="p-3 md:p-4 bg-white border-b border-gray-200">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <input
+                  type="text"
+                  placeholder={`Search items...${
+                    selectedSubcategory ? ` in ${selectedSubcategory}` : ""
+                  }`}
+                  value={searchTerm}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  className="w-full pl-10 pr-12 py-2 md:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#10b981] focus:border-transparent text-sm"
+                />
+                {searchTerm && (
+                  <button
+                    onClick={clearSearch}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+
+              {/* Search Results Info */}
               {searchTerm && (
-                <button
-                  onClick={clearSearch}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+                <div className="mt-2 text-xs text-gray-500">
+                  {menuItems.length > 0
+                    ? `Found ${menuItems.length} item${
+                        menuItems.length !== 1 ? "s" : ""
+                      } for "${searchTerm}"`
+                    : `No items found for "${searchTerm}"`}
+                </div>
               )}
             </div>
 
-            {/* Search Results Info */}
-            {searchTerm && (
-              <div className="mt-2 text-xs text-gray-500">
-                {menuItems.length > 0
-                  ? `Found ${menuItems.length} item${
-                      menuItems.length !== 1 ? "s" : ""
-                    } for "${searchTerm}"`
-                  : `No items found for "${searchTerm}"`}
-              </div>
-            )}
-          </div>
-
-          {/* Menu Items Grid */}
-          <div className="flex-1 p-3 md:p-4 overflow-y-auto">
-            {loader ? (
-              <div className="flex items-center justify-center h-full">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                  <p className="text-gray-500">Loading items...</p>
+            {/* Menu Items Grid */}
+            <div className="flex-1 p-3 md:p-4 overflow-y-auto">
+              {loader ? (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p className="text-gray-500">Loading items...</p>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <>
-                <div className="mb-4">
-                  <h3 className="text-sm font-semibold text-[#4688f3]">
-                    {selectedSubcategory
-                      ? `${selectedCuisine?.categoryName} - ${selectedSubcategory} (${menuItems.length} items)`
-                      : searchTerm
-                      ? `Search Results (${menuItems.length} items)`
-                      : `All Items (${menuItems.length} items)`}
-                  </h3>
-                </div>
+              ) : (
+                <>
+                  <div className="mb-4">
+                    <h3 className="text-sm font-semibold text-[#4688f3]">
+                      {selectedSubcategory
+                        ? `${selectedCuisine?.categoryName} - ${selectedSubcategory} (${menuItems.length} items)`
+                        : searchTerm
+                        ? `Search Results (${menuItems.length} items)`
+                        : `All Items (${menuItems.length} items)`}
+                    </h3>
+                  </div>
 
-                {menuItems.length === 0 ? (
-                  <div className="flex items-center justify-center h-64">
-                    <div className="text-center text-gray-500">
-                      <Search className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                      <h3 className="text-lg font-medium mb-2">
-                        No Items Found
-                      </h3>
-                      <p className="text-sm">
-                        {searchTerm
-                          ? `No items found matching "${searchTerm}"`
-                          : selectedSubcategory
-                          ? `No items available in ${selectedSubcategory}`
-                          : "No items available"}
-                      </p>
+                  {menuItems.length === 0 ? (
+                    <div className="flex items-center justify-center h-64">
+                      <div className="text-center text-gray-500">
+                        <Search className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                        <h3 className="text-lg font-medium mb-2">
+                          No Items Found
+                        </h3>
+                        <p className="text-sm">
+                          {searchTerm
+                            ? `No items found matching "${searchTerm}"`
+                            : selectedSubcategory
+                            ? `No items available in ${selectedSubcategory}`
+                            : "No items available"}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4 auto-rows-fr">
-                    {menuItems.map((item, index) => (
-                      <motion.div
-                        key={item._id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3, delay: index * 0.05 }}
-                        className="group relative bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-[1.02] active:scale-95"
-                        onClick={() => addToOrder(item)}
-                      >
-                        {/* Image Container with Overlay Effects */}
-                        <div className="relative h-28 sm:h-32 md:h-36 lg:h-40 overflow-hidden">
-                          <img
-                            src={
-                              item.product_image ||
-                              "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=300&h=200&fit=crop"
-                            }
-                            alt={item.product_name}
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                            onError={(e) => {
-                              e.target.src =
-                                "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=300&h=200&fit=crop";
-                            }}
-                          />
+                  ) : (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4 auto-rows-fr">
+                      {menuItems.map((item, index) => (
+                        <motion.div
+                          key={item._id}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3, delay: index * 0.05 }}
+                          className="group relative bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-[1.02] active:scale-95"
+                          onClick={() => addToOrder(item)}
+                        >
+                          {/* Image Container with Overlay Effects */}
+                          <div className="relative h-28 sm:h-32 md:h-36 lg:h-40 overflow-hidden">
+                            <img
+                              src={
+                                item.product_image ||
+                                "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=300&h=200&fit=crop"
+                              }
+                              alt={item.product_name}
+                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                              onError={(e) => {
+                                e.target.src =
+                                  "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=300&h=200&fit=crop";
+                              }}
+                            />
 
-                          {/* Gradient Overlay */}
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                            {/* Gradient Overlay */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
-                          {/* Quick Add Button */}
-                          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
-                            <div className="bg-white/90 backdrop-blur-sm rounded-full p-1.5 shadow-lg hover:bg-white hover:scale-110 transition-all duration-200">
-                              <Plus className="w-3 h-3 md:w-4 md:h-4 text-[#4688f3]" />
-                            </div>
-                          </div>
-
-                          {/* Popular Badge */}
-                          {(item.rating > 4.3 || Math.random() > 0.7) && (
-                            <div className="absolute bottom-2 left-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
-                              <div className="bg-orange-500 text-white px-1.5 py-0.5 rounded-full text-xs font-medium flex items-center space-x-1">
-                                <TrendingUp className="w-2 h-2 md:w-3 md:h-3" />
-                                <span className="hidden sm:inline text-xs">
-                                  Popular
-                                </span>
+                            {/* Quick Add Button */}
+                            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+                              <div className="bg-white/90 backdrop-blur-sm rounded-full p-1.5 shadow-lg hover:bg-white hover:scale-110 transition-all duration-200">
+                                <Plus className="w-3 h-3 md:w-4 md:h-4 text-[#4688f3]" />
                               </div>
                             </div>
-                          )}
-                        </div>
 
-                        {/* Content Section */}
-                        <div className="p-2 md:p-3">
-                          {/* Title and Rating */}
-                          <div className="mb-2">
-                            <h3
-                              className="font-bold text-[#4688f3] text-xs md:text-sm mb-1 line-clamp-2 group-hover:text-blue-700 transition-colors duration-200"
-                              title={item.product_name}
-                            >
-                              {item.product_name}
-                            </h3>
-
-                            {/* Rating and Time */}
-                            <div className="flex items-center justify-between text-xs text-gray-500">
-                              <div className="flex items-center space-x-1 text-[#4688f3]">
-                                <Clock className="w-2 h-2 md:w-3 md:h-3" />
-                                <span className="text-xs">
-                                  {item.time || "15-20 min"}
-                                </span>
+                            {/* Popular Badge */}
+                            {(item.rating > 4.3 || Math.random() > 0.7) && (
+                              <div className="absolute bottom-2 left-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                                <div className="bg-orange-500 text-white px-1.5 py-0.5 rounded-full text-xs font-medium flex items-center space-x-1">
+                                  <TrendingUp className="w-2 h-2 md:w-3 md:h-3" />
+                                  <span className="hidden sm:inline text-xs">
+                                    Popular
+                                  </span>
+                                </div>
                               </div>
-                            </div>
+                            )}
                           </div>
 
-                          {/* Price Section */}
-                          <div className="flex justify-between items-center">
-                            <div className="flex flex-col">
-                              <span className="text-sm md:text-base font-bold text-[#4688f3]">
-                                ₹
-                                {item.Priceleveles?.[0]?.pricerate ||
-                                  item.price ||
-                                  0}
-                              </span>
-                              {item.Priceleveles?.[0]?.priceDisc > 0 && (
-                                <span className="text-xs text-gray-400 line-through">
+                          {/* Content Section */}
+                          <div className="p-2 md:p-3">
+                            {/* Title and Rating */}
+                            <div className="mb-2">
+                              <h3
+                                className="font-bold text-[#4688f3] text-xs md:text-sm mb-1 line-clamp-2 group-hover:text-blue-700 transition-colors duration-200"
+                                title={item.product_name}
+                              >
+                                {item.product_name}
+                              </h3>
+
+                              {/* Rating and Time */}
+                              <div className="flex items-center justify-between text-xs text-gray-500">
+                                <div className="flex items-center space-x-1 text-[#4688f3]">
+                                  <Clock className="w-2 h-2 md:w-3 md:h-3" />
+                                  <span className="text-xs">
+                                    {item.time || "15-20 min"}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Price Section */}
+                            <div className="flex justify-between items-center">
+                              <div className="flex flex-col">
+                                {/* <span className="text-sm md:text-base font-bold text-[#4688f3]">
                                   ₹
-                                  {item.Priceleveles[0].pricerate +
-                                    item.Priceleveles[0].priceDisc}
+                                  {item.Priceleveles?.[0]?.pricerate ||
+                                    item.price ||
+                                    0}
+                                </span> */}
+                                <span className="text-sm md:text-base font-bold text-[#4688f3]">
+                                  ₹
+                                  {selectedPriceLevel
+                                    ? item.Priceleveles?.find(
+                                        (pl) =>
+                                          pl.pricelevel == selectedPriceLevel
+                                      )?.pricerate || 0
+                                    : item.Priceleveles?.[0]?.pricerate}
                                 </span>
-                              )}
+                              </div>
                             </div>
                           </div>
-                        </div>
 
-                        {/* Hover Border Effect */}
-                        <div className="absolute inset-0 border-2 border-transparent group-hover:border-blue-200 rounded-xl transition-colors duration-300 pointer-events-none"></div>
+                          {/* Hover Border Effect */}
+                          <div className="absolute inset-0 border-2 border-transparent group-hover:border-blue-200 rounded-xl transition-colors duration-300 pointer-events-none"></div>
 
-                        {/* Shine Effect */}
-                        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
+                          {/* Shine Effect */}
+                          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           </div>
-        </div>
 
-        {/* Order Summary Sidebar - Desktop always visible, Mobile modal */}
-        {isMobile && showOrderSummary && (
+          {/* Order Summary Sidebar - Desktop always visible, Mobile modal */}
+          {isMobile && showOrderSummary && (
+            <div
+              className="fixed inset-0 bg-black bg-opacity-50 z-50"
+              onClick={() => setShowOrderSummary(false)}
+            />
+          )}
+
           <div
-            className="fixed inset-0 bg-black bg-opacity-50 z-50"
-            onClick={() => setShowOrderSummary(false)}
-          />
-        )}
-
-        <div
-          className={`
+            className={`
           ${
             isMobile
               ? "fixed right-0 top-0 bottom-0 z-50 transform transition-transform duration-300"
@@ -920,146 +1037,149 @@ const handlePlaceOrder = () => {
           }
           w-full sm:w-80 md:w-80 lg:w-80 bg-white border-l border-gray-200 flex flex-col min-h-0 h-full shadow-lg
         `}
-        >
-          <div className="p-3 md:p-4 border-b border-gray-200 bg-gradient-to-r from-emerald-50 to-teal-50">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base md:text-lg font-bold text-[#4688f3] flex items-center">
-                <ShoppingCart className="w-4 h-4 md:w-5 md:h-5 mr-2 text-[#4688f3]" />
-                <span className="hidden sm:inline">Order Summary</span>
-                <span className="sm:hidden">Cart</span> ({getTotalItems()})
-              </h3>
-              {isMobile && (
-                <button
-                  onClick={() => setShowOrderSummary(false)}
-                  className="text-gray-500 hover:text-gray-700 p-1"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+          >
+            <div className="p-3 md:p-4 border-b border-gray-200 bg-gradient-to-r from-emerald-50 to-teal-50">
+              <div className="flex items-center justify-between">
+                <h3 className="text-base md:text-lg font-bold text-[#4688f3] flex items-center">
+                  <ShoppingCart className="w-4 h-4 md:w-5 md:h-5 mr-2 text-[#4688f3]" />
+                  <span className="hidden sm:inline">Order Summary</span>
+                  <span className="sm:hidden">Cart</span> ({getTotalItems()})
+                </h3>
+                {isMobile && (
+                  <button
+                    onClick={() => setShowOrderSummary(false)}
+                    className="text-gray-500 hover:text-gray-700 p-1"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto min-h-0 p-3 md:p-4">
+              {orderItems.length === 0 ? (
+                <div className="text-center py-8">
+                  <ShoppingCart className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                  <p className="text-gray-500 text-sm">No items in cart</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {orderItems.map((item) => (
+                    <div
+                      key={item._id}
+                      className="bg-gray-50 rounded-lg p-3 flex justify-between items-start"
+                    >
+                      <div className="flex-1 min-w-0 pr-2">
+                        <h4 className="text-sm font-semibold text-gray-800 line-clamp-2 mb-1">
+                          {item.product_name}
+                        </h4>
+                        <p className="text-xs text-gray-500 mb-2">
+                          ₹{item.price } x {item.quantity}
+                        </p>
+                        <p className="text-sm font-bold text-[#4688f3]">
+                          ₹{(item.price ) * item.quantity}
+                        </p>
+                      </div>
+                      <div className="flex flex-col items-center space-y-2">
+                        <button
+                          className="bg-[#4688f3] text-white w-7 h-7 flex items-center justify-center rounded-full hover:bg-blue-600 hover:scale-105 active:scale-95 transition-all duration-200"
+                          onClick={() =>
+                            updateQuantity(item._id, item.quantity + 1)
+                          }
+                        >
+                          <Plus className="w-3 h-3" />
+                        </button>
+
+                        <span className="text-sm font-medium min-w-[24px] text-center bg-white px-2 py-1 rounded border">
+                          {item.quantity}
+                        </span>
+
+                        <button
+                          className="bg-[#4688f3] text-white w-7 h-7 flex items-center justify-center rounded-full hover:bg-blue-600 hover:scale-105 active:scale-95 transition-all duration-200"
+                          onClick={() =>
+                            updateQuantity(item._id, item.quantity - 1)
+                          }
+                        >
+                          <Minus className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
-          </div>
 
-          <div className="flex-1 overflow-y-auto min-h-0 p-3 md:p-4">
-            {orderItems.length === 0 ? (
-              <div className="text-center py-8">
-                <ShoppingCart className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                <p className="text-gray-500 text-sm">No items in cart</p>
+            {/* Total and Order Buttons */}
+            <div className="p-3 md:p-4 border-t border-gray-200">
+              <div className="flex justify-between items-center mb-4">
+                <span className="text-lg font-semibold text-gray-700">
+                  Total
+                </span>
+                <span className="text-xl font-bold text-[#4688f3]">
+                  ₹{getTotalAmount()}
+                </span>
               </div>
-            ) : (
-              <div className="space-y-3">
-                {orderItems.map((item) => (
-                  <div
-                    key={item._id}
-                    className="bg-gray-50 rounded-lg p-3 flex justify-between items-start"
+
+              {/* Order Type Selection - Grid responsive */}
+              <div className="mb-4">
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => setOrderType("dine-in")}
+                    className={`flex flex-col items-center justify-center h-14 md:h-12 rounded-md border transition-colors text-xs ${
+                      orderType === "dine-in"
+                        ? "border-[#4688f3] bg-blue-50 text-[#4688f3]"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
                   >
-                    <div className="flex-1 min-w-0 pr-2">
-                      <h4 className="text-sm font-semibold text-gray-800 line-clamp-2 mb-1">
-                        {item.product_name}
-                      </h4>
-                      <p className="text-xs text-gray-500 mb-2">
-                        ₹{item.price || item.selling_price} x {item.quantity}
-                      </p>
-                      <p className="text-sm font-bold text-[#4688f3]">
-                        ₹{(item.price || item.selling_price) * item.quantity}
-                      </p>
-                    </div>
-                    <div className="flex flex-col items-center space-y-2">
-                      <button
-                        className="bg-[#4688f3] text-white w-7 h-7 flex items-center justify-center rounded-full hover:bg-blue-600 hover:scale-105 active:scale-95 transition-all duration-200"
-                        onClick={() =>
-                          updateQuantity(item._id, item.quantity + 1)
-                        }
-                      >
-                        <Plus className="w-3 h-3" />
-                      </button>
-
-                      <span className="text-sm font-medium min-w-[24px] text-center bg-white px-2 py-1 rounded border">
-                        {item.quantity}
-                      </span>
-
-                      <button
-                        className="bg-[#4688f3] text-white w-7 h-7 flex items-center justify-center rounded-full hover:bg-blue-600 hover:scale-105 active:scale-95 transition-all duration-200"
-                        onClick={() =>
-                          updateQuantity(item._id, item.quantity - 1)
-                        }
-                      >
-                        <Minus className="w-3 h-3" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                    <Home className="w-4 h-4 mb-1" />
+                    <span>Dine In</span>
+                  </button>
+                  <button
+                    onClick={() => setOrderType("takeaway")}
+                    className={`flex flex-col items-center justify-center h-14 md:h-12 rounded-md border transition-colors text-xs ${
+                      orderType === "takeaway"
+                        ? "border-[#4688f3] bg-blue-50 text-[#4688f3]"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    <Package className="w-4 h-4 mb-1" />
+                    <span>Takeaway</span>
+                  </button>
+                  <button
+                    onClick={() => setOrderType("delivery")}
+                    className={`flex flex-col items-center justify-center h-14 md:h-12 rounded-md border transition-colors text-xs ${
+                      orderType === "delivery"
+                        ? "border-[#4688f3] bg-blue-50 text-[#4688f3]"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    <Car className="w-4 h-4 mb-1" />
+                    <span>Delivery</span>
+                  </button>
+                  <button
+                    onClick={() => setOrderType("roomService")}
+                    className={`flex flex-col items-center justify-center h-14 md:h-12 rounded-md border transition-colors text-xs ${
+                      orderType === "roomService"
+                        ? "border-[#4688f3] bg-blue-50 text-[#4688f3]"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    <Bed className="w-4 h-4 mb-1" />
+                    <span>Room Service</span>
+                  </button>
+                </div>
               </div>
-            )}
-          </div>
 
-          {/* Total and Order Buttons */}
-          <div className="p-3 md:p-4 border-t border-gray-200">
-            <div className="flex justify-between items-center mb-4">
-              <span className="text-lg font-semibold text-gray-700">Total</span>
-              <span className="text-xl font-bold text-[#4688f3]">
-                ₹{getTotalAmount()}
-              </span>
-            </div>
-
-            {/* Order Type Selection - Grid responsive */}
-            <div className="mb-4">
-              <div className="grid grid-cols-2 gap-2">
+              {/* Action Buttons */}
+              <div className="flex space-x-2">
                 <button
-                  onClick={() => setOrderType("dine-in")}
-                  className={`flex flex-col items-center justify-center h-14 md:h-12 rounded-md border transition-colors text-xs ${
-                    orderType === "dine-in"
-                      ? "border-[#4688f3] bg-blue-50 text-[#4688f3]"
-                      : "border-gray-200 hover:border-gray-300"
-                  }`}
+                  className="flex-1 bg-[#4688f3] text-white py-3 rounded-lg font-semibold hover:bg-[#0f8f6b] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm hover:scale-105 active:scale-95"
+                  disabled={orderItems.length === 0}
+                  onClick={handlePlaceOrder}
                 >
-                  <Home className="w-4 h-4 mb-1" />
-                  <span>Dine In</span>
-                </button>
-                <button
-                  onClick={() => setOrderType("takeaway")}
-                  className={`flex flex-col items-center justify-center h-14 md:h-12 rounded-md border transition-colors text-xs ${
-                    orderType === "takeaway"
-                      ? "border-[#4688f3] bg-blue-50 text-[#4688f3]"
-                      : "border-gray-200 hover:border-gray-300"
-                  }`}
-                >
-                  <Package className="w-4 h-4 mb-1" />
-                  <span>Takeaway</span>
-                </button>
-                <button
-                  onClick={() => setOrderType("delivery")}
-                  className={`flex flex-col items-center justify-center h-14 md:h-12 rounded-md border transition-colors text-xs ${
-                    orderType === "delivery"
-                      ? "border-[#4688f3] bg-blue-50 text-[#4688f3]"
-                      : "border-gray-200 hover:border-gray-300"
-                  }`}
-                >
-                  <Car className="w-4 h-4 mb-1" />
-                  <span>Delivery</span>
-                </button>
-                <button
-                  onClick={() => setOrderType("roomService")}
-                  className={`flex flex-col items-center justify-center h-14 md:h-12 rounded-md border transition-colors text-xs ${
-                    orderType === "roomService"
-                      ? "border-[#4688f3] bg-blue-50 text-[#4688f3]"
-                      : "border-gray-200 hover:border-gray-300"
-                  }`}
-                >
-                  <Bed className="w-4 h-4 mb-1" />
-                  <span>Room Service</span>
+                  Place Order
                 </button>
               </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex space-x-2">
-              <button
-                className="flex-1 bg-[#4688f3] text-white py-3 rounded-lg font-semibold hover:bg-[#0f8f6b] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm hover:scale-105 active:scale-95"
-                disabled={orderItems.length === 0}
-                onClick={handlePlaceOrder}
-              >
-                Place Order
-              </button>
             </div>
           </div>
         </div>
@@ -1101,195 +1221,221 @@ const handlePlaceOrder = () => {
                 KOT Details
               </h2>
               <button
-                onClick={() => setShowKOTModal(false)}
-                className="text-gray-400 hover:text-gray-600 transition-colors p-1"
+                onClick={() => setShowFullTableSelection(false)}
+                className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-2xl font-bold"
               >
-                <X className="w-6 h-6" />
+                ×
               </button>
-            </div>
 
-            {/* Order Type Display */}
-            <div className="mb-4">
-              <div className="flex items-center justify-center p-3 bg-blue-50 rounded-lg border border-blue-200">
-                {orderType === "dine-in" && (
-                  <Home className="w-5 h-5 mr-2 text-[#4688f3]" />
-                )}
-                {orderType === "takeaway" && (
-                  <Package className="w-5 h-5 mr-2 text-[#4688f3]" />
-                )}
-                {orderType === "delivery" && (
-                  <Car className="w-5 h-5 mr-2 text-[#4688f3]" />
-                )}
-                {orderType === "roomService" && (
-                  <Bed className="w-5 h-5 mr-2 text-[#4688f3]" />
-                )}
-                <span className="text-sm font-medium text-[#4688f3]">
-                  {getOrderTypeDisplay(orderType)} Order
-                </span>
+              {/* Modal Content */}
+              <div className="p-4 ">
+                <TableSelection
+                  showKOTs={false}
+                  onTableSelect={(table) => {
+                    generateKOT(table.tableNumber, table.status);
+                    setShowFullTableSelection(false);
+                  }}
+                />
               </div>
-            </div>
-
-
-
-                
-            {/* Customer Details Input */}
-            <div className="space-y-4 mb-6">
-             
-
-              {orderType === "roomService" && (
-                <>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Room Number
-                    </label>
-                    <select
-                      value={roomDetails._id}
-                      onChange={(e) => {
-                        const selectedRoom = roomData.find(
-                          (room) => room._id === e.target.value
-                        );
-                        setRoomDetails({
-                          ...roomDetails,
-                          _id: selectedRoom?._id || "",
-                          roomno: selectedRoom?.roomName || "",
-                          guestName: selectedRoom?.customerName || "",
-                          CheckInNumber: selectedRoom?.voucherNumber || "", 
-                        });
-                      }}
-                      className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                    >
-                      <option value="">Select a room</option>
-                      {roomData?.map((room) => (
-                        <option value={room._id} key={room._id}>
-                          {room?.roomName} - {room?.customerName} -{" "}
-                          {room?.voucherNumber}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Guest Name
-                    </label>
-                    <input
-                      type="text"
-                      value={roomDetails.guestName}
-                      onChange={(e) =>
-                        setRoomDetails({
-                          ...roomDetails,
-                          guestName: e.target.value,
-                        })
-                      }
-                      className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Check-In Number
-                    </label>
-                    <input
-                      type="text"
-                      value={roomDetails.CheckInNumber || ""}
-                      readOnly
-                      className="w-full p-3 border border-gray-300 rounded-md bg-gray-100 text-black text-sm"
-                    />
-                  </div>
-                </>
-              )}
-
-              {(orderType === "delivery" || orderType === "takeaway") && (
-                <>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Customer Name
-                    </label>
-                    <input
-                      type="text"
-                      value={customerDetails.name}
-                      onChange={(e) =>
-                        setCustomerDetails({
-                          ...customerDetails,
-                          name: e.target.value,
-                        })
-                      }
-                      className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Phone Number
-                    </label>
-                    <input
-                      type="text"
-                      value={customerDetails.phone}
-                      onChange={(e) =>
-                        setCustomerDetails({
-                          ...customerDetails,
-                          phone: e.target.value,
-                        })
-                      }
-                      className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                    />
-                  </div>
-                  {orderType === "delivery" && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Address
-                      </label>
-                      <textarea
-                        rows={3}
-                        value={customerDetails.address}
-                        onChange={(e) =>
-                          setCustomerDetails({
-                            ...customerDetails,
-                            address: e.target.value,
-                          })
-                        }
-                        className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none"
-                      ></textarea>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-
-            {/* Confirm Button */}
-            <div className="flex space-x-3">
-              <button
-                onClick={() => setShowKOTModal(false)}
-                className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-3 rounded-md text-sm font-semibold transition-all duration-200"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={generateKOT}
-                className="flex-1 bg-[#10b981] hover:bg-[#0f8f6b] text-white px-6 py-3 rounded-md text-sm font-semibold transition-all duration-200 hover:scale-105 active:scale-95"
-              >
-                Confirm KOT
-              </button>
             </div>
           </div>
         </div>
-      )}
+        )}
 
-      {/* Custom CSS for better mobile experience */}
-      <style jsx>{`
-        .scrollbar-hide {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-        .scrollbar-hide::-webkit-scrollbar {
-          display: none;
-        }
-        .line-clamp-2 {
-          display: -webkit-box;
-          -webkit-line-clamp: 2;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
-        }
-      `}</style>
-    </div>
+        {/* KOT Modal - Enhanced for mobile */}
+        {showKOTModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg p-4 md:p-6 max-w-md w-full mx-4 transform transition-all duration-300 scale-100 max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg md:text-xl font-bold text-gray-800">
+                  KOT Details
+                </h2>
+                <button
+                  onClick={() => setShowKOTModal(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors p-1"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              {/* Order Type Display */}
+              <div className="mb-4">
+                <div className="flex items-center justify-center p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  {orderType === "dine-in" && (
+                    <Home className="w-5 h-5 mr-2 text-[#4688f3]" />
+                  )}
+                  {orderType === "takeaway" && (
+                    <Package className="w-5 h-5 mr-2 text-[#4688f3]" />
+                  )}
+                  {orderType === "delivery" && (
+                    <Car className="w-5 h-5 mr-2 text-[#4688f3]" />
+                  )}
+                  {orderType === "roomService" && (
+                    <Bed className="w-5 h-5 mr-2 text-[#4688f3]" />
+                  )}
+                  <span className="text-sm font-medium text-[#4688f3]">
+                    {getOrderTypeDisplay(orderType)} Order
+                  </span>
+                </div>
+              </div>
+
+              {/* Customer Details Input */}
+              <div className="space-y-4 mb-6">
+                {orderType === "roomService" && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Room Number
+                      </label>
+                      <select
+                        value={roomDetails._id}
+                        onChange={(e) => {
+                          const selectedRoom = roomData.find(
+                            (room) => room._id === e.target.value
+                          );
+                          setRoomDetails({
+                            ...roomDetails,
+                            _id: selectedRoom?._id || "",
+                            roomno: selectedRoom?.roomName || "",
+                            guestName: selectedRoom?.customerName || "",
+                            CheckInNumber: selectedRoom?.voucherNumber || "",
+                          });
+                        }}
+                        className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      >
+                        <option value="">Select a room</option>
+                        {roomData?.map((room) => (
+                          <option value={room._id} key={room._id}>
+                            {room?.roomName} - {room?.customerName} -{" "}
+                            {room?.voucherNumber}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Guest Name
+                      </label>
+                      <input
+                        type="text"
+                        value={roomDetails.guestName}
+                        onChange={(e) =>
+                          setRoomDetails({
+                            ...roomDetails,
+                            guestName: e.target.value,
+                          })
+                        }
+                        className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Check-In Number
+                      </label>
+                      <input
+                        type="text"
+                        value={roomDetails.CheckInNumber || ""}
+                        readOnly
+                        className="w-full p-3 border border-gray-300 rounded-md bg-gray-100 text-black text-sm"
+                      />
+                    </div>
+                  </>
+                )}
+
+                {(orderType === "delivery" || orderType === "takeaway") && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Customer Name
+                      </label>
+                      <input
+                        type="text"
+                        value={customerDetails.name}
+                        onChange={(e) =>
+                          setCustomerDetails({
+                            ...customerDetails,
+                            name: e.target.value,
+                          })
+                        }
+                        className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Phone Number
+                      </label>
+                      <input
+                        type="text"
+                        value={customerDetails.phone}
+                        onChange={(e) =>
+                          setCustomerDetails({
+                            ...customerDetails,
+                            phone: e.target.value,
+                          })
+                        }
+                        className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      />
+                    </div>
+                    {orderType === "delivery" && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Address
+                        </label>
+                        <textarea
+                          rows={3}
+                          value={customerDetails.address}
+                          onChange={(e) =>
+                            setCustomerDetails({
+                              ...customerDetails,
+                              address: e.target.value,
+                            })
+                          }
+                          className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none"
+                        ></textarea>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+
+              {/* Confirm Button */}
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => setShowKOTModal(false)}
+                  className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-3 rounded-md text-sm font-semibold transition-all duration-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={generateKOT}
+                  className="flex-1 bg-[#10b981] hover:bg-[#0f8f6b] text-white px-6 py-3 rounded-md text-sm font-semibold transition-all duration-200 hover:scale-105 active:scale-95"
+                >
+                  Confirm KOT
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Custom CSS for better mobile experience */}
+        <style jsx>{`
+          .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+          }
+          .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+          }
+          .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+          }
+        `}</style>
+      
+    </>
   );
 };
 

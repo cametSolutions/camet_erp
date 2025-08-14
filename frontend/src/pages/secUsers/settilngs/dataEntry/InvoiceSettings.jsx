@@ -83,9 +83,9 @@ const InvoiceSettings = () => {
             "Enable this option to include 'Ship to Bill' details on the invoice",
           icon: <FaRegAddressBook />,
           to: "/invoiceSettings/enableShipToBill",
-          toggleValue: enableShipTo || false,
+          toggleValue: enableShipTo["sale"] || false,
           dbField: "enableShipTo",
-          active: false,
+          active: true,
           toggle: true,
         },
 
@@ -142,7 +142,7 @@ const InvoiceSettings = () => {
         url = "updateCommonToggleConfiguration";
         break;
       case "enableShipTo":
-        url = "/updateFirstLayerConfiguration";
+        url = "/updateCommonToggleConfiguration";
         break;
 
       default:
@@ -160,7 +160,7 @@ const InvoiceSettings = () => {
 
     let body = {};
 
-    if (data?.title === "showDescription" || data?.title === "addRateWithTax") {
+    if (data?.title === "showDescription" || data?.title === "addRateWithTax" || data?.title === "enableShipTo") {
       body = {
         configField: data?.title,
         voucher: "sale",
