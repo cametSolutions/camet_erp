@@ -73,9 +73,11 @@ function VoucherInitialPage() {
   };
 
   // Redux selectors
-  const { _id: cmp_id } = useSelector(
+  const { _id: cmp_id, configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
+
+  const { enablePaymentSplittingAsCompulsory = false } = configurations[0];
 
   const {
     date,
@@ -350,9 +352,7 @@ function VoucherInitialPage() {
         };
       }
 
-
       console.log(formData);
-      
 
       const endPoint = getApiEndPoint();
       let params = {};
@@ -414,6 +414,9 @@ function VoucherInitialPage() {
             selectedVoucherSeriesFromRedux={
               selectedVoucherSeriesFromRedux || {}
             }
+            enablePaymentSplittingAsCompulsory={
+              enablePaymentSplittingAsCompulsory
+            }
           />
           {/* adding party */}
 
@@ -460,7 +463,11 @@ function VoucherInitialPage() {
             openAdditionalTile={openAdditionalTile}
           />
 
-          {totalAmount > 0 && <ReceiveAmount />}
+          {/* we will show receive amount section as button at header and footer if it is compulsory */}
+
+          {totalAmount > 0 && !enablePaymentSplittingAsCompulsory && (
+            <ReceiveAmount />
+          )}
 
           <AddNoteTile
             noteFromRedux={noteFromRedux}
@@ -492,6 +499,9 @@ function VoucherInitialPage() {
             title={formatVoucherType(voucherTypeFromRedux)}
             isLoading={submitLoading || isLoading}
             mode={mode}
+            enablePaymentSplittingAsCompulsory={
+              enablePaymentSplittingAsCompulsory
+            }
           />
         </div>
       </div>
