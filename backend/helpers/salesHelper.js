@@ -465,7 +465,7 @@ export const updateTallyData = async (
   Primary_user_id,
   party,
   lastAmount,
-  secondaryMobile,gi
+  secondaryMobile,
   session,
   valueToUpdateInTally,
   selectedDate,
