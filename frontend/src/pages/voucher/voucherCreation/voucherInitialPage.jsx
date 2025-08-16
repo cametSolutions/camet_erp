@@ -264,6 +264,7 @@ function VoucherInitialPage() {
   };
 
   const submitHandler = async () => {
+    
     // Validation
     if (
       Object.keys(party).length === 0 &&

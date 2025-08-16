@@ -1,11 +1,10 @@
 /* eslint-disable react/prop-types */
 import { useState, forwardRef } from "react";
-import { IoIosAddCircle } from "react-icons/io";
 import { MdDateRange } from "react-icons/md";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import VoucherSeriesModal from "./VoucherSeriesModal";
-import { Link } from "react-router-dom";
+import VoucherSubmitButton from "./VoucherSubmitButton";
 
 // Custom input component for the date picker - wrapped with forwardRef
 const CustomInput = forwardRef(({ onClick }, ref) => (
@@ -113,7 +112,7 @@ function HeaderTile({
           <div className="">
             <div className="flex gap-5 items-center">
               <div className="hidden sm:block">
-                <button
+                {/* <button
                   className={`${
                     loading && "pointer-events-none opacity-80"
                   } bottom-0 text-white bg-violet-700 w-full rounded-md p-2 flex items-center justify-center gap-2 hover_scale cursor-pointer`}
@@ -135,7 +134,16 @@ function HeaderTile({
                         : `Edit ${titleText}`}
                     </p>
                   )}
-                </button>
+                </button> */}
+
+                <VoucherSubmitButton
+                  title={title}
+                  mode={mode}
+                  submitHandler={submitHandler}
+                  loading={loading}
+                  titleText={titleText}
+                  enablePaymentSplittingAsCompulsory={enablePaymentSplittingAsCompulsory}
+                />
               </div>
               <div>
                 <button

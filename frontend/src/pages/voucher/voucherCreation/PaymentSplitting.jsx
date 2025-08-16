@@ -45,13 +45,13 @@ function PaymentSplitting() {
     credit: { title: "Credit", model: "Party" },
   };
 
-
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const { _id: cmp_id } = useSelector(
+  const { _id: cmp_id, configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
+  const { enablePaymentSplittingAsCompulsory = false } = configurations[0];
 
   const {
     totalWithAdditionalCharges: totalWithAdditionalCharges,
@@ -95,16 +95,20 @@ function PaymentSplitting() {
 
   const handleAmountChange = (type, amount) => {
     const numericAmount = parseFloat(amount) || 0;
-    
+
     // Calculate current total excluding this payment type
     const currentTotalExcludingThis = paymentSplits
-      .filter(split => split.type !== type)
+      .filter((split) => split.type !== type)
       .reduce((sum, split) => sum + (parseFloat(split.amount) || 0), 0);
-    
+
     // Check if adding this amount would exceed the total
-    if (currentTotalExcludingThis + numericAmount > totalWithAdditionalCharges) {
+    if (
+      currentTotalExcludingThis + numericAmount >
+      totalWithAdditionalCharges
+    ) {
       // Set amount to remaining balance
-      const remainingBalance = totalWithAdditionalCharges - currentTotalExcludingThis;
+      const remainingBalance =
+        totalWithAdditionalCharges - currentTotalExcludingThis;
       amount = remainingBalance > 0 ? remainingBalance.toString() : "";
     }
 
@@ -384,10 +388,10 @@ function PaymentSplitting() {
             {/* Action Button */}
             <div className="w-full">
               <div
-                className="px-8 py-3 rounded-md font-medium transition-all duration-200 text-center cursor-pointer bg-pink-500 text-white hover:bg-pink-600"
+                className={` ${enablePaymentSplittingAsCompulsory ? "bg-violet-700 hover:bg-violet-800" : "bg-pink-500 hover:bg-pink-600"}  px-8 py-3 rounded-md font-medium transition-all duration-200 text-center cursor-pointer  text-white`}
                 onClick={handleSavePaymentSplit}
               >
-                Save Payment Split
+                { enablePaymentSplittingAsCompulsory? "Generate Sales" : "Save Payment Split"}
               </div>
             </div>
           </div>
