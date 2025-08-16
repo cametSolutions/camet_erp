@@ -9,6 +9,7 @@ import {
   setPriceLevel,
   updateItem,
   addItem,
+  updateIsScanOn,
 } from "../../../../slices/voucherSlices/commonVoucherSlice";
 import SearchBar from "@/components/common/SearchBar";
 import VoucherProductLIst from "./VoucherProductLIst";
@@ -76,6 +77,7 @@ function VoucherAddCount() {
     hasMore: hasMoreFromRedux,
     voucherType: voucherTypeFromRedux,
     stockTransferToGodown,
+    isScanOn: isScanOnFromRedux,
   } = useSelector((state) => state.commonVoucherSlice);
 
   // ===================================
@@ -105,6 +107,7 @@ function VoucherAddCount() {
       setSearchTerm(data);
       setIsLoading(false);
       setPage(1);
+
       setItems([]);
       setHasMore(true);
 
@@ -384,7 +387,10 @@ function VoucherAddCount() {
 
         // purchase does not need the price level ,it is manually typed
 
-        if (voucherTypeFromRedux === "purchase" || voucherTypeFromRedux === "stockTransfer") {
+        if (
+          voucherTypeFromRedux === "purchase" ||
+          voucherTypeFromRedux === "stockTransfer"
+        ) {
           defaultPriceLevel = {
             _id: null,
             name: null,
@@ -408,7 +414,8 @@ function VoucherAddCount() {
 
   // Handle search term changes by resetting pagination
   useEffect(() => {
-    if (pricesLoaded) {
+    /// no need to fetch if isScan is on
+    if (pricesLoaded && !isScanOnFromRedux) {
       fetchProducts(1, "");
     }
   }, [pricesLoaded]);
@@ -435,7 +442,7 @@ function VoucherAddCount() {
     let totalTaxableAmount = 0; // Track total taxable amount (before tax)
 
     item.GodownList.forEach((godownOrBatch, index) => {
-      if (situation === "normal") {
+      if (situation === "normal" && godownOrBatch.selectedPriceRate) {
         priceRate = godownOrBatch.selectedPriceRate;
       }
       const quantity = Number(godownOrBatch.count) || 0;
@@ -705,6 +712,7 @@ function VoucherAddCount() {
           currentItem,
           selectedPriceLevelFromRedux
         );
+
         const updatedGodownListWithTotals = updatedGodownList.map(
           (godown, index) => {
             const matching = totalData.individualTotals.find(
@@ -763,6 +771,7 @@ function VoucherAddCount() {
   const handleBarcodeButtonClick = () => {
     if (!isScanOn) {
       setIsScanOn(true);
+      dispatch(updateIsScanOn(true));
       dispatch(
         addAllProducts({
           page: 1,
@@ -772,6 +781,7 @@ function VoucherAddCount() {
       );
       setItems(itemsFromRedux);
     } else {
+      dispatch(updateIsScanOn(false));
       setIsScanOn(false);
       fetchProducts(1, "");
     }
@@ -804,8 +814,8 @@ function VoucherAddCount() {
         (el) => el._id === scannedItem._id
       );
 
+      /// if exists
       if (isItemExistIndex !== -1) {
-        // Move the existing item to the top
         // Move the existing item to the top
         const [existingItem] = items.splice(isItemExistIndex, 1);
 
@@ -825,19 +835,119 @@ function VoucherAddCount() {
 
       if (isItemExistIndex !== -1) {
         // Increment the count and move to the top
-        handleIncrement(scannedItem._id, null, true);
+        handleIncrement(scannedItem._id, 0, true);
       } else {
         // Add the new item
+
+        const currentBatchOrGodown = { ...scannedItem.GodownList[0] };
+        const balance_stock = currentBatchOrGodown?.balance_stock || 0;
+
+        // Check if the  has no stock for van sale
+        if (
+          balance_stock <= 0 &&
+          enableNegativeStockBlockForVanInvoice &&
+          voucherTypeFromRedux === "vanSale"
+        ) {
+          return scannedItem;
+        }
+
+        // Toggle the added state or set to true if undefined
+        currentBatchOrGodown.added = currentBatchOrGodown.added
+          ? !currentBatchOrGodown.added
+          : true;
+
+        // Initialize count values
+        currentBatchOrGodown.count = 1;
+        currentBatchOrGodown.actualCount = 1;
+
+        /// find the price rate and set it in the godown
+        const priceRate =
+          scannedItem?.Priceleveles?.find(
+            (priceLevelItem) =>
+              priceLevelItem?._id === selectedPriceLevelFromRedux?._id
+          )?.pricerate || 0;
+        currentBatchOrGodown.selectedPriceRate = priceRate;
+
+        // Update the GodownList with the modified batch/godown
+        scannedItem.GodownList[0] = currentBatchOrGodown;
+
+        // Update the overall item count
+        const totalOfCounts = scannedItem.GodownList.reduce(
+          (sum, godown) => sum + (godown.count || 0),
+          0
+        );
+        scannedItem.totalCount = totalOfCounts;
+        scannedItem.totalActualCount = totalOfCounts;
+
+        // Calculate totals for the item
+        const totalData = calculateTotal(
+          scannedItem,
+          selectedPriceLevelFromRedux,
+          "priceLevelChange"
+        );
+
+        // Update individual totals for each godown/batch
+        const updatedGodownListWithTotals = scannedItem.GodownList.map(
+          (godown, index) => {
+            const matching = totalData.individualTotals.find(
+              ({ index: i }) => i === index
+            );
+            if (!matching) return godown;
+
+            // Destructure to exclude `index` and spread the rest
+            // eslint-disable-next-line no-unused-vars
+            const { index: _, quantity: __, ...rest } = matching;
+
+            return {
+              ...godown,
+              ...rest,
+            };
+          }
+        );
+
+        scannedItem.GodownList = updatedGodownListWithTotals;
+        // Update item total and added state
+        scannedItem.total = totalData?.total || 0;
+        scannedItem.totalCgstAmt = totalData?.totalCgstAmt || 0;
+        scannedItem.totalSgstAmt = totalData?.totalSgstAmt || 0;
+        scannedItem.totalIgstAmt = totalData?.totalIgstAmt || 0;
+        scannedItem.totalCessAmt = totalData?.totalCessAmt || 0;
+        scannedItem.totalAddlCessAmt = totalData?.totalAdditionalCessAmt || 0;
         scannedItem.added = true;
-        scannedItem.GodownList[0].selectedPriceRate = Number(priceRate);
-        scannedItem.GodownList[0].individualTotal = Number(priceRate);
-        scannedItem.count = 1;
-        scannedItem.total = Number(priceRate);
-        setItems((prevResults) => [scannedItem, ...prevResults]);
+
+        // Dispatch to Redux store
         dispatch(addItem({ payload: scannedItem, moveToTop: true }));
+        setItems((prevResults) => [scannedItem, ...prevResults]);
+
+        // scannedItem.added = true;
+        // scannedItem.GodownList[0].selectedPriceRate = Number(priceRate);
+        // scannedItem.GodownList[0].individualTotal = Number(priceRate);
+        // scannedItem.count = 1;
+        // scannedItem.total = Number(priceRate);
+        // setItems((prevResults) => [scannedItem, ...prevResults]);
+        // dispatch(addItem({ payload: scannedItem, moveToTop: true }));
       }
     }
   };
+
+  //// handle scan property on the page load
+
+  useEffect(() => {
+    if (isScanOnFromRedux) {
+      // handleBarcodeButtonClick();
+      setIsScanOn(true);
+      dispatch(updateIsScanOn(true));
+      dispatch(
+        addAllProducts({
+          page: 1,
+          hasMore: true,
+          products: [],
+        })
+      );
+
+      setItems(itemsFromRedux);
+    }
+  }, [isScanOnFromRedux]);
 
   // ===================================
   // Render Component

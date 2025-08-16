@@ -294,7 +294,7 @@ export const addProductSubDetails = async (req, res) => {
     /// add godownEnabled tag to company
     const company = await OragnizationModel.findOne({ _id: orgId });
     const generatedId = new mongoose.Types.ObjectId();
-    
+
     switch (key) {
       case "brand":
       case "roomType":
@@ -430,7 +430,7 @@ export const getProductSubDetails = async (req, res) => {
           under: "restaurant",
         });
         break;
-           case "foodItems":
+      case "foodItems":
         data = await Subcategory.find({
           cmp_id: orgId,
           Primary_user_id: Primary_user_id,

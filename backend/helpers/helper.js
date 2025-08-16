@@ -88,39 +88,82 @@ export const aggregateTransactions = (
     secondaryUserName: "$secondaryUser.name",
     secondaryUser_id: "$secondaryUser._id",
     balanceAmount: {
-      $toString: {
-        $ifNull: [
-          "$paymentSplittingData.balanceAmount",
-          type === "Receipt" || type === "Payment"
-            ? "$enteredAmount"
-            : "$finalAmount",
-        ],
-      },
-    },
-    cashTotal: {
-      $toString: {
-        $cond: {
-          if: { $ifNull: ["$paymentSplittingData.cashTotal", false] },
-          then: "$paymentSplittingData.cashTotal",
-          else: {
-            $cond: {
-              if: { $eq: ["$party.accountGroup", "Cash-in-Hand"] },
-              then: {
-                $cond: {
-                  if: {
-                    $or: [
-                      { $eq: [type, "Receipt"] },
-                      { $eq: [type, "Payment"] },
-                    ],
+      $convert: {
+        input: {
+          $cond: {
+            if: { $isArray: "$paymentSplittingData.balanceAmount" },
+            then: {
+              $cond: {
+                if: { $gt: [{ $size: "$paymentSplittingData.balanceAmount" }, 0] },
+                then: { $arrayElemAt: ["$paymentSplittingData.balanceAmount", 0] },
+                else: {
+                  $cond: {
+                    if: {
+                      $or: [
+                        { $eq: [type, "Receipt"] },
+                        { $eq: [type, "Payment"] },
+                      ],
+                    },
+                    then: "$enteredAmount",
+                    else: "$finalAmount",
                   },
-                  then: "$enteredAmount",
-                  else: "$finalAmount",
                 },
               },
-              else: "0",
+            },
+            else: {
+              $ifNull: [
+                "$paymentSplittingData.balanceAmount",
+                type === "Receipt" || type === "Payment"
+                  ? "$enteredAmount"
+                  : "$finalAmount",
+              ],
             },
           },
         },
+        to: "string",
+        onError: "0", // Default value if conversion fails
+      },
+    },
+    cashTotal: {
+      $convert: {
+        input: {
+          $cond: {
+            if: { $isArray: "$paymentSplittingData.cashTotal" },
+            then: {
+              $cond: {
+                if: { $gt: [{ $size: "$paymentSplittingData.cashTotal" }, 0] },
+                then: { $arrayElemAt: ["$paymentSplittingData.cashTotal", 0] },
+                else: "0",
+              },
+            },
+            else: {
+              $cond: {
+                if: { $ifNull: ["$paymentSplittingData.cashTotal", false] },
+                then: "$paymentSplittingData.cashTotal",
+                else: {
+                  $cond: {
+                    if: { $eq: ["$party.accountGroup", "Cash-in-Hand"] },
+                    then: {
+                      $cond: {
+                        if: {
+                          $or: [
+                            { $eq: [type, "Receipt"] },
+                            { $eq: [type, "Payment"] },
+                          ],
+                        },
+                        then: "$enteredAmount",
+                        else: "$finalAmount",
+                      },
+                    },
+                    else: "0",
+                  },
+                },
+              },
+            },
+          },
+        },
+        to: "string",
+        onError: "0", // Default value if conversion fails
       },
     },
   };
