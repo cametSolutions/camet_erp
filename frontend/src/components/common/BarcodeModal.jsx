@@ -91,7 +91,6 @@ const BarcodeModal = ({ isOpen, onClose, product }) => {
       // Clean up the object URL
       URL.revokeObjectURL(url);
       onClose();
-      setMrp("");
       setSplCode("");
       setSelectedBarcode("");
     }
