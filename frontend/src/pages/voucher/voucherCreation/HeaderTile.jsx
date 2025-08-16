@@ -35,7 +35,8 @@ function HeaderTile({
   number,
   selectedVoucherSeriesFromRedux = {}, // Default to null if not provided
   tab,
-  enablePaymentSplittingAsCompulsory
+  enablePaymentSplittingAsCompulsory,
+  openAdditionalTile
 }) {
   const [isSeriesModalOpen, setIsSeriesModalOpen] = useState(false);
   const [selectedSeries, setSelectedSeries] = useState(null);
@@ -143,6 +144,7 @@ function HeaderTile({
                   loading={loading}
                   titleText={titleText}
                   enablePaymentSplittingAsCompulsory={enablePaymentSplittingAsCompulsory}
+                  openAdditionalTile={openAdditionalTile}
                 />
               </div>
               <div>

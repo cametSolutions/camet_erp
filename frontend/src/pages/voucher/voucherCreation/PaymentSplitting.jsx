@@ -3,13 +3,15 @@ import { ChevronDown, CircleDot } from "lucide-react";
 import TitleDiv from "@/components/common/TitleDiv";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "@/api/api";
 import { truncateText } from "../../../../../backend/utils/textHelpers";
 import {
   addPaymentSplits,
   updateTotalValue,
+  removeAll,
 } from "../../../../slices/voucherSlices/commonVoucherSlice";
+import { toast } from "sonner";
 
 // API function to fetch BankDetails and Cash sources
 const fetchBankAndCashSources = async (cmp_id) => {
@@ -36,6 +38,7 @@ function PaymentSplitting() {
       reference_name: "",
     },
   ]);
+  const [submitLoading, setSubmitLoading] = useState(false);
 
   // Payment mode display information
   const paymentModeInfo = {
@@ -47,15 +50,38 @@ function PaymentSplitting() {
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const queryClient = useQueryClient();
 
   const { _id: cmp_id, configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
   const { enablePaymentSplittingAsCompulsory = false } = configurations[0];
 
+  //// check if the user is admin
+  const isAdmin =
+    JSON.parse(localStorage.getItem("sUserData")).role === "admin"
+      ? true
+      : false;
+
   const {
     totalWithAdditionalCharges: totalWithAdditionalCharges,
     paymentSplittingData,
+
+    date,
+    party,
+    items,
+    despatchDetails,
+    // heights: batchHeights,
+    voucherType,
+    selectedPriceLevel: priceLevelFromRedux = "",
+    voucherType: voucherTypeFromRedux,
+    voucherNumber: voucherNumberFromRedux,
+    finalAmount,
+    vanSaleGodown: vanSaleGodownFromRedux,
+    additionalCharges: additionalChargesFromRedux = [],
+    stockTransferToGodown,
+    selectedVoucherSeries: selectedVoucherSeriesFromRedux,
+    note: noteFromRedux,
   } = useSelector((state) => state.commonVoucherSlice);
 
   // Fetch BankDetails and Cash sources using TanStack Query
@@ -70,8 +96,6 @@ function PaymentSplitting() {
     refetchOnWindowFocus: false,
     staleTime: 1000 * 60,
   });
-
-  console.log(paymentSplittingData);
 
   useEffect(() => {
     if (!totalWithAdditionalCharges) {
@@ -210,6 +234,20 @@ function PaymentSplitting() {
 
     navigate("/sUsers/sales", { replace: true });
   };
+  const handleSavePaymentSplitAndSubmit = () => {
+    const validSplits = getValidPaymentSplits();
+    const data = {
+      changeFinalAmount: true,
+      paymentSplits: validSplits,
+      totalPaymentSplits: totalAmount,
+    };
+    dispatch(addPaymentSplits(data));
+    dispatch(
+      updateTotalValue({ field: "totalPaymentSplits", value: totalAmount })
+    );
+
+    submitHandler();
+  };
 
   // Helper function to check if amount input should be disabled
   const isAmountInputDisabled = (split) => {
@@ -217,6 +255,157 @@ function PaymentSplitting() {
       return !split.ref_id || split.ref_id === null;
     }
     return !split.ref_id || split.ref_id === null;
+  };
+
+  const getVoucherNumberTitle = () => {
+    if (!voucherTypeFromRedux) return "";
+    if (
+      voucherTypeFromRedux === "sales" ||
+      voucherTypeFromRedux === "vanSale"
+    ) {
+      return "salesNumber";
+    } else {
+      return voucherTypeFromRedux + "Number";
+    }
+  };
+
+  const getApiEndPoint = () => {
+    if (voucherTypeFromRedux) {
+      return `create${voucherTypeFromRedux
+        ?.split("")[0]
+        ?.toUpperCase()}${voucherTypeFromRedux?.split("")?.slice(1).join("")}`;
+    } else {
+      return null;
+    }
+  };
+
+  const submitHandler = async () => {
+    // Validation
+    if (
+      Object.keys(party).length === 0 &&
+      voucherTypeFromRedux !== "stockTransfer"
+    ) {
+      toast.error("Add a party first");
+      return;
+    }
+
+    if (
+      voucherTypeFromRedux === "stockTransfer" &&
+      Object.keys(stockTransferToGodown).length === 0
+    ) {
+      toast.error("Select a from godown first");
+      return;
+    }
+
+    if (items.length === 0) {
+      toast.error("Add at least an item");
+      return;
+    }
+
+    if (!selectedVoucherSeriesFromRedux?._id) {
+      toast.error(
+        "Error with your voucher series. Please select a valid series."
+      );
+      return;
+    }
+
+    // if (openAdditionalTile) {
+    //   const hasEmptyValue = additionalChargesFromRedux.some(
+    //     (row) => row.value === ""
+    //   );
+    //   if (hasEmptyValue) {
+    //     toast.error("Please add a value.");
+    //     setSubmitLoading(false);
+    //     return;
+    //   }
+    //   const hasNagetiveValue = additionalChargesFromRedux.some(
+    //     (row) => parseFloat(row.value) < 0
+    //   );
+    //   if (hasNagetiveValue) {
+    //     toast.error("Please add a positive value");
+    //     setSubmitLoading(false);
+
+    //     return;
+    //   }
+    // }
+
+    setSubmitLoading(true);
+    const voucherNumberTitle = getVoucherNumberTitle();
+
+    let formData = {};
+
+    console.log(date);
+    const cleanedDate = typeof date === "string" && date.startsWith('"')
+  ? JSON.parse(date) // removes extra quotes
+  : date;
+
+    try {
+      if (voucherTypeFromRedux === "stockTransfer") {
+        formData = {
+          selectedDate: new Date(cleanedDate).toISOString(),
+          voucherType,
+          series_id: selectedVoucherSeriesFromRedux?._id,
+          usedSeriesNumber: selectedVoucherSeriesFromRedux?.currentNumber,
+          orgId: cmp_id,
+          [voucherNumberTitle]: voucherNumberFromRedux,
+          stockTransferToGodown,
+          items,
+          finalAmount: 0,
+          note: noteFromRedux,
+        };
+      } else {
+        formData = {
+          selectedDate: new Date(cleanedDate).toISOString(),
+          voucherType,
+          [voucherNumberTitle]: voucherNumberFromRedux,
+          series_id: selectedVoucherSeriesFromRedux?._id,
+          usedSeriesNumber: selectedVoucherSeriesFromRedux?.currentNumber,
+          orgId: cmp_id,
+          finalAmount: Number(finalAmount.toFixed(2)),
+          party,
+          items,
+          note: noteFromRedux,
+          despatchDetails,
+          priceLevelFromRedux,
+          additionalChargesFromRedux,
+          selectedGodownDetails: vanSaleGodownFromRedux,
+          paymentSplittingData: paymentSplittingData,
+        };
+      }
+
+      console.log(formData);
+
+      const endPoint = getApiEndPoint();
+      let params = {};
+      if (voucherTypeFromRedux === "vanSale") {
+        params = {
+          vanSale: true,
+        };
+      }
+
+      const res = await api.post(
+        `/api/sUsers/${endPoint}?${new URLSearchParams(params)}`,
+        formData,
+        {
+          headers: { "Content-Type": "application/json" },
+          withCredentials: true,
+        }
+      );
+
+      toast.success(res.data.message);
+      navigate(`/sUsers/${voucherTypeFromRedux}Details/${res.data.data._id}`, {
+        state: { from: location?.state?.from || "null" },
+      });
+      dispatch(removeAll());
+      queryClient.invalidateQueries({
+        queryKey: ["todaysTransaction", cmp_id, isAdmin],
+      });
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Error creating sale");
+      console.log(error);
+    } finally {
+      setSubmitLoading(false);
+    }
   };
 
   return (
@@ -387,12 +576,24 @@ function PaymentSplitting() {
 
             {/* Action Button */}
             <div className="w-full">
-              <div
-                className={` ${enablePaymentSplittingAsCompulsory ? "bg-violet-700 hover:bg-violet-800" : "bg-pink-500 hover:bg-pink-600"}  px-8 py-3 rounded-md font-medium transition-all duration-200 text-center cursor-pointer  text-white`}
-                onClick={handleSavePaymentSplit}
-              >
-                { enablePaymentSplittingAsCompulsory? "Generate Sales" : "Save Payment Split"}
-              </div>
+              {enablePaymentSplittingAsCompulsory ? (
+                <div
+                  disabled={submitLoading}
+                  onClick={handleSavePaymentSplitAndSubmit}
+                  className={`${
+                    submitLoading ? "opacity-50 cursor-not-allowed" : ""
+                  } bg-violet-700 hover:bg-violet-800 px-8 py-3 rounded-md font-medium transition-all duration-200 text-center cursor-pointer text-white`}
+                >
+                  Generate Sales
+                </div>
+              ) : (
+                <div
+                  onClick={handleSavePaymentSplit}
+                  className="bg-pink-500 hover:bg-pink-600 px-8 py-3 rounded-md font-medium transition-all duration-200 text-center cursor-pointer text-white"
+                >
+                  Save Payment Split
+                </div>
+              )}
             </div>
           </div>
         </div>

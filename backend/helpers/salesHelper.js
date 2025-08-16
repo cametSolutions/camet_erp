@@ -706,7 +706,9 @@ export const savePaymentSplittingDataInSources = async (
             : null;
 
         // Handle credit mode
-        if (mode === "credit") {
+
+        if (mode === "credit" && item.ref_id == null) return null
+        if (mode === "credit" && item.ref_id !== null) {
           const party = await partyModel
             .findOne({
               _id: item.ref_id || null,

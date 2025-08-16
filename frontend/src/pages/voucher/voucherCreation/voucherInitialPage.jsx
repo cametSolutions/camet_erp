@@ -388,6 +388,10 @@ function VoucherInitialPage() {
     }
   };
 
+
+  console.log(openAdditionalTile);
+  
+
   return (
     <div className="mb-14 sm:mb-0">
       <div className="flex-1 bg-slate-100 h -screen ">
@@ -418,6 +422,7 @@ function VoucherInitialPage() {
             enablePaymentSplittingAsCompulsory={
               enablePaymentSplittingAsCompulsory
             }
+            openAdditionalTile={openAdditionalTile}
           />
           {/* adding party */}
 
@@ -503,6 +508,7 @@ function VoucherInitialPage() {
             enablePaymentSplittingAsCompulsory={
               enablePaymentSplittingAsCompulsory
             }
+            openAdditionalTile={openAdditionalTile}
           />
         </div>
       </div>
