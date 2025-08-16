@@ -15,13 +15,18 @@ const StockItemSettings = () => {
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
   const settingsOptions = [
-      (industry === 7 || industry === 6 && {
-        title: "Room Creation",
-        description: "Create different room types for better room organization",
-        icon: <GrClipboard />,
-        to: "/sUsers/roomList",
-        active: true,
-      }),
+    ...(industry === 6 || industry === 7
+      ? [
+          {
+            title: "Room Creation",
+            description:
+              "Create different room types for better room organization",
+            icon: <GrClipboard />,
+            to: "/sUsers/roomList",
+            active: true,
+          },
+        ]
+      : []),
     {
       title:
         industry === 6 || industry === 7 ? "Room Type" : "Brand Management",
