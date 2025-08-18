@@ -481,6 +481,9 @@ export const updateTallyData = async (
     return;
   }
 
+  console.log("lastAmount", lastAmount);
+  console.log("valueToUpdateInTally", valueToUpdateInTally);
+
   try {
     const billData = {
       Primary_user_id: Primary_user_id,
@@ -502,6 +505,8 @@ export const updateTallyData = async (
       source: voucherType,
       classification,
     };
+
+    console.log("billData", billData);
 
     const tallyUpdate = await TallyData.findOneAndUpdate(
       {
@@ -691,12 +696,12 @@ export const savePaymentSplittingDataInSources = async (
   partyName,
   session,
   selectedDate,
-  voucherType,
-  
+  voucherType
 ) => {
   try {
     const updates = await Promise.all(
       paymentSplittingData?.map(async (item) => {
+        if (!item.ref_id) return;
         const mode = item.type;
         let selectedModel =
           mode === "cash"
@@ -707,7 +712,7 @@ export const savePaymentSplittingDataInSources = async (
 
         // Handle credit mode
 
-        if (mode === "credit" && item.ref_id == null) return null
+        if (mode === "credit" && item.ref_id == null) return null;
         if (mode === "credit" && item.ref_id !== null) {
           const party = await partyModel
             .findOne({
@@ -718,8 +723,6 @@ export const savePaymentSplittingDataInSources = async (
             .lean();
 
           party.accountGroupName = party.accountGroup.accountGroup;
-
-          console.log("party", party);
 
           // console.log("party", party);
 
@@ -739,7 +742,7 @@ export const savePaymentSplittingDataInSources = async (
             item.amount,
             selectedDate,
             voucherType,
-            "paymentSplitting"
+            "Dr"
           );
 
           // Return early for credit mode

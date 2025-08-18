@@ -11,6 +11,7 @@ import {
   updateTotalValue,
 } from "../../../../slices/voucherSlices/commonVoucherSlice";
 import { toast } from "sonner";
+import { store } from "../../../../app/store";
 
 // API function to fetch BankDetails and Cash sources
 const fetchBankAndCashSources = async (cmp_id) => {
@@ -75,12 +76,12 @@ function PaymentSplitting() {
     selectedPriceLevel: priceLevelFromRedux = "",
     voucherType: voucherTypeFromRedux,
     voucherNumber: voucherNumberFromRedux,
-    finalAmount,
     vanSaleGodown: vanSaleGodownFromRedux,
     additionalCharges: additionalChargesFromRedux = [],
     stockTransferToGodown,
     selectedVoucherSeries: selectedVoucherSeriesFromRedux,
     note: noteFromRedux,
+    
   } = useSelector((state) => state.commonVoucherSlice);
 
   // Fetch BankDetails and Cash sources using TanStack Query
@@ -322,6 +323,9 @@ function PaymentSplitting() {
         ? JSON.parse(date) // removes extra quotes
         : date;
 
+    const currentState = store.getState();
+    const reduxData = currentState.commonVoucherSlice;
+
     try {
       formData = {
         selectedDate: new Date(cleanedDate).toISOString(),
@@ -330,7 +334,10 @@ function PaymentSplitting() {
         series_id: selectedVoucherSeriesFromRedux?._id,
         usedSeriesNumber: selectedVoucherSeriesFromRedux?.currentNumber,
         orgId: cmp_id,
-        finalAmount: Number(finalAmount.toFixed(2)),
+
+        /// these values are not getting latest data,so we need to take it directly form store
+        finalAmount: Number(reduxData?.finalAmount?.toFixed(2) || 0),
+        finalOutstandingAmount: Number(reduxData?.finalOutstandingAmount?.toFixed(2) || 0),
         party,
         items,
         note: noteFromRedux,
@@ -338,10 +345,14 @@ function PaymentSplitting() {
         priceLevelFromRedux,
         additionalChargesFromRedux,
         selectedGodownDetails: vanSaleGodownFromRedux,
-        paymentSplittingData: paymentSplittingData,
+        paymentSplittingData: paymentSplits,
+        
       };
 
       console.log(formData);
+
+      console.log(formData.paymentSplittingData);
+      console.log(paymentSplits);
 
       const endPoint = getApiEndPoint();
       let params = {};
@@ -374,7 +385,6 @@ function PaymentSplitting() {
         queryKey: ["todaysTransaction", cmp_id, isAdmin],
       });
       // dispatch(removeAll());
-
     } catch (error) {
       toast.error(error.response?.data?.message || "Error creating sale");
       console.log(error);

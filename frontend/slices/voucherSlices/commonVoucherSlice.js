@@ -61,6 +61,7 @@ const initialState = {
   totalWithAdditionalCharges: 0,
   totalPaymentSplits: 0,
   finalAmount: 0,
+  finalOutstandingAmount: 0,
 };
 
 export const commonVoucherSlice = createSlice({
@@ -517,7 +518,6 @@ export const commonVoucherSlice = createSlice({
         state.totalAfterPaymentSplit = Number(
           state.totalAfterAdditionalCharges - total
         );
-        console.log(state.finalAmount);
       }
     },
     addCreditInPaymentSplit: (state, action) => {
@@ -570,25 +570,32 @@ export const commonVoucherSlice = createSlice({
       state.totalWithAdditionalCharges =
         state.subTotal + (state.totalAdditionalCharges || 0);
 
-      state.finalAmount =
+      state.finalAmount = state.totalWithAdditionalCharges;
+
+      state.finalOutstandingAmount =
         state.totalWithAdditionalCharges - (state.totalPaymentSplits || 0);
     },
 
     resetPaymentSplit: (state) => {
       state.totalPaymentSplits = 0;
       state.paymentSplittingData = [
-        { type: "cash", amount: "", ref_id:null, ref_collection: "Cash" },
-        { type: "upi", amount: "", ref_id:null, ref_collection: "BankDetails" },
+        { type: "cash", amount: "", ref_id: null, ref_collection: "Cash" },
+        {
+          type: "upi",
+          amount: "",
+          ref_id: null,
+          ref_collection: "BankDetails",
+        },
         {
           type: "cheque",
           amount: "",
-          ref_id:null,
+          ref_id: null,
           ref_collection: "BankDetails",
         },
         {
           type: "credit",
           amount: "",
-          ref_id:null,
+          ref_id: null,
           ref_collection: "Party",
           reference_name: "",
         },

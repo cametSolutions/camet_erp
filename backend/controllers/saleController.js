@@ -43,6 +43,7 @@ export const createSale = async (req, res) => {
       series_id,
       party,
       finalAmount: lastAmount,
+      finalOutstandingAmount,
       paymentSplittingData,
       selectedDate,
       voucherType,
@@ -101,7 +102,7 @@ export const createSale = async (req, res) => {
     if (convertedFrom.length > 0)
       await changeConversionStatusOfOrder(convertedFrom, session);
 
-    let valueToUpdateInTally = lastAmount;
+    let valueToUpdateInTally = finalOutstandingAmount;
 
     // if (paymentSplittingData && Object.keys(paymentSplittingData).length > 0) {
     //   valueToUpdateInTally = paymentSplittingData?.balanceAmount;
@@ -126,20 +127,22 @@ export const createSale = async (req, res) => {
 
     const Primary_user_id = req.owner;
 
-    await updateTallyData(
-      orgId,
-      salesNumber,
-      result._id,
-      Primary_user_id,
-      party,
-      lastAmount,
-      secondaryMobile,
-      session,
-      valueToUpdateInTally,
-      selectedDate,
-      voucherType,
-      "Dr"
-    );
+    if (valueToUpdateInTally > 0) {
+      await updateTallyData(
+        orgId,
+        salesNumber,
+        result._id,
+        Primary_user_id,
+        party,
+        lastAmount,
+        secondaryMobile,
+        session,
+        valueToUpdateInTally,
+        selectedDate,
+        voucherType,
+        "Dr"
+      );
+    }
 
     ////save payment splitting data in bank or cash model also
     console.log("have payment splitting data 1");
