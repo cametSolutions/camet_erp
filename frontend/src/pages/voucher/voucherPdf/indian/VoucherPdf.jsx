@@ -678,7 +678,7 @@ function VoucherPdf({
             />
             {isPreview && (
               <div className="flex gap-3 justify-end p-2">
-                <button className="px-3 py-1 rounded-lg bg-black text-white font-medium hover:bg-blue-700 active:scale-95 transition"
+                <button className="px-3 py-1 rounded-lg bg-gray-500 text-black font-medium hover:bg-gray-600 active:scale-95 transition"
                   onClick={()=>sendToParent(true)}>
                   Confirm
                 </button>

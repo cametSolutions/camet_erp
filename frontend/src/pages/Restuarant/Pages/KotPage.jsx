@@ -333,6 +333,7 @@ const OrdersDashboard = () => {
       };
     }
 
+
     try {
       const response = await api.put(
         `/api/sUsers/updateKotPayment/${cmp_id}/${id}`,
@@ -354,6 +355,8 @@ const OrdersDashboard = () => {
           )
         );
         setLoader(false);
+        setSelectedKot([])
+        showVoucherPdf(false)
       } else {
         console.error("Failed to update backend:", response.data || response);
       }
@@ -373,6 +376,7 @@ const OrdersDashboard = () => {
   };
 
   const handlePrintData = async (kotId) => {
+    console.log(kotId)
     try {
       let saleData = await api.get(
         `/api/sUsers/getSalePrintData/${cmp_id}/${kotId}`,
@@ -420,15 +424,15 @@ const OrdersDashboard = () => {
       (acc, item) => acc + Number(item.total),
       0
     );
-
+console.log(saleVoucherData)
     let newObject = {
       Date: new Date(),
       voucherType: "sales",
-      serialNumber: saleVoucherData?.seriesName?.currentNumber,
-      userLevelSerialNumber: saleVoucherData?.seriesName?.currentNumber,
+      serialNumber: saleVoucherData?.series?.currentNumber,
+      userLevelSerialNumber: saleVoucherData?.series?.currentNumber,
       salesNumber: saleVoucherData?.number,
-      series_id: saleVoucherData?.seriesName?._id,
-      usedSeriesNumber: saleVoucherData?.seriesName?.currentNumber,
+      series_id: saleVoucherData?.series?._id,
+      usedSeriesNumber: saleVoucherData?.series?.currentNumber,
       partyAccount: "Cash-in-Hand",
       items: itemList,
       finalAmount: totalAmount,
@@ -441,7 +445,6 @@ const OrdersDashboard = () => {
   };
 
   const handleSaveSales = (status) => {
-    console.log("welcome", status);
     if (!status) {
       setShowVoucherPdf(false);
       setPreviewForSales(null);
@@ -451,9 +454,6 @@ const OrdersDashboard = () => {
     setShowPaymentModal(true);
     setSelectedDataForPayment(previewForSales);
   };
-  console.log(previewForSales);
-  console.log(filteredOrders[0]);
-  console.log(selectedDataForPayment?.voucherNumber);
 
   return (
     <>
