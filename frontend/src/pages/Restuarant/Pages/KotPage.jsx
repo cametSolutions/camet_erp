@@ -20,6 +20,7 @@ import { generateAndPrintKOT } from "@/pages/Restuarant/Helper/kotPrintHelper";
 import { useNavigate } from "react-router-dom";
 import VoucherPdf from "@/pages/voucher/voucherPdf/indian/VoucherPdf";
 import { toast } from "react-toastify";
+import { FaRegEdit } from "react-icons/fa";
 const OrdersDashboard = () => {
   const [activeFilter, setActiveFilter] = useState("pending");
   const [searchQuery, setSearchQuery] = useState("");
@@ -455,6 +456,18 @@ console.log(saleVoucherData)
     setSelectedDataForPayment(previewForSales);
   };
 
+const handleEditKot = (kotData) => {
+  console.log(kotData)
+  if(kotData?.paymentCompleted){
+    toast.error("Kot Payment is completed so you can't edit");
+    return
+  }else if(kotData?.status === 'completed'){
+    toast.error("Kot is already completed so you can't edit");
+    return
+  }
+  navigate("/sUsers/RestaurantDashboard", { state: { kotData } });
+};
+
   return (
     <>
       {showVoucherPdf && (
@@ -565,7 +578,7 @@ console.log(saleVoucherData)
                           : "from-blue-50 to-indigo-50 border-blue-100"
                       }`}
                     >
-                      <div className="flex items-center justify-center">
+                      <div className="flex items-center justify-center gap-4">
                         <div
                           className={`flex items-center gap-2 px-3 py-1 rounded-lg shadow-sm border ${
                             isOrderSelected(order)
@@ -577,6 +590,9 @@ console.log(saleVoucherData)
                           <span className="text-sm font-bold text-blue-900">
                             #{order.voucherNumber}
                           </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <FaRegEdit className="w-4 h-4 text-blue-600" onClick={() => handleEditKot(order)}/>
                         </div>
                       </div>
                     </div>

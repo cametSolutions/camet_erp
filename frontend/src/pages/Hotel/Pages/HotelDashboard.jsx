@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useSelector } from "react-redux";
-import { BedDouble, Filter, X,Calendar, User, Clock } from "lucide-react";
+import { BedDouble, Filter, X, Calendar, User, Clock } from "lucide-react";
 import AnimatedBackground from "../Components/AnimatedBackground";
 import RoomStatus from "../Components/RoomStatus";
 import { useNavigate } from "react-router-dom";
 import api from "@/api/api";
-import useFetch from "@/customHook/useFetch";
+import CalenderComponent from "../Components/CalenderComponent";
 
 const HotelDashboard = () => {
   const [rooms, setRooms] = useState([]);
@@ -14,15 +14,15 @@ const HotelDashboard = () => {
   const [loader, setLoader] = useState(false);
   const [showRoomModal, setShowRoomModal] = useState(false);
   const [selectedRoomData, setSelectedRoomData] = useState(null);
- const [bookings, setBookings] = useState([]);
- const [page, setPage] = useState(1);
-   const [hasMore, setHasMore] = useState(true);
-    const [bookingsLoading, setBookingsLoading] = useState(false);
+  const [bookings, setBookings] = useState([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [bookingsLoading, setBookingsLoading] = useState(false);
   // Filter states
   const [roomTypes, setRoomTypes] = useState([]);
   const [floorTypes, setFloorTypes] = useState([]);
   const [bedTypes, setBedTypes] = useState([]);
-const limit=60
+  const limit = 60;
   // Selected filters
   const [filters, setFilters] = useState({
     roomType: "",
@@ -44,9 +44,9 @@ const limit=60
 
   const fetchBookings = useCallback(
     async (pageNumber = 1, searchTerm = "") => {
-       if (bookingsLoading) return;
+      if (bookingsLoading) return;
 
-       setBookingsLoading(true);
+      setBookingsLoading(true);
 
       try {
         const params = new URLSearchParams({
@@ -57,8 +57,7 @@ const limit=60
         if (searchTerm) {
           params.append("search", searchTerm);
         }
-       params.append("modal", "booking");
-        
+        params.append("modal", "booking");
 
         const res = await api.get(
           `/api/sUsers/getBookings/${cmp_id}?${params}`,
@@ -83,7 +82,7 @@ const limit=60
         setHasMore(false);
         // toast.error("Failed to load bookings");
       } finally {
-          setBookingsLoading(false);
+        setBookingsLoading(false);
       }
     },
     [cmp_id]
@@ -91,23 +90,23 @@ const limit=60
 
   // Format date for display
   const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
+    if (!dateString) return "N/A";
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
     });
   };
 
   // Format time for display
   const formatTime = (dateString) => {
-    if (!dateString) return 'N/A';
+    if (!dateString) return "N/A";
     const date = new Date(dateString);
-    return date.toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
+    return date.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
     });
   };
   // Fetch all rooms
@@ -125,7 +124,7 @@ const limit=60
           }
         );
         const roomsData = res.data.rooms || [];
-        console.log(roomsData)
+        console.log(roomsData);
         setRooms(roomsData);
         setFilteredRooms(roomsData);
 
@@ -223,79 +222,83 @@ const limit=60
     dirty: "from-yellow-500 to-orange-600",
     blocked: "from-gray-500 to-slate-800",
   };
- 
-const handleRoomAction = async (action) => {
-  if (!selectedRoomData) return;
 
-  if (action === "booking") {
-    navigate("/sUsers/bookingPage", { state: { room: selectedRoomData } });
-    return;
-  }
-  if (action === "CheckIn") {
-    navigate("/sUsers/checkInPage", { state: { room: selectedRoomData } });
-    return;
-  }
+  const handleRoomAction = async (action) => {
+    if (!selectedRoomData) return;
 
-  if (["dirty", "blocked"].includes(action)) {
-    try {
-      console.log("Updating room status:", {
-        roomId: selectedRoomData._id,
-        newStatus: action
-      }); // Debug log
-
-      const res = await api.put(
-        `/api/sUsers/updateStatus/${selectedRoomData._id}`,
-        { status: action },
-        { 
-          withCredentials: true,
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-
-      console.log("Status update response:", res.data); // Debug log
-
-      
-  await fetchRooms(selectedDate);
-      
-      // Update the main rooms array
-      // setRooms((prev) =>
-      //   prev.map((room) =>
-      //     room._id === updatedRoom._id
-      //       ? { ...room, status: updatedRoom.status }
-      //       : room
-      //   )
-      // );
-      
-      // // Update the filtered rooms array
-      // setFilteredRooms((prev) =>
-      //   prev.map((room) =>
-      //     room._id === updatedRoom._id
-      //       ? { ...room, status: updatedRoom.status }
-      //       : room
-      //   )
-      // );
-
-      // Close the modal
-      setShowRoomModal(false);
-      
-      // Optional: Show success message
-      console.log(`Room ${selectedRoomData.roomName} status updated to ${action}`);
-      
-    } catch (error) {
-      console.error("Error updating room status:", error);
-      console.error("Error details:", {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status
-      });
-      
-      // Optional: Show error message to user
-      alert(`Failed to update room status: ${error.response?.data?.message || error.message}`);
+    if (action === "booking") {
+      navigate("/sUsers/bookingPage", { state: { room: selectedRoomData } });
+      return;
     }
-  }
-};
+    if (action === "CheckIn") {
+      navigate("/sUsers/checkInPage", { state: { room: selectedRoomData } });
+      return;
+    }
+
+    if (["dirty", "blocked"].includes(action)) {
+      try {
+        console.log("Updating room status:", {
+          roomId: selectedRoomData._id,
+          newStatus: action,
+        }); // Debug log
+
+        const res = await api.put(
+          `/api/sUsers/updateStatus/${selectedRoomData._id}`,
+          { status: action },
+          {
+            withCredentials: true,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        console.log("Status update response:", res.data); // Debug log
+
+        await fetchRooms(selectedDate);
+
+        // Update the main rooms array
+        // setRooms((prev) =>
+        //   prev.map((room) =>
+        //     room._id === updatedRoom._id
+        //       ? { ...room, status: updatedRoom.status }
+        //       : room
+        //   )
+        // );
+
+        // // Update the filtered rooms array
+        // setFilteredRooms((prev) =>
+        //   prev.map((room) =>
+        //     room._id === updatedRoom._id
+        //       ? { ...room, status: updatedRoom.status }
+        //       : room
+        //   )
+        // );
+
+        // Close the modal
+        setShowRoomModal(false);
+
+        // Optional: Show success message
+        console.log(
+          `Room ${selectedRoomData.roomName} status updated to ${action}`
+        );
+      } catch (error) {
+        console.error("Error updating room status:", error);
+        console.error("Error details:", {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status,
+        });
+
+        // Optional: Show error message to user
+        alert(
+          `Failed to update room status: ${
+            error.response?.data?.message || error.message
+          }`
+        );
+      }
+    }
+  };
 
   // Calculate status counts
   const getStatusCounts = () => {
@@ -333,25 +336,25 @@ const handleRoomAction = async (action) => {
     applyFilters();
   }, [applyFilters]);
 
-
   useEffect(() => {
     fetchBookings();
   }, [fetchBookings]);
 
-
   const statusCounts = getStatusCounts();
   const grouped = groupRoomsByType(filteredRooms);
+  console.log("grouped", selectedDate);
+  const handleCalenderDate = (date) => {
+    setSelectedDate(date.toISOString().split("T")[0]);
+  };
 
-
-  console.log(rooms[0])
- return (
+  return (
     <div className="min-h-screen bg-slate-900 relative overflow-hidden">
       <AnimatedBackground />
       <div className="flex relative z-10">
         {/* Main Content - Left Side */}
-        <div className="flex-1 p-3" style={{ marginRight: '320px' }}>
+        <div className="flex-1 p-3" style={{ marginRight: "320px" }}>
           {/* Header */}
-            {/* Header */}
+          {/* Header */}
           <div className="bg-[#0B1D34] flex flex-col md:flex-row p-2 gap-2 md:gap-0">
             <div>
               <h3 className="font-bold text-blue-400 flex items-center gap-2 text-base md:text-lg">
@@ -395,18 +398,23 @@ const handleRoomAction = async (action) => {
             </div>
           </div>
 
-          <div className="mb-4">
-            <label htmlFor="selectedDate" className="text-gray-300 mr-2">
-              Select Date:
-            </label>
-            <input
-              type="date"
-              id="selectedDate"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="bg-slate-700 text-white border border-gray-600 rounded px-2 py-1 text-sm"
-              max={new Date().toISOString().split("T")[0]}
-            />
+          <div className="mb-4 flex">
+            <div>
+              <label htmlFor="selectedDate" className="text-gray-300 mr-2">
+                Select Date:
+              </label>
+              <input
+                type="date"
+                id="selectedDate"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="bg-slate-700 text-white border border-gray-600 rounded px-2 py-1 text-sm"
+                max={new Date().toISOString().split("T")[0]}
+              />
+            </div>
+            <div className="ml-auto">
+              <CalenderComponent sendDateToParent={handleCalenderDate} />
+            </div>
           </div>
 
           {/* Filters Section */}
@@ -483,7 +491,9 @@ const handleRoomAction = async (action) => {
                   </label>
                   <select
                     value={filters.status}
-                    onChange={(e) => handleFilterChange("status", e.target.value)}
+                    onChange={(e) =>
+                      handleFilterChange("status", e.target.value)
+                    }
                     className="w-full bg-slate-700 text-white border border-gray-600 rounded px-2 py-1 text-sm"
                   >
                     <option value="">All Statuses</option>
@@ -604,80 +614,79 @@ const handleRoomAction = async (action) => {
           </div>
 
           {/* Bookings List */}
-   <div className="flex-1 overflow-y-auto">
-  {bookingsLoading && bookings.length === 0 ? (
-    <div className="flex justify-center items-center py-8">
-      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
-    </div>
-  ) : bookings.filter(b => {
-      const bookingDate = new Date(b.bookingDate);
-      const today = new Date();
-      const isToday =
-        bookingDate.getFullYear() === today.getFullYear() &&
-        bookingDate.getMonth() === today.getMonth() &&
-        bookingDate.getDate() === today.getDate();
-      return isToday && b.status?.toLowerCase() !== "checkin";
-    }).length > 0 ? (
-    <div className="p-2">
-      {bookings
-        .filter(b => {
-          const bookingDate = new Date(b.bookingDate);
-          const today = new Date();
-          const isToday =
-            bookingDate.getFullYear() === today.getFullYear() &&
-            bookingDate.getMonth() === today.getMonth() &&
-            bookingDate.getDate() === today.getDate();
-          return isToday && b.status?.toLowerCase() !== "checkin";
-        })
-        .map((booking, index) => (
-          <div
-            key={booking._id || index}
-            className="bg-slate-800 rounded-lg p-3 mb-3 border border-slate-700 hover:border-blue-500/50 transition-colors"
-          >
-            {/* Guest Info */}
-            <div className="flex items-center gap-2 mb-2">
-              <User className="w-4 h-4 text-cyan-400" />
-              <span className="text-white font-semibold text-sm">
-                {booking.customerName}
-              </span>
-            </div>
-
-            {/* Booking Number */}
-            <div className="text-gray-300 text-xs mb-2">
-              <span className="text-blue-400">Booking Number</span>{" "}
-              {booking.voucherNumber}
-            </div>
-
-            {/* Dates */}
-            <div className="flex justify-between text-xs text-gray-400 mb-2">
-              <div>
-                <Clock className="w-3 h-3 inline mr-1" />
-                Book-in Date: {formatDate(booking.bookingDate)}
+          <div className="flex-1 overflow-y-auto">
+            {bookingsLoading && bookings.length === 0 ? (
+              <div className="flex justify-center items-center py-8">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
               </div>
-            </div>
-            <div className="flex justify-between text-xs text-gray-400 mb-2">
-              <div>
-                <Clock className="w-3 h-3 inline mr-1" />
-                Book-in Time: {booking.arrivalTime}
-              </div>
-            </div>
+            ) : bookings.filter((b) => {
+                const bookingDate = new Date(b.bookingDate);
+                const today = new Date();
+                const isToday =
+                  bookingDate.getFullYear() === today.getFullYear() &&
+                  bookingDate.getMonth() === today.getMonth() &&
+                  bookingDate.getDate() === today.getDate();
+                return isToday && b.status?.toLowerCase() !== "checkin";
+              }).length > 0 ? (
+              <div className="p-2">
+                {bookings
+                  .filter((b) => {
+                    const bookingDate = new Date(b.bookingDate);
+                    const today = new Date();
+                    const isToday =
+                      bookingDate.getFullYear() === today.getFullYear() &&
+                      bookingDate.getMonth() === today.getMonth() &&
+                      bookingDate.getDate() === today.getDate();
+                    return isToday && b.status?.toLowerCase() !== "checkin";
+                  })
+                  .map((booking, index) => (
+                    <div
+                      key={booking._id || index}
+                      className="bg-slate-800 rounded-lg p-3 mb-3 border border-slate-700 hover:border-blue-500/50 transition-colors"
+                    >
+                      {/* Guest Info */}
+                      <div className="flex items-center gap-2 mb-2">
+                        <User className="w-4 h-4 text-cyan-400" />
+                        <span className="text-white font-semibold text-sm">
+                          {booking.customerName}
+                        </span>
+                      </div>
 
-            {/* Phone */}
-            <div className="text-gray-300 text-xs mb-2">
-              <span className="text-blue-400">Phone Number</span>{" "}
-              {booking.mobileNumber}
-            </div>
+                      {/* Booking Number */}
+                      <div className="text-gray-300 text-xs mb-2">
+                        <span className="text-blue-400">Booking Number</span>{" "}
+                        {booking.voucherNumber}
+                      </div>
+
+                      {/* Dates */}
+                      <div className="flex justify-between text-xs text-gray-400 mb-2">
+                        <div>
+                          <Clock className="w-3 h-3 inline mr-1" />
+                          Book-in Date: {formatDate(booking.bookingDate)}
+                        </div>
+                      </div>
+                      <div className="flex justify-between text-xs text-gray-400 mb-2">
+                        <div>
+                          <Clock className="w-3 h-3 inline mr-1" />
+                          Book-in Time: {booking.arrivalTime}
+                        </div>
+                      </div>
+
+                      {/* Phone */}
+                      <div className="text-gray-300 text-xs mb-2">
+                        <span className="text-blue-400">Phone Number</span>{" "}
+                        {booking.mobileNumber}
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 px-4">
+                <Calendar className="w-12 h-12 text-gray-500 mx-auto mb-3" />
+                <p className="text-gray-400 text-sm">No bookings found</p>
+              </div>
+            )}
           </div>
-        ))}
-    </div>
-  ) : (
-    <div className="text-center py-8 px-4">
-      <Calendar className="w-12 h-12 text-gray-500 mx-auto mb-3" />
-      <p className="text-gray-400 text-sm">No bookings found</p>
-    </div>
-  )}
-</div>     
-
         </div>
       </div>
 

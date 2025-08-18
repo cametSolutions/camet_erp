@@ -4,33 +4,21 @@ import {
   Minus,
   ShoppingCart,
   Search,
-  Star,
   Clock,
   Users,
   TrendingUp,
   Filter,
-  Menu,
   X,
   MenuIcon,
   Receipt,
   Home,
   Package,
   Car,
-  Printer,
-  Check,
-  CreditCard,
-  Banknote,
-  ArrowRight,
-  Mic,
-  MicOff,
-  Volume2,
   Bed,
   ArrowLeft,
 } from "lucide-react";
 import { CiCircleList } from "react-icons/ci";
-import { MdTableBar } from "react-icons/md";
 import TableSelection from "../Pages/TableSelection";
-import woodImage from "../../../assets/images/wood.jpeg"; // Adjust the path as needed
 
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
@@ -38,20 +26,15 @@ import api from "@/api/api";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import useFetch from "@/customHook/useFetch";
-import {
-  generateAndPrintKOT,
-  generateAndPrintBill,
-} from "../Helper/kotPrintHelper";
+import { generateAndPrintKOT } from "../Helper/kotPrintHelper";
 import { taxCalculatorForRestaurant } from "@/pages/Hotel/Helper/taxCalculator";
-
+import { useLocation } from "react-router-dom";
 const RestaurantPOS = () => {
   const [selectedCuisine, setSelectedCuisine] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedSubcategory, setSelectedSubcategory] = useState("");
-  const [hoveredCuisine, setHoveredCuisine] = useState("");
   const [orderItems, setOrderItems] = useState([]);
   const navigate = useNavigate();
-  const [refreshTables, setRefreshTables] = useState(null);
+  const location = useLocation();
   const [showFullTableSelection, setShowFullTableSelection] = useState(false);
 
   // Mobile responsive states
@@ -65,18 +48,37 @@ const RestaurantPOS = () => {
   const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [loader, setLoader] = useState(false);
-
+  const [isEdit, setIsEdit] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showKOTModal, setShowKOTModal] = useState(false);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [orderType, setOrderType] = useState("dine-in");
   const [loading, setLoading] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState("cash");
   const [optionData, setOptionsData] = useState({});
   const [roomData, setRoomData] = useState({});
   const [showPriceLevelSelect, setShowPriceLevelSelect] = useState(false);
   const [priceLevelData, setPriceLevelData] = useState([]);
   const [selectedPriceLevel, setSelectedPriceLevel] = useState(null);
+  const kotDataForEdit = location.state?.kotData;
+
+  useEffect(() => {
+    if (kotDataForEdit) {
+      setIsEdit(true);
+      setOrderItems(kotDataForEdit.items);
+      setOrderType(kotDataForEdit.type);
+      setCustomerDetails({
+        name: kotDataForEdit?.customer?.name,
+        phone: kotDataForEdit?.customer?.phone,
+        address: kotDataForEdit?.customer?.address,
+        tableNumber: kotDataForEdit?.tableNumber,
+      });
+      setRoomDetails({
+        ...roomDetails,
+        _id: kotDataForEdit?.roomId || "",
+        guestName:  kotDataForEdit?.customer?.name|| "",
+        CheckInNumber: kotDataForEdit?.checkInNumber || "",
+      });
+    }
+  }, [kotDataForEdit]);
 
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
@@ -393,7 +395,6 @@ const RestaurantPOS = () => {
       categoryName: name,
     };
     setSelectedCuisine(newObject);
-    setSelectedCategory("");
     setSelectedSubcategory("");
     setSearchTerm("");
     if (isMobile) setShowSidebar(true);
@@ -407,7 +408,6 @@ const RestaurantPOS = () => {
 
   const handleBackToCategories = () => {
     setSelectedSubcategory("");
-    setSelectedCategory("");
     setSearchTerm("");
   };
 
@@ -421,10 +421,6 @@ const RestaurantPOS = () => {
     }
   };
 
-  // const handleProceedToPay = () => {
-  //   if (orderItems.length === 0) return;
-  //   setShowPaymentModal(true);
-  // };
 
   const generateKOT = async (selectedTableNumber, tableStatus) => {
     let updatedItems = [];
@@ -433,7 +429,6 @@ const RestaurantPOS = () => {
       tableNumber: selectedTableNumber,
       tableStatus,
     };
-    console.log("orderItems", orderItems);
     updatedItems = orderItems.map((item) => {
       return {
         ...item,
@@ -470,9 +465,9 @@ const RestaurantPOS = () => {
     } else if (orderType === "roomService") {
       console.log(roomDetails);
       orderCustomerDetails = {
-        roomNumber: roomDetails.roomno,
-        guestName: roomDetails.guestName,
-        CheckInNumber: roomDetails.CheckInNumber,
+        roomId: roomDetails?._id,
+        checkInNumber: roomDetails?.CheckInNumber,
+        name: roomDetails?.guestName,
       };
     } else {
       orderCustomerDetails = { ...customerDetails, tableStatus };
@@ -490,17 +485,15 @@ const RestaurantPOS = () => {
       total: getTotalAmount(),
       timestamp: new Date(),
       status: "pending",
-      paymentMethod: orderType === "dine-in" ? null : paymentMethod,
+      paymentMethod: orderType === "dine-in" ? null : "cash",
     };
-
+    let url = isEdit
+      ? `/api/sUsers/editKOT/${cmp_id}/${kotDataForEdit._id}`
+      : `/api/sUsers/generateKOT/${cmp_id}`;
     try {
-      let response = await api.post(
-        `/api/sUsers/generateKOT/${cmp_id}`,
-        newOrder,
-        {
-          withCredentials: true,
-        }
-      );
+      let response = await api.post(url, newOrder, {
+        withCredentials: true,
+      });
       if (response.data?.success) {
         handleKotPrint(response.data?.data);
         if (orderType === "dine-in") {
@@ -529,7 +522,11 @@ const RestaurantPOS = () => {
       address: "",
       tableNumber: "10",
     });
-    toast.success("KOT generated successfully!");
+    toast.success(
+      kotDataForEdit
+        ? "KOT updated successfully!"
+        : "KOT generated successfully!"
+    );
   };
 
   // const processPayment = () => {
@@ -608,7 +605,9 @@ const RestaurantPOS = () => {
                 Choose...
               </option>
               {priceLevelData.map((level) => (
-                <option key={level._id} value={level._id}>{level.pricelevel}</option>
+                <option key={level._id} value={level._id}>
+                  {level.pricelevel}
+                </option>
               ))}
             </select>
 
@@ -702,8 +701,8 @@ const RestaurantPOS = () => {
               <button
                 key={cuisine._id}
                 onClick={() => handleCategorySelect(cuisine._id, cuisine.name)}
-                onMouseEnter={() => setHoveredCuisine(cuisine.name)}
-                onMouseLeave={() => setHoveredCuisine(null)}
+                // onMouseEnter={() => setHoveredCuisine(cuisine.name)}
+                // onMouseLeave={() => setHoveredCuisine(null)}
                 className={`
                 group relative flex items-center gap-2 px-3 py-2 rounded-xl font-medium 
                 transition-all duration-300 transform hover:scale-105 active:scale-95
@@ -1173,7 +1172,7 @@ const RestaurantPOS = () => {
                   disabled={orderItems.length === 0}
                   onClick={handlePlaceOrder}
                 >
-                  Place Order
+                  {isEdit ? "Update Order" : "Place Order"}
                 </button>
               </div>
             </div>
@@ -1207,7 +1206,7 @@ const RestaurantPOS = () => {
       )}
 
       {/* KOT Modal - Enhanced for mobile */}
-      {(showKOTModal && orderType === "dine-in") && (
+      {showKOTModal && orderType === "dine-in" && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg p-4 md:p-6 max-w-md w-full mx-4 transform transition-all duration-300 scale-100 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
