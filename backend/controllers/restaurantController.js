@@ -358,6 +358,8 @@ export const generateKot = async (req, res) => {
       createdAt: new Date(),
       status: req.body.status || "pending",
       paymentMethod: req.body.paymentMethod,
+      roomId: req.body.customer?.roomId,
+      checkInNumber: req.body.customer?.checkInNumber,
     };
 
     // // Create the KOT document inside the transaction
@@ -392,6 +394,95 @@ export const generateKot = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Internal server error while generating KOT",
+      error: error.message,
+    });
+  }
+};
+
+export const editKot = async (req, res) => {
+  const session = await mongoose.startSession();
+
+  try {
+    session.startTransaction();
+
+    const cmp_id = req.params.cmp_id;
+
+    // Get the previous KOT
+    const previousKot = await kotModal.findOne(
+      { _id: req.params.kotId, cmp_id },
+      null,
+      { session }
+    );
+
+    if (!previousKot) {
+      throw new Error(
+        `KOT ${req.params.kotId} not found for company ${cmp_id}`
+      );
+    }
+
+    // Update the KOT
+    const updatedKot = await kotModal.findOneAndUpdate(
+      { _id: req.params.kotId, cmp_id },
+      {
+        items: req.body.items,
+        type: req.body.type,
+        customer: req.body.customer,
+        tableNumber: req.body.customer?.tableNumber,
+        total: req.body.total,
+        status: req.body.status || "pending",
+        paymentMethod: req.body.paymentMethod,
+        roomId: req.body.customer?.roomId,
+        checkInNumber: req.body.customer?.checkInNumber,
+      },
+      { new: true, session }
+    );
+
+    // If previous KOT was dine-in, free up the old table
+    if (previousKot.tableNumber && previousKot.type === "dine-in") {
+      const tableUpdate = await Table.findOneAndUpdate(
+        { cmp_id, tableNumber: previousKot.tableNumber },
+        { $set: { status: "available" } },
+        { new: true, session }
+      );
+
+      if (!tableUpdate) {
+        throw new Error(
+          `Table ${previousKot.tableNumber} not found for company ${cmp_id}`
+        );
+      }
+    }
+
+    // If new KOT is dine-in, occupy the new table
+    if (updatedKot.tableNumber && updatedKot.type === "dine-in") {
+      const tableUpdate = await Table.findOneAndUpdate(
+        { cmp_id, tableNumber: updatedKot.tableNumber },
+        { $set: { status: "occupied" } },
+        { new: true, session }
+      );
+
+      if (!tableUpdate) {
+        throw new Error(
+          `Table ${updatedKot.tableNumber} not found for company ${cmp_id}`
+        );
+      }
+    }
+
+    // Commit the transaction
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(200).json({
+      success: true,
+      data: updatedKot,
+    });
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+
+    console.error("Error editing KOT:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error while editing KOT",
       error: error.message,
     });
   }

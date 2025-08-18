@@ -77,6 +77,14 @@ const kotSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  roomId:{
+    type:mongoose.Schema.Types.ObjectId,
+    ref:"Room"
+  },
+  checkInNumber: {
+    type: String,
+    trim: true,
+  },
 });
 
 export default mongoose.model("Kot", kotSchema);

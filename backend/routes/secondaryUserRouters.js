@@ -61,7 +61,7 @@ import {saveAdditionalPax , getAdditionalPax ,updateAdditionalPax , deleteAdditi
     updateVisitOfPurpose,deleteVisitOfPurpose,saveIdProof,getIdProof,updateIdProof , deleteIdProof, saveFoodPlan , getFoodPlan
     ,updateFoodPlan,deleteFoodPlan,addRoom,getRooms,editRoom ,deleteRoom,getAllRooms,roomBooking,getBookings,deleteBooking,updateBooking,
 fetchAdvanceDetails,getAllRoomsWithStatusForDate,updateRoomStatus} from '../controllers/hotelController.js'
-import {addItem,getAllItems,getItems,getCategories,deleteItem,updateItem,generateKot,getKot,updateKotStatus,
+import {addItem,getAllItems,getItems,getCategories,deleteItem,updateItem,generateKot,getKot,updateKotStatus,editKot,
     getRoomDataForRestaurant,updateKotPayment,getPaymentType,saveTableNumber,getSalePrintData,updateTable,getTables,deleteTable,updateTableStatus,getKotDataByTable } from '../controllers/restaurantController.js'
 
 
@@ -338,6 +338,7 @@ router.delete('/deleteBooking/:id',authSecondary,secondaryIsBlocked,deleteBookin
 router.put('/updateRoomBooking/:id',authSecondary,secondaryIsBlocked,updateBooking)
 router.get('/getBookingAdvanceData/:id',authSecondary,secondaryIsBlocked,fetchAdvanceDetails)
 router.post('/generateKOT/:cmp_id',authSecondary,secondaryIsBlocked,generateKot)
+router.post('/editKOT/:cmp_id/:kotId',authSecondary,secondaryIsBlocked,editKot)
 
 router.post('/editItem/:cmp_id/:id',authSecondary,updateItem)
 router.get('/getItems/:cmp_id',authSecondary,getItems)
