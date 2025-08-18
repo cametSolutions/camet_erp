@@ -347,12 +347,13 @@ router.put('/updateKotStatus/:cmp_id',authSecondary,secondaryIsBlocked,updateKot
 router.get('/getRoomBasedOnBooking/:cmp_id',authSecondary,secondaryIsBlocked,getRoomDataForRestaurant)
 router.put("/updateKotPayment/:cmp_id/:id",authSecondary,secondaryIsBlocked,updateKotPayment)
 router.get('/getAllRoomsWithStatus/:cmp_id',authSecondary,getAllRoomsWithStatusForDate)
-router.post("/updateStatus/:id", authSecondary,updateRoomStatus);
+router.put("/updateStatus/:id", authSecondary, updateRoomStatus);
 router.get("/getPaymentType/:cmp_id",authSecondary,secondaryIsBlocked, getPaymentType)
 router.get("/getSeriesByVoucherForSaleAndReceipt/:cmp_id",authSecondary,secondaryIsBlocked)
 router.post("/Table/:cmp_id",authSecondary, saveTableNumber)
 router.put('/updateTable/:id', authSecondary,updateTable);
 router.get('/getTable/:cmp_id',authSecondary, getTables);
+
 router.delete('/deleteTable/:id', authSecondary,deleteTable);
 
 router.get("/getSalePrintData/:cmp_id/:kotId",authSecondary,secondaryIsBlocked,getSalePrintData)
