@@ -19,7 +19,10 @@ const tableSchema = new mongoose.Schema({
       trim: true,
     },
 
-
+  description: {
+      type: String,
+      trim: true,
+    },
     status:{ 
       type: String,
       trim: true,
