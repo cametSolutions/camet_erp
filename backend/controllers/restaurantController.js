@@ -904,8 +904,7 @@ async function createSalesVoucher(
   paymentSplittingArray,
   session
 ) {
-
-  console.log("saleNumber", kotData?.voucherNumber)
+  console.log("saleNumber", kotData?.voucherNumber);
   return await salesModel.create(
     [
       {
@@ -1046,7 +1045,9 @@ export const getSalePrintData = async (req, res) => {
   try {
     const salesData = await salesModel.findOne({
       cmp_id: req.params.cmp_id,
-      kotId: req.params.kotId,
+      convertedFrom: {
+        $elemMatch: { id: req.params.kotId },
+      },
     });
 
     if (!salesData) {
