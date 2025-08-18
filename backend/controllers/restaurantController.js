@@ -1074,7 +1074,7 @@ export const getSalePrintData = async (req, res) => {
 export const saveTableNumber = async (req, res) => {
   try {
     const { cmp_id } = req.params;
-    const { tableNumber, status } = req.body;
+    const { tableNumber, status,description } = req.body;
 
     if (!tableNumber) {
       return res.status(400).json({ message: "Table number is required" });
@@ -1083,6 +1083,7 @@ export const saveTableNumber = async (req, res) => {
     const newTable = new Table({
       cmp_id,
       tableNumber,
+      description,
       status: status || "available",
     });
 
@@ -1124,7 +1125,7 @@ export const getTables = async (req, res) => {
 export const updateTable = async (req, res) => {
   try {
     const { id } = req.params;
-    const { tableNumber } = req.body;
+    const { tableNumber,description } = req.body;
 
     if (!id) {
       return res
@@ -1165,6 +1166,7 @@ export const updateTable = async (req, res) => {
       id,
       {
         tableNumber: tableNumber.trim(),
+        description: description.trim(),
         updatedAt: new Date(),
       },
       { new: true, runValidators: true }
