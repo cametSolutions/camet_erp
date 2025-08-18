@@ -9,7 +9,6 @@ import { truncateText } from "../../../../../backend/utils/textHelpers";
 import {
   addPaymentSplits,
   updateTotalValue,
-  removeAll,
 } from "../../../../slices/voucherSlices/commonVoucherSlice";
 import { toast } from "sonner";
 
@@ -241,6 +240,9 @@ function PaymentSplitting() {
       paymentSplits: validSplits,
       totalPaymentSplits: totalAmount,
     };
+
+    console.log(data);
+
     dispatch(addPaymentSplits(data));
     dispatch(
       updateTotalValue({ field: "totalPaymentSplits", value: totalAmount })
@@ -309,69 +311,35 @@ function PaymentSplitting() {
       return;
     }
 
-    // if (openAdditionalTile) {
-    //   const hasEmptyValue = additionalChargesFromRedux.some(
-    //     (row) => row.value === ""
-    //   );
-    //   if (hasEmptyValue) {
-    //     toast.error("Please add a value.");
-    //     setSubmitLoading(false);
-    //     return;
-    //   }
-    //   const hasNagetiveValue = additionalChargesFromRedux.some(
-    //     (row) => parseFloat(row.value) < 0
-    //   );
-    //   if (hasNagetiveValue) {
-    //     toast.error("Please add a positive value");
-    //     setSubmitLoading(false);
-
-    //     return;
-    //   }
-    // }
-
     setSubmitLoading(true);
     const voucherNumberTitle = getVoucherNumberTitle();
 
     let formData = {};
 
     console.log(date);
-    const cleanedDate = typeof date === "string" && date.startsWith('"')
-  ? JSON.parse(date) // removes extra quotes
-  : date;
+    const cleanedDate =
+      typeof date === "string" && date.startsWith('"')
+        ? JSON.parse(date) // removes extra quotes
+        : date;
 
     try {
-      if (voucherTypeFromRedux === "stockTransfer") {
-        formData = {
-          selectedDate: new Date(cleanedDate).toISOString(),
-          voucherType,
-          series_id: selectedVoucherSeriesFromRedux?._id,
-          usedSeriesNumber: selectedVoucherSeriesFromRedux?.currentNumber,
-          orgId: cmp_id,
-          [voucherNumberTitle]: voucherNumberFromRedux,
-          stockTransferToGodown,
-          items,
-          finalAmount: 0,
-          note: noteFromRedux,
-        };
-      } else {
-        formData = {
-          selectedDate: new Date(cleanedDate).toISOString(),
-          voucherType,
-          [voucherNumberTitle]: voucherNumberFromRedux,
-          series_id: selectedVoucherSeriesFromRedux?._id,
-          usedSeriesNumber: selectedVoucherSeriesFromRedux?.currentNumber,
-          orgId: cmp_id,
-          finalAmount: Number(finalAmount.toFixed(2)),
-          party,
-          items,
-          note: noteFromRedux,
-          despatchDetails,
-          priceLevelFromRedux,
-          additionalChargesFromRedux,
-          selectedGodownDetails: vanSaleGodownFromRedux,
-          paymentSplittingData: paymentSplittingData,
-        };
-      }
+      formData = {
+        selectedDate: new Date(cleanedDate).toISOString(),
+        voucherType,
+        [voucherNumberTitle]: voucherNumberFromRedux,
+        series_id: selectedVoucherSeriesFromRedux?._id,
+        usedSeriesNumber: selectedVoucherSeriesFromRedux?.currentNumber,
+        orgId: cmp_id,
+        finalAmount: Number(finalAmount.toFixed(2)),
+        party,
+        items,
+        note: noteFromRedux,
+        despatchDetails,
+        priceLevelFromRedux,
+        additionalChargesFromRedux,
+        selectedGodownDetails: vanSaleGodownFromRedux,
+        paymentSplittingData: paymentSplittingData,
+      };
 
       console.log(formData);
 
@@ -391,15 +359,22 @@ function PaymentSplitting() {
           withCredentials: true,
         }
       );
-
       toast.success(res.data.message);
+
+      console.log(
+        "Navigating to",
+        `/sUsers/${voucherTypeFromRedux}Deta/${res.data.data._id}`
+      );
+
       navigate(`/sUsers/${voucherTypeFromRedux}Details/${res.data.data._id}`, {
         state: { from: location?.state?.from || "null" },
       });
-      dispatch(removeAll());
+
       queryClient.invalidateQueries({
         queryKey: ["todaysTransaction", cmp_id, isAdmin],
       });
+      // dispatch(removeAll());
+
     } catch (error) {
       toast.error(error.response?.data?.message || "Error creating sale");
       console.log(error);
@@ -577,22 +552,35 @@ function PaymentSplitting() {
             {/* Action Button */}
             <div className="w-full">
               {enablePaymentSplittingAsCompulsory ? (
-                <div
-                  disabled={submitLoading}
+                <button
+                  type="button"
+                  disabled={submitLoading || balanceAmount !== 0}
                   onClick={handleSavePaymentSplitAndSubmit}
-                  className={`${
-                    submitLoading ? "opacity-50 cursor-not-allowed" : ""
-                  } bg-violet-700 hover:bg-violet-800 px-8 py-3 rounded-md font-medium transition-all duration-200 text-center cursor-pointer text-white`}
+                  className={`w-full px-8 py-3 rounded-md font-medium transition-all duration-200 text-center text-white 
+        bg-violet-700 hover:bg-violet-800 
+        ${
+          submitLoading || balanceAmount !== 0
+            ? "opacity-50 cursor-not-allowed"
+            : ""
+        }`}
                 >
                   Generate Sales
-                </div>
+                </button>
               ) : (
-                <div
+                <button
+                  type="button"
+                  disabled={submitLoading || balanceAmount !== 0}
                   onClick={handleSavePaymentSplit}
-                  className="bg-pink-500 hover:bg-pink-600 px-8 py-3 rounded-md font-medium transition-all duration-200 text-center cursor-pointer text-white"
+                  className={`w-full px-8 py-3 rounded-md font-medium transition-all duration-200 text-center text-white 
+        bg-pink-500 hover:bg-pink-600 
+        ${
+          submitLoading || balanceAmount !== 0
+            ? "opacity-50 cursor-not-allowed"
+            : ""
+        }`}
                 >
                   Save Payment Split
-                </div>
+                </button>
               )}
             </div>
           </div>
