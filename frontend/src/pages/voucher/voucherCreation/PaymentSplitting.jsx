@@ -9,6 +9,7 @@ import { truncateText } from "../../../../../backend/utils/textHelpers";
 import {
   addPaymentSplits,
   updateTotalValue,
+  resetPaymentSplit,
 } from "../../../../slices/voucherSlices/commonVoucherSlice";
 import { toast } from "sonner";
 import { store } from "../../../../app/store";
@@ -81,7 +82,6 @@ function PaymentSplitting() {
     stockTransferToGodown,
     selectedVoucherSeries: selectedVoucherSeriesFromRedux,
     note: noteFromRedux,
-    
   } = useSelector((state) => state.commonVoucherSlice);
 
   // Fetch BankDetails and Cash sources using TanStack Query
@@ -337,7 +337,9 @@ function PaymentSplitting() {
 
         /// these values are not getting latest data,so we need to take it directly form store
         finalAmount: Number(reduxData?.finalAmount?.toFixed(2) || 0),
-        finalOutstandingAmount: Number(reduxData?.finalOutstandingAmount?.toFixed(2) || 0),
+        finalOutstandingAmount: Number(
+          reduxData?.finalOutstandingAmount?.toFixed(2) || 0
+        ),
         party,
         items,
         note: noteFromRedux,
@@ -346,7 +348,6 @@ function PaymentSplitting() {
         additionalChargesFromRedux,
         selectedGodownDetails: vanSaleGodownFromRedux,
         paymentSplittingData: paymentSplits,
-        
       };
 
       console.log(formData);
@@ -393,9 +394,14 @@ function PaymentSplitting() {
     }
   };
 
+  const customNavigate = () => {
+    dispatch(resetPaymentSplit());
+    navigate(-1, { replace: true });
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 w-full">
-      <TitleDiv title="Payment Splitting" loading={isLoading} />
+      <TitleDiv title="Payment Splitting" loading={isLoading} customNavigate={customNavigate} />
       <div className={`${isLoading && "opacity-75 animate-pulse"}`}></div>
       <div className="">
         {/* Main Card */}

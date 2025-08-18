@@ -11,7 +11,6 @@ function VoucherSubmitButton({
   submitHandler,
   mode,
   titleText,
-  openAdditionalTile = { openAdditionalTile },
 }) {
   const { additionalCharges: additionalChargesFromRedux = [] } = useSelector(
     (state) => state.commonVoucherSlice
