@@ -76,7 +76,6 @@ function VoucherPdfInitiator() {
     getTransactionDetails();
   }, [id, voucherType]);
 
-  /////////////////////////////////////////////// handle download ///////////////////////////////////////////////
   const handleDownload = () => {
     const element = contentToPrint.current;
     if (!element) return;

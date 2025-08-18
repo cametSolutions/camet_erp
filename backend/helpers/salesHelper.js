@@ -1062,8 +1062,9 @@ export const  saveSettlementData = async (
   session
 ) => {
   try {
-    
-    const accountGroup = party?.accountGroupName;
+
+    console.log(party)
+    const accountGroup = party?.accountGroup;
 
     if (!accountGroup) {
       throw new Error("Invalid account group");
