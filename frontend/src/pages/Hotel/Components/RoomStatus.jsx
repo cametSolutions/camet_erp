@@ -13,7 +13,7 @@ const RoomStatus = ({
   const statusColors = {
     vacant: "from-emerald-500 to-teal-600", // green gradient
     booked: "from-red-500 to-pink-600", // red/pink gradient
-    occupied: "from-orange-500 to-red-600", // orange/red gradient
+    occupied: "from-sky-400 to-violet-600", // orange/red gradient
     dirty: "from-yellow-500 to-orange-600",
     blocked: "from-gray-500 to-slate-800",
   };
