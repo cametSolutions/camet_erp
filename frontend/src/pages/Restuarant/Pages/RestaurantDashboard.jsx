@@ -900,108 +900,105 @@ const RestaurantPOS = () => {
                       </div>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4 auto-rows-fr">
-                      {menuItems.map((item, index) => (
-                        <motion.div
-                          key={item._id}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.3, delay: index * 0.05 }}
-                          className="group relative bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-[1.02] active:scale-95"
-                          onClick={() => addToOrder(item)}
-                        >
-                          {/* Image Container with Overlay Effects */}
-                          <div className="relative h-28 sm:h-32 md:h-36 lg:h-40 overflow-hidden">
-                            <img
-                              src={
-                                item.product_image ||
-                                "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=300&h=200&fit=crop"
-                              }
-                              alt={item.product_name}
-                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                              onError={(e) => {
-                                e.target.src =
-                                  "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=300&h=200&fit=crop";
-                              }}
-                            />
 
-                            {/* Gradient Overlay */}
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
+  {menuItems.map((item, index) => {
+    // Light gradient backgrounds matching the reference image
+    const lightGradients = [
+      'bg-gradient-to-br from-purple-200 via-purple-300 to-purple-400',
+      'bg-gradient-to-br from-pink-200 via-pink-300 to-pink-400', 
+      'bg-gradient-to-br from-blue-200 via-blue-300 to-blue-400',
+      'bg-gradient-to-br from-indigo-200 via-indigo-300 to-indigo-400',
+      'bg-gradient-to-br from-violet-200 via-violet-300 to-violet-400',
+      'bg-gradient-to-br from-cyan-200 via-cyan-300 to-cyan-400',
+      'bg-gradient-to-br from-emerald-200 via-emerald-300 to-emerald-400',
+      'bg-gradient-to-br from-orange-200 via-orange-300 to-orange-400',
+    ];
+    
+    const currentGradient = lightGradients[index % lightGradients.length];
+    
+    return (
+      <motion.div
+        key={item._id}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: index * 0.05 }}
+        className={`group relative ${currentGradient} rounded-2xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-[1.02] active:scale-95`}
+        onClick={() => addToOrder(item)}
+      >
+        {/* Card Content Container */}
+        <div className="p-4 flex flex-col items-center text-center min-h-[180px] sm:min-h-[200px] relative">
+          
+          {/* Food Image - Circular but larger, positioned in upper portion */}
+          <div className="relative mb-4 flex-shrink-0">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full overflow-hidden border-3 border-white/40 shadow-lg mx-auto">
+              <img
+                src={
+                  item.product_image ||
+                  "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=150&h=150&fit=crop"
+                }
+                alt={item.product_name}
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                onError={(e) => {
+                  e.target.src =
+                    "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=150&h=150&fit=crop";
+                }}
+              />
+            </div>
+            
+            {/* Add Button - positioned on the image */}
+            <div className="absolute -top-1 -right-1 bg-white/90 backdrop-blur-sm rounded-full p-1.5 shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-300 transform scale-0 group-hover:scale-100 hover:bg-white">
+              <Plus className="w-3 h-3 md:w-4 md:h-4 text-gray-700" />
+            </div>
+          </div>
 
-                            {/* Quick Add Button */}
-                            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
-                              <div className="bg-white/90 backdrop-blur-sm rounded-full p-1.5 shadow-lg hover:bg-white hover:scale-110 transition-all duration-200">
-                                <Plus className="w-3 h-3 md:w-4 md:h-4 text-[#4688f3]" />
-                              </div>
-                            </div>
+          {/* Product Name */}
+          <div className="flex-1 flex items-center justify-center mb-3">
+            <h3 className="font-bold text-gray-800 text-xs sm:text-sm md:text-base line-clamp-2 leading-tight text-center max-w-full">
+              {item.product_name.toUpperCase()}
+            </h3>
+          </div>
+          
+          {/* Price Section - positioned at bottom */}
+          <div className="mt-auto">
+            <div className="text-center">
+              <span className="text-gray-800 font-bold text-sm sm:text-base md:text-lg">
+                ₹{selectedPriceLevel
+                  ? item.Priceleveles?.find(
+                      (pl) => pl.pricelevel == selectedPriceLevel
+                    )?.pricerate || 0
+                  : item.Priceleveles?.[0]?.pricerate}
+              </span>
+              {item.originalPrice && (
+                <span className="text-gray-600 text-xs line-through ml-2">
+                  ₹{item.originalPrice}
+                </span>
+              )}
+            </div>
+          </div>
 
-                            {/* Popular Badge */}
-                            {(item.rating > 4.3 || Math.random() > 0.7) && (
-                              <div className="absolute bottom-2 left-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
-                                <div className="bg-orange-500 text-white px-1.5 py-0.5 rounded-full text-xs font-medium flex items-center space-x-1">
-                                  <TrendingUp className="w-2 h-2 md:w-3 md:h-3" />
-                                  <span className="hidden sm:inline text-xs">
-                                    Popular
-                                  </span>
-                                </div>
-                              </div>
-                            )}
-                          </div>
+          {/* Popular/Hot Badge */}
+          {(item.rating > 4.3 || Math.random() > 0.85) && (
+            <div className="absolute top-2 right-2 bg-orange-500 text-white px-2 py-1 rounded-full text-xs font-bold shadow-md">
+              HOT
+            </div>
+          )}
+          
+          {/* Subtle decorative elements */}
+          <div className="absolute top-3 left-3 w-1.5 h-1.5 bg-white/40 rounded-full"></div>
+          <div className="absolute bottom-3 left-3 w-1 h-1 bg-white/30 rounded-full"></div>
+        </div>
+        
+        {/* Hover overlay effect */}
+        <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl pointer-events-none"></div>
+        
+        {/* Subtle border effect */}
+        <div className="absolute inset-0 border border-white/20 rounded-2xl pointer-events-none"></div>
+      </motion.div>
+    );
+  })}
+</div>
 
-                          {/* Content Section */}
-                          <div className="p-2 md:p-3">
-                            {/* Title and Rating */}
-                            <div className="mb-2">
-                              <h3
-                                className="font-bold text-[#4688f3] text-xs md:text-sm mb-1 line-clamp-2 group-hover:text-blue-700 transition-colors duration-200"
-                                title={item.product_name}
-                              >
-                                {item.product_name}
-                              </h3>
-
-                              {/* Rating and Time */}
-                              <div className="flex items-center justify-between text-xs text-gray-500">
-                                <div className="flex items-center space-x-1 text-[#4688f3]">
-                                  <Clock className="w-2 h-2 md:w-3 md:h-3" />
-                                  <span className="text-xs">
-                                    {item.time || "15-20 min"}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Price Section */}
-                            <div className="flex justify-between items-center">
-                              <div className="flex flex-col">
-                                {/* <span className="text-sm md:text-base font-bold text-[#4688f3]">
-                                  ₹
-                                  {item.Priceleveles?.[0]?.pricerate ||
-                                    item.price ||
-                                    0}
-                                </span> */}
-                                <span className="text-sm md:text-base font-bold text-[#4688f3]">
-                                  ₹
-                                  {selectedPriceLevel
-                                    ? item.Priceleveles?.find(
-                                        (pl) =>
-                                          pl.pricelevel == selectedPriceLevel
-                                      )?.pricerate || 0
-                                    : item.Priceleveles?.[0]?.pricerate}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Hover Border Effect */}
-                          <div className="absolute inset-0 border-2 border-transparent group-hover:border-blue-200 rounded-xl transition-colors duration-300 pointer-events-none"></div>
-
-                          {/* Shine Effect */}
-                          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
-                          </div>
-                        </motion.div>
-                      ))}
-                    </div>
                   )}
                 </>
               )}
@@ -1412,21 +1409,56 @@ const RestaurantPOS = () => {
       )}
 
       {/* Custom CSS for better mobile experience */}
-      <style jsx>{`
-        .scrollbar-hide {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-        .scrollbar-hide::-webkit-scrollbar {
-          display: none;
-        }
-        .line-clamp-2 {
-          display: -webkit-box;
-          -webkit-line-clamp: 2;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
-        }
-      `}</style>
+<style jsx>{`
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  /* Enhanced hover effects */
+  .group:hover .food-image {
+    transform: scale(1.1);
+    transition: transform 0.5s ease;
+  }
+  
+  /* Soft shadow variations */
+  .shadow-soft {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  }
+  
+  .shadow-soft-hover {
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+  }
+  
+  /* Border radius consistency */
+  .border-3 {
+    border-width: 3px;
+  }
+  
+  /* Custom gradient animations for smooth transitions */
+  @keyframes gentle-pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.8;
+    }
+  }
+  
+  .gentle-pulse {
+    animation: gentle-pulse 2s ease-in-out infinite;
+  }
+`}</style>
     </>
   );
 };

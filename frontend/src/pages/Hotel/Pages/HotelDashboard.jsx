@@ -3,12 +3,16 @@ import { useSelector } from "react-redux";
 import { BedDouble, Filter, X, Calendar, User, Clock } from "lucide-react";
 import AnimatedBackground from "../Components/AnimatedBackground";
 import RoomStatus from "../Components/RoomStatus";
+import Tooltip from "./ToolTip";
+import RoomTooltipContent from "./RoomTooltipContent ";
 import { useNavigate } from "react-router-dom";
 import api from "@/api/api";
 import CalenderComponent from "../Components/CalenderComponent";
 
 const HotelDashboard = () => {
   const [rooms, setRooms] = useState([]);
+  const [tooltipData, setTooltipData] = useState({});
+  const [checkins, setCheckins] = useState([]);
   const [filteredRooms, setFilteredRooms] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [loader, setLoader] = useState(false);
@@ -18,6 +22,11 @@ const HotelDashboard = () => {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [bookingsLoading, setBookingsLoading] = useState(false);
+
+  const [tooltipX, setTooltipX] = useState(0);
+  const [tooltipY, setTooltipY] = useState(0);
+  const [hoveredRoomId, setHoveredRoomId] = useState(null);
+  const [tooltipPos, setTooltipPos] = useState({}); // for optional
   // Filter states
   const [roomTypes, setRoomTypes] = useState([]);
   const [floorTypes, setFloorTypes] = useState([]);
@@ -149,6 +158,31 @@ const HotelDashboard = () => {
         setBedTypes(uniqueBedTypes);
       } catch (error) {
         console.log("Error fetching rooms:", error);
+      } finally {
+        setIsLoading(false);
+        setLoader(false);
+      }
+    },
+    [cmp_id]
+  );
+  const fetchDateBasedData = useCallback(
+    async (date) => {
+      setIsLoading(true);
+      setLoader(true);
+
+      try {
+        const res = await api.get(
+          `/api/sUsers/getDateBasedRoomsWithStatus/${cmp_id}`,
+          {
+            params: { selectedDate: date },
+            withCredentials: true,
+          }
+        );
+
+        const roomsData = res.data || [];
+        setTooltipData(roomsData);
+      } catch (error) {
+        console.log("Error fetching date based data:", error);
       } finally {
         setIsLoading(false);
         setLoader(false);
@@ -330,6 +364,7 @@ const HotelDashboard = () => {
 
   useEffect(() => {
     fetchRooms(selectedDate);
+    fetchDateBasedData(selectedDate);
   }, [fetchRooms, selectedDate]);
 
   useEffect(() => {
@@ -412,11 +447,10 @@ const HotelDashboard = () => {
                 max={new Date().toISOString().split("T")[0]}
               />
             </div>
-            <div className="ml-auto">
-              <CalenderComponent sendDateToParent={handleCalenderDate} />
-            </div>
           </div>
-
+          <div className="ml-auto">
+            <CalenderComponent sendDateToParent={handleCalenderDate}  bookingData={bookings}/>
+          </div>
           {/* Filters Section */}
           {showFilters && (
             <div className="bg-[#0B1D34] p-4 border-t border-white/20">
@@ -580,6 +614,16 @@ const HotelDashboard = () => {
                         style={{ animationDelay: `${index * 0.05}s` }}
                         className="animate-slide-in rounded-lg p-2"
                         onClick={() => setSelectedRoom(room)}
+                        onMouseEnter={(e) => {
+                          setHoveredRoomId(room._id);
+                          setTooltipX(e.clientX);
+                          setTooltipY(e.clientY);
+                        }}
+                        onMouseMove={(e) => {
+                          setTooltipX(e.clientX);
+                          setTooltipY(e.clientY);
+                        }}
+                        onMouseLeave={() => setHoveredRoomId(null)}
                       >
                         <RoomStatus
                           {...room}
@@ -588,6 +632,24 @@ const HotelDashboard = () => {
                           status={room.status}
                           onClick={() => setSelectedRoom(room)}
                         />
+                         
+                        {hoveredRoomId === room._id && (
+                          <Tooltip
+                            style={{
+                              position: "fixed",
+                              top: `${tooltipY - 40}px`,
+                              left: `${tooltipX + 15}px`,
+                              zIndex: 9999,
+                              pointerEvents: "none",
+                              transformOrigin: "bottom left",
+                            }}
+                          >
+                            <RoomTooltipContent
+                              room={room}
+                              tooltipData={tooltipData}
+                            />
+                          </Tooltip>
+                        )}
                       </div>
                     ))}
                   </div>

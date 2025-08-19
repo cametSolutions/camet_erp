@@ -1227,3 +1227,42 @@ export const updateRoomStatus = async (req, res) => {
     });
   }
 };
+// function used  to fetch date based booking details and checking details
+export const getDateBasedRoomsWithStatus = async (req, res) => {
+  const { cmp_id } = req.params;
+  const { selectedDate } = req.query;
+
+  try {
+    // 1. Fetch pre-arrival bookings (status not 'checkIn')
+    const bookings = await Booking.find({
+      cmp_id,
+      status: { $ne: "checkIn" },
+      arrivalDate: { $lte: selectedDate },
+      checkOutDate: { $gte: selectedDate },
+    });
+
+    // 2. Fetch check-ins (status not 'checkOut')
+    const checkins = await CheckIn.find({
+      cmp_id,
+      status: { $ne: "checkOut" },
+      arrivalDate: { $lte: selectedDate },
+      checkOutDate: { $gte: selectedDate },
+    });
+
+    // ✅ Send response
+    return res.status(200).json({
+      success: true,
+      bookings,
+      checkins,
+    });
+
+  } catch (error) {
+    console.error("Error getting bookings:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch bookings",
+      error: error.message,
+    });
+  }
+};
