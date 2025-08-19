@@ -23,7 +23,8 @@ const partySchema = new mongoose.Schema({
   partyType: {
     type: String,
     required: true,
-    enum: ["Party", "Bank", "Cash"],
+    default:"party",
+    enum: ["party", "bank", "cash"],
     index: true,
   },
   accountGroup: {
@@ -45,7 +46,6 @@ const partySchema = new mongoose.Schema({
   }, // Unified opening balance field
   openingBalanceType: {
     type: String,
-    enum: ["Dr", "Cr", "debit", "credit"],
   },
 
   // All fields available for all party types (Party/Bank/Cash)
@@ -190,7 +190,7 @@ partySchema.index(
 );
 
 
-// 8. **COMBINED PARTY FILTER INDEX** - For complex filtering
+// 8.**COMBINED PARTY FILTER INDEX** - For complex filtering
 // Covers: Active parties by type with account group
 partySchema.index(
   {
