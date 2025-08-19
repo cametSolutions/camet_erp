@@ -76,7 +76,7 @@ const partySchema = new mongoose.Schema({
   branch: { type: String },
   upi_id: { type: String },
   bsr_code: { type: String },
-  client_code: { type: String, default: null },
+  client_code: { type: String},
 });
 
 // / ============= CRITICAL PARTY INDEXES =============

@@ -20,12 +20,12 @@ const BalancePage = () => {
       color: "text-gray-900",
       value: "bankBalance",
     },
-    {
-      label: "Bank OD A/c",
-      amount: 0,
-      color: "text-gray-900",
-      value: "bankOd",
-    },
+    // {
+    //   label: "Bank OD A/c",
+    //   amount: 0,
+    //   color: "text-gray-900",
+    //   value: "bankOd",
+    // },
   ]);
 
   const cmp_id = useSelector(
@@ -49,10 +49,10 @@ const BalancePage = () => {
             ...prev[1],
             amount: sourceData?.bankSettlementTotal,
           },
-          {
-            ...prev[2],
-            amount: sourceData?.bankOd || 0,
-          },
+          // {
+          //   ...prev[2],
+          //   amount: sourceData?.bankOd || 0,
+          // },
         ];
       });
     }
