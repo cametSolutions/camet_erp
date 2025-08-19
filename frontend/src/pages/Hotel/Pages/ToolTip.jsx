@@ -1,11 +1,11 @@
 const Tooltip = ({ children, style }) => (
   <div
-    className="z-[9999] bg-gray-900/95 backdrop-blur-sm text-white text-xs rounded-lg shadow-2xl px-4 py-2 border border-gray-700/50
+    className="z-9999 bg-gray-900/95 backdrop-blur-sm text-white text-xs rounded-lg shadow-2xl px-4 py-2 border border-gray-700/50
                max-w-none whitespace-nowrap"
     style={{
-      width: "200px",        // Wider width to accommodate more content horizontally
-      maxHeight: "120px",    // Limit height so it stays smaller vertically
-      overflowY: "auto",     // Scroll vertical overflow if text too tall
+      width: "200px",        
+      maxHeight: "120px",   
+      overflowY: "auto",     
       filter: "drop-shadow(0 10px 25px rgba(0, 0, 0, 0.4))",
       ...style,
     }}
