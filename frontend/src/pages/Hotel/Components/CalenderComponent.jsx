@@ -49,7 +49,7 @@ const CalenderComponent = ({sendDateToParent, bookingData}) => {
     if (day) {
       const selected = new Date(year, month, day);
       setSelectedDate(selected);
-      sendDateToParent(selected);
+      sendDateToParent(selected,true);
     }
   };
 
@@ -236,7 +236,10 @@ const CalenderComponent = ({sendDateToParent, bookingData}) => {
           className="group flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-4 py-2 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
         > */}
           <Calendar size={16} className="text-white m-2" 
-           onClick={() => setShowCalendar(!showCalendar)}/>
+           onClick={() =>{
+             setShowCalendar(!showCalendar)
+             sendDateToParent( new Date(),!showCalendar)
+            }}/>
           {/* <span className="text-sm font-medium">Calendar</span> */}
         {/* </button> */}
       </div>
@@ -258,7 +261,7 @@ const CalenderComponent = ({sendDateToParent, bookingData}) => {
               </div>
               
               <button
-                onClick={() => setShowCalendar(false)}
+                onClick={() => {setShowCalendar(false); sendDateToParent( new Date(),false)}}
                 className="p-2 hover:bg-slate-700 rounded-lg transition-colors text-slate-400 hover:text-white"
               >
                 <X size={20} />

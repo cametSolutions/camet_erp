@@ -77,6 +77,7 @@ console.log(bookingData);
               {
                 title: "New Guest",
                 to: "/sUsers/partyList",
+                from: "/sUsers/checkInPage",
               },
               {
                 title: "Check In List",

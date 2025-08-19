@@ -8,11 +8,11 @@ import RoomTooltipContent from "./RoomTooltipContent ";
 import { useNavigate } from "react-router-dom";
 import api from "@/api/api";
 import CalenderComponent from "../Components/CalenderComponent";
+import ReactDOM from "react-dom";
 
 const HotelDashboard = () => {
   const [rooms, setRooms] = useState([]);
   const [tooltipData, setTooltipData] = useState({});
-  const [checkins, setCheckins] = useState([]);
   const [filteredRooms, setFilteredRooms] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [loader, setLoader] = useState(false);
@@ -22,11 +22,11 @@ const HotelDashboard = () => {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [bookingsLoading, setBookingsLoading] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
 
   const [tooltipX, setTooltipX] = useState(0);
   const [tooltipY, setTooltipY] = useState(0);
   const [hoveredRoomId, setHoveredRoomId] = useState(null);
-  const [tooltipPos, setTooltipPos] = useState({}); // for optional
   // Filter states
   const [roomTypes, setRoomTypes] = useState([]);
   const [floorTypes, setFloorTypes] = useState([]);
@@ -50,6 +50,22 @@ const HotelDashboard = () => {
     const today = new Date();
     return today.toISOString().split("T")[0]; // format YYYY-MM-DD
   });
+
+  // Add these state variables at the top of your component
+  const [showBookingDetails, setShowBookingDetails] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Add this useEffect for responsive behavior
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   const fetchBookings = useCallback(
     async (pageNumber = 1, searchTerm = "") => {
@@ -377,20 +393,22 @@ const HotelDashboard = () => {
 
   const statusCounts = getStatusCounts();
   const grouped = groupRoomsByType(filteredRooms);
-  console.log("grouped", selectedDate);
-  const handleCalenderDate = (date) => {
+
+  const handleCalenderDate = (date, show) => {
+    console.log(date.toISOString().split("T")[0], show);
     setSelectedDate(date.toISOString().split("T")[0]);
+    setShowCalendar(show);
   };
 
   return (
     <div className="min-h-screen bg-slate-900 relative overflow-hidden">
       <AnimatedBackground />
-      <div className="flex relative z-10">
-        {/* Main Content - Left Side */}
-        <div className="flex-1 p-3" style={{ marginRight: "320px" }}>
+
+      {/* Main Layout Container */}
+      <div className="relative z-10">
+        <div className="p-3">
           {/* Header */}
-          {/* Header */}
-          <div className="bg-[#0B1D34] flex flex-col md:flex-row p-2 gap-2 md:gap-0">
+          <div className="bg-[#0B1D34] flex flex-col md:flex-row p-2 gap-2 md:gap-0 mb-4">
             <div>
               <h3 className="font-bold text-blue-400 flex items-center gap-2 text-base md:text-lg">
                 <BedDouble className="w-5 h-5 text-cyan-400" />
@@ -430,30 +448,52 @@ const HotelDashboard = () => {
                 <Filter className="w-4 h-4" />
                 Filters
               </button>
+
+              {/* Mobile Booking Toggle Button */}
+              {isMobile && (
+                <button
+                  onClick={() => setShowBookingDetails(!showBookingDetails)}
+                  className="bg-cyan-500 hover:bg-cyan-600 text-white font-bold px-3 py-1 rounded text-sm flex items-center gap-1"
+                >
+                  <Calendar className="w-4 h-4" />
+                  Bookings
+                </button>
+              )}
             </div>
           </div>
 
-          <div className="mb-4 flex">
-            <div>
-              <label htmlFor="selectedDate" className="text-gray-300 mr-2">
-                Select Date:
-              </label>
-              <input
-                type="date"
-                id="selectedDate"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="bg-slate-700 text-white border border-gray-600 rounded px-2 py-1 text-sm"
-                max={new Date().toISOString().split("T")[0]}
+          {/* Date Selector */}
+          <div className="mb-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+            {!showCalendar && (
+              <div>
+                <div className="flex items-center gap-2 bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 shadow-sm">
+                  <label
+                    htmlFor="selectedDate"
+                    className="text-gray-300 text-sm font-medium whitespace-nowrap"
+                  >
+                    Select Date:
+                  </label>
+                  <input
+                    type="date"
+                    id="selectedDate"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    className="bg-slate-700 text-white border border-slate-600 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    max={new Date().toISOString().split("T")[0]}
+                  />
+                </div>
+              </div>
+            )}
+            <div className={`${showCalendar ? "w-full" : "ml-auto"}`}>
+              <CalenderComponent
+                sendDateToParent={handleCalenderDate}
+                bookingData={bookings}
               />
             </div>
           </div>
-          <div className="ml-auto">
-            <CalenderComponent sendDateToParent={handleCalenderDate}  bookingData={bookings}/>
-          </div>
           {/* Filters Section */}
           {showFilters && (
-            <div className="bg-[#0B1D34] p-4 border-t border-white/20">
+            <div className="bg-[#0B1D34] p-4 border-t border-white/20 mb-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
                 {/* Room Type Filter */}
                 <div>
@@ -554,7 +594,7 @@ const HotelDashboard = () => {
           )}
 
           {/* Status Legend */}
-          <div className="flex flex-wrap gap-4 pt-6 border-t border-white/20">
+          <div className="flex flex-wrap gap-4 pt-6 border-t border-white/20 mb-6">
             {[
               {
                 label: "Vacant",
@@ -593,160 +633,251 @@ const HotelDashboard = () => {
             ))}
           </div>
 
-          {/* Loading State */}
-          {loader && (
-            <div className="flex justify-center items-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-            </div>
-          )}
-
-          {/* Room Grid */}
-          {!loader && Object.entries(grouped).length > 0
-            ? Object.entries(grouped).map(([brand, rooms]) => (
-                <div key={brand} className="mt-3">
-                  <h2 className="text-white text-sm font-semibold mb-2">
-                    {brand} ({rooms.length})
-                  </h2>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
-                    {rooms.map((room, index) => (
-                      <div
-                        key={room._id}
-                        style={{ animationDelay: `${index * 0.05}s` }}
-                        className="animate-slide-in rounded-lg p-2"
-                        onClick={() => setSelectedRoom(room)}
-                        onMouseEnter={(e) => {
-                          setHoveredRoomId(room._id);
-                          setTooltipX(e.clientX);
-                          setTooltipY(e.clientY);
-                        }}
-                        onMouseMove={(e) => {
-                          setTooltipX(e.clientX);
-                          setTooltipY(e.clientY);
-                        }}
-                        onMouseLeave={() => setHoveredRoomId(null)}
-                      >
-                        <RoomStatus
-                          {...room}
-                          room={room.roomName}
-                          name={room.roomName}
-                          status={room.status}
-                          onClick={() => setSelectedRoom(room)}
-                        />
-                         
-                        {hoveredRoomId === room._id && (
-                          <Tooltip
-                            style={{
-                              position: "fixed",
-                              top: `${tooltipY - 40}px`,
-                              left: `${tooltipX + 15}px`,
-                              zIndex: 9999,
-                              pointerEvents: "none",
-                              transformOrigin: "bottom left",
-                            }}
-                          >
-                            <RoomTooltipContent
-                              room={room}
-                              tooltipData={tooltipData}
-                            />
-                          </Tooltip>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))
-            : !loader && (
-                <div className="text-center py-8">
-                  <p className="text-gray-400">
-                    No rooms found matching the selected filters.
-                  </p>
+          {/* Main Content Area - Side by Side Layout */}
+          <div className={`flex gap-6 ${isMobile ? "flex-col" : "flex-row"}`}>
+            {/* Left Side - Room Grid */}
+            <div
+              className={`${
+                isMobile ? "w-full" : showBookingDetails ? "flex-1" : "w-full"
+              } transition-all duration-300`}
+            >
+              {/* Loading State */}
+              {loader && (
+                <div className="flex justify-center items-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
                 </div>
               )}
-        </div>
 
-        {/* Bookings Sidebar - Right Side */}
-        <div className="w-80 bg-[#0B1D34] border-l border-white/20 h-screen fixed right-0 top-0 overflow-hidden flex flex-col">
-          {/* Sidebar Header */}
-          <div className="p-4 border-b border-white/20">
-            <h3 className="font-bold text-blue-400 flex items-center gap-2 text-lg">
-              <Calendar className="w-5 h-5 text-cyan-400" />
-              Recent Bookings
-            </h3>
-            <p className="text-gray-400 text-sm mt-1">Today's reservations</p>
-          </div>
+              {/* Room Grid */}
+              {!loader && Object.entries(grouped).length > 0
+                ? Object.entries(grouped).map(([brand, rooms]) => (
+                    <div key={brand} className="mt-3">
+                      <h2 className="text-white text-sm font-semibold mb-2">
+                        {brand} ({rooms.length})
+                      </h2>
+                      <div
+                        className={`grid gap-3 ${
+                          isMobile
+                            ? "grid-cols-2 sm:grid-cols-4"
+                            : showBookingDetails
+                            ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5"
+                            : "grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8"
+                        }`}
+                      >
+                        {rooms.map((room, index) => (
+                          <div
+                            key={room._id}
+                            style={{ animationDelay: `${index * 0.05}s` }}
+                            className="animate-slide-in rounded-lg p-1"
+                            onClick={() => setSelectedRoom(room)}
+                            onMouseEnter={(e) => {
+                              setHoveredRoomId(room._id);
+                              setTooltipX(e.clientX);
+                              setTooltipY(e.clientY);
+                            }}
+                            onMouseMove={(e) => {
+                              setTooltipX(e.clientX);
+                              setTooltipY(e.clientY);
+                            }}
+                            onMouseLeave={() => setHoveredRoomId(null)}
+                          >
+                            <RoomStatus
+                              {...room}
+                              room={room.roomName}
+                              name={room.roomName}
+                              status={room.status}
+                              onClick={() => setSelectedRoom(room)}
+                            />
 
-          {/* Bookings List */}
-          <div className="flex-1 overflow-y-auto">
-            {bookingsLoading && bookings.length === 0 ? (
-              <div className="flex justify-center items-center py-8">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
-              </div>
-            ) : bookings.filter((b) => {
-                const bookingDate = new Date(b.bookingDate);
-                const today = new Date();
-                const isToday =
-                  bookingDate.getFullYear() === today.getFullYear() &&
-                  bookingDate.getMonth() === today.getMonth() &&
-                  bookingDate.getDate() === today.getDate();
-                return isToday && b.status?.toLowerCase() !== "checkin";
-              }).length > 0 ? (
-              <div className="p-2">
-                {bookings
-                  .filter((b) => {
-                    const bookingDate = new Date(b.bookingDate);
-                    const today = new Date();
-                    const isToday =
-                      bookingDate.getFullYear() === today.getFullYear() &&
-                      bookingDate.getMonth() === today.getMonth() &&
-                      bookingDate.getDate() === today.getDate();
-                    return isToday && b.status?.toLowerCase() !== "checkin";
-                  })
-                  .map((booking, index) => (
-                    <div
-                      key={booking._id || index}
-                      className="bg-slate-800 rounded-lg p-3 mb-3 border border-slate-700 hover:border-blue-500/50 transition-colors"
-                    >
-                      {/* Guest Info */}
-                      <div className="flex items-center gap-2 mb-2">
-                        <User className="w-4 h-4 text-cyan-400" />
-                        <span className="text-white font-semibold text-sm">
-                          {booking.customerName}
-                        </span>
-                      </div>
-
-                      {/* Booking Number */}
-                      <div className="text-gray-300 text-xs mb-2">
-                        <span className="text-blue-400">Booking Number</span>{" "}
-                        {booking.voucherNumber}
-                      </div>
-
-                      {/* Dates */}
-                      <div className="flex justify-between text-xs text-gray-400 mb-2">
-                        <div>
-                          <Clock className="w-3 h-3 inline mr-1" />
-                          Book-in Date: {formatDate(booking.bookingDate)}
-                        </div>
-                      </div>
-                      <div className="flex justify-between text-xs text-gray-400 mb-2">
-                        <div>
-                          <Clock className="w-3 h-3 inline mr-1" />
-                          Book-in Time: {booking.arrivalTime}
-                        </div>
-                      </div>
-
-                      {/* Phone */}
-                      <div className="text-gray-300 text-xs mb-2">
-                        <span className="text-blue-400">Phone Number</span>{" "}
-                        {booking.mobileNumber}
+                            {hoveredRoomId === room._id &&
+                              ReactDOM.createPortal(
+                                <Tooltip
+                                  style={{
+                                    position: "fixed",
+                                    top: `${tooltipY - 40}px`,
+                                    left: `${tooltipX + 15}px`,
+                                    zIndex: 99999,
+                                    pointerEvents: "none",
+                                  }}
+                                >
+                                  <RoomTooltipContent
+                                    room={room}
+                                    tooltipData={tooltipData}
+                                  />
+                                </Tooltip>,
+                                document.body // 👈 mounted outside RoomStatus
+                              )}
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 px-4">
-                <Calendar className="w-12 h-12 text-gray-500 mx-auto mb-3" />
-                <p className="text-gray-400 text-sm">No bookings found</p>
-              </div>
+                  ))
+                : !loader && (
+                    <div className="text-center py-8">
+                      <p className="text-gray-400">
+                        No rooms found matching the selected filters.
+                      </p>
+                    </div>
+                  )}
+            </div>
+
+            {/* Right Side - Booking Details */}
+            {showBookingDetails && (
+              <>
+                {/* Mobile Overlay */}
+                {isMobile && (
+                  <div
+                    className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+                    onClick={() => setShowBookingDetails(false)}
+                  />
+                )}
+
+                {/* Booking Details Panel */}
+                <div
+                  className={`${
+                    isMobile
+                      ? "fixed right-0 top-0 z-50 w-80 max-w-[90vw] h-full bg-[#0B1D34] border-l border-white/20 transform transition-transform duration-300 ease-in-out"
+                      : "w-80 flex-shrink-0 bg-[#0B1D34] border border-white/20 rounded-lg"
+                  } flex flex-col ${isMobile ? "p-0" : "p-4"}`}
+                >
+                  {/* Booking Section Header */}
+                  <div
+                    className={`flex items-center justify-between ${
+                      isMobile ? "p-4 border-b border-white/20" : "mb-4"
+                    }`}
+                  >
+                    <div>
+                      <h3 className="font-bold text-blue-400 flex items-center gap-2 text-lg">
+                        <Calendar className="w-5 h-5 text-cyan-400" />
+                        Recent Bookings
+                      </h3>
+                      <p className="text-gray-400 text-sm mt-1">
+                        Today's reservations
+                      </p>
+                    </div>
+
+                    {/* Close button for mobile */}
+                    {isMobile && (
+                      <button
+                        onClick={() => setShowBookingDetails(false)}
+                        className="p-1 hover:bg-slate-700 rounded-full transition-colors"
+                      >
+                        <X className="w-5 h-5 text-gray-400" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Booking Details Content */}
+                  <div
+                    className={`flex-1 overflow-y-auto ${
+                      isMobile ? "px-4 pb-4" : ""
+                    }`}
+                  >
+                    {bookingsLoading && bookings.length === 0 ? (
+                      <div className="flex justify-center items-center py-8">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+                      </div>
+                    ) : bookings.filter((b) => {
+                        const bookingDate = new Date(b.bookingDate);
+                        const today = new Date();
+                        const isToday =
+                          bookingDate.getFullYear() === today.getFullYear() &&
+                          bookingDate.getMonth() === today.getMonth() &&
+                          bookingDate.getDate() === today.getDate();
+                        return isToday && b.status?.toLowerCase() !== "checkin";
+                      }).length > 0 ? (
+                      <div className="space-y-3">
+                        {bookings
+                          .filter((b) => {
+                            const bookingDate = new Date(b.bookingDate);
+                            const today = new Date();
+                            const isToday =
+                              bookingDate.getFullYear() ===
+                                today.getFullYear() &&
+                              bookingDate.getMonth() === today.getMonth() &&
+                              bookingDate.getDate() === today.getDate();
+                            return (
+                              isToday && b.status?.toLowerCase() !== "checkin"
+                            );
+                          })
+                          .map((booking, index) => (
+                            <div
+                              key={booking._id || index}
+                              className="bg-slate-800 rounded-lg p-3 border border-slate-700 hover:border-blue-500/50 transition-colors"
+                            >
+                              {/* Guest Info */}
+                              <div className="flex items-center gap-2 mb-2">
+                                <User className="w-4 h-4 text-cyan-400 flex-shrink-0" />
+                                <span className="text-white font-semibold text-sm truncate">
+                                  {booking.customerName}
+                                </span>
+                              </div>
+
+                              {/* Booking Number */}
+                              <div className="text-gray-300 text-xs mb-2">
+                                <span className="text-blue-400">
+                                  Booking Number
+                                </span>{" "}
+                                <span className="break-all">
+                                  {booking.voucherNumber}
+                                </span>
+                              </div>
+
+                              {/* Dates */}
+                              <div className="text-xs text-gray-400 mb-2">
+                                <div className="flex items-center gap-1 mb-1">
+                                  <Clock className="w-3 h-3 flex-shrink-0" />
+                                  <span>
+                                    Date: {formatDate(booking.bookingDate)}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Clock className="w-3 h-3 flex-shrink-0" />
+                                  <span>Time: {booking.arrivalTime}</span>
+                                </div>
+                              </div>
+
+                              {/* Phone */}
+                              <div className="text-gray-300 text-xs">
+                                <span className="text-blue-400">
+                                  Phone Number
+                                </span>{" "}
+                                <span className="break-all">
+                                  {booking.mobileNumber}
+                                </span>
+                              </div>
+
+                              <div className="text-gray-300 text-xs flex gap-1">
+                                <span className="text-blue-400">
+                                  Room Number
+                                </span>
+                                {booking.selectedRooms.map((room) => {
+                                  return (
+                                    <div
+                                      key={room.id || room.roomName}
+                                      className="text-gray-300 text-xs"
+                                    >
+                                      <span className="break-all">
+                                        {room.roomName}
+                                      </span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <Calendar className="w-12 h-12 text-gray-500 mx-auto mb-3" />
+                        <p className="text-gray-400 text-sm">
+                          No bookings found for today
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
             )}
           </div>
         </div>
@@ -755,7 +886,7 @@ const HotelDashboard = () => {
       {/* Room Action Modal */}
       {showRoomModal && selectedRoomData && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60 z-50">
-          <div className="bg-slate-800 p-6 rounded-lg shadow-lg w-80">
+          <div className="bg-slate-800 p-6 rounded-lg shadow-lg w-80 max-w-[90vw]">
             <h2 className="text-lg font-bold text-white mb-4">
               Room: {selectedRoomData.roomName}
             </h2>
@@ -777,7 +908,7 @@ const HotelDashboard = () => {
 
             <button
               onClick={() => setShowRoomModal(false)}
-              className="mt-2 bg-red-500 hover:bg-red-600 text-white px-4 py-1 rounded"
+              className="mt-2 bg-red-500 hover:bg-red-600 text-white px-4 py-1 rounded w-full"
             >
               Close
             </button>
@@ -787,24 +918,24 @@ const HotelDashboard = () => {
 
       {/* Animations */}
       <style>{`
-        @keyframes fade-in {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
+    @keyframes fade-in {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
 
-        @keyframes slide-in {
-          from { opacity: 0; transform: translateX(-20px); }
-          to { opacity: 1; transform: translateX(0); }
-        }
+    @keyframes slide-in {
+      from { opacity: 0; transform: translateX(-20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
 
-        .animate-fade-in {
-          animation: fade-in 0.6s ease-out forwards;
-        }
+    .animate-fade-in {
+      animation: fade-in 0.6s ease-out forwards;
+    }
 
-        .animate-slide-in {
-          animation: slide-in 0.4s ease-out forwards;
-        }
-      `}</style>
+    .animate-slide-in {
+      animation: slide-in 0.4s ease-out forwards;
+    }
+  `}</style>
     </div>
   );
 };
