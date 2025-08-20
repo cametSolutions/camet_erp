@@ -285,7 +285,7 @@ const HotelDashboard = () => {
       return;
     }
 
-    if (["dirty", "blocked"].includes(action)) {
+    if (["dirty", "blocked","vacant"].includes(action)) {
       try {
         console.log("Updating room status:", {
           roomId: selectedRoomData._id,
@@ -603,7 +603,7 @@ const HotelDashboard = () => {
               },
               {
                 label: "Occupied",
-                color: "from-orange-500 to-red-600",
+                color: "from-sky-400 to-violet-600",
                 count: statusCounts.occupied,
               },
               {
@@ -904,6 +904,7 @@ const HotelDashboard = () => {
               <option value="CheckIn">CheckIn</option>
               <option value="dirty">Mark as Dirty</option>
               <option value="blocked">Mark as Blocked</option>
+              <option value="vacant">Mark as available</option>
             </select>
 
             <button
