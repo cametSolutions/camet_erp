@@ -86,33 +86,52 @@ function AvailableRooms({
 
   const location = useLocation();
 
-  const fetchRooms = useCallback(
-    async (pageNum = 1, searchTerm = "") => {
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await api.get(`/api/sUsers/getRooms/${cmp_id}`, {
-          params: {
-            page: pageNum,
-            limit: PAGE_SIZE,
-            search: searchTerm,
-            type: formData?.roomType || "All",
-          },
-          withCredentials: true,
-        });
-        const newRooms = res.data?.roomData;
-        setRooms((prev) => (pageNum === 1 ? newRooms : [...prev, ...newRooms]));
-        setHasMore(newRooms.length === PAGE_SIZE);
-      } catch (err) {
-        console.error(err);
-        setError("Failed to load rooms.");
-      } finally {
-        setLoading(false);
-      }
-    },
-    [cmp_id, location.pathname, formData?.roomType]
-  );
+ 
+// Updated fetchRooms function in your React component
+const fetchRooms = useCallback(
+  async (pageNum = 1, searchTerm = "") => {
+    setLoading(true);
+    setError(null);
+    try {
+      const params = {
+        page: pageNum,
+        limit: PAGE_SIZE,
+        search: searchTerm,
+      };
 
+      // Add date range if available for availability checking
+      if (formData?.arrivalDate) {
+        params.arrivalDate = formData.arrivalDate;
+      }
+      if (formData?.checkOutDate) {
+        params.checkOutDate = formData.checkOutDate;
+      }
+
+      const res = await api.get(`/api/sUsers/getRooms/${cmp_id}`, {
+        params,
+        withCredentials: true,
+        
+      });
+
+      const newRooms = res.data?.roomData || [];
+console.log(newRooms)
+      // Filter out any rooms that might have slipped through backend filtering
+      // Use 'availabilityStatus' instead of 'status'
+      const vacantRooms = newRooms.filter(room =>
+        room.availabilityStatus === 'vacant'
+      );
+
+      setRooms((prev) => (pageNum === 1 ? vacantRooms : [...prev, ...vacantRooms]));
+      setHasMore(vacantRooms.length === PAGE_SIZE);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to load vacant rooms.");
+    } finally {
+      setLoading(false);
+    }
+  },
+  [cmp_id, location.pathname, formData?.arrivalDate, formData?.checkOutDate]
+);
   const recalculateBookingTotals = useCallback((booking) => {
     const baseAmount =
       Number(booking.priceLevelRate || 0) * Number(booking.stayDays || 0);
@@ -340,7 +359,7 @@ function AvailableRooms({
   }, [cmp_id, fetchRooms]);
   useEffect(() => () => clearTimeout(debounceTimerRef.current), []);
 
-  console.log(bookings);
+  console.log(formData);
   return (
     <>
       <div className={`relative w-full ${className}`} ref={dropdownRef}>
@@ -398,15 +417,22 @@ function AvailableRooms({
                   onClick={() => handleSelect(room)}
                   className="p-3 hover:bg-gray-50 cursor-pointer border-b"
                 >
-                  <div className="flex justify-between">
-                    <div>
-                      <p className="font-medium text-gray-900">
-                        {room.roomName}
-                      </p>
+                 <div className="flex justify-between items-center">
+      <div className="flex-1">
+        <div className="flex items-center gap-2">
+          <p className="font-medium text-gray-900">
+            {room.roomName}
+          </p>
+          {room.availabilityStatus === 'vacant' && (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+              Available
+            </span>
+          )}
                     </div>
                   </div>
                 </div>
-              ))
+              </div>
+            ))
             )}
             {loading && rooms.length > 0 && (
               <div className="p-3 text-center text-gray-500 animate-pulse">

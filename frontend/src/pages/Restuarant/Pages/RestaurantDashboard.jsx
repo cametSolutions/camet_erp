@@ -90,8 +90,6 @@ const RestaurantPOS = () => {
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
 
-  const gradientClasses = ["bg-gradient-to-r from-gray-800 to-black"];
-
   const subcategoryIcons = {
     Pizza: "🍕",
     noodles: "🍜",
@@ -248,7 +246,6 @@ const RestaurantPOS = () => {
   useEffect(() => {
     if (roomBookingData) {
       const getRooms = roomBookingData?.data?.flatMap((room) => {
-        console.log(roomBookingData);
         return (
           room?.selectedRooms?.map((selectedRoom) => ({
             ...selectedRoom,
@@ -1211,11 +1208,11 @@ return (
                     value={roomDetails._id}
                     onChange={(e) => {
                       const selectedRoom = roomData.find(
-                        (room) => room._id === e.target.value
+                        (room) => room.roomId === e.target.value
                       );
                       setRoomDetails({
                         ...roomDetails,
-                        _id: selectedRoom?._id || "",
+                        _id: selectedRoom?.roomId || "",
                         roomno: selectedRoom?.roomName || "",
                         guestName: selectedRoom?.customerName || "",
                         CheckInNumber: selectedRoom?.voucherNumber || "",
@@ -1225,7 +1222,7 @@ return (
                   >
                     <option value="">Select a room</option>
                     {roomData?.map((room) => (
-                      <option value={room._id} key={room._id}>
+                      <option value={room.roomId} key={room.roomId}>
                         {room?.roomName} - {room?.customerName} -{" "}
                         {room?.voucherNumber}
                       </option>
