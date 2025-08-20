@@ -74,7 +74,7 @@ const RestaurantPOS = () => {
       setRoomDetails({
         ...roomDetails,
         _id: kotDataForEdit?.roomId || "",
-        guestName:  kotDataForEdit?.customer?.name|| "",
+        guestName: kotDataForEdit?.customer?.name || "",
         CheckInNumber: kotDataForEdit?.checkInNumber || "",
       });
     }
@@ -421,7 +421,6 @@ const RestaurantPOS = () => {
     }
   };
 
-
   const generateKOT = async (selectedTableNumber, tableStatus) => {
     let updatedItems = [];
     let orderCustomerDetails = {
@@ -591,10 +590,6 @@ const RestaurantPOS = () => {
       {showPriceLevelSelect && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 z-50">
           <div className="bg-slate-800 p-6 rounded-lg shadow-lg w-80">
-            <h2 className="text-lg font-bold text-white mb-4">
-              {/* Room: {selectedRoomData.roomName} */}
-            </h2>
-
             <label className="text-gray-300 mb-2 block">Select Action:</label>
             <select
               className="w-full bg-slate-700 text-white border border-gray-600 rounded px-2 py-1 mb-4"
@@ -696,30 +691,26 @@ const RestaurantPOS = () => {
         {/* Cuisine Categories - Horizontal scroll on mobile */}
 
         <div className="bg-white border-b border-gray-200 p-2 shadow-sm">
-          <div className="flex gap-2 text-xs overflow-x-auto scrollbar-hide pb-2">
+          <div className="flex gap-3 text-xs overflow-x-auto scrollbar-hide p-2">
             {cuisines.map((cuisine, index) => (
               <button
                 key={cuisine._id}
                 onClick={() => handleCategorySelect(cuisine._id, cuisine.name)}
-                // onMouseEnter={() => setHoveredCuisine(cuisine.name)}
-                // onMouseLeave={() => setHoveredCuisine(null)}
                 className={`
-                group relative flex items-center gap-2 px-3 py-2 rounded-xl font-medium 
-                transition-all duration-300 transform hover:scale-105 active:scale-95
-                whitespace-nowrap flex-shrink-0 min-w-max
-                ${gradientClasses[index % gradientClasses.length]}
-                ${
-                  selectedCuisine?.categoryName === cuisine.name
-                    ? "ring-2 ring-offset-2 ring-gray-400 shadow-lg scale-105"
-                    : "hover:shadow-lg"
-                }
-                text-white shadow-md
-              `}
+          flex items-center gap-2 px-4 py-2 rounded-lg font-semibold
+          transition-all duration-200 transform active:scale-95
+          whitespace-nowrap flex-shrink-0 min-w-max
+          ${gradientClasses[index % gradientClasses.length]}
+          text-white shadow-md
+          ${
+            selectedCuisine?.categoryName === cuisine.name
+              ? "ring-2 ring-white/70 shadow-lg scale-105"
+              : "hover:shadow-md hover:scale-105"
+          }
+        `}
               >
-                <span className="text-sm drop-shadow-sm">{cuisine.icon}</span>
-                <span className="text-xs font-semibold tracking-wide select-none">
-                  {cuisine.name}
-                </span>
+                <span className="text-sm">{cuisine.icon}</span>
+                <span className="text-sm tracking-wide">{cuisine.name}</span>
               </button>
             ))}
           </div>
@@ -900,105 +891,69 @@ const RestaurantPOS = () => {
                       </div>
                     </div>
                   ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-4 gap-3 md:gap-4">
+                      {menuItems.map((item, index) => {
+                        // Light gradient backgrounds matching the reference image
+                        const lightGradients = [
+                          "bg-gradient-to-br from-purple-200 via-purple-300 to-purple-400",
+                          "bg-gradient-to-br from-pink-200 via-pink-300 to-pink-400",
+                          "bg-gradient-to-br from-blue-200 via-blue-300 to-blue-400",
+                          "bg-gradient-to-br from-indigo-200 via-indigo-300 to-indigo-400",
+                          "bg-gradient-to-br from-violet-200 via-violet-300 to-violet-400",
+                          "bg-gradient-to-br from-cyan-200 via-cyan-300 to-cyan-400",
+                          "bg-gradient-to-br from-emerald-200 via-emerald-300 to-emerald-400",
+                          "bg-gradient-to-br from-orange-200 via-orange-300 to-orange-400",
+                        ];
 
-<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
-  {menuItems.map((item, index) => {
-    // Light gradient backgrounds matching the reference image
-    const lightGradients = [
-      'bg-gradient-to-br from-purple-200 via-purple-300 to-purple-400',
-      'bg-gradient-to-br from-pink-200 via-pink-300 to-pink-400', 
-      'bg-gradient-to-br from-blue-200 via-blue-300 to-blue-400',
-      'bg-gradient-to-br from-indigo-200 via-indigo-300 to-indigo-400',
-      'bg-gradient-to-br from-violet-200 via-violet-300 to-violet-400',
-      'bg-gradient-to-br from-cyan-200 via-cyan-300 to-cyan-400',
-      'bg-gradient-to-br from-emerald-200 via-emerald-300 to-emerald-400',
-      'bg-gradient-to-br from-orange-200 via-orange-300 to-orange-400',
-    ];
-    
-    const currentGradient = lightGradients[index % lightGradients.length];
-    
-    return (
-      <motion.div
-        key={item._id}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: index * 0.05 }}
-        className={`group relative ${currentGradient} rounded-2xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-[1.02] active:scale-95`}
-        onClick={() => addToOrder(item)}
-      >
-        {/* Card Content Container */}
-        <div className="p-4 flex flex-col items-center text-center min-h-[180px] sm:min-h-[200px] relative">
-          
-          {/* Food Image - Circular but larger, positioned in upper portion */}
-          <div className="relative mb-4 flex-shrink-0">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full overflow-hidden border-3 border-white/40 shadow-lg mx-auto">
-              <img
-                src={
-                  item.product_image ||
-                  "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=150&h=150&fit=crop"
-                }
-                alt={item.product_name}
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                onError={(e) => {
-                  e.target.src =
-                    "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=150&h=150&fit=crop";
-                }}
-              />
-            </div>
-            
-            {/* Add Button - positioned on the image */}
-            <div className="absolute -top-1 -right-1 bg-white/90 backdrop-blur-sm rounded-full p-1.5 shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-300 transform scale-0 group-hover:scale-100 hover:bg-white">
-              <Plus className="w-3 h-3 md:w-4 md:h-4 text-gray-700" />
-            </div>
-          </div>
+                        const currentGradient =
+                          lightGradients[index % lightGradients.length];
 
-          {/* Product Name */}
-          <div className="flex-1 flex items-center justify-center mb-3">
-            <h3 className="font-bold text-gray-800 text-xs sm:text-sm md:text-base line-clamp-2 leading-tight text-center max-w-full">
-              {item.product_name.toUpperCase()}
-            </h3>
-          </div>
-          
-          {/* Price Section - positioned at bottom */}
-          <div className="mt-auto">
-            <div className="text-center">
-              <span className="text-gray-800 font-bold text-sm sm:text-base md:text-lg">
-                ₹{selectedPriceLevel
-                  ? item.Priceleveles?.find(
-                      (pl) => pl.pricelevel == selectedPriceLevel
-                    )?.pricerate || 0
-                  : item.Priceleveles?.[0]?.pricerate}
-              </span>
-              {item.originalPrice && (
-                <span className="text-gray-600 text-xs line-through ml-2">
-                  ₹{item.originalPrice}
-                </span>
-              )}
-            </div>
-          </div>
+                        return (
+                          <motion.div
+                            key={item._id}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3, delay: index * 0.05 }}
+                            className={`group relative ${currentGradient} rounded-2xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer`}
+                            onClick={() => addToOrder(item)}
+                          >
+                            <div className="p-2 flex flex-col items-center justify-center text-center h-full min-h-[100px] relative">
+                              {/* Food Image */}
+                              <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-white/40 shadow-lg mb-3">
+                                <img
+                                  src={
+                                    item.product_image ||
+                                    "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=150&h=150&fit=crop"
+                                  }
+                                  alt={item.product_name}
+                                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                  onError={(e) => {
+                                    e.target.src =
+                                      "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=150&h=150&fit=crop";
+                                  }}
+                                />
+                              </div>
 
-          {/* Popular/Hot Badge */}
-          {(item.rating > 4.3 || Math.random() > 0.85) && (
-            <div className="absolute top-2 right-2 bg-orange-500 text-white px-2 py-1 rounded-full text-xs font-bold shadow-md">
-              HOT
-            </div>
-          )}
-          
-          {/* Subtle decorative elements */}
-          <div className="absolute top-3 left-3 w-1.5 h-1.5 bg-white/40 rounded-full"></div>
-          <div className="absolute bottom-3 left-3 w-1 h-1 bg-white/30 rounded-full"></div>
-        </div>
-        
-        {/* Hover overlay effect */}
-        <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl pointer-events-none"></div>
-        
-        {/* Subtle border effect */}
-        <div className="absolute inset-0 border border-white/20 rounded-2xl pointer-events-none"></div>
-      </motion.div>
-    );
-  })}
-</div>
+                              {/* Product Name */}
+                              <h3 className="font-bold text-gray-800 text-sm sm:text-base md:text-sm mb-2">
+                                {item.product_name.toUpperCase()}
+                              </h3>
 
+                              {/* Price */}
+                              <span className="text-gray-900 font-bold text-xl sm:text-xl">
+                                ₹
+                                {selectedPriceLevel
+                                  ? item.Priceleveles?.find(
+                                      (pl) =>
+                                        pl.pricelevel == selectedPriceLevel
+                                    )?.pricerate || 0
+                                  : item.Priceleveles?.[0]?.pricerate}
+                              </span>
+                            </div>
+                          </motion.div>
+                        );
+                      })}
+                    </div>
                   )}
                 </>
               )}
@@ -1409,56 +1364,57 @@ const RestaurantPOS = () => {
       )}
 
       {/* Custom CSS for better mobile experience */}
-<style jsx>{`
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
-  .line-clamp-2 {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  
-  /* Enhanced hover effects */
-  .group:hover .food-image {
-    transform: scale(1.1);
-    transition: transform 0.5s ease;
-  }
-  
-  /* Soft shadow variations */
-  .shadow-soft {
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  }
-  
-  .shadow-soft-hover {
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
-  }
-  
-  /* Border radius consistency */
-  .border-3 {
-    border-width: 3px;
-  }
-  
-  /* Custom gradient animations for smooth transitions */
-  @keyframes gentle-pulse {
-    0%, 100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.8;
-    }
-  }
-  
-  .gentle-pulse {
-    animation: gentle-pulse 2s ease-in-out infinite;
-  }
-`}</style>
+      <style jsx>{`
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+        .line-clamp-2 {
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        /* Enhanced hover effects */
+        .group:hover .food-image {
+          transform: scale(1.1);
+          transition: transform 0.5s ease;
+        }
+
+        /* Soft shadow variations */
+        .shadow-soft {
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .shadow-soft-hover {
+          box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Border radius consistency */
+        .border-3 {
+          border-width: 3px;
+        }
+
+        /* Custom gradient animations for smooth transitions */
+        @keyframes gentle-pulse {
+          0%,
+          100% {
+            opacity: 1;
+          }
+          50% {
+            opacity: 0.8;
+          }
+        }
+
+        .gentle-pulse {
+          animation: gentle-pulse 2s ease-in-out infinite;
+        }
+      `}</style>
     </>
   );
 };
