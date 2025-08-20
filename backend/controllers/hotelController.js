@@ -622,64 +622,95 @@ export const getRooms = async (req, res) => {
     // Extract arrival and checkout dates from params
     const { arrivalDate, checkOutDate } = params;
     
+    // Convert string dates to Date objects if needed
+    const startDate = new Date(arrivalDate);
+    const endDate = new Date(checkOutDate);
+    
+    console.log("Date range:", { startDate, endDate });
+    
     // Find rooms that are currently booked for the specified date range
     const overlappingBookings = await Booking.find({
       company_id: req.params.cmp_id,
       // Booking overlaps with requested date range
-      arrivalDate: { $lte: checkOutDate },
-      checkOutDate: { $gt: arrivalDate },
-      // Exclude cancelled bookings if needed
-    }).select('selectedRooms');
+      arrivalDate: { $lt: endDate }, // Changed from $lte to $lt
+      checkOutDate: { $gt: startDate }, // More explicit
+      // Add status filter to exclude cancelled bookings
+      status: { $nin: ['cancelled', 'rejected'] }
+    }).select('selectedRooms status');
+    
+    console.log("Overlapping bookings found:", overlappingBookings.length);
     
     // Find rooms that are currently checked-in for the specified date range
     const overlappingCheckIns = await CheckIn.find({
       company_id: req.params.cmp_id,
       // Check-in overlaps with requested date range
-      arrivalDate: { $lte: checkOutDate },
+      arrivalDate: { $lt: endDate }, // Changed from $lte to $lt
       $or: [
-        { checkOutDate: { $gt: arrivalDate } },
+        { checkOutDate: { $gt: startDate } },
         { checkOutDate: null } // No checkout time set yet
-      ]
-    }).select('roomDetails');
+      ],
+      // Add status filter if CheckIn has status field
+      // status: { $nin: ['cancelled'] }
+    }).select('roomDetails status');
+    
+    console.log("Overlapping check-ins found:", overlappingCheckIns.length);
     
     // Collect all occupied room IDs
     const occupiedRoomId = new Set();
     
     // Add booked room IDs
     overlappingBookings.forEach(booking => {
-      if (booking.selectedRooms) {
+      console.log("Processing booking:", booking._id, "selectedRooms:", booking.selectedRooms);
+      if (booking.selectedRooms && Array.isArray(booking.selectedRooms)) {
         booking.selectedRooms.forEach(room => {
-          occupiedRoomId.add(room.roomId.toString());
+          const roomId = room.roomId || room._id || room; // Handle different structures
+          if (roomId) {
+            occupiedRoomId.add(roomId.toString());
+            console.log("Added booked room ID:", roomId.toString());
+          }
         });
       }
     });
     
     // Add checked-in room IDs
     overlappingCheckIns.forEach(checkIn => {
-      if (checkIn.roomDetails) {
+      console.log("Processing check-in:", checkIn._id, "roomDetails:", checkIn.roomDetails);
+      if (checkIn.roomDetails && Array.isArray(checkIn.roomDetails)) {
         checkIn.roomDetails.forEach(room => {
-          occupiedRoomId.add(room.roomId.toString());
+          const roomId = room.roomId || room._id || room; // Handle different structures
+          if (roomId) {
+            occupiedRoomId.add(roomId.toString());
+            console.log("Added checked-in room ID:", roomId.toString());
+          }
         });
       }
     });
     
-    // Filter to get only vacant rooms
-    const vacantRooms = rooms.filter(room => {
+    console.log("Total occupied room IDs:", Array.from(occupiedRoomId));
+    
+    // Add availability status to each room
+    const roomsWithStatus = rooms.map(room => {
       const roomId = room._id.toString();
-      return !occupiedRoomId.has(roomId); // Room is vacant if not occupied
+      const isOccupied = occupiedRoomId.has(roomId);
+      
+      console.log(`Room ${roomId}: ${isOccupied ? 'occupied' : 'vacant'}`);
+      
+      return {
+        ...room.toObject(),
+        availabilityStatus: isOccupied ? 'occupied' : 'vacant',
+        checkedAt: now
+      };
     });
     
-    // Add vacant status to each room
-    const roomsWithStatus = rooms.map(room => ({
-      ...room.toObject(),
-      availabilityStatus: !occupiedRoomId.has(room._id.toString()) ? 'vacant' : 'occupied',
-      checkedAt: now
-    }));
+    // Filter vacant rooms if needed
+    const vacantRooms = roomsWithStatus.filter(room => room.availabilityStatus === 'vacant');
+    
+    console.log("Total rooms:", rooms.length, "Vacant rooms:", vacantRooms.length);
     
     // Send response with rooms and their availability status
     const sendRoomResponseData = sendRoomResponse(
       res,
-      roomsWithStatus,
+      roomsWithStatus, // Send all rooms with status
       rooms.length,
       params
     );

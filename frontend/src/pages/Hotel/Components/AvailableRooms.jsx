@@ -97,7 +97,6 @@ const fetchRooms = useCallback(
         page: pageNum,
         limit: PAGE_SIZE,
         search: searchTerm,
-      
       };
 
       // Add date range if available for availability checking
@@ -111,15 +110,17 @@ const fetchRooms = useCallback(
       const res = await api.get(`/api/sUsers/getRooms/${cmp_id}`, {
         params,
         withCredentials: true,
+        
       });
-      
+
       const newRooms = res.data?.roomData || [];
-      
+console.log(newRooms)
       // Filter out any rooms that might have slipped through backend filtering
-      const vacantRooms = newRooms.filter(room => 
-        room.status === 'vacant' 
+      // Use 'availabilityStatus' instead of 'status'
+      const vacantRooms = newRooms.filter(room =>
+        room.availabilityStatus === 'vacant'
       );
-      
+
       setRooms((prev) => (pageNum === 1 ? vacantRooms : [...prev, ...vacantRooms]));
       setHasMore(vacantRooms.length === PAGE_SIZE);
     } catch (err) {
