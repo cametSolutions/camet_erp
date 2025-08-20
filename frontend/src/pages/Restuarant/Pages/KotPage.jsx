@@ -60,6 +60,7 @@ const OrdersDashboard = () => {
 
   useEffect(() => {
     if (data) {
+      console.log(data?.data[23])
       setOrders(data?.data);
     }
   }, [data]);
@@ -171,37 +172,59 @@ const OrdersDashboard = () => {
   };
 
   // Filter orders based on active filter
-  const getFilteredOrders = () => {
-    let filtered = orders;
-    // Filter by status
-    if (activeFilter == "pending" && userRole !== "kitchen") {
-      filtered = filtered.filter((order) =>
-        ["pending", "cooking", "ready_to_serve", "completed"].includes(
-          order.status
-        )
-      );
-    } else if (activeFilter == "pending") {
+  // Updated getFilteredOrders function with proper kitchen filtering
+const getFilteredOrders = () => {
+  let filtered = orders;
+  
+  // Filter by status based on user role and active filter
+  if (userRole === "kitchen") {
+    if (activeFilter === "All") {
+      // Kitchen - All: Show all statuses
       filtered = filtered.filter((order) =>
         ["pending", "cooking", "ready_to_serve"].includes(order.status)
       );
-    } else if (activeFilter === "completed") {
-      filtered = filtered.filter((order) => order.status === "completed");
-    }
-
-    // Filter by search query
-    if (searchQuery) {
-      filtered = filtered.filter(
-        (order) =>
-          order.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          order.id.toString().includes(searchQuery) ||
-          order.items.some((item) =>
-            item.name.toLowerCase().includes(searchQuery.toLowerCase())
-          )
+    } else if (activeFilter === "On Process") {
+      // Kitchen - On Process: Show pending, cooking, and ready_to_serve
+      filtered = filtered.filter((order) =>
+        ["pending", "cooking", "ready_to_serve"].includes(order.status)
       );
     }
+    // } else if (activeFilter === "Completed") {
+    //   // Kitchen - Completed: Show only completed orders
+    //   filtered = filtered.filter((order) => order.status === "completed");
+    // }
+  } else if (userRole === "reception") {
+    if (activeFilter === "All") {
+      // Reception - All: Show all statuses
+      filtered = filtered.filter((order) =>
+        ["pending", "cooking", "ready_to_serve", "completed"].includes(order.status)
+      );
+    } else if (activeFilter === "On Process") {
+      // Reception - On Process: Show pending, cooking, and ready_to_serve
+      filtered = filtered.filter((order) =>
+        ["pending", "cooking", "ready_to_serve"].includes(order.status)
+      );
+    } else if (activeFilter === "Completed") {
+      // Reception - Completed: Show only completed orders
+      filtered = filtered.filter((order) => order.status === "completed");
+    }
+  }
 
-    return filtered;
-  };
+  // Filter by search query
+  if (searchQuery) {
+    filtered = filtered.filter(
+      (order) =>
+        order.customer?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        order.id?.toString().includes(searchQuery) ||
+        order.items.some((item) =>
+          item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          item.product_name?.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+    );
+  }
+
+  return filtered;
+};
 
   const handleStatusChange = async (orderId, newStatus) => {
     setLoader(true);
@@ -468,6 +491,8 @@ const handleEditKot = (kotData) => {
   navigate("/sUsers/RestaurantDashboard", { state: { kotData } });
 };
 
+
+console.log(orders)
   return (
     <>
       {showVoucherPdf && (
@@ -508,21 +533,22 @@ const handleEditKot = (kotData) => {
 
           {/* Controls */}
           <div className="bg-white px-4 py-3 border-b border-gray-200 flex justify-between items-center">
-            <div className="flex gap-2">
-              {["All", "On Process", "Completed"].map((filter) => (
-                <button
-                  key={filter}
-                  onClick={() => setActiveFilter(filter)}
-                  className={`px-3 py-1.5 border rounded-md text-sm font-medium transition-colors ${
-                    activeFilter === filter
-                      ? "bg-green-800 text-white border-green-800"
-                      : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
-                  }`}
-                >
-                  {filter}
-                </button>
-              ))}
-            </div>
+    
+<div className="flex gap-2">
+  {["All", "On Process", "Completed"].map((filter) => (
+    <button
+      key={filter}
+      onClick={() => setActiveFilter(filter)}
+      className={`px-3 py-1.5 border rounded-md text-sm font-medium transition-colors ${
+        activeFilter === filter
+          ? "bg-green-800 text-white border-green-800"
+          : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
+      }`}
+    >
+      {filter}
+    </button>
+  ))}
+</div>
 
             <div className="flex items-center gap-2">
               <MenuIcon />
@@ -609,10 +635,13 @@ const handleEditKot = (kotData) => {
                                   ? "bg-blue-200 text-blue-800"
                                   : "bg-gray-100 text-gray-700"
                               }`}
-                            >
-                              {order.type}
+                            > 
+                              {order.type} - <span>
+                                 {order.roomId?.roomName}
+                              </span>
                             </span>
                           </div>
+                          
                           <div className="text-xs text-gray-500 flex items-center gap-1">
                             <MdAccessTime className="w-3 h-3 flex-shrink-0" />
                             <span>

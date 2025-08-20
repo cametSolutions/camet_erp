@@ -491,7 +491,7 @@ export const editKot = async (req, res) => {
 // get all kot
 export const getKot = async (req, res) => {
   try {
-    const kot = await kotModal.find({ cmp_id: req.params.cmp_id });
+    const kot = await kotModal.find({ cmp_id: req.params.cmp_id }).populate('roomId');
     res.status(200).json({
       success: true,
       data: kot,

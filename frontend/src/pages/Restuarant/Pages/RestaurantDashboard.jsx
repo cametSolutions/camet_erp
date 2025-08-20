@@ -797,7 +797,7 @@ const RestaurantPOS = () => {
                     <button
                       key={subcategory._id}
                       onClick={() => handleSubcategorySelect(subcategory.name)}
-                      className={`w-full text-left px-3 py-2 mb-2 rounded-md font-medium transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md transform hover:scale-[1.02] hover:translate-x-1 
+                      className={`w-full text-left px-1  py-2 mb-2 rounded-md font-medium transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md transform hover:scale-[1.02] hover:translate-x-1 
                       ${
                         selectedSubcategory === subcategory.name
                           ? "text-white"
@@ -1236,11 +1236,12 @@ const RestaurantPOS = () => {
                       value={roomDetails._id}
                       onChange={(e) => {
                         const selectedRoom = roomData.find(
-                          (room) => room._id === e.target.value
+                          (room) => room.roomId === e.target.value
                         );
+                      
                         setRoomDetails({
                           ...roomDetails,
-                          _id: selectedRoom?._id || "",
+                          _id: selectedRoom?.roomId || "",
                           roomno: selectedRoom?.roomName || "",
                           guestName: selectedRoom?.customerName || "",
                           CheckInNumber: selectedRoom?.voucherNumber || "",
@@ -1250,7 +1251,7 @@ const RestaurantPOS = () => {
                     >
                       <option value="">Select a room</option>
                       {roomData?.map((room) => (
-                        <option value={room._id} key={room._id}>
+                        <option value={room.roomId} key={room._id}>
                           {room?.roomName} - {room?.customerName} -{" "}
                           {room?.voucherNumber}
                         </option>

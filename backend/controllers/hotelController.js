@@ -608,25 +608,92 @@ export const addRoom = async (req, res) => {
 export const getRooms = async (req, res) => {
   try {
     const params = extractRequestParams(req);
+    console.log("Rooms", params);
     const filter = buildDatabaseFilterForRoom(params);
-
+    
+    console.log("paramsForgetRooms", params);
+    
+    // Get current date and time
+    const now = new Date();
+    
+    // Get all rooms based on basic filters (no status field filtering)
     const { rooms, totalRooms } = await fetchRoomsFromDatabase(filter, params);
-
+    
+    // Extract arrival and checkout dates from params
+    const { arrivalDate, checkOutDate } = params;
+    
+    // Find rooms that are currently booked for the specified date range
+    const overlappingBookings = await Booking.find({
+      company_id: req.params.cmp_id,
+      // Booking overlaps with requested date range
+      arrivalDate: { $lte: checkOutDate },
+      checkOutDate: { $gt: arrivalDate },
+      // Exclude cancelled bookings if needed
+    }).select('selectedRooms');
+    
+    // Find rooms that are currently checked-in for the specified date range
+    const overlappingCheckIns = await CheckIn.find({
+      company_id: req.params.cmp_id,
+      // Check-in overlaps with requested date range
+      arrivalDate: { $lte: checkOutDate },
+      $or: [
+        { checkOutDate: { $gt: arrivalDate } },
+        { checkOutDate: null } // No checkout time set yet
+      ]
+    }).select('roomDetails');
+    
+    // Collect all occupied room IDs
+    const occupiedRoomId = new Set();
+    
+    // Add booked room IDs
+    overlappingBookings.forEach(booking => {
+      if (booking.selectedRooms) {
+        booking.selectedRooms.forEach(room => {
+          occupiedRoomId.add(room.roomId.toString());
+        });
+      }
+    });
+    
+    // Add checked-in room IDs
+    overlappingCheckIns.forEach(checkIn => {
+      if (checkIn.roomDetails) {
+        checkIn.roomDetails.forEach(room => {
+          occupiedRoomId.add(room.roomId.toString());
+        });
+      }
+    });
+    
+    // Filter to get only vacant rooms
+    const vacantRooms = rooms.filter(room => {
+      const roomId = room._id.toString();
+      return !occupiedRoomId.has(roomId); // Room is vacant if not occupied
+    });
+    
+    // Add vacant status to each room
+    const roomsWithStatus = rooms.map(room => ({
+      ...room.toObject(),
+      availabilityStatus: !occupiedRoomId.has(room._id.toString()) ? 'vacant' : 'occupied',
+      checkedAt: now
+    }));
+    
+    // Send response with rooms and their availability status
     const sendRoomResponseData = sendRoomResponse(
       res,
-      rooms,
-      totalRooms,
+      roomsWithStatus,
+      rooms.length,
       params
     );
+    
+    return sendRoomResponseData;
+    
   } catch (error) {
-    console.error("Error in getProducts:", error);
+    console.error("Error in getRooms:", error);
     return res.status(500).json({
       success: false,
       message: "Internal server error, try again!",
     });
   }
 };
-
 // function used to get all rooms
 
 export const getAllRooms = async (req, res) => {
