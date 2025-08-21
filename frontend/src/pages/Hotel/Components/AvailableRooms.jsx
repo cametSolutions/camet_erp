@@ -86,9 +86,7 @@ function AvailableRooms({
 
   const location = useLocation();
 
- 
-// Updated fetchRooms function in your React component
-const fetchRooms = useCallback(
+  const fetchRooms = useCallback(
   async (pageNum = 1, searchTerm = "") => {
     setLoading(true);
     setError(null);
@@ -97,9 +95,10 @@ const fetchRooms = useCallback(
         page: pageNum,
         limit: PAGE_SIZE,
         search: searchTerm,
+        type: formData?.roomType || "All",
       };
 
-      // Add date range if available for availability checking
+      // Add date range for availability checking
       if (formData?.arrivalDate) {
         params.arrivalDate = formData.arrivalDate;
       }
@@ -107,30 +106,39 @@ const fetchRooms = useCallback(
         params.checkOutDate = formData.checkOutDate;
       }
 
+      console.log("Sending params to backend:", params);
+
       const res = await api.get(`/api/sUsers/getRooms/${cmp_id}`, {
         params,
         withCredentials: true,
-        
       });
 
       const newRooms = res.data?.roomData || [];
-console.log(newRooms)
-      // Filter out any rooms that might have slipped through backend filtering
-      // Use 'availabilityStatus' instead of 'status'
-      const vacantRooms = newRooms.filter(room =>
-        room.availabilityStatus === 'vacant'
-      );
+      
+      console.log("Received vacant rooms from backend:", newRooms.length);
+      console.log("Sample room:", newRooms[0]);
 
-      setRooms((prev) => (pageNum === 1 ? vacantRooms : [...prev, ...vacantRooms]));
-      setHasMore(vacantRooms.length === PAGE_SIZE);
+      // Filter out rooms that are already selected in current booking
+      const availableRooms = newRooms.filter(room => {
+        const isAlreadyBooked = bookings.some(booking => booking.roomId === room._id);
+        if (isAlreadyBooked) {
+          console.log(`Filtering out already selected room: ${room._id}`);
+        }
+        return !isAlreadyBooked;
+      });
+
+      console.log("Available rooms after filtering out selected:", availableRooms.length);
+
+      setRooms((prev) => (pageNum === 1 ? availableRooms : [...prev, ...availableRooms]));
+      setHasMore(availableRooms.length === PAGE_SIZE);
     } catch (err) {
-      console.error(err);
-      setError("Failed to load vacant rooms.");
+      console.error("Error fetching rooms:", err);
+      setError("Failed to load available rooms.");
     } finally {
       setLoading(false);
     }
   },
-  [cmp_id, location.pathname, formData?.arrivalDate, formData?.checkOutDate]
+  [cmp_id, location.pathname, formData?.roomType, formData?.arrivalDate, formData?.checkOutDate, bookings]
 );
   const recalculateBookingTotals = useCallback((booking) => {
     const baseAmount =
@@ -359,7 +367,16 @@ console.log(newRooms)
   }, [cmp_id, fetchRooms]);
   useEffect(() => () => clearTimeout(debounceTimerRef.current), []);
 
-  console.log(formData);
+
+  // Add this useEffect after your existing useEffects, before the console.log(bookings)
+useEffect(() => {
+  // Refresh rooms when bookings change to update the dropdown
+  if (isOpen && cmp_id) {
+    fetchRooms(1, search);
+  }
+}, [bookings.length]); // Triggers when rooms are added/removed from bookings
+
+  console.log(bookings);
   return (
     <>
       <div className={`relative w-full ${className}`} ref={dropdownRef}>
@@ -417,22 +434,15 @@ console.log(newRooms)
                   onClick={() => handleSelect(room)}
                   className="p-3 hover:bg-gray-50 cursor-pointer border-b"
                 >
-                 <div className="flex justify-between items-center">
-      <div className="flex-1">
-        <div className="flex items-center gap-2">
-          <p className="font-medium text-gray-900">
-            {room.roomName}
-          </p>
-          {room.availabilityStatus === 'vacant' && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-              Available
-            </span>
-          )}
+                  <div className="flex justify-between">
+                    <div>
+                      <p className="font-medium text-gray-900">
+                        {room.roomName}
+                      </p>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))
+              ))
             )}
             {loading && rooms.length > 0 && (
               <div className="p-3 text-center text-gray-500 animate-pulse">

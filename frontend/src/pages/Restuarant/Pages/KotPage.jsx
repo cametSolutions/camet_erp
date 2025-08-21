@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import useFetch from "@/customHook/useFetch";
 import { useSelector } from "react-redux";
+import { useLocation } from "react-router-dom";
 import {
   MdDescription,
   MdAccessTime,
@@ -22,7 +23,7 @@ import VoucherPdf from "@/pages/voucher/voucherPdf/indian/VoucherPdf";
 import { toast } from "react-toastify";
 import { FaRegEdit } from "react-icons/fa";
 const OrdersDashboard = () => {
-  const [activeFilter, setActiveFilter] = useState("pending");
+  const [activeFilter, setActiveFilter] = useState("On Process");
   const [searchQuery, setSearchQuery] = useState("");
   const [userRole, setUserRole] = useState("reception");
   const [orders, setOrders] = useState([]);
@@ -43,6 +44,12 @@ const OrdersDashboard = () => {
   const [showVoucherPdf, setShowVoucherPdf] = useState(false);
   const [previewForSales, setPreviewForSales] = useState(null);
 
+
+
+   const location = useLocation();
+  const selectedKotFromRedirect  = location.state?.selectedKot;
+  const fromTable = location.state?.fromTable ?? false;
+  const [showKotNotification, setShowKotNotification] = useState(fromTable);
   // state used for showing pdf print
 
   const [salePrintData, setSalePrintData] = useState(null);
@@ -56,6 +63,8 @@ const OrdersDashboard = () => {
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
 
+
+  
   const { data, refreshHook } = useFetch(`/api/sUsers/getKotData/${cmp_id}`);
 
   useEffect(() => {
@@ -159,6 +168,12 @@ const OrdersDashboard = () => {
       setShowVoucherPdf(true);
     }
   }, [previewForSales]);
+
+  const handleKotClick = () => {
+    if (showKotNotification) {
+      setShowKotNotification(false);
+    }
+  };
 
   // Available status transitions for kitchen
   const getAvailableStatuses = (currentStatus) => {
@@ -495,6 +510,8 @@ const handleEditKot = (kotData) => {
 console.log(orders)
   return (
     <>
+   
+
       {showVoucherPdf && (
         <div>
           <VoucherPdf
@@ -550,6 +567,17 @@ console.log(orders)
   ))}
 </div>
 
+
+ {showKotNotification && selectedKotFromRedirect && (
+  <div
+    className="fixed top-6 inset-x-0 flex justify-center z-50 cursor-pointer"
+    onClick={() => setShowKotNotification(false)}
+  >
+    <div className="bg-yellow-100 border border-yellow-400 px-6 py-2 rounded-lg shadow text-yellow-900 font-medium">
+      KOT #{selectedKotFromRedirect.voucherNumber} was selected from table. Click to close this notice.
+    </div>
+  </div>
+)}
             <div className="flex items-center gap-2">
               <MenuIcon />
               <input
@@ -575,6 +603,7 @@ console.log(orders)
                 };
 
                 return (
+
                   <div
                     key={order.id}
                     className={`group relative bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border overflow-hidden h-96 flex flex-col cursor-pointer ${
@@ -582,7 +611,12 @@ console.log(orders)
                         ? "border-blue-500 ring-2 ring-blue-200 bg-blue-50"
                         : "border-gray-100 hover:border-blue-200"
                     }`}
-                    onClick={() => handleSelectMultipleKots(order)}
+                    onClick={() =>{
+                      if (showKotNotification && order._id === selectedKotFromRedirect._id) {
+    setShowKotNotification(false);
+  }
+                    handleSelectMultipleKots(order);
+                    }}
                   >
                     {/* Selection indicator - Tick mark */}
                     {isOrderSelected(order) && (
