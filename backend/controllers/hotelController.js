@@ -608,115 +608,105 @@ export const addRoom = async (req, res) => {
 export const getRooms = async (req, res) => {
   try {
     const params = extractRequestParams(req);
-    console.log("Rooms", params);
+    console.log("Rooms params:", params);
     const filter = buildDatabaseFilterForRoom(params);
-    
-    console.log("paramsForgetRooms", params);
-    
+
     // Get current date and time
     const now = new Date();
-    
-    // Get all rooms based on basic filters (no status field filtering)
+
+    // Get all rooms based on basic filters
     const { rooms, totalRooms } = await fetchRoomsFromDatabase(filter, params);
-    
-    // Extract arrival and checkout dates from params
-    const { arrivalDate, checkOutDate } = params;
-    
-    // Convert string dates to Date objects if needed
-    const startDate = new Date(arrivalDate);
-    const endDate = new Date(checkOutDate);
-    
-    console.log("Date range:", { startDate, endDate });
-    
-    // Find rooms that are currently booked for the specified date range
+
+    // Only care about checkOutDate in further logic
+    // Extract checkout only from params if given, else use today
+    let { checkOutDate } = params;
+    let endDate;
+    if (checkOutDate) {
+      endDate = checkOutDate;
+    } else {
+      endDate = new Date();
+      endDate.setHours(23, 59, 59, 999);
+    }
+
+    const startDate = new Date(); // startDate is required for check date, but not for overlap logic
+
+    console.log("Checking availability for date (checkOutDate logic only):", { endDate });
+    console.log("companyId", req.params.cmp_id);
+
+    // Find rooms that are currently booked for the specified checkout date (ignore arrivalDate)
     const overlappingBookings = await Booking.find({
-      company_id: req.params.cmp_id,
-      // Booking overlaps with requested date range
-      arrivalDate: { $lt: endDate }, // Changed from $lte to $lt
-      checkOutDate: { $gt: startDate }, // More explicit
-      // Add status filter to exclude cancelled bookings
-      status: { $nin: ['cancelled', 'rejected'] }
-    }).select('selectedRooms status');
-    
+      cmp_id: req.params.cmp_id,
+      checkOutDate: { $gt: startDate }, // Only consider checkOutDate
+      status: { $nin: ['CheckIn'] }
+    });
+
     console.log("Overlapping bookings found:", overlappingBookings.length);
-    
-    // Find rooms that are currently checked-in for the specified date range
+
+    // Find rooms that are currently checked-in for the specified checkout date
     const overlappingCheckIns = await CheckIn.find({
-      company_id: req.params.cmp_id,
-      // Check-in overlaps with requested date range
-      arrivalDate: { $lt: endDate }, // Changed from $lte to $lt
-      $or: [
-        { checkOutDate: { $gt: startDate } },
-        { checkOutDate: null } // No checkout time set yet
-      ],
-      // Add status filter if CheckIn has status field
-      // status: { $nin: ['cancelled'] }
-    }).select('roomDetails status');
-    
+      cmp_id: req.params.cmp_id,
+      checkOutDate: { $gt: startDate },
+    }).select('roomDetails');
+
     console.log("Overlapping check-ins found:", overlappingCheckIns.length);
-    
+
     // Collect all occupied room IDs
     const occupiedRoomId = new Set();
-    
+
     // Add booked room IDs
     overlappingBookings.forEach(booking => {
-      console.log("Processing booking:", booking._id, "selectedRooms:", booking.selectedRooms);
       if (booking.selectedRooms && Array.isArray(booking.selectedRooms)) {
         booking.selectedRooms.forEach(room => {
-          const roomId = room.roomId || room._id || room; // Handle different structures
+          const roomId = room.roomId || room._id || room;
           if (roomId) {
             occupiedRoomId.add(roomId.toString());
-            console.log("Added booked room ID:", roomId.toString());
           }
         });
       }
     });
-    
+
     // Add checked-in room IDs
     overlappingCheckIns.forEach(checkIn => {
-      console.log("Processing check-in:", checkIn._id, "roomDetails:", checkIn.roomDetails);
-      if (checkIn.roomDetails && Array.isArray(checkIn.roomDetails)) {
-        checkIn.roomDetails.forEach(room => {
-          const roomId = room.roomId || room._id || room; // Handle different structures
+      if (checkIn.selectedRooms && Array.isArray(checkIn.selectedRooms)) {
+        checkIn.selectedRooms.forEach(room => {
+          const roomId = room.roomId || room._id || room;
           if (roomId) {
             occupiedRoomId.add(roomId.toString());
-            console.log("Added checked-in room ID:", roomId.toString());
           }
         });
       }
     });
-    
-    console.log("Total occupied room IDs:", Array.from(occupiedRoomId));
-    
-    // Add availability status to each room
-    const roomsWithStatus = rooms.map(room => {
+
+    // Filter out occupied **and dirty/blocked** rooms
+    const vacantRooms = rooms.filter(room => {
       const roomId = room._id.toString();
       const isOccupied = occupiedRoomId.has(roomId);
-      
-      console.log(`Room ${roomId}: ${isOccupied ? 'occupied' : 'vacant'}`);
-      
-      return {
-        ...room.toObject(),
-        availabilityStatus: isOccupied ? 'occupied' : 'vacant',
-        checkedAt: now
-      };
+
+      // exclude rooms with status 'dirty' or 'blocked'
+      const isCleanAndOpen =
+        room.status !== 'dirty' &&
+        room.status !== 'blocked';
+
+      return !isOccupied && isCleanAndOpen;
     });
-    
-    // Filter vacant rooms if needed
-    const vacantRooms = roomsWithStatus.filter(room => room.availabilityStatus === 'vacant');
-    
-    console.log("Total rooms:", rooms.length, "Vacant rooms:", vacantRooms.length);
-    
-    // Send response with rooms and their availability status
+
+    // Add availability status
+    const roomsWithStatus = vacantRooms.map(room => ({
+      ...room.toObject(),
+      status: 'vacant',
+      checkedAt: now
+    }));
+
+    // Send response
     const sendRoomResponseData = sendRoomResponse(
       res,
-      roomsWithStatus, // Send all rooms with status
-      rooms.length,
+      roomsWithStatus,
+      vacantRooms.length,
       params
     );
-    
+
     return sendRoomResponseData;
-    
+
   } catch (error) {
     console.error("Error in getRooms:", error);
     return res.status(500).json({
@@ -725,6 +715,8 @@ export const getRooms = async (req, res) => {
     });
   }
 };
+
+
 // function used to get all rooms
 
 export const getAllRooms = async (req, res) => {
