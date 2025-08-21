@@ -22,11 +22,12 @@ import VoucherPdf from "@/pages/voucher/voucherPdf/indian/VoucherPdf";
 import { toast } from "react-toastify";
 import { FaRegEdit } from "react-icons/fa";
 const OrdersDashboard = () => {
-  const [activeFilter, setActiveFilter] = useState("pending");
+  const [activeFilter, setActiveFilter] = useState("On Process");
   const [searchQuery, setSearchQuery] = useState("");
   const [userRole, setUserRole] = useState("reception");
   const [orders, setOrders] = useState([]);
   const [loader, setLoader] = useState(false);
+  const [saveLoader, setSaveLoader] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [selectedDataForPayment, setSelectedDataForPayment] = useState({});
@@ -42,6 +43,8 @@ const OrdersDashboard = () => {
   const [saleVoucherData, setSaleVoucherData] = useState();
   const [showVoucherPdf, setShowVoucherPdf] = useState(false);
   const [previewForSales, setPreviewForSales] = useState(null);
+  const [conformationModal, setConformationModal] = useState(false);
+  const [isPostToRoom, setIsPostToRooms] = useState(false);
 
   // state used for showing pdf print
 
@@ -60,7 +63,7 @@ const OrdersDashboard = () => {
 
   useEffect(() => {
     if (data) {
-      console.log(data?.data[23])
+      console.log(data?.data[23]);
       setOrders(data?.data);
     }
   }, [data]);
@@ -117,8 +120,6 @@ const OrdersDashboard = () => {
       setLoader(false);
     }
   }, [cmp_id]);
-
-  console.log("saleVoucherData", saleVoucherData);
   useEffect(() => {
     fetchData();
   }, [fetchData]);
@@ -173,58 +174,63 @@ const OrdersDashboard = () => {
 
   // Filter orders based on active filter
   // Updated getFilteredOrders function with proper kitchen filtering
-const getFilteredOrders = () => {
-  let filtered = orders;
-  
-  // Filter by status based on user role and active filter
-  if (userRole === "kitchen") {
-    if (activeFilter === "All") {
-      // Kitchen - All: Show all statuses
-      filtered = filtered.filter((order) =>
-        ["pending", "cooking", "ready_to_serve"].includes(order.status)
-      );
-    } else if (activeFilter === "On Process") {
-      // Kitchen - On Process: Show pending, cooking, and ready_to_serve
-      filtered = filtered.filter((order) =>
-        ["pending", "cooking", "ready_to_serve"].includes(order.status)
+  const getFilteredOrders = () => {
+    let filtered = orders;
+
+    // Filter by status based on user role and active filter
+    if (userRole === "kitchen") {
+      if (activeFilter === "All") {
+        // Kitchen - All: Show all statuses
+        filtered = filtered.filter((order) =>
+          ["pending", "cooking", "ready_to_serve"].includes(order.status)
+        );
+      } else if (activeFilter === "On Process") {
+        // Kitchen - On Process: Show pending, cooking, and ready_to_serve
+        filtered = filtered.filter((order) =>
+          ["pending", "cooking", "ready_to_serve"].includes(order.status)
+        );
+      }
+      // } else if (activeFilter === "Completed") {
+      //   // Kitchen - Completed: Show only completed orders
+      //   filtered = filtered.filter((order) => order.status === "completed");
+      // }
+    } else if (userRole === "reception") {
+      if (activeFilter === "All") {
+        // Reception - All: Show all statuses
+        filtered = filtered.filter((order) =>
+          ["pending", "cooking", "ready_to_serve", "completed"].includes(
+            order.status
+          )
+        );
+      } else if (activeFilter === "On Process") {
+        // Reception - On Process: Show pending, cooking, and ready_to_serve
+        filtered = filtered.filter((order) =>
+          ["pending", "cooking", "ready_to_serve"].includes(order.status)
+        );
+      } else if (activeFilter === "Completed") {
+        // Reception - Completed: Show only completed orders
+        filtered = filtered.filter((order) => order.status === "completed");
+      }
+    }
+
+    // Filter by search query
+    if (searchQuery) {
+      filtered = filtered.filter(
+        (order) =>
+          order.customer?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          order.id?.toString().includes(searchQuery) ||
+          order.items.some(
+            (item) =>
+              item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              item.product_name
+                ?.toLowerCase()
+                .includes(searchQuery.toLowerCase())
+          )
       );
     }
-    // } else if (activeFilter === "Completed") {
-    //   // Kitchen - Completed: Show only completed orders
-    //   filtered = filtered.filter((order) => order.status === "completed");
-    // }
-  } else if (userRole === "reception") {
-    if (activeFilter === "All") {
-      // Reception - All: Show all statuses
-      filtered = filtered.filter((order) =>
-        ["pending", "cooking", "ready_to_serve", "completed"].includes(order.status)
-      );
-    } else if (activeFilter === "On Process") {
-      // Reception - On Process: Show pending, cooking, and ready_to_serve
-      filtered = filtered.filter((order) =>
-        ["pending", "cooking", "ready_to_serve"].includes(order.status)
-      );
-    } else if (activeFilter === "Completed") {
-      // Reception - Completed: Show only completed orders
-      filtered = filtered.filter((order) => order.status === "completed");
-    }
-  }
 
-  // Filter by search query
-  if (searchQuery) {
-    filtered = filtered.filter(
-      (order) =>
-        order.customer?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        order.id?.toString().includes(searchQuery) ||
-        order.items.some((item) =>
-          item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          item.product_name?.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-    );
-  }
-
-  return filtered;
-};
+    return filtered;
+  };
 
   const handleStatusChange = async (orderId, newStatus) => {
     setLoader(true);
@@ -319,6 +325,7 @@ const getFilteredOrders = () => {
   const filteredOrders = getFilteredOrders();
 
   const handleSavePayment = async (id) => {
+    setLoader(true);
     let paymentDetails;
     if (paymentMode == "single") {
       if (paymentMethod == "cash") {
@@ -357,14 +364,14 @@ const getFilteredOrders = () => {
       };
     }
 
-
     try {
       const response = await api.put(
-        `/api/sUsers/updateKotPayment/${cmp_id}/${id}`,
+        `/api/sUsers/updateKotPayment/${cmp_id}`,
         {
           paymentMethod: paymentMethod,
           paymentDetails: paymentDetails,
           selectedKotData: selectedDataForPayment,
+          isPostToRoom: isPostToRoom,
         },
         { withCredentials: true }
       );
@@ -379,11 +386,12 @@ const getFilteredOrders = () => {
           )
         );
         setLoader(false);
-        setSelectedKot([])
-        showVoucherPdf(false)
+        setSelectedKot([]);
+        setShowVoucherPdf(false);
       } else {
         console.error("Failed to update backend:", response.data || response);
       }
+      setLoader(false);
     } catch (error) {
       console.error(
         "Error updating order status:",
@@ -400,7 +408,7 @@ const getFilteredOrders = () => {
   };
 
   const handlePrintData = async (kotId) => {
-    console.log(kotId)
+    console.log(kotId);
     try {
       let saleData = await api.get(
         `/api/sUsers/getSalePrintData/${cmp_id}/${kotId}`,
@@ -416,7 +424,7 @@ const getFilteredOrders = () => {
   const handleSelectMultipleKots = (order) => {
     if (order && !order?.paymentCompleted) {
       let findOne = selectedKot.find((item) => item.id == order._id);
-
+      console.log(order);
       console.log(findOne);
       if (findOne) {
         setSelectedKot((prevSelected) =>
@@ -425,13 +433,19 @@ const getFilteredOrders = () => {
       } else {
         setSelectedKot((prevSelected) => [
           ...prevSelected,
-          { id: order._id, type: "kot", voucherNumber: order.voucherNumber },
+          {
+            id: order._id,
+            type: "kot",
+            voucherNumber: order.voucherNumber,
+            serviceWorker: order.type,
+          },
         ]);
       }
     }
   };
 
-  const handleSalesPreview = () => {
+  const handleSalesPreview = (postToRoom) => {
+    setIsPostToRooms(postToRoom);
     let kotVoucherNumberArray = [];
     let itemList = selectedKot.flatMap((item) => {
       let findOne = filteredOrders.find((order) => order._id == item.id);
@@ -448,7 +462,7 @@ const getFilteredOrders = () => {
       (acc, item) => acc + Number(item.total),
       0
     );
-console.log(saleVoucherData)
+    console.log(saleVoucherData);
     let newObject = {
       Date: new Date(),
       voucherType: "sales",
@@ -463,12 +477,11 @@ console.log(saleVoucherData)
       total: totalAmount,
       voucherNumber: kotVoucherNumberArray,
     };
-
-    console.log(newObject);
     setPreviewForSales(newObject);
   };
 
   const handleSaveSales = (status) => {
+    setConformationModal(false);
     if (!status) {
       setShowVoucherPdf(false);
       setPreviewForSales(null);
@@ -479,20 +492,19 @@ console.log(saleVoucherData)
     setSelectedDataForPayment(previewForSales);
   };
 
-const handleEditKot = (kotData) => {
-  console.log(kotData)
-  if(kotData?.paymentCompleted){
-    toast.error("Kot Payment is completed so you can't edit");
-    return
-  }else if(kotData?.status === 'completed'){
-    toast.error("Kot is already completed so you can't edit");
-    return
-  }
-  navigate("/sUsers/RestaurantDashboard", { state: { kotData } });
-};
+  const handleEditKot = (kotData) => {
+    console.log(kotData);
+    if (kotData?.paymentCompleted) {
+      toast.error("Kot Payment is completed so you can't edit");
+      return;
+    } else if (kotData?.status === "completed") {
+      toast.error("Kot is already completed so you can't edit");
+      return;
+    }
+    navigate("/sUsers/RestaurantDashboard", { state: { kotData } });
+  };
 
-
-console.log(orders)
+  console.log(selectedKot);
   return (
     <>
       {showVoucherPdf && (
@@ -533,22 +545,21 @@ console.log(orders)
 
           {/* Controls */}
           <div className="bg-white px-4 py-3 border-b border-gray-200 flex justify-between items-center">
-    
-<div className="flex gap-2">
-  {["All", "On Process", "Completed"].map((filter) => (
-    <button
-      key={filter}
-      onClick={() => setActiveFilter(filter)}
-      className={`px-3 py-1.5 border rounded-md text-sm font-medium transition-colors ${
-        activeFilter === filter
-          ? "bg-green-800 text-white border-green-800"
-          : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
-      }`}
-    >
-      {filter}
-    </button>
-  ))}
-</div>
+            <div className="flex gap-2">
+              {["All", "On Process", "Completed"].map((filter) => (
+                <button
+                  key={filter}
+                  onClick={() => setActiveFilter(filter)}
+                  className={`px-3 py-1.5 border rounded-md text-sm font-medium transition-colors ${
+                    activeFilter === filter
+                      ? "bg-green-800 text-white border-green-800"
+                      : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
+                  }`}
+                >
+                  {filter}
+                </button>
+              ))}
+            </div>
 
             <div className="flex items-center gap-2">
               <MenuIcon />
@@ -618,7 +629,10 @@ console.log(orders)
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <FaRegEdit className="w-4 h-4 text-blue-600" onClick={() => handleEditKot(order)}/>
+                          <FaRegEdit
+                            className="w-4 h-4 text-blue-600"
+                            onClick={() => handleEditKot(order)}
+                          />
                         </div>
                       </div>
                     </div>
@@ -635,13 +649,12 @@ console.log(orders)
                                   ? "bg-blue-200 text-blue-800"
                                   : "bg-gray-100 text-gray-700"
                               }`}
-                            > 
-                              {order.type} - <span>
-                                 {order.roomId?.roomName}
-                              </span>
+                            >
+                              {order.type} -{" "}
+                              <span>{order.roomId?.roomName}</span>
                             </span>
                           </div>
-                          
+
                           <div className="text-xs text-gray-500 flex items-center gap-1">
                             <MdAccessTime className="w-3 h-3 flex-shrink-0" />
                             <span>
@@ -842,22 +855,18 @@ console.log(orders)
                     {/* Action Buttons */}
                     {userRole === "reception" && (
                       <div className="p-3 pt-2 flex gap-2 flex-shrink-0">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation(); // Prevent card selection when clicking action button
-                            if (order?.paymentCompleted) {
+                        {order?.paymentCompleted && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation(); // Prevent card selection when clicking action button
                               handlePrintData(order._id);
-                            } else {
-                              setShowPaymentModal(true);
-                              order.voucherNumber = [order.voucherNumber];
-                              setSelectedDataForPayment(order);
-                            }
-                          }}
-                          className="flex-1 group px-3 py-1.5 bg-white text-emerald-700 border border-emerald-200 rounded-lg text-xs font-semibold hover:bg-emerald-50 hover:border-emerald-300 transition-all duration-200 hover:scale-105 flex items-center justify-center gap-1"
-                        >
-                          <MdVisibility className="w-3 h-3 group-hover:rotate-12 transition-transform duration-200" />
-                          Print
-                        </button>
+                            }}
+                            className="flex-1 group px-3 py-1.5 bg-white text-emerald-700 border border-emerald-200 rounded-lg text-xs font-semibold hover:bg-emerald-50 hover:border-emerald-300 transition-all duration-200 hover:scale-105 flex items-center justify-center gap-1"
+                          >
+                            <MdVisibility className="w-3 h-3 group-hover:rotate-12 transition-transform duration-200" />
+                            Print
+                          </button>
+                        )}
                         <button
                           className="flex-1 group px-3 py-1.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg text-xs font-semibold hover:from-blue-600 hover:to-blue-700 transition-all duration-200 hover:scale-105 flex items-center justify-center gap-1"
                           onClick={(e) => {
@@ -951,6 +960,44 @@ console.log(orders)
                         </div>
                       </div>
                     )}
+                    {conformationModal && (
+                      <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+                        <div className="bg-white rounded-2xl shadow-lg w-96 p-6 space-y-4">
+                          <h2 className="text-lg font-semibold text-gray-800">
+                            How would you like to proceed?
+                          </h2>
+                          <p className="text-sm text-gray-600">
+                            Choose to continue with payment or post the bill to
+                            the room.
+                          </p>
+
+                          <div className="flex flex-col gap-3">
+                            <button
+                              onClick={() => {
+                                handleSalesPreview(false);
+                              }}
+                              className="w-full px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg font-semibold hover:from-green-600 hover:to-emerald-700 transition-all duration-200 shadow-md"
+                            >
+                              Continue to Payment
+                            </button>
+                            <button
+                              onClick={() => {
+                                handleSalesPreview(true);
+                              }}
+                              className="w-full px-4 py-2 bg-blue-100 text-blue-700 rounded-lg font-semibold hover:bg-blue-200 transition-all duration-200"
+                            >
+                              Post to Room
+                            </button>
+                            <button
+                              onClick={() => setConformationModal(false)}
+                              className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-all duration-200"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Action Buttons */}
                     <div className="flex gap-2">
@@ -963,8 +1010,17 @@ console.log(orders)
                       <button
                         className="flex-2 px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg text-sm font-bold hover:from-green-600 hover:to-emerald-700 transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2 shadow-lg"
                         onClick={() => {
-                          handleSalesPreview();
-                          // setShowVoucherPdf(true);
+                          let findOneWithNoRoomService = selectedKot.find(
+                            (kot) => kot?.serviceWorker !== "roomService"
+                          );
+                          if (findOneWithNoRoomService) {
+                            handleSalesPreview();
+                            toast.warning(
+                              "Continue to room option only for room service"
+                            );
+                          } else {
+                            setConformationModal(true);
+                          }
                         }}
                       >
                         <MdPayment className="w-4 h-4" />
@@ -1034,7 +1090,8 @@ console.log(orders)
                             key={item?.id || index}
                             className="text-sm font-medium"
                           >
-                            {item?.voucherNumber}{","}
+                            {item?.voucherNumber}
+                            {","}
                           </span>
                         )
                       )}
