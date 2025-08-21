@@ -755,12 +755,15 @@ export const updateKotPayment = async (req, res) => {
 
   try {
     await session.withTransaction(async () => {
-      const { id: kotId, cmp_id } = req.params;
+      const {  cmp_id } = req.params;
       let {
         paymentMethod,
         paymentDetails,
         selectedKotData: kotData,
+        isPostToRoom
       } = req.body;
+
+    
 
       // Validate required fields
       if (!paymentDetails || !kotData) {
@@ -825,7 +828,7 @@ export const updateKotPayment = async (req, res) => {
       );
 
       // Handle outstanding balance
-      const paidAmount = cashAmt + onlineAmt;
+      const paidAmount = isPostToRoom ? 0 : cashAmt + onlineAmt;
       const pendingAmount = Number(kotData?.total || 0) - paidAmount;
 
       if (pendingAmount > 0) {
@@ -854,7 +857,8 @@ export const updateKotPayment = async (req, res) => {
       );
 
       // Update KOT payment status
-      paymentCompleted = paidAmount >= kotData?.total;
+      // paymentCompleted = paidAmount >= kotData?.total;
+      paymentCompleted = true
       await Promise.all(
         kotData?.voucherNumber.map((item) =>
           kotModal.updateOne(
