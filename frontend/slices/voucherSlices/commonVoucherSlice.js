@@ -521,7 +521,7 @@ export const commonVoucherSlice = createSlice({
       }
     },
     addCreditInPaymentSplit: (state, action) => {
-      const { reference_name, ref_id } = action.payload;
+      const { reference_name, ref_id,credit_reference_type } = action.payload;
 
       // Ensure paymentSplittingData exists and is an array
       if (
@@ -542,6 +542,7 @@ export const commonVoucherSlice = createSlice({
           ...state.paymentSplittingData[creditIndex],
           ref_id: ref_id,
           reference_name: reference_name,
+          credit_reference_type: credit_reference_type,
         };
       } else {
         // If no credit entry exists, create one
@@ -551,6 +552,7 @@ export const commonVoucherSlice = createSlice({
           ref_id: ref_id,
           ref_collection: "Party",
           reference_name: reference_name,
+          credit_reference_type: credit_reference_type,
         };
         state.paymentSplittingData.push(updatedData);
       }
@@ -598,6 +600,7 @@ export const commonVoucherSlice = createSlice({
           ref_id: null,
           ref_collection: "Party",
           reference_name: "",
+          credit_reference_type: "",
         },
       ];
     },

@@ -18,7 +18,6 @@ import {
   addBillToParty,
   addParty,
   addShipToParty,
-  addPaymentSplits,
   addCreditInPaymentSplit,
 } from "../../../../slices/voucherSlices/commonVoucherSlice";
 import { addParty as addPartyInAccountingVouchers } from "../../../../slices/voucherSlices/commonAccountingVoucherSlice";
@@ -197,8 +196,12 @@ function PartyListComponent({ deleteHandler = () => {}, isVoucher = false }) {
     if (location?.state?.from === "paymentSplitting") {
       const data = {
         reference_name: el?.partyName,
+        credit_reference_type: el?.partyType,
         ref_id: el?._id,
       };
+
+      console.log(data);
+      
 
       dispatch(addCreditInPaymentSplit(data));
       navigate("/sUsers/sales/paymentSplitting", { replace: true });

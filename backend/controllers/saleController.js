@@ -98,6 +98,7 @@ export const createSale = async (req, res) => {
       session // Pass session
     );
 
+
     /// add conversion status in sale order if the sale is converted from order
     if (convertedFrom.length > 0)
       await changeConversionStatusOfOrder(convertedFrom, session);
@@ -111,19 +112,19 @@ export const createSale = async (req, res) => {
     // }
 
     ///save settlement data
-    await saveSettlementData(
-      party,
-      orgId,
-      req.query.vanSale === "true" ? "normal van sale" : "normal sale",
+    // await saveSettlementData(
+    //   party,
+    //   orgId,
+    //   req.query.vanSale === "true" ? "normal van sale" : "normal sale",
 
-      req.query.vanSale === "true" ? "vanSale" : "sale",
-      salesNumber,
-      result._id,
-      valueToUpdateInTally,
-      result?.date,
-      result?.party?.partyName,
-      session
-    );
+    //   req.query.vanSale === "true" ? "vanSale" : "sale",
+    //   salesNumber,
+    //   result._id,
+    //   valueToUpdateInTally,
+    //   result?.date,
+    //   result?.party?.partyName,
+    //   session
+    // );
 
     const Primary_user_id = req.owner;
 
@@ -162,7 +163,7 @@ export const createSale = async (req, res) => {
         secondaryMobile,
         "sale",
         result?.date,
-        result?.party?.partyName,
+        result?.party,
         session,
         selectedDate,
         voucherType,

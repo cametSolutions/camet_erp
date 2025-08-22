@@ -13,15 +13,15 @@ const paymentSplitSchema = new Schema(
     amount: { type: Number, default: 0 },
     ref_id: {
       type: Schema.Types.ObjectId,
-      refPath: "paymentSplittingData.ref_collection",
+      ref: "Party",
       default: null,
     },
-    ref_collection: {
-      type: String,
-      required: true,
-      enum: ["Cash", "BankDetails", "Party"],
-    },
+   
     reference_name: {
+      type: String,
+      default: "", // Only relevant for credit
+    },
+    credit_reference_type: {
       type: String,
       default: "", // Only relevant for credit
     },
@@ -80,6 +80,7 @@ const salesSchema = new Schema(
     party: {
       _id: { type: Schema.Types.ObjectId, ref: "Party" },
       partyName: { type: String },
+      partyType: { type: String, default: "party" },
       accountGroupName: { type: String },
       accountGroup_id: {
         type: mongoose.Types.ObjectId,
@@ -258,19 +259,17 @@ const salesSchema = new Schema(
     paymentSplittingData: {
       type: [paymentSplitSchema],
       default: [
-        { type: "Cash", amount: 0, ref_id: null, ref_collection: "Cash" },
-        { type: "upi", amount: 0, ref_id: null, ref_collection: "BankDetails" },
+        { type: "cash", amount: 0, ref_id: null},
+        { type: "upi", amount: 0, ref_id: null},
         {
           type: "cheque",
           amount: 0,
           ref_id: null,
-          ref_collection: "BankDetails",
         },
         {
           type: "credit",
           amount: 0,
           ref_id: null,
-          ref_collection: "Party",
           reference_name: "",
         },
       ],

@@ -212,7 +212,7 @@ function PaymentSplitting() {
           ...split,
           amount: "",
           ref_id: "",
-          ...(split.type === "credit" ? { reference_name: "" } : {}),
+          ...(split.type === "credit" ? { reference_name: "" , credit_reference_type: ""} : {}),
         };
       }
 
