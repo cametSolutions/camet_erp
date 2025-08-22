@@ -32,7 +32,6 @@ import DespatchDetails from "./DespatchDetails";
 import HeaderTile from "./HeaderTile";
 import AddPartyTile from "./AddPartyTile";
 import AddItemTile from "./AddItemTile";
-// import PaymentSplittingIcon from "../../components/secUsers/main/paymentSplitting/PaymentSplittingIcon";
 import FooterButton from "./FooterButton";
 import TitleDiv from "../../../components/common/TitleDiv";
 import AdditionalChargesTile from "./AdditionalChargesTile";
@@ -573,13 +572,7 @@ function VoucherInitialPageEdit() {
             </div>
           </div>
 
-          {/* {items.length > 0 && totalAmount > 0 && (
-            <PaymentSplittingIcon
-              totalAmount={totalAmount}
-              party={party}
-              voucherType="sale"
-            />
-          )} */}
+        
 
           <FooterButton
             submitHandler={submitHandler}
