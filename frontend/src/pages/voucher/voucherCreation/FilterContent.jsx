@@ -22,9 +22,9 @@ export default function FilterContent() {
   const { selectedPriceLevel, priceLevels, vanSaleGodown, voucherType } =
     useSelector((state) => state.commonVoucherSlice);
 
+  console.log(selectedPriceLevel);
+
   ///// hard coded for temporary use
-
-
 
   const [accordionValue, setAccordionValue] = useState("");
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -87,7 +87,9 @@ export default function FilterContent() {
                     <div
                       onClick={() => handlePriceLevelSelection(level)}
                       className={` ${
-                        selectedPriceLevel === level ? "bg-slate-200" : ""
+                        selectedPriceLevel?._id == level?._id
+                          ? "bg-slate-200"
+                          : ""
                       } hover:bg-slate-200 mb-1 p-2 cursor-pointer`}
                     >
                       {level?.name}

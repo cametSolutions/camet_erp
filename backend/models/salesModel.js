@@ -2,6 +2,33 @@ import mongoose from "mongoose";
 import { convertToUTCMidnight } from "../utils/dateHelpers.js";
 const { Schema } = mongoose;
 
+// Payment Splitting Schema
+const paymentSplitSchema = new Schema(
+  {
+    type: {
+      type: String,
+      required: true,
+      enum: ["cash", "upi", "cheque", "credit"],
+    },
+    amount: { type: Number, default: 0 },
+    ref_id: {
+      type: Schema.Types.ObjectId,
+      ref: "Party",
+      default: null,
+    },
+   
+    reference_name: {
+      type: String,
+      default: "", // Only relevant for credit
+    },
+    credit_reference_type: {
+      type: String,
+      default: "", // Only relevant for credit
+    },
+  },
+  { _id: false }
+);
+
 const salesSchema = new Schema(
   {
     date: {
@@ -53,6 +80,7 @@ const salesSchema = new Schema(
     party: {
       _id: { type: Schema.Types.ObjectId, ref: "Party" },
       partyName: { type: String },
+      partyType: { type: String, default: "party" },
       accountGroupName: { type: String },
       accountGroup_id: {
         type: mongoose.Types.ObjectId,
@@ -228,7 +256,26 @@ const salesSchema = new Schema(
     note: { type: String },
 
     finalAmount: { type: Number, required: true },
-    paymentSplittingData: [],
+
+    paymentSplittingData: {
+      type: [paymentSplitSchema],
+      default: [
+        { type: "cash", amount: 0, ref_id: null},
+        { type: "upi", amount: 0, ref_id: null},
+        {
+          type: "cheque",
+          amount: 0,
+          ref_id: null,
+        },
+        {
+          type: "credit",
+          amount: 0,
+          ref_id: null,
+          reference_name: "",
+        },
+      ],
+    },
+
     isCancelled: { type: Boolean, default: false },
   },
   {

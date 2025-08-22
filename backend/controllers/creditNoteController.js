@@ -118,7 +118,8 @@ export const createCreditNote = async (req, res) => {
       lastAmount, ///valueToUpdateInTally is also last amount
       selectedDate,
       voucherType,
-      "Cr"
+      "Cr",
+      "CreditNote"
     );
 
     await session.commitTransaction();

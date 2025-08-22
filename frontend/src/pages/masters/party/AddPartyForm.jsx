@@ -26,7 +26,7 @@ function AddPartyForm({
   const [creditPeriod, setCreditPeriod] = useState("");
   const [creditLimit, setCreditLimit] = useState("");
   const [openingBalanceType, setOpeningBalanceType] = useState("");
-  const [openingBalanceAmount, setOpeningBalanceAmount] = useState("");
+  const [openingBalanceAmount, setOpeningBalanceAmount] = useState(0);
   const [country, setCountry] = useState("India");
   const [state, setState] = useState("Kerala");
   const [pin, setPin] = useState("");
@@ -91,7 +91,7 @@ function AddPartyForm({
       setBillingAddress(billingAddress);
       setShippingAddress(shippingAddress);
       setCreditPeriod(creditPeriod);
-      setOpeningBalanceAmount(openingBalanceAmount);
+      setOpeningBalanceAmount(openingBalanceAmount || 0);
       setOpeningBalanceType(openingBalanceType);
       setCreditLimit(creditLimit);
       setCountry(country);

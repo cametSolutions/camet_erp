@@ -1,5 +1,5 @@
 /* eslint-disable react/jsx-key */
-import { TbBrandGoogle, TbTags, TbListDetails } from "react-icons/tb";
+import {  TbListDetails } from "react-icons/tb";
 import { MdOutlineBedroomChild } from "react-icons/md";
 import { IoRestaurantOutline, IoPersonAddOutline } from "react-icons/io5";
 import { LuBedSingle } from "react-icons/lu";
@@ -15,18 +15,7 @@ const StockItemSettings = () => {
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
   const settingsOptions = [
-    ...(industry === 6 || industry === 7
-      ? [
-          {
-            title: "Room Creation",
-            description:
-              "Create different room types for better room organization",
-            icon: <GrClipboard />,
-            to: "/sUsers/roomList",
-            active: true,
-          },
-        ]
-      : []),
+
     {
       title:
         industry === 6 || industry === 7 ? "Room Type" : "Brand Management",
@@ -95,6 +84,16 @@ const StockItemSettings = () => {
         ]
       : []),
   ];
+
+  if (industry === 6 || industry === 7) {
+    settingsOptions.unshift({
+      title: "Room Creation",
+      description: "Create different room types for better room organization",
+      icon: <GrClipboard />,
+      to: "/sUsers/roomList",
+      active: true,
+    });
+  }
 
   return (
     <div className="bg-white">

@@ -16,12 +16,13 @@ import {
   addVoucherSeries,
   addNote,
   addIsNoteOpen,
+  updateTotalValue,
+  resetPaymentSplit,
 } from "../../../../slices/voucherSlices/commonVoucherSlice";
 import DespatchDetails from "./DespatchDetails";
 import HeaderTile from "./HeaderTile";
 import AddPartyTile from "./AddPartyTile";
 import AddItemTile from "./AddItemTile";
-// import PaymentSplittingIcon from "../../components/secUsers/main/paymentSplitting/PaymentSplittingIcon";
 import FooterButton from "./FooterButton";
 import TitleDiv from "../../../components/common/TitleDiv";
 import AdditionalChargesTile from "./AdditionalChargesTile";
@@ -29,6 +30,7 @@ import { formatVoucherType } from "../../../../utils/formatVoucherType";
 import AddGodownTile from "./AddGodownTile";
 import AddNoteTile from "./AddNoteTile";
 import { useQueryClient } from "@tanstack/react-query";
+import ReceiveAmount from "./ReceiveAmount";
 
 function VoucherInitialPage() {
   const dispatch = useDispatch();
@@ -70,22 +72,24 @@ function VoucherInitialPage() {
   };
 
   // Redux selectors
-  const { _id: cmp_id } = useSelector(
+  const { _id: cmp_id, configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
+
+  const { enablePaymentSplittingAsCompulsory = false } = configurations[0];
 
   const {
     date,
     party,
     items,
     despatchDetails,
-    // heights: batchHeights,
     voucherType,
     selectedPriceLevel: priceLevelFromRedux = "",
     voucherType: voucherTypeFromRedux,
     voucherNumber: voucherNumberFromRedux,
     allAdditionalCharges: allAdditionalChargesFromRedux,
     finalAmount: totalAmount,
+    finalOutstandingAmount,
     vanSaleGodown: vanSaleGodownFromRedux,
     additionalCharges: additionalChargesFromRedux = [],
     convertedFrom = [],
@@ -95,6 +99,7 @@ function VoucherInitialPage() {
     selectedVoucherSeries: selectedVoucherSeriesFromRedux,
     note: noteFromRedux,
     isNoteOpen: isNoteOpenFromRedux,
+    paymentSplittingData: paymentSplittingDataFromRedux,
   } = useSelector((state) => state.commonVoucherSlice);
 
   const getApiEndPoint = () => {
@@ -126,6 +131,10 @@ function VoucherInitialPage() {
   const subTotal = useMemo(() => {
     return items.reduce((acc, curr) => acc + (parseFloat(curr.total) || 0), 0);
   }, [items]);
+
+  useEffect(() => {
+    dispatch(updateTotalValue({ field: "subTotal", value: subTotal }));
+  }, [subTotal]);
 
   // API calls wrapped in promises
   const fetchData = useCallback(async () => {
@@ -249,6 +258,7 @@ function VoucherInitialPage() {
       toast.error("Select a from godown first");
       return;
     }
+    dispatch(resetPaymentSplit());
     navigate("/sUsers/addItemSales");
   };
 
@@ -330,6 +340,7 @@ function VoucherInitialPage() {
           usedSeriesNumber: selectedVoucherSeriesFromRedux?.currentNumber,
           orgId: cmp_id,
           finalAmount: Number(totalAmount.toFixed(2)),
+          finalOutstandingAmount: Number(finalOutstandingAmount.toFixed(2)),
           party,
           items,
           note: noteFromRedux,
@@ -337,8 +348,11 @@ function VoucherInitialPage() {
           priceLevelFromRedux,
           additionalChargesFromRedux,
           selectedGodownDetails: vanSaleGodownFromRedux,
+          paymentSplittingData: paymentSplittingDataFromRedux,
         };
       }
+
+      console.log(formData);
 
       const endPoint = getApiEndPoint();
       let params = {};
@@ -372,6 +386,7 @@ function VoucherInitialPage() {
       setSubmitLoading(false);
     }
   };
+
   return (
     <div className="mb-14 sm:mb-0">
       <div className="flex-1 bg-slate-100 h -screen ">
@@ -399,6 +414,10 @@ function VoucherInitialPage() {
             selectedVoucherSeriesFromRedux={
               selectedVoucherSeriesFromRedux || {}
             }
+            enablePaymentSplittingAsCompulsory={
+              enablePaymentSplittingAsCompulsory
+            }
+            openAdditionalTile={openAdditionalTile}
           />
           {/* adding party */}
 
@@ -445,6 +464,12 @@ function VoucherInitialPage() {
             openAdditionalTile={openAdditionalTile}
           />
 
+          {/* we will show receive amount section as button at header and footer if it is compulsory */}
+
+          {totalAmount > 0 && !enablePaymentSplittingAsCompulsory && (
+            <ReceiveAmount />
+          )}
+
           <AddNoteTile
             noteFromRedux={noteFromRedux}
             isNoteOpenFromRedux={isNoteOpenFromRedux}
@@ -462,19 +487,15 @@ function VoucherInitialPage() {
             </div>
           </div>
 
-          {/* {items.length > 0 && totalAmount > 0 && (
-            <PaymentSplittingIcon
-              totalAmount={totalAmount}
-              party={party}
-              voucherType="sale"
-            />
-          )} */}
-
           <FooterButton
             submitHandler={submitHandler}
             title={formatVoucherType(voucherTypeFromRedux)}
             isLoading={submitLoading || isLoading}
             mode={mode}
+            enablePaymentSplittingAsCompulsory={
+              enablePaymentSplittingAsCompulsory
+            }
+            openAdditionalTile={openAdditionalTile}
           />
         </div>
       </div>

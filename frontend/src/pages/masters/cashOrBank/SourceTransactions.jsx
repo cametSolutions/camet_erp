@@ -1,5 +1,4 @@
 import { useParams } from "react-router-dom";
-import useFetch from "../../../customHook/useFetch";
 import { useSelector } from "react-redux";
 import TitleDiv from "../../../components/common/TitleDiv";
 import SelectDate from "../../../components/Filters/SelectDate";
@@ -8,6 +7,8 @@ import { MdDoNotDisturbOnTotalSilence } from "react-icons/md";
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { FaDotCircle } from "react-icons/fa";
+import api from "@/api/api";
+import { useQuery } from "@tanstack/react-query";
 
 function SourceTransactions() {
   const [settlements, setSettlements] = useState([]);
@@ -18,9 +19,25 @@ function SourceTransactions() {
   const { start, end } = useSelector((state) => state.date);
   const { id, accGroup } = useParams();
   const location = useLocation();
-  const { data, loading } = useFetch(
-    `/api/sUsers/findSourceTransactions/${cmp_id}/${id}?startOfDayParam=${start}&endOfDayParam=${end}&accGroup=${accGroup}`
-  );
+
+  const findSourceTransactions = async (cmp_id) => {
+    const response = await api.get(
+      `/api/sUsers/findSourceTransactions/${cmp_id}/${id}?startOfDayParam=${start}&endOfDayParam=${end}&accGroup=${accGroup}`,
+      {
+        withCredentials: true,
+      }
+    );
+
+    return response.data;
+  };
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["sourceTransactions", cmp_id, id, start, end, accGroup],
+    queryFn: () => findSourceTransactions(cmp_id),
+    enabled: !!cmp_id, // Only run query if cmp_id exists
+    staleTime: 30 * 1000, // 30 seconds
+    refetchOnWindowFocus: false,
+  });
 
   useEffect(() => {
     if (data?.data?.settlements) {
@@ -34,7 +51,7 @@ function SourceTransactions() {
   return (
     <div>
       <div className="sticky top-0 z-50">
-        <TitleDiv title="Transactions" loading={loading} />
+        <TitleDiv title="Transactions" loading={isLoading} />
 
         <section className="shadow-lg border-b  ">
           <SelectDate />
@@ -46,10 +63,10 @@ function SourceTransactions() {
             Total : {data?.data?.total} ({data?.data?.settlements?.length}){" "}
           </p>
         </section>
-        <section className="flex items-center  text-gray-500 bg-gray-100 font-bold text-xs gap-1  py-2 px-3  ">
+        {/* <section className="flex items-center  text-gray-500 bg-gray-100 font-bold text-xs gap-1  py-2 px-3  ">
           <FaDotCircle className="inline-block" size={10} />
           <p className="">Opening Balance: {openingBalance}</p>
-        </section>
+        </section> */}
 
         <hr className="" />
       </div>
@@ -68,7 +85,7 @@ function SourceTransactions() {
             />
           </section>
           <section className="flex items-center  text-gray-500 bg-slate-100 font-bold text-xs gap-1  py-2 px-3  border-t  mb-4">
-            <FaDotCircle className="inline-block" size={10}  />
+            <FaDotCircle className="inline-block" size={10} />
             <p className="">
               Closing Balance:{" "}
               {(data?.data?.total || 0) + (openingBalance || 0)}

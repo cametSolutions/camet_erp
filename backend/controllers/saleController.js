@@ -43,6 +43,7 @@ export const createSale = async (req, res) => {
       series_id,
       party,
       finalAmount: lastAmount,
+      finalOutstandingAmount,
       paymentSplittingData,
       selectedDate,
       voucherType,
@@ -97,53 +98,60 @@ export const createSale = async (req, res) => {
       session // Pass session
     );
 
+
     /// add conversion status in sale order if the sale is converted from order
     if (convertedFrom.length > 0)
       await changeConversionStatusOfOrder(convertedFrom, session);
 
-    let valueToUpdateInTally = 0;
+    let valueToUpdateInTally = finalOutstandingAmount;
 
-    if (paymentSplittingData && Object.keys(paymentSplittingData).length > 0) {
-      valueToUpdateInTally = paymentSplittingData?.balanceAmount;
-    } else {
-      valueToUpdateInTally = lastAmount;
-    }
+    // if (paymentSplittingData && Object.keys(paymentSplittingData).length > 0) {
+    //   valueToUpdateInTally = paymentSplittingData?.balanceAmount;
+    // } else {
+    //   valueToUpdateInTally = lastAmount;
+    // }
 
     ///save settlement data
-    await saveSettlementData(
-      party,
-      orgId,
-      req.query.vanSale === "true" ? "normal van sale" : "normal sale",
+    // await saveSettlementData(
+    //   party,
+    //   orgId,
+    //   req.query.vanSale === "true" ? "normal van sale" : "normal sale",
 
-      req.query.vanSale === "true" ? "vanSale" : "sale",
-      salesNumber,
-      result._id,
-      valueToUpdateInTally,
-      result?.date,
-      result?.party?.partyName,
-      session
-    );
+    //   req.query.vanSale === "true" ? "vanSale" : "sale",
+    //   salesNumber,
+    //   result._id,
+    //   valueToUpdateInTally,
+    //   result?.date,
+    //   result?.party?.partyName,
+    //   session
+    // );
 
     const Primary_user_id = req.owner;
 
-    await updateTallyData(
-      orgId,
-      salesNumber,
-      result._id,
-      Primary_user_id,
-      party,
-      lastAmount,
-      secondaryMobile,
-      session,
-      valueToUpdateInTally,
-      selectedDate,
-      voucherType,
-      "Dr"
-    );
+    if (valueToUpdateInTally > 0) {
+      await updateTallyData(
+        orgId,
+        salesNumber,
+        result._id,
+        Primary_user_id,
+        party,
+        lastAmount,
+        secondaryMobile,
+        session,
+        valueToUpdateInTally,
+        selectedDate,
+        voucherType,
+        "Dr"
+      );
+    }
 
     ////save payment splitting data in bank or cash model also
 
-    if (paymentSplittingData && Object.keys(paymentSplittingData).length > 0) {
+    if (
+      paymentSplittingData.length > 0 &&
+      paymentSplittingData.some((item) => item?.ref_id !== "")
+    ) {
+
       await savePaymentSplittingDataInSources(
         paymentSplittingData,
         salesNumber,
@@ -153,8 +161,11 @@ export const createSale = async (req, res) => {
         secondaryMobile,
         "sale",
         result?.date,
-        result?.party?.partyName,
-        session
+        result?.party,
+        session,
+        selectedDate,
+        voucherType,
+        "Dr"
       );
     }
 
@@ -236,17 +247,14 @@ export const editSale = async (req, res) => {
             session
           );
 
-
-
         salesNumber = voucherNumber; // Always update when series changes
         usedSeriesNumber = newUsedSeriesNumber; // Always update when series changes
-      }else{
-        salesNumber = existingSale.salesNumber
-        usedSeriesNumber = existingSale.usedSeriesNumber
+      } else {
+        salesNumber = existingSale.salesNumber;
+        usedSeriesNumber = existingSale.usedSeriesNumber;
       }
       await revertSaleStockUpdates(existingSale.items, session);
       await handleSaleStockUpdates(items, session);
-
 
       const updateData = {
         _id: existingSale._id,
@@ -256,7 +264,7 @@ export const editSale = async (req, res) => {
         party,
         despatchDetails,
         items,
-        priceLevel: priceLevelFromRedux,
+        selectedPriceLevel: priceLevelFromRedux,
         additionalCharges: additionalChargesFromRedux,
         note,
         finalAmount: lastAmount,
@@ -578,7 +586,8 @@ export const getSalesDetails = async (req, res) => {
       })
       .populate({
         path: "items.GodownList.warrantyCard",
-        select: "warrantyYears warrantyMonths displayInput termsAndConditions customerCareInfo customerCareNo imageUrl", // populate item details
+        select:
+          "warrantyYears warrantyMonths displayInput termsAndConditions customerCareInfo customerCareNo imageUrl", // populate item details
       })
       .populate({
         path: "items._id",
