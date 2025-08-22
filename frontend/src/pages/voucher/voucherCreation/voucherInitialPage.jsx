@@ -83,13 +83,13 @@ function VoucherInitialPage() {
     party,
     items,
     despatchDetails,
-    // heights: batchHeights,
     voucherType,
     selectedPriceLevel: priceLevelFromRedux = "",
     voucherType: voucherTypeFromRedux,
     voucherNumber: voucherNumberFromRedux,
     allAdditionalCharges: allAdditionalChargesFromRedux,
     finalAmount: totalAmount,
+    finalOutstandingAmount,
     vanSaleGodown: vanSaleGodownFromRedux,
     additionalCharges: additionalChargesFromRedux = [],
     convertedFrom = [],
@@ -263,7 +263,6 @@ function VoucherInitialPage() {
   };
 
   const submitHandler = async () => {
-    
     // Validation
     if (
       Object.keys(party).length === 0 &&
@@ -341,6 +340,7 @@ function VoucherInitialPage() {
           usedSeriesNumber: selectedVoucherSeriesFromRedux?.currentNumber,
           orgId: cmp_id,
           finalAmount: Number(totalAmount.toFixed(2)),
+          finalOutstandingAmount: Number(finalOutstandingAmount.toFixed(2)),
           party,
           items,
           note: noteFromRedux,
@@ -386,10 +386,6 @@ function VoucherInitialPage() {
       setSubmitLoading(false);
     }
   };
-
-
-  console.log(openAdditionalTile);
-  
 
   return (
     <div className="mb-14 sm:mb-0">
@@ -490,8 +486,6 @@ function VoucherInitialPage() {
               <p className="text-[9px] text-gray-400">(rounded)</p>
             </div>
           </div>
-
-     
 
           <FooterButton
             submitHandler={submitHandler}

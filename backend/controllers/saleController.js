@@ -146,13 +146,11 @@ export const createSale = async (req, res) => {
     }
 
     ////save payment splitting data in bank or cash model also
-    console.log("have payment splitting data 1");
 
     if (
       paymentSplittingData.length > 0 &&
       paymentSplittingData.some((item) => item?.ref_id !== "")
     ) {
-      console.log("have payment splitting data 2");
 
       await savePaymentSplittingDataInSources(
         paymentSplittingData,

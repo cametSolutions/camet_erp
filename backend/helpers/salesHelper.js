@@ -471,50 +471,76 @@ export const updateTallyData = async (
   valueToUpdateInTally,
   selectedDate,
   voucherType,
-  classification
+  classification,
+  voucherModel = "Sales"
 ) => {
-  if (party?.partyType !== "party") {
-    console.log("Invalid party type, skipping outstanding update");
-
-    return;
-  }
-
-  try {
-    const billData = {
-      Primary_user_id: Primary_user_id,
-      bill_no: salesNumber,
-      billId: billId.toString(),
-      cmp_id: orgId,
-      party_id: party?._id,
-      accountGroup: party?.accountGroup_id,
-      subGroup: party?.subGroup_id,
-      bill_amount: Number(lastAmount),
-      bill_date: new Date(selectedDate),
-      bill_due_date: new Date(selectedDate),
-
-      bill_pending_amt: Number(valueToUpdateInTally),
-      email: party?.emailID,
-      mobile_no: party?.mobileNumber,
-      party_name: party?.partyName,
-      user_id: secondaryMobile || "null",
-      source: voucherType,
-      classification,
-    };
-
-    const tallyUpdate = await TallyData.findOneAndUpdate(
-      {
-        cmp_id: orgId,
+  if (party?.partyType === "party") {
+    try {
+      const billData = {
+        Primary_user_id: Primary_user_id,
         bill_no: salesNumber,
         billId: billId.toString(),
-        Primary_user_id: Primary_user_id,
+        cmp_id: orgId,
         party_id: party?._id,
-      },
-      { $set: billData },
-      { upsert: true, new: true, session }
-    );
-  } catch (error) {
-    console.error("Error updateTallyData sale stock updates:", error);
-    throw error;
+        accountGroup: party?.accountGroup_id,
+        subGroup: party?.subGroup_id,
+        bill_amount: Number(lastAmount),
+        bill_date: new Date(selectedDate),
+        bill_due_date: new Date(selectedDate),
+
+        bill_pending_amt: Number(valueToUpdateInTally),
+        email: party?.emailID,
+        mobile_no: party?.mobileNumber,
+        party_name: party?.partyName,
+        user_id: secondaryMobile || "null",
+        source: voucherType,
+        classification,
+      };
+
+      const tallyUpdate = await TallyData.findOneAndUpdate(
+        {
+          cmp_id: orgId,
+          bill_no: salesNumber,
+          billId: billId.toString(),
+          Primary_user_id: Primary_user_id,
+          party_id: party?._id,
+        },
+        { $set: billData },
+        { upsert: true, new: true, session }
+      );
+    } catch (error) {
+      console.error("Error updateTallyData sale stock updates:", error);
+      throw error;
+    }
+  } else if (party?.partyType === "cash" || party?.partyType === "bank") {
+    //// create settlement
+
+
+   try {
+     const settlementData = {
+       voucherNumber: salesNumber,
+       voucherId: billId,
+       voucherModel: voucherModel,
+       voucherType: voucherType,
+       amount: valueToUpdateInTally,
+       partyName: party?.partyName || "",
+       partyId: party?._id || null,
+       partyType: party?.partyType || null,
+       payment_mode: null,
+       /// source is also the same party
+       sourceId: party?._id || null,
+       sourceType: party?.partyType || null,
+       cmp_id: orgId,
+       Primary_user_id: Primary_user_id,
+       settlement_date: selectedDate,
+       voucher_date: selectedDate,
+     };
+ 
+     const settlement = new settlementModel(settlementData);
+     await settlement.save({ session });
+   } catch (error) {
+     console.error("Error creating settlement:", error);
+   }
   }
 };
 
@@ -670,133 +696,6 @@ export const revertSaleStockUpdates = async (items, session) => {
     throw error;
   }
 };
-
-// export const savePaymentSplittingDataInSources = async (
-//   paymentSplittingData,
-//   salesNumber,
-//   saleId,
-//   orgId,
-//   Primary_user_id,
-//   secondaryMobile,
-//   type,
-//   createdAt,
-//   partyName,
-//   session,
-//   selectedDate,
-//   voucherType
-// ) => {
-//   try {
-//     const updates = await Promise.all(
-//       paymentSplittingData?.map(async (item) => {
-//         if (!item.ref_id) return;
-//         const mode = item.type;
-//         let selectedModel =
-//           mode === "cash"
-//             ? cashModel
-//             : mode === "upi" || mode === "cheque"
-//             ? bankModel
-//             : null;
-
-//         // Handle credit mode
-
-//         if (mode === "credit" && item.ref_id == null) return null;
-//         if (mode === "credit" && item.ref_id !== null) {
-//           const party = await partyModel
-//             .findOne({
-//               _id: item.ref_id || null,
-//               cmp_id: orgId,
-//             })
-//             .populate({ path: "accountGroup", select: "accountGroup" })
-//             .lean();
-
-//           party.accountGroupName = party.accountGroup.accountGroup;
-
-//           // console.log("party", party);
-
-//           if (!party) {
-//             throw new Error("Invalid party");
-//           }
-
-//           await updateTallyData(
-//             orgId,
-//             salesNumber,
-//             saleId.toString(),
-//             Primary_user_id,
-//             party,
-//             item.amount,
-//             secondaryMobile,
-//             session,
-//             item.amount,
-//             selectedDate,
-//             voucherType,
-//             "Dr"
-//           );
-
-//           // Return early for credit mode
-//           return null;
-//         }
-
-//         // Only proceed with settlement update for non-credit modes
-//         if (!selectedModel) {
-//           throw new Error(`Invalid payment mode: ${mode}`);
-//         }
-
-//         const settlementData = {
-//           voucherNumber: salesNumber,
-//           voucherId: saleId,
-//           voucherModel:"Sales",
-//           voucherType:"sales",
-//           amount: item.amount,
-//           payment_mode:item?.type,
-//           partyName: partyName,
-//           partyId: party?._id,
-//           partyType: party?.partyType,
-//           cmp_id: orgId,
-//           primaryUserId: Primary_user_id,
-//           settlement_date: selectedDate,
-//           voucher_date: selectedDate,
-
-//         };
-
-//         const settlement = new settlementModel(settlementData);
-//         await settlement.save({ session });
-
-//         // const query = {
-//         //   cmp_id: orgId,
-//         //   _id: item.ref_id,
-//         //   // ...(mode === "cash"
-//         //   //   ? { _id: item.sourceId }
-//         //   //   : { _id: item.sourceId }),
-//         // };
-
-//         // const update = {
-//         //   $push: {
-//         //     settlements: settlementData,
-//         //   },
-//         // };
-
-//         // const options = {
-//         //   upsert: true,
-//         //   new: true,
-//         //   session,
-//         // };
-
-//         // const updatedSource = await selectedModel.findOneAndUpdate(
-//         //   query,
-//         //   update,
-//         //   options
-//         // );
-//         // return updatedSource;
-//       })
-//     );
-
-//     // Filter out null values (from credit mode) from updates array
-//     return updates.filter(Boolean);
-//   } catch (error) {
-//     console.error("Error in savePaymentSplittingDataInSources:", error);
-//     throw error;
-//   }
-// };
 
 const getSourceType = (item) => {
   let updatedSourceType;

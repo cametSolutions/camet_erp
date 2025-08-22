@@ -110,9 +110,6 @@ function PaymentSplitting() {
 
   // Auto-select sources based on party._id when data is available
   useEffect(() => {
-    console.log("Checking for auto-selection of payment sources...");
-    console.log(sourcesData, party, hasAutoSelected, paymentSplittingData);
-
     if (
       sourcesData &&
       party?._id &&
@@ -123,6 +120,9 @@ function PaymentSplitting() {
       const partyId = party._id;
 
       console.log("Auto-selecting payment sources for party:", partyId);
+      const isPartySelected = paymentSplittingData?.find(
+        (item) => item.type === "credit"
+      ).ref_id;
 
       setPaymentSplits((prevSplits) => {
         return prevSplits.map((split) => {
@@ -156,8 +156,8 @@ function PaymentSplitting() {
 
             case "credit":
               // For credit, we check if party._id should be used
-              // You might want to add additional logic here based on your requirements
-              if (partyId) {
+             /// if already party is selected no need to initialize
+              if (partyId && !isPartySelected) {
                 return {
                   ...split,
                   ref_id: partyId,
