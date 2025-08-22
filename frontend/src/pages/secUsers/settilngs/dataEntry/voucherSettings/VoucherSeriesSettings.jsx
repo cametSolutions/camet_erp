@@ -1,5 +1,6 @@
 import SettingsCard from "@/components/common/SettingsCard";
 import TitleDiv from "@/components/common/TitleDiv";
+import { IoFastFoodSharp } from "react-icons/io5";
 import { GiStorkDelivery } from "react-icons/gi";
 import {
   TbFileInvoice,
@@ -96,6 +97,14 @@ const VoucherSeriesSettings = () => {
       to: "/sUsers/voucherSeriesList",
       active: true,
       from: "deliveryNote",
+    },
+    {
+      title: "Memo Random",
+      description: "Configure voucher series for Delivery Notes",
+      icon: <IoFastFoodSharp />,
+      to: "/sUsers/voucherSeriesList",
+      active: true,
+      from: "memoRandom",
     },
   ];
 

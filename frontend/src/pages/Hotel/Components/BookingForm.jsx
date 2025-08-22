@@ -12,7 +12,7 @@ import AvailableRooms from "./AvailableRooms";
 import AdditionalPaxDetails from "./AdditionalPaxDetails";
 import FoodPlanComponent from "./FoodPlanComponent";
 import useFetch from "@/customHook/useFetch";
-import { number } from "framer-motion";
+import OutStandingModal from "./OutStandingModal";
 
 function BookingForm({
   isLoading,
@@ -21,8 +21,9 @@ function BookingForm({
   editData,
   isSubmittingRef,
   isFor,
-  outStanding=[]
+  outStanding = [],
 }) {
+  console.log(outStanding);
   const [voucherNumber, setVoucherNumber] = useState("");
   const [selectedParty, setSelectedParty] = useState("");
   const [displayFoodPlan, setDisplayFoodPlan] = useState(false);
@@ -32,6 +33,7 @@ function BookingForm({
   const [errorObject, setErrorObject] = useState({});
   const [hotelAgent, setHotelAgent] = useState({});
   const [visitOfPurpose, setVisitOfPurpose] = useState([]);
+  const [modalOpen, setModalOpen] = useState(false);
   const navigate = useNavigate();
   // used to get organization id from redux
   const cmp_id = useSelector(
@@ -211,10 +213,10 @@ function BookingForm({
         `/api/sUsers/getSeriesByVoucher/${cmp_id}?voucherType=${isFor}`,
         { withCredentials: true }
       );
-console.log(response.data);
+      console.log(response.data);
       if (response.data) {
         const specificSeries = response.data.series?.find(
-          (item) => item.currentlySelected === true
+          (item) => item.currentlySelected === true 
         );
 
         if (specificSeries) {
@@ -318,8 +320,6 @@ console.log(response.data);
       }));
     }
   };
-
-
 
   const handleAdvanceAmountChange = (e) => {
     const { value } = e.target;
@@ -507,6 +507,8 @@ console.log(response.data);
     delete payload.roomType;
     handleSubmit(payload);
   };
+
+  console.log(outStanding)
 
   return (
     <>
@@ -899,13 +901,15 @@ console.log(response.data);
 
               {/* Save Button */}
               <div className="flex justify-end">
-                 <button
-                  className="bg-pink-500 mt-4 ml-4 w-20 text-white active:bg-pink-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none mr-1 ease-linear transition-all duration-150 transform hover:scale-105"
-                  type="button"
-                  onClick={submitHandler}
-                >
-                  {editData ? "Update" : "Save"}
-                </button>
+                {outStanding.length > 0 && (
+                  <button
+                    className="bg-pink-500 mt-4 ml-4 w-20 text-white active:bg-pink-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none mr-1 ease-linear transition-all duration-150 transform hover:scale-105"
+                    type="button"
+                    onClick={() => setModalOpen(true)}
+                  >
+                    History
+                  </button>
+                )}
                 <button
                   className="bg-pink-500 mt-4 ml-4 w-20 text-white active:bg-pink-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none mr-1 ease-linear transition-all duration-150 transform hover:scale-105"
                   type="button"
@@ -947,6 +951,12 @@ console.log(response.data);
           </>
         </>
       )}
+
+       <OutStandingModal
+        showModal={modalOpen}
+        onClose={() => setModalOpen(false)}
+        outStanding={outStanding}
+      />
     </>
   );
 }

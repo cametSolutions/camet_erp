@@ -2,37 +2,44 @@ import React from 'react';
 import { BedDouble, Users, Calendar, Settings, Activity } from 'lucide-react';
 
 const RoomStatus = ({ room, status, guest, checkIn, checkOut, onClick, type }) => {
+   const statusColors = {
+  vacant: "from-emerald-500 to-teal-600",  // green gradient
+  booked: "from-red-500 to-pink-600",      // red/pink gradient
+  occupied: "from-orange-500 to-red-600",  // orange/red gradient
+  dirty: "from-yellow-500 to-orange-600",
+  blocked: "from-gray-500 to-slate-800",
+};
   const statusStyles = {
     vacant: {
-      bg: 'from-gray-700 to-gray-800',
+      // bg: 'from-gray-700 to-gray-800',
       border: 'border-gray-600',
       text: 'text-gray-300',
       hoverBg: 'hover:from-gray-600 hover:to-gray-700',
       hoverBorder: 'hover:border-white/50'
     },
     occupied: {
-      bg: 'from-gray-800 to-black',
+      // bg: 'from-gray-800 to-black',
       border: 'border-white/30',
       text: 'text-white',
       hoverBg: 'hover:from-gray-700 hover:to-gray-900',
       hoverBorder: 'hover:border-white/60'
     },
     booked: {
-      bg: 'from-black to-gray-900',
+      // bg: 'from-black to-gray-900',
       border: 'border-white/40',
       text: 'text-white',
       hoverBg: 'hover:from-gray-900 hover:to-black',
       hoverBorder: 'hover:border-white/70'
     },
     dirty: {
-      bg: 'from-gray-600 to-gray-700',
+      // bg: 'from-gray-600 to-gray-700',
       border: 'border-gray-500',
       text: 'text-gray-300',
       hoverBg: 'hover:from-gray-500 hover:to-gray-600',
       hoverBorder: 'hover:border-white/40'
     },
     blocked: {
-      bg: 'from-gray-900 to-black',
+      // bg: 'from-gray-900 to-black',
       border: 'border-gray-700',
       text: 'text-gray-400',
       hoverBg: 'hover:from-gray-800 hover:to-gray-900',
@@ -43,19 +50,21 @@ const RoomStatus = ({ room, status, guest, checkIn, checkOut, onClick, type }) =
   const style = statusStyles[status] || statusStyles.vacant;
 
   return (
-    <div 
-      onClick={onClick}
-      className={`
-        relative overflow-hidden rounded-xl cursor-pointer w-full
-        bg-gradient-to-br ${style.bg}
-        border-2 ${style.border}
-        transform transition-all duration-300 
-        hover:scale-105 hover:rotate-1
-        shadow-lg hover:shadow-2xl hover:shadow-white/10
-        ${style.hoverBg} ${style.hoverBorder}
-        group min-h-[50px] sm:min-h-[73px]
-      `}
-    >
+  <div
+  onClick={onClick}
+  className={`
+    relative overflow-hidden rounded-xl cursor-pointer w-full
+
+    border-2 ${style.border}
+    transform transition-all duration-300 
+    hover:scale-105 hover:rotate-1
+    shadow-lg hover:shadow-2xl hover:shadow-white/10
+    bg-gradient-to-r ${statusColors[status] || statusColors.vacant}
+    ${style.hoverBg} ${style.hoverBorder}
+    group min-h-[50px] sm:min-h-[73px]
+  `}
+>
+
       {/* Status indicator dot */}
      <div
   className={`absolute top-2 right-2 w-2 h-2 rounded-full 

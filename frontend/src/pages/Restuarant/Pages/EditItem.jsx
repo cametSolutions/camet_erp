@@ -4,29 +4,27 @@ import api from "@/api/api";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import CustomBarLoader from "@/components/common/CustomBarLoader";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import TitleDiv from "@/components/common/TitleDiv";
-function ItemRegistration() {
+function EditItem() {
+  const location = useLocation();
   const navigate = useNavigate();
+  let editData = location?.state
   const [loading, setLoading] = useState(false);
   const [optionData, setOptionsData] = useState({});
-  
+
   const orgId = useSelector(
     (state) => state?.secSelectedOrganization?.secSelectedOrg?._id
   );
-
   // Fetch all required data
   const fetchAllData = useCallback(async () => {
     try {
       setLoading(true);
 
       const subDetailsPromise = api.get(
-        `/api/sUsers/getAllSubDetailsBasedUnder/${orgId}`,
+        `/api/sUsers/getAllSubDetails/${orgId}`,
         {
           withCredentials: true,
-          params: {
-            under: "restaurant",
-          },
         }
       );
       const hsnResPromise = api.get(`/api/sUsers/fetchHsn/${orgId}`, {
@@ -38,12 +36,12 @@ function ItemRegistration() {
         hsnResPromise,
       ]);
 
-      const { categories, subcategories, priceLevels } =
+      const { brands, categories, subcategories, priceLevels } =
         subDetailsRes.data.data;
 
       setOptionsData((prev) => ({
         ...prev,
-
+        brand: brands,
         category: categories,
         subcategory: subcategories,
         priceLevel: priceLevels,
@@ -63,8 +61,14 @@ function ItemRegistration() {
 
   const handleSubmit = async (formData, tableData) => {
     try {
+    let url 
+    if(editData){
+      url = `/api/sUsers/editItem/${orgId}/${editData._id}`
+    }else{
+      url = `/api/sUsers/addItem/${orgId}`
+    }
       await api.post(
-        `/api/sUsers/addItem/${orgId}`,
+       url,
         {
           formData,
           tableData,
@@ -89,13 +93,14 @@ function ItemRegistration() {
         <div className="">
           <TitleDiv
             loading={loading}
-            title="Add Room"
+            title="Edit Item"
             from="/sUsers/itemList"
           />
           <ItemRegisterComponent
-            pageName="Food item Registration"
+            pageName="Edit Item"
             optionsData={optionData}
             sendToParent={handleSubmit}
+            editData={editData}
           />
         </div>
       )}
@@ -103,4 +108,4 @@ function ItemRegistration() {
   );
 }
 
-export default ItemRegistration;
+export default EditItem;

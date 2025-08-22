@@ -63,7 +63,7 @@ function AvailableRooms({
   }, [formData?.additionalPaxDetails, formData?.foodPlan, selectedRoomId]);
 
 useEffect(() => {
-  console.log(formData?.bookingType);
+
   if (!formData?.bookingType) return;
 
   const handleBookingTypeChange = async () => {
@@ -128,6 +128,7 @@ useEffect(() => {
   const calculateTax = useCallback(
     async (booking) => {
       if (!booking) return booking;
+      
       const updatedRoom = recalculateBookingTotals(booking);
       try {
         const taxResponse = await taxCalculator(
@@ -273,12 +274,12 @@ useEffect(() => {
     const defaultRate =
       room?.priceLevel[0]?.priceRate || room?.roomType?.roomRent || 0;
     const stayDays = formData?.stayDays || 1;
-    console.log(room);
+
     let booking = {
       roomId: room._id,
       roomName: room.roomName,
       priceLevel: room.priceLevel || [],
-      selectedPriceLevel: room.priceLevel[0]?.priceLevel?._id || room.roomType?._id,
+      selectedPriceLevel: room.priceLevel[0]?._id || room.roomType?._id,
       roomType: room.roomType,
       pax: 2,
       priceLevelRate: defaultRate,
@@ -342,7 +343,7 @@ useEffect(() => {
   }, [cmp_id, fetchRooms]);
   useEffect(() => () => clearTimeout(debounceTimerRef.current), []);
 
-
+console.log(bookings)
   return (
     <>
       <div className={`relative w-full ${className}`} ref={dropdownRef}>
@@ -483,7 +484,7 @@ useEffect(() => {
                     <td className="px-4 py-3 whitespace-nowrap ">
                       {booking.priceLevel && booking.priceLevel.length > 0 ? (
                         <select
-                          value={booking.selectedPriceLevel}
+                          value={booking.selectedPriceLevel ? booking.selectedPriceLevel?._id : booking?.selectedPriceLevel?._id}
                           onChange={(e) =>
                             handlePriceLevelChange(e, booking.roomId)
                           }

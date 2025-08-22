@@ -67,6 +67,10 @@ const salesSchema = new Schema(
       ref: "User",
       required: true,
     },
+    kotId: {
+      type: Schema.Types.ObjectId,
+      ref: "Kot",
+    },
     cmp_id: { type: Schema.Types.ObjectId, ref: "Company", required: true },
     Secondary_user_id: { type: Schema.Types.ObjectId, ref: "User" },
     selectedGodownDetails: {

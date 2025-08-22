@@ -1,186 +1,5 @@
-// import { number } from "framer-motion";
 
-// export const taxCalculator = (
-//   data,
-//   inclusive = false,
-//   formData = null,
-//   taxCalculationRoomId = null
-// ) => {
-//   console.log(formData);
-//   try {
-//     // Input validation
-//     if (!data || typeof data !== "object") {
-//       console.error("Invalid data provided to taxCalculator");
-//       return null;
-//     }
 
-//     const { hsnDetails } = data;
-
-//     // Validate hsnDetails
-//     if (!hsnDetails) {
-//       console.warn("No HSN details found, using default calculation");
-//     }
-
-//     // Calculate additional amounts for specific room
-//     const reducedAdditionalPaxAmount = taxCalculationRoomId
-//       ? formData?.additionalPaxDetails?.reduce((acc, item) => {
-//           return item.roomId === taxCalculationRoomId
-//             ? acc + (Number(item.rate) || 0)
-//             : acc;
-//         }, 0) || 0
-//       : 0;
-
-//     const reducedFoodPlanAmount = taxCalculationRoomId
-//       ? formData?.foodPlan?.reduce((acc, item) => {
-//           return item.roomId === taxCalculationRoomId
-//             ? acc + (Number(item.rate) || 0)
-//             : acc;
-//         }, 0) || 0
-//       : 0;
-
-//     // Base amount calculation
-//     const baseAmount = Number(data?.totalAmount || 0);
-
-//     let totalAmount = 0;
-//     if (formData?.bookingType !== "offline") {
-//       totalAmount =
-//         baseAmount + reducedAdditionalPaxAmount + reducedFoodPlanAmount;
-//     } else {
-//       totalAmount = baseAmount + reducedAdditionalPaxAmount;
-//     }
-//     // Total amount including additional charges
-
-//     // Tax calculation logic
-//     let taxRate = 0;
-//     let applicableSlab = null;
-
-//     // Check if HSN details exist and have tax slabs
-//     if (
-//       hsnDetails?.rows &&
-//       Array.isArray(hsnDetails.rows) &&
-//       hsnDetails.rows.length > 0
-//     ) {
-//       // Find applicable tax slab
-//       for (const row of hsnDetails.rows) {
-//         const slab = getApplicableTaxSlab(row, totalAmount);
-//         if (slab) {
-//           applicableSlab = slab;
-//           taxRate = Number(slab.igstRate || 0);
-//           break;
-//         }
-//       }
-
-//       console.log("Found tax slab:", applicableSlab);
-//     }
-
-//     // If no slab found, use default rate from hsnDetails
-//     if (!applicableSlab && hsnDetails?.igstRate !== undefined) {
-//       taxRate = Number(hsnDetails.igstRate);
-//       console.log("Using default tax rate:", taxRate);
-//     }
-//     // Calculate tax amount
-//     const taxAmount = (totalAmount * taxRate) / 100;
-
-//     // Calculate final amount based on inclusive/exclusive
-//     let amountWithTax = inclusive ? totalAmount + taxAmount : totalAmount-taxAmount;
-
-//     let foodPlanTax;
-//     if (formData?.bookingType !== "offline") {
-//       foodPlanTax = 5;
-//     } else {
-//       foodPlanTax = taxRate;
-//     }
-
-//     let additionalPaxAmountWithTax = 0;
-//     let foodPlanAmountWithTax = 0;
-//     if (formData) {
-//       additionalPaxAmountWithTax = inclusive
-//         ? reducedAdditionalPaxAmount +
-//           (reducedAdditionalPaxAmount * taxRate) / 100
-//         : reducedAdditionalPaxAmount -
-//           (reducedAdditionalPaxAmount * taxRate) / 100;
-
-//       foodPlanAmountWithTax = inclusive
-//         ? reducedFoodPlanAmount + (reducedFoodPlanAmount * foodPlanTax) / 100
-//         : reducedFoodPlanAmount - (reducedFoodPlanAmount * foodPlanTax) / 100;
-//     }
-//     if (formData?.bookingType !== "offline") {
-//       amountWithTax = Number(amountWithTax) + Number(reducedFoodPlanAmount);
-//     }
-
-//     return {
-//       amountWithTax: Number(amountWithTax.toFixed(2)),
-//       taxRate: Number(taxRate.toFixed(2)),
-//       taxAmount: Number(taxAmount.toFixed(2)),
-//       additionalPaxAmount: Number(reducedAdditionalPaxAmount.toFixed(2)),
-//       foodPlanAmount: Number(reducedFoodPlanAmount.toFixed(2)),
-//       additionalPaxAmountWithTax: Number(additionalPaxAmountWithTax.toFixed(2)),
-//       foodPlanAmountWithTax: Number(foodPlanAmountWithTax.toFixed(2)),
-//       baseAmount: Number(baseAmount.toFixed(2)),
-//       totalBeforeTax: Number(totalAmount.toFixed(2)),
-//     };
-//   } catch (error) {
-//     console.error("Error in taxCalculator:", error);
-
-//     // Return safe default values
-//     return {
-//       amountWithTax: Number(data?.totalAmount || 0),
-//       taxRate: 0,
-//       taxAmount: 0,
-//       additionalPaxAmount: 0,
-//       foodPlanAmount: 0,
-//       baseAmount: Number(data?.totalAmount || 0),
-//       totalBeforeTax: Number(data?.totalAmount || 0),
-//     };
-//   }
-// };
-
-// const getApplicableTaxSlab = (row, totalAmount) => {
-//   try {
-//     // Validate row object
-//     if (!row || typeof row !== "object") {
-//       return null;
-//     }
-
-//     const greaterThan = parseFloat(row.greaterThan);
-
-//     // Validate greaterThan value
-//     if (isNaN(greaterThan)) {
-//       console.warn("Invalid greaterThan value:", row.greaterThan);
-//       return null;
-//     }
-
-//     // Handle empty upto value (means no upper limit)
-//     const uptoValue = row.upto;
-//     let isApplicable = false;
-
-//     if (uptoValue === "" || uptoValue === null || uptoValue === undefined) {
-//       // No upper limit - check if amount is greater than greaterThan
-//       isApplicable = totalAmount > greaterThan;
-//       console.log("Tax slab check (no upper limit):", {
-//         totalAmount,
-//         greaterThan,
-//         upto: "No limit",
-//         isApplicable,
-//       });
-//     } else {
-//       // Has upper limit - check range
-//       const upto = parseFloat(uptoValue);
-
-//       if (isNaN(upto)) {
-//         console.warn("Invalid upto value:", uptoValue);
-//         return null;
-//       }
-
-//       isApplicable = totalAmount > greaterThan && totalAmount <= upto;
-//     }
-
-//     return isApplicable ? row : null;
-//   } catch (error) {
-//     console.error("Error in getApplicableTaxSlab:", error);
-//     return null;
-//   }
-//  };
 export const taxCalculator = (
   data,
   inclusive = false,
@@ -326,3 +145,82 @@ const getApplicableTaxSlab = (row, totalAmount) => {
     return null;
   }
 };
+
+
+export const taxCalculatorForRestaurant = (tableData = [], inclusive = false) => {
+  return tableData.map((item) => {
+    // Map through GodownList for each product
+    const updatedGodownList = item.GodownList.map((godown) => {
+      const price = Number(item.price) || 0;
+      const igst = Number(item.igst) || 0;
+      const cgst = Number(item.cgst) || 0;
+      const sgst = Number(item.sgst) || 0;
+
+      let basePrice;
+
+      if (inclusive) {
+        // Price includes tax → remove tax from it
+        basePrice = price / (1 + igst / 100);
+      } else {
+        // Price excludes tax → keep price as base
+        basePrice = price;
+      }
+
+      const igstAmount = (basePrice * igst) / 100;
+      const cgstAmount = (basePrice * cgst) / 100;
+      const sgstAmount = (basePrice * sgst) / 100;
+
+      return {
+        ...godown,
+        basePrice,
+        discountAmount: 0,
+        discountPercentage: 0,
+        discountType: "none",
+        taxableAmount: basePrice,
+        cgstValue: cgst,
+        sgstValue: sgst,
+        igstValue: igst,
+        cessValue: item?.cess || 0,
+        addlCessValue: item?.addl_cess || 0,
+        igstAmount,
+        cgstAmount,
+        sgstAmount,
+        individualTotal: inclusive
+          ? price
+          : basePrice + igstAmount + cgstAmount + sgstAmount,
+        isTaxIncluded: inclusive,
+        cessAmount: 0,
+        additionalCessAmount: 0,
+      };
+    });
+
+    // Sum up totals from GodownList
+    const total = updatedGodownList.reduce((sum, g) => sum + g.individualTotal, 0);
+    const totalCgstAmt = updatedGodownList.reduce((sum, g) => sum + g.cgstAmount, 0);
+    const totalSgstAmt = updatedGodownList.reduce((sum, g) => sum + g.sgstAmount, 0);
+    const totalIgstAmt = updatedGodownList.reduce((sum, g) => sum + g.igstAmount, 0);
+    const totalCessAmt = updatedGodownList.reduce((sum, g) => sum + g.cessAmount, 0);
+    const totalAddlCessAmt = updatedGodownList.reduce(
+      (sum, g) => sum + g.additionalCessAmount,
+      0
+    );
+
+    // Return product with updated GodownList & totals
+    return {
+      ...item,
+      GodownList: updatedGodownList,
+      total,
+      totalCgstAmt,
+      totalSgstAmt,
+      totalIgstAmt,
+      totalCessAmt,
+      totalAddlCessAmt,
+      added: true,
+      taxInclusive: inclusive,
+    };
+  });
+};
+
+
+
+
