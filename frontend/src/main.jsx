@@ -32,7 +32,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         position="top-right"
         swipeDirections={["left", "right"]}
          />
-        {/* <ReactQueryDevtools initialIsOpen={false} /> */}
+        <ReactQueryDevtools initialIsOpen={false} />
       </QueryClientProvider>
     </Provider>
   </BrowserRouter>

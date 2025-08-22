@@ -183,223 +183,395 @@ export const findSourceDetails = async (req, res) => {
 // @desc find source transactions
 // route get/api/sUsers/findSourceTransactions
 
+// export const findSourceTransactions = async (req, res) => {
+//   const { id } = req.params;
+//   const cmp_id = new mongoose.Types.ObjectId(req.params.cmp_id);
+
+//   const { startOfDayParam, endOfDayParam, accGroup } = req.query;
+
+//   try {
+//     let dateFilter = {};
+//     let openingBalanceFilter = {};
+//     if (startOfDayParam && endOfDayParam) {
+//       const startDate = parseISO(startOfDayParam);
+//       const endDate = parseISO(endOfDayParam);
+
+//       dateFilter = {
+//         "settlements.created_at": {
+//           $gte: startOfDay(startDate),
+//           $lte: endOfDay(endDate),
+//         },
+//       };
+
+//       // Filter for opening balance (before start date)
+//       openingBalanceFilter = {
+//         "settlements.created_at": {
+//           $lt: startOfDay(startDate),
+//         },
+//       };
+//     }
+
+//     let model;
+//     let openingField;
+//     switch (accGroup) {
+//       case "cashInHand":
+//         model = cashModel;
+//         openingField = "cash_opening";
+//         break;
+//       case "bankBalance":
+//         model = bankModel;
+//         openingField = "bank_opening";
+//         break;
+//       default:
+//         return res.status(400).json({ message: "Invalid account group" });
+//     }
+
+//     const [openingBalanceResult, transactions] = await Promise.all([
+//       // First pipeline to calculate opening balance
+//       model.aggregate([
+//         {
+//           $match: {
+//             _id: new mongoose.Types.ObjectId(id),
+//             cmp_id: cmp_id,
+//           },
+//         },
+//         {
+//           $project: {
+//             [openingField]: 1, // Include opening field
+//             settlements: {
+//               $cond: {
+//                 if: { $isArray: "$settlements" },
+//                 then: "$settlements",
+//                 else: [],
+//               },
+//             },
+//           },
+//         },
+//         {
+//           $unwind: {
+//             path: "$settlements",
+//             preserveNullAndEmptyArrays: true,
+//           },
+//         },
+//         {
+//           $match: openingBalanceFilter,
+//         },
+//         {
+//           $group: {
+//             _id: null,
+//             calculatedOpeningBalance: { $sum: "$settlements.amount" },
+//             openingField: { $first: `$${openingField}` }, // Retrieve opening field value
+//           },
+//         },
+//         {
+//           $project: {
+//             _id: 0,
+//             openingBalance: {
+//               $add: ["$calculatedOpeningBalance", "$openingField"], // Combine calculated and opening field
+//             },
+//           },
+//         },
+//       ]),
+
+//       // Second pipeline to get current period transactions
+//       model.aggregate([
+//         {
+//           $match: {
+//             _id: new mongoose.Types.ObjectId(id),
+//             cmp_id: cmp_id,
+//           },
+//         },
+//         {
+//           $project: {
+//             settlements: {
+//               $cond: {
+//                 if: { $isArray: "$settlements" },
+//                 then: "$settlements",
+//                 else: [],
+//               },
+//             },
+//           },
+//         },
+//         {
+//           $unwind: {
+//             path: "$settlements",
+//             preserveNullAndEmptyArrays: true,
+//           },
+//         },
+//         {
+//           $match: dateFilter,
+//         },
+//         {
+//           $group: {
+//             _id: null,
+//             settlements: { $push: "$settlements" },
+//             count: { $sum: 1 },
+//             total: { $sum: "$settlements.amount" },
+//           },
+//         },
+//         {
+//           $project: {
+//             _id: 0,
+//             settlements: {
+//               $map: {
+//                 input: "$settlements",
+//                 as: "settlement",
+//                 in: {
+//                   voucherNumber: "$$settlement.voucherNumber",
+//                   _id: "$$settlement.voucherId",
+//                   party_name: "$$settlement.party",
+//                   enteredAmount: "$$settlement.amount",
+//                   createdAt: "$$settlement.created_at",
+//                   payment_mode: "$$settlement.payment_mode",
+//                   type: {
+//                     $switch: {
+//                       branches: [
+//                         {
+//                           case: {
+//                             $eq: ["$$settlement.voucherType", "receipt"],
+//                           },
+//                           then: "Receipt",
+//                         },
+//                         {
+//                           case: {
+//                             $eq: ["$$settlement.voucherType", "payment"],
+//                           },
+//                           then: "Payment",
+//                         },
+//                         {
+//                           case: { $eq: ["$$settlement.voucherType", "sale"] },
+//                           then: "Tax Invoice",
+//                         },
+//                         {
+//                           case: {
+//                             $eq: ["$$settlement.voucherType", "vanSale"],
+//                           },
+//                           then: "Van Sale",
+//                         },
+//                         {
+//                           case: {
+//                             $eq: ["$$settlement.voucherType", "purchase"],
+//                           },
+//                           then: "Purchase",
+//                         },
+//                         {
+//                           case: {
+//                             $eq: ["$$settlement.voucherType", "creditNote"],
+//                           },
+//                           then: "Credit Note",
+//                         },
+//                         {
+//                           case: {
+//                             $eq: ["$$settlement.voucherType", "debitNote"],
+//                           },
+//                           then: "Debit Note",
+//                         },
+//                       ],
+//                       default: "$$settlement.voucherType",
+//                     },
+//                   },
+//                 },
+//               },
+//             },
+//             count: 1,
+//             total: 1,
+//           },
+//         },
+//       ]),
+//     ]);
+
+//     // Handle case when no transactions are found
+//     if (!transactions.length) {
+//       return res.status(200).json({
+//         message: "No transactions found for the specified period",
+//         success: true,
+//         data: {
+//           settlements: [],
+//           total: 0,
+//           count: 0,
+//           openingBalance: 0,
+//         },
+//       });
+//     }
+
+//     return res.status(200).json({
+//       message: "Transactions found successfully",
+//       success: true,
+//       data: {
+//         ...transactions[0],
+//         openingBalance: openingBalanceResult[0]?.openingBalance || 0,
+//       },
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     return res.status(500).json({
+//       error: "Internal Server Error",
+//       details: error.message,
+//     });
+//   }
+// };
+
 export const findSourceTransactions = async (req, res) => {
   const { id } = req.params;
   const cmp_id = new mongoose.Types.ObjectId(req.params.cmp_id);
-
   const { startOfDayParam, endOfDayParam, accGroup } = req.query;
 
   try {
-    let dateFilter = {};
-    let openingBalanceFilter = {};
-    if (startOfDayParam && endOfDayParam) {
-      const startDate = parseISO(startOfDayParam);
-      const endDate = parseISO(endOfDayParam);
-
-      dateFilter = {
-        "settlements.created_at": {
-          $gte: startOfDay(startDate),
-          $lte: endOfDay(endDate),
-        },
-      };
-
-      // Filter for opening balance (before start date)
-      openingBalanceFilter = {
-        "settlements.created_at": {
-          $lt: startOfDay(startDate),
-        },
-      };
-    }
-
-    let model;
-    let openingField;
+    // Determine partyType based on accountGroup
+    let partyTypeFilter;
     switch (accGroup) {
       case "cashInHand":
-        model = cashModel;
-        openingField = "cash_opening";
+        partyTypeFilter = "cash";
         break;
       case "bankBalance":
-        model = bankModel;
-        openingField = "bank_opening";
+      case "bankOd":
+        partyTypeFilter = "bank";
         break;
       default:
         return res.status(400).json({ message: "Invalid account group" });
     }
 
-    const [openingBalanceResult, transactions] = await Promise.all([
-      // First pipeline to calculate opening balance
-      model.aggregate([
-        {
-          $match: {
-            _id: new mongoose.Types.ObjectId(id),
-            cmp_id: cmp_id,
-          },
-        },
-        {
-          $project: {
-            [openingField]: 1, // Include opening field
-            settlements: {
-              $cond: {
-                if: { $isArray: "$settlements" },
-                then: "$settlements",
-                else: [],
-              },
-            },
-          },
-        },
-        {
-          $unwind: {
-            path: "$settlements",
-            preserveNullAndEmptyArrays: true,
-          },
-        },
-        {
-          $match: openingBalanceFilter,
-        },
-        {
-          $group: {
-            _id: null,
-            calculatedOpeningBalance: { $sum: "$settlements.amount" },
-            openingField: { $first: `$${openingField}` }, // Retrieve opening field value
-          },
-        },
-        {
-          $project: {
-            _id: 0,
-            openingBalance: {
-              $add: ["$calculatedOpeningBalance", "$openingField"], // Combine calculated and opening field
-            },
-          },
-        },
-      ]),
+    // Date filters
+    let dateFilter = {};
+    let openingDateFilter = {};
+    
+    if (startOfDayParam && endOfDayParam) {
+      const startDate = parseISO(startOfDayParam);
+      const endDate = parseISO(endOfDayParam);
 
-      // Second pipeline to get current period transactions
-      model.aggregate([
-        {
-          $match: {
-            _id: new mongoose.Types.ObjectId(id),
-            cmp_id: cmp_id,
-          },
+      dateFilter = {
+        settlement_date: {
+          $gte: startOfDay(startDate),
+          $lte: endOfDay(endDate),
         },
-        {
-          $project: {
-            settlements: {
-              $cond: {
-                if: { $isArray: "$settlements" },
-                then: "$settlements",
-                else: [],
+      };
+
+      openingDateFilter = {
+        settlement_date: {
+          $lt: startOfDay(startDate),
+        },
+      };
+    }
+
+    const result = await settlementModel.aggregate([
+      {
+        $facet: {
+          // Get opening balance
+          openingBalance: [
+            {
+              $match: {
+                cmp_id: cmp_id,
+                sourceId: new mongoose.Types.ObjectId(id),
+                sourceType: partyTypeFilter,
+                ...openingDateFilter,
               },
             },
-          },
-        },
-        {
-          $unwind: {
-            path: "$settlements",
-            preserveNullAndEmptyArrays: true,
-          },
-        },
-        {
-          $match: dateFilter,
-        },
-        {
-          $group: {
-            _id: null,
-            settlements: { $push: "$settlements" },
-            count: { $sum: 1 },
-            total: { $sum: "$settlements.amount" },
-          },
-        },
-        {
-          $project: {
-            _id: 0,
-            settlements: {
-              $map: {
-                input: "$settlements",
-                as: "settlement",
-                in: {
-                  voucherNumber: "$$settlement.voucherNumber",
-                  _id: "$$settlement.voucherId",
-                  party_name: "$$settlement.party",
-                  enteredAmount: "$$settlement.amount",
-                  createdAt: "$$settlement.created_at",
-                  payment_mode: "$$settlement.payment_mode",
-                  type: {
-                    $switch: {
-                      branches: [
-                        {
-                          case: {
-                            $eq: ["$$settlement.voucherType", "receipt"],
-                          },
-                          then: "Receipt",
-                        },
-                        {
-                          case: {
-                            $eq: ["$$settlement.voucherType", "payment"],
-                          },
-                          then: "Payment",
-                        },
-                        {
-                          case: { $eq: ["$$settlement.voucherType", "sale"] },
-                          then: "Tax Invoice",
-                        },
-                        {
-                          case: {
-                            $eq: ["$$settlement.voucherType", "vanSale"],
-                          },
-                          then: "Van Sale",
-                        },
-                        {
-                          case: {
-                            $eq: ["$$settlement.voucherType", "purchase"],
-                          },
-                          then: "Purchase",
-                        },
-                        {
-                          case: {
-                            $eq: ["$$settlement.voucherType", "creditNote"],
-                          },
-                          then: "Credit Note",
-                        },
-                        {
-                          case: {
-                            $eq: ["$$settlement.voucherType", "debitNote"],
-                          },
-                          then: "Debit Note",
-                        },
-                      ],
-                      default: "$$settlement.voucherType",
-                    },
+            {
+              $group: {
+                _id: null,
+                settlementOpening: { $sum: "$amount" },
+              },
+            },
+            {
+              $lookup: {
+                from: "parties",
+                let: { sourceId: new mongoose.Types.ObjectId(id) },
+                pipeline: [
+                  {
+                    $match: {
+                      $expr: { $eq: ["$_id", "$$sourceId"] }
+                    }
+                  },
+                  {
+                    $project: {
+                      openingBalanceAmount: 1
+                    }
+                  }
+                ],
+                as: "account"
+              }
+            },
+            {
+              $project: {
+                openingBalance: {
+                  $add: [
+                    { $ifNull: ["$settlementOpening", 0] },
+                    { $ifNull: [{ $arrayElemAt: ["$account.openingBalanceAmount", 0] }, 0] }
+                  ]
+                }
+              }
+            }
+          ],
+          
+          // Get current period transactions
+          transactions: [
+            {
+              $match: {
+                cmp_id: cmp_id,
+                sourceId: new mongoose.Types.ObjectId(id),
+                sourceType: partyTypeFilter,
+                ...dateFilter,
+              },
+            },
+            {
+              $project: {
+                voucherNumber: 1,
+                _id: "$voucherId",
+                party_name: "$partyName",
+                enteredAmount: "$amount",
+                createdAt: "$settlement_date",
+                payment_mode: 1,
+                type: {
+                  $switch: {
+                    branches: [
+                      { case: { $eq: ["$voucherType", "receipt"] }, then: "Receipt" },
+                      { case: { $eq: ["$voucherType", "payment"] }, then: "Payment" },
+                      { case: { $eq: ["$voucherType", "sales"] }, then: "Tax Invoice" },
+                    ],
+                    default: "$voucherType",
                   },
                 },
               },
             },
-            count: 1,
-            total: 1,
-          },
+            {
+              $sort: { createdAt: -1 }
+            }
+          ],
+          
+          // Get summary stats
+          summary: [
+            {
+              $match: {
+                cmp_id: cmp_id,
+                sourceId: new mongoose.Types.ObjectId(id),
+                sourceType: partyTypeFilter,
+                ...dateFilter,
+              },
+            },
+            {
+              $group: {
+                _id: null,
+                count: { $sum: 1 },
+                total: { $sum: "$amount" },
+              },
+            },
+          ],
         },
-      ]),
+      },
     ]);
 
-    // Handle case when no transactions are found
-    if (!transactions.length) {
-      return res.status(200).json({
-        message: "No transactions found for the specified period",
-        success: true,
-        data: {
-          settlements: [],
-          total: 0,
-          count: 0,
-          openingBalance: 0,
-        },
-      });
-    }
+    const openingBalance = result[0].openingBalance[0]?.openingBalance || 0;
+    const transactions = result[0].transactions || [];
+    const summary = result[0].summary[0] || { count: 0, total: 0 };
 
     return res.status(200).json({
       message: "Transactions found successfully",
       success: true,
       data: {
-        ...transactions[0],
-        openingBalance: openingBalanceResult[0]?.openingBalance || 0,
+        settlements: transactions,
+        count: summary.count,
+        total: summary.total,
+        openingBalance: openingBalance,
       },
     });
   } catch (error) {
