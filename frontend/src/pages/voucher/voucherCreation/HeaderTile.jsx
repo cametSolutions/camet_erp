@@ -1,10 +1,10 @@
 /* eslint-disable react/prop-types */
 import { useState, forwardRef } from "react";
-import { IoIosAddCircle } from "react-icons/io";
 import { MdDateRange } from "react-icons/md";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import VoucherSeriesModal from "./VoucherSeriesModal";
+import VoucherSubmitButton from "./VoucherSubmitButton";
 
 // Custom input component for the date picker - wrapped with forwardRef
 const CustomInput = forwardRef(({ onClick }, ref) => (
@@ -18,7 +18,7 @@ const CustomInput = forwardRef(({ onClick }, ref) => (
 ));
 
 // Add display name for better debugging
-CustomInput.displayName = 'CustomInput';
+CustomInput.displayName = "CustomInput";
 
 function HeaderTile({
   title,
@@ -34,13 +34,17 @@ function HeaderTile({
   addSelectedVoucherSeries,
   number,
   selectedVoucherSeriesFromRedux = {}, // Default to null if not provided
-  tab
+  tab,
+  enablePaymentSplittingAsCompulsory,
+  openAdditionalTile
 }) {
   const [isSeriesModalOpen, setIsSeriesModalOpen] = useState(false);
   const [selectedSeries, setSelectedSeries] = useState(null);
 
   const titleText =
     title.split("")[0]?.toUpperCase()?.concat(title.slice(1)) || "Title";
+
+
 
   // Handle date change
   const handleDateChange = (date) => {
@@ -64,7 +68,7 @@ function HeaderTile({
           >
             {Object?.keys(selectedVoucherSeriesFromRedux)?.length > 0 && (
               <span className="text-[10.5px] text-gray-500 ">
-                 {selectedVoucherSeriesFromRedux?.seriesName || ""}
+                {selectedVoucherSeriesFromRedux?.seriesName || ""}
               </span>
             )}
             {titleText} No:#{number}
@@ -105,45 +109,58 @@ function HeaderTile({
             />
           </div>
         </div>
-{tab !== "booking" && (
-        <div className="">
-          <div className="flex gap-5 items-center">
-            <div className="hidden sm:block">
-              <button
-                onClick={submitHandler}
-                className={`${
-                  loading && "pointer-events-none opacity-80"
-                } bottom-0 text-white bg-violet-700 w-full rounded-md p-2 flex items-center justify-center gap-2 hover_scale cursor-pointer`}
-              >
-                <IoIosAddCircle className="text-2xl" />
-                {title === "Stock Transfer" ? (
-                  <p>
-                    {mode === "create" ? `Transfer Stock` : `Edit Transfer`}
-                  </p>
-                ) : (
-                  <p>
-                    {mode === "create"
-                      ? `Generate ${titleText}`
-                      : `Edit ${titleText}`}
-                  </p>
-                )}
-              </button>
-            </div>
-            <div>
-              <button
-                onClick={() => {
-                  dispatch(removeAll());
-                }}
-                className="text-red-500 text-xs p-1 px-3 border border-1 border-gray-300 rounded-2xl cursor-pointer"
-              >
-                Cancel
-              </button>
+        {tab !== "booking" && (
+          <div className="">
+            <div className="flex gap-5 items-center">
+              <div className="hidden sm:block">
+                {/* <button
+                  className={`${
+                    loading && "pointer-events-none opacity-80"
+                  } bottom-0 text-white bg-violet-700 w-full rounded-md p-2 flex items-center justify-center gap-2 hover_scale cursor-pointer`}
+                >
+                  <IoIosAddCircle className="text-2xl" />
+                  {title === "Stock Transfer" ? (
+                    <p onClick={submitHandler}>
+                      {mode === "create" ? "Transfer Stock" : "Edit Transfer"}
+                    </p>
+                  ) : title === "Sales" &&
+                    enablePaymentSplittingAsCompulsory ? (
+                    <Link to="/sUsers/sales/paymentSplitting">
+                      Receive Payment
+                    </Link>
+                  ) : (
+                    <p onClick={submitHandler}>
+                      {mode === "create"
+                        ? `Generate ${titleText}`
+                        : `Edit ${titleText}`}
+                    </p>
+                  )}
+                </button> */}
+
+                <VoucherSubmitButton
+                  title={title}
+                  mode={mode}
+                  submitHandler={submitHandler}
+                  loading={loading}
+                  titleText={titleText}
+                  enablePaymentSplittingAsCompulsory={enablePaymentSplittingAsCompulsory}
+                  openAdditionalTile={openAdditionalTile}
+                />
+              </div>
+              <div>
+                <button
+                  onClick={() => {
+                    dispatch(removeAll());
+                  }}
+                  className="text-red-500 text-xs p-1 px-3 border border-1 border-gray-300 rounded-2xl cursor-pointer"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-           )}
+        )}
       </div>
-           
 
       {/* Voucher Series Modal */}
       <VoucherSeriesModal

@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 
+
 export const sendOrganizationApprovalEmail = async (organization) => {
 
     console.log("Organization:", organization);

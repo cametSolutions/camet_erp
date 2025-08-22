@@ -171,8 +171,8 @@ export const editProduct = async (req, res) => {
     // Check for existing product by name and cmp_id
     const existingProductByName = await productModel.findOne({
       _id: { $ne: productId }, // Exclude the current product
-      product_name: { $regex: new RegExp(`^${product_name}$`, "i") },
       cmp_id,
+      product_name: { $regex: new RegExp(`^${product_name}$`, "i") },
     });
 
     // Check for existing product by code and cmp_id

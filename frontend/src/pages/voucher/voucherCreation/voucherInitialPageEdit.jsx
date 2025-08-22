@@ -26,12 +26,12 @@ import {
   addSelectedVoucherSeriesForEdit,
   addNote,
   addIsNoteOpen,
+  setPriceLevel,
 } from "../../../../slices/voucherSlices/commonVoucherSlice";
 import DespatchDetails from "./DespatchDetails";
 import HeaderTile from "./HeaderTile";
 import AddPartyTile from "./AddPartyTile";
 import AddItemTile from "./AddItemTile";
-// import PaymentSplittingIcon from "../../components/secUsers/main/paymentSplitting/PaymentSplittingIcon";
 import FooterButton from "./FooterButton";
 import TitleDiv from "../../../components/common/TitleDiv";
 import AdditionalChargesTile from "./AdditionalChargesTile";
@@ -171,7 +171,10 @@ function VoucherInitialPageEdit() {
       _id: voucherIdFromState,
       stockTransferToGodown: stockTransferToGodownFromState = {},
       note: noteFromState,
+      selectedPriceLevel: selectedPriceLevelFromState,
     } = location.state.data || {};
+
+    
 
     try {
       if (voucherIdFromState) {
@@ -296,6 +299,14 @@ function VoucherInitialPageEdit() {
       if (noteFromState && noteFromRedux === null) {
         dispatch(addNote(noteFromState));
       }
+
+
+      //// price level
+      if (selectedPriceLevelFromState && priceLevelFromRedux === "") {
+        dispatch(setPriceLevel(selectedPriceLevelFromState));
+      }
+
+
 
       // Configuration Number
       if (voucherSeriesFromRedux === null && voucherTypeFromRedux) {
@@ -561,13 +572,7 @@ function VoucherInitialPageEdit() {
             </div>
           </div>
 
-          {/* {items.length > 0 && totalAmount > 0 && (
-            <PaymentSplittingIcon
-              totalAmount={totalAmount}
-              party={party}
-              voucherType="sale"
-            />
-          )} */}
+        
 
           <FooterButton
             submitHandler={submitHandler}

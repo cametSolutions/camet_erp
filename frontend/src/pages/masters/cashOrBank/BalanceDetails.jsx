@@ -1,11 +1,12 @@
 import TitleDiv from "../../../components/common/TitleDiv";
 import SelectDate from "../../../components/Filters/SelectDate";
 import { useNavigate, useParams } from "react-router-dom";
-import useFetch from "../../../customHook/useFetch";
 import { useSelector } from "react-redux";
 import { useEffect, useState } from "react";
 import { MdAddLink } from "react-icons/md";
 import { RiEdit2Fill } from "react-icons/ri";
+import api from "@/api/api";
+import { useQuery } from "@tanstack/react-query";
 
 const BalanceDetails = () => {
   const [balanceDetails, setBalanceDetails] = useState([]);
@@ -41,9 +42,28 @@ const BalanceDetails = () => {
       colorScheme = "gray-900";
   }
 
-  const { data, loading } = useFetch(
-    `/api/sUsers/findSourceDetails/${cmp_id}?accountGroup=${accGroup}&startOfDayParam=${start}&endOfDayParam=${end}`
-  );
+  // const { data, loading } = useFetch(
+  //   `/api/sUsers/findSourceDetails/${cmp_id}?accountGroup=${accGroup}&startOfDayParam=${start}&endOfDayParam=${end}`
+  // );
+
+  const findSourceDetails = async (cmp_id) => {
+    const response = await api.get(
+      `/api/sUsers/findSourceDetails/${cmp_id}?accountGroup=${accGroup}&startOfDayParam=${start}&endOfDayParam=${end}`,
+      {
+        withCredentials: true,
+      }
+    );
+
+    return response.data;
+  };
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["sourceDetails", cmp_id, accGroup, start, end],
+    queryFn: () => findSourceDetails(cmp_id),
+    enabled: !!cmp_id, // Only run query if cmp_id exists
+    staleTime: 30 * 1000, // 30 seconds
+    refetchOnWindowFocus: false,
+  });
 
   useEffect(() => {
     if (data?.data) {
@@ -64,7 +84,7 @@ const BalanceDetails = () => {
   return (
     <>
       <div className="flex flex-col sticky top-0 z-50">
-        <TitleDiv title={title} loading={loading} />
+        <TitleDiv title={title} loading={isLoading} />
 
         <section className="shadow-lg border-b ">
           <SelectDate />
@@ -74,7 +94,7 @@ const BalanceDetails = () => {
         <div
           style={{ backgroundColor: colorScheme }}
           className={`  ${
-            loading && "animate-pulse pointer-events-none opacity-80"
+            isLoading && "animate-pulse pointer-events-none opacity-80"
           }   flex flex-col   pb-11 shadow-xl justify-center`}
         >
           <div className=" w-full flex justify-end pr-3  text-white mt-4 gap-1 font-bold cursor-pointer  ">
@@ -119,7 +139,11 @@ const BalanceDetails = () => {
                     <aside>
                       <span
                         onClick={() => {
-                          navigate(`/sUsers/edit${label.replace(/\s+/g, '')}/${item._id}`);
+                          navigate(
+                            `/sUsers/edit${label.replace(/\s+/g, "")}/${
+                              item._id
+                            }`
+                          );
                         }}
                         className="text-gray-700 hover:scale-110  "
                       >
@@ -150,7 +174,7 @@ const BalanceDetails = () => {
           </div>
         </div>
 
-        {!loading && balanceDetails.length === 0 && (
+        {!isLoading && balanceDetails.length === 0 && (
           <div className="flex justify-center items-center ">
             <h1 className="text-sm font-bold text-gray-600">No Data Found</h1>
           </div>

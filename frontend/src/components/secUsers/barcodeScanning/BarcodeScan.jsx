@@ -20,6 +20,7 @@ const BarcodeScan = ({ handleBarcodeScanProducts }) => {
   const [showScanner, setShowScanner] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const scannerRef = useRef(null);
+  const inputRef = useRef(null);
 
   // Get company ID from Redux or context
   const cmp_id = useSelector(
@@ -46,6 +47,11 @@ const BarcodeScan = ({ handleBarcodeScanProducts }) => {
     checkMobile();
   }, []);
 
+  useEffect(() => {
+    // Focus the input when component mounts
+    inputRef.current?.focus();
+  }, []);
+
   // Debounced search for manual typing only
   const handleManualSearch = useCallback(
     debounce(async (term) => {
@@ -59,7 +65,10 @@ const BarcodeScan = ({ handleBarcodeScanProducts }) => {
 
       try {
         // Create the search params
-        const params = new URLSearchParams({ search: term,voucherType:voucherTypeFromRedux }).toString();
+        const params = new URLSearchParams({
+          search: term,
+          voucherType: voucherTypeFromRedux,
+        }).toString();
 
         // Call the API with search parameter
         const res = await api.get(
@@ -102,7 +111,10 @@ const BarcodeScan = ({ handleBarcodeScanProducts }) => {
 
     try {
       // Create the search params with the barcode
-      const params = new URLSearchParams({ search: barcode,voucherType:voucherTypeFromRedux }).toString();
+      const params = new URLSearchParams({
+        search: barcode,
+        voucherType: voucherTypeFromRedux,
+      }).toString();
 
       // Call the API with search parameter
       const res = await api.get(`/api/sUsers/getProducts/${cmp_id}?${params}`, {
@@ -261,6 +273,7 @@ const BarcodeScan = ({ handleBarcodeScanProducts }) => {
             type="text"
             value={searchTerm}
             onChange={handleInputChange}
+            ref={inputRef}
             className="no-focus-box outline-none border-none w-full pr-8"
             placeholder="Scan barcode or type product name or code..."
           />
