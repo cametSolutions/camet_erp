@@ -119,7 +119,6 @@ function PaymentSplitting() {
       const { banks = [], cashs = [] } = sourcesData;
       const partyId = party._id;
 
-      console.log("Auto-selecting payment sources for party:", partyId);
       const isPartySelected = paymentSplittingData?.find(
         (item) => item.type === "credit"
       ).ref_id;
@@ -162,6 +161,7 @@ function PaymentSplitting() {
                   ...split,
                   ref_id: partyId,
                   reference_name: party.partyName || "",
+                  credit_reference_type:party?.partyType
                 };
               }
               break;
