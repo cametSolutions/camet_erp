@@ -45,6 +45,7 @@ function BookingPage() {
             {
              title: "New Guest",
               to: "/sUsers/addParty",
+              from:"/sUsers/bookingPage"
             },
             {
               title: "Booking List",

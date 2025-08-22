@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { FaUtensils, FaCircle } from "react-icons/fa";
+import { useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import dining from "../../../assets/images/dining.png";
 import api from "@/api/api";
@@ -22,7 +24,11 @@ const TableTiles = ({ onTableSelect,showKOTs = true  }) => {
   const [selectedTable, setSelectedTable] = useState(null);
 const [tableKOTs, setTableKOTs] = useState([]);
 const [kotLoading, setKotLoading] = useState(false);
+const navigate = useNavigate();
+const location = useLocation();
+const [showKotNotification, setShowKotNotification] = useState(location.state?.fromTable);
 
+const selectedKot = location.state?.selectedKot;
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   ); // Replace with your actual ID or prop
@@ -49,7 +55,11 @@ const [kotLoading, setKotLoading] = useState(false);
 
 
 
-  
+  const handleKotClick = (kot) => {
+  // redirect with kot id and/or give data as state
+  navigate(`/sUsers/KotPage?tab=completed`, { state: { selectedKot: kot, fromTable: true } });
+
+};
   const getStatusColor = (status) => {
     switch (status) {
       case "available":
@@ -220,6 +230,10 @@ console.log(tables)
           return (
             <div
               key={kot._id}
+                onClick={() =>{ if (showKotNotification && kot._id === selectedKot._id) {
+      setShowKotNotification(false);
+                }
+                   handleKotClick(kot)}}
               className="group relative bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100 overflow-hidden h-96 flex flex-col"
             >
               {/* Status indicator bar */}

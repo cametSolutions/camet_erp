@@ -60,8 +60,8 @@ import { createVoucherSeries, getSeriesByVoucher, deleteVoucherSeriesById, editV
 import {saveAdditionalPax , getAdditionalPax ,updateAdditionalPax , deleteAdditionalPax,saveVisitOfPurpose,getVisitOfPurpose,
     updateVisitOfPurpose,deleteVisitOfPurpose,saveIdProof,getIdProof,updateIdProof , deleteIdProof, saveFoodPlan , getFoodPlan
     ,updateFoodPlan,deleteFoodPlan,addRoom,getRooms,editRoom ,deleteRoom,getAllRooms,roomBooking,getBookings,deleteBooking,updateBooking,
-fetchAdvanceDetails,getAllRoomsWithStatusForDate,updateRoomStatus} from '../controllers/hotelController.js'
-import {addItem,getAllItems,getItems,getCategories,deleteItem,updateItem,generateKot,getKot,updateKotStatus,
+fetchAdvanceDetails,getAllRoomsWithStatusForDate,updateRoomStatus,getDateBasedRoomsWithStatus} from '../controllers/hotelController.js'
+import {addItem,getAllItems,getItems,getCategories,deleteItem,updateItem,generateKot,getKot,updateKotStatus,editKot,
     getRoomDataForRestaurant,updateKotPayment,getPaymentType,saveTableNumber,getSalePrintData,updateTable,getTables,deleteTable,updateTableStatus,getKotDataByTable } from '../controllers/restaurantController.js'
 
 
@@ -338,6 +338,7 @@ router.delete('/deleteBooking/:id',authSecondary,secondaryIsBlocked,deleteBookin
 router.put('/updateRoomBooking/:id',authSecondary,secondaryIsBlocked,updateBooking)
 router.get('/getBookingAdvanceData/:id',authSecondary,secondaryIsBlocked,fetchAdvanceDetails)
 router.post('/generateKOT/:cmp_id',authSecondary,secondaryIsBlocked,generateKot)
+router.post('/editKOT/:cmp_id/:kotId',authSecondary,secondaryIsBlocked,editKot)
 
 router.post('/editItem/:cmp_id/:id',authSecondary,updateItem)
 router.get('/getItems/:cmp_id',authSecondary,getItems)
@@ -345,20 +346,21 @@ router.delete('/deleteItem/:id',authSecondary,deleteItem)
 router.get('/getKotData/:cmp_id',authSecondary,secondaryIsBlocked,getKot)
 router.put('/updateKotStatus/:cmp_id',authSecondary,secondaryIsBlocked,updateKotStatus)
 router.get('/getRoomBasedOnBooking/:cmp_id',authSecondary,secondaryIsBlocked,getRoomDataForRestaurant)
-router.put("/updateKotPayment/:cmp_id/:id",authSecondary,secondaryIsBlocked,updateKotPayment)
+router.put("/updateKotPayment/:cmp_id",authSecondary,secondaryIsBlocked,updateKotPayment)
 router.get('/getAllRoomsWithStatus/:cmp_id',authSecondary,getAllRoomsWithStatusForDate)
-router.post("/updateStatus/:id", authSecondary,updateRoomStatus);
+router.put("/updateStatus/:id", authSecondary, updateRoomStatus);
 router.get("/getPaymentType/:cmp_id",authSecondary,secondaryIsBlocked, getPaymentType)
 router.get("/getSeriesByVoucherForSaleAndReceipt/:cmp_id",authSecondary,secondaryIsBlocked)
 router.post("/Table/:cmp_id",authSecondary, saveTableNumber)
-// router.put('/updateTable/:id', authSecondary,updateTable);
+router.put('/updateTable/:id', authSecondary,updateTable);
 router.get('/getTable/:cmp_id',authSecondary, getTables);
-// DELETE /api/sUsers/Table/:id - Delete a specific table
-// router.delete('/deleteTable/:id', authSecondary,deleteTable);
+
+router.delete('/deleteTable/:id', authSecondary,deleteTable);
 
 router.get("/getSalePrintData/:cmp_id/:kotId",authSecondary,secondaryIsBlocked,getSalePrintData)
 router.put('/updateTableStatus/:cmp_id',authSecondary,updateTableStatus )
 router.get('/getKotDataByTable/:cmp_id',authSecondary,getKotDataByTable )
+router.get('/getDateBasedRoomsWithStatus/:cmp_id',authSecondary,getDateBasedRoomsWithStatus)
 // Route to get detailed booking information for a specific room and date
 
 export default router

@@ -1,6 +1,6 @@
 // helpers/productHelpers.js
-import mongoose from 'mongoose';
-import productModel from '../models/productModel.js';
+import mongoose from "mongoose";
+import productModel from "../models/productModel.js";
 
 /**
  * Validates and normalizes godown IDs
@@ -26,8 +26,13 @@ export const validateAndNormalizeGodowns = (godowns) => {
   return godownArray
     .map((id) => (typeof id === "string" ? id.trim() : id))
     .filter((id) => {
-      return id && id !== "" && id !== null && id !== undefined && 
-             mongoose.Types.ObjectId.isValid(id);
+      return (
+        id &&
+        id !== "" &&
+        id !== null &&
+        id !== undefined &&
+        mongoose.Types.ObjectId.isValid(id)
+      );
     });
 };
 
@@ -37,7 +42,7 @@ export const validateAndNormalizeGodowns = (godowns) => {
  * @returns {string} Godown ID
  */
 export const extractGodownId = (godownItem) => {
-    /// since it is  possible that godownItem.godown is not populated
+  /// since it is  possible that godownItem.godown is not populated
   return godownItem.godown?._id || godownItem.godown;
 };
 
@@ -48,25 +53,29 @@ export const extractGodownId = (godownItem) => {
  * @param {string} excludedId - ID to exclude (optional)
  * @returns {Array} Filtered godown list
  */
-export const filterGodownsByIds = (godownList, allowedIds = [], excludedId = null) => {
+export const filterGodownsByIds = (
+  godownList,
+  allowedIds = [],
+  excludedId = null
+) => {
   if (!godownList || godownList.length === 0) return [];
 
   return godownList.filter((godownItem) => {
     const godownId = extractGodownId(godownItem);
-  if (!godownId && allowedIds.length > 0) {
+    if (!godownId && allowedIds.length > 0) {
       return false;
     }
-    
+
     // Exclude specific godown if provided
     if (excludedId && godownId.toString() === excludedId.toString()) {
       return false;
     }
-    
+
     // Include only allowed godowns if specified
     if (allowedIds.length > 0) {
-      return allowedIds.some(id => id.toString() === godownId.toString());
+      return allowedIds.some((id) => id.toString() === godownId.toString());
     }
-    
+
     return true;
   });
 };
@@ -78,9 +87,11 @@ export const filterGodownsByIds = (godownList, allowedIds = [], excludedId = nul
  */
 export const filterPrimaryBatchWithZeroBalance = (godownList) => {
   if (!godownList || godownList.length <= 1) return godownList;
-  
+
   return godownList.filter((godownItem) => {
-    return !(godownItem.batch === "Primary Batch" && godownItem.balance_stock === 0);
+    return !(
+      godownItem.batch === "Primary Batch" && godownItem.balance_stock === 0
+    );
   });
 };
 
@@ -112,7 +123,7 @@ export const flattenGodownList = (godownList) => {
  */
 export const flattenPriceLevels = (priceLevels) => {
   if (!priceLevels || priceLevels.length === 0) return priceLevels;
-  
+
   return priceLevels.map((priceLevel) => {
     if (!priceLevel.pricelevel) return priceLevel;
 
@@ -135,14 +146,13 @@ export const extractRequestParams = (req) => {
 
   /// in configuration sales is saved as sale,by mistake,so we need to convert it
   /// to sale if it is sales
-   const voucherType = req.query.voucherType ==="sales" ? "sale" : req.query.voucherType || "all" ;
+  const voucherType =
+    req.query.voucherType === "sales" ? "sale" : req.query.voucherType || "all";
 
   /// in configuration sales is saved as sale,by mistake,so we need to convert it
   /// to sale if it is sales
-   const type = req.query.type 
-   const under = req.query.under
-
-   
+  const type = req.query.type;
+  const under = req.query.under;
 
   return {
     Secondary_user_id: req.sUserId,
@@ -157,7 +167,9 @@ export const extractRequestParams = (req) => {
     skip: limit > 0 ? (page - 1) * limit : 0,
     voucherType,
     type,
-    under
+    under,
+    arrivalDate: req.query?.arrivalDate,
+    checkOutDate: req.query?.checkOutDate,
   };
 };
 
@@ -190,7 +202,7 @@ export const buildDatabaseFilter = (params) => {
  * @returns {Array} Array of selected godown IDs
  */
 export const getSelectedGodowns = (configuration, isVanSale) => {
-    /// if it is van sale, use selectedVanSaleGodowns, otherwise use selectedGodowns
+  /// if it is van sale, use selectedVanSaleGodowns, otherwise use selectedGodowns
   if (isVanSale && configuration?.selectedVanSaleGodowns) {
     return validateAndNormalizeGodowns(configuration.selectedVanSaleGodowns);
   } else if (!isVanSale && configuration?.selectedGodowns) {
@@ -206,33 +218,35 @@ export const getSelectedGodowns = (configuration, isVanSale) => {
  * @returns {Object|null} Transformed product object or null if should be filtered out
  */
 export const transformSingleProduct = (product, options) => {
+  const {
+    selectedGodowns = [],
+    excludeGodownId,
+    isSaleOrder = false,
+    isTaxInclusive = false,
+  } = options;
 
-  
-  const { selectedGodowns = [], excludeGodownId, isSaleOrder = false, isTaxInclusive=false } = options;
-  
   const productObject = product.toObject();
-  
+
   // Set business flags
   const batchEnabled = productObject.batchEnabled === true;
   const gdnEnabled = productObject.gdnEnabled === true;
-  
+
   // Set hasGodownOrBatch flag based on context
   // it is true if it is not sale order and either batch or godown is enabled
   // otherwise it is false
-  productObject.hasGodownOrBatch = isSaleOrder ? false : (batchEnabled || gdnEnabled);
+  productObject.hasGodownOrBatch = isSaleOrder
+    ? false
+    : batchEnabled || gdnEnabled;
   productObject.isTaxInclusive = isTaxInclusive;
 
   // Process GodownList if it exists
   if (productObject.GodownList && productObject.GodownList.length > 0) {
     // Apply godown filtering
     let filteredGodownList = filterGodownsByIds(
-      productObject.GodownList, 
-      selectedGodowns, 
+      productObject.GodownList,
+      selectedGodowns,
       excludeGodownId
     );
-
-
-    
 
     // If no godowns remain after filtering, mark product for removal
     if (filteredGodownList.length === 0) {
@@ -241,7 +255,7 @@ export const transformSingleProduct = (product, options) => {
 
     // Apply business rule: filter Primary Batch with zero balance
     filteredGodownList = filterPrimaryBatchWithZeroBalance(filteredGodownList);
-    
+
     // Flatten the godown structure
     productObject.GodownList = flattenGodownList(filteredGodownList);
   }
@@ -259,14 +273,13 @@ export const transformSingleProduct = (product, options) => {
  * @returns {Array} Array of transformed products
  */
 export const transformProducts = (products, options) => {
-
-    /// here we exclude specific godown if it is provided
-    /// here we return only specific godowns if they are provided (selectedGodowns)
-    /// here we add hasGodownOrBatch flag to each product
-    /// here we add isTaxInclusive flag to each product
+  /// here we exclude specific godown if it is provided
+  /// here we return only specific godowns if they are provided (selectedGodowns)
+  /// here we add hasGodownOrBatch flag to each product
+  /// here we add isTaxInclusive flag to each product
   return products
-    .map(product => transformSingleProduct(product, options))
-    .filter(product => product && product.GodownList?.length > 0 );
+    .map((product) => transformSingleProduct(product, options))
+    .filter((product) => product && product.GodownList?.length > 0);
 };
 
 /**
@@ -277,7 +290,6 @@ export const transformProducts = (products, options) => {
 export const validateExcludeGodownId = (excludeGodownId) => {
   return excludeGodownId && mongoose.Types.ObjectId.isValid(excludeGodownId);
 };
-
 
 /**
  * Fetches products from database with pagination and population
@@ -320,7 +332,12 @@ export const fetchProductsFromDatabase = async (filter, params) => {
  * @param {Object} params - Request parameters
  * @returns {Object} Express response
  */
-export const sendProductResponse = (res, transformedProducts, totalProducts, params) => {
+export const sendProductResponse = (
+  res,
+  transformedProducts,
+  totalProducts,
+  params
+) => {
   if (transformedProducts && transformedProducts.length > 0) {
     return res.status(200).json({
       productData: transformedProducts,
@@ -333,8 +350,8 @@ export const sendProductResponse = (res, transformedProducts, totalProducts, par
       message: "Products fetched successfully",
     });
   } else {
-    return res.status(404).json({ 
-      message: "No products were found matching the criteria" 
+    return res.status(404).json({
+      message: "No products were found matching the criteria",
     });
   }
 };

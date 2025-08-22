@@ -181,6 +181,9 @@ const ItemList = lazy(() => import('@/pages/Restuarant/Pages/ItemList'))
 const EditItem = lazy(() => import('@/pages/Restuarant/Pages/EditItem'))
 const ItemRegistration = lazy(() => import('@/pages/Restuarant/Pages/ItemRegistration'))
 const TableMaster = lazy(() => import('@/pages/Restuarant/Masters/TableMaster'))
+const TableSelection  = lazy(() => import('@/pages/Restuarant/Pages/TableSelection'))
+const CheckOutPrint   = lazy(() => import('@/pages/Hotel/Pages/CheckOutPrint'))
+
 const Routers = () => {
   return (
     <Suspense fallback={<SuspenseLoader />}>
@@ -467,9 +470,12 @@ const Routers = () => {
         <Route path='/sUsers/itemList'  element={<ProtectedSecRoute><ItemList /></ProtectedSecRoute>} />
         <Route path='/sUsers/KotPage' element={<ProtectedSecRoute><KotPage/></ProtectedSecRoute>}/>
         <Route path='/sUsers/editItem' element={<ProtectedSecRoute><EditItem /></ProtectedSecRoute>} />
-        <Route path='/sUsers/itemRegistration' element ={<ProtectedSecRoute><ItemRegistration /></ProtectedSecRoute>} />
-        <Route path='/sUsers/TableMaster' element={<ProtectedSecRoute><TableMaster /></ProtectedSecRoute>} />
-{/* <Route path='/sUsers/TableSelection' element={<ProtectedSecRoute><TableSelection/></ProtectedSecRoute>}/> */}
+
+<Route path='/sUsers/itemRegistration' element ={<ProtectedSecRoute><ItemRegistration /></ProtectedSecRoute>} />
+<Route path='/sUsers/TableMaster' element={<ProtectedSecRoute><TableMaster /></ProtectedSecRoute>} />
+<Route path='/sUsers/TableSelection' element={<ProtectedSecRoute><TableSelection/></ProtectedSecRoute>}/>
+<Route path='/sUsers/CheckOutPrint' element={<ProtectedSecRoute><CheckOutPrint /></ProtectedSecRoute>} />
+
     </Routes>
     </Suspense>
   )

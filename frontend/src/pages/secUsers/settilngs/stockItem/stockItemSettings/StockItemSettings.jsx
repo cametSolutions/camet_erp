@@ -15,6 +15,7 @@ const StockItemSettings = () => {
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
   const settingsOptions = [
+
     {
       title:
         industry === 6 || industry === 7 ? "Room Type" : "Brand Management",

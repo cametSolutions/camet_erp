@@ -8,6 +8,7 @@ import CustomBarLoader from "@/components/common/CustomBarLoader";
 
 const TableMaster = () => {
   const [tableNumber, setTableNumber] = useState("");
+  const [description,setDescription]=useState("");
   const [loading, setLoading] = useState(false);
   const [tables, setTables] = useState([]);
   const [edit, setEdit] = useState({ enabled: false, id: null });
@@ -38,7 +39,7 @@ const TableMaster = () => {
     }
   };
 
-  const handleSubmit = async (value) => {
+  const handleSubmit = async (value,desc) => {
     if (!value || !value.trim()) {
       toast.error("Please enter a table number");
       return;
@@ -48,12 +49,14 @@ const TableMaster = () => {
     try {
       await api.post(
         `/api/sUsers/Table/${cmp_id}`,
-        { tableNumber: value },
+        { tableNumber: value ,description: desc  },
+        
         { withCredentials: true }
       );
 
       toast.success("Table Added Successfully");
       setTableNumber("");
+      setDescription('');
       fetchTables(); // Refresh the list
     } catch (error) {
       console.error("Failed to add table:", error);
@@ -63,12 +66,13 @@ const TableMaster = () => {
     }
   };
 
-  const handleEdit = (id, currentTableNumber) => {
+  const handleEdit = (id, currentTableNumber,currentdesc) => {
     setEdit({ enabled: true, id });
     setTableNumber(currentTableNumber);
+    setDescription(currentdesc);
   };
 
-  const editSubDetails = async (id, value) => {
+  const editSubDetails = async (id, value,desc) => {
     if (!value || !value.trim()) {
       toast.error("Please enter a table number");
       return;
@@ -78,12 +82,14 @@ const TableMaster = () => {
     try {
       await api.put(
         `/api/sUsers/updateTable/${id}`,
-        { tableNumber: value },
+        { tableNumber: value ,description: desc  },
+      
         { withCredentials: true }
       );
 
       toast.success("Table Updated Successfully");
       setTableNumber("");
+      setDescription('');
       setEdit({ enabled: false, id: null });
       fetchTables(); // Refresh the list
     } catch (error) {
@@ -130,9 +136,9 @@ console.log(tables)
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   if (edit?.enabled) {
-                    editSubDetails(edit.id, tableNumber);
+                    editSubDetails(edit.id, tableNumber,description);
                   } else {
-                    handleSubmit(tableNumber);
+                    handleSubmit(tableNumber,description);
                   }
                 }
               }}
@@ -141,12 +147,27 @@ console.log(tables)
               value={tableNumber}
               onChange={(e) => setTableNumber(e.target.value)}
             />
-
+ <input
+              type="text"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  if (edit?.enabled) {
+                    editSubDetails(edit.id, description);
+                  } else {
+                    handleSubmit(description);
+                  }
+                }
+              }}
+              placeholder="Enter your Description"
+              className="w-4/6 sm:w-2/6 p-1 text-black border border-gray-300 rounded-full mt-3 text-center"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
             <button
               onClick={
                 edit?.enabled
-                  ? () => editSubDetails(edit.id, tableNumber)
-                  : () => handleSubmit(tableNumber)
+                  ? () => editSubDetails(edit.id,tableNumber, description)
+                  : () => handleSubmit(tableNumber,description)
               }
               className="bg-gray-800 text-white px-6 py-1 rounded-full mt-3 text-sm font-bold"
             >
@@ -172,7 +193,7 @@ console.log(tables)
                     <div className="flex items-end gap-12 text-xs w-1/3 justify-end">
                       <div className="cursor-pointer text-center flex justify-center">
                         <p
-                          onClick={() => handleEdit(el._id, el.tableNumber)}
+                          onClick={() => handleEdit(el._id, el.tableNumber,el.description)}
                           className="text-blue-500"
                         >
                           <FaEdit size={15} />
