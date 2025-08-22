@@ -40,6 +40,7 @@ function PaymentSplitting() {
     },
   ]);
   const [submitLoading, setSubmitLoading] = useState(false);
+  const [hasAutoSelected, setHasAutoSelected] = useState(false); // Track if auto-selection has occurred
 
   // Payment mode display information
   const paymentModeInfo = {
@@ -67,12 +68,10 @@ function PaymentSplitting() {
   const {
     totalWithAdditionalCharges: totalWithAdditionalCharges,
     paymentSplittingData,
-
     date,
     party,
     items,
     despatchDetails,
-    // heights: batchHeights,
     voucherType,
     selectedPriceLevel: priceLevelFromRedux = "",
     voucherType: voucherTypeFromRedux,
@@ -108,6 +107,76 @@ function PaymentSplitting() {
       setPaymentSplits(paymentSplittingData);
     }
   }, [paymentSplittingData]);
+
+  // Auto-select sources based on party._id when data is available
+  useEffect(() => {
+    console.log("Checking for auto-selection of payment sources...");
+    console.log(sourcesData, party, hasAutoSelected, paymentSplittingData);
+
+    if (
+      sourcesData &&
+      party?._id &&
+      !hasAutoSelected
+      // !paymentSplittingData
+    ) {
+      const { banks = [], cashs = [] } = sourcesData;
+      const partyId = party._id;
+
+      console.log("Auto-selecting payment sources for party:", partyId);
+
+      setPaymentSplits((prevSplits) => {
+        return prevSplits.map((split) => {
+          let matchingSource = null;
+
+          switch (split.type) {
+            case "cash":
+              matchingSource = cashs.find(
+                (cash) => (cash.cash_id || cash._id) === partyId
+              );
+              if (matchingSource) {
+                return {
+                  ...split,
+                  ref_id: matchingSource.cash_id || matchingSource._id,
+                };
+              }
+              break;
+
+            case "upi":
+            case "cheque":
+              matchingSource = banks.find(
+                (bank) => (bank.bank_id || bank._id) === partyId
+              );
+              if (matchingSource) {
+                return {
+                  ...split,
+                  ref_id: matchingSource.bank_id || matchingSource._id,
+                };
+              }
+              break;
+
+            case "credit":
+              // For credit, we check if party._id should be used
+              // You might want to add additional logic here based on your requirements
+              if (partyId) {
+                return {
+                  ...split,
+                  ref_id: partyId,
+                  reference_name: party.partyName || "",
+                };
+              }
+              break;
+
+            default:
+              break;
+          }
+
+          return split;
+        });
+      });
+
+      setHasAutoSelected(true);
+    }
+  }, [sourcesData, party, hasAutoSelected, paymentSplittingData]);
 
   // Calculate total amount from payment splits
   const totalAmount = paymentSplits.reduce((sum, split) => {
@@ -212,7 +281,9 @@ function PaymentSplitting() {
           ...split,
           amount: "",
           ref_id: "",
-          ...(split.type === "credit" ? { reference_name: "" , credit_reference_type: ""} : {}),
+          ...(split.type === "credit"
+            ? { reference_name: "", credit_reference_type: "" }
+            : {}),
         };
       }
 
@@ -234,6 +305,7 @@ function PaymentSplitting() {
 
     navigate("/sUsers/sales", { replace: true });
   };
+
   const handleSavePaymentSplitAndSubmit = () => {
     const validSplits = getValidPaymentSplits();
     const data = {
@@ -401,7 +473,11 @@ function PaymentSplitting() {
 
   return (
     <div className="min-h-screen bg-gray-50 w-full">
-      <TitleDiv title="Payment Splitting" loading={isLoading} customNavigate={customNavigate} />
+      <TitleDiv
+        title="Payment Splitting"
+        loading={isLoading}
+        customNavigate={customNavigate}
+      />
       <div className={`${isLoading && "opacity-75 animate-pulse"}`}></div>
       <div className="">
         {/* Main Card */}
@@ -445,15 +521,16 @@ function PaymentSplitting() {
                     {split.type === "credit" ? (
                       paymentSplittingData?.find(
                         (item) => item?.type == "credit"
-                      )?.ref_id !== null ? (
+                      )?.ref_id !== null || split.ref_id ? (
                         <span
                           onClick={handleNavigateToPartyList}
                           className="text-sm font-medium w-full p-2 border rounded-md border-gray-300 cursor-pointer"
                         >
                           {truncateText(
-                            paymentSplittingData.find(
-                              (item) => item?.type == "credit"
-                            )?.reference_name,
+                            split.reference_name ||
+                              paymentSplittingData?.find(
+                                (item) => item?.type == "credit"
+                              )?.reference_name,
                             20
                           )}
                         </span>
