@@ -534,7 +534,7 @@ useEffect(() => {
                             onChange={(e) =>
                               handlePriceLevelChange(e, booking.roomId)
                             }
-                            className="w-full px-1 py-1 border border-red-300 rounded text-red-600 bg-red-50 text-xs focus:outline-none focus:ring-1 focus:ring-red-500"
+                            className="w-full px-1 py-1 border  border-red-300 rounded text-red-600 bg-red-50 text-xs focus:outline-none focus:ring-1 focus:ring-red-500"
                           >
                             {booking.priceLevel.map((priceLevel) => (
                               <option

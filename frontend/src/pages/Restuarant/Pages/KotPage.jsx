@@ -248,7 +248,7 @@ const OrdersDashboard = () => {
   };
 
   const handleStatusChange = async (orderId, newStatus) => {
-    setLoader(true);
+    setSaveLoader(true);
 
     try {
       const response = await api.put(
@@ -274,7 +274,7 @@ const OrdersDashboard = () => {
         error.response?.data || error.message
       );
     } finally {
-      setLoader(false);
+      setSaveLoader(false);
     }
   };
 
@@ -340,7 +340,7 @@ const OrdersDashboard = () => {
   const filteredOrders = getFilteredOrders();
 
   const handleSavePayment = async (id) => {
-    setLoader(true);
+    setSaveLoader(true);
     let paymentDetails;
     if (paymentMode == "single") {
       if (paymentMethod == "cash") {
@@ -406,20 +406,18 @@ const OrdersDashboard = () => {
       } else {
         console.error("Failed to update backend:", response.data || response);
       }
-      setLoader(false);
     } catch (error) {
       console.error(
         "Error updating order status:",
         error.response?.data || error.message
       );
+    } finally {
+      setSaveLoader(false);
+      setCashAmount(0);
+      setOnlineAmount(0);
+      refreshHook();
+      setShowPaymentModal(false);
     }
-    setCashAmount(0);
-    setOnlineAmount(0);
-    refreshHook();
-
-    // handlePrintData(id);
-    // Add your logic to save the payment details here
-    setShowPaymentModal(false);
   };
 
   const handlePrintData = async (kotId) => {
@@ -1490,10 +1488,24 @@ const OrdersDashboard = () => {
                       onClick={() => {
                         handleSavePayment(selectedDataForPayment?._id);
                       }}
-                      className="flex-1 group px-3 py-1.5 bg-white text-emerald-700 border border-emerald-200 rounded-lg text-xs font-semibold hover:bg-emerald-50 hover:border-emerald-300 transition-all duration-200 hover:scale-105 flex items-center justify-center gap-1"
+                      disabled={saveLoader}
+                      className={`flex-1 group px-3 py-1.5 border rounded-lg text-xs font-semibold transition-all duration-200 flex items-center justify-center gap-1 ${
+                        saveLoader
+                          ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                          : "bg-white text-emerald-700 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 hover:scale-105"
+                      }`}
                     >
-                      <MdVisibility className="w-3 h-3 group-hover:rotate-12 transition-transform duration-200" />
-                      Process Payment
+                      {saveLoader ? (
+                        <>
+                          <div className="w-3 h-3 border border-emerald-300 border-t-transparent rounded-full animate-spin"></div>
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <MdVisibility className="w-3 h-3 group-hover:rotate-12 transition-transform duration-200" />
+                          Process Payment
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>
