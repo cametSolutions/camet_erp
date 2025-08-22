@@ -43,11 +43,11 @@ const BalancePage = () => {
         return [
           {
             ...prev[0],
-            amount: sourceData?.cashSettlementTotal,
+            amount: sourceData?.cashCurrentBalance,
           },
           {
             ...prev[1],
-            amount: sourceData?.bankSettlementTotal,
+            amount: sourceData?.bankCurrentBalance,
           },
           // {
           //   ...prev[2],

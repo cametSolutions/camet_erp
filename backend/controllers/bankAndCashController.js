@@ -6,6 +6,7 @@ import BankOdModel from "../models/bankOdModel.js";
 import { startOfDay, endOfDay, parseISO } from "date-fns";
 import partyModel from "../models/partyModel.js";
 import accountGroup from "../models/accountGroup.js";
+import settlementModel from "../models/settlementModel.js";
 
 // @desc find source balances
 // route get/api/sUsers/findSourceBalance
@@ -14,85 +15,78 @@ export const findSourceBalance = async (req, res) => {
   const cmp_id = new mongoose.Types.ObjectId(req.params.cmp_id);
   const { startOfDayParam, endOfDayParam } = req.query;
 
-  // Initialize dateFilter for settlements.created_at
+  // Initialize dateFilter for settlement_date
   let dateFilter = {};
   if (startOfDayParam && endOfDayParam) {
     const startDate = parseISO(startOfDayParam);
     const endDate = parseISO(endOfDayParam);
     dateFilter = {
-      "settlements.created_at": {
+      settlement_date: {
         $gte: startOfDay(startDate),
         $lte: endOfDay(endDate),
       },
     };
   }
-  // else if (todayOnly === "true") {
-  //   dateFilter = {
-  //     "settlements.created_at": {
-  //       $gte: startOfDay(new Date()),
-  //       $lte: endOfDay(new Date()),
-  //     },
-  //   };
-  // }
+
   try {
-    const bankTotal = await bankModel.aggregate([
+    const sourceBalances = await settlementModel.aggregate([
       {
         $match: {
           cmp_id: cmp_id,
-          settlements: { $exists: true, $ne: [] },
+          ...dateFilter,
         },
       },
       {
-        $unwind: "$settlements",
+        $lookup: {
+          from: "parties", // Collection name for partyModel
+          localField: "sourceId",
+          foreignField: "_id",
+          as: "sourceAccount",
+        },
       },
       {
-        $match: dateFilter,
+        $unwind: "$sourceAccount",
       },
       {
         $group: {
-          _id: null,
-          totalAmount: { $sum: "$settlements.amount" },
+          _id: "$sourceType", // Group by sourceType (cash, bank)
+          settlementTotal: { $sum: "$amount" },
+          openingTotal: { $sum: "$sourceAccount.openingBalanceAmount" },
         },
       },
     ]);
 
-    // Aggregation pipeline for cash collection
-    const cashTotal = await cashModel.aggregate([
-      {
-        $match: {
-          settlements: { $exists: true, $ne: [] },
-          cmp_id: cmp_id,
-        },
-      },
-      {
-        $unwind: "$settlements",
-      },
 
-      {
-        $match: dateFilter,
-      },
-      {
-        $group: {
-          _id: null,
-          totalAmount: { $sum: "$settlements.amount" },
-        },
-      },
-    ]);
+    // Extract totals for each source type
+    let bankSettlementTotal = 0;
+    let cashSettlementTotal = 0;
+    let bankOpeningTotal = 0;
+    let cashOpeningTotal = 0;
 
-    // console.log("cashTotal", cashTotal);
+    sourceBalances.forEach((balance) => {
+      if (balance._id === "bank") {
+        bankSettlementTotal = balance.settlementTotal;
+        bankOpeningTotal = balance.openingTotal;
+      } else if (balance._id === "cash") {
+        cashSettlementTotal = balance.settlementTotal;
+        cashOpeningTotal = balance.openingTotal;
+      }
+    });
 
-    // Extract totals or set to 0 if no settlements found
-    const bankSettlementTotal =
-      bankTotal.length > 0 ? bankTotal[0].totalAmount : 0;
-    const cashSettlementTotal =
-      cashTotal.length > 0 ? cashTotal[0].totalAmount : 0;
-    const grandTotal = bankSettlementTotal + cashSettlementTotal;
+    // Calculate current balances (opening + settlements)
+    const bankCurrentBalance = bankOpeningTotal + bankSettlementTotal;
+    const cashCurrentBalance = cashOpeningTotal + cashSettlementTotal;
+    const grandTotal = bankCurrentBalance + cashCurrentBalance;
 
     return res.status(200).json({
       message: "Balance found successfully",
       success: true,
-      bankSettlementTotal,
+      cashOpeningTotal,
       cashSettlementTotal,
+      cashCurrentBalance,
+      bankOpeningTotal,
+      bankSettlementTotal,
+      bankCurrentBalance,
       grandTotal,
     });
   } catch (error) {
@@ -130,18 +124,46 @@ export const findSourceDetails = async (req, res) => {
         partyType: partyTypeFilter,
       })
       .select("_id partyName openingBalanceAmount")
-      .sort({ partyName: 1 }); // Sort alphabetically
+      .sort({ partyName: 1 });
 
-    // Map accounts to required format
-    const balanceDetails = accounts.map((account) => ({
-      _id: account._id,
-      name: account.partyName,
-      // openingBalance: account.openingBalanceAmount || 0,
-      // settlementTotal: 0, // Always zero for now
-      // currentBalance: account.openingBalanceAmount || 0,
-      total: 0, // For backward compatibility
-    }));
+    // Get settlement totals for each account from Settlement collection
+    const settlementTotals = await settlementModel.aggregate([
+      {
+        $match: {
+          cmp_id: cmp_id,
+          sourceType: partyTypeFilter, // Filter by sourceType (cash/bank)
+        },
+      },
+      {
+        $group: {
+          _id: "$sourceId", // Group by sourceId (the account ID)
+          settlementTotal: { $sum: "$amount" },
+        },
+      },
+    ]);
 
+    // Create a map for quick lookup of settlement totals
+    const settlementMap = {};
+    settlementTotals.forEach((settlement) => {
+      settlementMap[settlement._id.toString()] = settlement.settlementTotal;
+    });
+
+    // Map accounts to required format with settlement data
+    const balanceDetails = accounts.map((account) => {
+      const accountId = account._id.toString();
+      const openingBalance = account.openingBalanceAmount || 0;
+      const settlementTotal = settlementMap[accountId] || 0;
+      const currentBalance = openingBalance + settlementTotal;
+
+      return {
+        _id: account._id,
+        name: account.partyName,
+        openingBalance: openingBalance,
+        settlementTotal: settlementTotal,
+        currentBalance: currentBalance,
+        total: currentBalance, // For backward compatibility
+      };
+    });
 
     return res.status(200).json({
       message: "Balance details found successfully",
@@ -495,11 +517,9 @@ export const editCash = async (req, res) => {
   const cash_id = req.params.cash_id;
   const { cash_ledname, cash_opening = 0, cmp_id } = req.body;
   try {
-
-
-     // Create cash entry as Party with partyType = 'Cash'
+    // Create cash entry as Party with partyType = 'Cash'
     const cashData = {
-      partyName: cash_ledname, 
+      partyName: cash_ledname,
       // Opening balance
       openingBalanceAmount: cash_opening,
     };

@@ -134,6 +134,12 @@ settlementSchema.index({ cmp_id: 1, partyType: 1, voucher_date: -1 });
 // 10. Voucher reference lookup: Find settlements by voucher ID
 settlementSchema.index({ cmp_id: 1, voucherId: 1 });
 
+// 11. Source statements: Get all settlements for a specific source (cash/bank) with date sorting
+settlementSchema.index({ cmp_id: 1, sourceId: 1, settlement_date: -1 });
+
+// 12. Source type filtering: Get all cash or bank settlements for a company
+settlementSchema.index({ cmp_id: 1, sourceType: 1, settlement_date: -1 });
+
 // ============= TEXT INDEX FOR SEARCH =============
 // Optional: If you need to search by party names or voucher numbers
 settlementSchema.index({ 

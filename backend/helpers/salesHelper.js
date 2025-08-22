@@ -473,14 +473,11 @@ export const updateTallyData = async (
   voucherType,
   classification
 ) => {
-
-
   if (party?.partyType !== "party") {
     console.log("Invalid party type, skipping outstanding update");
 
     return;
   }
-
 
   try {
     const billData = {
@@ -504,7 +501,6 @@ export const updateTallyData = async (
       classification,
     };
 
-
     const tallyUpdate = await TallyData.findOneAndUpdate(
       {
         cmp_id: orgId,
@@ -516,7 +512,6 @@ export const updateTallyData = async (
       { $set: billData },
       { upsert: true, new: true, session }
     );
-
   } catch (error) {
     console.error("Error updateTallyData sale stock updates:", error);
     throw error;
@@ -525,7 +520,6 @@ export const updateTallyData = async (
 
 export const revertSaleStockUpdates = async (items, session) => {
   try {
-
     for (const item of items) {
       const product = await productModel
         .findOne({ _id: item._id })
@@ -534,7 +528,6 @@ export const revertSaleStockUpdates = async (items, session) => {
       if (!product) {
         throw new Error(`Product not found for item ID: ${item._id}`);
       }
-
 
       // Use actualCount if available, otherwise fall back to count
       const itemCount = parseFloat(
@@ -807,7 +800,10 @@ export const revertSaleStockUpdates = async (items, session) => {
 
 const getSourceType = (item) => {
   let updatedSourceType;
-  if (item?.ref_collection === "Cash") {
+
+  if (item?.type === "credit") {
+    updatedSourceType = item?.credit_reference_type || null;
+  } else if (item?.ref_collection === "Cash") {
     updatedSourceType = "cash";
   } else if (item?.ref_collection === "BankDetails") {
     updatedSourceType = "bank";
@@ -830,14 +826,12 @@ const handleCreditMode = async (
   voucherType,
   party
 ) => {
-
   const { ref_id, amount, credit_reference_type, reference_name } = item;
 
   if (!ref_id) return null;
 
   // Handle credit with cash or bank reference
   if (credit_reference_type === "cash" || credit_reference_type === "bank") {
- 
     const settlementData = {
       voucherNumber: salesNumber,
       voucherId: saleId,
@@ -864,7 +858,6 @@ const handleCreditMode = async (
   // Handle credit with party reference
   if (credit_reference_type === "party") {
     const party = await partyModel.findById(ref_id);
-
 
     await updateTallyData(
       orgId,
@@ -949,7 +942,6 @@ export const savePaymentSplittingDataInSources = async (
         .map(async (item) => {
           const { type: mode } = item;
 
-
           // Handle credit mode
           if (mode === "credit") {
             return await handleCreditMode(
@@ -1012,8 +1004,6 @@ export const revertPaymentSplittingDataInSources = async (
             : null;
 
         if (mode === "credit") {
-     
-
           // Delete tally data for credit mode
           // Find the specific record first
           const tallyRecord = await TallyData.findOne({
@@ -1132,7 +1122,6 @@ export const updateOutstandingBalance = async ({
   // Calculate difference in bill value
   const diffBillValue = Number(newBillBalance) - Number(oldBillBalance);
 
-
   // Find existing outstanding record
   const matchedOutStanding = await TallyData.findOne({
     party_id: existingVoucher?.party?._id,
@@ -1164,7 +1153,6 @@ export const updateOutstandingBalance = async ({
       );
 
       updatedAppliedReceipts = receiptsResult.updatedAppliedReceipts;
-
 
       console.log(
         `Remaining after processing receipts: ${receiptsResult.remainingAmount}`
