@@ -78,6 +78,8 @@ function VoucherInitialPage() {
 
   const { enablePaymentSplittingAsCompulsory = false } = configurations[0];
 
+
+
   const {
     date,
     party,
@@ -352,7 +354,7 @@ function VoucherInitialPage() {
         };
       }
 
-      console.log(formData);
+      // console.log(formData);
 
       const endPoint = getApiEndPoint();
       let params = {};

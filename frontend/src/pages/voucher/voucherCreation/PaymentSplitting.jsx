@@ -178,6 +178,9 @@ function PaymentSplitting() {
     }
   }, [sourcesData, party, hasAutoSelected, paymentSplittingData]);
 
+  //if play nation for the last tow yeqar i am on a goint about leavgel
+  
+
   // Calculate total amount from payment splits
   const totalAmount = paymentSplits.reduce((sum, split) => {
     const amount = parseFloat(split.amount) || 0;
@@ -216,7 +219,7 @@ function PaymentSplitting() {
         if (split.type === type) {
           // If ref_id is being cleared, also clear the amount
           if (!ref_id) {
-            return { ...split, ref_id, amount: "" };
+            return { ...split, ref_id:null, amount: "" };
           }
           return { ...split, ref_id };
         }
@@ -226,7 +229,6 @@ function PaymentSplitting() {
   };
 
   const handleNavigateToPartyList = () => {
-    console.log(paymentSplits);
 
     const data = {
       changeFinalAmount: false,
@@ -279,8 +281,8 @@ function PaymentSplitting() {
         // Clear amount and ref_id, and reference_name if credit
         return {
           ...split,
-          amount: "",
-          ref_id: "",
+          amount: 0,
+          ref_id: null,
           ...(split.type === "credit"
             ? { reference_name: "", credit_reference_type: "" }
             : {}),
@@ -314,7 +316,6 @@ function PaymentSplitting() {
       totalPaymentSplits: totalAmount,
     };
 
-    console.log(data);
 
     dispatch(addPaymentSplits(data));
     dispatch(
@@ -389,7 +390,6 @@ function PaymentSplitting() {
 
     let formData = {};
 
-    console.log(date);
     const cleanedDate =
       typeof date === "string" && date.startsWith('"')
         ? JSON.parse(date) // removes extra quotes
@@ -422,10 +422,6 @@ function PaymentSplitting() {
         paymentSplittingData: paymentSplits,
       };
 
-      console.log(formData);
-
-      console.log(formData.paymentSplittingData);
-      console.log(paymentSplits);
 
       const endPoint = getApiEndPoint();
       let params = {};
@@ -445,10 +441,7 @@ function PaymentSplitting() {
       );
       toast.success(res.data.message);
 
-      console.log(
-        "Navigating to",
-        `/sUsers/${voucherTypeFromRedux}Deta/${res.data.data._id}`
-      );
+
 
       navigate(`/sUsers/${voucherTypeFromRedux}Details/${res.data.data._id}`, {
         state: { from: location?.state?.from || "null" },
@@ -475,7 +468,7 @@ function PaymentSplitting() {
     <div className="min-h-screen bg-gray-50 w-full">
       <TitleDiv
         title="Payment Splitting"
-        loading={isLoading}
+        loading={isLoading || submitLoading}
         customNavigate={customNavigate}
       />
       <div className={`${isLoading && "opacity-75 animate-pulse"}`}></div>
