@@ -44,12 +44,12 @@ const initialState = {
   note: null,
   isNoteOpen: false,
   paymentSplittingData: [
-    { type: "cash", amount: "", ref_id: null, ref_collection: "Cash" },
-    { type: "upi", amount: "", ref_id: null, ref_collection: "BankDetails" },
-    { type: "cheque", amount: "", ref_id: null, ref_collection: "BankDetails" },
+    { type: "cash", amount: 0, ref_id: null, ref_collection: "Cash" },
+    { type: "upi", amount: 0, ref_id: null, ref_collection: "BankDetails" },
+    { type: "cheque", amount: 0, ref_id: null, ref_collection: "BankDetails" },
     {
       type: "credit",
-      amount: "",
+      amount: 0,
       ref_id: null,
       ref_collection: "Party",
       reference_name: "",
@@ -548,7 +548,7 @@ export const commonVoucherSlice = createSlice({
         // If no credit entry exists, create one
         const updatedData = {
           type: "credit",
-          amount: "",
+          amount: 0,
           ref_id: ref_id,
           ref_collection: "Party",
           reference_name: reference_name,
@@ -581,22 +581,22 @@ export const commonVoucherSlice = createSlice({
     resetPaymentSplit: (state) => {
       state.totalPaymentSplits = 0;
       state.paymentSplittingData = [
-        { type: "cash", amount: "", ref_id: null, ref_collection: "Cash" },
+        { type: "cash", amount: 0, ref_id: null, ref_collection: "Cash" },
         {
           type: "upi",
-          amount: "",
+          amount: 0,
           ref_id: null,
           ref_collection: "BankDetails",
         },
         {
           type: "cheque",
-          amount: "",
+          amount: 0,
           ref_id: null,
           ref_collection: "BankDetails",
         },
         {
           type: "credit",
-          amount: "",
+          amount: 0,
           ref_id: null,
           ref_collection: "Party",
           reference_name: "",

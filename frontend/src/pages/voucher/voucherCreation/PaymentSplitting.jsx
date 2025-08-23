@@ -28,12 +28,12 @@ const fetchBankAndCashSources = async (cmp_id) => {
 function PaymentSplitting() {
   // Store payment splits in the required format directly
   const [paymentSplits, setPaymentSplits] = useState([
-    { type: "cash", amount: "", ref_id: null, ref_collection: "Cash" },
-    { type: "upi", amount: "", ref_id: null, ref_collection: "BankDetails" },
-    { type: "cheque", amount: "", ref_id: null, ref_collection: "BankDetails" },
+    { type: "cash", amount: 0, ref_id: null, ref_collection: "Cash" },
+    { type: "upi", amount: 0, ref_id: null, ref_collection: "BankDetails" },
+    { type: "cheque", amount: 0, ref_id: null, ref_collection: "BankDetails" },
     {
       type: "credit",
-      amount: "",
+      amount: 0,
       ref_id: "",
       ref_collection: "Party",
       reference_name: "",
@@ -419,7 +419,7 @@ function PaymentSplitting() {
         priceLevelFromRedux,
         additionalChargesFromRedux,
         selectedGodownDetails: vanSaleGodownFromRedux,
-        paymentSplittingData: paymentSplits,
+        paymentSplittingData:  getValidPaymentSplits(),
       };
 
 
