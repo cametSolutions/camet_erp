@@ -16,7 +16,7 @@ const paymentSplitSchema = new Schema(
       ref: "Party",
       default: null,
     },
-   
+
     reference_name: {
       type: String,
       default: "", // Only relevant for credit
@@ -255,12 +255,18 @@ const salesSchema = new Schema(
 
     note: { type: String },
 
-    finalAmount: { type: Number, required: true },
+    subTotal: { type: Number, default: null },
+    totalAdditionalCharges: { type: Number, default: null },
+    totalWithAdditionalCharges: { type: Number, default: null },
+    totalPaymentSplits: { type: Number, default: null },
+    finalOutstandingAmount: { type: Number, default: null },
+    finalAmount: { type: Number, required: true, default: 0 },
+
     paymentSplittingData: {
       type: [paymentSplitSchema],
       default: [
-        { type: "cash", amount: 0, ref_id: null},
-        { type: "upi", amount: 0, ref_id: null},
+        { type: "cash", amount: 0, ref_id: null },
+        { type: "upi", amount: 0, ref_id: null },
         {
           type: "cheque",
           amount: 0,

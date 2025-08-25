@@ -67,6 +67,10 @@ function PaymentSplitting() {
 
   const {
     totalWithAdditionalCharges: totalWithAdditionalCharges,
+    subTotal: subTotalFromRedux,
+    totalAdditionalCharges: totalAdditionalChargesFromRedux,
+    totalPaymentSplits: totalPaymentSplitsFromRedux,
+    finalOutstandingAmount: finalOutstandingAmountFromRedux,
     paymentSplittingData,
     date,
     party,
@@ -412,6 +416,10 @@ function PaymentSplitting() {
         finalOutstandingAmount: Number(
           reduxData?.finalOutstandingAmount?.toFixed(2) || 0
         ),
+        subTotal: Number(reduxData?.subTotal?.toFixed(2) || 0),
+        totalPaymentSplits: Number(reduxData?.totalPaymentSplits?.toFixed(2) || 0),
+        totalAdditionalCharges: Number(reduxData?.totalAdditionalCharges?.toFixed(2) || 0),
+        totalWithAdditionalCharges: Number(reduxData?.totalWithAdditionalCharges?.toFixed(2) || 0),
         party,
         items,
         note: noteFromRedux,
@@ -423,9 +431,9 @@ function PaymentSplitting() {
       };
 
       console.log(formData);
+      
 
-      console.log(formData.paymentSplittingData);
-      console.log(paymentSplits);
+
 
       const endPoint = getApiEndPoint();
       let params = {};

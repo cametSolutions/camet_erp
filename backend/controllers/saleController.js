@@ -44,6 +44,10 @@ export const createSale = async (req, res) => {
       party,
       finalAmount: lastAmount,
       finalOutstandingAmount,
+      totalAdditionalCharges,
+      totalWithAdditionalCharges,
+      totalPaymentSplits,
+      subTotal,
       paymentSplittingData,
       selectedDate,
       voucherType,
@@ -95,7 +99,11 @@ export const createSale = async (req, res) => {
       salesNumber,
       items,
       updateAdditionalCharge,
-      session // Pass session
+      session ,// Pass session
+       totalAdditionalCharges,
+      totalWithAdditionalCharges,
+      totalPaymentSplits,
+      subTotal,
     );
 
 
@@ -168,6 +176,8 @@ export const createSale = async (req, res) => {
         "Dr"
       );
     }
+
+    // throw new Error("Payment splitting data is missing");
 
     await session.commitTransaction();
     res.status(201).json({

@@ -375,7 +375,11 @@ export const createSaleRecord = async (
   salesNumber,
   updatedItems,
   updateAdditionalCharge,
-  session
+  session,
+  totalAdditionalCharges,
+  totalWithAdditionalCharges,
+  totalPaymentSplits,
+  subTotal
 ) => {
   try {
     const {
@@ -391,6 +395,10 @@ export const createSaleRecord = async (
       series_id,
       usedSeriesNumber,
       note,
+      totalAdditionalCharges,
+      totalWithAdditionalCharges,
+      totalPaymentSplits,
+      subTotal,
     } = req.body;
 
     const Primary_user_id = req.owner;
@@ -441,6 +449,10 @@ export const createSaleRecord = async (
       additionalCharges: updateAdditionalCharge,
       note,
       finalAmount,
+      totalAdditionalCharges,
+      totalWithAdditionalCharges,
+      totalPaymentSplits,
+      subTotal,
       Primary_user_id,
       Secondary_user_id,
       salesNumber,
@@ -515,32 +527,31 @@ export const updateTallyData = async (
   } else if (party?.partyType === "cash" || party?.partyType === "bank") {
     //// create settlement
 
+    try {
+      const settlementData = {
+        voucherNumber: salesNumber,
+        voucherId: billId,
+        voucherModel: voucherModel,
+        voucherType: voucherType,
+        amount: valueToUpdateInTally,
+        partyName: party?.partyName || "",
+        partyId: party?._id || null,
+        partyType: party?.partyType || null,
+        payment_mode: null,
+        /// source is also the same party
+        sourceId: party?._id || null,
+        sourceType: party?.partyType || null,
+        cmp_id: orgId,
+        Primary_user_id: Primary_user_id,
+        settlement_date: selectedDate,
+        voucher_date: selectedDate,
+      };
 
-   try {
-     const settlementData = {
-       voucherNumber: salesNumber,
-       voucherId: billId,
-       voucherModel: voucherModel,
-       voucherType: voucherType,
-       amount: valueToUpdateInTally,
-       partyName: party?.partyName || "",
-       partyId: party?._id || null,
-       partyType: party?.partyType || null,
-       payment_mode: null,
-       /// source is also the same party
-       sourceId: party?._id || null,
-       sourceType: party?.partyType || null,
-       cmp_id: orgId,
-       Primary_user_id: Primary_user_id,
-       settlement_date: selectedDate,
-       voucher_date: selectedDate,
-     };
- 
-     const settlement = new settlementModel(settlementData);
-     await settlement.save({ session });
-   } catch (error) {
-     console.error("Error creating settlement:", error);
-   }
+      const settlement = new settlementModel(settlementData);
+      await settlement.save({ session });
+    } catch (error) {
+      console.error("Error creating settlement:", error);
+    }
   }
 };
 
