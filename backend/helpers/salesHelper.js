@@ -376,10 +376,6 @@ export const createSaleRecord = async (
   updatedItems,
   updateAdditionalCharge,
   session,
-  totalAdditionalCharges,
-  totalWithAdditionalCharges,
-  totalPaymentSplits,
-  subTotal
 ) => {
   try {
     const {
@@ -399,6 +395,7 @@ export const createSaleRecord = async (
       totalWithAdditionalCharges,
       totalPaymentSplits,
       subTotal,
+      finalOutstandingAmount
     } = req.body;
 
     const Primary_user_id = req.owner;
@@ -452,6 +449,7 @@ export const createSaleRecord = async (
       totalAdditionalCharges,
       totalWithAdditionalCharges,
       totalPaymentSplits,
+      finalOutstandingAmount,
       subTotal,
       Primary_user_id,
       Secondary_user_id,
