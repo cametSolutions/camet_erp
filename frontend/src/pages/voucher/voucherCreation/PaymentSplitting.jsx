@@ -28,12 +28,12 @@ const fetchBankAndCashSources = async (cmp_id) => {
 function PaymentSplitting() {
   // Store payment splits in the required format directly
   const [paymentSplits, setPaymentSplits] = useState([
-    { type: "cash", amount: "", ref_id: null, ref_collection: "Cash" },
-    { type: "upi", amount: "", ref_id: null, ref_collection: "BankDetails" },
-    { type: "cheque", amount: "", ref_id: null, ref_collection: "BankDetails" },
+    { type: "cash", amount: 0, ref_id: null, ref_collection: "Cash" },
+    { type: "upi", amount: 0, ref_id: null, ref_collection: "BankDetails" },
+    { type: "cheque", amount: 0, ref_id: null, ref_collection: "BankDetails" },
     {
       type: "credit",
-      amount: "",
+      amount: 0,
       ref_id: "",
       ref_collection: "Party",
       reference_name: "",
@@ -67,10 +67,6 @@ function PaymentSplitting() {
 
   const {
     totalWithAdditionalCharges: totalWithAdditionalCharges,
-    subTotal: subTotalFromRedux,
-    totalAdditionalCharges: totalAdditionalChargesFromRedux,
-    totalPaymentSplits: totalPaymentSplitsFromRedux,
-    finalOutstandingAmount: finalOutstandingAmountFromRedux,
     paymentSplittingData,
     date,
     party,
@@ -123,7 +119,6 @@ function PaymentSplitting() {
       const { banks = [], cashs = [] } = sourcesData;
       const partyId = party._id;
 
-      console.log("Auto-selecting payment sources for party:", partyId);
       const isPartySelected = paymentSplittingData?.find(
         (item) => item.type === "credit"
       ).ref_id;
@@ -166,6 +161,7 @@ function PaymentSplitting() {
                   ...split,
                   ref_id: partyId,
                   reference_name: party.partyName || "",
+                  credit_reference_type:party?.partyType
                 };
               }
               break;
@@ -181,6 +177,9 @@ function PaymentSplitting() {
       setHasAutoSelected(true);
     }
   }, [sourcesData, party, hasAutoSelected, paymentSplittingData]);
+
+  //if play nation for the last tow yeqar i am on a goint about leavgel
+  
 
   // Calculate total amount from payment splits
   const totalAmount = paymentSplits.reduce((sum, split) => {
@@ -220,7 +219,7 @@ function PaymentSplitting() {
         if (split.type === type) {
           // If ref_id is being cleared, also clear the amount
           if (!ref_id) {
-            return { ...split, ref_id, amount: "" };
+            return { ...split, ref_id:null, amount: "" };
           }
           return { ...split, ref_id };
         }
@@ -230,7 +229,6 @@ function PaymentSplitting() {
   };
 
   const handleNavigateToPartyList = () => {
-    console.log(paymentSplits);
 
     const data = {
       changeFinalAmount: false,
@@ -283,8 +281,8 @@ function PaymentSplitting() {
         // Clear amount and ref_id, and reference_name if credit
         return {
           ...split,
-          amount: "",
-          ref_id: "",
+          amount: 0,
+          ref_id: null,
           ...(split.type === "credit"
             ? { reference_name: "", credit_reference_type: "" }
             : {}),
@@ -318,7 +316,6 @@ function PaymentSplitting() {
       totalPaymentSplits: totalAmount,
     };
 
-    console.log(data);
 
     dispatch(addPaymentSplits(data));
     dispatch(
@@ -393,7 +390,6 @@ function PaymentSplitting() {
 
     let formData = {};
 
-    console.log(date);
     const cleanedDate =
       typeof date === "string" && date.startsWith('"')
         ? JSON.parse(date) // removes extra quotes
@@ -427,7 +423,7 @@ function PaymentSplitting() {
         priceLevelFromRedux,
         additionalChargesFromRedux,
         selectedGodownDetails: vanSaleGodownFromRedux,
-        paymentSplittingData: paymentSplits,
+        paymentSplittingData:  getValidPaymentSplits(),
       };
 
       console.log(formData);
@@ -453,10 +449,7 @@ function PaymentSplitting() {
       );
       toast.success(res.data.message);
 
-      console.log(
-        "Navigating to",
-        `/sUsers/${voucherTypeFromRedux}Deta/${res.data.data._id}`
-      );
+
 
       navigate(`/sUsers/${voucherTypeFromRedux}Details/${res.data.data._id}`, {
         state: { from: location?.state?.from || "null" },
@@ -483,7 +476,7 @@ function PaymentSplitting() {
     <div className="min-h-screen bg-gray-50 w-full">
       <TitleDiv
         title="Payment Splitting"
-        loading={isLoading}
+        loading={isLoading || submitLoading}
         customNavigate={customNavigate}
       />
       <div className={`${isLoading && "opacity-75 animate-pulse"}`}></div>

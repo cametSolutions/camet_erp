@@ -280,6 +280,7 @@ const salesSchema = new Schema(
         },
       ],
     },
+
     isCancelled: { type: Boolean, default: false },
   },
   {

@@ -51,6 +51,14 @@ function AddPartyForm({
   }, [accountGroupLoading, subGroupLoading]);
 
   useEffect(() => {
+    if(accountGroupList){
+      let findSpecificOne = accountGroupList.data?.find((acc) => acc?.accountGroup == "Sundry Debtors");
+      setAccountGroup(findSpecificOne?._id);
+    }
+    
+  }, [accountGroupList]);
+
+  useEffect(() => {
     // setCmp_id(companytId);
     if (Object.entries(partyDetails)?.length > 0) {
       const {

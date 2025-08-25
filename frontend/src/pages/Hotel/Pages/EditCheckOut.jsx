@@ -8,15 +8,17 @@ import { toast } from "react-toastify";
 import api from "@/api/api";
 import { useLocation } from "react-router-dom";
 import useFetch from "@/customHook/useFetch";
-function EditChecking() {
+function EditCheckOut() {
   const isSubmittingRef = useRef(false);
   const location = useLocation();
   const editData = location?.state;
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
   const [outStanding, setOutStanding] = useState([]);
+  
   const { data, loading: advanceLoading } = useFetch(
-    `/api/sUsers/getBookingAdvanceData/${editData?._id}?type=${"EditChecking"}`
+    `/api/sUsers/getBookingAdvanceData/${editData?._id}?type=${"EditCheckOut"}`
   );
 
   useEffect(() => {
@@ -28,25 +30,28 @@ function EditChecking() {
 
   useEffect(() => {
     if (editData) {
-      editData.previousAdvance = Number(
-        editData?.bookingId?.advanceAmount || 0
+      editData.previousAdvance = Math.abs(
+        Number(editData?.checkInId?.grandTotal) -
+          (Number(editData?.checkInId?.balanceToPay) +
+            Number(editData?.checkInId?.discountAmount))
       );
-      editData.totalAdvance =
-        Number(editData?.bookingId?.advanceAmount || 0) +
-        Number(editData?.advanceAmount || 0);
+      editData.totalAdvance = editData?.previousAdvance;
     }
+
+    console.log(editData?.previousAdvance);
   }, [editData]);
 
   const handleSubmit = async (data) => {
+    console.log(data);
     try {
       let response = await api.put(
         `/api/sUsers/updateRoomBooking/${editData._id}`,
-        { data: data, modal: "checkIn" },
+        { data: data, modal: "checkOut" },
         { withCredentials: true }
       );
       if (response?.data?.success) {
         toast.success(response?.data?.message);
-        navigate("/sUsers/checkInList");
+        navigate("/sUsers/checkOutList");
       }
     } catch (error) {
       console.log(error);
@@ -60,7 +65,7 @@ function EditChecking() {
       ) : (
         <div className="">
           <TitleDiv
-            title="Edit Checking"
+            title="Edit CheckOut"
             from="/sUsers/hotelDashBoard"
             dropdownContents={[
               {
@@ -85,4 +90,4 @@ function EditChecking() {
   );
 }
 
-export default EditChecking;
+export default EditCheckOut;
