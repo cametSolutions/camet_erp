@@ -27,6 +27,8 @@ import {
   addNote,
   addIsNoteOpen,
   setPriceLevel,
+  updateTotalValue,
+  addPaymentSplits,
 } from "../../../../slices/voucherSlices/commonVoucherSlice";
 import DespatchDetails from "./DespatchDetails";
 import HeaderTile from "./HeaderTile";
@@ -39,6 +41,7 @@ import { formatVoucherType } from "../../../../utils/formatVoucherType";
 import AddGodownTile from "./AddGodownTile";
 import AddNoteTile from "./AddNoteTile";
 import { useQueryClient } from "@tanstack/react-query";
+import ReceiveAmount from "./ReceiveAmount";
 
 function VoucherInitialPageEdit() {
   const dispatch = useDispatch();
@@ -54,9 +57,12 @@ function VoucherInitialPageEdit() {
       : false;
 
   // Redux selectors
-  const { _id: cmp_id } = useSelector(
+  const { _id: cmp_id, configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
+
+  const { enablePaymentSplittingAsCompulsory = false } = configurations[0];
+
   const {
     date,
     party,
@@ -172,9 +178,10 @@ function VoucherInitialPageEdit() {
       stockTransferToGodown: stockTransferToGodownFromState = {},
       note: noteFromState,
       selectedPriceLevel: selectedPriceLevelFromState,
-    } = location.state.data || {};
+      subTotal: subTotalFromState,
 
-    
+      paymentSplittingData: paymentSplittingDataFromState = [],
+    } = location.state.data || {};
 
     try {
       if (voucherIdFromState) {
@@ -300,13 +307,10 @@ function VoucherInitialPageEdit() {
         dispatch(addNote(noteFromState));
       }
 
-
       //// price level
       if (selectedPriceLevelFromState && priceLevelFromRedux === "") {
         dispatch(setPriceLevel(selectedPriceLevelFromState));
       }
-
-
 
       // Configuration Number
       if (voucherSeriesFromRedux === null && voucherTypeFromRedux) {
@@ -324,6 +328,28 @@ function VoucherInitialPageEdit() {
         if (isMounted.current) {
           setVoucherNumber(voucherNumberFromRedux);
         }
+      }
+
+      //// update payment splits
+
+      const totalPaymentSplitsFromState = paymentSplittingDataFromState.reduce(
+        (acc, item) => acc + (item.amount || 0),
+        0
+      );
+
+      const data = {
+        changeFinalAmount: true,
+        paymentSplits: paymentSplittingDataFromState,
+        totalPaymentSplits: totalPaymentSplitsFromState,
+      };
+
+      if (paymentSplittingDataFromState && initializedFromRedux === false) {
+        dispatch(addPaymentSplits(data));
+      }
+
+      //// update total fields from state if available
+      if (subTotalFromState && initializedFromRedux === false) {
+        dispatch(updateTotalValue({ field: "subTotal", value: subTotal }));
       }
 
       if (!initializedFromRedux) {
@@ -350,6 +376,11 @@ function VoucherInitialPageEdit() {
       isMounted.current = false;
     };
   }, []);
+
+  
+  useEffect(() => {
+    dispatch(updateTotalValue({ field: "subTotal", value: subTotal }));
+  }, [subTotal]);
 
   // Navigation and form handlers
   const handleAddItem = () => {
@@ -509,6 +540,9 @@ function VoucherInitialPageEdit() {
             selectedVoucherSeriesFromRedux={
               selectedVoucherSeriesFromRedux || {}
             }
+              enablePaymentSplittingAsCompulsory={
+              enablePaymentSplittingAsCompulsory
+            }
           />
           {/* adding party */}
 
@@ -555,6 +589,12 @@ function VoucherInitialPageEdit() {
             openAdditionalTile={openAdditionalTile}
           />
 
+          {/* <ReceiveAmount /> */}
+
+          {totalAmount > 0 && !enablePaymentSplittingAsCompulsory && (
+            <ReceiveAmount />
+          )}
+
           <AddNoteTile
             noteFromRedux={noteFromRedux}
             isNoteOpenFromRedux={isNoteOpenFromRedux}
@@ -571,8 +611,6 @@ function VoucherInitialPageEdit() {
               <p className="text-[9px] text-gray-400">(rounded)</p>
             </div>
           </div>
-
-        
 
           <FooterButton
             submitHandler={submitHandler}

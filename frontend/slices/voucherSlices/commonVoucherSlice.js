@@ -499,7 +499,6 @@ export const commonVoucherSlice = createSlice({
     },
 
     addPaymentSplits: (state, action) => {
-      console.log(action.payload);
 
       const { changeFinalAmount, paymentSplits, totalPaymentSplits } =
         action.payload;
@@ -576,6 +575,7 @@ export const commonVoucherSlice = createSlice({
 
       state.finalOutstandingAmount =
         state.totalWithAdditionalCharges - (state.totalPaymentSplits || 0);
+        state.totalAfterPaymentSplit = state.finalOutstandingAmount
     },
 
     resetPaymentSplit: (state) => {
@@ -603,6 +603,8 @@ export const commonVoucherSlice = createSlice({
           credit_reference_type: "",
         },
       ];
+      state.totalAfterPaymentSplit = state.totalWithAdditionalCharges;
+      state.finalOutstandingAmount = state.totalWithAdditionalCharges
     },
   },
 });

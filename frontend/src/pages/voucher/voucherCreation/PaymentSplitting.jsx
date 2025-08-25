@@ -81,6 +81,7 @@ function PaymentSplitting() {
     stockTransferToGodown,
     selectedVoucherSeries: selectedVoucherSeriesFromRedux,
     note: noteFromRedux,
+    mode: modeFromRedux,
   } = useSelector((state) => state.commonVoucherSlice);
 
   // Fetch BankDetails and Cash sources using TanStack Query
@@ -155,13 +156,13 @@ function PaymentSplitting() {
 
             case "credit":
               // For credit, we check if party._id should be used
-             /// if already party is selected no need to initialize
+              /// if already party is selected no need to initialize
               if (partyId && !isPartySelected) {
                 return {
                   ...split,
                   ref_id: partyId,
                   reference_name: party.partyName || "",
-                  credit_reference_type:party?.partyType
+                  credit_reference_type: party?.partyType,
                 };
               }
               break;
@@ -179,7 +180,6 @@ function PaymentSplitting() {
   }, [sourcesData, party, hasAutoSelected, paymentSplittingData]);
 
   //if play nation for the last tow yeqar i am on a goint about leavgel
-  
 
   // Calculate total amount from payment splits
   const totalAmount = paymentSplits.reduce((sum, split) => {
@@ -219,7 +219,7 @@ function PaymentSplitting() {
         if (split.type === type) {
           // If ref_id is being cleared, also clear the amount
           if (!ref_id) {
-            return { ...split, ref_id:null, amount: "" };
+            return { ...split, ref_id: null, amount: "" };
           }
           return { ...split, ref_id };
         }
@@ -229,10 +229,10 @@ function PaymentSplitting() {
   };
 
   const handleNavigateToPartyList = () => {
-
     const data = {
       changeFinalAmount: false,
       paymentSplits: paymentSplits,
+      totalPaymentSplits: totalAmount,
     };
 
     dispatch(addPaymentSplits(data));
@@ -315,7 +315,6 @@ function PaymentSplitting() {
       paymentSplits: validSplits,
       totalPaymentSplits: totalAmount,
     };
-
 
     dispatch(addPaymentSplits(data));
     dispatch(
@@ -413,9 +412,15 @@ function PaymentSplitting() {
           reduxData?.finalOutstandingAmount?.toFixed(2) || 0
         ),
         subTotal: Number(reduxData?.subTotal?.toFixed(2) || 0),
-        totalPaymentSplits: Number(reduxData?.totalPaymentSplits?.toFixed(2) || 0),
-        totalAdditionalCharges: Number(reduxData?.totalAdditionalCharges?.toFixed(2) || 0),
-        totalWithAdditionalCharges: Number(reduxData?.totalWithAdditionalCharges?.toFixed(2) || 0),
+        totalPaymentSplits: Number(
+          reduxData?.totalPaymentSplits?.toFixed(2) || 0
+        ),
+        totalAdditionalCharges: Number(
+          reduxData?.totalAdditionalCharges?.toFixed(2) || 0
+        ),
+        totalWithAdditionalCharges: Number(
+          reduxData?.totalWithAdditionalCharges?.toFixed(2) || 0
+        ),
         party,
         items,
         note: noteFromRedux,
@@ -423,13 +428,10 @@ function PaymentSplitting() {
         priceLevelFromRedux,
         additionalChargesFromRedux,
         selectedGodownDetails: vanSaleGodownFromRedux,
-        paymentSplittingData:  getValidPaymentSplits(),
+        paymentSplittingData: getValidPaymentSplits(),
       };
 
       console.log(formData);
-      
-
-
 
       const endPoint = getApiEndPoint();
       let params = {};
@@ -449,8 +451,6 @@ function PaymentSplitting() {
       );
       toast.success(res.data.message);
 
-
-
       navigate(`/sUsers/${voucherTypeFromRedux}Details/${res.data.data._id}`, {
         state: { from: location?.state?.from || "null" },
       });
@@ -468,7 +468,9 @@ function PaymentSplitting() {
   };
 
   const customNavigate = () => {
-    dispatch(resetPaymentSplit());
+    if (modeFromRedux === "create") {
+      dispatch(resetPaymentSplit());
+    }
     navigate(-1, { replace: true });
   };
 

@@ -79,6 +79,8 @@ function VoucherInitialPage() {
   const { enablePaymentSplittingAsCompulsory = false } = configurations[0];
 
 
+  
+
 
   const {
     date,
