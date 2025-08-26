@@ -484,7 +484,7 @@ export const updateTallyData = async (
   classification,
   voucherModel = "Sales"
 ) => {
-  if (party?.partyType === "party") {
+  // if (party?.partyType === "party") {
     try {
       const billData = {
         Primary_user_id: Primary_user_id,
@@ -522,35 +522,38 @@ export const updateTallyData = async (
       console.error("Error updateTallyData sale stock updates:", error);
       throw error;
     }
-  } else if (party?.partyType === "cash" || party?.partyType === "bank") {
-    //// create settlement
+  // } 
+  
+  
+  // else if (party?.partyType === "cash" || party?.partyType === "bank") {
+  //   //// create settlement
 
-    try {
-      const settlementData = {
-        voucherNumber: salesNumber,
-        voucherId: billId,
-        voucherModel: voucherModel,
-        voucherType: voucherType,
-        amount: valueToUpdateInTally,
-        partyName: party?.partyName || "",
-        partyId: party?._id || null,
-        partyType: party?.partyType || null,
-        payment_mode: null,
-        /// source is also the same party
-        sourceId: party?._id || null,
-        sourceType: party?.partyType || null,
-        cmp_id: orgId,
-        Primary_user_id: Primary_user_id,
-        settlement_date: selectedDate,
-        voucher_date: selectedDate,
-      };
+  //   try {
+  //     const settlementData = {
+  //       voucherNumber: salesNumber,
+  //       voucherId: billId,
+  //       voucherModel: voucherModel,
+  //       voucherType: voucherType,
+  //       amount: valueToUpdateInTally,
+  //       partyName: party?.partyName || "",
+  //       partyId: party?._id || null,
+  //       partyType: party?.partyType || null,
+  //       payment_mode: null,
+  //       /// source is also the same party
+  //       sourceId: party?._id || null,
+  //       sourceType: party?.partyType || null,
+  //       cmp_id: orgId,
+  //       Primary_user_id: Primary_user_id,
+  //       settlement_date: selectedDate,
+  //       voucher_date: selectedDate,
+  //     };
 
-      const settlement = new settlementModel(settlementData);
-      await settlement.save({ session });
-    } catch (error) {
-      console.error("Error creating settlement:", error);
-    }
-  }
+  //     const settlement = new settlementModel(settlementData);
+  //     await settlement.save({ session });
+  //   } catch (error) {
+  //     console.error("Error creating settlement:", error);
+  //   }
+  // }
 };
 
 export const revertSaleStockUpdates = async (items, session) => {
@@ -1006,26 +1009,28 @@ export const updateOutstandingBalance = async ({
   classification,
 }) => {
   // Calculate old bill balance
-  let oldBillBalance;
-  if (
-    existingVoucher?.paymentSplittingData &&
-    Object.keys(existingVoucher?.paymentSplittingData).length > 0
-  ) {
-    oldBillBalance = existingVoucher?.paymentSplittingData?.balanceAmount;
-  } else {
-    oldBillBalance = existingVoucher?.finalAmount || 0;
-  }
+  const oldBillBalance = existingVoucher?.finalAmount || 0;
+    const newBillBalance = newVoucherData?.lastAmount || 0;
 
-  // Calculate new bill balance
-  let newBillBalance;
-  if (
-    newVoucherData?.paymentSplittingData &&
-    Object.keys(newVoucherData?.paymentSplittingData).length > 0
-  ) {
-    newBillBalance = newVoucherData?.paymentSplittingData?.balanceAmount;
-  } else {
-    newBillBalance = newVoucherData?.lastAmount || 0;
-  }
+  // if (
+  //   existingVoucher?.paymentSplittingData &&
+  //   Object.keys(existingVoucher?.paymentSplittingData).length > 0
+  // ) {
+  //   oldBillBalance = existingVoucher?.paymentSplittingData?.balanceAmount;
+  // } else {
+  //   oldBillBalance = existingVoucher?.finalAmount || 0;
+  // }
+
+  // // Calculate new bill balance
+  // let newBillBalance;
+  // if (
+  //   newVoucherData?.paymentSplittingData &&
+  //   Object.keys(newVoucherData?.paymentSplittingData).length > 0
+  // ) {
+  //   newBillBalance = newVoucherData?.paymentSplittingData?.balanceAmount;
+  // } else {
+  //   newBillBalance = newVoucherData?.lastAmount || 0;
+  // }
 
   // Calculate difference in bill value
   const diffBillValue = Number(newBillBalance) - Number(oldBillBalance);
@@ -1219,50 +1224,50 @@ export const revertSettlementData = async (
   session
 ) => {
   try {
-    const accountGroup = party?.accountGroupName;
+    // const accountGroup = party?.accountGroupName;
 
-    if (!accountGroup) {
-      throw new Error("Invalid account group");
-    }
+    // if (!accountGroup) {
+    //   throw new Error("Invalid account group");
+    // }
 
-    let model;
-    if (accountGroup === "Cash-in-Hand") {
-      model = cashModel;
-    } else if (accountGroup === "Bank Accounts") {
-      model = bankModel;
-    }
+    // let model;
+    // if (accountGroup === "Cash-in-Hand") {
+    //   model = cashModel;
+    // } else if (accountGroup === "Bank Accounts") {
+    //   model = bankModel;
+    // }
 
-    if (!model) {
-      return;
-    }
+    // if (!model) {
+    //   return;
+    // }
 
-    const query = {
-      cmp_id: orgId,
-      ...(accountGroup === "Cash-in-Hand"
-        ? { cash_id: party?.party_master_id }
-        : { bank_id: party?.party_master_id }),
-    };
+    // const query = {
+    //   cmp_id: orgId,
+    //   ...(accountGroup === "Cash-in-Hand"
+    //     ? { cash_id: party?.party_master_id }
+    //     : { bank_id: party?.party_master_id }),
+    // };
 
-    // First, pull the specified settlements
-    const pullUpdate = {
-      $pull: {
-        settlements: {
-          voucherNumber: voucherNumber,
-          voucherId: voucherId.toString(),
-        },
-      },
-    };
+    // // First, pull the specified settlements
+    // const pullUpdate = {
+    //   $pull: {
+    //     settlements: {
+    //       voucherNumber: voucherNumber,
+    //       voucherId: voucherId.toString(),
+    //     },
+    //   },
+    // };
 
-    const options = {
-      new: true,
-      session,
-    };
+    // const options = {
+    //   new: true,
+    //   session,
+    // };
 
-    const updatedSource = await model.findOneAndUpdate(
-      query,
-      pullUpdate,
-      options
-    );
+    // const updatedSource = await model.findOneAndUpdate(
+    //   query,
+    //   pullUpdate,
+    //   options
+    // );
   } catch (error) {
     console.error("Error in revertSettlementData:", error);
     throw error;
