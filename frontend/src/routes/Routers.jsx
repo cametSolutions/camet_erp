@@ -2,6 +2,7 @@ import { Route, Routes } from 'react-router-dom'
 import { lazy, Suspense } from 'react'
 const ProtectedSecRoute = lazy(() => import('./ProtectedSecRoute'))
 import SuspenseLoader from '@/components/common/SuspenseLoader'
+import { ErrorTestComponent } from '@/components/errorBoundaries/ErrorTestComponent'
 
 // Lazy load all components
 const SecHome = lazy(() => import('../pages/secUsers/SecHome'))
@@ -475,6 +476,7 @@ const Routers = () => {
 <Route path='/sUsers/TableMaster' element={<ProtectedSecRoute><TableMaster /></ProtectedSecRoute>} />
 <Route path='/sUsers/TableSelection' element={<ProtectedSecRoute><TableSelection/></ProtectedSecRoute>}/>
 <Route path='/sUsers/CheckOutPrint' element={<ProtectedSecRoute><CheckOutPrint /></ProtectedSecRoute>} />
+<Route path='/sUsers/test-error-boundary' element={<ProtectedSecRoute><ErrorTestComponent /></ProtectedSecRoute>} />
 
     </Routes>
     </Suspense>

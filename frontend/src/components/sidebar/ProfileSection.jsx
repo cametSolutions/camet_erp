@@ -51,6 +51,7 @@ function ProfileSection({ org, userData, handleDropDownchange, open }) {
             } duration-500 ease-in-out origin-left flex-1`}
           >
             <p className="text-xs font-bold text-gray-300   ">
+              {/* {userData.hai} */}
               {userData?.name?.length > 20
                 ? userData?.name.slice(0, 20) + "..."
                 : userData?.name}

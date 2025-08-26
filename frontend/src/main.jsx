@@ -9,6 +9,7 @@ import { Provider } from "react-redux";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { Toaster } from "sonner";
+import GlobalErrorBoundary from "./components/errorBoundaries/GlobalErrorBoundary.jsx";
 
 const queryClient = new QueryClient();
 ReactDOM.createRoot(document.getElementById("root")).render(
@@ -22,7 +23,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     />
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
-        <App />
+        <GlobalErrorBoundary>
+          <App />
+        </GlobalErrorBoundary>
 
         {/* this is from sonner */}
         <Toaster 
