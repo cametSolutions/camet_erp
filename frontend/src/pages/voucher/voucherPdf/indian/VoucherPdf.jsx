@@ -429,12 +429,12 @@ function VoucherPdf({ data, org, contentToPrint, bank, tab }) {
                             className={` font-bold  text-black text-right pr-2 text-nowrap`}
                           >
                             {!el?.hasGodownOrBatch
-                              ? el?.GodownList[0]?.taxableAmount
+                              ? el?.GodownList[0]?.taxableAmount?.toFixed(2) || 0
                               : el?.GodownList?.reduce((acc, curr) => {
                                   curr.taxableAmount =
                                     Number(curr?.taxableAmount) || 0;
                                   return acc + curr.taxableAmount;
-                                }, 0) || 0}
+                                }, 0)?.toFixed(2) || 0}
                           </td>
 
                           {configurations?.showStockWiseTaxAmount && (
@@ -541,7 +541,7 @@ function VoucherPdf({ data, org, contentToPrint, bank, tab }) {
 
                                   <td className=" text-black text-right pr-2 text-nowrap">
                                     {el?.hasGodownOrBatch ? (
-                                      godownOrBatch?.taxableAmount
+                                     ( godownOrBatch.taxableAmount)?.toFixed(2)
                                     ) : (
                                       <td></td>
                                     )}
