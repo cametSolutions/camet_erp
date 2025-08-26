@@ -179,22 +179,41 @@ function PaymentSplitting() {
     }
   }, [sourcesData, party, hasAutoSelected, paymentSplittingData]);
 
-  //if play nation for the last tow yeqar i am on a goint about leavgel
+  // Calculate total amount from non-credit payment splits
+  const totalNonCreditAmount = paymentSplits
+    .filter((split) => split.type !== "credit")
+    .reduce((sum, split) => {
+      const amount = parseFloat(split.amount) || 0;
+      return sum + amount;
+    }, 0);
 
-  // Calculate total amount from payment splits
-  const totalAmount = paymentSplits.reduce((sum, split) => {
-    const amount = parseFloat(split.amount) || 0;
-    return sum + amount;
-  }, 0);
+  // Calculate balance amount for credit
+  const balanceAmount = totalWithAdditionalCharges - totalNonCreditAmount;
 
-  const balanceAmount = totalWithAdditionalCharges - totalAmount;
+  // Update credit amount whenever other amounts change
+  useEffect(() => {
+    setPaymentSplits((prevSplits) =>
+      prevSplits.map((split) =>
+        split.type === "credit"
+          ? { ...split, amount: balanceAmount > 0 ? balanceAmount : 0 }
+          : split
+      )
+    );
+  }, [totalNonCreditAmount, totalWithAdditionalCharges]);
+
+  // Calculate total amount including credit
+  const totalAmount =
+    totalNonCreditAmount + (balanceAmount > 0 ? balanceAmount : 0);
 
   const handleAmountChange = (type, amount) => {
+    // Don't allow changes to credit amount
+    if (type === "credit") return;
+
     const numericAmount = parseFloat(amount) || 0;
 
-    // Calculate current total excluding this payment type
+    // Calculate current total excluding this payment type (but not credit)
     const currentTotalExcludingThis = paymentSplits
-      .filter((split) => split.type !== type)
+      .filter((split) => split.type !== type && split.type !== "credit")
       .reduce((sum, split) => sum + (parseFloat(split.amount) || 0), 0);
 
     // Check if adding this amount would exceed the total
@@ -205,7 +224,7 @@ function PaymentSplitting() {
       // Set amount to remaining balance
       const remainingBalance =
         totalWithAdditionalCharges - currentTotalExcludingThis;
-      amount = remainingBalance > 0 ? remainingBalance.toString() : "";
+      amount = remainingBalance > 0 ? remainingBalance.toString() : "0";
     }
 
     setPaymentSplits((prev) =>
@@ -214,6 +233,9 @@ function PaymentSplitting() {
   };
 
   const handleSourceChange = (type, ref_id) => {
+    // Don't allow changes to credit source
+    if (type === "credit") return;
+
     setPaymentSplits((prev) =>
       prev.map((split) => {
         if (split.type === type) {
@@ -228,20 +250,10 @@ function PaymentSplitting() {
     );
   };
 
-  const handleNavigateToPartyList = () => {
-    const data = {
-      changeFinalAmount: false,
-      paymentSplits: paymentSplits,
-      totalPaymentSplits: totalAmount,
-    };
-
-    dispatch(addPaymentSplits(data));
-
-    // Navigate to Party list component
-    navigate("/sUsers/searchPartysales", {
-      state: { from: "paymentSplitting" },
-    });
-  };
+  // const handleNavigateToPartyList = () => {
+  //   // Don't allow navigation to party list - party is fixed
+  //   return;
+  // };
 
   // Get source options based on payment type
   const getSourceOptions = (type) => {
@@ -269,6 +281,14 @@ function PaymentSplitting() {
   // Get valid payment splits (with amount > 0 and ref_id selected)
   const getValidPaymentSplits = () => {
     return paymentSplits.map((split) => {
+      // For credit, always include if there's a balance
+      if (split.type === "credit") {
+        return {
+          ...split,
+          amount: balanceAmount > 0 ? balanceAmount : 0,
+        };
+      }
+
       const requiredKeys = ["amount", "ref_id"]; // Only these must be filled
       const hasValue = requiredKeys.some(
         (key) => split[key] && split[key].toString().trim() !== ""
@@ -300,6 +320,7 @@ function PaymentSplitting() {
       paymentSplits: validSplits,
       totalPaymentSplits: totalAmount,
     };
+
     dispatch(addPaymentSplits(data));
     dispatch(
       updateTotalValue({ field: "totalPaymentSplits", value: totalAmount })
@@ -326,8 +347,9 @@ function PaymentSplitting() {
 
   // Helper function to check if amount input should be disabled
   const isAmountInputDisabled = (split) => {
+    // Credit amount is always disabled (calculated automatically)
     if (split.type === "credit") {
-      return !split.ref_id || split.ref_id === null;
+      return true;
     }
     return !split.ref_id || split.ref_id === null;
   };
@@ -525,10 +547,7 @@ function PaymentSplitting() {
                       paymentSplittingData?.find(
                         (item) => item?.type == "credit"
                       )?.ref_id !== null || split.ref_id ? (
-                        <span
-                          onClick={handleNavigateToPartyList}
-                          className="text-sm font-medium w-full p-2 border rounded-md border-gray-300 cursor-pointer"
-                        >
+                        <span className="text-sm font-medium w-full p-2 border rounded-md border-gray-300 bg-gray-100 cursor-not-allowed">
                           {truncateText(
                             split.reference_name ||
                               paymentSplittingData?.find(
@@ -538,12 +557,9 @@ function PaymentSplitting() {
                           )}
                         </span>
                       ) : (
-                        <button
-                          onClick={handleNavigateToPartyList}
-                          className="flex items-center gap-2 px-4 py-2 text-sm bg-blue-50 border border-blue-200 rounded-md w-full hover:bg-blue-100 transition-colors duration-200"
-                        >
-                          Select Party
-                        </button>
+                        <div className="flex items-center gap-2 px-4 py-2 text-sm bg-gray-100 border border-gray-200 rounded-md w-full cursor-not-allowed">
+                          No Party Selected
+                        </div>
                       )
                     ) : (
                       <div className="relative w-full">
@@ -576,7 +592,13 @@ function PaymentSplitting() {
                       </span>
                       <input
                         type="number"
-                        value={split.amount}
+                        value={
+                          split.type === "credit"
+                            ? balanceAmount > 0
+                              ? balanceAmount.toFixed(2)
+                              : "0.00"
+                            : split.amount
+                        }
                         onChange={(e) =>
                           handleAmountChange(split.type, e.target.value)
                         }
@@ -588,6 +610,7 @@ function PaymentSplitting() {
                             : "border-gray-300 hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                         }`}
                         max={totalWithAdditionalCharges}
+                        readOnly={split.type === "credit"}
                       />
                     </div>
                   </div>
@@ -613,25 +636,12 @@ function PaymentSplitting() {
               </div>
             </div>
 
-            {/* Status Message */}
-            {balanceAmount !== 0 && (
-              <div
-                className={`p-4 rounded-lg mb-6 ${
-                  balanceAmount > 0
-                    ? "bg-orange-50 border border-orange-200"
-                    : "bg-red-50 border border-red-200"
-                }`}
-              >
-                <p
-                  className={`text-sm text-center ${
-                    balanceAmount > 0 ? "text-orange-700" : "text-red-700"
-                  }`}
-                >
-                  {balanceAmount > 0
-                    ? `Add ₹${balanceAmount.toFixed(
-                        2
-                      )} more to complete the payment`
-                    : `Reduce amount by ₹${Math.abs(balanceAmount).toFixed(2)}`}
+            {/* Status Message - Only show if there's an issue with calculations */}
+            {Math.abs(totalAmount - totalWithAdditionalCharges) > 0.01 && (
+              <div className="p-4 rounded-lg mb-6 bg-orange-50 border border-orange-200">
+                <p className="text-sm text-center text-orange-700">
+                  Payment allocation updated automatically based on other
+                  payment methods
                 </p>
               </div>
             )}
@@ -650,30 +660,22 @@ function PaymentSplitting() {
               {enablePaymentSplittingAsCompulsory ? (
                 <button
                   type="button"
-                  disabled={submitLoading || balanceAmount !== 0}
+                  disabled={submitLoading}
                   onClick={handleSavePaymentSplitAndSubmit}
                   className={`w-full px-8 py-3 rounded-md font-medium transition-all duration-200 text-center text-white 
         bg-violet-700 hover:bg-violet-800 
-        ${
-          submitLoading || balanceAmount !== 0
-            ? "opacity-50 cursor-not-allowed"
-            : ""
-        }`}
+        ${submitLoading ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
                   Generate Sales
                 </button>
               ) : (
                 <button
                   type="button"
-                  disabled={submitLoading || balanceAmount !== 0}
+                  disabled={submitLoading}
                   onClick={handleSavePaymentSplit}
                   className={`w-full px-8 py-3 rounded-md font-medium transition-all duration-200 text-center text-white 
         bg-pink-500 hover:bg-pink-600 
-        ${
-          submitLoading || balanceAmount !== 0
-            ? "opacity-50 cursor-not-allowed"
-            : ""
-        }`}
+        ${submitLoading ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
                   Save Payment Split
                 </button>

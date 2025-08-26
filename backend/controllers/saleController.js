@@ -111,32 +111,9 @@ export const createSale = async (req, res) => {
     if (convertedFrom.length > 0)
       await changeConversionStatusOfOrder(convertedFrom, session);
 
-    let valueToUpdateInTally = finalOutstandingAmount;
-
-    // if (paymentSplittingData && Object.keys(paymentSplittingData).length > 0) {
-    //   valueToUpdateInTally = paymentSplittingData?.balanceAmount;
-    // } else {
-    //   valueToUpdateInTally = lastAmount;
-    // }
-
-    ///save settlement data
-    // await saveSettlementData(
-    //   party,
-    //   orgId,
-    //   req.query.vanSale === "true" ? "normal van sale" : "normal sale",
-
-    //   req.query.vanSale === "true" ? "vanSale" : "sale",
-    //   salesNumber,
-    //   result._id,
-    //   valueToUpdateInTally,
-    //   result?.date,
-    //   result?.party?.partyName,
-    //   session
-    // );
-
     const Primary_user_id = req.owner;
 
-    if (valueToUpdateInTally > 0) {
+    if (finalOutstandingAmount > 0) {
       await updateTallyData(
         orgId,
         salesNumber,
@@ -146,7 +123,7 @@ export const createSale = async (req, res) => {
         lastAmount,
         secondaryMobile,
         session,
-        valueToUpdateInTally,
+        finalOutstandingAmount,
         selectedDate,
         voucherType,
         "Dr"
@@ -305,177 +282,51 @@ export const editSale = async (req, res) => {
       /// delete  all the settlements
       await settlementModel.deleteMany({ voucherId: saleId }, { session });
       ///// create new settlements according to the updated payment splitting data
-   if (
-      paymentSplittingData.length > 0 &&
-      paymentSplittingData.some((item) => item?.ref_id !== "")
-    ) {
-      await savePaymentSplittingDataInSources(
-        paymentSplittingData,
-        salesNumber,
-        result._id,
-        orgId,
-        req.owner,
-        secondaryMobile,
-        "sale",
-        result?.date,
-        result?.party,
-        session,
-        selectedDate,
-        voucherType,
-        "Dr"
-      );
-    }
-      
-
-      // await revertSettlementData(
-      //   existingSale?.party,
-      //   orgId,
-      //   existingSale?.salesNumber,
-      //   existingSale?._id.toString(),
-      //   session
-      // );
-
-      /// recreate the settlement data
-
-      // let valueToUpdateInTally = 0;
-
-      // if (
-      //   paymentSplittingData &&
-      //   Object.keys(paymentSplittingData).length > 0
-      // ) {
-      //   valueToUpdateInTally = paymentSplittingData?.balanceAmount;
-      // } else {
-      //   valueToUpdateInTally = lastAmount;
-      // }
-
-      // ///save settlement data
-      // await saveSettlementData(
-      //   party,
-      //   orgId,
-      //   "normal sale",
-      //   "sale",
-      //   updateData?.salesNumber,
-      //   saleId,
-      //   valueToUpdateInTally,
-      //   updateData?.date,
-      //   updateData?.party?.partyName,
-      //   session
-      // );
-
-      // ///updating the existing outstanding record by calculating the difference in bill value
-
-      const outstandingResult = await updateOutstandingBalance({
-        existingVoucher: existingSale,
-        newVoucherData: {
+      if (
+        paymentSplittingData.length > 0 &&
+        paymentSplittingData.some((item) => item?.ref_id !== "")
+      ) {
+        await savePaymentSplittingDataInSources(
           paymentSplittingData,
-          lastAmount,
-        },
-        orgId,
-        voucherNumber: salesNumber,
-        party,
-        session,
-        createdBy: req.owner,
-        transactionType: "sale",
-        secondaryMobile,
-        selectedDate,
-        classification: "Dr",
-      });
+          salesNumber,
+          result._id,
+          orgId,
+          req.owner,
+          secondaryMobile,
+          "sale",
+          result?.date,
+          result?.party,
+          session,
+          selectedDate,
+          voucherType,
+          "Dr",
+          "edit"
+        );
+      }
 
-      //// updating the payment splitting data
-      ///first reverting the existing payment splitting data if it exists
+      //// update the outstanding of the sale against specific party
 
-      // if (existingSale?.paymentSplittingData?.splittingData) {
-      //   await revertPaymentSplittingDataInSources(
-      //     existingSale?.paymentSplittingData,
-      //     salesNumber,
-      //     saleId,
-      //     orgId,
-      //     session
-      //   );
-      // }
-
-      // // recreating new the payment splitting data
-
-      // / need to do /// commenting for now
-
-      // if (paymentSplittingData?.splittingData?.length > 0) {
-      //   const creditItem = paymentSplittingData.splittingData.find(
-      //     (item) => item.mode === "credit"
-      //   );
-      //   if (creditItem) {
-      //     // console.log("creditItem", creditItem);
-
-      //     const oldCreditAmount =
-      //       existingSale.paymentSplittingData?.splittingData?.find(
-      //         (item) => item.mode === "credit"
-      //       )?.amount || 0;
-      //     const newCreditAmount = creditItem.amount;
-      //     const diffCreditAmount =
-      //       Number(newCreditAmount) - Number(oldCreditAmount);
-
-      //     const matchedOutStandingOfCredit = await TallyData.findOne({
-      //       cmp_id: orgId,
-      //       bill_no: salesNumber,
-      //       billId: existingSale?._id.toString(),
-      //       createdBy: "paymentSplitting",
-      //     }).session(session);
-
-      //     if (matchedOutStandingOfCredit) {
-      //       const newOutstanding =
-      //         Number(matchedOutStandingOfCredit.bill_pending_amt || 0) +
-      //         diffCreditAmount;
-
-      //       paymentSplittingData.splittingData =
-      //         paymentSplittingData.splittingData.map((item) =>
-      //           item.mode === "credit"
-      //             ? { ...item, amount: newOutstanding }
-      //             : item
-      //         );
-
-      //       await savePaymentSplittingDataInSources(
-      //         paymentSplittingData,
-      //         salesNumber,
-      //         saleId,
-      //         orgId,
-      //         req.owner,
-      //         secondaryMobile,
-      //         "sale",
-      //         updateData?.date,
-      //         updateData?.party?.partyName,
-
-      //         session
-      //       );
-      //     } else {
-      //       await savePaymentSplittingDataInSources(
-      //         paymentSplittingData,
-      //         salesNumber,
-      //         saleId,
-      //         orgId,
-      //         req.owner,
-      //         secondaryMobile,
-      //         "sale",
-      //         updateData?.date,
-      //         updateData?.party?.partyName,
-
-      //         session
-      //       );
-      //     }
-      //   } else {
-      //     await savePaymentSplittingDataInSources(
-      //       paymentSplittingData,
-      //       salesNumber,
-      //       saleId,
-      //       orgId,
-      //       req.owner,
-      //       secondaryMobile,
-      //       "sale",
-      //       updateData?.date,
-      //       updateData?.party?.partyName,
-
-      //       session
-      //     );
-      //   }
-      // }
+      if (
+        finalOutstandingAmount !==
+        (existingSale.finalOutstandingAmount || existingSale.finalAmount)
+      ) {
+        const outstandingResult = await updateOutstandingBalance({
+          existingVoucher: existingSale,
+          newVoucherData: {
+            paymentSplittingData,
+            lastAmount,
+          },
+          orgId,
+          voucherNumber: salesNumber,
+          party,
+          session,
+          createdBy: req.owner,
+          transactionType: "sale",
+          secondaryMobile,
+          selectedDate,
+          classification: "Dr",
+        });
+      }
 
       await session.commitTransaction();
       return res.status(200).json({

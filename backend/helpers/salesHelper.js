@@ -375,7 +375,7 @@ export const createSaleRecord = async (
   salesNumber,
   updatedItems,
   updateAdditionalCharge,
-  session,
+  session
 ) => {
   try {
     const {
@@ -395,7 +395,7 @@ export const createSaleRecord = async (
       totalWithAdditionalCharges,
       totalPaymentSplits,
       subTotal,
-      finalOutstandingAmount
+      finalOutstandingAmount,
     } = req.body;
 
     const Primary_user_id = req.owner;
@@ -485,46 +485,45 @@ export const updateTallyData = async (
   voucherModel = "Sales"
 ) => {
   // if (party?.partyType === "party") {
-    try {
-      const billData = {
-        Primary_user_id: Primary_user_id,
+  try {
+    const billData = {
+      Primary_user_id: Primary_user_id,
+      bill_no: salesNumber,
+      billId: billId.toString(),
+      cmp_id: orgId,
+      party_id: party?._id,
+      accountGroup: party?.accountGroup_id,
+      subGroup: party?.subGroup_id,
+      bill_amount: Number(lastAmount),
+      bill_date: new Date(selectedDate),
+      bill_due_date: new Date(selectedDate),
+
+      bill_pending_amt: Number(valueToUpdateInTally),
+      email: party?.emailID,
+      mobile_no: party?.mobileNumber,
+      party_name: party?.partyName,
+      user_id: secondaryMobile || "null",
+      source: voucherType,
+      classification,
+    };
+
+    const tallyUpdate = await TallyData.findOneAndUpdate(
+      {
+        cmp_id: orgId,
         bill_no: salesNumber,
         billId: billId.toString(),
-        cmp_id: orgId,
+        Primary_user_id: Primary_user_id,
         party_id: party?._id,
-        accountGroup: party?.accountGroup_id,
-        subGroup: party?.subGroup_id,
-        bill_amount: Number(lastAmount),
-        bill_date: new Date(selectedDate),
-        bill_due_date: new Date(selectedDate),
+      },
+      { $set: billData },
+      { upsert: true, new: true, session }
+    );
+  } catch (error) {
+    console.error("Error updateTallyData sale stock updates:", error);
+    throw error;
+  }
+  // }
 
-        bill_pending_amt: Number(valueToUpdateInTally),
-        email: party?.emailID,
-        mobile_no: party?.mobileNumber,
-        party_name: party?.partyName,
-        user_id: secondaryMobile || "null",
-        source: voucherType,
-        classification,
-      };
-
-      const tallyUpdate = await TallyData.findOneAndUpdate(
-        {
-          cmp_id: orgId,
-          bill_no: salesNumber,
-          billId: billId.toString(),
-          Primary_user_id: Primary_user_id,
-          party_id: party?._id,
-        },
-        { $set: billData },
-        { upsert: true, new: true, session }
-      );
-    } catch (error) {
-      console.error("Error updateTallyData sale stock updates:", error);
-      throw error;
-    }
-  // } 
-  
-  
   // else if (party?.partyType === "cash" || party?.partyType === "bank") {
   //   //// create settlement
 
@@ -735,7 +734,8 @@ const handleCreditMode = async (
   session,
   selectedDate,
   voucherType,
-  party
+  party,
+  mode
 ) => {
   const { ref_id, amount, credit_reference_type, reference_name } = item;
 
@@ -767,7 +767,7 @@ const handleCreditMode = async (
   }
 
   // Handle credit with party reference
-  if (credit_reference_type === "party") {
+  else if (credit_reference_type === "party") {
     const party = await partyModel.findById(ref_id);
 
     await updateTallyData(
@@ -784,11 +784,10 @@ const handleCreditMode = async (
       voucherType,
       "Dr"
     );
-
-    return null; // No settlement needed for party credit
   }
 
-  throw new Error(`Invalid credit_reference_type: ${credit_reference_type}`);
+  return null; // No settlement needed for party credit
+
 };
 
 // Helper function to handle non-credit modes
@@ -844,7 +843,8 @@ export const savePaymentSplittingDataInSources = async (
   party,
   session,
   selectedDate,
-  voucherType
+  voucherType,
+  mode = "create"
 ) => {
   try {
     const updates = await Promise.all(
@@ -865,7 +865,8 @@ export const savePaymentSplittingDataInSources = async (
               session,
               selectedDate,
               voucherType,
-              party
+              party,
+              mode
             );
           }
 
@@ -1009,28 +1010,26 @@ export const updateOutstandingBalance = async ({
   classification,
 }) => {
   // Calculate old bill balance
-  const oldBillBalance = existingVoucher?.finalAmount || 0;
-    const newBillBalance = newVoucherData?.lastAmount || 0;
+  let oldBillBalance;
+  if (
+    existingVoucher?.paymentSplittingData &&
+    Object.keys(existingVoucher?.paymentSplittingData).length > 0
+  ) {
+    oldBillBalance = existingVoucher?.paymentSplittingData?.balanceAmount;
+  } else {
+    oldBillBalance = existingVoucher?.finalAmount || 0;
+  }
 
-  // if (
-  //   existingVoucher?.paymentSplittingData &&
-  //   Object.keys(existingVoucher?.paymentSplittingData).length > 0
-  // ) {
-  //   oldBillBalance = existingVoucher?.paymentSplittingData?.balanceAmount;
-  // } else {
-  //   oldBillBalance = existingVoucher?.finalAmount || 0;
-  // }
-
-  // // Calculate new bill balance
-  // let newBillBalance;
-  // if (
-  //   newVoucherData?.paymentSplittingData &&
-  //   Object.keys(newVoucherData?.paymentSplittingData).length > 0
-  // ) {
-  //   newBillBalance = newVoucherData?.paymentSplittingData?.balanceAmount;
-  // } else {
-  //   newBillBalance = newVoucherData?.lastAmount || 0;
-  // }
+  // Calculate new bill balance
+  let newBillBalance;
+  if (
+    newVoucherData?.paymentSplittingData &&
+    Object.keys(newVoucherData?.paymentSplittingData).length > 0
+  ) {
+    newBillBalance = newVoucherData?.paymentSplittingData?.balanceAmount;
+  } else {
+    newBillBalance = newVoucherData?.lastAmount || 0;
+  }
 
   // Calculate difference in bill value
   const diffBillValue = Number(newBillBalance) - Number(oldBillBalance);
@@ -1042,16 +1041,33 @@ export const updateOutstandingBalance = async ({
     billId: existingVoucher?._id.toString(),
   }).session(session);
 
-  // If newBillBalance < oldBillBalance => create advance receipts and payments
-  if (newBillBalance < oldBillBalance) {
-    const appliedReceipts = matchedOutStanding?.appliedReceipts;
+  // Calculate sum of applied receipts
+  const appliedReceipts = matchedOutStanding?.appliedReceipts || [];
+  const sumOfAppliedReceipts = appliedReceipts.reduce((sum, receipt) => {
+    return sum + (receipt.settledAmount || 0);
+  }, 0);
+
+  console.log(`New bill balance: ${newBillBalance}`);
+  console.log(`Sum of applied receipts: ${sumOfAppliedReceipts}`);
+  console.log(
+    `Absolute difference: ${Math.abs(newBillBalance - sumOfAppliedReceipts)}`
+  );
+
+  let updatedAppliedReceipts = appliedReceipts;
+  let updatedAppliedPayments = matchedOutStanding?.appliedPayments || [];
+
+  // Check if we need to create advances
+  const absoluteDifference = Math.abs(newBillBalance - sumOfAppliedReceipts);
+  const shouldCreateAdvances = newBillBalance < sumOfAppliedReceipts;
+
+  console.log(`Should create advances: ${shouldCreateAdvances}`);
+
+  // If newBillBalance < oldBillBalance AND condition is met => create advance receipts and payments
+  if (newBillBalance < oldBillBalance && shouldCreateAdvances) {
     const appliedPayments = matchedOutStanding?.appliedPayments;
     const totalAdvanceAmount = oldBillBalance - newBillBalance;
 
     console.log(`Processing advances for amount: ${totalAdvanceAmount}`);
-
-    let updatedAppliedReceipts = appliedReceipts || [];
-    let updatedAppliedPayments = appliedPayments || [];
 
     // Process advance receipts
     if (appliedReceipts?.length > 0) {
@@ -1066,7 +1082,7 @@ export const updateOutstandingBalance = async ({
       );
 
       updatedAppliedReceipts = receiptsResult.updatedAppliedReceipts;
-
+      console.log("updatedAppliedReceipts", updatedAppliedReceipts);
       console.log(
         `Remaining after processing receipts: ${receiptsResult.remainingAmount}`
       );
@@ -1101,13 +1117,23 @@ export const updateOutstandingBalance = async ({
         },
         { session }
       );
+      console.log("Updated appliedReceipts and appliedPayments arrays");
     }
   }
 
-  // Calculate value to update in tally
-  const valueToUpdateInTally = Number(
-    (matchedOutStanding?.bill_pending_amt || 0) + diffBillValue
+  // Calculate sum of applied receipts after processing advances
+  const finalSumOfAppliedReceipts = updatedAppliedReceipts.reduce(
+    (sum, receipt) => {
+      return sum + (receipt.settledAmount || 0);
+    },
+    0
   );
+
+  // Calculate bill_pending_amt as the difference of newBillBalance - sum of appliedReceipts (after creating advance)
+  const billPendingAmount = newBillBalance - finalSumOfAppliedReceipts;
+
+  console.log(`Final sum of applied receipts: ${finalSumOfAppliedReceipts}`);
+  console.log(`Bill pending amount: ${billPendingAmount}`);
 
   let updatedTallyData;
 
@@ -1120,7 +1146,7 @@ export const updateOutstandingBalance = async ({
         cmp_id: orgId,
         billId: existingVoucher?._id.toString(),
         bill_amount: newBillBalance,
-        bill_pending_amt: valueToUpdateInTally,
+        bill_pending_amt: billPendingAmount, // Updated calculation
         voucherNumber: voucherNumber,
         primaryUserId: existingVoucher.Primary_user_id,
         party: party,
@@ -1132,6 +1158,8 @@ export const updateOutstandingBalance = async ({
         updatedAt: new Date(),
         bill_date: new Date(selectedDate),
         bill_due_date: new Date(selectedDate),
+        appliedReceipts: updatedAppliedReceipts, // Ensure updated arrays are saved
+        appliedPayments: updatedAppliedPayments,
       },
       {
         new: true, // Return updated document
@@ -1158,8 +1186,7 @@ export const saveSettlementData = async (
   session
 ) => {
   try {
-
-    console.log(party)
+    console.log(party);
     const accountGroup = party?.accountGroup;
 
     if (!accountGroup) {
@@ -1225,29 +1252,24 @@ export const revertSettlementData = async (
 ) => {
   try {
     // const accountGroup = party?.accountGroupName;
-
     // if (!accountGroup) {
     //   throw new Error("Invalid account group");
     // }
-
     // let model;
     // if (accountGroup === "Cash-in-Hand") {
     //   model = cashModel;
     // } else if (accountGroup === "Bank Accounts") {
     //   model = bankModel;
     // }
-
     // if (!model) {
     //   return;
     // }
-
     // const query = {
     //   cmp_id: orgId,
     //   ...(accountGroup === "Cash-in-Hand"
     //     ? { cash_id: party?.party_master_id }
     //     : { bank_id: party?.party_master_id }),
     // };
-
     // // First, pull the specified settlements
     // const pullUpdate = {
     //   $pull: {
@@ -1257,12 +1279,10 @@ export const revertSettlementData = async (
     //     },
     //   },
     // };
-
     // const options = {
     //   new: true,
     //   session,
     // };
-
     // const updatedSource = await model.findOneAndUpdate(
     //   query,
     //   pullUpdate,
