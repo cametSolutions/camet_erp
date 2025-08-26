@@ -99,13 +99,12 @@ export const createSale = async (req, res) => {
       salesNumber,
       items,
       updateAdditionalCharge,
-      session ,// Pass session
-       totalAdditionalCharges,
+      session, // Pass session
+      totalAdditionalCharges,
       totalWithAdditionalCharges,
       totalPaymentSplits,
-      subTotal,
+      subTotal
     );
-
 
     /// add conversion status in sale order if the sale is converted from order
     if (convertedFrom.length > 0)
@@ -159,7 +158,6 @@ export const createSale = async (req, res) => {
       paymentSplittingData.length > 0 &&
       paymentSplittingData.some((item) => item?.ref_id !== "")
     ) {
-
       await savePaymentSplittingDataInSources(
         paymentSplittingData,
         salesNumber,
@@ -218,7 +216,11 @@ export const editSale = async (req, res) => {
     additionalChargesFromRedux,
     note,
     finalAmount: lastAmount,
-
+    finalOutstandingAmount,
+    totalAdditionalCharges,
+    totalWithAdditionalCharges,
+    totalPaymentSplits,
+    subTotal,
     selectedDate,
     paymentSplittingData = {},
   } = req.body;
@@ -290,9 +292,8 @@ export const editSale = async (req, res) => {
 
       await model.findByIdAndUpdate(saleId, updateData, { new: true, session });
 
-      //// update the settlement data ,so delete and recreate the settlement data
 
-      /// revert it
+      /// revert all the settlements
       await revertSettlementData(
         existingSale?.party,
         orgId,
