@@ -20,11 +20,16 @@ import {
 } from "../helpers/hotelHelper.js";
 import { extractRequestParams } from "../helpers/productHelper.js";
 import { generateVoucherNumber } from "../helpers/voucherHelper.js";
-import mongoose from "mongoose";
+import mongoose, { get } from "mongoose";
 import VoucherSeriesModel from "../models/VoucherSeriesModel.js";
 import { addItem } from "./restaurantController.js";
 import kotModal from "../models/kotModal.js";
 const { ObjectId } = mongoose.Types;
+import bankModel from "../models/bankModel.js";
+import cashModel from "../models/cashModel.js";
+import Party from "../models/partyModel.js";
+import { saveSettlementData } from "../helpers/salesHelper.js";
+import salesModel from "../models/salesModel.js";
 
 // function used to save additional pax details
 export const saveAdditionalPax = async (req, res) => {
@@ -633,14 +638,16 @@ export const getRooms = async (req, res) => {
 
     const startDate = new Date(); // startDate is required for check date, but not for overlap logic
 
-    console.log("Checking availability for date (checkOutDate logic only):", { endDate });
+    console.log("Checking availability for date (checkOutDate logic only):", {
+      endDate,
+    });
     console.log("companyId", req.params.cmp_id);
 
     // Find rooms that are currently booked for the specified checkout date (ignore arrivalDate)
     const overlappingBookings = await Booking.find({
       cmp_id: req.params.cmp_id,
       checkOutDate: { $gt: startDate }, // Only consider checkOutDate
-      status: { $nin: ['CheckIn'] }
+      status: { $nin: ["CheckIn"] },
     });
 
     console.log("Overlapping bookings found:", overlappingBookings.length);
@@ -649,7 +656,7 @@ export const getRooms = async (req, res) => {
     const overlappingCheckIns = await CheckIn.find({
       cmp_id: req.params.cmp_id,
       checkOutDate: { $gt: startDate },
-    }).select('roomDetails');
+    }).select("roomDetails");
 
     console.log("Overlapping check-ins found:", overlappingCheckIns.length);
 
@@ -657,9 +664,9 @@ export const getRooms = async (req, res) => {
     const occupiedRoomId = new Set();
 
     // Add booked room IDs
-    overlappingBookings.forEach(booking => {
+    overlappingBookings.forEach((booking) => {
       if (booking.selectedRooms && Array.isArray(booking.selectedRooms)) {
-        booking.selectedRooms.forEach(room => {
+        booking.selectedRooms.forEach((room) => {
           const roomId = room.roomId || room._id || room;
           if (roomId) {
             occupiedRoomId.add(roomId.toString());
@@ -669,9 +676,9 @@ export const getRooms = async (req, res) => {
     });
 
     // Add checked-in room IDs
-    overlappingCheckIns.forEach(checkIn => {
+    overlappingCheckIns.forEach((checkIn) => {
       if (checkIn.selectedRooms && Array.isArray(checkIn.selectedRooms)) {
-        checkIn.selectedRooms.forEach(room => {
+        checkIn.selectedRooms.forEach((room) => {
           const roomId = room.roomId || room._id || room;
           if (roomId) {
             occupiedRoomId.add(roomId.toString());
@@ -681,23 +688,22 @@ export const getRooms = async (req, res) => {
     });
 
     // Filter out occupied **and dirty/blocked** rooms
-    const vacantRooms = rooms.filter(room => {
+    const vacantRooms = rooms.filter((room) => {
       const roomId = room._id.toString();
       const isOccupied = occupiedRoomId.has(roomId);
 
       // exclude rooms with status 'dirty' or 'blocked'
       const isCleanAndOpen =
-        room.status !== 'dirty' &&
-        room.status !== 'blocked';
+        room.status !== "dirty" && room.status !== "blocked";
 
       return !isOccupied && isCleanAndOpen;
     });
 
     // Add availability status
-    const roomsWithStatus = vacantRooms.map(room => ({
+    const roomsWithStatus = vacantRooms.map((room) => ({
       ...room.toObject(),
-      status: 'vacant',
-      checkedAt: now
+      status: "vacant",
+      checkedAt: now,
     }));
 
     // Send response
@@ -717,7 +723,6 @@ export const getRooms = async (req, res) => {
     });
   }
 };
-
 
 // function used to get all rooms
 
@@ -1488,8 +1493,12 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
       if (item) {
         if (item?.selectedRooms) {
           for (const room of item?.selectedRooms) {
-            let startDateTime = new Date(`${item?.arrivalDate} ${item?.arrivalTime}`);
-            let endDateTime = new Date(`${item?.checkOutDate} ${item?.checkOutTime}`);
+            let startDateTime = new Date(
+              `${item?.arrivalDate} ${item?.arrivalTime}`
+            );
+            let endDateTime = new Date(
+              `${item?.checkOutDate} ${item?.checkOutTime}`
+            );
 
             let kotData = await kotModal.find({
               roomId: room.roomId,
@@ -1546,3 +1555,336 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
     });
   }
 };
+
+export const convertCheckOutToSale = async (req, res) => {
+  const session = await mongoose.startSession();
+  try {
+    await session.withTransaction(async () => {
+      const { cmp_id } = req.params;
+      let {
+        paymentMethod,
+        paymentDetails,
+        selectedCheckOut,
+        selectedParty,
+        isPostToRoom = false, // ✅ default false if not passed
+      } = req.body;
+
+      // ✅ Validate required fields
+      if (!paymentDetails) {
+        throw new Error("Missing payment details");
+      }
+
+      let paymentCompleted = false;
+
+      // ✅ Payment method logic
+      const cashAmt = Number(paymentDetails?.cashAmount || 0);
+      const onlineAmt = Number(paymentDetails?.onlineAmount || 0);
+
+      if (cashAmt > 0 && onlineAmt > 0) {
+        paymentMethod = "mixed";
+      }
+
+      // ✅ Fetch voucher series & number
+      const specificVoucherSeries = await hotelVoucherSeries(cmp_id, session);
+      const saleNumber = await generateVoucherNumber(
+        cmp_id,
+        "sales",
+        specificVoucherSeries._id.toString(),
+        session
+      );
+
+      // ✅ Payment split
+      const paymentSplittingArray = createPaymentSplittingArray(
+        paymentDetails,
+        cashAmt,
+        onlineAmt
+      );
+      let  partyData = await getSelectedParty(selectedParty,cmp_id,session);
+      // ✅ Party
+      const party = mapPartyData(partyData);
+
+      // ✅ Save Sales Voucher
+      const savedVoucherData = await createSalesVoucher(
+        cmp_id,
+        specificVoucherSeries,
+        saleNumber,
+        req,
+        selectedCheckOut,
+        party,
+        selectedParty,
+        paymentSplittingArray,
+        session
+      );
+
+      // ✅ Handle Outstanding
+      const paidAmount = isPostToRoom ? 0 : cashAmt + onlineAmt;
+      const pendingAmount = selectedCheckOut.reduce(
+        (acc, item) => acc + (item.balanceToPay || 0),
+        0
+      );
+
+      if (pendingAmount > 0) {
+        await createTallyEntry(
+          cmp_id,
+          req,
+          selectedParty,
+          selectedCheckOut,
+          savedVoucherData[0],
+          paidAmount,
+          pendingAmount,
+          session
+        );
+      }
+
+      // ✅ Save Settlement
+      await saveSettlement(
+        paymentDetails,
+        selectedParty,
+        cmp_id,
+        savedVoucherData[0],
+        paidAmount,
+        cashAmt,
+        onlineAmt,
+        session
+      );
+
+      // ✅ Update Checkout
+      if (selectedCheckOut?.voucherNumber?.length > 0) {
+        paymentCompleted = true;
+        await Promise.all(
+          kotData.voucherNumber.map((item) =>
+            CheckOut.updateOne(
+              { _id: item.id },
+              { balanceToPay: 0 },
+              { session }
+            )
+          )
+        );
+      }
+
+      await session.commitTransaction();
+
+      res.status(200).json({
+        success: true,
+        message: "Checkout converted to Sales successfully",
+        data: { saleNumber, salesRecord: savedVoucherData[0] },
+      });
+    });
+  } catch (error) {
+    console.error("Error converting checkout:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "Internal server error",
+    });
+  } finally {
+    await session.endSession();
+  }
+};
+
+async function hotelVoucherSeries(cmp_id, session) {
+  const SaleVoucher = await VoucherSeriesModel.findOne({
+    cmp_id,
+    voucherType: "sales",
+  }).session(session);
+  if (!SaleVoucher) throw new Error("Sale voucher not found");
+
+  const specificVoucherSeries = SaleVoucher.series.find(
+    (series) => series.under === "hotel"
+  );
+  if (!specificVoucherSeries)
+    throw new Error("No 'hotel' voucher series found");
+
+  return specificVoucherSeries;
+}
+
+function createPaymentSplittingArray(paymentDetails, cashAmt, onlineAmt) {
+  const arr = [];
+  if (cashAmt > 0) {
+    arr.push({
+      type: "Cash",
+      amount: cashAmt,
+      ref_id: paymentDetails?.selectedCash,
+      ref_collection: "Cash",
+    });
+  }
+  if (onlineAmt > 0) {
+    arr.push({
+      type: "upi",
+      amount: onlineAmt,
+      ref_id: paymentDetails?.selectedBank,
+      ref_collection: "BankDetails",
+    });
+  }
+  return arr;
+}
+
+function mapPartyData(selectedParty) {
+  console.log(selectedParty);
+  return {
+    _id: selectedParty._id,
+    partyName: selectedParty.partyName,
+    accountGroup_id: selectedParty.accountGroup?._id,
+    accountGroupName: selectedParty.accountGroup?.accountGroup,
+    subGroup_id: selectedParty.subGroup_id || null,
+    subGroupName: selectedParty.subGroupName || null,
+    mobileNumber: selectedParty.mobileNumber || null,
+    country: selectedParty.country || null,
+    state: selectedParty.state || null,
+    pin: selectedParty.pin || null,
+    emailID: selectedParty.emailID || null,
+    gstNo: selectedParty.gstNo || null,
+    party_master_id: selectedParty.party_master_id || null,
+    billingAddress: selectedParty.billingAddress || null,
+    shippingAddress: selectedParty.shippingAddress || null,
+    accountGroup: selectedParty.accountGroup?.toString() || null,
+    totalOutstanding: selectedParty.totalOutstanding || 0,
+    latestBillDate: selectedParty.latestBillDate || null,
+    newAddress: selectedParty.newAddress || {},
+  };
+}
+
+async function createSalesVoucher(
+  cmp_id,
+  specificVoucherSeries,
+  saleNumber,
+  req,
+  selectedCheckOut,
+  party,
+  selectedParty,
+  paymentSplittingArray,
+  session
+) {
+  let items = selectedCheckOut.flatMap((item) => item.selectedRooms);
+  let amount = selectedCheckOut.reduce(
+    (acc, item) => acc + Number(item.grandTotal),
+    0
+  );
+  let convertedFrom = selectedCheckOut.map((item) => item.voucherNumber);
+
+  return await salesModel.create(
+    [
+      {
+        date: new Date(),
+        selectedDate: new Date().toLocaleDateString(),
+        voucherType: "sales",
+        serialNumber: saleNumber.usedSeriesNumber,
+        userLevelSerialNumber: saleNumber.usedSeriesNumber,
+        salesNumber: saleNumber.voucherNumber,
+        series_id: specificVoucherSeries._id.toString(),
+        usedSeriesNumber: saleNumber.usedSeriesNumber,
+        Primary_user_id: req.pUserId || req.owner,
+        cmp_id,
+        secondary_user_id: req.sUserId,
+        party,
+        partyAccount: selectedParty.accountGroup?.accountGroup,
+        items,
+        address: selectedParty.billingAddress,
+        finalAmount: amount,
+        paymentSplittingData: paymentSplittingArray,
+        convertedFrom,
+      },
+    ],
+    { session }
+  );
+}
+
+async function createTallyEntry(
+  cmp_id,
+  req,
+  selectedParty,
+  selectedCheckOut,
+  savedVoucher,
+  paidAmount,
+  pendingAmount,
+  session
+) {
+  for (const item of selectedCheckOut) {
+    await TallyData.create(
+      [
+        {
+          Primary_user_id: req.pUserId || req.owner,
+          cmp_id,
+          party_id: selectedParty?._id,
+          party_name: selectedParty?.partyName,
+          mobile_no: selectedParty?.mobileNumber,
+          bill_date: new Date(),
+          bill_no: item?.voucherNumber,
+          billId: item?._id,
+          bill_amount: item?.balanceToPay,
+          bill_pending_amt: pendingAmount,
+          accountGroup: selectedParty?.accountGroup,
+          user_id: req.sUserId,
+          advanceAmount: item?.balanceToPay,
+          advanceDate: new Date(),
+          classification: "Cr",
+          source: "sales",
+        },
+      ],
+      { session }
+    );
+  }
+}
+
+async function saveSettlement(
+  paymentDetails,
+  selectedParty,
+  cmp_id,
+  savedVoucher,
+  paidAmount,
+  cashAmt,
+  onlineAmt,
+  session
+) {
+  if (paymentDetails?.paymentMode === "single") {
+    await saveSettlementData(
+      selectedParty,
+      cmp_id,
+      "normal sale",
+      "sale",
+      savedVoucher?.salesNumber,
+      savedVoucher?._id,
+      paidAmount,
+      new Date(),
+      selectedParty?.partyName,
+      session
+    );
+  } else {
+    if (cashAmt > 0) {
+      await saveSettlementData(
+        selectedParty,
+        cmp_id,
+        "normal sale",
+        "sale",
+        savedVoucher?.salesNumber,
+        savedVoucher?._id,
+        cashAmt,
+        new Date(),
+        selectedParty?.partyName,
+        session
+      );
+    }
+    if (onlineAmt > 0) {
+      await saveSettlementData(
+        selectedParty,
+        cmp_id,
+        "normal sale",
+        "sale",
+        savedVoucher?.salesNumber,
+        savedVoucher?._id,
+        onlineAmt,
+        new Date(),
+        selectedParty?.partyName,
+        session
+      );
+    }
+  }
+}
+
+async function getSelectedParty(selected,cmp_id, session) {
+  const selectedParty = await Party.findOne({ cmp_id, _id: selected })
+    .populate("accountGroup")
+    .session(session);
+  if (!selectedParty) throw new Error(`Party not found: ${partyName}`);
+
+  return selectedParty;
+}
