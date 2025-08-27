@@ -25,6 +25,7 @@ export const generateVoucherNumber = async (
   session = null
 ) => {
   const options = session ? { session } : {};
+  
 console.log("seriesId",seriesId,"cmp_id",cmp_id,"voucherType",voucherType)
   // 1. First find the current value
   const doc = await VoucherSeriesModel.findOne(

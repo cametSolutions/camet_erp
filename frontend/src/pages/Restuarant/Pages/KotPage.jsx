@@ -1342,7 +1342,6 @@ const OrdersDashboard = () => {
                                 {cashier.bank_ledname}
                               </option>
                             ))}
-                            <option value="hdfc">HDFC Bank</option>
                           </select>
                         </div>
                       )}

@@ -36,11 +36,23 @@ function AvailableRooms({
   const dropdownRef = useRef(null);
   const PAGE_SIZE = 50;
 
-  useEffect(() => {
+useEffect(() => {
+  const fetchBookings = async () => {
     if (formData?.selectedRooms?.length > 0) {
-      setBookings(formData?.selectedRooms);
+      const updatedBookings = await Promise.all(
+        formData.selectedRooms.map(async (booking) => {
+          const taxCalculation = await calculateTax(booking);
+          return taxCalculation;
+        })
+      );
+      console.log(updatedBookings);
+      setBookings(updatedBookings);
     }
-  }, [formData?.selectedRooms]);
+  };
+
+  fetchBookings();
+}, [formData?.selectedRooms?.length,formData?.stayDays]);
+
 
   useEffect(() => {
     if (!formData?.additionalPaxDetails && !formData?.foodPlan) return;
@@ -72,7 +84,7 @@ function AvailableRooms({
             return taxCalculation;
           })
         );
-        console.log("updatedBookings", updatedBookings);
+        console.log(updatedBookings);
         setBookings(updatedBookings);
       }
     };
@@ -114,7 +126,7 @@ const fetchRooms = useCallback(
       });
 
       const newRooms = res.data?.roomData || [];
-console.log(newRooms)
+
       // Filter out any rooms that might have slipped through backend filtering
       // Use 'availabilityStatus' instead of 'status'
       const vacantRooms = newRooms.filter(room =>
@@ -246,7 +258,7 @@ console.log(newRooms)
   };
 
   const handleDaysChange = (e, roomId) => {
-    const newDays = Number(e.target.value) || 0;
+    const newDays = Number(e.target.value || 0) 
     setBookings((prev) =>
       prev.map((b) =>
         b.roomId === roomId

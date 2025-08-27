@@ -21,6 +21,9 @@ import {
 import { extractRequestParams } from "../helpers/productHelper.js";
 import { generateVoucherNumber } from "../helpers/voucherHelper.js";
 import mongoose from "mongoose";
+import VoucherSeriesModel from "../models/VoucherSeriesModel.js";
+import { addItem } from "./restaurantController.js";
+import kotModal from "../models/kotModal.js";
 const { ObjectId } = mongoose.Types;
 
 // function used to save additional pax details
@@ -610,24 +613,24 @@ export const getRooms = async (req, res) => {
     const params = extractRequestParams(req);
     console.log("Rooms", params);
     const filter = buildDatabaseFilterForRoom(params);
-    
+
     console.log("paramsForgetRooms", params);
-    
+
     // Get current date and time
     const now = new Date();
-    
+
     // Get all rooms based on basic filters (no status field filtering)
     const { rooms, totalRooms } = await fetchRoomsFromDatabase(filter, params);
-    
+
     // Extract arrival and checkout dates from params
     const { arrivalDate, checkOutDate } = params;
-    
+
     // Convert string dates to Date objects if needed
     const startDate = new Date(arrivalDate);
     const endDate = new Date(checkOutDate);
-    
+
     console.log("Date range:", { startDate, endDate });
-    
+
     // Find rooms that are currently booked for the specified date range
     const overlappingBookings = await Booking.find({
       company_id: req.params.cmp_id,
@@ -635,11 +638,11 @@ export const getRooms = async (req, res) => {
       arrivalDate: { $lt: endDate }, // Changed from $lte to $lt
       checkOutDate: { $gt: startDate }, // More explicit
       // Add status filter to exclude cancelled bookings
-      status: { $nin: ['cancelled', 'rejected'] }
-    }).select('selectedRooms status');
-    
+      status: { $nin: ["cancelled", "rejected"] },
+    }).select("selectedRooms status");
+
     console.log("Overlapping bookings found:", overlappingBookings.length);
-    
+
     // Find rooms that are currently checked-in for the specified date range
     const overlappingCheckIns = await CheckIn.find({
       company_id: req.params.cmp_id,
@@ -647,22 +650,27 @@ export const getRooms = async (req, res) => {
       arrivalDate: { $lt: endDate }, // Changed from $lte to $lt
       $or: [
         { checkOutDate: { $gt: startDate } },
-        { checkOutDate: null } // No checkout time set yet
+        { checkOutDate: null }, // No checkout time set yet
       ],
       // Add status filter if CheckIn has status field
       // status: { $nin: ['cancelled'] }
-    }).select('roomDetails status');
-    
+    }).select("roomDetails status");
+
     console.log("Overlapping check-ins found:", overlappingCheckIns.length);
-    
+
     // Collect all occupied room IDs
     const occupiedRoomId = new Set();
-    
+
     // Add booked room IDs
-    overlappingBookings.forEach(booking => {
-      console.log("Processing booking:", booking._id, "selectedRooms:", booking.selectedRooms);
+    overlappingBookings.forEach((booking) => {
+      console.log(
+        "Processing booking:",
+        booking._id,
+        "selectedRooms:",
+        booking.selectedRooms
+      );
       if (booking.selectedRooms && Array.isArray(booking.selectedRooms)) {
-        booking.selectedRooms.forEach(room => {
+        booking.selectedRooms.forEach((room) => {
           const roomId = room.roomId || room._id || room; // Handle different structures
           if (roomId) {
             occupiedRoomId.add(roomId.toString());
@@ -671,12 +679,17 @@ export const getRooms = async (req, res) => {
         });
       }
     });
-    
+
     // Add checked-in room IDs
-    overlappingCheckIns.forEach(checkIn => {
-      console.log("Processing check-in:", checkIn._id, "roomDetails:", checkIn.roomDetails);
+    overlappingCheckIns.forEach((checkIn) => {
+      console.log(
+        "Processing check-in:",
+        checkIn._id,
+        "roomDetails:",
+        checkIn.roomDetails
+      );
       if (checkIn.roomDetails && Array.isArray(checkIn.roomDetails)) {
-        checkIn.roomDetails.forEach(room => {
+        checkIn.roomDetails.forEach((room) => {
           const roomId = room.roomId || room._id || room; // Handle different structures
           if (roomId) {
             occupiedRoomId.add(roomId.toString());
@@ -685,28 +698,35 @@ export const getRooms = async (req, res) => {
         });
       }
     });
-    
+
     console.log("Total occupied room IDs:", Array.from(occupiedRoomId));
-    
+
     // Add availability status to each room
-    const roomsWithStatus = rooms.map(room => {
+    const roomsWithStatus = rooms.map((room) => {
       const roomId = room._id.toString();
       const isOccupied = occupiedRoomId.has(roomId);
-      
-      console.log(`Room ${roomId}: ${isOccupied ? 'occupied' : 'vacant'}`);
-      
+
+      console.log(`Room ${roomId}: ${isOccupied ? "occupied" : "vacant"}`);
+
       return {
         ...room.toObject(),
-        availabilityStatus: isOccupied ? 'occupied' : 'vacant',
-        checkedAt: now
+        availabilityStatus: isOccupied ? "occupied" : "vacant",
+        checkedAt: now,
       };
     });
-    
+
     // Filter vacant rooms if needed
-    const vacantRooms = roomsWithStatus.filter(room => room.availabilityStatus === 'vacant');
-    
-    console.log("Total rooms:", rooms.length, "Vacant rooms:", vacantRooms.length);
-    
+    const vacantRooms = roomsWithStatus.filter(
+      (room) => room.availabilityStatus === "vacant"
+    );
+
+    console.log(
+      "Total rooms:",
+      rooms.length,
+      "Vacant rooms:",
+      vacantRooms.length
+    );
+
     // Send response with rooms and their availability status
     const sendRoomResponseData = sendRoomResponse(
       res,
@@ -714,9 +734,8 @@ export const getRooms = async (req, res) => {
       rooms.length,
       params
     );
-    
+
     return sendRoomResponseData;
-    
   } catch (error) {
     console.error("Error in getRooms:", error);
     return res.status(500).json({
@@ -888,7 +907,7 @@ export const roomBooking = async (req, res) => {
     if (isFor === "bookingPage") {
       selectedModal = Booking;
       voucherType = "saleOrder";
-      under = "Booking";
+      under = "hotel";
     } else if (isFor === "checkIn") {
       if (bookingData?.bookingId) {
         let updateBookingData = await Booking.findByIdAndUpdate(
@@ -906,7 +925,7 @@ export const roomBooking = async (req, res) => {
 
       selectedModal = CheckIn;
       voucherType = "deliveryNote";
-      under = "CheckIn";
+      under = "hotel";
     } else {
       console.log("bookingData", bookingData);
       if (bookingData?.checkInId) {
@@ -924,7 +943,7 @@ export const roomBooking = async (req, res) => {
       }
       selectedModal = CheckOut;
       voucherType = "sales";
-      under = "CheckOut";
+      under = "hotel";
     }
 
     const series_id = bookingData.voucherId || null;
@@ -1145,7 +1164,7 @@ export const fetchAdvanceDetails = async (req, res) => {
         });
         let checkOutSideAdvanceDetails = await TallyData.find({
           billId: checkOutData._id,
-        })
+        });
         advanceDetails = [
           ...bookingSideAdvanceDetails,
           ...checkInSideAdvanceDetails,
@@ -1153,21 +1172,21 @@ export const fetchAdvanceDetails = async (req, res) => {
         ];
       }
     } else if (type == "EditChecking") {
-       let checkInData = await CheckIn.findOne({
-          _id: bookingId,
+      let checkInData = await CheckIn.findOne({
+        _id: bookingId,
+      });
+      if (checkInData) {
+        let bookingSideAdvanceDetails = await TallyData.find({
+          billId: checkInData.bookingId,
         });
-        if(checkInData){
-          let bookingSideAdvanceDetails = await TallyData.find({
-            billId: checkInData.bookingId,
-          })
-          let checkInSideAdvanceDetails = await TallyData.find({
-            billId: checkInData._id,
-          })
-          advanceDetails = [
-            ...bookingSideAdvanceDetails,
-            ...checkInSideAdvanceDetails,
-          ];
-        }
+        let checkInSideAdvanceDetails = await TallyData.find({
+          billId: checkInData._id,
+        });
+        advanceDetails = [
+          ...bookingSideAdvanceDetails,
+          ...checkInSideAdvanceDetails,
+        ];
+      }
     } else {
       advanceDetails = await TallyData.find({ billId: bookingId });
     }
@@ -1191,20 +1210,15 @@ export const fetchAdvanceDetails = async (req, res) => {
   }
 };
 
-
-// Backend API Controller - getRoomsWithDateStatus.js
-
-
-
-
 export const getAllRoomsWithStatusForDate = async (req, res) => {
   const { cmp_id } = req.params;
   const { selectedDate } = req.query; // expected format: "YYYY-MM-DD"
 
   try {
     // 1. Fetch all rooms for the company
-    const allRooms = await roomModal.find({ cmp_id })
-     .populate("cmp_id", "name") // Populate organization details
+    const allRooms = await roomModal
+      .find({ cmp_id })
+      .populate("cmp_id", "name") // Populate organization details
       .populate("roomType") // Populate from brand collection
       .populate("roomFloor") // Populate from subCategory collection
       .populate("bedType") // Populate from category collection
@@ -1217,7 +1231,7 @@ export const getAllRoomsWithStatusForDate = async (req, res) => {
       cmp_id,
       status: { $ne: "checkIn" }, // skip check-ins, only pre-arrival bookings
       arrivalDate: { $lte: selectedDate },
-      checkOutDate: { $gte: selectedDate }
+      checkOutDate: { $gte: selectedDate },
     }).select("selectedRooms");
 
     // 3. CheckIns: status NOT 'checkOut' AND date overlaps selectedDate
@@ -1225,7 +1239,7 @@ export const getAllRoomsWithStatusForDate = async (req, res) => {
       cmp_id,
       status: { $ne: "checkOut" }, // skip already checked out
       arrivalDate: { $lte: selectedDate },
-      checkOutDate: { $gte: selectedDate }
+      checkOutDate: { $gte: selectedDate },
     }).select("selectedRooms");
 
     // --- Collect booked room IDs
@@ -1260,7 +1274,6 @@ export const getAllRoomsWithStatusForDate = async (req, res) => {
     });
 
     return res.json({ success: true, rooms: roomsWithStatus });
-
   } catch (error) {
     console.error("Error getting rooms with status:", error);
     return res.status(500).json({
@@ -1270,9 +1283,6 @@ export const getAllRoomsWithStatusForDate = async (req, res) => {
     });
   }
 };
-
-
-
 // Update room status
 export const updateRoomStatus = async (req, res) => {
   try {
@@ -1289,21 +1299,18 @@ export const updateRoomStatus = async (req, res) => {
     // Validate status
     const validStatuses = ["vacant", "booked", "occupied", "dirty", "blocked"];
     if (!status || !validStatuses.includes(status)) {
-      return res.status(400).json({ 
-        message: "Invalid or missing status", 
-        validStatuses 
+      return res.status(400).json({
+        message: "Invalid or missing status",
+        validStatuses,
       });
     }
 
     // Find room by ID and update
-    const updatedRoom = await roomModal.findByIdAndUpdate(
-      id,
-      { status },
-      { new: true, runValidators: true }
-    )
-    .populate("roomType")
-    .populate("bedType")
-    .populate("roomFloor");
+    const updatedRoom = await roomModal
+      .findByIdAndUpdate(id, { status }, { new: true, runValidators: true })
+      .populate("roomType")
+      .populate("bedType")
+      .populate("roomFloor");
 
     console.log("Room found and updated:", updatedRoom); // Debug log
 
@@ -1313,15 +1320,14 @@ export const updateRoomStatus = async (req, res) => {
 
     res.json({
       message: "Room status updated successfully",
-      room: updatedRoom
+      room: updatedRoom,
     });
-    
   } catch (error) {
     console.error("Error updating room status:", error);
-    res.status(500).json({ 
-      message: "Server error", 
+    res.status(500).json({
+      message: "Server error",
       error: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
     });
   }
 };
@@ -1353,13 +1359,214 @@ export const getDateBasedRoomsWithStatus = async (req, res) => {
       bookings,
       checkins,
     });
-
   } catch (error) {
     console.error("Error getting bookings:", error);
 
     return res.status(500).json({
       success: false,
       message: "Failed to fetch bookings",
+      error: error.message,
+    });
+  }
+};
+// function used to close multiple checkouts
+export const checkoutWithArrayOfData = async (req, res) => {
+  const session = await CheckOut.startSession();
+  try {
+    const checkOutArray = req.body?.data; // checkout array
+    const orgId = req.params.cmp_id;
+    const isFor = req.body?.modal;
+
+    if (!checkOutArray || checkOutArray.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No checkout data provided",
+      });
+    }
+
+    const selectedModal = CheckOut; // Always checkout here
+    const voucherType = "sales";
+    const under = "hotel";
+
+    await session.withTransaction(async () => {
+      for (const bookingData of checkOutArray) {
+        // ✅ Step 1: Update checkIn if linked
+        if (bookingData?.checkInId) {
+          let updateBookingData = await CheckIn.findByIdAndUpdate(
+            bookingData.checkInId,
+            { status: "checkOut" },
+            { new: true, session }
+          );
+
+          if (!updateBookingData) {
+            throw new Error(
+              "Check In not found for ID: " + bookingData.checkInId
+            );
+          }
+        }
+
+        const findSeries = await VoucherSeriesModel.findOne({
+          cmp_id: orgId,
+          voucherType,
+        });
+        let series_id = findSeries?.series
+          .find((s) => s.under === under)
+          ?._id.toString();
+
+        console.log("series_id", series_id);
+
+        const bookingNumber = await generateVoucherNumber(
+          orgId,
+          voucherType,
+          series_id,
+          session
+        );
+
+        let checkInId = bookingData._id;
+        // Attach generated voucher details
+        bookingData.voucherNumber = bookingNumber?.voucherNumber;
+        bookingData.voucherId = series_id;
+        bookingData.advanceAmount = 0;
+        delete bookingData._id;
+        // bookingData.advanceAmount = Number(bookingData.balanceToPay)
+        // bookingData.balanceToPay = 0;
+        // ✅ Step 3: Save checkout entry
+        const newBooking = new selectedModal({
+          cmp_id: orgId,
+          Primary_user_id: req.pUserId || req.owner,
+          Secondary_user_id: req.sUserId,
+          customerId: bookingData.customerId?._id,
+          checkInId,
+          ...bookingData,
+        });
+
+        let updateCheckIn = await CheckIn.findByIdAndUpdate(
+          checkInId,
+          { status: "checkOut" },
+          { new: true, session }
+        );
+        if (!updateCheckIn) {
+          throw new Error("Check In not found for ID: " + bookingData._id);
+        }
+
+        const savedBooking = await newBooking.save({ session });
+
+        // ✅ Step 4: If advance exists, save tally entry
+        // if (bookingData.advanceAmount && bookingData.advanceAmount > 0) {
+        //   const advanceObject = new TallyData({
+        //     Primary_user_id: req.pUserId || req.owner,
+        //     cmp_id: orgId,
+        //     party_id: bookingData.customerId?._id,
+        //     party_name: bookingData?.customerName,
+        //     mobile_no: bookingData?.mobileNumber,
+        //     bill_date: new Date(),
+        //     bill_no: savedBooking?.voucherNumber,
+        //     billId: savedBooking._id,
+        //     bill_amount: bookingData.advanceAmount,
+        //     bill_pending_amt: bookingData.advanceAmount,
+        //     accountGroup: bookingData.customerId?.accountGroup,
+        //     user_id: req.sUserId,
+        //     advanceAmount: bookingData.advanceAmount,
+        //     advanceDate: new Date(),
+        //     classification: "Cr",
+        //     source: under,
+        //   });
+
+        //   await advanceObject.save({ session });
+        // }
+      }
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "All checkouts saved successfully",
+    });
+  } catch (error) {
+    console.error("Error saving booking:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
+    });
+  } finally {
+    await session.endSession();
+  }
+};
+
+// function used to fetch out standing data
+export const fetchOutStandingAndFoodData = async (req, res) => {
+  try {
+    const checkoutData = req.body?.data;
+
+    if (!checkoutData || checkoutData.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No checkout data provided",
+      });
+    }
+
+    // Collect all advanceDetails across checkouts
+    let allAdvanceDetails = [];
+    let allKotData = [];
+
+    for (const item of checkoutData) {
+      if (item) {
+        if (item?.selectedRooms) {
+          for (const room of item?.selectedRooms) {
+            let startDateTime = new Date(`${item?.arrivalDate} ${item?.arrivalTime}`);
+            let endDateTime = new Date(`${item?.checkOutDate} ${item?.checkOutTime}`);
+
+            let kotData = await kotModal.find({
+              roomId: room.roomId,
+              createdAt: {
+                $gte: startDateTime,
+                $lte: endDateTime,
+              },
+            });
+            allKotData.push(...kotData);
+          }
+        }
+        const checkInData = await CheckIn.findOne({ _id: item.checkInId });
+
+        if (!checkInData) continue;
+
+        const bookingSideAdvanceDetails = await TallyData.find({
+          billId: checkInData.bookingId,
+        });
+
+        const checkInSideAdvanceDetails = await TallyData.find({
+          billId: checkInData._id,
+        });
+
+        const checkOutSideAdvanceDetails = await TallyData.find({
+          billId: item._id,
+        });
+        allAdvanceDetails.push(
+          ...bookingSideAdvanceDetails,
+          ...checkInSideAdvanceDetails,
+          ...checkOutSideAdvanceDetails
+        );
+      }
+    }
+
+    if (allAdvanceDetails.length > 0 || allKotData.length > 0) {
+      return res.status(200).json({
+        success: true,
+        message: "Advance details fetched successfully",
+        data: allAdvanceDetails || [],
+        kotData: allKotData || [],
+      });
+    } else {
+      return res.status(404).json({
+        success: false,
+        message: "Advance details not found",
+      });
+    }
+  } catch (error) {
+    console.error("Error fetching advance details:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch advance details",
       error: error.message,
     });
   }
