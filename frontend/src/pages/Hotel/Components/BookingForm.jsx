@@ -23,7 +23,7 @@ function BookingForm({
   isFor,
   outStanding = [],
 }) {
-  console.log(outStanding);
+ 
   const [voucherNumber, setVoucherNumber] = useState("");
   const [selectedParty, setSelectedParty] = useState("");
   const [displayFoodPlan, setDisplayFoodPlan] = useState(false);
@@ -146,7 +146,6 @@ function BookingForm({
       } else {
         checkout.setDate(checkout.getDate() + 1); // ✅ use `checkout`
       }
-
       const formattedCheckout = checkout.toISOString().split("T")[0];
 
       setFormData((prev) => ({
@@ -167,11 +166,17 @@ function BookingForm({
 
       // Convert milliseconds to days
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+       let updatedSelectedItems = formData.selectedRooms?.map((room) => ({
+          ...room,
+          stayDays: diffDays,
+          totalAmount: diffDays * room.priceLevelRate
+        }));
 
       setFormData((prev) => ({
         ...prev,
         checkOutDate: value,
         stayDays: diffDays,
+        selectedRooms: updatedSelectedItems
       }));
       return;
     }
@@ -182,12 +187,18 @@ function BookingForm({
       if (!isNaN(stayDays)) {
         const checkout = new Date(arrival);
         checkout.setDate(arrival.getDate() + stayDays);
+        let updatedSelectedItems = formData.selectedRooms?.map((room) => ({
+          ...room,
+          stayDays: stayDays,
+          totalAmount: stayDays * room.priceLevelRate
+        }));
 
         const formattedCheckout = checkout.toISOString().split("T")[0];
         setFormData((prev) => ({
           ...prev,
           stayDays: value,
           checkOutDate: formattedCheckout,
+          selectedRooms: updatedSelectedItems,
         }));
       } else {
         setFormData((prev) => ({
@@ -216,7 +227,7 @@ function BookingForm({
       console.log(response.data);
       if (response.data) {
         const specificSeries = response.data.series?.find(
-          (item) => item.currentlySelected === true 
+          (item) => item.under === "hotel"
         );
 
         if (specificSeries) {
@@ -508,7 +519,7 @@ function BookingForm({
     handleSubmit(payload);
   };
 
-  console.log(outStanding)
+  console.log(outStanding);
 
   return (
     <>
@@ -952,7 +963,7 @@ function BookingForm({
         </>
       )}
 
-       <OutStandingModal
+      <OutStandingModal
         showModal={modalOpen}
         onClose={() => setModalOpen(false)}
         outStanding={outStanding}

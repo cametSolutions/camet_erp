@@ -126,6 +126,7 @@ const bookingSchema = new mongoose.Schema(
     agentId: { type: mongoose.Schema.Types.ObjectId, ref: "Party" },
     bookingId: { type: mongoose.Schema.Types.ObjectId, ref: "Booking" },
     checkInId: { type: mongoose.Schema.Types.ObjectId, ref: "CheckIn" },
+    checkInArray : [{type: mongoose.Schema.Types.ObjectId, ref: "CheckIn"}],
     status: String,
 
   },
