@@ -52,6 +52,8 @@ function CheckOut() {
       bookingId: bookingData?.bookingDataId?._id,
       checkInId: bookingData?._id,
     };
+
+    console.log(updatedData);
     try {
       let response = await api.post(
         `/api/sUsers/saveData/${organization._id}`,
@@ -60,7 +62,7 @@ function CheckOut() {
       );
       if (response?.data?.success) {
         toast.success("Check Out Saved Successfully");
-        navigate("/sUsers/hotelDashBoard");
+        navigate("/sUsers/checkOutList");
       }
       isSubmittingRef.current = false;
     } catch (error) {

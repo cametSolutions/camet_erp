@@ -54,7 +54,7 @@ console.log(bookingData);
       );
       if (response?.data?.success) {
         toast.success("Check In Successfully");
-        navigate("/sUsers/hotelDashBoard");
+        navigate("/sUsers/checkInList");
       }
       isSubmittingRef.current = false;
     } catch (error) {

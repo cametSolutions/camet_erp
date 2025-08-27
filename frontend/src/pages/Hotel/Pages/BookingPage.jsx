@@ -23,7 +23,7 @@ function BookingPage() {
       );
       if (response?.data?.success) {
         toast.success(response?.data?.message);
-        navigate("/sUsers/hotelDashBoard");
+        navigate("/sUsers/bookingList");
       }
       isSubmittingRef.current = false;
     } catch (error) {
