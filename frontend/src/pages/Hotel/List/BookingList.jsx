@@ -32,7 +32,11 @@ function BookingList() {
   const [loader, setLoader] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [listHeight, setListHeight] = useState(0);
-  const [selectedCheckOut, setSelectedCheckOut] = useState(location?.state?.selectedCheckOut || []);
+  console.log(location?.state?.selectedCustomer);
+  console.log(location?.state?.balanceToPay);
+  const [selectedCheckOut, setSelectedCheckOut] = useState(
+    location?.state?.selectedCheckOut || []
+  );
   const [conformationModal, setConformationModal] = useState(false);
   const [paymentType, setPaymentType] = useState("cash");
   const [selectedCustomer, setSelectedCustomer] = useState({});
@@ -42,7 +46,7 @@ function BookingList() {
   const listRef = useRef();
   const searchTimeoutRef = useRef(null);
   const limit = 60; // Number of bookings per page
-  
+
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [selectedDataForPayment, setSelectedDataForPayment] = useState(null);
@@ -57,7 +61,18 @@ function BookingList() {
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
-  
+
+  useEffect(() => {
+    // if (location?.state?.selectedCheckOut) {
+    //   setSelectedCheckOut(location?.state?.selectedCheckOut);
+    //   setSelectedCustomer(location?.state?.selectedCustomer?._id);
+    //   setSelectedDataForPayment((prevData) => ({
+    //     ...prevData,
+    //     total: location?.state?.balanceToPay,
+    //   }));
+    //   setShowPaymentModal(true);
+    // }
+  }, [location?.state?.selectedCheckOut]);
 
   // Debounced search function
   const searchData = (data) => {
@@ -162,17 +177,17 @@ function BookingList() {
     fetchBookings(1, searchTerm);
   }, [fetchBookings, searchTerm]);
 
-  useEffect(() => {
-    if (selectedCheckOut.length > 0) {
-      let prevObject = {};
-      let total = selectedCheckOut.reduce(
-        (acc, item) => acc + Number(item.balanceToPay),
-        0
-      );
-      prevObject.total = total;
-      setSelectedDataForPayment(prevObject);
-    }
-  }, [selectedCheckOut]);
+  // useEffect(() => {
+  //   if (selectedCheckOut.length > 0) {
+  //     let prevObject = {};
+  //     let total = selectedCheckOut.reduce(
+  //       (acc, item) => acc + Number(item.balanceToPay),
+  //       0
+  //     );
+  //     prevObject.total = total;
+  //     setSelectedDataForPayment(prevObject);
+  //   }
+  // }, [selectedCheckOut]);
 
   const handleDelete = async (id) => {
     // Show confirmation dialog
@@ -275,6 +290,76 @@ function BookingList() {
       setCheckOutModal(false);
       setSelectedCheckOut([]);
     }
+  };
+
+  const handleSavePayment = async (id) => {
+    // setSaveLoader(true);
+    // let paymentDetails;
+    // if (paymentMode == "single") {
+    //   if (paymentMethod == "cash") {
+    //     paymentDetails = {
+    //       cashAmount: selectedDataForPayment?.total,
+    //       onlineAmount: onlineAmount,
+    //       selectedCash: selectedCash,
+    //       selectedBank: selectedBank,
+    //       paymentMode: paymentMode,
+    //     };
+    //   } else {
+    //     paymentDetails = {
+    //       cashAmount: cashAmount,
+    //       onlineAmount: selectedDataForPayment?.total,
+    //       selectedCash: selectedCash,
+    //       selectedBank: selectedBank,
+    //       paymentMode: paymentMode,
+    //     };
+    //   }
+    // } else {
+    //   if (
+    //     Number(cashAmount) + Number(onlineAmount) !=
+    //     selectedDataForPayment?.total
+    //   ) {
+    //     setPaymentError(
+    //       "Cash and online amounts together equal the total amount."
+    //     );
+    //     return;
+    //   }
+    //   paymentDetails = {
+    //     cashAmount: cashAmount,
+    //     onlineAmount: onlineAmount,
+    //     selectedCash: selectedCash,
+    //     selectedBank: selectedBank,
+    //     paymentMode: paymentMode,
+    //   };
+    // }
+
+    // try {
+    //   const response = await api.post(
+    //     `/api/sUsers/convertCheckOutToSale/${cmp_id}`,
+    //     {
+    //       paymentMethod: paymentMethod,
+    //       paymentDetails: paymentDetails,
+    //       selectedCheckOut : selectedCheckOut,
+    //       paidBalance : selectedDataForPayment?.total,
+    //       selectedParty : selectedCustomer
+    //     },
+    //     { withCredentials: true }
+    //   );
+    //   // Check if the response was successful
+    //   if (response.status === 200 || response.status === 201) {
+    //     toast.success(response?.data?.message);
+    //     fetchBookings(1, searchTerm);
+    //   }
+    // } catch (error) {
+    //   console.error(
+    //     "Error updating order status:",
+    //     error.response?.data || error.message
+    //   );
+    // } finally {
+    //   setSaveLoader(false);
+    //   setCashAmount(0);
+    //   setOnlineAmount(0);
+    //   setShowPaymentModal(false);
+    // }
   };
 
   const Row = ({ index, style }) => {
@@ -516,7 +601,7 @@ function BookingList() {
                 {/* Selected Items List */}
                 <div className="max-h-32 overflow-y-auto mb-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                   <div className="space-y-2">
-                    {selectedCheckOut.map((item, index) => (
+                    {selectedCheckOut.map((item) => (
                       <div
                         key={item.id}
                         className="flex items-center justify-between text-xs bg-gray-50 p-2 rounded-lg"
@@ -577,7 +662,11 @@ function BookingList() {
                       location.pathname === "/sUsers/checkInList"
                         ? setCheckOutModal(true)
                         : navigate("/sUsers/CheckOutPrint", {
-                            state: {selectedCheckOut:selectedCheckOut,customerId:selectedCustomer,isForPreview:true},
+                            state: {
+                              selectedCheckOut: selectedCheckOut,
+                              customerId: selectedCustomer,
+                              isForPreview: true,
+                            },
                           });
                       // setCheckOutModal(true);
                     }}
@@ -954,57 +1043,6 @@ function BookingList() {
 
               {/* Order Summary */}
               <div className="bg-gray-50 p-3 rounded-lg">
-                <div className="space-y-1">
-                  {/* {selectedDataForPayment?.type === "dine-in" && (
-                    <div className="flex justify-between text-xs">
-                      <span>Table Number:</span>
-                      <span className="font-medium">
-                        {selectedDataForPayment?.tableNumber}
-                      </span>
-                    </div>
-                  )}
-                  {selectedDataForPayment?.type !== "roomService" &&
-                    selectedDataForPayment?.type !== "dine-in" && (
-                      <>
-                        <div className="flex justify-between text-xs">
-                          <span>Customer:</span>
-                          <span className="font-medium">
-                            {selectedDataForPayment?.customer?.name}
-                          </span>
-                        </div>
-                        <div className="flex justify-between text-xs">
-                          <span>Phone:</span>
-                          <span className="font-medium">
-                            {selectedDataForPayment?.customer?.phone}
-                          </span>
-                        </div>
-                      </>
-                    )}
-                  {selectedDataForPayment?.type === "delivery" && (
-                    <div className="flex justify-between text-xs">
-                      <span>Address:</span>
-                      <span className="font-medium text-right max-w-48">
-                        {selectedDataForPayment?.customer?.address}
-                      </span>
-                    </div>
-                  )}
-                  {selectedDataForPayment?.type === "roomService" && (
-                    <>
-                      <div className="flex justify-between text-xs">
-                        <span>Room No:</span>
-                        <span className="font-medium text-right max-w-48">
-                          {selectedDataForPayment?.roomDetails?.roomno}
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-xs">
-                        <span>Guest Name:</span>
-                        <span className="font-medium text-right max-w-48">
-                          {selectedDataForPayment?.roomDetails?.guestName}
-                        </span>
-                      </div>
-                    </>
-                  )} */}
-                </div>
                 <div className="border-t border-gray-200 pt-2 mt-2 flex justify-between font-semibold text-gray-800">
                   <span className="text-sm">Total Amount</span>
                   <span className="text-base text-blue-600">
@@ -1014,27 +1052,27 @@ function BookingList() {
                 <div className="flex gap-2 mt-2">
                   <button
                     onClick={() => {
-                      // handleSavePayment(selectedDataForPayment?._id);
+                      handleSavePayment();
                     }}
-                    // disabled={saveLoader}
+                    disabled={saveLoader}
                     className={`flex-1 group px-3 py-1.5 border rounded-lg text-xs font-semibold transition-all duration-200 flex items-center justify-center gap-1 ${
-                      // saveLoader
-                      // ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
-                      // :
+                      saveLoader
+                      ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                      :
                       "bg-white text-emerald-700 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 hover:scale-105"
                     }`}
                   >
-                    {/* {saveLoader ? (
+                    {saveLoader ? (
                       <>
                         <div className="w-3 h-3 border border-emerald-300 border-t-transparent rounded-full animate-spin"></div>
                         Processing...
                       </>
-                    ) : ( */}
+                    ) : (
                     <>
                       <MdVisibility className="w-3 h-3 group-hover:rotate-12 transition-transform duration-200" />
                       Process Payment
                     </>
-                    {/* )} */}
+                   )}
                   </button>
                 </div>
               </div>

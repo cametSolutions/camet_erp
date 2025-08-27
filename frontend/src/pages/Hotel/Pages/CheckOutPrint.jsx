@@ -123,6 +123,7 @@ export default function SattvaInvoice() {
 
     const balanceAmount = roomTariffTotal - advanceTotal;
     const totalTaxAmount = (taxAmountForFood + taxAmountForRoom) * 2; // CGST + SGST
+    const balanceAmountToPay = (roomTariffTotal + kotTotal) - advanceTotal
 
     return {
       roomTariffTotal,
@@ -130,6 +131,7 @@ export default function SattvaInvoice() {
       kotTotal,
       balanceAmount,
       totalTaxAmount,
+      balanceAmountToPay
     };
   };
 
@@ -481,7 +483,7 @@ export default function SattvaInvoice() {
                 </td>
                 
                 <td className="border border-black p-2 text-right">
-                  {((totals.roomTariffTotal + totals.kotTotal).toFixed(2) -totals.advanceTotal.toFixed(2)).toFixed(2)  }
+                  {totals.balanceAmountToPay.toFixed(2)}  
                 </td>
               </tr>
               {!isForPreview && (
@@ -698,7 +700,8 @@ export default function SattvaInvoice() {
         {isForPreview && (
           <div className="no-print w-full flex justify-end">
             <button
-              onClick={() => navigate("/sUsers/checkOutList", {state: {selectedCheckOut:selectedCheckOut}})}
+              onClick={() => navigate("/sUsers/checkOutList", {state: {selectedCheckOut:selectedCheckOut, selectedCustomer:selectedCustomerData,
+                 balanceToPay:totals?.balanceAmountToPay}})}
               className="bg-black hover:bg-gray-800 text-white px-6 py-2 rounded-lg font-medium"
             >
               Confirm Payment
@@ -714,7 +717,6 @@ export default function SattvaInvoice() {
             position: static;
           }
         }
-
         @media print {
           .no-print {
             display: none !important;
