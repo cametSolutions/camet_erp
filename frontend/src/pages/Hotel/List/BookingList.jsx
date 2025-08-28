@@ -835,7 +835,7 @@ function BookingList() {
                       >
                         {cashOrBank?.cashDetails?.map((cashier) => (
                           <option key={cashier._id} value={cashier._id}>
-                            {cashier.cash_ledname}
+                            {cashier.partyName}
                           </option>
                         ))}
                       </select>
@@ -861,7 +861,7 @@ function BookingList() {
                         </option>
                         {cashOrBank?.bankDetails?.map((cashier) => (
                           <option key={cashier._id} value={cashier._id}>
-                            {cashier.bank_ledname}
+                            {cashier.partyName}
                           </option>
                         ))}
                       </select>
@@ -930,7 +930,7 @@ function BookingList() {
                           </option>
                           {cashOrBank?.cashDetails?.map((cashier) => (
                             <option key={cashier._id} value={cashier._id}>
-                              {cashier.cash_ledname}
+                              {cashier.partyName}
                             </option>
                           ))}
                         </select>
@@ -989,7 +989,7 @@ function BookingList() {
                           </option>
                           {cashOrBank?.bankDetails?.map((cashier) => (
                             <option key={cashier._id} value={cashier._id}>
-                              {cashier.bank_ledname}
+                              {cashier.partyName}
                             </option>
                           ))}
                         </select>

@@ -286,6 +286,8 @@ const OrdersDashboard = () => {
       tableNo: data?.tableNumber,
       items: data?.items,
       createdAt: data?.createdAt,
+      customerName:data?.customer?.name,
+      type:data?.type
     };
 
     generateAndPrintKOT(orderData, true, false, companyName);
@@ -1222,7 +1224,7 @@ const OrdersDashboard = () => {
                         >
                           {cashOrBank?.cashDetails?.map((cashier) => (
                             <option key={cashier._id} value={cashier._id}>
-                              {cashier.cash_ledname}
+                              {cashier.partyName}
                             </option>
                           ))}
                         </select>
@@ -1248,7 +1250,7 @@ const OrdersDashboard = () => {
                           </option>
                           {cashOrBank?.bankDetails?.map((cashier) => (
                             <option key={cashier._id} value={cashier._id}>
-                              {cashier.bank_ledname}
+                              {cashier.partyName}
                             </option>
                           ))}
                         </select>
@@ -1317,7 +1319,7 @@ const OrdersDashboard = () => {
                             </option>
                             {cashOrBank?.cashDetails?.map((cashier) => (
                               <option key={cashier._id} value={cashier._id}>
-                                {cashier.cash_ledname}
+                                {cashier.partyName}
                               </option>
                             ))}
                           </select>
@@ -1376,7 +1378,7 @@ const OrdersDashboard = () => {
                             </option>
                             {cashOrBank?.bankDetails?.map((cashier) => (
                               <option key={cashier._id} value={cashier._id}>
-                                {cashier.bank_ledname}
+                                {cashier.partyName}
                               </option>
                             ))}
                           </select>
