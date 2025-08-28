@@ -1,0 +1,1802 @@
+[33mc6e1d5a4[m first commit
+[33m96349913[m directoty changed
+[33ma37773f5[m api changed
+[33m4972d365[m hostinger server change
+[33me494183f[m test server
+[33m34d1c0bd[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp
+[33md300ae7a[m test 2
+[33m8c7fb50b[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp
+[33md5d14699[m test 3
+[33m791095a7[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp
+[33mc7b0090b[m test 4
+[33m84f7de90[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp test 3
+[33m6978f03c[m size increased
+[33m54f277a8[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp
+[33m05a349ba[m category sub brand add edit delete done
+[33mea306141[m api changed
+[33m6ae9f684[m Resolved merge conflicts in frontend/src/api/api.js
+[33m43536e12[m api changed to localhost
+[33m2bf73778[m added level name location
+[33m5c3b246b[m level name an dlocation added
+[33m6e520031[m add product copleted
+[33mc0944107[m edit completed in item on creating in voice
+[33mf5546db5[m redux worked in add item
+[33mee251c35[m invoice office work satday
+[33m58c1a2ad[m invoice saved in db
+[33mef9fa7ed[m invoice/cheque number
+[33m22bd41f1[m api changed
+[33m241c91ad[m bug fixes
+[33m065bb2c9[m sidebar updation
+[33m79bf6b6d[m loader added
+[33mdeee5cc2[m before react window usage
+[33m5b23fde5[m after rect window usage
+[33m0f715268[m add item optimisation done
+[33madd09596[m party and product list updated
+[33m051683b9[m optimisation complted dashboard changed
+[33mc9782f6a[m optimisation added to main
+[33m2a366a02[m api changed
+[33mef726775[m product list height changed
+[33m11b623ba[m api changed
+[33m409fe1c7[m hight of invoilce list changed and button hight changed
+[33m029c7261[m buttonheight /back button
+[33m7f5874e8[m api changed
+[33med8cc5d4[m bugs fixed and changes office work
+[33mb18ee382[m tuesday work
+[33m1d74aff4[m api changed
+[33mcae50099[m sidebar isuues solved
+[33m5e2b32a1[m api changed
+[33mf4e4bb60[m resolving bugs
+[33md24478ca[m api changed
+[33m07c4aad6[m added filter/navigation condition in primary
+[33m8633c540[m api
+[33m9f3da12c[m filter width  changed
+[33m96b651f4[m api
+[33m1e31beb4[m sidebar changed to products
+[33mb4724f7a[m api changed
+[33mda19c804[m error in routers solved
+[33m98bdaba2[m api changed
+[33m58979e64[m id created for invoice ,company refresh
+[33m3c06bc67[m api
+[33maf7ad714[m change in main saving
+[33mb75c18d8[m edit order
+[33madb21df1[m outstanding scroll solved and some issuues in edit invoice solved
+[33m3f818a3b[m invoice pdf office work
+[33m74b3d3f1[m before screen adjustment of invoice
+[33mbeb99b8b[m invoice upto words
+[33m91a8bc76[m invoice completed
+[33m332a3bf5[m pulled from remote and conflit resolved in share invoice
+[33mbf84335b[m before merging invoice pdf to main
+[33m404836fc[m Merge branch 'feat/updatingReceipt'
+[33m54212ea2[m changed secondary like primary upto print pdf
+[33m2206bb79[m api changed
+[33m51feca01[m fixed some navigation bugs
+[33m809bfd03[m loader in company change added
+[33md7460f54[m api changed
+[33m3efbef36[m all parties showed for secondary users
+[33me6c7ff1f[m sale oder to sale
+[33m0a4249b7[m api changed
+[33mc98476b9[m filter issue solved in additem secondary
+[33m61317b64[m test git ingnore
+[33m42b07f00[m test git ingnore
+[33m759c61aa[m additional charges add page created
+[33mba2e9fd2[m added configuration additional charges in primary
+[33mc40b320c[m additional charge and order configuration completed in secondary
+[33m5e8252b2[m additional charge in invoice  completed in secondary
+[33m42917848[m additional charge in edit invoice  completed in secondary
+[33mcc93a2ac[m additional charge/bank/terms and contions  in share   invoice  completed in secondary
+[33m1caa91fe[m commit before merging changes into main
+[33m85673398[m merged aditional charges to main
+[33mce693ef4[m bugs fixed
+[33m829e1fe4[m bugs fixed 2
+[33m3b775e7f[m added remove all in addiitionl and configurations
+[33m70a44373[m upto qr code completed/sale in secondary completed
+[33m4d14a009[m configure secondary is added
+[33ma51f0454[m added configuration page of secuser
+[33m05b39cb6[m fethced configuration number
+[33m6070557a[m configuration number is added in sales
+[33mf7c9dbd3[m sales changes
+[33m585d692b[m sales updated
+[33m8d5773fa[m bugs cleared in new user
+[33mc688edf4[m changes added
+[33mebca3b6e[m api changed
+[33m288d0497[m buh cleared
+[33mcd38392a[m api changed
+[33m8c19e699[m sec user password issue solved
+[33m07eefecf[m inventory-setup
+[33m4f4a32e9[m produts to save from tally function added
+[33mc2a8a22b[m api changed
+[33mab4b5708[m apic chaged
+[33m7b14a5d9[m added configuration remaning things
+[33m042e86da[m sales branch merged to main
+[33m3780b761[m Merge branch 'main' into main
+[33m01d3f992[m Merge pull request #1 from sreeraj-vijay/main
+[33mf722b7c1[m Inventory details primary,secondary
+[33m9ea0aef3[m transactions in dashboard /added tax invoice link address
+[33m3e74ea22[m added removeall functionality in sales
+[33mf1a1de89[m errors in sales primary solved
+[33m08b8dab5[m fixed bugs in sales and order
+[33m36bf6032[m party adding functuion added in tally controller
+[33m79967fc4[m added cancel button in InvoiceSecondary
+[33m7e0e085a[m added validation in secondary user configuration
+[33m42008721[m some bug fixes
+[33m6a368a6f[m inventory filter added in primary
+[33m2bafd059[m api changed
+[33mdf4c2e29[m Merge branch 'main' into main
+[33m2168e187[m Merge pull request #2 from sreeraj-vijay/main
+[33m62d49b78[m api  changed
+[33maeb6f8fe[m api changed
+[33m7cd8eebe[m inventory added in primary and party controller updated
+[33m722834e7[m api changed
+[33mae054a73[m server changed
+[33m80c38c65[m first invnetory
+[33m23d6ab58[m api changed
+[33m96f327ff[m refresh product on price level change is added in add item in invoice primary
+[33m13a8fa41[m changed total with pricrlevels
+[33m9fecb139[m changed total with pricrlevels in secobdary and filters persisted in secondary invoice
+[33meef16820[m changed total with pricrlevels in secobdary sales
+[33m36de63bd[m added space in additem invoice secondary
+[33m3d5f466f[m Inventory added in secondary user
+[33mb5544caf[m Merge branch 'main' into main
+[33m165e6c41[m Merge pull request #3 from sreeraj-vijay/main
+[33mfa8c4945[m added secondary inventory
+[33m542adbbe[m sales and outstanding is connected in primary
+[33m332c6760[m primary uoustanding connection completed
+[33m5c783db5[m error in pricrlrvrl change fixed
+[33m1220dc72[m api changed
+[33me2303845[m decrement issue in add item solved
+[33mdf5f70a7[m api changed
+[33m3c929f97[m admin errors fixed
+[33m37ee7d25[m added additional charges tally frunction
+[33mf45203b0[m merged  additional charge function in tally cintroller
+[33m3b5ce943[m bug in admin fixed
+[33m5b0a295f[m bank issue solved
+[33m71bd2112[m pricrlrvrl issue solved
+[33m9f065ab8[m pricelevel bug merged
+[33m93fd622a[m ErrorPage correction
+[33medda9bc1[m Merge branch 'main' into main
+[33m1954e13b[m Merge pull request #4 from sreeraj-vijay/main
+[33m2620891c[m api changed
+[33mc77fe9ee[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp
+[33m712308c4[m configuration issue solved
+[33m5d08d9b2[m + and - swapped
+[33mf820b131[m search clear issue solved in additem sale order  primary
+[33m2549f8fd[m search clear issue solved in additem sale  primary
+[33mcf1c31d1[m search clear issue solved in additem saleorder secondary
+[33m6b148d30[m search clear issue solved in additem sales secondary
+[33m7d21c62c[m configuration back issue solved
+[33mc7fc5482[m correctiong additional charges
+[33mb1380e83[m id correction
+[33mbf9faa30[m secondary salesorder back issue and invoice details issue solved
+[33ma0963bfb[m Merge pull request #5 from sreeraj-vijay/main
+[33mb2c2c1f4[m merged additional charges
+[33mf5ee378c[m api changed
+[33m3207460e[m Invoice setup
+[33m7121d6cb[m edit aditional details successFully
+[33mf2b4b11b[m changed contion of stock in add item sales and color chaanged to red
+[33m3889145e[m added removesales dispatch in secondary
+[33mca7d803e[m Merge pull request #6 from sreeraj-vijay/main
+[33ma3d55be1[m added edit in addtional charges secondary
+[33me8697572[m api changed
+[33m48cebd59[m  added error page 404 and internal server error
+[33m2cbdcbac[m Error page
+[33md442c244[m CompanyAuthentication
+[33mdcb1062a[m serial number added and giving function of invoice to tally added
+[33mf84f0102[m serial number added in secondary invoice function
+[33m56179c42[m added sales giving function in tally controller
+[33ma5bf497d[m tally intrgration of sale and intrgration completed (giving function merged
+[33m9f288355[m New error page correction
+[33m414cff93[m Merge branch 'main' of https://github.com/sreeraj-vijay/camet_erp
+[33m092e4bc3[m Merge pull request #7 from sreeraj-vijay/main
+[33md897f766[m api changed
+[33m71901059[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp
+[33mb86b5ab6[m changes
+[33mf5f9585c[m godown name correction
+[33m4617ff0d[m changes made successfully
+[33m4c6b1225[m Merge pull request #8 from sreeraj-vijay/main
+[33m1647b497[m van sale godown showed in sales
+[33mc8f8cf36[m gst amounts and vansale popup removed
+[33mcb2830e5[m vansale godown count showed as balace stock of corresponding godown
+[33m62c93d6b[m vansale godown name toast error resolved
+[33m97806325[m pagination updated
+[33mb4437ab3[m api changed
+[33m50525ab2[m change
+[33mc3ff3d87[m additional charges amount added in order and sales
+[33me707a049[m json updated and bank led_name updated
+[33meb475a79[m merged json updation branch to main
+[33m90f9a28e[m edit invoice updated
+[33mac26b198[m rounding added in invoice and sales in primary and secondary
+[33m7352093c[m search close buttn  added in invoice and sales in primary and secondary
+[33m6d3ec697[m  added remove item button in primary invoice
+[33m3d301eeb[m  added remove item button in primary invoiceSecondary
+[33m68511718[m  added remove item button in all  primary  Secondary
+[33me3494868[m decimal added in count in invoice primary
+[33m9c3555d5[m godown mismatch resolved in primary sales
+[33m585800c3[m godown mismatch resolved in secondary  sales
+[33m3cfd0d6c[m edit salses page input decimal almost completed
+[33mdabf3d5b[m bug in logo and configuration fixed
+[33m3f4a3bcb[m api changed
+[33m59a4ed86[m before newe change
+[33m68362d18[m decimal in sales almost completed
+[33mb1661d5c[m Merge branch 'feat/pwa'
+[33md8cdd6f3[m api changed
+[33m0ae4dd37[m saving
+[33mc6463397[m pwa completed
+[33mf379dc97[m save decimal changes
+[33mb5c1034a[m decimal errors cleared
+[33m53e567a1[m merging to main
+[33m13398f6e[m Merge branch 'feat/pwa'
+[33mb072cd58[m api changed
+[33mfa29935b[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp into proWebApp
+[33mdca9d1ce[m Merge branch 'proWebApp'
+[33mcddf59ca[m changes inn server committed
+[33md3e71f94[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp
+[33m3784c171[m directory cahnged
+[33m5b9c5e14[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp
+[33m74837161[m pos print added
+[33mffa8b39c[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp
+[33me80bacda[m decimal in sec sales completed
+[33m1ec7238f[m pos added in secondary/decimal added in secondary
+[33me0aad6d4[m api changed
+[33me4703dda[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp
+[33m41fc8ac5[m puser error solved
+[33mce9fae71[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp
+[33mfe2031cb[m payment default bank issue solved
+[33mc155b35a[m self godown bug solved in primary add product and  edit product
+[33m9db1b6a3[m self pricrlrvel issue solved  in primary add product and  edit product
+[33m2c52cd50[m primary and secondary godown self issue solved
+[33m982df740[m account number and ifsc validation removed in add bank primary
+[33mca148dce[m cancel button is added for products in saleorder edit
+[33m87ab6224[m vansale godown problem stock updation revised and somee navigate issues solved
+[33m1f8aee78[m bug in sales secondary solved in vansale
+[33m10142dec[m add product validation issue solved in primary and secondary
+[33m6be4d7a6[m van sale conifig default issue solved
+[33m0153e401[m bug fixes
+[33m59d293ca[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp
+[33me2e29010[m all products added in redux and get products functioin modified
+[33mf2e8212f[m optimisation added in sec order
+[33mf12e09be[m optimisation added in sec order and sales/rounded added in sec sales and order/invoicenumber in pos format issuee solved
+[33mc6967f6f[m sales edit in secondary resolved
+[33m7cfc1f9b[m loader added in sales and order in search party
+[33m40c21845[m apin changed and merged optimisation with main
+[33ma279305e[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp
+[33m22fcdf37[m popup issue in secondary solved in order
+[33mdf5e6bab[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp
+[33m054fb939[m scroll added in sale order sec
+[33med9c9387[m scroll added in sales  sec
+[33ma723df80[m configure secondary issue solved
+[33m8336eef4[m inventory loader issue solved in primary and secondary
+[33md8687b5a[m receipt title changed to transactions in both primary and secondary
+[33m3712e012[m receipt title changed t transactions in both primary and secondary
+[33mb679c9c2[m total in   transactions is addedd in both primary and secondary
+[33mb1591fb1[m order configurtion changed to settings  addedd in both primary and secondary
+[33mfa08118b[m pos removed from  both primary and secondary
+[33m66af9155[m three inch invoice is removed from both primary and secondary
+[33m5d941c4c[m api changed
+[33m6685a301[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp
+[33mb263ecc0[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp
+[33m5c15030b[m date added in dashboard secondary
+[33mef3a5180[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp
+[33mff7245ae[m contacts and popup added
+[33m85449dc1[m primary deletion completed
+[33meccb3269[m changes merged to main
+[33m78150156[m api changed
+[33m0c1a68a8[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp
+[33m9de3f869[m back issue solved in contacts
+[33m74e8b723[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp
+[33m853bff31[m changes
+[33m726b7dc9[m vansale functionaity added in contact popup
+[33mb62dab06[m inventory godown popup added in primary
+[33mc4f5b74a[m inventory godown popup added in secondary
+[33m98b2a13f[m purchase created  in secondary
+[33mc0b1c6e0[m purchase completed in secondary
+[33m43417a67[m purchase done in primary
+[33mf632a204[m Merge branch 'primaryEdits'
+[33m52391d5b[m merged purchase with main
+[33m62adc6ff[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp
+[33mf2b67693[m sale order bug cleared
+[33m20ea03ed[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp
+[33m93f5ef37[m api changed
+[33maf831876[m  product list updated as tax and hsn and tax made in one line
+[33m935f4867[m receipt changed to outstanding
+[33m6e3d2d67[m  product list updated as tax and hsn and tax made in one line and uppercased
+[33m3230aa70[m search component is added in all pages
+[33m1868217c[m hsn and tax changed in inventory
+[33m2d9fa552[m todays transcartion size adjusted in dashboard
+[33me440db09[m toast messages reviwed
+[33m47b3e007[m out standing backbutton added
+[33mc056b7bd[m api changed
+[33m50a8cc00[m merged changes to main
+[33mad63a404[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp
+[33mdb929126[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp
+[33m73ed354a[m order configuration changed in secondary
+[33m59475fb6[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp
+[33mffb8a79a[m small change
+[33mce77b003[m before batch
+[33m950069fa[m batch ui almost completed
+[33m37cc7232[m counter ui sucessfully added
+[33mb0a836c4[m batch edit completedd 95%
+[33m28e5d6e0[m calulations error solved in calculate total in additem page
+[33ma1a52a0c[m edit from continue page is completed
+[33m45f33447[m backend sale completed but vasale ignored
+[33m18299159[m balance stock null and no godown issue resolved in baackend
+[33m73e7f028[m inventory completed in secondary
+[33m7ee1668a[m product balance update removed from createsale
+[33mf46305fe[m inventory updated in primary
+[33m558a3d8f[m before merging batch to main
+[33m3fd3a0ce[m merged batch with main and  api changed
+[33m1282f463[m changes unknown which i dont needed
+[33m6e2e8282[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp
+[33m2a28c4b6[m server changed
+[33m540dc3dc[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp
+[33m4da83ad1[m product fetching has godown or batch changed to map insted of for  loop
+[33m5704d768[m added order stock in primary
+[33md3da0cec[m added order stock in secondary
+[33m75156c69[m api changed
+[33m2b860e64[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp
+[33ma631e705[m stock register decimals resolved
+[33m08778539[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp
+[33mdde90e3e[m updated fetchGodownsAndPriceLevels this function to avild null and empty string
+[33mfcbcdbb3[m  updated getproducts function accordinng to selected godowns
+[33m90b95bd1[m list height updated to 250 in sale and  order
+[33mc7d360cf[m stock added in each item right,order balace stock updation added
+[33m9e257630[m api changed
+[33mcd0dce76[m batch updations added to main
+[33mbd5b1b47[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp
+[33m75549445[m product overwrite on push done
+[33m753decc0[m order total issues solved
+[33m36573539[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp
+[33meed198b4[m edit sales frondend completed
+[33m3ebede94[m edit sale stock updation completed
+[33m912330c3[m balance stock updation completed
+[33mfcb1a30a[m product deletion in sale updation completed
+[33m0f254df8[m product delete and batch detelete done
+[33m4a7d6e28[m godown wise delete done
+[33m59ef6b9a[m new item added in sale edit
+[33m69ab26d1[m sale edit primary checking success,added additional charges edit and discount edit
+[33mc7819e16[m solved product delete problem
+[33me8ff0727[m balance stock updated
+[33m91400a5e[m before marging to main feat batch
+[33m53a13d63[m merged edit to main
+[33m4fc3a230[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp
+[33me832e596[m added helpers
+[33mf2dfc0ea[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp
+[33mbf540b6e[m updated sales details and pdf
+[33m31e3c25a[m doubling issue solved
+[33mea1586c5[m print issues solved
+[33m021102dc[m updated balance stock display in additem page
+[33mbd9112d5[m three ich pdf edited
+[33m6b3c75fc[m added new changes in three inch pdf
+[33ma3d6b46c[m merged feat/Batch to main
+[33m088ca26f[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp
+[33me89c58bc[m pdf size decreased
+[33mfb58f604[m api changed
+[33m891279a2[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp
+[33m8d6687b4[m chaned api
+[33m4c333d77[m suser config page updated
+[33m158e057f[m pricelevel mandatory removed
+[33ma1303ce2[m changes merged to main
+[33m17a3f972[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp
+[33m4c094f2d[m added navigation
+[33m708db11e[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp
+[33mdee3ea22[m api changed
+[33ma35a5a3a[m before making bulk updates
+[33mf70734f5[m order details page updated /order edit issue solved/ pdf updated/
+[33m7d4285c6[m api changed
+[33mb7f4ae69[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp
+[33m1dd7db8a[m added rate input
+[33m97ef872a[m added rete change function
+[33m5725f57f[m debounce tested
+[33m60ba4598[m api changed
+[33mf3e6e936[m dir changed
+[33m22ccc81a[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp
+[33mbe8f7293[m office work
+[33mdc58bb5a[m rate editing done in order
+[33mc0e1e71b[m dir changed
+[33md0273a18[m api changed
+[33m9d12a7bc[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp
+[33ma3ed5ea3[m change added in edit order also
+[33mcabb294b[m resolved total change issue according to pricelevel change
+[33m06253795[m added selected pricerate each item in sales in initial render
+[33md8bfeb37[m updated pricerate in display in sales
+[33mc1417126[m initial /change in pricelevel/ change in rate/ + and - done
+[33m93a5f561[m rate in create sale added
+[33m7d3b0193[m edit sale page updated
+[33mc6aee25c[m edit sale updated with pricerate
+[33m17419916[m sales details page updated
+[33m21d931b4[m updated sales order details
+[33m03ae763e[m sales pdf updated  tax invoice
+[33m1060b772[m server issue
+[33me73e7bbc[m chabnged dir
+[33me62df877[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp
+[33mfd9c4bd0[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp into feat/Batch
+[33m887e970f[m office work friday
+[33mafb8fa59[m batch enabling button added in add and edit company
+[33maa3134d7[m updated order details page
+[33me92d5ade[m tax invoice in sales order buggs solved
+[33mbef46727[m pos print in sale order added
+[33meba63434[m updated sales order details page in primary
+[33ma167bf24[m pos added in primary also
+[33m586f69cd[m tax invoice in sale updated
+[33m091fa94b[m pos in sale updated
+[33mfd47e678[m sales details page ui updated
+[33m28573118[m sales details page updated in primary
+[33m13dfe53d[m Connection to outstanding -Sale done
+[33m065a60ff[m before merging changes to main
+[33m6a353d1e[m api changed
+[33md853d4bf[m Resolved merge conflicts
+[33m2e186122[m api changed
+[33mac98c7bb[m before starting Godown wise batch updating
+[33me06f0ec1[m createsale updatred with Godown wise batch updating
+[33m58188a0a[m swallfire added in both mobile screen in sale and order details
+[33mdaf0beae[m api changed
+[33m6cb9b692[m added bill to button
+[33m718fc3cc[m bill to ship to completed
+[33m81d6a393[m merged changes to main
+[33m441bdb68[m changed width of the inputs
+[33m4e685cf4[m changed api
+[33me167cefb[m api changed
+[33ma26eede3[m updated discount calculation in sales pdf
+[33mb1238fbc[m solved pricerate issue in sales and sale order
+[33m857b1df9[m api changed
+[33meac07c11[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp into feat/billTo
+[33m0debb875[m ui of challan updated
+[33md7f57892[m despatch details  is added in sales and sale order
+[33m445dbbb0[m despatch details edit added in sales
+[33mebf0561c[m before merging to changes to main
+[33mec0aa75d[m api changed
+[33m855bb099[m updated pdf
+[33m191bfb87[m primary sales pdf updated
+[33m6c696978[m pished changes with main
+[33m38999bd6[m deleted unwanted files and made add org form component and added industry and state in constants and add org updated
+[33m0adb1639[m updated edit org form
+[33m77ca9c1a[m added add batch
+[33m4ad33b9f[m added brand category subcategory godown pricelevel pages
+[33m10207a78[m sidebar test
+[33me3d1b0e1[m sidebar updation completed in primary users
+[33m3c2559fb[m completed 80% updation
+[33med271099[m updated add product
+[33mc5cb9884[m updated add product and edit product in secondadry
+[33m759b341b[m brand commented in sale and saleorder
+[33m1f558100[m sidebar completed in primary user
+[33m0f7c049c[m 20% in secondary sidebar
+[33m08bfb612[m conflit resolved
+[33m6545d75e[m updated pagination
+[33mc1f4022b[m Merge branch 'feat/sidebar'
+[33mc3acedb5[m merged sidebar with main and api changed
+[33ma9ef7524[m api changed
+[33m9938ce4d[m updated pricelevel issure and issue in route
+[33mbe310e94[m api changed
+[33md8110d03[m added partyList component
+[33m872e655e[m added call option in partylist secondary
+[33me67a05ec[m Merge branch 'feat/billTo'
+[33madde1a8f[m api changed
+[33m056eff91[m api changed
+[33m911c5390[m party list component added in primary and call option added in both primary and secondary
+[33m787ca19c[m updated primary dashboard
+[33m18ef5225[m updated dashboard card as common component
+[33me408ce2a[m api changed
+[33mfd14009e[m updation on product
+[33me95597b6[m updation on product
+[33m376bf17d[m Updation made on secondary user (pUser to Suser)
+[33mf1ab5970[m SecondaryUser Product Error In getAllSubDetails Corrected
+[33m4a23c8c4[m updations are made on product page secondary user
+[33m0fb0f7fc[m Product Part Updated
+[33mbb0dd792[m api Changed
+[33m2574a26c[m Merge pull request #9 from sreeraj-vijay/main
+[33m55b2dd08[m updations on invoice and header repetation
+[33m5239596f[m Merge branch 'productErrorCorrectionSecUser'
+[33m44846e79[m Merge pull request #10 from sreeraj-vijay/main
+[33m62f34c08[m Bill to Updated
+[33m67d4b898[m Merge branch 'productErrorCorrectionSecUser'
+[33m7675d1c6[m Merge pull request #11 from sreeraj-vijay/main
+[33mbea7cf71[m invoiceUpdation
+[33m12d3d81c[m Merge branch 'productErrorCorrectionSecUser'
+[33mfa568ef1[m Merge pull request #12 from sreeraj-vijay/main
+[33m86f1cee1[m number repeating issue solved
+[33mbd05ed1e[m same updated in sale order also
+[33m5172b1b8[m issue that price rate is not updating white editing a sale issue solved
+[33mfdc8881c[m api changed
+[33m1dd470c2[m added adderess in pos in primary and secondary in sale and sale order
+[33m287fc9d5[m ship to check box added in settings and updates pdf according to that
+[33m9e0c1756[m added date change updation in sale and sale order
+[33m5d19dced[m order configuration updation completed in primary and secndary like despatch details added in it
+[33m0de45447[m add party form component added
+[33me5183b40[m edit party updated with common form
+[33m067eac75[m Merge branch 'feat/billTo'
+[33mc4286381[m numbers moved inside the configuration
+[33m53542e40[m fetch configuration updated
+[33m8d2fb570[m updated  create invoice according to order number change
+[33m52015bf0[m updated crate sale according to sale number change
+[33m5c7db288[m added  - in configuratioon number
+[33mdb2879ab[m saving changes before moving to updation branch
+[33m22f73d73[m solved errors in add party and removed validations in order configurations
+[33m29ebbea2[m merged changes to main
+[33m5fb1091f[m error in add party of cmp_id solved
+[33m77bcb067[m url issue in party list solved
+[33m0a47d8a2[m api changed
+[33m2c09981f[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp into feat/billTo
+[33m978eccda[m added existing sales number checking in sales
+[33mf7e9930c[m added existing sales number checking in sales order
+[33m18495a11[m merged current numbers to main
+[33m661df194[m vanslae creation model updated in backend
+[33mc8977d1c[m office worK
+[33m276ae269[m backend of get products updated for seperated  van sale and sale
+[33m3f5154cd[m vansale detailspage/transacton page /dashboard/both pdf updated in primary and secondary
+[33m9252940c[m vansale edit done
+[33m925241f7[m Merge branch 'feat/billTo'
+[33ma6cb118e[m changes added to main
+[33m23cdb02e[m api changed
+[33mf5df5668[m add click done in vansale updation
+[33m24455549[m vansale updation completed
+[33m3c4314ff[m merged changes to main and api changed
+[33mb0b94e11[m sale made as component
+[33md2376602[m error in vansale backend resolved
+[33mb0c8e7fc[m Merge branch 'feat/billTo'
+[33m7c210ab0[m api changed
+[33mdb6c0ac5[m stock transfer added in dashboard
+[33mbf9912e4[m added stock transfer page and its redux
+[33m77a45e1f[m get products functin updated for removing bacth only and empty godown if excluded godown id is present
+[33m9a89bbfd[m office work
+[33mbf9d82c5[m stock tranfer backed completed /stock transfer details page done/
+[33m7566ddfa[m stock transfer added in transaction for secondary
+[33m36c38326[m vansale edit completed
+[33mb9068b43[m updated tally controller for vansale and added tally helper
+[33mf9464285[m dashboard updated
+[33m68d879a0[m search issue solved
+[33m5f587b0c[m redux cleared on sidebar click
+[33m4bf563d5[m configuration of stock transfer done
+[33m09e0798c[m updations done
+[33m587ec9d4[m api changed and changes added to main
+[33m9de7a045[m unnecessaty logs are removed from secondary user controller
+[33mbfdcbe0d[m invoice cancel completed
+[33ma410a97e[m cancellation added for vansale
+[33mbc113356[m stock transfer cancel added successfully
+[33mf859193d[m changes saved
+[33m034781b3[m bug fixed of configuration page
+[33m7fe799c7[m pdf issue test update 1
+[33mbd6b49d9[m merged changes to main
+[33me2c50f5a[m updated user configuration page and vansale updated
+[33m814750bc[m Merge branch 'bugFix'
+[33mede0169a[m changes added to main
+[33mfc9b6988[m main changes
+[33m0a190e36[m moving branch
+[33m73e576a4[m moving to cancel:
+[33mecc65385[m fetched all prodtcts in add item stock transfer and inventory
+[33m2702f5b3[m added title in despatch details
+[33m9da40516[m added cancel in all
+[33m9dac4df8[m modified pos print
+[33m5f351e68[m Merge branch 'feat/cancel'
+[33me735e59f[m border added in pos
+[33m118beeee[m added non ptintable content in sidebar
+[33m31041eeb[m api changed
+[33m74b7a978[m added print button
+[33m9e6ffa4b[m bt test
+[33mb044b44e[m api changed
+[33mb89550bb[m res changed
+[33m5b9f1c29[m removed authentication for printing
+[33mea105f7a[m print updated
+[33m90c23065[m removed top div from print
+[33m53bb4972[m api changed
+[33m138cdd9b[m print test by color
+[33ma4e2c093[m api changed
+[33meeb417d6[m height issue test 1
+[33m6eb7476b[m api changed
+[33md7a612b6[m padding adjusted
+[33m9b9a2f2f[m sizee oof test reduced
+[33m80eaa026[m api changed
+[33m0b876b2e[m conflit resolved
+[33ma7459496[m vansle bugs fixed
+[33m78dd2a57[m type issue and tranculate issue solved
+[33m7748f35f[m api changed
+[33mc82df5cf[m api change
+[33mae30f53d[m vansale print test
+[33mbdd309f3[m Merge branch 'bugFix'
+[33m91ea067c[m api changed
+[33mf2c42a73[m van sale test
+[33m523338ff[m pos added for all
+[33mf78fcd23[m sidebar in edit product is removed
+[33m5c9ac3a8[m main changes
+[33m7477460d[m godown id and name missing issue solved
+[33m83d8cb6b[m api changed
+[33m423d944f[m moving to main and saving
+[33ma22d2e04[m godown id and name missing issue solved again
+[33m00a3445b[m pricelevel issue solved
+[33m23533a5d[m Merge branch 'bugFix'
+[33m7a5c33b9[m api changed
+[33m14364939[m  api changed
+[33m2984a32e[m stock transfer was not showing issue solved in cofiguration page
+[33m5859205c[m product saving issue solved
+[33mc06400a5[m Merge branch 'bugFix'
+[33mb4f113c3[m schema validations in product is removed
+[33mad8654b9[m api changed
+[33mc1d8cefc[m purchase 1st page done
+[33m498571cd[m pricelevel issue solved in add item sale
+[33m258b76da[m purchase front end completed
+[33m0634e955[m vansale router issue solved
+[33mf23f82c1[m vansale route issue solved
+[33m5ccaf6d0[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp into bugFix
+[33m74f933f2[m vansale godown abscence issue handled
+[33m263d4273[m Bug Removed
+[33mc45770ff[m Bug Fixed @ product
+[33mbef58c2e[m Merge branch 'MidhunMohan210:main' into main
+[33mb035138c[m Merge pull request #13 from sreeraj-vijay/main
+[33me900c422[m stock tranfer number issue in edit is solved
+[33maf3df029[m Merge branch 'bugFix' into Purchase
+[33m84183b01[m conflit resolved in EditItemPurchase.jsx
+[33m76ac51c6[m api changed after pull to main
+[33m9ad5adff[m Merge branch 'main' into bugFix
+[33m3f5e2368[m stock transfer lssue solved in configuration and colsolelogs are removed  from primary user controller
+[33m9f76a3da[m bug fix merged to main
+[33m309379b1[m updation on Add organization
+[33m36eb099e[m Merge branch 'bugFixing'
+[33m1d5ec855[m Merge branch 'main' of https://github.com/sreeraj-vijay/camet_erp
+[33m8369d577[m Merge branch 'MidhunMohan210:main' into main
+[33m33d67460[m Merge pull request #14 from sreeraj-vijay/main
+[33m072c981e[m api changed
+[33mda4bc32e[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp into bugFix
+[33mca8708cc[m currency name addded
+[33md8a029b2[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp into Purchase
+[33m41489b05[m fetchFilters function updated in backend and pricelevel isssue solved in add purchase
+[33m39662156[m batch enabling completed in product master and company master
+[33md609fc06[m batch adding form added in purchase
+[33mecee5bbc[m added tax calculation in batch adding
+[33md366072d[m unshift done
+[33mf67f9043[m Updation on createSale pdf
+[33mc61b62fd[m Api changed
+[33mbda98166[m Merge pull request #15 from sreeraj-vijay/main
+[33m189ce4a2[m updation on share back
+[33m37b66254[m updation on share back1
+[33m85ee5548[m Merge pull request #16 from sreeraj-vijay/bugFixing
+[33m457f01f2[m warning added in creating godown
+[33ma2e6ebe7[m default godown boolean added in godown model
+[33m6027af48[m default godown edit and delete restricted
+[33ma87e3dce[m added batch enabling all pages
+[33m3ecf5191[m Merge branch 'main' of into bugFix
+[33mea170697[m price level issue solved in sale
+[33mf5e2f810[m added the default godown in product master form as defaultly show in the location rows
+[33m81a1e870[m godown validation done succedfullt in adding batch
+[33mecfdc4fd[m purchase backend done
+[33mda2c96a8[m batch remaved from display with balalance stock is zero in purchase
+[33m565e8349[m - issue solved in purchase number in purchase page
+[33m12f5170e[m purchase created successfully
+[33m9dc7d6c1[m currency issue solved in pdf
+[33m32a5c43d[m merged bugfix to main
+[33m286c7907[m purchase remove all added in sidebar
+[33m00d5187a[m Merge branch 'main' of into bugFix
+[33mebb4963b[m godown fetching reemoved form purchase
+[33m340bd00a[m merged purchase to main
+[33m1e79f1a2[m total addding in item in purchase issure solved
+[33m56097edb[m redux added in handle expasion to prevent show detiails un necessary open
+[33m8f657d6b[m godown validation issue solved
+[33m54eb09d7[m batch title removed from product details
+[33m5bc2efb3[m purchase edit done
+[33md396b51b[m Filter items with balace stock zero for purchase only but not for normal no   batch and  no godown items
+[33m90df6c24[m purchase completed
+[33m1551f085[m api changed
+[33me49e0765[m url changed
+[33m4442301f[m discount issue in sales pdf solved
+[33m0563f984[m sales pdf issues  solved
+[33md1ab4581[m Merge branch 'Purchase' into testing
+[33m5134ed75[m purchase details added in primary
+[33m4ffa8faf[m purchase cancell is done
+[33m49416bf4[m Merge branch 'Purchase' into testing
+[33m1e88111c[m newbatch with count zero removed while saving
+[33mcc3f3968[m testing git ignore
+[33mbf98a873[m testing git ignore 2
+[33mad3f4b96[m testing git ignore 3
+[33m4a0bc3b2[m test failed restoring old api
+[33m65472424[m api changed
+[33m05df4cc7[m delete from all model is done in admin
+[33m207cbfdd[m api changed
+[33me5e7a5a5[m voucher page ui done
+[33mf869a58d[m vouchers page completed
+[33m7f09a519[m merged vouchers to testing branch
+[33md094dece[m vansale name issue solved
+[33m36e06f44[m dashbord updated with new icons
+[33mc32d188c[m moving to bug fix
+[33m52cdf46d[m sales order pdf company issue solved
+[33m175bc9b4[m Merge branch 'bugFix'
+[33m118dc35b[m api changed
+[33m8b29ef31[m vat no issue solved in pdf
+[33m00a8f862[m Merge branch 'bugFix'
+[33m990cd8d3[m conflit resolved
+[33m2b49b6f0[m backend updated to get partylist along with total outastanding
+[33m3f7e7a36[m out standing showed in party list of receipt
+[33m0728db3b[m receipt upto bill settlement done
+[33m6c159851[m receipt frontend completed
+[33m1e09283b[m receipt issue solved
+[33m259ed3a2[m api changed
+[33maef88dfe[m company issue solved
+[33mfd4c910e[m Merge branch 'feat/receipt' into testing
+[33ma0ab89e9[m added credit note in configuration
+[33mc84ca039[m config numbser of credit note fetched in ui
+[33m70abd09c[m added despatch details in credit note
+[33md921943d[m added items page in credit note
+[33m69e28a5c[m credit note ui completed
+[33mc5ae84c4[m credit note create done
+[33m1ea87365[m crdit note details done
+[33m9d7b4150[m transaction added in common controller
+[33m0d8adac8[m credit note added in transaction
+[33ma7cda9ee[m credit note cancel completed
+[33m2a8aa96c[m credit note detils and pdf added in primary and secondary
+[33m37b07e22[m bug in transaction resolved
+[33mb6b68a3e[m login and register page new ui added
+[33m8e7ce10c[m login screen done
+[33m5d45129f[m api changed
+[33m9b29f8fa[m added debit note in configuration
+[33madebf21f[m sidebar memoised
+[33m0b78e5ef[m pdf titles updated
+[33md036960b[m edit button issue in vansale resolved
+[33m5d3babc3[m merged bugfix and api changed
+[33m23416059[m solved conflits
+[33m1aea6e87[m address char limit maded 120,state missing issue,additional charge to common controller,round off in sales and sale order done
+[33m7df29abf[m added party out standing in all parties
+[33mb143f01d[m added comma in party out standing
+[33md402ec4c[m removed vouchers from select vouchers page
+[33m33623cb1[m pricelevel issue solved in sale order during initial loading
+[33medc60892[m add item page organized
+[33m07cdc2d5[m increment of vouvher mumber issue solved
+[33m58df760d[m api changed
+[33m93194cc2[m merged changes in main to debitnote branch
+[33mb383082c[m search and show details issue solved
+[33m3e227456[m debit note creation and detals page done
+[33mea5f1332[m debit note cancell done
+[33me872e855[m debit note completed
+[33ma9f93d29[m cofig issue solved in crdit and debit note
+[33m6c912887[m share debit note addedd in primary
+[33m00721d00[m added session in create sale and with souch filed created tallydata in sale
+[33m472599fd[m edit sale addded to sale controller/added session/retrys and eddit tally data done
+[33me2636840[m added session in cancel sale and moved it to sale controller
+[33m84d478b9[m added session  in create debit note
+[33ma15236af[m org gst number issue solved
+[33m30810c7a[m Merge branch 'bugFix'
+[33m0f01507a[m conflit resolved
+[33mdeb9593a[m added outstanding updation in debit note and edi debit note
+[33m39e076f6[m fetch outstanding updated with voucher
+[33m3e0485c1[m added voucher based outstanding in partylist
+[33mfbf5bacd[m added advance amount in receipt
+[33m5b7c8317[m added note in recepit details
+[33m58ea7b6f[m testing
+[33m517f387d[m configure secondary updated
+[33mad58bed5[m payment configuraston is added
+[33m90e19b42[m bug in add product solved
+[33mc2f17ea3[m api changed
+[33mb42b91e3[m add product issue solved
+[33me9f5a50b[m api solved
+[33mfe9204a6[m bil to shipt to buttom remved in receipt and payment
+[33m8c91df51[m payment created
+[33m7b5fa0fa[m vansale issue solved
+[33m587ba385[m changing branch
+[33m0687c585[m pdf header number issue solved
+[33m53a2738b[m updated terms character limit to 1000
+[33mb423d64f[m Merge branch 'testing' into feat/debitNote
+[33m2192fe07[m configure secondary retrieved to old
+[33m51c1fa72[m added payment print out page in secondary user
+[33m1981f436[m removed all redux values in payment and receipt during selecr voucher page
+[33m3e084ff1[m payment print out and payment details added in primary
+[33me4931756[m added receipt details and receipt print out in primary
+[33m89843ee2[m create purchase is done with session and outstanding updated with purchase amount with purchase tag
+[33m8c03c308[m edit purchase is done with session
+[33m85f4dde4[m added cancel purchase with session and retrys
+[33mc60ab80a[m credit note session added and outstanding created with credit note tag
+[33me8313666[m cacel of crdit note added with session and retrys
+[33m2077b0e4[m added session and sale order controller and helper
+[33m0d7f37cd[m updated create stock trannsfer
+[33mc9be37a1[m due to some issues with stock transfer in session in stock transfer session is deleted from stock transfer
+[33m5c105c76[m added tax inclusive in order configuration
+[33m858acc24[m tax inclusive added in get products function
+[33mf474d07b[m added tax inclusive fuction in add item and edit item in sale order
+[33m395f6cea[m tax inclusive calculated in sale ordser backend
+[33mbaf0ff1c[m added tax inclusive in edit item sale additem sale
+[33m455d84ba[m updated tax amount calculation in sale
+[33m09d95f88[m sale order tax amount completed
+[33m322b5976[m added taxinclusive query in sale and sale order and in get products backend
+[33m1e810831[m tax iclusive condition of check box showing updated and backend updated by checking both query and taxincluded in company
+[33m8c093868[m api changed and debit note branch is merged to testing
+[33mb00be127[m added scroll bar in products and costemer in secondary
+[33m16fc06c7[m scroll bar done
+[33m5e0abefc[m api changed
+[33mb4650418[m tax inclusive issue while fetching product/ternary opreator added
+[33ma4cb38a4[m api changed
+[33m097ca132[m cacel receipt updated successfully
+[33meedb00cf[m cancel payment done
+[33m7b1b1d2d[m tax inclusive total ls not showing issue in redux is solved
+[33maf2b6741[m edit receipt page added
+[33m8a581b91[m added outstandings in receipt doc
+[33m88b145b9[m add conditional api call in outstanding list of receipt
+[33m00e8b7e5[m edit receipt frontend completed
+[33m629ac891[m edit receipt completed successfully
+[33md1ed3dba[m inventory added in siebar
+[33m0b18af05[m added option for addig sub details for secondary
+[33m0939f2be[m added self condition for inventory
+[33m3529edb5[m added hsnform component
+[33m2d0359b6[m hsn added to secondary/inventory addded
+[33m73024b1a[m options added to testing and api changed
+[33mc0838dd2[m case issue solved
+[33m3b22a09a[m case issue solved in voucher page
+[33m38547fb9[m payment edit done
+[33m06778e8a[m api changed
+[33md996c067[m responsive button added in payment and receipt
+[33m62af69a2[m removed outstanding with zero
+[33m83ce2bcd[m api changed
+[33m9339e4ab[m api changed
+[33ma5585879[m increased post per page of admin
+[33mc8197c48[m api changed
+[33m05f610b6[m api changed
+[33m3f65c1c5[m tagged receipt in outstanding
+[33m7291d696[m tAGGED receipt id in outstanding
+[33m363d287d[m eroor in taggig receipt resolved:
+[33m77192729[m not loading issue solved
+[33me74da54c[m hai
+[33m26e9a85a[m Merge branch 'testing' into editSale
+[33m0ee04a10[m configure secondary user/sale order and vanale current number missing issues solvedZ
+[33m76a9056d[m merged to testing
+[33mca72910f[m added fetch receipt in tally
+[33mefcddcb0[m payments added in tallly
+[33me960aca6[m api changed
+[33mdcae5944[m changed added to main to get receipt and payments to tally
+[33m51b62267[m Merge branch 'testing' into editSale
+[33mee82cc97[m report page added successfully
+[33m299f4f30[m added erp headig in sidebar sec
+[33m9ff9ad66[m sale edit completed/added cancellation like sale/if receipt is added not editabl or calcellable
+[33m7b8f43c3[m added applied payments in outstanding/restricted purchase if applied receiots are there
+[33m1df6ad73[m restricted credit and debit note if applied receiots or payments are there
+[33m62be9859[m api changed
+[33m44f0cd93[m report page completed
+[33mba05059f[m statemet ui completed
+[33m10cc7571[m report page except opening balance completed
+[33m6d8bf072[m tax inclusive error
+[33m6ee2270e[m api changed
+[33mde454043[m added optional chaining in all taxinclusive
+[33mf802d542[m added opening balalce in report
+[33mdb71e1b6[m closing balance logic changed
+[33m86ab1ef2[m Merge branch 'main' into testing
+[33m92b53c63[m merged report to testing/resolved conflits
+[33m62216ffb[m added classification in model and in each vouchaser
+[33m057d1c86[m checkingout
+[33m148e2a4a[m commented taxinclusive form aditemsecondary page
+[33mde1af24e[m api changed
+[33mfc45d695[m main merged to classifications
+[33m89bdc220[m added DR/Cr in all vouchers and vansale edit restrictd on adding receipt or payment
+[33ma40ae9a6[m added classification to testing api changed
+[33m0d4333b7[m Stop tracking frontend/src/api/api.js
+[33m62143bee[m git ignore changed
+[33m718d2fb4[m removed paisa and rupees from pdf
+[33m4692d583[m api changed
+[33m20d8cb10[m api added
+[33m0104beaa[m day bokk page /date range/select voucher/added accountgroup in all vouchers /transcation backend updated with select vouchers
+[33m1ca5bbd0[m daybook ui completed
+[33mfb7b06ce[m add costomer added in all party list
+[33m8cd26f06[m add product button added in add item page except stock transfer
+[33m6b8eacb8[m added decimal in all
+[33m46d185bd[m checked if hsn is present or not in pdf
+[33mcc16014b[m bug fix merged to main
+[33m81f96074[m org form country fields updated/phone number validation updaed in party/amount in words updated with subunit
+[33m5586e8d0[m tax classigication type checking is removed
+[33m8e5c2ca5[m vat added in three inch pdf
+[33m10b21825[m discount issue in pdf issue solved
+[33mb8464d9a[m Merge branch 'bugfix'
+[33mc543c1a1[m secondary user creation form added and mobile number validation done according to countries
+[33m1a5739f7[m updated sales and sale order pdf such as han code removed and unit splitted before hypen
+[33m12525d36[m Merge branch 'bugfix'
+[33m7b4e8bb6[m bug fix merged to main
+[33md9d9fc94[m api changed
+[33m0a78fab3[m address issue solved
+[33mb6e01b8f[m Merge branch 'bugfix'
+[33m21ff1c91[m batch and pricelevel doubling issue solved
+[33m5c5e19b0[m Merge branch 'bugfix'
+[33mc9d0b435[m 404 godown name isue solved
+[33mbaa24ca5[m Merge branch 'bugfix'
+[33m2b5eca1e[m edit sec  user update with configuration
+[33m5f1a5aa0[m Merge branch 'bugfix'
+[33mf7f8a2b1[m party statement sticky header done
+[33m9dae5de2[m day book completed
+[33m5d4bb826[m daybokk and statement completed
+[33m025623be[m org adding issue solved
+[33m3795d528[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp into daybook
+[33m5ae326c7[m merged main and changed dashboard img
+[33m31267eaf[m merged day book to testing
+[33m2d895789[m added navigation in daybook
+[33m36e64c68[m darshboard card updated
+[33m0575eab8[m hsn page id issue solved
+[33me011a0d6[m Merge branch 'bugfix'
+[33m754569f3[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp into daybook
+[33m3ea2a584[m added dr and cr fileration in fetching parties in secondary user
+[33m426ff95c[m party validation updaed according to accoun group
+[33m58b49232[m day book and dasbord updation done
+[33m4e152548[m Merge branch 'daybook' into testing
+[33md5442d5f[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp into testing
+[33m595d822c[m Merge branch 'main' of https://github.com/MidhunMohan210/camet_erp into daybook
+[33mc3d36dd9[m sales summary completed
+[33mc2427eb0[m Merge branch 'daybook' into testing
+[33m768dc850[m case issue solved
+[33m44f02353[m case issue solved 2
+[33mb417d8d9[m total sales amount added in sales summary
+[33m7056947f[m order summary completed
+[33m1949ee24[m custom date added in date range
+[33m01d92b8e[m updated subtitles of reports
+[33md91f4b78[m bill to ship to updated with party select
+[33m2800680f[m added country /state/pin in party and added fetched it in billto ship to
+[33mfc6b5dc6[m merged chages to main
+[33m3725c63c[m conflits resolved
+[33m76aa0815[m Merge branch 'daybook' into testing
+[33me63e812b[m import issue
+[33m99e2d1e0[m added cash json and payment ui done
+[33m1fec986c[m added cash data in db
+[33mdb332980[m payment splitting added in tally data upadation
+[33ma6637f88[m payment creation backend done
+[33m3465754c[m before edit sale of credit done
+[33md850d89c[m changing branch
+[33me4857d39[m merged testing to mian
+[33mabedcf8d[m office work friday
+[33m739170de[m payment edit done
+[33me7486b1e[m payment details are added in sales details
+[33m5655504a[m party statement updated with balance amount
+[33m023dc3db[m api changed merged payment mode to testing
+[33m1265aa1b[m added cash total and bank total
+[33md63776e6[m payment mode done
+[33m5892a419[m payment button updated
+[33mf9c4df74[m payment fully completed
+[33mfffbdb0a[m Merge branch 'paymentMode' into testing
+[33m6225dc18[m added bill id in all vouchers
+[33m47d36f4a[m reqired true removed from billId in tallydata
+[33m27ff1fc0[m Merge branch 'paymentMode' into testing
+[33mfe2d86f0[m added bill id in all outstanding with a function in common controller
+[33m45afb647[m updated all with bill ids
+[33m844a88bd[m outstandig iscalled true updateed when voucher is cancelled
+[33m3624c305[m loader added in sale
+[33m90202ba4[m Merge branch 'paymentMode' into testing
+[33mb58837dc[m loader in sale implemented
+[33m2980771d[m loader in sale and edit sale  implemented
+[33me5337f04[m loader in credit note in add and edit completed
+[33md087b77e[m loader in purchase  add and edit completed
+[33m4e137083[m loader in debitnote  add and edit completed
+[33m6a8591f8[m loader added in all vouchers
+[33mdd798aad[m product seperated
+[33m4a99f652[m Merge branch 'paymentMode' into testing
+[33m45ce602a[m ui of cahsor bank completed
+[33mc0794b49[m Merge branch 'paymentMode' into testing
+[33mc6a95ffb[m sale updated with account group checking in creatiog and editiong sale
+[33m5d66c2e5[m credit note  updated with account group checking in creatiog and editiong creditnote
+[33mfdfb4d10[m purchase  updated with account group checking in creatiog and editiong purchase
+[33m6659b6af[m debit note  updated with account group checking in creatiog and editiong debit note
+[33m77707405[m Merge branch 'paymentMode' into testing
+[33md7a2d461[m added cash list in payment mode of receipt
+[33m411ed562[m added helper in receipt to add settle ment data in cash or bank
+[33mac1b4356[m receipt done with cash list
+[33ma5a41f09[m added cash selction in create and edit payment
+[33m73dc17a4[m added cashlist in payment done
+[33mcc5963ba[m Merge branch 'paymentMode' into testing
+[33m42c973e1[m _id added in settlement data of sale insed of cashid and bankid
+[33ma58b200c[m cash list filtered in payment splitting to revoce same cash account for party
+[33m94a22497[m sale done with settlement data
+[33mbbaef438[m purchase done with settlement data
+[33m4d93246a[m credit note done with settlement data
+[33m9c687b0c[m debit note done with settlement data
+[33m3a82f9f3[m vansale done with settlement data
+[33m560a974b[m added all bank and cash filters in payment spplitting/settlement data updation is completed
+[33m79dc485c[m date issue resolved in settlelments
+[33mfad925cb[m cash or bank done
+[33m9a1e77fe[m Merge branch 'paymentMode' into testing
+[33m3a1dc28a[m date issue checking
+[33mb9781f53[m Merge branch 'paymentMode' into testing
+[33mde573e66[m replce blank issue solved
+[33mc80cb47a[m Merge branch 'paymentMode' into testing
+[33m0e22bdb0[m added add bank or cash button
+[33m358e56e0[m bank add completed
+[33m6961c1ff[m Merge branch 'paymentMode' into testing
+[33m8fce2118[m puser changed to suser
+[33m4ae30227[m get bank details api call issue resolved
+[33m7054dffd[m cash added successfully
+[33ma7aea2c5[m loder added in cash and bank add and edit
+[33m51d99c5e[m closing and opening balance done in cash or bank
+[33m2bc50faa[m api changed
+[33m00a01013[m added alteraions in model about group name
+[33m1379b882[m Merge branch 'paymentMode' into testing
+[33m90ba707d[m saving sidebar
+[33ma44b5db0[m resolved replace issue in mian
+[33m4bd2114f[m api changed
+[33m39566d79[m sidebar 70% completed
+[33m5c5181d8[m sidebar completed upto log out
+[33m4985fb19[m testing added to mian
+[33m6726d40f[m sidebar complted
+[33m088c213b[m Merge branch 'paymentMode' into testing
+[33m4128d456[m stock and outstanding added to reports/dash bord allignment changed
+[33m6f5ea829[m sidebar collapsed 20%
+[33mb81d6c12[m added product in sidebar
+[33mbb612c60[m api changed
+[33me3dd5f10[m saving work dashboard
+[33m61c85e1e[m saving outstading updated with billID
+[33mb9ce2ea8[m api changed
+[33m708bf894[m merged test
+[33md84897f9[m coustomers added in sidebar in main
+[33mfc1061bf[m corresponding party edit  done
+[33m674431d1[m Merge branch 'bugfixTesting' into paymentMode
+[33m075ee971[m summasry ui updated in destop screen
+[33m3d3b7282[m dashbaord done in mobile view
+[33mb80c57ae[m loader added in product and customsers
+[33mad407bf6[m chaged added to testing
+[33m0c307ab5[m z index changed in dashboard
+[33md82fbb14[m added back button in party and customer
+[33m93140111[m setting page added
+[33mf4b1851f[m dummy values chaged ledger added in sidebar/navigation acded in summary
+[33md480fe75[m merged testiong to main
+[33mf5f295ed[m bug fixed
+[33m30511d75[m settings ui completed
+[33m0a04a34c[m no found added in dashboard transcation
+[33me9d4a33f[m merged settings ui to test
+[33mabcc805d[m pdf sendign on work
+[33m1ebcfa76[m cgst igst added in print pdf footer
+[33m243adf25[m no upddased in sales
+[33mb8d63eb9[m moving to main
+[33m0c752515[m despatch details issue solved
+[33m044dc1b9[m merged mian
+[33mcec5676d[m despatch details issue solved in main
+[33m0fab89ca[m share ui updated
+[33mec916fff[m purchase invoice issue solved
+[33m0c57831a[m api changed
+[33mcfe42850[m Merge branch 'main' into paymentMode
+[33m829c805f[m added tax analysis table in sales pdf/discount corrected
+[33m233ef80b[m added validation for sales number
+[33me5cc023b[m format page done
+[33md027bdae[m saved barcode data
+[33m4e8cceac[m edit done for badrcode
+[33m524587fb[m barcode print done office work
+[33mc5e786fd[m Merge branch 'paymentMode' into testing
+[33m76415d3a[m barcode list page completed/adding editing delting completed
+[33mae9bdfff[m submission added in print on and print off
+[33m34018801[m formatting vallidation done
+[33mb2434b62[m pop up done 50%
+[33m0bdb7a69[m missing receipt and payment id issue solved in backend
+[33m9338df8b[m Merge branch 'main' into paymentMode
+[33m7d489dc8[m barcode modal added
+[33m12375e4f[m Merge branch 'paymentMode' into testing
+[33m99668a17[m loder added in share modal
+[33m37da0870[m tax table issue solved in sale order
+[33m73174391[m added toogle bacend function for configuration
+[33mf5a04e23[m invoice configuration done execpt tax inclusive
+[33m439fb5de[m Merge branch 'paymentMode' into testing
+[33m4ff39fcd[m Api changed
+[33m5c48c391[m ErrorCorrections at invoice and edit orgaization
+[33m6780beb2[m updatio on POS invoice
+[33mced222c2[m updation on analysis tax
+[33mc64d0981[m updation on %
+[33m22a4b636[m updation on invoice
+[33m757ed82e[m updation on POS format pdf
+[33m2038a8ed[m print configuration bug fix solved
+[33m9732128f[m print configuration bug fix solved
+[33md3f60df4[m print configuration bug fix solved
+[33m4260c972[m bug in print configuration solved
+[33mc6b706ce[m discound toggling enabled in print configuration
+[33m2dfef9ce[m merged to test
+[33m68e01e88[m changes added to main
+[33mcb0faf05[m - discount removed and space added in signature
+[33mec621689[m - discount removed 2
+[33mfc9c1b79[m sale print cofiguration complted except discount
+[33m45a1622e[m calculation in edit page of sale order done
+[33m28da0d0c[m edit page calcultion of sale order cmpleted
+[33m567170ac[m backend calculation of igst and subtotal done in sale order
+[33md9b2a520[m stock wise tax amount added on configuration/rate calulted accordingly
+[33m14ec2efc[m merged changes to testing
+[33mf483b304[m saving before checkout
+[33mc0140dc3[m resolved pdf discount issue in sales pdf
+[33m9e8c097d[m sales pdf correction complted except tax analysis
+[33m3c7975b8[m saved changes to main
+[33me940c0d1[m added optional chaining in add item purchase
+[33m923cbd4e[m changes added in purchase crdit and debit note
+[33mc2d6bc0c[m Merge branch 'main' into testing
+[33m5a7fca5e[m subtotal and igst caluclation in backend of sale doone
+[33m39707864[m solved pdf discount/tax amount /tax ananlysis issue in sales
+[33mc6343e21[m solved pdf discount/tax amount /tax ananlysis issue in sales in testing
+[33m8b74bf67[m bug resolved
+[33m6b85c01c[m error resolved  in test
+[33m6b0c72e5[m error solved
+[33mdb8a033f[m bug solved
+[33me0c5201e[m bug solved
+[33m3549b711[m merged changes in main
+[33mf45f2478[m saving
+[33me67f3d4b[m gst numbaer added in billto and shipto
+[33m7b20f6e1[m changes added to testing
+[33md22502d3[m sale and sale order edited -added date in creation and edit
+[33m8cb317b7[m credit and debit note edited -added date in creation and edit
+[33m3a002d1c[m purchase and vansale edited -added date in creation and edit
+[33m6b4e5429[m saving
+[33m0be8ae58[m added seperate pdf for purchase and updated titles of ship to and bill to
+[33m7fa1cb70[m api changed
+[33mfe11c2ae[m tax analysis issue solved /sales helper
+[33me7e4cf22[m save
+[33mcdd8b7c0[m purchase updations finised/billto shipto heading changed in pdf/space between items reduced
+[33md630fe26[m Merge branch 'testing'
+[33m15221c4c[m company address added as default in purchase
+[33m074204c9[m data field added in recipt
+[33m1c43902b[m data field added in payment
+[33m8ee7423d[m date added in all doc and updaed stocktransfer with date
+[33m61869fc7[m sales number missing issue in sale resolved
+[33m1db7f1d3[m date changed in details page
+[33m91179c81[m date fix done in all pages
+[33maa3d26ad[m saving
+[33mc37200f6[m merged changes to main
+[33mf562cccd[m created non indian sales and saleorder
+[33mde241cde[m pdf added for non inidan countries for sale saleorder purchase
+[33m1970d888[m changes added to test
+[33mf4441609[m removed restiction in cancelling and editing saleorder
+[33m0f344538[m add product button in purchase made working
+[33mbcdeab2e[m Merge commit '0f344538774ffb4d63505b3da71de5c30f61f6d4' into testing
+[33m46691f92[m Merge branch 'testing'
+[33m9b593489[m api changed
+[33m0711cf69[m added ? before find in sale pdf non inian find
+[33ma0cc13dc[m Merge branch 'testing'
+[33m84685c70[m despatch details added in sale and sale order settings
+[33mb9fa92ac[m despatch details modification added in sale and order entry screen
+[33m18b94e43[m added default configuration in creating a company
+[33m6ec0e8af[m terms and conditions done
+[33m7b1dd96f[m Merge branch 'paymentMode' into testing
+[33me81d861b[m barcode search done
+[33me288a923[m barcode initial scanning not working issue solved
+[33mee80ab64[m barcode toggle added and scanning completed in sale
+[33m4d050f4c[m barcode manual search also done
+[33mdcfc5dfd[m barcode in sale complted
+[33m67317013[m saving order pending
+[33maea7c57e[m unit split is done with a test fundction updat eUnitFields
+[33m6c090dd3[m updated purchase and sale of existing whith new unit and alt unit
+[33md45a4616[m Merge branch 'bugfix' into testing
+[33m9539c69e[m Merge branch 'paymentMode' into testing
+[33mad8776e7[m api changed
+[33m0c3dfa3c[m api changed
+[33m065f634a[m api changed
+[33mb3962c1a[m givcing purchas to tally done
+[33m32c82689[m api changed
+[33m3a6a6d19[m resolved voucher number changing issue in purchase
+[33ma3c159ea[m saving before pushing
+[33m8ef73d83[m price level issue solved
+[33m9dfc3694[m sales summary partially done
+[33m6cf2b4ab[m sales summmary
+[33m5ea40cad[m saving on main before going to branch
+[33m8b6cb300[m Merge branch 'main' into paymentMode
+[33m79652ead[m sales summary half done
+[33m3bef8398[m saving order convertion
+[33md1061b4e[m vansale issue due to scanning addition solved
+[33m64229062[m van sale bug fix added to main
+[33m96ae32db[m vansale issues solved in testing due to adding of scanning
+[33m171d2fbc[m order convertiion functionality done
+[33m4f70aec3[m order conversion done
+[33m08aaf3ac[m order pending merged to main
+[33me7d49241[m alter buttons disabled in sale and edit sale page in the situation of convertion
+[33m58c2b753[m add rate with tax configuration done
+[33mc47154c4[m half
+[33ma86f370d[m alert added on converting orders having batch and godown ,removed sale order from party stetement,
+[33m0db7347b[m Merge branch 'paymentMode' into testing
+[33mf5bb43f1[m added changes to main
+[33me6abed1c[m api changed
+[33mb3b8695c[m updated primary user controller register
+[33m15319c38[m updated party valudation
+[33m999adee9[m category
+[33med19bd4d[m pos title updated as per settings/ pendins lessthan zero are hidden
+[33mb9daf07b[m api changed
+[33m03d8392a[m added new print configuraions in settings of sale and sale order
+[33m6d9e8e90[m pos print updated according to settings
+[33m4d70fd47[m sales normal indian and non indian pdf done with new settings
+[33m16df7c02[m salesorder  normal indian and non indian pdf done with new settings
+[33m38117a39[m api changed
+[33m3611882a[m Merge branch 'testing' into paymentMode
+[33mf246a57a[m navigation issue in sales solved
+[33me48168a8[m sale order navigation issue solved
+[33m38b3e61a[m order pendings navigation issues are solvec
+[33m4ca40a82[m api changed
+[33m943ce680[m Merge branch 'testing' into paymentMode
+[33m36e1f247[m added add company in sidebar
+[33m1b386a11[m sale and sale order navigation issues solved
+[33m8caeba1a[m added add order button in party list of order penigns
+[33m135bb51a[m api changed
+[33m45c5ad4b[m Merge branch 'testing' into paymentMode
+[33m39c0dc89[m added company filter in retailers list of secondary
+[33mbcf3321a[m previos date enabled in all vouchers
+[33m52800b73[m added secondary configuration for secondary user
+[33m1992326f[m sale summary done
+[33m798c391b[m sale summary done with details
+[33md54ce4f3[m sale summary done with api change
+[33mf4c660ac[m Merge branch 'bugfixTesting' into bugfixTesting
+[33m6cbaa276[m Merge pull request #17 from ABHIDAS-S/bugfixTesting
+[33m577bafaa[m Merge branch 'bugfixTesting' of https://github.com/MidhunMohan210/camet_erp into salesSummary
+[33me43c51c5[m merged summary to salesummary branch
+[33mb1cbff62[m Merge branch 'bugfix' into paymentMode
+[33m6543b9a8[m previos date issue solved
+[33mbd1a53ac[m merged primary conversion to testing and seatch bar ui updated in party and product list
+[33m0ac99c35[m api changed
+[33m632ceb41[m code by abhidas corrected
+[33m8c50e048[m code by midhun
+[33m010d5558[m corrected tax calulatin in sales summary
+[33m7dbcad18[m corrected tax amount calculation in ledger and item
+[33mdfd9730b[m added changes to testing
+[33m9323e525[m commiting the lost code
+[33m93782909[m Merge branch 'recovered-tax-correction' into testing
+[33m4ee87804[m resolved drop down not changing bug
+[33m161ec37c[m Merge branch 'salesSummary' into testing
+[33m5735afcb[m changed ui of sales summary
+[33m9e44bf99[m leger corrections complted
+[33m6232652f[m sock item optimisation and date filter added in summary details
+[33mcba4925a[m added group and category fileter in sales summary
+[33mf95ea135[m sales summary completed by adding ? to fields
+[33mbf9daec4[m adding sales summary in testing
+[33mdef9c1a9[m added group id in tally model
+[33m397e0435[m added outstanding summary
+[33m4a951a6d[m sales summary and secondary conversion added to main
+[33m58791ca8[m api changed
+[33me042bf8e[m total added in summary and list height adjusted dymanically/fetch outstading total function added to outstading controller
+[33m8b4e1174[m exel conversion done
+[33mbe1ae165[m outstanding completd in report
+[33m197dc1e5[m outstanding completd in report with exel export
+[33m8985d654[m added filter in outstading list
+[33m82f114a7[m group wise filtering added in outstanding list
+[33mead2466f[m outstanding upto total/leder and group done
+[33m14b8ec27[m out standing ledger /group/ reveivables /paybles completed
+[33m6ec509f3[m out standing summary is done with dr and cr calulcation
+[33m035a70f2[m height clauction of outstanding summary restored
+[33meb0541bd[m outstanding sumamry and filters added to testing
+[33m533af8c6[m scrolling adding
+[33mbae6afdf[m outstanding bugs solved
+[33m9b251793[m changes added to tessting
+[33me4f1884b[m Merge branch 'testing'
+[33m61c162d3[m leger total caluclation issue solved
+[33m0f391605[m Merge branch 'bugfixTesting' into outstanding
+[33mb200af19[m leger total caluclation issue solved again
+[33mf8e6cfd1[m added account group id in party
+[33m36ec3b7d[m acoount group added in parties
+[33mbfebbf53[m sidebar company refreshing issue solved
+[33mb04a4124[m added balace in party statement and changed its ui
+[33mc31e54b4[m Merge branch 'bugfixTesting' into testing
+[33mc51dbca3[m table head alligned in party sltatement
+[33m7ea9fcfc[m party statement completed with dr and cr notation
+[33mc080e763[m Merge branch 'bugfixTesting' into testing
+[33mc1639cfd[m dashbord summary added with values and skeletion
+[33mca0a5525[m updated dashboard summary with current financial year
+[33m83240ace[m added grop adding page in settings
+[33m748c4107[m conflit resolved
+[33m7b098be3[m added sub groups in party edit and add
+[33m5e0208bc[m added popup of party opening
+[33mce0077e8[m opening completed
+[33ma3dfb6f4[m Merge branch 'bugfixTesting' into testing
+[33mca2c26bc[m optinal chaning added in dashboard summary
+[33m4b376c65[m added sales transatctions in sales summary
+[33mcd7691e8[m summary transcations added to sales summary
+[33m34e85368[m added manual selction of bills in receipt
+[33m723b4ee0[m added ? in sale controller bug
+[33m151c6116[m receipt remaked
+[33m7daba35f[m updated outstdning list for recipt and payment
+[33m02a28643[m payment and receipt is completed with random selection of bill
+[33m3c3b0a63[m Merge branch 'bugfixTesting' into testing
+[33m6a2a2d32[m added mrp in scehema product add page and edit and inventory and product list
+[33mb70d6739[m added mrp in entry pages also
+[33m861e6004[m mrp updation completed
+[33mb770e378[m Mrp changed to uppercase in all pages
+[33m3a0d8d01[m Merge branch 'bugfixTesting' into testing
+[33mdc3f1edf[m Merge branch 'bugfixTesting' into outstanding
+[33md275a3dd[m sub group  modified
+[33md2fb1160[m added sub group and id in all vouchers outstanding
+[33ma6b5156e[m outstanding grouping completed
+[33m760bffc6[m updated scroll postion restoration in outstanding and and total cr and dr correctly
+[33m08159066[m barcode scannig outline removed
+[33m0fdca3b0[m Merge branch 'outstanding' into testing
+[33m3d263a20[m added padding for outstading
+[33m3a1dcee2[m next click issue in phone view in receipt and payment resolved
+[33ma6ac45d7[m Merge branch 'testing' into bugfixTesting
+[33mc7f0fb46[m merged testing with bugfix testing
+[33m58d3f5f2[m added enableActualAndBilledQuantity setting in voucher settings
+[33me2d08a74[m actual count front end session completed
+[33mf351758b[m creating sale with actual quantity done for nothing product
+[33m4c759382[m actuall and billed added in sale
+[33m697a1b4c[m added billed and actuall quantity to testing
+[33m7c585b04[m addded acutall and bille quantity in debit note also
+[33md1830d7c[m decremt issue in sale vansale and debit note resolved
+[33mc3be5e8c[m Merge branch 'feat/billedQuantity' into testing
+[33m6afa4137[m purchase front end completed with billed and actual quantity
+[33m73f8c32c[m purchase backend is also updated with billed and actual count
+[33m4ae0cfc7[m updated purchase and credit note with actual and billed quantity
+[33m142e8261[m added backend code for credit note for actual and billed count
+[33m32a8f105[m added billed and actual quantity for sale order also
+[33m6b22bdaf[m added billed and actual quantity in sale order and order conversion bug solved
+[33md1490c1b[m[33m ([m[1;31morigin/feat/billedQuantity[m[33m)[m bug solved in add item tile
+[33m06b3e1b1[m Merge branch 'feat/billedQuantity' into testing
+[33md654f45b[m edit page of sale updated with godown synchronisation
+[33m3442b720[m caluclate total function reworked in sale
+[33m0b4efdb7[m godown sync in sale done
+[33m73907f43[m godown sync in credit note done
+[33mb02c7b79[m godown sync in debit note done
+[33m71d97186[m godown sync in purchasen done
+[33mbdeb6908[m vansale issues with calculate total resolved
+[33m7c1507f4[m[33m ([m[1;31morigin/godownUpdate[m[33m)[m sales pdf retuned to old-removed the godown updated form pdf
+[33m5315e17e[m Merge branch 'godownUpdate' into testing
+[33m766a6597[m Merge branch 'testing'
+[33ma0f33e09[m org page in primary deleted,org updation added to redux
+[33m8f6c60d8[m update schema of sub details and indexed it
+[33m9cb32cf7[m updated product model and add product form and added one correct product in db
+[33mc4ab729f[m product master updation done
+[33mb17d45e8[m dist path changed
+[33m267ee01b[m logged mongo uri and changed dist path
+[33m6ca9f160[m added masters of subdetails and product adding function renewed
+[33m6e31c041[m saving godown import sync in product
+[33m168fba69[m removed unique ture from account group and sub group
+[33m8a7d33d9[m vansle godown blank issue solved
+[33md29d8e6b[m cash and bank adding issue solvedZ
+[33m68105267[m Merge branch 'main' into majorGodownUpdate
+[33mb045557c[m added default godown in company creation
+[33m3ce1c4d4[m saving product before changing to optimised code
+[33mcf87f755[m hsn updaed to hsncode insted of id in product master
+[33m6998916e[m added product and organisation controller
+[33ma7570770[m added loader in product add and delete
+[33m8a3e0500[m batch enabling and godown enabling toggling done in settings
+[33m8a8923e9[m product master completed
+[33mb5cd921e[m added cess and addl_cess in sale vansale credit note debit note
+[33m644c2e12[m puchase added with cess and addl_cess
+[33mbaa021d5[m modified sales pdf and tax table according to the cess and addlcess
+[33mdab241b8[m cess updations added to testing
+[33m3b1bb33d[m tax table unit added in cess column
+[33mc8430c89[m modified purchase credit and debit note with cess and addl_cess
+[33mb20e9eb1[m share with out preview of all vouchers except sale order complted
+[33mfface94a[m saving cess updation in all vouchers other than sale order
+[33m491c617a[m Merge branch 'bugfixTesting' into testing
+[33m7b602eb0[m cess and addl_cess updation added to testing
+[33mf5d26849[m cess and addl_cess updation added to main
+[33m9528e8e0[m added cess and addl_cess in sale order voucher creation
+[33m4d93d0e0[m added cess and addl_cess in sale order also and pdf
+[33mea9390c3[m Merge branch 'bugfixTesting' into testing
+[33m86edd60a[m sale order cess updation added to testing
+[33m8500783b[m added inifinity scroll and backend search in product list
+[33me33d0011[m added infinity scroll in party also
+[33m2aba449a[m added infinity scroll to testing
+[33me3c265a4[m added same party list with infinity scrolling for vouchers
+[33m5552464c[m added optimisation in sale
+[33m74db5c18[m added filter in sale
+[33m012ee70e[m sale ui updated
+[33m4e1108af[m updatd stock updation technique
+[33mb036b8c6[m infinity scoll is added in sale voucher
+[33m68026c29[m saving voucer add count
+[33m16a3902b[m added sub group selection in seconday settings and updated party fetching according to that
+[33me7b6ea5d[m added sub group selection in seconday settings and updated party fetching according to that added to main
+[33m25515f86[m added vansale in sale summary
+[33m97cbaf24[m Merge branch 'bugfix'
+[33md151c652[m daybokk with all transaction for primary
+[33mb57a7f72[m Merge branch 'bugfix'
+[33m3739bf71[m chaching done in sale
+[33m37a4fee3[m added inital loading and selected price rate in sale
+[33m2809d0f7[m limit updated only if it is available
+[33m8ec1b489[m Merge branch 'temp-merge' into testing
+[33m2d122703[m added stock clearing functionality in tally
+[33mb4fc153a[m Merge branch 'testing' into bugfixTesting
+[33m57bf80a6[m merged main with bufix tesing
+[33mf74b3592[m added user filter in party
+[33mcc6d03b6[m[33m ([m[1;31morigin/bugfixTesting[m[33m)[m added user filter in daybook
+[33m2273a9fe[m added user filter updation to testing
+[33m0359e0cd[m sale voucher updated for adding screen
+[33m4f283901[m Merge branch 'testing' into infinityScroll
+[33maa74467c[m testing merged with infinity scroll
+[33m174aa590[m added infinity scroll to testing
+[33md14cc540[m search function in sale is added
+[33m271989b7[m added scanning in sale also
+[33m5d57a3b0[m[33m ([m[1;31morigin/infinityScroll[m[33m)[m qr in phone added
+[33m5c64e857[m Merge branch 'infinityScroll' into testing
+[33ma0e7243c[m confilts resolved
+[33m7a78b6aa[m sub group updated with Objid
+[33mf8ebdbf1[m party master completed
+[33m29e1a6c5[m deleted unwanted files and saved sub group and account group form tally
+[33m8e9cd1d7[m party master updation completed
+[33mfa2fb7f5[m cash in hand and bank accounts and bank od added in company creation and bank and cash creation updated in master
+[33md6d47ce9[m additional charges pages added
+[33m9465638f[m additional charge bank cash tally controller updated
+[33m5f9d8199[m added bank od master
+[33m274265c3[m removed unwanted functions from primary user
+[33mf6ed38c3[m editing disabled in party withe bank or cash acc group/moved subdetails funciton to product controller
+[33m4eae0832[m party and product mastser and its submaster problems are resoolved in self and checked
+[33m558517ad[m updated locaion and pricelevel ui in product adding form and updated batch enabled in org form
+[33m1c65486e[m added godown enblaed in company
+[33md669df92[m brand category and subcategory price level tally integraion updated with new conditions
+[33ma3b8b1bf[m updaed product base integraation fnction
+[33m86b7de42[m price level sync and godown add done
+[33me0af5e9f[m before commonising voucher
+[33m64e3e55b[m updatd upto product fetching
+[33m6c7aeabd[m updted handle add inc dec pricelevel with new calulate total
+[33mdaf69cb5[m edit screen and edit+inc done
+[33me1f135eb[m discout issue in edit screen solved
+[33m36d8cf08[m resoved calculation issues and edit page done
+[33mc5fc0d61[m edit screen of item saving before count total issue
+[33m336ea885[m add count and edit page done
+[33ma0692775[m sale inital page done
+[33md0ba291a[m additonal charge chedked with item
+[33m5ce12299[m sale creation done initail check
+[33mafcd34ca[m path changed
+[33m79e20515[m api changed
+[33m053bc84c[m resolved no price level issue
+[33m55fb5c6c[m updatd the stock updates of sale
+[33mf72db6ec[m resolved dash board transactionissues
+[33mc4a6510a[m added userLevelSerialNumber
+[33m02043f33[m resolved issue in vansale godown
+[33ma4908234[m voucher initilage page added with api call for godown name
+[33meff856d6[m vansale creation done
+[33m670a1f9d[m sales details done with populate
+[33m320ed31e[m sale inital fetching completed
+[33m246a9532[m stock updation in sale done
+[33m8cab0acc[m sale and vansle creation and edit complted
+[33m67073df7[m api changed
+[33madb6a2c3[m credit note creation done
+[33m5acaaad5[m debit note creatio done
+[33m987bca98[m edit of credit note and debit note done
+[33m87572117[m dicount bug solved heading commonised
+[33m49d95120[m added action buttons in detail page
+[33m824ecd6d[m updated outstanding reflection
+[33mdcd0eb2c[m credit note cancel done
+[33m392f1aff[m debit note cancel done
+[33m4ae25c03[m added share modal
+[33m4a717155[m api changed
+[33ma54289f4[m sale order completed
+[33m43ca4033[m godown and batch enabled conditon replaced old conditions in backend
+[33m8ad3bfbc[m unwanted voucher pages are deleted
+[33m0ef709a4[m removed pricelevel in purchase
+[33m617d4ae4[m purchase front end completed
+[33m3860c016[m purchase creation completed
+[33m346332c9[m cancel purchase is done
+[33m559090f3[m purchse edit complted
+[33m50605aa3[m api changed
+[33m0139bf73[m purchse new batch issue done
+[33md6bfb536[m api changed
+[33m6827cb3a[m title div issue resolved
+[33m826e9802[m vansale user wise import done
+[33mf9ba72a6[m redux data persistiong issue solved
+[33m3965fc80[m showd all transcations for primary users
+[33m67181af4[m number input issue is removed in edit form and batch adding form
+[33ma55b8e16[m api changed
+[33m5b2053c6[m api changed to app.camet.in
+[33m8da782e4[m default godown creation is made for self only
+[33m07774ad3[m coustomer fetching bug of sub group resolved and pricelevel filtered in oceantraders company
+[33mb8ab58cd[m bugs fixed
+[33m964df0e3[m resolved bug of filter
+[33mb94501b1[m party fetcing with sub group issue solved
+[33m8303d94f[m party fetcing with sub group issue solved but added no sub grup condition also
+[33mb188ce7b[m api changed
+[33m4d203e38[m api change
+[33mcc56ad1b[m added -ve stock in vansale
+[33mcd2bf0aa[m added -ve stock in vansale in main
+[33m293a1de6[m stok transfer front end done
+[33md7d91fe9[m price level configuration done
+[33m46477631[m company creation bug solved
+[33mc2d7a83d[m Merge branch 'majorGodownUpdate' into stockTransfer
+[33m8432d34b[m saving stock trasfer
+[33m64af27bf[m stock transfer completed creation edit and cancel
+[33m33e60ef1[m hsn list ui changed
+[33mf4aed6a1[m bill to ship to screen added
+[33m75fb7be5[m pushing latest updations
+[33m23d5ae71[m updated secondary user configuration
+[33m923775c1[m re worked sales pdf with new sturcture/cess amoount is pening
+[33m389658e2[m created common voucher pdf page for pdf
+[33macecd2f2[m saving non indina pdf
+[33m3bb01275[m print title/tax classification/ additonal charge/bank /pop up ui /back selection ui  done
+[33mea437c75[m saving pdf in mobile
+[33mc8ed237a[m text chaned to new updation
+[33me6bd3780[m changaed zoom
+[33m7e24afef[m changaed zoom 2
+[33mfbfe0a2b[m changaed zoom 3
+[33m8ec5b5a1[m api chaned
+[33m519ffafe[m added pos
+[33md18e9209[m added pos in testing
+[33m557f8a72[m print functionality added and purchase validation bug resolved
+[33m23d1c2dd[m js errror in print resolved
+[33mc37924d0[m mobile printing issue solved
+[33m10c59475[m mobile issue addressed 1
+[33m5f34ae6a[m added download functionality
+[33m2bad2953[m added print and download as one
+[33me214d95e[m added print and download as one 2
+[33m34c619b9[m made dwnld in phone and print in pc
+[33mb353a2c2[m changes in alligment of mobile view
+[33m58bfc110[m updated pos print
+[33m8d4cf75d[m receipt and payment fornt end completed of creation
+[33m9bb31113[m receit and paymet creation done/details page done
+[33m058f957c[m payment and receipt cancellation done
+[33m10d08ceb[m added receipt edit inital page
+[33md6a9f76e[m receipt edit front end done
+[33m077af14b[m receipt edit done
+[33m6e3ff107[m godown and batch enabling bugs fixed
+[33md7e50ae3[m changes updated to tesing branch
+[33m952e2668[m saving stokck transfer
+[33ma3367004[m product getting function updated with validation of selected godown
+[33m2af55fd5[m stock transfer completed
+[33m461545a8[m cash or bank report completed
+[33mf3633970[m outstanding completed
+[33mb93ab88e[m date icon issue solved
+[33md9be7960[m Merge branch 'stockTransfer' into testing
+[33m9e280e04[m saving folder change
+[33m00dc72ba[m voucher sereis creation form done
+[33mda63980b[m voucher series selection added in common vouchers
+[33m4b3f4157[m voucher sereis added in voucher initail page edit
+[33meaaaef79[m added voucher series numbaer edit in sale
+[33mdb0eae8d[m Merge branch 'stockTransfer' into testing
+[33m786792e7[m creditnote creation with sereis number done
+[33m07fd16e8[m credit not edit done with sereies number
+[33mfe33bdca[m debit note added with series number
+[33mbb952ebd[m sale order added with sereis number
+[33mc0f52f70[m vasale added with sereis numbser
+[33me7582ae2[m purchase added with sereis numbser
+[33m68d5bc3e[m stock transfer added with sereies
+[33m796787ec[m date issue in pdf solved
+[33m536fb972[m Merge branch 'testing' into stockTransfer
+[33m52a262fc[m validatd vocher number in creation
+[33m7d6d6583[m api changed
+[33md3fd137b[m sereis number added in receipt creation
+[33m3556629e[m saving voucher creation in recipt and paymane
+[33mfc3187f2[m added voucher series in payment
+[33mac52c169[m added validation in voucher number in schema
+[33m8cac35a1[m removed show and hide button forom only one batch product in vansale
+[33m210ff52f[m added product and party form voucher iteself
+[33m4187a65b[m intergrated outstanding done
+[33ma4c986d2[m saaving warrety card
+[33mb929a367[m saving outstaing
+[33m9b431ef8[m bug in subgroup without saving fixed
+[33m76916cc6[m edited editform
+[33m5daf3b19[m outstading reciving from tally done
+[33ma431b80f[m issue with outstangin is not saving is resolved
+[33meeaf33b3[m added mfgt and expdt and warenty cared numbr in common vouhcers
+[33me2a4f8f3[m Merge branch 'outstandingNew' into stockTransfer
+[33m9f8dff67[m warrenty card added
+[33mc8d4f4ec[m use tanstackquery
+[33m54500cb7[m added mobile pdf viewer in warrenty card
+[33m49710446[m upto warrenty card added to tesitg
+[33mfaca278f[m added scroll in mobile view
+[33mdc14eff7[m api changed
+[33mbbc14535[m api changed
+[33m77efacc4[m resoved bug that batch is not coming in product issue
+[33m91500f95[m bug that product batch is not coming resolved in product controller
+[33mcb1e78ca[m api chaged
+[33m3e385481[m api chaged
+[33m69d30259[m summary page partially done
+[33m1d801b05[m warranty card vouher completed
+[33me2cf8e8f[m added show description option in setting of invouce and sale
+[33m06df2d60[m added warranty card master/ tagged it in sale/updated warranty card print
+[33m7517ca36[m terms and conditions updated in warranty card
+[33m81dbc2ea[m api changed
+[33m74b57032[m resolved default godown true string issue and added a rspoce messgae in outstanding receiveing with out party ids
+[33m4bffcec7[m api changed
+[33m1cde6ea1[m null is passed if warrenty card is not found
+[33m787a31c4[m saving stock trandfer
+[33m92f78d7c[m remove unwanted cmp_id :1 & series_id :1 validation form schema
+[33ma8bf407e[m remove unwanted cmp_id :1 & series_id :1 validation form schema from receipt
+[33m41184e8f[m voucher number duplicate issue resolved
+[33m44a5fee4[m summary report partially done
+[33mb13c65e8[m indexing issue resolved =added series_id with cmp_id and vouchernumber
+[33m7fef544f[m Merge branch 'testing' into stockTransfer
+[33mebc3e31a[m note added in sale
+[33mbdb096d7[m note added in van sale and credit note
+[33m246d1811[m note added in debit note purchase and stock transfer
+[33m5dce07f8[m note added successfully
+[33m498b5a53[m summary report with voucher dropdown
+[33m404a9f8e[m company allocation tile done/creation
+[33m316276ac[m savaed summary
+[33m331d00c8[m summary report added to testing
+[33m74a0b7e4[m bug fixed in summary report
+[33m6ed30a0b[m allocate company page done
+[33m47956815[m set api for voucherseries
+[33m099a7529[m in retailer list added admin tag
+[33m3879b1ee[m Merge branch 'stockTransfer' into testing
+[33m5bb956b6[m api changed
+[33ma8a6aa72[m bug
+[33m70801a86[m transaction bug
+[33mf0dbfec7[m api changed
+[33m5fde2bee[m Merge pull request #21 from ABHIDAS-S/testing
+[33m15cb99b5[m company allocation and price level allocation done
+[33m1ee4fde9[m godown and vansale godown allocation done
+[33m0da6c651[m voucher series allocation done
+[33mbcfc7ca7[m allocate subGroup done
+[33m63f56cb6[m debit note total corrected
+[33mdf771c7d[m added loader in retailers list
+[33m7655b689[m add CR and DR to summryreport
+[33ma1168f81[m bug in crbr fixed
+[33m1f7b08ac[m summary report done
+[33m56f88f49[m Merge branch 'summaryReport' into testing
+[33m67a79b44[m Merge branch 'testing' of https://github.com/MidhunMohan210/camet_erp into testing
+[33m74ead13c[m view details partialy
+[33md370f8bb[m updation on hostel management
+[33m0e72e020[m conflit resolved
+[33m0750043f[m resolved charcter limit bug in warrenty card
+[33mfee424ab[m fetched pricelevel/location/vanLocation according to allocation
+[33m566abfb1[m fetching details according to allocation done
+[33m1a14d896[m excel export for summary details
+[33m0e0f771f[m confilts resolved when summary reports merged
+[33mbe08e5f6[m Merge branch 'stockTransfer' into testing
+[33m5611e9f6[m allocation modifications added to testing
+[33m17c1006b[m spellling issue in router resolved
+[33mbc3574f0[m updation for ruksana
+[33m8ed7c464[m resolved roting issues in day book and dashboard
+[33maea60236[m bug in without category report done
+[33m8e012aa7[m Merge pull request #24 from ABHIDAS-S/testing
+[33m3055eeb1[m summay table ui refinement added like lines
+[33m5dc3b02c[m api changed
+[33ma523e8a1[m summary table doubling issue solved
+[33m43fd7219[m checkin and out
+[33m3890807a[m Merge pull request #1 from anzibrahman/testing
+[33m92c5da07[m add gst and hsn
+[33m07ac35c0[m saving testing
+[33m067e6abd[m conflits resolved in summary table
+[33m7b15aca1[m resolved the issue that mongodb id is getting changed of outstanding while editing voucher
+[33me44d10f0[m updation on testing
+[33m6f9043f3[m Merge branch 'testing' into stockTransfer
+[33me4e592df[m list
+[33m61f72873[m Merge pull request #2 from anzibrahman/testing
+[33m058ca975[m creating advance amount in sale edit done
+[33md2962a64[m booking checkin checkout list and date filteration
+[33m9bada00d[m Merge pull request #3 from anzibrahman/testing
+[33m8a3657d3[m date filter
+[33m228ee99e[m summarydetails done
+[33m8895db98[m add extra heads to summarydetails
+[33m2dee105a[m add gst and hsn
+[33m023e89a0[m bug in gst fixed
+[33m836e1637[m updation on hostel
+[33me564080a[m hotel branch merged to tesing and confits are resolved
+[33m9dd44dcd[m spelling issue resolved
+[33m63eb16de[m spelling issue resolved 2
+[33m4bdfc8de[m spelling issue resolved 3
+[33m9c6ddf59[m spelling issue resolved 4
+[33m5c7917f9[m summary bugfix added to testing
+[33m54bd27a0[m Merge branch 'sreeraj-vijay:testing' into testing
+[33m437d6bf7[m mail async issue solved
+[33m769da53d[m email credentails changed in node mailer
+[33m2f2c27fe[m consoles changed in auth admin
+[33m5a681f20[m email credentails changed to testing
+[33m97aff729[m api changed
+[33mbf8581b8[m restriction added in vouchers for edit and  cancel
+[33m5eef765b[m updated sidebar admin
+[33mafa0bacf[m added print in warrenty card
+[33m708a7fdb[m updation on hotel side
+[33mf29ade38[m Merge branch 'testing' of https://github.com/sreeraj-vijay/camet_erp into testing
+[33m1865614a[m Merge pull request #28 from sreeraj-vijay/testing
+[33m7d710b26[m admin layot added
+[33m2106031e[m restaurent dashboard
+[33m76446478[m restrictions added in payment also
+[33m141f7156[m Merge branch 'stockTransfer' into adminPanel
+[33mf1e35a15[m admin panel inital done
+[33md445df85[m[33m ([m[1;31morigin/stockTransfer[m[33m)[m resolved batch not matching issue while pushing stock
+[33m8ec700d3[m Merge branch 'stockTransfer' into testing
+[33md563a17e[m Merge branch 'testing' of https://github.com/MidhunMohan210/camet_erp into testing
+[33me895b59d[m restaurent dashboard
+[33m85c0846b[m Merge pull request #4 from anzibrahman/testing
+[33md36e1cae[m[33m ([m[1;31morigin/adminPanel[m[33m)[m updated primary users
+[33m613ba699[m add stockdetailspage
+[33mb86b2f80[m Merge pull request #29 from ABHIDAS-S/testing
+[33m394e1339[m Merge pull request #30 from sreeraj-vijay/testing
+[33m4af34971[m api changed
+[33mf9780a6a[m changed api with modes
+[33m2f20706e[m api bug resolved
+[33m88b0f169[m receipt and payment model some requreied ture issue resolved
+[33m40620d79[m change
+[33ma7b9730c[m updated url with forward slash in sourcelist page
+[33m44b1f06e[m add optimisation in fetching parties
+[33me291ab15[m updated function for reciving bank form tally
+[33m9ca4c995[m upi qr code scanner added in pdf
+[33m7cd5f7eb[m bank name changed to bank legname in selecting default bank
+[33mf4d5ec5e[m bank fetching filters are removed -bankname
+[33m179c3cc6[m updatation on main
+[33mae3d573a[m conflit resolved
+[33m454bd115[m added series datails in returning documents to tally
+[33m48705a0f[m Merge branch 'testing' of https://github.com/MidhunMohan210/camet_erp_orginal into testing
+[33ma20d5d63[m[33m ([m[1;32mhostelSide[m[33m)[m updation on hostel side
+[33m7f84ff62[m dahsboard layout changed
+[33m773d4ac0[m Merge branch 'testing' of https://github.com/sreeraj-vijay/camet_erp into testing
+[33mdce997f9[m Merge pull request #1 from sreeraj-vijay/testing
+[33m25e532e2[m bank name is removed form bank details validation
+[33mb3839fc5[m Merge pull request #2 from MidhunMohan210/testing
+[33m0749b025[m Merge branch 'testing' into updation
+[33meb6d9a12[m stock summary details partially done
+[33m52d9b063[m Merge branch 'featStockSummary' into testing
+[33mcc28a9e6[m Merge pull request #4 from MidhunMohan210/testing
+[33m023ecb63[m Merge branch 'testing' into updation
+[33mb2aae495[m pdf fotter bank issue solved
+[33m72f35e6a[m added react qurey dev tools
+[33m3b96d263[m Merge pull request #5 from MidhunMohan210/testing
+[33mb7650b5d[m admin panel dashboard
+[33mf8632c88[m transcation and dashbord counts added with react query
+[33m932edae4[m query invalidatin for voucher creation and edit done
+[33md09b12cf[m added numbers in dashboard of products and coustomers
+[33m1243cf02[m Merge branch 'updation' into testing
+[33m9d900d24[m Merge pull request #7 from MidhunMohan210/testing
+[33m9a1bf08d[m bug in dashboard cards resolved
+[33m198574ac[m Merge pull request #8 from MidhunMohan210/testing
+[33m446e69d0[m added some console corrections
+[33m022fafa6[m removed old configuraton details from secondary user creation page
+[33m468ab503[m admin dashboard
+[33mbc5961c1[m remove dahsboard count limit in dashboard card
+[33m58cfb720[m log out swallfiere chaned to shadcn
+[33m389ef609[m letter head page added
+[33m7225fb1f[m stock details with excel done
+[33m863dfde3[m limit
+[33m9d8e840e[m updated pdf dectiption and primary batch issue
+[33m569d3d00[m Merge pull request #13 from MidhunMohan210/testing
+[33mafc7b4c6[m Merge pull request #12 from ABHIDAS-S/testing
+[33m4737eff6[m resolved some ternory issue in stock register
+[33m1557823a[m Merge pull request #14 from MidhunMohan210/testing
+[33m95ff77af[m letter head upload completed
+[33m5d4aed00[m Merge branch 'testing' into updation
+[33mb3b8cfb4[m updated letter head logo
+[33m0abf59e6[m Merge pull request #16 from MidhunMohan210/testing
+[33me752f514[m updation on hotel checkIn
+[33mcb8db303[m Updation on merge
+[33m537b9bee[m warrenty card logo added
+[33ma8e80ec6[m Merge pull request #17 from MidhunMohan210/testing
+[33me7c3ebb4[m food item group
+[33mda82c866[m updated company delete and get company datas in admin
+[33m0b49f23c[m updated letter head upload page
+[33m3391f418[m resolved conflits
+[33mb9496e10[m Merge pull request #20 from MidhunMohan210/testing
+[33mf05105da[m letter head upload page updated to use in mobile also
+[33m4dce8ee3[m some js issues resolved in LetterHeadUploadPage
+[33m46bf1d44[m Merge branch 'updation' into testing
+[33m67e786d8[m Merge pull request #21 from MidhunMohan210/testing
+[33m8ddc4309[m resolved case issue in route
+[33m7305d08b[m Merge pull request #22 from MidhunMohan210/testing
+[33m1298bfbe[m resolved case issue in ItemRegisterComponent
+[33m72f823bb[m Merge pull request #23 from MidhunMohan210/testing
+[33m8f2b0ad9[m merged admin and letter head upload to testing
+[33m554ff6c4[m Merge pull request #24 from MidhunMohan210/testing
+[33m0f1ad2df[m updated node mailer email
+[33m3620345e[m added space before paisa in in words amount in pdf footer in inidan and non inidan
+[33m7e7ecd11[m sidebar fecting org function updated
+[33m42441b32[m updted admin login and admin logout
+[33m77cc47f1[m added new sonner and changed admin login and logout
+[33m6b28f2b9[m Merge branch 'testing' of https://github.com/MidhunMohan210/camet_erp_orginal into testing
+[33mbaf56bf7[m Merge pull request #26 from MidhunMohan210/testing
+[33m043f652e[m added sonner in log out an updated footer
+[33m789c8cc6[m Merge pull request #27 from MidhunMohan210/testing
+[33m45c6dab0[m restaurant dashboad
+[33mef3df4b5[m updation on hotel
+[33m9fcb311e[m[33m ([m[1;32mrestuarentSide[m[33m)[m updation on live
+[33m18b48802[m updation on restuarent side
+[33m78380b66[m Merge branch 'testing' into restuarentSide
+[33m411f8850[m updation on testing
+[33m876e5ed6[m resolved confilts from resturant
+[33m9ba8646c[m Merge pull request #30 from MidhunMohan210/testing
+[33m76b577f2[m dashboard restaurant
+[33md7cdd09a[m Merge branch 'testing' of https://github.com/anzibrahman/camet_erp_origin into testing
+[33m9f079104[m Merge pull request #31 from anzibrahman/testing
+[33m0fbbc593[m updation on dashBoard
+[33m26b51c8d[m pull request merged
+[33mde97fa09[m dash res
+[33m8850a898[m Merge pull request #32 from anzibrahman/testing
+[33m602825a6[m updation on resturant dash board
+[33m34158e24[m conflit resolved
+[33m29ad49c0[m Merge pull request #33 from sreeraj-vijay/testing
+[33m72d02b03[m printout
+[33m417cd6df[m kotprint
+[33m41536bef[m Merge pull request #34 from anzibrahman/testing
+[33m9fdd78b4[m updation on restuarant side
+[33maeddb234[m conflit resolved
+[33m61fc2e61[m backend kot updation
+[33md41aae3d[m updation on testing
+[33m938248b0[m Merge pull request #39 from sreeraj-vijay/testing
+[33m51288623[m item list correction
+[33m8dcc288e[m Merge pull request #40 from sreeraj-vijay/testing
+[33mf5383b4b[m final correction on route error
+[33m35946920[m Merge pull request #41 from sreeraj-vijay/testing
+[33m7b374a58[m updation on print
+[33m5b778959[m updation on print1
+[33m4e0b6eda[m[33m ([m[1;32mhotelSide[m[33m)[m updation on print2
+[33me3d0d18d[m Merge pull request #42 from sreeraj-vijay/testing
+[33md67c34a2[m status update
+[33m96f436ea[m updation on live
+[33me433eb09[m Merge branch 'cametSolutions:testing' into testing
+[33ma14bd4f5[m Merge pull request #44 from sreeraj-vijay/testing
+[33mb1a6478e[m updation on conflit
+[33m96477567[m Merge pull request #45 from sreeraj-vijay/testing
+[33mb134f3c8[m bundle size updation
+[33mb2ebcce6[m Merge pull request #46 from sreeraj-vijay/testing
+[33m4f62a46b[m updation on bundle size and forder name
+[33me9ce026f[m Merge pull request #47 from sreeraj-vijay/testing
+[33m2054ee45[m hotel dashboard
+[33m4a55458d[m hotel dashboard status check
+[33m7c01c2cf[m hotel
+[33m0966a1d6[m hotel status
+[33md8bde2c3[m Merge branch 'testing' into testing
+[33m4923437a[m Merge pull request #51 from anzibrahman/testing
+[33ma3e9f97d[m local Changes
+[33m652d23aa[m conflit merged
+[33md96d8369[m Merge pull request #52 from sreeraj-vijay/testing
+[33m0940ce0c[m updation on restaurantController
+[33m4d2804c7[m Merge branch 'testing' of https://github.com/sreeraj-vijay/camet_erp into testing
+[33mc923d567[m table master,reverse,checkin
+[33mfa5c2d3a[m Merge pull request #54 from anzibrahman/testing
+[33ma0e96fba[m updation on sales
+[33mf6cb4a1f[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mtesting[m[33m)[m updation on sales

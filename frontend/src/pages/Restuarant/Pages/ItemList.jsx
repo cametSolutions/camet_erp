@@ -14,7 +14,7 @@ import { useSelector } from "react-redux";
 import SearchBar from "@/components/common/SearchBar";
 import TitleDiv from "@/components/common/TitleDiv";
 
-function itemList() {
+function ItemList() {
   const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [page, setPage] = useState(1);
@@ -74,7 +74,7 @@ function itemList() {
         if (searchTerm) {
           params.append("search", searchTerm);
         }
-
+        params.append('under' ,  'restaurant')
         const res = await api.get(`/api/sUsers/getItems/${cmp_id}?${params}`, {
           withCredentials: true,
         });
@@ -218,7 +218,7 @@ function itemList() {
         className="bg-white p-4 pb-6 drop-shadow-lg mt-4 flex flex-col rounded-sm cursor-pointer hover:bg-slate-100"
       >
         <div className="">
-          <p className="font-bold text-sm">{el?.itemName}</p>
+          <p className="font-bold text-sm">{el?.product_name}</p>
         </div>
         <hr className="mt-4" />
         <div className="flex justify-between items-center w-full gap-3 mt-4 text-sm">
@@ -322,4 +322,4 @@ function itemList() {
   );
 }
 
-export default itemList;
+export default ItemList;

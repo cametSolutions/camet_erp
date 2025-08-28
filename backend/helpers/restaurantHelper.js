@@ -1,11 +1,13 @@
+import productModel from "../models/productModel.js";
 import restaurantModels from "../models/restaurantModels.js";
 import roomModal from "../models/roomModal.js";
+import product from "../models/productModel.js";
 
 // helper function used to add search concept with room
 export const buildDatabaseFilterForRoom = (params) => {
   const filter = {
     cmp_id: params.cmp_id,
-    primary_user_id: params.Primary_user_id,
+    Primary_user_id: params.Primary_user_id,
   };
   console.log("params.type",params);
  
@@ -23,9 +25,9 @@ export const buildDatabaseFilterForRoom = (params) => {
 export const fetchRoomsFromDatabase = async (filter, params) => {
 
   // Count total products matching the filter for pagination
-  const totalItems = await restaurantModels.countDocuments(filter);
+  const totalItems = await product.countDocuments(filter);
   // Build query with pagination
-  let query = restaurantModels.find(filter).populate("hsn")
+  let query = product.find(filter).populate("hsn_code")
   
 
   // Apply pagination if limit is specified
@@ -35,7 +37,7 @@ export const fetchRoomsFromDatabase = async (filter, params) => {
 
   // Execute query with population and sorting
   const items = await query
-    .sort({ itemName: 1 }).populate('priceLevel.priceLevel');
+    .sort({ itemName: 1 });
 
   return { items,totalItems };
 };
@@ -50,7 +52,7 @@ export const sendRoomResponse = (res, items, totalItems, params) => {
         total: totalItems,
         page: params.page,
         limit: params.limit,
-        hasMore: params.skip + rooms.length < totalItems,
+        hasMore: params.skip + items.length < totalItems,
       },
       message: "Rooms fetched successfully",
     });

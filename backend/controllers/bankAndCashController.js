@@ -1,97 +1,92 @@
 import mongoose from "mongoose";
 import cashModel from "../models/cashModel.js";
-import { addCorrespondingParty, editCorrespondingParty } from "../helpers/helper.js";
+import { editCorrespondingParty } from "../helpers/helper.js";
 import bankModel from "../models/bankModel.js";
 import BankOdModel from "../models/bankOdModel.js";
 import { startOfDay, endOfDay, parseISO } from "date-fns";
-
+import partyModel from "../models/partyModel.js";
+import accountGroup from "../models/accountGroup.js";
+import settlementModel from "../models/settlementModel.js";
 
 // @desc find source balances
 // route get/api/sUsers/findSourceBalance
 
 export const findSourceBalance = async (req, res) => {
-    const cmp_id = new mongoose.Types.ObjectId(req.params.cmp_id);
+  const cmp_id = new mongoose.Types.ObjectId(req.params.cmp_id);
   const { startOfDayParam, endOfDayParam } = req.query;
 
-  // Initialize dateFilter for settlements.created_at
+  // Initialize dateFilter for settlement_date
   let dateFilter = {};
   if (startOfDayParam && endOfDayParam) {
     const startDate = parseISO(startOfDayParam);
     const endDate = parseISO(endOfDayParam);
     dateFilter = {
-      "settlements.created_at": {
+      settlement_date: {
         $gte: startOfDay(startDate),
         $lte: endOfDay(endDate),
       },
     };
   }
-  // else if (todayOnly === "true") {
-  //   dateFilter = {
-  //     "settlements.created_at": {
-  //       $gte: startOfDay(new Date()),
-  //       $lte: endOfDay(new Date()),
-  //     },
-  //   };
-  // }
+
   try {
-    const bankTotal = await bankModel.aggregate([
+    const sourceBalances = await settlementModel.aggregate([
       {
         $match: {
           cmp_id: cmp_id,
-          settlements: { $exists: true, $ne: [] },
+          ...dateFilter,
         },
       },
       {
-        $unwind: "$settlements",
+        $lookup: {
+          from: "parties", // Collection name for partyModel
+          localField: "sourceId",
+          foreignField: "_id",
+          as: "sourceAccount",
+        },
       },
       {
-        $match: dateFilter,
+        $unwind: "$sourceAccount",
       },
       {
         $group: {
-          _id: null,
-          totalAmount: { $sum: "$settlements.amount" },
+          _id: "$sourceType", // Group by sourceType (cash, bank)
+          settlementTotal: { $sum: "$amount" },
+          openingTotal: { $sum: "$sourceAccount.openingBalanceAmount" },
         },
       },
     ]);
 
-    // Aggregation pipeline for cash collection
-    const cashTotal = await cashModel.aggregate([
-      {
-        $match: {
-          settlements: { $exists: true, $ne: [] },
-          cmp_id: cmp_id,
-        },
-      },
-      {
-        $unwind: "$settlements",
-      },
 
-      {
-        $match: dateFilter,
-      },
-      {
-        $group: {
-          _id: null,
-          totalAmount: { $sum: "$settlements.amount" },
-        },
-      },
-    ]);
+    // Extract totals for each source type
+    let bankSettlementTotal = 0;
+    let cashSettlementTotal = 0;
+    let bankOpeningTotal = 0;
+    let cashOpeningTotal = 0;
 
-    // console.log("cashTotal", cashTotal);
+    sourceBalances.forEach((balance) => {
+      if (balance._id === "bank") {
+        bankSettlementTotal = balance.settlementTotal;
+        bankOpeningTotal = balance.openingTotal;
+      } else if (balance._id === "cash") {
+        cashSettlementTotal = balance.settlementTotal;
+        cashOpeningTotal = balance.openingTotal;
+      }
+    });
 
-    // Extract totals or set to 0 if no settlements found
-    const bankSettlementTotal =
-      bankTotal.length > 0 ? bankTotal[0].totalAmount : 0;
-    const cashSettlementTotal =
-      cashTotal.length > 0 ? cashTotal[0].totalAmount : 0;
-    const grandTotal = bankSettlementTotal + cashSettlementTotal;
+    // Calculate current balances (opening + settlements)
+    const bankCurrentBalance = bankOpeningTotal + bankSettlementTotal;
+    const cashCurrentBalance = cashOpeningTotal + cashSettlementTotal;
+    const grandTotal = bankCurrentBalance + cashCurrentBalance;
 
     return res.status(200).json({
       message: "Balance found successfully",
       success: true,
-      bankSettlementTotal,
+      cashOpeningTotal,
       cashSettlementTotal,
+      cashCurrentBalance,
+      bankOpeningTotal,
+      bankSettlementTotal,
+      bankCurrentBalance,
       grandTotal,
     });
   } catch (error) {
@@ -105,132 +100,79 @@ export const findSourceBalance = async (req, res) => {
 
 export const findSourceDetails = async (req, res) => {
   const cmp_id = new mongoose.Types.ObjectId(req.params.cmp_id);
-
-  const { accountGroup, startOfDayParam, endOfDayParam, todayOnly } = req.query;
-
-  // Initialize dateFilter for settlements.created_at
-  let dateFilter = {};
-  if (startOfDayParam && endOfDayParam) {
-    const startDate = parseISO(startOfDayParam);
-    const endDate = parseISO(endOfDayParam);
-    dateFilter = {
-      $gte: startOfDay(startDate),
-      $lte: endOfDay(endDate),
-    };
-  } else if (todayOnly === "true") {
-    dateFilter = {
-      $gte: startOfDay(new Date()),
-      $lte: endOfDay(new Date()),
-    };
-  }
+  const { accountGroup } = req.query;
 
   try {
-    let model;
-    let nameField;
-
+    // Determine partyType based on accountGroup
+    let partyTypeFilter;
     switch (accountGroup) {
       case "cashInHand":
-        model = cashModel;
-        nameField = "cash_ledname";
+        partyTypeFilter = "cash";
         break;
       case "bankBalance":
-        model = bankModel;
-        nameField = "bank_ledname";
-        break;
       case "bankOd":
-        model = BankOdModel;
-        nameField = "bank_ledname";
+        partyTypeFilter = "bank";
         break;
       default:
         return res.status(400).json({ message: "Invalid account group" });
     }
 
-    const balanceDetails = await model.aggregate([
+    // Get all Bank/Cash accounts for the company
+    const accounts = await partyModel
+      .find({
+        cmp_id: cmp_id,
+        partyType: partyTypeFilter,
+      })
+      .select("_id partyName openingBalanceAmount")
+      .sort({ partyName: 1 });
+
+    // Get settlement totals for each account from Settlement collection
+    const settlementTotals = await settlementModel.aggregate([
       {
         $match: {
-          cmp_id: cmp_id, // Match by company ID initially
-        },
-      },
-      {
-        $project: {
-          name: `$${nameField}`,
-          settlements: {
-            $cond: {
-              if: { $isArray: "$settlements" },
-              then: "$settlements",
-              else: [],
-            },
-          },
-          originalId: "$_id",
-        },
-      },
-      {
-        $unwind: {
-          path: "$settlements",
-          preserveNullAndEmptyArrays: true, // Keep documents even if no settlements
-        },
-      },
-      {
-        $project: {
-          name: 1,
-          originalId: 1,
-          settlement: {
-            $cond: [
-              {
-                $and: [
-                  { $ifNull: ["$settlements", false] },
-                  {
-                    $gte: [
-                      "$settlements.created_at",
-                      dateFilter.$gte || new Date(0),
-                    ],
-                  },
-                  {
-                    $lte: [
-                      "$settlements.created_at",
-                      dateFilter.$lte || new Date(),
-                    ],
-                  },
-                ],
-              },
-              "$settlements",
-              null,
-            ],
-          },
+          cmp_id: cmp_id,
+          sourceType: partyTypeFilter, // Filter by sourceType (cash/bank)
         },
       },
       {
         $group: {
-          _id: "$originalId",
-          name: { $first: "$name" },
-          settlementTotal: {
-            $sum: {
-              $cond: [
-                { $ifNull: ["$settlement.amount", false] },
-                "$settlement.amount",
-                0,
-              ],
-            },
-          },
+          _id: "$sourceId", // Group by sourceId (the account ID)
+          settlementTotal: { $sum: "$amount" },
         },
       },
-      {
-        $sort: { name: 1 }, // Sort by name alphabetically
-      },
     ]);
+
+    // Create a map for quick lookup of settlement totals
+    const settlementMap = {};
+    settlementTotals.forEach((settlement) => {
+      settlementMap[settlement._id.toString()] = settlement.settlementTotal;
+    });
+
+    // Map accounts to required format with settlement data
+    const balanceDetails = accounts.map((account) => {
+      const accountId = account._id.toString();
+      const openingBalance = account.openingBalanceAmount || 0;
+      const settlementTotal = settlementMap[accountId] || 0;
+      const currentBalance = openingBalance + settlementTotal;
+
+      return {
+        _id: account._id,
+        name: account.partyName,
+        openingBalance: openingBalance,
+        settlementTotal: settlementTotal,
+        currentBalance: currentBalance,
+        total: currentBalance, // For backward compatibility
+      };
+    });
 
     return res.status(200).json({
       message: "Balance details found successfully",
       success: true,
       accountGroup,
-      data: balanceDetails.map((detail) => ({
-        _id: detail._id,
-        name: detail.name,
-        total: detail.settlementTotal || 0, // Ensure zero if no total
-      })),
+      data: balanceDetails,
     });
   } catch (error) {
-    console.error(error);
+    console.error("findSourceDetails error:", error);
     return res.status(500).json({
       error: "Internal Server Error",
       details: error.message,
@@ -241,211 +183,395 @@ export const findSourceDetails = async (req, res) => {
 // @desc find source transactions
 // route get/api/sUsers/findSourceTransactions
 
-export const findSourceTransactions = async (req, res) => {
-  const {  id } = req.params;
-  const cmp_id = new mongoose.Types.ObjectId(req.params.cmp_id);
+// export const findSourceTransactions = async (req, res) => {
+//   const { id } = req.params;
+//   const cmp_id = new mongoose.Types.ObjectId(req.params.cmp_id);
 
+//   const { startOfDayParam, endOfDayParam, accGroup } = req.query;
+
+//   try {
+//     let dateFilter = {};
+//     let openingBalanceFilter = {};
+//     if (startOfDayParam && endOfDayParam) {
+//       const startDate = parseISO(startOfDayParam);
+//       const endDate = parseISO(endOfDayParam);
+
+//       dateFilter = {
+//         "settlements.created_at": {
+//           $gte: startOfDay(startDate),
+//           $lte: endOfDay(endDate),
+//         },
+//       };
+
+//       // Filter for opening balance (before start date)
+//       openingBalanceFilter = {
+//         "settlements.created_at": {
+//           $lt: startOfDay(startDate),
+//         },
+//       };
+//     }
+
+//     let model;
+//     let openingField;
+//     switch (accGroup) {
+//       case "cashInHand":
+//         model = cashModel;
+//         openingField = "cash_opening";
+//         break;
+//       case "bankBalance":
+//         model = bankModel;
+//         openingField = "bank_opening";
+//         break;
+//       default:
+//         return res.status(400).json({ message: "Invalid account group" });
+//     }
+
+//     const [openingBalanceResult, transactions] = await Promise.all([
+//       // First pipeline to calculate opening balance
+//       model.aggregate([
+//         {
+//           $match: {
+//             _id: new mongoose.Types.ObjectId(id),
+//             cmp_id: cmp_id,
+//           },
+//         },
+//         {
+//           $project: {
+//             [openingField]: 1, // Include opening field
+//             settlements: {
+//               $cond: {
+//                 if: { $isArray: "$settlements" },
+//                 then: "$settlements",
+//                 else: [],
+//               },
+//             },
+//           },
+//         },
+//         {
+//           $unwind: {
+//             path: "$settlements",
+//             preserveNullAndEmptyArrays: true,
+//           },
+//         },
+//         {
+//           $match: openingBalanceFilter,
+//         },
+//         {
+//           $group: {
+//             _id: null,
+//             calculatedOpeningBalance: { $sum: "$settlements.amount" },
+//             openingField: { $first: `$${openingField}` }, // Retrieve opening field value
+//           },
+//         },
+//         {
+//           $project: {
+//             _id: 0,
+//             openingBalance: {
+//               $add: ["$calculatedOpeningBalance", "$openingField"], // Combine calculated and opening field
+//             },
+//           },
+//         },
+//       ]),
+
+//       // Second pipeline to get current period transactions
+//       model.aggregate([
+//         {
+//           $match: {
+//             _id: new mongoose.Types.ObjectId(id),
+//             cmp_id: cmp_id,
+//           },
+//         },
+//         {
+//           $project: {
+//             settlements: {
+//               $cond: {
+//                 if: { $isArray: "$settlements" },
+//                 then: "$settlements",
+//                 else: [],
+//               },
+//             },
+//           },
+//         },
+//         {
+//           $unwind: {
+//             path: "$settlements",
+//             preserveNullAndEmptyArrays: true,
+//           },
+//         },
+//         {
+//           $match: dateFilter,
+//         },
+//         {
+//           $group: {
+//             _id: null,
+//             settlements: { $push: "$settlements" },
+//             count: { $sum: 1 },
+//             total: { $sum: "$settlements.amount" },
+//           },
+//         },
+//         {
+//           $project: {
+//             _id: 0,
+//             settlements: {
+//               $map: {
+//                 input: "$settlements",
+//                 as: "settlement",
+//                 in: {
+//                   voucherNumber: "$$settlement.voucherNumber",
+//                   _id: "$$settlement.voucherId",
+//                   party_name: "$$settlement.party",
+//                   enteredAmount: "$$settlement.amount",
+//                   createdAt: "$$settlement.created_at",
+//                   payment_mode: "$$settlement.payment_mode",
+//                   type: {
+//                     $switch: {
+//                       branches: [
+//                         {
+//                           case: {
+//                             $eq: ["$$settlement.voucherType", "receipt"],
+//                           },
+//                           then: "Receipt",
+//                         },
+//                         {
+//                           case: {
+//                             $eq: ["$$settlement.voucherType", "payment"],
+//                           },
+//                           then: "Payment",
+//                         },
+//                         {
+//                           case: { $eq: ["$$settlement.voucherType", "sale"] },
+//                           then: "Tax Invoice",
+//                         },
+//                         {
+//                           case: {
+//                             $eq: ["$$settlement.voucherType", "vanSale"],
+//                           },
+//                           then: "Van Sale",
+//                         },
+//                         {
+//                           case: {
+//                             $eq: ["$$settlement.voucherType", "purchase"],
+//                           },
+//                           then: "Purchase",
+//                         },
+//                         {
+//                           case: {
+//                             $eq: ["$$settlement.voucherType", "creditNote"],
+//                           },
+//                           then: "Credit Note",
+//                         },
+//                         {
+//                           case: {
+//                             $eq: ["$$settlement.voucherType", "debitNote"],
+//                           },
+//                           then: "Debit Note",
+//                         },
+//                       ],
+//                       default: "$$settlement.voucherType",
+//                     },
+//                   },
+//                 },
+//               },
+//             },
+//             count: 1,
+//             total: 1,
+//           },
+//         },
+//       ]),
+//     ]);
+
+//     // Handle case when no transactions are found
+//     if (!transactions.length) {
+//       return res.status(200).json({
+//         message: "No transactions found for the specified period",
+//         success: true,
+//         data: {
+//           settlements: [],
+//           total: 0,
+//           count: 0,
+//           openingBalance: 0,
+//         },
+//       });
+//     }
+
+//     return res.status(200).json({
+//       message: "Transactions found successfully",
+//       success: true,
+//       data: {
+//         ...transactions[0],
+//         openingBalance: openingBalanceResult[0]?.openingBalance || 0,
+//       },
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     return res.status(500).json({
+//       error: "Internal Server Error",
+//       details: error.message,
+//     });
+//   }
+// };
+
+export const findSourceTransactions = async (req, res) => {
+  const { id } = req.params;
+  const cmp_id = new mongoose.Types.ObjectId(req.params.cmp_id);
   const { startOfDayParam, endOfDayParam, accGroup } = req.query;
 
   try {
-    let dateFilter = {};
-    let openingBalanceFilter = {};
-    if (startOfDayParam && endOfDayParam) {
-      const startDate = parseISO(startOfDayParam);
-      const endDate = parseISO(endOfDayParam);
-
-      dateFilter = {
-        "settlements.created_at": {
-          $gte: startOfDay(startDate),
-          $lte: endOfDay(endDate),
-        },
-      };
-
-      // Filter for opening balance (before start date)
-      openingBalanceFilter = {
-        "settlements.created_at": {
-          $lt: startOfDay(startDate),
-        },
-      };
-    }
-
-    let model;
-    let openingField;
+    // Determine partyType based on accountGroup
+    let partyTypeFilter;
     switch (accGroup) {
       case "cashInHand":
-        model = cashModel;
-        openingField = "cash_opening";
+        partyTypeFilter = "cash";
         break;
       case "bankBalance":
-        model = bankModel;
-        openingField = "bank_opening";
+      case "bankOd":
+        partyTypeFilter = "bank";
         break;
       default:
         return res.status(400).json({ message: "Invalid account group" });
     }
 
-    const [openingBalanceResult, transactions] = await Promise.all([
-      // First pipeline to calculate opening balance
-      model.aggregate([
-        {
-          $match: {
-            _id: new mongoose.Types.ObjectId(id),
-            cmp_id: cmp_id,
-          },
-        },
-        {
-          $project: {
-            [openingField]: 1, // Include opening field
-            settlements: {
-              $cond: {
-                if: { $isArray: "$settlements" },
-                then: "$settlements",
-                else: [],
-              },
-            },
-          },
-        },
-        {
-          $unwind: {
-            path: "$settlements",
-            preserveNullAndEmptyArrays: true,
-          },
-        },
-        {
-          $match: openingBalanceFilter,
-        },
-        {
-          $group: {
-            _id: null,
-            calculatedOpeningBalance: { $sum: "$settlements.amount" },
-            openingField: { $first: `$${openingField}` }, // Retrieve opening field value
-          },
-        },
-        {
-          $project: {
-            _id: 0,
-            openingBalance: {
-              $add: ["$calculatedOpeningBalance", "$openingField"], // Combine calculated and opening field
-            },
-          },
-        },
-      ]),
+    // Date filters
+    let dateFilter = {};
+    let openingDateFilter = {};
+    
+    if (startOfDayParam && endOfDayParam) {
+      const startDate = parseISO(startOfDayParam);
+      const endDate = parseISO(endOfDayParam);
 
-      // Second pipeline to get current period transactions
-      model.aggregate([
-        {
-          $match: {
-            _id: new mongoose.Types.ObjectId(id),
-            cmp_id: cmp_id,
-          },
+      dateFilter = {
+        settlement_date: {
+          $gte: startOfDay(startDate),
+          $lte: endOfDay(endDate),
         },
-        {
-          $project: {
-            settlements: {
-              $cond: {
-                if: { $isArray: "$settlements" },
-                then: "$settlements",
-                else: [],
+      };
+
+      openingDateFilter = {
+        settlement_date: {
+          $lt: startOfDay(startDate),
+        },
+      };
+    }
+
+    const result = await settlementModel.aggregate([
+      {
+        $facet: {
+          // Get opening balance
+          openingBalance: [
+            {
+              $match: {
+                cmp_id: cmp_id,
+                sourceId: new mongoose.Types.ObjectId(id),
+                sourceType: partyTypeFilter,
+                ...openingDateFilter,
               },
             },
-          },
-        },
-        {
-          $unwind: {
-            path: "$settlements",
-            preserveNullAndEmptyArrays: true,
-          },
-        },
-        {
-          $match: dateFilter,
-        },
-        {
-          $group: {
-            _id: null,
-            settlements: { $push: "$settlements" },
-            count: { $sum: 1 },
-            total: { $sum: "$settlements.amount" },
-          },
-        },
-        {
-          $project: {
-            _id: 0,
-            settlements: {
-              $map: {
-                input: "$settlements",
-                as: "settlement",
-                in: {
-                  voucherNumber: "$$settlement.voucherNumber",
-                  _id: "$$settlement.voucherId",
-                  party_name: "$$settlement.party",
-                  enteredAmount: "$$settlement.amount",
-                  createdAt: "$$settlement.created_at",
-                  payment_mode: "$$settlement.payment_mode",
-                  type: {
-                    $switch: {
-                      branches: [
-                        {
-                          case: { $eq: ["$$settlement.voucherType", "receipt"] },
-                          then: "Receipt",
-                        },
-                        {
-                          case: { $eq: ["$$settlement.voucherType", "payment"] },
-                          then: "Payment",
-                        },
-                        {
-                          case: { $eq: ["$$settlement.voucherType", "sale"] },
-                          then: "Tax Invoice",
-                        },
-                        {
-                          case: { $eq: ["$$settlement.voucherType", "vanSale"] },
-                          then: "Van Sale",
-                        },
-                        {
-                          case: { $eq: ["$$settlement.voucherType", "purchase"] },
-                          then: "Purchase",
-                        },
-                        {
-                          case: { $eq: ["$$settlement.voucherType", "creditNote"] },
-                          then: "Credit Note",
-                        },
-                        {
-                          case: { $eq: ["$$settlement.voucherType", "debitNote"] },
-                          then: "Debit Note",
-                        },
-                      ],
-                      default: "$$settlement.voucherType",
-                    },
+            {
+              $group: {
+                _id: null,
+                settlementOpening: { $sum: "$amount" },
+              },
+            },
+            {
+              $lookup: {
+                from: "parties",
+                let: { sourceId: new mongoose.Types.ObjectId(id) },
+                pipeline: [
+                  {
+                    $match: {
+                      $expr: { $eq: ["$_id", "$$sourceId"] }
+                    }
+                  },
+                  {
+                    $project: {
+                      openingBalanceAmount: 1
+                    }
+                  }
+                ],
+                as: "account"
+              }
+            },
+            {
+              $project: {
+                openingBalance: {
+                  $add: [
+                    { $ifNull: ["$settlementOpening", 0] },
+                    { $ifNull: [{ $arrayElemAt: ["$account.openingBalanceAmount", 0] }, 0] }
+                  ]
+                }
+              }
+            }
+          ],
+          
+          // Get current period transactions
+          transactions: [
+            {
+              $match: {
+                cmp_id: cmp_id,
+                sourceId: new mongoose.Types.ObjectId(id),
+                sourceType: partyTypeFilter,
+                ...dateFilter,
+              },
+            },
+            {
+              $project: {
+                voucherNumber: 1,
+                _id: "$voucherId",
+                party_name: "$partyName",
+                enteredAmount: "$amount",
+                createdAt: "$settlement_date",
+                payment_mode: 1,
+                type: {
+                  $switch: {
+                    branches: [
+                      { case: { $eq: ["$voucherType", "receipt"] }, then: "Receipt" },
+                      { case: { $eq: ["$voucherType", "payment"] }, then: "Payment" },
+                      { case: { $eq: ["$voucherType", "sales"] }, then: "Tax Invoice" },
+                    ],
+                    default: "$voucherType",
                   },
                 },
               },
             },
-            count: 1,
-            total: 1,
-          },
+            {
+              $sort: { createdAt: -1 }
+            }
+          ],
+          
+          // Get summary stats
+          summary: [
+            {
+              $match: {
+                cmp_id: cmp_id,
+                sourceId: new mongoose.Types.ObjectId(id),
+                sourceType: partyTypeFilter,
+                ...dateFilter,
+              },
+            },
+            {
+              $group: {
+                _id: null,
+                count: { $sum: 1 },
+                total: { $sum: "$amount" },
+              },
+            },
+          ],
         },
-      ]),
+      },
     ]);
 
-    // Handle case when no transactions are found
-    if (!transactions.length) {
-      return res.status(200).json({
-        message: "No transactions found for the specified period",
-        success: true,
-        data: {
-          settlements: [],
-          total: 0,
-          count: 0,
-          openingBalance: 0,
-        },
-      });
-    }
+    const openingBalance = result[0].openingBalance[0]?.openingBalance || 0;
+    const transactions = result[0].transactions || [];
+    const summary = result[0].summary[0] || { count: 0, total: 0 };
 
     return res.status(200).json({
       message: "Transactions found successfully",
       success: true,
       data: {
-        ...transactions[0],
-        openingBalance: openingBalanceResult[0]?.openingBalance || 0,
+        settlements: transactions,
+        count: summary.count,
+        total: summary.total,
+        openingBalance: openingBalance,
       },
     });
   } catch (error) {
@@ -461,45 +587,68 @@ export const findSourceTransactions = async (req, res) => {
 // route get/api/sUsers/addCash
 
 export const addCash = async (req, res) => {
-  const { cash_ledname, cash_opening, cmp_id } = req.body;
-  const Primary_user_id = req.pUserId || req.owner;
-  const session = await mongoose.startSession();
-  session.startTransaction();
+  const { cash_ledname, cash_opening = 0, cmp_id } = req.body;
+
+  const Primary_user_id = req.owner;
+  const Secondary_user_id = req.sUserId;
 
   try {
-    const cash = await cashModel({
-      cash_ledname,
-      cash_opening,
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    const accountGroupData = await accountGroup
+      .findOne({
+        cmp_id: cmp_id,
+        accountGroup: "Cash-in-Hand",
+      })
+      .session(session);
+
+    // Create cash entry as Party with partyType = 'Cash'
+    const cashData = {
+      // Common fields
       Primary_user_id,
+      Secondary_user_id,
       cmp_id,
-    });
+      partyType: "cash",
+      // Account classification
+      accountGroup: accountGroupData?._id,
+      // Basic info
+      partyName: cash_ledname, // Cash ledger name as party name
+      party_master_id: "temp_" + Date.now(),
+      // Opening balance
+      openingBalanceAmount: cash_opening,
+    };
 
-    const result = await cash.save({ session });
+    // Create and save cash party
+    const cashParty = new partyModel(cashData);
+    const result = await cashParty.save({ session });
 
-    result.cash_id = result._id;
-    await result.save();
-
-    await addCorrespondingParty(
-      cash_ledname,
-      Primary_user_id,
-      cmp_id,
-      "Cash-in-Hand",
-      result._id,
-      session
-    );
+    // Update party_master_id with the MongoDB _id
+    result.party_master_id = result._id.toString();
+    await result.save({ session });
 
     await session.commitTransaction();
     session.endSession();
-    return res
-      .status(200)
-      .json({ success: true, message: "Cash added successfully" });
+
+    return res.status(200).json({
+      success: true,
+      message: "Cash account added successfully",
+    });
   } catch (error) {
-    session.abortTransaction();
-    session.endSession();
-    console.error(error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Internal server error, try again!" });
+    console.error("Cash entry error:", error);
+
+    // Handle duplicate party_master_id error
+    if (error.code === 11000 && error.keyPattern?.party_master_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Cash account ID already exists, please try again",
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to add cash account, please try again!",
+    });
   }
 };
 
@@ -515,12 +664,12 @@ export const getCashDetails = async (req, res) => {
         .json({ success: false, message: "Cash is required" });
     }
 
-    const cashDetails = await cashModel.findById(cashId);
+    const cashDetails = await partyModel.findById(cashId);
 
     if (!cashDetails) {
       return res
         .status(404)
-        .json({ success: false, message: "Bank details not found" });
+        .json({ success: false, message: "Cash details not found" });
     }
 
     return res.status(200).json({ success: true, data: cashDetails });
@@ -538,30 +687,22 @@ export const getCashDetails = async (req, res) => {
 
 export const editCash = async (req, res) => {
   const cash_id = req.params.cash_id;
-  const session = await mongoose.startSession();
-  session.startTransaction();
+  const { cash_ledname, cash_opening = 0, cmp_id } = req.body;
   try {
-    const updatedCash = await cashModel.findOneAndUpdate(
+    // Create cash entry as Party with partyType = 'Cash'
+    const cashData = {
+      partyName: cash_ledname,
+      // Opening balance
+      openingBalanceAmount: cash_opening,
+    };
+
+    const updatedCash = await partyModel.findOneAndUpdate(
       { _id: cash_id },
-      req.body,
+      cashData,
       { new: true }
     );
 
-    updatedCash.cash_id = updatedCash._id;
-    updatedCash.save({ session });
-
-    //// update corresponding party
-    await editCorrespondingParty(
-      updatedCash.cash_ledname,
-      updatedCash.Primary_user_id,
-      updatedCash.cmp_id,
-      "Cash-in-Hand",
-      updatedCash._id,
-      session
-    );
-
-    await session.commitTransaction();
-    session.endSession();
+    updatedCash.save();
     res.status(200).json({
       success: true,
       message: "Cash updated successfully",
@@ -575,157 +716,19 @@ export const editCash = async (req, res) => {
   }
 };
 
-
-
-// @desc  Add bank
-// route post/api/sUsers/addBank
-
-// export const addBank = async (req, res) => {
-//     const {
-//       acholder_name,
-//       ac_no,
-//       ifsc,
-//       bank_name,
-//       branch,
-//       upi_id,
-//       cmp_id,
-//       bank_opening,
-//     } = req.body;
-//     const Primary_user_id = req.pUserId || req.owner;
-//     const bank_ledname = bank_name;
-  
-//     try {
-//       const session = await mongoose.startSession();
-//       session.startTransaction();
-//       const bank = await bankModel({
-//         acholder_name,
-//         ac_no,
-//         ifsc,
-//         bank_name,
-//         branch,
-//         upi_id,
-//         cmp_id,
-//         Primary_user_id,
-//         bank_ledname,
-//         bank_opening,
-//       });
-  
-//       const result = await bank.save();
-  
-//       result.bank_id = result._id;
-//       await result.save({ session });
-  
-//       await addCorrespondingParty(
-//         bank_name,
-//         Primary_user_id,
-//         cmp_id,
-//         "Bank Accounts",
-//         result._id,
-//         session
-//       );
-  
-//       await session.commitTransaction();
-//       session.endSession();
-//       return res.status(200).json({
-//         success: true,
-//         message: "Bank added successfully",
-//         data: result,
-//       });
-//     } catch (error) {
-//       console.error(error);
-//       return res
-//         .status(500)
-//         .json({ success: false, message: "Internal server error, try again!" });
-//     }
-//   };
-//   // @desc Edit bank details
-//   // route post/api/sUsers/editBank
-  
-//   export const editBank = async (req, res) => {
-//     const bank_id = req.params.bank_id;
-  
-//     const session = await mongoose.startSession();
-//     session.startTransaction();
-  
-//     try {
-//       const udatedBank = await bankModel.findOneAndUpdate(
-//         { _id: bank_id },
-//         req.body,
-//         { new: true }
-//       );
-  
-//       udatedBank.bank_id = udatedBank._id;
-//       udatedBank.bank_ledname = udatedBank.bank_name;
-//       udatedBank.save({ session });
-  
-//       //// update corresponding party
-//       await editCorrespondingParty(
-//         udatedBank.bank_ledname,
-//         udatedBank.Primary_user_id,
-//         udatedBank.cmp_id,
-//         "Bank Accounts",
-//         udatedBank._id,
-//         session
-//       );
-  
-//       await session.commitTransaction();
-//       session.endSession();
-  
-//       res.status(200).json({
-//         success: true,
-//         message: "Bank updated successfully",
-//         data: udatedBank,
-//       });
-//     } catch (error) {
-//       await session.abortTransaction();
-//       session.endSession();
-//       console.error(error);
-//       res.status(500).json({ success: false, message: "Internal Server Error" });
-//     }
-//   };
-  
-//     // @desc Get bank details
-//   // route get/api/sUsers/getBankDetails
-//   export const getBankDetails = async (req, res) => {
-//     try {
-//       const bankId = req?.params?.bank_id;
-//       if (!bankId) {
-//         return res
-//           .status(400)
-//           .json({ success: false, message: "Bank ID is required" });
-//       }
-  
-//       const bankDetails = await bankModel.findById(bankId);
-  
-//       if (!bankDetails) {
-//         return res
-//           .status(404)
-//           .json({ success: false, message: "Bank details not found" });
-//       }
-  
-//       return res.status(200).json({ success: true, data: bankDetails });
-//     } catch (error) {
-//       console.error(`Error fetching bank details: ${error.message}`);
-  
-//       return res
-//         .status(500)
-//         .json({ success: false, message: "Internal server error, try again!" });
-//     }
-//   };
-
-
 // Helper function to determine which model to use based on the route
 const getModelAndType = (req) => {
-  const isOD = req.path.toLowerCase().includes('od');
+  const isOD = req.path.toLowerCase().includes("od");
   return {
     model: isOD ? BankOdModel : bankModel,
     type: isOD ? "Bank OD A/c" : "Bank Accounts",
-    name: isOD ? "Bank OD" : "Bank"
+    name: isOD ? "Bank OD" : "Bank",
   };
 };
 
 // @desc Add a new bank or bank OD
 // @route POST /api/sUsers/addBank/:cmp_id or /api/sUsers/addBankOD/:cmp_id
+
 export const addBankEntry = async (req, res) => {
   const {
     acholder_name,
@@ -736,64 +739,85 @@ export const addBankEntry = async (req, res) => {
     upi_id,
     cmp_id,
     bank_opening,
-    // od_limit // Optional, only for OD
   } = req.body;
-  
-  const Primary_user_id = req.pUserId || req.owner;
-  const bank_ledname = bank_name;
-  const { model, type, name } = getModelAndType(req);
 
+  const Primary_user_id = req.pUserId || req.owner;
+  const Secondary_user_id = req.sUserId;
+
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
-    const session = await mongoose.startSession();
-    session.startTransaction();
-    
-    // Create basic bank data object
+    // Generate placeholder party_master_id (will be updated with _id after save)
+    const party_master_id = "temp_" + Date.now();
+    const accountGroupData = await accountGroup
+      .findOne({
+        cmp_id: cmp_id,
+        accountGroup: "Bank Accounts",
+      })
+      .session(session);
+
+    // Create bank entry as Party with partyType = 'Bank'
     const bankData = {
+      // Common fields
+      Primary_user_id,
+      Secondary_user_id,
+      cmp_id,
+      partyType: "bank",
+
+      // Account classification
+      accountGroup: accountGroupData?._id,
+
+      // Basic info
+      partyName: bank_name, // Bank name as party name
+      party_master_id,
+      // Opening balance
+      openingBalanceAmount: bank_opening || 0,
+
+      // Bank-specific fields
       acholder_name,
       ac_no,
       ifsc,
       bank_name,
       branch,
       upi_id,
-      cmp_id,
-      Primary_user_id,
-      bank_ledname,
-      bank_opening
     };
-    
-    // Add OD specific fields if it's an OD entry
-    // if (type === "Bank OD Accounts" && od_limit) {
-    //   bankData.od_limit = od_limit;
-    // }
-    
-    const bank = await model(bankData);
-    const result = await bank.save({ session });
 
-    result.bank_id = result._id;
+    // Create and save bank party
+    const bankParty = new partyModel(bankData);
+    const result = await bankParty.save({ session });
+
+    // Update party_master_id with the MongoDB _id
+    result.party_master_id = result._id.toString();
     await result.save({ session });
-
-    await addCorrespondingParty(
-      bank_name,
-      Primary_user_id,
-      cmp_id,
-      type,
-      result._id,
-      session
-    );
 
     await session.commitTransaction();
     session.endSession();
-    
+
     return res.status(200).json({
       success: true,
-      message: `${name} added successfully`,
-      data: result,
+      message: "Bank account added successfully",
     });
   } catch (error) {
-    console.error(error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Internal server error, try again!" });
+    // Rollback transaction on error
+    if (session) {
+      await session.abortTransaction();
+      session.endSession();
+    }
+
+    console.error("Bank entry error:", error);
+
+    // Handle duplicate party_master_id error
+    if (error.code === 11000 && error.keyPattern?.party_master_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Bank ID already exists, please try again",
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to add bank account, please try again!",
+    });
   }
 };
 
@@ -801,47 +825,67 @@ export const addBankEntry = async (req, res) => {
 // @route PUT /api/sUsers/editBank/:cmp_id/:bank_id or /api/sUsers/editBankOD/:cmp_id/:bank_id
 export const editBankEntry = async (req, res) => {
   const bank_id = req.params.bank_id;
-  const { model, type, name } = getModelAndType(req);
+
+  const {
+    acholder_name,
+    ac_no,
+    ifsc,
+    bank_name,
+    branch,
+    upi_id,
+    cmp_id,
+    bank_opening,
+  } = req.body;
 
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-    const updatedEntry = await model.findOneAndUpdate(
+    // Create bank entry as Party with partyType = 'Bank'
+    const bankData = {
+      // Common fields
+      Primary_user_id: req?.owner,
+      Secondary_user_id: req?.sUserId,
+      cmp_id,
+      partyType: "bank",
+
+      // Basic info
+      partyName: bank_name,
+      party_master_id: bank_id,
+      // Opening balance
+      openingBalanceAmount: bank_opening || 0,
+
+      // Bank-specific fields
+      acholder_name,
+      ac_no,
+      ifsc,
+      bank_name,
+      branch,
+      upi_id,
+    };
+    const updatedEntry = await partyModel.findOneAndUpdate(
       { _id: bank_id },
-      req.body,
+      bankData,
       { new: true, session }
     );
 
     if (!updatedEntry) {
       await session.abortTransaction();
       session.endSession();
-      return res.status(404).json({ 
-        success: false, 
-        message: `${name} not found` 
+      return res.status(404).json({
+        success: false,
+        message: `Bank account not found`,
       });
     }
 
-    updatedEntry.bank_id = updatedEntry._id;
-    updatedEntry.bank_ledname = updatedEntry.bank_name;
     await updatedEntry.save({ session });
-
-    // Update corresponding party
-    await editCorrespondingParty(
-      updatedEntry.bank_ledname,
-      updatedEntry.Primary_user_id,
-      updatedEntry.cmp_id,
-      type,
-      updatedEntry._id,
-      session
-    );
 
     await session.commitTransaction();
     session.endSession();
 
     res.status(200).json({
       success: true,
-      message: `${name} updated successfully`,
+      message: `Bank account updated successfully`,
       data: updatedEntry,
     });
   } catch (error) {
@@ -857,49 +901,31 @@ export const editBankEntry = async (req, res) => {
 export const getBankEntryDetails = async (req, res) => {
   try {
     const bankId = req?.params?.bank_id;
-    const { model, name } = getModelAndType(req);
-    
+
     if (!bankId) {
       return res
         .status(400)
-        .json({ success: false, message: `${name} ID is required` });
+        .json({ success: false, message: `Bank ID is required` });
     }
 
-    const entryDetails = await model.findById(bankId);
+    const entryDetails = await partyModel.findById(bankId);
 
     if (!entryDetails) {
       return res
         .status(404)
-        .json({ success: false, message: `${name} details not found` });
+        .json({ success: false, message: `Bank details not found` });
     }
 
     return res.status(200).json({ success: true, data: entryDetails });
   } catch (error) {
-    console.error(`Error fetching ${getModelAndType(req).name.toLowerCase()} details: ${error.message}`);
+    console.error(
+      `Error fetching ${getModelAndType(req).name.toLowerCase()} details: ${
+        error.message
+      }`
+    );
 
     return res
       .status(500)
       .json({ success: false, message: "Internal server error, try again!" });
   }
 };
-
-// @desc Get all banks or bank ODs for a company
-// @route GET /api/sUsers/getAllBanks/:cmp_id or /api/sUsers/getAllBankODs/:cmp_id
-// export const getAllBankEntries = async (req, res) => {
-//   try {
-//     const cmp_id = req.params.cmp_id;
-//     const { model } = getModelAndType(req);
-    
-//     const entries = await model.find({ cmp_id });
-    
-//     return res.status(200).json({
-//       success: true,
-//       data: entries
-//     });
-//   } catch (error) {
-//     console.error(`Error fetching ${getModelAndType(req).name.toLowerCase()} entries: ${error.message}`);
-//     return res
-//       .status(500)
-//       .json({ success: false, message: "Internal server error, try again!" });
-//   }
-// };
