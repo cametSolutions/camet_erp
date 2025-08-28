@@ -491,7 +491,9 @@ export const editKot = async (req, res) => {
 // get all kot
 export const getKot = async (req, res) => {
   try {
-    const kot = await kotModal.find({ cmp_id: req.params.cmp_id }).populate('roomId');
+    const kot = await kotModal
+      .find({ cmp_id: req.params.cmp_id })
+      .populate("roomId");
     res.status(200).json({
       success: true,
       data: kot,
@@ -755,15 +757,13 @@ export const updateKotPayment = async (req, res) => {
 
   try {
     await session.withTransaction(async () => {
-      const {  cmp_id } = req.params;
+      const { cmp_id } = req.params;
       let {
         paymentMethod,
         paymentDetails,
         selectedKotData: kotData,
-        isPostToRoom
+        isPostToRoom,
       } = req.body;
-
-    
 
       // Validate required fields
       if (!paymentDetails || !kotData) {
@@ -831,7 +831,7 @@ export const updateKotPayment = async (req, res) => {
       const paidAmount = isPostToRoom ? 0 : cashAmt + onlineAmt;
       const pendingAmount = Number(kotData?.total || 0) - paidAmount;
 
-      if (pendingAmount > 0) {
+      if (pendingAmount > 0 && party?.paymentType == "party") {
         await createTallyEntry(
           cmp_id,
           req,
@@ -843,22 +843,24 @@ export const updateKotPayment = async (req, res) => {
           session
         );
       }
-
-      // Save settlement data
-      await saveSettlement(
-        paymentDetails,
-        selectedParty,
-        cmp_id,
-        savedVoucherData[0],
-        paidAmount,
-        cashAmt,
-        onlineAmt,
-        session
-      );
+      if (party?.paymentType != "party") {
+        // Save settlement data
+        await saveSettlement(
+          paymentDetails,
+          selectedParty,
+          cmp_id,
+          savedVoucherData[0],
+          paidAmount,
+          cashAmt,
+          onlineAmt,
+          req,
+          session
+        );
+      }
 
       // Update KOT payment status
       // paymentCompleted = paidAmount >= kotData?.total;
-      paymentCompleted = true
+      paymentCompleted = true;
       await Promise.all(
         kotData?.voucherNumber.map((item) =>
           kotModal.updateOne(
@@ -947,10 +949,10 @@ function createPaymentSplittingArray(paymentDetails, cashAmt, onlineAmt) {
   console.log("paymentDetails", paymentDetails);
   if (cashAmt > 0) {
     arr.push({
-      type: "Cash",
+      type: "cash",
       amount: cashAmt,
       ref_id: paymentDetails?.selectedCash,
-      ref_collection: "Cash",
+      // ref_collection: "Cash",
     });
   }
   if (onlineAmt > 0) {
@@ -958,7 +960,7 @@ function createPaymentSplittingArray(paymentDetails, cashAmt, onlineAmt) {
       type: "upi",
       amount: onlineAmt,
       ref_id: paymentDetails?.selectedBank,
-      ref_collection: "BankDetails",
+      // ref_collection: "BankDetails",
     });
   }
   return arr;
@@ -1018,9 +1020,11 @@ async function createSalesVoucher(
         partyAccount: selectedParty.accountGroup?.accountGroup,
         items: kotData?.items,
         address: kotData?.customer,
+        subTotal: kotData?.total,
         finalAmount: kotData?.total,
         paymentSplittingData: paymentSplittingArray,
         convertedFrom: kotData?.voucherNumber,
+
       },
     ],
     { session }
@@ -1070,19 +1074,22 @@ async function saveSettlement(
   paidAmount,
   cashAmt,
   onlineAmt,
+  req,
   session
 ) {
   if (paymentDetails?.paymentMode === "single") {
+    
     await saveSettlementData(
       selectedParty,
       cmp_id,
-      "normal sale",
+      "cash",
       "sale",
       savedVoucher?.salesNumber,
       savedVoucher?._id,
       paidAmount,
       new Date(),
       selectedParty?.partyName,
+      req,
       session
     );
   } else {
@@ -1090,13 +1097,14 @@ async function saveSettlement(
       await saveSettlementData(
         selectedParty,
         cmp_id,
-        "normal sale",
+        "cash",
         "sale",
         savedVoucher?.salesNumber,
         savedVoucher?._id,
         cashAmt,
         new Date(),
         selectedParty?.partyName,
+        req,
         session
       );
     }
@@ -1104,13 +1112,14 @@ async function saveSettlement(
       await saveSettlementData(
         selectedParty,
         cmp_id,
-        "normal sale",
+        "bank",
         "sale",
         savedVoucher?.salesNumber,
         savedVoucher?._id,
         onlineAmt,
         new Date(),
         selectedParty?.partyName,
+        req,
         session
       );
     }
@@ -1169,7 +1178,7 @@ export const getSalePrintData = async (req, res) => {
 export const saveTableNumber = async (req, res) => {
   try {
     const { cmp_id } = req.params;
-    const { tableNumber, status,description } = req.body;
+    const { tableNumber, status, description } = req.body;
 
     if (!tableNumber) {
       return res.status(400).json({ message: "Table number is required" });
@@ -1220,7 +1229,7 @@ export const getTables = async (req, res) => {
 export const updateTable = async (req, res) => {
   try {
     const { id } = req.params;
-    const { tableNumber,description } = req.body;
+    const { tableNumber, description } = req.body;
 
     if (!id) {
       return res
