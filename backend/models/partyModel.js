@@ -152,6 +152,7 @@ partySchema.index(
   {
     cmp_id: 1,
     party_master_id: 1,
+    partyType: 1,
   },
   {
     name: "party_master_id_idx",
