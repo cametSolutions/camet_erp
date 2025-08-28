@@ -63,15 +63,15 @@ function BookingList() {
   );
 
   useEffect(() => {
-    // if (location?.state?.selectedCheckOut) {
-    //   setSelectedCheckOut(location?.state?.selectedCheckOut);
-    //   setSelectedCustomer(location?.state?.selectedCustomer?._id);
-    //   setSelectedDataForPayment((prevData) => ({
-    //     ...prevData,
-    //     total: location?.state?.balanceToPay,
-    //   }));
-    //   setShowPaymentModal(true);
-    // }
+    if (location?.state?.selectedCheckOut) {
+      setSelectedCheckOut(location?.state?.selectedCheckOut);
+      setSelectedCustomer(location?.state?.selectedCustomer?._id);
+      setSelectedDataForPayment((prevData) => ({
+        ...prevData,
+        total: location?.state?.balanceToPay,
+      }));
+      setShowPaymentModal(true);
+    }
   }, [location?.state?.selectedCheckOut]);
 
   // Debounced search function
@@ -293,73 +293,73 @@ function BookingList() {
   };
 
   const handleSavePayment = async (id) => {
-    // setSaveLoader(true);
-    // let paymentDetails;
-    // if (paymentMode == "single") {
-    //   if (paymentMethod == "cash") {
-    //     paymentDetails = {
-    //       cashAmount: selectedDataForPayment?.total,
-    //       onlineAmount: onlineAmount,
-    //       selectedCash: selectedCash,
-    //       selectedBank: selectedBank,
-    //       paymentMode: paymentMode,
-    //     };
-    //   } else {
-    //     paymentDetails = {
-    //       cashAmount: cashAmount,
-    //       onlineAmount: selectedDataForPayment?.total,
-    //       selectedCash: selectedCash,
-    //       selectedBank: selectedBank,
-    //       paymentMode: paymentMode,
-    //     };
-    //   }
-    // } else {
-    //   if (
-    //     Number(cashAmount) + Number(onlineAmount) !=
-    //     selectedDataForPayment?.total
-    //   ) {
-    //     setPaymentError(
-    //       "Cash and online amounts together equal the total amount."
-    //     );
-    //     return;
-    //   }
-    //   paymentDetails = {
-    //     cashAmount: cashAmount,
-    //     onlineAmount: onlineAmount,
-    //     selectedCash: selectedCash,
-    //     selectedBank: selectedBank,
-    //     paymentMode: paymentMode,
-    //   };
-    // }
+    setSaveLoader(true);
+    let paymentDetails;
+    if (paymentMode == "single") {
+      if (paymentMethod == "cash") {
+        paymentDetails = {
+          cashAmount: selectedDataForPayment?.total,
+          onlineAmount: onlineAmount,
+          selectedCash: selectedCash,
+          selectedBank: selectedBank,
+          paymentMode: paymentMode,
+        };
+      } else {
+        paymentDetails = {
+          cashAmount: cashAmount,
+          onlineAmount: selectedDataForPayment?.total,
+          selectedCash: selectedCash,
+          selectedBank: selectedBank,
+          paymentMode: paymentMode,
+        };
+      }
+    } else {
+      if (
+        Number(cashAmount) + Number(onlineAmount) !=
+        selectedDataForPayment?.total
+      ) {
+        setPaymentError(
+          "Cash and online amounts together equal the total amount."
+        );
+        return;
+      }
+      paymentDetails = {
+        cashAmount: cashAmount,
+        onlineAmount: onlineAmount,
+        selectedCash: selectedCash,
+        selectedBank: selectedBank,
+        paymentMode: paymentMode,
+      };
+    }
 
-    // try {
-    //   const response = await api.post(
-    //     `/api/sUsers/convertCheckOutToSale/${cmp_id}`,
-    //     {
-    //       paymentMethod: paymentMethod,
-    //       paymentDetails: paymentDetails,
-    //       selectedCheckOut : selectedCheckOut,
-    //       paidBalance : selectedDataForPayment?.total,
-    //       selectedParty : selectedCustomer
-    //     },
-    //     { withCredentials: true }
-    //   );
-    //   // Check if the response was successful
-    //   if (response.status === 200 || response.status === 201) {
-    //     toast.success(response?.data?.message);
-    //     fetchBookings(1, searchTerm);
-    //   }
-    // } catch (error) {
-    //   console.error(
-    //     "Error updating order status:",
-    //     error.response?.data || error.message
-    //   );
-    // } finally {
-    //   setSaveLoader(false);
-    //   setCashAmount(0);
-    //   setOnlineAmount(0);
-    //   setShowPaymentModal(false);
-    // }
+    try {
+      const response = await api.post(
+        `/api/sUsers/convertCheckOutToSale/${cmp_id}`,
+        {
+          paymentMethod: paymentMethod,
+          paymentDetails: paymentDetails,
+          selectedCheckOut: selectedCheckOut,
+          paidBalance: selectedDataForPayment?.total,
+          selectedParty: selectedCustomer,
+        },
+        { withCredentials: true }
+      );
+      // Check if the response was successful
+      if (response.status === 200 || response.status === 201) {
+        toast.success(response?.data?.message);
+        fetchBookings(1, searchTerm);
+      }
+    } catch (error) {
+      console.error(
+        "Error updating order status:",
+        error.response?.data || error.message
+      );
+    } finally {
+      setSaveLoader(false);
+      setCashAmount(0);
+      setOnlineAmount(0);
+      setShowPaymentModal(false);
+    }
   };
 
   const Row = ({ index, style }) => {
@@ -464,10 +464,26 @@ function BookingList() {
               location.pathname === "/sUsers/checkInList") ||
             (Number(el?.balanceToPay) <= 0 &&
               location.pathname === "/sUsers/checkOutList")) && (
-            <button className="bg-green-600 hover:bg-green-400 text-white font-semibold py-1 px-2 rounded shadow-md transition duration-300 ml-auto">
+            <button
+              onClick={() => {
+                if (location.pathname === "/sUsers/checkOutList") {
+                  setSelectedCustomer(el.customerId?._id);
+                  setSelectedCheckOut([el]);
+                  console.log(bookings?.filter((item) => item.voucherNumber === el.voucherNumber))
+                  navigate("/sUsers/CheckOutPrint", {
+                    state: {
+                      selectedCheckOut:bookings?.filter((item) => item.voucherNumber === el.voucherNumber),
+                      customerId: el.customerId?._id,
+                      isForPreview: false,
+                    },
+                  });
+                }
+              }}
+              className="bg-green-600 hover:bg-green-400 text-white font-semibold py-1 px-2 rounded shadow-md transition duration-300 ml-auto"
+            >
               {location.pathname === "/sUsers/checkInList"
                 ? "CheckedOut"
-                : "Admitted"}
+                : "Print"}
             </button>
           )}
         </div>
@@ -613,41 +629,27 @@ function BookingList() {
                     ))}
                   </div>
                 </div>
-                {location.pathname === "/sUsers/checkInList" && (
-                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-3 rounded-lg mb-4 border border-green-200">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-semibold text-green-800">
-                        Total Amount
-                      </span>
-                      <span className="text-lg font-bold text-green-900">
-                        ₹{selectedDataForPayment?.total.toFixed(2)}
-                      </span>
-                    </div>
-                  </div>
-                )}
-                {location.pathname === "/sUsers/checkOutList" && (
-                  <div className="mb-6">
-                    <label className="block text-xs font-semibold text-gray-700 mb-2">
-                      Select Customer
-                    </label>
-                    <select
-                      value={selectedCustomer}
-                      onChange={(e) => setSelectedCustomer(e.target.value)}
-                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                    >
-                      <option value="">Choose a customer...</option>
-                      {/* Replace with your actual customer list */}
-                      {selectedCheckOut?.map((selected) => (
-                        <option
-                          key={selected?.customerId?._id}
-                          value={selected?.customerId?._id}
-                        >
-                          {selected?.customerId?.partyName}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
+                <div className="mb-6">
+                  <label className="block text-xs font-semibold text-gray-700 mb-2">
+                    Select Customer
+                  </label>
+                  <select
+                    value={selectedCustomer}
+                    onChange={(e) => setSelectedCustomer(e.target.value)}
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                  >
+                    <option value="">Choose a customer...</option>
+                    {/* Replace with your actual customer list */}
+                    {selectedCheckOut?.map((selected) => (
+                      <option
+                        key={selected?.customerId?._id}
+                        value={selected?.customerId?._id}
+                      >
+                        {selected?.customerId?.partyName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 {/* Action Buttons */}
                 <div className="flex gap-2">
                   <button
@@ -659,22 +661,18 @@ function BookingList() {
                   <button
                     className="flex-2 px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg text-sm font-bold hover:from-green-600 hover:to-emerald-700 transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2 shadow-lg"
                     onClick={() => {
-                      location.pathname === "/sUsers/checkInList"
-                        ? setCheckOutModal(true)
-                        : navigate("/sUsers/CheckOutPrint", {
-                            state: {
-                              selectedCheckOut: selectedCheckOut,
-                              customerId: selectedCustomer,
-                              isForPreview: true,
-                            },
-                          });
+                      navigate("/sUsers/CheckOutPrint", {
+                        state: {
+                          selectedCheckOut: selectedCheckOut,
+                          customerId: selectedCustomer,
+                          isForPreview: true,
+                        },
+                      });
                       // setCheckOutModal(true);
                     }}
                   >
                     <MdPayment className="w-4 h-4" />
-                    {location.pathname === "/sUsers/checkOutList"
-                      ? "Pay Now"
-                      : "Checkout"}
+                    Checkout
                   </button>
                 </div>
               </div>
@@ -1057,9 +1055,8 @@ function BookingList() {
                     disabled={saveLoader}
                     className={`flex-1 group px-3 py-1.5 border rounded-lg text-xs font-semibold transition-all duration-200 flex items-center justify-center gap-1 ${
                       saveLoader
-                      ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
-                      :
-                      "bg-white text-emerald-700 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 hover:scale-105"
+                        ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                        : "bg-white text-emerald-700 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 hover:scale-105"
                     }`}
                   >
                     {saveLoader ? (
@@ -1068,11 +1065,11 @@ function BookingList() {
                         Processing...
                       </>
                     ) : (
-                    <>
-                      <MdVisibility className="w-3 h-3 group-hover:rotate-12 transition-transform duration-200" />
-                      Process Payment
-                    </>
-                   )}
+                      <>
+                        <MdVisibility className="w-3 h-3 group-hover:rotate-12 transition-transform duration-200" />
+                        Process Payment
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
@@ -1080,7 +1077,7 @@ function BookingList() {
           </div>
         )}
 
-        {checkOutModal && (
+        {/* {checkOutModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
@@ -1102,7 +1099,7 @@ function BookingList() {
               </div>
 
               {/* KOT Section */}
-              <div className="mb-3 p-2 bg-blue-50 rounded-lg border border-blue-200">
+        {/* <div className="mb-3 p-2 bg-blue-50 rounded-lg border border-blue-200">
                 <div className="flex items-center text-blue-700">
                   <Check className="w-5 h-5 mr-2" />
                   <span className="text-sm font-medium">
@@ -1118,9 +1115,9 @@ function BookingList() {
                     ))}
                   </span>
                 </div>
-              </div>
-              {/* Order Summary */}
-              <div className="bg-gray-50 p-3 rounded-lg">
+              </div> */}
+        {/* Order Summary */}
+        {/* <div className="bg-gray-50 p-3 rounded-lg">
                 <div className="border-t border-gray-200 pt-2 mt-2 flex justify-between font-semibold text-gray-800">
                   <span className="text-sm">Total Amount</span>
                   <span className="text-base text-blue-600">
@@ -1153,9 +1150,9 @@ function BookingList() {
                   </button>
                 </div>
               </div>
-            </motion.div>
-          </div>
-        )}
+            </motion.div> */}
+        {/* </div> */}
+        {/* )} */}
 
         <div className="pb-4">
           <InfiniteLoader

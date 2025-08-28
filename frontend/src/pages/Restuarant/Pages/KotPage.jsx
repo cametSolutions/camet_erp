@@ -339,6 +339,8 @@ const OrdersDashboard = () => {
 
   const filteredOrders = getFilteredOrders();
 
+  console.log(selectedDataForPayment)
+
   const handleSavePayment = async (id) => {
     setSaveLoader(true);
     let paymentDetails;
@@ -403,6 +405,7 @@ const OrdersDashboard = () => {
         setLoader(false);
         setSelectedKot([]);
         setShowVoucherPdf(false);
+        toast.success(response?.data?.message);
       } else {
         console.error("Failed to update backend:", response.data || response);
       }

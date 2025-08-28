@@ -1510,7 +1510,8 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
             allKotData.push(...kotData);
           }
         }
-        const checkInData = await CheckIn.findOne({ _id: item.checkInId });
+
+        const checkInData = await CheckIn.findOne({ _id: item._id });
 
         if (!checkInData) continue;
 
@@ -1519,19 +1520,17 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
         });
 
         const checkInSideAdvanceDetails = await TallyData.find({
-          billId: checkInData._id,
-        });
-
-        const checkOutSideAdvanceDetails = await TallyData.find({
           billId: item._id,
         });
+
         allAdvanceDetails.push(
           ...bookingSideAdvanceDetails,
-          ...checkInSideAdvanceDetails,
-          ...checkOutSideAdvanceDetails
+          ...checkInSideAdvanceDetails
         );
       }
     }
+
+    console.log("allAdvanceDetails", allAdvanceDetails);
 
     if (allAdvanceDetails.length > 0 || allKotData.length > 0) {
       return res.status(200).json({
@@ -1599,7 +1598,7 @@ export const convertCheckOutToSale = async (req, res) => {
         cashAmt,
         onlineAmt
       );
-      let  partyData = await getSelectedParty(selectedParty,cmp_id,session);
+      let partyData = await getSelectedParty(selectedParty, cmp_id, session);
       // ✅ Party
       const party = mapPartyData(partyData);
 
@@ -1611,54 +1610,74 @@ export const convertCheckOutToSale = async (req, res) => {
         req,
         selectedCheckOut,
         party,
-        selectedParty,
+        partyData,
         paymentSplittingArray,
         session
       );
 
-      // ✅ Handle Outstanding
-      const paidAmount = isPostToRoom ? 0 : cashAmt + onlineAmt;
-      const pendingAmount = selectedCheckOut.reduce(
-        (acc, item) => acc + (item.balanceToPay || 0),
-        0
-      );
+      // // ✅ Handle Outstanding
+      // const paidAmount = isPostToRoom ? 0 : cashAmt + onlineAmt;
+      // const pendingAmount = selectedCheckOut.reduce(
+      //   (acc, item) => acc + (item.balanceToPay || 0),
+      //   0
+      // );
 
-      if (pendingAmount > 0) {
-        await createTallyEntry(
-          cmp_id,
-          req,
-          selectedParty,
-          selectedCheckOut,
-          savedVoucherData[0],
-          paidAmount,
-          pendingAmount,
-          session
-        );
-      }
+      // if (pendingAmount > 0) {
+      //   await createTallyEntry(
+      //     cmp_id,
+      //     req,
+      //     selectedParty,
+      //     selectedCheckOut,
+      //     savedVoucherData[0],
+      //     paidAmount,
+      //     pendingAmount,
+      //     session
+      //   );
+      // }
 
-      // ✅ Save Settlement
-      await saveSettlement(
-        paymentDetails,
-        selectedParty,
-        cmp_id,
-        savedVoucherData[0],
-        paidAmount,
-        cashAmt,
-        onlineAmt,
-        session
-      );
+      // // ✅ Save Settlement
+      // await saveSettlement(
+      //   paymentDetails,
+      //   selectedParty,
+      //   cmp_id,
+      //   savedVoucherData[0],
+      //   paidAmount,
+      //   cashAmt,
+      //   onlineAmt,
+      //   session
+      // );
+
+  
 
       // ✅ Update Checkout
-      if (selectedCheckOut?.voucherNumber?.length > 0) {
+      if (selectedCheckOut?.length > 0) {
+    console.log("selectedCheckout", selectedCheckOut);
         paymentCompleted = true;
+
         await Promise.all(
-          kotData.voucherNumber.map((item) =>
-            CheckOut.updateOne(
-              { _id: item.id },
-              { balanceToPay: 0 },
+          selectedCheckOut.map(async (item) => {
+            item.bookingId = item?.bookingId ?? item?.bookingId?._id;
+            item.customerId = item?.customerId ?? item?.customerId?._id;
+            item.checkInId = item?._id;
+            item.balanceToPay = 0;
+
+            // Create checkout
+            await CheckOut.create({
+              ...item,
+              voucherNumber: saleNumber?.voucherNumber,
+              checkInId: item?._id,
+              bookingId: item?.bookingId ?? item?.bookingId?._id,
+              balanceToPay: 0,
+              
+            });
+
+            // Update check-in status
+            await CheckIn.updateOne(
+              { _id: item._id },
+              { status: "checkOut" },
               { session }
-            )
-          )
+            );
+          })
         );
       }
 
@@ -1699,12 +1718,13 @@ async function hotelVoucherSeries(cmp_id, session) {
 
 function createPaymentSplittingArray(paymentDetails, cashAmt, onlineAmt) {
   const arr = [];
+  console.log("paymentDetails", paymentDetails);
   if (cashAmt > 0) {
     arr.push({
-      type: "Cash",
+      type: "cash",
       amount: cashAmt,
       ref_id: paymentDetails?.selectedCash,
-      ref_collection: "Cash",
+      // ref_collection: "Cash",
     });
   }
   if (onlineAmt > 0) {
@@ -1712,14 +1732,14 @@ function createPaymentSplittingArray(paymentDetails, cashAmt, onlineAmt) {
       type: "upi",
       amount: onlineAmt,
       ref_id: paymentDetails?.selectedBank,
-      ref_collection: "BankDetails",
+      // ref_collection: "BankDetails",
     });
   }
   return arr;
 }
 
 function mapPartyData(selectedParty) {
-  console.log(selectedParty);
+  console.log("selectedParty", selectedParty);
   return {
     _id: selectedParty._id,
     partyName: selectedParty.partyName,
@@ -1761,6 +1781,8 @@ async function createSalesVoucher(
   );
   let convertedFrom = selectedCheckOut.map((item) => item.voucherNumber);
 
+  console.log("paymentSplittingArray", selectedParty);
+
   return await salesModel.create(
     [
       {
@@ -1780,6 +1802,7 @@ async function createSalesVoucher(
         items,
         address: selectedParty.billingAddress,
         finalAmount: amount,
+        subTotal: amount,
         paymentSplittingData: paymentSplittingArray,
         convertedFrom,
       },
@@ -1880,7 +1903,7 @@ async function saveSettlement(
   }
 }
 
-async function getSelectedParty(selected,cmp_id, session) {
+async function getSelectedParty(selected, cmp_id, session) {
   const selectedParty = await Party.findOne({ cmp_id, _id: selected })
     .populate("accountGroup")
     .session(session);

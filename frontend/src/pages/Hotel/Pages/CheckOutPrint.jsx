@@ -5,6 +5,8 @@ import { toast } from "react-toastify";
 import sattvaLogo from "../../../assets/images/sattva.jpg";
 import api from "@/api/api";
 import { useNavigate } from "react-router-dom";
+import { add } from "date-fns";
+import { GiConsoleController } from "react-icons/gi";
 export default function SattvaInvoice() {
   // Router and Redux state
   const location = useLocation();
@@ -27,8 +29,9 @@ export default function SattvaInvoice() {
   const [dateWiseDisplayedData, setDateWiseDisplayedData] = useState([]);
   const [taxAmountForRoom, setTaxAmountForRoom] = useState(0);
   const [taxAmountForFood, setTaxAmountForFood] = useState(0);
+  const [taxAmountForAdditionalPax, setTaxAmountForAdditionalPax] = useState(0);
   const [foodPlanAmount, setFoodPlanAmount] = useState(0);
-
+  const [additionalPaxAmount, setAdditionalPaxAmount] = useState(0);
 
   // Utility function to transform checkout data
   const transformCheckOutData = (selectedCheckOut) => {
@@ -43,6 +46,11 @@ export default function SattvaInvoice() {
         const foodPlanAmountWithTax = room.foodPlanAmountWithTax / stayDays;
         const foodPlanAmountWithOutTax =
           room.foodPlanAmountWithOutTax / stayDays;
+
+        const additionalPaxDataWithTax =
+          room.additionalPaxAmountWithTax / stayDays;
+        const additionalPaxDataWithOutTax =
+          room.additionalPaxAmountWithOutTax / stayDays;
 
         // Calculate date range
         const startDate = new Date(item.arrivalDate);
@@ -69,6 +77,8 @@ export default function SattvaInvoice() {
             customerName: item.customerId?.partyName,
             foodPlanAmountWithTax,
             foodPlanAmountWithOutTax,
+            additionalPaxDataWithTax,
+            additionalPaxDataWithOutTax,
           });
         }
       });
@@ -112,6 +122,16 @@ export default function SattvaInvoice() {
       0
     );
 
+    const planAmount = dateWiseDisplayedData.reduce(
+      (total, order) => total + order?.foodPlanAmountWithOutTax,
+      0
+    );
+    
+    const additionalPaxAmount = dateWiseDisplayedData.reduce(
+      (total, order) => total + order?.additionalPaxDataWithOutTax,
+      0
+    );
+
     const advanceTotal =
       outStanding?.reduce(
         (total, transaction) => total + transaction?.bill_amount,
@@ -121,9 +141,9 @@ export default function SattvaInvoice() {
     const kotTotal =
       kotData?.reduce((total, kot) => total + kot?.total, 0) || 0;
 
-    const balanceAmount = roomTariffTotal - advanceTotal;
+    const balanceAmount = (roomTariffTotal + planAmount + additionalPaxAmount) - advanceTotal;
     const totalTaxAmount = (taxAmountForFood + taxAmountForRoom) * 2; // CGST + SGST
-    const balanceAmountToPay = (roomTariffTotal + kotTotal) - advanceTotal
+    const balanceAmountToPay =  (roomTariffTotal + planAmount + additionalPaxAmount) + kotTotal - advanceTotal;
 
     return {
       roomTariffTotal,
@@ -131,7 +151,7 @@ export default function SattvaInvoice() {
       kotTotal,
       balanceAmount,
       totalTaxAmount,
-      balanceAmountToPay
+      balanceAmountToPay,
     };
   };
 
@@ -162,12 +182,18 @@ export default function SattvaInvoice() {
           0
         );
         setTaxAmountForRoom(taxAmountBasedOnRoom);
-
+        console.log([selectedCheckOutData]);
         const foodPlanAmountWithOutTax = selectedCheckOutData.reduce(
           (acc, item) => acc + Number(item.foodPlanAmountWithOutTax),
           0
         );
+        const paxAmount = selectedCheckOutData.reduce(
+          (acc, item) => acc + Number(item.additionalPaxDataWithTax),
+          0
+        );
         setFoodPlanAmount(foodPlanAmountWithOutTax);
+        setAdditionalPaxAmount(paxAmount);
+        console.log(selectedCheckOut[0]);
 
         const foodPlanTaxAmount = selectedCheckOutData.reduce(
           (acc, item) =>
@@ -176,7 +202,16 @@ export default function SattvaInvoice() {
             Number(item.taxAmountForFoodPlan || 0),
           0
         );
-        setTaxAmountForFood(foodPlanTaxAmount);
+        const additionalPlanTaxAmount = selectedCheckOutData.reduce(
+          (acc, item) =>
+            acc +
+            Number(item.paxA || 0) -
+            Number(item.taxAmountForFoodPlan || 0),
+          0
+        );
+
+        setTaxAmountForFood(foodPlanTaxAmount - foodPlanAmountWithOutTax);
+        setTaxAmountForAdditionalPax(additionalPlanTaxAmount - paxAmount);
       }
     }
   }, [selectedCustomerId, selectedCheckOut]);
@@ -193,14 +228,14 @@ export default function SattvaInvoice() {
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       {/* Print Button */}
-      {/* <div className="no-print mb-4">
+      <div className="no-print mb-4 w-full flex justify-end p-4">
         <button
           onClick={handlePrint}
-          className="bg-blue-500 hover:bg-blue-500 text-white px-6 py-2 rounded-lg font-medium"
+          className="bg-blue-500 hover:bg-blue-500 text-white px-3 py-2 rounded-lg font-medium"
         >
           🖨️ Print Invoice
         </button>
-      </div> */}
+      </div>
 
       <div className="max-w-4xl mx-auto bg-white border-2 border-black p-2 text-sm">
         {/* Header Section */}
@@ -385,10 +420,23 @@ export default function SattvaInvoice() {
                     colSpan="6"
                     className="text-right p-2 border-r border-black"
                   >
-                    Food Plan Sales @ 5%
+                    Food Plan Sales
                   </td>
                   <td className="p-2 text-right">
                     {foodPlanAmount.toFixed(2)}
+                  </td>
+                </tr>
+              )}
+              {additionalPaxAmount > 0 && (
+                <tr>
+                  <td
+                    colSpan="6"
+                    className="text-right p-2 border-r border-black"
+                  >
+                    Additional Pax Amount
+                  </td>
+                  <td className="p-2 text-right">
+                    {additionalPaxAmount.toFixed(2)}
                   </td>
                 </tr>
               )}
@@ -481,9 +529,9 @@ export default function SattvaInvoice() {
                 <td colSpan="6" className="border border-black p-2">
                   Balance To Pay
                 </td>
-                
+
                 <td className="border border-black p-2 text-right">
-                  {totals.balanceAmountToPay.toFixed(2)}  
+                  {totals.balanceAmountToPay.toFixed(2)}
                 </td>
               </tr>
               {!isForPreview && (
@@ -700,8 +748,15 @@ export default function SattvaInvoice() {
         {isForPreview && (
           <div className="no-print w-full flex justify-end">
             <button
-              onClick={() => navigate("/sUsers/checkOutList", {state: {selectedCheckOut:selectedCheckOut, selectedCustomer:selectedCustomerData,
-                 balanceToPay:totals?.balanceAmountToPay}})}
+              onClick={() =>
+                navigate("/sUsers/checkInList", {
+                  state: {
+                    selectedCheckOut: selectedCheckOut,
+                    selectedCustomer: selectedCustomerData,
+                    balanceToPay: totals?.balanceAmountToPay,
+                  },
+                })
+              }
               className="bg-black hover:bg-gray-800 text-white px-6 py-2 rounded-lg font-medium"
             >
               Confirm Payment
@@ -713,7 +768,8 @@ export default function SattvaInvoice() {
       {/* Print Styles */}
       <style jsx>{`
         @media screen {
-          .print-header, .print-footer {
+          .print-header,
+          .print-footer {
             position: static;
           }
         }

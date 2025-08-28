@@ -9,6 +9,7 @@ import bankModel from "../models/bankModel.js";
 import partyModel from "../models/partyModel.js";
 import mongoose from "mongoose";
 import invoiceModel from "../models/invoiceModel.js";
+
 import {
   processAdvancePayments,
   processAdvanceReceipts,
@@ -515,32 +516,31 @@ export const updateTallyData = async (
   } else if (party?.partyType === "cash" || party?.partyType === "bank") {
     //// create settlement
 
+    try {
+      const settlementData = {
+        voucherNumber: salesNumber,
+        voucherId: billId,
+        voucherModel: voucherModel,
+        voucherType: voucherType,
+        amount: valueToUpdateInTally,
+        partyName: party?.partyName || "",
+        partyId: party?._id || null,
+        partyType: party?.partyType || null,
+        payment_mode: null,
+        /// source is also the same party
+        sourceId: party?._id || null,
+        sourceType: party?.partyType || null,
+        cmp_id: orgId,
+        Primary_user_id: Primary_user_id,
+        settlement_date: selectedDate,
+        voucher_date: selectedDate,
+      };
 
-   try {
-     const settlementData = {
-       voucherNumber: salesNumber,
-       voucherId: billId,
-       voucherModel: voucherModel,
-       voucherType: voucherType,
-       amount: valueToUpdateInTally,
-       partyName: party?.partyName || "",
-       partyId: party?._id || null,
-       partyType: party?.partyType || null,
-       payment_mode: null,
-       /// source is also the same party
-       sourceId: party?._id || null,
-       sourceType: party?.partyType || null,
-       cmp_id: orgId,
-       Primary_user_id: Primary_user_id,
-       settlement_date: selectedDate,
-       voucher_date: selectedDate,
-     };
- 
-     const settlement = new settlementModel(settlementData);
-     await settlement.save({ session });
-   } catch (error) {
-     console.error("Error creating settlement:", error);
-   }
+      const settlement = new settlementModel(settlementData);
+      await settlement.save({ session });
+    } catch (error) {
+      console.error("Error creating settlement:", error);
+    }
   }
 };
 
@@ -1141,66 +1141,38 @@ export const saveSettlementData = async (
   amount,
   createdAt,
   partyName,
+  req,
   session
 ) => {
   try {
-
-    console.log(party)
-    const accountGroup = party?.accountGroup;
-
-    if (!accountGroup) {
-      throw new Error("Invalid account group");
-    }
-
-    let model;
-    if (accountGroup === "Cash-in-Hand") {
-      model = cashModel;
-    } else if (accountGroup === "Bank Accounts") {
-      model = bankModel;
-    } else {
-      // console.log("Invalid account group so return");
-      return;
-    }
-
-    if (!model) {
-      throw new Error("Invalid model");
-    }
-
-    const query = {
-      cmp_id: orgId,
-      ...(accountGroup === "Cash-in-Hand"
-        ? { cash_id: party?.party_master_id }
-        : { bank_id: party?.party_master_id }),
-    };
-
-    const settlementData = {
+    const object = {
       voucherNumber: voucherNumber,
-      voucherId: voucherId.toString(),
-      party: partyName,
-      amount: Number(amount),
-      created_at: createdAt,
-      payment_mode: paymentMethod,
-      type: type,
+      voucherId: voucherId,
+      voucherModel: "Sales", // must match enum
+      voucherType: "sales",  // must match enum
+      amount: amount,
+      payment_mode: paymentMethod?.toLowerCase() || null, // ✅ schema expects lowercase enum
+      partyId: party?._id,
+      partyName: partyName || party?.partyName,
+      partyType: party?.partyType?.toLowerCase(), // must match ["cash","bank","party"]
+      sourceId: party?._id,
+      sourceType: party?.partyType?.toLowerCase(), // must match enum
+      cmp_id: orgId,
+      Primary_user_id: req?.pUserId || req?.owner, // must not be null
+      settlement_date: createdAt ? new Date(createdAt) : new Date(),
+      voucher_date: createdAt ? new Date(createdAt) : new Date(),
     };
 
-    const update = {
-      $push: {
-        settlements: settlementData,
-      },
-    };
+    console.log("Saving settlement object:", object);
 
-    const options = {
-      upsert: true,
-      new: true,
-      session,
-    };
-
-    const updatedSource = await model.findOneAndUpdate(query, update, options);
+    const updatedData = await settlementModel.create([object], { session });
+    return updatedData;
   } catch (error) {
     console.error("Error in saveSettlementData:", error);
     throw error;
   }
 };
+
 
 export const revertSettlementData = async (
   party,
