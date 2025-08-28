@@ -915,28 +915,19 @@ async function getSelectedParty(
   kotData,
   session
 ) {
-  let partyName;
+  let partyId;
 
   if (paymentDetails?.paymentMode === "single") {
     if (cashAmt > 0) {
-      let selectedData = await cashModel
-        .findOne({ _id: paymentDetails?.selectedCash })
-        .session(session);
-      partyName = selectedData?.cash_ledname;
+      partyId = paymentDetails?.selectedCash;
     } else if (onlineAmt > 0) {
-      let selectedData = await bankDetails
-        .findOne({ _id: paymentDetails?.selectedBank })
-        .session(session);
-      partyName = selectedData?.bank_ledname;
+      partyId = paymentDetails?.selectedBank;
     }
   } else {
-    let selectedData = await cashModel
-      .findOne({ _id: paymentDetails?.selectedCash })
-      .session(session);
-    partyName = selectedData?.cash_ledname;
+    partyId = paymentDetails?.selectedCash;
   }
 
-  const selectedParty = await Party.findOne({ cmp_id, partyName })
+  const selectedParty = await Party.findOne({ cmp_id, _id: partyId })
     .populate("accountGroup")
     .session(session);
   if (!selectedParty) throw new Error(`Party not found: ${partyName}`);
@@ -1024,7 +1015,6 @@ async function createSalesVoucher(
         finalAmount: kotData?.total,
         paymentSplittingData: paymentSplittingArray,
         convertedFrom: kotData?.voucherNumber,
-
       },
     ],
     { session }
@@ -1078,7 +1068,6 @@ async function saveSettlement(
   session
 ) {
   if (paymentDetails?.paymentMode === "single") {
-    
     await saveSettlementData(
       selectedParty,
       cmp_id,
@@ -1129,8 +1118,15 @@ async function saveSettlement(
 // function used to fetch bank and cash online details
 export const getPaymentType = async (req, res) => {
   try {
-    const bankDetails = await bankModel.find({ cmp_id: req.params.cmp_id });
-    const cashDetails = await cashModel.find({ cmp_id: req.params.cmp_id });
+    const bankDetails = await Party.find({
+      cmp_id: req.params.cmp_id,
+      partyType: "bank",
+    });
+    const cashDetails = await Party.find({
+      cmp_id: req.params.cmp_id,
+      partyType: "cash",
+    });
+    console.log("bankDetails", bankDetails);
     const paymentBelongsTo = { bankDetails, cashDetails };
     res.status(200).json({
       success: true,

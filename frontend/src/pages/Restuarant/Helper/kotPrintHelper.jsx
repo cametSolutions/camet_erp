@@ -1,22 +1,29 @@
+import jsPDF from "jspdf";
+import { useSelector } from "react-redux";
 
-import jsPDF from 'jspdf';
-import { useSelector } from 'react-redux';
-
-export const generateKitchenOrderTicket = (orderData, restaurantName = 'ABC RESTAURANT') => {
+export const generateKitchenOrderTicket = (
+  orderData,
+  restaurantName = "ABC RESTAURANT"
+) => {
   // Validate required data
-  if (!orderData || !orderData.kotNo || !orderData.items || !Array.isArray(orderData.items)) {
-    throw new Error('Invalid order data: Missing kotNo or items array');
+  if (
+    !orderData ||
+    !orderData.kotNo ||
+    !orderData.items ||
+    !Array.isArray(orderData.items)
+  ) {
+    throw new Error("Invalid order data: Missing kotNo or items array");
   }
 
   // Create PDF with thermal printer dimensions (80mm width)
   const pdf = new jsPDF({
-    orientation: 'portrait',
-    unit: 'mm',
-    format: [80, 200] // 80mm width, 200mm initial height (will auto-adjust)
+    orientation: "portrait",
+    unit: "mm",
+    format: [80, 200], // 80mm width, 200mm initial height (will auto-adjust)
   });
 
   // Set font to monospace for thermal printer style
-  pdf.setFont('courier', 'normal');
+  pdf.setFont("courier", "normal");
 
   let yPos = 10; // Starting Y position
   const leftMargin = 5;
@@ -28,7 +35,7 @@ export const generateKitchenOrderTicket = (orderData, restaurantName = 'ABC REST
     if (text) {
       pdf.setFontSize(fontSize);
       const textWidth = pdf.getTextWidth(text);
-      pdf.text(text, centerX - (textWidth / 2), y);
+      pdf.text(text, centerX - textWidth / 2, y);
     }
   };
 
@@ -49,7 +56,7 @@ export const generateKitchenOrderTicket = (orderData, restaurantName = 'ABC REST
     const dashLength = 2;
     const gapLength = 1;
     let currentX = leftMargin;
-    
+
     while (currentX < rightMargin) {
       pdf.line(currentX, y, Math.min(currentX + dashLength, rightMargin), y);
       currentX += dashLength + gapLength;
@@ -58,14 +65,14 @@ export const generateKitchenOrderTicket = (orderData, restaurantName = 'ABC REST
 
   // Header - Restaurant Name
   if (restaurantName) {
-    pdf.setFont('courier', 'bold');
+    pdf.setFont("courier", "bold");
     addCenteredText(restaurantName, yPos, 14);
     yPos += 8;
   }
 
   // Header - Ticket Type
-  pdf.setFont('courier', 'normal');
-  addCenteredText('KITCHEN ORDER TICKET', yPos, 12);
+  pdf.setFont("courier", "normal");
+  addCenteredText("KITCHEN ORDER TICKET", yPos, 12);
   yPos += 10;
 
   // Dashed line separator
@@ -74,29 +81,37 @@ export const generateKitchenOrderTicket = (orderData, restaurantName = 'ABC REST
 
   // Order Information
   const orderDate = new Date(orderData.createdAt || new Date());
-  const formattedDate = orderDate.toLocaleDateString('en-GB');
-  const formattedTime = orderDate.toLocaleTimeString('en-GB', { 
-    hour: '2-digit', 
-    minute: '2-digit' 
+  const formattedDate = orderDate.toLocaleDateString("en-GB");
+  const formattedTime = orderDate.toLocaleTimeString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
   });
 
   // KOT Number and Date
   if (orderData.kotNo) {
-    addJustifiedText(`KOT No: ${orderData.kotNo}`, `Date: ${formattedDate}`, yPos);
+    addJustifiedText(
+      `KOT No: ${orderData.kotNo}`,
+      `Date: ${formattedDate}`,
+      yPos
+    );
     yPos += 6;
   }
-  
+
   // Conditional table number rendering for KOT
   if (orderData?.tableNo) {
-    addJustifiedText(`Time: ${formattedTime}`, `Table: ${orderData.tableNo}`, yPos);
+    addJustifiedText(
+      `Time: ${formattedTime}`,
+      `Table: ${orderData.tableNo}`,
+      yPos
+    );
   } else {
-    addJustifiedText(`Time: ${formattedTime}`, '', yPos);
+    addJustifiedText(`Time: ${formattedTime}`, "", yPos);
   }
   yPos += 10;
 
   // Items Header
-  pdf.setFont('courier', 'bold');
-  addJustifiedText('SL  ITEM', 'QTY', yPos, 9);
+  pdf.setFont("courier", "bold");
+  addJustifiedText("SL  ITEM", "QTY", yPos, 9);
   yPos += 5;
 
   // Dashed line separator
@@ -105,11 +120,11 @@ export const generateKitchenOrderTicket = (orderData, restaurantName = 'ABC REST
 
   // Order Items with validation
   if (orderData.items && orderData.items.length > 0) {
-    pdf.setFont('courier', 'normal');
+    pdf.setFont("courier", "normal");
     orderData.items.forEach((item, index) => {
       if (item && (item.product_name || item.name) && item.quantity) {
         const serialNo = (index + 1).toString();
-        const itemName = item.product_name || item.name || 'Unknown Item';
+        const itemName = item.product_name || item.name || "Unknown Item";
         const itemText = `${serialNo}   ${itemName}`;
         const qtyText = item.quantity.toString();
 
@@ -125,12 +140,12 @@ export const generateKitchenOrderTicket = (orderData, restaurantName = 'ABC REST
   yPos += 10;
 
   // Footer
-  pdf.setFont('courier', 'bold');
-  addCenteredText('** KITCHEN COPY **', yPos, 10);
+  pdf.setFont("courier", "bold");
+  addCenteredText("** KITCHEN COPY **", yPos, 10);
   yPos += 6;
-  
-  pdf.setFont('courier', 'normal');
-  addCenteredText('Prepare items as per order', yPos, 9);
+
+  pdf.setFont("courier", "normal");
+  addCenteredText("Prepare items as per order", yPos, 9);
   yPos += 10;
 
   // Print timestamp
@@ -140,20 +155,28 @@ export const generateKitchenOrderTicket = (orderData, restaurantName = 'ABC REST
   return pdf;
 };
 
-
-export const generateCustomerBill = (orderData, restaurantName = 'ABC RESTAURANT', restaurantInfo = {}) => {
+export const generateCustomerBill = (
+  orderData,
+  restaurantName = "ABC RESTAURANT",
+  restaurantInfo = {}
+) => {
   // Validate required data
-  if (!orderData || !orderData.kotNo || !orderData.items || !Array.isArray(orderData.items)) {
-    throw new Error('Invalid order data: Missing kotNo or items array');
+  if (
+    !orderData ||
+    !orderData.kotNo ||
+    !orderData.items ||
+    !Array.isArray(orderData.items)
+  ) {
+    throw new Error("Invalid order data: Missing kotNo or items array");
   }
 
   const pdf = new jsPDF({
-    orientation: 'portrait',
-    unit: 'mm',
-    format: [80, 250]
+    orientation: "portrait",
+    unit: "mm",
+    format: [80, 250],
   });
 
-  pdf.setFont('courier', 'normal');
+  pdf.setFont("courier", "normal");
 
   let yPos = 10;
   const leftMargin = 5;
@@ -164,7 +187,7 @@ export const generateCustomerBill = (orderData, restaurantName = 'ABC RESTAURANT
     if (text) {
       pdf.setFontSize(fontSize);
       const textWidth = pdf.getTextWidth(text);
-      pdf.text(text, centerX - (textWidth / 2), y);
+      pdf.text(text, centerX - textWidth / 2, y);
     }
   };
 
@@ -183,7 +206,7 @@ export const generateCustomerBill = (orderData, restaurantName = 'ABC RESTAURANT
     const dashLength = 2;
     const gapLength = 1;
     let currentX = leftMargin;
-    
+
     while (currentX < rightMargin) {
       pdf.line(currentX, y, Math.min(currentX + dashLength, rightMargin), y);
       currentX += dashLength + gapLength;
@@ -192,14 +215,14 @@ export const generateCustomerBill = (orderData, restaurantName = 'ABC RESTAURANT
 
   // Header
   if (restaurantName) {
-    pdf.setFont('courier', 'bold');
+    pdf.setFont("courier", "bold");
     addCenteredText(restaurantName, yPos, 14);
     yPos += 6;
   }
 
   // Restaurant info with conditionals
   if (restaurantInfo?.address) {
-    pdf.setFont('courier', 'normal');
+    pdf.setFont("courier", "normal");
     addCenteredText(restaurantInfo.address, yPos, 8);
     yPos += 4;
   }
@@ -217,23 +240,31 @@ export const generateCustomerBill = (orderData, restaurantName = 'ABC RESTAURANT
 
   // Bill details
   const orderDate = new Date(orderData.createdAt || new Date());
-  const formattedDate = orderDate.toLocaleDateString('en-GB');
-  const formattedTime = orderDate.toLocaleTimeString('en-GB', { 
-    hour: '2-digit', 
-    minute: '2-digit' 
+  const formattedDate = orderDate.toLocaleDateString("en-GB");
+  const formattedTime = orderDate.toLocaleTimeString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
   });
 
   // Bill number and date
   if (orderData.kotNo) {
-    addJustifiedText(`Bill No: ${orderData.kotNo}`, `Date: ${formattedDate}`, yPos);
+    addJustifiedText(
+      `Bill No: ${orderData.kotNo}`,
+      `Date: ${formattedDate}`,
+      yPos
+    );
     yPos += 5;
   }
 
   // Conditional table number rendering for customer bill
   if (orderData?.tableNo) {
-    addJustifiedText(`Table: ${orderData.tableNo}`, `Time: ${formattedTime}`, yPos);
+    addJustifiedText(
+      `Table: ${orderData.tableNo}`,
+      `Time: ${formattedTime}`,
+      yPos
+    );
   } else {
-    addJustifiedText(`Time: ${formattedTime}`, '', yPos);
+    addJustifiedText(`Time: ${formattedTime}`, "", yPos);
   }
   yPos += 8;
 
@@ -241,31 +272,37 @@ export const generateCustomerBill = (orderData, restaurantName = 'ABC RESTAURANT
   yPos += 6;
 
   // Items header for bill
-  pdf.setFont('courier', 'bold');
+  pdf.setFont("courier", "bold");
   pdf.setFontSize(8);
-  pdf.text('ITEM', leftMargin, yPos);
-  pdf.text('QTY', 45, yPos);
-  pdf.text('RATE', 55, yPos);
-  pdf.text('AMT', 68, yPos);
+  pdf.text("ITEM", leftMargin, yPos);
+  pdf.text("QTY", 45, yPos);
+  pdf.text("RATE", 55, yPos);
+  pdf.text("AMT", 68, yPos);
   yPos += 5;
 
   addDashedLine(yPos);
   yPos += 4;
 
   // Items with prices and validation
-  pdf.setFont('courier', 'normal');
+  pdf.setFont("courier", "normal");
   let subtotal = 0;
 
   if (orderData.items && orderData.items.length > 0) {
     orderData.items.forEach((item) => {
-      if (item && (item.name || item.product_name) && item.quantity && item.price) {
+      if (
+        item &&
+        (item.name || item.product_name) &&
+        item.quantity &&
+        item.price
+      ) {
         const itemTotal = item.price * item.quantity;
         subtotal += itemTotal;
 
         // Item name (may wrap to next line if too long)
-        const itemName = item.name || item.product_name || 'Unknown Item';
-        const displayName = itemName.length > 20 ? itemName.substring(0, 20) : itemName;
-        
+        const itemName = item.name || item.product_name || "Unknown Item";
+        const displayName =
+          itemName.length > 20 ? itemName.substring(0, 20) : itemName;
+
         pdf.text(displayName, leftMargin, yPos);
         pdf.text(item.quantity.toString(), 45, yPos);
         pdf.text(item.price.toString(), 55, yPos);
@@ -280,54 +317,58 @@ export const generateCustomerBill = (orderData, restaurantName = 'ABC RESTAURANT
   yPos += 6;
 
   // Totals
-  pdf.setFont('courier', 'bold');
-  addJustifiedText('SUBTOTAL:', `₹${subtotal.toFixed(2)}`, yPos);
+  pdf.setFont("courier", "bold");
+  addJustifiedText("SUBTOTAL:", `₹${subtotal.toFixed(2)}`, yPos);
   yPos += 5;
 
   // Calculate tax (assuming 5% GST)
   const taxRate = 0.05;
   const taxAmount = subtotal * taxRate;
-  addJustifiedText('GST (5%):', `₹${taxAmount.toFixed(2)}`, yPos);
+  addJustifiedText("GST (5%):", `₹${taxAmount.toFixed(2)}`, yPos);
   yPos += 5;
 
   const grandTotal = subtotal + taxAmount;
   pdf.setFontSize(10);
-  addJustifiedText('TOTAL:', `₹${grandTotal.toFixed(2)}`, yPos);
+  addJustifiedText("TOTAL:", `₹${grandTotal.toFixed(2)}`, yPos);
   yPos += 10;
 
   addDashedLine(yPos);
   yPos += 8;
 
   // Footer
-  pdf.setFont('courier', 'normal');
-  addCenteredText('Thank you for dining with us!', yPos, 9);
+  pdf.setFont("courier", "normal");
+  addCenteredText("Thank you for dining with us!", yPos, 9);
   yPos += 5;
-  addCenteredText('Please visit again', yPos, 8);
+  addCenteredText("Please visit again", yPos, 8);
 
   return pdf;
 };
 
-export const printThermalReceipt = (pdf, filename = 'receipt', useNewWindow = false) => {
+export const printThermalReceipt = (
+  pdf,
+  filename = "receipt",
+  useNewWindow = false
+) => {
   if (pdf) {
     if (useNewWindow) {
       // Traditional method - opens new window
       pdf.autoPrint();
-      window.open(pdf.output('bloburl'), '_blank');
+      window.open(pdf.output("bloburl"), "_blank");
     } else {
       // Direct print without new window
-      const pdfBlob = pdf.output('blob');
+      const pdfBlob = pdf.output("blob");
       const blobUrl = URL.createObjectURL(pdfBlob);
-      
+
       // Create hidden iframe for printing
-      const iframe = document.createElement('iframe');
-      iframe.style.display = 'none';
+      const iframe = document.createElement("iframe");
+      iframe.style.display = "none";
       iframe.src = blobUrl;
-      
+
       document.body.appendChild(iframe);
-      
-      iframe.onload = function() {
+
+      iframe.onload = function () {
         iframe.contentWindow.print();
-        
+
         // Clean up after printing
         setTimeout(() => {
           document.body.removeChild(iframe);
@@ -338,25 +379,27 @@ export const printThermalReceipt = (pdf, filename = 'receipt', useNewWindow = fa
   }
 };
 
-
-export const downloadReceipt = (pdf, filename = 'receipt.pdf') => {
+export const downloadReceipt = (pdf, filename = "receipt.pdf") => {
   if (pdf) {
     pdf.save(filename);
   }
 };
 
-
-export const printDirectHTML = (orderData, restaurantName = 'ABC RESTAURANT', isKOT = true) => {
+export const printDirectHTML = (
+  orderData,
+  restaurantName = "ABC RESTAURANT",
+  isKOT = true
+) => {
   if (!orderData) return;
 
   const orderDate = new Date(orderData.createdAt || new Date());
-  const formattedDate = orderDate.toLocaleDateString('en-GB');
-  const formattedTime = orderDate.toLocaleTimeString('en-GB', { 
-    hour: '2-digit', 
-    minute: '2-digit' 
+  const formattedDate = orderDate.toLocaleDateString("en-GB");
+  const formattedTime = orderDate.toLocaleTimeString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
   });
 
-  let printContent = '';
+  let printContent = "";
 
   if (isKOT) {
     // KOT Content
@@ -439,12 +482,20 @@ export const printDirectHTML = (orderData, restaurantName = 'ABC RESTAURANT', is
         <div class="divider"></div>
         
         <div class="order-info">
-          <div>KOT No: ${orderData.kotNo || 'N/A'}</div>
+          <div>KOT No: ${orderData.kotNo || "N/A"}</div>
           <div>Date: ${formattedDate}</div>
+        </div>
+             <div class="order-info">
+          <div>Name: ${orderData?.customerName || "N/A"}</div>
+          <div>Type: ${orderData?.type}</div>
         </div>
         <div class="order-info">
           <div>Time: ${formattedTime}</div>
-          ${orderData?.tableNo ? `<div>Table: ${orderData.tableNo}</div>` : '<div></div>'}
+          ${
+            orderData?.tableNo
+              ? `<div>Table: ${orderData.tableNo}</div>`
+              : "<div></div>"
+          }
         </div>
         
         <div class="items-header">
@@ -453,19 +504,28 @@ export const printDirectHTML = (orderData, restaurantName = 'ABC RESTAURANT', is
         </div>
         <div class="divider"></div>
         
-        ${orderData.items && orderData.items.length > 0 ? 
-          orderData.items.map((item, index) => {
-            if (item && (item.product_name || item.name) && item.quantity) {
-              const itemName = item.product_name || item.name || 'Unknown Item';
-              return `
+        ${
+          orderData.items && orderData.items.length > 0
+            ? orderData.items
+                .map((item, index) => {
+                  if (
+                    item &&
+                    (item.product_name || item.name) &&
+                    item.quantity
+                  ) {
+                    const itemName =
+                      item.product_name || item.name || "Unknown Item";
+                    return `
                 <div class="item-row">
                   <span>${index + 1}   ${itemName}</span>
                   <span>${item.quantity}</span>
                 </div>
               `;
-            }
-            return '';
-          }).join('') : '<div class="item-row"><span>No items</span></div>'
+                  }
+                  return "";
+                })
+                .join("")
+            : '<div class="item-row"><span>No items</span></div>'
         }
         
         <div class="divider"></div>
@@ -487,7 +547,7 @@ export const printDirectHTML = (orderData, restaurantName = 'ABC RESTAURANT', is
     if (orderData.items && orderData.items.length > 0) {
       subtotal = orderData.items.reduce((sum, item) => {
         if (item && item.price && item.quantity) {
-          return sum + (item.price * item.quantity);
+          return sum + item.price * item.quantity;
         }
         return sum;
       }, 0);
@@ -582,11 +642,15 @@ export const printDirectHTML = (orderData, restaurantName = 'ABC RESTAURANT', is
         <div class="divider"></div>
         
         <div class="bill-info">
-          <div>Bill No: ${orderData.kotNo || 'N/A'}</div>
+          <div>Bill No: ${orderData.kotNo || "N/A"}</div>
           <div>Date: ${formattedDate}</div>
         </div>
         <div class="bill-info">
-          ${orderData?.tableNo ? `<div>Table: ${orderData.tableNo}</div>` : '<div></div>'}
+          ${
+            orderData?.tableNo
+              ? `<div>Table: ${orderData.tableNo}</div>`
+              : "<div></div>"
+          }
           <div>Time: ${formattedTime}</div>
         </div>
         
@@ -600,13 +664,24 @@ export const printDirectHTML = (orderData, restaurantName = 'ABC RESTAURANT', is
         </div>
         <div class="divider"></div>
         
-        ${orderData.items && orderData.items.length > 0 ? 
-          orderData.items.map((item) => {
-            if (item && (item.product_name || item.name) && item.quantity && item.price) {
-              const itemName = item.product_name || item.name || 'Unknown Item';
-              const displayName = itemName.length > 15 ? itemName.substring(0, 15) : itemName;
-              const itemTotal = item.price * item.quantity;
-              return `
+        ${
+          orderData.items && orderData.items.length > 0
+            ? orderData.items
+                .map((item) => {
+                  if (
+                    item &&
+                    (item.product_name || item.name) &&
+                    item.quantity &&
+                    item.price
+                  ) {
+                    const itemName =
+                      item.product_name || item.name || "Unknown Item";
+                    const displayName =
+                      itemName.length > 15
+                        ? itemName.substring(0, 15)
+                        : itemName;
+                    const itemTotal = item.price * item.quantity;
+                    return `
                 <div class="item-row">
                   <span>${displayName}</span>
                   <span>${item.quantity}</span>
@@ -614,9 +689,11 @@ export const printDirectHTML = (orderData, restaurantName = 'ABC RESTAURANT', is
                   <span>₹${itemTotal.toFixed(2)}</span>
                 </div>
               `;
-            }
-            return '';
-          }).join('') : '<div class="item-row"><span>No items</span></div>'
+                  }
+                  return "";
+                })
+                .join("")
+            : '<div class="item-row"><span>No items</span></div>'
         }
         
         <div class="divider"></div>
@@ -648,24 +725,24 @@ export const printDirectHTML = (orderData, restaurantName = 'ABC RESTAURANT', is
   }
 
   // Create and print without new window
-  const iframe = document.createElement('iframe');
-  iframe.style.position = 'fixed';
-  iframe.style.right = '0';
-  iframe.style.bottom = '0';
-  iframe.style.width = '0';
-  iframe.style.height = '0';
-  iframe.style.border = 'none';
-  
+  const iframe = document.createElement("iframe");
+  iframe.style.position = "fixed";
+  iframe.style.right = "0";
+  iframe.style.bottom = "0";
+  iframe.style.width = "0";
+  iframe.style.height = "0";
+  iframe.style.border = "none";
+
   document.body.appendChild(iframe);
-  
+
   const doc = iframe.contentDocument || iframe.contentWindow.document;
   doc.open();
   doc.write(printContent);
   doc.close();
-  
-  iframe.onload = function() {
+
+  iframe.onload = function () {
     iframe.contentWindow.print();
-    
+
     // Clean up after printing
     setTimeout(() => {
       document.body.removeChild(iframe);
@@ -681,10 +758,16 @@ export const printDirectHTML = (orderData, restaurantName = 'ABC RESTAURANT', is
  * @param {string} restaurantName - Restaurant name (optional)
  * @param {boolean} useHTML - Use HTML printing instead of PDF (default: true)
  */
-export const generateAndPrintKOT = (orderData, autoPrint = true, download = false, restaurantName = 'ABC RESTAURANT', useHTML = true) => {
+export const generateAndPrintKOT = (
+  orderData,
+  autoPrint = true,
+  download = false,
+  restaurantName = "ABC RESTAURANT",
+  useHTML = true
+) => {
   try {
     if (!orderData) {
-      throw new Error('Order data is required');
+      throw new Error("Order data is required");
     }
 
     if (useHTML && autoPrint) {
@@ -694,19 +777,19 @@ export const generateAndPrintKOT = (orderData, autoPrint = true, download = fals
     } else {
       // Use PDF method
       const pdf = generateKitchenOrderTicket(orderData, restaurantName);
-      
+
       if (download && orderData.kotNo) {
         downloadReceipt(pdf, `KOT_${orderData.kotNo}.pdf`);
       }
-      
+
       if (autoPrint) {
-        printThermalReceipt(pdf, 'KOT', false); // false = no new window
+        printThermalReceipt(pdf, "KOT", false); // false = no new window
       }
-      
+
       return pdf;
     }
   } catch (error) {
-    console.error('Error generating KOT:', error);
+    console.error("Error generating KOT:", error);
     throw error;
   }
 };
@@ -720,10 +803,17 @@ export const generateAndPrintKOT = (orderData, autoPrint = true, download = fals
  * @param {Object} restaurantInfo - Restaurant information (optional)
  * @param {boolean} useHTML - Use HTML printing instead of PDF (default: true)
  */
-export const generateAndPrintBill = (orderData, autoPrint = true, download = false, restaurantName = 'ABC RESTAURANT', restaurantInfo, useHTML = true) => {
+export const generateAndPrintBill = (
+  orderData,
+  autoPrint = true,
+  download = false,
+  restaurantName = "ABC RESTAURANT",
+  restaurantInfo,
+  useHTML = true
+) => {
   try {
     if (!orderData) {
-      throw new Error('Order data is required');
+      throw new Error("Order data is required");
     }
 
     if (useHTML && autoPrint) {
@@ -735,24 +825,27 @@ export const generateAndPrintBill = (orderData, autoPrint = true, download = fal
       const defaultRestaurantInfo = restaurantInfo || {
         address: "123 Main Street, City",
         phone: "+91 98765 43210",
-        gst: "22AAAAA0000A1Z5"
+        gst: "22AAAAA0000A1Z5",
       };
-      
-      const pdf = generateCustomerBill(orderData, restaurantName, defaultRestaurantInfo);
-      
+
+      const pdf = generateCustomerBill(
+        orderData,
+        restaurantName,
+        defaultRestaurantInfo
+      );
+
       if (download && orderData.kotNo) {
         downloadReceipt(pdf, `Bill_${orderData.kotNo}.pdf`);
       }
-      
+
       if (autoPrint) {
-        printThermalReceipt(pdf, 'Bill', false); // false = no new window
+        printThermalReceipt(pdf, "Bill", false); // false = no new window
       }
-      
+
       return pdf;
     }
   } catch (error) {
-    console.error('Error generating bill:', error);
+    console.error("Error generating bill:", error);
     throw error;
   }
 };
-
