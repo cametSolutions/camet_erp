@@ -65,8 +65,7 @@ function SourceList() {
             (bank) =>
               // bank.bank_name &&
               // bank.bank_name !== "null" &&
-              bank.bank_ledname &&
-              bank.bank_ledname !== "null"
+              bank.bank_ledname && bank.bank_ledname !== "null"
           );
           setData(filteredBanks);
           dispatch(addAllBankList(filteredBanks));

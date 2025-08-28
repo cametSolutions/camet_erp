@@ -201,6 +201,7 @@ export const editSale = async (req, res) => {
     subTotal,
     selectedDate,
     paymentSplittingData = {},
+    voucherType,
   } = req.body;
 
   let { salesNumber, series_id, usedSeriesNumber } = req.body;
@@ -277,7 +278,10 @@ export const editSale = async (req, res) => {
         subTotal,
       };
 
-      await model.findByIdAndUpdate(saleId, updateData, { new: true, session });
+      const result = await model.findByIdAndUpdate(saleId, updateData, {
+        new: true,
+        session,
+      });
 
       /// delete  all the settlements
       await settlementModel.deleteMany({ voucherId: saleId }, { session });
@@ -286,6 +290,7 @@ export const editSale = async (req, res) => {
         paymentSplittingData.length > 0 &&
         paymentSplittingData.some((item) => item?.ref_id !== "")
       ) {
+
         await savePaymentSplittingDataInSources(
           paymentSplittingData,
           salesNumber,
@@ -306,15 +311,18 @@ export const editSale = async (req, res) => {
 
       //// update the outstanding of the sale against specific party
 
+      const valueToUpdateInOutstanding = finalOutstandingAmount;
+
       if (
-        finalOutstandingAmount !==
+        valueToUpdateInOutstanding !==
         (existingSale.finalOutstandingAmount || existingSale.finalAmount)
+        /// in old sales we dont have finalOutstandingAmount so we added || finalAmount
       ) {
         const outstandingResult = await updateOutstandingBalance({
           existingVoucher: existingSale,
           newVoucherData: {
             paymentSplittingData,
-            lastAmount,
+            valueToUpdateInOutstanding,
           },
           orgId,
           voucherNumber: salesNumber,

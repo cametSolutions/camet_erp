@@ -512,11 +512,14 @@ export const commonVoucherSlice = createSlice({
           0
         );
 
+        const creditAmount = paymentSplits?.find((split) => split.type === "credit")?.amount || 0;
+
         console.log(total);
 
         state.totalAfterPaymentSplit = Number(
           state.totalAfterAdditionalCharges - total
         );
+        state.finalOutstandingAmount=creditAmount
       }
     },
     addCreditInPaymentSplit: (state, action) => {
@@ -573,9 +576,11 @@ export const commonVoucherSlice = createSlice({
 
       state.finalAmount = state.totalWithAdditionalCharges;
 
+      const creditAmount = state.paymentSplittingData.find((split) => split.type === "credit")?.amount || 0;
+
       state.finalOutstandingAmount =
-        state.totalWithAdditionalCharges - (state.totalPaymentSplits || 0);
-        state.totalAfterPaymentSplit = state.finalOutstandingAmount
+        state.totalWithAdditionalCharges - ((state.totalPaymentSplits || 0) - creditAmount);
+      state.totalAfterPaymentSplit =  state.totalWithAdditionalCharges - (state.totalPaymentSplits || 0)
     },
 
     resetPaymentSplit: (state) => {

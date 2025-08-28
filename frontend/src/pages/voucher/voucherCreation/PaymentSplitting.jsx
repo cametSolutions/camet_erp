@@ -121,8 +121,8 @@ function PaymentSplitting() {
       const partyId = party._id;
 
       const isPartySelected = paymentSplittingData?.find(
-        (item) => item.type === "credit"
-      ).ref_id;
+        (item) => item?.type === "credit"
+      )?.ref_id;
 
       setPaymentSplits((prevSplits) => {
         return prevSplits.map((split) => {
@@ -326,7 +326,7 @@ function PaymentSplitting() {
       updateTotalValue({ field: "totalPaymentSplits", value: totalAmount })
     );
 
-    navigate("/sUsers/sales", { replace: true });
+    navigate(-1, { replace: true });
   };
 
   const handleSavePaymentSplitAndSubmit = () => {

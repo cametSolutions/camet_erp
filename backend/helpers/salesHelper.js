@@ -484,75 +484,74 @@ export const updateTallyData = async (
   classification,
   voucherModel = "Sales"
 ) => {
-  // if (party?.partyType === "party") {
-  try {
-    const billData = {
-      Primary_user_id: Primary_user_id,
-      bill_no: salesNumber,
-      billId: billId.toString(),
-      cmp_id: orgId,
-      party_id: party?._id,
-      accountGroup: party?.accountGroup_id,
-      subGroup: party?.subGroup_id,
-      bill_amount: Number(lastAmount),
-      bill_date: new Date(selectedDate),
-      bill_due_date: new Date(selectedDate),
-
-      bill_pending_amt: Number(valueToUpdateInTally),
-      email: party?.emailID,
-      mobile_no: party?.mobileNumber,
-      party_name: party?.partyName,
-      user_id: secondaryMobile || "null",
-      source: voucherType,
-      classification,
-    };
-
-    const tallyUpdate = await TallyData.findOneAndUpdate(
-      {
-        cmp_id: orgId,
+  if (party?.partyType === "party") {
+    try {
+      const billData = {
+        Primary_user_id: Primary_user_id,
         bill_no: salesNumber,
         billId: billId.toString(),
-        Primary_user_id: Primary_user_id,
+        cmp_id: orgId,
         party_id: party?._id,
-      },
-      { $set: billData },
-      { upsert: true, new: true, session }
-    );
-  } catch (error) {
-    console.error("Error updateTallyData sale stock updates:", error);
-    throw error;
+        accountGroup: party?.accountGroup_id,
+        subGroup: party?.subGroup_id,
+        bill_amount: Number(lastAmount),
+        bill_date: new Date(selectedDate),
+        bill_due_date: new Date(selectedDate),
+
+        bill_pending_amt: Number(valueToUpdateInTally),
+        email: party?.emailID,
+        mobile_no: party?.mobileNumber,
+        party_name: party?.partyName,
+        user_id: secondaryMobile || "null",
+        source: voucherType,
+        classification,
+      };
+
+      const tallyUpdate = await TallyData.findOneAndUpdate(
+        {
+          cmp_id: orgId,
+          bill_no: salesNumber,
+          billId: billId.toString(),
+          Primary_user_id: Primary_user_id,
+          party_id: party?._id,
+        },
+        { $set: billData },
+        { upsert: true, new: true, session }
+      );
+    } catch (error) {
+      console.error("Error updateTallyData sale stock updates:", error);
+      throw error;
+    }
+  } else if (party?.partyType === "cash" || party?.partyType === "bank") {
+    //// create settlement
+
+    try {
+      const settlementData = {
+        voucherNumber: salesNumber,
+        voucherId: billId,
+        voucherModel: voucherModel,
+        voucherType: voucherType,
+        amount: valueToUpdateInTally,
+        partyName: party?.partyName || "",
+        partyId: party?._id || null,
+        partyType: party?.partyType || null,
+        payment_mode: null,
+        /// source is also the same party
+        sourceId: party?._id || null,
+        sourceType: party?.partyType || null,
+        cmp_id: orgId,
+        Primary_user_id: Primary_user_id,
+        settlement_date: selectedDate,
+        voucher_date: selectedDate,
+      };
+
+      const settlement = new settlementModel(settlementData);
+
+      await settlement.save({ session });
+    } catch (error) {
+      console.error("Error creating settlement:", error);
+    }
   }
-  // }
-
-  // else if (party?.partyType === "cash" || party?.partyType === "bank") {
-  //   //// create settlement
-
-  //   try {
-  //     const settlementData = {
-  //       voucherNumber: salesNumber,
-  //       voucherId: billId,
-  //       voucherModel: voucherModel,
-  //       voucherType: voucherType,
-  //       amount: valueToUpdateInTally,
-  //       partyName: party?.partyName || "",
-  //       partyId: party?._id || null,
-  //       partyType: party?.partyType || null,
-  //       payment_mode: null,
-  //       /// source is also the same party
-  //       sourceId: party?._id || null,
-  //       sourceType: party?.partyType || null,
-  //       cmp_id: orgId,
-  //       Primary_user_id: Primary_user_id,
-  //       settlement_date: selectedDate,
-  //       voucher_date: selectedDate,
-  //     };
-
-  //     const settlement = new settlementModel(settlementData);
-  //     await settlement.save({ session });
-  //   } catch (error) {
-  //     console.error("Error creating settlement:", error);
-  //   }
-  // }
 };
 
 export const revertSaleStockUpdates = async (items, session) => {
@@ -713,13 +712,20 @@ const getSourceType = (item) => {
 
   if (item?.type === "credit") {
     updatedSourceType = item?.credit_reference_type || null;
-  } else if (item?.ref_collection === "Cash") {
+  } else if (item?.type === "cash") {
     updatedSourceType = "cash";
-  } else if (item?.ref_collection === "BankDetails") {
+  } else if (
+    item?.type === "bank" ||
+    item?.type === "upi" ||
+    item?.type === "cheque"
+  ) {
     updatedSourceType = "bank";
   } else {
     updatedSourceType = "party";
   }
+
+  console.log("Updated source type:", updatedSourceType);
+
   return updatedSourceType;
 };
 
@@ -762,32 +768,35 @@ const handleCreditMode = async (
     };
 
     const settlement = new settlementModel(settlementData);
+
     await settlement.save({ session });
     return settlement;
+  } else {
+    return null;
   }
 
   // Handle credit with party reference
-  else if (credit_reference_type === "party") {
-    const party = await partyModel.findById(ref_id);
+  // currently we are not considering credit mode outstanding update,we are creating the outstanding for the party tagged in sale
+  // else if (credit_reference_type === "party") {
+  //   const party = await partyModel.findById(ref_id);
 
-    await updateTallyData(
-      orgId,
-      salesNumber,
-      saleId.toString(),
-      Primary_user_id,
-      party,
-      amount,
-      secondaryMobile,
-      session,
-      amount,
-      selectedDate,
-      voucherType,
-      "Dr"
-    );
-  }
+  //   await updateTallyData(
+  //     orgId,
+  //     salesNumber,
+  //     saleId.toString(),
+  //     Primary_user_id,
+  //     party,
+  //     amount,
+  //     secondaryMobile,
+  //     session,
+  //     amount,
+  //     selectedDate,
+  //     voucherType,
+  //     "Dr"
+  //   );
+  // }
 
   return null; // No settlement needed for party credit
-
 };
 
 // Helper function to handle non-credit modes
@@ -827,6 +836,7 @@ const handleNonCreditMode = async (
   };
 
   const settlement = new settlementModel(settlementData);
+
   await settlement.save({ session });
   return settlement;
 };
@@ -855,33 +865,36 @@ export const savePaymentSplittingDataInSources = async (
 
           // Handle credit mode
           if (mode === "credit") {
-            return await handleCreditMode(
+            // currently we are not considering credit mode outstanding update,we are creating the outstanding for the party tagged in sale
+            return null;
+
+            // return await handleCreditMode(
+            //   item,
+            //   orgId,
+            //   salesNumber,
+            //   saleId,
+            //   Primary_user_id,
+            //   secondaryMobile,
+            //   session,
+            //   selectedDate,
+            //   voucherType,
+            //   party,
+            //   mode
+            // );
+          } else {
+            // Handle non-credit modes (cash, upi, cheque)
+            return await handleNonCreditMode(
               item,
-              orgId,
+              mode,
               salesNumber,
               saleId,
-              Primary_user_id,
-              secondaryMobile,
-              session,
-              selectedDate,
-              voucherType,
               party,
-              mode
+              orgId,
+              Primary_user_id,
+              selectedDate,
+              session
             );
           }
-
-          // Handle non-credit modes (cash, upi, cheque)
-          return await handleNonCreditMode(
-            item,
-            mode,
-            salesNumber,
-            saleId,
-            party,
-            orgId,
-            Primary_user_id,
-            selectedDate,
-            session
-          );
         })
     );
 
@@ -1009,168 +1022,162 @@ export const updateOutstandingBalance = async ({
   selectedDate,
   classification,
 }) => {
-  // Calculate old bill balance
-  let oldBillBalance;
-  if (
-    existingVoucher?.paymentSplittingData &&
-    Object.keys(existingVoucher?.paymentSplittingData).length > 0
-  ) {
-    oldBillBalance = existingVoucher?.paymentSplittingData?.balanceAmount;
-  } else {
-    oldBillBalance = existingVoucher?.finalAmount || 0;
-  }
+  if (party?.partyType === "party") {
+    // Calculate old bill balance
+    let oldBillBalance =
+      existingVoucher?.finalOutstandingAmount ||
+      existingVoucher?.finalAmount ||
+      0;
+    let newBillBalance = newVoucherData?.valueToUpdateInOutstanding || 0;
 
-  // Calculate new bill balance
-  let newBillBalance;
-  if (
-    newVoucherData?.paymentSplittingData &&
-    Object.keys(newVoucherData?.paymentSplittingData).length > 0
-  ) {
-    newBillBalance = newVoucherData?.paymentSplittingData?.balanceAmount;
-  } else {
-    newBillBalance = newVoucherData?.lastAmount || 0;
-  }
+    // Calculate difference in bill value
+    const diffBillValue = Number(newBillBalance) - Number(oldBillBalance);
 
-  // Calculate difference in bill value
-  const diffBillValue = Number(newBillBalance) - Number(oldBillBalance);
+    // Find existing outstanding record
+    const matchedOutStanding = await TallyData.findOne({
+      party_id: existingVoucher?.party?._id,
+      cmp_id: orgId,
+      billId: existingVoucher?._id.toString(),
+    }).session(session);
 
-  // Find existing outstanding record
-  const matchedOutStanding = await TallyData.findOne({
-    party_id: existingVoucher?.party?._id,
-    cmp_id: orgId,
-    billId: existingVoucher?._id.toString(),
-  }).session(session);
-
-  // Calculate sum of applied receipts
-  const appliedReceipts = matchedOutStanding?.appliedReceipts || [];
-  const sumOfAppliedReceipts = appliedReceipts.reduce((sum, receipt) => {
-    return sum + (receipt.settledAmount || 0);
-  }, 0);
-
-  console.log(`New bill balance: ${newBillBalance}`);
-  console.log(`Sum of applied receipts: ${sumOfAppliedReceipts}`);
-  console.log(
-    `Absolute difference: ${Math.abs(newBillBalance - sumOfAppliedReceipts)}`
-  );
-
-  let updatedAppliedReceipts = appliedReceipts;
-  let updatedAppliedPayments = matchedOutStanding?.appliedPayments || [];
-
-  // Check if we need to create advances
-  const absoluteDifference = Math.abs(newBillBalance - sumOfAppliedReceipts);
-  const shouldCreateAdvances = newBillBalance < sumOfAppliedReceipts;
-
-  console.log(`Should create advances: ${shouldCreateAdvances}`);
-
-  // If newBillBalance < oldBillBalance AND condition is met => create advance receipts and payments
-  if (newBillBalance < oldBillBalance && shouldCreateAdvances) {
-    const appliedPayments = matchedOutStanding?.appliedPayments;
-    const totalAdvanceAmount = oldBillBalance - newBillBalance;
-
-    console.log(`Processing advances for amount: ${totalAdvanceAmount}`);
-
-    // Process advance receipts
-    if (appliedReceipts?.length > 0) {
-      const receiptsResult = await processAdvanceReceipts(
-        appliedReceipts,
-        totalAdvanceAmount,
-        orgId,
-        existingVoucher,
-        party,
-        secondaryMobile,
-        session
-      );
-
-      updatedAppliedReceipts = receiptsResult.updatedAppliedReceipts;
-      console.log("updatedAppliedReceipts", updatedAppliedReceipts);
-      console.log(
-        `Remaining after processing receipts: ${receiptsResult.remainingAmount}`
-      );
-    }
-
-    // Process advance payments
-    if (appliedPayments?.length > 0) {
-      const paymentsResult = await processAdvancePayments(
-        appliedPayments,
-        totalAdvanceAmount,
-        orgId,
-        existingVoucher,
-        party,
-        secondaryMobile,
-        session
-      );
-
-      updatedAppliedPayments = paymentsResult.updatedAppliedPayments;
-      console.log(
-        `Remaining after processing payments: ${paymentsResult.remainingAmount}`
-      );
-    }
-
-    // Update the matchedOutStanding with updated arrays
-    if (matchedOutStanding?._id) {
-      await TallyData.findByIdAndUpdate(
-        matchedOutStanding._id,
-        {
-          appliedReceipts: updatedAppliedReceipts,
-          appliedPayments: updatedAppliedPayments,
-          updatedAt: new Date(),
-        },
-        { session }
-      );
-      console.log("Updated appliedReceipts and appliedPayments arrays");
-    }
-  }
-
-  // Calculate sum of applied receipts after processing advances
-  const finalSumOfAppliedReceipts = updatedAppliedReceipts.reduce(
-    (sum, receipt) => {
+    // Calculate sum of applied receipts
+    const appliedReceipts = matchedOutStanding?.appliedReceipts || [];
+    const sumOfAppliedReceipts = appliedReceipts.reduce((sum, receipt) => {
       return sum + (receipt.settledAmount || 0);
-    },
-    0
-  );
+    }, 0);
 
-  // Calculate bill_pending_amt as the difference of newBillBalance - sum of appliedReceipts (after creating advance)
-  const billPendingAmount = newBillBalance - finalSumOfAppliedReceipts;
-
-  console.log(`Final sum of applied receipts: ${finalSumOfAppliedReceipts}`);
-  console.log(`Bill pending amount: ${billPendingAmount}`);
-
-  let updatedTallyData;
-
-  if (matchedOutStanding?._id) {
-    // Update existing document to preserve _id
-    updatedTallyData = await TallyData.findByIdAndUpdate(
-      matchedOutStanding._id,
-      {
-        party_id: existingVoucher?.party?._id,
-        cmp_id: orgId,
-        billId: existingVoucher?._id.toString(),
-        bill_amount: newBillBalance,
-        bill_pending_amt: billPendingAmount, // Updated calculation
-        voucherNumber: voucherNumber,
-        primaryUserId: existingVoucher.Primary_user_id,
-        party: party,
-        secondaryMobile: secondaryMobile,
-        voucherType: existingVoucher?.voucherType,
-        classification: classification,
-        createdBy: createdBy,
-        transactionType: transactionType,
-        updatedAt: new Date(),
-        bill_date: new Date(selectedDate),
-        bill_due_date: new Date(selectedDate),
-        appliedReceipts: updatedAppliedReceipts, // Ensure updated arrays are saved
-        appliedPayments: updatedAppliedPayments,
-      },
-      {
-        new: true, // Return updated document
-        session: session,
-      }
+    console.log(`New bill balance: ${newBillBalance}`);
+    console.log(`old bill balance: ${oldBillBalance}`);
+    console.log(`Sum of applied receipts: ${sumOfAppliedReceipts}`);
+    console.log(
+      `Absolute difference: ${Math.abs(newBillBalance - sumOfAppliedReceipts)}`
     );
 
-    // console.log("updatedTallyData", updatedTallyData);
-  }
+    let updatedAppliedReceipts = appliedReceipts;
+    let updatedAppliedPayments = matchedOutStanding?.appliedPayments || [];
 
-  return updatedTallyData;
+    // Check if we need to create advances
+    const absoluteDifference = Math.abs(newBillBalance - sumOfAppliedReceipts);
+    const shouldCreateAdvances = newBillBalance < sumOfAppliedReceipts;
+
+    console.log(`Should create advances: ${shouldCreateAdvances}`);
+
+    // If newBillBalance < oldBillBalance AND condition is met => create advance receipts and payments
+    if (newBillBalance < oldBillBalance && shouldCreateAdvances) {
+      const appliedPayments = matchedOutStanding?.appliedPayments;
+      const totalAdvanceAmount = oldBillBalance - newBillBalance;
+
+      console.log(`Processing advances for amount: ${totalAdvanceAmount}`);
+
+      // Process advance receipts
+      if (appliedReceipts?.length > 0) {
+        const receiptsResult = await processAdvanceReceipts(
+          appliedReceipts,
+          totalAdvanceAmount,
+          orgId,
+          existingVoucher,
+          party,
+          secondaryMobile,
+          session
+        );
+
+        updatedAppliedReceipts = receiptsResult.updatedAppliedReceipts;
+        console.log("updatedAppliedReceipts", updatedAppliedReceipts);
+        console.log(
+          `Remaining after processing receipts: ${receiptsResult.remainingAmount}`
+        );
+      }
+
+      // Process advance payments
+      if (appliedPayments?.length > 0) {
+        const paymentsResult = await processAdvancePayments(
+          appliedPayments,
+          totalAdvanceAmount,
+          orgId,
+          existingVoucher,
+          party,
+          secondaryMobile,
+          session
+        );
+
+        updatedAppliedPayments = paymentsResult.updatedAppliedPayments;
+        console.log(
+          `Remaining after processing payments: ${paymentsResult.remainingAmount}`
+        );
+      }
+
+      // Update the matchedOutStanding with updated arrays
+      if (matchedOutStanding?._id) {
+        await TallyData.findByIdAndUpdate(
+          matchedOutStanding._id,
+          {
+            appliedReceipts: updatedAppliedReceipts,
+            appliedPayments: updatedAppliedPayments,
+            updatedAt: new Date(),
+          },
+          { session }
+        );
+        console.log("Updated appliedReceipts and appliedPayments arrays");
+      }
+    } else {
+      console.log(
+        "No updates made to appliedReceipts and appliedPayments arrays"
+      );
+    }
+
+    // Calculate sum of applied receipts after processing advances
+    const finalSumOfAppliedReceipts = updatedAppliedReceipts.reduce(
+      (sum, receipt) => {
+        return sum + (receipt.settledAmount || 0);
+      },
+      0
+    );
+
+    // Calculate bill_pending_amt as the difference of newBillBalance - sum of appliedReceipts (after creating advance)
+    const billPendingAmount = newBillBalance - finalSumOfAppliedReceipts;
+
+    console.log(`Final sum of applied receipts: ${finalSumOfAppliedReceipts}`);
+    console.log(`Bill pending amount: ${billPendingAmount}`);
+
+    let updatedTallyData;
+
+    if (matchedOutStanding?._id) {
+      // Update existing document to preserve _id
+      updatedTallyData = await TallyData.findByIdAndUpdate(
+        matchedOutStanding._id,
+        {
+          party_id: existingVoucher?.party?._id,
+          cmp_id: orgId,
+          billId: existingVoucher?._id.toString(),
+          bill_amount: newBillBalance,
+          bill_pending_amt: billPendingAmount, // Updated calculation
+          voucherNumber: voucherNumber,
+          primaryUserId: existingVoucher.Primary_user_id,
+          party: party,
+          secondaryMobile: secondaryMobile,
+          voucherType: existingVoucher?.voucherType,
+          classification: classification,
+          createdBy: createdBy,
+          transactionType: transactionType,
+          updatedAt: new Date(),
+          bill_date: new Date(selectedDate),
+          bill_due_date: new Date(selectedDate),
+          appliedReceipts: updatedAppliedReceipts, // Ensure updated arrays are saved
+          appliedPayments: updatedAppliedPayments,
+        },
+        {
+          new: true, // Return updated document
+          session: session,
+        }
+      );
+
+      // console.log("updatedTallyData", updatedTallyData);
+    }
+
+    return updatedTallyData;
+  } else {
+    return null;
+  }
 };
 
 export const saveSettlementData = async (

@@ -80,6 +80,11 @@ function VoucherInitialPageEdit() {
     party: partyFromRedux,
     despatchDetails: despatchDetailsFromRedux,
     finalAmount: finalAmountFromRedux,
+    subTotal: subTotalFromRedux,
+    totalAdditionalCharges: totalAdditionalChargesFromRedux,
+    totalWithAdditionalCharges: totalWithAdditionalChargesFromRedux,
+    totalPaymentSplits: totalPaymentSplitsFromRedux,
+    finalOutstandingAmount: finalOutstandingAmountFromRedux,
     date: dateFromRedux,
     initialized: initializedFromRedux,
     stockTransferToGodown: stockTransferToGodownFromRedux,
@@ -88,6 +93,7 @@ function VoucherInitialPageEdit() {
     selectedVoucherSeries: selectedVoucherSeriesFromRedux,
     note: noteFromRedux,
     isNoteOpen: isNoteOpenFromRedux,
+    paymentSplittingData: paymentSplittingDataFromRedux,
   } = useSelector((state) => state.commonVoucherSlice);
 
   // to find the current voucher
@@ -377,7 +383,6 @@ function VoucherInitialPageEdit() {
     };
   }, []);
 
-  
   useEffect(() => {
     dispatch(updateTotalValue({ field: "subTotal", value: subTotal }));
   }, [subTotal]);
@@ -469,6 +474,18 @@ function VoucherInitialPageEdit() {
           [voucherNumberTitle]: voucherNumber,
           orgId: cmp_id,
           finalAmount: Number(totalAmount.toFixed(2)),
+          finalOutstandingAmount: Number(
+            finalOutstandingAmountFromRedux.toFixed(2)
+          ),
+          subTotal: Number(subTotalFromRedux.toFixed(2)),
+          totalAdditionalCharges: Number(
+            totalAdditionalChargesFromRedux.toFixed(2)
+          ),
+          totalWithAdditionalCharges: Number(
+            totalWithAdditionalChargesFromRedux.toFixed(2)
+          ),
+          totalPaymentSplits: Number(totalPaymentSplitsFromRedux.toFixed(2)),
+
           party,
           items,
           despatchDetails,
@@ -478,6 +495,7 @@ function VoucherInitialPageEdit() {
           selectedGodownDetails: vanSaleGodownFromRedux,
           series_id: selectedVoucherSeriesFromRedux?._id,
           usedSeriesNumber: selectedVoucherSeriesFromRedux?.currentNumber,
+          paymentSplittingData: paymentSplittingDataFromRedux,
         };
       }
 
@@ -540,7 +558,7 @@ function VoucherInitialPageEdit() {
             selectedVoucherSeriesFromRedux={
               selectedVoucherSeriesFromRedux || {}
             }
-              enablePaymentSplittingAsCompulsory={
+            enablePaymentSplittingAsCompulsory={
               enablePaymentSplittingAsCompulsory
             }
           />
