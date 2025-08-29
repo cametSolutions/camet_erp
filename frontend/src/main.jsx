@@ -34,6 +34,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         offset={16} 
         position="top-right"
         swipeDirections={["left", "right"]}
+        closeButton={true}
          />
         <ReactQueryDevtools initialIsOpen={false} />
       </QueryClientProvider>

@@ -2,10 +2,7 @@ import mongoose from "mongoose";
 import {
   createSaleRecord,
   handleSaleStockUpdates,
-  processSaleItems,
-  updateSalesNumber,
   updateTallyData,
-  checkForNumberExistence,
   revertSaleStockUpdates,
   savePaymentSplittingDataInSources,
   updateOutstandingBalance,
@@ -316,10 +313,8 @@ export const editSale = async (req, res) => {
       ) {
         const outstandingResult = await updateOutstandingBalance({
           existingVoucher: existingSale,
-          newVoucherData: {
-            paymentSplittingData,
-            valueToUpdateInOutstanding,
-          },
+          valueToUpdateInOutstanding,
+
           orgId,
           voucherNumber: salesNumber,
           party,
@@ -382,7 +377,7 @@ export const cancelSale = async (req, res) => {
     // Find the sale to cancel
     const sale = await (vanSaleQuery === "true" ? vanSaleModel : salesModel)
       .findById(saleId)
-      .session(session); // Use the session in the query
+      .session(session);
 
     if (!sale) {
       await session.abortTransaction(); // Rollback transaction if sale not found
@@ -402,27 +397,31 @@ export const cancelSale = async (req, res) => {
       : salesModel
     ).findByIdAndUpdate(saleId, sale, { session }); // Use the session in the update
 
-    /// cancel outstanding
+    /// delete  all the settlements
+    await settlementModel.deleteMany({ voucherId: saleId }, { session });
 
-    const cancelOutstanding = await TallyData.findOneAndUpdate(
-      {
-        bill_no: sale?.salesNumber,
-        billId: saleId.toString(),
-      },
-      {
-        $set: {
-          isCancelled: true,
-        },
-      }
-    ).session(session);
+    //// update the outstanding of the sale against specific party
+
+    const outstandingResult = await updateOutstandingBalance({
+      existingVoucher: sale,
+      valueToUpdateInOutstanding: 0,
+      orgId: sale.cmp_id,
+      voucherNumber: sale?.salesNumber,
+      party: sale?.party,
+      session,
+      createdBy: req.owner,
+      transactionType: "sale",
+      secondaryMobile: sale?.party?.mobileNumber || null,
+      selectedDate: sale?.date,
+      classification: "Dr",
+      isCancelled: true,
+    });
 
     /// if sale is created from order conversion then revert it
 
-    if (sale?.convertedFrom?.length > 0) {
-      await reverseConversionStatusOfOrder(sale?.convertedFrom, session);
-    }
-
-
+    // if (sale?.convertedFrom?.length > 0) {
+    //   await reverseConversionStatusOfOrder(sale?.convertedFrom, session);
+    // }
 
     // Commit the transaction
     await session.commitTransaction();

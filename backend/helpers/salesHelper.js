@@ -1011,7 +1011,7 @@ export const revertPaymentSplittingDataInSources = async (
 // Main function - updated version
 export const updateOutstandingBalance = async ({
   existingVoucher,
-  newVoucherData,
+  valueToUpdateInOutstanding,
   orgId,
   voucherNumber,
   party,
@@ -1021,6 +1021,7 @@ export const updateOutstandingBalance = async ({
   secondaryMobile,
   selectedDate,
   classification,
+  isCancelled = false,
 }) => {
   if (party?.partyType === "party") {
     // Calculate old bill balance
@@ -1028,7 +1029,7 @@ export const updateOutstandingBalance = async ({
       existingVoucher?.finalOutstandingAmount ||
       existingVoucher?.finalAmount ||
       0;
-    let newBillBalance = newVoucherData?.valueToUpdateInOutstanding || 0;
+    let newBillBalance = valueToUpdateInOutstanding;
 
     // Calculate difference in bill value
     const diffBillValue = Number(newBillBalance) - Number(oldBillBalance);
@@ -1039,6 +1040,11 @@ export const updateOutstandingBalance = async ({
       cmp_id: orgId,
       billId: existingVoucher?._id.toString(),
     }).session(session);
+
+    console.log(existingVoucher);
+    console.log(orgId);
+
+    console.log(`Matched outstanding record: ${matchedOutStanding}`);
 
     // Calculate sum of applied receipts
     const appliedReceipts = matchedOutStanding?.appliedReceipts || [];
@@ -1164,6 +1170,7 @@ export const updateOutstandingBalance = async ({
           bill_due_date: new Date(selectedDate),
           appliedReceipts: updatedAppliedReceipts, // Ensure updated arrays are saved
           appliedPayments: updatedAppliedPayments,
+          isCancelled: isCancelled,
         },
         {
           new: true, // Return updated document

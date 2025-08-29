@@ -168,9 +168,9 @@ export const commonAccountingVoucherSlice = createSlice({
       state.selectedVoucherSeries = action.payload;
     },
 
-    addReceiptId: (state, action) => {
-      state._id = action.payload;
-    },
+    // addReceiptId: (state, action) => {
+    //   state._id = action.payload;
+    // },
     
   },
 });

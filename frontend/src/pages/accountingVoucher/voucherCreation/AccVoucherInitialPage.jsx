@@ -64,6 +64,9 @@ function AccVoucherInitialPage() {
 
   /// get voucherType form location
   const voucherType = location.state?.voucherType;
+
+  console.log(voucherType);
+
   useEffect(() => {
     if (voucherType && voucherTypeFromRedux === "") {
       dispatch(addVoucherType(voucherType));

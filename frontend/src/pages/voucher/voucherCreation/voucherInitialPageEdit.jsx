@@ -29,6 +29,7 @@ import {
   setPriceLevel,
   updateTotalValue,
   addPaymentSplits,
+  saveId,
 } from "../../../../slices/voucherSlices/commonVoucherSlice";
 import DespatchDetails from "./DespatchDetails";
 import HeaderTile from "./HeaderTile";
@@ -94,6 +95,7 @@ function VoucherInitialPageEdit() {
     note: noteFromRedux,
     isNoteOpen: isNoteOpenFromRedux,
     paymentSplittingData: paymentSplittingDataFromRedux,
+  
   } = useSelector((state) => state.commonVoucherSlice);
 
   // to find the current voucher
@@ -185,12 +187,12 @@ function VoucherInitialPageEdit() {
       note: noteFromState,
       selectedPriceLevel: selectedPriceLevelFromState,
       subTotal: subTotalFromState,
-
+      _id: _idFromState,
       paymentSplittingData: paymentSplittingDataFromState = [],
     } = location.state.data || {};
 
     try {
-      if (voucherIdFromState) {
+      if (voucherIdFromState ) {
         setVoucherId(voucherIdFromState);
       }
 
@@ -356,6 +358,10 @@ function VoucherInitialPageEdit() {
       //// update total fields from state if available
       if (subTotalFromState && initializedFromRedux === false) {
         dispatch(updateTotalValue({ field: "subTotal", value: subTotal }));
+      }
+
+      if(!initializedFromRedux){
+        dispatch(saveId(_idFromState))
       }
 
       if (!initializedFromRedux) {

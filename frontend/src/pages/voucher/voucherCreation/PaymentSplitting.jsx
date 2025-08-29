@@ -82,6 +82,7 @@ function PaymentSplitting() {
     selectedVoucherSeries: selectedVoucherSeriesFromRedux,
     note: noteFromRedux,
     mode: modeFromRedux,
+    id: _idFromRedux
   } = useSelector((state) => state.commonVoucherSlice);
 
   // Fetch BankDetails and Cash sources using TanStack Query
@@ -366,8 +367,14 @@ function PaymentSplitting() {
     }
   };
 
+  console.log(_idFromRedux);
+  
+
   const getApiEndPoint = () => {
     if (voucherTypeFromRedux) {
+      if (modeFromRedux == "edit") {
+        return `editSales/${_idFromRedux}`;
+      }
       return `create${voucherTypeFromRedux
         ?.split("")[0]
         ?.toUpperCase()}${voucherTypeFromRedux?.split("")?.slice(1).join("")}`;
@@ -666,7 +673,7 @@ function PaymentSplitting() {
         bg-violet-700 hover:bg-violet-800 
         ${submitLoading ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
-                  Generate Sales
+                  {modeFromRedux == "create" ? "Generate Sales" : "Edit Sales"}
                 </button>
               ) : (
                 <button
