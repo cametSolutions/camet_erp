@@ -336,7 +336,7 @@ const OrdersDashboard = () => {
 
   useEffect(() => {
     if (salePrintData) {
-      navigate(`/sUsers/sharesales/${salePrintData._id}`);
+      navigate(`/sUsers/sharesalesThreeInch/${salePrintData._id}`);
     }
   }, [salePrintData, navigate]);
 
