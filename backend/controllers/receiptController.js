@@ -111,18 +111,32 @@ export const createReceipt = async (req, res) => {
 
     /// save settlement data in cash or bank collection
     await saveSettlementData(
-      paymentMethod,
-      paymentDetails,
       receiptNumber,
       savedReceipt._id.toString(),
-      enteredAmount,
-      cmp_id,
+      "Receipt",
       "receipt",
-      newReceipt?.date,
-      savedReceipt?.party?.partyName,
-      session,
+      enteredAmount || 0,
+      paymentMethod,
+      paymentDetails,
       party,
-      "Receipt"
+      cmp_id,
+      Primary_user_id,
+      date,
+      session
+
+
+      // paymentMethod,
+      // paymentDetails,
+      // receiptNumber,
+      // savedReceipt._id.toString(),
+      // enteredAmount,
+      // cmp_id,
+      // "receipt",
+      // newReceipt?.date,
+      // savedReceipt?.party?.partyName,
+      // session,
+      // party,
+      // "Receipt"
     );
 
     // Use the helper function to update TallyData
@@ -494,8 +508,11 @@ export const getReceiptDetails = async (req, res) => {
         _id: populated?._id ?? billFields._id, // original ObjectId (not the whole object)
         ...billFields, // bill_no, bill_date, etc.
         appliedReceiptAmount: receiptMatch ? receiptMatch?.settledAmount : 0,
-        currentOutstandingAmount: populated?.bill_pending_amt ?? billFields.bill_pending_amt, // latest outstanding balance
-         bill_pending_amt: (receiptMatch?.settledAmount || 0) +( Math.max(populated?.bill_pending_amt ,0) || 0),
+        currentOutstandingAmount:
+          populated?.bill_pending_amt ?? billFields.bill_pending_amt, // latest outstanding balance
+        bill_pending_amt:
+          (receiptMatch?.settledAmount || 0) +
+          (Math.max(populated?.bill_pending_amt, 0) || 0),
       };
     });
 
@@ -511,4 +528,3 @@ export const getReceiptDetails = async (req, res) => {
       .json({ success: false, message: "Internal server error, try again!" });
   }
 };
-

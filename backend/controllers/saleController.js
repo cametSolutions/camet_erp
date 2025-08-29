@@ -8,10 +8,7 @@ import {
   checkForNumberExistence,
   revertSaleStockUpdates,
   savePaymentSplittingDataInSources,
-  revertPaymentSplittingDataInSources,
   updateOutstandingBalance,
-  saveSettlementData,
-  revertSettlementData,
   changeConversionStatusOfOrder,
   reverseConversionStatusOfOrder,
 } from "../helpers/salesHelper.js";
@@ -290,7 +287,6 @@ export const editSale = async (req, res) => {
         paymentSplittingData.length > 0 &&
         paymentSplittingData.some((item) => item?.ref_id !== "")
       ) {
-
         await savePaymentSplittingDataInSources(
           paymentSplittingData,
           salesNumber,
@@ -420,33 +416,13 @@ export const cancelSale = async (req, res) => {
       }
     ).session(session);
 
-    //// revert settlement data
-    /// revert it
-    await revertSettlementData(
-      sale?.party,
-      sale?.cmp_id,
-      sale?.salesNumber,
-      sale?._id.toString(),
-      session
-    );
-
     /// if sale is created from order conversion then revert it
 
     if (sale?.convertedFrom?.length > 0) {
       await reverseConversionStatusOfOrder(sale?.convertedFrom, session);
     }
 
-    //// revert payment splitting data in sources
 
-    if (sale?.paymentSplittingData?.splittingData) {
-      await revertPaymentSplittingDataInSources(
-        sale?.paymentSplittingData || {},
-        sale?.salesNumber,
-        sale?._id.toString(),
-        sale?.cmp_id,
-        session
-      );
-    }
 
     // Commit the transaction
     await session.commitTransaction();

@@ -4,6 +4,7 @@ import OragnizationModel from "../models/OragnizationModel.js";
 import TallyData from "../models/TallyData.js";
 import cashModel from "../models/cashModel.js";
 import bankModel from "../models/bankModel.js";
+import settlementModel from "../models/settlementModel.js";
 
 /**
  * Updates the receiptNumber for a given secondary user
@@ -142,7 +143,6 @@ export const createOutstandingWithAdvanceAmount = async (
   sourceName,
   classification
 ) => {
-
   try {
     const billData = {
       Primary_user_id,
@@ -329,75 +329,39 @@ export const deleteAdvanceReceipt = async (
 ///// save payment details in payment collection
 
 export const saveSettlementData = async (
-  paymentMethod,
-  paymentDetails,
   voucherNumber,
   voucherId,
+  voucherModel,
+  voucherType,
   amount,
-  orgId,
-  type,
-  createdAt,
-  partyName,
-  session,
+  paymentMethod,
+  paymentDetails,
   party,
-  voucherModel
+  cmp_id,
+  Primary_user_id,
+  date,
+  session
 ) => {
   try {
-    if (!paymentDetails._id || !paymentMethod) {
-      throw new Error("Invalid paymentDetails");
-    }
-    let model = null;
-    switch (paymentMethod) {
-      case "Online":
-        model = bankModel;
-        break;
-      case "Cash":
-        model = cashModel;
-        break;
-      case "Cheque":
-        model = bankModel;
-        break;
-      default:
-        throw new Error("Invalid paymentMethod");
-    }
+    const settlementData = {
+      voucherNumber: voucherNumber,
+      voucherId: voucherId,
+      voucherModel: voucherModel,
+      voucherType: voucherType,
+      amount: amount,
+      payment_mode: paymentMethod.toLowerCase(),
+      partyName: party?.partyName || "",
+      partyId: party?._id || null,
+      partyType: party?.partyType || null,
+      sourceId: paymentDetails?._id || null,
+      sourceType: paymentMethod == "Cash" ? "cash" : "bank",
+      cmp_id: cmp_id,
+      Primary_user_id: Primary_user_id,
+      settlement_date: date,
+      voucher_date: date,
+    };
 
-    if (model) {
-      const settlementData = {
-        voucherNumber: voucherNumber,
-        voucherId: voucherId.toString(),
-        voucherType: voucherModel?.toLowerCase(),
-        voucherModel: voucherModel,
-        amount: amount,
-        created_at: createdAt,
-        payment_mode: paymentMethod.toLowerCase(),
-        type: type,
-        party: partyName,
-        partyId: party._id,
-      };
-
-      const query = {
-        cmp_id: orgId,
-        _id: new mongoose.Types.ObjectId(paymentDetails._id),
-      };
-
-      const update = {
-        $push: {
-          settlements: settlementData,
-        },
-      };
-
-      const options = {
-        upsert: true,
-        new: true,
-        session,
-      };
-
-      const updatedSource = await model.findOneAndUpdate(
-        query,
-        update,
-        options
-      );
-    }
+    await settlementModel.create([settlementData], { session });
   } catch (error) {
     console.error("Error in save settlement data:", error);
     throw error;

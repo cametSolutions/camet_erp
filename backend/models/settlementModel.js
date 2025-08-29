@@ -34,7 +34,7 @@ const settlementSchema = new mongoose.Schema(
     payment_mode: {
       type: String,
       default:null,
-      enum: ["cash", "bank", "cheque", "upi", "card", "online_transfer"],
+      enum: ["cash", "bank", "cheque", "upi", "card", "online"],
     },
 
     // Party Information (who paid/received from)
