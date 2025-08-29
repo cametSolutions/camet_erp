@@ -363,12 +363,12 @@ export const cancelTransaction = async (req, res) => {
 export const fetchBanks = async (req, res) => {
   const cmp_id = req.params.cmp_id;
   try {
-    const bankData = await BankDetails.aggregate([
-      { $match: { cmp_id: new mongoose.Types.ObjectId(cmp_id) } },
+    const bankData = await partyModel.aggregate([
+      { $match: { cmp_id: new mongoose.Types.ObjectId(cmp_id), partyType: "bank"} },
       {
         $project: {
           bank_name: 1,
-          bank_ledname: 1,
+          partyName: 1,
           ifsc: 1,
           upi_id: 1,
           ac_no: 1,

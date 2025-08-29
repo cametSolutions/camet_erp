@@ -143,7 +143,7 @@ export default function SelectBankModal({ showModal = true, setShowModal }) {
               <SelectContent className="bg-gray-800 border-gray-600">
                 {bankList?.length > 0 ? (
                   bankList
-                    ?.filter((bank) => bank?.bank_name !== "null")
+                    ?.filter((bank) => bank?.partyName !== "null")
                     ?.map((bank, index) => (
                       <SelectItem 
                         key={index} 
@@ -153,9 +153,9 @@ export default function SelectBankModal({ showModal = true, setShowModal }) {
                         <div className="flex items-center gap-2">
                           <FaUniversity size={14} className="text-gray-400" />
                           <span>
-                            {bank?.bank_ledname?.length > 35
-                              ? bank?.bank_ledname?.substring(0, 35) + "..."
-                              : bank?.bank_ledname}
+                            {bank?.partyName?.length > 35
+                              ? bank?.partyName?.substring(0, 35) + "..."
+                              : bank?.partyName}
                           </span>
                         </div>
                       </SelectItem>
