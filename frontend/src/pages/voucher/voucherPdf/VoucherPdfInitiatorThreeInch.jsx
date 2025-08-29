@@ -92,12 +92,13 @@ const handlePrint = useReactToPrint({
   pageStyle: `
     @page { 
       size: 80mm auto; 
-      margin: 0; 
+      margin: 0mm;
     }
     @media print {
       body { 
-        -webkit-print-color-adjust: exact; 
+        margin: 0;
         font-family: monospace !important;
+        -webkit-print-color-adjust: exact;
       }
     }
   `,
@@ -105,7 +106,6 @@ const handlePrint = useReactToPrint({
   onAfterPrint: () => console.log("after printing..."),
   removeAfterPrint: true,
 });
-
   return (
     <div>
       {/* <TitleDiv title="Voucher" loading={loading} /> */}
