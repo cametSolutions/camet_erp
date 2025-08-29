@@ -87,12 +87,24 @@ function VoucherPdfInitiatorThreeInch() {
     }
   }, [voucherData]);
 
-  const handlePrint = useReactToPrint({
-    documentTitle: `Sale Order ${data?.salesNumber}`,
-    onBeforePrint: () => console.log("before printing..."),
-    onAfterPrint: () => console.log("after printing..."),
-    removeAfterPrint: true,
-  });
+const handlePrint = useReactToPrint({
+  documentTitle: `Sale Order ${data?.salesNumber}`,
+  pageStyle: `
+    @page { 
+      size: 80mm auto; 
+      margin: 0; 
+    }
+    @media print {
+      body { 
+        -webkit-print-color-adjust: exact; 
+        font-family: monospace !important;
+      }
+    }
+  `,
+  onBeforePrint: () => console.log("before printing..."),
+  onAfterPrint: () => console.log("after printing..."),
+  removeAfterPrint: true,
+});
 
   return (
     <div>
