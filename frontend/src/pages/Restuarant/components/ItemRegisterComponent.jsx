@@ -22,8 +22,7 @@ function ItemRegisterComponent({ pageName, optionsData, sendToParent, editData }
   const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
-    console.log(editData);
-    console.log("optionsData",optionsData);
+
     if (editData) {
       console.log(editData)
       setRoomData({
@@ -42,8 +41,8 @@ function ItemRegisterComponent({ pageName, optionsData, sendToParent, editData }
       setPriceLevelRows(updatedPriceLevel);
       
       // Set image preview for existing data
-      if (editData.imageUrl) {
-        setImagePreview(editData.imageUrl);
+      if (editData.product_image) {
+        setImagePreview(editData.product_image);
       }
     }
   }, [editData]);
@@ -207,6 +206,9 @@ function ItemRegisterComponent({ pageName, optionsData, sendToParent, editData }
     console.log("newPriceLevelRows", newPriceLevelRows);
     sendToParent(roomData, newPriceLevelRows);
   };
+
+  console.log("priceLevelRows", roomData)
+  console.log("ca",optionsData)
 
   return (
     <div className="flex-auto px-4 lg:px-10 py-10 pt-0">

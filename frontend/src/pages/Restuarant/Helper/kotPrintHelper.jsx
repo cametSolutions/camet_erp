@@ -390,6 +390,8 @@ export const printDirectHTML = (
   restaurantName = "ABC RESTAURANT",
   isKOT = true
 ) => {
+  let loggedUser = JSON.parse(localStorage.getItem("sUserData"));
+  console.log(loggedUser);
   if (!orderData) return;
 
   const orderDate = new Date(orderData.createdAt || new Date());
@@ -486,8 +488,16 @@ export const printDirectHTML = (
           <div>Date: ${formattedDate}</div>
         </div>
              <div class="order-info">
-          <div>Name: ${orderData?.customerName || "N/A"}</div>
+       ${
+         orderData?.customerName
+           ? `<div>Name: ${orderData.customerName}</div>`
+           : ""
+       }
           <div>Type: ${orderData?.type}</div>
+        </div>
+                     <div class="order-info">
+       ${loggedUser ? `<div>Name: ${loggedUser?.name}</div>` : ""}
+      
         </div>
         <div class="order-info">
           <div>Time: ${formattedTime}</div>
