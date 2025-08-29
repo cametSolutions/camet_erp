@@ -15,10 +15,11 @@ const restuarentSettings = () => {
   const { industry } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
+  console.log(industry)
   const settingsOptions = [
       (industry === 7 || industry === 6 && {
         title: " food Types",
-        description: "Create different region wise category",
+        description:  industry === 6 || industry === 7 ? "Create different region wise category":"Create different region wise category",
         icon: <IoFastFood />,
         to: "/sUsers/AddRestuarentCategory",
         active: true,

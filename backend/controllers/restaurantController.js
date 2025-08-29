@@ -528,18 +528,17 @@ export const updateKotStatus = async (req, res) => {
 export const getRoomDataForRestaurant = async (req, res) => {
   try {
     const now = new Date();
+    const today = new Date(now.toDateString()); // strip time part
 
     // Get all records for that cmp_id
     const allData = await CheckIn.find({ cmp_id: req.params.cmp_id });
 
-    // Filter in JS
+    // Filter in JS (only by dates, ignore time)
     const filtered = allData.filter((doc) => {
-      const arrivalDateTime = new Date(`${doc.arrivalDate} ${doc.arrivalTime}`);
-      const checkOutDateTime = new Date(
-        `${doc.checkOutDate} ${doc.checkOutTime}`
-      );
+      const arrivalDate = new Date(doc.arrivalDate);
+      const checkOutDate = new Date(doc.checkOutDate);
 
-      return arrivalDateTime <= now && now <= checkOutDateTime;
+      return arrivalDate <= today && today <= checkOutDate;
     });
 
     res.status(200).json({
@@ -554,6 +553,7 @@ export const getRoomDataForRestaurant = async (req, res) => {
     });
   }
 };
+
 
 // function used to update kot data
 
