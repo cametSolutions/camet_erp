@@ -1,13 +1,14 @@
 import mongoose from "mongoose";
 import Item from "../models/restaurantModels.js"; // Adjust path as needed
 import hsnModel from "../models/hsnModel.js";
-import product from "../models/productModel.js";
+import productModel from "../models/productModel.js";
 import { Category } from "../models/subDetails.js"; // Adjust path as needed
 import kotModal from "../models/kotModal.js";
 import { generateVoucherNumber } from "../helpers/voucherHelper.js";
 import salesModel from "../models/salesModel.js";
 import TallyData from "../models/TallyData.js";
 import Receipt from "../models/receiptModel.js";
+productModel;
 import bankModel from "../models/bankModel.js";
 import cashModel from "../models/cashModel.js";
 import Party from "../models/partyModel.js";
@@ -60,7 +61,7 @@ export const addItem = async (req, res) => {
     };
 
     // Step 4: Create Item document
-    const newItem = new product({
+    const newItem = new productModel({
       Primary_user_id: req.pUserId || req.owner,
       Secondary_user_id: req.sUserId,
       cmp_id: req.params.cmp_id,
@@ -138,7 +139,7 @@ export const getAllItems = async (req, res) => {
     const filter = buildDatabaseFilterForRoom(params); // build your filter based on request
 
     // Fetch all products matching the filter (NO pagination)
-    const products = await product.find(filter);
+    const products = await productModel.find(filter);
 
     // Optionally: return count too
     // const totalItems = await ProductModel.countDocuments(filter);
@@ -201,6 +202,8 @@ export const updateItem = async (req, res) => {
   try {
     const { formData, tableData } = req.body;
 
+    console.log("Form Data:", formData, tableData);
+
     session.startTransaction();
 
     // Verify HSN exists
@@ -213,26 +216,29 @@ export const updateItem = async (req, res) => {
     }
 
     // Update item
-    const updatedItem = await product.findOneAndUpdate(
-      { _id: req.params.id, cmp_id: req.params.cmp_id },
+    const updatedItem = await productModel.findByIdAndUpdate(
+      req.params.id,
       {
-        itemName: formData.itemName,
-        foodCategory: formData.foodCategory,
-        foodType: formData.foodType,
-        unit: formData.unit,
-        hsn_code: formData.hsn,
-        cgst: formData.cgst,
-        sgst: formData.sgst,
-        igst: formData.igst,
-        Priceleveles: tableData,
-        updatedAt: new Date(),
+        $set: {
+          product_image: formData.imageUrl?.secure_url,
+          product_name: formData.itemName,
+          category: formData.foodCategory,
+          sub_category: formData.foodType,
+          unit: formData.unit,
+          hsn_code: formData.hsn,
+          cgst: formData.cgst,
+          sgst: formData.sgst,
+          igst: formData.igst,
+          Priceleveles: tableData,
+        },
       },
       {
-        new: true,
+        // new: true,
         session,
-        runValidators: true,
+        // runValidators: true,
       }
     );
+    console.log(updatedItem);
 
     if (!updatedItem) {
       await session.abortTransaction();
@@ -268,7 +274,7 @@ export const deleteItem = async (req, res) => {
   try {
     const { itemId } = req.params.id;
 
-    const deletedItem = await product.findOneAndDelete(itemId);
+    const deletedItem = await productModel.findOneAndDelete(itemId);
     if (!deletedItem) {
       return res.status(404).json({
         success: false,

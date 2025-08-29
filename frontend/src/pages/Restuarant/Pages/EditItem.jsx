@@ -38,12 +38,13 @@ function EditItem() {
 
       const { brands, categories, subcategories, priceLevels } =
         subDetailsRes.data.data;
+        console.log(categories)
 
       setOptionsData((prev) => ({
         ...prev,
-        brand: brands,
-        category: categories,
-        subcategory: subcategories,
+        brand: brands.filter((item) => item.under == "restaurant"),
+        category: categories.filter((item) => item.under == "restaurant"),
+        subcategory: subcategories.filter((item) => item.under == "restaurant"),
         priceLevel: priceLevels,
         hsn: hsnRes.data.data,
       }));
@@ -58,8 +59,10 @@ function EditItem() {
   useEffect(() => {
     fetchAllData();
   }, [fetchAllData]);
+  console.log(editData)
 
   const handleSubmit = async (formData, tableData) => {
+    console.log(formData)
     try {
     let url 
     if(editData){
@@ -84,6 +87,8 @@ function EditItem() {
       toast.error(error.response?.data?.message || "Failed to add room");
     }
   };
+
+  
 
   return (
     <>

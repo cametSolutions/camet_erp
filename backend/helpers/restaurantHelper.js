@@ -15,7 +15,7 @@ export const buildDatabaseFilterForRoom = (params) => {
   // Add search functionality if search term is provided
   if (params.searchTerm) {
     filter.$or = [
-      { itemName: { $regex: params.searchTerm, $options: "i" } },
+      { product_name: { $regex: params.searchTerm, $options: "i" } },
     ];
   }
 

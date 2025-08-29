@@ -4,7 +4,7 @@ import { MdOutlineBedroomChild } from "react-icons/md";
 import { IoRestaurantOutline, IoPersonAddOutline } from "react-icons/io5";
 import { LuBedSingle } from "react-icons/lu";
 import { FiLayers } from "react-icons/fi";
-import { IoFastFood }from "react-icons/io5"
+import { IoFastFood } from "react-icons/io5";
 import { MdFoodBank } from "react-icons/md";
 import { FaFingerprint } from "react-icons/fa";
 import TitleDiv from "../../../../../components/common/TitleDiv";
@@ -16,48 +16,49 @@ const restuarentSettings = () => {
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
   const settingsOptions = [
-      (industry === 7 || industry === 6 && {
-        title: " food Types",
-        description: "Create different region wise category",
-        icon: <IoFastFood />,
-        to: "/sUsers/AddRestuarentCategory",
-        active: true,
-      }),
     {
       title:
         industry === 6 || industry === 7 ? "food Category" : "Group Management",
       description:
         industry === 6 || industry === 7
-          ? "Manage your food category effectively":
-         " Manage your food item effectively",
-      icon:<MdFoodBank />,
+          ? "Manage your food category effectively"
+          : " Manage your food item effectively",
+      icon: <MdFoodBank />,
       to: "/sUsers/AddSubRestuarentCategory",
       active: true,
     },
     {
-      title:
-        industry === 6 || industry === 7 ? "Item Add" : "Group Management",
+      title: industry === 6 || industry === 7 ? "Item Add" : "Group Management",
       description:
         industry === 6 || industry === 7
           ? "Manage your food name effectively"
           : "Manage your food item effectively",
-      icon:<MdFoodBank />,
+      icon: <MdFoodBank />,
       to: "/sUsers/itemList",
       active: true,
     },
-   {
+    {
       title:
         industry === 6 || industry === 7 ? "Table Master" : "Group Management",
       description:
         industry === 6 || industry === 7
           ? "Manage your Table Entrys here"
           : "Manage your Table Addition here",
-      icon:<MdFoodBank />,
+      icon: <MdFoodBank />,
       to: "/sUsers/TableMaster",
       active: true,
     },
-    
   ];
+
+  if (industry === 7 || industry === 6) {
+    settingsOptions.unshift({
+      title: " food Types",
+      description: "Create different region wise category",
+      icon: <IoFastFood />,
+      to: "/sUsers/AddRestuarentCategory",
+      active: true,
+    });
+  }
 
   return (
     <div className="bg-white">
