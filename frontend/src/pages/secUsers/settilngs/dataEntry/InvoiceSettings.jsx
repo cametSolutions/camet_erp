@@ -17,6 +17,8 @@ import { updateConfiguration } from "../../../../../slices/secSelectedOrgSlice";
 import { PiVan } from "react-icons/pi";
 import { FaRegAddressBook } from "react-icons/fa";
 import { GrDocumentWord } from "react-icons/gr";
+import { MdCallSplit } from "react-icons/md";
+
 
 const InvoiceSettings = () => {
   const [loading, setLoading] = useState(false);
@@ -83,9 +85,9 @@ const InvoiceSettings = () => {
             "Enable this option to include 'Ship to Bill' details on the invoice",
           icon: <FaRegAddressBook />,
           to: "/invoiceSettings/enableShipToBill",
-          toggleValue: enableShipTo || false,
+          toggleValue: enableShipTo["sale"] || false,
           dbField: "enableShipTo",
-          active: false,
+          active: true,
           toggle: true,
         },
 
@@ -99,6 +101,18 @@ const InvoiceSettings = () => {
           dbField: "enableNegativeStockBlockForVanInvoice",
           toggleValue:
             configurations[0]?.enableNegativeStockBlockForVanInvoice || false,
+        },
+        {
+          title: "Enable Receive Amount",
+          description:
+            "Enable it to allow receiving amounts against invoices as compulsory",
+          icon: <MdCallSplit />,
+          active: true,
+          modal: false,
+          toggle: true,
+          dbField: "enablePaymentSplittingAsCompulsory",
+          toggleValue:
+            configurations[0]?.enablePaymentSplittingAsCompulsory || false,
         },
 
         {
@@ -142,6 +156,12 @@ const InvoiceSettings = () => {
         url = "updateCommonToggleConfiguration";
         break;
       case "enableShipTo":
+        url = "/updateCommonToggleConfiguration";
+        break;
+      case "enableNegativeStockBlockForVanInvoice":
+        url = "/updateFirstLayerConfiguration";
+        break;
+      case "enablePaymentSplittingAsCompulsory":
         url = "/updateFirstLayerConfiguration";
         break;
 
@@ -160,7 +180,11 @@ const InvoiceSettings = () => {
 
     let body = {};
 
-    if (data?.title === "showDescription" || data?.title === "addRateWithTax") {
+    if (
+      data?.title === "showDescription" ||
+      data?.title === "addRateWithTax" ||
+      data?.title === "enableShipTo"
+    ) {
       body = {
         configField: data?.title,
         voucher: "sale",

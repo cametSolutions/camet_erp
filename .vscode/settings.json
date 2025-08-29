@@ -28,5 +28,8 @@
       ]
     }
   ],
-  "console-ninja.featureSet": "Community"
+  "console-ninja.featureSet": "Community",
+  "cSpell.words": [
+    "dont"
+  ]
 }

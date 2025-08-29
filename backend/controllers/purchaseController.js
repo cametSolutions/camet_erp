@@ -126,7 +126,8 @@ export const createPurchase = async (req, res) => {
       lastAmount,
       selectedDate,
       "purchase",
-      "Cr"
+      "Cr",
+      "Purchase"
     );
 
     await session.commitTransaction();

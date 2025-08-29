@@ -316,6 +316,7 @@ export const editVoucherSeriesById = async (req, res) => {
           "series.$.currentNumber": updatedSeries.currentNumber || 1,
           "series.$.widthOfNumericalPart":
             updatedSeries.widthOfNumericalPart || 1,
+          "series.$.under":updatedSeries.under
         },
       },
       { new: true }

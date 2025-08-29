@@ -10,9 +10,11 @@ function ItemRegistration() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [optionData, setOptionsData] = useState({});
+  
   const orgId = useSelector(
     (state) => state?.secSelectedOrganization?.secSelectedOrg?._id
   );
+
   // Fetch all required data
   const fetchAllData = useCallback(async () => {
     try {

@@ -100,6 +100,7 @@ export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
         .populate("agentId")
         .populate("selectedRooms.selectedPriceLevel")
         .populate('bookingId')
+        .populate("checkInId")
         .sort({ createdAt: -1 })
         .skip(limit > 0 ? skip : 0)
         .limit(limit > 0 ? limit : 0),

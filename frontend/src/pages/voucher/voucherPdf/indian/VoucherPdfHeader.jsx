@@ -11,6 +11,7 @@ function VoucherPdfHeader({
   voucherType,
   configVoucherType,
 }) {
+
   /// to get voucher number name
   const getVoucherNumber = () => {
     if (!voucherType) return "";

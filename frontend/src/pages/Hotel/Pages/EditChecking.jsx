@@ -7,13 +7,24 @@ import { useSelector } from "react-redux";
 import { toast } from "sonner";
 import api from "@/api/api";
 import { useLocation } from "react-router-dom";
+import useFetch from "@/customHook/useFetch";
 function EditChecking() {
   const isSubmittingRef = useRef(false);
   const location = useLocation();
   const editData = location?.state;
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [outStanding, setOutStanding] = useState([]);
+  const { data, loading: advanceLoading } = useFetch(
+    `/api/sUsers/getBookingAdvanceData/${editData?._id}?type=${"EditChecking"}`
+  );
 
+  useEffect(() => {
+    if (data) {
+      console.log(data?.data);
+      setOutStanding(data?.data);
+    }
+  }, [data]);
 
   useEffect(() => {
     if (editData) {
@@ -26,13 +37,11 @@ function EditChecking() {
     }
   }, [editData]);
 
-
   const handleSubmit = async (data) => {
-    console.log(data)
     try {
       let response = await api.put(
         `/api/sUsers/updateRoomBooking/${editData._id}`,
-        {data : data, modal:"checkIn"},
+        { data: data, modal: "checkIn" },
         { withCredentials: true }
       );
       if (response?.data?.success) {
@@ -68,6 +77,7 @@ function EditChecking() {
             editData={editData}
             isSubmittingRef={isSubmittingRef}
             isFor={"deliveryNote"}
+            outStanding={outStanding}
           />
         </div>
       )}

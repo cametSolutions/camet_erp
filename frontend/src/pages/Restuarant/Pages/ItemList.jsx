@@ -14,7 +14,7 @@ import { useSelector } from "react-redux";
 import SearchBar from "@/components/common/SearchBar";
 import TitleDiv from "@/components/common/TitleDiv";
 
-function itemList() {
+function ItemList() {
   const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [page, setPage] = useState(1);
@@ -322,4 +322,4 @@ function itemList() {
   );
 }
 
-export default itemList;
+export default ItemList;

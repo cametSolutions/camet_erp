@@ -44,7 +44,8 @@ function BookingPage() {
             dropdownContents={[
             {
              title: "New Guest",
-              to: "/sUsers/partyList",
+              to: "/sUsers/addParty",
+              from:"/sUsers/bookingPage"
             },
             {
               title: "Booking List",

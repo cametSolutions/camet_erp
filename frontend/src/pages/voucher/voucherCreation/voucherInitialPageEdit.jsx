@@ -26,12 +26,14 @@ import {
   addSelectedVoucherSeriesForEdit,
   addNote,
   addIsNoteOpen,
+  setPriceLevel,
+  updateTotalValue,
+  addPaymentSplits,
 } from "../../../../slices/voucherSlices/commonVoucherSlice";
 import DespatchDetails from "./DespatchDetails";
 import HeaderTile from "./HeaderTile";
 import AddPartyTile from "./AddPartyTile";
 import AddItemTile from "./AddItemTile";
-// import PaymentSplittingIcon from "../../components/secUsers/main/paymentSplitting/PaymentSplittingIcon";
 import FooterButton from "./FooterButton";
 import TitleDiv from "../../../components/common/TitleDiv";
 import AdditionalChargesTile from "./AdditionalChargesTile";
@@ -39,6 +41,7 @@ import { formatVoucherType } from "../../../../utils/formatVoucherType";
 import AddGodownTile from "./AddGodownTile";
 import AddNoteTile from "./AddNoteTile";
 import { useQueryClient } from "@tanstack/react-query";
+import ReceiveAmount from "./ReceiveAmount";
 
 function VoucherInitialPageEdit() {
   const dispatch = useDispatch();
@@ -54,9 +57,12 @@ function VoucherInitialPageEdit() {
       : false;
 
   // Redux selectors
-  const { _id: cmp_id } = useSelector(
+  const { _id: cmp_id, configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
+
+  const { enablePaymentSplittingAsCompulsory = false } = configurations[0];
+
   const {
     date,
     party,
@@ -74,6 +80,11 @@ function VoucherInitialPageEdit() {
     party: partyFromRedux,
     despatchDetails: despatchDetailsFromRedux,
     finalAmount: finalAmountFromRedux,
+    subTotal: subTotalFromRedux,
+    totalAdditionalCharges: totalAdditionalChargesFromRedux,
+    totalWithAdditionalCharges: totalWithAdditionalChargesFromRedux,
+    totalPaymentSplits: totalPaymentSplitsFromRedux,
+    finalOutstandingAmount: finalOutstandingAmountFromRedux,
     date: dateFromRedux,
     initialized: initializedFromRedux,
     stockTransferToGodown: stockTransferToGodownFromRedux,
@@ -82,6 +93,7 @@ function VoucherInitialPageEdit() {
     selectedVoucherSeries: selectedVoucherSeriesFromRedux,
     note: noteFromRedux,
     isNoteOpen: isNoteOpenFromRedux,
+    paymentSplittingData: paymentSplittingDataFromRedux,
   } = useSelector((state) => state.commonVoucherSlice);
 
   // to find the current voucher
@@ -171,6 +183,10 @@ function VoucherInitialPageEdit() {
       _id: voucherIdFromState,
       stockTransferToGodown: stockTransferToGodownFromState = {},
       note: noteFromState,
+      selectedPriceLevel: selectedPriceLevelFromState,
+      subTotal: subTotalFromState,
+
+      paymentSplittingData: paymentSplittingDataFromState = [],
     } = location.state.data || {};
 
     try {
@@ -297,6 +313,11 @@ function VoucherInitialPageEdit() {
         dispatch(addNote(noteFromState));
       }
 
+      //// price level
+      if (selectedPriceLevelFromState && priceLevelFromRedux === "") {
+        dispatch(setPriceLevel(selectedPriceLevelFromState));
+      }
+
       // Configuration Number
       if (voucherSeriesFromRedux === null && voucherTypeFromRedux) {
         setIsLoading(true);
@@ -313,6 +334,28 @@ function VoucherInitialPageEdit() {
         if (isMounted.current) {
           setVoucherNumber(voucherNumberFromRedux);
         }
+      }
+
+      //// update payment splits
+
+      const totalPaymentSplitsFromState = paymentSplittingDataFromState.reduce(
+        (acc, item) => acc + (item.amount || 0),
+        0
+      );
+
+      const data = {
+        changeFinalAmount: true,
+        paymentSplits: paymentSplittingDataFromState,
+        totalPaymentSplits: totalPaymentSplitsFromState,
+      };
+
+      if (paymentSplittingDataFromState && initializedFromRedux === false) {
+        dispatch(addPaymentSplits(data));
+      }
+
+      //// update total fields from state if available
+      if (subTotalFromState && initializedFromRedux === false) {
+        dispatch(updateTotalValue({ field: "subTotal", value: subTotal }));
       }
 
       if (!initializedFromRedux) {
@@ -339,6 +382,10 @@ function VoucherInitialPageEdit() {
       isMounted.current = false;
     };
   }, []);
+
+  useEffect(() => {
+    dispatch(updateTotalValue({ field: "subTotal", value: subTotal }));
+  }, [subTotal]);
 
   // Navigation and form handlers
   const handleAddItem = () => {
@@ -427,6 +474,18 @@ function VoucherInitialPageEdit() {
           [voucherNumberTitle]: voucherNumber,
           orgId: cmp_id,
           finalAmount: Number(totalAmount.toFixed(2)),
+          finalOutstandingAmount: Number(
+            finalOutstandingAmountFromRedux.toFixed(2)
+          ),
+          subTotal: Number(subTotalFromRedux.toFixed(2)),
+          totalAdditionalCharges: Number(
+            totalAdditionalChargesFromRedux.toFixed(2)
+          ),
+          totalWithAdditionalCharges: Number(
+            totalWithAdditionalChargesFromRedux.toFixed(2)
+          ),
+          totalPaymentSplits: Number(totalPaymentSplitsFromRedux.toFixed(2)),
+
           party,
           items,
           despatchDetails,
@@ -436,6 +495,7 @@ function VoucherInitialPageEdit() {
           selectedGodownDetails: vanSaleGodownFromRedux,
           series_id: selectedVoucherSeriesFromRedux?._id,
           usedSeriesNumber: selectedVoucherSeriesFromRedux?.currentNumber,
+          paymentSplittingData: paymentSplittingDataFromRedux,
         };
       }
 
@@ -498,6 +558,9 @@ function VoucherInitialPageEdit() {
             selectedVoucherSeriesFromRedux={
               selectedVoucherSeriesFromRedux || {}
             }
+            enablePaymentSplittingAsCompulsory={
+              enablePaymentSplittingAsCompulsory
+            }
           />
           {/* adding party */}
 
@@ -544,6 +607,12 @@ function VoucherInitialPageEdit() {
             openAdditionalTile={openAdditionalTile}
           />
 
+          {/* <ReceiveAmount /> */}
+
+          {totalAmount > 0 && !enablePaymentSplittingAsCompulsory && (
+            <ReceiveAmount />
+          )}
+
           <AddNoteTile
             noteFromRedux={noteFromRedux}
             isNoteOpenFromRedux={isNoteOpenFromRedux}
@@ -560,14 +629,6 @@ function VoucherInitialPageEdit() {
               <p className="text-[9px] text-gray-400">(rounded)</p>
             </div>
           </div>
-
-          {/* {items.length > 0 && totalAmount > 0 && (
-            <PaymentSplittingIcon
-              totalAmount={totalAmount}
-              party={party}
-              voucherType="sale"
-            />
-          )} */}
 
           <FooterButton
             submitHandler={submitHandler}

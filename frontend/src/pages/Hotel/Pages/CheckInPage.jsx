@@ -12,10 +12,22 @@ function CheckInPage() {
   const location = useLocation();
   const bookingData = location?.state?.bookingData;
   const isSubmittingRef = useRef(false);
+  const [outStanding, setOutStanding] = useState([]);
   const [loading, setLoading] = useState(false);
   const organization = useSelector(
     (state) => state?.secSelectedOrganization?.secSelectedOrg
   );
+
+    const { data, loading: advanceLoading } = useFetch(
+    `/api/sUsers/getBookingAdvanceData/${bookingData?._id}?type=${"checkIn"}`
+  );
+
+  useEffect(() => {
+    if (data) {
+
+      setOutStanding(data?.data);
+    }
+  }, [data]);
   useEffect(() => {
     if (bookingData) {
       bookingData.previousAdvance = Number(bookingData?.advanceAmount || 0);
@@ -23,7 +35,7 @@ function CheckInPage() {
       bookingData.advanceAmount = 0;
     }
   }, [bookingData]);
-
+console.log(bookingData);
   const handleSubmit = async (data) => {
     let updatedData;
     if (bookingData) {
@@ -65,6 +77,7 @@ function CheckInPage() {
               {
                 title: "New Guest",
                 to: "/sUsers/partyList",
+                from: "/sUsers/checkInPage",
               },
               {
                 title: "Check In List",
@@ -78,6 +91,7 @@ function CheckInPage() {
             isSubmittingRef={isSubmittingRef}
             isFor="deliveryNote"
             editData={bookingData}
+            outStanding={outStanding}
           />
         </div>
       )}

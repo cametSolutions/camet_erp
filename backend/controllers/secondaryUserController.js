@@ -363,12 +363,12 @@ export const cancelTransaction = async (req, res) => {
 export const fetchBanks = async (req, res) => {
   const cmp_id = req.params.cmp_id;
   try {
-    const bankData = await BankDetails.aggregate([
-      { $match: { cmp_id: new mongoose.Types.ObjectId(cmp_id) } },
+    const bankData = await partyModel.aggregate([
+      { $match: { cmp_id: new mongoose.Types.ObjectId(cmp_id), partyType: "bank"} },
       {
         $project: {
           bank_name: 1,
-          bank_ledname: 1,
+          partyName: 1,
           ifsc: 1,
           upi_id: 1,
           ac_no: 1,
@@ -1375,7 +1375,7 @@ export const getAllSubDetailsBasedUnder = async (req, res) => {
       await Promise.all([
         Brand.find({ cmp_id, Primary_user_id }).select("_id brand"),
         Category.find({ cmp_id, Primary_user_id,under:under }).select("_id category"),
-        Subcategory.find({ cmp_id, Primary_user_id ,under:under }).select("_id subcategory"),
+        Subcategory.find({ cmp_id, Primary_user_id ,under:under }).select("_id subcategory category_id"),
         Godown.find({ cmp_id, Primary_user_id,under:under }).select(
           "_id godown defaultGodown"
         ),
@@ -1388,6 +1388,7 @@ export const getAllSubDetailsBasedUnder = async (req, res) => {
       subcategories: subcategories.map((s) => ({
         _id: s._id,
         name: s.subcategory,
+         category:s.category_id,
       })),
       godowns: godowns.map((g) => ({
         _id: g._id,
@@ -1646,29 +1647,66 @@ export const getBankAndCashSources = async (req, res) => {
 
   try {
     // Run both queries in parallel with filters for non-null and non-"null" fields
-    const [banks, cashs] = await Promise.all([
-      bankModel
-        .find({
-          cmp_id,
-          bank_ledname: { $nin: [null, "null"] },
-          bank_id: { $exists: true },
-          // bank_name: { $nin: [null, "null"] },
-        })
-        .select({ bank_ledname: 1, bank_id: 1, bank_name: 1 }),
+    // const [banks, cashs] = await Promise.all([
+    //   bankModel
+    //     .find({
+    //       cmp_id,
+    //       bank_ledname: { $nin: [null, "null"] },
+    //       bank_id: { $exists: true },
+    //       // bank_name: { $nin: [null, "null"] },
+    //     })
+    //     .select({ bank_ledname: 1, bank_id: 1, bank_name: 1 }),
 
-      cashModel
-        .find({
-          cmp_id,
-          cash_ledname: { $nin: [null, "null"] },
-          cash_id: { $exists: true },
-        })
-        .select({ cash_ledname: 1, cash_id: 1 }),
+    //   cashModel
+    //     .find({
+    //       cmp_id,
+    //       cash_ledname: { $nin: [null, "null"] },
+    //       cash_id: { $exists: true },
+    //     })
+    //     .select({ cash_ledname: 1, cash_id: 1 }),
+    // ]);
+
+    const [banks, cashs] = await Promise.all([
+      // Get Bank accounts
+      partyModel.find({
+        cmp_id,
+        partyType: 'bank',
+        partyName: { $nin: [null, "null", ""] },
+        party_master_id: { $exists: true },
+      }).select({
+        partyName: 1,
+      }),
+
+      // Get Cash accounts
+      partyModel.find({
+        cmp_id,
+        partyType: 'cash',
+        partyName: { $nin: [null, "null", ""] },
+        party_master_id: { $exists: true },
+      }).select({
+        partyName: 1
+      })
     ]);
+
+
+      // Transform data to match expected format
+    const transformedBanks = banks.map(bank => ({
+      _id: bank._id,
+      bank_ledname: bank.partyName,
+    }));
+
+    const transformedCashs = cashs.map(cash => ({
+      _id: cash._id,
+      cash_ledname: cash.partyName,
+    }));
 
     // Return fetched data with a consistent structure
     res.status(200).json({
       message: "Bank and Cash fetched",
-      data: { banks, cashs },
+     data: { 
+        banks: transformedBanks, 
+        cashs: transformedCashs 
+      },
     });
   } catch (error) {
     console.log("Error in getting bank and cash sources:", error);

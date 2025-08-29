@@ -101,6 +101,7 @@ export const PartyList = async (req, res) => {
               $project: {
                 _id: 1,
                 partyName: 1,
+                partyType: 1 , 
                 party_master_id: 1,
                 billingAddress: 1,
                 shippingAddress: 1,

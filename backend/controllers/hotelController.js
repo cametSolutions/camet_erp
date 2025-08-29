@@ -608,18 +608,107 @@ export const addRoom = async (req, res) => {
 export const getRooms = async (req, res) => {
   try {
     const params = extractRequestParams(req);
+    console.log("Rooms params:", params);
     const filter = buildDatabaseFilterForRoom(params);
 
+    // Get current date and time
+    const now = new Date();
+
+    // Get all rooms based on basic filters
     const { rooms, totalRooms } = await fetchRoomsFromDatabase(filter, params);
 
+    // Only care about checkOutDate in further logic
+    // Extract checkout only from params if given, else use today
+    let { checkOutDate } = params;
+    let endDate;
+    if (checkOutDate) {
+      endDate = checkOutDate;
+    } else {
+      endDate = new Date();
+      endDate.setHours(23, 59, 59, 999);
+    }
+
+    const startDate = new Date(); // startDate is required for check date, but not for overlap logic
+
+    console.log("Checking availability for date (checkOutDate logic only):", { endDate });
+    console.log("companyId", req.params.cmp_id);
+
+    // Find rooms that are currently booked for the specified checkout date (ignore arrivalDate)
+    const overlappingBookings = await Booking.find({
+      cmp_id: req.params.cmp_id,
+      checkOutDate: { $gt: startDate }, // Only consider checkOutDate
+      status: { $nin: ['CheckIn'] }
+    });
+
+    console.log("Overlapping bookings found:", overlappingBookings.length);
+
+    // Find rooms that are currently checked-in for the specified checkout date
+    const overlappingCheckIns = await CheckIn.find({
+      cmp_id: req.params.cmp_id,
+      checkOutDate: { $gt: startDate },
+    }).select('roomDetails');
+
+    console.log("Overlapping check-ins found:", overlappingCheckIns.length);
+
+    // Collect all occupied room IDs
+    const occupiedRoomId = new Set();
+
+    // Add booked room IDs
+    overlappingBookings.forEach(booking => {
+      if (booking.selectedRooms && Array.isArray(booking.selectedRooms)) {
+        booking.selectedRooms.forEach(room => {
+          const roomId = room.roomId || room._id || room;
+          if (roomId) {
+            occupiedRoomId.add(roomId.toString());
+          }
+        });
+      }
+    });
+
+    // Add checked-in room IDs
+    overlappingCheckIns.forEach(checkIn => {
+      if (checkIn.selectedRooms && Array.isArray(checkIn.selectedRooms)) {
+        checkIn.selectedRooms.forEach(room => {
+          const roomId = room.roomId || room._id || room;
+          if (roomId) {
+            occupiedRoomId.add(roomId.toString());
+          }
+        });
+      }
+    });
+
+    // Filter out occupied **and dirty/blocked** rooms
+    const vacantRooms = rooms.filter(room => {
+      const roomId = room._id.toString();
+      const isOccupied = occupiedRoomId.has(roomId);
+
+      // exclude rooms with status 'dirty' or 'blocked'
+      const isCleanAndOpen =
+        room.status !== 'dirty' &&
+        room.status !== 'blocked';
+
+      return !isOccupied && isCleanAndOpen;
+    });
+
+    // Add availability status
+    const roomsWithStatus = vacantRooms.map(room => ({
+      ...room.toObject(),
+      status: 'vacant',
+      checkedAt: now
+    }));
+
+    // Send response
     const sendRoomResponseData = sendRoomResponse(
       res,
-      rooms,
-      totalRooms,
+      roomsWithStatus,
+      vacantRooms.length,
       params
     );
+
+    return sendRoomResponseData;
+
   } catch (error) {
-    console.error("Error in getProducts:", error);
+    console.error("Error in getRooms:", error);
     return res.status(500).json({
       success: false,
       message: "Internal server error, try again!",
@@ -627,12 +716,13 @@ export const getRooms = async (req, res) => {
   }
 };
 
+
 // function used to get all rooms
 
 export const getAllRooms = async (req, res) => {
   try {
     const { cmp_id } = req.params;
-    const selectedDate= req.query.selectedData
+    const selectedDate = req.query.selectedData;
 
     // Validate company ID
     if (!cmp_id) {
@@ -651,7 +741,7 @@ export const getAllRooms = async (req, res) => {
     }
 
     // if(selectedDate){
-      
+
     // }
 
     // Fetch all rooms for the company
@@ -811,7 +901,7 @@ export const roomBooking = async (req, res) => {
       under = "CheckIn";
     } else {
       console.log("bookingData", bookingData);
-    if (bookingData?.checkInId) {
+      if (bookingData?.checkInId) {
         let updateBookingData = await CheckIn.findByIdAndUpdate(
           bookingData.checkInId,
           { status: "checkOut" },
@@ -1030,16 +1120,48 @@ export const fetchAdvanceDetails = async (req, res) => {
   try {
     const bookingId = req.params.id;
     const type = req.query?.type;
+    console.log("type", type);
+    console.log("bookingId", bookingId);
     let advanceDetails = null;
-    if(type == "CheckOut"){
-      let checkInData = await CheckIn.findOne({ _id: bookingId });
-      if(checkInData){
-      let bookingSideAdvanceDetails = await TallyData.find({ billId: checkInData.bookingId });
-      let checkInSideAdvanceDetails = await TallyData.find({ billId: bookingId });
-      advanceDetails = [...bookingSideAdvanceDetails, ...checkInSideAdvanceDetails];
-    }
-  }else{
-     advanceDetails = await TallyData.find({ billId: bookingId });
+    if (type == "EditCheckOut") {
+      let checkOutData = await CheckOut.findOne({ _id: bookingId });
+      if (checkOutData) {
+        let checkInData = await CheckIn.findOne({
+          _id: checkOutData.checkInId,
+        });
+        let bookingSideAdvanceDetails = await TallyData.find({
+          billId: checkInData.bookingId,
+        });
+        let checkInSideAdvanceDetails = await TallyData.find({
+          billId: checkInData._id,
+        });
+        let checkOutSideAdvanceDetails = await TallyData.find({
+          billId: checkOutData._id,
+        })
+        advanceDetails = [
+          ...bookingSideAdvanceDetails,
+          ...checkInSideAdvanceDetails,
+          ...checkOutSideAdvanceDetails,
+        ];
+      }
+    } else if (type == "EditChecking") {
+       let checkInData = await CheckIn.findOne({
+          _id: bookingId,
+        });
+        if(checkInData){
+          let bookingSideAdvanceDetails = await TallyData.find({
+            billId: checkInData.bookingId,
+          })
+          let checkInSideAdvanceDetails = await TallyData.find({
+            billId: checkInData._id,
+          })
+          advanceDetails = [
+            ...bookingSideAdvanceDetails,
+            ...checkInSideAdvanceDetails,
+          ];
+        }
+    } else {
+      advanceDetails = await TallyData.find({ billId: bookingId });
     }
     if (advanceDetails) {
       return res.status(200).json({
@@ -1053,11 +1175,184 @@ export const fetchAdvanceDetails = async (req, res) => {
         message: "Advance details not found",
       });
     }
-  
- } catch (error) {
+  } catch (error) {
     res.status(500).json({
       success: false,
       message: "Failed to fetch advance details",
+    });
+  }
+};
+
+
+// Backend API Controller - getRoomsWithDateStatus.js
+
+
+
+
+export const getAllRoomsWithStatusForDate = async (req, res) => {
+  const { cmp_id } = req.params;
+  const { selectedDate } = req.query; // expected format: "YYYY-MM-DD"
+
+  try {
+    // 1. Fetch all rooms for the company
+    const allRooms = await roomModal.find({ cmp_id })
+     .populate("cmp_id", "name") // Populate organization details
+      .populate("roomType") // Populate from brand collection
+      .populate("roomFloor") // Populate from subCategory collection
+      .populate("bedType") // Populate from category collection
+      .populate("priceLevel.priceLevel", "name") // Populate price level details
+      .sort({ roomName: 1 }) // Sort by room name (roomNumber doesn't exist in schema)
+      .lean();
+
+    // 2. Bookings: status NOT 'checkIn' AND date overlaps selectedDate
+    const bookings = await Booking.find({
+      cmp_id,
+      status: { $ne: "checkIn" }, // skip check-ins, only pre-arrival bookings
+      arrivalDate: { $lte: selectedDate },
+      checkOutDate: { $gte: selectedDate }
+    }).select("selectedRooms");
+
+    // 3. CheckIns: status NOT 'checkOut' AND date overlaps selectedDate
+    const checkins = await CheckIn.find({
+      cmp_id,
+      status: { $ne: "checkOut" }, // skip already checked out
+      arrivalDate: { $lte: selectedDate },
+      checkOutDate: { $gte: selectedDate }
+    }).select("selectedRooms");
+
+    // --- Collect booked room IDs
+    const bookedRoomIds = new Set();
+    for (const booking of bookings) {
+      for (const selRoom of booking.selectedRooms) {
+        if (selRoom.roomId) {
+          bookedRoomIds.add(selRoom.roomId.toString());
+        }
+      }
+    }
+
+    // --- Collect occupied room IDs
+    const occupiedRoomIds = new Set();
+    for (const checkin of checkins) {
+      for (const selRoom of checkin.selectedRooms) {
+        if (selRoom.roomId) {
+          occupiedRoomIds.add(selRoom.roomId.toString());
+        }
+      }
+    }
+
+    // --- Mark each room's status
+    const roomsWithStatus = allRooms.map((room) => {
+      let status = room?.status;
+      if (occupiedRoomIds.has(room._id.toString())) {
+        status = "occupied";
+      } else if (bookedRoomIds.has(room._id.toString())) {
+        status = "booked";
+      }
+      return { ...room, status };
+    });
+
+    return res.json({ success: true, rooms: roomsWithStatus });
+
+  } catch (error) {
+    console.error("Error getting rooms with status:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch rooms",
+      error: error.message,
+    });
+  }
+};
+
+
+
+// Update room status
+export const updateRoomStatus = async (req, res) => {
+  try {
+    const { id } = req.params; // Get room ID from URL
+    const { status } = req.body; // Get status from request body
+
+    console.log("Updating room status:", { id, status }); // Debug log
+
+    // Validate room ID
+    if (!id) {
+      return res.status(400).json({ message: "Room ID is required" });
+    }
+
+    // Validate status
+    const validStatuses = ["vacant", "booked", "occupied", "dirty", "blocked"];
+    if (!status || !validStatuses.includes(status)) {
+      return res.status(400).json({ 
+        message: "Invalid or missing status", 
+        validStatuses 
+      });
+    }
+
+    // Find room by ID and update
+    const updatedRoom = await roomModal.findByIdAndUpdate(
+      id,
+      { status },
+      { new: true, runValidators: true }
+    )
+    .populate("roomType")
+    .populate("bedType")
+    .populate("roomFloor");
+
+    console.log("Room found and updated:", updatedRoom); // Debug log
+
+    if (!updatedRoom) {
+      return res.status(404).json({ message: "Room not found" });
+    }
+
+    res.json({
+      message: "Room status updated successfully",
+      room: updatedRoom
+    });
+    
+  } catch (error) {
+    console.error("Error updating room status:", error);
+    res.status(500).json({ 
+      message: "Server error", 
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+};
+// function used  to fetch date based booking details and checking details
+export const getDateBasedRoomsWithStatus = async (req, res) => {
+  const { cmp_id } = req.params;
+  const { selectedDate } = req.query;
+
+  try {
+    // 1. Fetch pre-arrival bookings (status not 'checkIn')
+    const bookings = await Booking.find({
+      cmp_id,
+      status: { $ne: "checkIn" },
+      arrivalDate: { $lte: selectedDate },
+      checkOutDate: { $gte: selectedDate },
+    });
+
+    // 2. Fetch check-ins (status not 'checkOut')
+    const checkins = await CheckIn.find({
+      cmp_id,
+      status: { $ne: "checkOut" },
+      arrivalDate: { $lte: selectedDate },
+      checkOutDate: { $gte: selectedDate },
+    });
+
+    // ✅ Send response
+    return res.status(200).json({
+      success: true,
+      bookings,
+      checkins,
+    });
+
+  } catch (error) {
+    console.error("Error getting bookings:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch bookings",
+      error: error.message,
     });
   }
 };

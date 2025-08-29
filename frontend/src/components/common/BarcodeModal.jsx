@@ -11,13 +11,6 @@ const BarcodeModal = ({ isOpen, onClose, product }) => {
   const [barcodeItemName, setBarcodeItemName] = useState("");
   const [barcodeList, setBarcodeList] = useState([]);
 
-
-  console.log(product);
-  
-  
-
-  
-
   const { _id: cmp_id, name: company_name } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
@@ -34,9 +27,15 @@ const BarcodeModal = ({ isOpen, onClose, product }) => {
     }
   }, [apiData]);
 
-  const handlePrint = () => {
+  useEffect(() => {
+    if (product) {
+      setMrp(product.item_mrp);
+      setBarcodeItemName(product.product_name);
+    }
+  }, [product]);
 
-    if(!selectedBarcode) {
+  const handlePrint = () => {
+    if (!selectedBarcode) {
       alert("Please select a Barcode");
     }
     if (selectedBarcode) {
@@ -47,7 +46,7 @@ const BarcodeModal = ({ isOpen, onClose, product }) => {
       const productName = product?.product_name;
       const companyName = company_name;
       const productCode = product?.product_code;
-      const productId=product?._id
+      const productId = product?._id;
 
       // Replace placeholders in format1 and format2 with actual values
       const format1WithValues = currentBarcode.format1
@@ -58,7 +57,6 @@ const BarcodeModal = ({ isOpen, onClose, product }) => {
         .replace(/\${mrp}/g, mrp)
         .replace(/\${splCode}/g, splCode)
         .replace(/\${barcodeItemName}/g, barcodeItemName);
-        
 
       // const format2WithValues = currentBarcode.format2
       //   .replace(/\${productName}/g, productName)
@@ -93,10 +91,8 @@ const BarcodeModal = ({ isOpen, onClose, product }) => {
       // Clean up the object URL
       URL.revokeObjectURL(url);
       onClose();
-      setMrp("");
       setSplCode("");
       setSelectedBarcode("");
-
     }
   };
 

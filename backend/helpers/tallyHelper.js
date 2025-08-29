@@ -7,13 +7,14 @@ import TransactionModel from "../models/TransactionModel.js";
 import vanSaleModel from "../models/vanSaleModel.js";
 import purchaseModel from "../models/purchaseModel.js";
 import VoucherSeriesModel from "../models/VoucherSeriesModel.js";
+import OrganizationModel from "../models/OragnizationModel.js";
 
 import mongoose from "mongoose";
 
 export const fetchData = async (type, cmp_id, serialNumber, res, userId) => {
   let model;
   let voucherType; // For series lookup
-  
+
   switch (type) {
     case "invoices":
       model = invoiceModel;
@@ -51,7 +52,6 @@ export const fetchData = async (type, cmp_id, serialNumber, res, userId) => {
       return res.status(400).json({ message: "Invalid type parameter" });
   }
 
-
   try {
     let query = {
       cmp_id: new mongoose.Types.ObjectId(cmp_id),
@@ -78,14 +78,15 @@ export const fetchData = async (type, cmp_id, serialNumber, res, userId) => {
     }
 
     // Extract unique series_ids from all documents
-    const seriesIds = [...new Set(
-      data
-        .filter(doc => doc.series_id)
-        .map(doc => doc.series_id.toString())
-    )];
+    const seriesIds = [
+      ...new Set(
+        data
+          .filter((doc) => doc.series_id)
+          .map((doc) => doc.series_id.toString())
+      ),
+    ];
 
     console.log("Series IDs:", seriesIds);
-    
 
     // Fetch all series documents in one query
     let seriesMap = new Map();
@@ -93,18 +94,20 @@ export const fetchData = async (type, cmp_id, serialNumber, res, userId) => {
       const seriesDocuments = await VoucherSeriesModel.find({
         cmp_id: new mongoose.Types.ObjectId(cmp_id),
         voucherType: voucherType, // Use voucherType instead of type
-        "series._id": { $in: seriesIds.map(id => new mongoose.Types.ObjectId(id)) }
+        "series._id": {
+          $in: seriesIds.map((id) => new mongoose.Types.ObjectId(id)),
+        },
       }).lean();
 
       // Create a map for O(1) lookup: series_id -> series details
-      seriesDocuments.forEach(seriesDoc => {
+      seriesDocuments.forEach((seriesDoc) => {
         if (seriesDoc.series && Array.isArray(seriesDoc.series)) {
-          seriesDoc.series.forEach(series => {
+          seriesDoc.series.forEach((series) => {
             // Store only required fields
             seriesMap.set(series._id.toString(), {
               seriesName: series.seriesName,
               prefix: series.prefix,
-              suffix: series.suffix
+              suffix: series.suffix,
             });
           });
         }
@@ -115,16 +118,16 @@ export const fetchData = async (type, cmp_id, serialNumber, res, userId) => {
 
     // For receipt and payment, return full data without processing
     if (type === "receipt" || type === "payment") {
-      const processedData = data.map(doc => {
+      const processedData = data.map((doc) => {
         const processedDoc = { ...doc };
         processedDoc.party.billData = doc.billData;
         delete processedDoc.billData;
-        
+
         // Attach series details if available
         if (doc.series_id && seriesMap.has(doc.series_id.toString())) {
           processedDoc.seriesDetails = seriesMap.get(doc.series_id.toString());
         }
-        
+
         return processedDoc;
       });
 
@@ -140,7 +143,9 @@ export const fetchData = async (type, cmp_id, serialNumber, res, userId) => {
 
       // Attach series details if available
       if (document.series_id && seriesMap.has(document.series_id.toString())) {
-        processedDocument.seriesDetails = seriesMap.get(document.series_id.toString());
+        processedDocument.seriesDetails = seriesMap.get(
+          document.series_id.toString()
+        );
       }
 
       // Skip processing if no items array
@@ -184,4 +189,27 @@ export const fetchData = async (type, cmp_id, serialNumber, res, userId) => {
       message: "Internal server error",
     });
   }
+};
+
+export const getApiLogs = async (cmp_id, dataName) => {
+  const company = await OrganizationModel.findById(cmp_id)
+    .lean()
+    .select("name");
+
+  const currentTime = new Date();
+  const standardTime = currentTime.toISOString();
+  const indianTime = currentTime.toLocaleString("en-IN", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+  console.log(
+    `${dataName} added By ${
+      company.name || "N/A"
+    }  (${cmp_id}) company at standard time ${standardTime} and indian time ${indianTime}`
+  );
 };

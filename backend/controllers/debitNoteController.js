@@ -116,7 +116,8 @@ export const createDebitNote = async (req, res) => {
       lastAmount, ///valueToUpdateInTally is also last amount
       selectedDate,
       voucherType,
-      "Dr"
+      "Dr",
+      "DebitNote"
     );
 
     await session.commitTransaction();

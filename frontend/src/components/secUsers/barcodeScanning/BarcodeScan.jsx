@@ -20,10 +20,15 @@ const BarcodeScan = ({ handleBarcodeScanProducts }) => {
   const [showScanner, setShowScanner] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const scannerRef = useRef(null);
+  const inputRef = useRef(null);
 
   // Get company ID from Redux or context
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
+  );
+
+  const { voucherType: voucherTypeFromRedux } = useSelector(
+    (state) => state.commonVoucherSlice
   );
   // Reference to track if the current search is from barcode
   const isBarcodeSearch = useRef(false);
@@ -32,11 +37,19 @@ const BarcodeScan = ({ handleBarcodeScanProducts }) => {
   useEffect(() => {
     const checkMobile = () => {
       const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-      const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+      const isMobileDevice =
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+          userAgent
+        );
       setIsMobile(isMobileDevice);
     };
-    
+
     checkMobile();
+  }, []);
+
+  useEffect(() => {
+    // Focus the input when component mounts
+    inputRef.current?.focus();
   }, []);
 
   // Debounced search for manual typing only
@@ -52,7 +65,10 @@ const BarcodeScan = ({ handleBarcodeScanProducts }) => {
 
       try {
         // Create the search params
-        const params = new URLSearchParams({ search: term }).toString();
+        const params = new URLSearchParams({
+          search: term,
+          voucherType: voucherTypeFromRedux,
+        }).toString();
 
         // Call the API with search parameter
         const res = await api.get(
@@ -95,7 +111,10 @@ const BarcodeScan = ({ handleBarcodeScanProducts }) => {
 
     try {
       // Create the search params with the barcode
-      const params = new URLSearchParams({ search: barcode }).toString();
+      const params = new URLSearchParams({
+        search: barcode,
+        voucherType: voucherTypeFromRedux,
+      }).toString();
 
       // Call the API with search parameter
       const res = await api.get(`/api/sUsers/getProducts/${cmp_id}?${params}`, {
@@ -114,7 +133,7 @@ const BarcodeScan = ({ handleBarcodeScanProducts }) => {
       setSearchLoading(false);
       setShowDropdown(false);
       setSearchTerm("");
-      
+
       // Close the scanner if it's open
       if (showScanner) {
         stopScanner();
@@ -166,25 +185,27 @@ const BarcodeScan = ({ handleBarcodeScanProducts }) => {
   const startScanner = () => {
     const html5QrCode = new Html5Qrcode("reader");
     scannerRef.current = html5QrCode;
-    
-    html5QrCode.start(
-      { facingMode: "environment" }, // Use the rear camera
-      {
-        fps: 10,
-        qrbox: { width: 250, height: 250 },
-      },
-      (decodedText) => {
-        // On successful scan
-        handleBarcodeSearch(decodedText);
-      },
-      (errorMessage) => {
-        // Ignore errors during scanning
-        console.log(errorMessage);
-      }
-    ).catch((err) => {
-      console.error("Failed to start scanner:", err);
-      setErrorMessage("Failed to access camera. Please check permissions.");
-    });
+
+    html5QrCode
+      .start(
+        { facingMode: "environment" }, // Use the rear camera
+        {
+          fps: 10,
+          qrbox: { width: 250, height: 250 },
+        },
+        (decodedText) => {
+          // On successful scan
+          handleBarcodeSearch(decodedText);
+        },
+        (errorMessage) => {
+          // Ignore errors during scanning
+          console.log(errorMessage);
+        }
+      )
+      .catch((err) => {
+        console.error("Failed to start scanner:", err);
+        setErrorMessage("Failed to access camera. Please check permissions.");
+      });
   };
 
   // Function to stop the scanner
@@ -252,6 +273,7 @@ const BarcodeScan = ({ handleBarcodeScanProducts }) => {
             type="text"
             value={searchTerm}
             onChange={handleInputChange}
+            ref={inputRef}
             className="no-focus-box outline-none border-none w-full pr-8"
             placeholder="Scan barcode or type product name or code..."
           />
@@ -290,7 +312,9 @@ const BarcodeScan = ({ handleBarcodeScanProducts }) => {
           <div className="fixed inset-0 bg-black bg-opacity-70 flex flex-col items-center justify-center z-50">
             <div className="bg-white p-4 rounded-lg w-full max-w-md">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold">Scan Barcode or QR Code</h3>
+                <h3 className="text-lg font-semibold">
+                  Scan Barcode or QR Code
+                </h3>
                 <button
                   onClick={stopScanner}
                   className="text-gray-500 hover:text-gray-700"

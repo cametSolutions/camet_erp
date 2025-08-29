@@ -18,8 +18,10 @@ function CheckOut() {
     (state) => state?.secSelectedOrganization?.secSelectedOrg
   );
 
+  console.log(bookingData?.checkInId)
+
   const { data, loading: advanceLoading } = useFetch(
-`/api/sUsers/getBookingAdvanceData/${bookingData?._id}?type=${"CheckOut"}`
+`/api/sUsers/getBookingAdvanceData/${bookingData?._id}?type=${"EditChecking"}`
 
   );
 
@@ -57,7 +59,7 @@ function CheckOut() {
         { withCredentials: true }
       );
       if (response?.data?.success) {
-        toast.success(response?.data?.message);
+        toast.success("Check Out Saved Successfully");
         navigate("/sUsers/hotelDashBoard");
       }
       isSubmittingRef.current = false;

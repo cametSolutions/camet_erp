@@ -1,159 +1,193 @@
+import { Route, Routes } from 'react-router-dom'
+import { lazy, Suspense } from 'react'
+const ProtectedSecRoute = lazy(() => import('./ProtectedSecRoute'))
+import SuspenseLoader from '@/components/common/SuspenseLoader'
+import { ErrorTestComponent } from '@/components/errorBoundaries/ErrorTestComponent'
 
-import {Route,Routes} from 'react-router-dom'
-import SecHome from '../pages/secUsers/SecHome'
-import Outstanding from '../pages/voucherReports/outstanding/Outstanding'
-import OutstandingDetails from '../pages/voucherReports/outstanding/OutstandingDetails'
-import PaymentSec from '../pages/secUsers/Payment'
-import ProtectedSecRoute from './ProtectedSecRoute'
-import Transaction from '../pages/voucherReports/DayBook/Transaction'
-import EditOrg from '../pages/masters/organization/EditOrg'
-import DashboardSec from '../pages/secUsers/dashboard/Dashboard'
-import Hsn from '../pages/masters/hsn/Hsn'
-import Demo from '../pages/secUsers/Demo'
-import RetailersList from '../pages/masters/secondaryUsers/RetailersList'
-import HsnList from '../pages/masters/hsn/HsnList'
-import EditHsn from '../pages/masters/hsn/EditHsn'
-import PartyListSecondary from '../pages/masters/party/PartyListSecondary'
-import AddPartySecondary from '../pages/masters/party/AddPartySecondary'
-import ProductListSecondary from '../pages/masters/product/ProductListSecondary'
-// import AddItemSecondary from '../pages/secUsers/AddItemSecondary'
-// import EditItemSecondary from '../pages/secUsers/EditItemSecondary'
-import EditPartySecondary from '../pages/masters/party/EditPartySecondary'
-import AddProductSecondary from '../pages/masters/product/AddProductSecondary'
-import EditProductSecondary from '../pages/masters/product/EditProductSecondary'
-import EditSecUsers from '../pages/masters/secondaryUsers/EditSecUsers'
-import AddChargesListSecondary from '../pages/secUsers/settilngs/serviceLedger/AddChargesListSecondary'
-import AdditionalChargesSecondary from '../pages/secUsers/settilngs/serviceLedger/AdditionalChargesSecondary'
-import OrderConfigurationsSecondary from '../pages/secUsers/OrderConfigurationsSecondary'
-// inventory 
-// import SalesSecondary from '../pages/secUsers/SalesSecondary'
-import SearchParty from '../pages/secUsers/SearchParty'
-// Error Page
-import ErrorPage from '../pages/errorPages/Notfound'
-import Notfound from '../pages/errorPages/Notfound'
-import ServerError from '../pages/errorPages/ServerError'
-// import EditSale from '../pages/secUsers/EditSale'
+// Lazy load all components
+const SecHome = lazy(() => import('../pages/secUsers/SecHome'))
+const Outstanding = lazy(() => import('../pages/voucherReports/outstanding/Outstanding'))
+const OutstandingDetails = lazy(() => import('../pages/voucherReports/outstanding/OutstandingDetails'))
+const PaymentSec = lazy(() => import('../pages/secUsers/Payment'))
+const Transaction = lazy(() => import('../pages/voucherReports/DayBook/Transaction'))
+const EditOrg = lazy(() => import('../pages/masters/organization/EditOrg'))
+const DashboardSec = lazy(() => import('../pages/secUsers/dashboard/Dashboard'))
+const Hsn = lazy(() => import('../pages/masters/hsn/Hsn'))
+const Demo = lazy(() => import('../pages/secUsers/Demo'))
+const RetailersList = lazy(() => import('../pages/masters/secondaryUsers/RetailersList'))
+const HsnList = lazy(() => import('../pages/masters/hsn/HsnList'))
+const EditHsn = lazy(() => import('../pages/masters/hsn/EditHsn'))
+const PartyListSecondary = lazy(() => import('../pages/masters/party/PartyListSecondary'))
+const AddPartySecondary = lazy(() => import('../pages/masters/party/AddPartySecondary'))
+const ProductListSecondary = lazy(() => import('../pages/masters/product/ProductListSecondary'))
+const EditPartySecondary = lazy(() => import('../pages/masters/party/EditPartySecondary'))
+const AddProductSecondary = lazy(() => import('../pages/masters/product/AddProductSecondary'))
+const EditProductSecondary = lazy(() => import('../pages/masters/product/EditProductSecondary'))
+const EditSecUsers = lazy(() => import('../pages/masters/secondaryUsers/EditSecUsers'))
+const AddChargesListSecondary = lazy(() => import('../pages/secUsers/settilngs/serviceLedger/AddChargesListSecondary'))
+const AdditionalChargesSecondary = lazy(() => import('../pages/secUsers/settilngs/serviceLedger/AdditionalChargesSecondary'))
+const OrderConfigurationsSecondary = lazy(() => import('../pages/secUsers/OrderConfigurationsSecondary'))
+const SearchParty = lazy(() => import('../pages/secUsers/SearchParty'))
+
+// Error Pages
+const ErrorPage = lazy(() => import('../pages/errorPages/Notfound'))
+const Notfound = lazy(() => import('../pages/errorPages/Notfound'))
+const ServerError = lazy(() => import('../pages/errorPages/ServerError'))
+
+// Product Sub Details
+const AddBrand = lazy(() => import('../pages/masters/product/productSubDetails/AddBrand'))
+const AddCategory = lazy(() => import('../pages/masters/product/productSubDetails/AddCategory'))
+const AddRestuarentCategory = lazy(() => import('@/pages/masters/product/productSubDetails/AddRestuarentCategory'))
+const AddSubCategory = lazy(() => import('../pages/masters/product/productSubDetails/AddSubCategory'))
+const AddGodown = lazy(() => import('../pages/masters/product/productSubDetails/AddGodown'))
+const AddPriceLevel = lazy(() => import('../pages/masters/product/productSubDetails/AddPriceLevel'))
+const SearchGodown = lazy(() => import('../pages/secUsers/SearchGodown'))
+const AddbatchInPurchase = lazy(() => import('../pages/secUsers/AddbatchInPurchase'))
+const ReceiptPrintOut = lazy(() => import('../pages/secUsers/ReceiptPrintOut'))
+const SelectVouchers = lazy(() => import('../pages/secUsers/SelectVouchers'))
+const PaymentPrintOut = lazy(() => import('../pages/secUsers/PaymentPrintOut'))
+const OutstandingListOfReceiptForEdit = lazy(() => import('../pages/secUsers/OutstandingListOfReceiptForEdit'))
+const OutstandingListOfPaymentForEdit = lazy(() => import('../pages/secUsers/OutstandingListOfPaymentForEdit'))
+
+// Reports
+const Reports = lazy(() => import('../pages/secUsers/Reports'))
+const PartyStatement = lazy(() => import('../pages/voucherReports/PartyStatement/PartyStatement'))
+const DateRange = lazy(() => import('../components/Filters/DateRange'))
+const VouchersList = lazy(() => import('../components/common/Reports/VouchersList'))
+const SalesSummary = lazy(() => import('../pages/secUsers/Reports/salesSummary/SalesSummary'))
+const SummaryReport = lazy(() => import('@/pages/secUsers/Reports/SummaryReport'))
+const PartyFilterList = lazy(() => import('../components/Filters/party/PartyFilterList'))
+const StatusFilterList = lazy(() => import('../components/Filters/status/StatusFilterList'))
+const OrderSummary = lazy(() => import('../pages/secUsers/Reports/orderSummary/OrderSummary'))
+
+// Cash/Bank Management
+const BalancePage = lazy(() => import('../pages/masters/cashOrBank/BalancePage'))
+const BalanceDetails = lazy(() => import('../pages/masters/cashOrBank/BalanceDetails'))
+const SourceList = lazy(() => import('../pages/secUsers/SourceList'))
+const SourceTransactions = lazy(() => import('../pages/masters/cashOrBank/SourceTransactions'))
+const AddCash = lazy(() => import('../pages/masters/cashOrBank/AddCash'))
+const BankingManagement = lazy(() => import('@/pages/masters/cashOrBank/BankingManagement'))
+
+// Settings
+const SettingsList = lazy(() => import('../pages/secUsers/settilngs/SettingsList'))
+const StockItem = lazy(() => import('../pages/secUsers/settilngs/stockItem/StockItem'))
+const PartySettings = lazy(() => import('../pages/secUsers/settilngs/PartySettings'))
+const DateEntrySettings = lazy(() => import('../pages/secUsers/settilngs/DateEntrySettings'))
+const OutstandingSettings = lazy(() => import('../pages/secUsers/settilngs/OutstandingSettings'))
+const StockItemSettings = lazy(() => import('../pages/secUsers/settilngs/stockItem/stockItemSettings/StockItemSettings'))
+const VoucherSettings = lazy(() => import('../pages/secUsers/settilngs/dataEntry/VoucherSettings'))
+const OrderSettings = lazy(() => import('../pages/secUsers/settilngs/dataEntry/OrderSettings'))
+const InvoiceSettings = lazy(() => import('../pages/secUsers/settilngs/dataEntry/InvoiceSettings'))
+const EmailSettings = lazy(() => import('../pages/secUsers/settilngs/dataEntry/voucherSettings/EmailSettings'))
+
+// Barcode
+const BarcodeList = lazy(() => import('../pages/secUsers/settilngs/stockItem/stockItemSettings/barcode/BarcodeList'))
+const BarcodeCreationDetails = lazy(() => import('../pages/secUsers/settilngs/stockItem/stockItemSettings/barcode/BarcodeCreationDetails'))
+const BarcodePrintOn = lazy(() => import('../pages/secUsers/settilngs/stockItem/stockItemSettings/barcode/BarcodePrintOn'))
+const BarcodePrintOff = lazy(() => import('../pages/secUsers/settilngs/stockItem/stockItemSettings/barcode/BarcodePrintOff'))
+const BarcodeFormat = lazy(() => import('../pages/secUsers/settilngs/stockItem/stockItemSettings/barcode/BarcodeFormat'))
+const BarcodeScan = lazy(() => import('../components/secUsers/barcodeScanning/BarcodeScan'))
+
+// Print Configuration
+const PrintConfiguration = lazy(() => import('../pages/secUsers/settilngs/PrintConfiguration/PrintConfiguration'))
+const SaleOrderPrintConfiguration = lazy(() => import('../pages/secUsers/settilngs/PrintConfiguration/SaleOrderPrintConfiguration'))
+const SalePrintConfiguration = lazy(() => import('../pages/secUsers/settilngs/PrintConfiguration/SalePrintConfiguration'))
+const LetterHeadUploadPage = lazy(() => import('@/pages/secUsers/settilngs/PrintConfiguration/LetterHeadUploadPage'))
+
+// Invoice and Order Common Settings
+const DespatchTitleSettings = lazy(() => import('../pages/secUsers/settilngs/dataEntry/invoiceAndOrderCommon/DespatchTitleSettings'))
+const TermsAndConditionSettings = lazy(() => import('../pages/secUsers/settilngs/dataEntry/invoiceAndOrderCommon/TermsAndConditionSettings'))
+
+// Orders and Sales
+const PendingOrders = lazy(() => import('../pages/secUsers/orderPendings/PendingOrders'))
+const SalesSummaryTable = lazy(() => import('../pages/secUsers/Reports/salesSummary/SalesSummaryTable'))
+const OutstandingSummary = lazy(() => import('../pages/secUsers/OutstandingSummary'))
+const SalesSummaryTransactions = lazy(() => import('@/pages/secUsers/Reports/salesSummary/SalesSummaryTransactions'))
+
+// Party and Organization Management
+const AddSubGroup = lazy(() => import('../pages/secUsers/settilngs/partySettings/AddSubGroup'))
+const AddOpening = lazy(() => import('@/pages/secUsers/openings/PartyOpening/AddOpening'))
+const AddOrganisation = lazy(() => import('../pages/masters/organization/AddOrganisation'))
+const OrganizationList = lazy(() => import('../pages/masters/organization/OrganisationList'))
+const AddSecUsers = lazy(() => import('../pages/masters/secondaryUsers/AddSecUsers'))
+
+// Voucher Management
+const VoucherAddCount = lazy(() => import('@/pages/voucher/voucherCreation/VoucherAddCount'))
+const VoucherInitialPage = lazy(() => import('@/pages/voucher/voucherCreation/voucherInitialPage'))
+const VoucherDetails = lazy(() => import('@/pages/voucher/voucherDetails/VoucherDetails'))
+const VoucherInitialPageEdit = lazy(() => import('@/pages/voucher/voucherCreation/voucherInitialPageEdit'))
+const BillToVoucher = lazy(() => import('@/pages/voucher/voucherCreation/BillToVoucher'))
+const EditItemVoucher = lazy(() => import('@/pages/voucher/voucherCreation/EditItemVoucher'))
+const PaymentSplitting = lazy(() => import('@/pages/voucher/voucherCreation/PaymentSplitting'))
+
+// Voucher PDF
+const VoucherPdfInitiator = lazy(() => import('@/pages/voucher/voucherPdf/VoucherPdfInitiator'))
+const VoucherPdfInitiatorThreeInch = lazy(() => import('@/pages/voucher/voucherPdf/VoucherPdfInitiatorThreeInch'))
+const WarrantyCard = lazy(() => import('@/pages/voucher/voucherPdf/warrantyCard/WarrantyCard'))
+
+// Accounting Voucher
+const AccVoucherInitialPage = lazy(() => import('@/pages/accountingVoucher/voucherCreation/AccVoucherInitialPage'))
+const OutstandingListOfAccVoucher = lazy(() => import('@/pages/accountingVoucher/voucherCreation/OutstandingListOfAccVoucher'))
+const AccVoucherDetails = lazy(() => import('@/pages/accountingVoucher/voucherDetails/AccVoucherDetails'))
+const AccVoucherInitialPageEdit = lazy(() => import('@/pages/accountingVoucher/voucherCreation/AccVoucherInitialPageEdit'))
+
+// Stock Register
+const StockRegister = lazy(() => import('@/pages/voucherReports/stockRegister/StockRegister'))
+const StockRegisterDetails = lazy(() => import('@/pages/voucherReports/stockRegister/StockRegisterDetails'))
+
+// Voucher Series Settings
+const VoucherSeriesSettings = lazy(() => import('@/pages/secUsers/settilngs/dataEntry/voucherSettings/VoucherSeriesSettings'))
+const VoucherSeriesForm = lazy(() => import('@/pages/secUsers/settilngs/dataEntry/voucherSettings/voucherSeries/VoucherSeriesForm'))
+const VoucherSeriesList = lazy(() => import('@/pages/secUsers/settilngs/dataEntry/voucherSettings/voucherSeries/VoucherSeriesList'))
+
+// Hotel Management
+const HotelDashboard = lazy(() => import('@/pages/Hotel/Pages/HotelDashboard'))
+const AddAdditionalPax = lazy(() => import('@/pages/Hotel/Pages/AddAdditionalPax'))
+const VisitOfPurpose = lazy(() => import('@/pages/Hotel/Pages/VisitOfPurpose'))
+const IdProof = lazy(() => import('@/pages/Hotel/Pages/IdProof'))
+const FoodPlan = lazy(() => import('@/pages/Hotel/Pages/FoodPlan'))
+const RoomRegistration = lazy(() => import('@/pages/Hotel/Pages/RoomRegistration'))
+const RoomList = lazy(() => import('@/pages/Hotel/Pages/RoomList'))
+const EditRoom = lazy(() => import('@/pages/Hotel/Pages/EditRoom'))
+const BookingPage = lazy(() => import('@/pages/Hotel/Pages/BookingPage'))
+const CheckInPage = lazy(() => import('@/pages/Hotel/Pages/CheckInPage'))
+const CheckOut = lazy(() => import('@/pages/Hotel/Pages/CheckOut'))
+const BookingList = lazy(() => import('@/pages/Hotel/List/BookingList'))
+const EditBooking = lazy(() => import('@/pages/Hotel/Pages/EditBooking'))
+const EditChecking = lazy(() => import('@/pages/Hotel/Pages/EditChecking'))
+
+// Warranty Card Settings
+const WarrantyCardList = lazy(() => import('@/pages/secUsers/settilngs/dataEntry/invoiceSettings/WarrantyCard/WarrantyCardList'))
+const AddWarrantyCard = lazy(() => import('@/pages/secUsers/settilngs/dataEntry/invoiceSettings/WarrantyCard/AddWarrantyCard'))
+const EditWarrantyCard = lazy(() => import('@/pages/secUsers/settilngs/dataEntry/invoiceSettings/WarrantyCard/EditWarrantyCard '))
+
+// Retailer Configuration
+const ConfigureRetailer = lazy(() => import('@/pages/masters/secondaryUsers/RetailerConfiguration/ConfigureRetailer'))
+const AllocateCompany = lazy(() => import('@/pages/masters/secondaryUsers/RetailerConfiguration/AllocateCompany'))
+const AllocatePriceLevel = lazy(() => import('@/pages/masters/secondaryUsers/RetailerConfiguration/AllocatePriceLevel'))
+const AllocateGodown = lazy(() => import('@/pages/masters/secondaryUsers/RetailerConfiguration/AllocateGodown'))
+const AllocationSeriesList = lazy(() => import('@/pages/masters/secondaryUsers/RetailerConfiguration/AllocationSeriesList'))
+const AllocateVoucherSeries = lazy(() => import('@/pages/masters/secondaryUsers/RetailerConfiguration/AllocateVoucherSeries'))
+const AllocateSubGroup = lazy(() => import('@/pages/masters/secondaryUsers/RetailerConfiguration/AllocateSubGroup'))
+
+// Restaurant Management
+const RestaurantDashboard = lazy(() => import('@/pages/Restuarant/Pages/RestaurantDashboard'))
+const KotPage = lazy(() => import('@/pages/Restuarant/Pages/KotPage'))
+const RestuarentSettings = lazy(() => import('@/pages/secUsers/settilngs/stockItem/stockItemSettings/RestuarentSettings'))
+const AddSubRestuarentCategory = lazy(() => import('@/pages/masters/product/productSubDetails/AddsubRestuarentCategory'))
 
 
-import AddBrand from '../pages/masters/product/productSubDetails/AddBrand'
-import AddCategory from '../pages/masters/product/productSubDetails/AddCategory'
-import AddRestuarentCategory from '@/pages/masters/product/productSubDetails/AddRestuarentCategory'
-import AddSubCategory from '../pages/masters/product/productSubDetails/AddSubCategory'
-import AddGodown from '../pages/masters/product/productSubDetails/AddGodown'
-import AddPriceLevel from '../pages/masters/product/productSubDetails/AddPriceLevel'
-// import EditVanSale from '../pages/secUsers/EditVanSale'
-import SearchGodown from '../pages/secUsers/SearchGodown'
-import AddbatchInPurchase from '../pages/secUsers/AddbatchInPurchase'
-import ReceiptPrintOut from '../pages/secUsers/ReceiptPrintOut'
-import SelectVouchers from '../pages/secUsers/SelectVouchers'
-// import Receipt from '../pages/secUsers/Receipt'
-// import AddItemCreditNote from '../pages/secUsers/AddItemCreditNote'
-// import EditItemCreditNote from '../pages/secUsers/EditItemCreditNote'
-// import AddItemDebitNote from '../pages/secUsers/AddItemDebitNote'
-// import EditItemDebitNote from '../pages/secUsers/EditItemDebitNote'
-import PaymentPrintOut from '../pages/secUsers/PaymentPrintOut'
-import OutstandingListOfReceiptForEdit from '../pages/secUsers/OutstandingListOfReceiptForEdit'
-import OutstandingListOfPaymentForEdit from '../pages/secUsers/OutstandingListOfPaymentForEdit'
-import Reports from '../pages/secUsers/Reports'
-import PartyStatement from '../pages/voucherReports/PartyStatement/PartyStatement'
-import DateRange from '../components/Filters/DateRange'
-import VouchersList from '../components/common/Reports/VouchersList'
-import SalesSummary from '../pages/secUsers/Reports/salesSummary/SalesSummary'
-import SummaryReport from '@/pages/secUsers/Reports/SummaryReport'
-import PartyFilterList from '../components/Filters/party/PartyFilterList'
-import StatusFilterList from '../components/Filters/status/StatusFilterList'
-import OrderSummary from '../pages/secUsers/Reports/orderSummary/OrderSummary'
-import PaymentSplitting from '../components/secUsers/main/paymentSplitting/PaymentSplitting'
-import BalancePage from '../pages/masters/cashOrBank/BalancePage'
-import BalanceDetails from '../pages/masters/cashOrBank/BalanceDetails'
-import SourceList from '../pages/secUsers/SourceList'
-import SourceTransactions from '../pages/masters/cashOrBank/SourceTransactions'
-import AddCash from '../pages/masters/cashOrBank/AddCash'
-import SettingsList from '../pages/secUsers/settilngs/SettingsList'
-import StockItem from '../pages/secUsers/settilngs/stockItem/StockItem'
-import PartySettings from '../pages/secUsers/settilngs/PartySettings'
-import DateEntrySettings from '../pages/secUsers/settilngs/DateEntrySettings'
-import OutstandingSettings from '../pages/secUsers/settilngs/OutstandingSettings'
-import StockItemSettings from '../pages/secUsers/settilngs/stockItem/stockItemSettings/StockItemSettings'
-import VoucherSettings from '../pages/secUsers/settilngs/dataEntry/VoucherSettings'
-import OrderSettings from '../pages/secUsers/settilngs/dataEntry/OrderSettings'
-import InvoiceSettings from '../pages/secUsers/settilngs/dataEntry/InvoiceSettings'
-import EmailSettings from '../pages/secUsers/settilngs/dataEntry/voucherSettings/EmailSettings'
-import BarcodeList from '../pages/secUsers/settilngs/stockItem/stockItemSettings/barcode/BarcodeList'
-import BarcodeCreationDetails from '../pages/secUsers/settilngs/stockItem/stockItemSettings/barcode/BarcodeCreationDetails'
-import BarcodePrintOn from '../pages/secUsers/settilngs/stockItem/stockItemSettings/barcode/BarcodePrintOn'
-import BarcodePrintOff from '../pages/secUsers/settilngs/stockItem/stockItemSettings/barcode/BarcodePrintOff'
-import BarcodeFormat from '../pages/secUsers/settilngs/stockItem/stockItemSettings/barcode/BarcodeFormat'
-import PrintConfiguration from '../pages/secUsers/settilngs/PrintConfiguration/PrintConfiguration'
-import SaleOrderPrintConfiguration from '../pages/secUsers/settilngs/PrintConfiguration/SaleOrderPrintConfiguration'
-import SalePrintConfiguration from '../pages/secUsers/settilngs/PrintConfiguration/SalePrintConfiguration'
-import DespatchTitleSettings from '../pages/secUsers/settilngs/dataEntry/invoiceAndOrderCommon/DespatchTitleSettings'
-import TermsAndConditionSettings from '../pages/secUsers/settilngs/dataEntry/invoiceAndOrderCommon/TermsAndConditionSettings'
-import BarcodeScan from '../components/secUsers/barcodeScanning/BarcodeScan'
-import PendingOrders from '../pages/secUsers/orderPendings/PendingOrders'
-import SalesSummaryTable from '../pages/secUsers/Reports/salesSummary/SalesSummaryTable'
-import OutstandingSummary from '../pages/secUsers/OutstandingSummary'
-import AddSubGroup from '../pages/secUsers/settilngs/partySettings/AddSubGroup'
-import AddOpening from '@/pages/secUsers/openings/PartyOpening/AddOpening'
-import SalesSummaryTransactions from '@/pages/secUsers/Reports/salesSummary/SalesSummaryTransactions'
-import VoucherAddCount from '@/pages/voucher/voucherCreation/VoucherAddCount'
-import AddOrganisation from '../pages/masters/organization/AddOrganisation'
-import OrganizationList from '../pages/masters/organization/OrganisationList'
-import AddSecUsers from '../pages/masters/secondaryUsers/AddSecUsers'
-import BankingManagement from '@/pages/masters/cashOrBank/BankingManagement'
-import VoucherInitalPage from '@/pages/voucher/voucherCreation/voucherInitialPage'
-import VoucherInitialPage from '@/pages/voucher/voucherCreation/voucherInitialPage'
-import VoucherDetails from '@/pages/voucher/voucherDetails/VoucherDetails'
-import VoucherInitialPageEdit from '@/pages/voucher/voucherCreation/voucherInitialPageEdit'
-import AccVoucherInitialPage from '@/pages/accountingVoucher/voucherCreation/AccVoucherInitialPage'
-import BillToVoucher from '@/pages/voucher/voucherCreation/BillToVoucher'
-import VoucherPdfInitiator from '@/pages/voucher/voucherPdf/VoucherPdfInitiator'
-import VoucherPdfInitiatorThreeInch from '@/pages/voucher/voucherPdf/VoucherPdfInitiatorThreeInch'
-import OutstandingListOfAccVoucher from '@/pages/accountingVoucher/voucherCreation/OutstandingListOfAccVoucher'
-import AccVoucherDetails from '@/pages/accountingVoucher/voucherDetails/AccVoucherDetails'
-import AccVoucherInitialPageEdit from '@/pages/accountingVoucher/voucherCreation/AccVoucherInitialPageEdit'
-import StockRegister from '@/pages/voucherReports/stockRegister/StockRegister'
-import StockRegisterDetails from '@/pages/voucherReports/stockRegister/StockRegisterDetails'
-import VoucherSeriesSettings from '@/pages/secUsers/settilngs/dataEntry/voucherSettings/VoucherSeriesSettings'
-import VoucherSeriesForm from '@/pages/secUsers/settilngs/dataEntry/voucherSettings/voucherSeries/VoucherSeriesForm'
-import VoucherSeriesList from '@/pages/secUsers/settilngs/dataEntry/voucherSettings/voucherSeries/VoucherSeriesList'
-import EditItemVoucher from '@/pages/voucher/voucherCreation/EditItemVoucher'
-import WarrantyCard from '@/pages/voucher/voucherPdf/warrantyCard/WarrantyCard'
-import HotelDashboard from '@/pages/Hotel/Pages/HotelDashboard'
-import AddAdditionalPax from '@/pages/Hotel/Pages/AddAdditionalPax' 
-import VisitOfPurpose from '@/pages/Hotel/Pages/VisitOfPurpose'
-import IdProof from '@/pages/Hotel/Pages/IdProof'
-import FoodPlan from '@/pages/Hotel/Pages/FoodPlan'
-import RoomRegistration from '@/pages/Hotel/Pages/RoomRegistration'
-import RoomList from '@/pages/Hotel/Pages/RoomList'
-import EditRoom from '@/pages/Hotel/Pages/EditRoom'
-import WarrantyCardList from '@/pages/secUsers/settilngs/dataEntry/invoiceSettings/WarrantyCard/WarrantyCardList'
-import AddWarrantyCard from '@/pages/secUsers/settilngs/dataEntry/invoiceSettings/WarrantyCard/AddWarrantyCard'
-import EditWarrantyCard from '@/pages/secUsers/settilngs/dataEntry/invoiceSettings/WarrantyCard/EditWarrantyCard '
-import ConfigureRetailer from '@/pages/masters/secondaryUsers/RetailerConfiguration/ConfigureRetailer'
-import AllocateCompany from '@/pages/masters/secondaryUsers/RetailerConfiguration/AllocateCompany'
-import AllocatePriceLevel from '@/pages/masters/secondaryUsers/RetailerConfiguration/AllocatePriceLevel'
-import AllocateGodown from '@/pages/masters/secondaryUsers/RetailerConfiguration/AllocateGodown'
-import AllocationSeriesList from '@/pages/masters/secondaryUsers/RetailerConfiguration/AllocationSeriesList'
-import AllocateVoucherSeries from '@/pages/masters/secondaryUsers/RetailerConfiguration/AllocateVoucherSeries'
-import AllocateSubGroup from '@/pages/masters/secondaryUsers/RetailerConfiguration/AllocateSubGroup'
-import RestuarentSettings from '@/pages/secUsers/settilngs/stockItem/stockItemSettings/RestuarentSettings'
-import BookingPage from '@/pages/Hotel/Pages/BookingPage'
-import CheckInPage from '@/pages/Hotel/Pages/CheckInPage'
-import CheckOut from '@/pages/Hotel/Pages/CheckOut' 
-import BookingList from '@/pages/Hotel/List/BookingList'
-// import CheckInList from '@/pages/Hotel/List/CheckIn'
-// import CheckOutList from '@/pages/Hotel/List/CheckOutList'
-import RestaurantDashboard from '@/pages/Restuarant/Pages/RestaurantDashboard'
-import LetterHeadUploadPage from '@/pages/secUsers/settilngs/PrintConfiguration/LetterHeadUploadPage'
-import KotPage from '@/pages/Restuarant/Pages/KotPage'
-import AddSubRestuarentCategory from '@/pages/masters/product/productSubDetails/AddsubRestuarentCategory'
-// import ItemRegistration from '@/pages/Restuarant/Pages/ItemRegistration'
-// import ItemList from '@/pages/Restuarant/Pages/ItemList'
-import EditBooking from '@/pages/Hotel/Pages/EditBooking'
-import EditChecking from '@/pages/Hotel/Pages/EditChecking'
+const EditCheckOut = lazy(() => import('@/pages/Hotel/Pages/EditCheckOut'))
+const ItemList = lazy(() => import('@/pages/Restuarant/Pages/ItemList'))
+const EditItem = lazy(() => import('@/pages/Restuarant/Pages/EditItem'))
+const ItemRegistration = lazy(() => import('@/pages/Restuarant/Pages/ItemRegistration'))
+const TableMaster = lazy(() => import('@/pages/Restuarant/Masters/TableMaster'))
+const TableSelection  = lazy(() => import('@/pages/Restuarant/Pages/TableSelection'))
+const CheckOutPrint   = lazy(() => import('@/pages/Hotel/Pages/CheckOutPrint'))
+
 const Routers = () => {
   return (
+    <Suspense fallback={<SuspenseLoader />}>
     <Routes>
       <Route path='*' element={<Notfound/>}></Route>
         <Route path='/sUsers/home' element={<ProtectedSecRoute><SecHome/></ProtectedSecRoute>}></Route>
@@ -164,7 +198,7 @@ const Routers = () => {
         <Route path='/sUsers/dashboard' element={<ProtectedSecRoute><DashboardSec/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/hotelDashBoard' element={<ProtectedSecRoute><HotelDashboard/></ProtectedSecRoute>}></Route>
          <Route path='/sUsers/RestaurantDashboard' element={<ProtectedSecRoute><RestaurantDashboard/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/invoice' element={<ProtectedSecRoute><VoucherInitalPage/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/invoice' element={<ProtectedSecRoute><VoucherInitialPage/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/searchPartysaleOrder' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/partyList' element={<ProtectedSecRoute><PartyListSecondary/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/addParty' element={<ProtectedSecRoute><AddPartySecondary/></ProtectedSecRoute>}></Route>
@@ -199,7 +233,7 @@ const Routers = () => {
         <Route path='/sUsers/shareSalesWarrantyCard/:id' element={<ProtectedSecRoute><WarrantyCard/></ProtectedSecRoute>}></Route> 
 
         <Route path='/sUsers/sales/paymentSplitting' element={<ProtectedSecRoute><PaymentSplitting/></ProtectedSecRoute>}></Route> 
-        <Route path='/sUsers/editSale/:id/paymentSplitting' element={<ProtectedSecRoute><PaymentSplitting/></ProtectedSecRoute>}></Route> 
+        {/* <Route path='/sUsers/editSale/:id/paymentSplitting' element={<ProtectedSecRoute><PaymentSplitting/></ProtectedSecRoute>}></Route>  */}
        
        
        {/* purchase */}
@@ -218,8 +252,8 @@ const Routers = () => {
         <Route path='/sUsers/editVanSale/:id' element={<ProtectedSecRoute><VoucherInitialPageEdit/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/billToSales/:id' element={<ProtectedSecRoute><BillToVoucher/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/billToSalesOrder/:id' element={<ProtectedSecRoute><BillToVoucher/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/vanSale' element={<ProtectedSecRoute><VoucherInitalPage/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/stockTransfer' element={<ProtectedSecRoute><VoucherInitalPage/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/vanSale' element={<ProtectedSecRoute><VoucherInitialPage/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/stockTransfer' element={<ProtectedSecRoute><VoucherInitialPage/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/searchGodown' element={<ProtectedSecRoute><SearchGodown/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/StockTransferDetails/:id' element={<ProtectedSecRoute><VoucherDetails/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editStockTransfer/:id' element={<ProtectedSecRoute><VoucherInitialPageEdit/></ProtectedSecRoute>}></Route>
@@ -254,7 +288,7 @@ const Routers = () => {
 
 {/* bank payment */}
          {/* creditNote */}
-        <Route path='/sUsers/creditNote' element={<ProtectedSecRoute><VoucherInitalPage/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/creditNote' element={<ProtectedSecRoute><VoucherInitialPage/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/searchPartyCreditNote' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/billToCreditNote/:id' element={<ProtectedSecRoute><BillToVoucher/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/creditNoteDetails/:id' element={<ProtectedSecRoute><VoucherDetails/></ProtectedSecRoute>}></Route>
@@ -262,7 +296,7 @@ const Routers = () => {
         <Route path='/sUsers/shareCreditNote/:id' element={<ProtectedSecRoute><VoucherPdfInitiator/></ProtectedSecRoute>}></Route> 
 
          {/* debitNote */}
-        <Route path='/sUsers/debitNote' element={<ProtectedSecRoute><VoucherInitalPage/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/debitNote' element={<ProtectedSecRoute><VoucherInitialPage/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/searchPartyDebitNote' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/billToDebitNote/:id' element={<ProtectedSecRoute><BillToVoucher/></ProtectedSecRoute>}></Route>
 
@@ -433,10 +467,19 @@ const Routers = () => {
         <Route path='/sUsers/CheckOutList' element={<ProtectedSecRoute><BookingList/></ProtectedSecRoute>}/>
         <Route path='/sUsers/EditBooking' element={<ProtectedSecRoute><EditBooking /></ProtectedSecRoute>} />
         <Route path='/sUsers/EditChecking' element={<ProtectedSecRoute><EditChecking /></ProtectedSecRoute>} />
+        <Route path='/sUsers/EditCheckOut' element={<ProtectedSecRoute><EditCheckOut /></ProtectedSecRoute>} />
+        <Route path='/sUsers/itemList'  element={<ProtectedSecRoute><ItemList /></ProtectedSecRoute>} />
+        <Route path='/sUsers/KotPage' element={<ProtectedSecRoute><KotPage/></ProtectedSecRoute>}/>
+        <Route path='/sUsers/editItem' element={<ProtectedSecRoute><EditItem /></ProtectedSecRoute>} />
 
-        <Route path='/KotPage' element={<KotPage/>}/>
+<Route path='/sUsers/itemRegistration' element ={<ProtectedSecRoute><ItemRegistration /></ProtectedSecRoute>} />
+<Route path='/sUsers/TableMaster' element={<ProtectedSecRoute><TableMaster /></ProtectedSecRoute>} />
+<Route path='/sUsers/TableSelection' element={<ProtectedSecRoute><TableSelection/></ProtectedSecRoute>}/>
+<Route path='/sUsers/CheckOutPrint' element={<ProtectedSecRoute><CheckOutPrint /></ProtectedSecRoute>} />
+<Route path='/sUsers/test-error-boundary' element={<ProtectedSecRoute><ErrorTestComponent /></ProtectedSecRoute>} />
 
     </Routes>
+    </Suspense>
   )
 }
 

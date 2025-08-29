@@ -8,7 +8,8 @@ const SeriesSchema = new mongoose.Schema({
   widthOfNumericalPart: { type: Number, required: true, min: 1 },
   isDefault: { type: Boolean, default: false },
   currentlySelected: { type: Boolean, default: false },
-  lastUsedNumber: { type: Number, default: 1, min: 1 }
+  lastUsedNumber: { type: Number, default: 1, min: 1 },
+  under: { type: String , trim: true},
 
 });
 
@@ -29,7 +30,8 @@ const VoucherSeriesSchema = new mongoose.Schema(
         "stockTransfer",
         "receipt",
         "payment",
-        "deliveryNote"
+        "deliveryNote",
+        "memoRandom"
       ],
     },
     series: [SeriesSchema],
