@@ -1041,10 +1041,7 @@ export const updateOutstandingBalance = async ({
       billId: existingVoucher?._id.toString(),
     }).session(session);
 
-    console.log(existingVoucher);
-    console.log(orgId);
 
-    console.log(`Matched outstanding record: ${matchedOutStanding}`);
 
     // Calculate sum of applied receipts
     const appliedReceipts = matchedOutStanding?.appliedReceipts || [];
@@ -1064,14 +1061,14 @@ export const updateOutstandingBalance = async ({
 
     // Check if we need to create advances
     const absoluteDifference = Math.abs(newBillBalance - sumOfAppliedReceipts);
-    const shouldCreateAdvances = newBillBalance < sumOfAppliedReceipts;
+    const shouldCreateAdvances = absoluteDifference > 0;
 
     console.log(`Should create advances: ${shouldCreateAdvances}`);
 
     // If newBillBalance < oldBillBalance AND condition is met => create advance receipts and payments
     if (newBillBalance < oldBillBalance && shouldCreateAdvances) {
       const appliedPayments = matchedOutStanding?.appliedPayments;
-      const totalAdvanceAmount = oldBillBalance - newBillBalance;
+      const totalAdvanceAmount = Math.abs(sumOfAppliedReceipts - newBillBalance);
 
       console.log(`Processing advances for amount: ${totalAdvanceAmount}`);
 
