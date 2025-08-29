@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import dayjs from "dayjs";
 import useFetch from "@/customHook/useFetch";
 import { useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
@@ -560,7 +561,7 @@ const OrdersDashboard = () => {
                 </select>
               </div>
             </div>
-            <div className="text-gray-600 text-sm">Wednesday, 12 July 2023</div>
+            <div className="text-gray-600 text-sm">{dayjs().format("dddd, D MMMM YYYY")}</div>
           </div>
 
           {/* Controls */}

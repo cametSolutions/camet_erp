@@ -1,12 +1,6 @@
 /* eslint-disable react/jsx-key */
-import { TbBrandGoogle, TbTags, TbListDetails } from "react-icons/tb";
-import { MdOutlineBedroomChild } from "react-icons/md";
-import { IoRestaurantOutline, IoPersonAddOutline } from "react-icons/io5";
-import { LuBedSingle } from "react-icons/lu";
-import { FiLayers } from "react-icons/fi";
 import { IoFastFood } from "react-icons/io5";
 import { MdFoodBank } from "react-icons/md";
-import { FaFingerprint } from "react-icons/fa";
 import TitleDiv from "../../../../../components/common/TitleDiv";
 import SettingsCard from "../../../../../components/common/SettingsCard";
 import { useSelector } from "react-redux";
@@ -15,6 +9,7 @@ const restuarentSettings = () => {
   const { industry } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
+  console.log(industry)
   const settingsOptions = [
     {
       title:
