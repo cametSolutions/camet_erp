@@ -126,7 +126,7 @@ export default function SattvaInvoice() {
       (total, order) => total + order?.foodPlanAmountWithOutTax,
       0
     );
-    
+
     const additionalPaxAmount = dateWiseDisplayedData.reduce(
       (total, order) => total + order?.additionalPaxDataWithOutTax,
       0
@@ -141,9 +141,15 @@ export default function SattvaInvoice() {
     const kotTotal =
       kotData?.reduce((total, kot) => total + kot?.total, 0) || 0;
 
-    const balanceAmount = (roomTariffTotal + planAmount + additionalPaxAmount) - advanceTotal;
+    const balanceAmount =
+      roomTariffTotal + planAmount + additionalPaxAmount - advanceTotal;
     const totalTaxAmount = (taxAmountForFood + taxAmountForRoom) * 2; // CGST + SGST
-    const balanceAmountToPay =  (roomTariffTotal + planAmount + additionalPaxAmount) + kotTotal - advanceTotal;
+    const balanceAmountToPay =
+      roomTariffTotal +
+      planAmount +
+      additionalPaxAmount +
+      kotTotal -
+      advanceTotal;
 
     return {
       roomTariffTotal,
@@ -228,14 +234,14 @@ export default function SattvaInvoice() {
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       {/* Print Button */}
-      <div className="no-print mb-4 w-full flex justify-end p-4">
+      {/* <div className="no-print mb-4 w-full flex justify-end p-4">
         <button
           onClick={handlePrint}
           className="bg-blue-500 hover:bg-blue-500 text-white px-3 py-2 rounded-lg font-medium"
         >
           🖨️ Print Invoice
         </button>
-      </div>
+      </div> */}
 
       <div className="max-w-4xl mx-auto bg-white border-2 border-black p-2 text-sm">
         {/* Header Section */}
@@ -747,20 +753,30 @@ export default function SattvaInvoice() {
         )}
         {isForPreview && (
           <div className="no-print w-full flex justify-end">
-            <button
-              onClick={() =>
-                navigate("/sUsers/checkInList", {
-                  state: {
-                    selectedCheckOut: selectedCheckOut,
-                    selectedCustomer: selectedCustomerData,
-                    balanceToPay: totals?.balanceAmountToPay,
-                  },
-                })
-              }
-              className="bg-black hover:bg-gray-800 text-white px-6 py-2 rounded-lg font-medium"
-            >
-              Confirm Payment
-            </button>
+            <div className="no-print mb-4  p-4">
+              <button
+                onClick={handlePrint}
+                className="bg-black text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-500"
+              >
+                🖨️ Print Invoice
+              </button>
+            </div>
+       <div className="no-print mb-4 p-4">
+              <button
+                onClick={() =>
+                  navigate("/sUsers/checkInList", {
+                    state: {
+                      selectedCheckOut: selectedCheckOut,
+                      selectedCustomer: selectedCustomerData,
+                      balanceToPay: totals?.balanceAmountToPay,
+                    },
+                  })
+                }
+                className="bg-black hover:bg-gray-800 text-white px-6 py-2 rounded-lg font-medium"
+              >
+                Confirm 
+              </button>
+            </div>
           </div>
         )}
       </div>

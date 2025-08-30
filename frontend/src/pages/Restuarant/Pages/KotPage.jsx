@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import dayjs from "dayjs";
 import useFetch from "@/customHook/useFetch";
 import { useSelector } from "react-redux";
@@ -20,10 +20,14 @@ import { motion } from "framer-motion";
 import { Check, CreditCard, X, Banknote } from "lucide-react";
 import { generateAndPrintKOT } from "@/pages/Restuarant/Helper/kotPrintHelper";
 import { useNavigate } from "react-router-dom";
-import VoucherPdf from "@/pages/voucher/voucherPdf/indian/VoucherPdf";
+// import VoucherPdf from "@/pages/voucher/voucherPdf/indian/VoucherPdf";
 import { toast } from "react-toastify";
 import { FaRegEdit } from "react-icons/fa";
+import VoucherThreeInchPdf from "@/pages/voucher/voucherPdf/threeInchPdf/VoucherThreeInchPdf";
+import { useReactToPrint } from "react-to-print";
+
 const OrdersDashboard = () => {
+  const contentToPrint = useRef(null);
   const [activeFilter, setActiveFilter] = useState("On Process");
   const [searchQuery, setSearchQuery] = useState("");
   const [userRole, setUserRole] = useState("reception");
@@ -48,10 +52,8 @@ const OrdersDashboard = () => {
   const [conformationModal, setConformationModal] = useState(false);
   const [isPostToRoom, setIsPostToRooms] = useState(false);
 
-
-
-   const location = useLocation();
-  const selectedKotFromRedirect  = location.state?.selectedKot;
+  const location = useLocation();
+  const selectedKotFromRedirect = location.state?.selectedKot;
   const fromTable = location.state?.fromTable ?? false;
   const [showKotNotification, setShowKotNotification] = useState(fromTable);
   // state used for showing pdf print
@@ -67,8 +69,6 @@ const OrdersDashboard = () => {
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
 
-
-  
   const { data, refreshHook } = useFetch(`/api/sUsers/getKotData/${cmp_id}`);
 
   useEffect(() => {
@@ -287,8 +287,8 @@ const OrdersDashboard = () => {
       tableNo: data?.tableNumber,
       items: data?.items,
       createdAt: data?.createdAt,
-      customerName:data?.customer?.name,
-      type:data?.type
+      customerName: data?.customer?.name,
+      type: data?.type,
     };
 
     generateAndPrintKOT(orderData, true, false, companyName);
@@ -342,47 +342,66 @@ const OrdersDashboard = () => {
 
   const filteredOrders = getFilteredOrders();
 
-  console.log(selectedDataForPayment)
+
 
   const handleSavePayment = async (id) => {
     setSaveLoader(true);
+
     let paymentDetails;
-    if (paymentMode == "single") {
-      if (paymentMethod == "cash") {
+    let selectedKotData
+     if (selectedDataForPayment.roomService && Object.keys(selectedDataForPayment.roomService).length > 0) {
+      if (paymentMode == "single") {
+        if (paymentMethod == "cash") {
+          paymentDetails = {
+            cashAmount: selectedDataForPayment?.total,
+            onlineAmount: onlineAmount,
+            selectedCash: selectedCash,
+            selectedBank: selectedBank,
+            paymentMode: paymentMode,
+          };
+          selectedKotData=selectedDataForPayment
+        } else {
+          paymentDetails = {
+            cashAmount: cashAmount,
+            onlineAmount: selectedDataForPayment?.total,
+            selectedCash: selectedCash,
+            selectedBank: selectedBank,
+            paymentMode: paymentMode,
+          };
+          selectedKotData=selectedDataForPayment
+        }
+      } else {
+        if (
+          Number(cashAmount) + Number(onlineAmount) !=
+          selectedDataForPayment?.total
+        ) {
+          setPaymentError(
+            "Cash and online amounts together equal the total amount."
+          );
+          return;
+        }
         paymentDetails = {
-          cashAmount: selectedDataForPayment?.total,
+          cashAmount: cashAmount,
           onlineAmount: onlineAmount,
           selectedCash: selectedCash,
           selectedBank: selectedBank,
           paymentMode: paymentMode,
         };
-      } else {
-        paymentDetails = {
-          cashAmount: cashAmount,
-          onlineAmount: selectedDataForPayment?.total,
-          selectedCash: selectedCash,
-          selectedBank: selectedBank,
-          paymentMode: paymentMode,
-        };
+        selectedKotData=selectedDataForPayment
       }
     } else {
-      if (
-        Number(cashAmount) + Number(onlineAmount) !=
-        selectedDataForPayment?.total
-      ) {
-        setPaymentError(
-          "Cash and online amounts together equal the total amount."
-        );
-        return;
-      }
       paymentDetails = {
-        cashAmount: cashAmount,
+        cashAmount: previewForSales?.total,
         onlineAmount: onlineAmount,
         selectedCash: selectedCash,
         selectedBank: selectedBank,
         paymentMode: paymentMode,
+        isPostToRoom: true,
       };
+      selectedKotData=previewForSales
     }
+
+    console.log(paymentDetails);
 
     try {
       const response = await api.put(
@@ -390,7 +409,7 @@ const OrdersDashboard = () => {
         {
           paymentMethod: paymentMethod,
           paymentDetails: paymentDetails,
-          selectedKotData: selectedDataForPayment,
+          selectedKotData: selectedKotData, 
           isPostToRoom: isPostToRoom,
         },
         { withCredentials: true }
@@ -427,7 +446,6 @@ const OrdersDashboard = () => {
   };
 
   const handlePrintData = async (kotId) => {
-    console.log(kotId);
     try {
       let saleData = await api.get(
         `/api/sUsers/getSalePrintData/${cmp_id}/${kotId}`,
@@ -442,21 +460,45 @@ const OrdersDashboard = () => {
   // function used to select multiple kot
   const handleSelectMultipleKots = (order) => {
     if (order && !order?.paymentCompleted) {
-      let findOne = selectedKot.find((item) => item.id == order._id);
-      console.log(order);
-      console.log(findOne);
+      const findOne = selectedKot.find((item) => item.id === order._id);
+      const firstSelected = selectedKot[0]; // take the first selection
+
+      if (firstSelected) {
+        if (firstSelected.type === "roomService") {
+          // ✅ only allow roomService with same roomId
+          if (
+            order.type !== "roomService" ||
+            firstSelected.roomId !== order?.roomId?._id
+          ) {
+            toast.error(
+              "You can only select room service KOTs from the same room"
+            );
+            return;
+          }
+        } else {
+          // ✅ if first is NOT roomService, then don't allow roomService mixing
+          if (order.type === "roomService") {
+            toast.error("You can't mix room service with other KOTs");
+            return;
+          }
+        }
+      }
+
       if (findOne) {
+        // remove if already selected
         setSelectedKot((prevSelected) =>
           prevSelected.filter((item) => item.id !== order._id)
         );
       } else {
+        // add new selection
         setSelectedKot((prevSelected) => [
           ...prevSelected,
           {
             id: order._id,
-            type: "kot",
+            type: order.type,
             voucherNumber: order.voucherNumber,
-            serviceWorker: order.type,
+            roomId: order?.roomId?._id, // keep roomId for validation
+            checkInNumber: order?.checkInNumber,
           },
         ]);
       }
@@ -464,6 +506,7 @@ const OrdersDashboard = () => {
   };
 
   const handleSalesPreview = (postToRoom) => {
+    console.log("working", postToRoom);
     setIsPostToRooms(postToRoom);
     let kotVoucherNumberArray = [];
     let itemList = selectedKot.flatMap((item) => {
@@ -472,6 +515,7 @@ const OrdersDashboard = () => {
         kotVoucherNumberArray.push({
           voucherNumber: findOne.voucherNumber,
           id: findOne._id,
+          checkInNumber: findOne?.checkInNumber,
         });
       }
       return findOne?.items || []; // return empty array if not found
@@ -500,7 +544,13 @@ const OrdersDashboard = () => {
   };
 
   const handleSaveSales = (status) => {
+
     setConformationModal(false);
+    if (isPostToRoom && status) {
+      handleSavePayment();
+      return;
+    }
+    
     if (!status) {
       setShowVoucherPdf(false);
       setPreviewForSales(null);
@@ -523,20 +573,31 @@ const OrdersDashboard = () => {
     navigate("/sUsers/RestaurantDashboard", { state: { kotData } });
   };
 
-  console.log(selectedKot);
+  const handlePrint = useReactToPrint({
+    content: () => contentToPrint.current,
+  });
+
   return (
     <>
-   
-
       {showVoucherPdf && (
         <div>
-          <VoucherPdf
+          {/* <VoucherPdf
             data={previewForSales}
             org={org}
             userType="secondaryUser"
             tab="sales"
             isPreview={true}
+
             sendToParent={handleSaveSales}
+          /> */}
+          <VoucherThreeInchPdf
+            contentToPrint={contentToPrint}
+            data={previewForSales}
+            org={org}
+            tab="sale"
+            isPreview={true}
+            sendToParent={handleSaveSales}
+            handlePrintData={handlePrint}
           />
         </div>
       )}
@@ -561,7 +622,9 @@ const OrdersDashboard = () => {
                 </select>
               </div>
             </div>
-            <div className="text-gray-600 text-sm">{dayjs().format("dddd, D MMMM YYYY")}</div>
+            <div className="text-gray-600 text-sm">
+              {dayjs().format("dddd, D MMMM YYYY")}
+            </div>
           </div>
 
           {/* Controls */}
@@ -582,17 +645,17 @@ const OrdersDashboard = () => {
               ))}
             </div>
 
-
- {showKotNotification && selectedKotFromRedirect && (
-  <div
-    className="fixed top-6 inset-x-0 flex justify-center z-50 cursor-pointer"
-    onClick={() => setShowKotNotification(false)}
-  >
-    <div className="bg-yellow-100 border border-yellow-400 px-6 py-2 rounded-lg shadow text-yellow-900 font-medium">
-      KOT #{selectedKotFromRedirect.voucherNumber} was selected from table. Click to close this notice.
-    </div>
-  </div>
-)}
+            {showKotNotification && selectedKotFromRedirect && (
+              <div
+                className="fixed top-6 inset-x-0 flex justify-center z-50 cursor-pointer"
+                onClick={() => setShowKotNotification(false)}
+              >
+                <div className="bg-yellow-100 border border-yellow-400 px-6 py-2 rounded-lg shadow text-yellow-900 font-medium">
+                  KOT #{selectedKotFromRedirect.voucherNumber} was selected from
+                  table. Click to close this notice.
+                </div>
+              </div>
+            )}
             <div className="flex items-center gap-2">
               <MenuIcon />
               <input
@@ -618,7 +681,6 @@ const OrdersDashboard = () => {
                 };
 
                 return (
-
                   <div
                     key={order.id}
                     className={`group relative bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border overflow-hidden h-96 flex flex-col cursor-pointer ${
@@ -626,11 +688,14 @@ const OrdersDashboard = () => {
                         ? "border-blue-500 ring-2 ring-blue-200 bg-blue-50"
                         : "border-gray-100 hover:border-blue-200"
                     }`}
-                    onClick={() =>{
-                      if (showKotNotification && order._id === selectedKotFromRedirect._id) {
-    setShowKotNotification(false);
-  }
-                    handleSelectMultipleKots(order);
+                    onClick={() => {
+                      if (
+                        showKotNotification &&
+                        order._id === selectedKotFromRedirect._id
+                      ) {
+                        setShowKotNotification(false);
+                      }
+                      handleSelectMultipleKots(order);
                     }}
                   >
                     {/* Selection indicator - Tick mark */}
@@ -1049,7 +1114,7 @@ const OrdersDashboard = () => {
                         className="flex-2 px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg text-sm font-bold hover:from-green-600 hover:to-emerald-700 transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2 shadow-lg"
                         onClick={() => {
                           let findOneWithNoRoomService = selectedKot.find(
-                            (kot) => kot?.serviceWorker !== "roomService"
+                            (kot) => kot?.type !== "roomService"
                           );
                           if (findOneWithNoRoomService) {
                             handleSalesPreview();

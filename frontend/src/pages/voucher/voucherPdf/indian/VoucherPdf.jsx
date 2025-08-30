@@ -15,7 +15,6 @@ function VoucherPdf({
   isPreview = false,
   sendToParent,
 }) {
-  console.log("data", data);
   const [subTotal, setSubTotal] = useState("");
   const [additinalCharge, setAdditinalCharge] = useState("");
   const [inWords, setInWords] = useState("");
@@ -264,7 +263,11 @@ function VoucherPdf({
     return null;
   }
 
-  console.log(data?.items);
+  const handlePrint = () => {
+    contentToPrint.current
+  };  
+
+
 
   return (
     <div>
@@ -678,6 +681,10 @@ function VoucherPdf({
             />
             {isPreview && (
               <div className="flex gap-3 justify-end p-2">
+                <button className="px-3 py-1 rounded-lg bg-gray-500 text-black font-medium hover:bg-gray-600 active:scale-95 transition"
+                  onClick={()=>handlePrint()}>
+                  Print
+                </button>
                 <button className="px-3 py-1 rounded-lg bg-gray-500 text-black font-medium hover:bg-gray-600 active:scale-95 transition"
                   onClick={()=>sendToParent(true)}>
                   Confirm
