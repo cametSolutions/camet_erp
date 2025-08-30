@@ -547,16 +547,24 @@ export const updateKotStatus = async (req, res) => {
 // function used to fetch room data based on room booking
 export const getRoomDataForRestaurant = async (req, res) => {
   try {
-    const now = new Date();
-    const today = new Date(now.toDateString()); // strip time part
+    // Today's date only (strip time)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // reset time to midnight
 
-    // Get all records for that cmp_id
-    const allData = await CheckIn.find({ cmp_id: req.params.cmp_id });
+    // Get all records for cmp_id
+    const allData = await CheckIn.find({
+      cmp_id: req.params.cmp_id,
+      status: { $ne: "checkOut" },
+    });
 
-    // Filter in JS (only by dates, ignore time)
+    // Filter only those where today's date falls between arrivalDate & checkOutDate
     const filtered = allData.filter((doc) => {
+      // arrivalDate/checkOutDate are stored as "YYYY-MM-DD" strings
       const arrivalDate = new Date(doc.arrivalDate);
+      arrivalDate.setHours(0, 0, 0, 0);
+
       const checkOutDate = new Date(doc.checkOutDate);
+      checkOutDate.setHours(0, 0, 0, 0);
 
       return arrivalDate <= today && today <= checkOutDate;
     });
@@ -573,7 +581,6 @@ export const getRoomDataForRestaurant = async (req, res) => {
     });
   }
 };
-
 
 // function used to update kot data
 
@@ -822,6 +829,7 @@ export const updateKotPayment = async (req, res) => {
         cashAmt,
         onlineAmt,
         kotData,
+        isPostToRoom,
         session
       );
 
@@ -951,18 +959,29 @@ async function getSelectedParty(
   cashAmt,
   onlineAmt,
   kotData,
+  isPostToRoom,
   session
 ) {
   let partyId;
 
-  if (paymentDetails?.paymentMode === "single") {
-    if (cashAmt > 0) {
-      partyId = paymentDetails?.selectedCash;
-    } else if (onlineAmt > 0) {
-      partyId = paymentDetails?.selectedBank;
-    }
+  if (isPostToRoom) {
+    console.log("koptData",kotData?.voucherNumber[0]?.checkInNumber)
+    let checkInData = await CheckIn.findOne({
+      voucherNumber: kotData?.voucherNumber[0]?.checkInNumber,
+    }).session(session);
+    console.log("checkInData", checkInData);
+    partyId = checkInData?.customerId.toString();
+    console.log("partyId", partyId);
   } else {
-    partyId = paymentDetails?.selectedCash;
+    if (paymentDetails?.paymentMode === "single") {
+      if (cashAmt > 0) {
+        partyId = paymentDetails?.selectedCash;
+      } else if (onlineAmt > 0) {
+        partyId = paymentDetails?.selectedBank;
+      }
+    } else {
+      partyId = paymentDetails?.selectedCash;
+    }
   }
 
   const selectedParty = await Party.findOne({ cmp_id, _id: partyId })

@@ -402,13 +402,13 @@ function BookingList() {
         className={`bg-white p-4 pb-6 drop-shadow-lg mt-4 flex flex-col rounded-sm cursor-pointer transition-all duration-200 ease-in-out
     ${
       isCheckOutSelected(el) &&
-      (location.pathname === "/sUsers/checkInList" ||
-        location.pathname === "/sUsers/checkOutList")
+      (location.pathname === "/sUsers/checkInList" )
         ? "border-2 border-blue-500 ring-2 ring-blue-200 bg-blue-50 shadow-lg scale-[1.02] transform"
         : "border border-gray-200 hover:border-blue-300 hover:bg-slate-50 hover:shadow-xl"
     }`}
         onClick={() => {
-          if (el.status === "checkOut") return;
+          
+          if (el.status === "checkOut" || location.pathname === "/sUsers/checkOutList") return;
           let findOne = selectedCheckOut.find((item) => item._id === el._id);
           if (selectedCheckOut.length == 0) {
             setSelectedCustomer(el.customerId?._id);
@@ -426,10 +426,10 @@ function BookingList() {
           <p className="font-bold text-sm">{el?.voucherNumber}</p>
           {((location.pathname === "/sUsers/bookingList" &&
             el?.status != "checkIn") ||
-            (el?.status != "checkOut" &&
-              location.pathname === "/sUsers/checkInList") ||
+            (el?.status == "checkOut" &&
+              location.pathname !== "/sUsers/checkInList") ||
             (Number(el?.balanceToPay) > 0 &&
-              location.pathname === "/sUsers/checkOutList")) && (
+              location.pathname !== "/sUsers/checkOutList")) && (
             <button
               onClick={() => {
                 if (location.pathname == "/sUsers/bookingList") {
@@ -451,9 +451,11 @@ function BookingList() {
               }}
               className="bg-black hover:bg-blue-400 text-white font-semibold py-1 px-2 rounded shadow-md transition duration-300 ml-auto"
             >
-              {location.pathname === "/sUsers/checkInList"
+              {
+              location.pathname === "/sUsers/checkInList"
                 ? "Checkout"
-                : location.pathname === "/sUsers/checkOutList"
+                : 
+                location.pathname === "/sUsers/checkOutList"
                 ? "Close"
                 : "Check-In"}
             </button>
@@ -466,10 +468,9 @@ function BookingList() {
               location.pathname === "/sUsers/checkOutList")) && (
             <button
               onClick={() => {
-                if (location.pathname === "/sUsers/checkOutList") {
+                if (location.pathname === "/sUsers/checkOutList" || location.pathname === "/sUsers/bookingList" ) {
                   setSelectedCustomer(el.customerId?._id);
                   setSelectedCheckOut([el]);
-                  console.log(bookings?.filter((item) => item.voucherNumber === el.voucherNumber))
                   navigate("/sUsers/CheckOutPrint", {
                     state: {
                       selectedCheckOut:bookings?.filter((item) => item.voucherNumber === el.voucherNumber),
