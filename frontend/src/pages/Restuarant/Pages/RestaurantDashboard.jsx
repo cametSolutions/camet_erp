@@ -1013,7 +1013,7 @@ return (
               </div>
             ) : (
               <div className="space-y-2">
-                {orderItems.map((item) => (
+           {orderItems.map((item) => (
                   <div
                     key={item._id}
                     className="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-100 rounded-xl p-3 flex justify-between items-start hover:shadow-md transition-all duration-300"
@@ -1022,12 +1022,28 @@ return (
                       <h4 className="text-xs font-bold text-gray-800 line-clamp-2 mb-1">
                         {item.product_name}
                       </h4>
-                      <div className="flex items-center gap-2">
-                        <p className="text-xs text-gray-600">
-                          ₹{item.price} × {item.quantity}
-                        </p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs text-gray-600">₹</span>
+                          <input
+                            type="number"
+                            value={item.price}
+                            onChange={(e) => {
+                              const newPrice = parseFloat(e.target.value) ;
+                              setOrderItems(orderItems.map(orderItem =>
+                                orderItem._id === item._id 
+                                  ? { ...orderItem, price: newPrice }
+                                  : orderItem
+                              ));
+                            }}
+                            className="w-16 text-xs text-gray-600 bg-transparent border-none focus:outline-none focus:bg-white focus:border focus:border-indigo-300 focus:rounded px-1 py-0.5"
+                            step="0.01"
+                            min="0"
+                          />
+                          <span className="text-xs text-gray-600">× {item.quantity}</span>
+                        </div>
                         <p className="text-xs font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-full">
-                          ₹{item.price * item.quantity}
+                          ₹{(item.price * item.quantity).toFixed(2)}
                         </p>
                       </div>
                     </div>

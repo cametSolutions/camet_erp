@@ -8,7 +8,7 @@ import { generateVoucherNumber } from "../helpers/voucherHelper.js";
 import salesModel from "../models/salesModel.js";
 import TallyData from "../models/TallyData.js";
 import Receipt from "../models/receiptModel.js";
-productModel;
+
 import bankModel from "../models/bankModel.js";
 import cashModel from "../models/cashModel.js";
 import Party from "../models/partyModel.js";
@@ -202,7 +202,6 @@ export const updateItem = async (req, res) => {
   try {
     const { formData, tableData } = req.body;
 
-    console.log("Form Data:", formData, tableData);
 
     session.startTransaction();
 
@@ -238,7 +237,6 @@ export const updateItem = async (req, res) => {
         // runValidators: true,
       }
     );
-    console.log(updatedItem);
 
     if (!updatedItem) {
       await session.abortTransaction();
@@ -272,9 +270,10 @@ export const updateItem = async (req, res) => {
 // Delete Item Controller
 export const deleteItem = async (req, res) => {
   try {
-    const { itemId } = req.params.id;
-
-    const deletedItem = await productModel.findOneAndDelete(itemId);
+    const { id } = req.params; // or const itemId = req.params.id;
+    
+    const deletedItem = await productModel.findByIdAndDelete(id);
+    
     if (!deletedItem) {
       return res.status(404).json({
         success: false,
@@ -497,9 +496,23 @@ export const editKot = async (req, res) => {
 // get all kot
 export const getKot = async (req, res) => {
   try {
+    const { cmp_id } = req.params;
+    let { date } = req.query;
+    // If no date is passed, use today's date
+    if (!date) {
+      date = new Date().toISOString().slice(0, 10); // Format: YYYY-MM-DD
+    }
+    // Get date range for filtering (00:00 to 23:59 of that day)
+    const start = new Date(date + "T00:00:00.000Z");
+    const end = new Date(date + "T23:59:59.999Z");
+
     const kot = await kotModal
-      .find({ cmp_id: req.params.cmp_id })
+      .find({ 
+        cmp_id,
+        createdAt: { $gte: start, $lte: end }
+      })
       .populate("roomId");
+
     res.status(200).json({
       success: true,
       data: kot,
@@ -512,6 +525,7 @@ export const getKot = async (req, res) => {
     });
   }
 };
+
 
 // function used to update kot
 export const updateKotStatus = async (req, res) => {
@@ -777,6 +791,7 @@ export const updateKotPayment = async (req, res) => {
         selectedKotData: kotData,
         isPostToRoom,
       } = req.body;
+      console.log("table",kotData)
 
       // Validate required fields
       if (!paymentDetails || !kotData) {
@@ -887,11 +902,28 @@ export const updateKotPayment = async (req, res) => {
 
       await session.commitTransaction();
       await session.commitTransaction(); // commits before map is done
+       const pendingCount = await kotModal.countDocuments({
+      "customer.tableNumber": kotData.tableNumber,
+      paymentCompleted: false
+    })
+    console.log("check",pendingCount)
+    let tableAvailable=false
+    if(pendingCount===0){
+      const updatetabestatus=await Table.findOneAndUpdate(
+      { tableNumber:kotData.tableNumber}, // find by table number
+      { status:  "available" },      // update status
+      { new: true }    // return updated doc
+    )
+    if(updatetabestatus){
+      tableAvailable=true
+    }
 
+    }
+    
       res.status(200).json({
         success: true,
         message: "KOT payment updated successfully",
-        data: { saleNumber, salesRecord: savedVoucherData[0] },
+        data: { saleNumber, salesRecord: savedVoucherData[0],tableAvailable },
       });
     });
   } catch (error) {
@@ -962,7 +994,6 @@ async function getSelectedParty(
 
 function createPaymentSplittingArray(paymentDetails, cashAmt, onlineAmt) {
   const arr = [];
-  console.log("paymentDetails", paymentDetails);
   if (cashAmt > 0) {
     arr.push({
       type: "cash",
@@ -1017,7 +1048,6 @@ async function createSalesVoucher(
   paymentSplittingArray,
   session
 ) {
-  console.log("saleNumber", kotData?.voucherNumber);
   return await salesModel.create(
     [
       {
@@ -1151,7 +1181,6 @@ export const getPaymentType = async (req, res) => {
       cmp_id: req.params.cmp_id,
       partyType: "cash",
     });
-    console.log("bankDetails", bankDetails);
     const paymentBelongsTo = { bankDetails, cashDetails };
     res.status(200).json({
       success: true,
