@@ -33,7 +33,7 @@ const OrdersDashboard = () => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [selectedDataForPayment, setSelectedDataForPayment] = useState({});
-
+const [selectedDate, setSelectedDate] = useState(dayjs().format("YYYY-MM-DD"));
   const [paymentMode, setPaymentMode] = useState("single"); // "single" or "split"
   const [cashAmount, setCashAmount] = useState(0);
   const [onlineAmount, setOnlineAmount] = useState(0);
@@ -69,14 +69,14 @@ const OrdersDashboard = () => {
 
 
   
-  const { data, refreshHook } = useFetch(`/api/sUsers/getKotData/${cmp_id}`);
+  const { data, refreshHook } = useFetch(`/api/sUsers/getKotData/${cmp_id}?date=${selectedDate}`);
 
   useEffect(() => {
     if (data) {
       console.log(data?.data[23]);
       setOrders(data?.data);
     }
-  }, [data]);
+  }, [data,selectedDate]);
 
   const { data: paymentTypeData } = useFetch(
     `/api/sUsers/getPaymentType/${cmp_id}`
@@ -561,7 +561,18 @@ const OrdersDashboard = () => {
                 </select>
               </div>
             </div>
-            <div className="text-gray-600 text-sm">{dayjs().format("dddd, D MMMM YYYY")}</div>
+            <div className="flex items-center gap-4 mb-4">
+        <div className="text-gray-600 text-sm">
+          {dayjs(selectedDate).format("dddd, D MMMM YYYY")}
+        </div>
+        <input
+          type="date"
+          value={selectedDate}
+          onChange={e => setSelectedDate(e.target.value)}
+          className="px-3 py-1 border rounded text-sm"
+          max={dayjs().format("YYYY-MM-DD")}
+        />
+      </div>
           </div>
 
           {/* Controls */}
