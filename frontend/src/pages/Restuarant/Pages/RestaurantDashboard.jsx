@@ -1163,7 +1163,8 @@ return (
             <TableSelection
               showKOTs={false}
               onTableSelect={(table) => {
-                generateKOT(table.tableNumber, table.status);
+                // setShowKOTModal(true);
+                   generateKOT(table.tableNumber, table.status);
                 setShowFullTableSelection(false);
               }}
             />
@@ -1214,7 +1215,7 @@ return (
 
           {/* Customer Details Input */}
           <div className="space-y-3 mb-6">
-            {orderType === "roomService" && (
+            {(orderType === "roomService" || orderType === "dine-in" )&& (
               <>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">

@@ -751,17 +751,17 @@ export default function SattvaInvoice() {
             </div>
           </>
         )}
-        {isForPreview && (
-          <div className="no-print w-full flex justify-end">
-            <div className="no-print mb-4  p-4">
-              <button
-                onClick={handlePrint}
-                className="bg-black text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-500"
-              >
-                🖨️ Print Invoice
-              </button>
-            </div>
-       <div className="no-print mb-4 p-4">
+        <div className="no-print w-full flex justify-end">
+          <div className="no-print mb-4  p-4">
+            <button
+              onClick={handlePrint}
+              className="bg-black text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-500"
+            >
+              🖨️ Print Invoice
+            </button>
+          </div>
+          {isForPreview && (
+            <div className="no-print mb-4 p-4">
               <button
                 onClick={() =>
                   navigate("/sUsers/checkInList", {
@@ -774,11 +774,11 @@ export default function SattvaInvoice() {
                 }
                 className="bg-black hover:bg-gray-800 text-white px-6 py-2 rounded-lg font-medium"
               >
-                Confirm 
+                Confirm
               </button>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Print Styles */}

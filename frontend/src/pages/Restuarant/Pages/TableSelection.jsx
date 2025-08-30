@@ -124,7 +124,7 @@ const TableTiles = ({ onTableSelect, showKOTs = true }) => {
   // Navigate to print page when salePrintData is set
   useEffect(() => {
     if (salePrintData) {
-      navigate(`/sUsers/sharesales/${salePrintData._id}`);
+     navigate(`/sUsers/sharesalesThreeInch/${salePrintData._id}`);
     }
   }, [salePrintData, navigate]);
 
