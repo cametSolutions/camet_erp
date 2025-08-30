@@ -178,13 +178,13 @@ function VoucherThreeInchPdf({
     <div className="grid">
       <div
         ref={contentToPrint}
-        style={{
-          width: "80mm",
-          height: "auto",
-          fontSize: "12px",
-          fontFamily: "monospace",
-          padding: "10px",
-        }}
+        // style={{
+        //   width: "80mm",
+        //   height: "auto",
+        //   fontSize: "12px",
+        //   fontFamily: "monospace",
+        //   padding: "10px",
+        // }}
         className="print-container rounded-lg flex justify-center px-2.5"
       >
         <div className="max-w-3xl mx-auto md:block w-full">
