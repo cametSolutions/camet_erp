@@ -1,5 +1,5 @@
 /* eslint-disable react/jsx-key */
-import {  TbListDetails } from "react-icons/tb";
+import { TbListDetails } from "react-icons/tb";
 import { MdOutlineBedroomChild } from "react-icons/md";
 import { IoRestaurantOutline, IoPersonAddOutline } from "react-icons/io5";
 import { LuBedSingle } from "react-icons/lu";
@@ -9,13 +9,38 @@ import { FaFingerprint } from "react-icons/fa";
 import TitleDiv from "../../../../../components/common/TitleDiv";
 import SettingsCard from "../../../../../components/common/SettingsCard";
 import { useSelector } from "react-redux";
+import api from "../../../../../api/api";
+import { toast } from "react-toastify";
+import { LiaMoneyCheckAltSolid } from "react-icons/lia";
+import { updateConfiguration } from "../../../../../../slices/secSelectedOrgSlice.js";
 
+import { useDispatch } from "react-redux";
 const StockItemSettings = () => {
-  const { industry } = useSelector(
+  const dispatch = useDispatch();
+  const { industry, _id , configurations} = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
-  const settingsOptions = [
+  
+console.log(configurations);
 
+  const handleToggleChangeFromParent = async (data) => {
+    console.log(data);
+    try {
+      const response = await api.put(
+        `/api/sUsers/updateConfigurationForHotelAndRestaurant/${_id}`,
+        data,
+        { withCredentials: true }
+      );
+      if (response?.data?.success) {
+        dispatch(updateConfiguration(response?.data?.organization));
+        toast.success(response?.data?.message);
+      }
+    } catch (error) {
+      toast.error(error?.response?.data?.message);
+    }
+  };
+
+  const settingsOptions = [
     {
       title:
         industry === 6 || industry === 7 ? "Room Type" : "Brand Management",
@@ -81,6 +106,16 @@ const StockItemSettings = () => {
             to: "/sUsers/foodPlan",
             active: true,
           },
+          {
+            title: "addRateWithTax",
+            description: "Better tax calculations for better organization",
+            icon: <LiaMoneyCheckAltSolid />,
+            to: "/sUsers/foodPlan",
+            active: true,
+            toggle: true,
+            toggleValue: configurations[0]?.addRateWithTax?.restaurantSale,
+            dbField: "restaurantSale",
+          },
         ]
       : []),
   ];
@@ -107,7 +142,12 @@ const StockItemSettings = () => {
       />
       <div className="space-y-4 b-white p-4   mx-1">
         {settingsOptions.map((option, index) => (
-          <SettingsCard key={index} option={option} index={index} />
+          <SettingsCard
+            key={index}
+            option={option}
+            index={index}
+            handleToggleChangeFromParent={handleToggleChangeFromParent}
+          />
         ))}
       </div>
     </div>

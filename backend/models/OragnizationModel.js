@@ -62,6 +62,8 @@ const organizationSchema = new mongoose.Schema(
           default: {
             sale: false,
             saleOrder: false,
+            restaurantSale:false,
+            hotelSales:false
           },
         },
         showDescription: {

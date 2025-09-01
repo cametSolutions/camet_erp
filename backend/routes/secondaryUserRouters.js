@@ -61,7 +61,7 @@ import {saveAdditionalPax , getAdditionalPax ,updateAdditionalPax , deleteAdditi
     updateVisitOfPurpose,deleteVisitOfPurpose,saveIdProof,getIdProof,updateIdProof , deleteIdProof, saveFoodPlan , getFoodPlan
     ,updateFoodPlan,deleteFoodPlan,addRoom,getRooms,editRoom ,deleteRoom,getAllRooms,roomBooking,getBookings,deleteBooking,updateBooking,
 fetchAdvanceDetails,getAllRoomsWithStatusForDate,updateRoomStatus,getDateBasedRoomsWithStatus,checkoutWithArrayOfData,
-fetchOutStandingAndFoodData,convertCheckOutToSale} from '../controllers/hotelController.js'
+fetchOutStandingAndFoodData,convertCheckOutToSale , updateConfigurationForHotelAndRestaurant} from '../controllers/hotelController.js'
 import {addItem,getAllItems,getItems,getCategories,deleteItem,updateItem,generateKot,getKot,updateKotStatus,editKot,
     getRoomDataForRestaurant,updateKotPayment,getPaymentType,saveTableNumber,getSalePrintData,updateTable,getTables,deleteTable,
     updateTableStatus,getKotDataByTable } from '../controllers/restaurantController.js'
@@ -366,6 +366,7 @@ router.get('/getDateBasedRoomsWithStatus/:cmp_id',authSecondary,getDateBasedRoom
 router.put('/checkOutWithArray/:cmp_id',authSecondary,checkoutWithArrayOfData)
 router.post('/fetchOutStandingAndFoodData',authSecondary,fetchOutStandingAndFoodData)
 router.post('/convertCheckOutToSale/:cmp_id',authSecondary,convertCheckOutToSale)
+router.put('/updateConfigurationForHotelAndRestaurant/:cmp_id',authSecondary,updateConfigurationForHotelAndRestaurant)
 // Route to get detailed booking information for a specific room and date
 
 export default router

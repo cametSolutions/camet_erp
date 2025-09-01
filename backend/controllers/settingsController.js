@@ -685,7 +685,7 @@ export const updateCommonToggleConfiguration = async (req, res) => {
       saleOrder: false,
     };
 
-    // Initialize field if it doesn't exist
+    // Initialize field if it doesn't exist 
     if (!company.configurations[0][configField]) {
       company.configurations[0][configField] = defaultStructures;
     }

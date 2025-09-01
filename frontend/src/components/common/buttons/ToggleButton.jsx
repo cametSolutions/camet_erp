@@ -1,6 +1,8 @@
 /* eslint-disable react/prop-types */
 import { useState, useEffect } from "react";
 
+
+
 const ToggleButton = ({ isChecked, onToggle, option }) => {
   // Initial state based on the isChecked prop
   const [checked, setChecked] = useState(isChecked);
