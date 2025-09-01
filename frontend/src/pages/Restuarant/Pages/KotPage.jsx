@@ -37,7 +37,9 @@ const OrdersDashboard = () => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [selectedDataForPayment, setSelectedDataForPayment] = useState({});
-const [selectedDate, setSelectedDate] = useState(dayjs().format("YYYY-MM-DD"));
+  const [selectedDate, setSelectedDate] = useState(
+    dayjs().format("YYYY-MM-DD")
+  );
   const [paymentMode, setPaymentMode] = useState("single"); // "single" or "split"
   const [cashAmount, setCashAmount] = useState(0);
   const [onlineAmount, setOnlineAmount] = useState(0);
@@ -68,15 +70,17 @@ const [selectedDate, setSelectedDate] = useState(dayjs().format("YYYY-MM-DD"));
   const org = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
-  
-  const { data, refreshHook } = useFetch(`/api/sUsers/getKotData/${cmp_id}?date=${selectedDate}`);
+
+  const { data, refreshHook } = useFetch(
+    `/api/sUsers/getKotData/${cmp_id}?date=${selectedDate}`
+  );
 
   useEffect(() => {
     if (data) {
       console.log(data?.data[23]);
       setOrders(data?.data);
     }
-  }, [data,selectedDate]);
+  }, [data, selectedDate]);
 
   const { data: paymentTypeData } = useFetch(
     `/api/sUsers/getPaymentType/${cmp_id}`
@@ -342,14 +346,15 @@ const [selectedDate, setSelectedDate] = useState(dayjs().format("YYYY-MM-DD"));
 
   const filteredOrders = getFilteredOrders();
 
-
-
   const handleSavePayment = async (id) => {
     setSaveLoader(true);
 
     let paymentDetails;
-    let selectedKotData
-     if (selectedDataForPayment.roomService && Object.keys(selectedDataForPayment.roomService).length > 0) {
+    let selectedKotData;
+    if (
+      selectedDataForPayment.roomService &&
+      Object.keys(selectedDataForPayment.roomService).length > 0
+    ) {
       if (paymentMode == "single") {
         if (paymentMethod == "cash") {
           paymentDetails = {
@@ -359,7 +364,7 @@ const [selectedDate, setSelectedDate] = useState(dayjs().format("YYYY-MM-DD"));
             selectedBank: selectedBank,
             paymentMode: paymentMode,
           };
-          selectedKotData=selectedDataForPayment
+          selectedKotData = selectedDataForPayment;
         } else {
           paymentDetails = {
             cashAmount: cashAmount,
@@ -368,7 +373,7 @@ const [selectedDate, setSelectedDate] = useState(dayjs().format("YYYY-MM-DD"));
             selectedBank: selectedBank,
             paymentMode: paymentMode,
           };
-          selectedKotData=selectedDataForPayment
+          selectedKotData = selectedDataForPayment;
         }
       } else {
         if (
@@ -387,7 +392,7 @@ const [selectedDate, setSelectedDate] = useState(dayjs().format("YYYY-MM-DD"));
           selectedBank: selectedBank,
           paymentMode: paymentMode,
         };
-        selectedKotData=selectedDataForPayment
+        selectedKotData = selectedDataForPayment;
       }
     } else {
       paymentDetails = {
@@ -398,7 +403,7 @@ const [selectedDate, setSelectedDate] = useState(dayjs().format("YYYY-MM-DD"));
         paymentMode: paymentMode,
         isPostToRoom: true,
       };
-      selectedKotData=previewForSales
+      selectedKotData = previewForSales;
     }
 
     console.log(paymentDetails);
@@ -409,7 +414,7 @@ const [selectedDate, setSelectedDate] = useState(dayjs().format("YYYY-MM-DD"));
         {
           paymentMethod: paymentMethod,
           paymentDetails: paymentDetails,
-          selectedKotData: selectedKotData, 
+          selectedKotData: selectedKotData,
           isPostToRoom: isPostToRoom,
         },
         { withCredentials: true }
@@ -460,28 +465,17 @@ const [selectedDate, setSelectedDate] = useState(dayjs().format("YYYY-MM-DD"));
   // function used to select multiple kot
   const handleSelectMultipleKots = (order) => {
     if (order && !order?.paymentCompleted) {
+      console.log(order?.roomId?._id);
       const findOne = selectedKot.find((item) => item.id === order._id);
-      const firstSelected = selectedKot[0]; // take the first selection
+      const firstSelected = selectedKot[0];
+      console.log(firstSelected); // take the first selection
 
       if (firstSelected) {
-        if (firstSelected.type === "roomService") {
           // ✅ only allow roomService with same roomId
-          if (
-            order.type !== "roomService" ||
-            firstSelected.roomId !== order?.roomId?._id
-          ) {
-            toast.error(
-              "You can only select room service KOTs from the same room"
-            );
+          if (firstSelected.roomId !== order?.roomId?._id) {
+            toast.error("You can only select room  KOTs from the same room");
             return;
-          }
-        } else {
-          // ✅ if first is NOT roomService, then don't allow roomService mixing
-          if (order.type === "roomService") {
-            toast.error("You can't mix room service with other KOTs");
-            return;
-          }
-        }
+        } 
       }
 
       if (findOne) {
@@ -506,7 +500,6 @@ const [selectedDate, setSelectedDate] = useState(dayjs().format("YYYY-MM-DD"));
   };
 
   const handleSalesPreview = (postToRoom) => {
-    console.log("working", postToRoom);
     setIsPostToRooms(postToRoom);
     let kotVoucherNumberArray = [];
     let itemList = selectedKot.flatMap((item) => {
@@ -544,13 +537,12 @@ const [selectedDate, setSelectedDate] = useState(dayjs().format("YYYY-MM-DD"));
   };
 
   const handleSaveSales = (status) => {
-
     setConformationModal(false);
     if (isPostToRoom && status) {
       handleSavePayment();
       return;
     }
-    
+
     if (!status) {
       setShowVoucherPdf(false);
       setPreviewForSales(null);
@@ -623,18 +615,17 @@ const [selectedDate, setSelectedDate] = useState(dayjs().format("YYYY-MM-DD"));
               </div>
             </div>
             <div className="flex items-center gap-4 mb-4">
-        <div className="text-gray-600 text-sm">
-          {dayjs(selectedDate).format("dddd, D MMMM YYYY")}
-        </div>
-        <input
-          type="date"
-          value={selectedDate}
-          onChange={e => setSelectedDate(e.target.value)}
-          className="px-3 py-1 border rounded text-sm"
-          max={dayjs().format("YYYY-MM-DD")}
-        />
-      </div>
-
+              <div className="text-gray-600 text-sm">
+                {dayjs(selectedDate).format("dddd, D MMMM YYYY")}
+              </div>
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="px-3 py-1 border rounded text-sm"
+                max={dayjs().format("YYYY-MM-DD")}
+              />
+            </div>
           </div>
 
           {/* Controls */}
@@ -1124,8 +1115,9 @@ const [selectedDate, setSelectedDate] = useState(dayjs().format("YYYY-MM-DD"));
                         className="flex-2 px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg text-sm font-bold hover:from-green-600 hover:to-emerald-700 transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2 shadow-lg"
                         onClick={() => {
                           let findOneWithNoRoomService = selectedKot.find(
-                            (kot) => kot?.type !== "roomService"
+                            (kot) => !kot.roomId
                           );
+                          console.log(findOneWithNoRoomService);
                           if (findOneWithNoRoomService) {
                             handleSalesPreview();
                             toast.warning(

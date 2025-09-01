@@ -30,6 +30,7 @@ import cashModel from "../models/cashModel.js";
 import Party from "../models/partyModel.js";
 import { saveSettlementData } from "../helpers/salesHelper.js";
 import salesModel from "../models/salesModel.js";
+import Organization from "../models/OragnizationModel.js";
 
 // function used to save additional pax details
 export const saveAdditionalPax = async (req, res) => {
@@ -1647,11 +1648,9 @@ export const convertCheckOutToSale = async (req, res) => {
       //   session
       // );
 
-  
-
       // ✅ Update Checkout
       if (selectedCheckOut?.length > 0) {
-    console.log("selectedCheckout", selectedCheckOut);
+        console.log("selectedCheckout", selectedCheckOut);
         paymentCompleted = true;
 
         await Promise.all(
@@ -1668,7 +1667,6 @@ export const convertCheckOutToSale = async (req, res) => {
               checkInId: item?._id,
               bookingId: item?.bookingId ?? item?.bookingId?._id,
               balanceToPay: 0,
-              
             });
 
             // Update check-in status
@@ -1911,3 +1909,33 @@ async function getSelectedParty(selected, cmp_id, session) {
 
   return selectedParty;
 }
+
+export const updateConfigurationForHotelAndRestaurant = async (req, res) => {
+  try {
+    const { cmp_id } = req.params;
+    const data = req.body;
+
+    // update object
+    const updateData = {
+      $set: {
+        [`configurations.0.addRateWithTax.${data.title}`]: data?.checked,
+      },
+    };
+
+    const updatedDoc = await Organization.findOneAndUpdate(
+      { _id: cmp_id },
+      updateData,
+      { new: true }
+    );
+
+    if (!updatedDoc) {
+      return res.status(404).json({ message: "Organization not found" });
+    }
+
+    res.status(200).json({ message: "Configuration updated" ,success : true , organization: updatedDoc});
+  } catch (error) {
+    console.error("Error updating configuration:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+

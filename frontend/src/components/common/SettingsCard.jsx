@@ -31,9 +31,14 @@ function SettingsCard({
   };
 
   const handleToggleChange = async (newState) => {
+    console.log("newState", newState);
 
     handleToggleChangeFromParent(newState);
   };
+
+// const handleToggleChange = async (newState) => {
+//   handleToggleChangeFromParent(newState);
+// };  
 
   return (
     <div>

@@ -169,7 +169,7 @@ useEffect(() => {
       try {
         const taxResponse = await taxCalculator(
           updatedRoom,
-          configurations[0]?.addRateWithTax?.sale,
+          configurations[0]?.addRateWithTax?.hotelSale,
           formData,
           booking.roomId
         );
@@ -606,7 +606,7 @@ useEffect(() => {
                           <span className="block font-bold text-emerald-600 text-xs leading-tight">
                             ₹{Number(booking.totalAmount || 0).toFixed(0)}
                           </span>
-                          {configurations[0]?.addRateWithTax?.sale && (
+                          {configurations[0]?.addRateWithTax?.hotelSale && (
                             <span className="block text-gray-600 text-xs leading-tight">
                               ₹
                               {(
