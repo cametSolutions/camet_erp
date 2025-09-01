@@ -430,48 +430,51 @@ console.log(tables)
       {!showVoucherPdf && (
         <>
           {/* Header */}
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-violet-600 via-purple-600 to-blue-600 text-transparent bg-clip-text mb-2">
-              Restaurant Tables
-            </h1>
-            <div className="w-24 h-1 bg-gradient-to-r from-violet-500 to-blue-500 mx-auto rounded-full"></div>
-          </div>
+        <div className="flex flex-row justify-center items-start gap-x-8 mb-8">
+  {/* Restaurant Tables Header */}
+  <div className="text-center mb-0">
+    <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-600 via-purple-600 to-blue-600 text-transparent bg-clip-text mb-2">
+      Restaurant Tables
+    </h1>
+    <div className="w-24 h-1 bg-gradient-to-r from-violet-500 to-blue-500 mx-auto rounded-full"></div>
+  </div>
 
-          {/* Status Legend */}
-          <div className="flex flex-wrap justify-center gap-6 mb-10">
-            <div className="bg-white/70 backdrop-blur-sm rounded-2xl px-6 py-3 shadow-lg border border-white/20">
-              <div className="flex flex-wrap justify-center gap-6">
-                <div className="flex items-center gap-3 group">
-                  <div className="relative">
-                    <FaCircle className="text-emerald-500 text-sm animate-pulse" />
-                    <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-20"></div>
-                  </div>
-                  <span className="text-sm font-semibold text-gray-700 group-hover:text-emerald-600 transition-colors">Available</span>
-                </div>
-                <div className="flex items-center gap-3 group">
-                  <div className="relative">
-                    <FaCircle className="text-rose-500 text-sm animate-pulse" />
-                    <div className="absolute inset-0 bg-rose-500 rounded-full animate-ping opacity-20"></div>
-                  </div>
-                  <span className="text-sm font-semibold text-gray-700 group-hover:text-rose-600 transition-colors">Occupied</span>
-                </div>
-                <div className="flex items-center gap-3 group">
-                  <div className="relative">
-                    <FaCircle className="text-amber-500 text-sm animate-pulse" />
-                    <div className="absolute inset-0 bg-amber-500 rounded-full animate-ping opacity-20"></div>
-                  </div>
-                  <span className="text-sm font-semibold text-gray-700 group-hover:text-amber-600 transition-colors">Reserved</span>
-                </div>
-                <div className="flex items-center gap-3 group">
-                  <div className="relative">
-                    <FaCircle className="text-sky-500 text-sm animate-pulse" />
-                    <div className="absolute inset-0 bg-sky-500 rounded-full animate-ping opacity-20"></div>
-                  </div>
-                  <span className="text-sm font-semibold text-gray-700 group-hover:text-sky-600 transition-colors">Cleaning</span>
-                </div>
-              </div>
-            </div>
-          </div>
+  {/* Status Legend */}
+  <div className="bg-white/70 backdrop-blur-sm rounded-2xl px-6 py-3 shadow-lg border border-white/20">
+    <div className="flex flex-wrap justify-center gap-6">
+ <div className="flex items-center gap-3 group">
+                  <div className="relative">
+                    <FaCircle className="text-emerald-500 text-sm animate-pulse" />
+                    <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-20"></div>
+                  </div>
+                  <span className="text-sm font-semibold text-gray-700 group-hover:text-emerald-600 transition-colors">Available</span>
+                </div>
+                <div className="flex items-center gap-3 group">
+                  <div className="relative">
+                    <FaCircle className="text-rose-500 text-sm animate-pulse" />
+                    <div className="absolute inset-0 bg-rose-500 rounded-full animate-ping opacity-20"></div>
+                  </div>
+                  <span className="text-sm font-semibold text-gray-700 group-hover:text-rose-600 transition-colors">Occupied</span>
+                </div>
+                <div className="flex items-center gap-3 group">
+                  <div className="relative">
+                    <FaCircle className="text-amber-500 text-sm animate-pulse" />
+                    <div className="absolute inset-0 bg-amber-500 rounded-full animate-ping opacity-20"></div>
+                  </div>
+                  <span className="text-sm font-semibold text-gray-700 group-hover:text-amber-600 transition-colors">Reserved</span>
+                </div>
+                <div className="flex items-center gap-3 group">
+                  <div className="relative">
+                    <FaCircle className="text-sky-500 text-sm animate-pulse" />
+ <div className="absolute inset-0 bg-sky-500 rounded-full animate-ping opacity-20"></div>
+ 
+ </div>
+  <span className="text-sm font-semibold text-gray-700 group-hover:text-sky-600 transition-colors">Cleaning</span>
+    </div>
+    </div>
+  </div>
+</div>
+
 
           {/* KOT Notification */}
           {showKotNotification && selectedKotFromRedirect && (
@@ -487,14 +490,8 @@ console.log(tables)
 
           {/* Tables Grid */}
           <div className="flex justify-center mb-8">
-            <div 
-              className="grid gap-3"
-              style={{
-                gridTemplateColumns: `repeat(${Math.min(tables.length, 5)}, minmax(0, 1fr))`,
-                maxWidth: 'fit-content'
-              }}
-            >
-              {tables.map((table, index) => {
+        <div className="grid grid-cols-5 md:grid-cols-10 gap-3 sm:gap-4 mb-2 ">
+          {tables.map((table, index) => {
                 const getStatusConfig = (status) => {
                   switch (status) {
                     case "available":
@@ -548,18 +545,18 @@ console.log(tables)
                 const statusConfig = getStatusConfig(table.status);
 
                 return (
-                  <div
-                    key={table._id}
-                     className={`group relative bg-gradient-to-br  backdrop-blur-sm rounded-2xl border-2  cursor-pointer transition-all duration-500 hover:scale-110 hover:rotate-2 hover:shadow-2xl
-                  w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 lg:w-24 lg:h-24 xl:w-28 xl:h-28
-                  flex flex-col items-center justify-center overflow-hidden
-                `}
-                    onClick={() => handleTableClick(table)}
-                    style={{
-                      animationDelay: `${index * 100}ms`,
-                      animation: 'fadeInUp 0.6s ease-out forwards'
-                    }}
-                  >
+              <div
+                key={table._id}
+                className={`group relative bg-gradient-to-br ${statusConfig.bgGradient} backdrop-blur-sm rounded-2xl border-2 ${statusConfig.borderColor} cursor-pointer transition-all duration-500 hover:scale-110 hover:rotate-2 hover:shadow-2xl ${statusConfig.glowColor}
+                w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 xl:w-28 xl:h-28
+                flex flex-col items-center justify-center 
+              }
+              `}
+                onClick={() => handleTableClick(table)}
+                style={{
+                  animationDelay: `${index * 100}ms`,
+                }}
+              >
                     <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
                       <div className="absolute top-2 left-2 w-1 h-1 bg-white rounded-full animate-bounce" style={{animationDelay: '0ms'}}></div>
                       <div className="absolute top-3 right-3 w-1 h-1 bg-white rounded-full animate-bounce" style={{animationDelay: '200ms'}}></div>
@@ -597,7 +594,7 @@ console.log(tables)
 
           {/* KOT Section */}
           {showKOTs && selectedTable && (
-            <div className="mt-12 bg-white/60 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/30 p-8">
+            <div className="mt-6 bg-white/60 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/30 p-8">
               <div className="mb-8 text-center">
                 <h2 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 text-transparent bg-clip-text mb-2">
                   Table No -{selectedTable.tableNumber} Orders

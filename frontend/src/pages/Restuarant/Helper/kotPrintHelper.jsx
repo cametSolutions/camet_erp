@@ -390,6 +390,7 @@ export const printDirectHTML = (
   restaurantName = "ABC RESTAURANT",
   isKOT = true
 ) => {
+  console.log(orderData)
   let loggedUser = JSON.parse(localStorage.getItem("sUserData"));
   console.log(loggedUser);
   if (!orderData) return;
