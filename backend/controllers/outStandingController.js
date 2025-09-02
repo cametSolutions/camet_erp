@@ -445,9 +445,12 @@ export const fetchOutstandingDetails = async (req, res) => {
         ...baseMatch,
         $or: [
           // invoices that are still open AND match the voucher type
-          { ...classificationFilter, bill_pending_amt: { $gt: 0 } },
+          {
+            ...classificationFilter,
+            //  bill_pending_amt: { $gt: 0 }
+          },
           // the invoice referenced by the voucherId (forced include)
-          { billId: voucherId.toString() },
+          // { billId: voucherId.toString() },
         ],
       }
     : {
@@ -460,7 +463,7 @@ export const fetchOutstandingDetails = async (req, res) => {
     const outstandings = await TallyData.find(query)
       .sort({ bill_date: 1 })
       .select(
-        "_id bill_no billId bill_date bill_pending_amt source classification"
+        "_id bill_no billId bill_date bill_pending_amt bill_amount source classification appliedReceipts appliedPayments"
       )
       .lean();
 
@@ -470,16 +473,65 @@ export const fetchOutstandingDetails = async (req, res) => {
         .json({ message: "No outstandings were found for user" });
     }
 
-    const totalOutstandingAmount = outstandings.reduce(
+    /* -----------------------------------------------------------
+     3. If voucherId is present, update bill_pending_amt calculation
+        for records that have applied receipts/payments
+    ----------------------------------------------------------- */
+    let processedOutstandings = outstandings;
+
+    if (voucherId) {
+      processedOutstandings = outstandings.map((outstanding) => {
+        let updatedPendingAmount = outstanding.bill_pending_amt;
+
+        // Check if this outstanding has applied receipts/payments
+        if (voucher === "receipt" && outstanding.appliedReceipts?.length > 0) {
+          // Filter out the voucher being processed and sum the remaining
+          const filteredReceipts = outstanding.appliedReceipts.filter(
+            (receipt) => receipt._id.toString() !== voucherId
+          );
+          const totalAppliedReceipts = filteredReceipts.reduce(
+            (sum, receipt) => sum + (receipt.settledAmount || 0),
+            0
+          );
+          updatedPendingAmount = outstanding.bill_amount - totalAppliedReceipts;
+        } else if (
+          voucher === "payment" &&
+          outstanding.appliedPayments?.length > 0
+        ) {
+          // Filter out the voucher being processed and sum the remaining
+          const filteredPayments = outstanding.appliedPayments.filter(
+            (payment) => payment._id.toString() !== voucherId
+          );
+          const totalAppliedPayments = filteredPayments.reduce(
+            (sum, payment) => sum + (payment.settledAmount || 0),
+            0
+          );
+          updatedPendingAmount = outstanding.bill_amount - totalAppliedPayments;
+        }
+
+        return {
+          ...outstanding,
+          bill_pending_amt: Math.max(0, updatedPendingAmount), // Ensure non-negative
+        };
+      });
+    }
+
+    const totalOutstandingAmount = processedOutstandings.reduce(
       (sum, o) => sum + (o.bill_pending_amt > 0 ? o.bill_pending_amt : 0),
       0
     );
+
+    // Remove appliedReceipts and appliedPayments from response for cleaner output and filter out doc with bill_pending_amt <= 0
+    // Filter out documents with bill_pending_amt <= 0
+    const responseOutstandings = processedOutstandings.filter(
+      (o) => o.bill_pending_amt > 0
+    ).map(({ appliedReceipts, appliedPayments, ...rest }) => rest);
 
     return res.status(200).json({
       success: true,
       message: "Outstandings fetched",
       totalOutstandingAmount,
-      outstandings,
+      outstandings: responseOutstandings,
     });
   } catch (error) {
     console.error(error);

@@ -1169,8 +1169,8 @@ export const updateOutstandingBalance = async ({
           updatedAt: new Date(),
           bill_date: new Date(selectedDate),
           bill_due_date: new Date(selectedDate),
-          appliedReceipts: existingVoucher?.appliedReceipts || [], // Ensure updated arrays are saved
-          appliedPayments: existingVoucher?.appliedPayments || [],
+          // appliedReceipts: matchedOutStanding?.appliedReceipts || [], // Ensure updated arrays are saved
+          // appliedPayments: matchedOutStanding?.appliedPayments || [],
           isCancelled: isCancelled,
         },
         {
