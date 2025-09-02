@@ -439,46 +439,41 @@ console.log(roomDetails)
       {!showVoucherPdf && (
         <>
           {/* Header */}
-          <div className="text-center mb-8">
-            {/* Title */}
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-violet-600 via-purple-600 to-blue-600 text-transparent bg-clip-text mb-4">
-              Restaurant Tables
-            </h1>
+          <div className="flex items-center justify-center gap-6 mb-8">
+  {/* Title */}
+ <div className="text-center mb-0">
+    <h1 className="text-4xl font-bold bg-gradient-to-r from-violet-600 via-purple-600 to-blue-600 text-transparent bg-clip-text mb-2">
+      Restaurant Tables
+    </h1>
+    <div className="w-24 h-1 bg-gradient-to-r from-violet-500 to-blue-500 mx-auto rounded-full"></div>
+  </div>
 
-            {/* Gradient line */}
-            <div className="w-24 h-1 bg-gradient-to-r from-violet-500 to-blue-500 mx-auto rounded-full mb-6"></div>
+  {/* Dropdown */}
+  <select
+    className="px-4 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+    value={roomDetails?._id}
+    onChange={(e) => {
+      const selectedRoom = roomData.find(
+        (room) => room.roomId === e.target.value
+      );
+      setRoomDetails({
+        ...roomDetails,
+        _id: selectedRoom?.roomId || "",
+        roomno: selectedRoom?.roomName || "",
+        guestName: selectedRoom?.customerName || "",
+        CheckInNumber: selectedRoom?.voucherNumber || "",
+      });
+    }}
+  >
+    <option value="">Select a room</option>
+    {roomData?.map((room) => (
+      <option value={room.roomId} key={room.roomId}>
+        {room?.roomName} - {room?.customerName} - {room?.voucherNumber}
+      </option>
+    ))}
+  </select>
 
-            {/* Dropdown */}
-            <div className="flex justify-center">
-              <select
-                className="px-4 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
-                value={roomDetails._id}
-                onChange={(e) => {
-                  const selectedRoom = roomData.find(
-                    (room) => room.roomId === e.target.value
-                  );
-                  setRoomDetails({
-                    ...roomDetails,
-                    _id: selectedRoom?.roomId || "",
-                    roomno: selectedRoom?.roomName || "",
-                    guestName: selectedRoom?.customerName || "",
-                    CheckInNumber: selectedRoom?.voucherNumber || "",
-                  });
-                }}
-              >
-                <option value="">Select a room</option>
-                {roomData?.map((room) => (
-                  <option value={room.roomId} key={room.roomId}>
-                    {room?.roomName} - {room?.customerName} -{" "}
-                    {room?.voucherNumber}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Status Legend */}
-          <div className="flex flex-wrap justify-center gap-6 mb-10">
+  <div className="flex flex-wrap justify-center gap-6 mb-10">
             <div className="bg-white/70 backdrop-blur-sm rounded-2xl px-6 py-3 shadow-lg border border-white/20">
               <div className="flex flex-wrap justify-center gap-6">
                 <div className="flex items-center gap-3 group">
@@ -520,6 +515,9 @@ console.log(roomDetails)
               </div>
             </div>
           </div>
+</div>
+          {/* Status Legend */}
+        
 
           {/* KOT Notification */}
           {showKotNotification && selectedKotFromRedirect && (
@@ -536,18 +534,12 @@ console.log(roomDetails)
 
           {/* Tables Grid */}
           <div className="flex justify-center mb-8">
-            <div
-              className="grid gap-3"
-              style={{
-                gridTemplateColumns: `repeat(${Math.min(
-                  tables.length,
-                  5
-                )}, minmax(0, 1fr))`,
-                maxWidth: "fit-content",
-              }}
-            >
-              {tables.map((table, index) => {
-                const getStatusConfig = (status) => {
+  <div
+    className="grid gap-3 grid-cols-5 md:grid-cols-9"
+    style={{ maxWidth: "fit-content" }}
+  >
+    {tables.map((table, index) => {
+      const getStatusConfig = (status) => {
                   switch (status) {
                     case "available":
                       return {
@@ -602,21 +594,21 @@ console.log(roomDetails)
                   }
                 };
 
-                const statusConfig = getStatusConfig(table.status);
+                 const statusConfig = getStatusConfig(table.status);
 
-                return (
-                  <div
-                    key={table._id}
-                    className={`group relative bg-gradient-to-br  backdrop-blur-sm rounded-2xl border-2  cursor-pointer transition-all duration-500 hover:scale-110 hover:rotate-2 hover:shadow-2xl
-                  w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 lg:w-24 lg:h-24 xl:w-28 xl:h-28
-                  flex flex-col items-center justify-center overflow-hidden
-                `}
-                    onClick={() => handleTableClick(table)}
-                    style={{
-                      animationDelay: `${index * 100}ms`,
-                      animation: "fadeInUp 0.6s ease-out forwards",
-                    }}
-                  >
+      return (
+        <div
+          key={table._id}
+          className={`group relative bg-gradient-to-br backdrop-blur-sm rounded-2xl border-2 cursor-pointer transition-all duration-500 hover:scale-110 hover:rotate-2 hover:shadow-2xl
+            w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 lg:w-24 lg:h-24 xl:w-28 xl:h-28
+            flex flex-col items-center justify-center overflow-hidden
+          `}
+          onClick={() => handleTableClick(table)}
+          style={{
+            animationDelay: `${index * 100}ms`,
+            animation: "fadeInUp 0.6s ease-out forwards",
+          }}
+        >
                     <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
                       <div
                         className="absolute top-2 left-2 w-1 h-1 bg-white rounded-full animate-bounce"
@@ -669,7 +661,7 @@ console.log(roomDetails)
 
           {/* KOT Section */}
           {showKOTs && selectedTable && (
-            <div className="mt-12 bg-white/60 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/30 p-8">
+            <div className="mt-6 bg-white/60 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/30 p-8">
               <div className="mb-8 text-center">
                 <h2 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 text-transparent bg-clip-text mb-2">
                   Table No -{selectedTable.tableNumber} Orders

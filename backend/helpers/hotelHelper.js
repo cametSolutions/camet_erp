@@ -7,7 +7,6 @@ export const buildDatabaseFilterForRoom = (params) => {
   const filter = {
     cmp_id: params.cmp_id,
     primary_user_id: params.Primary_user_id,
-
   };
   console.log("params.type", params);
   if (params?.type && params?.type !== "All") {
@@ -62,17 +61,31 @@ export const sendRoomResponse = (res, rooms, totalRooms, params) => {
 
 // helper function used to add search concept with booking
 export const buildDatabaseFilterForBooking = (params) => {
-  const filter = {
+  let filter = {
     cmp_id: params.cmp_id,
     Primary_user_id: params.Primary_user_id,
   };
 
   // Add search functionality if search term is provided
-  if (params.searchTerm) {
-    filter.$or = [
-      { voucherNumber: { $regex: params.searchTerm, $options: "i" } },
-      { customerName: { $regex: params.searchTerm, $options: "i" } },
-    ];
+  if (params.searchTerm && params.searchTerm != "completed") {
+    if (params.searchTerm != "pending") {
+      filter.$or = [
+        { voucherNumber: { $regex: params.searchTerm, $options: "i" } },
+        { customerName: { $regex: params.searchTerm, $options: "i" } },
+      ];
+    }else{
+     filter = { ...filter, status: { $exists: false } };
+
+    }                                                    
+
+  } else if (params.searchTerm == "completed") {
+   
+    if (params.modal == "booking") {
+      filter = { ...filter, status: "checkIn" };
+    }
+    if(params.modal == "checkIn") {
+      filter = {...filter,status:"checkIn"}
+    }
   }
 
   return filter;
@@ -92,14 +105,14 @@ export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
       selectedModal = CheckOut;
     }
     console.log("selectedModal", selectedModal);
-    console.log("params", params);  
+    console.log("params", params);
     const [bookings, totalBookings] = await Promise.all([
       selectedModal
         .find(filter)
         .populate("customerId")
         .populate("agentId")
         .populate("selectedRooms.selectedPriceLevel")
-        .populate('bookingId')
+        .populate("bookingId")
         .populate("checkInId")
         .sort({ createdAt: -1 })
         .skip(limit > 0 ? skip : 0)

@@ -42,6 +42,8 @@ const RestaurantPOS = () => {
   const [showSidebar, setShowSidebar] = useState(false);
   const [showOrderSummary, setShowOrderSummary] = useState(false);
 
+  const [showOptions, setShowOptions] = useState(false);
+  const [searchTerms, setSearchTerms] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [items, setItems] = useState([]);
   const [allItems, setAllItems] = useState([]);
@@ -130,6 +132,31 @@ const RestaurantPOS = () => {
   useEffect(() => {
     fetchPriceList();
   }, []);
+
+  const filteredRooms = Array.isArray(roomData)
+    ? roomData.filter(
+        (room) =>
+          room.roomName?.toLowerCase().includes(searchTerms.toLowerCase()) ||
+          room.customerName
+            ?.toLowerCase()
+            .includes(searchTerms.toLowerCase()) ||
+          room.voucherNumber?.toLowerCase().includes(searchTerms.toLowerCase())
+      )
+    : [];
+
+  const handleSelect = (room) => {
+    setRoomDetails({
+      ...roomDetails,
+      _id: room.roomId,
+      roomno: room.roomName,
+      guestName: room.customerName,
+      CheckInNumber: room.voucherNumber,
+    });
+    setSearchTerms(
+      `${room.roomName} - ${room.customerName} - ${room.voucherNumber}`
+    );
+    setShowOptions(false);
+  };
 
   const fetchPriceList = async () => {
     try {
@@ -419,6 +446,7 @@ const RestaurantPOS = () => {
   };
 
   const generateKOT = async (selectedTableNumber, tableStatus) => {
+    console.log("hi");
     let updatedItems = [];
     let orderCustomerDetails = {
       ...customerDetails,
@@ -480,7 +508,7 @@ const RestaurantPOS = () => {
     }
 
     console.log("orderCustomerDetails", orderItems);
-
+    console.log(orderType);
     console.log("orderCustomerDetails", finalProductData);
 
     const newOrder = {
@@ -493,9 +521,11 @@ const RestaurantPOS = () => {
       status: "pending",
       paymentMethod: orderType === "dine-in" ? null : "cash",
     };
+
     let url = isEdit
       ? `/api/sUsers/editKOT/${cmp_id}/${kotDataForEdit._id}`
       : `/api/sUsers/generateKOT/${cmp_id}`;
+    console.log(url);
     try {
       let response = await api.post(url, newOrder, {
         withCredentials: true,
@@ -578,12 +608,16 @@ const RestaurantPOS = () => {
   };
 
   const handleKotPrint = (data) => {
+    console.log(data);
+    console.log(data.type);
     const orderData = {
       kotNo: data?.voucherNumber,
       tableNo: data?.tableNumber,
+      type: data.type,
       items: data?.items,
       createdAt: new Date(),
     };
+
     generateAndPrintKOT(orderData, true, false, companyName);
   };
 
@@ -1180,35 +1214,46 @@ const RestaurantPOS = () => {
         </div>
       </div>
 
-      {showFullTableSelection && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl w-full max-w-3xl max-h-[85vh] overflow-auto relative border border-white/20 animate-in zoom-in-95 duration-200">
-            <button
-              onClick={() => {
-                setShowFullTableSelection(false);
-                if (!kotDataForEdit  &&  Object.keys(kotDataForEdit).length <= 0) {
-                  setRoomDetails({});
-                }
-              }}
-              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl font-bold w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center transition-all duration-200"
-            >
-              ×
-            </button>
-            <div className="p-4 md:p-6">
-              <TableSelection
-                showKOTs={false}
-                onTableSelect={(table) => {
-                  generateKOT(table.tableNumber, table.status);
-                  setShowFullTableSelection(false);
-                }}
-                roomData={roomData}
-                setRoomDetails={setRoomDetails}
-                roomDetails={roomDetails}
-              />
-            </div>
-          </div>
-        </div>
-      )}
+    {showFullTableSelection && (
+  <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+    <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-auto relative border border-white/20 animate-in zoom-in-95 duration-200">
+      <button
+        onClick={() => {
+          setShowFullTableSelection(false);
+          if (!kotDataForEdit && Object.keys(kotDataForEdit).length <= 0) {
+            setRoomDetails({});
+          }
+        }}
+        className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl font-bold w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center transition-all duration-200"
+      >
+     <button
+  onClick={() => {
+    setShowFullTableSelection(false);
+    if (!kotDataForEdit && Object.keys(kotDataForEdit).length <= 0) {
+      setRoomDetails({});
+    }
+  }}
+  className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-3xl font-bold w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center transition-all duration-200"
+  aria-label="Close modal"
+>
+  &times;
+</button>
+      </button>
+      <div>
+        <TableSelection
+          showKOTs={false}
+          onTableSelect={(table) => {
+            generateKOT(table.tableNumber, table.status);
+            setShowFullTableSelection(false);
+          }}
+          roomData={roomData}
+          setRoomDetails={setRoomDetails}
+          roomDetails={roomDetails}
+        />
+      </div>
+    </div>
+  </div>
+)}
 
       {/* Compact KOT Modal */}
       {showKOTModal && (

@@ -18,10 +18,15 @@ const restuarentSettings = () => {
   
 
   const handleToggleChangeFromParent = async (data) => {
-    console.log(data);
+    console.log(data)
+  let url 
+  if(data?.title == "kotApproval"){
+    url =`/api/sUsers/updateConfigurationForKotApproval/${_id}`
+  }else{
+url=  `/api/sUsers/updateConfigurationForHotelAndRestaurant/${_id}`
+  }
     try {
-      const response = await api.put(
-        `/api/sUsers/updateConfigurationForHotelAndRestaurant/${_id}`,
+      const response = await api.put(url,
         data,
         { withCredentials: true }
       );
@@ -77,6 +82,15 @@ const restuarentSettings = () => {
       icon: <IoFastFood />,
       to: "/sUsers/AddRestuarentCategory",
       active: true,
+    });
+     settingsOptions.push({
+      title: "Auto approval for kot kitchen",
+      description:"For better kot management",
+      icon: <LiaMoneyCheckAltSolid />,
+      active: true,
+      toggle: true,
+      toggleValue: configurations[0]?.kotAutoApproval,
+      dbField: "kotApproval",
     });
     settingsOptions.push({
       title: "addRateWithTax",
