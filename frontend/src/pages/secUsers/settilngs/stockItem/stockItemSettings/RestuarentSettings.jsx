@@ -1,15 +1,45 @@
 /* eslint-disable react/jsx-key */
+import React from "react";
 import { IoFastFood } from "react-icons/io5";
 import { MdFoodBank } from "react-icons/md";
 import TitleDiv from "../../../../../components/common/TitleDiv";
 import SettingsCard from "../../../../../components/common/SettingsCard";
-import { useSelector } from "react-redux";
+import { useSelector , useDispatch } from "react-redux";
+import { toast } from "react-toastify";
+import { LiaMoneyCheckAltSolid } from "react-icons/lia";
+import { updateConfiguration } from "../../../../../../slices/secSelectedOrgSlice.js";
+import api from "@/api/api";
 
 const restuarentSettings = () => {
-  const { industry } = useSelector(
+  const dispatch = useDispatch();
+  const { industry, _id , configurations} = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
-  console.log(industry)
+  
+
+  const handleToggleChangeFromParent = async (data) => {
+    console.log(data)
+  let url 
+  if(data?.title == "kotApproval"){
+    url =`/api/sUsers/updateConfigurationForKotApproval/${_id}`
+  }else{
+url=  `/api/sUsers/updateConfigurationForHotelAndRestaurant/${_id}`
+  }
+    try {
+      const response = await api.put(url,
+        data,
+        { withCredentials: true }
+      );
+      if (response?.data?.success) {
+        dispatch(updateConfiguration(response?.data?.organization));
+        toast.success(response?.data?.message);
+      }
+    } catch (error) {
+      toast.error(error?.response?.data?.message);
+    }
+  };
+
+
   const settingsOptions = [
     {
       title:
@@ -53,6 +83,24 @@ const restuarentSettings = () => {
       to: "/sUsers/AddRestuarentCategory",
       active: true,
     });
+     settingsOptions.push({
+      title: "Auto approval for kot kitchen",
+      description:"For better kot management",
+      icon: <LiaMoneyCheckAltSolid />,
+      active: true,
+      toggle: true,
+      toggleValue: configurations[0]?.kotAutoApproval,
+      dbField: "kotApproval",
+    });
+    settingsOptions.push({
+      title: "addRateWithTax",
+      description: "Better tax calculations for better organization",
+      icon: <LiaMoneyCheckAltSolid />,
+      active: true,
+      toggle: true,
+      toggleValue: configurations[0]?.addRateWithTax?.hotelSale,
+      dbField: "hotelSale",
+    });
   }
 
   return (
@@ -67,7 +115,7 @@ const restuarentSettings = () => {
       />
       <div className="space-y-4 b-white p-4   mx-1">
         {settingsOptions.map((option, index) => (
-          <SettingsCard key={index} option={option} index={index} />
+          <SettingsCard key={index} option={option} index={index}   handleToggleChangeFromParent={handleToggleChangeFromParent} />
         ))}
       </div>
     </div>

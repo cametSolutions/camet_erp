@@ -62,6 +62,20 @@ const RestaurantPOS = () => {
   const [selectedPriceLevel, setSelectedPriceLevel] = useState(null);
   const kotDataForEdit = location.state?.kotData;
 
+  const [customerDetails, setCustomerDetails] = useState({
+    name: "",
+    phone: "",
+    address: "",
+    tableNumber: "10",
+  });
+  const [roomDetails, setRoomDetails] = useState({
+    roomno: "",
+    guestName: "",
+    CheckInNumber: "",
+  });
+  const [orders, setOrders] = useState([]);
+  const [orderNumber, setOrderNumber] = useState(1001);
+
   useEffect(() => {
     if (kotDataForEdit) {
       setIsEdit(true);
@@ -74,14 +88,14 @@ const RestaurantPOS = () => {
         tableNumber: kotDataForEdit?.tableNumber,
       });
       setRoomDetails({
-        ...roomDetails,
-        _id: kotDataForEdit?.roomId || "",
+        _id: kotDataForEdit?.roomId?._id || "",
         guestName: kotDataForEdit?.customer?.name || "",
         CheckInNumber: kotDataForEdit?.checkInNumber || "",
       });
     }
   }, [kotDataForEdit]);
 
+  console.log(roomDetails, "roomDetails");
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
@@ -103,20 +117,6 @@ const RestaurantPOS = () => {
     Biriyani: "🍲",
     Default: "🍽️",
   };
-
-  const [customerDetails, setCustomerDetails] = useState({
-    name: "",
-    phone: "",
-    address: "",
-    tableNumber: "10",
-  });
-  const [roomDetails, setRoomDetails] = useState({
-    roomno: "",
-    guestName: "",
-    CheckInNumber: "",
-  });
-  const [orders, setOrders] = useState([]);
-  const [orderNumber, setOrderNumber] = useState(1001);
 
   // Mobile detection
   useEffect(() => {
@@ -479,13 +479,23 @@ const RestaurantPOS = () => {
     });
     let finalProductData = await taxCalculatorForRestaurant(
       updatedItems,
-      configurations[0]?.addRateWithTax?.sale
+      configurations[0]?.addRateWithTax?.restaurantSale
     );
     if (orderType === "dine-in") {
-      orderCustomerDetails = {
-        tableNumber: selectedTableNumber,
-        tableStatus,
-      };
+      if (roomDetails && Object.keys(roomDetails).length > 0) {
+        orderCustomerDetails = {
+          roomId: roomDetails?._id,
+          checkInNumber: roomDetails?.CheckInNumber,
+          name: roomDetails?.guestName,
+          tableNumber: selectedTableNumber,
+          tableStatus,
+        };
+      } else {
+        orderCustomerDetails = {
+          tableNumber: selectedTableNumber,
+          tableStatus,
+        };
+      }
     } else if (orderType === "roomService") {
       console.log(roomDetails);
       orderCustomerDetails = {
@@ -1204,33 +1214,41 @@ const RestaurantPOS = () => {
         </div>
       </div>
 
-     {showFullTableSelection && (
-  <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-md p-4">
-    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden relative border border-gray-200 animate-in zoom-in-95 duration-300 ease-out">
-      {/* Modal Header */}
-      <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-semibold text-gray-800">Select Table</h2>
-          <p className="text-sm text-gray-500">Choose a table to generate KOT</p>
-        </div>
-        <button
-          onClick={() => setShowFullTableSelection(false)}
-          className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 group"
-        >
-          <svg className="w-6 h-6 group-hover:rotate-90 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
-
-      {/* Modal Body - Scrollable */}
-      <div className="overflow-y-auto max-h-[calc(90vh-80px)] px-6 py-4">
+    {showFullTableSelection && (
+  <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+    <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-auto relative border border-white/20 animate-in zoom-in-95 duration-200">
+      <button
+        onClick={() => {
+          setShowFullTableSelection(false);
+          if (!kotDataForEdit && Object.keys(kotDataForEdit).length <= 0) {
+            setRoomDetails({});
+          }
+        }}
+        className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl font-bold w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center transition-all duration-200"
+      >
+     <button
+  onClick={() => {
+    setShowFullTableSelection(false);
+    if (!kotDataForEdit && Object.keys(kotDataForEdit).length <= 0) {
+      setRoomDetails({});
+    }
+  }}
+  className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-3xl font-bold w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center transition-all duration-200"
+  aria-label="Close modal"
+>
+  &times;
+</button>
+      </button>
+      <div>
         <TableSelection
           showKOTs={false}
           onTableSelect={(table) => {
             generateKOT(table.tableNumber, table.status);
             setShowFullTableSelection(false);
           }}
+          roomData={roomData}
+          setRoomDetails={setRoomDetails}
+          roomDetails={roomDetails}
         />
       </div>
     </div>
@@ -1279,38 +1297,36 @@ const RestaurantPOS = () => {
 
             {/* Customer Details Input */}
             <div className="space-y-3 mb-6">
-              {orderType === "roomService" && (
+              {(orderType === "roomService" || orderType === "dine-in") && (
                 <>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Room Number
                     </label>
-
-                    <input
-                      type="text"
-                      value={searchTerms}
+                    <select
+                      value={roomDetails._id}
                       onChange={(e) => {
-                        setSearchTerms(e.target.value);
-                        setShowOptions(true);
+                        const selectedRoom = roomData.find(
+                          (room) => room.roomId === e.target.value
+                        );
+                        setRoomDetails({
+                          ...roomDetails,
+                          _id: selectedRoom?.roomId || "",
+                          roomno: selectedRoom?.roomName || "",
+                          guestName: selectedRoom?.customerName || "",
+                          CheckInNumber: selectedRoom?.voucherNumber || "",
+                        });
                       }}
-                      onFocus={() => setShowOptions(true)}
                       className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 text-sm bg-white transition-all duration-200"
-                      placeholder="Type or select a room"
-                    />
-                    {showOptions && filteredRooms?.length > 0 && (
-                      <ul className="absolute z-10 w-full bg-white border border-gray-300 rounded-xl mt-1 max-h-60 overflow-y-auto shadow-lg">
-                        {filteredRooms.map((room) => (
-                          <li
-                            key={room.roomId}
-                            onClick={() => handleSelect(room)}
-                            className="px-3 py-2 hover:bg-indigo-100 cursor-pointer text-sm"
-                          >
-                            {room.roomName} - {room.customerName} -{" "}
-                            {room.voucherNumber}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
+                    >
+                      <option value="">Select a room</option>
+                      {roomData?.map((room) => (
+                        <option value={room.roomId} key={room.roomId}>
+                          {room?.roomName} - {room?.customerName} -{" "}
+                          {room?.voucherNumber}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   <div>
@@ -1402,7 +1418,10 @@ const RestaurantPOS = () => {
             {/* Confirm Button */}
             <div className="flex space-x-2">
               <button
-                onClick={() => setShowKOTModal(false)}
+                onClick={() => {
+                  setShowKOTModal(false);
+                  setRoomDetails({});
+                }}
                 className="flex-1 bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 hover:scale-105 active:scale-95"
               >
                 Cancel

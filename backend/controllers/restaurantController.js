@@ -13,7 +13,7 @@ import bankModel from "../models/bankModel.js";
 import cashModel from "../models/cashModel.js";
 import Party from "../models/partyModel.js";
 import { saveSettlementData } from "../helpers/salesHelper.js";
-
+import Organization from "../models/OragnizationModel.js";
 import Table from "../models/TableModel.js";
 import { Godown } from "../models/subDetails.js";
 // Helper functions (you may need to create these or adjust based on your existing ones)
@@ -202,7 +202,6 @@ export const updateItem = async (req, res) => {
   try {
     const { formData, tableData } = req.body;
 
-
     session.startTransaction();
 
     // Verify HSN exists
@@ -271,9 +270,9 @@ export const updateItem = async (req, res) => {
 export const deleteItem = async (req, res) => {
   try {
     const { id } = req.params; // or const itemId = req.params.id;
-    
+
     const deletedItem = await productModel.findByIdAndDelete(id);
-    
+
     if (!deletedItem) {
       return res.status(404).json({
         success: false,
@@ -329,7 +328,13 @@ export const generateKot = async (req, res) => {
     session.startTransaction();
 
     const cmp_id = req.params.cmp_id;
+    const organizationData = await Organization.findOne(
+      { _id: cmp_id }, // filter
+      null, // projection (null = all fields)
+      { session } // options (session here)
+    );
 
+    console.log(organizationData);
     // Find voucher series inside the session
     const voucherData = await VoucherSeriesModel.findOne(
       { voucherType: "memoRandom", cmp_id: cmp_id },
@@ -361,7 +366,11 @@ export const generateKot = async (req, res) => {
       tableNumber: req.body.customer?.tableNumber,
       total: req.body.total,
       createdAt: new Date(),
-      status: req.body.status || "pending",
+
+      status: organizationData.configurations[0].kotAutoApproval
+        ? "completed"
+        : req.body.status || "pending",
+
       paymentMethod: req.body.paymentMethod,
       roomId: req.body.customer?.roomId,
       checkInNumber: req.body.customer?.checkInNumber,
@@ -507,9 +516,9 @@ export const getKot = async (req, res) => {
     const end = new Date(date + "T23:59:59.999Z");
 
     const kot = await kotModal
-      .find({ 
+      .find({
         cmp_id,
-        createdAt: { $gte: start, $lte: end }
+        createdAt: { $gte: start, $lte: end },
       })
       .populate("roomId");
 
@@ -525,7 +534,6 @@ export const getKot = async (req, res) => {
     });
   }
 };
-
 
 // function used to update kot
 export const updateKotStatus = async (req, res) => {
@@ -547,16 +555,24 @@ export const updateKotStatus = async (req, res) => {
 // function used to fetch room data based on room booking
 export const getRoomDataForRestaurant = async (req, res) => {
   try {
-    const now = new Date();
-    const today = new Date(now.toDateString()); // strip time part
+    // Today's date only (strip time)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // reset time to midnight
 
-    // Get all records for that cmp_id
-    const allData = await CheckIn.find({ cmp_id: req.params.cmp_id });
+    // Get all records for cmp_id
+    const allData = await CheckIn.find({
+      cmp_id: req.params.cmp_id,
+      status: { $ne: "checkOut" },
+    });
 
-    // Filter in JS (only by dates, ignore time)
+    // Filter only those where today's date falls between arrivalDate & checkOutDate
     const filtered = allData.filter((doc) => {
+      // arrivalDate/checkOutDate are stored as "YYYY-MM-DD" strings
       const arrivalDate = new Date(doc.arrivalDate);
+      arrivalDate.setHours(0, 0, 0, 0);
+
       const checkOutDate = new Date(doc.checkOutDate);
+      checkOutDate.setHours(0, 0, 0, 0);
 
       return arrivalDate <= today && today <= checkOutDate;
     });
@@ -573,7 +589,6 @@ export const getRoomDataForRestaurant = async (req, res) => {
     });
   }
 };
-
 
 // function used to update kot data
 
@@ -784,7 +799,7 @@ export const updateKotPayment = async (req, res) => {
         selectedKotData: kotData,
         isPostToRoom,
       } = req.body;
-      console.log("table",kotData)
+      console.log("table", kotData);
 
       // Validate required fields
       if (!paymentDetails || !kotData) {
@@ -822,6 +837,7 @@ export const updateKotPayment = async (req, res) => {
         cashAmt,
         onlineAmt,
         kotData,
+        isPostToRoom,
         session
       );
 
@@ -894,28 +910,27 @@ export const updateKotPayment = async (req, res) => {
 
       await session.commitTransaction();
       await session.commitTransaction(); // commits before map is done
-       const pendingCount = await kotModal.countDocuments({
-      "customer.tableNumber": kotData.tableNumber,
-      paymentCompleted: false
-    })
-    console.log("check",pendingCount)
-    let tableAvailable=false
-    if(pendingCount===0){
-      const updatetabestatus=await Table.findOneAndUpdate(
-      { tableNumber:kotData.tableNumber}, // find by table number
-      { status:  "available" },      // update status
-      { new: true }    // return updated doc
-    )
-    if(updatetabestatus){
-      tableAvailable=true
-    }
+      const pendingCount = await kotModal.countDocuments({
+        "customer.tableNumber": kotData.tableNumber,
+        paymentCompleted: false,
+      });
+      console.log("check", pendingCount);
+      let tableAvailable = false;
+      if (pendingCount === 0) {
+        const updatetabestatus = await Table.findOneAndUpdate(
+          { tableNumber: kotData.tableNumber }, // find by table number
+          { status: "available" }, // update status
+          { new: true } // return updated doc
+        );
+        if (updatetabestatus) {
+          tableAvailable = true;
+        }
+      }
 
-    }
-    
       res.status(200).json({
         success: true,
         message: "KOT payment updated successfully",
-        data: { saleNumber, salesRecord: savedVoucherData[0],tableAvailable },
+        data: { saleNumber, salesRecord: savedVoucherData[0], tableAvailable },
       });
     });
   } catch (error) {
@@ -951,18 +966,29 @@ async function getSelectedParty(
   cashAmt,
   onlineAmt,
   kotData,
+  isPostToRoom,
   session
 ) {
   let partyId;
 
-  if (paymentDetails?.paymentMode === "single") {
-    if (cashAmt > 0) {
-      partyId = paymentDetails?.selectedCash;
-    } else if (onlineAmt > 0) {
-      partyId = paymentDetails?.selectedBank;
-    }
+  if (isPostToRoom) {
+    console.log("koptData", kotData?.voucherNumber[0]?.checkInNumber);
+    let checkInData = await CheckIn.findOne({
+      voucherNumber: kotData?.voucherNumber[0]?.checkInNumber,
+    }).session(session);
+    console.log("checkInData", checkInData);
+    partyId = checkInData?.customerId.toString();
+    console.log("partyId", partyId);
   } else {
-    partyId = paymentDetails?.selectedCash;
+    if (paymentDetails?.paymentMode === "single") {
+      if (cashAmt > 0) {
+        partyId = paymentDetails?.selectedCash;
+      } else if (onlineAmt > 0) {
+        partyId = paymentDetails?.selectedBank;
+      }
+    } else {
+      partyId = paymentDetails?.selectedCash;
+    }
   }
 
   const selectedParty = await Party.findOne({ cmp_id, _id: partyId })
@@ -1431,5 +1457,38 @@ export const getKotDataByTable = async (req, res) => {
     res.json({ success: true, data: kots });
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+export const updateConfigurationForKotApproval = async (req, res) => {
+  try {
+    const { cmp_id } = req.params;
+    const data = req.body;
+
+    // update object
+    const updateData = {
+      $set: {
+        [`configurations.0.kotAutoApproval`]: data?.checked,
+      },
+    };
+
+    const updatedDoc = await Organization.findOneAndUpdate(
+      { _id: cmp_id },
+      updateData,
+      { new: true }
+    );
+
+    if (!updatedDoc) {
+      return res.status(404).json({ message: "Organization not found" });
+    }
+
+    res.status(200).json({
+      message: "Configuration updated",
+      success: true,
+      organization: updatedDoc,
+    });
+  } catch (error) {
+    console.error("Error updating configuration:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };

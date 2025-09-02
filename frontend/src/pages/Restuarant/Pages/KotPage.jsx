@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import dayjs from "dayjs";
 import useFetch from "@/customHook/useFetch";
 import { useSelector } from "react-redux";
@@ -20,10 +20,14 @@ import { motion } from "framer-motion";
 import { Check, CreditCard, X, Banknote } from "lucide-react";
 import { generateAndPrintKOT } from "@/pages/Restuarant/Helper/kotPrintHelper";
 import { useNavigate } from "react-router-dom";
-import VoucherPdf from "@/pages/voucher/voucherPdf/indian/VoucherPdf";
+// import VoucherPdf from "@/pages/voucher/voucherPdf/indian/VoucherPdf";
 import { toast } from "react-toastify";
 import { FaRegEdit } from "react-icons/fa";
+import VoucherThreeInchPdf from "@/pages/voucher/voucherPdf/threeInchPdf/VoucherThreeInchPdf";
+import { useReactToPrint } from "react-to-print";
+
 const OrdersDashboard = () => {
+  const contentToPrint = useRef(null);
   const [activeFilter, setActiveFilter] = useState("On Process");
   const [searchQuery, setSearchQuery] = useState("");
   const [userRole, setUserRole] = useState("reception");
@@ -33,7 +37,9 @@ const OrdersDashboard = () => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [selectedDataForPayment, setSelectedDataForPayment] = useState({});
-const [selectedDate, setSelectedDate] = useState(dayjs().format("YYYY-MM-DD"));
+  const [selectedDate, setSelectedDate] = useState(
+    dayjs().format("YYYY-MM-DD")
+  );
   const [paymentMode, setPaymentMode] = useState("single"); // "single" or "split"
   const [cashAmount, setCashAmount] = useState(0);
   const [onlineAmount, setOnlineAmount] = useState(0);
@@ -48,10 +54,8 @@ const [selectedDate, setSelectedDate] = useState(dayjs().format("YYYY-MM-DD"));
   const [conformationModal, setConformationModal] = useState(false);
   const [isPostToRoom, setIsPostToRooms] = useState(false);
 
-
-
-   const location = useLocation();
-  const selectedKotFromRedirect  = location.state?.selectedKot;
+  const location = useLocation();
+  const selectedKotFromRedirect = location.state?.selectedKot;
   const fromTable = location.state?.fromTable ?? false;
   const [showKotNotification, setShowKotNotification] = useState(fromTable);
   // state used for showing pdf print
@@ -67,16 +71,16 @@ const [selectedDate, setSelectedDate] = useState(dayjs().format("YYYY-MM-DD"));
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
 
-
-  
-  const { data, refreshHook } = useFetch(`/api/sUsers/getKotData/${cmp_id}?date=${selectedDate}`);
+  const { data, refreshHook } = useFetch(
+    `/api/sUsers/getKotData/${cmp_id}?date=${selectedDate}`
+  );
 
   useEffect(() => {
     if (data) {
       console.log(data?.data[23]);
       setOrders(data?.data);
     }
-  }, [data,selectedDate]);
+  }, [data, selectedDate]);
 
   const { data: paymentTypeData } = useFetch(
     `/api/sUsers/getPaymentType/${cmp_id}`
@@ -287,8 +291,8 @@ const [selectedDate, setSelectedDate] = useState(dayjs().format("YYYY-MM-DD"));
       tableNo: data?.tableNumber,
       items: data?.items,
       createdAt: data?.createdAt,
-      customerName:data?.customer?.name,
-      type:data?.type
+      customerName: data?.customer?.name,
+      type: data?.type,
     };
 
     generateAndPrintKOT(orderData, true, false, companyName);
@@ -336,53 +340,73 @@ const [selectedDate, setSelectedDate] = useState(dayjs().format("YYYY-MM-DD"));
 
   useEffect(() => {
     if (salePrintData) {
-      navigate(`/sUsers/sharesales/${salePrintData._id}`);
+      navigate(`/sUsers/sharesalesThreeInch/${salePrintData._id}`);
     }
   }, [salePrintData, navigate]);
 
   const filteredOrders = getFilteredOrders();
 
-  console.log(selectedDataForPayment)
-
   const handleSavePayment = async (id) => {
     setSaveLoader(true);
+
     let paymentDetails;
-    if (paymentMode == "single") {
-      if (paymentMethod == "cash") {
+    let selectedKotData;
+    if (
+      selectedDataForPayment.roomService &&
+      Object.keys(selectedDataForPayment.roomService).length > 0
+    ) {
+      if (paymentMode == "single") {
+        if (paymentMethod == "cash") {
+          paymentDetails = {
+            cashAmount: selectedDataForPayment?.total,
+            onlineAmount: onlineAmount,
+            selectedCash: selectedCash,
+            selectedBank: selectedBank,
+            paymentMode: paymentMode,
+          };
+          selectedKotData = selectedDataForPayment;
+        } else {
+          paymentDetails = {
+            cashAmount: cashAmount,
+            onlineAmount: selectedDataForPayment?.total,
+            selectedCash: selectedCash,
+            selectedBank: selectedBank,
+            paymentMode: paymentMode,
+          };
+          selectedKotData = selectedDataForPayment;
+        }
+      } else {
+        if (
+          Number(cashAmount) + Number(onlineAmount) !=
+          selectedDataForPayment?.total
+        ) {
+          setPaymentError(
+            "Cash and online amounts together equal the total amount."
+          );
+          return;
+        }
         paymentDetails = {
-          cashAmount: selectedDataForPayment?.total,
+          cashAmount: cashAmount,
           onlineAmount: onlineAmount,
           selectedCash: selectedCash,
           selectedBank: selectedBank,
           paymentMode: paymentMode,
         };
-      } else {
-        paymentDetails = {
-          cashAmount: cashAmount,
-          onlineAmount: selectedDataForPayment?.total,
-          selectedCash: selectedCash,
-          selectedBank: selectedBank,
-          paymentMode: paymentMode,
-        };
+        selectedKotData = selectedDataForPayment;
       }
     } else {
-      if (
-        Number(cashAmount) + Number(onlineAmount) !=
-        selectedDataForPayment?.total
-      ) {
-        setPaymentError(
-          "Cash and online amounts together equal the total amount."
-        );
-        return;
-      }
       paymentDetails = {
-        cashAmount: cashAmount,
+        cashAmount: previewForSales?.total,
         onlineAmount: onlineAmount,
         selectedCash: selectedCash,
         selectedBank: selectedBank,
         paymentMode: paymentMode,
+        isPostToRoom: true,
       };
+      selectedKotData = previewForSales;
     }
+
+    console.log(paymentDetails);
 
     try {
       const response = await api.put(
@@ -390,7 +414,7 @@ const [selectedDate, setSelectedDate] = useState(dayjs().format("YYYY-MM-DD"));
         {
           paymentMethod: paymentMethod,
           paymentDetails: paymentDetails,
-          selectedKotData: selectedDataForPayment,
+          selectedKotData: selectedKotData,
           isPostToRoom: isPostToRoom,
         },
         { withCredentials: true }
@@ -427,7 +451,6 @@ const [selectedDate, setSelectedDate] = useState(dayjs().format("YYYY-MM-DD"));
   };
 
   const handlePrintData = async (kotId) => {
-    console.log(kotId);
     try {
       let saleData = await api.get(
         `/api/sUsers/getSalePrintData/${cmp_id}/${kotId}`,
@@ -442,21 +465,34 @@ const [selectedDate, setSelectedDate] = useState(dayjs().format("YYYY-MM-DD"));
   // function used to select multiple kot
   const handleSelectMultipleKots = (order) => {
     if (order && !order?.paymentCompleted) {
-      let findOne = selectedKot.find((item) => item.id == order._id);
-      console.log(order);
-      console.log(findOne);
+      console.log(order?.roomId?._id);
+      const findOne = selectedKot.find((item) => item.id === order._id);
+      const firstSelected = selectedKot[0];
+      console.log(firstSelected); // take the first selection
+
+      if (firstSelected) {
+          // ✅ only allow roomService with same roomId
+          if (firstSelected.roomId !== order?.roomId?._id) {
+            toast.error("You can only select room  KOTs from the same room");
+            return;
+        } 
+      }
+
       if (findOne) {
+        // remove if already selected
         setSelectedKot((prevSelected) =>
           prevSelected.filter((item) => item.id !== order._id)
         );
       } else {
+        // add new selection
         setSelectedKot((prevSelected) => [
           ...prevSelected,
           {
             id: order._id,
-            type: "kot",
+            type: order.type,
             voucherNumber: order.voucherNumber,
-            serviceWorker: order.type,
+            roomId: order?.roomId?._id, // keep roomId for validation
+            checkInNumber: order?.checkInNumber,
           },
         ]);
       }
@@ -472,6 +508,7 @@ const [selectedDate, setSelectedDate] = useState(dayjs().format("YYYY-MM-DD"));
         kotVoucherNumberArray.push({
           voucherNumber: findOne.voucherNumber,
           id: findOne._id,
+          checkInNumber: findOne?.checkInNumber,
         });
       }
       return findOne?.items || []; // return empty array if not found
@@ -501,6 +538,11 @@ const [selectedDate, setSelectedDate] = useState(dayjs().format("YYYY-MM-DD"));
 
   const handleSaveSales = (status) => {
     setConformationModal(false);
+    if (isPostToRoom && status) {
+      handleSavePayment();
+      return;
+    }
+
     if (!status) {
       setShowVoucherPdf(false);
       setPreviewForSales(null);
@@ -523,20 +565,31 @@ const [selectedDate, setSelectedDate] = useState(dayjs().format("YYYY-MM-DD"));
     navigate("/sUsers/RestaurantDashboard", { state: { kotData } });
   };
 
-  console.log(selectedKot);
+  const handlePrint = useReactToPrint({
+    content: () => contentToPrint.current,
+  });
+
   return (
     <>
-   
-
       {showVoucherPdf && (
         <div>
-          <VoucherPdf
+          {/* <VoucherPdf
             data={previewForSales}
             org={org}
             userType="secondaryUser"
             tab="sales"
             isPreview={true}
+
             sendToParent={handleSaveSales}
+          /> */}
+          <VoucherThreeInchPdf
+            contentToPrint={contentToPrint}
+            data={previewForSales}
+            org={org}
+            tab="sale"
+            isPreview={true}
+            sendToParent={handleSaveSales}
+            handlePrintData={handlePrint}
           />
         </div>
       )}
@@ -562,17 +615,17 @@ const [selectedDate, setSelectedDate] = useState(dayjs().format("YYYY-MM-DD"));
               </div>
             </div>
             <div className="flex items-center gap-4 mb-4">
-        <div className="text-gray-600 text-sm">
-          {dayjs(selectedDate).format("dddd, D MMMM YYYY")}
-        </div>
-        <input
-          type="date"
-          value={selectedDate}
-          onChange={e => setSelectedDate(e.target.value)}
-          className="px-3 py-1 border rounded text-sm"
-          max={dayjs().format("YYYY-MM-DD")}
-        />
-      </div>
+              <div className="text-gray-600 text-sm">
+                {dayjs(selectedDate).format("dddd, D MMMM YYYY")}
+              </div>
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="px-3 py-1 border rounded text-sm"
+                max={dayjs().format("YYYY-MM-DD")}
+              />
+            </div>
           </div>
 
           {/* Controls */}
@@ -593,17 +646,17 @@ const [selectedDate, setSelectedDate] = useState(dayjs().format("YYYY-MM-DD"));
               ))}
             </div>
 
-
- {showKotNotification && selectedKotFromRedirect && (
-  <div
-    className="fixed top-6 inset-x-0 flex justify-center z-50 cursor-pointer"
-    onClick={() => setShowKotNotification(false)}
-  >
-    <div className="bg-yellow-100 border border-yellow-400 px-6 py-2 rounded-lg shadow text-yellow-900 font-medium">
-      KOT #{selectedKotFromRedirect.voucherNumber} was selected from table. Click to close this notice.
-    </div>
-  </div>
-)}
+            {showKotNotification && selectedKotFromRedirect && (
+              <div
+                className="fixed top-6 inset-x-0 flex justify-center z-50 cursor-pointer"
+                onClick={() => setShowKotNotification(false)}
+              >
+                <div className="bg-yellow-100 border border-yellow-400 px-6 py-2 rounded-lg shadow text-yellow-900 font-medium">
+                  KOT #{selectedKotFromRedirect.voucherNumber} was selected from
+                  table. Click to close this notice.
+                </div>
+              </div>
+            )}
             <div className="flex items-center gap-2">
               <MenuIcon />
               <input
@@ -629,7 +682,6 @@ const [selectedDate, setSelectedDate] = useState(dayjs().format("YYYY-MM-DD"));
                 };
 
                 return (
-
                   <div
                     key={order.id}
                     className={`group relative bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border overflow-hidden h-96 flex flex-col cursor-pointer ${
@@ -637,11 +689,14 @@ const [selectedDate, setSelectedDate] = useState(dayjs().format("YYYY-MM-DD"));
                         ? "border-blue-500 ring-2 ring-blue-200 bg-blue-50"
                         : "border-gray-100 hover:border-blue-200"
                     }`}
-                    onClick={() =>{
-                      if (showKotNotification && order._id === selectedKotFromRedirect._id) {
-    setShowKotNotification(false);
-  }
-                    handleSelectMultipleKots(order);
+                    onClick={() => {
+                      if (
+                        showKotNotification &&
+                        order._id === selectedKotFromRedirect._id
+                      ) {
+                        setShowKotNotification(false);
+                      }
+                      handleSelectMultipleKots(order);
                     }}
                   >
                     {/* Selection indicator - Tick mark */}
@@ -1060,8 +1115,9 @@ const [selectedDate, setSelectedDate] = useState(dayjs().format("YYYY-MM-DD"));
                         className="flex-2 px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg text-sm font-bold hover:from-green-600 hover:to-emerald-700 transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2 shadow-lg"
                         onClick={() => {
                           let findOneWithNoRoomService = selectedKot.find(
-                            (kot) => kot?.serviceWorker !== "roomService"
+                            (kot) => !kot.roomId
                           );
+                          console.log(findOneWithNoRoomService);
                           if (findOneWithNoRoomService) {
                             handleSalesPreview();
                             toast.warning(

@@ -25,13 +25,19 @@ import {
   MdPayment,
 } from "react-icons/md";
 
-const TableTiles = ({ onTableSelect, showKOTs = true }) => {
+const TableTiles = ({
+  onTableSelect,
+  showKOTs = true,
+  roomData,
+  setRoomDetails,
+   roomDetails
+}) => {
   const [tables, setTables] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedTable, setSelectedTable] = useState(null);
   const [tableKOTs, setTableKOTs] = useState([]);
   const [kotLoading, setKotLoading] = useState(false);
-  const [tableAvailable,setTableAvailable]=useState(false)
+  const [tableAvailable, setTableAvailable] = useState(false);
   // Payment and print states
   const [selectedKot, setSelectedKot] = useState([]);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -54,7 +60,9 @@ const TableTiles = ({ onTableSelect, showKOTs = true }) => {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const [showKotNotification, setShowKotNotification] = useState(location.state?.fromTable);
+  const [showKotNotification, setShowKotNotification] = useState(
+    location.state?.fromTable
+  );
   const selectedKotFromRedirect = location.state?.selectedKot;
 
   const { _id: cmp_id, name: companyName } = useSelector(
@@ -124,7 +132,7 @@ const TableTiles = ({ onTableSelect, showKOTs = true }) => {
   // Navigate to print page when salePrintData is set
   useEffect(() => {
     if (salePrintData) {
-      navigate(`/sUsers/sharesales/${salePrintData._id}`);
+      navigate(`/sUsers/sharesalesThreeInch/${salePrintData._id}`);
     }
   }, [salePrintData, navigate]);
 
@@ -156,8 +164,8 @@ const TableTiles = ({ onTableSelect, showKOTs = true }) => {
 
   // Handle KOT click
   const handleKotClick = (kot) => {
-    navigate(`/sUsers/KotPage?tab=completed`, { 
-      state: { selectedKot: kot, fromTable: true } 
+    navigate(`/sUsers/KotPage?tab=completed`, {
+      state: { selectedKot: kot, fromTable: true },
     });
   };
 
@@ -176,8 +184,8 @@ const TableTiles = ({ onTableSelect, showKOTs = true }) => {
           withCredentials: true,
           params: {
             tableNumber: table.tableNumber,
-            status: "completed"
-          }
+            status: "completed",
+          },
         });
         setTableKOTs(res.data?.data || []);
       } catch (error) {
@@ -219,7 +227,7 @@ const TableTiles = ({ onTableSelect, showKOTs = true }) => {
       items: data?.items,
       createdAt: data?.createdAt,
       customerName: data?.customer?.name,
-      type: data?.type
+      type: data?.type,
     };
     generateAndPrintKOT(orderData, true, false, companyName);
   };
@@ -239,8 +247,8 @@ const TableTiles = ({ onTableSelect, showKOTs = true }) => {
 
   // Handle sales preview
   const handleSalesPreview = (postToRoom = false) => {
-    console.log(selectedKot)
-    console.log(tableKOTs)
+    console.log(selectedKot);
+    console.log(tableKOTs);
 
     setIsPostToRooms(postToRoom);
     let kotVoucherNumberArray = [];
@@ -273,7 +281,7 @@ const TableTiles = ({ onTableSelect, showKOTs = true }) => {
       finalAmount: totalAmount,
       total: totalAmount,
       voucherNumber: kotVoucherNumberArray,
-      tableNumber:tableKOTs[0]?.customer?.tableNumber
+      tableNumber: tableKOTs[0]?.customer?.tableNumber,
     };
     setPreviewForSales(newObject);
   };
@@ -295,7 +303,7 @@ const TableTiles = ({ onTableSelect, showKOTs = true }) => {
   const handleSavePayment = async (id) => {
     setSaveLoader(true);
     let paymentDetails;
-    
+
     if (paymentMode == "single") {
       if (paymentMethod == "cash") {
         paymentDetails = {
@@ -349,24 +357,25 @@ const TableTiles = ({ onTableSelect, showKOTs = true }) => {
       if (response.status === 200 || response.status === 201) {
         setTableKOTs((prevOrders) =>
           prevOrders.map((order) =>
-            order._id === id
-              ? { ...order, paymentCompleted: true }
-              : order
+            order._id === id ? { ...order, paymentCompleted: true } : order
           )
         );
-        console.log(response.data.tableAvailable)
-        setTableAvailable(response.data.tableAvailable)
+        console.log(response.data.tableAvailable);
+        setTableAvailable(response.data.tableAvailable);
         setSelectedKot([]);
         setShowVoucherPdf(false);
         toast.success(response?.data?.message);
-        
+
         // Refresh the KOTs for the selected table
         if (selectedTable) {
           handleTableClick(selectedTable);
         }
       }
     } catch (error) {
-      console.error("Error updating payment:", error.response?.data || error.message);
+      console.error(
+        "Error updating payment:",
+        error.response?.data || error.message
+      );
       toast.error("Payment processing failed");
     } finally {
       setSaveLoader(false);
@@ -406,11 +415,11 @@ const TableTiles = ({ onTableSelect, showKOTs = true }) => {
   //       return <FaCircle className="text-gray-300 text-xs" />;
   //   }
   // };
-
+console.log(roomDetails)
   const isOrderSelected = (order) => {
     return selectedKot.find((item) => item.id === order._id);
   };
-console.log(tables)
+  console.log(tables);
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50 p-6">
       {/* Voucher PDF Modal */}
@@ -430,51 +439,85 @@ console.log(tables)
       {!showVoucherPdf && (
         <>
           {/* Header */}
-        <div className="flex flex-row justify-center items-start gap-x-8 mb-8">
-  {/* Restaurant Tables Header */}
-  <div className="text-center mb-0">
-    <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-600 via-purple-600 to-blue-600 text-transparent bg-clip-text mb-2">
+          <div className="flex items-center justify-center gap-6 mb-8">
+  {/* Title */}
+ <div className="text-center mb-0">
+    <h1 className="text-4xl font-bold bg-gradient-to-r from-violet-600 via-purple-600 to-blue-600 text-transparent bg-clip-text mb-2">
       Restaurant Tables
     </h1>
     <div className="w-24 h-1 bg-gradient-to-r from-violet-500 to-blue-500 mx-auto rounded-full"></div>
   </div>
 
-  {/* Status Legend */}
-  <div className="bg-white/70 backdrop-blur-sm rounded-2xl px-6 py-3 shadow-lg border border-white/20">
-    <div className="flex flex-wrap justify-center gap-6">
- <div className="flex items-center gap-3 group">
-                  <div className="relative">
-                    <FaCircle className="text-emerald-500 text-sm animate-pulse" />
-                    <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-20"></div>
-                  </div>
-                  <span className="text-sm font-semibold text-gray-700 group-hover:text-emerald-600 transition-colors">Available</span>
-                </div>
-                <div className="flex items-center gap-3 group">
-                  <div className="relative">
-                    <FaCircle className="text-rose-500 text-sm animate-pulse" />
-                    <div className="absolute inset-0 bg-rose-500 rounded-full animate-ping opacity-20"></div>
-                  </div>
-                  <span className="text-sm font-semibold text-gray-700 group-hover:text-rose-600 transition-colors">Occupied</span>
-                </div>
-                <div className="flex items-center gap-3 group">
-                  <div className="relative">
-                    <FaCircle className="text-amber-500 text-sm animate-pulse" />
-                    <div className="absolute inset-0 bg-amber-500 rounded-full animate-ping opacity-20"></div>
-                  </div>
-                  <span className="text-sm font-semibold text-gray-700 group-hover:text-amber-600 transition-colors">Reserved</span>
-                </div>
-                <div className="flex items-center gap-3 group">
-                  <div className="relative">
-                    <FaCircle className="text-sky-500 text-sm animate-pulse" />
- <div className="absolute inset-0 bg-sky-500 rounded-full animate-ping opacity-20"></div>
- 
- </div>
-  <span className="text-sm font-semibold text-gray-700 group-hover:text-sky-600 transition-colors">Cleaning</span>
-    </div>
-    </div>
-  </div>
-</div>
+  {/* Dropdown */}
+  <select
+    className="px-4 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+    value={roomDetails?._id}
+    onChange={(e) => {
+      const selectedRoom = roomData.find(
+        (room) => room.roomId === e.target.value
+      );
+      setRoomDetails({
+        ...roomDetails,
+        _id: selectedRoom?.roomId || "",
+        roomno: selectedRoom?.roomName || "",
+        guestName: selectedRoom?.customerName || "",
+        CheckInNumber: selectedRoom?.voucherNumber || "",
+      });
+    }}
+  >
+    <option value="">Select a room</option>
+    {roomData?.map((room) => (
+      <option value={room.roomId} key={room.roomId}>
+        {room?.roomName} - {room?.customerName} - {room?.voucherNumber}
+      </option>
+    ))}
+  </select>
 
+  <div className="flex flex-wrap justify-center gap-6 mb-10">
+            <div className="bg-white/70 backdrop-blur-sm rounded-2xl px-6 py-3 shadow-lg border border-white/20">
+              <div className="flex flex-wrap justify-center gap-6">
+                <div className="flex items-center gap-3 group">
+                  <div className="relative">
+                    <FaCircle className="text-emerald-500 text-sm animate-pulse" />
+                    <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-20"></div>
+                  </div>
+                  <span className="text-sm font-semibold text-gray-700 group-hover:text-emerald-600 transition-colors">
+                    Available
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 group">
+                  <div className="relative">
+                    <FaCircle className="text-rose-500 text-sm animate-pulse" />
+                    <div className="absolute inset-0 bg-rose-500 rounded-full animate-ping opacity-20"></div>
+                  </div>
+                  <span className="text-sm font-semibold text-gray-700 group-hover:text-rose-600 transition-colors">
+                    Occupied
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 group">
+                  <div className="relative">
+                    <FaCircle className="text-amber-500 text-sm animate-pulse" />
+                    <div className="absolute inset-0 bg-amber-500 rounded-full animate-ping opacity-20"></div>
+                  </div>
+                  <span className="text-sm font-semibold text-gray-700 group-hover:text-amber-600 transition-colors">
+                    Reserved
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 group">
+                  <div className="relative">
+                    <FaCircle className="text-sky-500 text-sm animate-pulse" />
+                    <div className="absolute inset-0 bg-sky-500 rounded-full animate-ping opacity-20"></div>
+                  </div>
+                  <span className="text-sm font-semibold text-gray-700 group-hover:text-sky-600 transition-colors">
+                    Cleaning
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+</div>
+          {/* Status Legend */}
+        
 
           {/* KOT Notification */}
           {showKotNotification && selectedKotFromRedirect && (
@@ -483,88 +526,110 @@ console.log(tables)
               onClick={() => setShowKotNotification(false)}
             >
               <div className="bg-yellow-100 border border-yellow-400 px-6 py-2 rounded-lg shadow text-yellow-900 font-medium">
-                KOT #{selectedKotFromRedirect.voucherNumber} was selected from table. Click to close this notice.
+                KOT #{selectedKotFromRedirect.voucherNumber} was selected from
+                table. Click to close this notice.
               </div>
             </div>
           )}
 
           {/* Tables Grid */}
           <div className="flex justify-center mb-8">
-        <div className="grid grid-cols-5 md:grid-cols-10 gap-3 sm:gap-4 mb-2 ">
-          {tables.map((table, index) => {
-                const getStatusConfig = (status) => {
+  <div
+    className="grid gap-3 grid-cols-5 md:grid-cols-9"
+    style={{ maxWidth: "fit-content" }}
+  >
+    {tables.map((table, index) => {
+      const getStatusConfig = (status) => {
                   switch (status) {
                     case "available":
                       return {
-                        bgGradient: "from-emerald-50/90 via-green-50/80 to-emerald-100/90",
+                        bgGradient:
+                          "from-emerald-50/90 via-green-50/80 to-emerald-100/90",
                         borderColor: "border-emerald-200/60",
                         glowColor: "shadow-emerald-500/20",
                         textColor: "text-emerald-800",
                         iconColor: "text-emerald-600",
-                        pulseColor: "bg-emerald-500"
+                        pulseColor: "bg-emerald-500",
                       };
                     case "occupied":
                       return {
-                        bgGradient: "from-rose-50/90 via-red-50/80 to-rose-100/90",
+                        bgGradient:
+                          "from-rose-50/90 via-red-50/80 to-rose-100/90",
                         borderColor: "border-rose-200/60",
                         glowColor: "shadow-rose-500/20",
                         textColor: "text-rose-800",
                         iconColor: "text-rose-600",
-                        pulseColor: "bg-rose-500"
+                        pulseColor: "bg-rose-500",
                       };
                     case "reserved":
                       return {
-                        bgGradient: "from-amber-50/90 via-yellow-50/80 to-amber-100/90",
+                        bgGradient:
+                          "from-amber-50/90 via-yellow-50/80 to-amber-100/90",
                         borderColor: "border-amber-200/60",
                         glowColor: "shadow-amber-500/20",
                         textColor: "text-amber-800",
                         iconColor: "text-amber-600",
-                        pulseColor: "bg-amber-500"
+                        pulseColor: "bg-amber-500",
                       };
                     case "cleaning":
                       return {
-                        bgGradient: "from-sky-50/90 via-blue-50/80 to-sky-100/90",
+                        bgGradient:
+                          "from-sky-50/90 via-blue-50/80 to-sky-100/90",
                         borderColor: "border-sky-200/60",
                         glowColor: "shadow-sky-500/20",
                         textColor: "text-sky-800",
                         iconColor: "text-sky-600",
-                        pulseColor: "bg-sky-500"
+                        pulseColor: "bg-sky-500",
                       };
                     default:
                       return {
-                        bgGradient: "from-gray-50/90 via-slate-50/80 to-gray-100/90",
+                        bgGradient:
+                          "from-gray-50/90 via-slate-50/80 to-gray-100/90",
                         borderColor: "border-gray-200/60",
                         glowColor: "shadow-gray-500/20",
                         textColor: "text-gray-800",
                         iconColor: "text-gray-600",
-                        pulseColor: "bg-gray-500"
+                        pulseColor: "bg-gray-500",
                       };
                   }
                 };
 
-                const statusConfig = getStatusConfig(table.status);
+                 const statusConfig = getStatusConfig(table.status);
 
-                return (
-              <div
-                key={table._id}
-                className={`group relative bg-gradient-to-br ${statusConfig.bgGradient} backdrop-blur-sm rounded-2xl border-2 ${statusConfig.borderColor} cursor-pointer transition-all duration-500 hover:scale-110 hover:rotate-2 hover:shadow-2xl ${statusConfig.glowColor}
-                w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 xl:w-28 xl:h-28
-                flex flex-col items-center justify-center 
-              }
-              `}
-                onClick={() => handleTableClick(table)}
-                style={{
-                  animationDelay: `${index * 100}ms`,
-                }}
-              >
+      return (
+        <div
+          key={table._id}
+          className={`group relative bg-gradient-to-br backdrop-blur-sm rounded-2xl border-2 cursor-pointer transition-all duration-500 hover:scale-110 hover:rotate-2 hover:shadow-2xl
+            w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 lg:w-24 lg:h-24 xl:w-28 xl:h-28
+            flex flex-col items-center justify-center overflow-hidden
+          `}
+          onClick={() => handleTableClick(table)}
+          style={{
+            animationDelay: `${index * 100}ms`,
+            animation: "fadeInUp 0.6s ease-out forwards",
+          }}
+        >
                     <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                      <div className="absolute top-2 left-2 w-1 h-1 bg-white rounded-full animate-bounce" style={{animationDelay: '0ms'}}></div>
-                      <div className="absolute top-3 right-3 w-1 h-1 bg-white rounded-full animate-bounce" style={{animationDelay: '200ms'}}></div>
-                      <div className="absolute bottom-3 left-3 w-1 h-1 bg-white rounded-full animate-bounce" style={{animationDelay: '400ms'}}></div>
+                      <div
+                        className="absolute top-2 left-2 w-1 h-1 bg-white rounded-full animate-bounce"
+                        style={{ animationDelay: "0ms" }}
+                      ></div>
+                      <div
+                        className="absolute top-3 right-3 w-1 h-1 bg-white rounded-full animate-bounce"
+                        style={{ animationDelay: "200ms" }}
+                      ></div>
+                      <div
+                        className="absolute bottom-3 left-3 w-1 h-1 bg-white rounded-full animate-bounce"
+                        style={{ animationDelay: "400ms" }}
+                      ></div>
                     </div>
 
-                    <div className={`absolute -top-1 -right-1 w-3 h-3 ${statusConfig.pulseColor} rounded-full animate-ping opacity-75`}></div>
-                    <div className={`absolute -top-1 -right-1 w-3 h-3 ${statusConfig.pulseColor} rounded-full`}></div>
+                    <div
+                      className={`absolute -top-1 -right-1 w-3 h-3 ${statusConfig.pulseColor} rounded-full animate-ping opacity-75`}
+                    ></div>
+                    <div
+                      className={`absolute -top-1 -right-1 w-3 h-3 ${statusConfig.pulseColor} rounded-full`}
+                    ></div>
 
                     <div className="relative z-10 mb-1 group-hover:rotate-12 transition-transform duration-300">
                       <img
@@ -574,7 +639,9 @@ console.log(tables)
                       />
                     </div>
 
-                    <div className={`relative z-10 text-xs font-bold ${statusConfig.textColor} group-hover:scale-110 transition-transform duration-300`}>
+                    <div
+                      className={`relative z-10 text-xs font-bold ${statusConfig.textColor} group-hover:scale-110 transition-transform duration-300`}
+                    >
                       {table.tableNumber}
                     </div>
 
@@ -606,9 +673,17 @@ console.log(tables)
                 <div className="flex flex-col justify-center items-center py-16">
                   <div className="relative">
                     <div className="w-16 h-16 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin"></div>
-                    <div className="absolute inset-0 w-16 h-16 border-4 border-transparent border-t-blue-600 rounded-full animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
+                    <div
+                      className="absolute inset-0 w-16 h-16 border-4 border-transparent border-t-blue-600 rounded-full animate-spin"
+                      style={{
+                        animationDirection: "reverse",
+                        animationDuration: "1.5s",
+                      }}
+                    ></div>
                   </div>
-                  <p className="text-lg text-gray-600 mt-6 font-medium">Loading KOTs...</p>
+                  <p className="text-lg text-gray-600 mt-6 font-medium">
+                    Loading KOTs...
+                  </p>
                 </div>
               ) : tableKOTs.length > 0 ? (
                 <>
@@ -641,7 +716,8 @@ console.log(tables)
                         },
                       };
 
-                      const currentStatusConfig = statusConfig[kot.status] || statusConfig.pending;
+                      const currentStatusConfig =
+                        statusConfig[kot.status] || statusConfig.pending;
 
                       return (
                         <div
@@ -652,7 +728,10 @@ console.log(tables)
                               : "border-gray-100 hover:border-blue-200"
                           }`}
                           onClick={() => {
-                            if (showKotNotification && kot._id === selectedKotFromRedirect?._id) {
+                            if (
+                              showKotNotification &&
+                              kot._id === selectedKotFromRedirect?._id
+                            ) {
                               setShowKotNotification(false);
                             }
                             handleSelectMultipleKots(kot);
@@ -666,20 +745,26 @@ console.log(tables)
                           )}
 
                           {/* Status indicator bar */}
-                          <div className={`h-1 w-full ${currentStatusConfig.bgColor}`} />
+                          <div
+                            className={`h-1 w-full ${currentStatusConfig.bgColor}`}
+                          />
 
                           {/* Invoice Number */}
-                          <div className={`px-3 py-2 bg-gradient-to-r border-b flex-shrink-0 ${
-                            isOrderSelected(kot)
-                              ? "from-blue-100 to-indigo-100 border-blue-200"
-                              : "from-blue-50 to-indigo-50 border-blue-100"
-                          }`}>
+                          <div
+                            className={`px-3 py-2 bg-gradient-to-r border-b flex-shrink-0 ${
+                              isOrderSelected(kot)
+                                ? "from-blue-100 to-indigo-100 border-blue-200"
+                                : "from-blue-50 to-indigo-50 border-blue-100"
+                            }`}
+                          >
                             <div className="flex items-center justify-center">
-                              <div className={`flex items-center gap-2 px-3 py-1 rounded-lg shadow-sm border ${
-                                isOrderSelected(kot)
-                                  ? "bg-blue-100 border-blue-300"
-                                  : "bg-white border-blue-200"
-                              }`}>
+                              <div
+                                className={`flex items-center gap-2 px-3 py-1 rounded-lg shadow-sm border ${
+                                  isOrderSelected(kot)
+                                    ? "bg-blue-100 border-blue-300"
+                                    : "bg-white border-blue-200"
+                                }`}
+                              >
                                 <MdDescription className="w-4 h-4 text-blue-600" />
                                 <span className="text-sm font-bold text-blue-900">
                                   #{kot.voucherNumber}
@@ -693,36 +778,49 @@ console.log(tables)
                             <div className="flex items-start gap-2 min-w-0 flex-1">
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-2 mb-1">
-                                  <span className={`px-2 py-1 rounded-md text-xs font-medium ${
-                                    isOrderSelected(kot)
-                                      ? "bg-blue-200 text-blue-800"
-                                      : "bg-gray-100 text-gray-700"
-                                  }`}>
-                                    {kot.type} - <span>{kot.roomId?.roomName}</span>
+                                  <span
+                                    className={`px-2 py-1 rounded-md text-xs font-medium ${
+                                      isOrderSelected(kot)
+                                        ? "bg-blue-200 text-blue-800"
+                                        : "bg-gray-100 text-gray-700"
+                                    }`}
+                                  >
+                                    {kot.type} -{" "}
+                                    <span>{kot.roomId?.roomName}</span>
                                   </span>
                                 </div>
 
                                 <div className="text-xs text-gray-500 flex items-center gap-1">
                                   <MdAccessTime className="w-3 h-3 flex-shrink-0" />
                                   <span>
-                                    {new Date(kot.createdAt).toLocaleDateString("en-GB", {
-                                      day: "2-digit",
-                                      month: "short",
-                                      year: "numeric",
-                                    })}{" "}
-                                    {new Date(kot.createdAt).toLocaleTimeString([], {
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                      hour12: true,
-                                    })}
+                                    {new Date(kot.createdAt).toLocaleDateString(
+                                      "en-GB",
+                                      {
+                                        day: "2-digit",
+                                        month: "short",
+                                        year: "numeric",
+                                      }
+                                    )}{" "}
+                                    {new Date(kot.createdAt).toLocaleTimeString(
+                                      [],
+                                      {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                        hour12: true,
+                                      }
+                                    )}
                                   </span>
                                 </div>
                               </div>
                             </div>
 
                             {/* Status badge */}
-                            <div className={`flex-shrink-0 px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1 ${currentStatusConfig.bgColor} ${currentStatusConfig.textColor}`}>
-                              <div className={`w-1.5 h-1.5 rounded-full ${currentStatusConfig.iconColor} animate-pulse`} />
+                            <div
+                              className={`flex-shrink-0 px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1 ${currentStatusConfig.bgColor} ${currentStatusConfig.textColor}`}
+                            >
+                              <div
+                                className={`w-1.5 h-1.5 rounded-full ${currentStatusConfig.iconColor} animate-pulse`}
+                              />
                               {currentStatusConfig.label}
                             </div>
                           </div>
@@ -760,14 +858,18 @@ console.log(tables)
 
                                     <div className="flex items-center gap-2 flex-shrink-0">
                                       <div className="text-center">
-                                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full min-w-[24px] inline-block ${
-                                          isOrderSelected(kot)
-                                            ? "bg-blue-200 text-blue-900"
-                                            : "bg-blue-100 text-blue-800"
-                                        }`}>
+                                        <span
+                                          className={`text-xs font-semibold px-2 py-0.5 rounded-full min-w-[24px] inline-block ${
+                                            isOrderSelected(kot)
+                                              ? "bg-blue-200 text-blue-900"
+                                              : "bg-blue-100 text-blue-800"
+                                          }`}
+                                        >
                                           {item.quantity}
                                         </span>
-                                        <div className="text-xs text-gray-400 mt-0.5">qty</div>
+                                        <div className="text-xs text-gray-400 mt-0.5">
+                                          qty
+                                        </div>
                                       </div>
 
                                       <div className="text-right min-w-[50px]">
@@ -775,7 +877,11 @@ console.log(tables)
                                           ₹{(item.price || 0).toFixed(2)}
                                         </div>
                                         <div className="text-xs text-gray-500">
-                                          ₹{((item.price || 0) * (item.quantity || 0)).toFixed(2)}
+                                          ₹
+                                          {(
+                                            (item.price || 0) *
+                                            (item.quantity || 0)
+                                          ).toFixed(2)}
                                         </div>
                                       </div>
                                     </div>
@@ -783,7 +889,9 @@ console.log(tables)
                                 )) || (
                                   <div className="text-center py-4">
                                     <MdInbox className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                                    <p className="text-xs text-gray-500">No items in this order</p>
+                                    <p className="text-xs text-gray-500">
+                                      No items in this order
+                                    </p>
                                   </div>
                                 )}
                               </div>
@@ -791,20 +899,30 @@ console.log(tables)
                           </div>
 
                           {/* Order Total */}
-                          <div className={`px-3 py-2 bg-gradient-to-r border-t flex-shrink-0 ${
-                            isOrderSelected(kot)
-                              ? "from-blue-100 to-emerald-100 border-blue-200"
-                              : "from-green-50 to-emerald-50 border-green-100"
-                          }`}>
+                          <div
+                            className={`px-3 py-2 bg-gradient-to-r border-t flex-shrink-0 ${
+                              isOrderSelected(kot)
+                                ? "from-blue-100 to-emerald-100 border-blue-200"
+                                : "from-green-50 to-emerald-50 border-green-100"
+                            }`}
+                          >
                             <div className="flex justify-between items-center">
-                              <span className={`text-xs font-semibold ${
-                                isOrderSelected(kot) ? "text-blue-800" : "text-green-800"
-                              }`}>
+                              <span
+                                className={`text-xs font-semibold ${
+                                  isOrderSelected(kot)
+                                    ? "text-blue-800"
+                                    : "text-green-800"
+                                }`}
+                              >
                                 Total Amount
                               </span>
-                              <span className={`text-sm font-bold ${
-                                isOrderSelected(kot) ? "text-blue-900" : "text-green-900"
-                              }`}>
+                              <span
+                                className={`text-sm font-bold ${
+                                  isOrderSelected(kot)
+                                    ? "text-blue-900"
+                                    : "text-green-900"
+                                }`}
+                              >
                                 ₹{(kot.total || 0).toFixed(2)}
                               </span>
                             </div>
@@ -837,11 +955,13 @@ console.log(tables)
                           </div>
 
                           {/* Click indicator overlay */}
-                          <div className={`absolute inset-0 pointer-events-none transition-all duration-200 ${
-                            isOrderSelected(kot)
-                              ? "bg-blue-500 bg-opacity-5"
-                              : "group-hover:bg-gray-500 group-hover:bg-opacity-5"
-                          }`} />
+                          <div
+                            className={`absolute inset-0 pointer-events-none transition-all duration-200 ${
+                              isOrderSelected(kot)
+                                ? "bg-blue-500 bg-opacity-5"
+                                : "group-hover:bg-gray-500 group-hover:bg-opacity-5"
+                            }`}
+                          />
                         </div>
                       );
                     })}
@@ -859,9 +979,12 @@ console.log(tables)
                             </div>
                             <div>
                               <p className="text-sm font-semibold text-gray-900">
-                                {selectedKot.length} item{selectedKot.length > 1 ? "s" : ""} selected
+                                {selectedKot.length} item
+                                {selectedKot.length > 1 ? "s" : ""} selected
                               </p>
-                              <p className="text-xs text-gray-500">Ready for payment</p>
+                              <p className="text-xs text-gray-500">
+                                Ready for payment
+                              </p>
                             </div>
                           </div>
                           <button
@@ -898,9 +1021,12 @@ console.log(tables)
                               Total Amount
                             </span>
                             <span className="text-lg font-bold text-green-900">
-                              ₹{selectedKot
+                              ₹
+                              {selectedKot
                                 .reduce((total, kot) => {
-                                  const order = tableKOTs.find((o) => o._id === kot.id);
+                                  const order = tableKOTs.find(
+                                    (o) => o._id === kot.id
+                                  );
                                   return total + (order?.total || 0);
                                 }, 0)
                                 .toFixed(2)}
@@ -916,7 +1042,8 @@ console.log(tables)
                                 How would you like to proceed?
                               </h2>
                               <p className="text-sm text-gray-600">
-                                Choose to continue with payment or post the bill to the room.
+                                Choose to continue with payment or post the bill
+                                to the room.
                               </p>
 
                               <div className="flex flex-col gap-3">
@@ -982,7 +1109,9 @@ console.log(tables)
               ) : (
                 <div className="flex flex-col items-center justify-center py-20">
                   <div className="text-6xl mb-6">🍽️</div>
-                  <div className="text-2xl text-gray-400 mb-2 font-bold">No KOTs found</div>
+                  <div className="text-2xl text-gray-400 mb-2 font-bold">
+                    No KOTs found
+                  </div>
                   <div className="text-gray-500 text-lg">
                     No active KOTs for Table {selectedTable.tableNumber}
                   </div>
@@ -992,427 +1121,466 @@ console.log(tables)
           )}
 
           {/* Payment Modal */}
-       {showPaymentModal && (
-  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <motion.div
-      initial={{ scale: 0.9, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      className="bg-white rounded-lg p-4 max-w-lg w-full mx-4 max-h-[95vh] overflow-y-auto"
-    >
-      <div className="flex justify-between items-center mb-3">
-        <h2 className="text-lg font-bold text-gray-800">
-          Table Payment Processing
-        </h2>
-        <button
-          onClick={() => {
-            setShowPaymentModal(false);
-            setPaymentMode("single");
-            setCashAmount(0);
-            setOnlineAmount(0);
-            setPaymentError("");
-            setSelectedCash("");
-            setSelectedBank("");
-          }}
-          className="text-gray-400 hover:text-gray-600"
-        >
-          <X className="w-6 h-6" />
-        </button>
-      </div>
-
-      {/* KOT Section for Dine-In */}
-      <div className="mb-3 p-2 bg-blue-50 rounded-lg border border-blue-200">
-        <div className="flex items-center text-blue-700">
-          <Check className="w-5 h-5 mr-2" />
-          <span className="text-sm font-medium">
-            KOT: {" "}
-            {selectedDataForPayment?.voucherNumber?.map(
-              (item, index) => (
-                <span
-                  key={item?.id || index}
-                  className="text-sm font-medium"
-                >
-                  {item?.voucherNumber}
-                  {index < selectedDataForPayment.voucherNumber.length - 1 ? ", " : ""}
-                </span>
-              )
-            )}
-          </span>
-        </div>
-      </div>
-
-      {/* Payment Mode Selection */}
-      <div className="mb-3">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Payment Mode
-        </label>
-        <div className="flex gap-2 mb-3">
-          <button
-            onClick={() => {
-              setPaymentMode("single");
-              setCashAmount(0);
-              setOnlineAmount(0);
-              setPaymentError("");
-              setSelectedCash("");
-              setSelectedBank("");
-            }}
-            className={`flex-1 px-3 py-2 rounded-lg border-2 text-xs font-medium transition-colors ${
-              paymentMode === "single"
-                ? "border-blue-500 bg-blue-50 text-blue-700"
-                : "border-gray-200 hover:border-gray-300"
-            }`}
-          >
-            Single Payment
-          </button>
-          <button
-            onClick={() => {
-              setPaymentMode("split");
-              setPaymentError("");
-              setCashAmount(0);
-              setOnlineAmount(0);
-            }}
-            className={`flex-1 px-3 py-2 rounded-lg border-2 text-xs font-medium transition-colors ${
-              paymentMode === "split"
-                ? "border-blue-500 bg-blue-50 text-blue-700"
-                : "border-gray-200 hover:border-gray-300"
-            }`}
-          >
-            Split Payment
-          </button>
-        </div>
-      </div>
-
-      {/* Single Payment Method Selection */}
-      {paymentMode === "single" && (
-        <div className="mb-3">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Payment Method
-          </label>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              onClick={() => setPaymentMethod("cash")}
-              className={`flex flex-col items-center p-3 rounded-lg border-2 transition-colors ${
-                paymentMethod === "cash"
-                  ? "border-blue-500 bg-blue-50 text-blue-700"
-                  : "border-gray-200 hover:border-gray-300"
-              }`}
-            >
-              <Banknote className="w-6 h-6 mb-1" />
-              <span className="text-xs font-medium">Cash</span>
-            </button>
-            <button
-              onClick={() => setPaymentMethod("card")}
-              className={`flex flex-col items-center p-3 rounded-lg border-2 transition-colors ${
-                paymentMethod === "card"
-                  ? "border-blue-500 bg-blue-50 text-blue-700"
-                  : "border-gray-200 hover:border-gray-300"
-              }`}
-            >
-              <CreditCard className="w-6 h-6 mb-1" />
-              <span className="text-xs font-medium">Online Payment</span>
-            </button>
-          </div>
-
-          {/* Cash Payment Dropdown */}
-          {paymentMethod === "cash" && (
-            <div className="mt-3">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Select Cash Register
-              </label>
-              <select
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                value={selectedCash}
-                onChange={(e) => setSelectedCash(e.target.value)}
+          {showPaymentModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="bg-white rounded-lg p-4 max-w-lg w-full mx-4 max-h-[95vh] overflow-y-auto"
               >
-                <option value="" disabled>
-                  Select Cash Register
-                </option>
-                {cashOrBank?.cashDetails?.map((cashier) => (
-                  <option key={cashier._id} value={cashier._id}>
-                    {cashier.partyName}
-                  </option>
-                ))}
-              </select>
+                <div className="flex justify-between items-center mb-3">
+                  <h2 className="text-lg font-bold text-gray-800">
+                    Table Payment Processing
+                  </h2>
+                  <button
+                    onClick={() => {
+                      setShowPaymentModal(false);
+                      setPaymentMode("single");
+                      setCashAmount(0);
+                      setOnlineAmount(0);
+                      setPaymentError("");
+                      setSelectedCash("");
+                      setSelectedBank("");
+                    }}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+
+                {/* KOT Section for Dine-In */}
+                <div className="mb-3 p-2 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="flex items-center text-blue-700">
+                    <Check className="w-5 h-5 mr-2" />
+                    <span className="text-sm font-medium">
+                      KOT:{" "}
+                      {selectedDataForPayment?.voucherNumber?.map(
+                        (item, index) => (
+                          <span
+                            key={item?.id || index}
+                            className="text-sm font-medium"
+                          >
+                            {item?.voucherNumber}
+                            {index <
+                            selectedDataForPayment.voucherNumber.length - 1
+                              ? ", "
+                              : ""}
+                          </span>
+                        )
+                      )}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Payment Mode Selection */}
+                <div className="mb-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Payment Mode
+                  </label>
+                  <div className="flex gap-2 mb-3">
+                    <button
+                      onClick={() => {
+                        setPaymentMode("single");
+                        setCashAmount(0);
+                        setOnlineAmount(0);
+                        setPaymentError("");
+                        setSelectedCash("");
+                        setSelectedBank("");
+                      }}
+                      className={`flex-1 px-3 py-2 rounded-lg border-2 text-xs font-medium transition-colors ${
+                        paymentMode === "single"
+                          ? "border-blue-500 bg-blue-50 text-blue-700"
+                          : "border-gray-200 hover:border-gray-300"
+                      }`}
+                    >
+                      Single Payment
+                    </button>
+                    <button
+                      onClick={() => {
+                        setPaymentMode("split");
+                        setPaymentError("");
+                        setCashAmount(0);
+                        setOnlineAmount(0);
+                      }}
+                      className={`flex-1 px-3 py-2 rounded-lg border-2 text-xs font-medium transition-colors ${
+                        paymentMode === "split"
+                          ? "border-blue-500 bg-blue-50 text-blue-700"
+                          : "border-gray-200 hover:border-gray-300"
+                      }`}
+                    >
+                      Split Payment
+                    </button>
+                  </div>
+                </div>
+
+                {/* Single Payment Method Selection */}
+                {paymentMode === "single" && (
+                  <div className="mb-3">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Payment Method
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => setPaymentMethod("cash")}
+                        className={`flex flex-col items-center p-3 rounded-lg border-2 transition-colors ${
+                          paymentMethod === "cash"
+                            ? "border-blue-500 bg-blue-50 text-blue-700"
+                            : "border-gray-200 hover:border-gray-300"
+                        }`}
+                      >
+                        <Banknote className="w-6 h-6 mb-1" />
+                        <span className="text-xs font-medium">Cash</span>
+                      </button>
+                      <button
+                        onClick={() => setPaymentMethod("card")}
+                        className={`flex flex-col items-center p-3 rounded-lg border-2 transition-colors ${
+                          paymentMethod === "card"
+                            ? "border-blue-500 bg-blue-50 text-blue-700"
+                            : "border-gray-200 hover:border-gray-300"
+                        }`}
+                      >
+                        <CreditCard className="w-6 h-6 mb-1" />
+                        <span className="text-xs font-medium">
+                          Online Payment
+                        </span>
+                      </button>
+                    </div>
+
+                    {/* Cash Payment Dropdown */}
+                    {paymentMethod === "cash" && (
+                      <div className="mt-3">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Select Cash Register
+                        </label>
+                        <select
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                          value={selectedCash}
+                          onChange={(e) => setSelectedCash(e.target.value)}
+                        >
+                          <option value="" disabled>
+                            Select Cash Register
+                          </option>
+                          {cashOrBank?.cashDetails?.map((cashier) => (
+                            <option key={cashier._id} value={cashier._id}>
+                              {cashier.partyName}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    {/* Online Payment Dropdown */}
+                    {paymentMethod === "card" && (
+                      <div className="mt-3">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Select Payment Method
+                        </label>
+                        <select
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                          value={selectedBank}
+                          onChange={(e) => setSelectedBank(e.target.value)}
+                        >
+                          <option value="" disabled>
+                            Select Payment Method
+                          </option>
+                          {cashOrBank?.bankDetails?.map((bank) => (
+                            <option key={bank._id} value={bank._id}>
+                              {bank.partyName}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Split Payment Amount Inputs */}
+                {paymentMode === "split" && (
+                  <div className="mb-3">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Split Payment Amounts
+                    </label>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1 w-16">
+                          <Banknote className="w-4 h-4 text-gray-600" />
+                          <span className="text-xs font-medium">Cash:</span>
+                        </div>
+                        <div className="flex-1">
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                              ₹
+                            </span>
+                            <input
+                              type="number"
+                              value={cashAmount}
+                              onChange={(e) => {
+                                const newCashAmount =
+                                  parseFloat(e.target.value) || 0;
+                                const currentOnlineAmount =
+                                  parseFloat(onlineAmount) || 0;
+                                const totalAmount =
+                                  parseFloat(selectedDataForPayment?.total) ||
+                                  0;
+
+                                if (
+                                  newCashAmount + currentOnlineAmount <=
+                                  totalAmount
+                                ) {
+                                  setCashAmount(e.target.value);
+                                  setPaymentError("");
+                                } else {
+                                  setPaymentError(
+                                    "Sum of cash and online amount cannot exceed order total."
+                                  );
+                                }
+                              }}
+                              className="w-full pl-6 pr-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                              placeholder="0.00"
+                              min="0"
+                              step="0.01"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Cash Payment Dropdown - Show when cash amount > 0 */}
+                      {cashAmount > 0 && (
+                        <div className="ml-20">
+                          <label className="block text-xs font-medium text-gray-600 mb-1">
+                            Select Cash Register
+                          </label>
+                          <select
+                            className="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
+                            value={selectedCash}
+                            onChange={(e) => setSelectedCash(e.target.value)}
+                          >
+                            <option value="" disabled>
+                              Select Cash Register
+                            </option>
+                            {cashOrBank?.cashDetails?.map((cashier) => (
+                              <option key={cashier._id} value={cashier._id}>
+                                {cashier.partyName}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1 w-16">
+                          <CreditCard className="w-4 h-4 text-gray-600" />
+                          <span className="text-xs font-medium">Online:</span>
+                        </div>
+                        <div className="flex-1">
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                              ₹
+                            </span>
+                            <input
+                              type="number"
+                              value={onlineAmount}
+                              onChange={(e) => {
+                                const newOnlineAmount =
+                                  parseFloat(e.target.value) || 0;
+                                const currentCashAmount =
+                                  parseFloat(cashAmount) || 0;
+                                const totalAmount =
+                                  parseFloat(selectedDataForPayment?.total) ||
+                                  0;
+
+                                if (
+                                  newOnlineAmount + currentCashAmount <=
+                                  totalAmount
+                                ) {
+                                  setOnlineAmount(e.target.value);
+                                  setPaymentError("");
+                                } else {
+                                  setPaymentError(
+                                    "Sum of cash and online amount cannot exceed order total."
+                                  );
+                                }
+                              }}
+                              className="w-full pl-6 pr-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                              placeholder="0.00"
+                              min="0"
+                              step="0.01"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Online Payment Dropdown - Show when online amount > 0 */}
+                      {onlineAmount > 0 && (
+                        <div className="ml-20">
+                          <label className="block text-xs font-medium text-gray-600 mb-1">
+                            Select Payment Method
+                          </label>
+                          <select
+                            className="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
+                            value={selectedBank}
+                            onChange={(e) => setSelectedBank(e.target.value)}
+                          >
+                            <option value="" disabled>
+                              Select Payment Method
+                            </option>
+                            {cashOrBank?.bankDetails?.map((bank) => (
+                              <option key={bank._id} value={bank._id}>
+                                {bank.partyName}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      {/* Payment Summary for Split */}
+                      <div className="bg-gray-50 p-2 rounded-lg border">
+                        <div className="flex justify-between text-xs text-gray-600 mb-1">
+                          <span>Total Entered:</span>
+                          <span>
+                            ₹
+                            {(
+                              parseFloat(cashAmount || 0) +
+                              parseFloat(onlineAmount || 0)
+                            ).toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-xs font-medium">
+                          <span>Order Total:</span>
+                          <span>₹{selectedDataForPayment?.total}</span>
+                        </div>
+                        {parseFloat(cashAmount || 0) +
+                          parseFloat(onlineAmount || 0) !==
+                          parseFloat(selectedDataForPayment?.total || 0) && (
+                          <div className="flex justify-between text-xs text-amber-600 mt-1">
+                            <span>Remaining:</span>
+                            <span>
+                              ₹
+                              {(
+                                parseFloat(selectedDataForPayment?.total || 0) -
+                                (parseFloat(cashAmount || 0) +
+                                  parseFloat(onlineAmount || 0))
+                              ).toFixed(2)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Error Message */}
+                {paymentError && (
+                  <div className="mb-3 p-2 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-red-600 text-xs">{paymentError}</p>
+                  </div>
+                )}
+
+                {/* Dine-In Order Summary */}
+                <div className="bg-gray-50 p-3 rounded-lg">
+                  <div className="space-y-2">
+                    {/* Table Information */}
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium text-gray-600">
+                        Table Number:
+                      </span>
+                      <span className="text-lg font-bold text-blue-600">
+                        {selectedDataForPayment?.tableNumber}
+                      </span>
+                    </div>
+
+                    {/* Order Type Badge */}
+                    <div className="flex justify-center">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        Dine-In Order
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-gray-200 pt-2 mt-3 flex justify-between font-semibold text-gray-800">
+                    <span className="text-sm">Total Amount</span>
+                    <span className="text-lg text-blue-600">
+                      ₹{selectedDataForPayment?.total}
+                    </span>
+                  </div>
+
+                  <div className="flex gap-2 mt-3">
+                    <button
+                      onClick={() => {
+                        // Validation for payment completion
+                        if (paymentMode === "single") {
+                          if (!paymentMethod) {
+                            setPaymentError("Please select a payment method");
+                            return;
+                          }
+                          if (paymentMethod === "cash" && !selectedCash) {
+                            setPaymentError("Please select a cash register");
+                            return;
+                          }
+                          if (paymentMethod === "card" && !selectedBank) {
+                            setPaymentError("Please select a payment method");
+                            return;
+                          }
+                        } else if (paymentMode === "split") {
+                          const totalEntered =
+                            parseFloat(cashAmount || 0) +
+                            parseFloat(onlineAmount || 0);
+                          const orderTotal = parseFloat(
+                            selectedDataForPayment?.total || 0
+                          );
+
+                          if (totalEntered !== orderTotal) {
+                            setPaymentError(
+                              "Split payment amounts must equal the order total"
+                            );
+                            return;
+                          }
+                          if (cashAmount > 0 && !selectedCash) {
+                            setPaymentError(
+                              "Please select a cash register for cash payment"
+                            );
+                            return;
+                          }
+                          if (onlineAmount > 0 && !selectedBank) {
+                            setPaymentError(
+                              "Please select a payment method for online payment"
+                            );
+                            return;
+                          }
+                        }
+
+                        handleSavePayment(
+                          selectedDataForPayment?._id,
+                          selectedDataForPayment?.tableNumber
+                        );
+                      }}
+                      disabled={saveLoader}
+                      className={`flex-1 group px-4 py-2 border rounded-lg text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 ${
+                        saveLoader
+                          ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                          : "bg-blue-600 text-white border-blue-600 hover:bg-blue-700 hover:border-blue-700 hover:scale-105"
+                      }`}
+                    >
+                      {saveLoader ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <MdVisibility className="w-4 h-4 group-hover:rotate-12 transition-transform duration-200" />
+                          Complete Table Payment
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
             </div>
           )}
-
-          {/* Online Payment Dropdown */}
-          {paymentMethod === "card" && (
-            <div className="mt-3">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Select Payment Method
-              </label>
-              <select
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                value={selectedBank}
-                onChange={(e) => setSelectedBank(e.target.value)}
-              >
-                <option value="" disabled>
-                  Select Payment Method
-                </option>
-                {cashOrBank?.bankDetails?.map((bank) => (
-                  <option key={bank._id} value={bank._id}>
-                    {bank.partyName}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-        </div>
+        </>
       )}
-
-      {/* Split Payment Amount Inputs */}
-      {paymentMode === "split" && (
-        <div className="mb-3">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Split Payment Amounts
-          </label>
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1 w-16">
-                <Banknote className="w-4 h-4 text-gray-600" />
-                <span className="text-xs font-medium">Cash:</span>
-              </div>
-              <div className="flex-1">
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-                    ₹
-                  </span>
-                  <input
-                    type="number"
-                    value={cashAmount}
-                    onChange={(e) => {
-                      const newCashAmount = parseFloat(e.target.value) || 0;
-                      const currentOnlineAmount = parseFloat(onlineAmount) || 0;
-                      const totalAmount = parseFloat(selectedDataForPayment?.total) || 0;
-                      
-                      if (newCashAmount + currentOnlineAmount <= totalAmount) {
-                        setCashAmount(e.target.value);
-                        setPaymentError("");
-                      } else {
-                        setPaymentError(
-                          "Sum of cash and online amount cannot exceed order total."
-                        );
-                      }
-                    }}
-                    className="w-full pl-6 pr-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                    placeholder="0.00"
-                    min="0"
-                    step="0.01"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Cash Payment Dropdown - Show when cash amount > 0 */}
-            {cashAmount > 0 && (
-              <div className="ml-20">
-                <label className="block text-xs font-medium text-gray-600 mb-1">
-                  Select Cash Register
-                </label>
-                <select
-                  className="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
-                  value={selectedCash}
-                  onChange={(e) => setSelectedCash(e.target.value)}
-                >
-                  <option value="" disabled>
-                    Select Cash Register
-                  </option>
-                  {cashOrBank?.cashDetails?.map((cashier) => (
-                    <option key={cashier._id} value={cashier._id}>
-                      {cashier.partyName}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1 w-16">
-                <CreditCard className="w-4 h-4 text-gray-600" />
-                <span className="text-xs font-medium">Online:</span>
-              </div>
-              <div className="flex-1">
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-                    ₹
-                  </span>
-                  <input
-                    type="number"
-                    value={onlineAmount}
-                    onChange={(e) => {
-                      const newOnlineAmount = parseFloat(e.target.value) || 0;
-                      const currentCashAmount = parseFloat(cashAmount) || 0;
-                      const totalAmount = parseFloat(selectedDataForPayment?.total) || 0;
-                      
-                      if (newOnlineAmount + currentCashAmount <= totalAmount) {
-                        setOnlineAmount(e.target.value);
-                        setPaymentError("");
-                      } else {
-                        setPaymentError(
-                          "Sum of cash and online amount cannot exceed order total."
-                        );
-                      }
-                    }}
-                    className="w-full pl-6 pr-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                    placeholder="0.00"
-                    min="0"
-                    step="0.01"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Online Payment Dropdown - Show when online amount > 0 */}
-            {onlineAmount > 0 && (
-              <div className="ml-20">
-                <label className="block text-xs font-medium text-gray-600 mb-1">
-                  Select Payment Method
-                </label>
-                <select
-                  className="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
-                  value={selectedBank}
-                  onChange={(e) => setSelectedBank(e.target.value)}
-                >
-                  <option value="" disabled>
-                    Select Payment Method
-                  </option>
-                  {cashOrBank?.bankDetails?.map((bank) => (
-                    <option key={bank._id} value={bank._id}>
-                      {bank.partyName}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {/* Payment Summary for Split */}
-            <div className="bg-gray-50 p-2 rounded-lg border">
-              <div className="flex justify-between text-xs text-gray-600 mb-1">
-                <span>Total Entered:</span>
-                <span>
-                  ₹{(
-                    parseFloat(cashAmount || 0) +
-                    parseFloat(onlineAmount || 0)
-                  ).toFixed(2)}
-                </span>
-              </div>
-              <div className="flex justify-between text-xs font-medium">
-                <span>Order Total:</span>
-                <span>₹{selectedDataForPayment?.total}</span>
-              </div>
-              {parseFloat(cashAmount || 0) + parseFloat(onlineAmount || 0) !== 
-                parseFloat(selectedDataForPayment?.total || 0) && (
-                <div className="flex justify-between text-xs text-amber-600 mt-1">
-                  <span>Remaining:</span>
-                  <span>
-                    ₹{(
-                      parseFloat(selectedDataForPayment?.total || 0) -
-                      (parseFloat(cashAmount || 0) + parseFloat(onlineAmount || 0))
-                    ).toFixed(2)}
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Error Message */}
-      {paymentError && (
-        <div className="mb-3 p-2 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-red-600 text-xs">{paymentError}</p>
-        </div>
-      )}
-
-      {/* Dine-In Order Summary */}
-      <div className="bg-gray-50 p-3 rounded-lg">
-        <div className="space-y-2">
-          {/* Table Information */}
-          <div className="flex justify-between items-center">
-            <span className="text-sm font-medium text-gray-600">Table Number:</span>
-            <span className="text-lg font-bold text-blue-600">
-              {selectedDataForPayment?.tableNumber}
-            </span>
-          </div>
-          
-          {/* Order Type Badge */}
-          <div className="flex justify-center">
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-              Dine-In Order
-            </span>
-          </div>
-        </div>
-        
-        <div className="border-t border-gray-200 pt-2 mt-3 flex justify-between font-semibold text-gray-800">
-          <span className="text-sm">Total Amount</span>
-          <span className="text-lg text-blue-600">
-            ₹{selectedDataForPayment?.total}
-          </span>
-        </div>
-        
-        <div className="flex gap-2 mt-3">
-          <button
-            onClick={() => {
-              // Validation for payment completion
-              if (paymentMode === "single") {
-                if (!paymentMethod) {
-                  setPaymentError("Please select a payment method");
-                  return;
-                }
-                if (paymentMethod === "cash" && !selectedCash) {
-                  setPaymentError("Please select a cash register");
-                  return;
-                }
-                if (paymentMethod === "card" && !selectedBank) {
-                  setPaymentError("Please select a payment method");
-                  return;
-                }
-              } else if (paymentMode === "split") {
-                const totalEntered = parseFloat(cashAmount || 0) + parseFloat(onlineAmount || 0);
-                const orderTotal = parseFloat(selectedDataForPayment?.total || 0);
-                
-                if (totalEntered !== orderTotal) {
-                  setPaymentError("Split payment amounts must equal the order total");
-                  return;
-                }
-                if (cashAmount > 0 && !selectedCash) {
-                  setPaymentError("Please select a cash register for cash payment");
-                  return;
-                }
-                if (onlineAmount > 0 && !selectedBank) {
-                  setPaymentError("Please select a payment method for online payment");
-                  return;
-                }
-              }
-              
-              handleSavePayment(selectedDataForPayment?._id,selectedDataForPayment?.tableNumber);
-            }}
-            disabled={saveLoader}
-            className={`flex-1 group px-4 py-2 border rounded-lg text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 ${
-              saveLoader
-                ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
-                : "bg-blue-600 text-white border-blue-600 hover:bg-blue-700 hover:border-blue-700 hover:scale-105"
-            }`}
-          >
-            {saveLoader ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                Processing...
-              </>
-            ) : (
-              <>
-                <MdVisibility className="w-4 h-4 group-hover:rotate-12 transition-transform duration-200" />
-                Complete Table Payment
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-    </motion.div>
-  </div>
-)}
-              </>
-            )}
-          </div>
-  )};
-  export default TableTiles;
+    </div>
+  );
+};
+export default TableTiles;

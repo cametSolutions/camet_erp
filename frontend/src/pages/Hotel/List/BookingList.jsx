@@ -30,8 +30,10 @@ function BookingList() {
   const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [loader, setLoader] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState("pending");
   const [listHeight, setListHeight] = useState(0);
+  const [activeTab, setActiveTab] = useState("pending"); // Default to pending
+
   console.log(location?.state?.selectedCustomer);
   console.log(location?.state?.balanceToPay);
   const [selectedCheckOut, setSelectedCheckOut] = useState(
@@ -136,6 +138,7 @@ function BookingList() {
         }
         if (location.pathname == "/sUsers/checkInList") {
           params.append("modal", "checkIn");
+
         } else if (location.pathname == "/sUsers/bookingList") {
           params.append("modal", "booking");
         } else {
@@ -169,13 +172,13 @@ function BookingList() {
         setLoader(false);
       }
     },
-    [cmp_id]
+    [cmp_id,activeTab]
   );
 
   useEffect(() => {
     // Fetch bookings whenever searchTerm changes (debounced)
     fetchBookings(1, searchTerm);
-  }, [fetchBookings, searchTerm]);
+  }, [fetchBookings, searchTerm,activeTab]);
 
   // useEffect(() => {
   //   if (selectedCheckOut.length > 0) {
@@ -366,6 +369,7 @@ function BookingList() {
     // Return a loading placeholder if the item is not loaded yet
     if (!isItemLoaded(index)) {
       return (
+        
         <div
           style={style}
           className="bg-white p-4 pb-6 drop-shadow-lg mt-4 flex flex-col rounded-sm "
@@ -396,6 +400,7 @@ function BookingList() {
     };
 
     return (
+      
       <div
         key={index}
         style={adjustedStyle}
@@ -469,7 +474,6 @@ function BookingList() {
                 if (location.pathname === "/sUsers/checkOutList") {
                   setSelectedCustomer(el.customerId?._id);
                   setSelectedCheckOut([el]);
-                  console.log(bookings?.filter((item) => item.voucherNumber === el.voucherNumber))
                   navigate("/sUsers/CheckOutPrint", {
                     state: {
                       selectedCheckOut:bookings?.filter((item) => item.voucherNumber === el.voucherNumber),
@@ -481,7 +485,7 @@ function BookingList() {
               }}
               className="bg-green-600 hover:bg-green-400 text-white font-semibold py-1 px-2 rounded shadow-md transition duration-300 ml-auto"
             >
-              {location.pathname === "/sUsers/checkInList"
+              {location.pathname === "/sUsers/checkInList" || location.pathname =="/sUsers/bookingList"
                 ? "CheckedOut"
                 : "Print"}
             </button>
@@ -500,6 +504,35 @@ function BookingList() {
                 <p className="text-gray-500">
                   {formatCurrency(el?.grandTotal)}
                 </p>
+                 {/* <p className="text-gray-500">SL.No :</p>
+                <p className="text-gray-500">
+                 {el?.index}
+                </p> <p className="text-gray-500">Date :</p>
+                <p className="text-gray-500">
+                  {el?.grandTotal}
+                </p>
+                 <p className="text-gray-500">RoomNo :</p>
+                <p className="text-gray-500">
+                  {el?.roomNo}
+                </p>
+                 <p className="text-gray-500">Booking Date :</p>
+                <p className="text-gray-500">
+                  {el?.bookingDate}
+                </p>
+                 <p className="text-gray-500">CheckOut Date :</p>
+                <p className="text-gray-500">
+                  {el?.checkoutDate}
+                </p> <p className="text-gray-500">Additional Pax :</p>
+                <p className="text-gray-500">
+                  {el?.additionaPax}
+                </p> <p className="text-gray-500">FoodPlan Amount :</p>
+                <p className="text-gray-500">
+                  {el?.foodPlanAmount}
+                </p>  */}
+                {/* <p className="text-gray-500">Booking Advance :</p>
+                <p className="text-gray-500">
+                  {el?.BookingAdvance} */}
+                {/* </p> */}
               </div>
             </div>
           </div>
@@ -559,6 +592,8 @@ function BookingList() {
 
   return (
     <>
+ 
+
       <div className="flex-1 bg-slate-50 h-screen overflow-hidden">
         <div className="sticky top-0 z-20">
           <TitleDiv
@@ -583,7 +618,8 @@ function BookingList() {
             ]}
           />
 
-          <SearchBar onType={searchData} />
+
+          <SearchBar onType={searchData} toggle={true} from={location.pathname}  />
         </div>
 
         {!loader && !isLoading && bookings?.length === 0 && (
