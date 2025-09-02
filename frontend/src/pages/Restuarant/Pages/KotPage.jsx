@@ -210,10 +210,6 @@ const OrdersDashboard = () => {
           ["pending", "cooking", "ready_to_serve"].includes(order.status)
         );
       }
-      // } else if (activeFilter === "Completed") {
-      //   // Kitchen - Completed: Show only completed orders
-      //   filtered = filtered.filter((order) => order.status === "completed");
-      // }
     } else if (userRole === "reception") {
       if (activeFilter === "All") {
         // Reception - All: Show all statuses
@@ -222,14 +218,17 @@ const OrdersDashboard = () => {
             order.status
           )
         );
-      } else if (activeFilter === "On Process") {
+      } else if (activeFilter === "ON PROCESS") {
         // Reception - On Process: Show pending, cooking, and ready_to_serve
         filtered = filtered.filter((order) =>
           ["pending", "cooking", "ready_to_serve"].includes(order.status)
         );
-      } else if (activeFilter === "Completed") {
+      } else if (activeFilter === "KOT BILL PENDING") {
         // Reception - Completed: Show only completed orders
         filtered = filtered.filter((order) => order.status === "completed");
+      } else if (activeFilter === "COMPLETED") {
+        // Reception - Completed: Show only completed orders
+        filtered = filtered.filter((order) => order.status === "completed" && order.paymentCompleted );
       }
     }
 
@@ -471,11 +470,11 @@ const OrdersDashboard = () => {
       console.log(firstSelected); // take the first selection
 
       if (firstSelected) {
-          // ✅ only allow roomService with same roomId
-          if (firstSelected.roomId !== order?.roomId?._id) {
-            toast.error("You can only select room  KOTs from the same room");
-            return;
-        } 
+        // ✅ only allow roomService with same roomId
+        if (firstSelected.roomId !== order?.roomId?._id) {
+          toast.error("You can only select room  KOTs from the same room");
+          return;
+        }
       }
 
       if (findOne) {
@@ -631,19 +630,21 @@ const OrdersDashboard = () => {
           {/* Controls */}
           <div className="bg-white px-4 py-3 border-b border-gray-200 flex justify-between items-center">
             <div className="flex gap-2">
-              {["All", "On Process", "Completed"].map((filter) => (
-                <button
-                  key={filter}
-                  onClick={() => setActiveFilter(filter)}
-                  className={`px-3 py-1.5 border rounded-md text-sm font-medium transition-colors ${
-                    activeFilter === filter
-                      ? "bg-green-800 text-white border-green-800"
-                      : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
-                  }`}
-                >
-                  {filter}
-                </button>
-              ))}
+              {["All", "ON PROCESS", "KOT BILL PENDING", "COMPLETED"].map(
+                (filter) => (
+                  <button
+                    key={filter}
+                    onClick={() => setActiveFilter(filter)}
+                    className={`px-3 py-1.5 border rounded-md text-sm font-medium transition-colors ${
+                      activeFilter === filter
+                        ? "bg-green-800 text-white border-green-800"
+                        : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
+                    }`}
+                  >
+                    {filter}
+                  </button>
+                )
+              )}
             </div>
 
             {showKotNotification && selectedKotFromRedirect && (
