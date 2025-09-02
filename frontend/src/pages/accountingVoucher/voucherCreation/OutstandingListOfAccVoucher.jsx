@@ -93,11 +93,6 @@ function OutstandingListOfAccVoucher() {
       dispatch(addOutstandings(updatedOutstandingList));
       dispatch(setTotalBillAmount(updatedTotalOutstanding));
     } else {
-
-      console.log("haii");
-      console.log(billDataFromRedux);
-
-      
       // Fallback to redux values
       setData(billDataFromRedux || []);
       setTotal(totalBillAmount || 0);

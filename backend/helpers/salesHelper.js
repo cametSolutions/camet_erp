@@ -1031,8 +1031,7 @@ export const updateOutstandingBalance = async ({
       0;
     let newBillBalance = valueToUpdateInOutstanding;
 
-    // Calculate difference in bill value
-    const diffBillValue = Number(newBillBalance) - Number(oldBillBalance);
+
 
     // Find existing outstanding record
     const matchedOutStanding = await TallyData.findOne({
@@ -1056,90 +1055,95 @@ export const updateOutstandingBalance = async ({
       `Absolute difference: ${Math.abs(newBillBalance - sumOfAppliedReceipts)}`
     );
 
-    let updatedAppliedReceipts = appliedReceipts;
-    let updatedAppliedPayments = matchedOutStanding?.appliedPayments || [];
 
-    // Check if we need to create advances
-    const absoluteDifference = Math.abs(newBillBalance - sumOfAppliedReceipts);
-    const shouldCreateAdvances = absoluteDifference > 0;
+    //// we were actually created advance receipts according to the new bill balance
+    /// but now we changed the logic to create advances as new bills
+    /// we are now creating advances in the same outstanding document itself by modifying the bill pending amount
+/// we are commenting the old code for future reference
 
-    console.log(`Should create advances: ${shouldCreateAdvances}`);
+    // let updatedAppliedReceipts = appliedReceipts;
+    // let updatedAppliedPayments = matchedOutStanding?.appliedPayments || [];
 
-    // If newBillBalance < oldBillBalance AND condition is met => create advance receipts and payments
-    if (newBillBalance < oldBillBalance && shouldCreateAdvances) {
-      const appliedPayments = matchedOutStanding?.appliedPayments;
-      const totalAdvanceAmount = Math.abs(sumOfAppliedReceipts - newBillBalance);
+    // // Check if we need to create advances
+    // const absoluteDifference = Math.abs(newBillBalance - sumOfAppliedReceipts);
+    // const shouldCreateAdvances = absoluteDifference > 0;
 
-      console.log(`Processing advances for amount: ${totalAdvanceAmount}`);
+    // console.log(`Should create advances: ${shouldCreateAdvances}`);
 
-      // Process advance receipts
-      if (appliedReceipts?.length > 0) {
-        const receiptsResult = await processAdvanceReceipts(
-          appliedReceipts,
-          totalAdvanceAmount,
-          orgId,
-          existingVoucher,
-          party,
-          secondaryMobile,
-          session
-        );
+    // // If newBillBalance < oldBillBalance AND condition is met => create advance receipts and payments
+    // if (newBillBalance < oldBillBalance && shouldCreateAdvances) {
+    //   const appliedPayments = matchedOutStanding?.appliedPayments;
+    //   const totalAdvanceAmount = Math.abs(sumOfAppliedReceipts - newBillBalance);
 
-        updatedAppliedReceipts = receiptsResult.updatedAppliedReceipts;
-        console.log("updatedAppliedReceipts", updatedAppliedReceipts);
-        console.log(
-          `Remaining after processing receipts: ${receiptsResult.remainingAmount}`
-        );
-      }
+    //   console.log(`Processing advances for amount: ${totalAdvanceAmount}`);
 
-      // Process advance payments
-      if (appliedPayments?.length > 0) {
-        const paymentsResult = await processAdvancePayments(
-          appliedPayments,
-          totalAdvanceAmount,
-          orgId,
-          existingVoucher,
-          party,
-          secondaryMobile,
-          session
-        );
+    //   // Process advance receipts
+    //   if (appliedReceipts?.length > 0) {
+    //     const receiptsResult = await processAdvanceReceipts(
+    //       appliedReceipts,
+    //       totalAdvanceAmount,
+    //       orgId,
+    //       existingVoucher,
+    //       party,
+    //       secondaryMobile,
+    //       session
+    //     );
 
-        updatedAppliedPayments = paymentsResult.updatedAppliedPayments;
-        console.log(
-          `Remaining after processing payments: ${paymentsResult.remainingAmount}`
-        );
-      }
+    //     updatedAppliedReceipts = receiptsResult.updatedAppliedReceipts;
+    //     console.log("updatedAppliedReceipts", updatedAppliedReceipts);
+    //     console.log(
+    //       `Remaining after processing receipts: ${receiptsResult.remainingAmount}`
+    //     );
+    //   }
+
+    //   // Process advance payments
+    //   if (appliedPayments?.length > 0) {
+    //     const paymentsResult = await processAdvancePayments(
+    //       appliedPayments,
+    //       totalAdvanceAmount,
+    //       orgId,
+    //       existingVoucher,
+    //       party,
+    //       secondaryMobile,
+    //       session
+    //     );
+
+    //     updatedAppliedPayments = paymentsResult.updatedAppliedPayments;
+    //     console.log(
+    //       `Remaining after processing payments: ${paymentsResult.remainingAmount}`
+    //     );
+    //   }
 
       // Update the matchedOutStanding with updated arrays
-      if (matchedOutStanding?._id) {
-        await TallyData.findByIdAndUpdate(
-          matchedOutStanding._id,
-          {
-            appliedReceipts: updatedAppliedReceipts,
-            appliedPayments: updatedAppliedPayments,
-            updatedAt: new Date(),
-          },
-          { session }
-        );
-        console.log("Updated appliedReceipts and appliedPayments arrays");
-      }
-    } else {
-      console.log(
-        "No updates made to appliedReceipts and appliedPayments arrays"
-      );
-    }
+    //   if (matchedOutStanding?._id) {
+    //     await TallyData.findByIdAndUpdate(
+    //       matchedOutStanding._id,
+    //       {
+    //         appliedReceipts: updatedAppliedReceipts,
+    //         appliedPayments: updatedAppliedPayments,
+    //         updatedAt: new Date(),
+    //       },
+    //       { session }
+    //     );
+    //     console.log("Updated appliedReceipts and appliedPayments arrays");
+    //   }
+    // } else {
+    //   console.log(
+    //     "No updates made to appliedReceipts and appliedPayments arrays"
+    //   );
+    // }
 
     // Calculate sum of applied receipts after processing advances
-    const finalSumOfAppliedReceipts = updatedAppliedReceipts.reduce(
-      (sum, receipt) => {
-        return sum + (receipt.settledAmount || 0);
-      },
-      0
-    );
+    // const finalSumOfAppliedReceipts = updatedAppliedReceipts.reduce(
+    //   (sum, receipt) => {
+    //     return sum + (receipt.settledAmount || 0);
+    //   },
+    //   0
+    // );
 
     // Calculate bill_pending_amt as the difference of newBillBalance - sum of appliedReceipts (after creating advance)
-    const billPendingAmount = newBillBalance - finalSumOfAppliedReceipts;
+    const billPendingAmount = Number(newBillBalance - sumOfAppliedReceipts);
 
-    console.log(`Final sum of applied receipts: ${finalSumOfAppliedReceipts}`);
     console.log(`Bill pending amount: ${billPendingAmount}`);
 
     let updatedTallyData;
@@ -1159,14 +1163,14 @@ export const updateOutstandingBalance = async ({
           party: party,
           secondaryMobile: secondaryMobile,
           voucherType: existingVoucher?.voucherType,
-          classification: classification,
+          classification: billPendingAmount > 0 ? "Dr" : "Cr",
           createdBy: createdBy,
           transactionType: transactionType,
           updatedAt: new Date(),
           bill_date: new Date(selectedDate),
           bill_due_date: new Date(selectedDate),
-          appliedReceipts: updatedAppliedReceipts, // Ensure updated arrays are saved
-          appliedPayments: updatedAppliedPayments,
+          appliedReceipts: existingVoucher?.appliedReceipts || [], // Ensure updated arrays are saved
+          appliedPayments: existingVoucher?.appliedPayments || [],
           isCancelled: isCancelled,
         },
         {
