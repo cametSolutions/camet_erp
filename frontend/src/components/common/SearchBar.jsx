@@ -15,7 +15,7 @@ function SearchBar({ onType, toggle, from }) {
 setChecked(false)
       onType("pending")
     } else {
-      if (from == "/sUsers/bookingList") {
+      if (from == "/sUsers/bookingList" || from == "/sUsers/checkInList") {
         setSearch("completed");
         setChecked(true)
         onType("completed");

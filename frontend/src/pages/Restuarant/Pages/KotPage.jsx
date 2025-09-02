@@ -463,6 +463,7 @@ const OrdersDashboard = () => {
 
   // function used to select multiple kot
   const handleSelectMultipleKots = (order) => {
+    if(userRole == "kitchen") return
     if (order && !order?.paymentCompleted) {
       console.log(order?.roomId?._id);
       const findOne = selectedKot.find((item) => item.id === order._id);
