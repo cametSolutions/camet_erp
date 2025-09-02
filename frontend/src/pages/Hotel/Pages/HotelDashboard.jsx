@@ -905,6 +905,8 @@ const HotelDashboard = () => {
               <option value="dirty">Mark as Dirty</option>
               <option value="blocked">Mark as Blocked</option>
               <option value="vacant">Mark as available</option>
+              <option value="vacant">Swap room</option>
+
             </select>
 
             <button
