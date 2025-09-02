@@ -233,7 +233,7 @@ export default function SattvaInvoice() {
   }, [selectedCheckOut]);
 
   const totals = calculateTotals();
-
+console.log(outStanding)
   return (
     <>
       <TitleDiv title="Check out print" />

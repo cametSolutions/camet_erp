@@ -138,7 +138,6 @@ function BookingList() {
         }
         if (location.pathname == "/sUsers/checkInList") {
           params.append("modal", "checkIn");
-
         } else if (location.pathname == "/sUsers/bookingList") {
           params.append("modal", "booking");
         } else {
@@ -172,13 +171,13 @@ function BookingList() {
         setLoader(false);
       }
     },
-    [cmp_id,activeTab]
+    [cmp_id, activeTab]
   );
 
   useEffect(() => {
     // Fetch bookings whenever searchTerm changes (debounced)
     fetchBookings(1, searchTerm);
-  }, [fetchBookings, searchTerm,activeTab]);
+  }, [fetchBookings, searchTerm, activeTab]);
 
   // useEffect(() => {
   //   if (selectedCheckOut.length > 0) {
@@ -365,79 +364,97 @@ function BookingList() {
     }
   };
 
-const TableHeader = () => (
-  <div className="bg-gray-100 border-b border-gray-300 sticky top-0 z-10">
-    <div className="flex items-center px-4 py-3 text-xs font-bold text-gray-800 uppercase tracking-wider">
-      <div className="w-16 text-center">SL.NO</div>
-      <div className="w-28 text-center">BOOKING DATE</div>
-      <div className="w-32 text-center">BOOKING NO</div>
-      <div className="w-40 text-center">GUEST NAME</div>
-      <div className="w-24 text-center">ROOM NO</div>
-      <div className="w-36 text-center">ARRIVAL DATE OF TIME</div>
-      <div className="w-28 text-center">ROOM TARIFF</div>
-      <div className="w-20 text-center">ADD. PAX</div>
-      <div className="w-28 text-center">FOOD PLAN</div>
-      <div className="w-24 text-center">ADVANCE</div>
-      <div className="w-28 text-center">TOTAL</div>
-      <div className="w-32 text-center">ACTIONS</div>
-    </div>
+  const TableHeader = () => (
+    <div className="bg-gray-100 border-b border-gray-300 sticky top-0 z-10">
+  {/* Mobile Header */}
+  <div className="flex items-center px-4 py-3 text-xs font-bold text-gray-800 uppercase tracking-wider md:hidden">
+    <div className="w-18 text-center">SL.NO</div>
+    <div className="w-32 text-center">BOOKING DATE</div>
+    <div className="w-32 text-center">BOOKING NO</div>
+     <div className="w-32 text-center"> ACTIONS</div>
   </div>
-);
 
-const Row = ({ index, style }) => {
-  // Return a loading placeholder if the item is not loaded yet
-  if (!isItemLoaded(index)) {
+  {/* Desktop Header */}
+  <div className="hidden md:flex items-center px-4 py-3 text-xs font-bold text-gray-800 uppercase tracking-wider">
+    <div className="w-10 text-center">SL.NO</div>
+    <div className="w-28 text-center">BOOKING DATE</div>
+    <div className="w-32 text-center">BOOKING NO</div>
+    <div className="w-40 text-center">GUEST NAME</div>
+    <div className="w-24 text-center">ROOM NO</div>
+    <div className="w-36 text-center">ARRIVAL DATE</div>
+    <div className="w-28 text-center">ROOM TARIFF</div>
+    <div className="w-20 text-center">PAX</div>
+    <div className="w-28 text-center">FOODPLAN AMOUNT</div>
+    <div className="w-24 text-center">ADVANCE</div>
+    <div className="w-28 text-center">TOTAL</div>
+    <div className="w-32 text-center">ACTIONS</div>
+  </div>
+</div>
+
+  );
+
+  const Row = ({ index, style }) => {
+    // Return a loading placeholder if the item is not loaded yet
+    if (!isItemLoaded(index)) {
+      return (
+        <div
+          style={style}
+          className="flex items-center px-4 py-3 border-b border-gray-200 bg-white"
+        >
+          <div className="animate-pulse flex w-full items-center md:hidden ">
+            <div className="w-10 h-4 bg-gray-200 rounded mr-4"></div>
+            <div className="w-28 h-4 bg-gray-200 rounded mr-4"></div>
+            <div className="w-32 h-4 bg-gray-200 rounded mr-4"></div>
+          </div>
+          <div className="animate-pulse md:flex w-full items-center">
+            <div className="w-10 h-4 bg-gray-200 rounded mr-4"></div>
+            <div className="w-28 h-4 bg-gray-200 rounded mr-4"></div>
+            <div className="w-32 h-4 bg-gray-200 rounded mr-4"></div>
+            <div className="w-40 h-4 bg-gray-200 rounded mr-4"></div>
+            <div className="w-24 h-4 bg-gray-200 rounded mr-4"></div>
+            <div className="w-36 h-4 bg-gray-200 rounded mr-4"></div>
+            <div className="w-28 h-4 bg-gray-200 rounded mr-4"></div>
+            <div className="w-20 h-4 bg-gray-200 rounded mr-4"></div>
+            <div className="w-28 h-4 bg-gray-200 rounded mr-4"></div>
+            <div className="w-24 h-4 bg-gray-200 rounded mr-4"></div>
+            <div className="w-28 h-4 bg-gray-200 rounded mr-4"></div>
+            <div className="w-32 h-4 bg-gray-200 rounded"></div>
+          </div>
+        </div>
+      );
+    }
+
+    const el = bookings[index];
+    if (!el) return null;
+
+    const adjustedStyle = {
+      ...style,
+      height: "56px",
+    };
+
+    const isCheckOutSelected = (order) => {
+      return selectedCheckOut.find((item) => item._id === order._id);
+    };
+
+    const formatDate = (dateString) => {
+      if (!dateString) return "-";
+      return new Date(dateString).toLocaleDateString("en-GB");
+    };
+
+    const formatDateTime = (dateString) => {
+      if (!dateString) return "-";
+      const date = new Date(dateString);
+      return `${date.toLocaleDateString("en-GB")}(${date.toLocaleTimeString(
+        [],
+        { hour: "2-digit", minute: "2-digit" }
+      )})`;
+    };
+    console.log(el);
     return (
       <div
-        style={style}
-        className="flex items-center px-4 py-3 border-b border-gray-200 bg-white"
-      >
-        <div className="animate-pulse flex w-full items-center">
-          <div className="w-16 h-4 bg-gray-200 rounded mr-4"></div>
-          <div className="w-28 h-4 bg-gray-200 rounded mr-4"></div>
-          <div className="w-32 h-4 bg-gray-200 rounded mr-4"></div>
-          <div className="w-40 h-4 bg-gray-200 rounded mr-4"></div>
-          <div className="w-24 h-4 bg-gray-200 rounded mr-4"></div>
-          <div className="w-36 h-4 bg-gray-200 rounded mr-4"></div>
-          <div className="w-28 h-4 bg-gray-200 rounded mr-4"></div>
-          <div className="w-20 h-4 bg-gray-200 rounded mr-4"></div>
-          <div className="w-28 h-4 bg-gray-200 rounded mr-4"></div>
-          <div className="w-24 h-4 bg-gray-200 rounded mr-4"></div>
-          <div className="w-28 h-4 bg-gray-200 rounded mr-4"></div>
-          <div className="w-32 h-4 bg-gray-200 rounded"></div>
-        </div>
-      </div>
-    );
-  }
-
-  const el = bookings[index];
-  if (!el) return null;
-
-  const adjustedStyle = {
-    ...style,
-    height: "56px",
-  };
-
-  const isCheckOutSelected = (order) => {
-    return selectedCheckOut.find((item) => item._id === order._id);
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return '-';
-    return new Date(dateString).toLocaleDateString('en-GB');
-  };
-
-  const formatDateTime = (dateString) => {
-    if (!dateString) return '-';
-    const date = new Date(dateString);
-    return `${date.toLocaleDateString('en-GB')}(${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})})`;
-  };
-
-  return (
-    <div
-      key={index}
-      style={adjustedStyle}
-      className={`flex items-center px-4 py-3 border-b border-gray-200 cursor-pointer transition-all duration-200 ease-in-out text-sm bg-white hover:bg-gray-50
+        key={index}
+        style={adjustedStyle}
+        className={`flex items-center px-4 py-3 border-b border-gray-200 cursor-pointer transition-all duration-200 ease-in-out text-sm bg-white hover:bg-gray-50
         ${
           isCheckOutSelected(el) &&
           (location.pathname === "/sUsers/checkInList" ||
@@ -445,192 +462,322 @@ const Row = ({ index, style }) => {
             ? "bg-blue-50 border-blue-200 ring-1 ring-blue-300"
             : ""
         }`}
-      onClick={() => {
-        if (el.status === "checkOut") return;
-        let findOne = selectedCheckOut.find((item) => item._id === el._id);
-        if (selectedCheckOut.length == 0) {
-          setSelectedCustomer(el.customerId?._id);
-        }
-        if (findOne) {
-          setSelectedCheckOut((prev) =>
-            prev.filter((item) => item._id !== el._id)
-          );
-          return;
-        }
-        setSelectedCheckOut((prev) => [...prev, el]);
-      }}
-    >
-      {/* SL.NO */}
-      <div className="w-16 text-center text-gray-700 font-medium">
-        {index + 1}
-      </div>
-
-      {/* BOOKING DATE */}
-      <div className="w-28 text-center text-gray-600 text-xs">
-        {formatDate(el?.bookingDate)}
-      </div>
-
-      {/* BOOKING NO */}
-      <div className="w-32 text-center text-gray-700 font-semibold text-xs">
-        {el?.voucherNumber || '-'}
-      </div>
-
-      {/* GUEST NAME */}
-      <div className="w-40 text-center text-gray-700 truncate text-xs" title={el?.customerId?.partyName}>
-        {el?.customerId?.partyName || '-'}
-      </div>
-
-      {/* ROOM NO */}
-      <div className="w-24 text-center text-gray-600 font-medium">
-        {el?.roomNo || '-'}
-      </div>
-
-      {/* ARRIVAL DATE/TIME */}
-      <div className="w-36 text-center text-gray-600 text-xs">
-        {formatDateTime(el?.arrivalDateTime)}
-      </div>
-
-      {/* ROOM TARIFF */}
-      <div className="w-28 text-center text-gray-600 text-xs">
-        {el?.roomTariff || '6000'}
-      </div>
-
-      {/* ADD. PAX */}
-      <div className="w-20 text-center text-gray-600 font-medium">
-        {el?.additionalPax || 2}
-      </div>
-
-      {/* FOOD PLAN */}
-      <div className="w-28 text-center text-gray-600 text-xs">
-        ₹{el?.foodPlanAmount || '0.00'}
-      </div>
-
-      {/* ADVANCE */}
-      <div className="w-24 text-center text-gray-600 text-xs">
-        ₹{el?.bookingAdvance ? formatCurrency(el.bookingAdvance).replace('₹', '') : '2,000.00'}
-      </div>
-
-      {/* TOTAL */}
-      <div className="w-28 text-center text-gray-800 font-semibold text-xs">
-        ₹{el?.grandTotal ? formatCurrency(el.grandTotal).replace('₹', '') : '6,000.00'}
-      </div>
-
-      {/* ACTIONS */}
-      <div className="w-32 flex items-center justify-center gap-1">
-        {/* Primary Action Button */}
-        {((location.pathname === "/sUsers/bookingList" &&
-          el?.status != "checkIn") ||
-          (el?.status != "checkOut" &&
-            location.pathname === "/sUsers/checkInList") ||
-          (Number(el?.balanceToPay) > 0 &&
-            location.pathname === "/sUsers/checkOutList")) && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              if (location.pathname == "/sUsers/bookingList") {
-                navigate(`/sUsers/checkInPage`, {
-                  state: { bookingData: el },
-                });
-              } else if (
-                location.pathname === "/sUsers/checkOutList" &&
-                el.checkInId
-              ) {
-                navigate(`/sUsers/EditCheckOut`, {
-                  state: el,
-                });
-              } else {
-                navigate(`/sUsers/CheckOutPage`, {
-                  state: { bookingData: el },
-                });
-              }
-            }}
-            className="bg-black hover:bg-blue-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
-          >
-            {location.pathname === "/sUsers/checkInList"
-              ? "Checkout"
-              : location.pathname === "/sUsers/checkOutList"
-              ? "Close"
-              : "Check-In"}
-          </button>
-        )}
-
-        {/* Status Button */}
-        {((el?.status === "checkIn" &&
-          location.pathname === "/sUsers/bookingList") ||
-          (el?.status === "checkOut" &&
-            location.pathname === "/sUsers/checkInList") ||
-          (Number(el?.balanceToPay) <= 0 &&
-            location.pathname === "/sUsers/checkOutList")) && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              if (location.pathname === "/sUsers/checkOutList") {
-                setSelectedCustomer(el.customerId?._id);
-                setSelectedCheckOut([el]);
-                navigate("/sUsers/CheckOutPrint", {
-                  state: {
-                    selectedCheckOut: bookings?.filter(
-                      (item) => item.voucherNumber === el.voucherNumber
-                    ),
-                    customerId: el.customerId?._id,
-                    isForPreview: false,
-                  },
-                });
-              }
-            }}
-            className="bg-green-600 hover:bg-green-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
-          >
-            {location.pathname === "/sUsers/checkInList" ||
-            location.pathname === "/sUsers/bookingList"
-              ? "CheckedOut"
-              : "Print"}
-          </button>
-        )}
-
-        {/* Edit and Delete Actions */}
-        {(el?.status != "checkIn" &&
-          location.pathname == "/sUsers/bookingList") ||
-        (el?.status != "checkOut" &&
-          location.pathname == "/sUsers/checkInList") ? (
-          <div className="flex items-center gap-1">
-            <FaEdit
-              title="Edit booking details"
-              className="text-blue-500 cursor-pointer hover:text-blue-700 text-sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                if (location.pathname === "/sUsers/bookingList") {
-                  navigate("/sUsers/editBooking", {
-                    state: el,
-                  });
-                } else if (location.pathname === "/sUsers/checkInList") {
-                  navigate("/sUsers/editChecking", {
-                    state: el,
-                  });
-                } else {
-                  navigate("/sUsers/editChecking", {
-                    state: el,
-                  });
-                }
-              }}
-            />
-
-            <MdDelete
-              title="Delete booking details"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDelete(el._id);
-              }}
-              className="text-red-500 cursor-pointer hover:text-red-700 text-sm"
-            />
+        onClick={() => {
+          if (el.status === "checkOut") return;
+          let findOne = selectedCheckOut.find((item) => item._id === el._id);
+          if (selectedCheckOut.length == 0) {
+            setSelectedCustomer(el.customerId?._id);
+          }
+          if (findOne) {
+            setSelectedCheckOut((prev) =>
+              prev.filter((item) => item._id !== el._id)
+            );
+            return;
+          }
+          setSelectedCheckOut((prev) => [...prev, el]);
+        }}
+      >
+        <div className="flex justify-between items-center w-full md:hidden text-xs">
+          <div className="text-gray-700 font-medium">{index + 1}</div>
+          <div className="text-gray-700 font-semibold">
+            {el?.voucherNumber || "-"}
           </div>
-        ) : null}
-      </div>
-    </div>
-  );
-};
+          <div className="text-gray-700 truncate">
+            {el?.customerId?.partyName || "-"}
+          </div>
+          <div className="w-32 flex items-center justify-center gap-1">
+            {/* Primary Action Button */}
+            {((location.pathname === "/sUsers/bookingList" &&
+              el?.status != "checkIn") ||
+              (el?.status != "checkOut" &&
+                location.pathname === "/sUsers/checkInList") ||
+              (Number(el?.balanceToPay) > 0 &&
+                location.pathname === "/sUsers/checkOutList")) && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (location.pathname == "/sUsers/bookingList") {
+                    navigate(`/sUsers/checkInPage`, {
+                      state: { bookingData: el },
+                    });
+                  } else if (
+                    location.pathname === "/sUsers/checkOutList" &&
+                    el.checkInId
+                  ) {
+                    navigate(`/sUsers/EditCheckOut`, {
+                      state: el,
+                    });
+                  } else {
+                    navigate(`/sUsers/CheckOutPage`, {
+                      state: { bookingData: el },
+                    });
+                  }
+                }}
+                className="bg-black hover:bg-blue-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
+              >
+                {location.pathname === "/sUsers/checkInList"
+                  ? "Checkout"
+                  : location.pathname === "/sUsers/checkOutList"
+                  ? "Close"
+                  : "Check-In"}
+              </button>
+            )}
 
-// Main Component
-// const BookingListComponent = () => {
+            {/* Status Button */}
+            {((el?.status === "checkIn" &&
+              location.pathname === "/sUsers/bookingList") ||
+              (el?.status === "checkOut" &&
+                location.pathname === "/sUsers/checkInList") ||
+              (Number(el?.balanceToPay) <= 0 &&
+                location.pathname === "/sUsers/checkOutList")) && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (location.pathname === "/sUsers/checkOutList") {
+                    setSelectedCustomer(el.customerId?._id);
+                    setSelectedCheckOut([el]);
+                    navigate("/sUsers/CheckOutPrint", {
+                      state: {
+                        selectedCheckOut: bookings?.filter(
+                          (item) => item.voucherNumber === el.voucherNumber
+                        ),
+                        customerId: el.customerId?._id,
+                        isForPreview: false,
+                      },
+                    });
+                  }
+                }}
+                className="bg-green-600 hover:bg-green-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
+              >
+                {location.pathname === "/sUsers/checkInList" ||
+                location.pathname === "/sUsers/bookingList"
+                  ? "CheckedOut"
+                  : "Print"}
+              </button>
+            )}
+
+            {/* Edit and Delete Actions */}
+            {(el?.status != "checkIn" &&
+              location.pathname == "/sUsers/bookingList") ||
+            (el?.status != "checkOut" &&
+              location.pathname == "/sUsers/checkInList") ? (
+              <div className="flex items-center gap-1">
+                <FaEdit
+                  title="Edit booking details"
+                  className="text-blue-500 cursor-pointer hover:text-blue-700 text-sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (location.pathname === "/sUsers/bookingList") {
+                      navigate("/sUsers/editBooking", {
+                        state: el,
+                      });
+                    } else if (location.pathname === "/sUsers/checkInList") {
+                      navigate("/sUsers/editChecking", {
+                        state: el,
+                      });
+                    } else {
+                      navigate("/sUsers/editChecking", {
+                        state: el,
+                      });
+                    }
+                  }}
+                />
+
+                <MdDelete
+                  title="Delete booking details"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(el._id);
+                  }}
+                  className="text-red-500 cursor-pointer hover:text-red-700 text-sm"
+                />
+              </div>
+            ) : null}
+          </div>
+        </div>
+        <div className="hidden md:flex items-center w-full">
+          {/* SL.NO */}
+          <div className="w-10 text-center text-gray-700 font-medium">
+            {index + 1}
+          </div>
+
+          {/* BOOKING DATE */}
+          <div className="w-28 text-center text-gray-600 text-xs">
+            {formatDate(el?.bookingDate)}
+          </div>
+
+          {/* BOOKING NO */}
+          <div className="w-32 text-center text-gray-700 font-semibold text-xs">
+            {el?.voucherNumber || "-"}
+          </div>
+
+          {/* GUEST NAME */}
+          <div
+            className="w-40 text-center text-gray-700 truncate text-xs"
+            title={el?.customerId?.partyName}
+          >
+            {el?.customerId?.partyName || "-"}
+          </div>
+
+          {/* ROOM NO */}
+          <div className="w-24 text-center text-gray-600 font-medium">
+            {el?.selectedRooms?.map((r) => r.roomName).join(", ") || "-"}
+          </div>
+
+          {/* ARRIVAL DATE/TIME */}
+          <div className="w-36 text-center text-gray-600 text-xs">
+            {formatDate(el?.arrivalDate)}
+            <span>({el.arrivalTime})</span>
+          </div>
+
+          {/* ROOM TARIFF */}
+          <div className="w-28 text-center text-gray-600 text-xs">
+            ₹{el?.selectedRooms?.[0]?.priceLevelRate || "0.00"}
+          </div>
+
+          {/* ADD. PAX */}
+          <div className="w-20 text-center text-gray-600 font-medium">
+            {el?.selectedRooms?.[0]?.pax || 0}
+          </div>
+
+          {/* FOOD PLAN */}
+          <div className="w-28 text-center text-gray-600 text-xs">
+            ₹{el?.selectedRooms?.[0]?.foodPlanAmount || "0.00"}
+          </div>
+
+          {/* ADVANCE */}
+          <div className="w-24 text-center text-gray-600 text-xs">
+            ₹
+            {el?.advanceAmount
+              ? formatCurrency(el.advanceAmount).replace("₹", "")
+              : "0.00"}
+          </div>
+
+          {/* TOTAL */}
+          <div className="w-28 text-center text-gray-800 font-semibold text-xs">
+            ₹
+            {el?.grandTotal
+              ? formatCurrency(el.grandTotal).replace("₹", "")
+              : "6,000.00"}
+          </div>
+
+          {/* ACTIONS */}
+          <div className="w-32 flex items-center justify-center gap-1">
+            {/* Primary Action Button */}
+            {((location.pathname === "/sUsers/bookingList" &&
+              el?.status != "checkIn") ||
+              (el?.status != "checkOut" &&
+                location.pathname === "/sUsers/checkInList") ||
+              (Number(el?.balanceToPay) > 0 &&
+                location.pathname === "/sUsers/checkOutList")) && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (location.pathname == "/sUsers/bookingList") {
+                    navigate(`/sUsers/checkInPage`, {
+                      state: { bookingData: el },
+                    });
+                  } else if (
+                    location.pathname === "/sUsers/checkOutList" &&
+                    el.checkInId
+                  ) {
+                    navigate(`/sUsers/EditCheckOut`, {
+                      state: el,
+                    });
+                  } else {
+                    navigate(`/sUsers/CheckOutPage`, {
+                      state: { bookingData: el },
+                    });
+                  }
+                }}
+                className="bg-black hover:bg-blue-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
+              >
+                {location.pathname === "/sUsers/checkInList"
+                  ? "Checkout"
+                  : location.pathname === "/sUsers/checkOutList"
+                  ? "Close"
+                  : "Check-In"}
+              </button>
+            )}
+
+            {/* Status Button */}
+            {((el?.status === "checkIn" &&
+              location.pathname === "/sUsers/bookingList") ||
+              (el?.status === "checkOut" &&
+                location.pathname === "/sUsers/checkInList") ||
+              (Number(el?.balanceToPay) <= 0 &&
+                location.pathname === "/sUsers/checkOutList")) && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (location.pathname === "/sUsers/checkOutList") {
+                    setSelectedCustomer(el.customerId?._id);
+                    setSelectedCheckOut([el]);
+                    navigate("/sUsers/CheckOutPrint", {
+                      state: {
+                        selectedCheckOut: bookings?.filter(
+                          (item) => item.voucherNumber === el.voucherNumber
+                        ),
+                        customerId: el.customerId?._id,
+                        isForPreview: false,
+                      },
+                    });
+                  }
+                }}
+                className="bg-green-600 hover:bg-green-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
+              >
+                {location.pathname === "/sUsers/checkInList" ||
+                location.pathname === "/sUsers/bookingList"
+                  ? "CheckedOut"
+                  : "Print"}
+              </button>
+            )}
+
+            {/* Edit and Delete Actions */}
+            {(el?.status != "checkIn" &&
+              location.pathname == "/sUsers/bookingList") ||
+            (el?.status != "checkOut" &&
+              location.pathname == "/sUsers/checkInList") ? (
+              <div className="flex items-center gap-1">
+                <FaEdit
+                  title="Edit booking details"
+                  className="text-blue-500 cursor-pointer hover:text-blue-700 text-sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (location.pathname === "/sUsers/bookingList") {
+                      navigate("/sUsers/editBooking", {
+                        state: el,
+                      });
+                    } else if (location.pathname === "/sUsers/checkInList") {
+                      navigate("/sUsers/editChecking", {
+                        state: el,
+                      });
+                    } else {
+                      navigate("/sUsers/editChecking", {
+                        state: el,
+                      });
+                    }
+                  }}
+                />
+
+                <MdDelete
+                  title="Delete booking details"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(el._id);
+                  }}
+                  className="text-red-500 cursor-pointer hover:text-red-700 text-sm"
+                />
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Main Component
+  // const BookingListComponent = () => {
   return (
     <>
       <div className="flex-1 bg-slate-50 h-screen overflow-hidden">
@@ -656,7 +803,11 @@ const Row = ({ index, style }) => {
               },
             ]}
           />
-          <SearchBar onType={searchData} toggle={true} from={location.pathname} />
+          <SearchBar
+            onType={searchData}
+            toggle={true}
+            from={location.pathname}
+          />
         </div>
 
         {!loader && !isLoading && bookings?.length === 0 && (
@@ -1147,7 +1298,7 @@ const Row = ({ index, style }) => {
         {/* Table Structure */}
         <div className="bg-white border border-gray-300 rounded-lg mx-4 mt-4 overflow-hidden shadow-sm">
           <TableHeader />
-          
+
           <div className="pb-4">
             <InfiniteLoader
               isItemLoaded={isItemLoaded}

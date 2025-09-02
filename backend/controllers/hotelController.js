@@ -973,6 +973,7 @@ export const roomBooking = async (req, res) => {
           advanceDate: new Date(),
           classification: "Cr",
           source: under,
+          from:selectedModal,
         });
 
         await advanceObject.save({ session });
