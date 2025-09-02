@@ -4,7 +4,7 @@ import { IoFastFood } from "react-icons/io5";
 import { MdFoodBank } from "react-icons/md";
 import TitleDiv from "../../../../../components/common/TitleDiv";
 import SettingsCard from "../../../../../components/common/SettingsCard";
-import { useSelector , useDispatch } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { toast } from "react-toastify";
 import { LiaMoneyCheckAltSolid } from "react-icons/lia";
 import { updateConfiguration } from "../../../../../../slices/secSelectedOrgSlice.js";
@@ -12,24 +12,20 @@ import api from "@/api/api";
 
 const restuarentSettings = () => {
   const dispatch = useDispatch();
-  const { industry, _id , configurations} = useSelector(
+  const { industry, _id, configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
-  
 
   const handleToggleChangeFromParent = async (data) => {
-    console.log(data)
-  let url 
-  if(data?.title == "kotApproval"){
-    url =`/api/sUsers/updateConfigurationForKotApproval/${_id}`
-  }else{
-url=  `/api/sUsers/updateConfigurationForHotelAndRestaurant/${_id}`
-  }
+    console.log(data);
+    let url;
+    if (data?.title == "kotApproval") {
+      url = `/api/sUsers/updateConfigurationForKotApproval/${_id}`;
+    } else {
+      url = `/api/sUsers/updateConfigurationForHotelAndRestaurant/${_id}`;
+    }
     try {
-      const response = await api.put(url,
-        data,
-        { withCredentials: true }
-      );
+      const response = await api.put(url, data, { withCredentials: true });
       if (response?.data?.success) {
         dispatch(updateConfiguration(response?.data?.organization));
         toast.success(response?.data?.message);
@@ -38,7 +34,6 @@ url=  `/api/sUsers/updateConfigurationForHotelAndRestaurant/${_id}`
       toast.error(error?.response?.data?.message);
     }
   };
-
 
   const settingsOptions = [
     {
@@ -83,9 +78,9 @@ url=  `/api/sUsers/updateConfigurationForHotelAndRestaurant/${_id}`
       to: "/sUsers/AddRestuarentCategory",
       active: true,
     });
-     settingsOptions.push({
+    settingsOptions.push({
       title: "Auto approval for kot kitchen",
-      description:"For better kot management",
+      description: "For better kot management",
       icon: <LiaMoneyCheckAltSolid />,
       active: true,
       toggle: true,
@@ -98,8 +93,8 @@ url=  `/api/sUsers/updateConfigurationForHotelAndRestaurant/${_id}`
       icon: <LiaMoneyCheckAltSolid />,
       active: true,
       toggle: true,
-      toggleValue: configurations[0]?.addRateWithTax?.hotelSale,
-      dbField: "hotelSale",
+      toggleValue: configurations[0]?.addRateWithTax?.restaurantSale,
+      dbField: "restaurantSale",
     });
   }
 
@@ -115,7 +110,12 @@ url=  `/api/sUsers/updateConfigurationForHotelAndRestaurant/${_id}`
       />
       <div className="space-y-4 b-white p-4   mx-1">
         {settingsOptions.map((option, index) => (
-          <SettingsCard key={index} option={option} index={index}   handleToggleChangeFromParent={handleToggleChangeFromParent} />
+          <SettingsCard
+            key={index}
+            option={option}
+            index={index}
+            handleToggleChangeFromParent={handleToggleChangeFromParent}
+          />
         ))}
       </div>
     </div>

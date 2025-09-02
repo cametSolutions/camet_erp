@@ -365,235 +365,274 @@ function BookingList() {
     }
   };
 
-  const Row = ({ index, style }) => {
-    // Return a loading placeholder if the item is not loaded yet
-    if (!isItemLoaded(index)) {
-      return (
-        
-        <div
-          style={style}
-          className="bg-white p-4 pb-6 drop-shadow-lg mt-4 flex flex-col rounded-sm "
-        >
-          <div className="animate-pulse flex space-x-4">
-            <div className="flex-1 space-y-4 py-1">
-              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-              <div className="space-y-2">
-                <div className="h-4 bg-gray-200 rounded"></div>
-                <div className="h-4 bg-gray-200 rounded w-5/6"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      );
-    }
-    const el = bookings[index];
-    if (!el) return null;
+const TableHeader = () => (
+  <div className="bg-gray-100 border-b border-gray-300 sticky top-0 z-10">
+    <div className="flex items-center px-4 py-3 text-xs font-bold text-gray-800 uppercase tracking-wider">
+      <div className="w-16 text-center">SL.NO</div>
+      <div className="w-28 text-center">BOOKING DATE</div>
+      <div className="w-32 text-center">BOOKING NO</div>
+      <div className="w-40 text-center">GUEST NAME</div>
+      <div className="w-24 text-center">ROOM NO</div>
+      <div className="w-36 text-center">ARRIVAL DATE OF TIME</div>
+      <div className="w-28 text-center">ROOM TARIFF</div>
+      <div className="w-20 text-center">ADD. PAX</div>
+      <div className="w-28 text-center">FOOD PLAN</div>
+      <div className="w-24 text-center">ADVANCE</div>
+      <div className="w-28 text-center">TOTAL</div>
+      <div className="w-32 text-center">ACTIONS</div>
+    </div>
+  </div>
+);
 
-    const adjustedStyle = {
-      ...style,
-      marginTop: "16px",
-      height: "128px",
-    };
-
-    const isCheckOutSelected = (order) => {
-      return selectedCheckOut.find((item) => item._id === order._id);
-    };
-
+const Row = ({ index, style }) => {
+  // Return a loading placeholder if the item is not loaded yet
+  if (!isItemLoaded(index)) {
     return (
-      
       <div
-        key={index}
-        style={adjustedStyle}
-        className={`bg-white p-4 pb-6 drop-shadow-lg mt-4 flex flex-col rounded-sm cursor-pointer transition-all duration-200 ease-in-out
-    ${
-      isCheckOutSelected(el) &&
-      (location.pathname === "/sUsers/checkInList" ||
-        location.pathname === "/sUsers/checkOutList")
-        ? "border-2 border-blue-500 ring-2 ring-blue-200 bg-blue-50 shadow-lg scale-[1.02] transform"
-        : "border border-gray-200 hover:border-blue-300 hover:bg-slate-50 hover:shadow-xl"
-    }`}
-        onClick={() => {
-          if (el.status === "checkOut") return;
-          let findOne = selectedCheckOut.find((item) => item._id === el._id);
-          if (selectedCheckOut.length == 0) {
-            setSelectedCustomer(el.customerId?._id);
-          }
-          if (findOne) {
-            setSelectedCheckOut((prev) =>
-              prev.filter((item) => item._id !== el._id)
-            );
-            return;
-          }
-          setSelectedCheckOut((prev) => [...prev, el]);
-        }}
+        style={style}
+        className="flex items-center px-4 py-3 border-b border-gray-200 bg-white"
       >
-        <div className="flex">
-          <p className="font-bold text-sm">{el?.voucherNumber}</p>
-          {((location.pathname === "/sUsers/bookingList" &&
-            el?.status != "checkIn") ||
-            (el?.status != "checkOut" &&
-              location.pathname === "/sUsers/checkInList") ||
-            (Number(el?.balanceToPay) > 0 &&
-              location.pathname === "/sUsers/checkOutList")) && (
-            <button
-              onClick={() => {
-                if (location.pathname == "/sUsers/bookingList") {
-                  navigate(`/sUsers/checkInPage`, {
-                    state: { bookingData: el },
-                  });
-                } else if (
-                  location.pathname === "/sUsers/checkOutList" &&
-                  el.checkInId
-                ) {
-                  navigate(`/sUsers/EditCheckOut`, {
-                    state: el,
-                  });
-                } else {
-                  navigate(`/sUsers/CheckOutPage`, {
-                    state: { bookingData: el },
-                  });
-                }
-              }}
-              className="bg-black hover:bg-blue-400 text-white font-semibold py-1 px-2 rounded shadow-md transition duration-300 ml-auto"
-            >
-              {location.pathname === "/sUsers/checkInList"
-                ? "Checkout"
-                : location.pathname === "/sUsers/checkOutList"
-                ? "Close"
-                : "Check-In"}
-            </button>
-          )}
-          {((el?.status === "checkIn" &&
-            location.pathname === "/sUsers/bookingList") ||
-            (el?.status === "checkOut" &&
-              location.pathname === "/sUsers/checkInList") ||
-            (Number(el?.balanceToPay) <= 0 &&
-              location.pathname === "/sUsers/checkOutList")) && (
-            <button
-              onClick={() => {
-                if (location.pathname === "/sUsers/checkOutList") {
-                  setSelectedCustomer(el.customerId?._id);
-                  setSelectedCheckOut([el]);
-                  navigate("/sUsers/CheckOutPrint", {
-                    state: {
-                      selectedCheckOut:bookings?.filter((item) => item.voucherNumber === el.voucherNumber),
-                      customerId: el.customerId?._id,
-                      isForPreview: false,
-                    },
-                  });
-                }
-              }}
-              className="bg-green-600 hover:bg-green-400 text-white font-semibold py-1 px-2 rounded shadow-md transition duration-300 ml-auto"
-            >
-              {location.pathname === "/sUsers/checkInList" || location.pathname =="/sUsers/bookingList"
-                ? "CheckedOut"
-                : "Print"}
-            </button>
-          )}
-        </div>
-        <hr className="mt-4" />
-        <div className="flex justify-between items-center w-full gap-3 mt-4 text-sm">
-          <div className="flex flex-col">
-            <div className="flex gap-2 text-sm">
-              <div className="flex gap-2 text-nowrap">
-                <p className="text-gray-500 uppercase">Customer :</p>
-                <p className="text-gray-500">{el?.customerId?.partyName}</p>
-              </div>
-              <div className="flex gap-2">
-                <p className="text-gray-500">Total :</p>
-                <p className="text-gray-500">
-                  {formatCurrency(el?.grandTotal)}
-                </p>
-                 {/* <p className="text-gray-500">SL.No :</p>
-                <p className="text-gray-500">
-                 {el?.index}
-                </p> <p className="text-gray-500">Date :</p>
-                <p className="text-gray-500">
-                  {el?.grandTotal}
-                </p>
-                 <p className="text-gray-500">RoomNo :</p>
-                <p className="text-gray-500">
-                  {el?.roomNo}
-                </p>
-                 <p className="text-gray-500">Booking Date :</p>
-                <p className="text-gray-500">
-                  {el?.bookingDate}
-                </p>
-                 <p className="text-gray-500">CheckOut Date :</p>
-                <p className="text-gray-500">
-                  {el?.checkoutDate}
-                </p> <p className="text-gray-500">Additional Pax :</p>
-                <p className="text-gray-500">
-                  {el?.additionaPax}
-                </p> <p className="text-gray-500">FoodPlan Amount :</p>
-                <p className="text-gray-500">
-                  {el?.foodPlanAmount}
-                </p>  */}
-                {/* <p className="text-gray-500">Booking Advance :</p>
-                <p className="text-gray-500">
-                  {el?.BookingAdvance} */}
-                {/* </p> */}
-              </div>
-            </div>
-          </div>
-          {(el?.status != "checkIn" &&
-            location.pathname == "/sUsers/bookingList") ||
-          (el?.status != "checkOut" &&
-            location.pathname == "/sUsers/checkInList") ? (
-            <div className="flex items-center">
-              <div
-                className={` 
-                flex gap-3 px-4`}
-              >
-                {/* <FaSignInAlt
-                    title="Check In"
-                    onClick={() =>
-                      navigate("/sUsers/EditBooking", {
-                        state: el,
-                      })
-                    }
-                  /> */}
-                <FaEdit
-                  title="Edit booking details"
-                  className="text-blue-500"
-                  onClick={() => {
-                    if (location.pathname === "/sUsers/bookingList") {
-                      navigate("/sUsers/editBooking", {
-                        state: el,
-                      });
-                    } else if (location.pathname === "/sUsers/checkInList") {
-                      navigate("/sUsers/editChecking", {
-                        state: el,
-                      });
-                    } else {
-                      navigate("/sUsers/editChecking", {
-                        state: el,
-                      });
-                    }
-                  }}
-                />
-
-                <MdDelete
-                  title="Delete booking details"
-                  onClick={() => {
-                    handleDelete(el._id);
-                  }}
-                  className="text-red-500"
-                />
-              </div>
-            </div>
-          ) : (
-            <></>
-          )}
+        <div className="animate-pulse flex w-full items-center">
+          <div className="w-16 h-4 bg-gray-200 rounded mr-4"></div>
+          <div className="w-28 h-4 bg-gray-200 rounded mr-4"></div>
+          <div className="w-32 h-4 bg-gray-200 rounded mr-4"></div>
+          <div className="w-40 h-4 bg-gray-200 rounded mr-4"></div>
+          <div className="w-24 h-4 bg-gray-200 rounded mr-4"></div>
+          <div className="w-36 h-4 bg-gray-200 rounded mr-4"></div>
+          <div className="w-28 h-4 bg-gray-200 rounded mr-4"></div>
+          <div className="w-20 h-4 bg-gray-200 rounded mr-4"></div>
+          <div className="w-28 h-4 bg-gray-200 rounded mr-4"></div>
+          <div className="w-24 h-4 bg-gray-200 rounded mr-4"></div>
+          <div className="w-28 h-4 bg-gray-200 rounded mr-4"></div>
+          <div className="w-32 h-4 bg-gray-200 rounded"></div>
         </div>
       </div>
     );
+  }
+
+  const el = bookings[index];
+  if (!el) return null;
+
+  const adjustedStyle = {
+    ...style,
+    height: "56px",
+  };
+
+  const isCheckOutSelected = (order) => {
+    return selectedCheckOut.find((item) => item._id === order._id);
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '-';
+    return new Date(dateString).toLocaleDateString('en-GB');
+  };
+
+  const formatDateTime = (dateString) => {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    return `${date.toLocaleDateString('en-GB')}(${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})})`;
   };
 
   return (
-    <>
- 
+    <div
+      key={index}
+      style={adjustedStyle}
+      className={`flex items-center px-4 py-3 border-b border-gray-200 cursor-pointer transition-all duration-200 ease-in-out text-sm bg-white hover:bg-gray-50
+        ${
+          isCheckOutSelected(el) &&
+          (location.pathname === "/sUsers/checkInList" ||
+            location.pathname === "/sUsers/checkOutList")
+            ? "bg-blue-50 border-blue-200 ring-1 ring-blue-300"
+            : ""
+        }`}
+      onClick={() => {
+        if (el.status === "checkOut") return;
+        let findOne = selectedCheckOut.find((item) => item._id === el._id);
+        if (selectedCheckOut.length == 0) {
+          setSelectedCustomer(el.customerId?._id);
+        }
+        if (findOne) {
+          setSelectedCheckOut((prev) =>
+            prev.filter((item) => item._id !== el._id)
+          );
+          return;
+        }
+        setSelectedCheckOut((prev) => [...prev, el]);
+      }}
+    >
+      {/* SL.NO */}
+      <div className="w-16 text-center text-gray-700 font-medium">
+        {index + 1}
+      </div>
 
+      {/* BOOKING DATE */}
+      <div className="w-28 text-center text-gray-600 text-xs">
+        {formatDate(el?.bookingDate)}
+      </div>
+
+      {/* BOOKING NO */}
+      <div className="w-32 text-center text-gray-700 font-semibold text-xs">
+        {el?.voucherNumber || '-'}
+      </div>
+
+      {/* GUEST NAME */}
+      <div className="w-40 text-center text-gray-700 truncate text-xs" title={el?.customerId?.partyName}>
+        {el?.customerId?.partyName || '-'}
+      </div>
+
+      {/* ROOM NO */}
+      <div className="w-24 text-center text-gray-600 font-medium">
+        {el?.roomNo || '-'}
+      </div>
+
+      {/* ARRIVAL DATE/TIME */}
+      <div className="w-36 text-center text-gray-600 text-xs">
+        {formatDateTime(el?.arrivalDateTime)}
+      </div>
+
+      {/* ROOM TARIFF */}
+      <div className="w-28 text-center text-gray-600 text-xs">
+        {el?.roomTariff || '6000'}
+      </div>
+
+      {/* ADD. PAX */}
+      <div className="w-20 text-center text-gray-600 font-medium">
+        {el?.additionalPax || 2}
+      </div>
+
+      {/* FOOD PLAN */}
+      <div className="w-28 text-center text-gray-600 text-xs">
+        ₹{el?.foodPlanAmount || '0.00'}
+      </div>
+
+      {/* ADVANCE */}
+      <div className="w-24 text-center text-gray-600 text-xs">
+        ₹{el?.bookingAdvance ? formatCurrency(el.bookingAdvance).replace('₹', '') : '2,000.00'}
+      </div>
+
+      {/* TOTAL */}
+      <div className="w-28 text-center text-gray-800 font-semibold text-xs">
+        ₹{el?.grandTotal ? formatCurrency(el.grandTotal).replace('₹', '') : '6,000.00'}
+      </div>
+
+      {/* ACTIONS */}
+      <div className="w-32 flex items-center justify-center gap-1">
+        {/* Primary Action Button */}
+        {((location.pathname === "/sUsers/bookingList" &&
+          el?.status != "checkIn") ||
+          (el?.status != "checkOut" &&
+            location.pathname === "/sUsers/checkInList") ||
+          (Number(el?.balanceToPay) > 0 &&
+            location.pathname === "/sUsers/checkOutList")) && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (location.pathname == "/sUsers/bookingList") {
+                navigate(`/sUsers/checkInPage`, {
+                  state: { bookingData: el },
+                });
+              } else if (
+                location.pathname === "/sUsers/checkOutList" &&
+                el.checkInId
+              ) {
+                navigate(`/sUsers/EditCheckOut`, {
+                  state: el,
+                });
+              } else {
+                navigate(`/sUsers/CheckOutPage`, {
+                  state: { bookingData: el },
+                });
+              }
+            }}
+            className="bg-black hover:bg-blue-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
+          >
+            {location.pathname === "/sUsers/checkInList"
+              ? "Checkout"
+              : location.pathname === "/sUsers/checkOutList"
+              ? "Close"
+              : "Check-In"}
+          </button>
+        )}
+
+        {/* Status Button */}
+        {((el?.status === "checkIn" &&
+          location.pathname === "/sUsers/bookingList") ||
+          (el?.status === "checkOut" &&
+            location.pathname === "/sUsers/checkInList") ||
+          (Number(el?.balanceToPay) <= 0 &&
+            location.pathname === "/sUsers/checkOutList")) && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (location.pathname === "/sUsers/checkOutList") {
+                setSelectedCustomer(el.customerId?._id);
+                setSelectedCheckOut([el]);
+                navigate("/sUsers/CheckOutPrint", {
+                  state: {
+                    selectedCheckOut: bookings?.filter(
+                      (item) => item.voucherNumber === el.voucherNumber
+                    ),
+                    customerId: el.customerId?._id,
+                    isForPreview: false,
+                  },
+                });
+              }
+            }}
+            className="bg-green-600 hover:bg-green-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
+          >
+            {location.pathname === "/sUsers/checkInList" ||
+            location.pathname === "/sUsers/bookingList"
+              ? "CheckedOut"
+              : "Print"}
+          </button>
+        )}
+
+        {/* Edit and Delete Actions */}
+        {(el?.status != "checkIn" &&
+          location.pathname == "/sUsers/bookingList") ||
+        (el?.status != "checkOut" &&
+          location.pathname == "/sUsers/checkInList") ? (
+          <div className="flex items-center gap-1">
+            <FaEdit
+              title="Edit booking details"
+              className="text-blue-500 cursor-pointer hover:text-blue-700 text-sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (location.pathname === "/sUsers/bookingList") {
+                  navigate("/sUsers/editBooking", {
+                    state: el,
+                  });
+                } else if (location.pathname === "/sUsers/checkInList") {
+                  navigate("/sUsers/editChecking", {
+                    state: el,
+                  });
+                } else {
+                  navigate("/sUsers/editChecking", {
+                    state: el,
+                  });
+                }
+              }}
+            />
+
+            <MdDelete
+              title="Delete booking details"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete(el._id);
+              }}
+              className="text-red-500 cursor-pointer hover:text-red-700 text-sm"
+            />
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+};
+
+// Main Component
+// const BookingListComponent = () => {
+  return (
+    <>
       <div className="flex-1 bg-slate-50 h-screen overflow-hidden">
         <div className="sticky top-0 z-20">
           <TitleDiv
@@ -617,9 +656,7 @@ function BookingList() {
               },
             ]}
           />
-
-
-          <SearchBar onType={searchData} toggle={true} from={location.pathname}  />
+          <SearchBar onType={searchData} toggle={true} from={location.pathname} />
         </div>
 
         {!loader && !isLoading && bookings?.length === 0 && (
@@ -675,7 +712,6 @@ function BookingList() {
                     className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                   >
                     <option value="">Choose a customer...</option>
-                    {/* Replace with your actual customer list */}
                     {selectedCheckOut?.map((selected) => (
                       <option
                         key={selected?.customerId?._id}
@@ -704,7 +740,6 @@ function BookingList() {
                           isForPreview: true,
                         },
                       });
-                      // setCheckOutModal(true);
                     }}
                   >
                     <MdPayment className="w-4 h-4" />
@@ -715,6 +750,7 @@ function BookingList() {
             </div>
           )}
 
+        {/* Payment Modal */}
         {showPaymentModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <motion.div
@@ -733,7 +769,6 @@ function BookingList() {
                     setCashAmount(0);
                     setOnlineAmount(0);
                     setPaymentError("");
-                    // Reset split payment selections
                     setSelectedCash("");
                     setSelectedBank("");
                   }}
@@ -774,7 +809,6 @@ function BookingList() {
                       setCashAmount(0);
                       setOnlineAmount(0);
                       setPaymentError("");
-                      // Reset split payment selections
                       setSelectedCash("");
                       setSelectedBank("");
                     }}
@@ -803,6 +837,7 @@ function BookingList() {
                   </button>
                 </div>
               </div>
+
               <div className="mb-6">
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Select Customer
@@ -813,7 +848,6 @@ function BookingList() {
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                 >
                   <option value="">Choose a customer...</option>
-                  {/* Replace with your actual customer list */}
                   {selectedCheckOut?.map((selected) => (
                     <option
                       key={selected?.customerId?._id}
@@ -866,7 +900,6 @@ function BookingList() {
                       </label>
                       <select
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                        // value={selectedCash}
                         onChange={(e) => setSelectedCash(e.target.value)}
                       >
                         {cashOrBank?.cashDetails?.map((cashier) => (
@@ -886,10 +919,8 @@ function BookingList() {
                       </label>
                       <select
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                        // value={selectedBank}
                         onChange={(e) => {
                           setSelectedBank(e.target.value);
-                          // setSelectedCash
                         }}
                       >
                         <option value="" disabled>
@@ -1113,106 +1144,34 @@ function BookingList() {
           </div>
         )}
 
-        {/* {checkOutModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="bg-white rounded-lg p-4 max-w-lg w-full mx-4 max-h-[95vh] overflow-y-auto"
+        {/* Table Structure */}
+        <div className="bg-white border border-gray-300 rounded-lg mx-4 mt-4 overflow-hidden shadow-sm">
+          <TableHeader />
+          
+          <div className="pb-4">
+            <InfiniteLoader
+              isItemLoaded={isItemLoaded}
+              itemCount={hasMore ? bookings?.length + 1 : bookings?.length}
+              loadMoreItems={loadMoreItems}
+              threshold={10}
             >
-              <div className="flex justify-between items-center mb-3">
-                <h2 className="text-lg font-bold text-gray-800">
-                  Confirm Before CheckOut
-                </h2>
-                <button
-                  onClick={() => {
-                    setCheckOutModal(false);
+              {({ onItemsRendered, ref }) => (
+                <List
+                  className="pb-4"
+                  height={listHeight - 140} // Adjust for header
+                  itemCount={hasMore ? bookings?.length + 1 : bookings?.length}
+                  itemSize={56} // Height for table rows
+                  onItemsRendered={onItemsRendered}
+                  ref={(listInstance) => {
+                    ref(listInstance);
+                    listRef.current = listInstance;
                   }}
-                  className="text-gray-400 hover:text-gray-600"
                 >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-
-              {/* KOT Section */}
-        {/* <div className="mb-3 p-2 bg-blue-50 rounded-lg border border-blue-200">
-                <div className="flex items-center text-blue-700">
-                  <Check className="w-5 h-5 mr-2" />
-                  <span className="text-sm font-medium">
-                    Check-in List :{" "}
-                    {selectedCheckOut?.map((item, index) => (
-                      <span
-                        key={item?.id || index}
-                        className="text-sm font-medium"
-                      >
-                        {item?.voucherNumber}
-                        {","}
-                      </span>
-                    ))}
-                  </span>
-                </div>
-              </div> */}
-        {/* Order Summary */}
-        {/* <div className="bg-gray-50 p-3 rounded-lg">
-                <div className="border-t border-gray-200 pt-2 mt-2 flex justify-between font-semibold text-gray-800">
-                  <span className="text-sm">Total Amount</span>
-                  <span className="text-base text-blue-600">
-                    ₹{selectedDataForPayment?.total}
-                  </span>
-                </div>
-                <div className="flex gap-2 mt-2">
-                  <button
-                    onClick={() => {
-                      handleCheckOutData();
-                    }}
-                    disabled={saveLoader}
-                    className={`flex-1 group px-3 py-1.5 border rounded-lg text-xs font-semibold transition-all duration-200 flex items-center justify-center gap-1 ${
-                      saveLoader
-                        ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
-                        : "bg-white text-emerald-700 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 hover:scale-105"
-                    }`}
-                  >
-                    {saveLoader ? (
-                      <>
-                        <div className="w-3 h-3 border border-emerald-300 border-t-transparent rounded-full animate-spin"></div>
-                        Processing...
-                      </>
-                    ) : (
-                      <>
-                        <MdVisibility className="w-3 h-3 group-hover:rotate-12 transition-transform duration-200" />
-                        Confirm
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            </motion.div> */}
-        {/* </div> */}
-        {/* )} */}
-
-        <div className="pb-4">
-          <InfiniteLoader
-            isItemLoaded={isItemLoaded}
-            itemCount={hasMore ? bookings?.length + 1 : bookings?.length}
-            loadMoreItems={loadMoreItems}
-            threshold={10}
-          >
-            {({ onItemsRendered, ref }) => (
-              <List
-                className="pb-4"
-                height={listHeight}
-                itemCount={hasMore ? bookings?.length + 1 : bookings?.length}
-                itemSize={140}
-                onItemsRendered={onItemsRendered}
-                ref={(listInstance) => {
-                  ref(listInstance);
-                  listRef.current = listInstance;
-                }}
-              >
-                {Row}
-              </List>
-            )}
-          </InfiniteLoader>
+                  {Row}
+                </List>
+              )}
+            </InfiniteLoader>
+          </div>
         </div>
 
         {isLoading && !loader && (

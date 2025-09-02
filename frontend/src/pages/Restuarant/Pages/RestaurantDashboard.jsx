@@ -133,6 +133,12 @@ const RestaurantPOS = () => {
     fetchPriceList();
   }, []);
 
+  //
+
+  const [search, setSearch] = useState("");
+  const [showResults, setShowResults] = useState(false);
+
+  // Filter rooms based on search
   const filteredRooms = Array.isArray(roomData)
     ? roomData.filter(
         (room) =>
@@ -144,18 +150,18 @@ const RestaurantPOS = () => {
       )
     : [];
 
-  const handleSelect = (room) => {
+  const handleSelectRoom = (room) => {
     setRoomDetails({
       ...roomDetails,
-      _id: room.roomId,
-      roomno: room.roomName,
-      guestName: room.customerName,
-      CheckInNumber: room.voucherNumber,
+      _id: room?.roomId || "",
+      roomno: room?.roomName || "",
+      guestName: room?.customerName || "",
+      CheckInNumber: room?.voucherNumber || "",
     });
-    setSearchTerms(
+    setSearch(
       `${room.roomName} - ${room.customerName} - ${room.voucherNumber}`
     );
-    setShowOptions(false);
+    setShowResults(false);
   };
 
   const fetchPriceList = async () => {
@@ -1214,46 +1220,52 @@ const RestaurantPOS = () => {
         </div>
       </div>
 
-    {showFullTableSelection && (
-  <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-    <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-auto relative border border-white/20 animate-in zoom-in-95 duration-200">
-      <button
-        onClick={() => {
-          setShowFullTableSelection(false);
-          if (!kotDataForEdit && Object.keys(kotDataForEdit).length <= 0) {
-            setRoomDetails({});
-          }
-        }}
-        className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl font-bold w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center transition-all duration-200"
-      >
-     <button
-  onClick={() => {
-    setShowFullTableSelection(false);
-    if (!kotDataForEdit && Object.keys(kotDataForEdit).length <= 0) {
-      setRoomDetails({});
-    }
-  }}
-  className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-3xl font-bold w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center transition-all duration-200"
-  aria-label="Close modal"
->
-  &times;
-</button>
-      </button>
-      <div>
-        <TableSelection
-          showKOTs={false}
-          onTableSelect={(table) => {
-            generateKOT(table.tableNumber, table.status);
-            setShowFullTableSelection(false);
-          }}
-          roomData={roomData}
-          setRoomDetails={setRoomDetails}
-          roomDetails={roomDetails}
-        />
-      </div>
-    </div>
-  </div>
-)}
+      {showFullTableSelection && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-auto relative border border-white/20 animate-in zoom-in-95 duration-200">
+            <button
+              onClick={() => {
+                setShowFullTableSelection(false);
+                if (
+                  !kotDataForEdit &&
+                  Object.keys(kotDataForEdit).length <= 0
+                ) {
+                  setRoomDetails({});
+                }
+              }}
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl font-bold w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center transition-all duration-200"
+            >
+              <button
+                onClick={() => {
+                  setShowFullTableSelection(false);
+                  if (
+                    !kotDataForEdit &&
+                    Object.keys(kotDataForEdit).length <= 0
+                  ) {
+                    setRoomDetails({});
+                  }
+                }}
+                className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-3xl font-bold w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center transition-all duration-200"
+                aria-label="Close modal"
+              >
+                &times;
+              </button>
+            </button>
+            <div>
+              <TableSelection
+                showKOTs={false}
+                onTableSelect={(table) => {
+                  generateKOT(table.tableNumber, table.status);
+                  setShowFullTableSelection(false);
+                }}
+                roomData={roomData}
+                setRoomDetails={setRoomDetails}
+                roomDetails={roomDetails}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Compact KOT Modal */}
       {showKOTModal && (
@@ -1303,7 +1315,41 @@ const RestaurantPOS = () => {
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Room Number
                     </label>
-                    <select
+                    <div className="relative ">
+                      <input
+                        type="text"
+                        placeholder="Search room..."
+                        className="px-3 py-2 border rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-violet-500"
+                        value={search}
+                        onChange={(e) => {
+                          setSearch(e.target.value);
+                          setShowResults(true);
+                        }}
+                      />
+
+                      {/* Dropdown results */}
+                      {showResults && search && (
+                        <ul className="absolute z-10 w-full bg-white border rounded-lg shadow max-h-60 overflow-y-auto">
+                          {filteredRooms.length > 0 ? (
+                            filteredRooms.map((room) => (
+                              <li
+                                key={room.roomId}
+                                className="px-4 py-2 hover:bg-violet-100 cursor-pointer"
+                                onClick={() => handleSelectRoom(room)}
+                              >
+                                {room.roomName} - {room.customerName} -{" "}
+                                {room.voucherNumber}
+                              </li>
+                            ))
+                          ) : (
+                            <li className="px-4 py-2 text-gray-500">
+                              No results found
+                            </li>
+                          )}
+                        </ul>
+                      )}
+                    </div>
+                    {/* <select
                       value={roomDetails._id}
                       onChange={(e) => {
                         const selectedRoom = roomData.find(
@@ -1326,7 +1372,7 @@ const RestaurantPOS = () => {
                           {room?.voucherNumber}
                         </option>
                       ))}
-                    </select>
+                    </select> */}
                   </div>
 
                   <div>

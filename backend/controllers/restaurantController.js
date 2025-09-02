@@ -799,9 +799,9 @@ export const updateKotPayment = async (req, res) => {
         selectedKotData: kotData,
         isPostToRoom,
       } = req.body;
+
       console.log("table", kotData);
 
-      // Validate required fields
       if (!paymentDetails || !kotData) {
         throw new Error("Missing payment details or KOT data");
       }
@@ -816,13 +816,13 @@ export const updateKotPayment = async (req, res) => {
         paymentMethod = "mixed";
       }
 
-      // Fetch voucher series
+      // Voucher series
       const specificVoucherSeries = await getRestaurantVoucherSeries(
         cmp_id,
         session
       );
 
-      // Generate voucher number
+      // Voucher number
       const saleNumber = await generateVoucherNumber(
         cmp_id,
         "sales",
@@ -830,7 +830,7 @@ export const updateKotPayment = async (req, res) => {
         session
       );
 
-      // Fetch selected party
+      // Selected party
       const selectedParty = await getSelectedParty(
         cmp_id,
         paymentDetails,
@@ -841,17 +841,16 @@ export const updateKotPayment = async (req, res) => {
         session
       );
 
-      // Payment splitting array
+      // Payment splitting
       const paymentSplittingArray = createPaymentSplittingArray(
         paymentDetails,
         cashAmt,
         onlineAmt
       );
 
-      // Party object for voucher
       const party = mapPartyData(selectedParty);
 
-      // Save sales voucher
+      // Save voucher
       const savedVoucherData = await createSalesVoucher(
         cmp_id,
         specificVoucherSeries,
@@ -864,7 +863,7 @@ export const updateKotPayment = async (req, res) => {
         session
       );
 
-      // Handle outstanding balance
+      // Outstanding balance
       const paidAmount = isPostToRoom ? 0 : cashAmt + onlineAmt;
       const pendingAmount = Number(kotData?.total || 0) - paidAmount;
 
@@ -880,8 +879,8 @@ export const updateKotPayment = async (req, res) => {
           session
         );
       }
+
       if (party?.paymentType != "party") {
-        // Save settlement data
         await saveSettlement(
           paymentDetails,
           selectedParty,
@@ -895,42 +894,58 @@ export const updateKotPayment = async (req, res) => {
         );
       }
 
-      // Update KOT payment status
-      // paymentCompleted = paidAmount >= kotData?.total;
+      // Update KOTs
       paymentCompleted = true;
+      let selectedTableNumber = [];
+
       await Promise.all(
-        kotData?.voucherNumber.map((item) =>
-          kotModal.updateOne(
+        kotData?.voucherNumber.map(async (item) => {
+          // Find the KOT first
+          const kot = await kotModal.findById(item.id).lean();
+
+          if (!selectedTableNumber.includes(kot?.tableNumber)) {
+            selectedTableNumber.push(kot.tableNumber);
+          }
+
+          // Then update it
+          return kotModal.updateOne(
             { _id: item.id },
             { paymentMethod, paymentCompleted },
             { session }
-          )
-        )
+          );
+        })
       );
 
-      await session.commitTransaction();
-      await session.commitTransaction(); // commits before map is done
-      const pendingCount = await kotModal.countDocuments({
-        "customer.tableNumber": kotData.tableNumber,
-        paymentCompleted: false,
-      });
-      console.log("check", pendingCount);
-      let tableAvailable = false;
-      if (pendingCount === 0) {
-        const updatetabestatus = await Table.findOneAndUpdate(
-          { tableNumber: kotData.tableNumber }, // find by table number
-          { status: "available" }, // update status
-          { new: true } // return updated doc
-        );
-        if (updatetabestatus) {
-          tableAvailable = true;
+      console.log("Selected Table Numbers:", selectedTableNumber);
+
+      // Check pending
+      for (const tableNumber of selectedTableNumber) {
+        const pendingCount = await kotModal
+          .countDocuments({
+            "customer.tableNumber": tableNumber,
+            paymentCompleted: false,
+          })
+          .session(session);
+
+        console.log("pendingCount", pendingCount);
+        console.log("kotData.tableNumber", kotData);
+
+        if (pendingCount <= 1) {
+          const updateTableStatus = await Table.findOneAndUpdate(
+            { cmp_id, tableNumber },
+            { status: "available" },
+            { new: true, session }
+          );
+
+          console.log("updated table", updateTableStatus);
         }
       }
 
+      // ✅ No manual commit here
       res.status(200).json({
         success: true,
         message: "KOT payment updated successfully",
-        data: { saleNumber, salesRecord: savedVoucherData[0], tableAvailable },
+        data: { saleNumber, salesRecord: savedVoucherData[0] },
       });
     });
   } catch (error) {
