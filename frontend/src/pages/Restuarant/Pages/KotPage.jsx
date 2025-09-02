@@ -28,7 +28,7 @@ import { useReactToPrint } from "react-to-print";
 
 const OrdersDashboard = () => {
   const contentToPrint = useRef(null);
-  const [activeFilter, setActiveFilter] = useState("On Process");
+  const [activeFilter, setActiveFilter] = useState("ON PROCESS");
   const [searchQuery, setSearchQuery] = useState("");
   const [userRole, setUserRole] = useState("reception");
   const [orders, setOrders] = useState([]);
@@ -225,7 +225,7 @@ const OrdersDashboard = () => {
         );
       } else if (activeFilter === "KOT BILL PENDING") {
         // Reception - Completed: Show only completed orders
-        filtered = filtered.filter((order) => order.status === "completed");
+        filtered = filtered.filter((order) => order.status === "completed" && !order.paymentCompleted);
       } else if (activeFilter === "COMPLETED") {
         // Reception - Completed: Show only completed orders
         filtered = filtered.filter((order) => order.status === "completed" && order.paymentCompleted );
