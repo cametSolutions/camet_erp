@@ -84,7 +84,7 @@ export const buildDatabaseFilterForBooking = (params) => {
       filter = { ...filter, status: "checkIn" };
     }
     if(params.modal == "checkIn") {
-      filter = {...filter,status:"checkIn"}
+      filter = {...filter,status:"checkOut"}
     }
   }
 

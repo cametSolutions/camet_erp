@@ -34,6 +34,7 @@ const tallySchema = new mongoose.Schema(
     bill_pending_amt: { type: Number, required: true },
     user_id: { type: String },
     source: { type: String },
+    from:{type:String},
     classification: { type: String },
     appliedReceipts: [
       {
