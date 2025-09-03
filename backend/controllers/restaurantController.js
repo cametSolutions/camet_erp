@@ -930,7 +930,7 @@ export const updateKotPayment = async (req, res) => {
         console.log("pendingCount", pendingCount);
         console.log("kotData.tableNumber", kotData);
 
-        if (pendingCount <= 1) {
+        if (pendingCount < 1) {
           const updateTableStatus = await Table.findOneAndUpdate(
             { cmp_id, tableNumber },
             { status: "available" },
@@ -1467,6 +1467,8 @@ export const getKotDataByTable = async (req, res) => {
     if (status) {
       filter.status = status;
     }
+
+    console.log("filter", filter);
 
     const kots = await kotModal.find(filter).sort({ createdAt: -1 });
     res.json({ success: true, data: kots });
