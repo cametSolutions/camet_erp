@@ -15,13 +15,13 @@ export default function SattvaInvoice() {
   const organization = useSelector(
     (state) => state?.secSelectedOrganization?.secSelectedOrg
   );
-  console.log(organization);
+
 
   // Props from location state
   const selectedCheckOut = location.state?.selectedCheckOut;
   const selectedCustomerId = location.state?.customerId;
   const isForPreview = location.state?.isForPreview;
-
+  console.log(selectedCheckOut);
   // Component state
   const [outStanding, setOutStanding] = useState([]);
   const [kotData, setKotData] = useState([]);
