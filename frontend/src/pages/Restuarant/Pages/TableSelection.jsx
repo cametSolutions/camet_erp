@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { FaUtensils, FaCircle } from "react-icons/fa";
 import { useLocation } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
@@ -30,8 +30,9 @@ const TableTiles = ({
   showKOTs = true,
   roomData,
   setRoomDetails,
-   roomDetails
+  roomDetails,
 }) => {
+  const sectionRef = useRef(null);
   const [tables, setTables] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedTable, setSelectedTable] = useState(null);
@@ -83,10 +84,10 @@ const TableTiles = ({
       const { bankDetails, cashDetails } = paymentTypeData?.data;
       setCashOrBank(paymentTypeData?.data);
       if (bankDetails && bankDetails.length > 0) {
-        setSelectedBank(bankDetails[0]._id);
+        setSelectedBank(bankDetails[0]?._id);
       }
       if (cashDetails && cashDetails.length > 0) {
-        setSelectedCash(cashDetails[0]._id);
+        setSelectedCash(cashDetails[0]?._id);
       }
     }
   }, [paymentTypeData]);
@@ -143,6 +144,31 @@ const TableTiles = ({
     }
   }, [previewForSales]);
 
+  const [search, setSearch] = useState("");
+  const [showResults, setShowResults] = useState(false);
+
+  // Filter rooms based on search
+  const filteredRooms = roomData?.filter(
+    (room) =>
+      room.roomName.toLowerCase().includes(search.toLowerCase()) ||
+      room.customerName.toLowerCase().includes(search.toLowerCase()) ||
+      room.voucherNumber.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const handleSelectRoom = (room) => {
+    setRoomDetails({
+      ...roomDetails,
+      _id: room?.roomId || "",
+      roomno: room?.roomName || "",
+      guestName: room?.customerName || "",
+      CheckInNumber: room?.voucherNumber || "",
+    });
+    setSearch(
+      `${room.roomName} - ${room.customerName} - ${room.voucherNumber}`
+    );
+    setShowResults(false);
+  };
+
   // Fetch Tables from API
   const fetchTables = async () => {
     setLoading(true);
@@ -171,6 +197,7 @@ const TableTiles = ({
 
   // Handle table click and fetch KOTs
   const handleTableClick = async (table) => {
+    sectionRef.current?.scrollIntoView({ behavior: "smooth" });
     if (onTableSelect) {
       onTableSelect(table);
     }
@@ -184,7 +211,7 @@ const TableTiles = ({
           withCredentials: true,
           params: {
             tableNumber: table.tableNumber,
-            status: "completed",
+            status: "pending",
           },
         });
         setTableKOTs(res.data?.data || []);
@@ -385,37 +412,7 @@ const TableTiles = ({
       setPaymentError("");
     }
   };
-
-  // const getStatusColor = (status) => {
-  //   switch (status) {
-  //     case "available":
-  //       return "from-green-400 to-green-600";
-  //     case "occupied":
-  //       return "from-red-400 to-red-600";
-  //     case "reserved":
-  //       return "from-yellow-400 to-yellow-600";
-  //     case "cleaning":
-  //       return "from-blue-400 to-blue-600";
-  //     default:
-  //       return "from-gray-400 to-gray-600";
-  //   }
-  // };
-
-  // const getStatusIcon = (status) => {
-  //   switch (status) {
-  //     case "available":
-  //       return <FaCircle className="text-green-300 text-xs animate-pulse" />;
-  //     case "occupied":
-  //       return <FaCircle className="text-red-300 text-xs animate-pulse" />;
-  //     case "reserved":
-  //       return <FaCircle className="text-yellow-300 text-xs animate-pulse" />;
-  //     case "cleaning":
-  //       return <FaCircle className="text-blue-300 text-xs animate-pulse" />;
-  //     default:
-  //       return <FaCircle className="text-gray-300 text-xs" />;
-  //   }
-  // };
-console.log(roomDetails)
+  console.log(roomDetails);
   const isOrderSelected = (order) => {
     return selectedKot.find((item) => item.id === order._id);
   };
@@ -439,88 +436,53 @@ console.log(roomDetails)
       {!showVoucherPdf && (
         <>
           {/* Header */}
-          <div className="flex items-center justify-center gap-6 mb-8">
-  {/* Title */}
- <div className="text-center mb-0">
-    <h1 className="text-4xl font-bold bg-gradient-to-r from-violet-600 via-purple-600 to-blue-600 text-transparent bg-clip-text mb-2">
-      Restaurant Tables
-    </h1>
-    <div className="w-24 h-1 bg-gradient-to-r from-violet-500 to-blue-500 mx-auto rounded-full"></div>
-  </div>
-
-  {/* Dropdown */}
-  <select
-    className="px-4 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
-    value={roomDetails?._id}
-    onChange={(e) => {
-      const selectedRoom = roomData.find(
-        (room) => room.roomId === e.target.value
-      );
-      setRoomDetails({
-        ...roomDetails,
-        _id: selectedRoom?.roomId || "",
-        roomno: selectedRoom?.roomName || "",
-        guestName: selectedRoom?.customerName || "",
-        CheckInNumber: selectedRoom?.voucherNumber || "",
-      });
-    }}
-  >
-    <option value="">Select a room</option>
-    {roomData?.map((room) => (
-      <option value={room.roomId} key={room.roomId}>
-        {room?.roomName} - {room?.customerName} - {room?.voucherNumber}
-      </option>
-    ))}
-  </select>
-
-  <div className="flex flex-wrap justify-center gap-6 mb-10">
-            <div className="bg-white/70 backdrop-blur-sm rounded-2xl px-6 py-3 shadow-lg border border-white/20">
-              <div className="flex flex-wrap justify-center gap-6">
-                <div className="flex items-center gap-3 group">
-                  <div className="relative">
-                    <FaCircle className="text-emerald-500 text-sm animate-pulse" />
-                    <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-20"></div>
-                  </div>
-                  <span className="text-sm font-semibold text-gray-700 group-hover:text-emerald-600 transition-colors">
-                    Available
-                  </span>
-                </div>
-                <div className="flex items-center gap-3 group">
-                  <div className="relative">
-                    <FaCircle className="text-rose-500 text-sm animate-pulse" />
-                    <div className="absolute inset-0 bg-rose-500 rounded-full animate-ping opacity-20"></div>
-                  </div>
-                  <span className="text-sm font-semibold text-gray-700 group-hover:text-rose-600 transition-colors">
-                    Occupied
-                  </span>
-                </div>
-                <div className="flex items-center gap-3 group">
-                  <div className="relative">
-                    <FaCircle className="text-amber-500 text-sm animate-pulse" />
-                    <div className="absolute inset-0 bg-amber-500 rounded-full animate-ping opacity-20"></div>
-                  </div>
-                  <span className="text-sm font-semibold text-gray-700 group-hover:text-amber-600 transition-colors">
-                    Reserved
-                  </span>
-                </div>
-                <div className="flex items-center gap-3 group">
-                  <div className="relative">
-                    <FaCircle className="text-sky-500 text-sm animate-pulse" />
-                    <div className="absolute inset-0 bg-sky-500 rounded-full animate-ping opacity-20"></div>
-                  </div>
-                  <span className="text-sm font-semibold text-gray-700 group-hover:text-sky-600 transition-colors">
-                    Cleaning
-                  </span>
-                </div>
-              </div>
+          <div className="flex items-center justify-center gap-6 mb-4">
+            {/* Title */}
+            <div className="text-center mb-0">
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-violet-600 via-purple-600 to-blue-600 text-transparent bg-clip-text mb-2">
+                Restaurant Tables
+              </h1>
+              <div className="w-24 h-1 bg-gradient-to-r from-violet-500 to-blue-500 mx-auto rounded-full"></div>
             </div>
-          </div>
-</div>
-          {/* Status Legend */}
-        
+            <div></div>
+            {/* Dropdown */}
+            {roomData?.length > 0 && (
+              <div className="relative ">
+                <input
+                  type="text"
+                  placeholder="Search room..."
+                  className="px-3 py-2 border rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setShowResults(true);
+                  }}
+                />
 
-          {/* KOT Notification */}
-          {showKotNotification && selectedKotFromRedirect && (
+                {/* Dropdown results */}
+                {showResults && search && (
+                  <ul className="absolute z-10 w-full bg-white border rounded-lg shadow max-h-60 overflow-y-auto">
+                    {filteredRooms.length > 0 ? (
+                      filteredRooms.map((room) => (
+                        <li
+                          key={room.roomId}
+                          className="px-4 py-2 hover:bg-violet-100 cursor-pointer"
+                          onClick={() => handleSelectRoom(room)}
+                        >
+                          {room.roomName} - {room.customerName} -{" "}
+                          {room.voucherNumber}
+                        </li>
+                      ))
+                    ) : (
+                      <li className="px-4 py-2 text-gray-500">
+                        No results found
+                      </li>
+                    )}
+                  </ul>
+                )}
+              </div>
+            )}
+            {/* {showKotNotification && selectedKotFromRedirect && (
             <div
               className="fixed top-6 inset-x-0 flex justify-center z-50 cursor-pointer"
               onClick={() => setShowKotNotification(false)}
@@ -530,140 +492,200 @@ console.log(roomDetails)
                 table. Click to close this notice.
               </div>
             </div>
-          )}
+          )} */}
+            <>
+              <div className="mb-3">
+                <div className="flex justify-center">
+                  <div className="bg-white/80 backdrop-blur-sm rounded-xl px-2 py-2 shadow-lg border border-white/30">
+                    <div className="flex flex-wrap justify-center gap-4">
+                      <div className="flex items-center gap-2 group">
+                        <div className="relative">
+                          <FaCircle className="text-emerald-500 text-sm animate-pulse" />
+                          <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-20"></div>
+                        </div>
+                        <span className="text-sm font-medium text-gray-700 group-hover:text-emerald-600 transition-colors">
+                          Available
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 group">
+                        <div className="relative">
+                          <FaCircle className="text-rose-500 text-sm animate-pulse" />
+                          <div className="absolute inset-0 bg-rose-500 rounded-full animate-ping opacity-20"></div>
+                        </div>
+                        <span className="text-sm font-medium text-gray-700 group-hover:text-rose-600 transition-colors">
+                          Occupied
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 group">
+                        <div className="relative">
+                          <FaCircle className="text-amber-500 text-sm animate-pulse" />
+                          <div className="absolute inset-0 bg-amber-500 rounded-full animate-ping opacity-20"></div>
+                        </div>
+                        <span className="text-sm font-medium text-gray-700 group-hover:text-amber-600 transition-colors">
+                          Reserved
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 group">
+                        <div className="relative">
+                          <FaCircle className="text-sky-500 text-sm animate-pulse" />
+                          <div className="absolute inset-0 bg-sky-500 rounded-full animate-ping opacity-20"></div>
+                        </div>
+                        <span className="text-sm font-medium text-gray-700 group-hover:text-sky-600 transition-colors">
+                          Cleaning
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          </div>
+          {/* Status Legend */}
+
+          {/* KOT Notification */}
 
           {/* Tables Grid */}
-          <div className="flex justify-center mb-8">
-  <div
-    className="grid gap-3 grid-cols-5 md:grid-cols-9"
-    style={{ maxWidth: "fit-content" }}
-  >
-    {tables.map((table, index) => {
-      const getStatusConfig = (status) => {
-                  switch (status) {
-                    case "available":
-                      return {
-                        bgGradient:
-                          "from-emerald-50/90 via-green-50/80 to-emerald-100/90",
-                        borderColor: "border-emerald-200/60",
-                        glowColor: "shadow-emerald-500/20",
-                        textColor: "text-emerald-800",
-                        iconColor: "text-emerald-600",
-                        pulseColor: "bg-emerald-500",
-                      };
-                    case "occupied":
-                      return {
-                        bgGradient:
-                          "from-rose-50/90 via-red-50/80 to-rose-100/90",
-                        borderColor: "border-rose-200/60",
-                        glowColor: "shadow-rose-500/20",
-                        textColor: "text-rose-800",
-                        iconColor: "text-rose-600",
-                        pulseColor: "bg-rose-500",
-                      };
-                    case "reserved":
-                      return {
-                        bgGradient:
-                          "from-amber-50/90 via-yellow-50/80 to-amber-100/90",
-                        borderColor: "border-amber-200/60",
-                        glowColor: "shadow-amber-500/20",
-                        textColor: "text-amber-800",
-                        iconColor: "text-amber-600",
-                        pulseColor: "bg-amber-500",
-                      };
-                    case "cleaning":
-                      return {
-                        bgGradient:
-                          "from-sky-50/90 via-blue-50/80 to-sky-100/90",
-                        borderColor: "border-sky-200/60",
-                        glowColor: "shadow-sky-500/20",
-                        textColor: "text-sky-800",
-                        iconColor: "text-sky-600",
-                        pulseColor: "bg-sky-500",
-                      };
-                    default:
-                      return {
-                        bgGradient:
-                          "from-gray-50/90 via-slate-50/80 to-gray-100/90",
-                        borderColor: "border-gray-200/60",
-                        glowColor: "shadow-gray-500/20",
-                        textColor: "text-gray-800",
-                        iconColor: "text-gray-600",
-                        pulseColor: "bg-gray-500",
-                      };
-                  }
-                };
+          <div className="container mx-auto px-4">
+            {/* Tables Grid - Main Section */}
+            <div className="flex justify-center w-full">
+              <div
+                className="grid gap-4 grid-cols-3 sm:grid-cols-8 md:grid-cols-12 lg:grid-cols-16 xl:grid-cols-20"
+                style={{ maxWidth: "fit-content" }}
+              >
+                {tables.map((table, index) => {
+                  const getStatusConfig = (status) => {
+                    switch (status) {
+                      case "available":
+                        return {
+                          bgGradient:
+                            "from-emerald-50/90 via-green-50/80 to-emerald-100/90",
+                          borderColor: "border-emerald-200/60",
+                          glowColor: "shadow-emerald-500/20",
+                          textColor: "text-emerald-800",
+                          iconColor: "text-emerald-600",
+                          pulseColor: "bg-emerald-500",
+                        };
+                      case "occupied":
+                        return {
+                          bgGradient:
+                            "from-rose-50/90 via-red-50/80 to-rose-100/90",
+                          borderColor: "border-rose-200/60",
+                          glowColor: "shadow-rose-500/20",
+                          textColor: "text-rose-800",
+                          iconColor: "text-rose-600",
+                          pulseColor: "bg-rose-500",
+                        };
+                      case "reserved":
+                        return {
+                          bgGradient:
+                            "from-amber-50/90 via-yellow-50/80 to-amber-100/90",
+                          borderColor: "border-amber-200/60",
+                          glowColor: "shadow-amber-500/20",
+                          textColor: "text-amber-800",
+                          iconColor: "text-amber-600",
+                          pulseColor: "bg-amber-500",
+                        };
+                      case "cleaning":
+                        return {
+                          bgGradient:
+                            "from-sky-50/90 via-blue-50/80 to-sky-100/90",
+                          borderColor: "border-sky-200/60",
+                          glowColor: "shadow-sky-500/20",
+                          textColor: "text-sky-800",
+                          iconColor: "text-sky-600",
+                          pulseColor: "bg-sky-500",
+                        };
+                      default:
+                        return {
+                          bgGradient:
+                            "from-gray-50/90 via-slate-50/80 to-gray-100/90",
+                          borderColor: "border-gray-200/60",
+                          glowColor: "shadow-gray-500/20",
+                          textColor: "text-gray-800",
+                          iconColor: "text-gray-600",
+                          pulseColor: "bg-gray-500",
+                        };
+                    }
+                  };
 
-                 const statusConfig = getStatusConfig(table.status);
+                  const statusConfig = getStatusConfig(table.status);
 
-      return (
-        <div
-          key={table._id}
-          className={`group relative bg-gradient-to-br backdrop-blur-sm rounded-2xl border-2 cursor-pointer transition-all duration-500 hover:scale-110 hover:rotate-2 hover:shadow-2xl
-            w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 lg:w-24 lg:h-24 xl:w-28 xl:h-28
-            flex flex-col items-center justify-center overflow-hidden
-          `}
-          onClick={() => handleTableClick(table)}
-          style={{
-            animationDelay: `${index * 100}ms`,
-            animation: "fadeInUp 0.6s ease-out forwards",
-          }}
-        >
-                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                      <div
-                        className="absolute top-2 left-2 w-1 h-1 bg-white rounded-full animate-bounce"
-                        style={{ animationDelay: "0ms" }}
-                      ></div>
-                      <div
-                        className="absolute top-3 right-3 w-1 h-1 bg-white rounded-full animate-bounce"
-                        style={{ animationDelay: "200ms" }}
-                      ></div>
-                      <div
-                        className="absolute bottom-3 left-3 w-1 h-1 bg-white rounded-full animate-bounce"
-                        style={{ animationDelay: "400ms" }}
-                      ></div>
-                    </div>
-
+                  return (
                     <div
-                      className={`absolute -top-1 -right-1 w-3 h-3 ${statusConfig.pulseColor} rounded-full animate-ping opacity-75`}
-                    ></div>
-                    <div
-                      className={`absolute -top-1 -right-1 w-3 h-3 ${statusConfig.pulseColor} rounded-full`}
-                    ></div>
-
-                    <div className="relative z-10 mb-1 group-hover:rotate-12 transition-transform duration-300">
-                      <img
-                        src={dining || "/api/placeholder/24/24"}
-                        alt="Dining table"
-                        className={`w-6 h-6 object-contain ${statusConfig.iconColor} filter drop-shadow-sm group-hover:drop-shadow-lg transition-all duration-300`}
-                      />
-                    </div>
-
-                    <div
-                      className={`relative z-10 text-xs font-bold ${statusConfig.textColor} group-hover:scale-110 transition-transform duration-300`}
+                      key={table?._id}
+                      className={`group relative bg-gradient-to-br ${statusConfig.bgGradient}
+                       backdrop-blur-sm rounded-2xl border-2 ${statusConfig.borderColor} cursor-pointer
+                        transition-all duration-500 hover:scale-105 hover:rotate-1 hover:${statusConfig.glowColor} hover:shadow-xl
+              w-15 h-15 
+              flex flex-col items-center justify-center overflow-hidden`}
+                      onClick={() => handleTableClick(table)}
+                      style={{
+                        animationDelay: `${index * 50}ms`,
+                        animation: "fadeInUp 0.6s ease-out forwards",
+                      }}
                     >
-                      {table.tableNumber}
-                    </div>
-
-                    {table.status === "occupied" && (
-                      <div className="absolute -bottom-1 -right-1 bg-gradient-to-r from-rose-500 to-pink-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center shadow-lg animate-bounce">
-                        {table.currentOrders}
+                      {/* Decorative particles on hover */}
+                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                        <div
+                          className="absolute top-0 left-0 w-1 h-1 bg-white rounded-full animate-bounce"
+                          style={{ animationDelay: "0ms" }}
+                        ></div>
+                        <div
+                          className="absolute top-0 right-1 w-1 h-1 bg-white rounded-full animate-bounce"
+                          style={{ animationDelay: "200ms" }}
+                        ></div>
+                        <div
+                          className="absolute bottom-0 left-1 w-1 h-1 bg-white rounded-full animate-bounce"
+                          style={{ animationDelay: "400ms" }}
+                        ></div>
                       </div>
-                    )}
 
-                    <div className="absolute inset-0 bg-white/20 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-500 rounded-2xl border border-white/30"></div>
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 opacity-0 group-hover:opacity-100 group-hover:animate-pulse transition-opacity duration-700"></div>
-                  </div>
-                );
-              })}
+                      {/* Status indicator dot */}
+                      <div
+                        className={`absolute top-0 left-0 w-3 h-3 ${statusConfig.pulseColor} rounded-full animate-ping opacity-75`}
+                      ></div>
+                      <div
+                        className={`absolute top-2 left-2 w-3 h-3 ${statusConfig.pulseColor} rounded-full`}
+                      ></div>
+
+                      {/* Table icon */}
+                      <div className="relative z-10 mb-2 group-hover:rotate-6 transition-transform duration-300">
+                        <img
+                          src={dining || "/api/placeholder/32/32"}
+                          alt="Dining table"
+                          className={`w-8 h-8 object-contain ${statusConfig.iconColor} filter drop-shadow-sm group-hover:drop-shadow-lg transition-all duration-300`}
+                        />
+                      </div>
+
+                      {/* Table number */}
+                      <div
+                        className={`relative z-10 text-sm font-bold ${statusConfig.textColor} group-hover:scale-110 transition-transform duration-300`}
+                      >
+                        {table.tableNumber}
+                      </div>
+
+                      {/* Order count badge for occupied tables */}
+                      {table.status === "occupied" && table.currentOrders && (
+                        <div className="absolute -bottom-1 -right-1 bg-gradient-to-r from-rose-500 to-pink-500 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center shadow-lg animate-bounce">
+                          {table.currentOrders}
+                        </div>
+                      )}
+
+                      {/* Hover overlay effects */}
+                      <div className="absolute inset-0 bg-white/20 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-500 rounded-2xl border border-white/30"></div>
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 opacity-0 group-hover:opacity-100 group-hover:animate-pulse transition-opacity duration-700"></div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
           {/* KOT Section */}
           {showKOTs && selectedTable && (
-            <div className="mt-6 bg-white/60 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/30 p-8">
-              <div className="mb-8 text-center">
-                <h2 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 text-transparent bg-clip-text mb-2">
+            <div className="mt-4 bg-white/60 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/30 p-2">
+              <div className="mb-2 text-center">
+                <h2 className="text-md font-bold bg-gradient-to-r from-purple-600 to-blue-600 text-transparent bg-clip-text mb-2">
                   Table No -{selectedTable.tableNumber} Orders
                 </h2>
                 <div className="w-16 h-1 bg-gradient-to-r from-purple-500 to-blue-500 mx-auto rounded-full"></div>
@@ -687,7 +709,10 @@ console.log(roomDetails)
                 </div>
               ) : tableKOTs.length > 0 ? (
                 <>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  <div
+                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+                    ref={sectionRef}
+                  >
                     {tableKOTs.map((kot, index) => {
                       const statusConfig = {
                         pending: {
@@ -721,7 +746,7 @@ console.log(roomDetails)
 
                       return (
                         <div
-                          key={kot._id}
+                          key={kot?._id}
                           className={`group relative bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border overflow-hidden h-96 flex flex-col cursor-pointer ${
                             isOrderSelected(kot)
                               ? "border-blue-500 ring-2 ring-blue-200 bg-blue-50"
@@ -1359,7 +1384,7 @@ console.log(roomDetails)
                               Select Cash Register
                             </option>
                             {cashOrBank?.cashDetails?.map((cashier) => (
-                              <option key={cashier._id} value={cashier._id}>
+                              <option key={cashier?._id} value={cashier?._id}>
                                 {cashier.partyName}
                               </option>
                             ))}
@@ -1425,7 +1450,7 @@ console.log(roomDetails)
                               Select Payment Method
                             </option>
                             {cashOrBank?.bankDetails?.map((bank) => (
-                              <option key={bank._id} value={bank._id}>
+                              <option key={bank?._id} value={bank?._id}>
                                 {bank.partyName}
                               </option>
                             ))}

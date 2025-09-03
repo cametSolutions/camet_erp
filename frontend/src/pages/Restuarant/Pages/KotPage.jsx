@@ -28,7 +28,7 @@ import { useReactToPrint } from "react-to-print";
 
 const OrdersDashboard = () => {
   const contentToPrint = useRef(null);
-  const [activeFilter, setActiveFilter] = useState("On Process");
+  const [activeFilter, setActiveFilter] = useState("ON PROCESS");
   const [searchQuery, setSearchQuery] = useState("");
   const [userRole, setUserRole] = useState("reception");
   const [orders, setOrders] = useState([]);
@@ -198,39 +198,43 @@ const OrdersDashboard = () => {
     let filtered = orders;
 
     // Filter by status based on user role and active filter
-    if (userRole === "kitchen") {
-      if (activeFilter === "All") {
-        // Kitchen - All: Show all statuses
-        filtered = filtered.filter((order) =>
-          ["pending", "cooking", "ready_to_serve"].includes(order.status)
-        );
-      } else if (activeFilter === "On Process") {
-        // Kitchen - On Process: Show pending, cooking, and ready_to_serve
-        filtered = filtered.filter((order) =>
-          ["pending", "cooking", "ready_to_serve"].includes(order.status)
-        );
-      }
-    } else if (userRole === "reception") {
-      if (activeFilter === "All") {
-        // Reception - All: Show all statuses
-        filtered = filtered.filter((order) =>
-          ["pending", "cooking", "ready_to_serve", "completed"].includes(
-            order.status
-          )
-        );
-      } else if (activeFilter === "ON PROCESS") {
-        // Reception - On Process: Show pending, cooking, and ready_to_serve
-        filtered = filtered.filter((order) =>
-          ["pending", "cooking", "ready_to_serve"].includes(order.status)
-        );
-      } else if (activeFilter === "KOT BILL PENDING") {
-        // Reception - Completed: Show only completed orders
-        filtered = filtered.filter((order) => order.status === "completed");
-      } else if (activeFilter === "COMPLETED") {
-        // Reception - Completed: Show only completed orders
-        filtered = filtered.filter((order) => order.status === "completed" && order.paymentCompleted );
-      }
+    // if (userRole === "kitchen") {
+    //   if (activeFilter === "All") {
+    //     // Kitchen - All: Show all statuses
+    //     filtered = filtered.filter((order) =>
+    //       ["pending", "cooking", "ready_to_serve"].includes(order.status)
+    //     );
+    //   } else if (activeFilter === "On Process") {
+    //     // Kitchen - On Process: Show pending, cooking, and ready_to_serve
+    //     filtered = filtered.filter((order) =>
+    //       ["pending", "cooking", "ready_to_serve"].includes(order.status)
+    //     );
+    //   }
+    // } else if (userRole === "reception") {
+    if (activeFilter === "All") {
+      // Reception - All: Show all statuses
+      filtered = filtered.filter((order) =>
+        ["pending", "cooking", "ready_to_serve", "completed"].includes(
+          order.status
+        )
+      );
+    } else if (activeFilter === "ON PROCESS") {
+      // Reception - On Process: Show pending, cooking, and ready_to_serve
+      filtered = filtered.filter((order) =>
+        ["pending", "cooking", "ready_to_serve"].includes(order.status)
+      );
+    } else if (activeFilter === "KOT BILL PENDING") {
+      // Reception - Completed: Show only completed orders
+      filtered = filtered.filter(
+        (order) => order.status === "completed" && !order.paymentCompleted
+      );
+    } else if (activeFilter === "COMPLETED") {
+      // Reception - Completed: Show only completed orders
+      filtered = filtered.filter(
+        (order) => order.status === "completed" && order.paymentCompleted
+      );
     }
+    // }
 
     // Filter by search query
     if (searchQuery) {
@@ -463,7 +467,7 @@ const OrdersDashboard = () => {
 
   // function used to select multiple kot
   const handleSelectMultipleKots = (order) => {
-    if(userRole == "kitchen") return
+    if (userRole == "kitchen") return;
     if (order && !order?.paymentCompleted) {
       console.log(order?.roomId?._id);
       const findOne = selectedKot.find((item) => item.id === order._id);
@@ -606,7 +610,10 @@ const OrdersDashboard = () => {
                 <span className="text-sm text-gray-500">Role:</span>
                 <select
                   value={userRole}
-                  onChange={(e) => setUserRole(e.target.value)}
+                  onChange={(e) => {
+                    setUserRole(e.target.value);
+                    setActiveFilter("ON PROCESS");
+                  }}
                   className="px-2 py-1 border border-gray-300 rounded text-sm"
                 >
                   <option value="reception">Reception</option>
@@ -631,21 +638,22 @@ const OrdersDashboard = () => {
           {/* Controls */}
           <div className="bg-white px-4 py-3 border-b border-gray-200 flex justify-between items-center">
             <div className="flex gap-2">
-              {["All", "ON PROCESS", "KOT BILL PENDING", "COMPLETED"].map(
-                (filter) => (
-                  <button
-                    key={filter}
-                    onClick={() => setActiveFilter(filter)}
-                    className={`px-3 py-1.5 border rounded-md text-sm font-medium transition-colors ${
-                      activeFilter === filter
-                        ? "bg-green-800 text-white border-green-800"
-                        : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
-                    }`}
-                  >
-                    {filter}
-                  </button>
-                )
-              )}
+              {(userRole === "reception"
+                ? ["All", "ON PROCESS", "KOT BILL PENDING", "COMPLETED"]
+                : ["ON PROCESS"]
+              ).map((filter) => (
+                <button
+                  key={filter}
+                  onClick={() => setActiveFilter(filter)}
+                  className={`px-3 py-1.5 border rounded-md text-sm font-medium transition-colors ${
+                    activeFilter === filter
+                      ? "bg-green-800 text-white border-green-800"
+                      : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
+                  }`}
+                >
+                  {filter}
+                </button>
+              ))}
             </div>
 
             {showKotNotification && selectedKotFromRedirect && (

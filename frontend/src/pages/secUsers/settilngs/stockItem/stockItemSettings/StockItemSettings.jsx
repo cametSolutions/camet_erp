@@ -17,11 +17,11 @@ import { updateConfiguration } from "../../../../../../slices/secSelectedOrgSlic
 import { useDispatch } from "react-redux";
 const StockItemSettings = () => {
   const dispatch = useDispatch();
-  const { industry, _id , configurations} = useSelector(
+  const { industry, _id, configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
-  
-console.log(configurations);
+
+  console.log(configurations);
 
   const handleToggleChangeFromParent = async (data) => {
     console.log(data);
@@ -113,8 +113,8 @@ console.log(configurations);
             to: "/sUsers/foodPlan",
             active: true,
             toggle: true,
-            toggleValue: configurations[0]?.addRateWithTax?.restaurantSale,
-            dbField: "restaurantSale",
+            toggleValue: configurations[0]?.addRateWithTax?.hotelSale,
+            dbField: "hotelSale",
           },
         ]
       : []),
