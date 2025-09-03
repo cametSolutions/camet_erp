@@ -211,7 +211,7 @@ const TableTiles = ({
           withCredentials: true,
           params: {
             tableNumber: table.tableNumber,
-            status: "completed",
+            status: "pending",
           },
         });
         setTableKOTs(res.data?.data || []);
@@ -493,61 +493,59 @@ const TableTiles = ({
               </div>
             </div>
           )} */}
-          <>
-          <div className="mb-3">
-              <div className="flex justify-center">
-                <div className="bg-white/80 backdrop-blur-sm rounded-xl px-2 py-2 shadow-lg border border-white/30">
-                  <div className="flex flex-wrap justify-center gap-4">
-                    <div className="flex items-center gap-2 group">
-                      <div className="relative">
-                        <FaCircle className="text-emerald-500 text-sm animate-pulse" />
-                        <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-20"></div>
+            <>
+              <div className="mb-3">
+                <div className="flex justify-center">
+                  <div className="bg-white/80 backdrop-blur-sm rounded-xl px-2 py-2 shadow-lg border border-white/30">
+                    <div className="flex flex-wrap justify-center gap-4">
+                      <div className="flex items-center gap-2 group">
+                        <div className="relative">
+                          <FaCircle className="text-emerald-500 text-sm animate-pulse" />
+                          <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-20"></div>
+                        </div>
+                        <span className="text-sm font-medium text-gray-700 group-hover:text-emerald-600 transition-colors">
+                          Available
+                        </span>
                       </div>
-                      <span className="text-sm font-medium text-gray-700 group-hover:text-emerald-600 transition-colors">
-                        Available
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 group">
-                      <div className="relative">
-                        <FaCircle className="text-rose-500 text-sm animate-pulse" />
-                        <div className="absolute inset-0 bg-rose-500 rounded-full animate-ping opacity-20"></div>
+                      <div className="flex items-center gap-2 group">
+                        <div className="relative">
+                          <FaCircle className="text-rose-500 text-sm animate-pulse" />
+                          <div className="absolute inset-0 bg-rose-500 rounded-full animate-ping opacity-20"></div>
+                        </div>
+                        <span className="text-sm font-medium text-gray-700 group-hover:text-rose-600 transition-colors">
+                          Occupied
+                        </span>
                       </div>
-                      <span className="text-sm font-medium text-gray-700 group-hover:text-rose-600 transition-colors">
-                        Occupied
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 group">
-                      <div className="relative">
-                        <FaCircle className="text-amber-500 text-sm animate-pulse" />
-                        <div className="absolute inset-0 bg-amber-500 rounded-full animate-ping opacity-20"></div>
+                      <div className="flex items-center gap-2 group">
+                        <div className="relative">
+                          <FaCircle className="text-amber-500 text-sm animate-pulse" />
+                          <div className="absolute inset-0 bg-amber-500 rounded-full animate-ping opacity-20"></div>
+                        </div>
+                        <span className="text-sm font-medium text-gray-700 group-hover:text-amber-600 transition-colors">
+                          Reserved
+                        </span>
                       </div>
-                      <span className="text-sm font-medium text-gray-700 group-hover:text-amber-600 transition-colors">
-                        Reserved
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 group">
-                      <div className="relative">
-                        <FaCircle className="text-sky-500 text-sm animate-pulse" />
-                        <div className="absolute inset-0 bg-sky-500 rounded-full animate-ping opacity-20"></div>
+                      <div className="flex items-center gap-2 group">
+                        <div className="relative">
+                          <FaCircle className="text-sky-500 text-sm animate-pulse" />
+                          <div className="absolute inset-0 bg-sky-500 rounded-full animate-ping opacity-20"></div>
+                        </div>
+                        <span className="text-sm font-medium text-gray-700 group-hover:text-sky-600 transition-colors">
+                          Cleaning
+                        </span>
                       </div>
-                      <span className="text-sm font-medium text-gray-700 group-hover:text-sky-600 transition-colors">
-                        Cleaning
-                      </span>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </>
+            </>
           </div>
           {/* Status Legend */}
 
           {/* KOT Notification */}
-          
 
           {/* Tables Grid */}
           <div className="container mx-auto px-4">
-
             {/* Tables Grid - Main Section */}
             <div className="flex justify-center w-full">
               <div
