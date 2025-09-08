@@ -47,11 +47,16 @@ useEffect(() => {
       );
       console.log(updatedBookings);
       setBookings(updatedBookings);
+    }else if(rooms?.length > 0){
+      console.log("rooms",rooms);
+      let specificRoom = rooms.find((room) => room._id === selectedRoomId);
+      console.log(specificRoom);
+      handleSelect(specificRoom);
     }
   };
 
   fetchBookings();
-}, [formData?.selectedRooms?.length,formData?.stayDays]);
+}, [formData?.selectedRooms?.length,formData?.stayDays,rooms?.length]);
 
 
   useEffect(() => {

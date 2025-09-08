@@ -17,6 +17,7 @@ import {
   fetchBookingsFromDatabase,
   sendBookingsResponse,
   extractRequestParamsForBookings,
+  updateStatus,
 } from "../helpers/hotelHelper.js";
 import { extractRequestParams } from "../helpers/productHelper.js";
 import { generateVoucherNumber } from "../helpers/voucherHelper.js";
@@ -882,16 +883,18 @@ export const roomBooking = async (req, res) => {
     if (!bookingData.arrivalDate) {
       return res.status(400).json({ message: "Missing required fields" });
     }
+
     let selectedModal;
     let voucherType;
     let under;
+
     if (isFor === "bookingPage") {
       selectedModal = Booking;
       voucherType = "saleOrder";
       under = "hotel";
     } else if (isFor === "checkIn") {
       if (bookingData?.bookingId) {
-        let updateBookingData = await Booking.findByIdAndUpdate(
+        const updateBookingData = await Booking.findByIdAndUpdate(
           bookingData.bookingId,
           { status: "checkIn" },
           { new: true }
@@ -903,14 +906,12 @@ export const roomBooking = async (req, res) => {
             .json({ success: false, message: "Booking not found" });
         }
       }
-
       selectedModal = CheckIn;
       voucherType = "deliveryNote";
       under = "hotel";
     } else {
-      console.log("bookingData", bookingData);
       if (bookingData?.checkInId) {
-        let updateBookingData = await CheckIn.findByIdAndUpdate(
+        const updateBookingData = await CheckIn.findByIdAndUpdate(
           bookingData.checkInId,
           { status: "checkOut" },
           { new: true }
@@ -930,9 +931,9 @@ export const roomBooking = async (req, res) => {
     const series_id = bookingData.voucherId || null;
     let savedBooking;
 
-    // Start the transaction
+    // ✅ Transaction wrapper
     await session.withTransaction(async () => {
-      // Generate voucher number with session
+      // Generate voucher number inside session
       const bookingNumber = await generateVoucherNumber(
         orgId,
         voucherType,
@@ -966,18 +967,21 @@ export const roomBooking = async (req, res) => {
           bill_no: savedBooking?.voucherNumber,
           billId: savedBooking._id,
           bill_amount: bookingData.advanceAmount,
-          bill_pending_amt: bookingData.advanceAmount,
+          bill_pending_amt: bookingData.advanceAmount, // ⚠️ check business logic
           accountGroup: bookingData.accountGroup,
           user_id: req.sUserId,
           advanceAmount: bookingData.advanceAmount,
           advanceDate: new Date(),
           classification: "Cr",
           source: under,
-          from:selectedModal,
+          from: selectedModal,
         });
 
         await advanceObject.save({ session });
       }
+      let status = selectedModal == "CheckIn" ? "checkIn" : "booking";
+      // ✅ Update room status INSIDE the same transaction
+      await updateStatus(bookingData?.selectedRooms, status, session);
     });
 
     res.status(201).json({
@@ -1679,6 +1683,11 @@ export const convertCheckOutToSale = async (req, res) => {
           })
         );
       }
+      await Promise.all(
+        selectedCheckOut.map((item) =>
+          updateStatus(item?.selectedRooms, "dirty", session)
+        )
+      );
 
       await session.commitTransaction();
 
@@ -1964,4 +1973,3 @@ export const updateConfigurationForHotelAndRestaurant = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
-

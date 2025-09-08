@@ -277,15 +277,19 @@ const HotelDashboard = () => {
     if (!selectedRoomData) return;
 
     if (action === "booking") {
-      navigate("/sUsers/bookingPage", { state: { room: selectedRoomData } });
+      navigate("/sUsers/bookingPage", {
+        state: { roomId: selectedRoomData?._id },
+      });
       return;
     }
     if (action === "CheckIn") {
-      navigate("/sUsers/checkInPage", { state: { room: selectedRoomData } });
+      navigate("/sUsers/checkInPage", {
+        state: { roomId: selectedRoomData?._id },
+      });
       return;
     }
 
-    if (["dirty", "blocked","vacant"].includes(action)) {
+    if (["dirty", "blocked", "vacant"].includes(action)) {
       try {
         console.log("Updating room status:", {
           roomId: selectedRoomData._id,
@@ -399,6 +403,8 @@ const HotelDashboard = () => {
     setSelectedDate(date.toISOString().split("T")[0]);
     setShowCalendar(show);
   };
+
+  console.log(selectedRoomData);
 
   return (
     <div className="min-h-screen bg-slate-900 relative overflow-hidden">
@@ -900,13 +906,16 @@ const HotelDashboard = () => {
               <option value="" disabled>
                 Choose...
               </option>
-              <option value="booking">Booking</option>
-              <option value="CheckIn">CheckIn</option>
+              {selectedRoomData.status != "booked" && (
+                <>
+                  <option value="booking">Booking</option>
+                  <option value="CheckIn">CheckIn</option>
+                </>
+              )}
               <option value="dirty">Mark as Dirty</option>
               <option value="blocked">Mark as Blocked</option>
               <option value="vacant">Mark as available</option>
               <option value="vacant">Swap room</option>
-
             </select>
 
             <button

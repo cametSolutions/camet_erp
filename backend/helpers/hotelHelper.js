@@ -164,3 +164,13 @@ export const extractRequestParamsForBookings = (req) => {
     modal: req.query.modal,
   };
 };
+
+export const updateStatus = async (roomData, status,session) => {
+  const ids = roomData.map(room => room.roomId);
+  await roomModal.updateMany(
+    { _id: { $in: ids } },
+    { $set: { status } },
+    { session }
+  );
+};
+

@@ -2,13 +2,15 @@ import { useState , useRef} from "react";
 import CustomBarLoader from "@/components/common/CustomBarLoader";
 import TitleDiv from "@/components/common/TitleDiv";
 import BookingForm from "../Components/BookingForm";
-import { useNavigate } from "react-router-dom";
+import { useNavigate,useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import api from "@/api/api";
 
 function BookingPage() {
+  const location = useLocation()  
   const isSubmittingRef = useRef(false);
+  const roomId = location?.state?.roomId
   const organization = useSelector(
     (state) => state?.secSelectedOrganization?.secSelectedOrg
   );
@@ -53,7 +55,7 @@ function BookingPage() {
             },
           ]}
           />
-          <BookingForm handleSubmit={handleSubmit} setIsLoading={setLoading} isSubmittingRef={isSubmittingRef} isFor="saleOrder" />
+          <BookingForm handleSubmit={handleSubmit} setIsLoading={setLoading} isSubmittingRef={isSubmittingRef} isFor="saleOrder" roomId={roomId} />
         </div>
       )}
     </>

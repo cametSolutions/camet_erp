@@ -22,8 +22,8 @@ function BookingForm({
   isSubmittingRef,
   isFor,
   outStanding = [],
+  roomId,
 }) {
- 
   const [voucherNumber, setVoucherNumber] = useState("");
   const [selectedParty, setSelectedParty] = useState("");
   const [displayFoodPlan, setDisplayFoodPlan] = useState(false);
@@ -133,7 +133,13 @@ function BookingForm({
     }
   }, [editData]);
 
-  console.log(editData?.totalAdvance);
+  useEffect(() => {
+    if (roomId) {
+     setSelectedRoomId(roomId);
+    }
+  }, [roomId]);
+   
+  console.log(selectedRoomId)
 
   // handle change function used to update form data
   const handleChange = (e) => {
@@ -166,17 +172,17 @@ function BookingForm({
 
       // Convert milliseconds to days
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-       let updatedSelectedItems = formData.selectedRooms?.map((room) => ({
-          ...room,
-          stayDays: diffDays,
-          totalAmount: diffDays * room.priceLevelRate
-        }));
+      let updatedSelectedItems = formData.selectedRooms?.map((room) => ({
+        ...room,
+        stayDays: diffDays,
+        totalAmount: diffDays * room.priceLevelRate,
+      }));
 
       setFormData((prev) => ({
         ...prev,
         checkOutDate: value,
         stayDays: diffDays,
-        selectedRooms: updatedSelectedItems
+        selectedRooms: updatedSelectedItems,
       }));
       return;
     }
@@ -190,7 +196,7 @@ function BookingForm({
         let updatedSelectedItems = formData.selectedRooms?.map((room) => ({
           ...room,
           stayDays: stayDays,
-          totalAmount: stayDays * room.priceLevelRate
+          totalAmount: stayDays * room.priceLevelRate,
         }));
 
         const formattedCheckout = checkout.toISOString().split("T")[0];
