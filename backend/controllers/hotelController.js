@@ -1925,12 +1925,33 @@ export const updateConfigurationForHotelAndRestaurant = async (req, res) => {
     const { cmp_id } = req.params;
     const data = req.body;
 
-    // update object
-    const updateData = {
-      $set: {
-        [`configurations.0.addRateWithTax.${data.title}`]: data?.checked,
-      },
-    };
+    let updateData = {};
+
+    // Handle different types of updates
+    if (data.fieldType === 'defaultPrint') {
+      // Handle defaultPrint checkbox group updates
+      updateData = {
+        $set: {
+          [`configurations.0.defaultPrint.${data.field}`]: data.checked,
+        },
+      };
+    } else if (data.fieldType === 'addRateWithTax') {
+      // Handle existing addRateWithTax toggle updates
+      updateData = {
+        $set: {
+          [`configurations.0.addRateWithTax.${data.title || data.field}`]: data.checked,
+        },
+      };
+    } else if (data.title) {
+      // Fallback for backward compatibility with old toggle structure
+      updateData = {
+        $set: {
+          [`configurations.0.addRateWithTax.${data.title}`]: data.checked,
+        },
+      };
+    } else {
+      return res.status(400).json({ message: "Invalid data structure" });
+    }
 
     const updatedDoc = await Organization.findOneAndUpdate(
       { _id: cmp_id },
@@ -1942,13 +1963,11 @@ export const updateConfigurationForHotelAndRestaurant = async (req, res) => {
       return res.status(404).json({ message: "Organization not found" });
     }
 
-    res
-      .status(200)
-      .json({
-        message: "Configuration updated",
-        success: true,
-        organization: updatedDoc,
-      });
+    res.status(200).json({ 
+      message: "Configuration updated", 
+      success: true, 
+      organization: updatedDoc 
+    });
   } catch (error) {
     console.error("Error updating configuration:", error);
     res.status(500).json({ message: "Internal server error" });

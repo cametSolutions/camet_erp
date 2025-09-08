@@ -530,7 +530,7 @@ function BookingList() {
                   if (location.pathname === "/sUsers/checkOutList") {
                     setSelectedCustomer(el.customerId?._id);
                     setSelectedCheckOut([el]);
-                    navigate("/sUsers/CheckOutPrint", {
+                    navigate("sUsers/BillPrint", {
                       state: {
                         selectedCheckOut: bookings?.filter(
                           (item) => item.voucherNumber === el.voucherNumber
@@ -705,7 +705,7 @@ function BookingList() {
                   if (location.pathname === "/sUsers/checkOutList") {
                     setSelectedCustomer(el.customerId?._id);
                     setSelectedCheckOut([el]);
-                    navigate("/sUsers/CheckOutPrint", {
+                    navigate("/sUsers/BillPrint", {
                       state: {
                         selectedCheckOut: bookings?.filter(
                           (item) => item.voucherNumber === el.voucherNumber
@@ -876,7 +876,7 @@ function BookingList() {
                   <button
                     className="flex-2 px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg text-sm font-bold hover:from-green-600 hover:to-emerald-700 transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2 shadow-lg"
                     onClick={() => {
-                      navigate("/sUsers/CheckOutPrint", {
+                      navigate("/sUsers/BillPrint", {
                         state: {
                           selectedCheckOut: selectedCheckOut,
                           customerId: selectedCustomer,
