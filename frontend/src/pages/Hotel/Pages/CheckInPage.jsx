@@ -11,20 +11,20 @@ function CheckInPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const bookingData = location?.state?.bookingData;
+  const roomId = location?.state?.roomId
   const isSubmittingRef = useRef(false);
   const [outStanding, setOutStanding] = useState([]);
   const [loading, setLoading] = useState(false);
   const organization = useSelector(
     (state) => state?.secSelectedOrganization?.secSelectedOrg
   );
-
-    const { data, loading: advanceLoading } = useFetch(
+ 
+  const { data, loading: advanceLoading } = useFetch(
     `/api/sUsers/getBookingAdvanceData/${bookingData?._id}?type=${"checkIn"}`
   );
 
   useEffect(() => {
     if (data) {
-
       setOutStanding(data?.data);
     }
   }, [data]);
@@ -35,7 +35,7 @@ function CheckInPage() {
       bookingData.advanceAmount = 0;
     }
   }, [bookingData]);
-console.log(bookingData);
+  console.log(bookingData);
   const handleSubmit = async (data) => {
     let updatedData;
     if (bookingData) {
@@ -92,6 +92,7 @@ console.log(bookingData);
             isFor="deliveryNote"
             editData={bookingData}
             outStanding={outStanding}
+            roomId={roomId}
           />
         </div>
       )}

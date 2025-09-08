@@ -33,9 +33,6 @@ function BookingList() {
   const [searchTerm, setSearchTerm] = useState("pending");
   const [listHeight, setListHeight] = useState(0);
   const [activeTab, setActiveTab] = useState("pending"); // Default to pending
-
-  console.log(location?.state?.selectedCustomer);
-  console.log(location?.state?.balanceToPay);
   const [selectedCheckOut, setSelectedCheckOut] = useState(
     location?.state?.selectedCheckOut || []
   );
@@ -366,31 +363,30 @@ function BookingList() {
 
   const TableHeader = () => (
     <div className="bg-gray-100 border-b border-gray-300 sticky top-0 z-10">
-  {/* Mobile Header */}
-  <div className="flex items-center px-4 py-3 text-xs font-bold text-gray-800 uppercase tracking-wider md:hidden">
-    <div className="w-18 text-center">SL.NO</div>
-    <div className="w-32 text-center">BOOKING DATE</div>
-    <div className="w-32 text-center">BOOKING NO</div>
-     <div className="w-32 text-center"> ACTIONS</div>
-  </div>
+      {/* Mobile Header */}
+      <div className="flex items-center px-4 py-3 text-xs font-bold text-gray-800 uppercase tracking-wider md:hidden">
+        <div className="w-18 text-center">SL.NO</div>
+        <div className="w-32 text-center">BOOKING DATE</div>
+        <div className="w-32 text-center">BOOKING NO</div>
+        <div className="w-32 text-center"> ACTIONS</div>
+      </div>
 
-  {/* Desktop Header */}
-  <div className="hidden md:flex items-center px-4 py-3 text-xs font-bold text-gray-800 uppercase tracking-wider">
-    <div className="w-10 text-center">SL.NO</div>
-    <div className="w-28 text-center">BOOKING DATE</div>
-    <div className="w-32 text-center">BOOKING NO</div>
-    <div className="w-40 text-center">GUEST NAME</div>
-    <div className="w-24 text-center">ROOM NO</div>
-    <div className="w-36 text-center">ARRIVAL DATE</div>
-    <div className="w-28 text-center">ROOM TARIFF</div>
-    <div className="w-20 text-center">PAX</div>
-    <div className="w-28 text-center">FOODPLAN AMOUNT</div>
-    <div className="w-24 text-center">ADVANCE</div>
-    <div className="w-28 text-center">TOTAL</div>
-    <div className="w-32 text-center">ACTIONS</div>
-  </div>
-</div>
-
+      {/* Desktop Header */}
+      <div className="hidden md:flex items-center px-4 py-3 text-xs font-bold text-gray-800 uppercase tracking-wider">
+        <div className="w-10 text-center">SL.NO</div>
+        <div className="w-28 text-center">BOOKING DATE</div>
+        <div className="w-32 text-center">BOOKING NO</div>
+        <div className="w-40 text-center">GUEST NAME</div>
+        <div className="w-24 text-center">ROOM NO</div>
+        <div className="w-36 text-center">ARRIVAL DATE</div>
+        <div className="w-28 text-center">ROOM TARIFF</div>
+        <div className="w-20 text-center">PAX</div>
+        <div className="w-28 text-center">FOODPLAN AMOUNT</div>
+        <div className="w-24 text-center">ADVANCE</div>
+        <div className="w-28 text-center">TOTAL</div>
+        <div className="w-32 text-center">ACTIONS</div>
+      </div>
+    </div>
   );
 
   const Row = ({ index, style }) => {
@@ -441,27 +437,25 @@ function BookingList() {
       return new Date(dateString).toLocaleDateString("en-GB");
     };
 
-    const formatDateTime = (dateString) => {
-      if (!dateString) return "-";
-      const date = new Date(dateString);
-      return `${date.toLocaleDateString("en-GB")}(${date.toLocaleTimeString(
-        [],
-        { hour: "2-digit", minute: "2-digit" }
-      )})`;
-    };
-    console.log(el);
+
+    console.log(bookings);
     return (
       <div
         key={index}
         style={adjustedStyle}
-        className={`flex items-center px-4 py-3 border-b border-gray-200 cursor-pointer transition-all duration-200 ease-in-out text-sm bg-white hover:bg-gray-50
-        ${
-          isCheckOutSelected(el) &&
-          (location.pathname === "/sUsers/checkInList" ||
-            location.pathname === "/sUsers/checkOutList")
-            ? "bg-blue-50 border-blue-200 ring-1 ring-blue-300"
-            : ""
-        }`}
+        className={`
+  flex items-center px-4 py-3 text-sm
+  border-b border-gray-200 
+  cursor-pointer transition-all duration-200 ease-in-out 
+  bg-white hover:bg-gray-50 
+  ${
+    isCheckOutSelected(el) &&
+    (location.pathname === "/sUsers/checkInList" ||
+      location.pathname === "/sUsers/checkOutList")
+      ? "bg-blue-400 border-blue-400 ring-2 ring-blue-200"
+      : ""
+  }
+`}
         onClick={() => {
           if (el.status === "checkOut") return;
           let findOne = selectedCheckOut.find((item) => item._id === el._id);
@@ -519,7 +513,7 @@ function BookingList() {
                   ? "Checkout"
                   : location.pathname === "/sUsers/checkOutList"
                   ? "Close"
-                  : "Check-In"}
+                  : "CheckIn"}
               </button>
             )}
 
@@ -667,7 +661,7 @@ function BookingList() {
             {((location.pathname === "/sUsers/bookingList" &&
               el?.status != "checkIn") ||
               (el?.status != "checkOut" &&
-                location.pathname === "/sUsers/checkInList") ||
+                location.pathname != "/sUsers/checkInList") ||
               (Number(el?.balanceToPay) > 0 &&
                 location.pathname === "/sUsers/checkOutList")) && (
               <button
@@ -692,11 +686,9 @@ function BookingList() {
                 }}
                 className="bg-black hover:bg-blue-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
               >
-                {location.pathname === "/sUsers/checkInList"
-                  ? "Checkout"
-                  : location.pathname === "/sUsers/checkOutList"
+                {location.pathname === "/sUsers/checkOutList"
                   ? "Close"
-                  : "Check-In"}
+                  : "CheckIn"}
               </button>
             )}
 
@@ -1296,34 +1288,37 @@ function BookingList() {
         )}
 
         {/* Table Structure */}
-        <div className="bg-white border border-gray-300 rounded-lg mx-4 mt-4 overflow-hidden shadow-sm">
-          <TableHeader />
-
-          <div className="pb-4">
-            <InfiniteLoader
-              isItemLoaded={isItemLoaded}
-              itemCount={hasMore ? bookings?.length + 1 : bookings?.length}
-              loadMoreItems={loadMoreItems}
-              threshold={10}
-            >
-              {({ onItemsRendered, ref }) => (
-                <List
-                  className="pb-4"
-                  height={listHeight - 140} // Adjust for header
-                  itemCount={hasMore ? bookings?.length + 1 : bookings?.length}
-                  itemSize={56} // Height for table rows
-                  onItemsRendered={onItemsRendered}
-                  ref={(listInstance) => {
-                    ref(listInstance);
-                    listRef.current = listInstance;
-                  }}
-                >
-                  {Row}
-                </List>
-              )}
-            </InfiniteLoader>
+        {bookings?.length && bookings.length > 0  && (
+          <div className="bg-white border border-gray-300 rounded-lg mx-4 mt-4 overflow-hidden shadow-sm">
+            <TableHeader />
+            <div className="pb-4">
+              <InfiniteLoader
+                isItemLoaded={isItemLoaded}
+                itemCount={hasMore ? bookings?.length + 1 : bookings?.length}
+                loadMoreItems={loadMoreItems}
+                threshold={10}
+              >
+                {({ onItemsRendered, ref }) => (
+                  <List
+                    className="pb-4"
+                    height={listHeight - 140} // Adjust for header
+                    itemCount={
+                      hasMore ? bookings?.length + 1 : bookings?.length
+                    }
+                    itemSize={56} // Height for table rows
+                    onItemsRendered={onItemsRendered}
+                    ref={(listInstance) => {
+                      ref(listInstance);
+                      listRef.current = listInstance;
+                    }}
+                  >
+                    {Row}
+                  </List>
+                )}
+              </InfiniteLoader>
+            </div>
           </div>
-        </div>
+        )}
 
         {isLoading && !loader && (
           <div className="flex justify-center items-center py-4">
@@ -1331,6 +1326,7 @@ function BookingList() {
           </div>
         )}
       </div>
+      
     </>
   );
 }
