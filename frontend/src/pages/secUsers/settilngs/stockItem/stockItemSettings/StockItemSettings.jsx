@@ -110,11 +110,31 @@ const StockItemSettings = () => {
             title: "addRateWithTax",
             description: "Better tax calculations for better organization",
             icon: <LiaMoneyCheckAltSolid />,
-            to: "/sUsers/foodPlan",
+            to: "sec",
             active: true,
             toggle: true,
             toggleValue: configurations[0]?.addRateWithTax?.hotelSale,
             dbField: "hotelSale",
+          },
+          {
+            title: "Default Print",
+            description: "Select your default print options",
+            icon: <GrClipboard />,
+            to: "sec",
+            active: true,
+            checkboxGroup: true,
+            checkboxes: [
+              {
+                label: "Print 1",
+                checked: configurations?.[0]?.defaultPrint?.print1 ?? false, // Fixed access
+                dbField: "defaultPrint.print1",
+              },
+              {
+                label: "Print 2",
+                checked: configurations?.[0]?.defaultPrint?.print2 ?? false, // Fixed access
+                dbField: "defaultPrint.print2",
+              },
+            ],
           },
         ]
       : []),

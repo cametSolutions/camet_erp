@@ -67,6 +67,13 @@ const organizationSchema = new mongoose.Schema(
             hotelSales: false,
           },
         },
+        defaultPrint: {
+          type: Object,
+          default: {
+            print1: true,
+            print2: false,
+          },
+        },
         showDescription: {
           type: Object,
           default: {
