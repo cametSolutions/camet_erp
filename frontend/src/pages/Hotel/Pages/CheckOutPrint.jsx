@@ -5,9 +5,11 @@ import { toast } from "react-toastify";
 import api from "@/api/api";
 import { useNavigate } from "react-router-dom";
 import TitleDiv from "@/components/common/TitleDiv";
-import reactToPrint from "react-to-print";
 import { useRef } from "react";
 import { useReactToPrint } from "react-to-print";
+import { jsPDF } from 'jspdf';
+import 'jspdf-autotable';
+
 export default function SattvaInvoice() {
   // Router and Redux state
   const location = useLocation();
@@ -16,12 +18,12 @@ export default function SattvaInvoice() {
     (state) => state?.secSelectedOrganization?.secSelectedOrg
   );
 
-
   // Props from location state
   const selectedCheckOut = location.state?.selectedCheckOut;
   const selectedCustomerId = location.state?.customerId;
   const isForPreview = location.state?.isForPreview;
   console.log(selectedCheckOut);
+  
   // Component state
   const [outStanding, setOutStanding] = useState([]);
   const [kotData, setKotData] = useState([]);
@@ -34,6 +36,7 @@ export default function SattvaInvoice() {
   const [foodPlanAmount, setFoodPlanAmount] = useState(0);
   const [additionalPaxAmount, setAdditionalPaxAmount] = useState(0);
   const printReference = useRef(null);
+
   // Utility function to transform checkout data
   const transformCheckOutData = (selectedCheckOut) => {
     let result = [];
@@ -169,6 +172,414 @@ export default function SattvaInvoice() {
     removeAfterPrint: true,
   });
 
+  // PDF Generation Functions
+  const addPDFHeader = (doc, pageWidth, pageHeight, margin) => {
+    const headerHeight = 40;
+    let currentY = margin;
+    
+    // Organization Logo (if available)
+    if (organization?.logo) {
+      try {
+        doc.addImage(organization.logo, 'PNG', margin, currentY, 25, 25);
+      } catch (error) {
+        console.warn('Could not add logo:', error);
+      }
+    }
+    
+    // Organization Details - Right aligned
+    doc.setFontSize(16);
+    doc.setFont(undefined, 'bold');
+    const orgName = organization?.name || '';
+    doc.text(orgName.toUpperCase(), pageWidth - margin, currentY + 5, { align: 'right' });
+    
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'normal');
+    
+    // Address line
+    const addressParts = [
+      organization?.flat,
+      organization?.road,
+      organization?.landmark,
+      organization?.mobile
+    ].filter(Boolean);
+    
+    if (addressParts.length > 0) {
+      doc.text(addressParts.join(', ').toUpperCase(), pageWidth - margin, currentY + 12, { align: 'right' });
+    }
+    
+    // GST and other details
+    let detailY = currentY + 18;
+    if (organization?.gstNum) {
+      doc.text(`GSTIN: ${organization.gstNum}`, pageWidth - margin, detailY, { align: 'right' });
+      detailY += 4;
+    }
+    
+    if (organization?.state) {
+      const statePin = `State Name: ${organization.state}${organization?.pin ? `, Pin: ${organization.pin}` : ''}`;
+      doc.text(statePin, pageWidth - margin, detailY, { align: 'right' });
+      detailY += 4;
+    }
+    
+    if (organization?.email) {
+      doc.text(`E-Mail: ${organization.email}`, pageWidth - margin, detailY, { align: 'right' });
+    }
+    
+    // Draw header border
+    doc.rect(margin, margin, pageWidth - (2 * margin), headerHeight);
+    
+    return margin + headerHeight + 5;
+  };
+
+  const addPDFInvoiceDetails = (doc, pageWidth, margin, startY) => {
+    doc.setFontSize(9);
+    doc.setFont(undefined, 'normal');
+    
+    const col1X = margin + 2;
+    const col2X = margin + 65;
+    const col3X = margin + 130;
+    
+    let detailY = startY + 5;
+    
+    // Column 1
+    doc.setFont(undefined, 'bold');
+    doc.text('GRC No:', col1X, detailY);
+    doc.setFont(undefined, 'normal');
+    doc.text(selectedCheckOutData?.voucherNumber || '', col1X + 20, detailY);
+    
+    detailY += 5;
+    doc.setFont(undefined, 'bold');
+    doc.text('Pax:', col1X, detailY);
+    doc.setFont(undefined, 'normal');
+    const totalPax = selectedCheckOutData?.selectedRooms?.reduce(
+      (acc, curr) => acc + Number(curr.pax || 0), 0
+    ) || 0;
+    doc.text(totalPax.toString(), col1X + 20, detailY);
+    
+    detailY += 5;
+    doc.setFont(undefined, 'bold');
+    doc.text('Guest:', col1X, detailY);
+    doc.setFont(undefined, 'normal');
+    doc.text(selectedCheckOutData?.customerName || '', col1X + 20, detailY);
+    
+    detailY += 5;
+    doc.setFont(undefined, 'bold');
+    doc.text('Agent:', col1X, detailY);
+    doc.setFont(undefined, 'normal');
+    doc.text(selectedCheckOutData?.agentId?.name || 'Walk-In Customer', col1X + 20, detailY);
+    
+    // Column 2
+    detailY = startY + 5;
+    doc.setFont(undefined, 'bold');
+    doc.text('Bill No:', col2X, detailY);
+    doc.setFont(undefined, 'normal');
+    doc.text(selectedCheckOutData?.voucherNumber || '', col2X + 20, detailY);
+    
+    detailY += 5;
+    doc.setFont(undefined, 'bold');
+    doc.text('Arrival:', col2X, detailY);
+    doc.setFont(undefined, 'normal');
+    const arrivalText = `${selectedCheckOutData?.arrivalDate || ''} / ${selectedCheckOutData?.arrivalTime || ''}`;
+    doc.text(arrivalText, col2X + 20, detailY);
+    
+    // Column 3
+    detailY = startY + 5;
+    doc.setFont(undefined, 'bold');
+    doc.text('Bill Date:', col3X, detailY);
+    doc.setFont(undefined, 'normal');
+    doc.text(formatDate(new Date()), col3X + 25, detailY);
+    
+    detailY += 5;
+    doc.setFont(undefined, 'bold');
+    doc.text('Departure:', col3X, detailY);
+    doc.setFont(undefined, 'normal');
+    const departureText = `${formatDate(new Date())} / ${new Date().toLocaleTimeString()}`;
+    doc.text(departureText, col3X + 25, detailY);
+    
+    // Draw border around details
+    doc.rect(margin, startY, pageWidth - (2 * margin), 25);
+    
+    return startY + 30;
+  };
+
+  const addPDFFooter = (doc, pageWidth, pageHeight, margin) => {
+    const footerHeight = 30;
+    const footerStartY = pageHeight - footerHeight - margin;
+    
+    // Footer details - Left side
+    doc.setFontSize(9);
+    doc.setFont(undefined, 'bold');
+    
+    let footerY = footerStartY;
+    const leftCol = margin + 5;
+    const rightCol = pageWidth / 2 + 10;
+    
+    // Left column details
+    doc.text('Settlement:', leftCol, footerY);
+    doc.setFont(undefined, 'normal');
+    doc.text('Cash', leftCol + 30, footerY);
+    
+    footerY += 5;
+    doc.setFont(undefined, 'bold');
+    doc.text('Prepared By:', leftCol, footerY);
+    doc.setFont(undefined, 'normal');
+    doc.text('System', leftCol + 30, footerY);
+    
+    footerY += 5;
+    doc.setFont(undefined, 'bold');
+    doc.text('Billed By:', leftCol, footerY);
+    doc.setFont(undefined, 'normal');
+    doc.text('Reception', leftCol + 30, footerY);
+    
+    footerY += 5;
+    doc.setFont(undefined, 'bold');
+    doc.text('Rooms:', leftCol, footerY);
+    doc.setFont(undefined, 'normal');
+    const rooms = selectedCheckOutData?.selectedRooms?.map(room => room.roomName).join(', ') || '';
+    doc.text(rooms, leftCol + 30, footerY);
+    
+    // Right column - Bank details
+    footerY = footerStartY;
+    doc.setFont(undefined, 'bold');
+    doc.text('Bank Details', rightCol + 20, footerY);
+    doc.line(rightCol, footerY + 2, rightCol + 80, footerY + 2);
+    
+    footerY += 8;
+    doc.text('Bank Name:', rightCol, footerY);
+    doc.line(rightCol + 25, footerY, rightCol + 80, footerY);
+    
+    footerY += 5;
+    doc.text('A/C Number:', rightCol, footerY);
+    doc.line(rightCol + 25, footerY, rightCol + 80, footerY);
+    
+    footerY += 5;
+    doc.text('Branch & IFSC:', rightCol, footerY);
+    doc.line(rightCol + 28, footerY, rightCol + 80, footerY);
+    
+    // Signature lines
+    const signatureY = pageHeight - 15;
+    doc.line(margin + 20, signatureY, margin + 70, signatureY);
+    doc.line(pageWidth - margin - 70, signatureY, pageWidth - margin - 20, signatureY);
+    
+    doc.setFontSize(8);
+    doc.text('Cashier Signature', margin + 45, signatureY + 5, { align: 'center' });
+    doc.text('Guest Signature', pageWidth - margin - 45, signatureY + 5, { align: 'center' });
+  };
+
+  // PDF Generation Handler
+  const handlePDFGeneration = () => {
+    try {
+      const doc = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = doc.internal.pageSize.width;
+      const pageHeight = doc.internal.pageSize.height;
+      const margin = 10;
+      const totals = calculateTotals();
+      
+      // Add header
+      let currentY = addPDFHeader(doc, pageWidth, pageHeight, margin);
+      
+      // Add invoice details
+      currentY = addPDFInvoiceDetails(doc, pageWidth, margin, currentY);
+      
+      // Prepare table data
+      const headers = ['DATE', 'VOUCHER', 'DESCRIPTION', 'HSN', 'DEBIT', 'CREDIT', 'AMOUNT'];
+      const tableData = [];
+      
+      // Outstanding transactions
+      outStanding?.forEach(transaction => {
+        tableData.push([
+          formatDate(transaction?.bill_date),
+          transaction?.bill_no || '',
+          'Advance',
+          '',
+          '',
+          transaction?.bill_amount?.toFixed(2) || '0.00',
+          ''
+        ]);
+      });
+      
+      // Room tariff entries
+      dateWiseDisplayedData?.forEach(order => {
+        tableData.push([
+          order?.date || '',
+          order?.voucherNumber || '',
+          `Room Tariff [${order?.roomName} - ${order?.customerName}]`,
+          order?.hsn || '',
+          order?.baseAmount?.toFixed(2) || '0.00',
+          '',
+          ''
+        ]);
+      });
+      
+      // Summary rows
+      tableData.push([
+        '', '', '', '', '', 'Room Tariff Assessable Value', totals.roomTariffTotal.toFixed(2)
+      ]);
+      
+      if (foodPlanAmount > 0) {
+        tableData.push([
+          '', '', '', '', '', 'Food Plan Sales', foodPlanAmount.toFixed(2)
+        ]);
+      }
+      
+      if (additionalPaxAmount > 0) {
+        tableData.push([
+          '', '', '', '', '', 'Additional Pax Amount', additionalPaxAmount.toFixed(2)
+        ]);
+      }
+      
+      // Tax entries
+      tableData.push(['', '', '', '', '', 'CGST', (taxAmountForFood + taxAmountForRoom).toFixed(2)]);
+      tableData.push(['', '', '', '', '', 'SGST', (taxAmountForFood + taxAmountForRoom).toFixed(2)]);
+      
+      // Room service header
+      tableData.push(['ROOM SERVICE BILL DETAILS', '', '', '', '', '', '']);
+      
+      // KOT data
+      kotData?.forEach(kot => {
+        tableData.push([
+          formatDate(kot?.createdAt),
+          kot?.voucherNumber || '',
+          'POS [Restaurant]',
+          '',
+          '',
+          '',
+          kot?.total?.toFixed(2) || '0.00'
+        ]);
+      });
+      
+      // Final totals
+      tableData.push(['Total', '', '', '', '', totals.advanceTotal.toFixed(2), (totals.roomTariffTotal + totals.kotTotal).toFixed(2)]);
+      tableData.push(['Balance To Pay', '', '', '', '', '', totals.balanceAmountToPay.toFixed(2)]);
+      
+      // Add invoice summary if not preview
+      if (!isForPreview) {
+        tableData.push(['Round off', '', '', '', '', '', '0.00']);
+        tableData.push(['TOTAL INVOICE AMOUNT', '', '', '', '', '', (totals.roomTariffTotal + totals.kotTotal + totals.totalTaxAmount).toFixed(2)]);
+      }
+      
+      // Create main table
+      doc.autoTable({
+        head: [headers],
+        body: tableData,
+        startY: currentY,
+        margin: { left: margin, right: margin },
+        styles: {
+          fontSize: 8,
+          cellPadding: 2,
+        },
+        headStyles: {
+          fillColor: [240, 240, 240],
+          textColor: [0, 0, 0],
+          fontStyle: 'bold',
+        },
+        columnStyles: {
+          4: { halign: 'right' }, // DEBIT
+          5: { halign: 'right' }, // CREDIT
+          6: { halign: 'right' }, // AMOUNT
+        },
+        didParseCell: function(data) {
+          // Highlight summary rows
+          if (data.row.raw.includes('Room Tariff Assessable Value') || 
+              data.row.raw.includes('Total') || 
+              data.row.raw.includes('Balance To Pay') ||
+              data.row.raw.includes('TOTAL INVOICE AMOUNT')) {
+            data.cell.styles.fillColor = [240, 240, 240];
+            data.cell.styles.fontStyle = 'bold';
+          }
+          
+          // Highlight room service header
+          if (data.row.raw[0] === 'ROOM SERVICE BILL DETAILS') {
+            data.cell.styles.fillColor = [200, 255, 200];
+            data.cell.styles.fontStyle = 'bold';
+            data.cell.styles.halign = 'center';
+          }
+        }
+      });
+      
+      currentY = doc.lastAutoTable.finalY + 10;
+      
+      // Add tax breakdown table if not preview
+      if (!isForPreview) {
+        const taxHeaders = ['Taxable Amount', 'CGST Rate', 'CGST Amount', 'SGST Rate', 'SGST Amount', 'Total Tax'];
+        const taxData = [];
+        
+        // Room tariff tax row
+        taxData.push([
+          totals.roomTariffTotal.toFixed(2),
+          '6%',
+          taxAmountForRoom.toFixed(2),
+          '6%',
+          taxAmountForRoom.toFixed(2),
+          (taxAmountForRoom * 2).toFixed(2)
+        ]);
+        
+        // Food plan tax row (if applicable)
+        if (foodPlanAmount > 0) {
+          taxData.push([
+            foodPlanAmount.toFixed(2),
+            '2.50%',
+            taxAmountForFood.toFixed(2),
+            '2.50%',
+            taxAmountForFood.toFixed(2),
+            (taxAmountForFood * 2).toFixed(2)
+          ]);
+        }
+        
+        // Total row
+        taxData.push([
+          (totals.roomTariffTotal + foodPlanAmount).toFixed(2),
+          '',
+          (taxAmountForRoom + taxAmountForFood).toFixed(2),
+          '',
+          (taxAmountForRoom + taxAmountForFood).toFixed(2),
+          totals.totalTaxAmount.toFixed(2)
+        ]);
+        
+        doc.autoTable({
+          head: [taxHeaders],
+          body: taxData,
+          startY: currentY,
+          margin: { left: pageWidth/2, right: margin },
+          styles: {
+            fontSize: 8,
+            cellPadding: 2,
+          },
+          headStyles: {
+            fillColor: [240, 240, 240],
+            textColor: [0, 0, 0],
+            fontStyle: 'bold',
+          },
+          columnStyles: {
+            0: { halign: 'right' },
+            1: { halign: 'center' },
+            2: { halign: 'right' },
+            3: { halign: 'center' },
+            4: { halign: 'right' },
+            5: { halign: 'right' },
+          },
+          didParseCell: function(data) {
+            if (data.row.index === taxData.length - 1) {
+              data.cell.styles.fillColor = [240, 240, 240];
+              data.cell.styles.fontStyle = 'bold';
+            }
+          }
+        });
+      }
+      
+      // Add footer
+      addPDFFooter(doc, pageWidth, pageHeight, margin);
+      
+      // Save PDF
+      const filename = `invoice_${selectedCheckOutData?.voucherNumber || 'unknown'}_${new Date().toISOString().split('T')[0]}.pdf`;
+      doc.save(filename);
+      
+      toast.success('PDF generated successfully!');
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error('Failed to generate PDF');
+    }
+  };
+
   // Main effect to process checkout data
   useEffect(() => {
     if (selectedCustomerId && selectedCheckOut?.length > 0) {
@@ -233,7 +644,8 @@ export default function SattvaInvoice() {
   }, [selectedCheckOut]);
 
   const totals = calculateTotals();
-console.log(outStanding)
+  console.log(outStanding);
+  
   return (
     <>
       <TitleDiv title="Check out print" />
@@ -748,13 +1160,21 @@ console.log(outStanding)
               </div>
             </>
           )}
+
+          {/* Action Buttons */}
           <div className="no-print w-full flex justify-end">
-            <div className="no-print mb-4  p-4">
+            <div className="no-print mb-4 p-4">
               <button
                 onClick={handlePrint}
-                className="bg-black text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-500"
+                className="bg-black text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-500 mr-3"
               >
                 🖨️ Print Invoice
+              </button>
+              <button
+                onClick={handlePDFGeneration}
+                className="bg-green-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-green-700"
+              >
+                📄 Download PDF
               </button>
             </div>
             {isForPreview && (
