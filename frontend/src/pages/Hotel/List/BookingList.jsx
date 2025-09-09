@@ -437,7 +437,6 @@ function BookingList() {
       return new Date(dateString).toLocaleDateString("en-GB");
     };
 
-
     console.log(bookings);
     return (
       <div
@@ -876,7 +875,7 @@ function BookingList() {
                   <button
                     className="flex-2 px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg text-sm font-bold hover:from-green-600 hover:to-emerald-700 transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2 shadow-lg"
                     onClick={() => {
-                      navigate("/sUsers/BillPrint", {
+                      navigate("/sUsers/CheckOutPrint", {
                         state: {
                           selectedCheckOut: selectedCheckOut,
                           customerId: selectedCustomer,
@@ -1288,7 +1287,7 @@ function BookingList() {
         )}
 
         {/* Table Structure */}
-        {bookings?.length && bookings.length > 0  && (
+        {bookings?.length && bookings.length > 0 && (
           <div className="bg-white border border-gray-300 rounded-lg mx-4 mt-4 overflow-hidden shadow-sm">
             <TableHeader />
             <div className="pb-4">
@@ -1326,7 +1325,6 @@ function BookingList() {
           </div>
         )}
       </div>
-      
     </>
   );
 }
