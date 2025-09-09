@@ -407,7 +407,7 @@ function AccVoucherInitialPageEdit() {
           linkBillTo=""
         />
 
-        <AddAmountTile party={party} />
+        <AddAmountTile party={party} process="edit" />
         <PaymentModeTile tab={voucherTypeFromRedux} />
 
         <FooterButton

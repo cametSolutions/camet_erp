@@ -77,15 +77,11 @@ export const updateTallyData = async (
     ])
   );
 
-  // console.log("billAmountMap", billAmountMap);
-
   // Fetch the outstanding bills from TallyData for this company
   const outstandingData = await TallyData.find({
     cmp_id,
     billId: { $in: Array.from(billAmountMap.keys()) },
   }).session(session);
-
-  // console.log("outstandingData", outstandingData);
 
   if (outstandingData.length === 0) {
     return;
@@ -101,6 +97,7 @@ export const updateTallyData = async (
         update: {
           $set: {
             bill_pending_amt: remainingAmount, // Update remaining amount (pending amount)
+            classification: remainingAmount < 0 ? "Cr" : "Dr", // ✅ set classification dynamically
           },
           $push: {
             appliedReceipts: {
@@ -318,8 +315,6 @@ export const deleteAdvanceReceipt = async (
     const deletedAdvanceReceipt = await TallyData.findOneAndDelete({
       _id: advanceReceipt._id,
     }).session(session);
-
-    console.log(`Advance receipt deleted for receipt number: ${receiptNumber}`);
   } catch (error) {
     console.error("Error in deleteAdvanceReceipt:", error);
     throw error;

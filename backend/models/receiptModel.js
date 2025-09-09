@@ -44,6 +44,7 @@ const receiptSchema = new mongoose.Schema(
     party: {
       _id: { type: Schema.Types.ObjectId, ref: "Party" },
       partyName: { type: String },
+      partyType: { type: String },
       accountGroupName: { type: String },
       accountGroup_id: {
         type: mongoose.Types.ObjectId,

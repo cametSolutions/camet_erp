@@ -3,6 +3,7 @@ import { lazy, Suspense } from 'react'
 const ProtectedSecRoute = lazy(() => import('./ProtectedSecRoute'))
 import SuspenseLoader from '@/components/common/SuspenseLoader'
 import { ErrorTestComponent } from '@/components/errorBoundaries/ErrorTestComponent'
+import OutstandingListOfAccVoucherEdit from '@/pages/accountingVoucher/voucherCreation/OutstandingListOfAccVoucherEdit'
 
 // Lazy load all components
 const SecHome = lazy(() => import('../pages/secUsers/SecHome'))
@@ -271,7 +272,7 @@ const Routers = () => {
         <Route path='/sUsers/receipt/details/:id' element={<ProtectedSecRoute><AccVoucherDetails/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/receiptPrintOut' element={<ProtectedSecRoute><ReceiptPrintOut/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editReceipt/:id' element={<ProtectedSecRoute><AccVoucherInitialPageEdit/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/receipt/edit/addAmount/:party_id' element={<ProtectedSecRoute><OutstandingListOfReceiptForEdit/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/receipt/editAmount/:party_id' element={<ProtectedSecRoute><OutstandingListOfAccVoucherEdit/></ProtectedSecRoute>}></Route>
 
 
         {/* payment */}

@@ -73,7 +73,6 @@ export const deleteAdvancePayment = async (
       source: "advancePayment",
     }).session(session);
 
-    console.log("deletedAdvancePayment", deletedAdvancePayment);
 
     if (!deletedAdvancePayment) {
       console.log(
@@ -82,7 +81,6 @@ export const deleteAdvancePayment = async (
       return;
     }
 
-    console.log(`Advance receipt deleted for receipt number: ${paymentNumber}`);
   } catch (error) {
     console.error("Error in deleteAdvanceReceipt:", error);
     throw error;
