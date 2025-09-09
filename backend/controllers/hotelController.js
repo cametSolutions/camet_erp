@@ -1494,49 +1494,33 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
     // Collect all advanceDetails across checkouts
     let allAdvanceDetails = [];
     let allKotData = [];
-
+   
     for (const item of checkoutData) {
-      if (item) {
-        if (item?.selectedRooms) {
-          for (const room of item?.selectedRooms) {
-            let startDateTime = new Date(
-              `${item?.arrivalDate} ${item?.arrivalTime}`
-            );
-            let endDateTime = new Date(
-              `${item?.checkOutDate} ${item?.checkOutTime}`
-            );
+      console.log("item",  item.voucherNumber);
+      const docs = await salesModel.find({
+        "convertedFrom.checkInNumber": item.voucherNumber,
+      });
+      allKotData.push(...docs);
 
-            let kotData = await kotModal.find({
-              roomId: room.roomId,
-              createdAt: {
-                $gte: startDateTime,
-                $lte: endDateTime,
-              },
-            });
-            allKotData.push(...kotData);
-          }
-        }
+      const checkInData = await CheckIn.findOne({ _id: item._id });
 
-        const checkInData = await CheckIn.findOne({ _id: item._id });
+      if (!checkInData) continue;
 
-        if (!checkInData) continue;
+      const bookingSideAdvanceDetails = await TallyData.find({
+        billId: checkInData.bookingId,
+      });
 
-        const bookingSideAdvanceDetails = await TallyData.find({
-          billId: checkInData.bookingId,
-        });
+      const checkInSideAdvanceDetails = await TallyData.find({
+        billId: item._id,
+      });
 
-        const checkInSideAdvanceDetails = await TallyData.find({
-          billId: item._id,
-        });
-
-        allAdvanceDetails.push(
-          ...bookingSideAdvanceDetails,
-          ...checkInSideAdvanceDetails
-        );
-      }
+      allAdvanceDetails.push(
+        ...bookingSideAdvanceDetails,
+        ...checkInSideAdvanceDetails
+      );
     }
 
-    console.log("allAdvanceDetails", allAdvanceDetails);
+    console.log("allAdvanceDetails", allKotData);
 
     if (allAdvanceDetails.length > 0 || allKotData.length > 0) {
       return res.status(200).json({
@@ -1928,18 +1912,19 @@ export const updateConfigurationForHotelAndRestaurant = async (req, res) => {
     let updateData = {};
 
     // Handle different types of updates
-    if (data.fieldType === 'defaultPrint') {
+    if (data.fieldType === "defaultPrint") {
       // Handle defaultPrint checkbox group updates
       updateData = {
         $set: {
           [`configurations.0.defaultPrint.${data.field}`]: data.checked,
         },
       };
-    } else if (data.fieldType === 'addRateWithTax') {
+    } else if (data.fieldType === "addRateWithTax") {
       // Handle existing addRateWithTax toggle updates
       updateData = {
         $set: {
-          [`configurations.0.addRateWithTax.${data.title || data.field}`]: data.checked,
+          [`configurations.0.addRateWithTax.${data.title || data.field}`]:
+            data.checked,
         },
       };
     } else if (data.title) {
@@ -1963,10 +1948,10 @@ export const updateConfigurationForHotelAndRestaurant = async (req, res) => {
       return res.status(404).json({ message: "Organization not found" });
     }
 
-    res.status(200).json({ 
-      message: "Configuration updated", 
-      success: true, 
-      organization: updatedDoc 
+    res.status(200).json({
+      message: "Configuration updated",
+      success: true,
+      organization: updatedDoc,
     });
   } catch (error) {
     console.error("Error updating configuration:", error);
