@@ -9,7 +9,7 @@ import { useNavigate } from "react-router-dom";
 import api from "@/api/api";
 import CalenderComponent from "../Components/CalenderComponent";
 import ReactDOM from "react-dom";
-
+import RoomSwapModal from "./RoomSwapModal ";
 const HotelDashboard = () => {
   const [rooms, setRooms] = useState([]);
   const [tooltipData, setTooltipData] = useState({});
@@ -23,6 +23,7 @@ const HotelDashboard = () => {
   const [hasMore, setHasMore] = useState(true);
   const [bookingsLoading, setBookingsLoading] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
+    const [showRoomSwapModal, setShowRoomSwapModal] = useState(false);
 
   const [tooltipX, setTooltipX] = useState(0);
   const [tooltipY, setTooltipY] = useState(0);
@@ -289,6 +290,20 @@ const HotelDashboard = () => {
       return;
     }
 
+
+
+     if (action === "swapRoom") {
+      // Check if room is available for swap (should be vacant)
+      // if (selectedRoomData.status !== "vacant") {
+      //   alert("Room must be vacant to swap guests into it");
+      //   return;
+      // }
+      setShowRoomModal(false);
+      setShowRoomSwapModal(true);
+      return;
+    }
+
+
     if (["dirty", "blocked", "vacant"].includes(action)) {
       try {
         console.log("Updating room status:", {
@@ -351,6 +366,18 @@ const HotelDashboard = () => {
           }`
         );
       }
+    }
+  };
+
+
+ const handleRoomSwapConfirm = async () => {
+    try {
+      // Refresh rooms data after successful swap
+      await fetchRooms(selectedDate);
+      setShowRoomSwapModal(false);
+      setSelectedRoomData(null);
+    } catch (error) {
+      console.error("Error refreshing data after room swap:", error);
     }
   };
 
@@ -892,7 +919,7 @@ const HotelDashboard = () => {
       {/* Room Action Modal */}
       {showRoomModal && selectedRoomData && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60 z-50">
-          <div className="bg-slate-800 p-6 rounded-lg shadow-lg w-80 max-w-[90vw]">
+          <div className="bg-slate-800 p-6 rounded-lg shadow-lg w-90 max-w-[150vw] ">
             <h2 className="text-lg font-bold text-white mb-4">
               Room: {selectedRoomData.roomName}
             </h2>
@@ -915,7 +942,9 @@ const HotelDashboard = () => {
               <option value="dirty">Mark as Dirty</option>
               <option value="blocked">Mark as Blocked</option>
               <option value="vacant">Mark as available</option>
-              <option value="vacant">Swap room</option>
+              {/* {selectedRoomData.status === "vacant" && ( */}
+                <option value="swapRoom">Swap Room</option>
+              {/* )} */}
             </select>
 
             <button
@@ -927,6 +956,19 @@ const HotelDashboard = () => {
           </div>
         </div>
       )}
+
+       <RoomSwapModal
+        isOpen={showRoomSwapModal}
+        onClose={() => {
+          setShowRoomSwapModal(false);
+          setSelectedRoomData(null);
+        }}
+        selectedRoom={selectedRoomData}
+        onConfirmSwap={handleRoomSwapConfirm}
+        cmp_id={cmp_id}
+        api={api}
+      />
+      {/* Animations */}
 
       {/* Animations */}
       <style>{`

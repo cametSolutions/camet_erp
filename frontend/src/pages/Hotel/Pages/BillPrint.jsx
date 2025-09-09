@@ -261,7 +261,7 @@ console.log(dateWiseDisplayedData)
         date: item.date,
         description: item.description,
         docNo: item.docNo || '-',
-        amount: item.baseAmount || 0,
+        amount: (item.baseAmount || 0) + (item.additionalPaxDataWithOutTax || 0) + (item.foodPlanAmountWithOutTax || 0),
         taxes:selectedCheckOutData?.selectedRooms?.map(room => room.taxAmount).join(', ') ,
         Advance:selectedCheckOutData?.advanceAmount ,
         balance:selectedCheckOutData?.balanceToPay ,
@@ -511,7 +511,7 @@ console.log(billData)
                     <td className="p-3 text-sm border-b border-gray-200 text-right font-semibold">
                       {charge.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                     </td>
-                     <td className="p-3 text-sm border-b border-gray-200">{charge.taxes}</td> 
+                     <td className="p-3 text-sm border-b border-gray-200">{charge.tax}</td> 
                      <td className="p-3 text-sm border-b border-gray-200">{charge.balance}</td>
                       <td className="p-3 text-sm border-b border-gray-200">{charge.Advance}</td>
                   </tr>
