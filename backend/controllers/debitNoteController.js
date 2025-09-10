@@ -35,6 +35,7 @@ export const createDebitNote = async (req, res) => {
       additionalChargesFromRedux,
       note,
       finalAmount: lastAmount,
+      
       selectedDate,
       voucherType,
       series_id,
@@ -90,19 +91,6 @@ export const createDebitNote = async (req, res) => {
       session // Pass session
     );
 
-    ///save settlement data
-    await saveSettlementData(
-      party,
-      orgId,
-      "normal debit note",
-      "debitNote",
-      debitNoteNumber,
-      result._id,
-      lastAmount,
-      result?.createdAt,
-      result?.party?.partyName,
-      session
-    );
 
     await updateTallyData(
       orgId,

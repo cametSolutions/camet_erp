@@ -1058,7 +1058,7 @@ export const updateOutstandingBalance = async ({
 
     //// we were actually created advance receipts according to the new bill balance
     /// but now we changed the logic to create advances as new bills
-    /// we are now creating advances in the same outstanding document itself by modifying the bill pending amount
+   /// we are now creating advances in the same outstanding document itself by modifying the bill pending amount
 /// we are commenting the old code for future reference
 
     // let updatedAppliedReceipts = appliedReceipts;
@@ -1157,7 +1157,7 @@ export const updateOutstandingBalance = async ({
           cmp_id: orgId,
           billId: existingVoucher?._id.toString(),
           bill_amount: newBillBalance,
-          bill_pending_amt: billPendingAmount, // Updated calculation
+          bill_pending_amt: Math.abs(billPendingAmount), // Updated calculation
           voucherNumber: voucherNumber,
           primaryUserId: existingVoucher.Primary_user_id,
           party: party,

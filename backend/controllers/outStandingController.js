@@ -501,29 +501,87 @@ export const fetchOutstandingDetails = async (req, res) => {
      4. Apply classification filter at the end (after processing)
         Only when voucherId is present
     ----------------------------------------------------------- */
+    // if (voucherId) {
+    //   const classificationFilter =
+    //     voucher === "receipt" ? "Dr" : voucher === "payment" ? "Cr" : null;
+
+    //   if (classificationFilter) {
+    //     processedOutstandings = processedOutstandings.filter((outstanding) => {
+    //       // Include if it matches classification OR if it has applied amount for this voucherId
+    //       const hasAppliedAmount =
+    //         voucher === "receipt"
+    //           ? outstanding.appliedReceipts?.some(
+    //               (receipt) => receipt._id.toString() === voucherId
+    //             )
+    //           : outstanding.appliedPayments?.some(
+    //               (payment) => payment._id.toString() === voucherId
+    //             );
+
+    //       return (
+    //         (outstanding.classification === classificationFilter &&
+    //           outstanding.bill_pending_amt > 0) ||
+    //         hasAppliedAmount
+    //       );
+    //     });
+    //   }
+    // }
+
+
     if (voucherId) {
-      const classificationFilter =
-        voucher === "receipt" ? "Dr" : voucher === "payment" ? "Cr" : null;
+      processedOutstandings = outstandings.map((outstanding) => {
+        let updatedPendingAmount = outstanding.bill_pending_amt;
 
-      if (classificationFilter) {
-        processedOutstandings = processedOutstandings.filter((outstanding) => {
-          // Include if it matches classification OR if it has applied amount for this voucherId
-          const hasAppliedAmount =
-            voucher === "receipt"
-              ? outstanding.appliedReceipts?.some(
-                  (receipt) => receipt._id.toString() === voucherId
-                )
-              : outstanding.appliedPayments?.some(
-                  (payment) => payment._id.toString() === voucherId
-                );
-
-          return (
-            (outstanding.classification === classificationFilter &&
-              outstanding.bill_pending_amt > 0) ||
-            hasAppliedAmount
+        // Check if this outstanding has applied receipts/payments
+        if (voucher === "receipt" && outstanding.appliedReceipts?.length > 0) {
+          // Filter out the voucher being processed and sum the remaining
+          const filteredReceipts = outstanding.appliedReceipts.filter(
+            (receipt) => receipt._id.toString() !== voucherId
           );
-        });
-      }
+
+          const totalAppliedReceipts = filteredReceipts.reduce(
+            (sum, receipt) => sum + (receipt.settledAmount || 0),
+            0
+          );
+
+          console.log(
+            "voucherId",
+            voucherId,
+            "filteredReceipts",
+            filteredReceipts,
+            "totalAppliedReceipts",
+            totalAppliedReceipts
+          );
+
+          updatedPendingAmount = outstanding.bill_amount - totalAppliedReceipts;
+
+          console.log(
+            "outstanding.bill_amount",
+            outstanding.bill_amount,
+            "totalAppliedReceipts",
+            totalAppliedReceipts,
+            "updatedPendingAmount",
+            updatedPendingAmount
+          );
+        } else if (
+          voucher === "payment" &&
+          outstanding.appliedPayments?.length > 0
+        ) {
+          // Filter out the voucher being processed and sum the remaining
+          const filteredPayments = outstanding.appliedPayments.filter(
+            (payment) => payment._id.toString() !== voucherId
+          );
+          const totalAppliedPayments = filteredPayments.reduce(
+            (sum, payment) => sum + (payment.settledAmount || 0),
+            0
+          );
+          updatedPendingAmount = outstanding.bill_amount - totalAppliedPayments;
+        }
+
+        return {
+          ...outstanding,
+          bill_pending_amt: Math.max(0, updatedPendingAmount), // Ensure non-negative
+        };
+      });
     }
 
     const totalOutstandingAmount = processedOutstandings.reduce(

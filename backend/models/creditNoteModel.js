@@ -220,6 +220,11 @@ const creditNoteSchema = new Schema(
 
     note: { type: String },
     finalAmount: { type: Number, required: true },
+    subTotal: { type: Number, default: null },
+    totalAdditionalCharges: { type: Number, default: null },
+    totalWithAdditionalCharges: { type: Number, default: null },
+    totalPaymentSplits: { type: Number, default: null },
+    finalOutstandingAmount: { type: Number, default: null },
     paymentSplittingData: { type: Object },
     isCancelled: { type: Boolean, default: false },
   },
