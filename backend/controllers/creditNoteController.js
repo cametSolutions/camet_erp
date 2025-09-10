@@ -33,11 +33,8 @@ export const createCreditNote = async (req, res) => {
       orgId,
       party,
       items,
-      despatchDetails,
       additionalChargesFromRedux,
-      note,
       finalAmount: lastAmount,
-
       selectedDate,
       voucherType,
       series_id,
