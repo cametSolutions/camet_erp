@@ -7,7 +7,7 @@ import { IoIosCloseCircleOutline } from "react-icons/io";
 function SearchBar({ onType, toggle, from }) {
   const [search, setSearch] = useState("");
   const [checked, setChecked] = useState(false);
-  console.log(from);
+
   const handleCheckboxChange = () => {
     if (search == "completed") {
      
