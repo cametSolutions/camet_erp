@@ -247,7 +247,7 @@ export const createOutstandingWithAdvanceAmount = async (
  * @param {Object} session - mongoose session
  */
 
-export const revertTallyUpdates = async (billData, session, receiptId) => {
+export const revertTallyUpdates = async (billData,cmp_id, session, receiptId) => {
   // const receiptIdObj = new mongoose.Types.ObjectId(receiptId);
   // console.log("receiptId", receiptIdObj);
 

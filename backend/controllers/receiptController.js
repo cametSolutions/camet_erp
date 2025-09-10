@@ -204,7 +204,7 @@ export const cancelReceipt = async (req, res) => {
     }
 
     // Revert tally updates
-    await revertTallyUpdates(receipt.billData, session, receiptId.toString());
+    await revertTallyUpdates(receipt.billData,cmp_id, session, receiptId.toString());
 
     /// save settlement data in cash or bank collection
     await revertSettlementData(
