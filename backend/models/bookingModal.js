@@ -14,6 +14,31 @@ const paxDetailSchema = new mongoose.Schema({
   roomId: { type: mongoose.Schema.Types.ObjectId, ref: "Room" },
 });
 
+const roomSwapHistorySchema = new mongoose.Schema({
+  fromRoomId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Room",
+    required: true,
+  },
+  toRoomId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Room",
+    required: true,
+  },
+  swapDate: {
+    type: Date,
+    default: Date.now,
+  },
+  reason: {
+    type: String,
+    default: "Guest requested room change",
+  },
+  swappedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User", // staff user who swapped
+  },
+});
+
 const hsnDetailsSchema = new mongoose.Schema({
   hsn: String,
   description: String,
@@ -128,7 +153,7 @@ const bookingSchema = new mongoose.Schema(
     checkInId: { type: mongoose.Schema.Types.ObjectId, ref: "CheckIn" },
     checkInArray : [{type: mongoose.Schema.Types.ObjectId, ref: "CheckIn"}],
     status: String,
-
+ roomSwapHistory: [roomSwapHistorySchema],
   },
   { timestamps: true }
 );

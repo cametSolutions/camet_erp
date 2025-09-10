@@ -1958,3 +1958,198 @@ export const updateConfigurationForHotelAndRestaurant = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+
+// controllers/checkInController.js
+ // adjust path as needed
+
+export const checkedInGuest = async (req, res) => {
+
+  try {
+    const { cmp_id } = req.params;
+
+    const activeCheckIns = await CheckIn.find({
+      cmp_id: new mongoose.Types.ObjectId(cmp_id),
+    })
+      .populate("customerId", "customerName mobileNumber email") // if referenced
+      .populate("selectedRooms.roomId", "roomName roomType roomFloor bedType")
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.status(200).json({
+      success: true,
+      message: "Active check-ins fetched successfully",
+      guests: activeCheckIns,
+      count: activeCheckIns.length,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error fetching active check-ins",
+      error: error.message,
+    });
+  }
+};
+
+ 
+export const swapRoom = async (req, res) => {
+  try {
+    const { checkInId } = req.params;
+    const { newRoomId, oldRoomId } = req.body;
+console.log("body",req.body)
+    console.log("Swap Room Request:", { checkInId, newRoomId, oldRoomId });
+
+    if (!newRoomId || !oldRoomId) {
+      return res.status(400).json({
+        success: false,
+        message: "Both new room ID and old room ID are required",
+      });
+    }
+
+    // 🔹 Find CheckIn document
+    const checkIn = await CheckIn.findById(checkInId);
+    if (!checkIn) {
+      return res.status(404).json({
+        success: false,
+        message: "CheckIn record not found",
+      });
+    }
+
+    console.log("CheckIn selectedRooms:", JSON.stringify(checkIn.selectedRooms, null, 2));
+    console.log("Looking for oldRoomId:", oldRoomId, "Type:", typeof oldRoomId);
+
+    // 🔹 Find the index of old room inside selectedRooms
+    const checkInRoomIndex = checkIn.selectedRooms.findIndex((r) => {
+  const currentId =
+    r.roomId && r.roomId._id
+      ? r.roomId._id.toString()
+      : r.roomId.toString();
+  return currentId === oldRoomId.toString();
+});
+
+
+    console.log("CheckIn room index found:", checkInRoomIndex);
+
+    if (checkInRoomIndex === -1) {
+      return res.status(400).json({
+        success: false,
+        message: `Old room not found in CheckIn. Searching for: "${oldRoomId}". Available rooms: ${checkIn.selectedRooms.map((r, idx) => {
+          const roomId = typeof r.roomId === "object" && r.roomId?._id 
+            ? r.roomId._id.toString() 
+            : r.roomId.toString();
+          return `[${idx}] ${roomId} (${r.roomName || 'No name'})`;
+        }).join(', ')}`,
+      });
+    }
+
+    // 🔹 Verify new room exists and is vacant
+    const newRoom = await roomModal.findById(newRoomId);
+    if (!newRoom) {
+      return res.status(404).json({
+        success: false,
+        message: "New room not found",
+      });
+    }
+    if (newRoom.status !== "vacant") {
+      return res.status(400).json({
+        success: false,
+        message: "New room is not available for swap",
+      });
+    }
+
+    // 🔹 Get old room details
+    const oldRoom = await roomModal.findById(oldRoomId);
+
+    // 🔹 Update room statuses
+    await roomModal.findByIdAndUpdate(oldRoomId, { status: "dirty" });
+    await roomModal.findByIdAndUpdate(newRoomId, { status: "occupied" });
+
+    // 🔹 Update CheckIn document selectedRooms
+    console.log("Old CheckIn room data:", checkIn.selectedRooms[checkInRoomIndex]);
+    
+    // Update roomId
+    checkIn.selectedRooms[checkInRoomIndex].roomId = newRoomId;
+    
+    // Update room name/number based on schema
+    if (checkIn.selectedRooms[checkInRoomIndex].hasOwnProperty('roomName')) {
+      checkIn.selectedRooms[checkInRoomIndex].roomName = newRoom.roomName;
+    }
+    if (checkIn.selectedRooms[checkInRoomIndex].hasOwnProperty('roomNumber')) {
+      checkIn.selectedRooms[checkInRoomIndex].roomNumber = newRoom.roomNumber;
+    }
+    
+    console.log("Updated CheckIn room data:", checkIn.selectedRooms[checkInRoomIndex]);
+
+    // 🔹 Add room swap history to CheckIn
+    if (!checkIn.roomSwapHistory) {
+      checkIn.roomSwapHistory = [];
+    }
+    checkIn.roomSwapHistory.push({
+      fromRoomId: oldRoomId,
+      toRoomId: newRoomId,
+      swapDate: new Date(),
+      reason: "Guest requested room change",
+    });
+
+    // 🔹 Mark as modified and save CheckIn
+    checkIn.markModified('selectedRooms');
+    const savedCheckIn = await checkIn.save();
+    
+    console.log("CheckIn after save:", JSON.stringify(savedCheckIn.selectedRooms, null, 2));
+
+    return res.status(200).json({
+      success: true,
+      message: `Room successfully swapped from ${oldRoom?.roomName} to ${newRoom.roomName}`,
+      swapDetails: {
+        checkInId: checkIn._id,
+        customerName: checkIn.customerName,
+        fromRoom: {
+          id: oldRoomId,
+          name: oldRoom?.roomName,
+        },
+        toRoom: {
+          id: newRoomId,
+          name: newRoom.roomName,
+        },
+        swapDate: new Date(),
+      },
+    });
+  } catch (error) {
+    console.error("Error in swapRoom:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to swap room",
+      error: error.message,
+    });
+  }
+};
+export const getRoomSwapHistory = async (req, res) => {
+  try {
+    const { checkInId } = req.params;
+
+    const checkIn = await CheckIn.findById(checkInId)
+      .populate("roomSwapHistory.fromRoomId", "roomName")
+      .populate("roomSwapHistory.toRoomId", "roomName")
+      .populate("customerId", "customerName");
+
+    if (!checkIn) {
+      return res.status(404).json({
+        success: false,
+        message: "Check-in record not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      swapHistory: checkIn.roomSwapHistory || [],
+      customerName: checkIn.customerId?.customerName || checkIn.customerName,
+    });
+  } catch (error) {
+    console.error("Error fetching room swap history:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch room swap history",
+      error: error.message,
+    });
+  }
+};
