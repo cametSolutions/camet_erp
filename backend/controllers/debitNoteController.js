@@ -19,7 +19,11 @@ import debitNoteModel from "../models/debitNoteModel.js";
 import secondaryUserModel from "../models/secondaryUserModel.js";
 import mongoose from "mongoose";
 import TallyData from "../models/TallyData.js";
-import { generateVoucherNumber, getSeriesDetailsById } from "../helpers/voucherHelper.js";
+import {
+  generateVoucherNumber,
+  getSeriesDetailsById,
+} from "../helpers/voucherHelper.js";
+import settlementModel from "../models/settlementModel.js";
 
 // @desc create credit note
 // route GET/api/sUsers/createDebitNote
@@ -35,7 +39,7 @@ export const createDebitNote = async (req, res) => {
       additionalChargesFromRedux,
       note,
       finalAmount: lastAmount,
-      
+
       selectedDate,
       voucherType,
       series_id,
@@ -90,7 +94,6 @@ export const createDebitNote = async (req, res) => {
       updateAdditionalCharge,
       session // Pass session
     );
-
 
     await updateTallyData(
       orgId,
@@ -216,8 +219,13 @@ export const editDebitNote = async (req, res) => {
       despatchDetails,
       additionalChargesFromRedux,
       finalAmount: lastAmount,
+      finalOutstandingAmount,
+      totalAdditionalCharges,
+      totalWithAdditionalCharges,
+      totalPaymentSplits,
       selectedDate,
-      note
+      subTotal,
+      note,
     } = req.body;
 
     let { debitNoteNumber, series_id, usedSeriesNumber } = req.body;
@@ -244,11 +252,9 @@ export const editDebitNote = async (req, res) => {
 
       debitNoteNumber = voucherNumber; // Always update when series changes
       usedSeriesNumber = newUsedSeriesNumber; // Always update when series changes
-    }
-    
-    else{
-      debitNoteNumber = existingDebitNote.debitNoteNumber
-      usedSeriesNumber = existingDebitNote.usedSeriesNumber
+    } else {
+      debitNoteNumber = existingDebitNote.debitNoteNumber;
+      usedSeriesNumber = existingDebitNote.usedSeriesNumber;
     }
 
     await revertDebitNoteStockUpdates(existingDebitNote.items, session);
@@ -274,6 +280,11 @@ export const editDebitNote = async (req, res) => {
       usedSeriesNumber,
       date: await formatToLocalDate(selectedDate, orgId, session),
       createdAt: existingDebitNote.createdAt,
+      finalOutstandingAmount,
+      totalAdditionalCharges,
+      totalWithAdditionalCharges,
+      totalPaymentSplits,
+      subTotal,
     };
 
     await debitNoteModel.findByIdAndUpdate(debitNoteId, updateData, {
@@ -281,54 +292,49 @@ export const editDebitNote = async (req, res) => {
       session,
     });
 
-    /// revert settlement data
-    await revertSettlementData(
-      existingDebitNote?.party,
-      orgId,
-      existingDebitNote?.debitNoteNumber,
-      existingDebitNote?._id.toString(),
-      session
-    );
-
+    /// delete  all the settlements
+    await settlementModel.deleteMany({ voucherId: debitNoteId }, { session });
     /// recreate the settlement data
 
-    ///save settlement data
-    await saveSettlementData(
-      party,
-      orgId,
-      "normal debit note",
-      "debitNote",
-      updateData?.debitNoteNumber,
-      debitNoteId,
-      lastAmount,
-      updateData?.createdAt,
-      updateData?.party?.partyName,
-      session
-    );
 
-    //// edit outstanding
 
     const secondaryUser = await secondaryUserModel
       .findById(req.sUserId)
       .session(session);
     const secondaryMobile = secondaryUser?.mobile;
 
-    const outstandingResult = await updateOutstandingBalance({
-      existingVoucher: existingDebitNote,
-      newVoucherData: {
-        paymentSplittingData: {},
+    console.log("lastAmount", lastAmount);
+    
+
+    if (party?.partyType === "party") {
+      const outstandingResult = await updateOutstandingBalance({
+        existingVoucher: existingDebitNote,
+        valueToUpdateInOutstanding:lastAmount,
+        orgId,
+        voucherNumber: debitNoteNumber,
+        party,
+        session,
+        createdBy: req.owner,
+        transactionType: "debitNote",
+        secondaryMobile,
+        selectedDate,
+        classification: "Dr",
+      });
+    } else {
+      /// save settlements
+      await saveSettlementData(
+        debitNoteNumber,
+        series_id,
+        "Debit Note",
+        "debitNote",
         lastAmount,
-      },
-      orgId,
-      voucherNumber: debitNoteNumber,
-      party,
-      session,
-      createdBy: req.owner,
-      transactionType: "debitNote",
-      secondaryMobile,
-      selectedDate,
-      classification: "Dr",
-    });
+        party,
+        orgId,
+        Primary_user_id,
+        selectedDate,
+        session
+      );
+    }
 
     await session.commitTransaction();
     session.endSession();

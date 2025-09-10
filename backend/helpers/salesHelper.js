@@ -1023,6 +1023,7 @@ export const updateOutstandingBalance = async ({
   classification,
   isCancelled = false,
 }) => {
+
   if (party?.partyType === "party") {
     // Calculate old bill balance
     let oldBillBalance =
@@ -1031,16 +1032,12 @@ export const updateOutstandingBalance = async ({
       0;
     let newBillBalance = valueToUpdateInOutstanding;
 
-
-
     // Find existing outstanding record
     const matchedOutStanding = await TallyData.findOne({
       party_id: existingVoucher?.party?._id,
       cmp_id: orgId,
       billId: existingVoucher?._id.toString(),
     }).session(session);
-
-
 
     // Calculate sum of applied receipts
     const appliedReceipts = matchedOutStanding?.appliedReceipts || [];
@@ -1054,92 +1051,6 @@ export const updateOutstandingBalance = async ({
     console.log(
       `Absolute difference: ${Math.abs(newBillBalance - sumOfAppliedReceipts)}`
     );
-
-
-    //// we were actually created advance receipts according to the new bill balance
-    /// but now we changed the logic to create advances as new bills
-   /// we are now creating advances in the same outstanding document itself by modifying the bill pending amount
-/// we are commenting the old code for future reference
-
-    // let updatedAppliedReceipts = appliedReceipts;
-    // let updatedAppliedPayments = matchedOutStanding?.appliedPayments || [];
-
-    // // Check if we need to create advances
-    // const absoluteDifference = Math.abs(newBillBalance - sumOfAppliedReceipts);
-    // const shouldCreateAdvances = absoluteDifference > 0;
-
-    // console.log(`Should create advances: ${shouldCreateAdvances}`);
-
-    // // If newBillBalance < oldBillBalance AND condition is met => create advance receipts and payments
-    // if (newBillBalance < oldBillBalance && shouldCreateAdvances) {
-    //   const appliedPayments = matchedOutStanding?.appliedPayments;
-    //   const totalAdvanceAmount = Math.abs(sumOfAppliedReceipts - newBillBalance);
-
-    //   console.log(`Processing advances for amount: ${totalAdvanceAmount}`);
-
-    //   // Process advance receipts
-    //   if (appliedReceipts?.length > 0) {
-    //     const receiptsResult = await processAdvanceReceipts(
-    //       appliedReceipts,
-    //       totalAdvanceAmount,
-    //       orgId,
-    //       existingVoucher,
-    //       party,
-    //       secondaryMobile,
-    //       session
-    //     );
-
-    //     updatedAppliedReceipts = receiptsResult.updatedAppliedReceipts;
-    //     console.log("updatedAppliedReceipts", updatedAppliedReceipts);
-    //     console.log(
-    //       `Remaining after processing receipts: ${receiptsResult.remainingAmount}`
-    //     );
-    //   }
-
-    //   // Process advance payments
-    //   if (appliedPayments?.length > 0) {
-    //     const paymentsResult = await processAdvancePayments(
-    //       appliedPayments,
-    //       totalAdvanceAmount,
-    //       orgId,
-    //       existingVoucher,
-    //       party,
-    //       secondaryMobile,
-    //       session
-    //     );
-
-    //     updatedAppliedPayments = paymentsResult.updatedAppliedPayments;
-    //     console.log(
-    //       `Remaining after processing payments: ${paymentsResult.remainingAmount}`
-    //     );
-    //   }
-
-      // Update the matchedOutStanding with updated arrays
-    //   if (matchedOutStanding?._id) {
-    //     await TallyData.findByIdAndUpdate(
-    //       matchedOutStanding._id,
-    //       {
-    //         appliedReceipts: updatedAppliedReceipts,
-    //         appliedPayments: updatedAppliedPayments,
-    //         updatedAt: new Date(),
-    //       },
-    //       { session }
-    //     );
-    //     console.log("Updated appliedReceipts and appliedPayments arrays");
-    //   }
-    // } else {
-    //   console.log(
-    //     "No updates made to appliedReceipts and appliedPayments arrays"
-    //   );
-    // }
-
-    // Calculate sum of applied receipts after processing advances
-    // const finalSumOfAppliedReceipts = updatedAppliedReceipts.reduce(
-    //   (sum, receipt) => {
-    //     return sum + (receipt.settledAmount || 0);
-    //   },
-    //   0
-    // );
 
     // Calculate bill_pending_amt as the difference of newBillBalance - sum of appliedReceipts (after creating advance)
     const billPendingAmount = Number(newBillBalance - sumOfAppliedReceipts);
@@ -1189,69 +1100,42 @@ export const updateOutstandingBalance = async ({
 };
 
 export const saveSettlementData = async (
-  party,
-  orgId,
-  paymentMethod,
-  type,
   voucherNumber,
   voucherId,
+  voucherModel,
+  voucherType,
   amount,
-  createdAt,
-  partyName,
+  party,
+  cmp_id,
+  Primary_user_id,
+  selectedDate,
   session
 ) => {
   try {
-    console.log(party);
-    const accountGroup = party?.accountGroup;
-
-    if (!accountGroup) {
-      throw new Error("Invalid account group");
-    }
-
-    let model;
-    if (accountGroup === "Cash-in-Hand") {
-      model = cashModel;
-    } else if (accountGroup === "Bank Accounts") {
-      model = bankModel;
-    } else {
-      // console.log("Invalid account group so return");
-      return;
-    }
-
-    if (!model) {
-      throw new Error("Invalid model");
-    }
-
-    const query = {
-      cmp_id: orgId,
-      ...(accountGroup === "Cash-in-Hand"
-        ? { cash_id: party?.party_master_id }
-        : { bank_id: party?.party_master_id }),
-    };
-
     const settlementData = {
-      voucherNumber: voucherNumber,
-      voucherId: voucherId.toString(),
-      party: partyName,
-      amount: Number(amount),
-      created_at: createdAt,
-      payment_mode: paymentMethod,
-      type: type,
+      voucherNumber,
+      voucherId,
+      voucherModel,
+      voucherType,
+      amount,
+      payment_mode: null,
+      partyName: party?.partyName || "",
+      partyId: party?._id || null,
+      partyType: party?.partyType || null,
+      sourceId: party?._id || null,
+      sourceType: party?.partyType || null,
+      cmp_id: cmp_id,
+      Primary_user_id: Primary_user_id,
+      settlement_date: selectedDate,
+      voucher_date: selectedDate,
     };
 
-    const update = {
-      $push: {
-        settlements: settlementData,
-      },
-    };
+    console.log("settlementData", settlementData);
 
-    const options = {
-      upsert: true,
-      new: true,
-      session,
-    };
+    const settlement = new settlementModel(settlementData);
 
-    const updatedSource = await model.findOneAndUpdate(query, update, options);
+    await settlement.save({ session });
+    return settlement;
   } catch (error) {
     console.error("Error in saveSettlementData:", error);
     throw error;

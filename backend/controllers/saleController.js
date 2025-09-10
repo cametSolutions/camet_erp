@@ -314,7 +314,6 @@ export const editSale = async (req, res) => {
         const outstandingResult = await updateOutstandingBalance({
           existingVoucher: existingSale,
           valueToUpdateInOutstanding,
-
           orgId,
           voucherNumber: salesNumber,
           party,

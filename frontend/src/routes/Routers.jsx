@@ -47,7 +47,7 @@ const AddbatchInPurchase = lazy(() => import('../pages/secUsers/AddbatchInPurcha
 const ReceiptPrintOut = lazy(() => import('../pages/secUsers/ReceiptPrintOut'))
 const SelectVouchers = lazy(() => import('../pages/secUsers/SelectVouchers'))
 const PaymentPrintOut = lazy(() => import('../pages/secUsers/PaymentPrintOut'))
-const OutstandingListOfReceiptForEdit = lazy(() => import('../pages/secUsers/OutstandingListOfReceiptForEdit'))
+// const OutstandingListOfReceiptForEdit = lazy(() => import('../pages/secUsers/OutstandingListOfReceiptForEdit'))
 const OutstandingListOfPaymentForEdit = lazy(() => import('../pages/secUsers/OutstandingListOfPaymentForEdit'))
 
 // Reports
@@ -277,9 +277,9 @@ const Routers = () => {
 
         {/* payment */}
         <Route path='/sUsers/paymentPurchase' element={<ProtectedSecRoute><AccVoucherInitialPage/></ProtectedSecRoute>}></Route>
-            <Route path='/sUsers/searchPartyPayment' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route>
-
-            <Route path='/sUsers/payment/addAmount/:party_id' element={<ProtectedSecRoute><OutstandingListOfAccVoucher/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/searchPartyPayment' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/payment/addAmount/:party_id' element={<ProtectedSecRoute><OutstandingListOfAccVoucher/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/payment/editAmount/:party_id' element={<ProtectedSecRoute><OutstandingListOfAccVoucherEdit/></ProtectedSecRoute>}></Route>
 
         <Route path='/sUsers/payment/sourceList/:source' element={<ProtectedSecRoute><SourceList/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/payment/details/:id' element={<ProtectedSecRoute><AccVoucherDetails/></ProtectedSecRoute>}></Route>

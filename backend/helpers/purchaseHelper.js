@@ -636,3 +636,94 @@ export const removeNewBatchCreatedByThisPurchase = async (
     console.log("No products needed updating");
   }
 };
+
+
+export const updateOutstandingBalance = async ({
+  existingVoucher,
+  valueToUpdateInOutstanding,
+  orgId,
+  voucherNumber,
+  party,
+  session,
+  createdBy,
+  transactionType,
+  secondaryMobile,
+  selectedDate,
+  classification,
+  isCancelled = false,
+}) => {
+
+  if (party?.partyType === "party") {
+    // Calculate old bill balance
+    let oldBillBalance =
+      existingVoucher?.finalOutstandingAmount ||
+      existingVoucher?.finalAmount ||
+      0;
+    let newBillBalance = valueToUpdateInOutstanding;
+
+    // Find existing outstanding record
+    const matchedOutStanding = await TallyData.findOne({
+      party_id: existingVoucher?.party?._id,
+      cmp_id: orgId,
+      billId: existingVoucher?._id.toString(),
+    }).session(session);
+
+    // Calculate sum of applied receipts
+    const appliedPayments = matchedOutStanding?.appliedPayments || [];
+    const sumOfAppliedPayments = appliedPayments.reduce((sum, receipt) => {
+      return sum + (receipt.settledAmount || 0);
+    }, 0);
+
+    console.log(`New bill balance: ${newBillBalance}`);
+    console.log(`old bill balance: ${oldBillBalance}`);
+    console.log(`Sum of applied receipts: ${sumOfAppliedPayments}`);
+    console.log(
+      `Absolute difference: ${Math.abs(newBillBalance - sumOfAppliedPayments)}`
+    );
+
+    // Calculate bill_pending_amt as the difference of newBillBalance - sum of appliedPayments (after creating advance)
+    const billPendingAmount = Number(newBillBalance - sumOfAppliedPayments);
+
+    console.log(`Bill pending amount: ${billPendingAmount}`);
+
+    let updatedTallyData;
+
+    if (matchedOutStanding?._id) {
+      // Update existing document to preserve _id
+      updatedTallyData = await TallyData.findByIdAndUpdate(
+        matchedOutStanding._id,
+        {
+          party_id: existingVoucher?.party?._id,
+          cmp_id: orgId,
+          billId: existingVoucher?._id.toString(),
+          bill_amount: newBillBalance,
+          bill_pending_amt: Math.abs(billPendingAmount), // Updated calculation
+          voucherNumber: voucherNumber,
+          primaryUserId: existingVoucher.Primary_user_id,
+          party: party,
+          secondaryMobile: secondaryMobile,
+          voucherType: existingVoucher?.voucherType,
+          classification: billPendingAmount > 0 ? "Cr" : "Dr",
+          createdBy: createdBy,
+          transactionType: transactionType,
+          updatedAt: new Date(),
+          bill_date: new Date(selectedDate),
+          bill_due_date: new Date(selectedDate),
+          // appliedPayments: matchedOutStanding?.appliedPayments || [], // Ensure updated arrays are saved
+          // appliedPayments: matchedOutStanding?.appliedPayments || [],
+          isCancelled: isCancelled,
+        },
+        {
+          new: true, // Return updated document
+          session: session,
+        }
+      );
+
+      // console.log("updatedTallyData", updatedTallyData);
+    }
+
+    return updatedTallyData;
+  } else {
+    return null;
+  }
+};

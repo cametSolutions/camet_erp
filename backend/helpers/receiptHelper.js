@@ -87,17 +87,43 @@ export const updateTallyData = async (
     return;
   }
 
+  const TotalAppliedReceipts = outstandingData?.appliedReceipts?.reduce(
+    (sum, receipt) => sum + receipt?.settledAmount,
+    0
+  );
+
   // Prepare bulk update operations for TallyData
   const bulkUpdateOperations = outstandingData.map((doc) => {
     const { remainingAmount, settledAmount } = billAmountMap.get(doc.billId); // Get the remaining and settled amount
+    const bill_pending_amt = doc?.bill_pending_amt || 0;
+
+    //Calculate total applied receipts from existing + this one
+    const existingAppliedReceiptsTotal = (doc?.appliedReceipts || []).reduce(
+      (sum, r) => sum + (r?.settledAmount || 0),
+      0
+    );
+    const totalAppliedReceipts = existingAppliedReceiptsTotal + settledAmount;
+    const balance = (doc?.bill_amount || 0) - totalAppliedReceipts;
+
+    // console.log("doc", doc);
+    // console.log("bill_pending_amt", bill_pending_amt);
+    // console.log("totalAppliedReceipts", totalAppliedReceipts);
+    // console.log("balance", balance);
+    
+
+    //  Classification rule
+    let classification = "Dr";
+    if (balance < 0) {
+      classification = "Cr";
+    }
 
     return {
       updateOne: {
         filter: { _id: doc._id },
         update: {
           $set: {
-            bill_pending_amt: remainingAmount, // Update remaining amount (pending amount)
-            classification: remainingAmount < 0 ? "Cr" : "Dr", // ✅ set classification dynamically
+            bill_pending_amt: balance, // Update remaining amount (pending amount)
+            classification: classification, // ✅ set classification dynamically
           },
           $push: {
             appliedReceipts: {

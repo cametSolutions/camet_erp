@@ -124,19 +124,6 @@ export const createReceipt = async (req, res) => {
       Primary_user_id,
       date,
       session
-
-      // paymentMethod,
-      // paymentDetails,
-      // receiptNumber,
-      // savedReceipt._id.toString(),
-      // enteredAmount,
-      // cmp_id,
-      // "receipt",
-      // newReceipt?.date,
-      // savedReceipt?.party?.partyName,
-      // session,
-      // party,
-      // "Receipt"
     );
 
     // Use the helper function to update TallyData
@@ -319,7 +306,7 @@ export const editReceipt = async (req, res) => {
     }
 
     // Revert tally updates
-    await revertTallyUpdates(receipt.billData, session, receiptId.toString());
+    await revertTallyUpdates(receipt.billData,cmp_id, session, receiptId.toString());
 
     /// delete  all the settlements
     await settlementModel.deleteMany({ voucherId: receiptId }, { session });

@@ -459,7 +459,6 @@ export const fetchOutstandingDetails = async (req, res) => {
         .json({ message: "No outstandings were found for user" });
     }
 
-
     /* -----------------------------------------------------------
      3. If voucherId is present, update bill_pending_amt calculation
         for records that have applied receipts/payments
@@ -526,7 +525,6 @@ export const fetchOutstandingDetails = async (req, res) => {
     //   }
     // }
 
-
     if (voucherId) {
       processedOutstandings = outstandings.map((outstanding) => {
         let updatedPendingAmount = outstanding.bill_pending_amt;
@@ -543,25 +541,7 @@ export const fetchOutstandingDetails = async (req, res) => {
             0
           );
 
-          console.log(
-            "voucherId",
-            voucherId,
-            "filteredReceipts",
-            filteredReceipts,
-            "totalAppliedReceipts",
-            totalAppliedReceipts
-          );
-
           updatedPendingAmount = outstanding.bill_amount - totalAppliedReceipts;
-
-          console.log(
-            "outstanding.bill_amount",
-            outstanding.bill_amount,
-            "totalAppliedReceipts",
-            totalAppliedReceipts,
-            "updatedPendingAmount",
-            updatedPendingAmount
-          );
         } else if (
           voucher === "payment" &&
           outstanding.appliedPayments?.length > 0

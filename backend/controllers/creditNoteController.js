@@ -7,14 +7,11 @@ import {
   // updateTallyData,
 } from "../helpers/creditNoteHelper.js";
 import {
-  processSaleItems as processCreditNoteItems,
   revertSettlementData,
   saveSettlementData,
-  updateOutstandingBalance,
   updateTallyData,
 } from "../helpers/salesHelper.js";
 
-import { checkForNumberExistence } from "../helpers/secondaryHelper.js";
 import creditNoteModel from "../models/creditNoteModel.js";
 import secondaryUserModel from "../models/secondaryUserModel.js";
 import mongoose from "mongoose";
@@ -24,6 +21,7 @@ import {
   getSeriesDetailsById,
 } from "../helpers/voucherHelper.js";
 import settlementModel from "../models/settlementModel.js";
+import { updateOutstandingBalance } from "../helpers/purchaseHelper.js";
 
 // @desc create credit note
 // route GET/api/sUsers/createCreditNote
@@ -71,7 +69,6 @@ export const createCreditNote = async (req, res) => {
     }
 
     await handleCreditNoteStockUpdates(items, session);
-    // const updatedItems = await processCreditNoteItems(items);
     const updatedCreditNoteNumber = await updateCreditNoteNumber(
       orgId,
       secondaryUser,
@@ -326,20 +323,35 @@ export const editCreditNote = async (req, res) => {
       .session(session);
     const secondaryMobile = secondaryUser?.mobile;
 
-    const outstandingResult = await updateOutstandingBalance({
-      existingVoucher: existingCreditNote,
-      lastAmount,
-      orgId,
-      voucherNumber: creditNoteNumber,
-      party,
-      session,
-      createdBy: req.owner,
-      transactionType: "creditNote",
-      secondaryMobile,
-      selectedDate,
-      classification: "Cr",
-    });
-
+    if (party?.partyType === "party") {
+      const outstandingResult = await updateOutstandingBalance({
+        existingVoucher: existingCreditNote,
+        valueToUpdateInOutstanding: lastAmount,
+        orgId,
+        voucherNumber: creditNoteNumber,
+        party,
+        session,
+        createdBy: req.owner,
+        transactionType: "creditNote",
+        secondaryMobile,
+        selectedDate,
+        classification: "Cr",
+      });
+    } else {
+      /// save settlements
+      await saveSettlementData(
+        creditNoteNumber,
+        series_id,
+        "Credit Note",
+        "creditNote",
+        lastAmount,
+        party,
+        orgId,
+        existingCreditNote?.Primary_user_id,
+        selectedDate,
+        session
+      );
+    }
     await session.commitTransaction();
     session.endSession();
     res.status(200).json({

@@ -73,14 +73,12 @@ export const deleteAdvancePayment = async (
       source: "advancePayment",
     }).session(session);
 
-
     if (!deletedAdvancePayment) {
       console.log(
         `No advance payment found for payment number: ${paymentNumber}`
       );
       return;
     }
-
   } catch (error) {
     console.error("Error in deleteAdvanceReceipt:", error);
     throw error;
@@ -125,14 +123,37 @@ export const updateTallyData = async (
 
   // Prepare bulk update operations for TallyData
   const bulkUpdateOperations = outstandingData.map((doc) => {
-    const { remainingAmount, settledAmount } = billAmountMap.get(doc.billId); // Get the remaining and settled amount
+    const { settledAmount } = billAmountMap.get(doc.billId); // Get the remaining and settled amount
+
+    const bill_pending_amt = doc?.bill_pending_amt || 0;
+
+    //Calculate total applied receipts from existing + this one
+    const existingAppliedPaymentsTotal = (doc?.appliedPayments || []).reduce(
+      (sum, r) => sum + (r?.settledAmount || 0),
+      0
+    );
+    const appliedPayments = existingAppliedPaymentsTotal + settledAmount;
+    const balance = (doc?.bill_amount || 0) - appliedPayments;
+
+    //  Classification rule
+    let classification = "Cr";
+    if (balance < 0) {
+      classification = "Dr";
+    }
+
+
+    console.log("bill_pending_amt", bill_pending_amt);
+    console.log("settledAmount", settledAmount);
+    console.log("balance", balance);
+    
 
     return {
       updateOne: {
         filter: { _id: doc._id },
         update: {
           $set: {
-            bill_pending_amt: remainingAmount, // Update remaining amount (pending amount)
+            bill_pending_amt: balance, // Update remaining amount (pending amount)
+            classification: classification, // ✅ set classification dynamically
           },
           $push: {
             appliedPayments: {
