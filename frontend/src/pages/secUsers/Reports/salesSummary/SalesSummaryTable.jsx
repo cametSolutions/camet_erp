@@ -146,8 +146,6 @@ function SalesSummaryTable() {
 
   // Get cell value based on selected option and field
   const getCellValue = useCallback((saleItem, field, selectedOption) => {
-
-    
     const valueMap = {
       secondary: {
         "Ledger": saleItem?.itemName,
@@ -188,7 +186,7 @@ function SalesSummaryTable() {
       getSecondaryHeader(selectedOption),
       getTertiaryHeader(selectedOption),
       getQuaternaryHeader(selectedOption),
-      ...(selectedOption === "voucher" ? ["Category Name"] : []),
+      ...(selectedOption === "voucher" ? ["Category Name", "Product Code"] : []),
       "Gst No", "Hsn", "Batch", "Quantity", "Rate", "Discount", "Amount",
       "Tax%", "Tax Amount", "Cess%", "Cess Amount", "AddtlnCess", "AddtlnCessAmt", "Net Amount"
     ]
@@ -204,7 +202,7 @@ function SalesSummaryTable() {
           getCellValue(saleItem, 'secondary', selectedOption),
           getCellValue(saleItem, 'tertiary', selectedOption),
           getCellValue(saleItem, 'quaternary', selectedOption),
-          ...(selectedOption === "voucher" ? [saleItem?.categoryName || ""] : []),
+          ...(selectedOption === "voucher" ? [saleItem?.categoryName || "", saleItem?.product_code || ""] : []),
           saleItem?.gstNo, saleItem?.hsn, saleItem?.batch || "",
           saleItem?.quantity, saleItem.rate, formatNumber(saleItem?.discount),
           formatNumber(saleItem?.amount), saleItem.taxPercentage,
@@ -331,17 +329,18 @@ function SalesSummaryTable() {
                   <th className="p-2 font-semibold text-gray-600">
                     {getSecondaryHeader(selectedOption)}
                   </th>
-                  {selectedOption === "voucher" && (
-                    <th className="p-2 font-semibold text-gray-600">
-                      {getTertiaryHeader(selectedOption)}
-                    </th>
-                  )}
                   <th className="p-2 font-semibold text-gray-600">
                     {getTertiaryHeader(selectedOption)}
                   </th>
                   <th className="p-2 font-semibold text-gray-600">
                     {getQuaternaryHeader(selectedOption)}
                   </th>
+                  {selectedOption === "voucher" && (
+                    <>
+                      <th className="p-2 font-semibold text-gray-600">Category Name</th>
+                      <th className="p-2 font-semibold text-gray-600">Product Code</th>
+                    </>
+                  )}
                   <th className="p-2 font-semibold text-gray-600">Gst No</th>
                   <th className="p-2 font-semibold text-gray-600">HSN</th>
                   <th className="p-2 font-semibold text-gray-600">Batch</th>
@@ -363,7 +362,7 @@ function SalesSummaryTable() {
                   <>
                     {partyIndex !== 0 && (
                       <tr>
-                        <td colSpan={21} className="h-1 bg-gray-300" />
+                        <td colSpan={selectedOption === "voucher" ? 23 : 21} className="h-1 bg-gray-300" />
                       </tr>
                     )}
                     {party?.sale.map((saleItem, saleIndex) => (
@@ -390,17 +389,22 @@ function SalesSummaryTable() {
                         <td className="px-1 py-2 text-gray-800 text-xs cursor-pointer text-nowrap">
                           {getCellValue(saleItem, 'secondary', selectedOption)}
                         </td>
-                        {selectedOption === "voucher" && (
-                          <td className="px-1 py-2 text-gray-800 text-xs cursor-pointer text-nowrap">
-                            {getCellValue(saleItem, 'tertiary', selectedOption)}
-                          </td>
-                        )}
                         <td className="px-1 py-2 text-gray-800 text-xs cursor-pointer">
                           {getCellValue(saleItem, 'tertiary', selectedOption)}
                         </td>
                         <td className="px-1 py-2 text-gray-800 text-xs cursor-pointer">
                           {getCellValue(saleItem, 'quaternary', selectedOption)}
                         </td>
+                        {selectedOption === "voucher" && (
+                          <>
+                            <td className="px-1 py-2 text-gray-800 text-xs cursor-pointer">
+                              {saleItem?.categoryName || ""}
+                            </td>
+                            <td className="px-1 py-2 text-gray-800 text-xs cursor-pointer">
+                              {saleItem?.product_code || ""}
+                            </td>
+                          </>
+                        )}
                         <td className="px-1 py-2 text-gray-800 text-xs cursor-pointer">
                           {saleItem?.gstNo || ""}
                         </td>
