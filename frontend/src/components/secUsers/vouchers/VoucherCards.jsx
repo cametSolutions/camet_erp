@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom"
 import sale from "../../../assets/images/sale.png"
 
 import creditNote from "../../../assets/images/creditNote.png"
+import dashboard from "../../../assets/images/dashboard.png"
 import PerformaInvoice from "../../../assets/images/bill.png"
 import Quotation from "../../../assets/images/quotation.png"
 import purchaseInvoice from "../../../assets/images/purchaseInvoice.png"
@@ -210,7 +211,14 @@ const popular = [
     to: "/sUsers/InventoryDetails",
     active: true,
     subtitle: "Manage inventory details"
-  }
+  },
+  {
+    title: "Hotel Summary",
+    icon: dashboard,
+    to: "/sUsers/SummaryDashboard",
+    active: true,
+    subtitle: "Valuate Hotel and Restuarent Monthly,Daily growth"
+  },
 ]
 
 const VoucherCards = ({ tab }) => {
