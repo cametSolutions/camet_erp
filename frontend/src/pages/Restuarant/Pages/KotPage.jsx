@@ -513,6 +513,7 @@ const OrdersDashboard = () => {
           voucherNumber: findOne.voucherNumber,
           id: findOne._id,
           checkInNumber: findOne?.checkInNumber,
+          tableNumber: findOne?.tableNumber,
         });
       }
       return findOne?.items || []; // return empty array if not found

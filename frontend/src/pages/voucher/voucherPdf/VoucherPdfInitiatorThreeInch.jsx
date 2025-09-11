@@ -86,18 +86,60 @@ function VoucherPdfInitiatorThreeInch() {
       setData(voucherData.data);
     }
   }, [voucherData]);
-
 const handlePrint = useReactToPrint({
   documentTitle: `Sale Order ${data?.salesNumber}`,
   pageStyle: `
     @page { 
-      size: 80mm auto; 
+      size: 65mm auto; 
       margin: 0; 
     }
     @media print {
+      * {
+        -webkit-print-color-adjust: exact;
+        color-adjust: exact;
+      }
       body { 
-        -webkit-print-color-adjust: exact; 
-        font-family: monospace !important;
+        font-family: 'Courier New', monospace !important;
+        font-size: 14px !important;
+        font-weight: bold !important;
+        line-height: 1.4 !important;
+        margin: 0 !important;
+        padding: 3mm !important;
+        width: 67mm !important;
+      }
+      .receipt-container {
+        width: 100% !important;
+        max-width: 67mm !important;
+        margin: 0 auto !important;
+        padding: 0 !important;
+      }
+      .header {
+        text-align: center !important;
+        margin-bottom: 10px !important;
+      }
+      .restaurant-name {
+        font-size: 16px !important;
+        font-weight: bold !important;
+        margin-bottom: 6px !important;
+        letter-spacing: 1px !important;
+      }
+      .divider {
+        margin: 8px 0 !important;
+        width: 100% !important;
+      }
+      .order-info {
+        display: flex !important;
+        justify-content: space-between !important;
+        margin-bottom: 8px !important;
+        font-size: 14px !important;
+        font-weight: bold !important;
+      }
+      .footer {
+        text-align: center !important;
+        margin-top: 10px !important;
+        font-weight: bold !important;
+        font-size: 14px !important;
+        letter-spacing: 0.5px !important;
       }
     }
   `,
@@ -105,6 +147,8 @@ const handlePrint = useReactToPrint({
   onAfterPrint: () => console.log("after printing..."),
   removeAfterPrint: true,
 });
+
+
 
   return (
     <div>
