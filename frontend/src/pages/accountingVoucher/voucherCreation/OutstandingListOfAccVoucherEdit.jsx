@@ -4,7 +4,8 @@ import useFetch from "../../../customHook/useFetch";
 import {
   addOutstandings,
   setTotalBillAmount,
-  setIsInitialRender
+  setIsInitialRender,
+  addEnteredAmount
 } from "../../../../slices/voucherSlices/commonAccountingVoucherSlice";
 import OutstandingLIstComponent from "./OutstandingLIstComponent";
 
@@ -23,7 +24,6 @@ function OutstandingListOfAccVoucherEdit() {
     totalBillAmount,
     mode,
     _id: ReceiptIdFromRedux,
-    isInitialRender: isInitialRenderFromRedux
   } = useSelector((state) => state.commonAccountingVoucherSlice);
 
   // Initialize with Redux data
@@ -71,7 +71,7 @@ function OutstandingListOfAccVoucherEdit() {
       let initialData = [];
       let initialTotal = 0;
 
-      if (mode === "edit" && Array.isArray(billDataFromRedux) && billDataFromRedux.length > 0) {
+      if (mode === "edit" && Array.isArray(billDataFromRedux) && billDataFromRedux.length > 0 && outstandingFromRedux?.length === 0) {
         // In edit mode, show billDataFromRedux
         initialData = billDataFromRedux;
         initialTotal = billDataFromRedux.reduce((sum, bill) => sum + (bill.settledAmount || bill.bill_pending_amt || 0), 0);
@@ -105,13 +105,14 @@ function OutstandingListOfAccVoucherEdit() {
       setTotal(updatedTotalOutstanding);
       dispatch(addOutstandings(updatedOutstandingList));
       dispatch(setTotalBillAmount(updatedTotalOutstanding));
+      dispatch(addEnteredAmount(0)); // Reset entered amount on data refresh
     }
   }, [apiData, shouldFetchApi, dispatch]);
 
   return (
     <OutstandingLIstComponent
       {...{
-        loading: isInitialRenderFromRedux === true ? loading : false, // Only show loading when API is being called for initial render
+        loading, // Only show loading when API is being called for initial render
         data,
         total,
         tab: voucherType,

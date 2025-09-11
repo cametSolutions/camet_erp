@@ -379,8 +379,8 @@ export const editHsn = async (req, res) => {
 
   try {
     let findOne = await hsnModel.findOne({
-      _id: { $ne: hsnId }, 
-      hsn: { $regex: `^${req.body.hsn}$`, $options: "i" }, 
+      _id: { $ne: hsnId },
+      hsn: { $regex: `^${req.body.hsn}$`, $options: "i" },
     });
 
     if (findOne) {
