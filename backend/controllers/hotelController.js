@@ -8,6 +8,7 @@ import TallyData from "../models/TallyData.js";
 import hsnModel from "../models/hsnModel.js";
 import roomModal from "../models/roomModal.js";
 import { Booking, CheckIn, CheckOut } from "../models/bookingModal.js";
+import receiptModel from "../models/receiptModel.js";
 
 import {
   buildDatabaseFilterForRoom,
@@ -23,11 +24,7 @@ import { extractRequestParams } from "../helpers/productHelper.js";
 import { generateVoucherNumber } from "../helpers/voucherHelper.js";
 import mongoose, { get } from "mongoose";
 import VoucherSeriesModel from "../models/VoucherSeriesModel.js";
-import { addItem } from "./restaurantController.js";
-import kotModal from "../models/kotModal.js";
 const { ObjectId } = mongoose.Types;
-import bankModel from "../models/bankModel.js";
-import cashModel from "../models/cashModel.js";
 import Party from "../models/partyModel.js";
 import { saveSettlementData } from "../helpers/salesHelper.js";
 import salesModel from "../models/salesModel.js";
@@ -957,6 +954,12 @@ export const roomBooking = async (req, res) => {
 
       // If there's an advance, save it too
       if (bookingData.advanceAmount && bookingData.advanceAmount > 0) {
+        const voucher = await VoucherSeriesModel.findOne({cmp_id:orgId,voucherType:"receipt"}).session(session);
+        console.log(voucher,"voucher");
+        const series_id = voucher?.series?.find((s) => s.under === "hotel")
+        console.log(series_id,"series_id");
+        const receiptVoucher = await generateVoucherNumber(orgId, "receipt", series_id, session);
+        console.log(receiptVoucher,"receiptVoucher");
         const advanceObject = new TallyData({
           Primary_user_id: req.pUserId || req.owner,
           cmp_id: orgId,
@@ -967,7 +970,7 @@ export const roomBooking = async (req, res) => {
           bill_no: savedBooking?.voucherNumber,
           billId: savedBooking._id,
           bill_amount: bookingData.advanceAmount,
-          bill_pending_amt: bookingData.advanceAmount, // ⚠️ check business logic
+          bill_pending_amt: bookingData.advanceAmount,
           accountGroup: bookingData.accountGroup,
           user_id: req.sUserId,
           advanceAmount: bookingData.advanceAmount,

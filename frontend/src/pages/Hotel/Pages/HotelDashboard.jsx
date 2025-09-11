@@ -431,9 +431,30 @@ const HotelDashboard = () => {
     setShowCalendar(show);
   };
 
-  console.log(selectedRoomData);
+const scrollbarStyles = {
+  scrollbarWidth: 'thin',
+  scrollbarColor: 'rgba(0, 0, 0, 0.7) rgba(0, 0, 0, 0.2)' // black thumb, lighter black track
+};
 
   return (
+    <>
+    <style>{`
+        .custom-scroll::-webkit-scrollbar {
+          width: 8px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 4px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.3);
+          border-radius: 4px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+          background: rgba(255, 255, 255, 0.5);
+        }
+      `}
+      </style>
     <div className="min-h-screen bg-slate-900 relative overflow-hidden">
       <AnimatedBackground />
 
@@ -766,20 +787,21 @@ const HotelDashboard = () => {
                 )}
 
                 {/* Booking Details Panel */}
-                <div
-                  className={`${
-                    isMobile
-                      ? "fixed right-0 top-0 z-50 w-80 max-w-[90vw] h-full bg-[#0B1D34] border-l border-white/20 transform transition-transform duration-300 ease-in-out"
-                      : "w-80 flex-shrink-0 bg-[#0B1D34] border border-white/20 rounded-lg"
-                  } flex flex-col ${isMobile ? "p-0" : "p-4"}`}
-                >
+        <div
+        className={`custom-scroll ${
+          isMobile
+            ? "fixed right-0 top-0 z-50 w-80 max-w-[90vw] h-full bg-[#0B1D34] border-l border-white/20 transform transition-transform duration-300 ease-in-out"
+            : "w-80 flex-shrink-0 bg-[#0B1D34] border border-white/20 rounded-lg"
+        } flex flex-col h-screen ${isMobile ? "p-0" : "p-4"}`}
+        style={scrollbarStyles}
+      >
                   {/* Booking Section Header */}
                   <div
-                    className={`flex items-center justify-between ${
+                    className={`flex items-center justify-between   ${
                       isMobile ? "p-4 border-b border-white/20" : "mb-4"
                     }`}
                   >
-                    <div>
+                    <div className="">
                       <h3 className="font-bold text-blue-400 flex items-center gap-2 text-lg">
                         <Calendar className="w-5 h-5 text-cyan-400" />
                         Recent Bookings
@@ -991,6 +1013,7 @@ const HotelDashboard = () => {
     }
   `}</style>
     </div>
+    </>
   );
 };
 
