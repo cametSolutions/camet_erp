@@ -179,6 +179,7 @@ export const getSummary = async (req, res) => {
                     $dateToString: { format: "%d-%m-%Y", date: "$date" }
                   },
                   itemName: "$items.product_name",
+                  product_code: "$items.product_code",
                   categoryName: "$categoryInfo.category",
                   groupName: "$brandInfo.brand"
                 }
