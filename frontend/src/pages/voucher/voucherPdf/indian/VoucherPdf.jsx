@@ -6,7 +6,16 @@ import VoucherPdfFooter from "./VoucherPdfFooter";
 import VoucherPdfHeader from "./VoucherPdfHeader";
 import { defaultPrintSettings } from "../../../../../utils/defaultConfigurations";
 
-function VoucherPdf({ data, org, contentToPrint, bank, tab }) {
+function VoucherPdf({
+  data,
+  org,
+  contentToPrint,
+  bank,
+  tab,
+  isPreview = false,
+  sendToParent,
+}) {
+  console.log("data", data);
   const [subTotal, setSubTotal] = useState("");
   const [additinalCharge, setAdditinalCharge] = useState("");
   const [inWords, setInWords] = useState("");
@@ -106,7 +115,7 @@ function VoucherPdf({ data, org, contentToPrint, bank, tab }) {
       const integerWords = numberToWords.toWords(parseInt(integerPart, 10));
       const decimalWords = decimalPart
         ? ` and ${numberToWords.toWords(parseInt(decimalPart, 10))} `
-        : " and Zero";
+        : " and Zero ";
 
       const mergedWord = [
         ...(integerWords + " "),
@@ -125,14 +134,8 @@ function VoucherPdf({ data, org, contentToPrint, bank, tab }) {
   let address;
 
   console.log(address);
-  
 
-  
-
-  if (
-    party?.newAddress &&
-    Object.keys(party?.newAddress).length > 0
-  ) {
+  if (party?.newAddress && Object.keys(party?.newAddress).length > 0) {
     address = party?.newAddress;
   } else {
     if (party) {
@@ -261,6 +264,8 @@ function VoucherPdf({ data, org, contentToPrint, bank, tab }) {
     return null;
   }
 
+  console.log(data?.items);
+
   return (
     <div>
       {/* <style dangerouslySetInnerHTML={{ __html: `
@@ -278,7 +283,6 @@ function VoucherPdf({ data, org, contentToPrint, bank, tab }) {
           className="pdf-content rounded-lg px-3 max-w-3xl mx-auto md:block"
         >
           <div className="pdf-page">
-           
             <VoucherPdfHeader
               configurations={configurations}
               data={data}
@@ -407,9 +411,9 @@ function VoucherPdf({ data, org, contentToPrint, bank, tab }) {
                           {configurations?.showRate && (
                             <td className=" text-black text-right pr-2 text-nowrap ">
                               {!el?.hasGodownOrBatch ? (
-                                el?.GodownList[0]?.selectedPriceRate
+                                el?.GodownList[0]?.selectedPriceRate.toFixed(2)
                               ) : isGodownOnlyItem(el) ? (
-                                el?.GodownList[0]?.selectedPriceRate
+                                el?.GodownList[0]?.selectedPriceRate.toFixed(2)
                               ) : (
                                 <td></td>
                               )}
@@ -429,17 +433,22 @@ function VoucherPdf({ data, org, contentToPrint, bank, tab }) {
                             className={` font-bold  text-black text-right pr-2 text-nowrap`}
                           >
                             {!el?.hasGodownOrBatch
+
                               ? el?.GodownList[0]?.taxableAmount?.toFixed(2) || 0
+
                               : el?.GodownList?.reduce((acc, curr) => {
                                   curr.taxableAmount =
                                     Number(curr?.taxableAmount) || 0;
                                   return acc + curr.taxableAmount;
+
                                 }, 0)?.toFixed(2) || 0}
+
+
                           </td>
 
                           {configurations?.showStockWiseTaxAmount && (
                             <td className=" text-black text-right pr-2 font-bold">
-                              {el?.totalIgstAmt}
+                              {el?.totalIgstAmt.toFixed(2)}
                             </td>
                           )}
                           {configurations?.showStockWiseTaxAmount && (
@@ -659,7 +668,6 @@ function VoucherPdf({ data, org, contentToPrint, bank, tab }) {
                 </tr>
               </tfoot>
             </table>
-
             <VoucherPdfFooter
               bank={bank}
               org={org}
@@ -673,6 +681,18 @@ function VoucherPdf({ data, org, contentToPrint, bank, tab }) {
               party={party}
               configVoucherType={voucherType}
             />
+            {isPreview && (
+              <div className="flex gap-3 justify-end p-2">
+                <button className="px-3 py-1 rounded-lg bg-gray-500 text-black font-medium hover:bg-gray-600 active:scale-95 transition"
+                  onClick={()=>sendToParent(true)}>
+                  Confirm
+                </button>
+                <button className="px-3 py-1 rounded-lg bg-gray-200 text-gray-800 font-medium hover:bg-gray-300 active:scale-95 transition"
+                  onClick={()=>sendToParent(false)}>
+                  Cancel
+                </button>
+              </div>
+            )}
 
             <div className="page-number"></div>
           </div>

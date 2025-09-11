@@ -17,6 +17,8 @@ import { updateConfiguration } from "../../../../../slices/secSelectedOrgSlice";
 import { PiVan } from "react-icons/pi";
 import { FaRegAddressBook } from "react-icons/fa";
 import { GrDocumentWord } from "react-icons/gr";
+import { MdCallSplit } from "react-icons/md";
+
 
 const InvoiceSettings = () => {
   const [loading, setLoading] = useState(false);
@@ -100,6 +102,18 @@ const InvoiceSettings = () => {
           toggleValue:
             configurations[0]?.enableNegativeStockBlockForVanInvoice || false,
         },
+        {
+          title: "Enable Receive Amount",
+          description:
+            "Enable it to allow receiving amounts against invoices as compulsory",
+          icon: <MdCallSplit />,
+          active: true,
+          modal: false,
+          toggle: true,
+          dbField: "enablePaymentSplittingAsCompulsory",
+          toggleValue:
+            configurations[0]?.enablePaymentSplittingAsCompulsory || false,
+        },
 
         {
           title: "Disable Rate for an Item",
@@ -144,6 +158,12 @@ const InvoiceSettings = () => {
       case "enableShipTo":
         url = "/updateCommonToggleConfiguration";
         break;
+      case "enableNegativeStockBlockForVanInvoice":
+        url = "/updateFirstLayerConfiguration";
+        break;
+      case "enablePaymentSplittingAsCompulsory":
+        url = "/updateFirstLayerConfiguration";
+        break;
 
       default:
         url = "/updateFirstLayerConfiguration";
@@ -160,7 +180,11 @@ const InvoiceSettings = () => {
 
     let body = {};
 
-    if (data?.title === "showDescription" || data?.title === "addRateWithTax" || data?.title === "enableShipTo") {
+    if (
+      data?.title === "showDescription" ||
+      data?.title === "addRateWithTax" ||
+      data?.title === "enableShipTo"
+    ) {
       body = {
         configField: data?.title,
         voucher: "sale",

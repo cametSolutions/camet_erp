@@ -1,9 +1,10 @@
 import TitleDiv from "../../../components/common/TitleDiv";
 import SelectDate from "../../../components/Filters/SelectDate";
 import { useNavigate } from "react-router-dom";
-import useFetch from "../../../customHook/useFetch";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
+import { useQuery } from "@tanstack/react-query";
+import api from "@/api/api";
 
 const BalancePage = () => {
   const navigate = useNavigate();
@@ -20,12 +21,6 @@ const BalancePage = () => {
       color: "text-gray-900",
       value: "bankBalance",
     },
-    {
-      label: "Bank OD A/c",
-      amount: 0,
-      color: "text-gray-900",
-      value: "bankOd",
-    },
   ]);
 
   const cmp_id = useSelector(
@@ -33,9 +28,28 @@ const BalancePage = () => {
   );
   const { start, end } = useSelector((state) => state.date);
 
-  const { data: sourceData, loading } = useFetch(
-    `/api/sUsers/findSourceBalance/${cmp_id}?startOfDayParam=${start}&endOfDayParam=${end}`
-  );
+  // const { data: sourceData, loading } = useFetch(
+  //   `/api/sUsers/findSourceBalance/${cmp_id}?startOfDayParam=${start}&endOfDayParam=${end}`
+  // );
+
+  const findSourceBalance = async (cmp_id) => {
+    const response = await api.get(
+      `/api/sUsers/findSourceBalance/${cmp_id}?startOfDayParam=${start}&endOfDayParam=${end}`,
+      {
+        withCredentials: true,
+      }
+    );
+
+    return response.data;
+  };
+
+  const { data: sourceData, isLoading } = useQuery({
+    queryKey: ["sourceBalance", cmp_id, start, end],
+    queryFn: () => findSourceBalance(cmp_id),
+    enabled: !!cmp_id, // Only run query if cmp_id exists
+    staleTime: 30 * 1000, // 30 seconds
+    refetchOnWindowFocus: false,
+  });
 
   useEffect(() => {
     if (sourceData) {
@@ -43,31 +57,21 @@ const BalancePage = () => {
         return [
           {
             ...prev[0],
-            amount: sourceData?.cashSettlementTotal,
+            amount: sourceData?.cashCurrentBalance,
           },
           {
             ...prev[1],
-            amount: sourceData?.bankSettlementTotal,
-          },
-          {
-            ...prev[2],
-            amount: sourceData?.bankOd || 0,
+            amount: sourceData?.bankCurrentBalance,
           },
         ];
       });
     }
   }, [sourceData]);
 
-
-
   return (
     <>
       <div className="sticky top-0">
-        <TitleDiv
-          title="Cash / Bank Balance"
-          
-          loading={loading}
-        />
+        <TitleDiv title="Cash / Bank Balance" loading={isLoading} />
 
         <section className="shadow-lg border-b  ">
           <SelectDate />
@@ -85,7 +89,7 @@ const BalancePage = () => {
 
       <div
         className={` ${
-          loading && "animate-pulse opacity-70 pointer-events-none"
+          isLoading && "animate-pulse opacity-70 pointer-events-none"
         }  flex flex-col gap-3`}
       >
         {/* Total Balance */}

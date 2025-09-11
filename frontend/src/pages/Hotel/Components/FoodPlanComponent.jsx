@@ -54,7 +54,6 @@ function FoodPlanComponent({
 
   const handlePaxChange = (index, value) => {
     let specificData = foodPlanData?.find((item) => item._id === value);
-    console.log(selectedRoomId);
     const updatedRows = [...foodPlan];
     updatedRows[index].foodPlan = specificData.foodPlan;
     updatedRows[index].foodPlanId = specificData._id;

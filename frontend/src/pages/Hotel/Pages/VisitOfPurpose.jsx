@@ -119,6 +119,7 @@ function VisitOfPurpose() {
           displayData={visitOfPurposeData}
           loading={loading}
           handleDelete={handleDelete}
+          
         />
       </div>
     </div>

@@ -4,12 +4,14 @@
 /* eslint-disable react/no-unknown-property */
 import { RiLoginCircleFill } from "react-icons/ri";
 import { useEffect, useState } from "react";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { PropagateLoader } from "react-spinners";
 import api from "../../../api/api";
 import { FaRegEye } from "react-icons/fa";
 import { IoMdEyeOff } from "react-icons/io";
 import { useNavigate, Link } from "react-router-dom";
+import Footer from "../footer/Footer";
+
 function LoginForm({ user }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -31,68 +33,64 @@ function LoginForm({ user }) {
 
     setLoader(true);
 
-    const formData = {
-      email,
-      password,
-    };
-
-    console.log(user);
-    
+    // Set endpoint and storage key based on user type
+    let apiPath, storageKey, dashboardPath;
+    if (user === "admin") {
+      apiPath = "/api/admin/login";
+      storageKey = "adminData";
+      dashboardPath = "/admin/home";
+    } else if (user === "secondary") {
+      apiPath = "/api/sUsers/login";
+      storageKey = "sUserData";
+      dashboardPath = "/sUsers/dashboard";
+    } else {
+      toast.error("Invalid user type");
+      setLoader(false);
+      return;
+    }
 
     try {
-      const res = await api.post(`/api/${user==="primary"?"pUsers":"sUsers"}/login`, formData, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-        withCredentials: true,
-      });
+      const res = await api.post(
+        apiPath,
+        { email, password },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          withCredentials: true,
+        }
+      );
 
       setTimeout(() => {
         setLoader(false);
         toast.success(res.data.message);
-        const loginData = JSON.stringify(res.data.data);
-        // localStorage.setItem("sUserData", loginData);
-        localStorage.setItem(`${user==="primary"?"pUserData":"sUserData"}`, loginData);
-        navigate(`/${user==="primary"?"pUsers":"sUsers"}/dashboard`);
+        localStorage.setItem(storageKey, JSON.stringify(res.data.data));
+        navigate(dashboardPath);
         setEmail("");
         setPassword("");
       }, 1000);
     } catch (error) {
       setTimeout(() => {
-        toast.error(error.response.data.message);
+        toast.error(error?.response?.data?.message || "Login failed");
         setLoader(false);
       }, 1000);
     }
   };
 
-
-  // const forgotPassword = () => {
-  //   console.log("kjshdf");
-    
-
-  //   if (!email) {
-  //     toast.error("Add your email address to send password reset link");
-  //     return;
-  //   }
-  //   // navigate(`/${user==="primary"?"pUsers":"sUsers"}/forgotPassword`);
-  // };
-
-  
-
-
-
   return (
-    <div
-      className="bg-gray-100 font-[sans-serif]"
-      // style={backgroundStyle}
-    >
-      <div className="min-h-screen flex flex-col items-center justify-center py-6 px-4">
+    <div className="bg-white font-[sans-serif] min-h-screen flex flex-col">
+      {/* Main content container with flex-grow to push footer down */}
+      <div className="flex-grow flex flex-col items-center justify-center py-6 px-4">
         <div className="max-w-md w-full">
           <div className="p-8 rounded-sm bg-white shadow-xl">
-            <RiLoginCircleFill className="w-12 h-12 text-blue-500 mx-auto" />
+            <RiLoginCircleFill
+              className={`w-12 h-12 ${
+                user === "admin" ? "text-violet-500" : "text-blue-500"
+              } mx-auto `}
+            />
 
-            <h1 className="text-gray-800 text-center text-2xl font-bold mt-3 ">
-              Welcome!
+            <h1 className="text-gray-800 text-center text-xl font-bold mt-3 ">
+              {user === "admin" ? "Admin Login" : "Welcome!"}
             </h1>
             <h2 className="text-gray-500 text-center text-md font-bold">
               Sign in to your account
@@ -178,7 +176,7 @@ function LoginForm({ user }) {
                 </div>
                 <div className="text-sm">
                   <a
-                  // onClick={forgetPassword}
+                    // onClick={forgetPassword}
                     href="jajvascript:void(0);"
                     className="text-blue-600 hover:underline font-semibold"
                   >
@@ -190,7 +188,11 @@ function LoginForm({ user }) {
               <div className="!mt-8">
                 <button
                   type="submit"
-                  className="w-full py-3 px-4 text-sm tracking-wide rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none"
+                  className={`w-full py-3 px-4 text-sm tracking-wide rounded-lg text-white ${
+                    user === "admin"
+                      ? "bg-violet-600 hover:bg-violet-700"
+                      : "bg-blue-600 hover:bg-blue-700"
+                  }  focus:outline-none`}
                 >
                   {loader ? (
                     <PropagateLoader
@@ -204,44 +206,27 @@ function LoginForm({ user }) {
                   )}
                 </button>
               </div>
-              <p className="text-gray-800 text-sm !mt-8 text-center">
-                Don't have an account?{" "}
 
-                <Link to={"/pUsers/register"}>
-
-                <a
-                  href="javascript:void(0);"
-                  className="text-blue-600 hover:underline ml-1 whitespace-nowrap font-semibold"
-                >
-                  Register here
-                </a>
-                </Link>
-
-              </p>
+              {user !== "admin" && (
+                <p className="text-gray-800 text-sm !mt-8 text-center">
+                  Don't have an account?{" "}
+                  <Link to={"/pUsers/register"}>
+                    <a
+                      href="javascript:void(0);"
+                      className="text-blue-600 hover:underline ml-1 whitespace-nowrap font-semibold"
+                    >
+                      Register here
+                    </a>
+                  </Link>
+                </p>
+              )}
             </form>
-
-            {/* {user == "secondary" ? (
-              <p className="text-gray-800 text-sm  text-center mt-2">
-                Login as{" "}
-                <Link to={"/pUsers/login"}>
-                  <span className="text-blue-600 font-bold hover:underline">
-                    Owner
-                  </span>
-                </Link>
-              </p>
-            ) : (
-              <p className="text-gray-800 text-sm  text-center mt-2">
-                Login as{" "}
-                <Link to={"/sUsers/login"}>
-                  <span className="text-blue-600 font-bold hover:underline">
-                    Reatiler
-                  </span>
-                </Link>
-              </p>
-            )} */}
           </div>
         </div>
       </div>
+
+      {/* Footer at the bottom */}
+      <Footer user={user} />
     </div>
   );
 }

@@ -2,7 +2,7 @@
 /* eslint-disable react/no-unknown-property */
 import { useState, useEffect, useCallback, useRef } from "react";
 import api from "../../api/api";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import {
@@ -29,18 +29,7 @@ import { GrInfo } from "react-icons/gr";
 import { IoMdPower } from "react-icons/io";
 import { BsFillBuildingsFill } from "react-icons/bs";
 import { SlUserFollow } from "react-icons/sl";
-
-// shadcn/ui components
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import LogoutModal from "../common/modal/LogoutModal";
 
 function SidebarSec({ showBar }) {
   const [showSidebar, setShowSidebar] = useState(false);
@@ -157,7 +146,7 @@ function SidebarSec({ showBar }) {
       setUserData(userData);
       setCompanies(userData?.organization);
       setRole(userData?.role || "user");
-      
+
       if (!prevOrg) {
         setOrg(userData?.organization[0]);
         dispatch(setSecSelectedOrganization(userData?.organization[0]));
@@ -233,18 +222,31 @@ function SidebarSec({ showBar }) {
     setShowLogoutModal(false);
   };
 
-  const handleDropDownchange = (el) => {
-    setDropdown(!dropdown);
-    if (window.innerWidth <= 640) {
-      setShowSidebar(!showSidebar);
-    }
-    setLoader(true);
-    setTimeout(() => {
-      setOrg(el);
-      dispatch(setSecSelectedOrganization(el));
+  const handleDropDownchange = async (el) => {
+    if (!el?._id) return;
+
+    try {
+      setLoader(true);
+      const res = await api.get(`/api/sUsers/getSingleOrganization/${el._id}`, {
+        withCredentials: true,
+      });
+
+      const org = res.data.organizationData;
+      setDropdown(!dropdown);
+      if (window.innerWidth <= 640) {
+        setShowSidebar(!showSidebar);
+      }
+      setOrg(org);
+      dispatch(setSecSelectedOrganization(org));
       navigate("/sUsers/dashboard");
       setLoader(false);
-    }, 1000);
+    } catch (error) {
+      console.log(error);
+      toast.error("An error occurred");
+      setLoader(false);
+    } finally {
+      setLoader(false);
+    }
   };
 
   const SidebarCard = ({
@@ -316,7 +318,7 @@ function SidebarSec({ showBar }) {
           <RingLoader color="#1c14a0" />
         </div>
       )}
-      
+
       <div
         className={`${
           showSidebar
@@ -347,8 +349,16 @@ function SidebarSec({ showBar }) {
 
         {/* Main content area - this will take up remaining space */}
         <div className="flex flex-col flex-1 my-3">
-          <div className={`flex flex-col ${!open ? "items-center mt-1" : "mt-9"}`}>
-            <p className={`text-sm text-gray-400 ${open ? "px-4" : "text-center"}`}>Menu</p>
+          <div
+            className={`flex flex-col ${!open ? "items-center mt-1" : "mt-9"}`}
+          >
+            <p
+              className={`text-sm text-gray-400 ${
+                open ? "px-4" : "text-center"
+              }`}
+            >
+              Menu
+            </p>
 
             {/* my accounts */}
             <nav>
@@ -364,7 +374,13 @@ function SidebarSec({ showBar }) {
             </nav>
 
             {/* security items */}
-            <p className={`text-sm text-gray-400 mt-7 ${open ? "px-4" : "text-center"}`}>Security</p>
+            <p
+              className={`text-sm text-gray-400 mt-7 ${
+                open ? "px-4" : "text-center"
+              }`}
+            >
+              Security
+            </p>
 
             <nav>
               {securityItems.map((item, index) => (
@@ -379,7 +395,13 @@ function SidebarSec({ showBar }) {
             </nav>
 
             {/* support items - removed logout from here */}
-            <p className={`text-sm text-gray-400 mt-7 ${open ? "px-4" : "text-center"}`}>Support</p>
+            <p
+              className={`text-sm text-gray-400 mt-7 ${
+                open ? "px-4" : "text-center"
+              }`}
+            >
+              Support
+            </p>
 
             <nav>
               {supportItems.map((item, index) => (
@@ -414,7 +436,9 @@ function SidebarSec({ showBar }) {
               {open ? (
                 <div className="flex items-center justify-between w-full ">
                   <div className="flex items-center ">
-                    <span className="text-lg text-red-500"><IoMdPower /></span>
+                    <span className="text-lg text-red-500">
+                      <IoMdPower />
+                    </span>
                     <span className=" transition-all mx-4 font-medium origin-left duration-500 ease-in-out">
                       Log Out
                     </span>
@@ -424,14 +448,16 @@ function SidebarSec({ showBar }) {
                   </span> */}
                 </div>
               ) : (
-                <div className="flex justify-center text-lg w-full text-red-500"><IoMdPower /></div>
+                <div className="flex justify-center text-lg w-full text-red-500">
+                  <IoMdPower />
+                </div>
               )}
             </span>
           </div>
 
           {/* version */}
           <hr className="mb-2 border mx-2 border-gray-700" />
-          
+
           <div className="flex flex-col items-center px-4 bg-gray-700 py-1">
             <h3 className="text-[10px] text-gray-400 tracking-widest text-center">
               Version 0.0.4
@@ -441,30 +467,13 @@ function SidebarSec({ showBar }) {
       </div>
 
       {/* Logout Confirmation Modal */}
-      <AlertDialog open={showLogoutModal} onOpenChange={setShowLogoutModal}>
-        <AlertDialogContent className="bg-gray-900 border-gray-700">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-white">Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription className="text-gray-300">
-              You want to logout! This action will end your current session.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel 
-              onClick={handleLogoutCancel}
-              className="bg-gray-700 text-white hover:bg-gray-600 border-gray-600"
-            >
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleLogoutConfirm}
-              className="bg-red-600 hover:bg-red-700 text-white"
-            >
-              Yes, logout!
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <LogoutModal
+        open={showLogoutModal}
+        onOpenChange={setShowLogoutModal}
+        onConfirm={handleLogoutConfirm}
+        onCancel={handleLogoutCancel}
+      />
+  
     </div>
   );
 }

@@ -1,39 +1,115 @@
 import { useEffect, useState } from "react";
 import { units } from "../../../../constants/units";
 import { toast } from "react-toastify";
-import { MdPlaylistAdd, MdDelete } from "react-icons/md";
-function ItemRegisterComponent({ pageName, optionsData, sendToParent , editData}) {
+import { MdPlaylistAdd, MdDelete, MdCloudUpload, MdImage } from "react-icons/md";
+import uploadImageToCloudinary from "../../../../utils/uploadCloudinary";
+
+function ItemRegisterComponent({ pageName, optionsData, sendToParent, editData }) {
+  console.log("editData",editData);
   const [priceLevelRows, setPriceLevelRows] = useState([
-    { priceLevel: "", priceRate: "" },
+    { pricelevel: "", pricerate: "" },
   ]);
   const [roomData, setRoomData] = useState({
     itemName: "",
-  
     foodCategory: "",
     foodType: "",
     unit: "DAY",
     hsn: "",
+    imageUrl: "", // Add image URL field
   });
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+
   useEffect(() => {
-    if (editData) {
-     setRoomData({
-      itemName: editData.itemName,
-    
-      foodCategory: editData.foodCategory,
-      foodType: editData.foodType,
-      unit: editData.unit,
-      hsn: optionsData?.hsn?.find((hsn) => hsn.hsn == editData.hsnCode)?._id,
-     })
     console.log(editData);
-     setPriceLevelRows(editData.priceLevel)
+    console.log("optionsData",optionsData);
+    if (editData) {
+      console.log(editData)
+      setRoomData({
+        itemName: editData. product_name,
+        foodCategory: editData.category,
+        foodType: editData.sub_category,
+        unit: editData.unit,
+        hsn: editData.hsn_code,
+        imageUrl: editData.product_image || "", // Set existing image URL
+      });
+      let updatedPriceLevel = editData.Priceleveles.map((item) => ({
+        pricelevel: item.pricelevel,
+        pricerate: item.pricerate,
+      }))
+      console.log("updatedPriceLevel",updatedPriceLevel)
+      setPriceLevelRows(updatedPriceLevel);
+      
+      // Set image preview for existing data
+      if (editData.imageUrl) {
+        setImagePreview(editData.imageUrl);
+      }
     }
   }, [editData]);
+
+  console.log("roomData",roomData)
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+      if (!allowedTypes.includes(file.type)) {
+        toast.error("Please select a valid image file (JPEG, PNG, WebP)");
+        return;
+      }
+
+      // Validate file size (5MB limit)
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (file.size > maxSize) {
+        toast.error("Image size should be less than 5MB");
+        return;
+      }
+
+      setImageFile(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleImageUpload = async () => {
+    if (!imageFile) {
+      toast.error("Please select an image first");
+      return;
+    }
+
+    setIsUploading(true);
+    
+    try {
+      const imageUrl = await uploadImageToCloudinary(imageFile);
+      setRoomData({ ...roomData, imageUrl });
+      toast.success("Image uploaded successfully");
+      setImageFile(null); // Clear the file after successful upload
+    } catch (error) {
+      console.error("Image upload error:", error);
+      toast.error("Failed to upload image. Please try again.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setImageFile(null);
+    setImagePreview("");
+    setRoomData({ ...roomData, imageUrl: "" });
+  };
 
   const handleAddRow = () => {
     const lastRow = priceLevelRows[priceLevelRows.length - 1];
 
     // Check if fields are filled
-    if (!lastRow?.priceLevel || !lastRow?.priceRate) {
+    if (!lastRow?.pricelevel || !lastRow?.pricerate) {
       toast.error("Add Level name and Rate");
       return;
     }
@@ -41,7 +117,7 @@ function ItemRegisterComponent({ pageName, optionsData, sendToParent , editData}
     // Check for duplicate pricelevel
     const isDuplicate = priceLevelRows
       .slice(0, -1) // exclude the last row being added
-      .some((row) => row.priceLevel === lastRow.c);
+      .some((row) => row.pricelevel === lastRow.pricelevel);
 
     if (isDuplicate) {
       toast.error("This price level already exists");
@@ -49,82 +125,89 @@ function ItemRegisterComponent({ pageName, optionsData, sendToParent , editData}
     }
 
     // Add new row if everything is valid
-    setPriceLevelRows([...priceLevelRows, { priceLevel: "", priceRate: "" }]);
+    setPriceLevelRows([...priceLevelRows, { pricelevel: "", pricerate: "" }]);
   };
 
   const handleLevelChange = (index, value) => {
     console.log(value);
     const updatedRows = [...priceLevelRows];
-    updatedRows[index].priceLevel = value;
+    updatedRows[index].pricelevel = value;
     setPriceLevelRows(updatedRows);
   };
 
   const handleRateChange = (index, value) => {
     const updatedRows = [...priceLevelRows];
-    updatedRows[index].priceRate = value;
+    updatedRows[index].pricerate = value;
     setPriceLevelRows(updatedRows);
   };
 
   const handleDeleteRow = (pricelevelId) => {
     setPriceLevelRows((prev) =>
-      prev.filter((row) => row.priceLevel !== pricelevelId)
+      prev.filter((row) => row.pricelevel !== pricelevelId)
     );
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (name === "roomName") {
-      setRoomData({ ...roomData, roomName: value});
+      setRoomData({ ...roomData, roomName: value });
+    }else if(name === "hsn"){
+      let selectedHsn = optionsData?.hsn?.find((hsn) => hsn.hsn== value)
+      setRoomData({ ...roomData, cgst: selectedHsn?.cgstRate, sgst: selectedHsn?.sgstUtgstRate, igst: selectedHsn?.igstRate, hsn: selectedHsn?.hsn });
     } else {
       setRoomData({ ...roomData, [name]: value });
     }
+  }; 
+
+  const isNonEmptyString = (value) =>
+    typeof value === "string" && value.trim() !== "";
+
+  const validDateFormData = () => {
+    if (!isNonEmptyString(roomData?.itemName)) {
+      toast.error("Item name is required");
+      return false;
+    }
+
+    if (!isNonEmptyString(roomData?.foodCategory)) {
+      toast.error("Food category is required");
+      return false;
+    }
+
+    if (!isNonEmptyString(roomData?.foodType)) {
+      toast.error("Food type is required");
+      return false;
+    }
+
+    if (!isNonEmptyString(roomData?.unit)) {
+      toast.error("Unit is required");
+      return false;
+    }
+
+    if (!isNonEmptyString(roomData?.hsn)) {
+      toast.error("HSN is required");
+      return false;
+    }
+
+    // Check if image is being uploaded
+    if (imageFile && !roomData.imageUrl) {
+      toast.error("Please upload the selected image before submitting");
+      return false;
+    }
+
+    return true; // All fields valid
   };
-
-const isNonEmptyString = (value) =>
-  typeof value === "string" && value.trim() !== "";
-
-const validDateFormData = () => {
-  if (!isNonEmptyString(roomData?.itemName)) {
-    toast.error("Room name is required");
-    return false;
-  }
-
- 
-
-  if (!isNonEmptyString(roomData?.foodCategory)) {
-    toast.error("Bed type is required");
-    return false;
-  }
-
-  if (!isNonEmptyString(roomData?.foodType)) {
-    toast.error("Room floor is required");
-    return false;
-  }
-
-  if (!isNonEmptyString(roomData?.unit)) {
-    toast.error("Unit is required");
-    return false;
-  }
-
-  if (!isNonEmptyString(roomData?.hsn)) {
-    toast.error("HSN is required");
-    return false;
-  }
-  return true; // All fields valid
-};
-
 
   const submitHandler = () => {
     if (!validDateFormData(roomData)) {
       return;
     }
     let newPriceLevelRows = priceLevelRows.filter(
-      (item) => item.priceLevel !== ""
+      (item) => item.pricelevel !== ""
     );
     console.log("newPriceLevelRows", newPriceLevelRows);
     sendToParent(roomData, newPriceLevelRows);
   };
-  
+
   return (
     <div className="flex-auto px-4 lg:px-10 py-10 pt-0">
       <div>
@@ -151,17 +234,78 @@ const validDateFormData = () => {
             </div>
           </div>
 
-        
+          {/* Image Upload Section */}
+          <div className="w-full lg:w-6/12 px-4">
+            <div className="relative w-full mb-3">
+              <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                Item Image
+              </label>
+              
+              {/* Image Preview */}
+              {imagePreview && (
+                <div className="mb-3 relative inline-block">
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    className="w-24 h-24 object-cover rounded border shadow"
+                  />
+                  <button
+                    onClick={handleRemoveImage}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                    type="button"
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
+
+              {/* File Input */}
+              <div className="flex items-center space-x-2">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="hidden"
+                  id="image-upload"
+                />
+                <label
+                  htmlFor="image-upload"
+                  className="flex items-center px-3 py-2 bg-gray-100 text-gray-700 rounded cursor-pointer hover:bg-gray-200 text-sm"
+                >
+                  <MdImage className="mr-2" />
+                  Choose Image
+                </label>
+                
+                {imageFile && !roomData.imageUrl && (
+                  <button
+                    onClick={handleImageUpload}
+                    disabled={isUploading}
+                    className="flex items-center px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-blue-300 text-sm"
+                    type="button"
+                  >
+                    <MdCloudUpload className="mr-2" />
+                    {isUploading ? "Uploading..." : "Upload"}
+                  </button>
+                )}
+              </div>
+              
+              {roomData.imageUrl && (
+                <p className="text-green-600 text-xs mt-1">
+                  ✓ Image uploaded successfully
+                </p>
+              )}
+            </div>
+          </div>
+
           <div className="w-full lg:w-6/12 px-4">
             <div className="relative w-full mb-3">
               <label
                 className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
                 htmlFor="grid-password"
               >
-               food category
+                Food Category
               </label>
               <select
-                type="text"
                 value={roomData.foodCategory}
                 className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                 name="foodCategory"
@@ -176,13 +320,14 @@ const validDateFormData = () => {
               </select>
             </div>
           </div>
+
           <div className="w-full lg:w-6/12 px-4">
             <div className="relative w-full mb-3">
               <label
                 className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
                 htmlFor="grid-password"
               >
-                food type
+                Food Type
               </label>
               <select
                 type="text"
@@ -200,6 +345,7 @@ const validDateFormData = () => {
               </select>
             </div>
           </div>
+
           <div className="w-full lg:w-6/12 px-4">
             <div className="relative w-full mb-3">
               <label
@@ -224,6 +370,7 @@ const validDateFormData = () => {
               </select>
             </div>
           </div>
+
           <div className="w-full lg:w-6/12 px-4">
             <div className="relative w-full mb-3">
               <label
@@ -241,7 +388,7 @@ const validDateFormData = () => {
               >
                 <option value="">Select a hsn</option>
                 {optionsData?.hsn?.map((el, index) => (
-                  <option key={index} value={el?._id}>
+                  <option key={index} value={el?.hsn }>
                     {el?.hsn}
                   </option>
                 ))}
@@ -249,16 +396,15 @@ const validDateFormData = () => {
             </div>
           </div>
         </div>
+
         {/* Price Level and Location Tabs */}
-        {/* <div className={` ${loading && "opacity-50 pointer-events-none "} `}> */}
         <div className="opacity-50 pointer-events-none?">
-          <div className="relative flex flex-col min-w-0 break-words w-full  pb-3 rounded-lg bg-blueGray-100 border-0">
+          <div className="relative flex flex-col min-w-0 break-words w-full pb-3 rounded-lg bg-blueGray-100 border-0">
             <div className="flex start mx-10 ">
-              <div className="mt-[10px]  border-b border-solid border-[#0066ff43]  ">
+              <div className="mt-[10px] border-b border-solid border-[#0066ff43]">
                 <button
                   type="button"
-                  // onClick={() => setTab("priceLevel")}
-                  className="y-2 px-5 mr-10   text-[16px] leading-7 text-headingColor font-semibold"
+                  className="y-2 px-5 mr-10 text-[16px] leading-7 text-headingColor font-semibold"
                 >
                   Price Level
                 </button>
@@ -267,7 +413,6 @@ const validDateFormData = () => {
 
             {/* Tab Content */}
             <div className="flex-auto px-4 lg:px-10 pt-0">
-              {/* {tab === "priceLevel" && ( */}
               <div className="container mx-auto mt-2">
                 <table className="table-fixed w-full bg-white shadow-md">
                   <thead className="bg-[#EFF6FF] border">
@@ -284,7 +429,7 @@ const validDateFormData = () => {
                         {/* Level Name Dropdown */}
                         <td className="px-4 py-2 border-r">
                           <select
-                            value={row?.priceLevel}
+                            value={row?.pricelevel}
                             onChange={(e) =>
                               handleLevelChange(index, e.target.value)
                             }
@@ -307,7 +452,7 @@ const validDateFormData = () => {
                         <td className="px-4 border-r">
                           <input
                             type="number"
-                            value={row?.priceRate}
+                            value={row?.pricerate}
                             onChange={(e) =>
                               handleRateChange(index, e.target.value)
                             }
@@ -322,7 +467,7 @@ const validDateFormData = () => {
                         {/* Delete Button */}
                         <td className="px-4 sm:px-10 py-2">
                           <button
-                            onClick={() => handleDeleteRow(row?.priceLevel)}
+                            onClick={() => handleDeleteRow(row?.pricelevel)}
                             className="text-red-600 hover:text-red-800"
                           >
                             <MdDelete />
@@ -335,7 +480,7 @@ const validDateFormData = () => {
 
                 <button
                   onClick={handleAddRow}
-                  className="mt-4 px-3  py-1 bg-green-500 text-white rounded"
+                  className="mt-4 px-3 py-1 bg-green-500 text-white rounded"
                 >
                   <MdPlaylistAdd />
                 </button>
@@ -343,13 +488,15 @@ const validDateFormData = () => {
             </div>
           </div>
         </div>
+
         <div className="flex justify-end">
           <button
             onClick={submitHandler}
-            className="bg-pink-500 mt-4 ml-4 w-20 text-white active:bg-pink-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none mr-1 ease-linear transition-all duration-150 transform hover:scale-105"
+            disabled={isUploading}
+            className="bg-pink-500 mt-4 ml-4 w-20 text-white active:bg-pink-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none mr-1 ease-linear transition-all duration-150 transform hover:scale-105 disabled:bg-pink-300"
             type="button"
           >
-           {pageName == "Food Item Registration" ? "Add" : "Update"} 
+            {pageName == "Food item Registration" ? "Add" : "Update"}
           </button>
         </div>
       </div>

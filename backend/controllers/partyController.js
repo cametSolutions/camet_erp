@@ -10,8 +10,14 @@ import TallyData from "../models/TallyData.js";
 export const PartyList = async (req, res) => {
   const { cmp_id } = req.params;
   const { owner: Primary_user_id, sUserId: secUserId } = req;
-  const { voucher, page = 1, limit = 20, search = "" } = req.query;
-
+  const {
+    voucher,
+    page = 1,
+    limit = 20,
+    search = "",
+    isAgent = false,
+  } = req.query;
+  console.log(isAgent);
   try {
     const pageNum = parseInt(page);
     const pageSize = parseInt(limit);
@@ -36,19 +42,21 @@ export const PartyList = async (req, res) => {
 
     // Add subgroup filter early to reduce document set
     if (voucher === "sale" && configuration?.selectedSubGroups?.length > 0) {
-      const subGroupObjectIds = configuration.selectedSubGroups.map(id => 
-        typeof id === 'string' ? new mongoose.Types.ObjectId(id) : id
+      const subGroupObjectIds = configuration.selectedSubGroups.map((id) =>
+        typeof id === "string" ? new mongoose.Types.ObjectId(id) : id
       );
       baseQuery.subGroup = { $in: subGroupObjectIds };
+    }
+
+    if (isAgent === "true" || isAgent === true) {
+      console.log("Filtering by Hotel Agent");
+      baseQuery.isHotelAgent = true;
     }
 
     // Build search query
     if (search) {
       const regex = new RegExp(search, "i");
-      baseQuery.$or = [
-        { partyName: regex },
-        { mobileNumber: regex }
-      ];
+      baseQuery.$or = [{ partyName: regex }, { mobileNumber: regex }];
     }
 
     // OPTIMIZATION 1: Use facet for count and data in single aggregation
@@ -58,12 +66,12 @@ export const PartyList = async (req, res) => {
         $facet: {
           // Get total count
           // totalCount: [{ $count: "count" }],
-          
+
           // Get paginated data with lookups
           paginatedResults: [
             { $skip: skip },
             { $limit: pageSize },
-            
+
             // OPTIMIZATION 2: Lookup only after pagination
             {
               $lookup: {
@@ -72,8 +80,8 @@ export const PartyList = async (req, res) => {
                 foreignField: "_id",
                 as: "accountGroupData",
                 pipeline: [
-                  { $project: { accountGroup: 1, _id: 1 } } // Only select needed fields
-                ]
+                  { $project: { accountGroup: 1, _id: 1 } }, // Only select needed fields
+                ],
               },
             },
             {
@@ -83,16 +91,17 @@ export const PartyList = async (req, res) => {
                 foreignField: "_id",
                 as: "subGroupData",
                 pipeline: [
-                  { $project: { subGroup: 1, _id: 1, subGroup_id: 1 } }
-                ]
+                  { $project: { subGroup: 1, _id: 1, subGroup_id: 1 } },
+                ],
               },
             },
-            
+
             // OPTIMIZATION 3: Simplified projection
             {
               $project: {
                 _id: 1,
                 partyName: 1,
+                partyType: 1 , 
                 party_master_id: 1,
                 billingAddress: 1,
                 shippingAddress: 1,
@@ -104,16 +113,20 @@ export const PartyList = async (req, res) => {
                 state: 1,
                 accountGroup: 1,
                 subGroup: 1,
-                accountGroupName: { $arrayElemAt: ["$accountGroupData.accountGroup", 0] },
+                accountGroupName: {
+                  $arrayElemAt: ["$accountGroupData.accountGroup", 0],
+                },
                 accountGroup_id: { $arrayElemAt: ["$accountGroupData._id", 0] },
                 subGroupName: { $arrayElemAt: ["$subGroupData.subGroup", 0] },
                 subGroup_id: { $arrayElemAt: ["$subGroupData._id", 0] },
-                subGroup_tally_id: { $arrayElemAt: ["$subGroupData.subGroup_id", 0] },
+                subGroup_tally_id: {
+                  $arrayElemAt: ["$subGroupData.subGroup_id", 0],
+                },
               },
-            }
-          ]
-        }
-      }
+            },
+          ],
+        },
+      },
     ];
 
     const [facetResult] = await partyModel.aggregate(facetPipeline);
@@ -122,7 +135,7 @@ export const PartyList = async (req, res) => {
 
     // OPTIMIZATION 4: Batch outstanding data query with better indexing
     let partyListWithOutstanding = partyList;
-    
+
     if (partyList.length > 0) {
       // Determine source match criteria
       let sourceMatch = {};
@@ -134,8 +147,8 @@ export const PartyList = async (req, res) => {
         sourceMatch = { source: "opening" };
       }
 
-      const partyIds = partyList.map(party => party._id);
-      
+      const partyIds = partyList.map((party) => party._id);
+
       // OPTIMIZATION 5: Optimized outstanding data aggregation
       const partyOutstandingData = await TallyData.aggregate([
         {
@@ -153,19 +166,19 @@ export const PartyList = async (req, res) => {
             totalOutstanding: { $sum: "$bill_pending_amt" },
             latestBillDate: { $max: "$bill_date" },
           },
-        }
+        },
       ]);
 
       // OPTIMIZATION 6: Use Map for O(1) lookup instead of find()
       const outstandingMap = new Map();
-      partyOutstandingData.forEach(item => {
+      partyOutstandingData.forEach((item) => {
         outstandingMap.set(String(item._id), {
           totalOutstanding: item.totalOutstanding,
-          latestBillDate: item.latestBillDate
+          latestBillDate: item.latestBillDate,
         });
       });
 
-      partyListWithOutstanding = partyList.map(party => {
+      partyListWithOutstanding = partyList.map((party) => {
         const outstandingData = outstandingMap.get(String(party._id));
         return {
           ...party,
@@ -186,7 +199,6 @@ export const PartyList = async (req, res) => {
         // totalPages: Math.ceil(totalCount / pageSize),
       },
     });
-
   } catch (error) {
     console.error("Error in PartyList:", error);
     res.status(500).json({ success: false, message: "Internal server error" });
@@ -255,10 +267,10 @@ export const addParty = async (req, res) => {
     // Get the newly created party with lookups (same as PartyList,because we are also creating party directly form voucher)
     if (result) {
       const aggregationPipeline = [
-        { 
-          $match: { 
-            _id: new mongoose.Types.ObjectId(result._id) 
-          } 
+        {
+          $match: {
+            _id: new mongoose.Types.ObjectId(result._id),
+          },
         },
 
         // Lookup for accountGroup
@@ -286,11 +298,11 @@ export const addParty = async (req, res) => {
             as: "subGroupData",
           },
         },
-        { 
-          $unwind: { 
-            path: "$subGroupData", 
-            preserveNullAndEmptyArrays: true 
-          } 
+        {
+          $unwind: {
+            path: "$subGroupData",
+            preserveNullAndEmptyArrays: true,
+          },
         },
 
         // Project to match PartyList format
@@ -318,12 +330,12 @@ export const addParty = async (req, res) => {
             subGroup_id: "$subGroupData._id",
             subGroup_tally_id: "$subGroupData.subGroup_id",
           },
-        }
+        },
       ];
 
       // Execute the aggregation to get party with lookups
       const partyWithLookups = await partyModel.aggregate(aggregationPipeline);
-      
+
       const newParty = partyWithLookups[0] || result;
 
       return res.status(200).json({

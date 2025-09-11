@@ -21,6 +21,7 @@ import {
     addPartyOpening,
     getPartyOpening,
     editPartyOpening,
+    getAllSubDetailsBasedUnder,
     fetchDashboardCounts,
 
 } from "../controllers/secondaryUserController.js"
@@ -53,13 +54,19 @@ import { addOrganizations, editOrg, getOrganizations } from '../controllers/orga
 import { addParty, addSubGroup, deleteParty, deleteSubGroup, editParty, editSubGroup, getSinglePartyDetails, getSubGroup, PartyList } from '../controllers/partyController.js';
 import { addBankEntry, addCash, editBankEntry, editCash, findSourceBalance, findSourceDetails, findSourceTransactions, getBankEntryDetails, getCashDetails } from '../controllers/bankAndCashController.js';
 import { addAditionalCharge, deleteAdditionalCharge, EditAditionalCharge, fetchAdditionalCharges, fetchSingleAdditionalCharge } from '../controllers/additionalChargeContoller.js';
-import { createVoucherSeries, getSeriesByVoucher, deleteVoucherSeriesById, editVoucherSeriesById, makeTheSeriesAsCurrentlySelected } from '../controllers/voucherSeriesController.js';
+import { createVoucherSeries, getSeriesByVoucher, deleteVoucherSeriesById, editVoucherSeriesById, makeTheSeriesAsCurrentlySelected, } from '../controllers/voucherSeriesController.js';
 
 //hotel controller
 import {saveAdditionalPax , getAdditionalPax ,updateAdditionalPax , deleteAdditionalPax,saveVisitOfPurpose,getVisitOfPurpose,
     updateVisitOfPurpose,deleteVisitOfPurpose,saveIdProof,getIdProof,updateIdProof , deleteIdProof, saveFoodPlan , getFoodPlan
-    ,updateFoodPlan,deleteFoodPlan,addRoom,getRooms,editRoom ,deleteRoom,getAllRooms,roomBooking} from '../controllers/hotelController.js'
- import {addItem,getItems} from '../controllers/restaurantController.js'
+    ,updateFoodPlan,deleteFoodPlan,addRoom,getRooms,editRoom ,deleteRoom,getAllRooms,roomBooking,getBookings,deleteBooking,updateBooking,
+fetchAdvanceDetails,getAllRoomsWithStatusForDate,updateRoomStatus,getDateBasedRoomsWithStatus,checkoutWithArrayOfData,
+fetchOutStandingAndFoodData,convertCheckOutToSale} from '../controllers/hotelController.js'
+import {addItem,getAllItems,getItems,getCategories,deleteItem,updateItem,generateKot,getKot,updateKotStatus,editKot,
+    getRoomDataForRestaurant,updateKotPayment,getPaymentType,saveTableNumber,getSalePrintData,updateTable,getTables,deleteTable,
+    updateTableStatus,getKotDataByTable } from '../controllers/restaurantController.js'
+
+
 router.post('/login',login)
 router.post('/sendOtp',sendOtp)
 router.post('/submitOtp',submitOtp)
@@ -118,6 +125,7 @@ router.get('/getPurchaseDetails/:id', authSecondary, secondaryIsBlocked, getPurc
 router.post('/editsales/:id', authSecondary, secondaryIsBlocked, editSale)
 router.post('/editvanSale/:id', authSecondary, secondaryIsBlocked, editSale)
 router.get("/getAllSubDetails/:orgId", authSecondary, secondaryIsBlocked, getAllSubDetails)
+router.get("/getAllSubDetailsBasedUnder/:orgId", authSecondary, secondaryIsBlocked, getAllSubDetailsBasedUnder)
 router.get("/fetchGodowns/:cmp_id", authSecondary, secondaryIsBlocked, fetchGodowns)
 router.post("/createStockTransfer", authSecondary, secondaryIsBlocked, createStockTransfer)
 router.get("/getStockTransferDetails/:id", authSecondary, secondaryIsBlocked, getStockTransferDetails)
@@ -303,7 +311,7 @@ router.post('/addAccountGroupIdToOutstanding', addAccountGroupIdToOutstanding)
 //// Hostel routes
 router.post('/saveAdditionalPax/:cmp_id',authSecondary,saveAdditionalPax)
 router.get('/getAdditionalPax/:cmp_id',authSecondary,getAdditionalPax)
-router.put('/updateAdditionalPax/:cmp_id',authSecondary,updateAdditionalPax)
+router.put('/updateAdditionalPax',authSecondary,updateAdditionalPax)
 router.delete('/deleteAdditionalPax/:cmp_id/:id',authSecondary,deleteAdditionalPax)
 router.post('/saveVisitOfPurpose/:cmp_id',authSecondary,saveVisitOfPurpose)
 router.get('/getVisitOfPurpose/:cmp_id',authSecondary,getVisitOfPurpose)
@@ -324,7 +332,40 @@ router.delete('/deleteRoom/:id',authSecondary,secondaryIsBlocked,deleteRoom)
 router.get('/getAllRooms/:cmp_id',authSecondary,secondaryIsBlocked,getAllRooms)
 router.post('/roomBooking/:cmp_id',authSecondary,secondaryIsBlocked,roomBooking)
 router.post('/addItem/:cmp_id', authSecondary,addItem)
-router.get('/getItems/:cmp_id', authSecondary,getItems)
+router.get('/getAllItems/:cmp_id', authSecondary,getAllItems)
+router.get('/categories/:cpm_id',authSecondary,getCategories)
+router.post('/saveData/:cmp_id',authSecondary,secondaryIsBlocked,roomBooking)
+router.get('/getBookings/:cmp_id',authSecondary,secondaryIsBlocked,getBookings)
+router.delete('/deleteBooking/:id',authSecondary,secondaryIsBlocked,deleteBooking)
+router.put('/updateRoomBooking/:id',authSecondary,secondaryIsBlocked,updateBooking)
+router.get('/getBookingAdvanceData/:id',authSecondary,secondaryIsBlocked,fetchAdvanceDetails)
+router.post('/generateKOT/:cmp_id',authSecondary,secondaryIsBlocked,generateKot)
+router.post('/editKOT/:cmp_id/:kotId',authSecondary,secondaryIsBlocked,editKot)
 
+router.post('/editItem/:cmp_id/:id',authSecondary,updateItem)
+router.get('/getItems/:cmp_id',authSecondary,getItems)
+router.delete('/deleteItem/:id',authSecondary,deleteItem)
+router.get('/getKotData/:cmp_id',authSecondary,secondaryIsBlocked,getKot)
+router.put('/updateKotStatus/:cmp_id',authSecondary,secondaryIsBlocked,updateKotStatus)
+router.get('/getRoomBasedOnBooking/:cmp_id',authSecondary,secondaryIsBlocked,getRoomDataForRestaurant)
+router.put("/updateKotPayment/:cmp_id",authSecondary,secondaryIsBlocked,updateKotPayment)
+router.get('/getAllRoomsWithStatus/:cmp_id',authSecondary,getAllRoomsWithStatusForDate)
+router.put("/updateStatus/:id", authSecondary, updateRoomStatus);
+router.get("/getPaymentType/:cmp_id",authSecondary,secondaryIsBlocked, getPaymentType)
+router.get("/getSeriesByVoucherForSaleAndReceipt/:cmp_id",authSecondary,secondaryIsBlocked)
+router.post("/Table/:cmp_id",authSecondary, saveTableNumber)
+router.put('/updateTable/:id', authSecondary,updateTable);
+router.get('/getTable/:cmp_id',authSecondary, getTables);
+
+router.delete('/deleteTable/:id', authSecondary,deleteTable);
+
+router.get("/getSalePrintData/:cmp_id/:kotId",authSecondary,secondaryIsBlocked,getSalePrintData)
+router.put('/updateTableStatus/:cmp_id',authSecondary,updateTableStatus )
+router.get('/getKotDataByTable/:cmp_id',authSecondary,getKotDataByTable )
+router.get('/getDateBasedRoomsWithStatus/:cmp_id',authSecondary,getDateBasedRoomsWithStatus)
+router.put('/checkOutWithArray/:cmp_id',authSecondary,checkoutWithArrayOfData)
+router.post('/fetchOutStandingAndFoodData',authSecondary,fetchOutStandingAndFoodData)
+router.post('/convertCheckOutToSale/:cmp_id',authSecondary,convertCheckOutToSale)
+// Route to get detailed booking information for a specific room and date
 
 export default router

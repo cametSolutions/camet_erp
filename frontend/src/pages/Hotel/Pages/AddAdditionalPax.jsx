@@ -39,11 +39,11 @@ function AddAdditionalPax() {
       let res;
       if (isEdit) {
         res = await api.put(
-          `/api/sUsers/updateAdditionalPax/${organization._id}`,
+          `/api/sUsers/updateAdditionalPax`,
           {
             additionalPaxName: value,
             amount: price,
-            additionalPaxId: id,
+            id: id,
 
           },
           { withCredentials: true }

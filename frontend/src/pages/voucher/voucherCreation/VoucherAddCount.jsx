@@ -399,7 +399,9 @@ function VoucherAddCount() {
           defaultPriceLevel = priceLevels[0];
         }
 
-        dispatch(setPriceLevel(defaultPriceLevel));
+        if (selectedPriceLevelFromRedux === "") {
+          dispatch(setPriceLevel(defaultPriceLevel));
+        }
 
         setPricesLoaded(true);
         setLoader(false);

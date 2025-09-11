@@ -1,6 +1,10 @@
 import mongoose, { set } from "mongoose";
 
+//// this party schema is used for managing party-related information in the system
+///// also for storing cash details and bank details since both are considered as parties
+
 const partySchema = new mongoose.Schema({
+  /// common fields
   Primary_user_id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "PrimaryUser",
@@ -15,6 +19,14 @@ const partySchema = new mongoose.Schema({
     ref: "Organization",
     required: true,
   },
+  // Account type and identification
+  partyType: {
+    type: String,
+    required: true,
+    default:"party",
+    enum: ["party", "bank", "cash"],
+    index: true,
+  },
   accountGroup: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "AccountGroup",
@@ -25,7 +37,19 @@ const partySchema = new mongoose.Schema({
     ref: "SubGroup",
     set: (v) => (v === "" || v === null ? null : v), // Allow subGroup to be optional
   },
-  partyName: { type: String, required: true },
+  groupName: { type: String }, // bank_grpname/cash_grpname
+  childGroupName: { type: String }, // bank_childgrpname/cash_childgrpname
+  // Opening balance
+  openingBalanceAmount: {
+    type: Number,
+    default: 0,
+  }, // Unified opening balance field
+  openingBalanceType: {
+    type: String,
+  },
+
+  // All fields available for all party types (Party/Bank/Cash)
+  partyName: { type: String, required: true }, // Unified name field (partyName/bank_ledname/cash_ledname)
   mobileNumber: { type: String },
   country: { type: String },
   state: { type: String },
@@ -35,14 +59,24 @@ const partySchema = new mongoose.Schema({
   pricelevel: { type: String },
   state_reference: { type: String },
   pincode: { type: String },
-  party_master_id: { type: String, required: true },
+  party_master_id: { type: String, required: true }, // Unified ID field (party_master_id/bank_id/cash_id)
   panNo: { type: String },
   billingAddress: { type: String },
   shippingAddress: { type: String },
   creditPeriod: { type: String },
   creditLimit: { type: String },
-  openingBalanceType: { type: String },
-  openingBalanceAmount: { type: Number },
+  isHotelAgent: { type: Boolean, default: false },
+
+  // Bank-specific fields (used when partyType = 'Bank')
+  acholder_name: { type: String },
+  ac_no: { type: String },
+  ifsc: { type: String },
+  swift_code: { type: String },
+  bank_name: { type: String },
+  branch: { type: String },
+  upi_id: { type: String },
+  bsr_code: { type: String },
+  client_code: { type: String},
 });
 
 // / ============= CRITICAL PARTY INDEXES =============
@@ -104,6 +138,7 @@ partySchema.index(
 partySchema.index(
   {
     cmp_id: 1,
+    partyType: 1,
     accountGroup: 1,
   },
   {
@@ -124,5 +159,52 @@ partySchema.index(
     unique: true, // Assuming party_master_id should be unique per company
   }
 );
+
+// 6. **PARTY TYPE MAIN INDEX** - Most important for fetching by type
+// Covers: Get all Banks, Cash, or Parties for a company/user
+partySchema.index(
+  {
+    cmp_id: 1,
+    Primary_user_id: 1,
+    partyType: 1,
+  },
+  {
+    name: "party_type_main_idx",
+    background: true,
+  }
+);
+
+// 7. **PARTY TYPE + SUBGROUP INDEX** - For filtered type queries
+// Covers: Get Banks of specific account groups, etc.
+partySchema.index(
+  {
+    cmp_id: 1,
+    Primary_user_id: 1,
+    partyType: 1,
+    subGroup: 1,
+  },
+  {
+    name: "party_type_subgroup_idx",
+    background: true,
+  }
+);
+
+
+// 8.**COMBINED PARTY FILTER INDEX** - For complex filtering
+// Covers: Active parties by type with account group
+partySchema.index(
+  {
+    cmp_id: 1,
+    Primary_user_id: 1,
+    partyType: 1,
+    accountGroup: 1,
+    subGroup: 1,
+  },
+  {
+    name: "party_full_filter_idx",
+    background: true,
+  }
+);
+
 
 export default mongoose.model("Party", partySchema);
