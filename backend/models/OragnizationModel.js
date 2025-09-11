@@ -135,6 +135,7 @@ const organizationSchema = new mongoose.Schema(
             letterHeadUrl: { type: String, default: null },
             letterHeadPublicId: { type: String, default: null },
             letterHeadUploadedAt: { type: Date, default: null },
+            showUnit: { type: Boolean, default: false },
           },
         ],
 
