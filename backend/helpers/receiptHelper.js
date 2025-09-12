@@ -211,7 +211,7 @@ export const createOutstandingWithAdvanceAmount = async (
         { new: true, session }
       );
 
-      console.log(`Merged advance for ${sourceName}:`, tallyUpdate);
+      // console.log(`Merged advance for ${sourceName}:`, tallyUpdate);
       return tallyUpdate;
     } else {
       // Create new advance

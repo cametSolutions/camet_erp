@@ -24,7 +24,7 @@ setChecked(false)
   };
 
   return (
-    <div className="flex items-center space-x-3 bg-white shadow-lg px-4 py-2.5 rounded-md">
+    <div className="flex items-center space-x-3 bg-white shadow-lg px-4 py-2.5 rounded-md border border-gray-300">
       {/* search icon */}
       <CiSearch size={20} className="text-gray-500" />
 
