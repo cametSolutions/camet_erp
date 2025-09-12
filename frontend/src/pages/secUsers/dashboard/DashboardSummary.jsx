@@ -108,6 +108,12 @@ const DashboardSummary = () => {
           icon: icons.saleOrders,
           to: "/sUsers/orderSummary",
         },
+          {
+          title: "Hotel Summary,",
+          value: 0,
+          icon: icons.saleOrders,
+          to: "/sUsers/SummaryDashboard",
+        },
       ]);
     // }
   }, []);

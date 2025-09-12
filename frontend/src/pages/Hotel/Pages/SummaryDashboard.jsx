@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import api from "@/api/api";// Adjust the import path according to your project structure
+import GraphHotelSummary from '../../Hotel/Pages/GraphHotelSummary'
 import { 
   Calendar, Hotel, UtensilsCrossed, TrendingUp, DollarSign, CreditCard, 
   Banknote, Wallet, PiggyBank, Receipt, BarChart3, ArrowUpRight, 
@@ -461,8 +462,12 @@ const SummaryDashboard = () => {
             </div>
           </div>
 
+            <div className="mb-6">
+            <GraphHotelSummary dashboardData={dashboardData} selectedDate={selectedDate} />
+          </div>
+
           {/* Analytics and Quick Stats Row */}
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-6">
+          {/* <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-6">
             <div className="bg-white rounded-lg p-3 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300 group">
               <div className="flex items-center gap-2">
                 <div className="p-2 bg-green-100 rounded-lg group-hover:bg-green-200 transition-colors">
@@ -542,7 +547,7 @@ const SummaryDashboard = () => {
                 </div>
               </div>
             </div>
-          </div>
+          </div> */}
         </>
       )}
     </div>
