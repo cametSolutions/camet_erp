@@ -14,6 +14,7 @@ import {
   processAdvancePayments,
   processAdvanceReceipts,
 } from "./receiptHelper.js";
+
 import settlementModel from "../models/settlementModel.js";
 
 export const checkForNumberExistence = async (
@@ -1101,8 +1102,6 @@ export const updateOutstandingBalance = async ({
   }
 };
 
-
-
 export const saveSettlementData = async (
   voucherNumber,
   voucherId,
@@ -1145,9 +1144,6 @@ export const saveSettlementData = async (
     throw error;
   }
 };
-
-
-
 
 export const revertSettlementData = async (
   party,
