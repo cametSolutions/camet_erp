@@ -11,7 +11,7 @@ import {
 import TitleDiv from "../../../../components/common/TitleDiv";
 import SettingsCard from "../../../../components/common/SettingsCard";
 import api from "../../../../api/api";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { useSelector, useDispatch } from "react-redux";
 import { useEffect, useState } from "react";
 import { updateConfiguration } from "../../../../../slices/secSelectedOrgSlice";

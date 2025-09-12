@@ -6,12 +6,12 @@ import {
   updatePurchaseNumber,
   revertPurchaseStockUpdates,
   removeNewBatchCreatedByThisPurchase,
+  updateOutstandingBalance,
 } from "../helpers/purchaseHelper.js";
 import {
   processSaleItems as processPurchaseItems,
   revertSettlementData,
   saveSettlementData,
-  updateOutstandingBalance,
   updateTallyData,
 } from "../helpers/salesHelper.js";
 import { checkForNumberExistence } from "../helpers/secondaryHelper.js";
@@ -22,6 +22,7 @@ import {
   generateVoucherNumber,
   getSeriesDetailsById,
 } from "../helpers/voucherHelper.js";
+import settlementModel from "../models/settlementModel.js";
 
 // @desc create purchase
 // route GET/api/sUsers/createPurchase
@@ -32,12 +33,9 @@ export const createPurchase = async (req, res) => {
 
   try {
     const {
-      selectedGodownId,
-      selectedGodownName,
       orgId,
       party,
       items,
-      despatchDetails,
       additionalChargesFromRedux,
       finalAmount: lastAmount,
       selectedDate,
@@ -100,20 +98,6 @@ export const createPurchase = async (req, res) => {
       purchase_id
     );
 
-    ///save settlement data
-    await saveSettlementData(
-      party,
-      orgId,
-      "normal purchase",
-      "purchase",
-      purchaseNumber,
-      result._id,
-      lastAmount,
-      result?.createdAt,
-      result?.party?.partyName,
-      session
-    );
-
     await updateTallyData(
       orgId,
       purchaseNumber,
@@ -168,7 +152,7 @@ export const editPurchase = async (req, res) => {
       additionalChargesFromRedux,
       finalAmount: lastAmount,
       selectedDate,
-      note
+      note,
     } = req.body;
 
     let { purchaseNumber, series_id, usedSeriesNumber } = req.body;
@@ -204,6 +188,10 @@ export const editPurchase = async (req, res) => {
     // Revert existing stock updates
     await removeNewBatchCreatedByThisPurchase(existingPurchase, session);
     await revertPurchaseStockUpdates(existingPurchase.items, session);
+
+    /// delete  all the settlements
+    await settlementModel.deleteMany({ voucherId: purchaseId }, { session });
+
     await handlePurchaseStockUpdates(
       items,
       session,
@@ -238,55 +226,41 @@ export const editPurchase = async (req, res) => {
       session,
     });
 
-    /// edit settlement data
-
-    /// revert it
-    await revertSettlementData(
-      existingPurchase?.party,
-      orgId,
-      existingPurchase?.purchaseNumber,
-      existingPurchase?._id.toString(),
-      session
-    );
-
-    /// recreate the settlement data
-
-    ///save settlement data
-    await saveSettlementData(
-      party,
-      orgId,
-      "normal purchase",
-      "purchase",
-      updateData?.purchaseNumber,
-      purchaseId,
-      lastAmount,
-      updateData?.createdAt,
-      updateData?.party?.partyName,
-      session
-    );
-
     //// edit outstanding
     const secondaryUser = await secondaryUserModel
       .findById(req.sUserId)
       .session(session);
     const secondaryMobile = secondaryUser?.mobile;
 
-    const outstandingResult = await updateOutstandingBalance({
-      existingVoucher: existingPurchase,
-      newVoucherData: {
-        paymentSplittingData: {},
+    if (party?.partyType === "party") {
+      const outstandingResult = await updateOutstandingBalance({
+        existingVoucher: existingPurchase,
+        valueToUpdateInOutstanding: lastAmount,
+        orgId,
+        voucherNumber: purchaseNumber,
+        party,
+        session,
+        createdBy: req.owner,
+        transactionType: "purchase",
+        secondaryMobile,
+        selectedDate,
+        classification: "Cr",
+      });
+    } else {
+      ///save settlement data
+      await saveSettlementData(
+        purchaseNumber,
+        series_id,
+        "Purchase",
+        "CreditNote",
         lastAmount,
-      },
-      orgId,
-      voucherNumber: purchaseNumber,
-      party,
-      session,
-      createdBy: req.owner,
-      transactionType: "purchase",
-      secondaryMobile,
-      selectedDate,
-      classification: "Cr",
-    });
+        party,
+        orgId,
+        existingPurchase?.Primary_user_id,
+        selectedDate,
+        session
+      );
+    }
 
     await session.commitTransaction();
     session.endSession();

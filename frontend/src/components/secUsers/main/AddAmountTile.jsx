@@ -4,7 +4,7 @@
 import { IoMdAdd } from "react-icons/io";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 function AddAmountTile({ process = "add" }) {
   const navigate = useNavigate();
@@ -21,7 +21,7 @@ function AddAmountTile({ process = "add" }) {
       navigate(`/sUsers/${voucherType}/addAmount/${party.party_master_id}`);
     } else if (process == "edit") {
       navigate(
-        `/sUsers/${voucherType}/edit/addAmount/${party.party_master_id}`
+        `/sUsers/${voucherType}/editAmount/${party.party_master_id}`
       );
     }
   };
@@ -74,7 +74,7 @@ function AddAmountTile({ process = "add" }) {
             </p>
             <p className="text-xs md:text-md font-semibold mr-1">
               Remaining Amount
-              <span className="text-red-500"> ₹ {remainingAmount?.toFixed(2)}</span>
+              <span className="text-red-500"> ₹ {remainingAmount?.toFixed(2) || 0}</span>
             </p>
           </section>
         </div>

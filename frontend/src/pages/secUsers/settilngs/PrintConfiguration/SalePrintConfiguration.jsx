@@ -22,7 +22,7 @@ import {
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import api from "../../../../api/api";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { updateConfiguration } from "../../../../../slices/secSelectedOrgSlice";
 import { useDispatch } from "react-redux";
 import PrintTitleModal from "./PrintTitleModal";

@@ -6,7 +6,7 @@ import {
 } from "../../../../../../../slices/barcodeSlice";
 import { useDispatch, useSelector } from "react-redux";
 import api from "../../../../../../api/api";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import SelectedBarcode from "./SelectedBarcode";
 

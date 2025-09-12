@@ -4,6 +4,7 @@ import OragnizationModel from "../models/OragnizationModel.js";
 import TallyData from "../models/TallyData.js";
 import cashModel from "../models/cashModel.js";
 import bankModel from "../models/bankModel.js";
+import settlementModel from "../models/settlementModel.js";
 
 /**
  * Updates the receiptNumber for a given secondary user
@@ -76,30 +77,54 @@ export const updateTallyData = async (
     ])
   );
 
-  // console.log("billAmountMap", billAmountMap);
-
   // Fetch the outstanding bills from TallyData for this company
   const outstandingData = await TallyData.find({
     cmp_id,
     billId: { $in: Array.from(billAmountMap.keys()) },
   }).session(session);
 
-  // console.log("outstandingData", outstandingData);
-
   if (outstandingData.length === 0) {
     return;
   }
 
+  const TotalAppliedReceipts = outstandingData?.appliedReceipts?.reduce(
+    (sum, receipt) => sum + receipt?.settledAmount,
+    0
+  );
+
   // Prepare bulk update operations for TallyData
   const bulkUpdateOperations = outstandingData.map((doc) => {
     const { remainingAmount, settledAmount } = billAmountMap.get(doc.billId); // Get the remaining and settled amount
+    const bill_pending_amt = doc?.bill_pending_amt || 0;
+
+    //Calculate total applied receipts from existing + this one
+    const existingAppliedReceiptsTotal = (doc?.appliedReceipts || []).reduce(
+      (sum, r) => sum + (r?.settledAmount || 0),
+      0
+    );
+    const totalAppliedReceipts = existingAppliedReceiptsTotal + settledAmount;
+    const balance = (doc?.bill_amount || 0) - totalAppliedReceipts;
+
+    console.log("doc", doc);
+    console.log("bill_pending_amt", bill_pending_amt);
+    console.log("totalAppliedReceipts", totalAppliedReceipts);
+    console.log("existingAppliedReceiptsTotal", existingAppliedReceiptsTotal);
+    console.log("balance", balance);
+    
+
+    //  Classification rule
+    let classification = "Dr";
+    if (balance < 0) {
+      classification = "Cr";
+    }
 
     return {
       updateOne: {
         filter: { _id: doc._id },
         update: {
           $set: {
-            bill_pending_amt: remainingAmount, // Update remaining amount (pending amount)
+            bill_pending_amt: balance, // Update remaining amount (pending amount)
+            classification: classification, // ✅ set classification dynamically
           },
           $push: {
             appliedReceipts: {
@@ -142,7 +167,6 @@ export const createOutstandingWithAdvanceAmount = async (
   sourceName,
   classification
 ) => {
-
   try {
     const billData = {
       Primary_user_id,
@@ -209,7 +233,6 @@ export const createOutstandingWithAdvanceAmount = async (
         { upsert: true, new: true, session }
       );
 
-      console.log(`Created new advance for ${sourceName}:`, tallyUpdate);
       return tallyUpdate;
     }
   } catch (error) {
@@ -225,56 +248,166 @@ export const createOutstandingWithAdvanceAmount = async (
  * @param {Object} session - mongoose session
  */
 
-export const revertTallyUpdates = async (billData, session, receiptId) => {
-  // const receiptIdObj = new mongoose.Types.ObjectId(receiptId);
-  // console.log("receiptId", receiptIdObj);
+// export const revertTallyUpdates = async (billData, cmp_id, session, receiptId) => {
+//   try {
+//     if (!billData?.length) {
+//       console.log("No bill data to revert");
+//       return;
+//     }
 
+//     const billIds = billData.map(bill => bill.billId.toString());
+    
+//     // Fetch documents and perform bulk operations
+//     const docs = await TallyData.find({
+//       billId: { $in: billIds }
+//     }).session(session);
+
+//     if (!docs.length) {
+//       console.log("No matching tally data found to revert");
+//       return;
+//     }
+
+//     // Prepare bulk operations
+//     const bulkOps = docs.map(doc => {
+//       // Filter out the receipt being reverted
+//       const remainingReceipts = doc.appliedReceipts?.filter(
+//         receipt => receipt._id.toString() !== receiptId.toString()
+//       ) || [];
+
+//       // Calculate total of remaining applied receipts
+//       const totalAppliedReceipts = remainingReceipts.reduce(
+//         (sum, receipt) => sum + (receipt.settledAmount || 0),
+//         0
+//       );
+
+//       // Calculate new pending amount and classification
+//       const newPendingAmount = doc.bill_amount - totalAppliedReceipts;
+//       const newClassification = newPendingAmount < 0 ? "Cr" : "Dr";
+
+//       return {
+//         updateOne: {
+//           filter: { _id: doc._id },
+//           update: {
+//             $set: {
+//               appliedReceipts: remainingReceipts,
+//               bill_pending_amt: newPendingAmount,
+//               classification: newClassification
+//             }
+//           }
+//         }
+//       };
+//     });
+
+//     // Execute bulk operation
+//     await TallyData.bulkWrite(bulkOps, { session });
+
+//     console.log(`Successfully reverted ${docs.length} tally updates`);
+//   } catch (error) {
+//     console.error("Error in revertTallyUpdates:", error);
+//     throw error;
+//   }
+// };
+
+
+export const revertTallyUpdates = async (billData, cmp_id, session, receiptId) => {
   try {
-    if (!billData || billData.length === 0) {
-      console.log("No bill data to revert");
+    if (!billData?.length) {
+      console.log("❌ No bill data to revert");
       return;
     }
 
-    // Create a lookup map for billNo to settled amount from billData
-    const billSettledAmountMap = new Map(
-      billData.map((bill) => [
-        bill.billId.toString(),
-        bill.settledAmount, // The amount that was settled
-      ])
-    );
+    // console.log("🔄 Starting revert process for receiptId:", receiptId);
+    // console.log("📋 Bill data to revert:", billData.length, "items");
 
-    // Fetch the bills from TallyData that need to be reverted
-    const tallyDataToRevert = await TallyData.find({
-      billId: { $in: Array.from(billSettledAmountMap.keys()) },
+    const billIds = billData.map(bill => bill.billId.toString());
+    // console.log("🔍 Looking for billIds:", billIds);
+    
+    // Fetch documents and perform bulk operations
+    const docs = await TallyData.find({
+      billId: { $in: billIds }
     }).session(session);
 
-    if (tallyDataToRevert.length === 0) {
-      console.log("No matching tally data found to revert");
+    if (!docs.length) {
+      console.log("❌ No matching tally data found to revert");
       return;
     }
 
-    // Process updates one at a time instead of bulk
-    for (const doc of tallyDataToRevert) {
-      const settledAmount = billSettledAmountMap.get(doc.billId) || 0;
+    // console.log("✅ Found", docs.length, "documents to revert");
 
-      await TallyData.updateOne(
-        { _id: doc._id },
-        {
-          $inc: { bill_pending_amt: settledAmount },
-          $pull: {
-            appliedReceipts: { _id: receiptId },
-          },
+    // Prepare bulk operations
+    const bulkOps = docs.map((doc, index) => {
+      // console.log(`\n📄 Processing document ${index + 1}/${docs.length}:`);
+      // console.log("   - BillId:", doc.billId);
+      // console.log("   - Current bill_amount:", doc.bill_amount);
+      // console.log("   - Current bill_pending_amt:", doc.bill_pending_amt);
+      // console.log("   - Current classification:", doc.classification);
+      // console.log("   - Applied receipts before filter:", doc.appliedReceipts?.length || 0);
+
+      // Filter out the receipt being reverted
+      const remainingReceipts = doc.appliedReceipts?.filter(
+        receipt => receipt._id.toString() !== receiptId.toString()
+      ) || [];
+
+      // console.log("   - Applied receipts after filter:", remainingReceipts.length);
+      // console.log("   - Remaining receipts:", remainingReceipts.map(r => ({
+      //   id: r._id, 
+      //   settled: r.settledAmount
+      // })));
+
+      // Calculate total of remaining applied receipts
+      const totalAppliedReceipts = remainingReceipts.reduce(
+        (sum, receipt) => sum + (receipt.settledAmount || 0),
+        0
+      );
+
+      // console.log("   - Total remaining applied receipts:", totalAppliedReceipts);
+
+      // Calculate new pending amount and classification
+      const newPendingAmount =( doc.bill_amount - totalAppliedReceipts);
+      const newClassification = newPendingAmount < 0 ? "Cr" : "Dr";
+
+      // console.log("   - New pending amount:", newPendingAmount);
+      // console.log("   - New classification:", newClassification);
+
+      return {
+        updateOne: {
+          filter: { _id: doc._id },
+          update: {
+            $set: {
+              appliedReceipts: remainingReceipts,
+              bill_pending_amt: Math.abs(newPendingAmount), // Ensure non-negative pending amount
+              classification: newClassification
+            }
+          }
         }
-      ).session(session);
-    }
+      };
+    });
 
-    // console.log(`Successfully reverted ${tallyDataToRevert.length} tally updates`);
+    // console.log("\n🔧 Executing bulk operations...");
+    // console.log("📊 Bulk operations count:", bulkOps.length);
+
+    // Execute bulk operation
+    const result = await TallyData.bulkWrite(bulkOps, { session });
+
+    // console.log("✅ Bulk operation result:", {
+    //   modifiedCount: result.modifiedCount,
+    //   matchedCount: result.matchedCount,
+    //   upsertedCount: result.upsertedCount
+    // });
+
+    // console.log(`🎉 Successfully reverted ${docs.length} tally updates`);
+
   } catch (error) {
-    console.error("Error in revertTallyUpdates:", error);
+    console.error("💥 Error in revertTallyUpdates:", {
+      message: error.message,
+      stack: error.stack,
+      receiptId,
+      billDataCount: billData?.length || 0,
+      timestamp: new Date().toISOString()
+    });
     throw error;
   }
 };
-
 /**
  * Deletes the advance receipt entry from TallyData if it exists
  * @param {String} receiptNumber - receipt number for the advance receipt
@@ -319,8 +452,6 @@ export const deleteAdvanceReceipt = async (
     const deletedAdvanceReceipt = await TallyData.findOneAndDelete({
       _id: advanceReceipt._id,
     }).session(session);
-
-    console.log(`Advance receipt deleted for receipt number: ${receiptNumber}`);
   } catch (error) {
     console.error("Error in deleteAdvanceReceipt:", error);
     throw error;
@@ -330,75 +461,39 @@ export const deleteAdvanceReceipt = async (
 ///// save payment details in payment collection
 
 export const saveSettlementData = async (
-  paymentMethod,
-  paymentDetails,
   voucherNumber,
   voucherId,
+  voucherModel,
+  voucherType,
   amount,
-  orgId,
-  type,
-  createdAt,
-  partyName,
-  session,
+  paymentMethod,
+  paymentDetails,
   party,
-  voucherModel
+  cmp_id,
+  Primary_user_id,
+  date,
+  session
 ) => {
   try {
-    if (!paymentDetails._id || !paymentMethod) {
-      throw new Error("Invalid paymentDetails");
-    }
-    let model = null;
-    switch (paymentMethod) {
-      case "Online":
-        model = bankModel;
-        break;
-      case "Cash":
-        model = cashModel;
-        break;
-      case "Cheque":
-        model = bankModel;
-        break;
-      default:
-        throw new Error("Invalid paymentMethod");
-    }
+    const settlementData = {
+      voucherNumber: voucherNumber,
+      voucherId: voucherId,
+      voucherModel: voucherModel,
+      voucherType: voucherType,
+      amount: amount,
+      payment_mode: paymentMethod.toLowerCase(),
+      partyName: party?.partyName || "",
+      partyId: party?._id || null,
+      partyType: party?.partyType || null,
+      sourceId: paymentDetails?._id || null,
+      sourceType: paymentMethod == "Cash" ? "cash" : "bank",
+      cmp_id: cmp_id,
+      Primary_user_id: Primary_user_id,
+      settlement_date: date,
+      voucher_date: date,
+    };
 
-    if (model) {
-      const settlementData = {
-        voucherNumber: voucherNumber,
-        voucherId: voucherId.toString(),
-        voucherType: voucherModel?.toLowerCase(),
-        voucherModel: voucherModel,
-        amount: amount,
-        created_at: createdAt,
-        payment_mode: paymentMethod.toLowerCase(),
-        type: type,
-        party: partyName,
-        partyId: party._id,
-      };
-
-      const query = {
-        cmp_id: orgId,
-        _id: new mongoose.Types.ObjectId(paymentDetails._id),
-      };
-
-      const update = {
-        $push: {
-          settlements: settlementData,
-        },
-      };
-
-      const options = {
-        upsert: true,
-        new: true,
-        session,
-      };
-
-      const updatedSource = await model.findOneAndUpdate(
-        query,
-        update,
-        options
-      );
-    }
+    await settlementModel.create([settlementData], { session });
   } catch (error) {
     console.error("Error in save settlement data:", error);
     throw error;

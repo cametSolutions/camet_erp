@@ -2,7 +2,7 @@
 /* eslint-disable react/no-unknown-property */
 import { useEffect, useState, useCallback, useRef } from "react";
 import api from "../../../api/api";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { FaEdit } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { MdDelete } from "react-icons/md";

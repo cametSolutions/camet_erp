@@ -1,7 +1,7 @@
 /* eslint-disable react/no-unescaped-entities */
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { useNavigate, useLocation } from "react-router-dom";
 import api from "../../../api/api";
 import {
@@ -79,6 +79,8 @@ function VoucherInitialPage() {
   const { enablePaymentSplittingAsCompulsory = false } = configurations[0];
 
 
+  
+
 
   const {
     date,
@@ -91,7 +93,11 @@ function VoucherInitialPage() {
     voucherNumber: voucherNumberFromRedux,
     allAdditionalCharges: allAdditionalChargesFromRedux,
     finalAmount: totalAmount,
-    finalOutstandingAmount,
+    subTotal: subTotalFromRedux,
+    totalAdditionalCharges: totalAdditionalChargesFromRedux,
+    totalWithAdditionalCharges: totalWithAdditionalChargesFromRedux,
+    totalPaymentSplits: totalPaymentSplitsFromRedux,
+    finalOutstandingAmount: finalOutstandingAmountFromRedux,
     vanSaleGodown: vanSaleGodownFromRedux,
     additionalCharges: additionalChargesFromRedux = [],
     convertedFrom = [],
@@ -342,7 +348,11 @@ function VoucherInitialPage() {
           usedSeriesNumber: selectedVoucherSeriesFromRedux?.currentNumber,
           orgId: cmp_id,
           finalAmount: Number(totalAmount.toFixed(2)),
-          finalOutstandingAmount: Number(finalOutstandingAmount.toFixed(2)),
+          finalOutstandingAmount: Number(finalOutstandingAmountFromRedux.toFixed(2)),
+          subTotal: Number(subTotalFromRedux.toFixed(2)),
+          totalAdditionalCharges: Number(totalAdditionalChargesFromRedux.toFixed(2)),
+          totalWithAdditionalCharges: Number(totalWithAdditionalChargesFromRedux.toFixed(2)),
+          totalPaymentSplits: Number(totalPaymentSplitsFromRedux.toFixed(2)),
           party,
           items,
           note: noteFromRedux,

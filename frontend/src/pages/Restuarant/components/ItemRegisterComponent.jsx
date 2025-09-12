@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { units } from "../../../../constants/units";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { MdPlaylistAdd, MdDelete, MdCloudUpload, MdImage } from "react-icons/md";
 import uploadImageToCloudinary from "../../../../utils/uploadCloudinary";
 

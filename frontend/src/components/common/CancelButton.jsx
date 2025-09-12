@@ -3,7 +3,7 @@
 /* eslint-disable react/prop-types */
 import { useState } from "react";
 import { MdCancel } from "react-icons/md";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import api from "../../api/api";
 
 // Import Shadcn UI components
@@ -17,12 +17,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useQueryClient } from "@tanstack/react-query";
+import { useSelector } from "react-redux";
 
 function CancelButton({
   id,
   voucherType,
   vanSale = false,
-  isEditable,
+  // isEditable,
   isConverted = false,
   setActionLoading,
   reFetch,
@@ -30,6 +32,19 @@ function CancelButton({
   cancellationAllowed,
 }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const queryClient = useQueryClient();
+
+      //// check if the user is admin
+  const isAdmin =
+    JSON.parse(localStorage.getItem("sUserData")).role === "admin"
+      ? true
+      : false;
+
+  // ///////////////////  redux details /////////////////////
+  const cmp_id = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg._id
+  );
+
 
   if (voucherType === "vanSale") {
     voucherType = "Sales";
@@ -37,12 +52,12 @@ function CancelButton({
   }
 
   const handleCancelClick = () => {
-    if (isEditable !== undefined && isEditable === false) {
-      window.alert(
-        "You can't cancel this voucher since it has been used to generate receipts or payments"
-      );
-      return;
-    }
+    // if (isEditable !== undefined && isEditable === false) {
+    //   window.alert(
+    //     "You can't cancel this voucher since it has been used to generate receipts or payments"
+    //   );
+    //   return;
+    // }
     if (isConverted !== undefined && isConverted === true) {
       window.alert(
         "You can't edit this voucher since it has been converted to sales"
@@ -73,6 +88,9 @@ function CancelButton({
       );
 
       toast.success("Your file has been cancelled successfully");
+       queryClient.invalidateQueries({
+        queryKey: ["todaysTransaction", cmp_id, isAdmin],
+      })
       reFetch();
     } catch (error) {
       console.log(error);

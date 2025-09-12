@@ -29,12 +29,12 @@ export default function VoucherDetailsActionButtons({
   const handleEditClick = () => {
     if (!voucherType) return;
 
-    if (isEditable !== undefined && isEditable === false) {
-      window.alert(
-        "You can't edit this voucher since it has been used to generate receipts or payments"
-      );
-      return;
-    }
+    // if (isEditable !== undefined && isEditable === false) {
+    //   window.alert(
+    //     "You can't edit this voucher since it has been used to generate receipts or payments"
+    //   );
+    //   return;
+    // }
 
     navigate(`/sUsers/edit${voucherType}/${_id}`, {
       state: {

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { useSidebar } from "../../../layout/Layout";
 import RemoveReduxData from "../../../components/secUsers/RemoveReduxData";
 import DashBoardLayout from "./DashboardLayout";

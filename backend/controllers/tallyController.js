@@ -224,7 +224,11 @@ export const addBankData = async (req, res) => {
     }
 
     // Find and log company information
-    getApiLogs(cmp_id, "Bank Data");
+
+    const accountGroupData = await accountGroupModel.findOne({
+      cmp_id: cmp_id,
+      accountGroup: "Bank Accounts",
+    });
 
     // Process each bank detail item
     const validBankDetails = [];
@@ -233,55 +237,87 @@ export const addBankData = async (req, res) => {
     let updatedCount = 0;
 
     for (let i = 0; i < bankDetailsArray.length; i++) {
-      const bankDetail = bankDetailsArray[i];
+      const {
+        cmp_id,
+        Primary_user_id,
+        bank_ledname,
+        bank_grpname,
+        bank_childgrpname,
+        acholder_name,
+        bank_id,
+        ac_no,
+        ifsc,
+        bank_name,
+        branch,
+      } = bankDetailsArray[i];
+
+      const modifiedBankDetails = {
+        Primary_user_id,
+        cmp_id,
+        accountGroup: accountGroupData?._id,
+        partyType: "bank",
+        partyName: bank_ledname,
+        party_master_id: bank_id,
+        groupName: bank_grpname,
+        childGroupName: bank_childgrpname,
+        acholder_name,
+        ac_no,
+        ifsc,
+        bank_name,
+        branch,
+      };
+
+      console.log("Modified Bank Details:", modifiedBankDetails);
+
       const itemIndex = i + 1;
 
       // Check for required fields
       const missingFields = [];
-      if (!bankDetail.Primary_user_id) missingFields.push("Primary_user_id");
-      if (!bankDetail.cmp_id) missingFields.push("cmp_id");
-      if (!bankDetail.bank_ledname) missingFields.push("bank_ledname");
-      if (!bankDetail.bank_id) missingFields.push("bank_id");
+      if (!modifiedBankDetails.Primary_user_id)
+        missingFields.push("Primary_user_id");
+      if (!modifiedBankDetails.cmp_id) missingFields.push("cmp_id");
+      if (!modifiedBankDetails.partyName) missingFields.push("bank_ledname");
+      if (!modifiedBankDetails.party_master_id) missingFields.push("bank_id");
 
       // Skip item if missing required fields
       if (missingFields.length > 0) {
         skippedItems.push({
           item: itemIndex,
           reason: `Missing required fields: ${missingFields.join(", ")}`,
-          data: bankDetail,
+          data: modifiedBankDetails,
         });
         continue;
       }
 
       try {
         // Check if bank detail already exists based on unique combination
-        const existingBankDetail = await BankDetailsModel.findOne({
-          Primary_user_id: bankDetail.Primary_user_id,
-          cmp_id: bankDetail.cmp_id,
-          bank_id: bankDetail.bank_id,
+        const existingBankDetail = await partyModel.findOne({
+          Primary_user_id: modifiedBankDetails.Primary_user_id,
+          cmp_id: modifiedBankDetails.cmp_id,
+          party_master_id: modifiedBankDetails.party_master_id,
         });
 
         if (existingBankDetail) {
           // Update existing record
-          await BankDetailsModel.findByIdAndUpdate(
+          await partyModel.findByIdAndUpdate(
             existingBankDetail._id,
-            bankDetail,
+            modifiedBankDetails,
             { new: true }
           );
           updatedCount++;
         } else {
           // Insert new record
-          await BankDetailsModel.create(bankDetail);
+          await partyModel.create(modifiedBankDetails);
           insertedCount++;
         }
 
-        validBankDetails.push(bankDetail);
+        validBankDetails.push(modifiedBankDetails);
       } catch (itemError) {
         // Handle individual item processing errors
         skippedItems.push({
           item: itemIndex,
           reason: `Processing error: ${itemError.message}`,
-          data: bankDetail,
+          data: modifiedBankDetails,
         });
       }
     }
@@ -380,6 +416,11 @@ export const addCashData = async (req, res) => {
     // Find and log company information
     getApiLogs(cmp_id, "Cash Data");
 
+    const accountGroupData = await accountGroupModel.findOne({
+      cmp_id: cmp_id,
+      accountGroup: "Cash-in-Hand",
+    });
+
     // Process each cash detail item
     const validCashDetails = [];
     const skippedItems = [];
@@ -387,55 +428,75 @@ export const addCashData = async (req, res) => {
     let updatedCount = 0;
 
     for (let i = 0; i < cashDetailsArray.length; i++) {
-      const cashDetail = cashDetailsArray[i];
+      const {
+        cash_ledname,
+        cmp_id,
+        Primary_user_id,
+        cash_id,
+        cash_grpname,
+        cash_childgrpname,
+      } = cashDetailsArray[i];
+
+      const modifiedCashDetail = {
+        Primary_user_id,
+        cmp_id,
+        accountGroup: accountGroupData?._id,
+        partyType: "cash",
+        partyName: cash_ledname,
+        party_master_id: cash_id,
+        groupName: cash_grpname,
+        childGroupName: cash_childgrpname,
+      };
       const itemIndex = i + 1;
 
       // Check for required fields
       const missingFields = [];
-      if (!cashDetail.Primary_user_id) missingFields.push("Primary_user_id");
-      if (!cashDetail.cmp_id) missingFields.push("cmp_id");
-      if (!cashDetail.cash_id) missingFields.push("cash_id");
-      if (!cashDetail.cash_ledname) missingFields.push("cash_ledname");
+      if (!modifiedCashDetail.Primary_user_id)
+        missingFields.push("Primary_user_id");
+      if (!modifiedCashDetail.cmp_id) missingFields.push("cmp_id");
+      if (!modifiedCashDetail.party_master_id) missingFields.push("cash_id");
+      if (!modifiedCashDetail.partyName) missingFields.push("cash_ledname");
 
       // Skip item if missing required fields
       if (missingFields.length > 0) {
         skippedItems.push({
           item: itemIndex,
           reason: `Missing required fields: ${missingFields.join(", ")}`,
-          data: cashDetail,
+          data: modifiedCashDetail,
         });
         continue;
       }
 
       try {
         // Check if cash detail already exists based on unique combination
-        const existingCashDetail = await CashModel.findOne({
-          Primary_user_id: cashDetail.Primary_user_id,
-          cmp_id: cashDetail.cmp_id,
-          cash_id: cashDetail.cash_id,
+        const existingCashDetail = await partyModel.findOne({
+          Primary_user_id: modifiedCashDetail.Primary_user_id,
+          cmp_id: modifiedCashDetail.cmp_id,
+          partyType: "cash",
+          party_master_id: modifiedCashDetail.party_master_id,
         });
 
         if (existingCashDetail) {
           // Update existing record
-          await CashModel.findByIdAndUpdate(
+          await partyModel.findByIdAndUpdate(
             existingCashDetail._id,
-            cashDetail,
+            modifiedCashDetail,
             { new: true }
           );
           updatedCount++;
         } else {
           // Insert new record
-          await CashModel.create(cashDetail);
+          await partyModel.create(modifiedCashDetail);
           insertedCount++;
         }
 
-        validCashDetails.push(cashDetail);
+        validCashDetails.push(modifiedCashDetail);
       } catch (itemError) {
         // Handle individual item processing errors
         skippedItems.push({
           item: itemIndex,
           reason: `Processing error: ${itemError.message}`,
-          data: cashDetail,
+          data: modifiedCashDetail,
         });
       }
     }

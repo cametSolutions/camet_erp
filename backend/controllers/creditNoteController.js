@@ -7,14 +7,11 @@ import {
   // updateTallyData,
 } from "../helpers/creditNoteHelper.js";
 import {
-  processSaleItems as processCreditNoteItems,
   revertSettlementData,
   saveSettlementData,
-  updateOutstandingBalance,
   updateTallyData,
 } from "../helpers/salesHelper.js";
 
-import { checkForNumberExistence } from "../helpers/secondaryHelper.js";
 import creditNoteModel from "../models/creditNoteModel.js";
 import secondaryUserModel from "../models/secondaryUserModel.js";
 import mongoose from "mongoose";
@@ -23,6 +20,8 @@ import {
   generateVoucherNumber,
   getSeriesDetailsById,
 } from "../helpers/voucherHelper.js";
+import settlementModel from "../models/settlementModel.js";
+import { updateOutstandingBalance } from "../helpers/purchaseHelper.js";
 
 // @desc create credit note
 // route GET/api/sUsers/createCreditNote
@@ -34,9 +33,7 @@ export const createCreditNote = async (req, res) => {
       orgId,
       party,
       items,
-      despatchDetails,
       additionalChargesFromRedux,
-      note,
       finalAmount: lastAmount,
       selectedDate,
       voucherType,
@@ -69,7 +66,6 @@ export const createCreditNote = async (req, res) => {
     }
 
     await handleCreditNoteStockUpdates(items, session);
-    // const updatedItems = await processCreditNoteItems(items);
     const updatedCreditNoteNumber = await updateCreditNoteNumber(
       orgId,
       secondaryUser,
@@ -92,20 +88,7 @@ export const createCreditNote = async (req, res) => {
       session
     );
 
-    ///save settlement data
-    await saveSettlementData(
-      party,
-      orgId,
-      "normal credit note",
-      "creditNote",
-      creditNoteNumber,
-      result._id,
-      lastAmount,
-      result?.createdAt,
-      party?.partyName,
-      session
-    );
-
+    /// update outstanding
     await updateTallyData(
       orgId,
       creditNoteNumber,
@@ -252,9 +235,13 @@ export const editCreditNote = async (req, res) => {
       items,
       despatchDetails,
       note,
-
       additionalChargesFromRedux,
       finalAmount: lastAmount,
+      finalOutstandingAmount,
+      totalAdditionalCharges,
+      totalWithAdditionalCharges,
+      totalPaymentSplits,
+      subTotal,
       selectedDate,
     } = req.body;
 
@@ -283,9 +270,9 @@ export const editCreditNote = async (req, res) => {
 
       creditNoteNumber = voucherNumber; // Always update when series changes
       usedSeriesNumber = newUsedSeriesNumber; // Always update when series changes
-    }else{
-      creditNoteNumber = existingCreditNote?.creditNoteNumber
-      usedSeriesNumber = existingCreditNote?.usedSeriesNumber
+    } else {
+      creditNoteNumber = existingCreditNote?.creditNoteNumber;
+      usedSeriesNumber = existingCreditNote?.usedSeriesNumber;
     }
 
     // Revert existing stock updates
@@ -305,6 +292,11 @@ export const editCreditNote = async (req, res) => {
       additionalCharges: additionalChargesFromRedux,
       note,
       finalAmount: lastAmount,
+      finalOutstandingAmount,
+      totalAdditionalCharges,
+      totalWithAdditionalCharges,
+      totalPaymentSplits,
+      subTotal,
       Primary_user_id: req.owner,
       Secondary_user_id: req.secondaryUserId,
       creditNoteNumber: creditNoteNumber,
@@ -319,57 +311,44 @@ export const editCreditNote = async (req, res) => {
       session,
     });
 
-    /// revert stock updates
-    await revertSettlementData(
-      existingCreditNote?.party,
-      orgId,
-      existingCreditNote?.creditNoteNumber,
-      existingCreditNote?._id.toString(),
-      session
-    );
-
-    /// recreate the settlement data
-
-    ///save settlement data
-    await saveSettlementData(
-      party,
-      orgId,
-      "normal credit note",
-      "creditNote",
-      updateData?.creditNoteNumber,
-      creditNoteId,
-      lastAmount,
-      updateData?.createdAt,
-      updateData?.party?.partyName,
-      session
-    );
-
-    //// edit outstanding
+    /// delete  all the settlements
+    await settlementModel.deleteMany({ voucherId: creditNoteId }, { session });
 
     // ///updating the existing outstanding record by calculating the difference in bill value
-
     const secondaryUser = await secondaryUserModel
       .findById(req.sUserId)
       .session(session);
     const secondaryMobile = secondaryUser?.mobile;
 
-    const outstandingResult = await updateOutstandingBalance({
-      existingVoucher: existingCreditNote,
-      newVoucherData: {
-        paymentSplittingData: {},
+    if (party?.partyType === "party") {
+      const outstandingResult = await updateOutstandingBalance({
+        existingVoucher: existingCreditNote,
+        valueToUpdateInOutstanding: lastAmount,
+        orgId,
+        voucherNumber: creditNoteNumber,
+        party,
+        session,
+        createdBy: req.owner,
+        transactionType: "creditNote",
+        secondaryMobile,
+        selectedDate,
+        classification: "Cr",
+      });
+    } else {
+      /// save settlements
+      await saveSettlementData(
+        creditNoteNumber,
+        series_id,
+        "Credit Note",
+        "creditNote",
         lastAmount,
-      },
-      orgId,
-      voucherNumber: creditNoteNumber,
-      party,
-      session,
-      createdBy: req.owner,
-      transactionType: "creditNote",
-      secondaryMobile,
-      selectedDate,
-      classification: "Cr",
-    });
-
+        party,
+        orgId,
+        existingCreditNote?.Primary_user_id,
+        selectedDate,
+        session
+      );
+    }
     await session.commitTransaction();
     session.endSession();
     res.status(200).json({

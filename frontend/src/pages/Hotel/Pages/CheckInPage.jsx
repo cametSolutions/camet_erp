@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import CustomBarLoader from "@/components/common/CustomBarLoader";
 import TitleDiv from "@/components/common/TitleDiv";
 import BookingForm from "../Components/BookingForm";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import api from "@/api/api";
 import { useSelector } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";

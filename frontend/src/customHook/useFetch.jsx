@@ -1,38 +1,37 @@
-import { useEffect, useState } from "react"
-import { fetchDataFromApi } from "../api/fetchDataFromApi.js"
+import { useEffect, useState } from "react";
+import { fetchDataFromApi } from "../api/fetchDataFromApi.js";
 
 const useFetch = (url, params) => {
-console.log(url)
-  const [refresh, setRefresh] = useState(false)
-  const [data, setData] = useState(null)
-  const [loading, setLoading] = useState(null)
-  const [error, setError] = useState(null)
+  const [refresh, setRefresh] = useState(false);
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!url) {
-      return
+      return;
     }
-    setLoading(true)
-    setData(null)
-    setError(null)
+    setLoading(true);
+    setData(null);
+    setError(null);
 
     fetchDataFromApi(url, params)
       .then((res) => {
-        setLoading(false)
-        setData(res)
+        setLoading(false);
+        setData(res);
       })
       // eslint-disable-next-line no-unused-vars
       .catch((err) => {
-        setLoading(false)
-        setError("Something went wrong!")
-      })
-  }, [url, refresh])
+        setLoading(false);
+        setError("Something went wrong!");
+      });
+  }, [url, refresh]);
 
   const refreshHook = () => {
-    setRefresh(!refresh)
-  }
+    setRefresh(!refresh);
+  };
 
-  return { data, loading, error, refreshHook }
-}
+  return { data, loading, error, refreshHook };
+};
 
-export default useFetch
+export default useFetch;

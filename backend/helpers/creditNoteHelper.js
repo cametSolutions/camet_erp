@@ -178,8 +178,12 @@ export const createCreditNoteRecord = async (
       selectedDate,
       usedSeriesNumber,
       series_id,
+      finalOutstandingAmount,
+      totalAdditionalCharges,
+      totalWithAdditionalCharges,
+      totalPaymentSplits,
+      subTotal,
     } = req.body;
-
 
     const Primary_user_id = req.owner;
     const Secondary_user_id = req.sUserId;
@@ -212,6 +216,11 @@ export const createCreditNoteRecord = async (
       additionalCharges: updateAdditionalCharge,
       note,
       finalAmount: lastAmount,
+      finalOutstandingAmount,
+      totalAdditionalCharges,
+      totalWithAdditionalCharges,
+      totalPaymentSplits,
+      subTotal,
       Primary_user_id,
       Secondary_user_id,
       creditNoteNumber,

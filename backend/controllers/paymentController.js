@@ -20,6 +20,7 @@ import {
 import paymentModel from "../models/paymentModel.js";
 import { formatToLocalDate } from "../helpers/helper.js";
 import { generateVoucherNumber } from "../helpers/voucherHelper.js";
+import settlementModel from "../models/settlementModel.js";
 
 /**
  * @desc  create payment
@@ -114,18 +115,18 @@ export const createPayment = async (req, res) => {
 
     // /// save settlement data in cash or bank collection
     await saveSettlementData(
-      paymentMethod,
-      paymentDetails,
       paymentNumber,
       savedPayment._id.toString(),
-      enteredAmount,
-      cmp_id,
+      "Payment",
       "payment",
-      savedPayment?.date,
-      savedPayment?.party?.partyName,
-      session,
+      enteredAmount || 0,
+      paymentMethod,
+      paymentDetails,
       party,
-      "Payment"
+      cmp_id,
+      Primary_user_id,
+      date,
+      session
     );
 
     // // Use the helper function to update TallyData
@@ -152,8 +153,6 @@ export const createPayment = async (req, res) => {
           "Dr"
         );
     }
-
-    
 
     // Commit the transaction
     await session.commitTransaction();
@@ -208,7 +207,12 @@ export const cancelPayment = async (req, res) => {
     }
 
     // Revert tally updates
-    await revertTallyUpdates(payment.billData, cmp_id, session,paymentId.toString());
+    await revertTallyUpdates(
+      payment.billData,
+      cmp_id,
+      session,
+      paymentId.toString()
+    );
 
     /// save settlement data in cash or bank collection
     await revertSettlementData(
@@ -305,16 +309,10 @@ export const editPayment = async (req, res) => {
     }
 
     // Revert tally updates
-    await revertTallyUpdates(payment.billData, cmp_id, session,paymentId.toString());
+    await revertTallyUpdates(payment.billData, cmp_id,session, paymentId.toString());
 
-    /// save settlement data in cash or bank collection
-    await revertSettlementData(
-      payment?.paymentMethod,
-      payment?.paymentDetails,
-      payment?.paymentNumber,
-      payment?._id.toString(),
-      session
-    );
+    /// delete  all the settlements
+    await settlementModel.deleteMany({ voucherId: paymentId }, { session });
 
     // Delete advance payment, if any
     if (payment.advanceAmount > 0) {
@@ -353,18 +351,18 @@ export const editPayment = async (req, res) => {
 
     /// save settlement data in cash or bank collection
     await saveSettlementData(
-      paymentMethod,
-      paymentDetails,
       paymentNumber,
       savedPayment._id.toString(),
-      enteredAmount,
-      cmp_id,
+      "Payment",
       "payment",
-      savedPayment?.date,
-      savedPayment?.party?.partyName,
-      session,
+      enteredAmount || 0,
+      paymentMethod,
+      paymentDetails,
       party,
-      "Payment"
+      cmp_id,
+      Primary_user_id,
+      date,
+      session
     );
 
     if (advanceAmount > 0) {
@@ -383,7 +381,6 @@ export const editPayment = async (req, res) => {
           "Dr"
         );
     }
-
 
     await session.commitTransaction();
     session.endSession();

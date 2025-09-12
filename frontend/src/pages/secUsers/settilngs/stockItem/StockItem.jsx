@@ -9,7 +9,7 @@ import {
 } from "react-icons/fi";
 import { IoBarcodeOutline } from "react-icons/io5";
 import api from "@/api/api";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { useDispatch, useSelector } from "react-redux";
 import { useEffect, useState } from "react";
 import { updateConfiguration } from "../../../../../slices/secSelectedOrgSlice";

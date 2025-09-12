@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useSelector } from "react-redux";
 import api from "@/api/api";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 const EditWarrantyCard = () => {
   const location = useLocation();

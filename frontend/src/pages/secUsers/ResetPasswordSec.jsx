@@ -1,7 +1,7 @@
 /* eslint-disable react/no-unknown-property */
 
 import { useState } from "react";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import api from "../../api/api";
 import { Link, useNavigate } from "react-router-dom";
 function ResetPasswordSec() {
