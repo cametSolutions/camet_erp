@@ -23,6 +23,7 @@ import {
   getSeriesDetailsById,
 } from "../helpers/voucherHelper.js";
 import settlementModel from "../models/settlementModel.js";
+import { createAdvancePaymentsFromAppliedPayments } from "../helpers/receiptHelper.js";
 
 // @desc create purchase
 // route GET/api/sUsers/createPurchase
@@ -314,27 +315,27 @@ export const cancelPurchase = async (req, res) => {
       await removeNewBatchCreatedByThisPurchase(existingPurchase, session);
       await revertPurchaseStockUpdates(existingPurchase.items, session);
 
-      //// revert settlement data
-      /// revert it
-      await revertSettlementData(
-        existingPurchase?.party,
-        existingPurchase?.cmp_id,
-        existingPurchase?.purchaseNumber,
-        existingPurchase?._id.toString(),
-        session
-      );
+      /// delete  all the settlements
+      await settlementModel.deleteMany({ voucherId: purchaseId }, { session });
 
-      const cancelOutstanding = await TallyData.findOneAndUpdate(
-        {
-          bill_no: existingPurchase?.purchaseNumber,
-          billId: purchaseId?.toString(),
-        },
-        {
-          $set: {
-            isCancelled: true,
-          },
-        }
-      ).session(session);
+      ////// update the outstanding as isCancelled as true and make advance receipts form applied Receipts
+      const outstandingRecord = await TallyData.findOne({
+        billId: existingPurchase?._id.toString(),
+        bill_no: existingPurchase?.purchaseNumber,
+        cmp_id: existingPurchase?.cmp_id,
+        Primary_user_id: existingPurchase?.Primary_user_id,
+      }).session(session);
+      if (outstandingRecord) {
+        await createAdvancePaymentsFromAppliedPayments(
+          outstandingRecord.appliedPayments,
+          existingPurchase.cmp_id,
+          existingPurchase,
+          existingPurchase.party,
+          session
+        );
+        outstandingRecord.isCancelled = true;
+        await outstandingRecord.save({ session });
+      }
 
       existingPurchase.isCancelled = true;
       const cancelledPurchase = await existingPurchase.save({ session });

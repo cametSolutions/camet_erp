@@ -22,6 +22,7 @@ import {
 } from "../helpers/voucherHelper.js";
 import settlementModel from "../models/settlementModel.js";
 import { updateOutstandingBalance } from "../helpers/purchaseHelper.js";
+import { createAdvancePaymentsFromAppliedPayments } from "../helpers/receiptHelper.js";
 
 // @desc create credit note
 // route GET/api/sUsers/createCreditNote
@@ -156,26 +157,30 @@ export const cancelCreditNote = async (req, res) => {
       // Revert existing stock updates
       await revertCreditNoteStockUpdates(existingCreditNote.items, session);
 
-      //// revert settlement data
-      await revertSettlementData(
-        existingCreditNote?.party,
-        existingCreditNote?.cmp_id,
-        existingCreditNote?.creditNoteNumber,
-        existingCreditNote?._id.toString(),
-        session
+      /// delete  all the settlements
+      await settlementModel.deleteMany(
+        { voucherId: creditNoteId },
+        { session }
       );
 
-      const cancelOutstanding = await TallyData.findOneAndUpdate(
-        {
-          bill_no: existingCreditNote?.creditNoteNumber,
-          billId: creditNoteId?.toString(),
-        },
-        {
-          $set: {
-            isCancelled: true,
-          },
-        }
-      ).session(session);
+      ////// update the outstanding as isCancelled as true and make advance receipts form applied Receipts
+      const outstandingRecord = await TallyData.findOne({
+        billId: existingCreditNote._id.toString(),
+        bill_no: existingCreditNote.creditNoteNumber,
+        cmp_id: existingCreditNote.cmp_id,
+        Primary_user_id: existingCreditNote.Primary_user_id,
+      }).session(session);
+      if (outstandingRecord) {
+        await createAdvancePaymentsFromAppliedPayments(
+          outstandingRecord.appliedPayments,
+          existingCreditNote.cmp_id,
+          existingCreditNote,
+          existingCreditNote.party,
+          session
+        );
+        outstandingRecord.isCancelled = true;
+        await outstandingRecord.save({ session });
+      }
 
       existingCreditNote.isCancelled = true;
       const cancelledCreditNote = await existingCreditNote.save({ session });

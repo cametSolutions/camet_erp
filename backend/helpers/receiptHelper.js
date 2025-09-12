@@ -705,7 +705,6 @@ export const createAdvanceReceiptsFromAppliedReceipts = async (
   for (let i = 0; i < appliedReceipts.length; i++) {
     const receipt = appliedReceipts[i];
 
-    console.log("receipt", receipt);
 
     const { receiptNumber, settledAmount, date, _id } = receipt;
 
@@ -743,5 +742,60 @@ export const createAdvanceReceiptsFromAppliedReceipts = async (
   return {
     remainingAmount: 0, // All receipts processed, no remaining amount
     updatedAppliedReceipts: updatedAppliedReceipts, // Empty array since all are processed
+  };
+};
+
+
+//// create advance payments if a voucherIsCancelled
+export const createAdvancePaymentsFromAppliedPayments = async (
+  appliedPayments,
+  orgId,
+  existingVoucher,
+  party,
+  session
+) => {
+  const updatedAppliedPayments = [];
+  let totalProcessedAmount = 0;
+
+  // Process all payments as advance payments within the existing transaction
+  for (let i = 0; i < appliedPayments.length; i++) {
+    const payment = appliedPayments[i];
+
+    const { paymentNumber, settledAmount, date, _id } = payment;
+
+    // Use the full settled amount as advance amount
+    const advanceAmount = settledAmount;
+
+    try {
+      // Call the function to create or update advance
+      await createOutstandingWithAdvanceAmount(
+        date,
+        orgId, // cmp_id
+        paymentNumber,
+        _id.toString(),
+        existingVoucher?.Primary_user_id,
+        party,
+        party?.mobileNumber,
+        advanceAmount,
+        session,
+        "advancePayment",
+        "Dr"
+      );
+
+      totalProcessedAmount += advanceAmount;
+      console.log(`Successfully processed payment ${paymentNumber}`);
+    } catch (error) {
+      console.error(`Error processing payment ${paymentNumber}:`, error);
+      // Re-throw the error to rollback the entire transaction
+      throw error;
+    }
+  }
+
+  console.log("All payments processed as advance payments");
+  console.log("Total processed amount:", totalProcessedAmount);
+
+  return {
+    remainingAmount: 0, // All payments processed, no remaining amount
+    updatedAppliedPayments: updatedAppliedPayments, // Empty array since all are processed
   };
 };
