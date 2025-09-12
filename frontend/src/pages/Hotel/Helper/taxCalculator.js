@@ -148,6 +148,7 @@ const getApplicableTaxSlab = (row, totalAmount) => {
 
 
 export const taxCalculatorForRestaurant = (tableData = [], inclusive = false) => {
+  console.log(inclusive);
   return tableData.map((item) => {
     // Map through GodownList for each product
     const updatedGodownList = item.GodownList.map((godown) => {

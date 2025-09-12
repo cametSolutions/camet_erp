@@ -6,6 +6,7 @@ import {
   Search,
   Clock,
   Users,
+  TrendingUp,
   Filter,
   X,
   MenuIcon,
@@ -41,6 +42,8 @@ const RestaurantPOS = () => {
   const [showSidebar, setShowSidebar] = useState(false);
   const [showOrderSummary, setShowOrderSummary] = useState(false);
 
+  const [showOptions, setShowOptions] = useState(false);
+  const [searchTerms, setSearchTerms] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [items, setItems] = useState([]);
   const [allItems, setAllItems] = useState([]);
@@ -59,6 +62,20 @@ const RestaurantPOS = () => {
   const [selectedPriceLevel, setSelectedPriceLevel] = useState(null);
   const kotDataForEdit = location.state?.kotData;
 
+  const [customerDetails, setCustomerDetails] = useState({
+    name: "",
+    phone: "",
+    address: "",
+    tableNumber: "10",
+  });
+  const [roomDetails, setRoomDetails] = useState({
+    roomno: "",
+    guestName: "",
+    CheckInNumber: "",
+  });
+  const [orders, setOrders] = useState([]);
+  const [orderNumber, setOrderNumber] = useState(1001);
+
   useEffect(() => {
     if (kotDataForEdit) {
       setIsEdit(true);
@@ -71,14 +88,14 @@ const RestaurantPOS = () => {
         tableNumber: kotDataForEdit?.tableNumber,
       });
       setRoomDetails({
-        ...roomDetails,
-        _id: kotDataForEdit?.roomId || "",
+        _id: kotDataForEdit?.roomId?._id || "",
         guestName: kotDataForEdit?.customer?.name || "",
         CheckInNumber: kotDataForEdit?.checkInNumber || "",
       });
     }
   }, [kotDataForEdit]);
 
+  console.log(roomDetails, "roomDetails");
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
@@ -101,20 +118,6 @@ const RestaurantPOS = () => {
     Default: "🍽️",
   };
 
-  const [customerDetails, setCustomerDetails] = useState({
-    name: "",
-    phone: "",
-    address: "",
-    tableNumber: "10",
-  });
-  const [roomDetails, setRoomDetails] = useState({
-    roomno: "",
-    guestName: "",
-    CheckInNumber: "",
-  });
-  const [orders, setOrders] = useState([]);
-  const [orderNumber, setOrderNumber] = useState(1001);
-
   // Mobile detection
   useEffect(() => {
     const checkMobile = () => {
@@ -129,6 +132,37 @@ const RestaurantPOS = () => {
   useEffect(() => {
     fetchPriceList();
   }, []);
+
+  //
+
+  const [search, setSearch] = useState("");
+  const [showResults, setShowResults] = useState(false);
+
+  // Filter rooms based on search
+  const filteredRooms = Array.isArray(roomData)
+    ? roomData.filter(
+        (room) =>
+          room.roomName?.toLowerCase().includes(searchTerms.toLowerCase()) ||
+          room.customerName
+            ?.toLowerCase()
+            .includes(searchTerms.toLowerCase()) ||
+          room.voucherNumber?.toLowerCase().includes(searchTerms.toLowerCase())
+      )
+    : [];
+
+  const handleSelectRoom = (room) => {
+    setRoomDetails({
+      ...roomDetails,
+      _id: room?.roomId || "",
+      roomno: room?.roomName || "",
+      guestName: room?.customerName || "",
+      CheckInNumber: room?.voucherNumber || "",
+    });
+    setSearch(
+      `${room.roomName} - ${room.customerName} - ${room.voucherNumber}`
+    );
+    setShowResults(false);
+  };
 
   const fetchPriceList = async () => {
     try {
@@ -418,6 +452,7 @@ const RestaurantPOS = () => {
   };
 
   const generateKOT = async (selectedTableNumber, tableStatus) => {
+    console.log("hi");
     let updatedItems = [];
     let orderCustomerDetails = {
       ...customerDetails,
@@ -450,13 +485,23 @@ const RestaurantPOS = () => {
     });
     let finalProductData = await taxCalculatorForRestaurant(
       updatedItems,
-      configurations[0]?.addRateWithTax?.sale
+      configurations[0]?.addRateWithTax?.restaurantSale
     );
     if (orderType === "dine-in") {
-      orderCustomerDetails = {
-        tableNumber: selectedTableNumber,
-        tableStatus,
-      };
+      if (roomDetails && Object.keys(roomDetails).length > 0) {
+        orderCustomerDetails = {
+          roomId: roomDetails?._id,
+          checkInNumber: roomDetails?.CheckInNumber,
+          name: roomDetails?.guestName,
+          tableNumber: selectedTableNumber,
+          tableStatus,
+        };
+      } else {
+        orderCustomerDetails = {
+          tableNumber: selectedTableNumber,
+          tableStatus,
+        };
+      }
     } else if (orderType === "roomService") {
       console.log(roomDetails);
       orderCustomerDetails = {
@@ -469,7 +514,7 @@ const RestaurantPOS = () => {
     }
 
     console.log("orderCustomerDetails", orderItems);
-
+    console.log(orderType);
     console.log("orderCustomerDetails", finalProductData);
 
     const newOrder = {
@@ -482,9 +527,11 @@ const RestaurantPOS = () => {
       status: "pending",
       paymentMethod: orderType === "dine-in" ? null : "cash",
     };
+
     let url = isEdit
       ? `/api/sUsers/editKOT/${cmp_id}/${kotDataForEdit._id}`
       : `/api/sUsers/generateKOT/${cmp_id}`;
+    console.log(url);
     try {
       let response = await api.post(url, newOrder, {
         withCredentials: true,
@@ -567,12 +614,16 @@ const RestaurantPOS = () => {
   };
 
   const handleKotPrint = (data) => {
+    console.log(data);
+    console.log(data.type);
     const orderData = {
       kotNo: data?.voucherNumber,
       tableNo: data?.tableNumber,
+      type: data.type,
       items: data?.items,
       createdAt: new Date(),
     };
+
     generateAndPrintKOT(orderData, true, false, companyName);
   };
 
@@ -1037,12 +1088,32 @@ const RestaurantPOS = () => {
                         <h4 className="text-xs font-bold text-gray-800 line-clamp-2 mb-1">
                           {item.product_name}
                         </h4>
-                        <div className="flex items-center gap-2">
-                          <p className="text-xs text-gray-600">
-                            ₹{item.price} × {item.quantity}
-                          </p>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs text-gray-600">₹</span>
+                            <input
+                              type="number"
+                              value={item.price}
+                              onChange={(e) => {
+                                const newPrice = parseFloat(e.target.value);
+                                setOrderItems(
+                                  orderItems.map((orderItem) =>
+                                    orderItem._id === item._id
+                                      ? { ...orderItem, price: newPrice }
+                                      : orderItem
+                                  )
+                                );
+                              }}
+                              className="w-16 text-xs text-gray-600 bg-transparent border-none focus:outline-none focus:bg-white focus:border focus:border-indigo-300 focus:rounded px-1 py-0.5"
+                              step="0.01"
+                              min="0"
+                            />
+                            <span className="text-xs text-gray-600">
+                              × {item.quantity}
+                            </span>
+                          </div>
                           <p className="text-xs font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-full">
-                            ₹{item.price * item.quantity}
+                            ₹{(item.price * item.quantity).toFixed(2)}
                           </p>
                         </div>
                       </div>
@@ -1151,20 +1222,45 @@ const RestaurantPOS = () => {
 
       {showFullTableSelection && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl w-full max-w-3xl max-h-[85vh] overflow-auto relative border border-white/20 animate-in zoom-in-95 duration-200">
+          <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-auto relative border border-white/20 animate-in zoom-in-95 duration-200">
             <button
-              onClick={() => setShowFullTableSelection(false)}
+              onClick={() => {
+                setShowFullTableSelection(false);
+                if (
+                  !kotDataForEdit &&
+                  Object.keys(kotDataForEdit).length <= 0
+                ) {
+                  setRoomDetails({});
+                }
+              }}
               className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl font-bold w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center transition-all duration-200"
             >
-              ×
+              <button
+                onClick={() => {
+                  setShowFullTableSelection(false);
+                  if (
+                    !kotDataForEdit &&
+                    Object.keys(kotDataForEdit).length <= 0
+                  ) {
+                    setRoomDetails({});
+                  }
+                }}
+                className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-3xl font-bold w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center transition-all duration-200"
+                aria-label="Close modal"
+              >
+                &times;
+              </button>
             </button>
-            <div className="p-4 md:p-6">
+            <div>
               <TableSelection
                 showKOTs={false}
                 onTableSelect={(table) => {
                   generateKOT(table.tableNumber, table.status);
                   setShowFullTableSelection(false);
                 }}
+                roomData={roomData}
+                setRoomDetails={setRoomDetails}
+                roomDetails={roomDetails}
               />
             </div>
           </div>
@@ -1213,13 +1309,47 @@ const RestaurantPOS = () => {
 
             {/* Customer Details Input */}
             <div className="space-y-3 mb-6">
-              {orderType === "roomService" && (
+              {(orderType === "roomService" || orderType === "dine-in") && (
                 <>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Room Number
                     </label>
-                    <select
+                    <div className="relative ">
+                      <input
+                        type="text"
+                        placeholder="Search room..."
+                        className="px-3 py-2 border rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-violet-500"
+                        value={search}
+                        onChange={(e) => {
+                          setSearch(e.target.value);
+                          setShowResults(true);
+                        }}
+                      />
+
+                      {/* Dropdown results */}
+                      {showResults && search && (
+                        <ul className="absolute z-10 w-full bg-white border rounded-lg shadow max-h-60 overflow-y-auto">
+                          {filteredRooms.length > 0 ? (
+                            filteredRooms.map((room) => (
+                              <li
+                                key={room.roomId}
+                                className="px-4 py-2 hover:bg-violet-100 cursor-pointer"
+                                onClick={() => handleSelectRoom(room)}
+                              >
+                                {room.roomName} - {room.customerName} -{" "}
+                                {room.voucherNumber}
+                              </li>
+                            ))
+                          ) : (
+                            <li className="px-4 py-2 text-gray-500">
+                              No results found
+                            </li>
+                          )}
+                        </ul>
+                      )}
+                    </div>
+                    {/* <select
                       value={roomDetails._id}
                       onChange={(e) => {
                         const selectedRoom = roomData.find(
@@ -1242,7 +1372,7 @@ const RestaurantPOS = () => {
                           {room?.voucherNumber}
                         </option>
                       ))}
-                    </select>
+                    </select> */}
                   </div>
 
                   <div>
@@ -1334,7 +1464,10 @@ const RestaurantPOS = () => {
             {/* Confirm Button */}
             <div className="flex space-x-2">
               <button
-                onClick={() => setShowKOTModal(false)}
+                onClick={() => {
+                  setShowKOTModal(false);
+                  setRoomDetails({});
+                }}
                 className="flex-1 bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 hover:scale-105 active:scale-95"
               >
                 Cancel

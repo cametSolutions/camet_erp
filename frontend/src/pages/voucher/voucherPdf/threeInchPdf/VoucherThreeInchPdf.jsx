@@ -4,7 +4,14 @@ import { useSelector } from "react-redux";
 import numberToWords from "number-to-words";
 import { defaultPrintSettings } from "../../../../../utils/defaultConfigurations";
 
-function VoucherThreeInchPdf({ contentToPrint, data, org }) {
+function VoucherThreeInchPdf({
+  contentToPrint,
+  data,
+  org,
+  isPreview,
+  sendToParent,
+  handlePrintData,
+}) {
   const [subTotal, setSubTotal] = useState("");
   const [additinalCharge, setAdditinalCharge] = useState("");
   const [inWords, setInWords] = useState("");
@@ -114,13 +121,13 @@ function VoucherThreeInchPdf({ contentToPrint, data, org }) {
   const calculateAddCess = () => {
     return data?.items?.reduce((acc, curr) => {
       return acc + curr?.totalAddlCessAmt;
-    }, 0); // Initialize the accumulator with 0
+    }, 0);
   };
 
   const calculateCess = () => {
     return data?.items?.reduce((acc, curr) => {
       return acc + curr?.totalCessAmt;
-    }, 0); // Initialize the accumulator with 0
+    }, 0);
   };
 
   let address;
@@ -162,300 +169,584 @@ function VoucherThreeInchPdf({ contentToPrint, data, org }) {
     }
   }
 
-  // console.log(address);
+  const handlePrint = () => {
+    console.log("welcome");
+    handlePrintData();
+  };
+
+  console.log(org?.industry);
+
   return (
-    <div
-      ref={contentToPrint}
-      style={{ width: "80mm", height: "auto" }}
-      className="  rounded-lg   flex justify-center px-2.5 "
-    >
-      <div className=" print-container  max-w-3xl mx-auto  md:block w-full ">
-        <div className="flex justify-center ">
-          <div className="font-bold text-md  mt-6">
-            {configurations?.printTitle || ""}
-          </div>
-        </div>
-        <div>
-          <div className="flex items-center justify-between flex-col leading-4   font-bold">
-            <div className="text-[12px]  tracking-wide ">
-              No: {data?.[getVoucherNumber()]}
-            </div>
-            <div className="text-[12px] tracking-wide">
-              Date:{new Date().toDateString()}{" "}
-            </div>
-          </div>
-        </div>
-        {configurations?.showCompanyDetails && (
-          <div className="flex justify-center">
-            <div className=" flex flex-col  items-center">
-              <div className=" flex justify-center ">
-                <p className="text-black font-extrabold text-[15px] pb-1 text-center">
-                  {org?.name}
-                </p>
+    <div className="grid">
+      <div
+        ref={contentToPrint}
+        className="receipt-container"
+        style={{
+          width: "100%",
+          maxWidth: "62mm", // Slightly increased to accommodate larger fonts
+          margin: "0 auto",
+          fontFamily: "'Courier New', monospace",
+          fontSize: "14px", // Increased base font
+          fontWeight: "bold", // Made default text bold
+          lineHeight: "1.4",
+          padding: "3mm",
+        }}
+      >
+        <div style={{ width: "100%" }}>
+          {/* Header */}
+          {(org?.industry != 6 && org?.industry != 7) && (
+            <div
+              className="header"
+              style={{ textAlign: "center", marginBottom: "10px" }}
+            >
+              <div
+                className="restaurant-name"
+                style={{
+                  fontSize: "16px", // Large, readable header
+                  fontWeight: "bold",
+                  marginBottom: "6px",
+                  letterSpacing: "1px",
+                }}
+              >
+                {configurations?.printTitle || ""}
               </div>
-              <div className=" flex flex-col items-center leading-4 ">
-                <div className="text-black  text-[12px] font-semibold text-center">
-                  {[
-                    org?.flat,
-                    org?.landmark,
-                    org?.road,
-                    org?.place,
-                    org?.pin,
-                    org?.mobile,
-                  ]
-                    .filter(Boolean) // Remove any falsy values (e.g., undefined or null)
+            </div>
+          )}
+
+          {/* Document Info */}
+          {/* Replace the commented order-info div with image */}
+          <div
+            className="image-container"
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              marginBottom: "8px",
+            }}
+          >
+            <img
+              src={org?.logo} // Replace with your image path
+              alt="Company Logo"
+              style={{
+                maxWidth: "50mm", // Adjust for thermal printer width
+                height: "auto",
+                objectFit: "contain",
+              }}
+            />
+          </div>
+
+          {/* Company Details */}
+          {configurations?.showCompanyDetails && (
+            <div style={{ textAlign: "center", marginBottom: "10px" }}>
+              <div
+                style={{
+                  fontSize: "20px", // Increased
+                  fontWeight: "bold",
+                  marginBottom: "4px",
+                }}
+              >
+                {org?.name}
+              </div>
+
+              <div
+                style={{
+                  fontSize: "12px",
+                  lineHeight: "1.3",
+                  fontWeight: "bold",
+                }}
+              >
+                <div>
+                  {[org?.flat, org?.landmark, org?.road, org?.place, org?.pin]
+                    .filter(Boolean)
                     .join(", ")}
                 </div>
-                <div className="text-black font-semibold   text-[12px] ">
-                  {org?.email}
-                </div>
-
-                {org?.website && (
-                  <div className="text-black font-semibold  text-[12px]">
-                    Website: {org?.website}
-                  </div>
-                )}
-
+                {org?.mobile && <div>Tel: {org?.mobile}</div>}
+                {org?.email && <div>{org?.email}</div>}
+                {org?.website && <div>Web: {org?.website}</div>}
                 {org?.gstNum && (
-                  <div className="text-black font-semibold  text-[12px]">
-                    {IsIndian ? "Tax No:" : "Vat No:"}: {org?.gstNum}
+                  <div>
+                    {IsIndian ? "Tax No:" : "Vat No:"} {org?.gstNum}
                   </div>
                 )}
-
-                {org?.pan && (
-                  <div className="text-black font-semibold   text-[12px]">
-                    Pan No: {org?.pan}
-                  </div>
-                )}
+                {org?.pan && <div>Pan: {org?.pan}</div>}
               </div>
+            </div>
+          )}
+          <div
+            className="divider"
+            style={{
+              borderBottom: "2px dashed #000", // Thicker divider
+              margin: "8px 0",
+            }}
+          ></div>
+
+          <div style={{ textAlign: "center", marginBottom: "10px" }}>
+            {(org?.industry == 6 || org?.industry == 7) && (
+              <>
+              <div
+                className="header"
+                style={{ textAlign: "center", marginBottom: "10px" }}
+              >
+                <div
+                  className="restaurant-name"
+                  style={{
+                    fontSize: "16px", // Large, readable header
+                    fontWeight: "bold",
+                    marginBottom: "6px",
+                    letterSpacing: "1px",
+                  }}
+                >
+                  {configurations?.printTitle || ""}
+                </div>
+              </div>
+                   <div
+            className="order-info"
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              marginBottom: "2px",
+              fontSize: "12px", // Increased
+              fontWeight: "bold",
+            }}
+          >
+            <div>No: {data?.[getVoucherNumber()]}</div>
+            <div>{new Date(data?.createdAt).toLocaleDateString("en-GB")}</div>
+          </div>
+          <div
+            className="order-info"
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              marginBottom: "4px",
+              fontSize: "12px", // Increased
+              fontWeight: "bold",
+            }}
+          >
+            <div>
+              Table No:{" "}
+              {data?.convertedFrom?.map((item) => item?.tableNumber).join(", ")}
+            </div>
+
+            <div>
+              {new Date(data?.createdAt).toLocaleTimeString("en-GB", {
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: true,
+              })}
             </div>
           </div>
-        )}
-        {/* </div> */}
+          <div
+            className="order-info"
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              marginBottom: "4px",
+              fontSize: "12px", // Increased
+              fontWeight: "bold",
+            }}
+          >
+            <div>
+              KOT NO :{" "}
+              {data?.convertedFrom
+                ?.map((item) => item?.voucherNumber)
+                .join(", ")}
+            </div>
+          </div>
+          </>
+            )}
+          </div>
 
-        <div className="leading-4">
-          <p className="text-black   text-[13px] font-bold mt-6 tracking-wider">
-            Name: {data?.party?.partyName}
-          </p>
-          <p className="text-black text-[12px] font-semibold">
-            {[address?.billToAddress]
-              .filter((item) => item != null && item !== "" && item !== "null")
-              .join(", ") || ""}
-          </p>
-        </div>
+          <div
+            className="divider"
+            style={{
+              borderBottom: "2px dashed #000", // Thicker divider
+              margin: "8px 0",
+            }}
+          ></div>
 
-        {/* <hr className="border-t-2 border-black mb-0.5" /> */}
-        <table className="w-full text-left     mt-2 tracking-wider ">
-          <thead className="border-b border-t-2 border-black text-[10px] text-right ">
-            <tr>
-              <th className="text-black font-bold uppercase  px-1 text-left">
-                Items
-              </th>
+          {/* Customer Details */}
+          <div
+            style={{
+              marginBottom: "10px",
+              fontSize: "14px",
+              fontWeight: "bold",
+            }}
+          >
+            <div style={{ fontSize: "14px", marginBottom: "2px" }}>
+              Customer: {data?.party?.partyName}
+            </div>
+            {address?.billToAddress && (
+              <div style={{ fontSize: "14px" }}>{address.billToAddress}</div>
+            )}
+          </div>
 
-              {configurations?.showQuantity ? (
-                <th className="text-black font-bold uppercase text-center p-2">
-                  Qty
-                </th>
-              ) : (
-                <th className="text-black font-bold uppercase text-right p-2"></th>
-              )}
+          <div
+            className="divider"
+            style={{
+              borderBottom: "1px dashed #000",
+              margin: "8px 0",
+            }}
+          ></div>
 
-              {configurations?.showRate ? (
-                <th className="text-black font-bold uppercase text-right p-2">
-                  Rate
-                </th>
-              ) : (
-                <th className="text-black font-bold uppercase text-right p-2"></th>
-              )}
+          {/* Items Header - Single column layout for better readability */}
+          {configurations?.showStockWiseAmount ? (
+            // Full bill format
+            <>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  fontSize: "14px",
+                  fontWeight: "bold",
+                  marginBottom: "5px",
+                  borderBottom: "1px solid #000",
+                  paddingBottom: "2px",
+                }}
+              >
+                <div style={{ width: "40%" }}>ITEMS</div>
+                <div style={{ width: "15%", textAlign: "center" }}>QTY</div>
+                <div style={{ width: "20%", textAlign: "right" }}>RATE</div>
+                <div style={{ width: "25%", textAlign: "right" }}>AMOUNT</div>
+              </div>
 
-              {configurations?.showStockWiseAmount && (
-                <th className="text-black font-bold uppercase p-2 pr-0">
-                  Amount
-                </th>
-              )}
-            </tr>
-          </thead>
+              {/* Items */}
+              {data?.items?.length > 0 &&
+                data?.items.map((el, index) => {
+                  const total = el?.total || 0;
+                  const count = el?.totalCount || 0;
+                  const rate = count > 0 ? (total / count).toFixed(1) : "0";
 
-          <tbody>
-            {data?.items?.length > 0 &&
-              data?.items.map((el, index) => {
-                const total = el?.total || 0;
-                // console.log("total", total);
-                const count = el?.totalCount || 0;
-                // console.log("count", count);
-                const rate = (total / count).toFixed(2) || 0;
+                  return (
+                    <div
+                      key={index}
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        fontSize: "14px",
+                        fontWeight: "bold",
+                        marginBottom: "3px",
+                        alignItems: "flex-start",
+                      }}
+                    >
+                      <div style={{ width: "40%" }}>
+                        <div style={{ fontSize: "12px", lineHeight: "1.2" }}>
+                          {el.product_name?.length > 12
+                            ? el.product_name
+                            : el.product_name}
+                        </div>
+                        {configurations?.showTaxPercentage && (
+                          <div style={{ fontSize: "12px" }}>({el.igst}%)</div>
+                        )}
+                      </div>
 
-                return (
-                  <tr
+                      {configurations?.showQuantity && (
+                        <div style={{ width: "15%", textAlign: "center" }}>
+                          <div>{el?.totalCount}</div>
+                          {configurations?.showUnit && (
+                            <div style={{ fontSize: "12px" }}>{el?.unit}</div>
+                          )}
+                        </div>
+                      )}
+
+                      {configurations?.showRate && (
+                        <div
+                          style={{
+                            width: "20%",
+                            fontSize: "12px",
+                            textAlign: "right",
+                          }}
+                        >
+                          {rate}
+                        </div>
+                      )}
+
+                      <div
+                        style={{
+                          width: "25%",
+                          fontSize: "12px",
+                          textAlign: "right",
+                        }}
+                      >
+                        {total?.toFixed(1)}
+                      </div>
+                    </div>
+                  );
+                })}
+            </>
+          ) : (
+            // Simple KOT format
+            <>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  fontSize: "14px",
+                  fontWeight: "bold",
+                  marginBottom: "5px",
+                  borderBottom: "1px solid #000",
+                  paddingBottom: "2px",
+                }}
+              >
+                <div>ITEMS</div>
+                <div>QTY</div>
+              </div>
+
+              {/* Items */}
+              {data?.items?.length > 0 &&
+                data?.items.map((el, index) => (
+                  <div
                     key={index}
-                    className="border-b  border-gray-500 border-t-2 text-[10px] bg-white  text-center  "
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      fontSize: "14px",
+                      fontWeight: "bold",
+                      marginBottom: "3px",
+                    }}
                   >
-                    <td className="py-1 text-black  font-bold  pr-2 flex ">
-                      {el.product_name} <br />
-                      {configurations?.showTaxPercentage && (
-                        <p className="text-black ">({el.igst}%)</p>
-                      )}
-                    </td>
-
-                    {configurations?.showQuantity ? (
-                      <td className="py-1 text-black  font-bold text-center pr-2">
-                        {el?.totalCount}
-                        <p className="text-[10px] font-semibold">{el?.unit}</p>
-                      </td>
-                    ) : (
-                      <td className="py-1 text-black  font-bold text-center pr-2"></td>
-                    )}
-
-                    {configurations?.showRate ? (
-                      <td className="py-1 text-black font-bold  text-right pl-2 pr-1 text-nowrap">
-                        {rate || 0}
-                      </td>
-                    ) : (
-                      <td className="py-1 text-black font-bold  text-right pl-2 pr-1 text-nowrap"></td>
-                    )}
-
-                    {configurations?.showStockWiseAmount && (
-                      <td className="py-1 text-black  font-bold text-right">
-                        {el?.total}
-                      </td>
-                    )}
-                  </tr>
-                );
-              })}
-
-            <tr
-              className={`border-gray-500 font-bold text-[12px] bg-white ${
-                configurations?.showStockWiseAmount ||
-                configurations?.showQuantity
-                  ? "border-y"
-                  : ""
-              }`}
-            >
-              {configurations?.showStockWiseAmount ? (
-                <td className="py-1 text-black">Total</td>
-              ) : (
-                <td className="py-1 text-black"></td>
-              )}
-              {configurations?.showQuantity ? (
-                <td className="col-span-2 py-1 text-black text-center">
-                  {data?.items?.reduce(
-                    (acc, curr) => (acc += Number(curr?.totalCount)),
-                    0
-                  )}
-                </td>
-              ) : (
-                <td className="col-span-2 py-1 text-black text-center"></td>
-              )}
-              <td className="py-1 text-black"></td>
-              {configurations?.showStockWiseAmount && (
-                <td className="py-1 text-black text-right">{subTotal}</td>
-              )}
-            </tr>
-          </tbody>
-        </table>
-
-        <div className="flex justify-end">
-          <div className=" mt-1  ">
-            <div className="  flex flex-col items-end ">
-              {IsIndian
-                ? configurations?.showTaxAmount && (
-                    <div className="flex flex-col items-end text-[12px] text-black font-bold gap-1">
-                      {isSameState ? (
-                        <>
-                          <p
-                            className={calculateTotalTax() > 0 ? "" : "hidden"}
-                          >
-                            CGST : {(calculateTotalTax() / 2).toFixed(2)}
-                          </p>
-                          <p
-                            className={calculateTotalTax() > 0 ? "" : "hidden"}
-                          >
-                            SGST : {(calculateTotalTax() / 2).toFixed(2)}
-                          </p>
-                        </>
-                      ) : (
-                        <p className={calculateTotalTax() > 0 ? "" : "hidden"}>
-                          IGST : {Number(calculateTotalTax()).toFixed(2)}
-                        </p>
-                      )}
-
-                      {IsIndian && (
-                        <>
-                          <p className={calculateCess() > 0 ? "" : "hidden"}>
-                            CESS : {calculateCess()}
-                          </p>
-                          <p className={calculateAddCess() > 0 ? "" : "hidden"}>
-                            ADD.CESS : {calculateAddCess()}
-                          </p>
-                        </>
-                      )}
+                    <div style={{ maxWidth: "75%" }}>
+                      {index + 1}.{" "}
+                      {el.product_name?.length > 15
+                        ? el.product_name.substring(0, 15) + "..."
+                        : el.product_name}
                     </div>
-                  )
-                : configurations?.showTaxAmount && (
-                    <div className="flex flex-col items-end text-[12px] text-black font-bold gap-1">
-                      <p className={calculateTotalTax() > 0 ? "" : "hidden"}>
-                        VAT : {Number(calculateTotalTax()).toFixed(2)}
-                      </p>
-                    </div>
-                  )}
-              {additinalCharge > 0 && (
-                <div className="flex items-center mt-1 mb-1">
-                  <div className="text-black mr-2 font-bold text-[12px] ">
-                    Add on charges:
+                    <div>{el?.totalCount || 1}</div>
                   </div>
-                  <div className="text-black font-bold text-[12px]">
-                    {additinalCharge}
-                  </div>
-                </div>
+                ))}
+            </>
+          )}
+
+          <div
+            className="divider"
+            style={{
+              borderBottom: "1px dashed #000",
+              margin: "8px 0",
+            }}
+          ></div>
+
+          {/* Totals */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              fontSize: "14px",
+              fontWeight: "bold",
+              marginBottom: "8px",
+              padding: "4px 0",
+              backgroundColor: "#f0f0f0",
+            }}
+          >
+            <div>TOTAL QTY:</div>
+            <div>
+              {data?.items?.reduce(
+                (acc, curr) => acc + Number(curr?.totalCount),
+                0
               )}
             </div>
-            {data?.additionalCharges?.map((el, index) => (
-              <>
+          </div>
+
+          {configurations?.showStockWiseAmount && (
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                fontSize: "12px",
+                fontWeight: "bold",
+                marginBottom: "8px",
+              }}
+            >
+              <div>SUBTOTAL:</div>
+              <div>{subTotal}</div>
+            </div>
+          )}
+
+          {/* Tax Details */}
+          {configurations?.showTaxAmount && (
+            <div
+              style={{
+                fontSize: "12px",
+                fontWeight: "bold",
+                marginBottom: "8px",
+              }}
+            >
+              {IsIndian ? (
+                isSameState ? (
+                  <>
+                    {calculateTotalTax() > 0 && (
+                      <div
+                        style={{
+                          display: "flex",
+                          fontSize: "12px",
+                          justifyContent: "space-between",
+                          marginBottom: "2px",
+                        }}
+                      >
+                        <div>CGST:</div>
+                        <div>{(calculateTotalTax() / 2).toFixed(1)}</div>
+                      </div>
+                    )}
+                    {calculateTotalTax() > 0 && (
+                      <div
+                        style={{
+                          display: "flex",
+                          fontSize: "12px",
+                          justifyContent: "space-between",
+                          marginBottom: "2px",
+                        }}
+                      >
+                        <div>SGST:</div>
+                        <div>{(calculateTotalTax() / 2).toFixed(1)}</div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  calculateTotalTax() > 0 && (
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        marginBottom: "2px",
+                        fontSize: "12px",
+                      }}
+                    >
+                      <div>IGST:</div>
+                      <div>{Number(calculateTotalTax()).toFixed(1)}</div>
+                    </div>
+                  )
+                )
+              ) : (
+                calculateTotalTax() > 0 && (
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      marginBottom: "2px",
+                    }}
+                  >
+                    <div>VAT:</div>
+                    <div>{Number(calculateTotalTax()).toFixed(1)}</div>
+                  </div>
+                )
+              )}
+            </div>
+          )}
+
+          {/* Additional Charges */}
+          {additinalCharge > 0 && (
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                fontSize: "14px",
+                fontWeight: "bold",
+                marginBottom: "8px",
+              }}
+            >
+              <div>Add Charges:</div>
+              <div>{additinalCharge}</div>
+            </div>
+          )}
+
+          {/* Net Amount */}
+          {configurations?.showNetAmount && (
+            <>
+              <div
+                className="divider"
+                style={{
+                  borderBottom: "3px solid #000", // Thicker divider for total
+                  margin: "8px 0",
+                }}
+              ></div>
+
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  fontSize: "12px", // Larger for final total
+                  fontWeight: "bold",
+                  marginBottom: "10px",
+                  padding: "4px",
+                  backgroundColor: "#f0f0f0",
+                }}
+              >
+                <div>GRAND TOTAL:</div>
+                <div>
+                  {selectedOrganization?.currency} {data?.finalAmount}
+                </div>
+              </div>
+
+              <div
+                style={{
+                  fontSize: "14px",
+                  textAlign: "center",
+                  marginTop: "8px",
+                  fontWeight: "bold",
+                }}
+              >
+                <div style={{ marginBottom: "4px" }}>Amount in words:</div>
                 <div
-                  key={index}
-                  className="text-black  text-right font-semibold text-[12px] "
+                  style={{
+                    fontSize: "10px",
+                    textTransform: "uppercase",
+                    wordWrap: "break-word",
+                    lineHeight: "1.3",
+                    fontStyle: "italic",
+                  }}
                 >
-                  <span>({el?.action === "add" ? "+" : "-"})</span> {el?.option}
-                  : ₹ {el?.finalValue}
-                </div>
-                {el?.taxPercentage && (
-                  <div className="text-black  text-right font-semibold text-[8px] mb-2">
-                    ( {el?.value} + {el?.taxPercentage}% )
-                  </div>
-                )}
-              </>
-            ))}
-
-            {configurations?.showNetAmount && (
-              <div className="flex justify-end  border-black  ">
-                <div className="w-3/4"></div>
-
-                <div className="  text-black  font-extrabold text-[11px] flex justify-end   ">
-                  <p className="text-nowrap border-y-2 py-1">
-                    NET AMOUNT :&nbsp;{" "}
-                  </p>
-                  <div className="text-black  font-bold text-[11px] text-nowrap  border-y-2 py-1    ">
-                    {selectedOrganization?.currency} {data?.finalAmount}
-                  </div>
+                  {inWords}
                 </div>
               </div>
-            )}
+            </>
+          )}
 
-            {configurations?.showNetAmount && (
-              <div className="flex  justify-end border-black pb-3 w-full ">
-                <div className="w-2/4"></div>
+          <div
+            className="divider"
+            style={{
+              borderBottom: "2px dashed #000",
+              margin: "10px 0",
+            }}
+          ></div>
 
-                <div className="text-black font-bold text-[12px] flex flex-col justify-end text-right mt-1">
-                  <p className="text-nowrap">Total Amount (in words)</p>
-                  <div className="text-black full font-bold text-[9px] text-nowrap uppercase mt-1   ">
-                    <p className="whitespace-normal -">{inWords} </p>
-                  </div>
-                </div>
-              </div>
-            )}
+          {/* Footer */}
+          <div
+            className="footer"
+            style={{
+              textAlign: "center",
+              fontSize: "10px",
+              fontWeight: "bold",
+              letterSpacing: "0.5px",
+            }}
+          >
+            *** THANK YOU ***
+            <br />
+            <div style={{ fontSize: "8px", marginTop: "4px" }}>
+              Please visit again!
+            </div>
           </div>
         </div>
       </div>
+
+      {isPreview && (
+        <div className="flex gap-3 justify-end p-2">
+          <button
+            className="px-3 py-1 rounded-lg bg-gray-500 text-black font-medium hover:bg-gray-600 active:scale-95 transition"
+            onClick={handlePrint}
+          >
+            Print
+          </button>
+          <button
+            className="px-3 py-1 rounded-lg bg-gray-500 text-black font-medium hover:bg-gray-600 active:scale-95 transition"
+            onClick={() => sendToParent(true)}
+          >
+            Confirm
+          </button>
+          <button
+            className="px-3 py-1 rounded-lg bg-gray-200 text-gray-800 font-medium hover:bg-gray-300 active:scale-95 transition"
+            onClick={() => sendToParent(false)}
+          >
+            Cancel
+          </button>
+        </div>
+      )}
     </div>
   );
 }

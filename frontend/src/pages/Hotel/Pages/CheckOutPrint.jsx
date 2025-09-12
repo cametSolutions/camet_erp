@@ -1,435 +1,1462 @@
-import React from 'react';
-import Logo from '../../../assets/images/sattva.jpg' 
+import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { toast } from "react-toastify";
+import api from "@/api/api";
+import { useNavigate } from "react-router-dom";
+import TitleDiv from "@/components/common/TitleDiv";
+import { useRef } from "react";
+import { useReactToPrint } from "react-to-print";
+import { jsPDF } from "jspdf";
+import "jspdf-autotable";
+
 export default function SattvaInvoice() {
-  const handlePrint = () => {
-    window.print();
+  // Router and Redux state
+  const location = useLocation();
+  const navigate = useNavigate();
+  const organization = useSelector(
+    (state) => state?.secSelectedOrganization?.secSelectedOrg
+  );
+
+  // Props from location state
+  const selectedCheckOut = location.state?.selectedCheckOut;
+  const selectedCustomerId = location.state?.customerId;
+  const isForPreview = location.state?.isForPreview;
+
+  // Component state
+  const [outStanding, setOutStanding] = useState([]);
+  const [kotData, setKotData] = useState([]);
+  const [selectedCustomerData, setSelectedCustomerData] = useState({});
+  const [selectedCheckOutData, setSelectedCheckOutData] = useState({});
+  const [dateWiseDisplayedData, setDateWiseDisplayedData] = useState([]);
+  const [taxAmountForRoom, setTaxAmountForRoom] = useState(0);
+  const [taxAmountForFood, setTaxAmountForFood] = useState(0);
+  const [taxAmountForAdditionalPax, setTaxAmountForAdditionalPax] = useState(0);
+  const [foodPlanAmount, setFoodPlanAmount] = useState(0);
+  const [additionalPaxAmount, setAdditionalPaxAmount] = useState(0);
+  const [showSplitPopUp, setShowSplitPopUp] = useState(false);
+  const printReference = useRef(null);
+  const [selected, setSelected] = useState(0);
+
+  // Utility function to transform checkout data
+  const transformCheckOutData = (selectedCheckOut) => {
+    let result = [];
+
+    selectedCheckOut.forEach((item) => {
+      item.selectedRooms.forEach((room) => {
+        const stayDays = room.stayDays || 1;
+        const perDayAmount = room.baseAmountWithTax / stayDays;
+        const baseAmount = room.baseAmount / stayDays;
+        const taxAmount = room.taxAmount / stayDays;
+        const foodPlanAmountWithTax = room.foodPlanAmountWithTax / stayDays;
+        const foodPlanAmountWithOutTax =
+          room.foodPlanAmountWithOutTax / stayDays;
+
+        const additionalPaxDataWithTax =
+          room.additionalPaxAmountWithTax / stayDays;
+        const additionalPaxDataWithOutTax =
+          room.additionalPaxAmountWithOutTax / stayDays;
+
+        // Calculate date range
+        const startDate = new Date(item.arrivalDate);
+        const endDate = new Date(item.checkOutDate);
+
+        // Create entry for each day
+        for (
+          let d = new Date(startDate);
+          d < endDate;
+          d.setDate(d.getDate() + 1)
+        ) {
+          const formattedDate = d
+            .toLocaleDateString("en-GB")
+            .replace(/\//g, "-");
+
+          result.push({
+            date: formattedDate,
+            baseAmountWithTax: perDayAmount,
+            baseAmount: baseAmount,
+            taxAmount,
+            voucherNumber: item.voucherNumber,
+            roomName: room.roomName,
+            hsn: room?.hsnDetails?.hsn,
+            customerName: item.customerId?.partyName,
+            foodPlanAmountWithTax,
+            foodPlanAmountWithOutTax,
+            additionalPaxDataWithTax,
+            additionalPaxDataWithOutTax,
+          });
+        }
+      });
+    });
+
+    return result;
   };
 
+  // API call to fetch debit data
+  const fetchDebitData = async (data) => {
+    try {
+      const res = await api.post(
+        `/api/sUsers/fetchOutStandingAndFoodData`,
+        { data: data },
+        { withCredentials: true }
+      );
+
+      if (res.data.success) {
+        setOutStanding(res.data.data);
+        setKotData(res.data.kotData);
+      }
+    } catch (error) {
+      toast.error(error.message);
+      console.error("Error fetching debit data:", error);
+    }
+  };
+
+  // Utility function to format date
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+  };
+
+  // Calculate totals
+  const calculateTotals = () => {
+    const roomTariffTotal = dateWiseDisplayedData.reduce(
+      (total, order) => total + order.baseAmount,
+      0
+    );
+
+    const planAmount = dateWiseDisplayedData.reduce(
+      (total, order) => total + order?.foodPlanAmountWithOutTax,
+      0
+    );
+
+    const additionalPaxAmount = dateWiseDisplayedData.reduce(
+      (total, order) => total + order?.additionalPaxDataWithOutTax,
+      0
+    );
+
+    const advanceTotal =
+      outStanding?.reduce(
+        (total, transaction) => total + transaction?.bill_amount,
+        0
+      ) || 0;
+
+    const kotTotal =
+      kotData?.reduce((total, kot) => total + kot?.finalAmount, 0) || 0;
+
+    const balanceAmount =
+      roomTariffTotal + planAmount + additionalPaxAmount - advanceTotal;
+    const totalTaxAmount = (taxAmountForFood + taxAmountForRoom) * 2; // CGST + SGST
+    const balanceAmountToPay =
+      totalTaxAmount +
+      roomTariffTotal +
+      planAmount +
+      additionalPaxAmount +
+      kotTotal -
+      advanceTotal;
+
+    return {
+      roomTariffTotal,
+      advanceTotal,
+      kotTotal,
+      balanceAmount,
+      totalTaxAmount,
+      balanceAmountToPay,
+    };
+  };
+
+  // Print handler
+  const handlePrint = useReactToPrint({
+    content: () => printReference.current,
+    documentTitle: "CheckOut",
+    removeAfterPrint: true,
+  });
+
+  // PDF Generation Functions
+  const addPDFHeader = (doc, pageWidth, pageHeight, margin) => {
+    const headerHeight = 40;
+    let currentY = margin;
+
+    // Organization Logo (if available)
+    if (organization?.logo) {
+      try {
+        doc.addImage(organization.logo, "PNG", margin, currentY, 25, 25);
+      } catch (error) {
+        console.warn("Could not add logo:", error);
+      }
+    }
+
+    // Organization Details - Right aligned
+    doc.setFontSize(16);
+    doc.setFont(undefined, "bold");
+    const orgName = organization?.name || "";
+    doc.text(orgName.toUpperCase(), pageWidth - margin, currentY + 5, {
+      align: "right",
+    });
+
+    doc.setFontSize(10);
+    doc.setFont(undefined, "normal");
+
+    // Address line
+    const addressParts = [
+      organization?.flat,
+      organization?.road,
+      organization?.landmark,
+      organization?.mobile,
+    ].filter(Boolean);
+
+    if (addressParts.length > 0) {
+      doc.text(
+        addressParts.join(", ").toUpperCase(),
+        pageWidth - margin,
+        currentY + 12,
+        { align: "right" }
+      );
+    }
+
+    // GST and other details
+    let detailY = currentY + 18;
+    if (organization?.gstNum) {
+      doc.text(`GSTIN: ${organization.gstNum}`, pageWidth - margin, detailY, {
+        align: "right",
+      });
+      detailY += 4;
+    }
+
+    if (organization?.state) {
+      const statePin = `State Name: ${organization.state}${
+        organization?.pin ? `, Pin: ${organization.pin}` : ""
+      }`;
+      doc.text(statePin, pageWidth - margin, detailY, { align: "right" });
+      detailY += 4;
+    }
+
+    if (organization?.email) {
+      doc.text(`E-Mail: ${organization.email}`, pageWidth - margin, detailY, {
+        align: "right",
+      });
+    }
+
+    // Draw header border
+    doc.rect(margin, margin, pageWidth - 2 * margin, headerHeight);
+
+    return margin + headerHeight + 5;
+  };
+
+  const addPDFInvoiceDetails = (doc, pageWidth, margin, startY) => {
+    doc.setFontSize(9);
+    doc.setFont(undefined, "normal");
+
+    const col1X = margin + 2;
+    const col2X = margin + 65;
+    const col3X = margin + 130;
+
+    let detailY = startY + 5;
+
+    // Column 1
+    doc.setFont(undefined, "bold");
+    doc.text("GRC No:", col1X, detailY);
+    doc.setFont(undefined, "normal");
+    doc.text(selectedCheckOutData?.voucherNumber || "", col1X + 20, detailY);
+
+    detailY += 5;
+    doc.setFont(undefined, "bold");
+    doc.text("Pax:", col1X, detailY);
+    doc.setFont(undefined, "normal");
+    const totalPax =
+      selectedCheckOutData?.selectedRooms?.reduce(
+        (acc, curr) => acc + Number(curr.pax || 0),
+        0
+      ) || 0;
+    doc.text(totalPax.toString(), col1X + 20, detailY);
+
+    detailY += 5;
+    doc.setFont(undefined, "bold");
+    doc.text("Guest:", col1X, detailY);
+    doc.setFont(undefined, "normal");
+    doc.text(selectedCheckOutData?.customerName || "", col1X + 20, detailY);
+
+    detailY += 5;
+    doc.setFont(undefined, "bold");
+    doc.text("Agent:", col1X, detailY);
+    doc.setFont(undefined, "normal");
+    doc.text(
+      selectedCheckOutData?.agentId?.name || "Walk-In Customer",
+      col1X + 20,
+      detailY
+    );
+
+    // Column 2
+    detailY = startY + 5;
+    doc.setFont(undefined, "bold");
+    doc.text("Bill No:", col2X, detailY);
+    doc.setFont(undefined, "normal");
+    doc.text(selectedCheckOutData?.voucherNumber || "", col2X + 20, detailY);
+
+    detailY += 5;
+    doc.setFont(undefined, "bold");
+    doc.text("Arrival:", col2X, detailY);
+    doc.setFont(undefined, "normal");
+    const arrivalText = `${selectedCheckOutData?.arrivalDate || ""} / ${
+      selectedCheckOutData?.arrivalTime || ""
+    }`;
+    doc.text(arrivalText, col2X + 20, detailY);
+
+    // Column 3
+    detailY = startY + 5;
+    doc.setFont(undefined, "bold");
+    doc.text("Bill Date:", col3X, detailY);
+    doc.setFont(undefined, "normal");
+    doc.text(formatDate(new Date()), col3X + 25, detailY);
+
+    detailY += 5;
+    doc.setFont(undefined, "bold");
+    doc.text("Departure:", col3X, detailY);
+    doc.setFont(undefined, "normal");
+    const departureText = `${formatDate(
+      new Date()
+    )} / ${new Date().toLocaleTimeString()}`;
+    doc.text(departureText, col3X + 25, detailY);
+
+    // Draw border around details
+    doc.rect(margin, startY, pageWidth - 2 * margin, 25);
+
+    return startY + 30;
+  };
+
+  const addPDFFooter = (doc, pageWidth, pageHeight, margin) => {
+    const footerHeight = 30;
+    const footerStartY = pageHeight - footerHeight - margin;
+
+    // Footer details - Left side
+    doc.setFontSize(9);
+    doc.setFont(undefined, "bold");
+
+    let footerY = footerStartY;
+    const leftCol = margin + 5;
+    const rightCol = pageWidth / 2 + 10;
+
+    // Left column details
+    doc.text("Settlement:", leftCol, footerY);
+    doc.setFont(undefined, "normal");
+    doc.text("Cash", leftCol + 30, footerY);
+
+    footerY += 5;
+    doc.setFont(undefined, "bold");
+    doc.text("Prepared By:", leftCol, footerY);
+    doc.setFont(undefined, "normal");
+    doc.text("System", leftCol + 30, footerY);
+
+    footerY += 5;
+    doc.setFont(undefined, "bold");
+    doc.text("Billed By:", leftCol, footerY);
+    doc.setFont(undefined, "normal");
+    doc.text("Reception", leftCol + 30, footerY);
+
+    footerY += 5;
+    doc.setFont(undefined, "bold");
+    doc.text("Rooms:", leftCol, footerY);
+    doc.setFont(undefined, "normal");
+    const rooms =
+      selectedCheckOutData?.selectedRooms
+        ?.map((room) => room.roomName)
+        .join(", ") || "";
+    doc.text(rooms, leftCol + 30, footerY);
+
+    // Right column - Bank details
+    footerY = footerStartY;
+    doc.setFont(undefined, "bold");
+    doc.text("Bank Details", rightCol + 20, footerY);
+    doc.line(rightCol, footerY + 2, rightCol + 80, footerY + 2);
+
+    footerY += 8;
+    doc.text("Bank Name:", rightCol, footerY);
+    doc.line(rightCol + 25, footerY, rightCol + 80, footerY);
+
+    footerY += 5;
+    doc.text("A/C Number:", rightCol, footerY);
+    doc.line(rightCol + 25, footerY, rightCol + 80, footerY);
+
+    footerY += 5;
+    doc.text("Branch & IFSC:", rightCol, footerY);
+    doc.line(rightCol + 28, footerY, rightCol + 80, footerY);
+
+    // Signature lines
+    const signatureY = pageHeight - 15;
+    doc.line(margin + 20, signatureY, margin + 70, signatureY);
+    doc.line(
+      pageWidth - margin - 70,
+      signatureY,
+      pageWidth - margin - 20,
+      signatureY
+    );
+
+    doc.setFontSize(8);
+    doc.text("Cashier Signature", margin + 45, signatureY + 5, {
+      align: "center",
+    });
+    doc.text("Guest Signature", pageWidth - margin - 45, signatureY + 5, {
+      align: "center",
+    });
+  };
+
+  // PDF Generation Handler
+  const handlePDFGeneration = () => {
+    try {
+      const doc = new jsPDF("p", "mm", "a4");
+      const pageWidth = doc.internal.pageSize.width;
+      const pageHeight = doc.internal.pageSize.height;
+      const margin = 10;
+      const totals = calculateTotals();
+
+      // Add header
+      let currentY = addPDFHeader(doc, pageWidth, pageHeight, margin);
+
+      // Add invoice details
+      currentY = addPDFInvoiceDetails(doc, pageWidth, margin, currentY);
+
+      // Prepare table data
+      const headers = [
+        "DATE",
+        "VOUCHER",
+        "DESCRIPTION",
+        "HSN",
+        "DEBIT",
+        "CREDIT",
+        "AMOUNT",
+      ];
+      const tableData = [];
+
+      // Outstanding transactions
+      outStanding?.forEach((transaction) => {
+        tableData.push([
+          formatDate(transaction?.bill_date),
+          transaction?.bill_no || "",
+          "Advance",
+          "",
+          "",
+          transaction?.bill_amount?.toFixed(2) || "0.00",
+          "",
+        ]);
+      });
+
+      // Room tariff entries
+      dateWiseDisplayedData?.forEach((order) => {
+        tableData.push([
+          order?.date || "",
+          order?.voucherNumber || "",
+          `Room Tariff [${order?.roomName} - ${order?.customerName}]`,
+          order?.hsn || "",
+          order?.baseAmount?.toFixed(2) || "0.00",
+          "",
+          "",
+        ]);
+      });
+
+      // Summary rows
+      tableData.push([
+        "",
+        "",
+        "",
+        "",
+        "",
+        "Room Tariff Assessable Value",
+        totals.roomTariffTotal.toFixed(2),
+      ]);
+
+      if (foodPlanAmount > 0) {
+        tableData.push([
+          "",
+          "",
+          "",
+          "",
+          "",
+          "Food Plan Sales",
+          foodPlanAmount.toFixed(2),
+        ]);
+      }
+
+      if (additionalPaxAmount > 0) {
+        tableData.push([
+          "",
+          "",
+          "",
+          "",
+          "",
+          "Additional Pax Amount",
+          additionalPaxAmount.toFixed(2),
+        ]);
+      }
+
+      // Tax entries
+      tableData.push([
+        "",
+        "",
+        "",
+        "",
+        "",
+        "CGST",
+        (taxAmountForFood + taxAmountForRoom).toFixed(2),
+      ]);
+      tableData.push([
+        "",
+        "",
+        "",
+        "",
+        "",
+        "SGST",
+        (taxAmountForFood + taxAmountForRoom).toFixed(2),
+      ]);
+
+      // Room service header
+      tableData.push(["ROOM SERVICE BILL DETAILS", "", "", "", "", "", ""]);
+
+      // KOT data
+      kotData?.forEach((kot) => {
+        tableData.push([
+          formatDate(kot?.createdAt),
+          kot?.voucherNumber || "",
+          "POS [Restaurant]",
+          "",
+          "",
+          "",
+          kot?.finalAmount?.toFixed(2) || "0.00",
+        ]);
+      });
+
+      // Final totals
+      tableData.push([
+        "Total",
+        "",
+        "",
+        "",
+        "",
+        totals.advanceTotal.toFixed(2),
+        (totals.roomTariffTotal + totals.kotTotal).toFixed(2),
+      ]);
+      tableData.push([
+        "Balance To Pay",
+        "",
+        "",
+        "",
+        "",
+        "",
+        totals.balanceAmountToPay.toFixed(2),
+      ]);
+
+      // Add invoice summary if not preview
+      // // if (!isForPreview) {
+      //   tableData.push(['Round off', '', '', '', '', '', '0.00']);
+      //   tableData.push(['TOTAL INVOICE AMOUNT', '', '', '', '', '', (totals.roomTariffTotal + totals.kotTotal + totals.totalTaxAmount).toFixed(2)]);
+      // // }
+
+      // Create main table
+      doc.autoTable({
+        head: [headers],
+        body: tableData,
+        startY: currentY,
+        margin: { left: margin, right: margin },
+        styles: {
+          fontSize: 8,
+          cellPadding: 2,
+        },
+        headStyles: {
+          fillColor: [240, 240, 240],
+          textColor: [0, 0, 0],
+          fontStyle: "bold",
+        },
+        columnStyles: {
+          4: { halign: "right" }, // DEBIT
+          5: { halign: "right" }, // CREDIT
+          6: { halign: "right" }, // AMOUNT
+        },
+        didParseCell: function (data) {
+          // Highlight summary rows
+          if (
+            data.row.raw.includes("Room Tariff Assessable Value") ||
+            data.row.raw.includes("Total") ||
+            data.row.raw.includes("Balance To Pay") ||
+            data.row.raw.includes("TOTAL INVOICE AMOUNT")
+          ) {
+            data.cell.styles.fillColor = [240, 240, 240];
+            data.cell.styles.fontStyle = "bold";
+          }
+
+          // Highlight room service header
+          if (data.row.raw[0] === "ROOM SERVICE BILL DETAILS") {
+            data.cell.styles.fillColor = [200, 255, 200];
+            data.cell.styles.fontStyle = "bold";
+            data.cell.styles.halign = "center";
+          }
+        },
+      });
+
+      currentY = doc.lastAutoTable.finalY + 10;
+
+      // Add tax breakdown table if not preview
+      // if (!isForPreview) {
+      const taxHeaders = [
+        "Taxable Amount",
+        "CGST Rate",
+        "CGST Amount",
+        "SGST Rate",
+        "SGST Amount",
+        "Total Tax",
+      ];
+      const taxData = [];
+
+      // Room tariff tax row
+      taxData.push([
+        totals.roomTariffTotal.toFixed(2),
+        "6%",
+        taxAmountForRoom.toFixed(2),
+        "6%",
+        taxAmountForRoom.toFixed(2),
+        (taxAmountForRoom * 2).toFixed(2),
+      ]);
+
+      // Food plan tax row (if applicable)
+      if (foodPlanAmount > 0) {
+        taxData.push([
+          foodPlanAmount.toFixed(2),
+          "2.50%",
+          taxAmountForFood.toFixed(2),
+          "2.50%",
+          taxAmountForFood.toFixed(2),
+          (taxAmountForFood * 2).toFixed(2),
+        ]);
+      }
+
+      // Total row
+      taxData.push([
+        (totals.roomTariffTotal + foodPlanAmount).toFixed(2),
+        "",
+        (taxAmountForRoom + taxAmountForFood).toFixed(2),
+        "",
+        (taxAmountForRoom + taxAmountForFood).toFixed(2),
+        totals.totalTaxAmount.toFixed(2),
+      ]);
+
+      doc.autoTable({
+        head: [taxHeaders],
+        body: taxData,
+        startY: currentY,
+        margin: { left: pageWidth / 2, right: margin },
+        styles: {
+          fontSize: 8,
+          cellPadding: 2,
+        },
+        headStyles: {
+          fillColor: [240, 240, 240],
+          textColor: [0, 0, 0],
+          fontStyle: "bold",
+        },
+        columnStyles: {
+          0: { halign: "right" },
+          1: { halign: "center" },
+          2: { halign: "right" },
+          3: { halign: "center" },
+          4: { halign: "right" },
+          5: { halign: "right" },
+        },
+        didParseCell: function (data) {
+          if (data.row.index === taxData.length - 1) {
+            data.cell.styles.fillColor = [240, 240, 240];
+            data.cell.styles.fontStyle = "bold";
+          }
+        },
+      });
+      // }
+
+      // Add footer
+      addPDFFooter(doc, pageWidth, pageHeight, margin);
+
+      // Save PDF
+      const filename = `invoice_${
+        selectedCheckOutData?.voucherNumber || "unknown"
+      }_${new Date().toISOString().split("T")[0]}.pdf`;
+      doc.save(filename);
+
+      toast.success("PDF generated successfully!");
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      toast.error("Failed to generate PDF");
+    }
+  };
+
+  // Main effect to process checkout data
+  useEffect(() => {
+    if (selectedCustomerId && selectedCheckOut?.length > 0) {
+      // Find customer data
+      const findCustomerFullData = selectedCheckOut.find(
+        (item) => item.customerId?._id === selectedCustomerId
+      );
+
+      if (findCustomerFullData) {
+        setSelectedCustomerData(findCustomerFullData.customerId);
+        setSelectedCheckOutData(findCustomerFullData);
+
+        // Transform and calculate data
+        const selectedCheckOutData = transformCheckOutData(selectedCheckOut);
+        setDateWiseDisplayedData(selectedCheckOutData);
+
+        // Calculate tax amounts
+        const taxAmountBasedOnRoom = selectedCheckOutData.reduce(
+          (acc, item) => acc + Number(item.taxAmount),
+          0
+        );
+        setTaxAmountForRoom(taxAmountBasedOnRoom);
+        console.log([selectedCheckOutData]);
+        const foodPlanAmountWithOutTax = selectedCheckOutData.reduce(
+          (acc, item) => acc + Number(item.foodPlanAmountWithOutTax),
+          0
+        );
+        const paxAmount = selectedCheckOutData.reduce(
+          (acc, item) => acc + Number(item.additionalPaxDataWithTax),
+          0
+        );
+        setFoodPlanAmount(foodPlanAmountWithOutTax);
+        setAdditionalPaxAmount(paxAmount);
+        console.log(selectedCheckOut[0]);
+
+        const foodPlanTaxAmount = selectedCheckOutData.reduce(
+          (acc, item) =>
+            acc +
+            Number(item.foodPlanAmountWithOutTax || 0) -
+            Number(item.taxAmountForFoodPlan || 0),
+          0
+        );
+        const additionalPlanTaxAmount = selectedCheckOutData.reduce(
+          (acc, item) =>
+            acc +
+            Number(item.paxA || 0) -
+            Number(item.taxAmountForFoodPlan || 0),
+          0
+        );
+
+        setTaxAmountForFood(foodPlanTaxAmount - foodPlanAmountWithOutTax);
+        setTaxAmountForAdditionalPax(additionalPlanTaxAmount - paxAmount);
+      }
+    }
+  }, [selectedCustomerId, selectedCheckOut, selected]);
+
+  // Effect to fetch debit data
+  useEffect(() => {
+    if (selectedCheckOut?.length > 0) {
+      fetchDebitData(selectedCheckOut);
+    }
+  }, [selectedCheckOut, selected]);
+
+  const totals = calculateTotals();
+  // console.log(sale);
+
+  const handleSplitPayment = () => {
+    setShowSplitPopUp(true);
+  };
+  const handleChange = (value) => {
+    setSelected(value);
+  };
+  console.log(selected);
+  const handleSplit = () => {
+    setShowSplitPopUp(false);
+    console.log(selected);
+    if (selected === "room") {
+      setKotData([]);
+    } else if (selected === "restaurant") {
+      setOutStanding([]);
+      setDateWiseDisplayedData([]);
+      setTaxAmountForAdditionalPax(0);
+      setTaxAmountForFood(0);
+      setTaxAmountForRoom(0);
+      setFoodPlanAmount(0);
+      setAdditionalPaxAmount(0);
+    }
+  };
+  console.log(kotData);
+
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
-      <div className="no-print mb-4">
-        <button 
-          onClick={handlePrint}
-          className="bg-blue-500 hover:bg-blue-500 text-white px-6 py-2 rounded-lg font-medium"
-        >
-          🖨️ Print Invoice
-        </button>
-      </div>
-      
-      <div className="max-w-4xl mx-auto bg-white border-2 border-black p-2 text-sm print-container">
-        {/* Print Header - Will appear on every page */}
-        <div className="print-header">
-          <div className="flex items-center justify-between border-black pb-4">
-            {/* Logo on left */}
-            <div className="w-24 h-24 flex-shrink-0">
-              <div className="bg-gray-200 h-full w-full flex items-center justify-center text-xs">
-                <img src={Logo} alt="Sattva Logo"  />
-              </div>
+    <>
+      <TitleDiv title="Check out print" dropdownContents={[]} />
+      {showSplitPopUp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 w-80">
+            <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
+              Select Option
+            </h2>
+
+            {/* Default Print */}
+            <div className="flex items-center mb-3">
+              <input
+                id="opt-default"
+                type="radio"
+                name="split-option"
+                value="default"
+                checked={selected === "default"}
+                onChange={() => handleChange("default")}
+                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-full focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+              />
+              <label
+                htmlFor="opt-default"
+                className="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300"
+              >
+                Default Print
+              </label>
             </div>
-            {/* Header text on right */}
-            <div className="text-right flex-1 ml-4">
-              <div className="text-xl font-bold mb-2">SATTVA, THE AWAKENING GARDEN</div>
-              <div className="mb-2">Kakkadampoyyil, Kozhikode, Kerala</div>
-              <div className="text-xs mb-1">GSTIN: 32AEHPM4090F2ZO</div>
-              <div className="text-xs mb-1">State Name: Kerala, Code: 32</div>
-              <div className="text-xs">E-Mail: info@sattvameditationresort.com</div>
+
+            {/* Room Based */}
+            <div className="flex items-center mb-3">
+              <input
+                id="opt-room"
+                type="radio"
+                name="split-option"
+                value="room"
+                checked={selected === "room"}
+                onChange={() => handleChange("room")}
+                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-full focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+              />
+              <label
+                htmlFor="opt-room"
+                className="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300"
+              >
+                Room based
+              </label>
+            </div>
+
+            {/* Restaurant Based */}
+            <div className="flex items-center mb-5">
+              <input
+                id="opt-restaurant"
+                type="radio"
+                name="split-option"
+                value="restaurant"
+                checked={selected === "restaurant"}
+                onChange={() => handleChange("restaurant")}
+                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-full focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+              />
+              <label
+                htmlFor="opt-restaurant"
+                className="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300"
+              >
+                Restaurant based
+              </label>
+            </div>
+
+            {/* Buttons */}
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowSplitPopUp(false)}
+                className="px-4 py-2 text-sm rounded-lg bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSplit}
+                className="px-4 py-2 text-sm rounded-lg bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50"
+                disabled={!selected}
+              >
+                Save
+              </button>
             </div>
           </div>
         </div>
+      )}
+      <div className="min-h-screen bg-gray-50 p-4 " ref={printReference}>
+        <div className="max-w-4xl mx-auto bg-white border-2 border-black p-2 text-sm">
+          {/* Header Section */}
+          <div className="flex items-center justify-between border-black pb-4">
+            {/* Logo */}
+            <div className="w-24 h-24 flex-shrink-0">
+              <img
+                src={organization?.logo}
+                alt="Sattva Logo"
+                className="object-contain h-full w-full"
+              />
+            </div>
 
-        {/* Print Content Area */}
-        <div className="print-content">
-          {/* Invoice Details */}
-          <div className="grid grid-cols-4 p-2 text-xs border border-black">
-            <div className="space-y-1">
-              <div className="flex"><span className="w-20 font-bold">GRC No:</span><span>15211</span></div>
-              <div className="flex"><span className="w-20 font-bold">Pax:</span><span>8</span></div>
-              <div className="flex"><span className="w-20 font-bold">Guest:</span><span>Nasif P T</span></div>
-              <div className="flex"><span className="w-20 font-bold">Agent:</span><span>Walk-In Customer</span></div>
-            </div>
-            <div className="space-y-1">
-              <div className="flex"><span className="w-24 font-bold">Room No:</span><span>107</span></div>
-              <div className="flex"><span className="w-24 font-bold">Room Type:</span><span>DELUX AC</span></div>
-            </div>
-            <div className="space-y-1">
-              <div className="flex"><span className="w-20 font-bold">Bill No:</span><span>C-OT\352</span></div>
-              <div className="flex"><span className="w-20 font-bold">Arrival:</span><span>30-Jun-23 / 16.00</span></div>
-              <div className="flex"><span className="w-20 font-bold">Plan:</span><span>CP</span></div>
-            </div>
-            <div className="space-y-1">
-              <div className="flex"><span className="w-20 font-bold">Bill Date:</span><span>1-Jul-23</span></div>
-              <div className="flex"><span className="w-20 font-bold">Departure:</span><span>1-Jul-23 / 18:59:47</span></div>
-              <div className="flex"><span className="w-20 font-bold">Tariff:</span><span>₹ 19,525.00</span></div>
+            {/* Organization Details */}
+            <div className="text-right flex-1 ml-4">
+              <div className="text-xl font-bold mb-2 uppercase">
+                {organization?.name}
+              </div>
+              <div className="mb-2 uppercase">
+                {[
+                  organization?.flat,
+                  organization?.road,
+                  organization?.landmark,
+                  organization?.mobile,
+                ]
+                  .filter(Boolean)
+                  .join(", ")}
+              </div>
+              <div className="text-xs mb-1">
+                {organization?.gstNum && `GSTIN: ${organization.gstNum}`}
+              </div>
+              <div className="text-xs mb-1">
+                {organization?.state && `State Name: ${organization.state}`}
+                {organization?.pin && `, Pin: ${organization.pin}`}
+              </div>
+              <div className="text-xs">
+                {organization?.email && `E-Mail: ${organization.email}`}
+              </div>
             </div>
           </div>
 
-          {/* Single Unified Table */}
+          {/* Invoice Details Grid */}
+          <div className="grid grid-cols-3 p-2 text-xs border border-black">
+            <div className="space-y-1">
+              <div className="flex">
+                <span className="w-20 font-bold">GRC No:</span>
+                <span>{selectedCheckOutData?.voucherNumber}</span>
+              </div>
+              <div className="flex">
+                <span className="w-20 font-bold">Pax:</span>
+                <span>
+                  {selectedCheckOutData?.selectedRooms?.reduce(
+                    (acc, curr) => acc + Number(curr.pax || 0),
+                    0
+                  )}
+                </span>
+              </div>
+              <div className="flex">
+                <span className="w-20 font-bold">Guest:</span>
+                <span>{selectedCheckOutData?.customerName}</span>
+              </div>
+              <div className="flex">
+                <span className="w-20 font-bold">Agent:</span>
+                <span>
+                  {selectedCheckOutData?.agentId?.name || "Walk-In Customer"}
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <div className="flex">
+                <span className="w-20 font-bold">Bill No:</span>
+                <span>{selectedCheckOutData?.voucherNumber}</span>
+              </div>
+              <div className="flex">
+                <span className="w-20 font-bold">Arrival:</span>
+                <span>
+                  {selectedCheckOutData?.arrivalDate} /{" "}
+                  {selectedCheckOutData?.arrivalTime}
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <div className="flex">
+                <span className="w-20 font-bold">Bill Date:</span>
+                <span>{formatDate(new Date())}</span>
+              </div>
+              <div className="flex">
+                <span className="w-20 font-bold">Departure:</span>
+                <span>
+                  {formatDate(new Date())} / {new Date().toLocaleTimeString()}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Main Transaction Table */}
           <div className="mb-3">
             <table className="w-full border border-black">
               <thead>
                 <tr className="bg-gray-100 text-xs">
-                  <th className="border border-black p-2 text-center font-bold">DATE</th>
-                  <th className="border border-black p-2 text-center font-bold">VOUCHER</th>
-                  <th className="border border-black p-2 text-center font-bold">DESCRIPTION</th>
-                  <th className="border border-black p-2 text-center font-bold">HSN</th>
-                  <th className="border border-black p-2 text-center font-bold">DEBIT</th>
-                  <th className="border border-black p-2 text-center font-bold">CREDIT</th>
-                  <th className="border border-black p-2 text-center font-bold">AMOUNT</th>
+                  <th className="border border-black p-2 text-center font-bold">
+                    DATE
+                  </th>
+                  <th className="border border-black p-2 text-center font-bold">
+                    VOUCHER
+                  </th>
+                  <th className="border border-black p-2 text-center font-bold">
+                    DESCRIPTION
+                  </th>
+                  <th className="border border-black p-2 text-center font-bold">
+                    HSN
+                  </th>
+                  <th className="border border-black p-2 text-center font-bold">
+                    DEBIT
+                  </th>
+                  <th className="border border-black p-2 text-center font-bold">
+                    CREDIT
+                  </th>
+                  <th className="border border-black p-2 text-center font-bold">
+                    AMOUNT
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {/* Payment History Section */}
-                <tr>
-                  <td className="border-r border-black p-1">26-Jun-23</td>
-                  <td className="border-r border-black p-1">BA\294</td>
-                  <td className="border-r border-black p-1">Booking Advance</td>
-                  <td className="border-r border-black p-1"></td>
-                  <td className="border-r border-black text-right p-1"></td>
-                  <td className="border-r border-black text-right p-1">5,000.00</td>
-                  <td className="border-r border-black text-right p-1"></td>
-                </tr>
-                <tr>
-                  <td className="border-r border-black p-1">30-Jun-23</td>
-                  <td className="border-r border-black p-1">CA\343</td>
-                  <td className="border-r border-black p-1">Check In Advance [Federal Bank AC Xx9412]</td>
-                  <td className="border-r border-black p-1"></td>
-                  <td className="border-r border-black text-right p-1"></td>
-                  <td className="border-r border-black text-right p-1">20,648.00</td>
-                  <td className="border-r border-black text-right p-1"></td>
-                </tr>
-                <tr>
-                  <td className="border-r border-black p-1">1-Jul-23</td>
-                  <td className="border-r border-black p-1">CC\369</td>
-                  <td className="border-r border-black p-1">Check Out Collection [Federal Bank AC Xx9412]</td>
-                  <td className="border-r border-black p-1"></td>
-                  <td className="border-r border-black text-right p-1"></td>
-                  <td className="border-r border-black text-right p-1">6,248.00</td>
-                  <td className="border-r border-black text-right p-1"></td>
-                </tr>
+                {/* Outstanding Transactions */}
+                {outStanding?.map((transaction, index) => (
+                  <tr key={`outstanding-${index}`}>
+                    <td className="border-r border-black p-1">
+                      {formatDate(transaction?.bill_date)}
+                    </td>
+                    <td className="border-r border-black p-1">
+                      {transaction?.bill_no}
+                    </td>
+                    <td className="border-r border-black p-1">Advance</td>
+                    <td className="border-r border-black p-1"></td>
+                    <td className="border-r border-black p-1 text-right"></td>
+                    <td className="border-r border-black p-1 text-right">
+                      {transaction?.bill_amount?.toFixed(2)}
+                    </td>
+                    <td className="border-r border-black p-1 text-right"></td>
+                  </tr>
+                ))}
+                {dateWiseDisplayedData?.length > 0 && (
+                  <>
+                    {/* Room Tariff Entries */}
+                    {dateWiseDisplayedData?.map((order, index) => (
+                      <tr key={`room-${index}`}>
+                        <td className="border-r border-black p-1">
+                          {order?.date}
+                        </td>
+                        <td className="border-r border-black p-1">
+                          {order?.voucherNumber}
+                        </td>
+                        <td className="border-r border-black p-1">
+                          Room Tariff [{order?.roomName} - {order?.customerName}
+                          ]
+                        </td>
+                        <td className="border-r border-black p-1">
+                          {order?.hsn}
+                        </td>
+                        <td className="border-r border-black p-1 text-right">
+                          {order?.baseAmount?.toFixed(2)}
+                        </td>
+                        <td className="border-r border-black p-1 text-right"></td>
+                        <td className="border-r border-black p-1 text-right"></td>
+                      </tr>
+                    ))}
 
-                {/* Room Charges Section */}
-                <tr>
-                  <td className="border-r border-black p-1">30-Jun-23</td>
-                  <td className="border-r border-black p-1">C-OT\352</td>
-                  <td className="border-r border-black p-1">Room Tariff [107 - Nasif P T]</td>
-                  <td className="border-r border-black p-1">99631</td>
-                  <td className="border-r border-black text-right p-1"></td>
-                  <td className="border-r border-black text-right p-1"></td>
-                  <td className="border-r border-black text-right p-1">5,050.00</td>
-                </tr>
-                <tr>
-                  <td className="border-r border-black p-1">30-Jun-23</td>
-                  <td className="border-r border-black p-1">C-OT\352</td>
-                  <td className="border-r border-black p-1">Room Tariff [108 - Nasif P T]</td>
-                  <td className="border-r border-black p-1">99631</td>
-                  <td className="border-r border-black text-right p-1"></td>
-                  <td className="border-r border-black text-right p-1"></td>
-                  <td className="border-r border-black text-right p-1">4,725.00</td>
-                </tr>
-                <tr>
-                  <td className="border-r border-black p-1">30-Jun-23</td>
-                  <td className="border-r border-black p-1">C-OT\352</td>
-                  <td className="border-r border-black p-1">Room Tariff [109 - Nasif P T]</td>
-                  <td className="border-r border-black p-1">99631</td>
-                  <td className="border-r border-black text-right p-1"></td>
-                  <td className="border-r border-black text-right p-1"></td>
-                  <td className="border-r border-black text-right p-1">4,400.00</td>
-                </tr>
-                <tr>
-                  <td className="border-r border-b border-black p-1">30-Jun-23</td>
-                  <td className="border-r border-b border-black p-1">C-OT\352</td>
-                  <td className="border-r border-b border-black p-1">Room Tariff [110 - Nasif P T]</td>
-                  <td className="border-r border-b border-black p-1">99631</td>
-                  <td className="border-r border-b border-black text-right p-1"></td>
-                  <td className="border-r border-b border-black text-right p-1"></td>
-                  <td className="border-r border-b border-black text-right p-1">5,350.00</td>
-                </tr>
-                <tr className="bg-gray-100">
-                  <td colSpan="6" className="text-right p-2 border-r border-black">Room Tariff Assessable Value</td>
-                  <td className="p-2 text-right">19,525.00</td>
-                </tr>
-                <tr>
-                  <td colSpan="6" className="text-right p-2 border-r border-black">Food Plan Sales @ 5%</td>
-                  <td className="p-2 text-right">3,600.00</td>
-                </tr>
-                <tr>
-                  <td colSpan="6" className="text-right p-2 border-r border-black">CGST</td>
-                  <td className="p-2 text-right">1,261.50</td>
-                </tr>
-                <tr>
-                  <td colSpan="6" className="text-right p-2 border-r border-b border-black">SGST</td>
-                  <td className="border-b border-black p-2 text-right">1,261.50</td>
-                </tr>
+                    {/* Room Tariff Summary */}
+                    <tr className="bg-gray-100">
+                      <td
+                        colSpan="6"
+                        className="text-right p-2 border-r border-black"
+                      >
+                        Room Tariff Assessable Value
+                      </td>
+                      <td className="p-2 text-right">
+                        {totals.roomTariffTotal.toFixed(2)}
+                      </td>
+                    </tr>
 
-                {/* Room Service Section */}
-                <tr className="bg-green-50 border-black">
-                  <td colSpan="7" className="border-b-2 p-2 font-bold text-center">ROOM SERVICE BILL DETAILS</td>
-                </tr>
-                <tr>
-                  <td className="border-r border-black p-1">30-Jun-23</td>
-                  <td className="border-r border-black p-1">POS\699</td>
-                  <td className="border-r border-black p-1">POS [Restaurant - HSN: 996332]</td>
-                  <td className="border-r border-black p-1">996332</td>
-                  <td className="border-r border-black text-right p-1"></td>
-                  <td className="border-r border-black text-right p-1"></td>
-                  <td className="border-r border-black text-right p-1">294.00</td>
-                </tr>
-                <tr>
-                  <td className="border-r border-black p-1">30-Jun-23</td>
-                  <td className="border-r border-black p-1">POS\700</td>
-                  <td className="border-r border-black p-1">POS [Restaurant - HSN: 996332]</td>
-                  <td className="border-r border-black p-1">996332</td>
-                  <td className="border-r border-black text-right p-1"></td>
-                  <td className="border-r border-black text-right p-1"></td>
-                  <td className="border-r border-black text-right p-1">2,930.00</td>
-                </tr>
-                <tr>
-                  <td className="border-r border-black p-1">30-Jun-23</td>
-                  <td className="border-r border-black p-1">POS\710</td>
-                  <td className="border-r border-black p-1">POS [Restaurant - HSN: 996332]</td>
-                  <td className="border-r border-black p-1">996332</td>
-                  <td className="border-r border-black text-right p-1"></td>
-                  <td className="border-r border-black text-right p-1"></td>
-                  <td className="border-r border-black text-right p-1">3,024.00</td>
+                    {/* Food Plan */}
+                    {foodPlanAmount > 0 && (
+                      <tr>
+                        <td
+                          colSpan="6"
+                          className="text-right p-2 border-r border-black"
+                        >
+                          Food Plan Sales
+                        </td>
+                        <td className="p-2 text-right">
+                          {foodPlanAmount.toFixed(2)}
+                        </td>
+                      </tr>
+                    )}
+                    {additionalPaxAmount > 0 && (
+                      <tr>
+                        <td
+                          colSpan="6"
+                          className="text-right p-2 border-r border-black"
+                        >
+                          Additional Pax Amount
+                        </td>
+                        <td className="p-2 text-right">
+                          {additionalPaxAmount.toFixed(2)}
+                        </td>
+                      </tr>
+                    )}
+
+                    {/* Tax Entries */}
+                    <tr>
+                      <td
+                        colSpan="6"
+                        className="text-right p-2 border-r border-black"
+                      >
+                        CGST
+                      </td>
+                      <td className="p-2 text-right">
+                        {(taxAmountForFood + taxAmountForRoom).toFixed(2)}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td
+                        colSpan="6"
+                        className="text-right p-2 border-r border-b border-black"
+                      >
+                        SGST
+                      </td>
+                      <td className="border-b border-black p-2 text-right">
+                        {(taxAmountForFood + taxAmountForRoom).toFixed(2)}
+                      </td>
+                    </tr>
+                    {/* Balance Summary */}
+                    <tr>
+                      <td colSpan="3" className="text-right p-2">
+                        {selectedCheckOutData?.selectedRooms
+                          ?.map((room) => room.roomName)
+                          .join(", ")}
+                      </td>
+                      <td colSpan="2" className="text-right p-2">
+                        {totals.roomTariffTotal.toFixed(2)}
+                      </td>
+                      <td className="border-b text-right p-2">
+                        {totals.advanceTotal.toFixed(2)}
+                      </td>
+                      <td className="border-b text-right p-2">
+                        {totals.balanceAmount.toFixed(2)}
+                      </td>
+                    </tr>
+                    {/* Room Service Section */}
+                    <tr className="bg-green-50 border-black">
+                      <td
+                        colSpan="7"
+                        className="border-b-2 p-2 font-bold text-center"
+                      >
+                        ROOM SERVICE BILL DETAILS
+                      </td>
+                    </tr>
+                  </>
+                )}
+
+                {kotData?.map((kot, index) => (
+                  <tr key={`kot-${index}`}>
+                    <td className="border-r border-black p-1">
+                      {formatDate(kot?.createdAt)}
+                    </td>
+                    <td className="border-r border-black p-1">
+                      {kot?.salesNumber}
+                    </td>
+                    <td className="border-r border-black p-1">
+                      POS [Restaurant]
+                    </td>
+                    <td className="border-r border-black p-1"></td>
+                    <td className="border-r border-black p-1 text-right"></td>
+                    <td className="border-r border-black p-1 text-right"></td>
+                    <td className="border-r border-black p-1 text-right">
+                      {kot?.finalAmount?.toFixed(2)}
+                    </td>
+                  </tr>
+                ))}
+
+                {/* Final Totals */}
+                <tr className="bg-gray-100 font-bold">
+                  <td colSpan="5" className="border border-black p-2">
+                    Total
+                  </td>
+                  <td className="border border-black p-2 text-right">
+                    {totals.advanceTotal.toFixed(2)}
+                  </td>
+                  <td className="border border-black p-2 text-right">
+                    {(totals.roomTariffTotal + totals.kotTotal).toFixed(2)}
+                  </td>
                 </tr>
                 <tr className="bg-gray-100 font-bold">
-                  <td colSpan="5" className="border border-black p-1">Total</td>
-                  <td className="border border-black text-right p-1">6,248.00</td>
-                  <td className="border border-black text-right p-1">6,248.00</td>
-                </tr>
+                  <td colSpan="6" className="border border-black p-2">
+                    Balance To Pay
+                  </td>
 
-                {/* Tax Summary */}
-                <tr className="bg-red-50">
-                  <td colSpan="6" className="border border-black font-bold text-right p-1">Round off</td>
-                  <td className="border border-black p-1"></td>
+                  <td className="border border-black p-2 text-right">
+                    {totals.balanceAmountToPay.toFixed(2)}
+                  </td>
                 </tr>
-                <tr className="bg-red-50">
-                  <td colSpan="6" className="border border-black font-bold text-right p-1">TOTAL INVOICE AMOUNT</td>
-                  <td className="border border-black p-2 text-right">6,248.00</td>
-                </tr>
+                {/* {!isForPreview && ( */}
+                <>
+                  {/* Invoice Summary */}
+                  {/* <tr className="bg-red-50">
+                      <td
+                        colSpan="6"
+                        className="border border-black font-bold text-right p-2"
+                      >
+                        Round off
+                      </td>
+                      <td className="border border-black p-2 text-right">
+                        0.00
+                      </td>
+                    </tr> */}
+                  <tr className="bg-red-50">
+                    <td
+                      colSpan="6"
+                      className="border border-black font-bold text-right p-2"
+                    >
+                      TOTAL INVOICE AMOUNT
+                    </td>
+                    <td className="border border-black p-2 text-right font-bold">
+                      {(
+                        totals.roomTariffTotal +
+                        totals.kotTotal +
+                        totals.totalTaxAmount
+                      ).toFixed(2)}
+                    </td>
+                  </tr>
+                </>
+                {/* )} */}
               </tbody>
             </table>
+            {/* {!isForPreview && ( */}
+            <>
+              {/* Tax Breakdown Table */}
+              <div className="flex justify-end border-b border-l border-black">
+                <table className="w-1/2 border border-black text-xs">
+                  <thead>
+                    <tr className="bg-gray-100">
+                      <th className="border border-black p-1 text-center">
+                        Taxable Amount
+                      </th>
+                      <th className="border border-black p-1 text-center">
+                        CGST Rate
+                      </th>
+                      <th className="border border-black p-1 text-center">
+                        CGST Amount
+                      </th>
+                      <th className="border border-black p-1 text-center">
+                        SGST Rate
+                      </th>
+                      <th className="border border-black p-1 text-center">
+                        SGST Amount
+                      </th>
+                      <th className="border border-black p-1 text-center">
+                        Total Tax
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td className="border border-black p-1 text-right">
+                        {totals.roomTariffTotal.toFixed(2)}
+                      </td>
+                      <td className="border border-black p-1 text-center">
+                        6%
+                      </td>
+                      <td className="border border-black p-1 text-right">
+                        {taxAmountForRoom.toFixed(2)}
+                      </td>
+                      <td className="border border-black p-1 text-center">
+                        6%
+                      </td>
+                      <td className="border border-black p-1 text-right">
+                        {taxAmountForRoom.toFixed(2)}
+                      </td>
+                      <td className="border border-black p-1 text-right">
+                        {(taxAmountForRoom * 2).toFixed(2)}
+                      </td>
+                    </tr>
 
-            {/* Tax Breakdown Table */}
-            <div className="flex justify-end border-b border-l border-black">
-              <table className="w-1/2 border border-black text-xs">
-                <thead>
-                  <tr className="bg-gray-100">
-                    <th className="border border-black p-1 text-center">Taxable</th>
-                    <th className="border border-black p-1 text-center">CGST</th>
-                    <th className="border border-black p-1 text-center"></th>
-                    <th className="border border-black p-1 text-center">SGST/UTGST</th>
-                    <th className="border border-black p-1 text-center"></th>
-                    <th className="border border-black p-1 text-center">Total Tax Amount</th>
-                  </tr>
-                  <tr className="bg-gray-100">
-                    <th className="border border-black p-1 text-center">Amount</th>
-                    <th className="border border-black p-1 text-center">Rate</th>
-                    <th className="border border-black p-1 text-center">Amount</th>
-                    <th className="border border-black p-1 text-center">Rate</th>
-                    <th className="border border-black p-1 text-center">Amount</th>
-                    <th className="border border-black p-1 text-center">Tax Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td className="border border-black p-1 text-right">19,525.00</td>
-                    <td className="border border-black p-1 text-center">6%</td>
-                    <td className="border border-black p-1 text-right">1,171.50</td>
-                    <td className="border border-black p-1 text-center">6%</td>
-                    <td className="border border-black p-1 text-right">1,171.50</td>
-                    <td className="border border-black p-1 text-right">2,343.00</td>
-                  </tr>
-                  <tr>
-                    <td className="border border-black p-1 text-right">3,600.00</td>
-                    <td className="border border-black p-1 text-center">2.50%</td>
-                    <td className="border border-black p-1 text-right">90.00</td>
-                    <td className="border border-black p-1 text-center">2.50%</td>
-                    <td className="border border-black p-1 text-right">90.00</td>
-                    <td className="border border-black p-1 text-right">180.00</td>
-                  </tr>
-                  <tr className="bg-gray-100 font-bold">
-                    <td className="border border-black p-1 text-right">23,125.00</td>
-                    <td className="border border-black p-1"></td>
-                    <td className="border border-black p-1 text-right">1,261.50</td>
-                    <td className="border border-black p-1"></td>
-                    <td className="border border-black p-1 text-right">1,261.50</td>
-                    <td className="border border-black p-1 text-right">2,523.00</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+                    {foodPlanAmount > 0 && (
+                      <tr>
+                        <td className="border border-black p-1 text-right">
+                          {foodPlanAmount.toFixed(2)}
+                        </td>
+                        <td className="border border-black p-1 text-center">
+                          2.50%
+                        </td>
+                        <td className="border border-black p-1 text-right">
+                          {taxAmountForFood.toFixed(2)}
+                        </td>
+                        <td className="border border-black p-1 text-center">
+                          2.50%
+                        </td>
+                        <td className="border border-black p-1 text-right">
+                          {taxAmountForFood.toFixed(2)}
+                        </td>
+                        <td className="border border-black p-1 text-right">
+                          {(taxAmountForFood * 2).toFixed(2)}
+                        </td>
+                      </tr>
+                    )}
+
+                    <tr className="bg-gray-100 font-bold">
+                      <td className="border border-black p-1 text-right">
+                        {(totals.roomTariffTotal + foodPlanAmount).toFixed(2)}
+                      </td>
+                      <td className="border border-black p-1"></td>
+                      <td className="border border-black p-1 text-right">
+                        {(taxAmountForRoom + taxAmountForFood).toFixed(2)}
+                      </td>
+                      <td className="border border-black p-1"></td>
+                      <td className="border border-black p-1 text-right">
+                        {(taxAmountForRoom + taxAmountForFood).toFixed(2)}
+                      </td>
+                      <td className="border border-black p-1 text-right">
+                        {totals.totalTaxAmount.toFixed(2)}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </>
+            {/* )} */}
           </div>
-
-          <div className="grid grid-cols-2">
-            {/* Footer Details */}
-            <div className="grid grid-cols-2 gap-2 mb-6">
+          {/* {!isForPreview && ( */}
+          <>
+            {/* Footer Section */}
+            <div className="grid grid-cols-2 gap-4">
+              {/* Footer Details */}
               <div className="space-y-2">
-                <div className="flex"><span className="w-32 font-bold">Settlement:</span><span>Nasif P T</span></div>
-                <div className="flex"><span className="w-32 font-bold">Prepared By:</span><span>a</span></div>
-                <div className="flex"><span className="w-32 font-bold">Billed By:</span><span>a</span></div>
-                <div className="flex"><span className="w-32 font-bold">Rooms:</span><span>107, 108, 109, 110</span></div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-2">
+                    <div className="flex">
+                      <span className="w-32 font-bold">Settlement:</span>
+                      <span>Cash</span>
+                    </div>
+                    <div className="flex">
+                      <span className="w-32 font-bold">Prepared By:</span>
+                      <span>System</span>
+                    </div>
+                    <div className="flex">
+                      <span className="w-32 font-bold">Billed By:</span>
+                      <span>Reception</span>
+                    </div>
+                    <div className="flex">
+                      <span className="w-32 font-bold">Rooms:</span>
+                      <span>
+                        {selectedCheckOutData?.selectedRooms
+                          ?.map((room) => room.roomName)
+                          .join(", ")}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex">
+                      <span className="w-32 font-bold">Total Rooms:</span>
+                      <span>
+                        {selectedCheckOutData?.selectedRooms?.length || 0}
+                      </span>
+                    </div>
+                    <div className="flex">
+                      <span className="w-32 font-bold">Total Pax:</span>
+                      <span>
+                        {selectedCheckOutData?.selectedRooms?.reduce(
+                          (acc, curr) => acc + Number(curr.pax || 0),
+                          0
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="space-y-2">
-                <div className="flex"><span className="w-32 font-bold">Total Rooms:</span><span>4</span></div>
-                <div className="flex"><span className="w-32 font-bold">Total Pax:</span><span>8</span></div>
+
+              {/* Bank Details */}
+              <div className="p-4 mb-6">
+                <h4 className="font-bold mb-3 text-center border-b border-black">
+                  Bank Details
+                </h4>
+                <div className="space-y-2">
+                  <div className="flex">
+                    <span className="w-32 font-bold">Bank Name:</span>
+                    <span className="border-b border-dotted border-black flex-1 mx-2"></span>
+                  </div>
+                  <div className="flex">
+                    <span className="w-32 font-bold">A/C Number:</span>
+                    <span className="border-b border-dotted border-black flex-1 mx-2"></span>
+                  </div>
+                  <div className="flex">
+                    <span className="w-32 font-bold">Branch & IFSC:</span>
+                    <span className="border-b border-dotted border-black flex-1 mx-2"></span>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Bank Details */}
-            <div className="p-4 mb-6">
-              <h4 className="font-bold mb-3 text-center border-b border-black">Bank Details</h4>
-              <div className="space-y-2">
-                <div className="flex"><span className="w-32 font-bold">Bank Name:</span><span className="border-b border-dotted border-black flex-1 mx-2"></span></div>
-                <div className="flex"><span className="w-32 font-bold">A/C Number:</span><span className="border-b border-dotted border-black flex-1 mx-2"></span></div>
-                <div className="flex"><span className="w-32 font-bold">Branch & IFSC:</span><span className="border-b border-dotted border-black flex-1 mx-2"></span></div>
+            {/* Signatures */}
+            <div className="grid grid-cols-2 mt-8">
+              <div className="text-center">
+                <div className="border-t border-black mt-16 pt-2">
+                  Cashier Signature
+                </div>
               </div>
+              <div className="text-center">
+                <div className="border-t border-black mt-16 pt-2">
+                  Guest Signature
+                </div>
+              </div>
+            </div>
+          </>
+          {/* )} */}
+
+          {/* Action Buttons */}
+          <div className="no-print w-full flex justify-end">
+            {/* Container for the action buttons */}
+            <div className="no-print flex flex-wrap gap-3 mb-4 p-4">
+              {/* Print */}
+              <button
+                onClick={handlePrint}
+                className="bg-black text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-500 transition-colors"
+              >
+                🖨️ Print Invoice
+              </button>
+
+              {/* Download PDF */}
+              <button
+                onClick={handlePDFGeneration}
+                className="bg-black text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-500 transition-colors"
+              >
+                📄 Download PDF
+              </button>
+
+              {/* Split Payment */}
+              <button
+                onClick={handleSplitPayment} // create a handler for this
+                className="bg-black text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-500 transition-colors"
+              >
+                💳 Split Payment
+              </button>
+
+              {/* Confirm – only if preview */}
+              {isForPreview && (
+                <button
+                  onClick={() =>
+                    navigate("/sUsers/checkInList", {
+                      state: {
+                        selectedCheckOut,
+                        selectedCustomer: selectedCustomerData,
+                        balanceToPay: totals?.balanceAmountToPay,
+                      },
+                    })
+                  }
+                  className="bg-black text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-500 transition-colors"
+                >
+                  ✅ Confirm
+                </button>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Print Footer - Will appear on every page */}
-        <div className="print-footer">
-          {/* Signatures */}
-          <div className="grid grid-cols-2 gap-4 pt-4 border-t border-black">
-            <div className="text-center">
-              <div className="mt-16 pt-2">Cashier Signature</div>
-            </div>
-            <div className="text-center">
-              <div className="mt-16 pt-2">Guest Signature</div>
-            </div>
-          </div>
-        </div>
+        {/* Print Styles */}
+        <style jsx>{`
+          @media screen {
+            .print-header,
+            .print-footer {
+              position: static;
+            }
+          }
+          @media print {
+            .no-print {
+              display: none !important;
+            }
+            body {
+              margin: 0;
+              background: white;
+            }
+            .min-h-screen {
+              min-height: auto;
+            }
+            .bg-gray-50 {
+              background: white;
+            }
+            .border-2 {
+              border-width: 1px;
+            }
+          }
+        `}</style>
       </div>
-
-      <style jsx>{`
-        @media screen {
-          .print-header, .print-footer {
-            position: static;
-          }
-        }
-
-        @media print {
-          .no-print { 
-            display: none !important; 
-          }
-          
-          body { 
-            margin: 0; 
-            background: white;
-            font-size: 11px;
-            line-height: 1.3;
-          }
-          
-          .min-h-screen { 
-            min-height: auto;
-            background: white;
-          }
-          
-          .bg-gray-50 { 
-            background: white !important; 
-          }
-
-          .print-container {
-            position: static;
-            width: 100%;
-            margin: 0;
-            padding: 15px;
-            border: 2px solid black;
-            box-sizing: border-box;
-          }
-
-          .print-header {
-            position: static;
-            width: 100%;
-            background: white;
-            padding: 0;
-            margin-bottom: 15px;
-            border-bottom: none;
-          }
-
-          .print-footer {
-            position: static;
-            width: 100%;
-            background: white;
-            padding: 0;
-            margin-top: 20px;
-            border-top: 1px solid black;
-            page-break-inside: avoid;
-          }
-
-          .print-content {
-            margin: 0;
-            width: 100%;
-          }
-
-          table {
-            page-break-inside: auto;
-            width: 100%;
-            border-collapse: collapse;
-          }
-          
-          tr {
-            page-break-inside: avoid;
-            page-break-after: auto;
-          }
-          
-          thead {
-            display: table-header-group;
-          }
-          
-          tbody tr:first-child {
-            page-break-before: avoid;
-          }
-
-          @page {
-            margin: 0.5in;
-            size: A4;
-          }
-
-          /* Ensure backgrounds print */
-          .bg-gray-100 {
-            background: #f3f4f6 !important;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-          }
-          
-          .bg-green-50 {
-            background: #f0fdf4 !important;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-          }
-          
-          .bg-red-50 {
-            background: #fef2f2 !important;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-          }
-
-          /* Ensure borders are visible */
-          .border-black {
-            border-color: black !important;
-          }
-
-          /* Force table borders */
-          table, th, td {
-            border: 1px solid black !important;
-          }
-
-          /* Adjust text sizes for print */
-          .text-xl {
-            font-size: 18px !important;
-          }
-          
-          .text-xs {
-            font-size: 10px !important;
-          }
-          
-          .text-sm {
-            font-size: 11px !important;
-          }
-        }
-      `}</style>
-    </div>
+    </>
   );
 }

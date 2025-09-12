@@ -1,18 +1,19 @@
 import mongoose from "mongoose";
 import Item from "../models/restaurantModels.js"; // Adjust path as needed
 import hsnModel from "../models/hsnModel.js";
-import product from "../models/productModel.js";
+import productModel from "../models/productModel.js";
 import { Category } from "../models/subDetails.js"; // Adjust path as needed
 import kotModal from "../models/kotModal.js";
 import { generateVoucherNumber } from "../helpers/voucherHelper.js";
 import salesModel from "../models/salesModel.js";
 import TallyData from "../models/TallyData.js";
 import Receipt from "../models/receiptModel.js";
+
 import bankModel from "../models/bankModel.js";
 import cashModel from "../models/cashModel.js";
 import Party from "../models/partyModel.js";
 import { saveSettlementData } from "../helpers/salesHelper.js";
-
+import Organization from "../models/OragnizationModel.js";
 import Table from "../models/TableModel.js";
 import { Godown } from "../models/subDetails.js";
 // Helper functions (you may need to create these or adjust based on your existing ones)
@@ -60,7 +61,7 @@ export const addItem = async (req, res) => {
     };
 
     // Step 4: Create Item document
-    const newItem = new product({
+    const newItem = new productModel({
       Primary_user_id: req.pUserId || req.owner,
       Secondary_user_id: req.sUserId,
       cmp_id: req.params.cmp_id,
@@ -138,7 +139,7 @@ export const getAllItems = async (req, res) => {
     const filter = buildDatabaseFilterForRoom(params); // build your filter based on request
 
     // Fetch all products matching the filter (NO pagination)
-    const products = await product.find(filter);
+    const products = await productModel.find(filter);
 
     // Optionally: return count too
     // const totalItems = await ProductModel.countDocuments(filter);
@@ -213,24 +214,26 @@ export const updateItem = async (req, res) => {
     }
 
     // Update item
-    const updatedItem = await product.findOneAndUpdate(
-      { _id: req.params.id, cmp_id: req.params.cmp_id },
+    const updatedItem = await productModel.findByIdAndUpdate(
+      req.params.id,
       {
-        itemName: formData.itemName,
-        foodCategory: formData.foodCategory,
-        foodType: formData.foodType,
-        unit: formData.unit,
-        hsn_code: formData.hsn,
-        cgst: formData.cgst,
-        sgst: formData.sgst,
-        igst: formData.igst,
-        Priceleveles: tableData,
-        updatedAt: new Date(),
+        $set: {
+          product_image: formData.imageUrl?.secure_url,
+          product_name: formData.itemName,
+          category: formData.foodCategory,
+          sub_category: formData.foodType,
+          unit: formData.unit,
+          hsn_code: formData.hsn,
+          cgst: formData.cgst,
+          sgst: formData.sgst,
+          igst: formData.igst,
+          Priceleveles: tableData,
+        },
       },
       {
-        new: true,
+        // new: true,
         session,
-        runValidators: true,
+        // runValidators: true,
       }
     );
 
@@ -266,9 +269,10 @@ export const updateItem = async (req, res) => {
 // Delete Item Controller
 export const deleteItem = async (req, res) => {
   try {
-    const { itemId } = req.params.id;
+    const { id } = req.params; // or const itemId = req.params.id;
 
-    const deletedItem = await product.findOneAndDelete(itemId);
+    const deletedItem = await productModel.findByIdAndDelete(id);
+
     if (!deletedItem) {
       return res.status(404).json({
         success: false,
@@ -324,7 +328,13 @@ export const generateKot = async (req, res) => {
     session.startTransaction();
 
     const cmp_id = req.params.cmp_id;
+    const organizationData = await Organization.findOne(
+      { _id: cmp_id }, // filter
+      null, // projection (null = all fields)
+      { session } // options (session here)
+    );
 
+    console.log(organizationData);
     // Find voucher series inside the session
     const voucherData = await VoucherSeriesModel.findOne(
       { voucherType: "memoRandom", cmp_id: cmp_id },
@@ -356,7 +366,11 @@ export const generateKot = async (req, res) => {
       tableNumber: req.body.customer?.tableNumber,
       total: req.body.total,
       createdAt: new Date(),
-      status: req.body.status || "pending",
+
+      status: organizationData.configurations[0].kotAutoApproval
+        ? "completed"
+        : req.body.status || "pending",
+
       paymentMethod: req.body.paymentMethod,
       roomId: req.body.customer?.roomId,
       checkInNumber: req.body.customer?.checkInNumber,
@@ -491,7 +505,23 @@ export const editKot = async (req, res) => {
 // get all kot
 export const getKot = async (req, res) => {
   try {
-    const kot = await kotModal.find({ cmp_id: req.params.cmp_id }).populate('roomId');
+    const { cmp_id } = req.params;
+    let { date } = req.query;
+    // If no date is passed, use today's date
+    if (!date) {
+      date = new Date().toISOString().slice(0, 10); // Format: YYYY-MM-DD
+    }
+    // Get date range for filtering (00:00 to 23:59 of that day)
+    const start = new Date(date + "T00:00:00.000Z");
+    const end = new Date(date + "T23:59:59.999Z");
+
+    const kot = await kotModal
+      .find({
+        cmp_id,
+        createdAt: { $gte: start, $lte: end },
+      })
+      .populate("roomId");
+
     res.status(200).json({
       success: true,
       data: kot,
@@ -525,19 +555,26 @@ export const updateKotStatus = async (req, res) => {
 // function used to fetch room data based on room booking
 export const getRoomDataForRestaurant = async (req, res) => {
   try {
-    const now = new Date();
+    // Today's date only (strip time)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // reset time to midnight
 
-    // Get all records for that cmp_id
-    const allData = await CheckIn.find({ cmp_id: req.params.cmp_id });
+    // Get all records for cmp_id
+    const allData = await CheckIn.find({
+      cmp_id: req.params.cmp_id,
+      status: { $ne: "checkOut" },
+    });
 
-    // Filter in JS
+    // Filter only those where today's date falls between arrivalDate & checkOutDate
     const filtered = allData.filter((doc) => {
-      const arrivalDateTime = new Date(`${doc.arrivalDate} ${doc.arrivalTime}`);
-      const checkOutDateTime = new Date(
-        `${doc.checkOutDate} ${doc.checkOutTime}`
-      );
+      // arrivalDate/checkOutDate are stored as "YYYY-MM-DD" strings
+      const arrivalDate = new Date(doc.arrivalDate);
+      arrivalDate.setHours(0, 0, 0, 0);
 
-      return arrivalDateTime <= now && now <= checkOutDateTime;
+      const checkOutDate = new Date(doc.checkOutDate);
+      checkOutDate.setHours(0, 0, 0, 0);
+
+      return arrivalDate <= today && today <= checkOutDate;
     });
 
     res.status(200).json({
@@ -755,17 +792,16 @@ export const updateKotPayment = async (req, res) => {
 
   try {
     await session.withTransaction(async () => {
-      const {  cmp_id } = req.params;
+      const { cmp_id } = req.params;
       let {
         paymentMethod,
         paymentDetails,
         selectedKotData: kotData,
-        isPostToRoom
+        isPostToRoom,
       } = req.body;
 
-    
+      console.log("table", kotData);
 
-      // Validate required fields
       if (!paymentDetails || !kotData) {
         throw new Error("Missing payment details or KOT data");
       }
@@ -780,13 +816,13 @@ export const updateKotPayment = async (req, res) => {
         paymentMethod = "mixed";
       }
 
-      // Fetch voucher series
+      // Voucher series
       const specificVoucherSeries = await getRestaurantVoucherSeries(
         cmp_id,
         session
       );
 
-      // Generate voucher number
+      // Voucher number
       const saleNumber = await generateVoucherNumber(
         cmp_id,
         "sales",
@@ -794,27 +830,27 @@ export const updateKotPayment = async (req, res) => {
         session
       );
 
-      // Fetch selected party
+      // Selected party
       const selectedParty = await getSelectedParty(
         cmp_id,
         paymentDetails,
         cashAmt,
         onlineAmt,
         kotData,
+        isPostToRoom,
         session
       );
 
-      // Payment splitting array
+      // Payment splitting
       const paymentSplittingArray = createPaymentSplittingArray(
         paymentDetails,
         cashAmt,
         onlineAmt
       );
 
-      // Party object for voucher
       const party = mapPartyData(selectedParty);
 
-      // Save sales voucher
+      // Save voucher
       const savedVoucherData = await createSalesVoucher(
         cmp_id,
         specificVoucherSeries,
@@ -827,11 +863,11 @@ export const updateKotPayment = async (req, res) => {
         session
       );
 
-      // Handle outstanding balance
+      // Outstanding balance
       const paidAmount = isPostToRoom ? 0 : cashAmt + onlineAmt;
       const pendingAmount = Number(kotData?.total || 0) - paidAmount;
 
-      if (pendingAmount > 0) {
+      if (pendingAmount > 0 && party?.paymentType == "party") {
         await createTallyEntry(
           cmp_id,
           req,
@@ -844,34 +880,68 @@ export const updateKotPayment = async (req, res) => {
         );
       }
 
-      // Save settlement data
-      await saveSettlement(
-        paymentDetails,
-        selectedParty,
-        cmp_id,
-        savedVoucherData[0],
-        paidAmount,
-        cashAmt,
-        onlineAmt,
-        session
-      );
+      if (party?.paymentType != "party") {
+        await saveSettlement(
+          paymentDetails,
+          selectedParty,
+          cmp_id,
+          savedVoucherData[0],
+          paidAmount,
+          cashAmt,
+          onlineAmt,
+          req,
+          session
+        );
+      }
 
-      // Update KOT payment status
-      // paymentCompleted = paidAmount >= kotData?.total;
-      paymentCompleted = true
+      // Update KOTs
+      paymentCompleted = true;
+      let selectedTableNumber = [];
+
       await Promise.all(
-        kotData?.voucherNumber.map((item) =>
-          kotModal.updateOne(
+        kotData?.voucherNumber.map(async (item) => {
+          // Find the KOT first
+          const kot = await kotModal.findById(item.id).lean();
+
+          if (!selectedTableNumber.includes(kot?.tableNumber)) {
+            selectedTableNumber.push(kot.tableNumber);
+          }
+
+          // Then update it
+          return kotModal.updateOne(
             { _id: item.id },
             { paymentMethod, paymentCompleted },
             { session }
-          )
-        )
+          );
+        })
       );
 
-      await session.commitTransaction();
-      await session.commitTransaction(); // commits before map is done
+      console.log("Selected Table Numbers:", selectedTableNumber);
 
+      // Check pending
+      for (const tableNumber of selectedTableNumber) {
+        const pendingCount = await kotModal
+          .countDocuments({
+            "customer.tableNumber": tableNumber,
+            paymentCompleted: false,
+          })
+          .session(session);
+
+        console.log("pendingCount", pendingCount);
+        console.log("kotData.tableNumber", kotData);
+
+        if (pendingCount < 1) {
+          const updateTableStatus = await Table.findOneAndUpdate(
+            { cmp_id, tableNumber },
+            { status: "available" },
+            { new: true, session }
+          );
+
+          console.log("updated table", updateTableStatus);
+        }
+      }
+
+      // ✅ No manual commit here
       res.status(200).json({
         success: true,
         message: "KOT payment updated successfully",
@@ -911,30 +981,32 @@ async function getSelectedParty(
   cashAmt,
   onlineAmt,
   kotData,
+  isPostToRoom,
   session
 ) {
-  let partyName;
+  let partyId;
 
-  if (paymentDetails?.paymentMode === "single") {
-    if (cashAmt > 0) {
-      let selectedData = await cashModel
-        .findOne({ _id: paymentDetails?.selectedCash })
-        .session(session);
-      partyName = selectedData?.cash_ledname;
-    } else if (onlineAmt > 0) {
-      let selectedData = await bankDetails
-        .findOne({ _id: paymentDetails?.selectedBank })
-        .session(session);
-      partyName = selectedData?.bank_ledname;
-    }
+  if (isPostToRoom) {
+    console.log("koptData", kotData?.voucherNumber[0]?.checkInNumber);
+    let checkInData = await CheckIn.findOne({
+      voucherNumber: kotData?.voucherNumber[0]?.checkInNumber,
+    }).session(session);
+    console.log("checkInData", checkInData);
+    partyId = checkInData?.customerId.toString();
+    console.log("partyId", partyId);
   } else {
-    let selectedData = await cashModel
-      .findOne({ _id: paymentDetails?.selectedCash })
-      .session(session);
-    partyName = selectedData?.cash_ledname;
+    if (paymentDetails?.paymentMode === "single") {
+      if (cashAmt > 0) {
+        partyId = paymentDetails?.selectedCash;
+      } else if (onlineAmt > 0) {
+        partyId = paymentDetails?.selectedBank;
+      }
+    } else {
+      partyId = paymentDetails?.selectedCash;
+    }
   }
 
-  const selectedParty = await Party.findOne({ cmp_id, partyName })
+  const selectedParty = await Party.findOne({ cmp_id, _id: partyId })
     .populate("accountGroup")
     .session(session);
   if (!selectedParty) throw new Error(`Party not found: ${partyName}`);
@@ -944,13 +1016,12 @@ async function getSelectedParty(
 
 function createPaymentSplittingArray(paymentDetails, cashAmt, onlineAmt) {
   const arr = [];
-  console.log("paymentDetails", paymentDetails);
   if (cashAmt > 0) {
     arr.push({
-      type: "Cash",
+      type: "cash",
       amount: cashAmt,
       ref_id: paymentDetails?.selectedCash,
-      ref_collection: "Cash",
+      // ref_collection: "Cash",
     });
   }
   if (onlineAmt > 0) {
@@ -958,7 +1029,7 @@ function createPaymentSplittingArray(paymentDetails, cashAmt, onlineAmt) {
       type: "upi",
       amount: onlineAmt,
       ref_id: paymentDetails?.selectedBank,
-      ref_collection: "BankDetails",
+      // ref_collection: "BankDetails",
     });
   }
   return arr;
@@ -999,7 +1070,6 @@ async function createSalesVoucher(
   paymentSplittingArray,
   session
 ) {
-  console.log("saleNumber", kotData?.voucherNumber);
   return await salesModel.create(
     [
       {
@@ -1018,6 +1088,7 @@ async function createSalesVoucher(
         partyAccount: selectedParty.accountGroup?.accountGroup,
         items: kotData?.items,
         address: kotData?.customer,
+        subTotal: kotData?.total,
         finalAmount: kotData?.total,
         paymentSplittingData: paymentSplittingArray,
         convertedFrom: kotData?.voucherNumber,
@@ -1070,19 +1141,21 @@ async function saveSettlement(
   paidAmount,
   cashAmt,
   onlineAmt,
+  req,
   session
 ) {
   if (paymentDetails?.paymentMode === "single") {
     await saveSettlementData(
       selectedParty,
       cmp_id,
-      "normal sale",
+      "cash",
       "sale",
       savedVoucher?.salesNumber,
       savedVoucher?._id,
       paidAmount,
       new Date(),
       selectedParty?.partyName,
+      req,
       session
     );
   } else {
@@ -1090,13 +1163,14 @@ async function saveSettlement(
       await saveSettlementData(
         selectedParty,
         cmp_id,
-        "normal sale",
+        "cash",
         "sale",
         savedVoucher?.salesNumber,
         savedVoucher?._id,
         cashAmt,
         new Date(),
         selectedParty?.partyName,
+        req,
         session
       );
     }
@@ -1104,13 +1178,14 @@ async function saveSettlement(
       await saveSettlementData(
         selectedParty,
         cmp_id,
-        "normal sale",
+        "bank",
         "sale",
         savedVoucher?.salesNumber,
         savedVoucher?._id,
         onlineAmt,
         new Date(),
         selectedParty?.partyName,
+        req,
         session
       );
     }
@@ -1120,8 +1195,14 @@ async function saveSettlement(
 // function used to fetch bank and cash online details
 export const getPaymentType = async (req, res) => {
   try {
-    const bankDetails = await bankModel.find({ cmp_id: req.params.cmp_id });
-    const cashDetails = await cashModel.find({ cmp_id: req.params.cmp_id });
+    const bankDetails = await Party.find({
+      cmp_id: req.params.cmp_id,
+      partyType: "bank",
+    });
+    const cashDetails = await Party.find({
+      cmp_id: req.params.cmp_id,
+      partyType: "cash",
+    });
     const paymentBelongsTo = { bankDetails, cashDetails };
     res.status(200).json({
       success: true,
@@ -1169,7 +1250,7 @@ export const getSalePrintData = async (req, res) => {
 export const saveTableNumber = async (req, res) => {
   try {
     const { cmp_id } = req.params;
-    const { tableNumber, status,description } = req.body;
+    const { tableNumber, status, description } = req.body;
 
     if (!tableNumber) {
       return res.status(400).json({ message: "Table number is required" });
@@ -1220,7 +1301,7 @@ export const getTables = async (req, res) => {
 export const updateTable = async (req, res) => {
   try {
     const { id } = req.params;
-    const { tableNumber,description } = req.body;
+    const { tableNumber, description } = req.body;
 
     if (!id) {
       return res
@@ -1387,9 +1468,44 @@ export const getKotDataByTable = async (req, res) => {
       filter.status = status;
     }
 
+    console.log("filter", filter);
+
     const kots = await kotModal.find(filter).sort({ createdAt: -1 });
     res.json({ success: true, data: kots });
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+export const updateConfigurationForKotApproval = async (req, res) => {
+  try {
+    const { cmp_id } = req.params;
+    const data = req.body;
+
+    // update object
+    const updateData = {
+      $set: {
+        [`configurations.0.kotAutoApproval`]: data?.checked,
+      },
+    };
+
+    const updatedDoc = await Organization.findOneAndUpdate(
+      { _id: cmp_id },
+      updateData,
+      { new: true }
+    );
+
+    if (!updatedDoc) {
+      return res.status(404).json({ message: "Organization not found" });
+    }
+
+    res.status(200).json({
+      message: "Configuration updated",
+      success: true,
+      organization: updatedDoc,
+    });
+  } catch (error) {
+    console.error("Error updating configuration:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };

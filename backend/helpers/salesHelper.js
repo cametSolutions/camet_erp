@@ -9,6 +9,7 @@ import bankModel from "../models/bankModel.js";
 import partyModel from "../models/partyModel.js";
 import mongoose from "mongoose";
 import invoiceModel from "../models/invoiceModel.js";
+
 import {
   processAdvancePayments,
   processAdvanceReceipts,
@@ -544,6 +545,7 @@ export const updateTallyData = async (
         settlement_date: selectedDate,
         voucher_date: selectedDate,
       };
+
 
       const settlement = new settlementModel(settlementData);
 
@@ -1099,6 +1101,8 @@ export const updateOutstandingBalance = async ({
   }
 };
 
+
+
 export const saveSettlementData = async (
   voucherNumber,
   voucherId,
@@ -1141,6 +1145,9 @@ export const saveSettlementData = async (
     throw error;
   }
 };
+
+
+
 
 export const revertSettlementData = async (
   party,

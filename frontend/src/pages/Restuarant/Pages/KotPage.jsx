@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import dayjs from "dayjs";
 import useFetch from "@/customHook/useFetch";
 import { useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
@@ -19,11 +20,15 @@ import { motion } from "framer-motion";
 import { Check, CreditCard, X, Banknote } from "lucide-react";
 import { generateAndPrintKOT } from "@/pages/Restuarant/Helper/kotPrintHelper";
 import { useNavigate } from "react-router-dom";
-import VoucherPdf from "@/pages/voucher/voucherPdf/indian/VoucherPdf";
+// import VoucherPdf from "@/pages/voucher/voucherPdf/indian/VoucherPdf";
 import { toast } from "react-toastify";
 import { FaRegEdit } from "react-icons/fa";
+import VoucherThreeInchPdf from "@/pages/voucher/voucherPdf/threeInchPdf/VoucherThreeInchPdf";
+import { useReactToPrint } from "react-to-print";
+
 const OrdersDashboard = () => {
-  const [activeFilter, setActiveFilter] = useState("On Process");
+  const contentToPrint = useRef(null);
+  const [activeFilter, setActiveFilter] = useState("ON PROCESS");
   const [searchQuery, setSearchQuery] = useState("");
   const [userRole, setUserRole] = useState("reception");
   const [orders, setOrders] = useState([]);
@@ -32,7 +37,9 @@ const OrdersDashboard = () => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [selectedDataForPayment, setSelectedDataForPayment] = useState({});
-
+  const [selectedDate, setSelectedDate] = useState(
+    dayjs().format("YYYY-MM-DD")
+  );
   const [paymentMode, setPaymentMode] = useState("single"); // "single" or "split"
   const [cashAmount, setCashAmount] = useState(0);
   const [onlineAmount, setOnlineAmount] = useState(0);
@@ -47,10 +54,8 @@ const OrdersDashboard = () => {
   const [conformationModal, setConformationModal] = useState(false);
   const [isPostToRoom, setIsPostToRooms] = useState(false);
 
-
-
-   const location = useLocation();
-  const selectedKotFromRedirect  = location.state?.selectedKot;
+  const location = useLocation();
+  const selectedKotFromRedirect = location.state?.selectedKot;
   const fromTable = location.state?.fromTable ?? false;
   const [showKotNotification, setShowKotNotification] = useState(fromTable);
   // state used for showing pdf print
@@ -66,16 +71,16 @@ const OrdersDashboard = () => {
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
 
-
-  
-  const { data, refreshHook } = useFetch(`/api/sUsers/getKotData/${cmp_id}`);
+  const { data, refreshHook } = useFetch(
+    `/api/sUsers/getKotData/${cmp_id}?date=${selectedDate}`
+  );
 
   useEffect(() => {
     if (data) {
       console.log(data?.data[23]);
       setOrders(data?.data);
     }
-  }, [data]);
+  }, [data, selectedDate]);
 
   const { data: paymentTypeData } = useFetch(
     `/api/sUsers/getPaymentType/${cmp_id}`
@@ -193,40 +198,43 @@ const OrdersDashboard = () => {
     let filtered = orders;
 
     // Filter by status based on user role and active filter
-    if (userRole === "kitchen") {
-      if (activeFilter === "All") {
-        // Kitchen - All: Show all statuses
-        filtered = filtered.filter((order) =>
-          ["pending", "cooking", "ready_to_serve"].includes(order.status)
-        );
-      } else if (activeFilter === "On Process") {
-        // Kitchen - On Process: Show pending, cooking, and ready_to_serve
-        filtered = filtered.filter((order) =>
-          ["pending", "cooking", "ready_to_serve"].includes(order.status)
-        );
-      }
-      // } else if (activeFilter === "Completed") {
-      //   // Kitchen - Completed: Show only completed orders
-      //   filtered = filtered.filter((order) => order.status === "completed");
-      // }
-    } else if (userRole === "reception") {
-      if (activeFilter === "All") {
-        // Reception - All: Show all statuses
-        filtered = filtered.filter((order) =>
-          ["pending", "cooking", "ready_to_serve", "completed"].includes(
-            order.status
-          )
-        );
-      } else if (activeFilter === "On Process") {
-        // Reception - On Process: Show pending, cooking, and ready_to_serve
-        filtered = filtered.filter((order) =>
-          ["pending", "cooking", "ready_to_serve"].includes(order.status)
-        );
-      } else if (activeFilter === "Completed") {
-        // Reception - Completed: Show only completed orders
-        filtered = filtered.filter((order) => order.status === "completed");
-      }
+    // if (userRole === "kitchen") {
+    //   if (activeFilter === "All") {
+    //     // Kitchen - All: Show all statuses
+    //     filtered = filtered.filter((order) =>
+    //       ["pending", "cooking", "ready_to_serve"].includes(order.status)
+    //     );
+    //   } else if (activeFilter === "On Process") {
+    //     // Kitchen - On Process: Show pending, cooking, and ready_to_serve
+    //     filtered = filtered.filter((order) =>
+    //       ["pending", "cooking", "ready_to_serve"].includes(order.status)
+    //     );
+    //   }
+    // } else if (userRole === "reception") {
+    if (activeFilter === "All") {
+      // Reception - All: Show all statuses
+      filtered = filtered.filter((order) =>
+        ["pending", "cooking", "ready_to_serve", "completed"].includes(
+          order.status
+        )
+      );
+    } else if (activeFilter === "ON PROCESS") {
+      // Reception - On Process: Show pending, cooking, and ready_to_serve
+      filtered = filtered.filter((order) =>
+        ["pending", "cooking", "ready_to_serve"].includes(order.status)
+      );
+    } else if (activeFilter === "KOT BILL PENDING") {
+      // Reception - Completed: Show only completed orders
+      filtered = filtered.filter(
+        (order) => order.status === "completed" && !order.paymentCompleted
+      );
+    } else if (activeFilter === "COMPLETED") {
+      // Reception - Completed: Show only completed orders
+      filtered = filtered.filter(
+        (order) => order.status === "completed" && order.paymentCompleted
+      );
     }
+    // }
 
     // Filter by search query
     if (searchQuery) {
@@ -286,6 +294,8 @@ const OrdersDashboard = () => {
       tableNo: data?.tableNumber,
       items: data?.items,
       createdAt: data?.createdAt,
+      customerName: data?.customer?.name,
+      type: data?.type,
     };
 
     generateAndPrintKOT(orderData, true, false, companyName);
@@ -333,7 +343,7 @@ const OrdersDashboard = () => {
 
   useEffect(() => {
     if (salePrintData) {
-      navigate(`/sUsers/sharesales/${salePrintData._id}`);
+      navigate(`/sUsers/sharesalesThreeInch/${salePrintData._id}`);
     }
   }, [salePrintData, navigate]);
 
@@ -341,43 +351,65 @@ const OrdersDashboard = () => {
 
   const handleSavePayment = async (id) => {
     setSaveLoader(true);
+
     let paymentDetails;
-    if (paymentMode == "single") {
-      if (paymentMethod == "cash") {
+    let selectedKotData;
+    if (
+      selectedDataForPayment.roomService &&
+      Object.keys(selectedDataForPayment.roomService).length > 0
+    ) {
+      if (paymentMode == "single") {
+        if (paymentMethod == "cash") {
+          paymentDetails = {
+            cashAmount: selectedDataForPayment?.total,
+            onlineAmount: onlineAmount,
+            selectedCash: selectedCash,
+            selectedBank: selectedBank,
+            paymentMode: paymentMode,
+          };
+          selectedKotData = selectedDataForPayment;
+        } else {
+          paymentDetails = {
+            cashAmount: cashAmount,
+            onlineAmount: selectedDataForPayment?.total,
+            selectedCash: selectedCash,
+            selectedBank: selectedBank,
+            paymentMode: paymentMode,
+          };
+          selectedKotData = selectedDataForPayment;
+        }
+      } else {
+        if (
+          Number(cashAmount) + Number(onlineAmount) !=
+          selectedDataForPayment?.total
+        ) {
+          setPaymentError(
+            "Cash and online amounts together equal the total amount."
+          );
+          return;
+        }
         paymentDetails = {
-          cashAmount: selectedDataForPayment?.total,
+          cashAmount: cashAmount,
           onlineAmount: onlineAmount,
           selectedCash: selectedCash,
           selectedBank: selectedBank,
           paymentMode: paymentMode,
         };
-      } else {
-        paymentDetails = {
-          cashAmount: cashAmount,
-          onlineAmount: selectedDataForPayment?.total,
-          selectedCash: selectedCash,
-          selectedBank: selectedBank,
-          paymentMode: paymentMode,
-        };
+        selectedKotData = selectedDataForPayment;
       }
     } else {
-      if (
-        Number(cashAmount) + Number(onlineAmount) !=
-        selectedDataForPayment?.total
-      ) {
-        setPaymentError(
-          "Cash and online amounts together equal the total amount."
-        );
-        return;
-      }
       paymentDetails = {
-        cashAmount: cashAmount,
+        cashAmount: previewForSales?.total,
         onlineAmount: onlineAmount,
         selectedCash: selectedCash,
         selectedBank: selectedBank,
         paymentMode: paymentMode,
+        isPostToRoom: true,
       };
+      selectedKotData = previewForSales;
     }
+
+    console.log(paymentDetails);
 
     try {
       const response = await api.put(
@@ -385,7 +417,7 @@ const OrdersDashboard = () => {
         {
           paymentMethod: paymentMethod,
           paymentDetails: paymentDetails,
-          selectedKotData: selectedDataForPayment,
+          selectedKotData: selectedKotData,
           isPostToRoom: isPostToRoom,
         },
         { withCredentials: true }
@@ -403,6 +435,7 @@ const OrdersDashboard = () => {
         setLoader(false);
         setSelectedKot([]);
         setShowVoucherPdf(false);
+        toast.success(response?.data?.message);
       } else {
         console.error("Failed to update backend:", response.data || response);
       }
@@ -421,7 +454,6 @@ const OrdersDashboard = () => {
   };
 
   const handlePrintData = async (kotId) => {
-    console.log(kotId);
     try {
       let saleData = await api.get(
         `/api/sUsers/getSalePrintData/${cmp_id}/${kotId}`,
@@ -435,22 +467,36 @@ const OrdersDashboard = () => {
 
   // function used to select multiple kot
   const handleSelectMultipleKots = (order) => {
+    if (userRole == "kitchen") return;
     if (order && !order?.paymentCompleted) {
-      let findOne = selectedKot.find((item) => item.id == order._id);
-      console.log(order);
-      console.log(findOne);
+      console.log(order?.roomId?._id);
+      const findOne = selectedKot.find((item) => item.id === order._id);
+      const firstSelected = selectedKot[0];
+      console.log(firstSelected); // take the first selection
+
+      if (firstSelected) {
+        // ✅ only allow roomService with same roomId
+        if (firstSelected.roomId !== order?.roomId?._id) {
+          toast.error("You can only select room  KOTs from the same room");
+          return;
+        }
+      }
+
       if (findOne) {
+        // remove if already selected
         setSelectedKot((prevSelected) =>
           prevSelected.filter((item) => item.id !== order._id)
         );
       } else {
+        // add new selection
         setSelectedKot((prevSelected) => [
           ...prevSelected,
           {
             id: order._id,
-            type: "kot",
+            type: order.type,
             voucherNumber: order.voucherNumber,
-            serviceWorker: order.type,
+            roomId: order?.roomId?._id, // keep roomId for validation
+            checkInNumber: order?.checkInNumber,
           },
         ]);
       }
@@ -466,6 +512,8 @@ const OrdersDashboard = () => {
         kotVoucherNumberArray.push({
           voucherNumber: findOne.voucherNumber,
           id: findOne._id,
+          checkInNumber: findOne?.checkInNumber,
+          tableNumber: findOne?.tableNumber,
         });
       }
       return findOne?.items || []; // return empty array if not found
@@ -495,6 +543,11 @@ const OrdersDashboard = () => {
 
   const handleSaveSales = (status) => {
     setConformationModal(false);
+    if (isPostToRoom && status) {
+      handleSavePayment();
+      return;
+    }
+
     if (!status) {
       setShowVoucherPdf(false);
       setPreviewForSales(null);
@@ -517,20 +570,31 @@ const OrdersDashboard = () => {
     navigate("/sUsers/RestaurantDashboard", { state: { kotData } });
   };
 
-  console.log(selectedKot);
+  const handlePrint = useReactToPrint({
+    content: () => contentToPrint.current,
+  });
+
   return (
     <>
-   
-
       {showVoucherPdf && (
         <div>
-          <VoucherPdf
+          {/* <VoucherPdf
             data={previewForSales}
             org={org}
             userType="secondaryUser"
             tab="sales"
             isPreview={true}
+
             sendToParent={handleSaveSales}
+          /> */}
+          <VoucherThreeInchPdf
+            contentToPrint={contentToPrint}
+            data={previewForSales}
+            org={org}
+            tab="sale"
+            isPreview={true}
+            sendToParent={handleSaveSales}
+            handlePrintData={handlePrint}
           />
         </div>
       )}
@@ -547,7 +611,10 @@ const OrdersDashboard = () => {
                 <span className="text-sm text-gray-500">Role:</span>
                 <select
                   value={userRole}
-                  onChange={(e) => setUserRole(e.target.value)}
+                  onChange={(e) => {
+                    setUserRole(e.target.value);
+                    setActiveFilter("ON PROCESS");
+                  }}
                   className="px-2 py-1 border border-gray-300 rounded text-sm"
                 >
                   <option value="reception">Reception</option>
@@ -555,13 +622,27 @@ const OrdersDashboard = () => {
                 </select>
               </div>
             </div>
-            <div className="text-gray-600 text-sm">Wednesday, 12 July 2023</div>
+            <div className="flex items-center gap-4 mb-4">
+              <div className="text-gray-600 text-sm">
+                {dayjs(selectedDate).format("dddd, D MMMM YYYY")}
+              </div>
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="px-3 py-1 border rounded text-sm"
+                max={dayjs().format("YYYY-MM-DD")}
+              />
+            </div>
           </div>
 
           {/* Controls */}
           <div className="bg-white px-4 py-3 border-b border-gray-200 flex justify-between items-center">
             <div className="flex gap-2">
-              {["All", "On Process", "Completed"].map((filter) => (
+              {(userRole === "reception"
+                ? ["All", "ON PROCESS", "KOT BILL PENDING", "COMPLETED"]
+                : ["ON PROCESS"]
+              ).map((filter) => (
                 <button
                   key={filter}
                   onClick={() => setActiveFilter(filter)}
@@ -576,17 +657,17 @@ const OrdersDashboard = () => {
               ))}
             </div>
 
-
- {showKotNotification && selectedKotFromRedirect && (
-  <div
-    className="fixed top-6 inset-x-0 flex justify-center z-50 cursor-pointer"
-    onClick={() => setShowKotNotification(false)}
-  >
-    <div className="bg-yellow-100 border border-yellow-400 px-6 py-2 rounded-lg shadow text-yellow-900 font-medium">
-      KOT #{selectedKotFromRedirect.voucherNumber} was selected from table. Click to close this notice.
-    </div>
-  </div>
-)}
+            {showKotNotification && selectedKotFromRedirect && (
+              <div
+                className="fixed top-6 inset-x-0 flex justify-center z-50 cursor-pointer"
+                onClick={() => setShowKotNotification(false)}
+              >
+                <div className="bg-yellow-100 border border-yellow-400 px-6 py-2 rounded-lg shadow text-yellow-900 font-medium">
+                  KOT #{selectedKotFromRedirect.voucherNumber} was selected from
+                  table. Click to close this notice.
+                </div>
+              </div>
+            )}
             <div className="flex items-center gap-2">
               <MenuIcon />
               <input
@@ -612,7 +693,6 @@ const OrdersDashboard = () => {
                 };
 
                 return (
-
                   <div
                     key={order.id}
                     className={`group relative bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border overflow-hidden h-96 flex flex-col cursor-pointer ${
@@ -620,11 +700,14 @@ const OrdersDashboard = () => {
                         ? "border-blue-500 ring-2 ring-blue-200 bg-blue-50"
                         : "border-gray-100 hover:border-blue-200"
                     }`}
-                    onClick={() =>{
-                      if (showKotNotification && order._id === selectedKotFromRedirect._id) {
-    setShowKotNotification(false);
-  }
-                    handleSelectMultipleKots(order);
+                    onClick={() => {
+                      if (
+                        showKotNotification &&
+                        order._id === selectedKotFromRedirect._id
+                      ) {
+                        setShowKotNotification(false);
+                      }
+                      handleSelectMultipleKots(order);
                     }}
                   >
                     {/* Selection indicator - Tick mark */}
@@ -1043,8 +1126,9 @@ const OrdersDashboard = () => {
                         className="flex-2 px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg text-sm font-bold hover:from-green-600 hover:to-emerald-700 transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2 shadow-lg"
                         onClick={() => {
                           let findOneWithNoRoomService = selectedKot.find(
-                            (kot) => kot?.serviceWorker !== "roomService"
+                            (kot) => !kot.roomId
                           );
+                          console.log(findOneWithNoRoomService);
                           if (findOneWithNoRoomService) {
                             handleSalesPreview();
                             toast.warning(
@@ -1219,7 +1303,7 @@ const OrdersDashboard = () => {
                         >
                           {cashOrBank?.cashDetails?.map((cashier) => (
                             <option key={cashier._id} value={cashier._id}>
-                              {cashier.cash_ledname}
+                              {cashier.partyName}
                             </option>
                           ))}
                         </select>
@@ -1245,7 +1329,7 @@ const OrdersDashboard = () => {
                           </option>
                           {cashOrBank?.bankDetails?.map((cashier) => (
                             <option key={cashier._id} value={cashier._id}>
-                              {cashier.bank_ledname}
+                              {cashier.partyName}
                             </option>
                           ))}
                         </select>
@@ -1314,7 +1398,7 @@ const OrdersDashboard = () => {
                             </option>
                             {cashOrBank?.cashDetails?.map((cashier) => (
                               <option key={cashier._id} value={cashier._id}>
-                                {cashier.cash_ledname}
+                                {cashier.partyName}
                               </option>
                             ))}
                           </select>
@@ -1373,10 +1457,9 @@ const OrdersDashboard = () => {
                             </option>
                             {cashOrBank?.bankDetails?.map((cashier) => (
                               <option key={cashier._id} value={cashier._id}>
-                                {cashier.bank_ledname}
+                                {cashier.partyName}
                               </option>
                             ))}
-                            <option value="hdfc">HDFC Bank</option>
                           </select>
                         </div>
                       )}

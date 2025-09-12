@@ -1319,9 +1319,9 @@ export const getAllSubDetails = async (req, res) => {
 
     const [brands, categories, subcategories, godowns, priceLevels] =
       await Promise.all([
-        Brand.find({ cmp_id, Primary_user_id }).select("_id brand"),
-        Category.find({ cmp_id, Primary_user_id }).select("_id category"),
-        Subcategory.find({ cmp_id, Primary_user_id }).select("_id subcategory"),
+        Brand.find({ cmp_id, Primary_user_id }).select("_id brand under"),
+        Category.find({ cmp_id, Primary_user_id }).select("_id category under"),
+        Subcategory.find({ cmp_id, Primary_user_id }).select("_id subcategory under"),
         Godown.find({ cmp_id, Primary_user_id }).select(
           "_id godown defaultGodown"
         ),
@@ -1330,10 +1330,11 @@ export const getAllSubDetails = async (req, res) => {
 
     const result = {
       brands: brands.map((b) => ({ _id: b._id, name: b.brand })),
-      categories: categories.map((c) => ({ _id: c._id, name: c.category })),
+      categories: categories.map((c) => ({ _id: c._id, name: c.category ,under:c.under })),
       subcategories: subcategories.map((s) => ({
         _id: s._id,
         name: s.subcategory,
+        under: s.under
       })),
       godowns: godowns.map((g) => ({
         _id: g._id,

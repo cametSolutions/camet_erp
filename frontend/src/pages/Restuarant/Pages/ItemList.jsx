@@ -79,6 +79,8 @@ function ItemList() {
           withCredentials: true,
         });
 
+        console.log(res);
+
         if (pageNumber === 1) {
           setItems(res?.data?.roomData);
         } else {

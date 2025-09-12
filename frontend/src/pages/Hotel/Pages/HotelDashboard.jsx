@@ -9,7 +9,7 @@ import { useNavigate } from "react-router-dom";
 import api from "@/api/api";
 import CalenderComponent from "../Components/CalenderComponent";
 import ReactDOM from "react-dom";
-
+import RoomSwapModal from "./RoomSwapModal ";
 const HotelDashboard = () => {
   const [rooms, setRooms] = useState([]);
   const [tooltipData, setTooltipData] = useState({});
@@ -23,6 +23,7 @@ const HotelDashboard = () => {
   const [hasMore, setHasMore] = useState(true);
   const [bookingsLoading, setBookingsLoading] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
+    const [showRoomSwapModal, setShowRoomSwapModal] = useState(false);
 
   const [tooltipX, setTooltipX] = useState(0);
   const [tooltipY, setTooltipY] = useState(0);
@@ -277,15 +278,33 @@ const HotelDashboard = () => {
     if (!selectedRoomData) return;
 
     if (action === "booking") {
-      navigate("/sUsers/bookingPage", { state: { room: selectedRoomData } });
+      navigate("/sUsers/bookingPage", {
+        state: { roomId: selectedRoomData?._id },
+      });
       return;
     }
     if (action === "CheckIn") {
-      navigate("/sUsers/checkInPage", { state: { room: selectedRoomData } });
+      navigate("/sUsers/checkInPage", {
+        state: { roomId: selectedRoomData?._id },
+      });
       return;
     }
 
-    if (["dirty", "blocked","vacant"].includes(action)) {
+
+
+     if (action === "swapRoom") {
+      // Check if room is available for swap (should be vacant)
+      // if (selectedRoomData.status !== "vacant") {
+      //   alert("Room must be vacant to swap guests into it");
+      //   return;
+      // }
+      setShowRoomModal(false);
+      setShowRoomSwapModal(true);
+      return;
+    }
+
+
+    if (["dirty", "blocked", "vacant"].includes(action)) {
       try {
         console.log("Updating room status:", {
           roomId: selectedRoomData._id,
@@ -350,6 +369,18 @@ const HotelDashboard = () => {
     }
   };
 
+
+ const handleRoomSwapConfirm = async () => {
+    try {
+      // Refresh rooms data after successful swap
+      await fetchRooms(selectedDate);
+      setShowRoomSwapModal(false);
+      setSelectedRoomData(null);
+    } catch (error) {
+      console.error("Error refreshing data after room swap:", error);
+    }
+  };
+
   // Calculate status counts
   const getStatusCounts = () => {
     const counts = {
@@ -400,7 +431,30 @@ const HotelDashboard = () => {
     setShowCalendar(show);
   };
 
+const scrollbarStyles = {
+  scrollbarWidth: 'thin',
+  scrollbarColor: 'rgba(0, 0, 0, 0.7) rgba(0, 0, 0, 0.2)' // black thumb, lighter black track
+};
+
   return (
+    <>
+    <style>{`
+        .custom-scroll::-webkit-scrollbar {
+          width: 8px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 4px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.3);
+          border-radius: 4px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+          background: rgba(255, 255, 255, 0.5);
+        }
+      `}
+      </style>
     <div className="min-h-screen bg-slate-900 relative overflow-hidden">
       <AnimatedBackground />
 
@@ -419,13 +473,13 @@ const HotelDashboard = () => {
             <div className="md:ml-auto flex flex-col sm:flex-row gap-2 mt-2 md:mt-0">
               <button
                 className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold px-3 py-1 rounded text-sm"
-                onClick={() => navigate("/sUsers/bookingPage")}
+                onClick={() => navigate("/sUsers/bookingList")}
               >
                 Room Booking
               </button>
               <button
                 className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold px-3 py-1 rounded text-sm"
-                onClick={() => navigate("/sUsers/checkInPage")}
+                onClick={() => navigate("/sUsers/checkInList")}
               >
                 Check In
               </button>
@@ -733,20 +787,21 @@ const HotelDashboard = () => {
                 )}
 
                 {/* Booking Details Panel */}
-                <div
-                  className={`${
-                    isMobile
-                      ? "fixed right-0 top-0 z-50 w-80 max-w-[90vw] h-full bg-[#0B1D34] border-l border-white/20 transform transition-transform duration-300 ease-in-out"
-                      : "w-80 flex-shrink-0 bg-[#0B1D34] border border-white/20 rounded-lg"
-                  } flex flex-col ${isMobile ? "p-0" : "p-4"}`}
-                >
+        <div
+        className={`custom-scroll ${
+          isMobile
+            ? "fixed right-0 top-0 z-50 w-80 max-w-[90vw] h-full bg-[#0B1D34] border-l border-white/20 transform transition-transform duration-300 ease-in-out"
+            : "w-80 flex-shrink-0 bg-[#0B1D34] border border-white/20 rounded-lg"
+        } flex flex-col h-screen ${isMobile ? "p-0" : "p-4"}`}
+        style={scrollbarStyles}
+      >
                   {/* Booking Section Header */}
                   <div
-                    className={`flex items-center justify-between ${
+                    className={`flex items-center justify-between   ${
                       isMobile ? "p-4 border-b border-white/20" : "mb-4"
                     }`}
                   >
-                    <div>
+                    <div className="">
                       <h3 className="font-bold text-blue-400 flex items-center gap-2 text-lg">
                         <Calendar className="w-5 h-5 text-cyan-400" />
                         Recent Bookings
@@ -886,7 +941,7 @@ const HotelDashboard = () => {
       {/* Room Action Modal */}
       {showRoomModal && selectedRoomData && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60 z-50">
-          <div className="bg-slate-800 p-6 rounded-lg shadow-lg w-80 max-w-[90vw]">
+          <div className="bg-slate-800 p-6 rounded-lg shadow-lg w-90 max-w-[150vw] ">
             <h2 className="text-lg font-bold text-white mb-4">
               Room: {selectedRoomData.roomName}
             </h2>
@@ -900,11 +955,18 @@ const HotelDashboard = () => {
               <option value="" disabled>
                 Choose...
               </option>
-              <option value="booking">Booking</option>
-              <option value="CheckIn">CheckIn</option>
+              {selectedRoomData.status != "booked" && (
+                <>
+                  <option value="booking">Booking</option>
+                  <option value="CheckIn">CheckIn</option>
+                </>
+              )}
               <option value="dirty">Mark as Dirty</option>
               <option value="blocked">Mark as Blocked</option>
               <option value="vacant">Mark as available</option>
+              {/* {selectedRoomData.status === "vacant" && ( */}
+                <option value="swapRoom">Swap Room</option>
+              {/* )} */}
             </select>
 
             <button
@@ -916,6 +978,19 @@ const HotelDashboard = () => {
           </div>
         </div>
       )}
+
+       <RoomSwapModal
+        isOpen={showRoomSwapModal}
+        onClose={() => {
+          setShowRoomSwapModal(false);
+          setSelectedRoomData(null);
+        }}
+        selectedRoom={selectedRoomData}
+        onConfirmSwap={handleRoomSwapConfirm}
+        cmp_id={cmp_id}
+        api={api}
+      />
+      {/* Animations */}
 
       {/* Animations */}
       <style>{`
@@ -938,6 +1013,7 @@ const HotelDashboard = () => {
     }
   `}</style>
     </div>
+    </>
   );
 };
 

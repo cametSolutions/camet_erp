@@ -57,11 +57,21 @@ const organizationSchema = new mongoose.Schema(
           type: Boolean,
           default: false,
         },
+        kotAutoApproval: { type: Boolean, default: false },
         addRateWithTax: {
           type: Object,
           default: {
             sale: false,
             saleOrder: false,
+            restaurantSale: false,
+            hotelSales: false,
+          },
+        },
+        defaultPrint: {
+          type: Object,
+          default: {
+            print1: true,
+            print2: false,
           },
         },
         showDescription: {
@@ -122,9 +132,10 @@ const organizationSchema = new mongoose.Schema(
             showStockWiseAmount: { type: Boolean, default: true },
             showNetAmount: { type: Boolean, default: true },
             showLetterHead: { type: Boolean, default: false },
-            letterHeadUrl: { type: String,default:null },
-            letterHeadPublicId: { type: String ,default:null},
-            letterHeadUploadedAt: { type: Date ,default:null},
+            letterHeadUrl: { type: String, default: null },
+            letterHeadPublicId: { type: String, default: null },
+            letterHeadUploadedAt: { type: Date, default: null },
+            showUnit: { type: Boolean, default: false },
           },
         ],
 

@@ -141,7 +141,7 @@ const TransactionTable = ({
                       </div>
                       <div className="text-gray-500 text-[0.7rem] font-bold mt-2 ">
                         Created By:{" "}
-                        {transaction?.secondaryUserName.length > 15
+                        {transaction?.secondaryUserName?.length > 15
                           ? `${transaction?.secondaryUserName.slice(0, 15)}...`
                           : transaction?.secondaryUserName}
                       </div>

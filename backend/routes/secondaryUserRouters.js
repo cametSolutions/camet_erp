@@ -54,15 +54,17 @@ import { addOrganizations, editOrg, getOrganizations } from '../controllers/orga
 import { addParty, addSubGroup, deleteParty, deleteSubGroup, editParty, editSubGroup, getSinglePartyDetails, getSubGroup, PartyList } from '../controllers/partyController.js';
 import { addBankEntry, addCash, editBankEntry, editCash, findSourceBalance, findSourceDetails, findSourceTransactions, getBankEntryDetails, getCashDetails } from '../controllers/bankAndCashController.js';
 import { addAditionalCharge, deleteAdditionalCharge, EditAditionalCharge, fetchAdditionalCharges, fetchSingleAdditionalCharge } from '../controllers/additionalChargeContoller.js';
-import { createVoucherSeries, getSeriesByVoucher, deleteVoucherSeriesById, editVoucherSeriesById, makeTheSeriesAsCurrentlySelected } from '../controllers/voucherSeriesController.js';
+import { createVoucherSeries, getSeriesByVoucher, deleteVoucherSeriesById, editVoucherSeriesById, makeTheSeriesAsCurrentlySelected, } from '../controllers/voucherSeriesController.js';
 
 //hotel controller
 import {saveAdditionalPax , getAdditionalPax ,updateAdditionalPax , deleteAdditionalPax,saveVisitOfPurpose,getVisitOfPurpose,
     updateVisitOfPurpose,deleteVisitOfPurpose,saveIdProof,getIdProof,updateIdProof , deleteIdProof, saveFoodPlan , getFoodPlan
     ,updateFoodPlan,deleteFoodPlan,addRoom,getRooms,editRoom ,deleteRoom,getAllRooms,roomBooking,getBookings,deleteBooking,updateBooking,
-fetchAdvanceDetails,getAllRoomsWithStatusForDate,updateRoomStatus,getDateBasedRoomsWithStatus} from '../controllers/hotelController.js'
+fetchAdvanceDetails,getAllRoomsWithStatusForDate,updateRoomStatus,getDateBasedRoomsWithStatus,checkoutWithArrayOfData,
+fetchOutStandingAndFoodData,convertCheckOutToSale , updateConfigurationForHotelAndRestaurant,swapRoom,getRoomSwapHistory,checkedInGuest} from '../controllers/hotelController.js'
 import {addItem,getAllItems,getItems,getCategories,deleteItem,updateItem,generateKot,getKot,updateKotStatus,editKot,
-    getRoomDataForRestaurant,updateKotPayment,getPaymentType,saveTableNumber,getSalePrintData,updateTable,getTables,deleteTable,updateTableStatus,getKotDataByTable } from '../controllers/restaurantController.js'
+    getRoomDataForRestaurant,updateKotPayment,getPaymentType,saveTableNumber,getSalePrintData,updateTable,getTables,deleteTable,
+    updateTableStatus,getKotDataByTable,updateConfigurationForKotApproval } from '../controllers/restaurantController.js'
 
 
 router.post('/login',login)
@@ -361,6 +363,14 @@ router.get("/getSalePrintData/:cmp_id/:kotId",authSecondary,secondaryIsBlocked,g
 router.put('/updateTableStatus/:cmp_id',authSecondary,updateTableStatus )
 router.get('/getKotDataByTable/:cmp_id',authSecondary,getKotDataByTable )
 router.get('/getDateBasedRoomsWithStatus/:cmp_id',authSecondary,getDateBasedRoomsWithStatus)
+router.put('/checkOutWithArray/:cmp_id',authSecondary,checkoutWithArrayOfData)
+router.post('/fetchOutStandingAndFoodData',authSecondary,fetchOutStandingAndFoodData)
+router.post('/convertCheckOutToSale/:cmp_id',authSecondary,convertCheckOutToSale)
+router.put('/updateConfigurationForHotelAndRestaurant/:cmp_id',authSecondary,updateConfigurationForHotelAndRestaurant)
+router.put('/updateConfigurationForKotApproval/:cmp_id',authSecondary,updateConfigurationForKotApproval)
+router.put("/swapRoom/:checkInId", swapRoom);
+router.get("/getRoomSwapHistory/:checkInId", getRoomSwapHistory);
+router.get("/getCheckedInGuests/:cmp_id", checkedInGuest);
 // Route to get detailed booking information for a specific room and date
 
 export default router
