@@ -24,6 +24,7 @@ import {
   getSeriesDetailsById,
 } from "../helpers/voucherHelper.js";
 import settlementModel from "../models/settlementModel.js";
+import { createAdvanceReceiptsFromAppliedReceipts } from "../helpers/receiptHelper.js";
 
 // @desc create credit note
 // route GET/api/sUsers/createDebitNote
@@ -136,6 +137,8 @@ export const createDebitNote = async (req, res) => {
 // route GET/api/sUsers/cancelDebitNote
 
 export const cancelDebitNote = async (req, res) => {
+  console.log("Cancel debit note request received");
+
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
@@ -154,33 +157,34 @@ export const cancelDebitNote = async (req, res) => {
     // Revert existing stock updates
     await revertDebitNoteStockUpdates(existingDebitNote.items, session);
 
-    //// revert settlement data
-    await revertSettlementData(
-      existingDebitNote?.party,
-      existingDebitNote?.cmp_id,
-      existingDebitNote?.debitNoteNumber,
-      existingDebitNote?._id.toString(),
-      session
-    );
+    /// delete  all the settlements
+    await settlementModel.deleteMany({ voucherId: debitNoteId }, { session });
 
-    const cancelOutstanding = await TallyData.findOneAndUpdate(
-      {
-        bill_no: existingDebitNote?.debitNoteNumber,
-        billId: debitNoteId?.toString(),
-      },
-      {
-        $set: {
-          isCancelled: true,
-        },
-      }
-    ).session(session);
+    ////// update the outstanding as isCancelled as true and make advance receipts form applied Receipts
+    const outstandingRecord = await TallyData.findOne({
+      billId: existingDebitNote._id.toString(),
+      bill_no: existingDebitNote.debitNoteNumber,
+      cmp_id: existingDebitNote.cmp_id,
+      Primary_user_id: existingDebitNote.Primary_user_id,
+    }).session(session);
+
+    console.log("outstandingRecord", outstandingRecord);
+
+    if (outstandingRecord) {
+      await createAdvanceReceiptsFromAppliedReceipts(
+        outstandingRecord.appliedReceipts,
+        existingDebitNote.cmp_id,
+        existingDebitNote,
+        existingDebitNote.party,
+        session
+      );
+      outstandingRecord.isCancelled = true;
+      await outstandingRecord.save({ session });
+    }
 
     // flagging is cancelled true
-
     existingDebitNote.isCancelled = true;
-
     const cancelledDebitNote = await existingDebitNote.save({ session });
-
     await session.commitTransaction();
 
     res.status(200).json({
@@ -296,20 +300,17 @@ export const editDebitNote = async (req, res) => {
     await settlementModel.deleteMany({ voucherId: debitNoteId }, { session });
     /// recreate the settlement data
 
-
-
     const secondaryUser = await secondaryUserModel
       .findById(req.sUserId)
       .session(session);
     const secondaryMobile = secondaryUser?.mobile;
 
     console.log("lastAmount", lastAmount);
-    
 
     if (party?.partyType === "party") {
       const outstandingResult = await updateOutstandingBalance({
         existingVoucher: existingDebitNote,
-        valueToUpdateInOutstanding:lastAmount,
+        valueToUpdateInOutstanding: lastAmount,
         orgId,
         voucherNumber: debitNoteNumber,
         party,

@@ -19,6 +19,7 @@ import {
   getSeriesDetailsById,
 } from "../helpers/voucherHelper.js";
 import settlementModel from "../models/settlementModel.js";
+import { createAdvanceReceiptsFromAppliedReceipts } from "../helpers/receiptHelper.js";
 
 /**
  * @desc To createSale
@@ -365,6 +366,8 @@ export const editSale = async (req, res) => {
  */
 
 export const cancelSale = async (req, res) => {
+
+  
   const saleId = req.params.id; // ID of the sale to cancel
   const vanSaleQuery = req.query.vanSale;
 
@@ -389,32 +392,36 @@ export const cancelSale = async (req, res) => {
     // Revert stock updates
     await revertSaleStockUpdates(sale.items, session); // Ensure stock updates use session
 
+    /// delete  all the settlements
+    await settlementModel.deleteMany({ voucherId: saleId }, { session });
+
+    ////// update the outstanding as isCancelled as true and make advance receipts form applied Receipts
+    const outstandingRecord = await TallyData.findOne({
+      billId: sale._id.toString(),
+      bill_no: sale.salesNumber,
+      cmp_id: sale.cmp_id,
+      Primary_user_id: sale.Primary_user_id,
+    }).session(session);
+    if (outstandingRecord) {
+      await  createAdvanceReceiptsFromAppliedReceipts(
+        outstandingRecord.appliedReceipts,
+        sale.cmp_id,
+        sale,
+        sale.party,
+        session
+      );
+      outstandingRecord.isCancelled = true;
+      await outstandingRecord.save({ session });
+    }
+
     // Update sale status
     sale.isCancelled = true;
     await (vanSaleQuery === "true"
       ? vanSaleModel
       : salesModel
-    ).findByIdAndUpdate(saleId, sale, { session }); // Use the session in the update
+    ).findByIdAndUpdate(saleId, sale, { session }); // Use the session in the update\
 
-    /// delete  all the settlements
-    await settlementModel.deleteMany({ voucherId: saleId }, { session });
-
-    //// update the outstanding of the sale against specific party
-
-    const outstandingResult = await updateOutstandingBalance({
-      existingVoucher: sale,
-      valueToUpdateInOutstanding: 0,
-      orgId: sale.cmp_id,
-      voucherNumber: sale?.salesNumber,
-      party: sale?.party,
-      session,
-      createdBy: req.owner,
-      transactionType: "sale",
-      secondaryMobile: sale?.party?.mobileNumber || null,
-      selectedDate: sale?.date,
-      classification: "Dr",
-      isCancelled: true,
-    });
+    ///
 
     /// if sale is created from order conversion then revert it
 

@@ -214,14 +214,10 @@ export const cancelPayment = async (req, res) => {
       paymentId.toString()
     );
 
-    /// save settlement data in cash or bank collection
-    await revertSettlementData(
-      payment?.paymentMethod,
-      payment?.paymentDetails,
-      payment?.paymentNumber,
-      payment?._id.toString(),
-      session
-    );
+
+    /// delete  all the settlements
+    await settlementModel.deleteMany({ voucherId: paymentId }, { session });
+
 
     // Delete advance payment, if any
     if (payment.advanceAmount > 0) {

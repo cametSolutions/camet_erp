@@ -105,12 +105,11 @@ export const updateTallyData = async (
     const totalAppliedReceipts = existingAppliedReceiptsTotal + settledAmount;
     const balance = (doc?.bill_amount || 0) - totalAppliedReceipts;
 
-    console.log("doc", doc);
-    console.log("bill_pending_amt", bill_pending_amt);
-    console.log("totalAppliedReceipts", totalAppliedReceipts);
-    console.log("existingAppliedReceiptsTotal", existingAppliedReceiptsTotal);
-    console.log("balance", balance);
-    
+    // console.log("doc", doc);
+    // console.log("bill_pending_amt", bill_pending_amt);
+    // console.log("totalAppliedReceipts", totalAppliedReceipts);
+    // console.log("existingAppliedReceiptsTotal", existingAppliedReceiptsTotal);
+    // console.log("balance", balance);
 
     //  Classification rule
     let classification = "Dr";
@@ -212,7 +211,7 @@ export const createOutstandingWithAdvanceAmount = async (
         { new: true, session }
       );
 
-      console.log(`Merged advance for ${sourceName}:`, tallyUpdate);
+      // console.log(`Merged advance for ${sourceName}:`, tallyUpdate);
       return tallyUpdate;
     } else {
       // Create new advance
@@ -256,7 +255,7 @@ export const createOutstandingWithAdvanceAmount = async (
 //     }
 
 //     const billIds = billData.map(bill => bill.billId.toString());
-    
+
 //     // Fetch documents and perform bulk operations
 //     const docs = await TallyData.find({
 //       billId: { $in: billIds }
@@ -308,8 +307,12 @@ export const createOutstandingWithAdvanceAmount = async (
 //   }
 // };
 
-
-export const revertTallyUpdates = async (billData, cmp_id, session, receiptId) => {
+export const revertTallyUpdates = async (
+  billData,
+  cmp_id,
+  session,
+  receiptId
+) => {
   try {
     if (!billData?.length) {
       console.log("❌ No bill data to revert");
@@ -319,12 +322,12 @@ export const revertTallyUpdates = async (billData, cmp_id, session, receiptId) =
     // console.log("🔄 Starting revert process for receiptId:", receiptId);
     // console.log("📋 Bill data to revert:", billData.length, "items");
 
-    const billIds = billData.map(bill => bill.billId.toString());
+    const billIds = billData.map((bill) => bill.billId.toString());
     // console.log("🔍 Looking for billIds:", billIds);
-    
+
     // Fetch documents and perform bulk operations
     const docs = await TallyData.find({
-      billId: { $in: billIds }
+      billId: { $in: billIds },
     }).session(session);
 
     if (!docs.length) {
@@ -344,13 +347,14 @@ export const revertTallyUpdates = async (billData, cmp_id, session, receiptId) =
       // console.log("   - Applied receipts before filter:", doc.appliedReceipts?.length || 0);
 
       // Filter out the receipt being reverted
-      const remainingReceipts = doc.appliedReceipts?.filter(
-        receipt => receipt._id.toString() !== receiptId.toString()
-      ) || [];
+      const remainingReceipts =
+        doc.appliedReceipts?.filter(
+          (receipt) => receipt._id.toString() !== receiptId.toString()
+        ) || [];
 
       // console.log("   - Applied receipts after filter:", remainingReceipts.length);
       // console.log("   - Remaining receipts:", remainingReceipts.map(r => ({
-      //   id: r._id, 
+      //   id: r._id,
       //   settled: r.settledAmount
       // })));
 
@@ -363,7 +367,7 @@ export const revertTallyUpdates = async (billData, cmp_id, session, receiptId) =
       // console.log("   - Total remaining applied receipts:", totalAppliedReceipts);
 
       // Calculate new pending amount and classification
-      const newPendingAmount =( doc.bill_amount - totalAppliedReceipts);
+      const newPendingAmount = doc.bill_amount - totalAppliedReceipts;
       const newClassification = newPendingAmount < 0 ? "Cr" : "Dr";
 
       // console.log("   - New pending amount:", newPendingAmount);
@@ -376,10 +380,10 @@ export const revertTallyUpdates = async (billData, cmp_id, session, receiptId) =
             $set: {
               appliedReceipts: remainingReceipts,
               bill_pending_amt: Math.abs(newPendingAmount), // Ensure non-negative pending amount
-              classification: newClassification
-            }
-          }
-        }
+              classification: newClassification,
+            },
+          },
+        },
       };
     });
 
@@ -396,14 +400,13 @@ export const revertTallyUpdates = async (billData, cmp_id, session, receiptId) =
     // });
 
     // console.log(`🎉 Successfully reverted ${docs.length} tally updates`);
-
   } catch (error) {
     console.error("💥 Error in revertTallyUpdates:", {
       message: error.message,
       stack: error.stack,
       receiptId,
       billDataCount: billData?.length || 0,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
     throw error;
   }
@@ -684,5 +687,115 @@ export const processAdvancePayments = async (
   return {
     remainingAmount: currentRemainingAmount,
     updatedAppliedPayments: updatedAppliedPayments,
+  };
+};
+
+//// create advance receipt if a voucherIsCancelled
+export const createAdvanceReceiptsFromAppliedReceipts = async (
+  appliedReceipts,
+  orgId,
+  existingVoucher,
+  party,
+  session
+) => {
+  const updatedAppliedReceipts = [];
+  let totalProcessedAmount = 0;
+
+  // Process all receipts as advance receipts within the existing transaction
+  for (let i = 0; i < appliedReceipts.length; i++) {
+    const receipt = appliedReceipts[i];
+
+
+    const { receiptNumber, settledAmount, date, _id } = receipt;
+
+    // Use the full settled amount as advance amount
+    const advanceAmount = settledAmount;
+
+    try {
+      // Call the function to create or update advance
+      await createOutstandingWithAdvanceAmount(
+        date,
+        orgId, // cmp_id
+        receiptNumber,
+        _id.toString(),
+        existingVoucher?.Primary_user_id,
+        party,
+        party?.mobileNumber,
+        advanceAmount,
+        session,
+        "advanceReceipt",
+        "Cr"
+      );
+
+      totalProcessedAmount += advanceAmount;
+      console.log(`Successfully processed receipt ${receiptNumber}`);
+    } catch (error) {
+      console.error(`Error processing receipt ${receiptNumber}:`, error);
+      // Re-throw the error to rollback the entire transaction
+      throw error;
+    }
+  }
+
+  console.log("All receipts processed as advance receipts");
+  console.log("Total processed amount:", totalProcessedAmount);
+
+  return {
+    remainingAmount: 0, // All receipts processed, no remaining amount
+    updatedAppliedReceipts: updatedAppliedReceipts, // Empty array since all are processed
+  };
+};
+
+
+//// create advance payments if a voucherIsCancelled
+export const createAdvancePaymentsFromAppliedPayments = async (
+  appliedPayments,
+  orgId,
+  existingVoucher,
+  party,
+  session
+) => {
+  const updatedAppliedPayments = [];
+  let totalProcessedAmount = 0;
+
+  // Process all payments as advance payments within the existing transaction
+  for (let i = 0; i < appliedPayments.length; i++) {
+    const payment = appliedPayments[i];
+
+    const { paymentNumber, settledAmount, date, _id } = payment;
+
+    // Use the full settled amount as advance amount
+    const advanceAmount = settledAmount;
+
+    try {
+      // Call the function to create or update advance
+      await createOutstandingWithAdvanceAmount(
+        date,
+        orgId, // cmp_id
+        paymentNumber,
+        _id.toString(),
+        existingVoucher?.Primary_user_id,
+        party,
+        party?.mobileNumber,
+        advanceAmount,
+        session,
+        "advancePayment",
+        "Dr"
+      );
+
+      totalProcessedAmount += advanceAmount;
+      // console.log(`Successfully processed payment ${paymentNumber}`);
+    } catch (error) {
+      console.error(`Error processing payment ${paymentNumber}:`, error);
+      // Re-throw the error to rollback the entire transaction
+      throw error;
+    }
+  }
+
+  // console.log("All payments processed as advance payments");
+  // console.log("Total processed amount:", totalProcessedAmount);
+
+  return {
+    remainingAmount: 0, // All payments processed, no remaining amount
+    updatedAppliedPayments: updatedAppliedPayments, // Empty array since all are processed
   };
 };
