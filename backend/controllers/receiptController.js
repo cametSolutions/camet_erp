@@ -204,16 +204,12 @@ export const cancelReceipt = async (req, res) => {
     }
 
     // Revert tally updates
-    await revertTallyUpdates(receipt.billData,cmp_id, session, receiptId.toString());
+    await revertTallyUpdates(receipt.billData,receipt.cmp_id, session, receiptId.toString());
 
-    /// save settlement data in cash or bank collection
-    await revertSettlementData(
-      receipt?.paymentMethod,
-      receipt?.paymentDetails,
-      receipt?.receiptNumber,
-      receiptId,
-      session
-    );
+    /// delete  all the settlements
+    await settlementModel.deleteMany({ voucherId: receiptId }, { session });
+
+
 
     // Delete advance receipt, if any
     if (receipt.advanceAmount > 0) {

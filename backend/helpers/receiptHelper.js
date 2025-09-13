@@ -783,7 +783,7 @@ export const createAdvancePaymentsFromAppliedPayments = async (
       );
 
       totalProcessedAmount += advanceAmount;
-      console.log(`Successfully processed payment ${paymentNumber}`);
+      // console.log(`Successfully processed payment ${paymentNumber}`);
     } catch (error) {
       console.error(`Error processing payment ${paymentNumber}:`, error);
       // Re-throw the error to rollback the entire transaction
@@ -791,8 +791,8 @@ export const createAdvancePaymentsFromAppliedPayments = async (
     }
   }
 
-  console.log("All payments processed as advance payments");
-  console.log("Total processed amount:", totalProcessedAmount);
+  // console.log("All payments processed as advance payments");
+  // console.log("Total processed amount:", totalProcessedAmount);
 
   return {
     remainingAmount: 0, // All payments processed, no remaining amount
