@@ -690,323 +690,170 @@ export const getProducts = async (req, res) => {
   }
 };
 
-// // @desc getting product list
-// // route get/api/pUsers/
 
-// export const getProducts = async (req, res) => {
-//   // Extract request parameters
-//   const Secondary_user_id = req.sUserId;
-//   const cmp_id = req.params.cmp_id;
-//   const vanSaleQuery = req.query.vanSale;
-//   const isVanSale = vanSaleQuery === "true";
-//   const excludeGodownId = req.query.excludeGodownId;
-//   const searchTerm = req.query.search || "";
-//   const isSaleOrder = req.query.saleOrder === "true";
 
-//   // Pagination parameters
-//   const page = parseInt(req.query.page) || 1;
-//   const limit = parseInt(req.query.limit) || 0;
-//   const skip = limit > 0 ? (page - 1) * limit : 0;
+export const getAllProductsForExcel = async (req, res) => {
 
-//   const Primary_user_id = req.owner;
+   try {
+    const { cmp_id } = req.params;
+    const { search } = req.query;
 
-//   try {
-//     // Check if secondary user exists
-//     const secUser = await SecondaryUser.findById(Secondary_user_id);
-//     if (!secUser) {
-//       return res.status(404).json({ message: "Secondary user not found" });
-//     }
+    // Build match stage for aggregation
+    let matchStage = { 
+      cmp_id: new mongoose.Types.ObjectId(cmp_id)
+    };
+    
+    if (search) {
+      matchStage.$or = [
+        { product_name: { $regex: search, $options: 'i' } },
+        { product_code: { $regex: search, $options: 'i' } },
+        { hsn_code: { $regex: search, $options: 'i' } }
+      ];
+    }
 
-//     // Get user configurations for the specified organization
-//     const configuration = secUser.configurations.find(
-//       (item) => item.organization == cmp_id
-//     );
+    // Create aggregation pipeline
+    const aggregationPipeline = [
+      // Stage 1: Match - Filter early to reduce data processing
+      {
+        $match: matchStage
+      },
+      // Stage 2: Project only required fields early to reduce memory usage
+      {
+        $project: {
+          product_name: 1,
+          product_code: 1,
+          balance_stock: 1,
+          unit: 1,
+          purchase_price: 1,
+          purchase_cost: 1,
+          item_mrp: 1,
+          cgst: 1,
+          sgst: 1,
+          igst: 1,
+          hsn_code: 1,
+          batchEnabled: 1,
+          gdnEnabled: 1,
+          addl_cess: 1,
+          cess: 1,
+          alt_unit: 1,
+          alt_unit_conversion: 1,
+          unit_conversion: 1,
+          brand: 1,
+          category: 1,
+          sub_category: 1
+        }
+      },
+      // Stage 3: Lookup Brand data
+      {
+        $lookup: {
+          from: 'brands',
+          localField: 'brand',
+          foreignField: '_id',
+          as: 'brandData'
+        }
+      },
+      // Stage 4: Lookup Category data
+      {
+        $lookup: {
+          from: 'categories',
+          localField: 'category',
+          foreignField: '_id',
+          as: 'categoryData'
+        }
+      },
+      // Stage 5: Lookup Subcategory data
+      {
+        $lookup: {
+          from: 'subcategories',
+          localField: 'sub_category',
+          foreignField: '_id',
+          as: 'subCategoryData'
+        }
+      },
+      // Stage 6: Final projection with flattened data
+      {
+        $project: {
+          product_name: 1,
+          product_code: 1,
+          balance_stock: 1,
+          unit: 1,
+          purchase_price: 1,
+          purchase_cost: 1,
+          item_mrp: 1,
+          cgst: 1,
+          sgst: 1,
+          igst: 1,
+          hsn_code: 1,
+          batchEnabled: 1,
+          gdnEnabled: 1,
+          addl_cess: 1,
+          cess: 1,
+          alt_unit: 1,
+          alt_unit_conversion: 1,
+          unit_conversion: 1,
+          brandName: { 
+            $ifNull: [
+              { $arrayElemAt: ['$brandData.brand', 0] }, 
+              ''
+            ]
+          },
+          categoryName: { 
+            $ifNull: [
+              { $arrayElemAt: ['$categoryData.category', 0] }, 
+              ''
+            ]
+          },
+          subCategoryName: { 
+            $ifNull: [
+              { $arrayElemAt: ['$subCategoryData.subcategory', 0] }, 
+              ''
+            ]
+          }
+        }
+      }
+    ];
 
-//     // Build filter object for MongoDB query
-//     const filter = {
-//       cmp_id: cmp_id,
-//       Primary_user_id: Primary_user_id,
-//     };
+    // Execute aggregation with proper options
+    const products = await productModel.aggregate(aggregationPipeline).allowDiskUse(true).exec();
 
-//     // Add search functionality if search term is provided
-//     if (searchTerm) {
-//       filter.$or = [
-//         { product_name: { $regex: searchTerm, $options: "i" } }, // Case-insensitive regex search
-//         { product_code: searchTerm }, // Exact match for product code
-//       ];
-//     }
+    // Transform data for Excel export
+    const excelData = products.map(product => ({
+      'Product Name': product.product_name || '',
+      'Product Code': product.product_code || '',
+      'HSN Code': product.hsn_code || '',
+      'Brand': product.brandName || '',
+      'Category': product.categoryName || '',
+      'Sub Category': product.subCategoryName || '',
+      'Unit': product.unit || '',
+      'Balance Stock': product.balance_stock || 0,
+      'Purchase Price': product.purchase_price || 0,
+      'Purchase Cost': product.purchase_cost || 0,
+      'MRP': product.item_mrp || 0,
+      'CGST %': product.cgst || 0,
+      'SGST %': product.sgst || 0,
+      'IGST %': product.igst || 0,
+      'CESS %': product.cess || 0,
+      'Additional CESS %': product.addl_cess || 0,
+      'Batch Enabled': product.batchEnabled ? 'Yes' : 'No',
+      'Godown Enabled': product.gdnEnabled ? 'Yes' : 'No',
+      'Alt Unit': product.alt_unit || '',
+      'Alt Unit Conversion': product.alt_unit_conversion || '',
+      'Unit Conversion': product.unit_conversion || ''
+    }));
 
-//     /**
-//      * Helper function to validate and normalize godown IDs
-//      * Handles both string and array inputs, validates ObjectId format
-//      * @param {string|Array} godowns - Godown IDs to validate
-//      * @returns {Array} Array of valid ObjectId strings
-//      */
-//     const validateAndNormalizeGodowns = (godowns) => {
-//       if (!godowns) return [];
+    res.json({
+      success: true,
+      data: excelData,
+      totalCount: products.length,
+      message: 'Products fetched successfully for Excel export'
+    });
 
-//       // Convert to array if it's a string
-//       let godownArray;
-//       if (typeof godowns === "string") {
-//         // Handle comma-separated string or single string
-//         godownArray = godowns.includes(",") ? godowns.split(",") : [godowns];
-//       } else if (Array.isArray(godowns)) {
-//         godownArray = godowns;
-//       } else {
-//         return [];
-//       }
-
-//       // Filter and validate ObjectIds
-//       return godownArray
-//         .map((id) => (typeof id === "string" ? id.trim() : id)) // Trim whitespace
-//         .filter((id) => {
-//           // Check if id is not empty, null, or undefined
-//           if (!id || id === "" || id === null || id === undefined) {
-//             return false;
-//           }
-
-//           // Check if it's a valid ObjectId format
-//           return mongoose.Types.ObjectId.isValid(id);
-//         });
-//     };
-
-//     // Determine which godowns to select based on configuration and validate them
-//     let selectedGodowns = [];
-//     if (isVanSale && configuration?.selectedVanSaleGodowns) {
-//       selectedGodowns = validateAndNormalizeGodowns(
-//         configuration.selectedVanSaleGodowns
-//       );
-
-//       // Only add filter if we have valid ObjectIds
-//       if (selectedGodowns.length > 0) {
-//         filter["GodownList.godown"] = { $in: selectedGodowns };
-//       }
-//     } else if (!isVanSale && configuration?.selectedGodowns) {
-//       selectedGodowns = validateAndNormalizeGodowns(
-//         configuration.selectedGodowns
-//       );
-
-//       // Only add filter if we have valid ObjectIds
-//       if (selectedGodowns.length > 0) {
-//         filter["GodownList.godown"] = { $in: selectedGodowns };
-//       }
-//     }
-
-//     // Handle godown exclusion functionality
-//     if (excludeGodownId) {
-//       // Validate the excludeGodownId format
-//       if (!mongoose.Types.ObjectId.isValid(excludeGodownId)) {
-//         return res.status(400).json({
-//           message: "Invalid excludeGodownId format",
-//         });
-//       }
-
-//       // Only get products with godown functionality enabled
-//       filter.gdnEnabled = true;
-//     }
-
-//     // Count total products matching the filter for pagination
-//     const totalProducts = await productModel.countDocuments(filter);
-
-//     // Create basic MongoDB query
-//     let query = productModel.find(filter);
-
-//     // Apply pagination if limit is specified
-//     if (limit > 0) {
-//       query = query.skip(skip).limit(limit);
-//     }
-
-//     // Sort products alphabetically by name
-//     query = query.sort({ product_name: 1 });
-
-//     // Execute query and populate related collections
-//     let products = await query
-//       .populate({
-//         path: "GodownList.godown",
-//         model: "Godown",
-//       })
-//       .populate({
-//         path: "Priceleveles.pricelevel",
-//         model: "PriceLevel",
-//       });
-
-//     // Post-query filtering for godown exclusion (done after DB query due to populated fields)
-//     /// this is for stock transfer voucher
-//     if (excludeGodownId) {
-//       products = products.filter((product) => {
-//         // Skip products that don't have godown list or godown is not enabled
-//         if (
-//           !product.gdnEnabled ||
-//           !product.GodownList ||
-//           product.GodownList.length === 0
-//         ) {
-//           return false;
-//         }
-
-//         // Filter out the excluded godown from the GodownList
-//         const filteredGodownList = product.GodownList.filter((godownItem) => {
-//           console.log("godownItem", godownItem);
-
-//           // Handle both populated and non-populated godown references
-//           const godownId = godownItem.godown?._id || godownItem.godown;
-//           const isExcluded =
-//             godownId && godownId.toString() === excludeGodownId.toString();
-
-//           // Keep godowns that are NOT excluded
-//           return !isExcluded;
-//         });
-
-//         console.log("filteredGodownList length", filteredGodownList.length);
-
-//         // If no godowns remain after filtering, exclude the entire product
-//         if (filteredGodownList.length === 0) {
-//           return false;
-//         }
-
-//         // Update the product's GodownList with the filtered list
-//         product.GodownList = filteredGodownList;
-
-//         // Keep the product since it has remaining godowns
-//         return true;
-//       });
-//     }
-//     // Transform products to flatten nested structures and apply business logic
-//     const transformedProducts = products
-//       .map((product) => {
-//         // Convert Mongoose document to plain JavaScript object
-//         const productObject = product.toObject();
-
-//         // Determine if product has batch or godown functionality enabled
-//         const batchEnabled = productObject.batchEnabled === true;
-//         const gdnEnabled = productObject.gdnEnabled === true;
-
-//         // Set hasGodownOrBatch flag based on context
-//         if (isSaleOrder) {
-//           // In sale orders, we don't show godown/batch details
-//           productObject.hasGodownOrBatch = false;
-//         } else {
-//           // For other contexts, flag is true if either batch or godown is enabled
-//           productObject.hasGodownOrBatch = batchEnabled || gdnEnabled;
-//         }
-
-//         // Process and filter GodownList items
-//         if (productObject.GodownList && productObject.GodownList.length > 0) {
-//           let filteredGodownList = productObject.GodownList;
-
-//           // Filter godowns based on selected godowns from configuration
-//           if (selectedGodowns.length > 0) {
-//             filteredGodownList = productObject.GodownList.filter(
-//               (godownItem) => {
-//                 if (!godownItem.godown) return false;
-
-//                 const godownId = godownItem.godown._id || godownItem.godown;
-//                 return selectedGodowns.some(
-//                   (id) => id.toString() === godownId.toString()
-//                 );
-//               }
-//             );
-//           }
-
-//           // Additional filtering for excluded godown
-//           if (excludeGodownId) {
-//             filteredGodownList = filteredGodownList.filter((godownItem) => {
-//               if (!godownItem.godown) return true;
-
-//               const godownId = godownItem.godown._id || godownItem.godown;
-//               return godownId.toString() !== excludeGodownId.toString();
-//             });
-//           }
-
-//           // Check if product should be removed after exclusion
-//           if (filteredGodownList.length === 0) {
-//             return null; // Mark product for removal
-//           }
-
-//           // Business logic: Filter out Primary Batch items with zero balance when multiple godowns exist
-//           // This prevents showing empty primary batches when there are other godown options available
-//           if (productObject.GodownList.length > 1) {
-//             filteredGodownList = filteredGodownList.filter((godownItem) => {
-//               // Remove Primary Batch entries with exactly zero balance stock
-//               if (
-//                 godownItem.batch === "Primary Batch" &&
-//                 godownItem.balance_stock === 0
-//               ) {
-//                 return false;
-//               }
-//               // Keep all other items (including Primary Batch with positive/negative balance)
-//               return true;
-//             });
-//           }
-
-//           // Flatten the nested godown structure for easier frontend consumption
-//           productObject.GodownList = filteredGodownList.map((godownItem) => {
-//             // Skip flattening if no godown reference exists
-//             if (!godownItem.godown) return godownItem;
-
-//             // Create flattened structure with godown properties at top level
-//             const flattenedGodownItem = {
-//               ...godownItem,
-//               // Extract godown properties to top level
-//               godownMongoDbId: godownItem.godown._id,
-//               godown: godownItem.godown.godown,
-//               godown_id: godownItem.godown.godown_id,
-//               defaultGodown: godownItem.godown.defaultGodown,
-//             };
-
-//             return flattenedGodownItem;
-//           });
-//         }
-
-//         // Flatten PriceLevels structure for easier frontend consumption
-//         if (
-//           productObject.Priceleveles &&
-//           productObject.Priceleveles.length > 0
-//         ) {
-//           productObject.Priceleveles = productObject.Priceleveles.map(
-//             (priceLevel) => {
-//               // Skip flattening if no pricelevel reference exists
-//               if (!priceLevel.pricelevel) return priceLevel;
-
-//               // Create flattened price level structure
-//               const flattenedPriceLevel = {
-//                 // Include original price level properties
-//                 ...priceLevel,
-//                 // Extract nested pricelevel properties to top level
-//                 _id: priceLevel.pricelevel._id,
-//                 pricelevel: priceLevel?.pricelevel?.pricelevel,
-//               };
-
-//               return flattenedPriceLevel;
-//             }
-//           );
-//         }
-
-//         return productObject;
-//       })
-//       .filter((product) => product?.GodownList?.length > 0); // Remove null products (those with empty GodownList after exclusion);
-
-//     // Return successful response with products and pagination info
-//     if (transformedProducts && transformedProducts.length > 0) {
-//       return res.status(200).json({
-//         productData: transformedProducts,
-//         pagination: {
-//           total: totalProducts,
-//           page,
-//           limit,
-//           hasMore: skip + transformedProducts.length < totalProducts,
-//         },
-//         message: "Products fetched",
-//       });
-//     } else {
-//       // Return 404 if no products found matching the criteria
-//       return res.status(404).json({ message: "No products were found" });
-//     }
-//   } catch (error) {
-//     // Log error for debugging and return generic error response
-//     console.error(error);
-//     return res.status(500).json({
-//       success: false,
-//       message: "Internal server error, try again!",
-//     });
-//   }
-// };
+  } catch (error) {
+    console.error('Error fetching products for Excel:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch products for Excel export',
+      error: error.message
+    });
+  }
+};

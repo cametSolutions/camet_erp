@@ -82,6 +82,7 @@ function TitleDiv({
           <p className="font-bold"> {title}</p>
         </div>
 
+        <div>
         {rightSideContent && (
           <button
             onClick={handleRightClick}
@@ -126,6 +127,9 @@ function TitleDiv({
           </DropdownMenu>
         )}
       </div>
+
+        </div>
+
 
       {loading && <CustomBarLoader />}
 

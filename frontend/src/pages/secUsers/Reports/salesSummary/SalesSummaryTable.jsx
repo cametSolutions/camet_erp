@@ -178,7 +178,7 @@ function SalesSummaryTable() {
 
     const worksheetData = []
 
-    // Create headers
+    // Create headers with Item MRP before HSN
     const headers = [
       getMainHeader(selectedOption),
       ...(selectedOption !== "voucher" ? ["Bill No"] : []),
@@ -187,7 +187,7 @@ function SalesSummaryTable() {
       getTertiaryHeader(selectedOption),
       getQuaternaryHeader(selectedOption),
       ...(selectedOption === "voucher" ? ["Category Name", "Product Code"] : []),
-      "Gst No", "Hsn", "Batch", "Quantity", "Rate", "Discount", "Amount",
+      "Gst No", "Item MRP", "Hsn", "Batch", "Quantity", "Rate", "Discount", "Amount",
       "Tax%", "Tax Amount", "Cess%", "Cess Amount", "AddtlnCess", "AddtlnCessAmt", "Net Amount"
     ]
     worksheetData.push(headers)
@@ -203,7 +203,10 @@ function SalesSummaryTable() {
           getCellValue(saleItem, 'tertiary', selectedOption),
           getCellValue(saleItem, 'quaternary', selectedOption),
           ...(selectedOption === "voucher" ? [saleItem?.categoryName || "", saleItem?.product_code || ""] : []),
-          saleItem?.gstNo, saleItem?.hsn, saleItem?.batch || "",
+          saleItem?.gstNo, 
+          saleItem?.item_mrp || "", // Added Item MRP
+          saleItem?.hsn, 
+          saleItem?.batch || "",
           saleItem?.quantity, saleItem.rate, formatNumber(saleItem?.discount),
           formatNumber(saleItem?.amount), saleItem.taxPercentage,
           formatNumber(saleItem?.taxAmount), saleItem?.cessPercentage,
@@ -342,6 +345,7 @@ function SalesSummaryTable() {
                     </>
                   )}
                   <th className="p-2 font-semibold text-gray-600">Gst No</th>
+                  <th className="p-2 font-semibold text-gray-600">Item MRP</th>
                   <th className="p-2 font-semibold text-gray-600">HSN</th>
                   <th className="p-2 font-semibold text-gray-600">Batch</th>
                   <th className="p-2 font-semibold text-gray-600">Quantity</th>
@@ -362,7 +366,7 @@ function SalesSummaryTable() {
                   <>
                     {partyIndex !== 0 && (
                       <tr>
-                        <td colSpan={selectedOption === "voucher" ? 23 : 21} className="h-1 bg-gray-300" />
+                        <td colSpan={selectedOption === "voucher" ? 24 : 22} className="h-1 bg-gray-300" />
                       </tr>
                     )}
                     {party?.sale.map((saleItem, saleIndex) => (
@@ -407,6 +411,9 @@ function SalesSummaryTable() {
                         )}
                         <td className="px-1 py-2 text-gray-800 text-xs cursor-pointer">
                           {saleItem?.gstNo || ""}
+                        </td>
+                        <td className="px-1 py-2 text-gray-800 text-xs cursor-pointer">
+                          {saleItem?.item_mrp || ""}
                         </td>
                         <td className="px-1 py-2 text-gray-800 text-xs cursor-pointer">
                           {saleItem?.hsn || ""}
