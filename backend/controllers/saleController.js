@@ -466,7 +466,7 @@ export const getSalesDetails = async (req, res) => {
       .findById(saleId)
       .populate({
         path: "party._id",
-        select: "partyName", // get only the name or other fields as needed
+        select: "partyName state", // get only the name or other fields as needed
       })
       .populate({
         path: "items.GodownList.warrantyCard",
@@ -504,6 +504,7 @@ export const getSalesDetails = async (req, res) => {
       // Update the party name with the latest value
       saleDetails.partyAccount = saleDetails.party._id.partyName;
       saleDetails.party.partyName = saleDetails.party._id.partyName;
+      saleDetails.party.state = saleDetails.party._id.state;
 
       // Restore ID to original format
       const partyId = saleDetails.party._id._id;

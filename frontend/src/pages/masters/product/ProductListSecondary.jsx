@@ -7,6 +7,7 @@ import { FaEdit } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { MdDelete } from "react-icons/md";
 import Swal from "sweetalert2";
+import * as XLSX from "xlsx-js-style";
 
 import { FixedSizeList as List } from "react-window";
 import InfiniteLoader from "react-window-infinite-loader";
@@ -16,6 +17,8 @@ import SearchBar from "../../../components/common/SearchBar";
 import { PiBarcode } from "react-icons/pi";
 import BarcodeModal from "../../../components/common/BarcodeModal";
 import TitleDiv from "@/components/common/TitleDiv";
+import { FaFileExcel } from "react-icons/fa";
+import { Progress } from "@/components/ui/progress";
 
 function ProductListSecondary() {
   const [products, setProducts] = useState([]);
@@ -27,6 +30,10 @@ function ProductListSecondary() {
   const [listHeight, setListHeight] = useState(0);
   const [openModal, setOpenModal] = useState(false);
   const [selectedProductForPrint, setSelectedProductForPrint] = useState(null);
+  
+  // Excel export states
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportProgress, setExportProgress] = useState(0);
 
   const listRef = useRef();
   const searchTimeoutRef = useRef(null);
@@ -76,7 +83,6 @@ function ProductListSecondary() {
         const params = new URLSearchParams({
           page: pageNumber,
           limit,
-          
         });
 
         if (searchTerm) {
@@ -104,7 +110,6 @@ function ProductListSecondary() {
       } catch (error) {
         console.log(error);
         setHasMore(false);
-        // toast.error("Failed to load products");
       } finally {
         setIsLoading(false);
         setLoader(false);
@@ -114,12 +119,10 @@ function ProductListSecondary() {
   );
 
   useEffect(() => {
-    // Fetch products whenever searchTerm changes (debounced)
     fetchProducts(1, searchTerm);
   }, [fetchProducts, searchTerm]);
 
   const handleDelete = async (id) => {
-    // Show confirmation dialog
     const confirmation = await Swal.fire({
       title: "Are you sure?",
       text: "This action cannot be undone!",
@@ -131,7 +134,6 @@ function ProductListSecondary() {
       cancelButtonText: "Cancel",
     });
 
-    // If user confirms deletion
     if (confirmation.isConfirmed) {
       setLoader(true);
       try {
@@ -142,17 +144,15 @@ function ProductListSecondary() {
           withCredentials: true,
         });
 
-        // Display success message
         await Swal.fire({
           title: "Deleted!",
           text: res.data.message,
           icon: "success",
-          timer: 2000, // Auto close after 2 seconds
+          timer: 2000,
           timerProgressBar: true,
           showConfirmButton: false,
         });
 
-        // Refresh the products list
         setProducts((prevProducts) =>
           prevProducts.filter((product) => product._id !== id)
         );
@@ -173,17 +173,129 @@ function ProductListSecondary() {
       setListHeight(newHeight);
     };
 
-    // Calculate the height on component mount and whenever the window is resized
     calculateHeight();
     window.addEventListener("resize", calculateHeight);
-
-    // Cleanup the event listener on component unmount
     return () => window.removeEventListener("resize", calculateHeight);
   }, []);
 
   const handlePrint = (el) => {
     setOpenModal(true);
     setSelectedProductForPrint(el);
+  };
+
+  // Excel export function
+  const handleExcelExport = async () => {
+    if (isExporting) return;
+
+    try {
+      setIsExporting(true);
+      setExportProgress(10);
+
+      // Build search params
+      const params = new URLSearchParams();
+      if (searchTerm) {
+        params.append("search", searchTerm);
+      }
+
+      setExportProgress(30);
+
+      // Fetch all products
+      const res = await api.get(
+        `/api/sUsers/getAllProductsForExcel/${cmp_id}?${params}`,
+        {
+          withCredentials: true,
+        }
+      );
+
+      setExportProgress(60);
+
+      const excelData = res.data.data;
+
+      if (!excelData || excelData.length === 0) {
+        toast.info("No products found to export");
+        return;
+      }
+
+      setExportProgress(80);
+
+      // Create workbook and worksheet
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(excelData);
+
+      // Style the header row
+      const headerStyle = {
+        fill: { fgColor: { rgb: "4F46E5" } },
+        font: { color: { rgb: "FFFFFF" }, bold: true, sz: 12 },
+        alignment: { horizontal: "center", vertical: "center" },
+        border: {
+          top: { style: "thin", color: { rgb: "000000" } },
+          bottom: { style: "thin", color: { rgb: "000000" } },
+          left: { style: "thin", color: { rgb: "000000" } },
+          right: { style: "thin", color: { rgb: "000000" } }
+        }
+      };
+
+      // Apply header styles
+      const headerKeys = Object.keys(excelData[0]);
+      headerKeys.forEach((key, index) => {
+        const cellAddress = XLSX.utils.encode_cell({ r: 0, c: index });
+        if (!ws[cellAddress]) ws[cellAddress] = {};
+        ws[cellAddress].s = headerStyle;
+      });
+
+      // Set column widths
+      const columnWidths = [
+        { wch: 30 }, // Product Name
+        { wch: 15 }, // Product Code
+        { wch: 20 }, // Product Master ID
+        { wch: 15 }, // HSN Code
+        { wch: 20 }, // Brand
+        { wch: 20 }, // Category
+        { wch: 20 }, // Sub Category
+        { wch: 10 }, // Unit
+        { wch: 15 }, // Balance Stock
+        { wch: 15 }, // Purchase Price
+        { wch: 15 }, // Purchase Cost
+        { wch: 12 }, // MRP
+        { wch: 10 }, // CGST %
+        { wch: 10 }, // SGST %
+        { wch: 10 }, // IGST %
+        { wch: 12 }, // CESS %
+        { wch: 15 }, // Additional CESS %
+        { wch: 15 }, // Batch Enabled
+        { wch: 15 }, // Godown Enabled
+        { wch: 12 }, // Alt Unit
+        { wch: 18 }, // Alt Unit Conversion
+        { wch: 15 }, // Unit Conversion
+      ];
+      ws['!cols'] = columnWidths;
+
+      // Add worksheet to workbook
+      XLSX.utils.book_append_sheet(wb, ws, "Products");
+
+      setExportProgress(95);
+
+      // Generate filename with current date
+      const currentDate = new Date().toISOString().split('T')[0];
+      const filename = `Products_Export_${currentDate}.xlsx`;
+
+      // Download the file
+      XLSX.writeFile(wb, filename);
+
+      setExportProgress(100);
+
+      toast.success(`Excel file downloaded successfully! (${excelData.length} products)`);
+
+    } catch (error) {
+      console.error('Excel export error:', error);
+      toast.error(error.response?.data?.message || "Failed to export Excel file");
+    } finally {
+      // Reset states after a small delay
+      setTimeout(() => {
+        setIsExporting(false);
+        setExportProgress(0);
+      }, 1000);
+    }
   };
 
   // Items loaded status for InfiniteLoader
@@ -197,11 +309,8 @@ function ProductListSecondary() {
     return Promise.resolve();
   };
 
-  
-
   const Row = ({ index, style }) => {
-    // Return a loading placeholder if the item is not loaded yet
-    if (!isItemLoaded(index) ) {
+    if (!isItemLoaded(index)) {
       return (
         <div
           style={style}
@@ -284,8 +393,6 @@ function ProductListSecondary() {
     );
   };
 
-  
-
   return (
     <>
       <BarcodeModal
@@ -293,8 +400,31 @@ function ProductListSecondary() {
         onClose={() => setOpenModal(false)}
         product={selectedProductForPrint}
       />
-      <div className="flex-1 bg-slate-50  h-screen overflow-hidden  ">
-        <div className="sticky top-0 z-20 ">
+      
+      {/* Excel Export Progress Modal */}
+      {isExporting && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4 text-center">
+              Exporting Products to Excel
+            </h3>
+            <Progress value={exportProgress} className="w-full mb-4" />
+            <p className="text-sm text-gray-600 text-center">
+              {exportProgress < 30 && "Preparing export..."}
+              {exportProgress >= 30 && exportProgress < 60 && "Fetching products data..."}
+              {exportProgress >= 60 && exportProgress < 80 && "Processing data..."}
+              {exportProgress >= 80 && exportProgress < 95 && "Generating Excel file..."}
+              {exportProgress >= 95 && "Download starting..."}
+            </p>
+            <p className="text-xs text-gray-500 text-center mt-2">
+              {exportProgress}% complete
+            </p>
+          </div>
+        </div>
+      )}
+
+      <div className="flex-1 bg-slate-50 h-screen overflow-hidden">
+        <div className="sticky top-0 z-20">
           <TitleDiv
             loading={loader}
             title="Your Products"
@@ -304,11 +434,20 @@ function ProductListSecondary() {
                 to: "/sUsers/addProduct",
               },
             ]}
+            rightSideContent={
+              <FaFileExcel 
+                className={`text-lg cursor-pointer transition-colors duration-200 ${
+                  isExporting 
+                    ? 'text-gray-400 cursor-not-allowed' 
+                    : 'text-green-600 hover:text-green-700'
+                }`} 
+              />
+            }
+            rightSideContentOnClick={handleExcelExport}
           />
 
           <SearchBar onType={searchData} />
         </div>
-
 
         {!loader && !isLoading && products.length === 0 && (
           <div className="flex justify-center items-center mt-20 overflow-hidden font-bold text-gray-500">
