@@ -1,15 +1,15 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import { useReactToPrint } from "react-to-print";
 import api from "@/api/api";
-import Logo from '../../../assets/images/hill.png';
-
+import Logo from "../../../assets/images/hill.png";
+import TitleDiv from "@/components/common/TitleDiv";
+import { Title } from "@radix-ui/react-dialog";
 const HotelBillPrint = () => {
   // Router and Redux state
   const location = useLocation();
-  const navigate = useNavigate();
   const organization = useSelector(
     (state) => state?.secSelectedOrganization?.secSelectedOrg
   );
@@ -17,7 +17,7 @@ const HotelBillPrint = () => {
   // Props from location state
   const selectedCheckOut = location.state?.selectedCheckOut;
   const selectedCustomerId = location.state?.customerId;
-  const isForPreview = location.state?.isForPreview;
+  // const isForPreview = location.state?.isForPreview;
 
   // Component state
   const [outStanding, setOutStanding] = useState([]);
@@ -42,15 +42,24 @@ const HotelBillPrint = () => {
         const baseAmount = room.baseAmount / stayDays;
         const taxAmount = room.taxAmount / stayDays;
         const foodPlanAmountWithTax = room.foodPlanAmountWithTax / stayDays;
-        const foodPlanAmountWithOutTax = room.foodPlanAmountWithOutTax / stayDays;
-        const additionalPaxDataWithTax = room.additionalPaxAmountWithTax / stayDays;
-        const additionalPaxDataWithOutTax = room.additionalPaxAmountWithOutTax / stayDays;
+        const foodPlanAmountWithOutTax =
+          room.foodPlanAmountWithOutTax / stayDays;
+        const additionalPaxDataWithTax =
+          room.additionalPaxAmountWithTax / stayDays;
+        const additionalPaxDataWithOutTax =
+          room.additionalPaxAmountWithOutTax / stayDays;
 
         const startDate = new Date(item.arrivalDate);
         const endDate = new Date(item.checkOutDate);
 
-        for (let d = new Date(startDate); d < endDate; d.setDate(d.getDate() + 1)) {
-          const formattedDate = d.toLocaleDateString("en-GB").replace(/\//g, "-");
+        for (
+          let d = new Date(startDate);
+          d < endDate;
+          d.setDate(d.getDate() + 1)
+        ) {
+          const formattedDate = d
+            .toLocaleDateString("en-GB")
+            .replace(/\//g, "-");
 
           result.push({
             date: formattedDate,
@@ -121,18 +130,25 @@ const HotelBillPrint = () => {
       0
     );
 
-    const advanceTotal = outStanding?.reduce(
-      (total, transaction) => total + (transaction?.bill_amount || 0),
-      0
-    ) || 0;
+    const advanceTotal =
+      outStanding?.reduce(
+        (total, transaction) => total + (transaction?.bill_amount || 0),
+        0
+      ) || 0;
 
-    const kotTotal = kotData?.reduce((total, kot) => total + (kot?.total || 0), 0) || 0;
+    const kotTotal =
+      kotData?.reduce((total, kot) => total + (kot?.total || 0), 0) || 0;
 
     const sgstAmount = taxAmountForRoom;
     const cgstAmount = taxAmountForRoom;
     const totalTaxAmount = sgstAmount + cgstAmount;
 
-    const grandTotal = roomTariffTotal + planAmount + additionalPaxAmount + totalTaxAmount + kotTotal;
+    const grandTotal =
+      roomTariffTotal +
+      planAmount +
+      additionalPaxAmount +
+      totalTaxAmount +
+      kotTotal;
     const netPay = grandTotal - advanceTotal;
 
     return {
@@ -145,21 +161,21 @@ const HotelBillPrint = () => {
       grandTotal,
       netPay,
       planAmount,
-      additionalPaxAmount
+      additionalPaxAmount,
     };
   };
 
   // Add keyboard shortcut for printing
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.ctrlKey && e.key === 'p') {
+      if (e.ctrlKey && e.key === "p") {
         e.preventDefault();
         window.print();
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, []);
 
   // Print handler
@@ -202,7 +218,9 @@ const HotelBillPrint = () => {
 
         const foodPlanTaxAmount = selectedCheckOutData.reduce(
           (acc, item) =>
-            acc + Number(item.foodPlanAmountWithOutTax || 0) - Number(item.taxAmountForFoodPlan || 0),
+            acc +
+            Number(item.foodPlanAmountWithOutTax || 0) -
+            Number(item.taxAmountForFoodPlan || 0),
           0
         );
 
@@ -219,98 +237,129 @@ const HotelBillPrint = () => {
   }, [selectedCheckOut]);
 
   const totals = calculateTotals();
-  
-console.log(location.state)
-console.log(outStanding)
-console.log(selectedCheckOutData)
-console.log(dateWiseDisplayedData)
+
+  console.log(location.state);
+  console.log(outStanding);
+  console.log(selectedCheckOutData);
+  console.log(dateWiseDisplayedData);
   // Dynamic bill data based on fetched information - FIXED VERSION
   const billData = {
     hotel: {
-      name: organization?.name ,
-      address: `${organization?.flat || ''} ${organization?.road || ''} ${organization?.landmark || ''}`.trim() || 'Erattayar road, Kattapana, Kerala India',
-      phone: organization?.mobile ,
+      name: organization?.name,
+      address:
+        `${organization?.flat || ""} ${organization?.road || ""} ${
+          organization?.landmark || ""
+        }`.trim() || "Erattayar road, Kattapana, Kerala India",
+      phone: organization?.mobile,
       email: organization?.email,
       website: organization?.website,
-      pan: organization?.pan ,
-      gstin: organization?.gstNum ,
-      sacCode: '996311'
+      pan: organization?.pan,
+      gstin: organization?.gstNum,
+      sacCode: "996311",
     },
     guest: {
-      name: selectedCustomerData?.partyName ,
-      roomNo: selectedCheckOutData?.selectedRooms?.map(room => room.roomName).join(', ') ,
+      name: selectedCustomerData?.partyName,
+      roomNo: selectedCheckOutData?.selectedRooms
+        ?.map((room) => room.roomName)
+        .join(", "),
       billNo: selectedCheckOutData?.voucherNumber,
       travelAgent: selectedCheckOutData?.agentId?.name,
-      address: selectedCustomerData?.address || '',
-      phone: selectedCustomerData?.mobileNumber || '',
-      gstNo: selectedCustomerData?.gstNo || ''
+      address: selectedCustomerData?.address || "",
+      phone: selectedCustomerData?.mobileNumber || "",
+      gstNo: selectedCustomerData?.gstNo || "",
     },
     stay: {
       billDate: formatDate(new Date()),
-      arrival: `${formatDate(selectedCheckOutData?.arrivalDate)} ${selectedCheckOutData?.arrivalTime || ''}`,
+      arrival: `${formatDate(selectedCheckOutData?.arrivalDate)} ${
+        selectedCheckOutData?.arrivalTime || ""
+      }`,
       departure: `${formatDate(new Date())} ${new Date().toLocaleTimeString()}`,
       days: selectedCheckOutData?.selectedRooms?.[0]?.stayDays,
-      plan: selectedCheckOutData?.foodPlanAmount ,
-      pax: selectedCheckOutData?.selectedRooms?.reduce((acc, curr) => acc + Number(curr.pax || 0), 0) || 1,
-      tariff: selectedCheckOutData?.selectedRooms?.[0]?.baseAmount || 0
+      plan: selectedCheckOutData?.foodPlanAmount,
+      pax:
+        selectedCheckOutData?.selectedRooms?.reduce(
+          (acc, curr) => acc + Number(curr.pax || 0),
+          0
+        ) || 1,
+      tariff: selectedCheckOutData?.selectedRooms?.[0]?.baseAmount || 0,
     },
-    
+
     charges: [
       // Room charges from dateWiseDisplayedData
-      ...dateWiseDisplayedData.map(item => ({
+      ...dateWiseDisplayedData.map((item) => ({
         date: item.date,
         description: item.description,
-        docNo: item.docNo || '-',
-        amount: (item.baseAmount || 0) + (item.additionalPaxDataWithOutTax || 0) + (item.foodPlanAmountWithOutTax || 0),
-        taxes:selectedCheckOutData?.selectedRooms?.map(room => room.taxAmount).join(', ') ,
-        Advance:selectedCheckOutData?.advanceAmount ,
-        balance:selectedCheckOutData?.balanceToPay ,
+        docNo: item.docNo || "-",
+        amount:
+          (item.baseAmount || 0) +
+          (item.additionalPaxDataWithOutTax || 0) +
+          (item.foodPlanAmountWithOutTax || 0),
+        taxes: selectedCheckOutData?.selectedRooms
+          ?.map((room) => room.taxAmount)
+          .join(", "),
+        Advance: selectedCheckOutData?.advanceAmount,
+        balance: selectedCheckOutData?.balanceToPay,
       })),
       // Advance entries from outStanding
-      ...outStanding.map(transaction => ({
+      ...outStanding.map((transaction) => ({
         date: formatDate(transaction.bill_date),
-        description: 'Advance',
+        description: "Advance",
         docNo: transaction.bill_no,
-        amount: -Math.abs(transaction.bill_amount || 0) ,// Negative for advance
-        taxes:transaction.tax,
-        Advance:transaction.advanceAmount,
-        balance:transaction.balance
+        amount: -Math.abs(transaction.bill_amount || 0), // Negative for advance
+        taxes: transaction.tax,
+        Advance: transaction.advanceAmount,
+        balance: transaction.balance,
       })),
       // Tax charges
-      ...(totals.cgstAmount > 0 ? [{
-        date: formatDate(new Date()),
-        description: 'CGST on Rent',
-        docNo: '-',
-        amount: totals.cgstAmount,
-
-      }] : []),
-      ...(totals.sgstAmount > 0 ? [{
-        date: formatDate(new Date()),
-        description: 'SGST on Rent @6%',
-        docNo: '-',
-        amount: totals.sgstAmount
-      }] : []),
+      ...(totals.cgstAmount > 0
+        ? [
+            {
+              date: formatDate(new Date()),
+              description: "CGST on Rent",
+              docNo: "-",
+              amount: totals.cgstAmount,
+            },
+          ]
+        : []),
+      ...(totals.sgstAmount > 0
+        ? [
+            {
+              date: formatDate(new Date()),
+              description: "SGST on Rent @6%",
+              docNo: "-",
+              amount: totals.sgstAmount,
+            },
+          ]
+        : []),
       // Restaurant charges from kotData
-      ...kotData.map(kot => ({
+      ...kotData.map((kot) => ({
         date: formatDate(kot.createdAt),
         description: kot.description,
         docNo: kot.voucherNumber,
-        amount: kot.total || 0
+        amount: kot.total || 0,
       })),
       // Food plan charges if any
-      ...(totals.planAmount > 0 ? [{
-        date: formatDate(new Date()),
-        description: 'Food Plan',
-        docNo: '-',
-        amount: totals.planAmount
-      }] : []),
+      ...(totals.planAmount > 0
+        ? [
+            {
+              date: formatDate(new Date()),
+              description: "Food Plan",
+              docNo: "-",
+              amount: totals.planAmount,
+            },
+          ]
+        : []),
       // Additional pax charges if any
-      ...(totals.additionalPaxAmount > 0 ? [{
-        date: formatDate(new Date()),
-        description: 'Additional Pax',
-        docNo: '-',
-        amount: totals.additionalPaxAmount
-      }] : [])
+      ...(totals.additionalPaxAmount > 0
+        ? [
+            {
+              date: formatDate(new Date()),
+              description: "Additional Pax",
+              docNo: "-",
+              amount: totals.additionalPaxAmount,
+            },
+          ]
+        : []),
     ],
     summary: {
       roomRent: totals.roomTariffTotal,
@@ -321,14 +370,14 @@ console.log(dateWiseDisplayedData)
       foodPlan: totals.planAmount,
       additionalPax: totals.additionalPaxAmount,
       total: totals.grandTotal,
-      totalWords: convertNumberToWords(totals.grandTotal)
+      totalWords: convertNumberToWords(totals.grandTotal),
     },
     payment: {
-      mode: 'Credit',
+      mode: "Credit",
       total: totals.grandTotal,
       advance: totals.advanceTotal,
-      netPay: totals.netPay
-    }
+      netPay: totals.netPay,
+    },
   };
 
   // Function to convert number to words (simplified version)
@@ -336,322 +385,825 @@ console.log(dateWiseDisplayedData)
     // This is a simplified version - you might want to use a proper number-to-words library
     return `${Math.round(amount)} Rupees Only`;
   }
-console.log(billData)
+
+  console.log(billData);
+
   return (
-    <div className="font-sans bg-gray-100 p-5 min-h-screen" ref={printReference}>
-      <style jsx>{`
-        @media print {
-          body {
-            background: white !important;
-            padding: 0 !important;
-          }
-          
-          .print-header {
-            display: none !important;
-          }
-          
-          .print-container {
-            box-shadow: none !important;
-            border-radius: 0 !important;
-            max-width: none !important;
-          }
-          
-          .bill-content {
-            padding: 20px !important;
-          }
-          
-          .charges-table {
-            box-shadow: none !important;
-          }
-          
-          .info-section, .summary-section, .payment-section {
-            background: white !important;
-            border: 1px solid #ddd !important;
-          }
-          
-          .bg-gradient-to-br {
-            background: white !important;
-            color: black !important;
-          }
-        }
-      `}</style>
-      
-      <div className="print-header text-white text-right">
-        <button 
-          onClick={handlePrint}
-          className="bg-green-500 hover:bg-green-600 text-white border-none py-3 px-6 text-base rounded cursor-pointer mb-2 transition-colors duration-300"
+    <>
+    <TitleDiv title="Bill Print"/>
+      <div
+        className="font-sans bg-gray-100 p-5 min-h-screen"
+        ref={printReference}
+      >
+        <div
+          style={{
+            maxWidth: "21cm",
+            margin: "0 auto",
+            padding: "0.5cm",
+            backgroundColor: "white",
+            fontFamily: "Arial, sans-serif",
+            fontSize: "11px",
+            lineHeight: "1.1",
+            color: "#000",
+          }}
         >
-          🖨️ Print Bill
-        </button>
-      </div>
-
-      <div className="print-container mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
-        {/* Bill Content */}
-        <div className="bill-content">
-          <div className="flex justify-between border-b-4 pb-5 mb-6">
-            {/* Logo */}
-            <div>
-              <img src={Logo} alt="Logo" className="w-30 h-35" />
+          {/* Header Section - Repeats on every page */}
+          <div
+            className="page-header flex"
+            style={{
+              textAlign: "center",
+              borderBottom: "1px solid #000",
+              paddingBottom: "8px",
+              marginBottom: "10px",
+            }}
+          >
+            <div style={{ flex: "0 0 120px" }}>
+              {Logo && (
+                <img
+                  src={Logo}
+                  alt="Logo"
+                  style={{ width: "120px", height: "auto" }}
+                />
+              )}
             </div>
-
-            {/* Hotel Header */}
-            <div className="text-center flex-1">
-              <div className="text-3xl font-bold text-gray-800 mb-2">
-                {billData.hotel.name}
+            <div className="ml-auto">
+              <div
+                style={{
+                  fontSize: "18px",
+                  fontWeight: "bold",
+                  marginBottom: "4px",
+                  textTransform: "uppercase",
+                }}
+              >
+                {billData?.hotel?.name}
               </div>
-              <div className="text-gray-600 text-sm leading-relaxed mb-3">
-                {billData.hotel.address}<br/>
-                Phone: {billData.hotel.phone}<br/>
-                Email: {billData.hotel.email} | Website: {billData.hotel.website}
+              <div
+                style={{
+                  fontSize: "10px",
+                  marginBottom: "2px",
+                  lineHeight: "1.2",
+                }}
+              >
+                {billData?.hotel?.address}
               </div>
-              <div className="text-gray-500 text-xs leading-tight">
-                PAN NO: {billData.hotel.pan} | GSTIN: {billData.hotel.gstin} | SAC CODE: {billData.hotel.sacCode}
+              <div
+                style={{
+                  fontSize: "10px",
+                  marginBottom: "2px",
+                  lineHeight: "1.2",
+                }}
+              >
+                Phone: {billData?.hotel?.phone}
+              </div>
+              <div
+                style={{
+                  fontSize: "10px",
+                  marginBottom: "3px",
+                  lineHeight: "1.2",
+                }}
+              >
+                E-mail: {billData?.hotel?.email} | Website:{" "}
+                {billData?.hotel?.website}
+              </div>
+              <div
+                style={{
+                  fontSize: "9px",
+                  lineHeight: "1.1",
+                }}
+              >
+                PAN NO: {billData?.hotel?.pan} | GSTIN: {billData?.hotel?.gstin}
+              </div>
+              <div
+                style={{
+                  fontSize: "9px",
+                  lineHeight: "1.1",
+                }}
+              >
+                SAC CODE-{billData?.hotel?.sacCode}
               </div>
             </div>
           </div>
 
-          {/* Bill Information Grid */}
-          <div className="grid grid-cols-1 border border-black md:grid-cols-2 gap-8 mb-8">
-            {/* Guest Information */}
-            <div className="info-section bg-gray-50 p-4 rounded-lg border-l-4">
-              <div className="space-y-1">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600 font-medium">GRC No:</span>
-                  <span className="text-gray-800 font-semibold">{billData.guest.billNo}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600 font-medium">Guest Name:</span>
-                  <span className="text-gray-800 font-semibold">{billData.guest.name}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600 font-medium">Address:</span>
-                  <span className="text-gray-800 font-semibold">{billData.guest.address}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600 font-medium">Phone:</span>
-                  <span className="text-gray-800 font-semibold">{billData.guest.phone}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600 font-medium">Gst No:</span>
-                  <span className="text-gray-800 font-semibold">{billData.guest.gstNo}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600 font-medium">Travel Agent:</span>
-                  <span className="text-gray-800 font-semibold">{billData.guest.travelAgent}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600 font-medium">Room No:</span>
-                  <span className="text-gray-800 font-semibold">{billData.guest.roomNo}</span>
-                </div>
-              </div>
-            </div>
+          {/* Guest Information Section */}
+          <div style={{ marginBottom: "10px" }}>
+            <table
+              style={{
+                width: "100%",
+                borderCollapse: "collapse",
+                fontSize: "10px",
+              }}
+            >
+              <tbody>
+                <tr>
+                  <td
+                    style={{
+                      width: "15%",
+                      padding: "2px 0",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    GRC No
+                  </td>
+                  <td style={{ width: "15%", padding: "2px 0" }}>
+                    {billData?.guest?.billNo}
+                  </td>
+                  <td
+                    style={{
+                      width: "15%",
+                      padding: "2px 0",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    Bill No
+                  </td>
+                  <td style={{ width: "15%", padding: "2px 0" }}>
+                    {billData?.guest?.billNo}
+                  </td>
+                  <td
+                    style={{
+                      width: "10%",
+                      padding: "2px 0",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    Date
+                  </td>
+                  <td style={{ width: "30%", padding: "2px 0" }}>
+                    {billData?.stay?.billDate}
+                  </td>
+                </tr>
+                <tr>
+                  <td style={{ padding: "2px 0", fontWeight: "bold" }}>
+                    GUEST
+                  </td>
+                  <td style={{ padding: "2px 0" }}>{billData?.guest?.name}</td>
+                  <td style={{ padding: "2px 0", fontWeight: "bold" }}>
+                    Arrival
+                  </td>
+                  <td style={{ padding: "2px 0" }}>
+                    {billData?.stay?.arrival}
+                  </td>
+                  <td style={{ padding: "2px 0", fontWeight: "bold" }}>
+                    Departure
+                  </td>
+                  <td style={{ padding: "2px 0" }}>
+                    {billData?.stay?.departure}
+                  </td>
+                </tr>
+                <tr>
+                  <td style={{ padding: "2px 0", fontWeight: "bold" }}>
+                    Address
+                  </td>
+                  <td colSpan="3" style={{ padding: "2px 0" }}>
+                    {billData?.guest?.address}
+                  </td>
+                  <td style={{ padding: "2px 0", fontWeight: "bold" }}>Plan</td>
+                  <td style={{ padding: "2px 0" }}>
+                    {billData?.stay?.plan} Pax {billData?.stay?.pax}
+                  </td>
+                </tr>
+                <tr>
+                  <td style={{ padding: "2px 0", fontWeight: "bold" }}>
+                    Phone
+                  </td>
+                  <td style={{ padding: "2px 0" }}>{billData?.guest?.phone}</td>
+                  <td style={{ padding: "2px 0", fontWeight: "bold" }}>
+                    Tariff
+                  </td>
+                  <td style={{ padding: "2px 0" }}>{billData?.stay?.tariff}</td>
+                  <td style={{ padding: "2px 0", fontWeight: "bold" }}>
+                    No. of Days
+                  </td>
+                  <td style={{ padding: "2px 0" }}>{billData?.stay?.days}</td>
+                </tr>
+                <tr>
+                  <td style={{ padding: "2px 0", fontWeight: "bold" }}>
+                    Travel Agent
+                  </td>
+                  <td style={{ padding: "2px 0" }}>
+                    {billData?.guest?.travelAgent}
+                  </td>
+                  <td colSpan="4"></td>
+                </tr>
+                <tr>
+                  <td style={{ padding: "2px 0", fontWeight: "bold" }}>
+                    GST No
+                  </td>
+                  <td style={{ padding: "2px 0" }}>{billData?.guest?.gstNo}</td>
+                  <td colSpan="4"></td>
+                </tr>
+                <tr>
+                  <td style={{ padding: "2px 0", fontWeight: "bold" }}>
+                    Company
+                  </td>
+                  <td style={{ padding: "2px 0" }}>
+                    {billData?.guest?.company}
+                  </td>
+                  <td colSpan="4"></td>
+                </tr>
+                <tr>
+                  <td style={{ padding: "2px 0", fontWeight: "bold" }}>
+                    Room No
+                  </td>
+                  <td style={{ padding: "2px 0" }}>
+                    {billData?.guest?.roomNo}
+                  </td>
+                  <td colSpan="4"></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
 
-            {/* Stay Details */}
-            <div className="info-section bg-gray-50 p-4 rounded-lg border-l-4">
-              <div className="space-y-1">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600 font-medium">Bill Date:</span>
-                  <span className="text-gray-800 font-semibold">{billData.stay.billDate}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600 font-medium">Bill No:</span>
-                  <span className="text-gray-800 font-semibold">{billData.guest.billNo}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600 font-medium">Arrival:</span>
-                  <span className="text-gray-800 font-semibold">{billData.stay.arrival}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600 font-medium">Departure:</span>
-                  <span className="text-gray-800 font-semibold">{billData.stay.departure}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600 font-medium">No. of Days:</span>
-                  <span className="text-gray-800 font-semibold">{billData.stay.days}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600 font-medium">Pax:</span>
-                  <span className="text-gray-800 font-semibold">{billData.stay.pax}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600 font-medium">Tariff:</span>
-                  <span className="text-gray-800 font-semibold">{billData.stay.tariff?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600 font-medium">Plan:</span>
-                  <span className="text-gray-800 font-semibold">{billData.stay.plan}</span>
-                </div>
-              </div>
-            </div>
+          {/* Bill Title */}
+          <div
+            style={{
+              textAlign: "center",
+              fontSize: "14px",
+              fontWeight: "bold",
+              margin: "10px 0",
+              border: "1px solid #000",
+              padding: "5px",
+              backgroundColor: "#f5f5f5",
+            }}
+          >
+            &lt;&lt; BILL &gt;&gt;
           </div>
 
           {/* Charges Table */}
-          <div className="charges-table overflow-hidden rounded-lg border border-black shadow-sm mb-6">
-            <table className="w-full border-collapse bg-white">
+          <div style={{ marginBottom: "10px" }}>
+            <table
+              style={{
+                width: "100%",
+                borderCollapse: "collapse",
+                border: "1px solid #000",
+                fontSize: "10px",
+              }}
+            >
               <thead>
-                <tr className="bg-gradient-to-r bg-red-50 text-black">
-                  <th className="p-4 text-left font-semibold text-sm">Date</th>
-                  <th className="p-4 text-left font-semibold text-sm">Description</th>
-                  <th className="p-4 text-left font-semibold text-sm">Doc No</th>
-                  <th className="p-4 text-right font-semibold text-sm">Amount (₹)</th>
-                   <th className="p-4 text-right font-semibold text-sm">Taxes (₹)</th>
-                    <th className="p-4 text-right font-semibold text-sm">Balance (₹)</th>
-                     <th className="p-4 text-right font-semibold text-sm">Advance (₹)</th>
+                <tr style={{ backgroundColor: "#f5f5f5" }}>
+                  <th
+                    style={{
+                      border: "1px solid #000",
+                      padding: "4px",
+                      textAlign: "left",
+                    }}
+                  >
+                    Date
+                  </th>
+                  <th
+                    style={{
+                      border: "1px solid #000",
+                      padding: "4px",
+                      textAlign: "left",
+                    }}
+                  >
+                    Doc No
+                  </th>
+                  <th
+                    style={{
+                      border: "1px solid #000",
+                      padding: "4px",
+                      textAlign: "left",
+                    }}
+                  >
+                    Description
+                  </th>
+                  <th
+                    style={{
+                      border: "1px solid #000",
+                      padding: "4px",
+                      textAlign: "right",
+                    }}
+                  >
+                    Amount
+                  </th>
+                  <th
+                    style={{
+                      border: "1px solid #000",
+                      padding: "4px",
+                      textAlign: "right",
+                    }}
+                  >
+                    Taxes
+                  </th>
+                  <th
+                    style={{
+                      border: "1px solid #000",
+                      padding: "4px",
+                      textAlign: "right",
+                    }}
+                  >
+                    Advance
+                  </th>
+                  <th
+                    style={{
+                      border: "1px solid #000",
+                      padding: "4px",
+                      textAlign: "right",
+                    }}
+                  >
+                    Balance
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {billData.charges.map((charge, index) => (
-                  <tr 
-                    key={index} 
-                    className={`${index % 2 === 0 ? 'bg-gray-50' : 'bg-white'} hover:bg-blue-50 transition-colors`}
-                  >
-                    <td className="p-3 text-sm border-b border-gray-200">{charge.date}</td>
-                    <td className="p-3 text-sm border-b border-gray-200">{charge.description}</td>
-                    <td className="p-3 text-sm border-b border-gray-200">{charge.docNo}</td>
-                    <td className="p-3 text-sm border-b border-gray-200 text-right font-semibold">
-                      {charge.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                {billData?.charges?.map((charge, index) => (
+                  <tr key={index}>
+                    <td style={{ border: "1px solid #000", padding: "3px" }}>
+                      {charge.date}
                     </td>
-                     <td className="p-3 text-sm border-b border-gray-200">{charge.tax}</td> 
-                     <td className="p-3 text-sm border-b border-gray-200">{charge.balance}</td>
-                      <td className="p-3 text-sm border-b border-gray-200">{charge.Advance}</td>
+                    <td
+                      style={{
+                        border: "1px solid #000",
+                        padding: "3px",
+                        textAlign: "center",
+                      }}
+                    >
+                      {charge.docNo}
+                    </td>
+                    <td style={{ border: "1px solid #000", padding: "3px" }}>
+                      {charge.description}
+                    </td>
+                    <td
+                      style={{
+                        border: "1px solid #000",
+                        padding: "3px",
+                        textAlign: "right",
+                      }}
+                    >
+                      {charge.amount?.toFixed(2)}
+                    </td>
+                    <td
+                      style={{
+                        border: "1px solid #000",
+                        padding: "3px",
+                        textAlign: "right",
+                      }}
+                    >
+                      {charge.tax}
+                    </td>
+                    <td
+                      style={{
+                        border: "1px solid #000",
+                        padding: "3px",
+                        textAlign: "right",
+                      }}
+                    >
+                      {charge.advance}
+                    </td>
+                    <td
+                      style={{
+                        border: "1px solid #000",
+                        padding: "3px",
+                        textAlign: "right",
+                      }}
+                    >
+                      {charge.balance}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
 
-          {/* Summary Section */}
-          <div className="summary-section bg-white p-5 rounded-lg border border-black">
-            <div className="flex justify-between items-start mb-4">
-              <div className="text-lg font-bold text-gray-800">Summary</div>
-              <div className="text-lg font-bold text-gray-800">Amount</div>
+          {/* Summary and Payment in two columns */}
+          <div style={{ display: "flex", gap: "20px", marginBottom: "10px" }}>
+            {/* Summary Section */}
+            <div style={{ flex: "1" }}>
+              <table
+                style={{
+                  width: "100%",
+                  borderCollapse: "collapse",
+                  border: "1px solid #000",
+                  fontSize: "11px",
+                }}
+              >
+                <thead>
+                  <tr style={{ backgroundColor: "#f5f5f5" }}>
+                    <th
+                      style={{
+                        border: "1px solid #000",
+                        padding: "6px",
+                        textAlign: "left",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      Summary
+                    </th>
+                    <th
+                      style={{
+                        border: "1px solid #000",
+                        padding: "6px",
+                        textAlign: "right",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      Amount
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style={{ border: "1px solid #000", padding: "4px" }}>
+                      Room Rent
+                    </td>
+                    <td
+                      style={{
+                        border: "1px solid #000",
+                        padding: "4px",
+                        textAlign: "right",
+                      }}
+                    >
+                      {billData?.summary?.roomRent?.toLocaleString("en-IN", {
+                        minimumFractionDigits: 2,
+                      })}
+                    </td>
+                  </tr>
+
+                  {billData?.summary?.foodPlan > 0 && (
+                    <tr>
+                      <td style={{ border: "1px solid #000", padding: "4px" }}>
+                        Food Plan
+                      </td>
+                      <td
+                        style={{
+                          border: "1px solid #000",
+                          padding: "4px",
+                          textAlign: "right",
+                        }}
+                      >
+                        {billData?.summary?.foodPlan?.toLocaleString("en-IN", {
+                          minimumFractionDigits: 2,
+                        })}
+                      </td>
+                    </tr>
+                  )}
+
+                  <tr>
+                    <td style={{ border: "1px solid #000", padding: "4px" }}>
+                      SGST on Rent
+                    </td>
+                    <td
+                      style={{
+                        border: "1px solid #000",
+                        padding: "4px",
+                        textAlign: "right",
+                      }}
+                    >
+                      {billData?.summary?.sgst?.toLocaleString("en-IN", {
+                        minimumFractionDigits: 2,
+                      })}
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td style={{ border: "1px solid #000", padding: "4px" }}>
+                      CGST on Rent
+                    </td>
+                    <td
+                      style={{
+                        border: "1px solid #000",
+                        padding: "4px",
+                        textAlign: "right",
+                      }}
+                    >
+                      {billData?.summary?.cgst?.toLocaleString("en-IN", {
+                        minimumFractionDigits: 2,
+                      })}
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td style={{ border: "1px solid #000", padding: "4px" }}>
+                      Ac Restaurant
+                    </td>
+                    <td
+                      style={{
+                        border: "1px solid #000",
+                        padding: "4px",
+                        textAlign: "right",
+                      }}
+                    >
+                      {billData?.summary?.restaurant?.toLocaleString("en-IN", {
+                        minimumFractionDigits: 2,
+                      })}
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td style={{ border: "1px solid #000", padding: "4px" }}>
+                      Room Service
+                    </td>
+                    <td
+                      style={{
+                        border: "1px solid #000",
+                        padding: "4px",
+                        textAlign: "right",
+                      }}
+                    >
+                      {billData?.summary?.roomService?.toLocaleString("en-IN", {
+                        minimumFractionDigits: 2,
+                      })}
+                    </td>
+                  </tr>
+
+                  <tr style={{ backgroundColor: "#f5f5f5" }}>
+                    <td
+                      style={{
+                        border: "1px solid #000",
+                        padding: "4px",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      Total
+                    </td>
+                    <td
+                      style={{
+                        border: "1px solid #000",
+                        padding: "4px",
+                        textAlign: "right",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      {billData?.summary?.total?.toLocaleString("en-IN", {
+                        minimumFractionDigits: 2,
+                      })}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
-            
-            <div className="space-y-1">
-              <div className="flex justify-between py-1">
-                <span className="text-gray-700">Room Rent</span>
-                <span className="text-gray-700">{billData.summary.roomRent.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+
+            {/* Payment Details Section */}
+            <div style={{ flex: "1" }}>
+              <table
+                style={{
+                  width: "100%",
+                  borderCollapse: "collapse",
+                  border: "1px solid #000",
+                  fontSize: "11px",
+                }}
+              >
+                <thead>
+                  <tr style={{ backgroundColor: "#f5f5f5" }}>
+                    <th
+                      colSpan="2"
+                      style={{
+                        border: "1px solid #000",
+                        padding: "6px",
+                        textAlign: "left",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      Payment Details
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td
+                      style={{
+                        border: "1px solid #000",
+                        padding: "4px",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      PAYMODE
+                    </td>
+                    <td
+                      style={{
+                        border: "1px solid #000",
+                        padding: "4px",
+                        fontWeight: "bold",
+                        textAlign: "center",
+                      }}
+                    >
+                      AMOUNT
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style={{ border: "1px solid #000", padding: "4px" }}>
+                      {billData?.payment?.mode}
+                    </td>
+                    <td
+                      style={{
+                        border: "1px solid #000",
+                        padding: "4px",
+                        textAlign: "right",
+                      }}
+                    >
+                      {billData?.payment?.total?.toLocaleString("en-IN", {
+                        minimumFractionDigits: 2,
+                      })}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td
+                      style={{
+                        border: "1px solid #000",
+                        padding: "4px",
+                        fontWeight: "bold",
+                        textAlign: "center",
+                      }}
+                      colSpan="2"
+                    >
+                      {billData?.guest?.name}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td
+                      style={{ border: "1px solid #000", padding: "4px" }}
+                      colSpan="2"
+                    >
+                      <div style={{ fontSize: "10px", fontWeight: "bold" }}>
+                        {billData?.summary?.totalWords}
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style={{ border: "1px solid #000", padding: "4px" }}>
+                      <div>Total :</div>
+                      <div>Less Advance:</div>
+                      <div style={{ fontWeight: "bold" }}>Net Pay :</div>
+                    </td>
+                    <td
+                      style={{
+                        border: "1px solid #000",
+                        padding: "4px",
+                        textAlign: "right",
+                      }}
+                    >
+                      <div>{billData?.payment?.total?.toFixed(2)}</div>
+                      <div>{billData?.payment?.advance?.toFixed(2)}</div>
+                      <div style={{ fontWeight: "bold" }}>
+                        {billData?.payment?.netPay?.toFixed(2)}
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Footer Section */}
+          <div style={{ border: "1px solid #000" }}>
+            <div style={{ display: "flex", borderBottom: "1px solid #000" }}>
+              <div
+                style={{
+                  flex: "1",
+                  padding: "8px",
+                  borderRight: "1px solid #000",
+                  fontSize: "10px",
+                  fontWeight: "bold",
+                }}
+              >
+                Please Deposit Your Room and Locker Keys
               </div>
-              {billData.summary.foodPlan > 0 && (
-                <div className="flex justify-between py-1">
-                  <span className="text-gray-700">Food Plan</span>
-                  <span className="text-gray-700">{billData.summary.foodPlan.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+              <div style={{ flex: "1", padding: "8px", fontSize: "10px" }}>
+                Regardless of charge instructions, I agree to be held personally
+                liable for the payment of total amount of bill. Please collect
+                receipt if you have paid cash.
+              </div>
+            </div>
+
+            <div style={{ display: "flex", borderBottom: "1px solid #000" }}>
+              <div
+                style={{
+                  flex: "1",
+                  padding: "12px",
+                  borderRight: "1px solid #000",
+                  textAlign: "left",
+                  fontSize: "10px",
+                }}
+              >
+                <div style={{ fontWeight: "bold", marginBottom: "15px" }}>
+                  Prepared By
                 </div>
-              )}
-              {billData.summary.additionalPax > 0 && (
-                <div className="flex justify-between py-1">
-                  <span className="text-gray-700">Additional Pax</span>
-                  <span className="text-gray-700">{billData.summary.additionalPax.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                <div>FO</div>
+              </div>
+              <div
+                style={{
+                  flex: "1",
+                  padding: "12px",
+                  borderRight: "1px solid #000",
+                  textAlign: "left",
+                  fontSize: "10px",
+                }}
+              >
+                <div style={{ fontWeight: "bold", marginBottom: "15px" }}>
+                  Manager
                 </div>
-              )}
-              <div className="flex justify-between py-1">
-                <span className="text-gray-700">SGST on Rent</span>
-                <span className="text-gray-700">{billData.summary.sgst.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                <div
+                  style={{
+                    height: "15px",
+                    borderBottom: "1px solid #000",
+                    margin: "10px 0",
+                  }}
+                ></div>
               </div>
-              <div className="flex justify-between py-1">
-                <span className="text-gray-700">CGST on Rent</span>
-                <span className="text-gray-700">{billData.summary.cgst.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+              <div
+                style={{
+                  flex: "1",
+                  padding: "12px",
+                  textAlign: "left",
+                  fontSize: "10px",
+                }}
+              >
+                <div style={{ fontWeight: "bold", marginBottom: "15px" }}>
+                  Guest Signature & Date
+                </div>
+                <div
+                  style={{
+                    height: "15px",
+                    borderBottom: "1px solid #000",
+                    margin: "10px 0",
+                  }}
+                ></div>
               </div>
-              <div className="flex justify-between py-1">
-                <span className="text-gray-700">Ac Restaurant</span>
-                <span className="text-gray-700">{billData.summary.restaurant.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+            </div>
+
+            <div style={{ display: "flex" }}>
+              <div
+                style={{
+                  flex: "1",
+                  padding: "8px",
+                  borderRight: "1px solid #000",
+                  fontStyle: "italic",
+                  fontSize: "10px",
+                }}
+              >
+                We hope you enjoyed your stay and would like to welcome you
+                back...
               </div>
-              <div className="flex justify-between py-1">
-                <span className="text-gray-700">Room Service</span>
-                <span className="text-gray-700">{billData.summary.roomService.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-              </div>
-              
-              {/* Total Row */}
-              <div className="flex justify-between py-1 pt-2 border-t border-gray-300">
-                <span className="text-gray-800 font-bold">Total</span>
-                <span className="text-gray-800 font-bold">{billData.summary.total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+              <div
+                style={{
+                  padding: "8px",
+                  fontSize: "10px",
+                  textAlign: "center",
+                  minWidth: "120px",
+                }}
+              >
+                Original Bill
+                <br />
+                Page 1
               </div>
             </div>
           </div>
 
-          {/* Payment Section */}
-          <div className="payment-section border border-black mt-6">
-            <div className="bg-white p-2 border-b font-bold text-gray-800">
-              Payment Details
-            </div>
-            
-            <div className="bg-white">
-              <div className="flex border-b border-gray-800">
-                <div className="w-32 p-2 font-semibold text-sm">PAYMODE</div>
-                <div className="w-24 p-2 font-semibold text-sm text-center">AMOUNT</div>
-                <div className="flex-1 p-2 text-sm"></div>
-                <div className="w-32 p-2 text-right">
-                  <div className="font-semibold text-sm">Total :</div>
-                  <div className="font-semibold text-sm">Less Advance:</div>
-                </div>
-                <div className="w-24 p-2 text-right">
-                  <div className="font-semibold text-sm">{billData.payment.total.toFixed(2)}</div>
-                  <div className="font-semibold text-sm">{billData.payment.advance.toFixed(2)}</div>
-                </div>
-              </div>
-              
-              <div className="flex">
-                <div className="w-32 p-2 text-sm">{billData.payment.mode}</div>
-                <div className="w-24 p-2 text-sm text-right">{billData.payment.netPay.toLocaleString('en-IN')}</div>
-                <div className="flex-1 p-2 text-sm font-semibold">{billData.guest.name}</div>
-                <div className="w-32 p-2"></div>
-                <div className="w-24 p-2"></div>
-              </div>
-              
-              <div className="flex">
-                <div className="flex-1 p-2"></div>
-                <div className="w-32 p-2 text-right">
-                  <div className="font-bold text-sm">Net Pay :</div>
-                </div>
-                <div className="w-24 p-2 text-right">
-                  <div className="font-bold text-sm">{billData.payment.netPay.toFixed(2)}</div>
-                </div>
-              </div>
-              
-              <div className="border-t border-gray-800 p-2">
-                <div className="text-sm font-medium">{billData.summary.totalWords}</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Footer */}
-          <div className="footer-section border border-gray-800 mt-6">
-            <div className="flex border-b border-gray-800">
-              <div className="w-1/2 p-3 border-r border-gray-800">
-                <div className="font-bold text-sm mb-2">Please Deposit Your Room and Locker Keys</div>
-              </div>
-              <div className="w-1/2 p-3">
-                <div className="text-sm">
-                  Regardless of charge instructions, I agree to be held personally liable for the payment of total amount of bill. Please collect receipt if you have paid cash.
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex">
-              <div className="w-1/3 p-3 border-r border-gray-800">
-                <div className="text-sm mb-1 font-semibold">Prepared By</div>
-                <div className="text-sm">FO</div>
-              </div>
-              <div className="w-1/3 p-3 border-r border-gray-800">
-                <div className="text-sm mb-1 font-semibold">Manager</div>
-              </div>
-              <div className="w-1/3 p-3">
-                <div className="text-sm mb-1 font-semibold">Guest Signature & Date</div>
-              </div>
-            </div>
-            
-            <div className="flex border-t border-gray-800">
-              <div className="flex-1 p-3 border-r border-gray-800">
-                <div className="text-sm italic">We hope you enjoyed your stay and would like to welcome you back...</div>
-              </div>
-              <div className="p-3">
-                <div className="text-sm">Original Bill - Page 1</div>
-              </div>
-            </div>
-          </div>
+          {/* Print Styles */}
+          <style>{`
+        @media print {
+          * {
+            -webkit-print-color-adjust: exact !important;
+            color-adjust: exact !important;
+          }
+          
+          body {
+            margin: 0;
+            padding: 0;
+          }
+          
+          @page {
+            margin: 0.5cm;
+            size: A4;
+          }
+          
+          .page-header {
+            position: running(header);
+          }
+          
+          @page {
+            @top {
+              content: element(header);
+            }
+          }
+          
+          /* Ensure header repeats on every page */
+          .page-header {
+            page-break-inside: avoid;
+            break-inside: avoid;
+          }
+          
+          /* Page break controls */
+          .charges-table,
+          .summary-section,
+          .payment-section {
+            page-break-inside: avoid;
+          }
+        }
+      `}</style>
+        </div>
+        <div className=" bg-gray-100 flex justify-center m-4 print:hidden ">
+          <button
+            onClick={handlePrint}
+            className="flex items-center gap-2 bg-gradient-to-r from-black to-gray-800 hover:from-blue-600 hover:to-blue-500 text-white font-medium py-2 px-2 rounded-xl shadow-lg transform transition duration-200 hover:scale-105 active:scale-95"
+          >
+            <span className="text-lg">🖨️</span>
+            <span>Print Bill</span>
+          </button>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

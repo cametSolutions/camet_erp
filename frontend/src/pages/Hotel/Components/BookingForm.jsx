@@ -13,6 +13,8 @@ import AdditionalPaxDetails from "./AdditionalPaxDetails";
 import FoodPlanComponent from "./FoodPlanComponent";
 import useFetch from "@/customHook/useFetch";
 import OutStandingModal from "./OutStandingModal";
+import PaymentModal from "./paymentModal";
+import { set } from "mongoose";
 
 function BookingForm({
   isLoading,
@@ -23,6 +25,7 @@ function BookingForm({
   isFor,
   outStanding = [],
   roomId,
+  submitLoader, 
 }) {
   const [voucherNumber, setVoucherNumber] = useState("");
   const [selectedParty, setSelectedParty] = useState("");
@@ -34,7 +37,9 @@ function BookingForm({
   const [hotelAgent, setHotelAgent] = useState({});
   const [visitOfPurpose, setVisitOfPurpose] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const navigate = useNavigate();
+  const [saveLoader, setSaveLoader] = useState(false);
   // used to get organization id from redux
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
@@ -65,6 +70,13 @@ function BookingForm({
   const checkOutDateObj = new Date(today);
   checkOutDateObj.setDate(today.getDate() + 1); // Add 1 day
   const checkOutDate = checkOutDateObj.toISOString().split("T")[0];
+
+  useEffect(() => {
+    if (submitLoader) {
+      setShowPaymentModal(true);
+      setSaveLoader(true);
+    }
+  }, [submitLoader]);
 
   const [formData, setFormData] = useState({
     bookingDate: arrivalDate,
@@ -135,11 +147,11 @@ function BookingForm({
 
   useEffect(() => {
     if (roomId) {
-     setSelectedRoomId(roomId);
+      setSelectedRoomId(roomId);
     }
   }, [roomId]);
-   
-  console.log(selectedRoomId)
+
+  console.log(selectedRoomId);
 
   // handle change function used to update form data
   const handleChange = (e) => {
@@ -499,7 +511,6 @@ function BookingForm({
 
   // function used to store available room details
   const handleAvailableRooms = (rooms, total) => {
-    console.log(rooms);
     if (rooms.length > 0) {
       setFormData((prev) => ({
         ...prev,
@@ -515,6 +526,24 @@ function BookingForm({
 
   // handle submit function
   const submitHandler = () => {
+    console.log(Number(formData?.advanceAmount));
+    if (Number(formData?.advanceAmount) <= 0) {
+      if (isSubmittingRef.current) return;
+      isSubmittingRef.current = true;
+      const payload = {
+        ...formData,
+        voucherNumber,
+      };
+      delete payload.roomType;
+      handleSubmit(payload);
+    } else {
+      setShowPaymentModal(true);
+    }
+  };
+
+  const handlePayment = (paymentData) => {
+    console.log(paymentData);
+    setSaveLoader(true);
     if (isSubmittingRef.current) return;
     isSubmittingRef.current = true;
     const payload = {
@@ -522,10 +551,11 @@ function BookingForm({
       voucherNumber,
     };
     delete payload.roomType;
-    handleSubmit(payload);
+    handleSubmit(payload, paymentData);
   };
-
-  console.log(outStanding);
+  const handleClose = () => {
+    setShowPaymentModal(false);
+  };
 
   return (
     <>
@@ -533,6 +563,17 @@ function BookingForm({
         <CustomBarLoader />
       ) : (
         <>
+          {showPaymentModal && (
+            <PaymentModal
+              selected={voucherNumber}
+              totalAmount={Number(formData?.advanceAmount)}
+              saveLoader={saveLoader}
+              onClose={handleClose}
+              onPaymentSave={handlePayment}
+              cmp_id={cmp_id}
+            
+            />
+          )}
           <>
             <HeaderTile
               title={formatVoucherType("Booking")}
