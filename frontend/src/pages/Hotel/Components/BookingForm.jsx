@@ -13,8 +13,8 @@ import AdditionalPaxDetails from "./AdditionalPaxDetails";
 import FoodPlanComponent from "./FoodPlanComponent";
 import useFetch from "@/customHook/useFetch";
 import OutStandingModal from "./OutStandingModal";
-import PaymentModal from "./paymentModal";
-import { set } from "mongoose";
+import PaymentModal from "./PaymentModal";
+
 
 function BookingForm({
   isLoading,
