@@ -2,7 +2,7 @@ import roomModal from "../models/roomModal.js";
 import { Booking, CheckIn, CheckOut } from "../models/bookingModal.js";
 import mongoose from "mongoose";
 import receiptModel from "../models/receiptModel.js";
-import VoucherSeriesModel from "../models/voucherSeriesModel.js";
+import VoucherSeriesModel from "../models/VoucherSeriesModel.js";
 import { generateVoucherNumber } from "../helpers/voucherHelper.js";
 import { createOutstandingWithAdvanceAmount } from "./receiptHelper.js";
 import { getNewSerialNumber } from "./secondaryHelper.js";
