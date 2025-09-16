@@ -17,12 +17,12 @@ const settlementSchema = new mongoose.Schema(
     voucherModel: {
       type: String,
       required: true,
-      enum: ["Receipt", "Payment", "Sales","CreditNote","DebitNote","Purchase"], // Model names (capitalized)
+      enum: ["Receipt", "Payment", "Sales","CreditNote","DebitNote","Purchase","Booking","CheckIn"], // Model names (capitalized)
     },
     voucherType: {
       type: String,
       required: true,
-      enum: ["receipt", "payment", "sales","creditNote","debitNote","purchase"], // For business logic/filtering
+      enum: ["receipt", "payment", "sales","creditNote","debitNote","purchase","Booking","CheckIn"], // For business logic/filtering
     },
 
     // Amount and Financial Details

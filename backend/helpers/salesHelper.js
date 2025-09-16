@@ -1141,22 +1141,25 @@ export const saveSettlementData = async (
   amount,
   createdAt,
   partyName,
+  selectedBankOrCashParty,
+  voucherModel,
   req,
   session
 ) => {
+  console.log("selectedBankOrCashParty", selectedBankOrCashParty)
   try {
     const object = {
       voucherNumber: voucherNumber,
       voucherId: voucherId,
-      voucherModel: "Sales", // must match enum
-      voucherType: "sales",  // must match enum
+      voucherModel, // must match enum
+      voucherType: type, // must match enum
       amount: amount,
       payment_mode: paymentMethod?.toLowerCase() || null, // ✅ schema expects lowercase enum
       partyId: party?._id,
       partyName: partyName || party?.partyName,
       partyType: party?.partyType?.toLowerCase(), // must match ["cash","bank","party"]
-      sourceId: party?._id,
-      sourceType: party?.partyType?.toLowerCase(), // must match enum
+      sourceId: selectedBankOrCashParty?._id,
+      sourceType: selectedBankOrCashParty?.partyType?.toLowerCase(), // must match enum
       cmp_id: orgId,
       Primary_user_id: req?.pUserId || req?.owner, // must not be null
       settlement_date: createdAt ? new Date(createdAt) : new Date(),
@@ -1172,7 +1175,6 @@ export const saveSettlementData = async (
     throw error;
   }
 };
-
 
 export const revertSettlementData = async (
   party,
