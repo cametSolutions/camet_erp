@@ -36,7 +36,7 @@ function CheckInPage() {
     }
   }, [bookingData]);
   console.log(bookingData);
-  const handleSubmit = async (data) => {
+  const handleSubmit = async (data,paymentData) => {
     let updatedData;
     if (bookingData) {
       updatedData = { ...data, bookingId: bookingData._id };
@@ -49,7 +49,7 @@ function CheckInPage() {
     try {
       let response = await api.post(
         `/api/sUsers/saveData/${organization._id}`,
-        { data: updatedData, modal: "checkIn" },
+        { data: updatedData, modal: "checkIn",  paymentData: paymentData  },
         { withCredentials: true }
       );
       if (response?.data?.success) {

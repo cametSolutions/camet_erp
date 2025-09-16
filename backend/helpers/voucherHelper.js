@@ -8,7 +8,7 @@ import StockTransferModel from "../models/stockTransferModel.js";
 import ReceiptModel from "../models/receiptModel.js";
 import PaymentModel from "../models/paymentModel.js";
 import SalesModel from "../models/salesModel.js";
-
+import SettlementModel from "../models/settlementModel.js";
 /**
  * Gets current voucher number, increments it, and returns formatted number
  * @param {string} cmp_id - Company ID
@@ -158,3 +158,5 @@ export const getSeriesDetailsById = async (seriesId, cmp_id, voucherType) => {
     throw error;
   }
 };
+
+

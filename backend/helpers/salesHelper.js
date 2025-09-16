@@ -1108,29 +1108,31 @@ export const saveSettlementData = async (
   voucherModel,
   voucherType,
   amount,
-  party,
-  cmp_id,
-  Primary_user_id,
-  selectedDate,
+  createdAt,
+  partyName,
+  selectedBankOrCashParty,
+  voucherModel,
+  req,
   session
 ) => {
+  console.log("selectedBankOrCashParty", selectedBankOrCashParty)
   try {
-    const settlementData = {
-      voucherNumber,
-      voucherId,
-      voucherModel,
-      voucherType,
-      amount,
-      payment_mode: null,
-      partyName: party?.partyName || "",
-      partyId: party?._id || null,
-      partyType: party?.partyType || null,
-      sourceId: party?._id || null,
-      sourceType: party?.partyType || null,
-      cmp_id: cmp_id,
-      Primary_user_id: Primary_user_id,
-      settlement_date: selectedDate,
-      voucher_date: selectedDate,
+    const object = {
+      voucherNumber: voucherNumber,
+      voucherId: voucherId,
+      voucherModel, // must match enum
+      voucherType: type, // must match enum
+      amount: amount,
+      payment_mode: paymentMethod?.toLowerCase() || null, // ✅ schema expects lowercase enum
+      partyId: party?._id,
+      partyName: partyName || party?.partyName,
+      partyType: party?.partyType?.toLowerCase(), // must match ["cash","bank","party"]
+      sourceId: selectedBankOrCashParty?._id,
+      sourceType: selectedBankOrCashParty?.partyType?.toLowerCase(), // must match enum
+      cmp_id: orgId,
+      Primary_user_id: req?.pUserId || req?.owner, // must not be null
+      settlement_date: createdAt ? new Date(createdAt) : new Date(),
+      voucher_date: createdAt ? new Date(createdAt) : new Date(),
     };
 
     console.log("settlementData", settlementData);
