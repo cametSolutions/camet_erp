@@ -47,81 +47,81 @@ const DashboardSummary = () => {
 
   // console.log("data", data);
 
-useEffect(() => {
-  const baseData = [
-    {
-      title: "Sales - Credit Note",
-      to: "/sUsers/summaryReport",
-      value: 0,
-      icon: icons.sales,
-      summaryType: "Sales Summary",
-      currencyIcon:"₹"
-    },
-    {
-      title: "Purchase - Debit Note",
-      value: 0,
-      icon: icons.purchases,
-      to: "/sUsers/summaryReport",
-      summaryType: "Purchase Summary",
-        currencyIcon:"₹"
-    },
-    {
-      title: "Receipt",
-      value: 0,
-      icon: icons.receipts,
-        currencyIcon:"₹"
-    },
-    {
-      title: "Payment",
-      value: 0,
-      icon: icons.payments,
-        currencyIcon:"₹"
-    },
-    {
-      title: "Outstanding Receivables",
-      value: 0,
-      to: "/sUsers/outstanding",
-      icon: icons.outstandingReceivables,
-        currencyIcon:"₹"
-    },
-    {
-      title: "Outstanding Payables",
-      value: 0,
-      to: "/sUsers/outstanding",
-      icon: icons.outstandingPayables,
-        currencyIcon:"₹"
-    },
-    {
-      title: "Cash/Bank Balance",
-      value: 0,
-      to: "/sUsers/balancePage",
-      icon: icons.cashOrBank,
-        currencyIcon:"₹"
-    },
-    {
-      title: "Sale Order",
-      value: 0,
-      icon: icons.saleOrders,
-      to: "/sUsers/orderSummary",
-        currencyIcon:"₹"
-    },
-  ];
+  useEffect(() => {
+    const baseData = [
+      {
+        title: "Sales - Credit Note",
+        to: "/sUsers/summaryReport",
+        value: 0,
+        icon: icons.sales,
+        summaryType: "Sales Summary",
+        currencyIcon: "₹",
+      },
+      {
+        title: "Purchase - Debit Note",
+        value: 0,
+        icon: icons.purchases,
+        to: "/sUsers/summaryReport",
+        summaryType: "Purchase Summary",
+        currencyIcon: "₹",
+      },
+      {
+        title: "Receipt",
+        value: 0,
+        icon: icons.receipts,
+        currencyIcon: "₹",
+      },
+      {
+        title: "Payment",
+        value: 0,
+        icon: icons.payments,
+        currencyIcon: "₹",
+      },
+      {
+        title: "Outstanding Receivables",
+        value: 0,
+        to: "/sUsers/outstanding",
+        icon: icons.outstandingReceivables,
+        currencyIcon: "₹",
+      },
+      {
+        title: "Outstanding Payables",
+        value: 0,
+        to: "/sUsers/outstanding",
+        icon: icons.outstandingPayables,
+        currencyIcon: "₹",
+      },
+      {
+        title: "Cash/Bank Balance",
+        value: 0,
+        to: "/sUsers/balancePage",
+        icon: icons.cashOrBank,
+        currencyIcon: "₹",
+      },
+      {
+        title: "Sale Order",
+        value: 0,
+        icon: icons.saleOrders,
+        to: "/sUsers/orderSummary",
+        currencyIcon: "₹",
+      },
+    ];
 
-  // If industry is 6 or 7 → add Dashboard
-  const extraData =
-    industry == 6 || industry == 7
-      ? [
-          {
-            title: "Hotel Dash Board",
-            value: "Dash",
-            icon: icons.saleOrders,
-            to: "/sUsers/SummaryDashboard",
-          },
-        ]
-      : [];
+    // If industry is 6 or 7 → add Dashboard
+    const extraData =
+      industry == 6 || industry == 7
+        ? [
+            {
+              title: "Hotel Dash Board",
+              value: "Dash",
+              icon: icons.saleOrders,
+              to: "/sUsers/SummaryDashboard",
+            },
+          ]
+        : [];
 
-  setSummaryData([...extraData,...baseData]);
-}, [industry]); // runs again when industry changes
+    setSummaryData([...extraData, ...baseData]);
+  }, [industry]); // runs again when industry changes
 
   const handleLinkClick = useCallback(
     (path, value, summaryType = "") => {
