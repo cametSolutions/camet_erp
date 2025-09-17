@@ -834,7 +834,7 @@ function BookingList() {
                 </div>
 
                 {/* Selected Items List */}
-                <div className="max-h-32 overflow-y-auto mb-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+  <div className="max-h-32 overflow-y-auto mb-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                   <div className="space-y-2">
                     {selectedCheckOut.map((item) => (
                       <div
@@ -847,7 +847,7 @@ function BookingList() {
                       </div>
                     ))}
                   </div>
-                </div>
+                </div>              
                 <div className="mb-6">
                   <label className="block text-xs font-semibold text-gray-700 mb-2">
                     Select Customer
