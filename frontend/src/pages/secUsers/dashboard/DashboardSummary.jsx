@@ -115,7 +115,7 @@ useEffect(() => {
             title: "Hotel Dash Board",
             value: "Dash",
             icon: icons.saleOrders,
-            to: "/sUsers/orderSummary",
+            to: "/sUsers/SummaryDashboard",
           },
         ]
       : [];
