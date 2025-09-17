@@ -164,6 +164,7 @@ function BookingList() {
       } catch (error) {
         console.log(error);
         setHasMore(false);
+        setBookings([]);
         // toast.error("Failed to load bookings");
       } finally {
         setIsLoading(false);
@@ -271,29 +272,29 @@ function BookingList() {
     })}`;
   };
 
-  const handleCheckOutData = async () => {
-    setSaveLoader(true);
-    try {
-      let response = await api.put(
-        `/api/sUsers/checkOutWithArray/${cmp_id}`,
-        { data: selectedCheckOut },
-        { withCredentials: true }
-      );
-      if (response?.data?.success) {
-        toast.success(response?.data?.message);
-        fetchBookings(1, searchTerm);
-      }
-    } catch (error) {
-      toast.error(error?.response?.data?.message);
-      console.log(error);
-    } finally {
-      setSaveLoader(false);
-      setCheckOutModal(false);
-      setSelectedCheckOut([]);
-    }
-  };
+  // const handleCheckOutData = async () => {
+  //   setSaveLoader(true);
+  //   try {
+  //     let response = await api.put(
+  //       `/api/sUsers/checkOutWithArray/${cmp_id}`,
+  //       { data: selectedCheckOut },
+  //       { withCredentials: true }
+  //     );
+  //     if (response?.data?.success) {
+  //       toast.success(response?.data?.message);
+  //       fetchBookings(1, searchTerm);
+  //     }
+  //   } catch (error) {
+  //     toast.error(error?.response?.data?.message);
+  //     console.log(error);
+  //   } finally {
+  //     setSaveLoader(false);
+  //     setCheckOutModal(false);
+  //     setSelectedCheckOut([]);
+  //   }
+  // };
 
-  const handleSavePayment = async (id) => {
+  const handleSavePayment = async () => {
     setSaveLoader(true);
     let paymentDetails;
     if (paymentMode == "single") {
@@ -322,6 +323,7 @@ function BookingList() {
         setPaymentError(
           "Cash and online amounts together equal the total amount."
         );
+        setSaveLoader(false);
         return;
       }
       paymentDetails = {
@@ -331,7 +333,6 @@ function BookingList() {
         selectedBank: selectedBank,
         paymentMode: paymentMode,
       };
-      
     }
 
     try {
@@ -343,14 +344,14 @@ function BookingList() {
           selectedCheckOut: selectedCheckOut,
           paidBalance: selectedDataForPayment?.total,
           selectedParty: selectedCustomer,
-          restaurantBaseSaleData:restaurantBaseSaleData
+          restaurantBaseSaleData: restaurantBaseSaleData,
         },
         { withCredentials: true }
       );
+      console.log(response);
       // Check if the response was successful
       if (response.status === 200 || response.status === 201) {
         toast.success(response?.data?.message);
-        fetchBookings(1, searchTerm);
       }
     } catch (error) {
       console.error(
@@ -358,10 +359,13 @@ function BookingList() {
         error.response?.data || error.message
       );
     } finally {
+      setSelectedCheckOut([]);
+      setSelectedCustomer(null);
       setSaveLoader(false);
       setCashAmount(0);
       setOnlineAmount(0);
       setShowPaymentModal(false);
+      fetchBookings(1, searchTerm);
     }
   };
 
@@ -879,9 +883,8 @@ function BookingList() {
                   <button
                     className="flex-2 px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg text-sm font-bold hover:from-green-600 hover:to-emerald-700 transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2 shadow-lg"
                     onClick={() => {
-                      console.log( configurations[0]?.defaultPrint?.print1);
+                      console.log(configurations[0]?.defaultPrint?.print1);
                       const hasPrint1 = configurations[0]?.defaultPrint?.print1;
-
 
                       navigate(
                         hasPrint1

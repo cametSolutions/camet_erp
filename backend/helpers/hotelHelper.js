@@ -9,7 +9,7 @@ import { getNewSerialNumber } from "./secondaryHelper.js";
 import Party from "../models/partyModel.js";
 import { formatToLocalDate } from "../helpers/helper.js";
 import TallyData from "../models/TallyData.js";
-
+import settlementModel from "../models/settlementModel.js";
 // helper function used to add search concept with room
 export const buildDatabaseFilterForRoom = (params) => {
   console.log("params", params);
@@ -445,6 +445,7 @@ export const createReceiptForSales = async (
     ?._id.toString();
   if (!series_id) throw new Error("No valid receipt series found for hotel");
 
+  console.log("series_id", restaurantBaseSaleData);
   // get all outstanding bills
   const outStandingArray = await Promise.all(
     restaurantBaseSaleData.map((sale) =>
@@ -455,16 +456,17 @@ export const createReceiptForSales = async (
   // helper to distribute amounts across bills
   const distributeBills = (amountLeft) => {
     const billData = [];
+    console.log("outStandingArray", outStandingArray);
     for (const out of outStandingArray) {
       if (amountLeft <= 0) break;
 
-      const settleAmt = Math.min(amountLeft, out.bill_amount);
+      const settleAmt = Math.min(amountLeft, out.bill_amount || 0);
       billData.push({
         _id: out._id,
         bill_no: out.bill_no,
         billId: out.billId,
         bill_date: new Date(),
-        billPending_amt: out.bill_amount,
+        bill_pending_amt: out.bill_amount,
         source: "hotel",
         settledAmount: settleAmt,
         remainingAmount: out.bill_amount - settleAmt,
@@ -479,7 +481,7 @@ export const createReceiptForSales = async (
         bill_no: saleData?.salesNumber,
         billId: saleData._id,
         bill_date: new Date(),
-        billPending_amt: 0,
+        bill_pending_amt: 0,
         source: "hotel",
         settledAmount: amountLeft,
         remainingAmount: 0,
@@ -662,4 +664,48 @@ const buildReceipt = async (
   });
 
   return await receipt.save({ session });
+};
+
+export const saveSettlementDataHotel = async (
+  party,
+  orgId,
+  paymentMethod,
+  type,
+  voucherNumber,
+  voucherId,
+  amount,
+  createdAt,
+  partyName,
+  selectedCashOrBank,
+  selectedModal,
+  req,
+  session
+) => {
+  try {
+    const object = {
+      voucherNumber: voucherNumber,
+      voucherId: voucherId,
+      voucherModel: selectedModal, // must match enum
+      voucherType: type,
+      amount: amount,
+      payment_mode: paymentMethod?.toLowerCase() || null, // ✅ schema expects lowercase enum
+      partyId: party?._id,
+      partyName: partyName || party?.partyName,
+      partyType: party?.partyType?.toLowerCase(), // must match ["cash","bank","party"]
+      sourceId: selectedCashOrBank?._id,
+      sourceType:  paymentMethod?.toLowerCase() || null, // must match enum
+      cmp_id: orgId,
+      Primary_user_id: req?.pUserId || req?.owner, // must not be null
+      settlement_date: createdAt ? new Date(createdAt) : new Date(),
+      voucher_date: createdAt ? new Date(createdAt) : new Date(),
+    };
+
+    console.log("Saving settlement object:", object);
+
+    const updatedData = await settlementModel.create([object], { session });
+    return updatedData;
+  } catch (error) {
+    console.error("Error in saveSettlementData:", error);
+    throw error;
+  }
 };
