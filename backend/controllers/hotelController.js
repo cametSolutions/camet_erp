@@ -11,6 +11,7 @@ import { Booking, CheckIn, CheckOut } from "../models/bookingModal.js";
 import ReceiptModel from "../models/receiptModel.js";
 import { formatToLocalDate } from "../helpers/helper.js";
 
+
 import {
   buildDatabaseFilterForRoom,
   sendRoomResponse,
@@ -20,6 +21,7 @@ import {
   sendBookingsResponse,
   extractRequestParamsForBookings,
   updateStatus,
+  saveSettlementDataHotel
 } from "../helpers/hotelHelper.js";
 import { extractRequestParams } from "../helpers/productHelper.js";
 import { generateVoucherNumber } from "../helpers/voucherHelper.js";
@@ -1000,7 +1002,7 @@ export const roomBooking = async (req, res) => {
             bill_no: savedBooking?.voucherNumber,
             billId: savedBooking._id,
             bill_date: new Date(),
-            billPending_amt: 0,
+            bill_pending_amt: 0,
             source: under,
             settledAmount: bookingData.advanceAmount,
             remainingAmount: 0,
@@ -1097,7 +1099,7 @@ export const roomBooking = async (req, res) => {
             method === "cash" ? "Cash" : "Online"
           );
 
-          await saveSettlementData(
+          await saveSettlementDataHotel(
             selectedParty,
             orgId,
             method === "cash" ? "cash" : "bank",
@@ -1133,7 +1135,7 @@ export const roomBooking = async (req, res) => {
               .findOne({ _id: payment.accountId })
               .session(session);
 
-            await saveSettlementData(
+            await saveSettlementDataHotel(
               selectedParty,
               orgId,
               payment.method === "cash" ? "cash" : "bank",
@@ -1280,7 +1282,7 @@ export const updateBooking = async (req, res) => {
           {
             $set: {
               bill_amount: bookingData.advanceAmount,
-              bill_pending_amt: bookingData.advanceAmount,
+              bill_pending_amt: 0,
             },
           },
           {
@@ -2103,7 +2105,7 @@ async function saveSettlement(
   session
 ) {
   const selectedOne = await Party.findOne({ _id: selectedParty });
-  await saveSettlementData(
+  await saveSettlementDataHotel(
     selectedOne,
     cmp_id,
     paymentMethod,

@@ -867,7 +867,7 @@ export const updateKotPayment = async (req, res) => {
       const paidAmount = isPostToRoom ? 0 : cashAmt + onlineAmt;
       const pendingAmount = Number(kotData?.total || 0) - paidAmount;
 
-      if (pendingAmount > 0 && party?.paymentType == "party") {
+      // if (pendingAmount > 0 && party?.paymentType == "party") {
         await createTallyEntry(
           cmp_id,
           req,
@@ -892,7 +892,7 @@ export const updateKotPayment = async (req, res) => {
           session
         );
       }
-    }
+    // }
       // Update KOTs
       paymentCompleted = true;
       let selectedTableNumber = [];
