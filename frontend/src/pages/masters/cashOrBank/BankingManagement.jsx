@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../../../api/api.js";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useLocation, useParams } from "react-router-dom";
 import TitleDiv from "../../../components/common/TitleDiv.jsx";

@@ -390,6 +390,7 @@ export const editHsn = async (req, res) => {
           hsn: { $regex: `^${req.body.hsn}$`, $options: "i" },
         });
 
+
         if (findOne) {
           return res.status(400).json({
             success: false,

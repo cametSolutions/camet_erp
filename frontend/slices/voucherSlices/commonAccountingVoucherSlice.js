@@ -1,6 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
+  isInitialRender: true, // Add this
   _id: "",
   voucherNumber: "",
   voucherType: "",
@@ -167,6 +168,14 @@ export const commonAccountingVoucherSlice = createSlice({
     addSelectedVoucherSeries: (state, action) => {
       state.selectedVoucherSeries = action.payload;
     },
+     setIsInitialRender: (state, action) => {
+      state.isInitialRender = action.payload;
+    },
+
+    // addReceiptId: (state, action) => {
+    //   state._id = action.payload;
+    // },
+    
   },
 });
 
@@ -200,6 +209,7 @@ export const {
   addBillData,
   addVoucherSeries,
   addSelectedVoucherSeries,
+  setIsInitialRender
 } = commonAccountingVoucherSlice.actions;
 
 export default commonAccountingVoucherSlice.reducer;

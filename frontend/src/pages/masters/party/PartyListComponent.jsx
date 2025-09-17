@@ -6,7 +6,7 @@ import { Link } from "react-router-dom";
 import { FixedSizeList as List } from "react-window";
 import InfiniteLoader from "react-window-infinite-loader";
 import CallIcon from "../../../components/common/CallIcon";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import api from "@/api/api";
 import CustomBarLoader from "../../../components/common/CustomBarLoader";
 import SearchBar from "../../../components/common/SearchBar";
@@ -329,14 +329,14 @@ function PartyListComponent({ deleteHandler = () => {}, isVoucher = false }) {
             <p className="font-bold text-sm truncate">{el?.partyName}</p>
             <p className="font-medium text-gray-500 text-sm">Customer</p>
           </div>
-          {el?.totalOutstanding && el?.totalOutstanding > 0 && (
+          {el?.totalOutstanding && el?.totalOutstanding > 0 ? (
             <section>
               <p className="font-medium text-gray-500 text-md mr-3 flex items-center gap-2">
                 <IoMdArrowDown color="green" />
-                {formatAmount(el?.totalOutstanding)}
+                {formatAmount(el?.totalOutstanding || 0)}
               </p>
             </section>
-          )}
+          ):0}
         </div>
       </div>
     );

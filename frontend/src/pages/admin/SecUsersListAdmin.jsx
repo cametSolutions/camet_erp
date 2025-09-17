@@ -1,7 +1,7 @@
 /* eslint-disable react/no-unknown-property */
 import { useEffect, useState } from "react";
 import api from "../../api/api";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import Swal from "sweetalert2";
 import Pagination from "../../components/common/Pagination";
 

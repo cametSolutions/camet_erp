@@ -5,7 +5,7 @@ import Gmail from "../../../../../assets/images/gmail.png";
 import FindUserAndCompany from "../../../../../components/Filters/FindUserAndCompany";
 import {  useNavigate, } from "react-router-dom";
 import api from "../../../../../api/api";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import useFetch from "../../../../../customHook/useFetch";
 
 function EmailSettings() {

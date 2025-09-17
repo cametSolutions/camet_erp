@@ -1,7 +1,7 @@
 /* eslint-disable react/no-unknown-property */
 import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import api from "../../../api/api";
 import { useNavigate } from "react-router-dom";
 import HsnForm from "../../../components/common/Forms/HsnForm";

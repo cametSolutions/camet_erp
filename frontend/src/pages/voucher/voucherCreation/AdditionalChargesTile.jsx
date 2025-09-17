@@ -11,7 +11,7 @@ import {
   updateTotalValue,
   resetPaymentSplit,
 } from "../../../../slices/voucherSlices/commonVoucherSlice";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 export default function AdditionalChargesTile({
   type,

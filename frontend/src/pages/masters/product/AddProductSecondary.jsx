@@ -2,7 +2,7 @@
 /* eslint-disable react/jsx-no-target-blank */
 import { useSelector } from "react-redux";
 import api from "../../../api/api";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import AddProductForm from "./AddProductsForm";
 import TitleDiv from "@/components/common/TitleDiv";

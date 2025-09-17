@@ -22,11 +22,12 @@ import {
   addAdvanceAmount,
   addRemainingAmount,
   addBillData,
+  addReceiptId,
 } from "../../../../slices/voucherSlices/commonAccountingVoucherSlice";
 import AddPartyTile from "../../voucher/voucherCreation/AddPartyTile";
 import AddAmountTile from "../../../components/secUsers/main/AddAmountTile";
 import PaymentModeTile from "../../../components/secUsers/main/PaymentModeTile";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { useLocation, useNavigate } from "react-router-dom";
 import TitleDiv from "../../../components/common/TitleDiv";
 import FooterButton from "../../voucher/voucherCreation/FooterButton";
@@ -111,6 +112,7 @@ function AccVoucherInitialPageEdit() {
     setLoading(true);
     const voucherNumberTitle = getVoucherNumberTitle();
     const {
+      _id: receiptIdFromLocation,
       [voucherNumberTitle]: voucherNumberFromLocation,
       party: partyFromLocation,
       paymentDetails: paymentDetailsFromLocation,
@@ -123,6 +125,11 @@ function AccVoucherInitialPageEdit() {
       paymentMethod: paymentMethodFromLocation,
       note: noteFromLocation,
     } = location?.state?.data || {};
+
+    //// set receipt id
+    if (receiptIdFromLocation) {
+      dispatch(addReceiptId(receiptIdFromLocation));
+    }
 
     ///// set voucher number
     if (voucherNumberFromLocation && voucherNumberRedux === "") {
@@ -400,7 +407,7 @@ function AccVoucherInitialPageEdit() {
           linkBillTo=""
         />
 
-        <AddAmountTile party={party} />
+        <AddAmountTile party={party} process="edit" />
         <PaymentModeTile tab={voucherTypeFromRedux} />
 
         <FooterButton

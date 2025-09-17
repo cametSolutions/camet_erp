@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 // import Sidebar from "../../components/homePage/Sidebar.jsx";
 import api from "../../../api/api.js";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import FindUserAndCompany from "../../../components/Filters/FindUserAndCompany.jsx";
 import { useLocation, useParams } from "react-router-dom";

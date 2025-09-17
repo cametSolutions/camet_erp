@@ -2,6 +2,8 @@ import { Route, Routes } from 'react-router-dom'
 import { lazy, Suspense } from 'react'
 const ProtectedSecRoute = lazy(() => import('./ProtectedSecRoute'))
 import SuspenseLoader from '@/components/common/SuspenseLoader'
+import { ErrorTestComponent } from '@/components/errorBoundaries/ErrorTestComponent'
+import OutstandingListOfAccVoucherEdit from '@/pages/accountingVoucher/voucherCreation/OutstandingListOfAccVoucherEdit'
 
 // Lazy load all components
 const SecHome = lazy(() => import('../pages/secUsers/SecHome'))
@@ -45,7 +47,7 @@ const AddbatchInPurchase = lazy(() => import('../pages/secUsers/AddbatchInPurcha
 const ReceiptPrintOut = lazy(() => import('../pages/secUsers/ReceiptPrintOut'))
 const SelectVouchers = lazy(() => import('../pages/secUsers/SelectVouchers'))
 const PaymentPrintOut = lazy(() => import('../pages/secUsers/PaymentPrintOut'))
-const OutstandingListOfReceiptForEdit = lazy(() => import('../pages/secUsers/OutstandingListOfReceiptForEdit'))
+// const OutstandingListOfReceiptForEdit = lazy(() => import('../pages/secUsers/OutstandingListOfReceiptForEdit'))
 const OutstandingListOfPaymentForEdit = lazy(() => import('../pages/secUsers/OutstandingListOfPaymentForEdit'))
 
 // Reports
@@ -271,14 +273,14 @@ const Routers = () => {
         <Route path='/sUsers/receipt/details/:id' element={<ProtectedSecRoute><AccVoucherDetails/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/receiptPrintOut' element={<ProtectedSecRoute><ReceiptPrintOut/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/editReceipt/:id' element={<ProtectedSecRoute><AccVoucherInitialPageEdit/></ProtectedSecRoute>}></Route>
-        <Route path='/sUsers/receipt/edit/addAmount/:party_id' element={<ProtectedSecRoute><OutstandingListOfReceiptForEdit/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/receipt/editAmount/:party_id' element={<ProtectedSecRoute><OutstandingListOfAccVoucherEdit/></ProtectedSecRoute>}></Route>
 
 
         {/* payment */}
         <Route path='/sUsers/paymentPurchase' element={<ProtectedSecRoute><AccVoucherInitialPage/></ProtectedSecRoute>}></Route>
-            <Route path='/sUsers/searchPartyPayment' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route>
-
-            <Route path='/sUsers/payment/addAmount/:party_id' element={<ProtectedSecRoute><OutstandingListOfAccVoucher/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/searchPartyPayment' element={<ProtectedSecRoute><SearchParty/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/payment/addAmount/:party_id' element={<ProtectedSecRoute><OutstandingListOfAccVoucher/></ProtectedSecRoute>}></Route>
+        <Route path='/sUsers/payment/editAmount/:party_id' element={<ProtectedSecRoute><OutstandingListOfAccVoucherEdit/></ProtectedSecRoute>}></Route>
 
         <Route path='/sUsers/payment/sourceList/:source' element={<ProtectedSecRoute><SourceList/></ProtectedSecRoute>}></Route>
         <Route path='/sUsers/payment/details/:id' element={<ProtectedSecRoute><AccVoucherDetails/></ProtectedSecRoute>}></Route>
@@ -476,8 +478,11 @@ const Routers = () => {
 <Route path='/sUsers/TableMaster' element={<ProtectedSecRoute><TableMaster /></ProtectedSecRoute>} />
 <Route path='/sUsers/TableSelection' element={<ProtectedSecRoute><TableSelection/></ProtectedSecRoute>}/>
 <Route path='/sUsers/CheckOutPrint' element={<ProtectedSecRoute><CheckOutPrint /></ProtectedSecRoute>} />
+<Route path='/sUsers/test-error-boundary' element={<ProtectedSecRoute><ErrorTestComponent /></ProtectedSecRoute>} />
 <Route path='/sUsers/BillPrint' element={<ProtectedSecRoute><BillPrint/></ProtectedSecRoute>}/>
+
 <Route path='/sUsers/SummaryDashboard' element={<ProtectedSecRoute><SummaryDashboard/></ProtectedSecRoute>}/>
+
     </Routes>
     </Suspense>
   )

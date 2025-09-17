@@ -6,7 +6,7 @@ import SelectBankModal from "./modals/SelectBankModal";
 import { MdOutlineProductionQuantityLimits } from "react-icons/md";
 import api from "@/api/api";
 import { useDispatch, useSelector } from "react-redux";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { updateConfiguration } from "../../../../../slices/secSelectedOrgSlice";
 import { SiSteelseries } from "react-icons/si";
 

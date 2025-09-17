@@ -2,7 +2,7 @@ import { useSelector } from "react-redux";
 import TitleDiv from "../../../../components/common/TitleDiv";
 import { useEffect, useState } from "react";
 import api from "../../../../api/api";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import { IoIosCloseCircle } from "react-icons/io";
 import Swal from "sweetalert2";

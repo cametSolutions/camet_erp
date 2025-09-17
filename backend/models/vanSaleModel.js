@@ -54,6 +54,7 @@ const vanSaleSchema = new Schema(
     party: {
       _id: { type: Schema.Types.ObjectId, ref: "Party" },
       partyName: { type: String },
+      partyType: { type: String, default: "party" },
       accountGroupName: { type: String },
       accountGroup_id: {
         type: mongoose.Types.ObjectId,
@@ -220,6 +221,11 @@ const vanSaleSchema = new Schema(
 
     note: { type: String },
     finalAmount: { type: Number, required: true },
+    subTotal: { type: Number, default: null },
+    totalAdditionalCharges: { type: Number, default: null },
+    totalWithAdditionalCharges: { type: Number, default: null },
+    totalPaymentSplits: { type: Number, default: null },
+    finalOutstandingAmount: { type: Number, default: null },
     paymentSplittingData: { type: Object },
     isCancelled: { type: Boolean, default: false },
   },

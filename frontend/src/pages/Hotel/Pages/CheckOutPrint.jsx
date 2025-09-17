@@ -1417,6 +1417,7 @@ export default function SattvaInvoice() {
                         selectedCheckOut,
                         selectedCustomer: selectedCustomerData,
                         balanceToPay: totals?.balanceAmountToPay,
+                        kotData
                       },
                     })
                   }

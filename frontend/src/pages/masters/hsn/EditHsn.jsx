@@ -2,7 +2,7 @@
 // import Sidebar from "../../components/homePage/Sidebar";
 import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import api from "../../../api/api";
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";

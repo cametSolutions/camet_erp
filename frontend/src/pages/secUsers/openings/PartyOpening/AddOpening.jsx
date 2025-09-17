@@ -21,7 +21,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import { CalendarIcon, Plus, X } from "lucide-react";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import api from "@/api/api";
 import CustomBarLoader from "@/components/common/CustomBarLoader";
 

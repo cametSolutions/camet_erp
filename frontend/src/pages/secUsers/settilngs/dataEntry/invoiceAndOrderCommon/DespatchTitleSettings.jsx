@@ -5,7 +5,7 @@ import TitleDiv from "../../../../../components/common/TitleDiv";
 import useFetch from "../../../../../customHook/useFetch";
 import CustomBarLoader from "../../../../../components/common/CustomBarLoader";
 import api from "../../../../../api/api";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { updateConfiguration } from "../../../../../../slices/secSelectedOrgSlice";
 

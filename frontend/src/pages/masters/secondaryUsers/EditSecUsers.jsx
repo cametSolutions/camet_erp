@@ -1,5 +1,5 @@
 import api from "../../../api/api";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { useParams, useNavigate } from "react-router-dom";
 import SecUserCreationForm from "../../../components/common/Forms/SecUserCreationForm";
 import { useDispatch } from "react-redux";

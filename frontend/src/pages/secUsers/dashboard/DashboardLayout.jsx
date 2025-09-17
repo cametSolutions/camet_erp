@@ -7,6 +7,7 @@ import DashboardCard from "../../../components/homePage/DashboardCards";
 import DashboardSummary from "./DashboardSummary";
 import { useState } from "react";
 import TodaysTransaction from "./TodaysTransaction";
+import { toast } from "sonner";
 
 function DashBoardLayout({
   handleToggleSidebar,
@@ -55,6 +56,8 @@ function DashBoardLayout({
             organization={org}
           />
           {/* tiles */}
+
+         {/* <button onClick={() => toast('Toast')}>Render Toast</button> */}
 
           <hr className="border" />
 

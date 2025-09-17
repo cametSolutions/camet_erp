@@ -878,7 +878,6 @@ export const updateKotPayment = async (req, res) => {
           pendingAmount,
           session
         );
-      }
 
       if (party?.paymentType != "party") {
         await saveSettlement(
@@ -893,7 +892,7 @@ export const updateKotPayment = async (req, res) => {
           session
         );
       }
-
+    }
       // Update KOTs
       paymentCompleted = true;
       let selectedTableNumber = [];
@@ -1134,6 +1133,7 @@ async function createTallyEntry(
 }
 
 async function saveSettlement(
+
   paymentDetails,
   selectedParty,
   cmp_id,
@@ -1144,6 +1144,7 @@ async function saveSettlement(
   req,
   session
 ) {
+  console.log
   if (paymentDetails?.paymentMode === "single") {
     await saveSettlementData(
       selectedParty,
@@ -1509,8 +1510,6 @@ export const updateConfigurationForKotApproval = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
-
-
 
  // Adjust import path as needed
 
@@ -1897,3 +1896,4 @@ export const getSummaryDashboard = async (req, res) => {
     });
   }
 };
+

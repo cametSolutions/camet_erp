@@ -363,12 +363,12 @@ export const cancelTransaction = async (req, res) => {
 export const fetchBanks = async (req, res) => {
   const cmp_id = req.params.cmp_id;
   try {
-    const bankData = await BankDetails.aggregate([
-      { $match: { cmp_id: new mongoose.Types.ObjectId(cmp_id) } },
+    const bankData = await partyModel.aggregate([
+      { $match: { cmp_id: new mongoose.Types.ObjectId(cmp_id), partyType: "bank"} },
       {
         $project: {
           bank_name: 1,
-          bank_ledname: 1,
+          partyName: 1,
           ifsc: 1,
           upi_id: 1,
           ac_no: 1,
@@ -1645,52 +1645,53 @@ export const cancelStockTransfer = async (req, res) => {
 
 export const getBankAndCashSources = async (req, res) => {
   const cmp_id = req.params.cmp_id;
-
+  const source = req.params.source || null;
+  
   try {
-    // Run both queries in parallel with filters for non-null and non-"null" fields
-    // const [banks, cashs] = await Promise.all([
-    //   bankModel
-    //     .find({
-    //       cmp_id,
-    //       bank_ledname: { $nin: [null, "null"] },
-    //       bank_id: { $exists: true },
-    //       // bank_name: { $nin: [null, "null"] },
-    //     })
-    //     .select({ bank_ledname: 1, bank_id: 1, bank_name: 1 }),
+    let banks = [];
+    let cashs = [];
 
-    //   cashModel
-    //     .find({
-    //       cmp_id,
-    //       cash_ledname: { $nin: [null, "null"] },
-    //       cash_id: { $exists: true },
-    //     })
-    //     .select({ cash_ledname: 1, cash_id: 1 }),
-    // ]);
+    // Common query conditions
+    const baseQuery = {
+      cmp_id,
+      partyName: { $nin: [null, "null", ""] },
+      party_master_id: { $exists: true },
+    };
 
-    const [banks, cashs] = await Promise.all([
-      // Get Bank accounts
-      partyModel.find({
-        cmp_id,
+    const selectFields = {
+      partyName: 1,
+    };
+
+    if (source === 'bank') {
+      // Fetch only banks
+      banks = await partyModel.find({
+        ...baseQuery,
         partyType: 'bank',
-        partyName: { $nin: [null, "null", ""] },
-        party_master_id: { $exists: true },
-      }).select({
-        partyName: 1,
-      }),
-
-      // Get Cash accounts
-      partyModel.find({
-        cmp_id,
+      }).select(selectFields);
+    } else if (source === 'cash') {
+      // Fetch only cash
+      cashs = await partyModel.find({
+        ...baseQuery,
         partyType: 'cash',
-        partyName: { $nin: [null, "null", ""] },
-        party_master_id: { $exists: true },
-      }).select({
-        partyName: 1
-      })
-    ]);
+      }).select(selectFields);
+    } else {
+      // Fetch both if no specific source is provided
+      [banks, cashs] = await Promise.all([
+        // Get Bank accounts
+        partyModel.find({
+          ...baseQuery,
+          partyType: 'bank',
+        }).select(selectFields),
 
+        // Get Cash accounts
+        partyModel.find({
+          ...baseQuery,
+          partyType: 'cash',
+        }).select(selectFields)
+      ]);
+    }
 
-      // Transform data to match expected format
+    // Transform data to match expected format
     const transformedBanks = banks.map(bank => ({
       _id: bank._id,
       bank_ledname: bank.partyName,
@@ -1703,8 +1704,8 @@ export const getBankAndCashSources = async (req, res) => {
 
     // Return fetched data with a consistent structure
     res.status(200).json({
-      message: "Bank and Cash fetched",
-     data: { 
+      message: source ? `${source.charAt(0).toUpperCase() + source.slice(1)} accounts fetched` : "Bank and Cash fetched",
+      data: { 
         banks: transformedBanks, 
         cashs: transformedCashs 
       },

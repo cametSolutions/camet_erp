@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import api from "../../../api/api";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { FaEdit } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import {
@@ -57,14 +57,16 @@ function BookingList() {
   const [selectedCash, setSelectedCash] = useState(null);
   const [selectedBank, setSelectedBank] = useState(null);
   const [cashOrBank, setCashOrBank] = useState({});
-  const cmp_id = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg._id
+  const [restaurantBaseSaleData, setRestaurantBaseSaleData] = useState({});
+  const { _id: cmp_id, configurations } = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg
   );
 
   useEffect(() => {
     if (location?.state?.selectedCheckOut) {
       setSelectedCheckOut(location?.state?.selectedCheckOut);
       setSelectedCustomer(location?.state?.selectedCustomer?._id);
+      setRestaurantBaseSaleData(location?.state?.kotData);
       setSelectedDataForPayment((prevData) => ({
         ...prevData,
         total: location?.state?.balanceToPay,
@@ -329,6 +331,7 @@ function BookingList() {
         selectedBank: selectedBank,
         paymentMode: paymentMode,
       };
+      
     }
 
     try {
@@ -340,6 +343,7 @@ function BookingList() {
           selectedCheckOut: selectedCheckOut,
           paidBalance: selectedDataForPayment?.total,
           selectedParty: selectedCustomer,
+          restaurantBaseSaleData:restaurantBaseSaleData
         },
         { withCredentials: true }
       );
@@ -875,13 +879,22 @@ function BookingList() {
                   <button
                     className="flex-2 px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg text-sm font-bold hover:from-green-600 hover:to-emerald-700 transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2 shadow-lg"
                     onClick={() => {
-                      navigate("/sUsers/CheckOutPrint", {
-                        state: {
-                          selectedCheckOut: selectedCheckOut,
-                          customerId: selectedCustomer,
-                          isForPreview: true,
-                        },
-                      });
+                      console.log( configurations[0]?.defaultPrint?.print1);
+                      const hasPrint1 = configurations[0]?.defaultPrint?.print1;
+
+
+                      navigate(
+                        hasPrint1
+                          ? "/sUsers/CheckOutPrint"
+                          : "/sUsers/BillPrint",
+                        {
+                          state: {
+                            selectedCheckOut,
+                            customerId: selectedCustomer,
+                            isForPreview: true,
+                          },
+                        }
+                      );
                     }}
                   >
                     <MdPayment className="w-4 h-4" />

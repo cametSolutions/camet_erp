@@ -12,7 +12,7 @@ import SettingsCard from "../../../../components/common/SettingsCard";
 import { useEffect, useState } from "react";
 import api from "../../../../api/api";
 import { useDispatch, useSelector } from "react-redux";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { updateConfiguration } from "../../../../../slices/secSelectedOrgSlice";
 import { PiVan } from "react-icons/pi";
 import { FaRegAddressBook } from "react-icons/fa";

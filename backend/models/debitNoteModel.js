@@ -53,6 +53,7 @@ const debitNoteSchema = new Schema(
     party: {
       _id: { type: Schema.Types.ObjectId, ref: "Party" },
       partyName: { type: String },
+      partyType: { type: String, default: "party" },
       accountGroupName: { type: String },
       accountGroup_id: {
         type: mongoose.Types.ObjectId,
@@ -216,6 +217,12 @@ const debitNoteSchema = new Schema(
       },
     ],
     note: { type: String },
+
+    subTotal: { type: Number, default: null },
+    totalAdditionalCharges: { type: Number, default: null },
+    totalWithAdditionalCharges: { type: Number, default: null },
+    totalPaymentSplits: { type: Number, default: null },
+    finalOutstandingAmount: { type: Number, default: null },
     finalAmount: { type: Number, required: true },
     paymentSplittingData: { type: Object },
     isCancelled: { type: Boolean, default: false },
@@ -230,7 +237,6 @@ debitNoteSchema.index(
   { cmp_id: 1, series_id: 1, debitNoteNumber: 1 },
   { unique: true, name: "unique_debit_note_number_per_series" }
 );
-
 
 // 3. Most common query pattern (company + date sorting)
 debitNoteSchema.index({ cmp_id: 1, date: -1 });

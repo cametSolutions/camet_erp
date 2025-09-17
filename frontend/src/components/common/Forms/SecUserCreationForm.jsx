@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 import { useEffect, useState } from "react";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { FaRegEye } from "react-icons/fa";
 import { IoMdEyeOff } from "react-icons/io";
 import api from "../../../api/api";

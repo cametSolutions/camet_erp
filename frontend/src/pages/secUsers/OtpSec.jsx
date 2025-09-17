@@ -2,7 +2,7 @@ import api from "../../api/api";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { PropagateLoader } from "react-spinners";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 
 function OtpSec() {
