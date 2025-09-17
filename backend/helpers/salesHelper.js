@@ -9,12 +9,6 @@ import bankModel from "../models/bankModel.js";
 import partyModel from "../models/partyModel.js";
 import mongoose from "mongoose";
 import invoiceModel from "../models/invoiceModel.js";
-
-import {
-  processAdvancePayments,
-  processAdvanceReceipts,
-} from "./receiptHelper.js";
-
 import settlementModel from "../models/settlementModel.js";
 
 export const checkForNumberExistence = async (

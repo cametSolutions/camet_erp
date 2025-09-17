@@ -9,6 +9,7 @@ import {
   createOutstandingWithAdvanceAmount,
   saveSettlementData,
   revertSettlementData,
+  updateAdvanceOnEdit,
 } from "../helpers/receiptHelper.js";
 
 import {
@@ -310,16 +311,16 @@ export const editPayment = async (req, res) => {
     /// delete  all the settlements
     await settlementModel.deleteMany({ voucherId: paymentId }, { session });
 
-    // Delete advance payment, if any
-    if (payment.advanceAmount > 0) {
-      await deleteAdvancePayment(
-        payment.paymentNumber,
-        payment._id.toString(),
-        Primary_user_id,
-        session
-      );
-    }
-
+    // update advance payment / advance payment on edit of receipt or payment
+     await updateAdvanceOnEdit(
+       "payment",
+       advanceAmount,
+       payment.party,
+       cmp_id,
+       paymentId.toString(),
+       session
+     );
+ 
     // Use the helper function to update TallyData
     await updateTallyData(
       billData,
@@ -361,22 +362,22 @@ export const editPayment = async (req, res) => {
       session
     );
 
-    if (advanceAmount > 0) {
-      const outstandingWithAdvanceAmount =
-        await createOutstandingWithAdvanceAmount(
-          date,
-          cmp_id,
-          savedPayment.paymentNumber,
-          savedPayment._id.toString(),
-          Primary_user_id,
-          party,
-          secondaryUser.mobileNumber,
-          advanceAmount,
-          session,
-          "advancePayment",
-          "Dr"
-        );
-    }
+    // if (advanceAmount > 0) {
+    //   const outstandingWithAdvanceAmount =
+    //     await createOutstandingWithAdvanceAmount(
+    //       date,
+    //       cmp_id,
+    //       savedPayment.paymentNumber,
+    //       savedPayment._id.toString(),
+    //       Primary_user_id,
+    //       party,
+    //       secondaryUser.mobileNumber,
+    //       advanceAmount,
+    //       session,
+    //       "advancePayment",
+    //       "Dr"
+    //     );
+    // }
 
     await session.commitTransaction();
     session.endSession();

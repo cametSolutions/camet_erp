@@ -13,7 +13,7 @@ import {
   revertTallyUpdates,
   deleteAdvanceReceipt,
   saveSettlementData,
-  revertSettlementData,
+  updateAdvanceOnEdit,
 } from "../helpers/receiptHelper.js";
 import { formatToLocalDate } from "../helpers/helper.js";
 import { generateVoucherNumber } from "../helpers/voucherHelper.js";
@@ -136,19 +136,19 @@ export const createReceipt = async (req, res) => {
     );
 
     if (advanceAmount > 0 && savedReceipt) {
-        await createOutstandingWithAdvanceAmount(
-          date,
-          cmp_id,
-          savedReceipt.receiptNumber,
-          savedReceipt._id.toString(),
-          Primary_user_id,
-          party,
-          secondaryUser.mobileNumber,
-          advanceAmount,
-          session,
-          "advanceReceipt",
-          "Cr"
-        );
+      await createOutstandingWithAdvanceAmount(
+        date,
+        cmp_id,
+        savedReceipt.receiptNumber,
+        savedReceipt._id.toString(),
+        Primary_user_id,
+        party,
+        secondaryUser.mobileNumber,
+        advanceAmount,
+        session,
+        "advanceReceipt",
+        "Cr"
+      );
     }
 
     // Commit the transaction
@@ -204,12 +204,15 @@ export const cancelReceipt = async (req, res) => {
     }
 
     // Revert tally updates
-    await revertTallyUpdates(receipt.billData,receipt.cmp_id, session, receiptId.toString());
+    await revertTallyUpdates(
+      receipt.billData,
+      receipt.cmp_id,
+      session,
+      receiptId.toString()
+    );
 
     /// delete  all the settlements
     await settlementModel.deleteMany({ voucherId: receiptId }, { session });
-
-
 
     // Delete advance receipt, if any
     if (receipt.advanceAmount > 0) {
@@ -302,23 +305,28 @@ export const editReceipt = async (req, res) => {
     }
 
     // Revert tally updates
-    await revertTallyUpdates(receipt.billData,cmp_id, session, receiptId.toString());
+    await revertTallyUpdates(
+      receipt.billData,
+      cmp_id,
+      session,
+      receiptId.toString()
+    );
 
     /// delete  all the settlements
     await settlementModel.deleteMany({ voucherId: receiptId }, { session });
 
-    // Delete advance receipt, if any
-    if (receipt.advanceAmount > 0) {
-      await deleteAdvanceReceipt(
-        receipt.receiptNumber,
-        receipt._id?.toString(),
-        Primary_user_id,
-        session
-      );
-    }
-
     // Use the helper function to update TallyData
     await updateTallyData(billData, cmp_id, session, receiptNumber, receiptId);
+
+    // update advance receipt / advance payment on edit of receipt or payment
+    await updateAdvanceOnEdit(
+      "receipt",
+      advanceAmount,
+      receipt.party,
+      cmp_id,
+      receiptId.toString(),
+      session
+    );
 
     ///update the existing receipt
     receipt.date = date;
@@ -352,21 +360,21 @@ export const editReceipt = async (req, res) => {
       session
     );
 
-   if (advanceAmount > 0 && savedReceipt) {
-        await createOutstandingWithAdvanceAmount(
-          date,
-          cmp_id,
-          savedReceipt.receiptNumber,
-          savedReceipt._id.toString(),
-          Primary_user_id,
-          party,
-          secondaryUser.mobileNumber,
-          advanceAmount,
-          session,
-          "advanceReceipt",
-          "Cr"
-        );
-    }
+    // if (advanceAmount > 0 && savedReceipt) {
+    //   await createOutstandingWithAdvanceAmount(
+    //     date,
+    //     cmp_id,
+    //     savedReceipt.receiptNumber,
+    //     savedReceipt._id.toString(),
+    //     Primary_user_id,
+    //     party,
+    //     secondaryUser.mobileNumber,
+    //     advanceAmount,
+    //     session,
+    //     "advanceReceipt",
+    //     "Cr"
+    //   );
+    // }
 
     // console.log(receipt);
 
