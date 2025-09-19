@@ -6,12 +6,12 @@ import {
   updatePurchaseNumber,
   revertPurchaseStockUpdates,
   removeNewBatchCreatedByThisPurchase,
-  updateOutstandingBalance,
 } from "../helpers/purchaseHelper.js";
 import {
   processSaleItems as processPurchaseItems,
   revertSettlementData,
   saveSettlementData,
+  updateOutstandingBalance,
   updateTallyData,
 } from "../helpers/salesHelper.js";
 import { checkForNumberExistence } from "../helpers/secondaryHelper.js";
@@ -112,7 +112,8 @@ export const createPurchase = async (req, res) => {
       selectedDate,
       "purchase",
       "Cr",
-      "Purchase"
+      "Purchase",
+      true /// negative value for tally (purchase is credit entry)
     );
 
     await session.commitTransaction();

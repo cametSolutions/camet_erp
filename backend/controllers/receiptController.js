@@ -325,6 +325,10 @@ export const editReceipt = async (req, res) => {
       receipt.party,
       cmp_id,
       receiptId.toString(),
+      Primary_user_id,
+      receipt.receiptNumber,
+      receipt?._id?.toString(),
+      date,
       session
     );
 

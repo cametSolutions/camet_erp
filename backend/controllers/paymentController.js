@@ -318,6 +318,10 @@ export const editPayment = async (req, res) => {
        payment.party,
        cmp_id,
        paymentId.toString(),
+       Primary_user_id,
+       payment?.paymentNumber,
+       payment?.id?.toString(),
+       date,
        session
      );
  
@@ -361,23 +365,6 @@ export const editPayment = async (req, res) => {
       date,
       session
     );
-
-    // if (advanceAmount > 0) {
-    //   const outstandingWithAdvanceAmount =
-    //     await createOutstandingWithAdvanceAmount(
-    //       date,
-    //       cmp_id,
-    //       savedPayment.paymentNumber,
-    //       savedPayment._id.toString(),
-    //       Primary_user_id,
-    //       party,
-    //       secondaryUser.mobileNumber,
-    //       advanceAmount,
-    //       session,
-    //       "advancePayment",
-    //       "Dr"
-    //     );
-    // }
 
     await session.commitTransaction();
     session.endSession();

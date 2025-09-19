@@ -366,8 +366,6 @@ export const editSale = async (req, res) => {
  */
 
 export const cancelSale = async (req, res) => {
-
-  
   const saleId = req.params.id; // ID of the sale to cancel
   const vanSaleQuery = req.query.vanSale;
 
@@ -403,7 +401,7 @@ export const cancelSale = async (req, res) => {
       Primary_user_id: sale.Primary_user_id,
     }).session(session);
     if (outstandingRecord) {
-      await  createAdvanceReceiptsFromAppliedReceipts(
+      await createAdvanceReceiptsFromAppliedReceipts(
         outstandingRecord.appliedReceipts,
         sale.cmp_id,
         sale,

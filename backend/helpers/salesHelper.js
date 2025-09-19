@@ -3,7 +3,12 @@ import salesModel from "../models/salesModel.js";
 import TallyData from "../models/TallyData.js";
 import vanSaleModel from "../models/vanSaleModel.js";
 import OrganizationModel from "../models/OragnizationModel.js";
-import { formatToLocalDate, truncateToNDecimals } from "./helper.js";
+import {
+  calculateBillPending,
+  formatToLocalDate,
+  getVoucherMultiplier,
+  truncateToNDecimals,
+} from "./helper.js";
 import cashModel from "../models/cashModel.js";
 import bankModel from "../models/bankModel.js";
 import partyModel from "../models/partyModel.js";
@@ -478,7 +483,8 @@ export const updateTallyData = async (
   selectedDate,
   voucherType,
   classification,
-  voucherModel = "Sales"
+  voucherModel = "Sales",
+  negative = false
 ) => {
   if (party?.partyType === "party") {
     try {
@@ -494,7 +500,9 @@ export const updateTallyData = async (
         bill_date: new Date(selectedDate),
         bill_due_date: new Date(selectedDate),
 
-        bill_pending_amt: Number(valueToUpdateInTally),
+        bill_pending_amt: negative
+          ? -valueToUpdateInTally
+          : valueToUpdateInTally,
         email: party?.emailID,
         mobile_no: party?.mobileNumber,
         party_name: party?.partyName,
@@ -540,7 +548,6 @@ export const updateTallyData = async (
         settlement_date: selectedDate,
         voucher_date: selectedDate,
       };
-
 
       const settlement = new settlementModel(settlementData);
 
@@ -1020,7 +1027,6 @@ export const updateOutstandingBalance = async ({
   classification,
   isCancelled = false,
 }) => {
-
   if (party?.partyType === "party") {
     // Calculate old bill balance
     let oldBillBalance =
@@ -1037,21 +1043,34 @@ export const updateOutstandingBalance = async ({
     }).session(session);
 
     // Calculate sum of applied receipts
+    const appliedPayments = matchedOutStanding?.appliedPayments || [];
     const appliedReceipts = matchedOutStanding?.appliedReceipts || [];
+    const sumOfAppliedPayments = appliedPayments.reduce((sum, receipt) => {
+      return sum + (receipt.settledAmount || 0);
+    }, 0);
     const sumOfAppliedReceipts = appliedReceipts.reduce((sum, receipt) => {
       return sum + (receipt.settledAmount || 0);
     }, 0);
 
-    console.log(`New bill balance: ${newBillBalance}`);
-    console.log(`old bill balance: ${oldBillBalance}`);
-    console.log(`Sum of applied receipts: ${sumOfAppliedReceipts}`);
-    console.log(
-      `Absolute difference: ${Math.abs(newBillBalance - sumOfAppliedReceipts)}`
+    // const totalSettlements = sumOfAppliedPayments + sumOfAppliedReceipts;
+
+    // const voucherTypeMultiplier = getVoucherMultiplier(transactionType);
+    // const billPendingAmount = Number(
+    //   voucherTypeMultiplier * newBillBalance - totalSettlements
+    // );
+
+    const billPendingAmount = calculateBillPending(
+      existingVoucher?.voucherType,
+      newBillBalance || 0,
+      sumOfAppliedReceipts,
+      sumOfAppliedPayments
     );
 
-    // Calculate bill_pending_amt as the difference of newBillBalance - sum of appliedReceipts (after creating advance)
-    const billPendingAmount = Number(newBillBalance - sumOfAppliedReceipts);
-
+    console.log(`New bill balance: ${newBillBalance}`);
+    console.log(`old bill balance: ${oldBillBalance}`);
+    console.log(`Sum of applied payments: ${sumOfAppliedPayments}`);
+    console.log(`Sum of applied receipts: ${sumOfAppliedReceipts}`);
+    // console.log(`Total settlements: ${totalSettlements}`);
     console.log(`Bill pending amount: ${billPendingAmount}`);
 
     let updatedTallyData;
@@ -1065,7 +1084,7 @@ export const updateOutstandingBalance = async ({
           cmp_id: orgId,
           billId: existingVoucher?._id.toString(),
           bill_amount: newBillBalance,
-          bill_pending_amt: Math.abs(billPendingAmount), // Updated calculation
+          bill_pending_amt: billPendingAmount, // Updated calculation
           voucherNumber: voucherNumber,
           primaryUserId: existingVoucher.Primary_user_id,
           party: party,
@@ -1077,7 +1096,7 @@ export const updateOutstandingBalance = async ({
           updatedAt: new Date(),
           bill_date: new Date(selectedDate),
           bill_due_date: new Date(selectedDate),
-          // appliedReceipts: matchedOutStanding?.appliedReceipts || [], // Ensure updated arrays are saved
+          // appliedPayments: matchedOutStanding?.appliedPayments || [], // Ensure updated arrays are saved
           // appliedPayments: matchedOutStanding?.appliedPayments || [],
           isCancelled: isCancelled,
         },

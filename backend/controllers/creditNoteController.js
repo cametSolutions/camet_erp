@@ -10,6 +10,7 @@ import {
   revertSettlementData,
   saveSettlementData,
   updateTallyData,
+  updateOutstandingBalance
 } from "../helpers/salesHelper.js";
 
 import creditNoteModel from "../models/creditNoteModel.js";
@@ -21,7 +22,7 @@ import {
   getSeriesDetailsById,
 } from "../helpers/voucherHelper.js";
 import settlementModel from "../models/settlementModel.js";
-import { updateOutstandingBalance } from "../helpers/purchaseHelper.js";
+// import {  } from "../helpers/purchaseHelper.js";
 import { createAdvancePaymentsFromAppliedPayments } from "../helpers/receiptHelper.js";
 
 // @desc create credit note
@@ -103,7 +104,9 @@ export const createCreditNote = async (req, res) => {
       selectedDate,
       voucherType,
       "Cr",
-      "CreditNote"
+      "CreditNote",
+      true /// negative value for tally (purchase is credit entry)
+
     );
 
     await session.commitTransaction();
