@@ -401,13 +401,21 @@ export const cancelSale = async (req, res) => {
       Primary_user_id: sale.Primary_user_id,
     }).session(session);
     if (outstandingRecord) {
-      await createAdvanceReceiptsFromAppliedReceipts(
-        outstandingRecord.appliedReceipts,
-        sale.cmp_id,
-        sale,
-        sale.party,
-        session
-      );
+      //// update pending amount and
+      const outstandingResult = await updateOutstandingBalance({
+        existingVoucher: sale,
+        valueToUpdateInOutstanding:0,
+        orgId: sale.cmp_id,
+        voucherNumber: sale?.salesNumber,
+        party: sale?.party,
+        session,
+        createdBy: req.owner,
+        transactionType: "sale",
+        secondaryMobile: null,
+        selectedDate: sale?.date,
+        classification: "Dr",
+      });
+
       outstandingRecord.isCancelled = true;
       await outstandingRecord.save({ session });
     }

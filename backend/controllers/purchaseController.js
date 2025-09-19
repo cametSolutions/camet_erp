@@ -327,13 +327,19 @@ export const cancelPurchase = async (req, res) => {
         Primary_user_id: existingPurchase?.Primary_user_id,
       }).session(session);
       if (outstandingRecord) {
-        await createAdvancePaymentsFromAppliedPayments(
-          outstandingRecord.appliedPayments,
-          existingPurchase.cmp_id,
-          existingPurchase,
-          existingPurchase.party,
-          session
-        );
+        const outstandingResult = await updateOutstandingBalance({
+          existingVoucher: existingPurchase,
+          valueToUpdateInOutstanding: 0,
+          orgId: existingPurchase.cmp_id,
+          voucherNumber: existingPurchase?.purchaseNumber,
+          party: existingPurchase?.party,
+          session,
+          createdBy: req.owner,
+          transactionType: "purchase",
+          secondaryMobile: null,
+          selectedDate: existingPurchase?.date,
+          classification: "Cr",
+        });
         outstandingRecord.isCancelled = true;
         await outstandingRecord.save({ session });
       }

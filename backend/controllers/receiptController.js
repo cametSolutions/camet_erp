@@ -214,15 +214,28 @@ export const cancelReceipt = async (req, res) => {
     /// delete  all the settlements
     await settlementModel.deleteMany({ voucherId: receiptId }, { session });
 
-    // Delete advance receipt, if any
-    if (receipt.advanceAmount > 0) {
-      await deleteAdvanceReceipt(
-        receipt.receiptNumber,
-        receipt._id?.toString(),
-        Primary_user_id,
-        session
-      );
-    }
+    await updateAdvanceOnEdit(
+      "receipt",
+      0,
+      receipt.party,
+      receipt.cmp_id,
+      receiptId.toString(),
+      Primary_user_id,
+      receipt.receiptNumber,
+      receipt?._id?.toString(),
+      receipt.date,
+      session
+    );
+
+    // // Delete advance receipt, if any
+    // if (receipt.advanceAmount > 0) {
+    //   await deleteAdvanceReceipt(
+    //     receipt.receiptNumber,
+    //     receipt._id?.toString(),
+    //     Primary_user_id,
+    //     session
+    //   );
+    // }
 
     // Mark the receipt as cancelled
     receipt.isCancelled = true;

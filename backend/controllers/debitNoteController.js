@@ -171,13 +171,19 @@ export const cancelDebitNote = async (req, res) => {
     console.log("outstandingRecord", outstandingRecord);
 
     if (outstandingRecord) {
-      await createAdvanceReceiptsFromAppliedReceipts(
-        outstandingRecord.appliedReceipts,
-        existingDebitNote.cmp_id,
-        existingDebitNote,
-        existingDebitNote.party,
-        session
-      );
+      const outstandingResult = await updateOutstandingBalance({
+        existingVoucher: existingDebitNote,
+        valueToUpdateInOutstanding: 0,
+        orgId: existingDebitNote.cmp_id,
+        voucherNumber: existingDebitNote?.debitNoteNumber,
+        party: existingDebitNote?.party,
+        session,
+        createdBy: req.owner,
+        transactionType: "debitNote",
+        secondaryMobile: null,
+        selectedDate: existingDebitNote?.date,
+        classification: "Dr",
+      });
       outstandingRecord.isCancelled = true;
       await outstandingRecord.save({ session });
     }

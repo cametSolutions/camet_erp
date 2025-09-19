@@ -79,11 +79,7 @@ export const updateTallyData = async (
   const bulkUpdateOperations = outstandingData.map((doc) => {
     const { settledAmount } = billAmountMap.get(doc.billId); // Get the remaining and settled amount
 
-    console.log("Updating TallyData for billId:", doc.billId, {
-      previousPendingAmount: doc.bill_pending_amt,
-      settledAmount: settledAmount,
-      billAmount: doc.bill_amount,
-    });
+
 
     //Calculate total applied receipts from existing + this one
     const existingAppliedReceiptsTotal = (doc?.appliedReceipts || []).reduce(
@@ -112,16 +108,8 @@ export const updateTallyData = async (
     );
 
     // const balance = (receiptPaymentMultiplier * doc?.bill_amount || 0) - (Number(totalAppliedReceipts)+Number(existingAppliedPaymentsTotal));
-    console.log("bill amount:", doc?.bill_amount || 0);
-    console.log(
-      "Total applied receipts (existing + new):",
-      totalAppliedReceipts
-    );
-    console.log(
-      "Existing applied payments total:",
-      existingAppliedPaymentsTotal
-    );
-    console.log("New balance after applying receipt:", balance);
+
+
 
     return {
       updateOne: {
@@ -648,12 +636,7 @@ export const updateAdvanceOnEdit = async (
   date,
   session
 ) => {
-  console.log(
-    "Updating advance for",
-    voucherType,
-    "with new amount:",
-    newAmount
-  );
+
 
   // Find existing outstanding record
   const matchedOutStanding = await TallyData.findOne({
@@ -663,7 +646,6 @@ export const updateAdvanceOnEdit = async (
     source: voucherType === "receipt" ? "advanceReceipt" : "advancePayment",
   }).session(session);
 
-  console.log("Matched outstanding record:", matchedOutStanding);
 
   if (matchedOutStanding) {
     const sumOfAppliedReceipts = matchedOutStanding.appliedReceipts.reduce(
@@ -696,7 +678,6 @@ export const updateAdvanceOnEdit = async (
         sumOfAppliedPayments
       );
 
-      console.log("Calculated bill pending amount:", billPendingAmount);
 
       // Use session in the update operation and fix the return value check
       const foundOutstanding = await TallyData.findOneAndUpdate(
@@ -715,7 +696,6 @@ export const updateAdvanceOnEdit = async (
         }
       );
 
-      console.log("Updated outstanding:", foundOutstanding);
 
       // Fix the error checking - findOneAndUpdate returns the document directly, not an {ok, value} object
       if (!foundOutstanding) {
@@ -726,10 +706,8 @@ export const updateAdvanceOnEdit = async (
       return foundOutstanding;
     }
   } else {
-    console.log("Creating new advance record as none exists");
 
     if (newAmount === 0) {
-      console.log("New amount is 0, no need to create advance record");
       return null; // No need to create a record if the new amount is 0
     }
 
