@@ -867,7 +867,7 @@ export const updateKotPayment = async (req, res) => {
       const paidAmount = isPostToRoom ? 0 : cashAmt + onlineAmt;
       const pendingAmount = Number(kotData?.total || 0) - paidAmount;
 
-      if (pendingAmount > 0 && party?.paymentType == "party") {
+      if (isPostToRoom) {
         await createTallyEntry(
           cmp_id,
           req,
@@ -879,7 +879,6 @@ export const updateKotPayment = async (req, res) => {
           session
         );
       }
-
       if (party?.paymentType != "party") {
         await saveSettlement(
           paymentDetails,
@@ -893,7 +892,7 @@ export const updateKotPayment = async (req, res) => {
           session
         );
       }
-
+    
       // Update KOTs
       paymentCompleted = true;
       let selectedTableNumber = [];
@@ -1005,7 +1004,7 @@ async function getSelectedParty(
       partyId = paymentDetails?.selectedCash;
     }
   }
-
+  console.log("partyId", partyId);
   const selectedParty = await Party.findOne({ cmp_id, _id: partyId })
     .populate("accountGroup")
     .session(session);
@@ -1134,6 +1133,7 @@ async function createTallyEntry(
 }
 
 async function saveSettlement(
+
   paymentDetails,
   selectedParty,
   cmp_id,
@@ -1144,6 +1144,7 @@ async function saveSettlement(
   req,
   session
 ) {
+  console.log
   if (paymentDetails?.paymentMode === "single") {
     await saveSettlementData(
       selectedParty,
@@ -1509,3 +1510,4 @@ export const updateConfigurationForKotApproval = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+

@@ -21,7 +21,7 @@ const StockItemSettings = () => {
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
 
-  console.log(configurations);
+  console.log(configurations?.[0]?.defaultPrint?.print1);
 
   const handleToggleChangeFromParent = async (data) => {
     console.log(data);

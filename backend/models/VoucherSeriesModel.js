@@ -9,8 +9,7 @@ const SeriesSchema = new mongoose.Schema({
   isDefault: { type: Boolean, default: false },
   currentlySelected: { type: Boolean, default: false },
   lastUsedNumber: { type: Number, default: 1, min: 1 },
-  under: { type: String , trim: true},
-
+  under: { type: String, trim: true },
 });
 
 const VoucherSeriesSchema = new mongoose.Schema(
@@ -31,7 +30,7 @@ const VoucherSeriesSchema = new mongoose.Schema(
         "receipt",
         "payment",
         "deliveryNote",
-        "memoRandom"
+        "memoRandom",
       ],
     },
     series: [SeriesSchema],
@@ -39,8 +38,9 @@ const VoucherSeriesSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Index to prevent duplicate voucherType per company
+// ✅ Prevent duplicate voucherType per company
 VoucherSeriesSchema.index({ cmp_id: 1, voucherType: 1 }, { unique: true });
 
-export default mongoose.model("VoucherSeries", VoucherSeriesSchema);
-
+// ✅ Fix OverwriteModelError
+export default mongoose.models.VoucherSeries ||
+  mongoose.model("VoucherSeries", VoucherSeriesSchema);

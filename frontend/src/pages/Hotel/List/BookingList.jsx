@@ -57,14 +57,16 @@ function BookingList() {
   const [selectedCash, setSelectedCash] = useState(null);
   const [selectedBank, setSelectedBank] = useState(null);
   const [cashOrBank, setCashOrBank] = useState({});
-  const cmp_id = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg._id
+  const [restaurantBaseSaleData, setRestaurantBaseSaleData] = useState({});
+  const { _id: cmp_id, configurations } = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg
   );
 
   useEffect(() => {
     if (location?.state?.selectedCheckOut) {
       setSelectedCheckOut(location?.state?.selectedCheckOut);
       setSelectedCustomer(location?.state?.selectedCustomer?._id);
+      setRestaurantBaseSaleData(location?.state?.kotData);
       setSelectedDataForPayment((prevData) => ({
         ...prevData,
         total: location?.state?.balanceToPay,
@@ -162,6 +164,7 @@ function BookingList() {
       } catch (error) {
         console.log(error);
         setHasMore(false);
+        setBookings([]);
         // toast.error("Failed to load bookings");
       } finally {
         setIsLoading(false);
@@ -269,29 +272,29 @@ function BookingList() {
     })}`;
   };
 
-  const handleCheckOutData = async () => {
-    setSaveLoader(true);
-    try {
-      let response = await api.put(
-        `/api/sUsers/checkOutWithArray/${cmp_id}`,
-        { data: selectedCheckOut },
-        { withCredentials: true }
-      );
-      if (response?.data?.success) {
-        toast.success(response?.data?.message);
-        fetchBookings(1, searchTerm);
-      }
-    } catch (error) {
-      toast.error(error?.response?.data?.message);
-      console.log(error);
-    } finally {
-      setSaveLoader(false);
-      setCheckOutModal(false);
-      setSelectedCheckOut([]);
-    }
-  };
+  // const handleCheckOutData = async () => {
+  //   setSaveLoader(true);
+  //   try {
+  //     let response = await api.put(
+  //       `/api/sUsers/checkOutWithArray/${cmp_id}`,
+  //       { data: selectedCheckOut },
+  //       { withCredentials: true }
+  //     );
+  //     if (response?.data?.success) {
+  //       toast.success(response?.data?.message);
+  //       fetchBookings(1, searchTerm);
+  //     }
+  //   } catch (error) {
+  //     toast.error(error?.response?.data?.message);
+  //     console.log(error);
+  //   } finally {
+  //     setSaveLoader(false);
+  //     setCheckOutModal(false);
+  //     setSelectedCheckOut([]);
+  //   }
+  // };
 
-  const handleSavePayment = async (id) => {
+  const handleSavePayment = async () => {
     setSaveLoader(true);
     let paymentDetails;
     if (paymentMode == "single") {
@@ -320,6 +323,7 @@ function BookingList() {
         setPaymentError(
           "Cash and online amounts together equal the total amount."
         );
+        setSaveLoader(false);
         return;
       }
       paymentDetails = {
@@ -340,13 +344,14 @@ function BookingList() {
           selectedCheckOut: selectedCheckOut,
           paidBalance: selectedDataForPayment?.total,
           selectedParty: selectedCustomer,
+          restaurantBaseSaleData: restaurantBaseSaleData,
         },
         { withCredentials: true }
       );
+      console.log(response);
       // Check if the response was successful
       if (response.status === 200 || response.status === 201) {
         toast.success(response?.data?.message);
-        fetchBookings(1, searchTerm);
       }
     } catch (error) {
       console.error(
@@ -354,10 +359,13 @@ function BookingList() {
         error.response?.data || error.message
       );
     } finally {
+      setSelectedCheckOut([]);
+      setSelectedCustomer(null);
       setSaveLoader(false);
       setCashAmount(0);
       setOnlineAmount(0);
       setShowPaymentModal(false);
+      fetchBookings(1, searchTerm);
     }
   };
 
@@ -830,7 +838,7 @@ function BookingList() {
                 </div>
 
                 {/* Selected Items List */}
-                <div className="max-h-32 overflow-y-auto mb-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+  <div className="max-h-32 overflow-y-auto mb-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                   <div className="space-y-2">
                     {selectedCheckOut.map((item) => (
                       <div
@@ -843,7 +851,7 @@ function BookingList() {
                       </div>
                     ))}
                   </div>
-                </div>
+                </div>              
                 <div className="mb-6">
                   <label className="block text-xs font-semibold text-gray-700 mb-2">
                     Select Customer
@@ -875,13 +883,21 @@ function BookingList() {
                   <button
                     className="flex-2 px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg text-sm font-bold hover:from-green-600 hover:to-emerald-700 transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2 shadow-lg"
                     onClick={() => {
-                      navigate("/sUsers/CheckOutPrint", {
-                        state: {
-                          selectedCheckOut: selectedCheckOut,
-                          customerId: selectedCustomer,
-                          isForPreview: true,
-                        },
-                      });
+                      console.log(configurations[0]?.defaultPrint?.print1);
+                      const hasPrint1 = configurations[0]?.defaultPrint?.print1;
+
+                      navigate(
+                        hasPrint1
+                          ? "/sUsers/CheckOutPrint"
+                          : "/sUsers/BillPrint",
+                        {
+                          state: {
+                            selectedCheckOut,
+                            customerId: selectedCustomer,
+                            isForPreview: true,
+                          },
+                        }
+                      );
                     }}
                   >
                     <MdPayment className="w-4 h-4" />

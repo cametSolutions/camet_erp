@@ -378,22 +378,40 @@ export const editHsn = async (req, res) => {
   req.body.Primary_user_id = Primary_user_id.toString();
 
   try {
-    let findOne = await hsnModel.findOne({
-      _id: { $ne: hsnId },
-      hsn: { $regex: `^${req.body.hsn}$`, $options: "i" },
-    });
+    // Only check for duplicate HSN name if the HSN field is being updated
+    if (req.body.hsn) {
+      // Get the current record to compare
+      const currentRecord = await hsnModel.findById(hsnId);
+      
+      // Only check for duplicates if the HSN name is actually being changed
+      if (currentRecord && currentRecord.hsn !== req.body.hsn) {
+        let findOne = await hsnModel.findOne({
+          _id: { $ne: hsnId },
+          hsn: { $regex: `^${req.body.hsn}$`, $options: "i" },
+        });
 
-    if (findOne) {
-      return res.status(400).json({
-        success: false,
-        message: "Hsn  with this name already exists",
-      });
+
+        if (findOne) {
+          return res.status(400).json({
+            success: false,
+            message: "HSN with this name already exists",
+          });
+        }
+      }
     }
+
     const updateHsn = await hsnModel.findOneAndUpdate(
       { _id: hsnId },
       req.body,
       { new: true }
     );
+
+    if (!updateHsn) {
+      return res.status(404).json({
+        success: false,
+        message: "HSN record not found",
+      });
+    }
 
     res.status(200).json({
       success: true,
@@ -402,7 +420,10 @@ export const editHsn = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, message: "Internal Server Error" });
+    res.status(500).json({ 
+      success: false, 
+      message: "Internal Server Error" 
+    });
   }
 };
 
