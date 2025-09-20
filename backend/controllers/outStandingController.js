@@ -122,30 +122,14 @@ export const fetchOutstandingTotal = async (req, res) => {
           Primary_user_id: new mongoose.Types.ObjectId(Primary_user_id),
         },
       };
-      // Original ledger-wise data logic
+
+      // Updated ledger-wise data logic - sum directly since Cr is negative and Dr is positive
       const ledgerData = await TallyData.aggregate([
         matchStage,
         {
           $group: {
             _id: "$party_id",
-            totalDr: {
-              $sum: {
-                $cond: [
-                  { $eq: ["$classification", "Dr"] },
-                  "$bill_pending_amt",
-                  0,
-                ],
-              },
-            },
-            totalCr: {
-              $sum: {
-                $cond: [
-                  { $eq: ["$classification", "Cr"] },
-                  "$bill_pending_amt",
-                  0,
-                ],
-              },
-            },
+            totalBillAmount: { $sum: "$bill_pending_amt" }, // Direct sum since Cr is -ve and Dr is +ve
             party_name: { $first: "$party_name" },
             cmp_id: { $first: "$cmp_id" },
             user_id: { $first: "$user_id" },
@@ -156,33 +140,42 @@ export const fetchOutstandingTotal = async (req, res) => {
         },
         {
           $addFields: {
-            totalBillAmount: { $abs: { $subtract: ["$totalDr", "$totalCr"] } },
             classification: {
               $cond: {
-                if: { $gt: [{ $subtract: ["$totalDr", "$totalCr"] }, 0] },
+                if: { $gt: ["$totalBillAmount", 0] },
                 then: "Dr",
-                else: "Cr",
+                else: {
+                  $cond: {
+                    if: { $lt: ["$totalBillAmount", 0] },
+                    then: "Cr",
+                    else: "",
+                  },
+                },
               },
             },
+            absoluteAmount: { $abs: "$totalBillAmount" }, // For display purposes if needed
           },
         },
+
         { $sort: { party_name: 1 } },
       ]);
 
-      let totalOutstandingDrCr = 0;
       let totalOutstandingPayable = 0;
       let totalOutstandingReceivable = 0;
 
       ledgerData.forEach((item) => {
-        if (item.classification === "Cr") {
-          totalOutstandingPayable += item.totalBillAmount;
-        } else {
+        if (item.totalBillAmount < 0) {
+          // Negative means payable (Cr)
+          totalOutstandingPayable += Math.abs(item.totalBillAmount);
+        } else if (item.totalBillAmount > 0) {
+          // Positive means receivable (Dr)
           totalOutstandingReceivable += item.totalBillAmount;
         }
-        totalOutstandingDrCr = Math.abs(
-          totalOutstandingReceivable - totalOutstandingPayable
-        );
       });
+
+      const totalOutstandingDrCr = Math.abs(
+        totalOutstandingReceivable - totalOutstandingPayable
+      );
 
       return res.status(200).json({
         outstandingData: ledgerData,
@@ -352,7 +345,6 @@ export const fetchOutstandingTotal = async (req, res) => {
           .flatMap((sg) => sg.bills);
 
         const totalAmount = group.totalAmount;
-        // totalOutstandingDrCr += totalAmount;
 
         if (group.totalDr > group.totalCr) {
           totalOutstandingReceivable += totalAmount;
@@ -598,7 +590,6 @@ export const fetchOutstandingTotal = async (req, res) => {
 //   }
 // };
 
-
 export const fetchOutstandingDetails = async (req, res) => {
   const { party_id: partyId, cmp_id: cmpId } = req.params;
   const { voucher, voucherId } = req.query;
@@ -621,25 +612,24 @@ export const fetchOutstandingDetails = async (req, res) => {
     ? {
         ...baseMatch,
         ...(voucher === "receipt" && {
-          source: { $in: ["sales", "debitNote", "advancePayment"] }
+          source: { $in: ["sales", "debitNote", "advancePayment"] },
         }),
         // Fetch all outstandings without pending amount or classification filter
       }
     : {
         ...baseMatch,
         // FIXED: Different pending amount filters based on voucher type
-        ...(voucher === "receipt" 
-          ? { 
-              bill_pending_amt: { $gt: 0 },  // Dr outstandings (positive)
-              classification: "Dr" 
+        ...(voucher === "receipt"
+          ? {
+              bill_pending_amt: { $gt: 0 }, // Dr outstandings (positive)
+              classification: "Dr",
             }
           : voucher === "payment"
-          ? { 
-              bill_pending_amt: { $lt: 0 },  // Cr outstandings (negative)
-              classification: "Cr" 
+          ? {
+              bill_pending_amt: { $lt: 0 }, // Cr outstandings (negative)
+              classification: "Cr",
             }
-          : { bill_pending_amt: { $ne: 0 } } // Any non-zero for other cases
-        ),
+          : { bill_pending_amt: { $ne: 0 } }), // Any non-zero for other cases
       };
 
   try {
@@ -668,13 +658,15 @@ export const fetchOutstandingDetails = async (req, res) => {
           let hasAppliedAmount = false;
 
           // Check if this outstanding has applied receipts/payments for this voucherId
-          if (voucher === "receipt" && outstanding.appliedReceipts?.length > 0) {
+          if (
+            voucher === "receipt" &&
+            outstanding.appliedReceipts?.length > 0
+          ) {
             hasAppliedAmount = outstanding.appliedReceipts.some(
               (receipt) => receipt._id.toString() === voucherId
             );
 
             console.log("Has Applied Receipt for voucherId:", hasAppliedAmount);
-            
 
             if (hasAppliedAmount) {
               const filteredReceipts = outstanding.appliedReceipts.filter(
@@ -686,18 +678,24 @@ export const fetchOutstandingDetails = async (req, res) => {
                 0
               );
 
-              const totalAppliedPayments = outstanding.appliedPayments?.reduce(
-                (sum, payment) => sum + (payment.settledAmount || 0),
-                0
-              ) || 0;
+              const totalAppliedPayments =
+                outstanding.appliedPayments?.reduce(
+                  (sum, payment) => sum + (payment.settledAmount || 0),
+                  0
+                ) || 0;
 
-              console.log("Total Applied Receipts (excluding current):", totalAppliedReceipts);
-              console.log("Total Applied Payments (excluding current):", totalAppliedPayments);
+              console.log(
+                "Total Applied Receipts (excluding current):",
+                totalAppliedReceipts
+              );
+              console.log(
+                "Total Applied Payments (excluding current):",
+                totalAppliedPayments
+              );
               console.log("Outstanding Bill Amount:", outstanding.bill_amount);
               console.log("Outstanding Source:", outstanding.source);
-              
 
-               updatedPendingAmount = calculateBillPending(
+              updatedPendingAmount = calculateBillPending(
                 outstanding.source,
                 outstanding.bill_amount,
                 totalAppliedReceipts,
@@ -724,10 +722,11 @@ export const fetchOutstandingDetails = async (req, res) => {
                 0
               );
 
-              const totalAppliedReceipts = outstanding.appliedReceipts?.reduce(
-                (sum, receipt) => sum + (receipt.settledAmount || 0),
-                0
-              ) || 0;
+              const totalAppliedReceipts =
+                outstanding.appliedReceipts?.reduce(
+                  (sum, receipt) => sum + (receipt.settledAmount || 0),
+                  0
+                ) || 0;
 
               updatedPendingAmount = calculateBillPending(
                 outstanding.source,
@@ -740,7 +739,7 @@ export const fetchOutstandingDetails = async (req, res) => {
 
           // Determine classification based on pending amount sign
           let newClassification = updatedPendingAmount < 0 ? "Cr" : "Dr";
-          
+
           // if (hasAppliedAmount) {
           //   if (voucher === "receipt") {
           //     newClassification = updatedPendingAmount < 0 ? "Cr" : "Dr";
@@ -760,35 +759,34 @@ export const fetchOutstandingDetails = async (req, res) => {
           // Filter based on voucher type and classification
           if (voucher === "receipt") {
             return (
-              outstanding.classification === "Dr" || outstanding.hasAppliedAmount
+              outstanding.classification === "Dr" ||
+              outstanding.hasAppliedAmount
             );
           } else if (voucher === "payment") {
             return (
-              outstanding.classification === "Cr" || outstanding.hasAppliedAmount
+              outstanding.classification === "Cr" ||
+              outstanding.hasAppliedAmount
             );
           }
           return true;
         });
     }
 
-
     console.log("Processed Outstandings:", processedOutstandings);
-    
 
     // FIXED: Calculate total and format response amounts
-    const totalOutstandingAmount = processedOutstandings.reduce(
-      (sum, o) => {
-        // For receipts: sum positive amounts, for payments: sum absolute values of negative amounts
-        if (voucher === "receipt") {
-          return sum + (o.bill_pending_amt > 0 ? o.bill_pending_amt : 0);
-        } else if (voucher === "payment") {
-          return sum + (o.bill_pending_amt < 0 ? Math.abs(o.bill_pending_amt) : 0);
-        } else {
-          return sum + Math.abs(o.bill_pending_amt);
-        }
-      },
-      0
-    );
+    const totalOutstandingAmount = processedOutstandings.reduce((sum, o) => {
+      // For receipts: sum positive amounts, for payments: sum absolute values of negative amounts
+      if (voucher === "receipt") {
+        return sum + (o.bill_pending_amt > 0 ? o.bill_pending_amt : 0);
+      } else if (voucher === "payment") {
+        return (
+          sum + (o.bill_pending_amt < 0 ? Math.abs(o.bill_pending_amt) : 0)
+        );
+      } else {
+        return sum + Math.abs(o.bill_pending_amt);
+      }
+    }, 0);
 
     // FIXED: Format response - convert negative amounts to positive for display
     const responseOutstandings = processedOutstandings
@@ -802,11 +800,13 @@ export const fetchOutstandingDetails = async (req, res) => {
           return o.bill_pending_amt !== 0; // Any non-zero
         }
       })
-      .map(({ appliedReceipts, appliedPayments, hasAppliedAmount, ...rest }) => ({
-        ...rest,
-        // FIXED: Always return positive amount for UI display
-        bill_pending_amt: Math.abs(rest.bill_pending_amt)
-      }));
+      .map(
+        ({ appliedReceipts, appliedPayments, hasAppliedAmount, ...rest }) => ({
+          ...rest,
+          // FIXED: Always return positive amount for UI display
+          bill_pending_amt: Math.abs(rest.bill_pending_amt),
+        })
+      );
 
     return res.status(200).json({
       success: true,
