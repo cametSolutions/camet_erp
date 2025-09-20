@@ -56,15 +56,20 @@ function OutstandingSummary() {
       (acc, bill) => {
         const amount = parseFloat(bill.bill_amount || 0);
         const pendingAmount = parseFloat(bill.bill_pending_amt || 0);
+        console.log( pendingAmount);
         
+
+        // acc.totalBillAmount += amount;
+        // acc.totalPendingAmount += pendingAmount;
+
         if (bill.classification === "Dr") {
           acc.totalBillAmount += amount;
           acc.totalPendingAmount += pendingAmount;
         } else if (bill.classification === "Cr") {
           acc.totalBillAmount -= amount;
-          acc.totalPendingAmount -= pendingAmount;
+          acc.totalPendingAmount += pendingAmount;
         }
-        
+
         return acc;
       },
       { totalBillAmount: 0, totalPendingAmount: 0 }
@@ -75,14 +80,14 @@ function OutstandingSummary() {
   filteredSummary.forEach((party) => {
     rowData.push({ type: "header", party_name: party.party_name });
     rowData.push(...party.bills.map((bill) => ({ type: "bill", ...bill })));
-    
+
     const totals = calculatePartyTotals(party.bills);
     rowData.push({
       type: "total",
       total_bill_amount: totals.totalBillAmount,
       total_pending_amount: totals.totalPendingAmount,
       total_final_balance: totals.totalPendingAmount, // Final balance is same as pending after Dr/Cr calculation
-      classification: totals.totalPendingAmount >= 0 ? "Dr" : "Cr"
+      classification: totals.totalPendingAmount >= 0 ? "Dr" : "Cr",
     });
   });
 
@@ -182,10 +187,16 @@ function OutstandingSummary() {
             "Party Name": "",
             "Bill Date": new Date(row.bill_date).toLocaleDateString(),
             "Bill No": row.bill_no,
-            "Bill Amount": `${row.bill_amount?.toFixed(2) || ""} ${row.classification}`,
-            "Pending Amount": `${row.bill_pending_amt?.toFixed(2) || ""} ${row.classification}`,
+            "Bill Amount": `${row.bill_amount?.toFixed(2) || ""} ${
+              row.classification
+            }`,
+            "Pending Amount": `${row.bill_pending_amt?.toFixed(2) || ""} ${
+              row.classification
+            }`,
             "Post-Dated Amount": "0.00",
-            "Final Balance": `${row.bill_pending_amt?.toFixed(2) || ""} ${row.classification}`,
+            "Final Balance": `${row.bill_pending_amt?.toFixed(2) || ""} ${
+              row.classification
+            }`,
             "Due Date": new Date(row.bill_due_date).toLocaleDateString(),
             "Age of Bill": `${row.age_of_bill} days`,
           });
@@ -194,10 +205,16 @@ function OutstandingSummary() {
             "Party Name": "Total",
             "Bill Date": "",
             "Bill No": "",
-            "Bill Amount": `${Math.abs(row.total_bill_amount)?.toFixed(2)} ${row.classification}`,
-            "Pending Amount": `${Math.abs(row.total_pending_amount)?.toFixed(2)} ${row.classification}`,
+            "Bill Amount": `${Math.abs(row.total_bill_amount)?.toFixed(2)} ${
+              row.classification
+            }`,
+            "Pending Amount": `${Math.abs(row.total_pending_amount)?.toFixed(
+              2
+            )} ${row.classification}`,
             "Post-Dated Amount": "0.00",
-            "Final Balance": `${Math.abs(row.total_final_balance)?.toFixed(2)} ${row.classification}`,
+            "Final Balance": `${Math.abs(row.total_final_balance)?.toFixed(
+              2
+            )} ${row.classification}`,
             "Due Date": "",
             "Age of Bill": "",
           });

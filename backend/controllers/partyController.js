@@ -164,7 +164,7 @@ export const PartyList = async (req, res) => {
           $group: {
             _id: "$party_id",
             totalOutstanding: { $sum: "$bill_pending_amt" },
-            latestBillDate: { $max: "$bill_date" },
+            // latestBillDate: { $max: "$bill_date" },
           },
         },
       ]);
@@ -174,7 +174,7 @@ export const PartyList = async (req, res) => {
       partyOutstandingData.forEach((item) => {
         outstandingMap.set(String(item._id), {
           totalOutstanding: item.totalOutstanding,
-          latestBillDate: item.latestBillDate,
+          // latestBillDate: item.latestBillDate,
         });
       });
 
@@ -183,7 +183,7 @@ export const PartyList = async (req, res) => {
         return {
           ...party,
           totalOutstanding: outstandingData?.totalOutstanding || 0,
-          latestBillDate: outstandingData?.latestBillDate || null,
+          // latestBillDate: outstandingData?.latestBillDate || null,
         };
       });
     }

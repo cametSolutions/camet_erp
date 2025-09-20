@@ -1,6 +1,7 @@
 import receipt from "../../frontend/slices/receipt.js";
 import OragnizationModel from "../models/OragnizationModel.js";
 import TallyData from "../models/TallyData.js";
+import { calculateBillPending, getReceiptPaymentMultiplier } from "./helper.js";
 
 /**
  * Updates the paymentNumber for a given secondary user
@@ -125,27 +126,26 @@ export const updateTallyData = async (
   const bulkUpdateOperations = outstandingData.map((doc) => {
     const { settledAmount } = billAmountMap.get(doc.billId); // Get the remaining and settled amount
 
-    const bill_pending_amt = doc?.bill_pending_amt || 0;
-
     //Calculate total applied receipts from existing + this one
     const existingAppliedPaymentsTotal = (doc?.appliedPayments || []).reduce(
       (sum, r) => sum + (r?.settledAmount || 0),
       0
     );
-    const appliedPayments = existingAppliedPaymentsTotal + settledAmount;
-    const balance = (doc?.bill_amount || 0) - appliedPayments;
 
-    //  Classification rule
-    let classification = "Cr";
-    if (balance < 0) {
-      classification = "Dr";
-    }
+    const existingAppliedReceiptsTotal = (doc?.appliedReceipts || []).reduce(
+      (sum, r) => sum + (r?.settledAmount || 0),
+      0
+    );
 
+    const totalAppliedPayments = existingAppliedPaymentsTotal + settledAmount;
+    const balance = calculateBillPending(
+      doc?.source,
+      doc?.bill_amount || 0,
+      existingAppliedReceiptsTotal,
+      totalAppliedPayments
+    );
 
-    console.log("bill_pending_amt", bill_pending_amt);
-    console.log("settledAmount", settledAmount);
     console.log("balance", balance);
-    
 
     return {
       updateOne: {
@@ -153,7 +153,7 @@ export const updateTallyData = async (
         update: {
           $set: {
             bill_pending_amt: balance, // Update remaining amount (pending amount)
-            classification: classification, // ✅ set classification dynamically
+            classification: balance < 0 ? "Cr" : "Dr", // ✅ set classification dynamically
           },
           $push: {
             appliedPayments: {
@@ -194,12 +194,12 @@ export const revertTallyUpdates = async (
     // console.log("🔄 Starting revert process for paymentId:", paymentId);
     // console.log("📋 Bill data to revert:", billData.length, "items");
 
-    const billIds = billData.map(bill => bill.billId.toString());
+    const billIds = billData.map((bill) => bill.billId.toString());
     // console.log("🔍 Looking for billIds:", billIds);
-    
+
     // Fetch documents and perform bulk operations
     const docs = await TallyData.find({
-      billId: { $in: billIds }
+      billId: { $in: billIds },
     }).session(session);
 
     if (!docs.length) {
@@ -219,13 +219,14 @@ export const revertTallyUpdates = async (
       // console.log("   - Applied payments before filter:", doc.appliedPayments?.length || 0);
 
       // Filter out the payment being reverted
-      const remainingPayments = doc.appliedPayments?.filter(
-        payment => payment._id.toString() !== paymentId.toString()
-      ) || [];
+      const remainingPayments =
+        doc.appliedPayments?.filter(
+          (payment) => payment._id.toString() !== paymentId.toString()
+        ) || [];
 
       // console.log("   - Applied payments after filter:", remainingPayments.length);
       // console.log("   - Remaining payments:", remainingPayments.map(p => ({
-      //   id: p._id, 
+      //   id: p._id,
       //   settled: p.settledAmount
       // })));
 
@@ -235,15 +236,19 @@ export const revertTallyUpdates = async (
         0
       );
 
-      // console.log("   - Total remaining applied payments:", totalAppliedPayments);
+      const totalAppliedReceipts = (doc?.appliedReceipts || []).reduce(
+        (sum, r) => sum + (r?.settledAmount || 0),
+        0
+      );
 
-      // Calculate new pending amount and classification
-      const newPendingAmount = doc.bill_amount - totalAppliedPayments;
-      // For payments: if negative -> Dr, if positive -> Cr
-      const newClassification = newPendingAmount < 0 ? "Dr" : "Cr";
+      const newPendingAmount = calculateBillPending(
+        doc?.source,
+        doc?.bill_amount || 0,
+        totalAppliedReceipts,
+        totalAppliedPayments
+      );
 
-      // console.log("   - New pending amount:", newPendingAmount);
-      // console.log("   - New classification:", newClassification);
+      const newClassification = newPendingAmount < 0 ? "Cr" : "Dr";
 
       return {
         updateOne: {
@@ -251,35 +256,22 @@ export const revertTallyUpdates = async (
           update: {
             $set: {
               appliedPayments: remainingPayments,
-              bill_pending_amt: Math.abs(newPendingAmount),
-              classification: newClassification
-            }
-          }
-        }
+              bill_pending_amt: newPendingAmount,
+              classification: newClassification,
+            },
+          },
+        },
       };
     });
 
-    // console.log("\n🔧 Executing bulk operations...");
-    // console.log("📊 Bulk operations count:", bulkOps.length);
-
-    // Execute bulk operation
     const result = await TallyData.bulkWrite(bulkOps, { session });
-
-    // console.log("✅ Bulk operation result:", {
-    //   modifiedCount: result.modifiedCount,
-    //   matchedCount: result.matchedCount,
-    //   upsertedCount: result.upsertedCount
-    // });
-
-    // console.log(`🎉 Successfully reverted ${docs.length} tally updates`);
-
   } catch (error) {
     console.error("💥 Error in revertTallyUpdates:", {
       message: error.message,
       stack: error.stack,
       paymentId,
       billDataCount: billData?.length || 0,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
     throw error;
   }

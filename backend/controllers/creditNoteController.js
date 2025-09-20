@@ -10,6 +10,7 @@ import {
   revertSettlementData,
   saveSettlementData,
   updateTallyData,
+  updateOutstandingBalance,
 } from "../helpers/salesHelper.js";
 
 import creditNoteModel from "../models/creditNoteModel.js";
@@ -21,7 +22,7 @@ import {
   getSeriesDetailsById,
 } from "../helpers/voucherHelper.js";
 import settlementModel from "../models/settlementModel.js";
-import { updateOutstandingBalance } from "../helpers/purchaseHelper.js";
+// import {  } from "../helpers/purchaseHelper.js";
 import { createAdvancePaymentsFromAppliedPayments } from "../helpers/receiptHelper.js";
 
 // @desc create credit note
@@ -103,7 +104,8 @@ export const createCreditNote = async (req, res) => {
       selectedDate,
       voucherType,
       "Cr",
-      "CreditNote"
+      "CreditNote",
+      true /// negative value for tally (purchase is credit entry)
     );
 
     await session.commitTransaction();
@@ -171,13 +173,19 @@ export const cancelCreditNote = async (req, res) => {
         Primary_user_id: existingCreditNote.Primary_user_id,
       }).session(session);
       if (outstandingRecord) {
-        await createAdvancePaymentsFromAppliedPayments(
-          outstandingRecord.appliedPayments,
-          existingCreditNote.cmp_id,
-          existingCreditNote,
-          existingCreditNote.party,
-          session
-        );
+        const outstandingResult = await updateOutstandingBalance({
+          existingVoucher: existingCreditNote,
+          valueToUpdateInOutstanding: 0,
+          orgId: existingCreditNote.cmp_id,
+          voucherNumber: existingCreditNote?.creditNoteNumber,
+          party: existingCreditNote?.party,
+          session,
+          createdBy: req.owner,
+          transactionType: "creditNote",
+          secondaryMobile: null,
+          selectedDate: existingCreditNote?.date,
+          classification: "Cr",
+        });
         outstandingRecord.isCancelled = true;
         await outstandingRecord.save({ session });
       }
