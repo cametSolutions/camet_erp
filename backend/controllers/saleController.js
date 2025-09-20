@@ -366,8 +366,6 @@ export const editSale = async (req, res) => {
  */
 
 export const cancelSale = async (req, res) => {
-
-  
   const saleId = req.params.id; // ID of the sale to cancel
   const vanSaleQuery = req.query.vanSale;
 
@@ -403,13 +401,21 @@ export const cancelSale = async (req, res) => {
       Primary_user_id: sale.Primary_user_id,
     }).session(session);
     if (outstandingRecord) {
-      await  createAdvanceReceiptsFromAppliedReceipts(
-        outstandingRecord.appliedReceipts,
-        sale.cmp_id,
-        sale,
-        sale.party,
-        session
-      );
+      //// update pending amount and
+      const outstandingResult = await updateOutstandingBalance({
+        existingVoucher: sale,
+        valueToUpdateInOutstanding:0,
+        orgId: sale.cmp_id,
+        voucherNumber: sale?.salesNumber,
+        party: sale?.party,
+        session,
+        createdBy: req.owner,
+        transactionType: "sale",
+        secondaryMobile: null,
+        selectedDate: sale?.date,
+        classification: "Dr",
+      });
+
       outstandingRecord.isCancelled = true;
       await outstandingRecord.save({ session });
     }
@@ -466,7 +472,7 @@ export const getSalesDetails = async (req, res) => {
       .findById(saleId)
       .populate({
         path: "party._id",
-        select: "partyName", // get only the name or other fields as needed
+        select: "partyName state", // get only the name or other fields as needed
       })
       .populate({
         path: "items.GodownList.warrantyCard",
@@ -504,6 +510,7 @@ export const getSalesDetails = async (req, res) => {
       // Update the party name with the latest value
       saleDetails.partyAccount = saleDetails.party._id.partyName;
       saleDetails.party.partyName = saleDetails.party._id.partyName;
+      saleDetails.party.state = saleDetails.party._id.state;
 
       // Restore ID to original format
       const partyId = saleDetails.party._id._id;

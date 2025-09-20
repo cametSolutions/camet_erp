@@ -48,7 +48,7 @@ import {  addSecondaryConfigurations, addSecUsers, allocateCompany, allocateSubD
 import { getSummary } from "../controllers/summaryController.js"
 import { getSummaryReport } from "../controllers/summaryController.js";
 import { fetchOutstandingDetails, fetchOutstandingTotal, getOutstandingSummary } from '../controllers/outStandingController.js';
-import { addProduct, deleteProduct, productDetails, editProduct, getProducts, addProductSubDetails, getProductSubDetails, deleteProductSubDetails, editProductSubDetails} from '../controllers/productController.js';
+import { addProduct, deleteProduct, productDetails, editProduct, getProducts, addProductSubDetails, getProductSubDetails, deleteProductSubDetails, editProductSubDetails, getAllProductsForExcel} from '../controllers/productController.js';
 import { getstockDetails } from '../controllers/stockController.js';
 import { addOrganizations, editOrg, getOrganizations } from '../controllers/organizationController.js';
 import { addParty, addSubGroup, deleteParty, deleteSubGroup, editParty, editSubGroup, getSinglePartyDetails, getSubGroup, PartyList } from '../controllers/partyController.js';
@@ -84,6 +84,7 @@ router.get('/fetchBanks/:cmp_id', authSecondary, secondaryIsBlocked, companyAuth
 router.get('/PartyList/:cmp_id', authSecondary, secondaryIsBlocked, companyAuthentication, PartyList)
 router.post('/addParty', authSecondary, secondaryIsBlocked, addParty)
 router.get('/getProducts/:cmp_id', authSecondary, secondaryIsBlocked, companyAuthentication, getProducts)
+router.get('/getAllProductsForExcel/:cmp_id', authSecondary, secondaryIsBlocked, companyAuthentication, getAllProductsForExcel)
 router.get('/stockregisterSummary/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,getstockDetails)
 router.post('/createSaleOrder', authSecondary, secondaryIsBlocked, createInvoice)
 router.get('/invoiceList/:cmp_id', authSecondary, secondaryIsBlocked, companyAuthentication, invoiceList)

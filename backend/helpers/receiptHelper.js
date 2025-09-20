@@ -1,18 +1,12 @@
 import mongoose from "mongoose";
-import receipt from "../../frontend/slices/receipt.js";
 import OragnizationModel from "../models/OragnizationModel.js";
 import TallyData from "../models/TallyData.js";
 import cashModel from "../models/cashModel.js";
 import bankModel from "../models/bankModel.js";
 import settlementModel from "../models/settlementModel.js";
+import { calculateBillPending, getReceiptPaymentMultiplier } from "./helper.js";
 
-/**
- * Updates the receiptNumber for a given secondary user
- * @param {String} secondaryUserId - id of the secondary user
- * @param {String} orgId - id of the organization
- * @param {Object} session - mongoose session
- */
-
+//Updates the receiptNumber for a given secondary user
 export const updateReceiptNumber = async (orgId, secondaryUser, session) => {
   try {
     let receiptConfig = false;
@@ -52,13 +46,7 @@ export const updateReceiptNumber = async (orgId, secondaryUser, session) => {
   }
 };
 
-/**
- * Updates the TallyData for a given set of bills
- * @param {Array} billData - array of bill objects with billNo and remainingAmount
- * @param {String} cmp_id - id of the organization
- * @param {Object} session - mongoose session
- */
-
+//Updates the TallyData for a given set of bills
 export const updateTallyData = async (
   billData,
   cmp_id,
@@ -87,35 +75,41 @@ export const updateTallyData = async (
     return;
   }
 
-  const TotalAppliedReceipts = outstandingData?.appliedReceipts?.reduce(
-    (sum, receipt) => sum + receipt?.settledAmount,
-    0
-  );
-
   // Prepare bulk update operations for TallyData
   const bulkUpdateOperations = outstandingData.map((doc) => {
-    const { remainingAmount, settledAmount } = billAmountMap.get(doc.billId); // Get the remaining and settled amount
-    const bill_pending_amt = doc?.bill_pending_amt || 0;
+    const { settledAmount } = billAmountMap.get(doc.billId); // Get the remaining and settled amount
+
+
 
     //Calculate total applied receipts from existing + this one
     const existingAppliedReceiptsTotal = (doc?.appliedReceipts || []).reduce(
-      (sum, r) => sum + (r?.settledAmount || 0),
+      (sum, r) => {
+        return sum + (r?.settledAmount || 0);
+      },
       0
     );
+
+    // console.log("Calculating total applied payments for billId:", doc.billId);
+    //// calculate applied payments total
+    const existingAppliedPaymentsTotal = (doc?.appliedPayments || []).reduce(
+      (sum, p) => {
+        return sum + (p?.settledAmount || 0);
+      },
+      0
+    );
+
     const totalAppliedReceipts = existingAppliedReceiptsTotal + settledAmount;
-    const balance = (doc?.bill_amount || 0) - totalAppliedReceipts;
 
-    // console.log("doc", doc);
-    // console.log("bill_pending_amt", bill_pending_amt);
-    // console.log("totalAppliedReceipts", totalAppliedReceipts);
-    // console.log("existingAppliedReceiptsTotal", existingAppliedReceiptsTotal);
-    // console.log("balance", balance);
+    const balance = calculateBillPending(
+      doc?.source,
+      doc?.bill_amount || 0,
+      totalAppliedReceipts,
+      existingAppliedPaymentsTotal
+    );
 
-    //  Classification rule
-    let classification = "Dr";
-    if (balance < 0) {
-      classification = "Cr";
-    }
+    // const balance = (receiptPaymentMultiplier * doc?.bill_amount || 0) - (Number(totalAppliedReceipts)+Number(existingAppliedPaymentsTotal));
+
+
 
     return {
       updateOne: {
@@ -123,7 +117,7 @@ export const updateTallyData = async (
         update: {
           $set: {
             bill_pending_amt: balance, // Update remaining amount (pending amount)
-            classification: classification, // ✅ set classification dynamically
+            classification: balance < 0 ? "Cr" : "Dr", // ✅ set classification dynamically
           },
           $push: {
             appliedReceipts: {
@@ -141,16 +135,6 @@ export const updateTallyData = async (
   // Execute the bulk update in TallyData
   await TallyData.bulkWrite(bulkUpdateOperations, { session });
 };
-
-/**
- * Creates a new outstanding record for a given party with the advance amount.
- * @param {String} cmp_id - id of the organization
- * @param {String} receiptNumber - receipt number for this outstanding record
- * @param {String} Primary_user_id - id of the primary user
- * @param {Object} party - party object with partyName, mobileNumber and emailID
- * @param {String} secondaryMobile - secondary user mobile number
- * @param {Number} advanceAmount - advance amount for this outstanding record
- */
 
 // Helper function to create or update advance amounts
 export const createOutstandingWithAdvanceAmount = async (
@@ -197,8 +181,24 @@ export const createOutstandingWithAdvanceAmount = async (
       // Merge by adding amounts
       const updatedBillAmount =
         Number(existingAdvance.bill_amount || 0) + Number(advanceAmount);
-      const updatedPendingAmount =
-        Number(existingAdvance.bill_pending_amt || 0) + Number(advanceAmount);
+
+      const totalAppliedPayments = (
+        existingAdvance?.appliedPayments || []
+      ).reduce((sum, payment) => sum + (payment.settledAmount || 0), 0);
+
+      const totalAppliedReceipts = (
+        existingAdvance?.appliedReceipts || []
+      ).reduce((sum, r) => sum + (r?.settledAmount || 0), 0);
+
+
+      const updatedPendingAmount = calculateBillPending(
+        existingAdvance?.source,
+        updatedBillAmount || 0,
+        totalAppliedReceipts,
+        totalAppliedPayments
+      );
+
+
 
       const tallyUpdate = await TallyData.findByIdAndUpdate(
         existingAdvance._id,
@@ -206,6 +206,7 @@ export const createOutstandingWithAdvanceAmount = async (
           ...billData,
           bill_amount: updatedBillAmount,
           bill_pending_amt: updatedPendingAmount,
+          classification: updatedPendingAmount < 0 ? "Cr" : "Dr",
           updatedAt: new Date(),
         },
         { new: true, session }
@@ -227,7 +228,7 @@ export const createOutstandingWithAdvanceAmount = async (
         {
           ...billData,
           bill_amount: advanceAmount,
-          bill_pending_amt: advanceAmount,
+          bill_pending_amt: sourceName === "advanceReceipt" ? -advanceAmount : advanceAmount,
         },
         { upsert: true, new: true, session }
       );
@@ -240,73 +241,7 @@ export const createOutstandingWithAdvanceAmount = async (
   }
 };
 
-/**
- * Reverts the TallyData updates made by addOutstanding and addSettlementData functions.
- * @param {Array} billData - array of bill objects with billNo and settledAmount
- * @param {String} cmp_id - id of the organization
- * @param {Object} session - mongoose session
- */
-
-// export const revertTallyUpdates = async (billData, cmp_id, session, receiptId) => {
-//   try {
-//     if (!billData?.length) {
-//       console.log("No bill data to revert");
-//       return;
-//     }
-
-//     const billIds = billData.map(bill => bill.billId.toString());
-
-//     // Fetch documents and perform bulk operations
-//     const docs = await TallyData.find({
-//       billId: { $in: billIds }
-//     }).session(session);
-
-//     if (!docs.length) {
-//       console.log("No matching tally data found to revert");
-//       return;
-//     }
-
-//     // Prepare bulk operations
-//     const bulkOps = docs.map(doc => {
-//       // Filter out the receipt being reverted
-//       const remainingReceipts = doc.appliedReceipts?.filter(
-//         receipt => receipt._id.toString() !== receiptId.toString()
-//       ) || [];
-
-//       // Calculate total of remaining applied receipts
-//       const totalAppliedReceipts = remainingReceipts.reduce(
-//         (sum, receipt) => sum + (receipt.settledAmount || 0),
-//         0
-//       );
-
-//       // Calculate new pending amount and classification
-//       const newPendingAmount = doc.bill_amount - totalAppliedReceipts;
-//       const newClassification = newPendingAmount < 0 ? "Cr" : "Dr";
-
-//       return {
-//         updateOne: {
-//           filter: { _id: doc._id },
-//           update: {
-//             $set: {
-//               appliedReceipts: remainingReceipts,
-//               bill_pending_amt: newPendingAmount,
-//               classification: newClassification
-//             }
-//           }
-//         }
-//       };
-//     });
-
-//     // Execute bulk operation
-//     await TallyData.bulkWrite(bulkOps, { session });
-
-//     console.log(`Successfully reverted ${docs.length} tally updates`);
-//   } catch (error) {
-//     console.error("Error in revertTallyUpdates:", error);
-//     throw error;
-//   }
-// };
-
+// Reverts the TallyData updates made by addOutstanding and addSettlementData functions.
 export const revertTallyUpdates = async (
   billData,
   cmp_id,
@@ -339,12 +274,15 @@ export const revertTallyUpdates = async (
 
     // Prepare bulk operations
     const bulkOps = docs.map((doc, index) => {
-      // console.log(`\n📄 Processing document ${index + 1}/${docs.length}:`);
-      // console.log("   - BillId:", doc.billId);
-      // console.log("   - Current bill_amount:", doc.bill_amount);
-      // console.log("   - Current bill_pending_amt:", doc.bill_pending_amt);
-      // console.log("   - Current classification:", doc.classification);
-      // console.log("   - Applied receipts before filter:", doc.appliedReceipts?.length || 0);
+      console.log(`\n📄 Processing document ${index + 1}/${docs.length}:`);
+      console.log("   - BillId:", doc.billId);
+      console.log("   - Current bill_amount:", doc.bill_amount);
+      console.log("   - Current bill_pending_amt:", doc.bill_pending_amt);
+      console.log("   - Current classification:", doc.classification);
+      console.log(
+        "   - Applied receipts before filter:",
+        doc.appliedReceipts?.length || 0
+      );
 
       // Filter out the receipt being reverted
       const remainingReceipts =
@@ -352,11 +290,17 @@ export const revertTallyUpdates = async (
           (receipt) => receipt._id.toString() !== receiptId.toString()
         ) || [];
 
-      // console.log("   - Applied receipts after filter:", remainingReceipts.length);
-      // console.log("   - Remaining receipts:", remainingReceipts.map(r => ({
-      //   id: r._id,
-      //   settled: r.settledAmount
-      // })));
+      console.log(
+        "   - Applied receipts after filter:",
+        remainingReceipts.length
+      );
+      console.log(
+        "   - Remaining receipts:",
+        remainingReceipts.map((r) => ({
+          id: r._id,
+          settled: r.settledAmount,
+        }))
+      );
 
       // Calculate total of remaining applied receipts
       const totalAppliedReceipts = remainingReceipts.reduce(
@@ -364,14 +308,30 @@ export const revertTallyUpdates = async (
         0
       );
 
-      // console.log("   - Total remaining applied receipts:", totalAppliedReceipts);
+      const totalAppliedPayments =
+        doc.appliedPayments?.reduce(
+          (sum, payment) => sum + (payment.settledAmount || 0),
+          0
+        ) || 0;
+
+      const newPendingAmount = calculateBillPending(
+        doc?.source,
+        doc?.bill_amount || 0,
+        totalAppliedReceipts,
+        totalAppliedPayments
+      );
+
+      console.log(
+        "   - Total remaining applied receipts:",
+        totalAppliedReceipts
+      );
 
       // Calculate new pending amount and classification
-      const newPendingAmount = doc.bill_amount - totalAppliedReceipts;
+      // const newPendingAmount = doc.bill_amount - totalAppliedReceipts;
       const newClassification = newPendingAmount < 0 ? "Cr" : "Dr";
 
-      // console.log("   - New pending amount:", newPendingAmount);
-      // console.log("   - New classification:", newClassification);
+      console.log("   - New pending amount:", newPendingAmount);
+      console.log("   - New classification:", newClassification);
 
       return {
         updateOne: {
@@ -379,7 +339,7 @@ export const revertTallyUpdates = async (
           update: {
             $set: {
               appliedReceipts: remainingReceipts,
-              bill_pending_amt: Math.abs(newPendingAmount), // Ensure non-negative pending amount
+              bill_pending_amt: newPendingAmount, // Ensure non-negative pending amount
               classification: newClassification,
             },
           },
@@ -387,8 +347,8 @@ export const revertTallyUpdates = async (
       };
     });
 
-    // console.log("\n🔧 Executing bulk operations...");
-    // console.log("📊 Bulk operations count:", bulkOps.length);
+    console.log("\n🔧 Executing bulk operations...");
+    console.log("📊 Bulk operations count:", bulkOps.length);
 
     // Execute bulk operation
     const result = await TallyData.bulkWrite(bulkOps, { session });
@@ -411,14 +371,8 @@ export const revertTallyUpdates = async (
     throw error;
   }
 };
-/**
- * Deletes the advance receipt entry from TallyData if it exists
- * @param {String} receiptNumber - receipt number for the advance receipt
- * @param {String} cmp_id - id of the organization
- * @param {String} Primary_user_id - id of the primary user
- * @param {Object} session - mongoose session
- */
 
+//Deletes the advance receipt entry from TallyData if it exists
 export const deleteAdvanceReceipt = async (
   receiptNumber,
   billId,
@@ -462,7 +416,6 @@ export const deleteAdvanceReceipt = async (
 };
 
 ///// save payment details in payment collection
-
 export const saveSettlementData = async (
   voucherNumber,
   voucherId,
@@ -504,7 +457,6 @@ export const saveSettlementData = async (
 };
 
 //// revert save settlement data
-
 export const revertSettlementData = async (
   paymentMethod,
   paymentDetails,
@@ -563,133 +515,6 @@ export const revertSettlementData = async (
   }
 };
 
-/// process advance receipts
-export const processAdvanceReceipts = async (
-  appliedReceipts,
-  remainingAdvanceAmount,
-  orgId,
-  existingVoucher,
-  party,
-  secondaryMobile,
-  session
-) => {
-  let currentRemainingAmount = remainingAdvanceAmount;
-  const updatedAppliedReceipts = [...appliedReceipts];
-
-  // LIFO: loop through in reverse
-  for (
-    let i = appliedReceipts.length - 1;
-    i >= 0 && currentRemainingAmount > 0;
-    i--
-  ) {
-    const receipt = appliedReceipts[i];
-
-    console.log("receipt", receipt);
-
-    const { receiptNumber, settledAmount, date, _id } = receipt;
-
-    const advanceAmount = Math.min(settledAmount, currentRemainingAmount);
-
-    // Call the function to create or update advance
-    await createOutstandingWithAdvanceAmount(
-      date,
-      orgId, // cmp_id
-      receiptNumber,
-      _id.toString(),
-      existingVoucher?.Primary_user_id,
-      party,
-      secondaryMobile,
-      advanceAmount,
-      session,
-      "advanceReceipt",
-      "Cr"
-    );
-
-    currentRemainingAmount -= advanceAmount;
-
-    // Update the applied receipt array
-    if (advanceAmount >= settledAmount) {
-      // Complete amount used, remove the receipt
-      updatedAppliedReceipts.splice(i, 1);
-    } else {
-      // console.log("partial amount used");
-      // console.log("settledAmount - advanceAmount", settledAmount - advanceAmount);
-
-      // Partial amount used, update the settled amount
-      updatedAppliedReceipts[i] = {
-        ...(receipt.toObject?.() || receipt), //// Convert to plain object
-        settledAmount: settledAmount - advanceAmount,
-      };
-    }
-  }
-
-  console.log("updatedAppliedReceipts from helper", updatedAppliedReceipts);
-
-  return {
-    remainingAmount: currentRemainingAmount,
-    updatedAppliedReceipts: updatedAppliedReceipts,
-  };
-};
-
-// Helper function to process advance payments
-export const processAdvancePayments = async (
-  appliedPayments,
-  remainingAdvanceAmount,
-  orgId,
-  existingVoucher,
-  party,
-  secondaryMobile,
-  session
-) => {
-  let currentRemainingAmount = remainingAdvanceAmount;
-  const updatedAppliedPayments = [...appliedPayments];
-
-  // LIFO: loop through in reverse
-  for (
-    let i = appliedPayments.length - 1;
-    i >= 0 && currentRemainingAmount > 0;
-    i--
-  ) {
-    const payment = appliedPayments[i];
-    const { paymentNumber, settledAmount, date, _id } = payment;
-
-    const advanceAmount = Math.min(settledAmount, currentRemainingAmount);
-
-    await createOutstandingWithAdvanceAmount(
-      date,
-      orgId, // cmp_id
-      paymentNumber,
-      _id.toString(),
-      existingVoucher?.Primary_user_id,
-      party,
-      secondaryMobile,
-      advanceAmount,
-      session,
-      "advancePayment",
-      "Dr" // Debit since it's a payment
-    );
-
-    currentRemainingAmount -= advanceAmount;
-
-    // Update the applied payment array
-    if (advanceAmount >= settledAmount) {
-      // Complete amount used, remove the payment
-      updatedAppliedPayments.splice(i, 1);
-    } else {
-      // Partial amount used, update the settled amount
-      updatedAppliedPayments[i] = {
-        ...payment.toObject(),
-        settledAmount: settledAmount - advanceAmount,
-      };
-    }
-  }
-
-  return {
-    remainingAmount: currentRemainingAmount,
-    updatedAppliedPayments: updatedAppliedPayments,
-  };
-};
-
 //// create advance receipt if a voucherIsCancelled
 export const createAdvanceReceiptsFromAppliedReceipts = async (
   appliedReceipts,
@@ -704,7 +529,6 @@ export const createAdvanceReceiptsFromAppliedReceipts = async (
   // Process all receipts as advance receipts within the existing transaction
   for (let i = 0; i < appliedReceipts.length; i++) {
     const receipt = appliedReceipts[i];
-
 
     const { receiptNumber, settledAmount, date, _id } = receipt;
 
@@ -744,7 +568,6 @@ export const createAdvanceReceiptsFromAppliedReceipts = async (
     updatedAppliedReceipts: updatedAppliedReceipts, // Empty array since all are processed
   };
 };
-
 
 //// create advance payments if a voucherIsCancelled
 export const createAdvancePaymentsFromAppliedPayments = async (
@@ -798,4 +621,108 @@ export const createAdvancePaymentsFromAppliedPayments = async (
     remainingAmount: 0, // All payments processed, no remaining amount
     updatedAppliedPayments: updatedAppliedPayments, // Empty array since all are processed
   };
+};
+
+/// helper function to update the advance receipt / advance payment on receipt or payment edit or cancel
+export const updateAdvanceOnEdit = async (
+  voucherType,
+  newAmount,
+  party,
+  cmp_id,
+  billId,
+  Primary_user_id,
+  voucherNumber,
+  voucherId,
+  date,
+  session
+) => {
+
+
+  // Find existing outstanding record
+  const matchedOutStanding = await TallyData.findOne({
+    party_id: party?._id,
+    cmp_id: cmp_id,
+    billId: billId.toString(),
+    source: voucherType === "receipt" ? "advanceReceipt" : "advancePayment",
+  }).session(session);
+
+
+  if (matchedOutStanding) {
+    const sumOfAppliedReceipts = matchedOutStanding.appliedReceipts.reduce(
+      (sum, receipt) => {
+        return sum + (receipt.settledAmount || 0);
+      },
+      0
+    );
+    const sumOfAppliedPayments = matchedOutStanding.appliedPayments.reduce(
+      (sum, payment) => {
+        return sum + (payment.settledAmount || 0);
+      },
+      0
+    );
+    if (
+      sumOfAppliedPayments === 0 &&
+      sumOfAppliedReceipts === 0 &&
+      newAmount === 0
+    ) {
+      // If no applied receipts or payments, we can directly delete the record if newAmount is 0
+      await TallyData.deleteOne({ _id: matchedOutStanding._id }).session(
+        session
+      );
+      return null;
+    } else {
+      const billPendingAmount = calculateBillPending(
+        matchedOutStanding?.source,
+        newAmount || 0,
+        sumOfAppliedReceipts,
+        sumOfAppliedPayments
+      );
+
+
+      // Use session in the update operation and fix the return value check
+      const foundOutstanding = await TallyData.findOneAndUpdate(
+        { _id: matchedOutStanding._id },
+        {
+          $set: {
+            bill_amount: newAmount,
+            bill_pending_amt: billPendingAmount,
+            classification: billPendingAmount < 0 ? "Cr" : "Dr",
+          },
+        },
+        {
+          upsert: true,
+          returnOriginal: false,
+          session: session, // Add session to the update operation
+        }
+      );
+
+
+      // Fix the error checking - findOneAndUpdate returns the document directly, not an {ok, value} object
+      if (!foundOutstanding) {
+        throw new Error(
+          `Unable to update outstanding record with ID: ${matchedOutStanding._id}`
+        );
+      }
+      return foundOutstanding;
+    }
+  } else {
+
+    if (newAmount === 0) {
+      return null; // No need to create a record if the new amount is 0
+    }
+
+    await createOutstandingWithAdvanceAmount(
+      date,
+      cmp_id,
+      voucherNumber,
+      voucherId,
+      Primary_user_id,
+      party,
+      null,
+      newAmount,
+      session,
+      voucherType === "receipt" ? "advanceReceipt" : "advancePayment",
+      voucherType === "receipt" ? "Cr" : "Dr"
+    );
+  }
 };
