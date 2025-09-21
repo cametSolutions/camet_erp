@@ -104,8 +104,20 @@ function Outstanding() {
         totalOutstandingDrCr,
       } = outstandingData;
       dispatch(addLedgerData(ledgerOutstandingData));
-      const notation =
-        totalOutstandingReceivable > totalOutstandingPayable ? "Dr" : "Cr";
+
+      // console.log("totalOutstandingReceivable", totalOutstandingReceivable);
+      // console.log("totalOutstandingPayable", totalOutstandingPayable);
+
+      let notation;
+      if (totalOutstandingReceivable === 0 && totalOutstandingPayable === 0) {
+        notation = "";
+      } else if (totalOutstandingReceivable > totalOutstandingPayable) {
+        notation = "Dr";
+      } else if (totalOutstandingReceivable < totalOutstandingPayable) {
+        notation = "Cr";
+      } else {
+        notation = "";
+      }
 
       dispatch(addLedgerTotal(`${totalOutstandingDrCr} ${notation}`));
       setTotal(`${totalOutstandingDrCr} ${notation}`);
@@ -168,7 +180,7 @@ function Outstanding() {
   /// -------------for handling scroll -----------------------
 
   //  scroll position restoration
-  useEffect(() => { 
+  useEffect(() => {
     const restoreScrollPosition = () => {
       if (
         containerRef.current &&
@@ -344,7 +356,7 @@ function Outstanding() {
                     <div className="flex-col justify-center">
                       <div className="flex justify-end">
                         <p className="text-sm font-bold text-gray-500">
-                          ₹{formatAmount(el.totalBillAmount)}{" "}
+                          ₹{formatAmount(Math.abs(el.totalBillAmount))}{" "}
                           {el?.classification}
                         </p>
                       </div>

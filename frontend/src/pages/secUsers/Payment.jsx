@@ -141,6 +141,7 @@ function Payment() {
       Swal.fire({
         title: "Success",
         text: res.data.message,
+        
         icon: "success",
         confirmButtonText: "OK",
       }).then((result) => {

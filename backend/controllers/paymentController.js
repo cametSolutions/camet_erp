@@ -9,6 +9,7 @@ import {
   createOutstandingWithAdvanceAmount,
   saveSettlementData,
   revertSettlementData,
+  updateAdvanceOnEdit,
 } from "../helpers/receiptHelper.js";
 
 import {
@@ -214,20 +215,31 @@ export const cancelPayment = async (req, res) => {
       paymentId.toString()
     );
 
-
     /// delete  all the settlements
     await settlementModel.deleteMany({ voucherId: paymentId }, { session });
 
+    await updateAdvanceOnEdit(
+      "payment",
+      0,
+      payment.party,
+      payment.cmp_id,
+      paymentId.toString(),
+      Primary_user_id,
+      payment.receiptNumber,
+      payment?._id?.toString(),
+      payment.date,
+      session
+    );
 
-    // Delete advance payment, if any
-    if (payment.advanceAmount > 0) {
-      await deleteAdvancePayment(
-        payment.paymentNumber,
-        payment._id.toString(),
-        Primary_user_id,
-        session
-      );
-    }
+    // // Delete advance payment, if any
+    // if (payment.advanceAmount > 0) {
+    //   await deleteAdvancePayment(
+    //     payment.paymentNumber,
+    //     payment._id.toString(),
+    //     Primary_user_id,
+    //     session
+    //   );
+    // }
 
     // Mark the payment as cancelled
     payment.isCancelled = true;
@@ -305,20 +317,29 @@ export const editPayment = async (req, res) => {
     }
 
     // Revert tally updates
-    await revertTallyUpdates(payment.billData, cmp_id,session, paymentId.toString());
+    await revertTallyUpdates(
+      payment.billData,
+      cmp_id,
+      session,
+      paymentId.toString()
+    );
 
     /// delete  all the settlements
     await settlementModel.deleteMany({ voucherId: paymentId }, { session });
 
-    // Delete advance payment, if any
-    if (payment.advanceAmount > 0) {
-      await deleteAdvancePayment(
-        payment.paymentNumber,
-        payment._id.toString(),
-        Primary_user_id,
-        session
-      );
-    }
+    // update advance payment / advance payment on edit of receipt or payment
+    await updateAdvanceOnEdit(
+      "payment",
+      advanceAmount,
+      payment.party,
+      cmp_id,
+      paymentId.toString(),
+      Primary_user_id,
+      payment?.paymentNumber,
+      payment?.id?.toString(),
+      date,
+      session
+    );
 
     // Use the helper function to update TallyData
     await updateTallyData(
@@ -360,23 +381,6 @@ export const editPayment = async (req, res) => {
       date,
       session
     );
-
-    if (advanceAmount > 0) {
-      const outstandingWithAdvanceAmount =
-        await createOutstandingWithAdvanceAmount(
-          date,
-          cmp_id,
-          savedPayment.paymentNumber,
-          savedPayment._id.toString(),
-          Primary_user_id,
-          party,
-          secondaryUser.mobileNumber,
-          advanceAmount,
-          session,
-          "advancePayment",
-          "Dr"
-        );
-    }
 
     await session.commitTransaction();
     session.endSession();

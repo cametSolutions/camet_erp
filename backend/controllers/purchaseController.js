@@ -6,12 +6,12 @@ import {
   updatePurchaseNumber,
   revertPurchaseStockUpdates,
   removeNewBatchCreatedByThisPurchase,
-  updateOutstandingBalance,
 } from "../helpers/purchaseHelper.js";
 import {
   processSaleItems as processPurchaseItems,
   revertSettlementData,
   saveSettlementData,
+  updateOutstandingBalance,
   updateTallyData,
 } from "../helpers/salesHelper.js";
 import { checkForNumberExistence } from "../helpers/secondaryHelper.js";
@@ -112,7 +112,8 @@ export const createPurchase = async (req, res) => {
       selectedDate,
       "purchase",
       "Cr",
-      "Purchase"
+      "Purchase",
+      true /// negative value for tally (purchase is credit entry)
     );
 
     await session.commitTransaction();
@@ -326,13 +327,19 @@ export const cancelPurchase = async (req, res) => {
         Primary_user_id: existingPurchase?.Primary_user_id,
       }).session(session);
       if (outstandingRecord) {
-        await createAdvancePaymentsFromAppliedPayments(
-          outstandingRecord.appliedPayments,
-          existingPurchase.cmp_id,
-          existingPurchase,
-          existingPurchase.party,
-          session
-        );
+        const outstandingResult = await updateOutstandingBalance({
+          existingVoucher: existingPurchase,
+          valueToUpdateInOutstanding: 0,
+          orgId: existingPurchase.cmp_id,
+          voucherNumber: existingPurchase?.purchaseNumber,
+          party: existingPurchase?.party,
+          session,
+          createdBy: req.owner,
+          transactionType: "purchase",
+          secondaryMobile: null,
+          selectedDate: existingPurchase?.date,
+          classification: "Cr",
+        });
         outstandingRecord.isCancelled = true;
         await outstandingRecord.save({ session });
       }
