@@ -39,7 +39,7 @@ const organizationSchema = new mongoose.Schema(
     gdnEnabled: { type: Boolean, default: false, required: true },
     configurations: [
       {
-        bank: { type: mongoose.Schema.Types.ObjectId, ref: "BankDetails" },
+        bank: { type: mongoose.Schema.Types.ObjectId, ref: "Party" },
         terms: { type: Array },
         enableBillToShipTo: { type: Boolean, default: true },
         batchEnabled: { type: Boolean, default: false, required: true },

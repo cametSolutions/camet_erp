@@ -429,7 +429,7 @@ export const createReceiptForSales = async (
   saleData,
   createdTallyData,
   req,
-  restaurantBaseSaleData,
+  restaurantBaseSaleData = [],
   session
 ) => {
   const receipts = [];

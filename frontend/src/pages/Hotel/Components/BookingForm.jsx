@@ -39,6 +39,7 @@ function BookingForm({
   const [modalOpen, setModalOpen] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const navigate = useNavigate();
+
   const [saveLoader, setSaveLoader] = useState(false);
   // used to get organization id from redux
   const cmp_id = useSelector(

@@ -174,7 +174,7 @@ function VoucherThreeInchPdf({
     handlePrintData();
   };
 
-  console.log(org?.industry);
+  console.log(data?.items);
 
   return (
     <div className="grid">

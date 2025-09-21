@@ -11,7 +11,6 @@ import { Booking, CheckIn, CheckOut } from "../models/bookingModal.js";
 import ReceiptModel from "../models/receiptModel.js";
 import { formatToLocalDate } from "../helpers/helper.js";
 
-
 import {
   buildDatabaseFilterForRoom,
   sendRoomResponse,
@@ -21,7 +20,7 @@ import {
   sendBookingsResponse,
   extractRequestParamsForBookings,
   updateStatus,
-  saveSettlementDataHotel
+  saveSettlementDataHotel,
 } from "../helpers/hotelHelper.js";
 import { extractRequestParams } from "../helpers/productHelper.js";
 import { generateVoucherNumber } from "../helpers/voucherHelper.js";
@@ -1678,7 +1677,8 @@ export const checkoutWithArrayOfData = async (req, res) => {
 export const fetchOutStandingAndFoodData = async (req, res) => {
   try {
     const checkoutData = req.body?.data;
-
+    const isForPreview = req.body?.isForPreview;
+    console.log(isForPreview);
     if (!checkoutData || checkoutData.length === 0) {
       return res.status(400).json({
         success: false,
@@ -1689,15 +1689,24 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
     // Collect all advanceDetails across checkouts
     let allAdvanceDetails = [];
     let allKotData = [];
-
     for (const item of checkoutData) {
-      console.log("item", item.voucherNumber);
+      console.log(
+        "itemsd",
+        checkoutData[0]?.checkInId?.voucherNumber,
+        isForPreview
+      );
+
       const docs = await salesModel.find({
-        "convertedFrom.checkInNumber": item.voucherNumber,
+        "convertedFrom.checkInNumber": isForPreview
+          ? item.voucherNumber
+          : item?.checkInId?.voucherNumber,
       });
+      console.log("docs", docs);
       allKotData.push(...docs);
 
-      const checkInData = await CheckIn.findOne({ _id: item._id });
+      const checkInData = await CheckIn.findOne({
+        _id: isForPreview ? item._id : item?.checkInId?._id,
+      });
 
       if (!checkInData) continue;
 
@@ -1706,13 +1715,18 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
       });
 
       const checkInSideAdvanceDetails = await TallyData.find({
+        billId: isForPreview ? item._id : item.checkInId?._id,
+      });
+      const checkOutSideAdvanceDetails = await TallyData.find({
         billId: item._id,
       });
 
       allAdvanceDetails.push(
         ...bookingSideAdvanceDetails,
-        ...checkInSideAdvanceDetails
+        ...checkInSideAdvanceDetails,
+        ...checkOutSideAdvanceDetails
       );
+      
     }
 
     console.log("allAdvanceDetails", allKotData);
@@ -1823,6 +1837,7 @@ export const convertCheckOutToSale = async (req, res) => {
         (acc, item) => acc + (item.balanceToPay || 0),
         0
       );
+
       let createdTallyData = await createTallyEntry(
         cmp_id,
         req,
@@ -1863,7 +1878,7 @@ export const convertCheckOutToSale = async (req, res) => {
           cashAmt,
           "cash",
           req,
-          session,
+          session
         );
       }
       if (onlineAmt > 0) {
@@ -2021,7 +2036,12 @@ async function createSalesVoucher(
     (acc, item) => acc + Number(item.grandTotal),
     0
   );
-  let convertedFrom = selectedCheckOut.map((item) => item.voucherNumber);
+  let convertedFrom = selectedCheckOut.map((item) => {
+    return {
+      voucherNumber: item.voucherNumber,
+      checkInNumber: item.voucherNumber,
+    };
+  });
 
   console.log("paymentSplittingArray", selectedParty);
 
@@ -2123,6 +2143,7 @@ async function saveSettlement(
 }
 
 async function getSelectedParty(selected, cmp_id, session) {
+  console.log(selected, cmp_id);
   const selectedParty = await Party.findOne({ cmp_id, _id: selected })
     .populate("accountGroup")
     .session(session);

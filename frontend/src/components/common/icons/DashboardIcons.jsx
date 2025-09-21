@@ -202,4 +202,19 @@ export const icons = {
       </g>
     </svg>
   ),
+  summary: (
+  <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <style>{`.cls-1{fill:#d8e1ef;}.cls-2{fill:#0593ff;}`}</style>
+    </defs>
+    <title>Summary</title>
+    <g id="Summary_Icon" data-name="Summary Icon">
+      <rect className="cls-1" x="6" y="4" width="20" height="24" rx="2" ry="2" />
+      <line className="cls-2" x1="10" y1="10" x2="22" y2="10" stroke="#0593ff" strokeWidth="2" />
+      <line className="cls-2" x1="10" y1="16" x2="22" y2="16" stroke="#0593ff" strokeWidth="2" />
+      <line className="cls-2" x1="10" y1="22" x2="18" y2="22" stroke="#0593ff" strokeWidth="2" />
+    </g>
+  </svg>
+)
+
 };

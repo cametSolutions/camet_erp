@@ -7,6 +7,7 @@ import api from "@/api/api";
 import { useSelector } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
 import useFetch from "@/customHook/useFetch";
+import { useQueryClient } from "@tanstack/react-query";
 function CheckOut() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -14,15 +15,17 @@ function CheckOut() {
   const [outStanding, setOutStanding] = useState([]);
   const isSubmittingRef = useRef(false);
   const [loading, setLoading] = useState(false);
+  const queryClient = useQueryClient();
   const organization = useSelector(
     (state) => state?.secSelectedOrganization?.secSelectedOrg
   );
 
-  console.log(bookingData?.checkInId)
+  console.log(bookingData?.checkInId);
 
   const { data, loading: advanceLoading } = useFetch(
-`/api/sUsers/getBookingAdvanceData/${bookingData?._id}?type=${"EditChecking"}`
-
+    `/api/sUsers/getBookingAdvanceData/${
+      bookingData?._id
+    }?type=${"EditChecking"}`
   );
 
   useEffect(() => {
@@ -62,6 +65,9 @@ function CheckOut() {
       );
       if (response?.data?.success) {
         toast.success("Check Out Saved Successfully");
+        queryClient.invalidateQueries({
+          queryKey: ["todaysTransaction", organization._id, false],
+        });
         navigate("/sUsers/checkOutList");
       }
       isSubmittingRef.current = false;

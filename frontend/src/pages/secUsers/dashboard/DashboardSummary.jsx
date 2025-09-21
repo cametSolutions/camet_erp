@@ -112,9 +112,9 @@ const DashboardSummary = () => {
       industry == 6 || industry == 7
         ? [
             {
-              title: "Hotel Dash Board",
-              value: "Dash",
-              icon: icons.saleOrders,
+              title: "Dashboard Summary",
+              value: "Summary",
+              icon: icons.summary,
               to: "/sUsers/SummaryDashboard",
             },
           ]
