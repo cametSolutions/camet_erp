@@ -7,18 +7,20 @@ import api from "@/api/api";
 import { useSelector } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
 import useFetch from "@/customHook/useFetch";
+import { useQueryClient } from "@tanstack/react-query";
 function CheckInPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const bookingData = location?.state?.bookingData;
-  const roomId = location?.state?.roomId
+  const roomId = location?.state?.roomId;
   const isSubmittingRef = useRef(false);
   const [outStanding, setOutStanding] = useState([]);
   const [loading, setLoading] = useState(false);
+  const queryClient = useQueryClient();
   const organization = useSelector(
     (state) => state?.secSelectedOrganization?.secSelectedOrg
   );
- 
+
   const { data, loading: advanceLoading } = useFetch(
     `/api/sUsers/getBookingAdvanceData/${bookingData?._id}?type=${"checkIn"}`
   );
@@ -36,7 +38,7 @@ function CheckInPage() {
     }
   }, [bookingData]);
   console.log(bookingData);
-  const handleSubmit = async (data,paymentData) => {
+  const handleSubmit = async (data, paymentData) => {
     let updatedData;
     if (bookingData) {
       updatedData = { ...data, bookingId: bookingData._id };
@@ -49,11 +51,14 @@ function CheckInPage() {
     try {
       let response = await api.post(
         `/api/sUsers/saveData/${organization._id}`,
-        { data: updatedData, modal: "checkIn",  paymentData: paymentData  },
+        { data: updatedData, modal: "checkIn", paymentData: paymentData },
         { withCredentials: true }
       );
       if (response?.data?.success) {
         toast.success("Check In Successfully");
+        queryClient.invalidateQueries({
+          queryKey: ["todaysTransaction", organization._id, false],
+        });
         navigate("/sUsers/checkInList");
       }
       isSubmittingRef.current = false;

@@ -393,7 +393,7 @@ useEffect(() => {
   }
 }, [bookings.length]); // Triggers when rooms are added/removed from bookings
 
-  console.log(bookings);
+  console.log(bookings[0]);
   return (
     <>
       <div className={`relative w-full ${className}`} ref={dropdownRef}>
@@ -618,6 +618,7 @@ useEffect(() => {
                                 Number(booking.totalAmount || 0) /
                                 (1 + (booking.taxPercentage || 0) / 100)
                               ).toFixed(0)}
+                              
                             </span>
                           )}
                         </div>

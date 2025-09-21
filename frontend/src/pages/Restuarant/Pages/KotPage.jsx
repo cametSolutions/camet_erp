@@ -574,6 +574,8 @@ const OrdersDashboard = () => {
     content: () => contentToPrint.current,
   });
 
+  console.log(filteredOrders)
+
   return (
     <>
       {showVoucherPdf && (

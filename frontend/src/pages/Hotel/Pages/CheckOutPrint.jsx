@@ -17,11 +17,17 @@ export default function SattvaInvoice() {
   const organization = useSelector(
     (state) => state?.secSelectedOrganization?.secSelectedOrg
   );
+  const secondaryUser = JSON.parse(localStorage.getItem("sUserData"))
 
+  console.log(organization?.configurations[0]?.bank)
   // Props from location state
   const selectedCheckOut = location.state?.selectedCheckOut;
   const selectedCustomerId = location.state?.customerId;
   const isForPreview = location.state?.isForPreview;
+
+console.log(isForPreview)
+  // const isForPreview = location.state?.isForPreview;
+
 
   // Component state
   const [outStanding, setOutStanding] = useState([]);
@@ -94,12 +100,16 @@ export default function SattvaInvoice() {
 
   // API call to fetch debit data
   const fetchDebitData = async (data) => {
+    // let updatedData = data?.map((item) => ({ ...item, checkInId: item.checkInId._id,bookingId }));
+    // console.log(updatedData);
     try {
       const res = await api.post(
         `/api/sUsers/fetchOutStandingAndFoodData`,
-        { data: data },
+        { data: data ,
+           isForPreview: isForPreview },
         { withCredentials: true }
       );
+      console.log(res);
 
       if (res.data.success) {
         setOutStanding(res.data.data);
@@ -127,6 +137,14 @@ export default function SattvaInvoice() {
       0
     );
 
+    let taxData = dateWiseDisplayedData.reduce(
+      (total, order) =>
+        total +
+        (order.taxAmount +
+          (order?.foodPlanAmountWithTax - order?.foodPlanAmountWithOutTax)),
+      0
+    );
+
     const planAmount = dateWiseDisplayedData.reduce(
       (total, order) => total + order?.foodPlanAmountWithOutTax,
       0
@@ -137,25 +155,39 @@ export default function SattvaInvoice() {
       0
     );
 
+    const totalAmountIncludeAllTax =
+      taxData + planAmount + additionalPaxAmount + roomTariffTotal;
+
     const advanceTotal =
       outStanding?.reduce(
         (total, transaction) => total + transaction?.bill_amount,
         0
       ) || 0;
+    console.log(advanceTotal);
 
     const kotTotal =
       kotData?.reduce((total, kot) => total + kot?.finalAmount, 0) || 0;
+    const taxableAmount = roomTariffTotal + additionalPaxAmount;
+    // const taxRate = taxableAmount / tax
+    console.log(dateWiseDisplayedData);
+    const taxAmount = dateWiseDisplayedData.reduce(
+      (total, order) => total + order.taxAmount,
+      0
+    );
+    const taxRate = (taxAmount / taxableAmount) * 100;
+    const taxAmountFoodPlan = dateWiseDisplayedData.reduce(
+      (total, order) =>
+        total +
+        (order?.foodPlanAmountWithTax - order?.foodPlanAmountWithOutTax),
+      0
+    );
 
-    const balanceAmount =
-      roomTariffTotal + planAmount + additionalPaxAmount - advanceTotal;
+    const taxRateFoodPlan = (taxAmountFoodPlan / planAmount) * 100;
+
+    const sumOfRestaurantAndRoom = totalAmountIncludeAllTax + kotTotal;
+    const balanceAmount = totalAmountIncludeAllTax - advanceTotal;
     const totalTaxAmount = (taxAmountForFood + taxAmountForRoom) * 2; // CGST + SGST
-    const balanceAmountToPay =
-      totalTaxAmount +
-      roomTariffTotal +
-      planAmount +
-      additionalPaxAmount +
-      kotTotal -
-      advanceTotal;
+    const balanceAmountToPay = sumOfRestaurantAndRoom - advanceTotal;
 
     return {
       roomTariffTotal,
@@ -164,6 +196,15 @@ export default function SattvaInvoice() {
       balanceAmount,
       totalTaxAmount,
       balanceAmountToPay,
+      taxData,
+      totalAmountIncludeAllTax,
+      sumOfRestaurantAndRoom,
+      taxableAmount,
+      taxRate,
+      taxRateFoodPlan,
+      taxAmount,
+      taxAmountFoodPlan,
+      planAmount
     };
   };
 
@@ -714,7 +755,7 @@ export default function SattvaInvoice() {
           0
         );
         const paxAmount = selectedCheckOutData.reduce(
-          (acc, item) => acc + Number(item.additionalPaxDataWithTax),
+          (acc, item) => acc + Number(item.additionalPaxDataWithOutTax),
           0
         );
         setFoodPlanAmount(foodPlanAmountWithOutTax);
@@ -774,7 +815,7 @@ export default function SattvaInvoice() {
       setAdditionalPaxAmount(0);
     }
   };
-  console.log(kotData);
+  console.log(selectedCheckOutData);
 
   return (
     <>
@@ -881,14 +922,12 @@ export default function SattvaInvoice() {
                 {organization?.name}
               </div>
               <div className="mb-2 uppercase">
-                {[
-                  organization?.flat,
-                  organization?.road,
-                  organization?.landmark,
-                  organization?.mobile,
-                ]
+                {[organization?.flat, organization?.landmark]
                   .filter(Boolean)
                   .join(", ")}
+              </div>
+              <div className="text-xs mb-1">
+                {organization?.road && `${organization.road}`}
               </div>
               <div className="text-xs mb-1">
                 {organization?.gstNum && `GSTIN: ${organization.gstNum}`}
@@ -943,6 +982,23 @@ export default function SattvaInvoice() {
                   {selectedCheckOutData?.arrivalTime}
                 </span>
               </div>
+              {selectedCheckOutData?.selectedRooms &&
+                selectedCheckOutData?.selectedRooms?.length == 1 && (
+                  <div className="flex">
+                    <span className="w-20 font-bold">Room No:</span>
+                    <span>
+                      {selectedCheckOutData?.selectedRooms[0]?.roomName}
+                    </span>
+                  </div>
+                )}
+
+              {selectedCheckOutData?.foodPlan &&
+                selectedCheckOutData?.foodPlan?.length > 0 && (
+                  <div className="flex">
+                    <span className="w-20 font-bold">Plan:</span>
+                    <span>{selectedCheckOutData?.foodPlan[0]?.foodPlan}</span>
+                  </div>
+                )}
             </div>
 
             <div className="space-y-1">
@@ -956,6 +1012,25 @@ export default function SattvaInvoice() {
                   {formatDate(new Date())} / {new Date().toLocaleTimeString()}
                 </span>
               </div>
+              {selectedCheckOutData?.selectedRooms &&
+                selectedCheckOutData?.selectedRooms?.length > 0 && (
+                  <div className="flex">
+                    <span className="w-20 font-bold">Room Type:</span>
+                    <span>
+                      {selectedCheckOutData?.selectedRooms[0]?.roomType?.brand}
+                    </span>
+                  </div>
+                )}
+
+              {selectedCheckOutData?.selectedRooms &&
+                selectedCheckOutData?.selectedRooms?.length > 0 && (
+                  <div className="flex">
+                    <span className="w-20 font-bold">Thariff:</span>
+                    <span>
+                      {selectedCheckOutData?.selectedRooms[0]?.priceLevelRate}
+                    </span>
+                  </div>
+                )}
             </div>
           </div>
 
@@ -1033,78 +1108,101 @@ export default function SattvaInvoice() {
                     ))}
 
                     {/* Room Tariff Summary */}
-                    <tr className="bg-gray-100">
+                    <tr className="bg-gray-100 ">
                       <td
-                        colSpan="6"
+                        colSpan="3"
                         className="text-right p-2 border-r border-black"
                       >
                         Room Tariff Assessable Value
                       </td>
-                      <td className="p-2 text-right">
+
+                      <td className="p-2 border-l border-black text-right"></td>
+                      <td className="p-1 border-l border-black text-right">
                         {totals.roomTariffTotal.toFixed(2)}
                       </td>
+                      <td
+                        // colSpan="2"
+                        className="p-2 border-l border-black text-right"
+                      ></td>
+                      <td
+                        // colSpan="2"
+                        className="p-2 border-l border-black text-right"
+                      ></td>
                     </tr>
 
                     {/* Food Plan */}
                     {foodPlanAmount > 0 && (
                       <tr>
                         <td
-                          colSpan="6"
+                          colSpan="3"
                           className="text-right p-2 border-r border-black"
                         >
                           Food Plan Sales
                         </td>
-                        <td className="p-2 text-right">
+                        <td className="p-2 border-l border-black text-right"></td>
+                        <td className="p-2 text-right border-l border-black">
                           {foodPlanAmount.toFixed(2)}
                         </td>
+                        <td className="p-2 border-l border-black text-right"></td>
+                        <td className="p-2 border-l border-black text-right"></td>
                       </tr>
                     )}
                     {additionalPaxAmount > 0 && (
                       <tr>
                         <td
-                          colSpan="6"
+                          colSpan="3"
                           className="text-right p-2 border-r border-black"
                         >
                           Additional Pax Amount
                         </td>
-                        <td className="p-2 text-right">
+                        <td className="p-2 border-l border-black text-right"></td>
+                        <td className="p-2 text-right border-l border-black">
                           {additionalPaxAmount.toFixed(2)}
                         </td>
+                        <td className="p-2 border-l border-black text-right"></td>
+                        <td className="p-2 border-l border-black text-right"></td>
                       </tr>
                     )}
 
                     {/* Tax Entries */}
                     <tr>
                       <td
-                        colSpan="6"
+                        colSpan="3"
                         className="text-right p-2 border-r border-black"
                       >
                         CGST
                       </td>
-                      <td className="p-2 text-right">
-                        {(taxAmountForFood + taxAmountForRoom).toFixed(2)}
+                      <td className="p-2 border-l border-black text-right"></td>
+                      <td className="p-2 text-right border-l border-black">
+                        {(totals?.taxData / 2).toFixed(2) || 0}
                       </td>
+                      <td className="p-2 border-l border-black text-right"></td>
+                      <td className="p-2 border-l border-black text-right"></td>
                     </tr>
                     <tr>
                       <td
-                        colSpan="6"
+                        colSpan="3"
                         className="text-right p-2 border-r border-b border-black"
                       >
                         SGST
                       </td>
-                      <td className="border-b border-black p-2 text-right">
-                        {(taxAmountForFood + taxAmountForRoom).toFixed(2)}
+                      <td className="p-2 border-l border-b border-black text-right"></td>
+                      <td className="border-b border-l border-black p-2 text-right">
+                        {(totals?.taxData / 2).toFixed(2) || 0}
                       </td>
+                      <td className="p-2 border-l border-b border-black text-right"></td>
+                      <td className="p-2 border-l border-b border-black text-right"></td>
                     </tr>
                     {/* Balance Summary */}
                     <tr>
-                      <td colSpan="3" className="text-right p-2">
+                      <td colSpan="2" className="text-right p-2">
+                        <span>ROOM NO : </span>
                         {selectedCheckOutData?.selectedRooms
                           ?.map((room) => room.roomName)
                           .join(", ")}
                       </td>
-                      <td colSpan="2" className="text-right p-2">
-                        {totals.roomTariffTotal.toFixed(2)}
+                      <td colSpan="3" className="text-right p-2">
+                        {totals.totalAmountIncludeAllTax.toFixed(2)}
                       </td>
                       <td className="border-b text-right p-2">
                         {totals.advanceTotal.toFixed(2)}
@@ -1137,27 +1235,31 @@ export default function SattvaInvoice() {
                       POS [Restaurant]
                     </td>
                     <td className="border-r border-black p-1"></td>
-                    <td className="border-r border-black p-1 text-right"></td>
-                    <td className="border-r border-black p-1 text-right"></td>
                     <td className="border-r border-black p-1 text-right">
                       {kot?.finalAmount?.toFixed(2)}
                     </td>
+                    <td className="border-r border-black p-1 text-right"></td>
+                    <td className="border-r border-black p-1 text-right"></td>
                   </tr>
                 ))}
 
                 {/* Final Totals */}
                 <tr className="bg-gray-100 font-bold">
-                  <td colSpan="5" className="border border-black p-2">
+                  <td colSpan="4" className="border border-black p-2">
                     Total
                   </td>
                   <td className="border border-black p-2 text-right">
-                    {totals.advanceTotal.toFixed(2)}
+                    {totals.kotTotal.toFixed(2)}
                   </td>
                   <td className="border border-black p-2 text-right">
-                    {(totals.roomTariffTotal + totals.kotTotal).toFixed(2)}
+                    {/* {totals.advanceTotal.toFixed(2)} */}
+                  </td>
+                  <td className="border border-black p-2 text-right">
+                    {totals.sumOfRestaurantAndRoom.toFixed(2)}
                   </td>
                 </tr>
-                <tr className="bg-gray-100 font-bold">
+                {isForPreview && (
+                  <tr className="bg-gray-100 font-bold">
                   <td colSpan="6" className="border border-black p-2">
                     Balance To Pay
                   </td>
@@ -1166,6 +1268,8 @@ export default function SattvaInvoice() {
                     {totals.balanceAmountToPay.toFixed(2)}
                   </td>
                 </tr>
+                )}
+                
                 {/* {!isForPreview && ( */}
                 <>
                   {/* Invoice Summary */}
@@ -1188,11 +1292,7 @@ export default function SattvaInvoice() {
                       TOTAL INVOICE AMOUNT
                     </td>
                     <td className="border border-black p-2 text-right font-bold">
-                      {(
-                        totals.roomTariffTotal +
-                        totals.kotTotal +
-                        totals.totalTaxAmount
-                      ).toFixed(2)}
+                      {totals.sumOfRestaurantAndRoom.toFixed(2)}
                     </td>
                   </tr>
                 </>
@@ -1229,62 +1329,62 @@ export default function SattvaInvoice() {
                   <tbody>
                     <tr>
                       <td className="border border-black p-1 text-right">
-                        {totals.roomTariffTotal.toFixed(2)}
+                        {totals.taxableAmount.toFixed(2)}
                       </td>
                       <td className="border border-black p-1 text-center">
-                        6%
+                        {(totals.taxRate / 2).toFixed(2)}
                       </td>
                       <td className="border border-black p-1 text-right">
-                        {taxAmountForRoom.toFixed(2)}
+                        {(totals.taxAmount / 2).toFixed(2)}
                       </td>
                       <td className="border border-black p-1 text-center">
-                        6%
+                       {(totals.taxRate / 2).toFixed(2)}
                       </td>
                       <td className="border border-black p-1 text-right">
-                        {taxAmountForRoom.toFixed(2)}
+                            {(totals.taxAmount / 2).toFixed(2)}
                       </td>
                       <td className="border border-black p-1 text-right">
-                        {(taxAmountForRoom * 2).toFixed(2)}
+                           {(totals.taxAmount).toFixed(2)}
                       </td>
                     </tr>
 
-                    {foodPlanAmount > 0 && (
+                    {totals?.planAmount > 0 && (
                       <tr>
                         <td className="border border-black p-1 text-right">
-                          {foodPlanAmount.toFixed(2)}
+                          {totals?.planAmount.toFixed(2)}
                         </td>
                         <td className="border border-black p-1 text-center">
-                          2.50%
+                         {(totals?.taxRateFoodPlan/2).toFixed(2)}
                         </td>
                         <td className="border border-black p-1 text-right">
-                          {taxAmountForFood.toFixed(2)}
+                         {(totals?.taxAmountFoodPlan/2).toFixed(2)}
                         </td>
                         <td className="border border-black p-1 text-center">
-                          2.50%
+                          {(totals?.taxRateFoodPlan/2).toFixed(2)}
                         </td>
                         <td className="border border-black p-1 text-right">
-                          {taxAmountForFood.toFixed(2)}
+                          {(totals?.taxAmountFoodPlan/2).toFixed(2)}
                         </td>
                         <td className="border border-black p-1 text-right">
-                          {(taxAmountForFood * 2).toFixed(2)}
+                         {totals?.taxAmountFoodPlan.toFixed(2)}
                         </td>
                       </tr>
                     )}
 
                     <tr className="bg-gray-100 font-bold">
                       <td className="border border-black p-1 text-right">
-                        {(totals.roomTariffTotal + foodPlanAmount).toFixed(2)}
+                        {(totals.taxableAmount + totals?.planAmount).toFixed(2)}
                       </td>
                       <td className="border border-black p-1"></td>
                       <td className="border border-black p-1 text-right">
-                        {(taxAmountForRoom + taxAmountForFood).toFixed(2)}
+                        {((totals.taxAmount / 2) +(totals?.taxAmountFoodPlan/2)).toFixed(2)}
                       </td>
                       <td className="border border-black p-1"></td>
                       <td className="border border-black p-1 text-right">
-                        {(taxAmountForRoom + taxAmountForFood).toFixed(2)}
+                       {((totals.taxAmount / 2) +(totals?.taxAmountFoodPlan/2)).toFixed(2)}
                       </td>
                       <td className="border border-black p-1 text-right">
-                        {totals.totalTaxAmount.toFixed(2)}
+                        {((totals.taxAmount ) +(totals?.taxAmountFoodPlan)).toFixed(2)}
                       </td>
                     </tr>
                   </tbody>
@@ -1307,7 +1407,7 @@ export default function SattvaInvoice() {
                     </div>
                     <div className="flex">
                       <span className="w-32 font-bold">Prepared By:</span>
-                      <span>System</span>
+                      <span>{secondaryUser?.name}</span>
                     </div>
                     <div className="flex">
                       <span className="w-32 font-bold">Billed By:</span>
@@ -1332,10 +1432,10 @@ export default function SattvaInvoice() {
                     <div className="flex">
                       <span className="w-32 font-bold">Total Pax:</span>
                       <span>
-                        {selectedCheckOutData?.selectedRooms?.reduce(
+                       {selectedCheckOutData?.selectedRooms?.reduce(
                           (acc, curr) => acc + Number(curr.pax || 0),
                           0
-                        )}
+                        ) + selectedCheckOutData?.additionalPaxDetails?.length || 0 }
                       </span>
                     </div>
                   </div>
@@ -1350,15 +1450,21 @@ export default function SattvaInvoice() {
                 <div className="space-y-2">
                   <div className="flex">
                     <span className="w-32 font-bold">Bank Name:</span>
-                    <span className="border-b border-dotted border-black flex-1 mx-2"></span>
+                    <span className="border-b border-dotted border-black flex-1 mx-2">
+                      {organization?.configurations[0]?.bank?.acholder_name || ""}</span>
                   </div>
                   <div className="flex">
                     <span className="w-32 font-bold">A/C Number:</span>
-                    <span className="border-b border-dotted border-black flex-1 mx-2"></span>
+                    <span className="border-b border-dotted border-black flex-1 mx-2">
+                        {organization?.configurations[0]?.bank?.ac_no || ""}
+                    </span>
                   </div>
                   <div className="flex">
                     <span className="w-32 font-bold">Branch & IFSC:</span>
-                    <span className="border-b border-dotted border-black flex-1 mx-2"></span>
+                    <span className="border-b border-dotted border-black flex-1 mx-2">
+                       {organization?.configurations[0]?.bank?.branch || ""} {organization?.configurations[0]?.bank?.branch && ","}
+                        {organization?.configurations[0]?.bank?.ifsc || ""}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -1417,7 +1523,7 @@ export default function SattvaInvoice() {
                         selectedCheckOut,
                         selectedCustomer: selectedCustomerData,
                         balanceToPay: totals?.balanceAmountToPay,
-                        kotData
+                        kotData,
                       },
                     })
                   }

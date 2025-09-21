@@ -445,7 +445,7 @@ function BookingList() {
       return new Date(dateString).toLocaleDateString("en-GB");
     };
 
-    console.log(bookings);
+   
     return (
       <div
         key={index}
@@ -457,14 +457,14 @@ function BookingList() {
   bg-white hover:bg-gray-50 
   ${
     isCheckOutSelected(el) &&
-    (location.pathname === "/sUsers/checkInList" ||
-      location.pathname === "/sUsers/checkOutList")
+    (location.pathname === "/sUsers/checkInList" )
       ? "bg-blue-400 border-blue-400 ring-2 ring-blue-200"
       : ""
   }
 `}
         onClick={() => {
-          if (el.status === "checkOut") return;
+          console.log(el?.checkInId?.status);
+          if (el?.checkInId?.status === "checkOut") return;
           let findOne = selectedCheckOut.find((item) => item._id === el._id);
           if (selectedCheckOut.length == 0) {
             setSelectedCustomer(el.customerId?._id);
@@ -665,12 +665,8 @@ function BookingList() {
           {/* ACTIONS */}
           <div className="w-32 flex items-center justify-center gap-1">
             {/* Primary Action Button */}
-            {((location.pathname === "/sUsers/bookingList" &&
-              el?.status != "checkIn") ||
-              (el?.status != "checkOut" &&
-                location.pathname != "/sUsers/checkInList") ||
-              (Number(el?.balanceToPay) > 0 &&
-                location.pathname === "/sUsers/checkOutList")) && (
+            {((location.pathname === "/sUsers/bookingList" && el?.status != "checkIn") ||
+              (el?.status != "checkOut" && location.pathname != "/sUsers/checkInList") && location.pathname != "/sUsers/checkOutList" ) && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -682,9 +678,9 @@ function BookingList() {
                     location.pathname === "/sUsers/checkOutList" &&
                     el.checkInId
                   ) {
-                    navigate(`/sUsers/EditCheckOut`, {
-                      state: el,
-                    });
+                    // navigate(`/sUsers/EditCheckOut`, {
+                    //   state: el,
+                    // });
                   } else {
                     navigate(`/sUsers/CheckOutPage`, {
                       state: { bookingData: el },
@@ -693,9 +689,7 @@ function BookingList() {
                 }}
                 className="bg-black hover:bg-blue-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
               >
-                {location.pathname === "/sUsers/checkOutList"
-                  ? "Close"
-                  : "CheckIn"}
+                CheckIn
               </button>
             )}
 
@@ -712,7 +706,13 @@ function BookingList() {
                   if (location.pathname === "/sUsers/checkOutList") {
                     setSelectedCustomer(el.customerId?._id);
                     setSelectedCheckOut([el]);
-                    navigate("/sUsers/BillPrint", {
+                    const hasPrint1 = configurations[0]?.defaultPrint?.print1;
+
+                      navigate(
+                        hasPrint1
+                          ? "/sUsers/CheckOutPrint"
+                          : "/sUsers/BillPrint",
+                   {
                       state: {
                         selectedCheckOut: bookings?.filter(
                           (item) => item.voucherNumber === el.voucherNumber
