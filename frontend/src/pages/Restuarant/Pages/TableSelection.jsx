@@ -416,7 +416,7 @@ const TableTiles = ({
   const isOrderSelected = (order) => {
     return selectedKot.find((item) => item.id === order._id);
   };
-  console.log(tables);
+  console.log(roomData);
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50 p-6">
       {/* Voucher PDF Modal */}

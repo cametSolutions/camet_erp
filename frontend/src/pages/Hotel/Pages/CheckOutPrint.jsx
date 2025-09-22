@@ -9,6 +9,8 @@ import { useRef } from "react";
 import { useReactToPrint } from "react-to-print";
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
+import { handlePrintInvoice, handleDownloadPDF } from '../PrintSide/generateHotelInvoicePDF ';
+
 
 export default function SattvaInvoice() {
   // Router and Redux state
@@ -209,11 +211,11 @@ console.log(isForPreview)
   };
 
   // Print handler
-  const handlePrint = useReactToPrint({
-    content: () => printReference.current,
-    documentTitle: "CheckOut",
-    removeAfterPrint: true,
-  });
+  // const handlePrint = useReactToPrint({
+  //   content: () => printReference.current,
+  //   documentTitle: "CheckOut",
+  //   removeAfterPrint: true,
+  // });
 
   // PDF Generation Functions
   const addPDFHeader = (doc, pageWidth, pageHeight, margin) => {
@@ -815,7 +817,88 @@ console.log(isForPreview)
       setAdditionalPaxAmount(0);
     }
   };
-  console.log(selectedCheckOutData);
+// Updated handlePrint function in your React component
+const handlePrint = () => {
+  // Calculate totals first
+  const totals = calculateTotals();
+  
+  // Prepare comprehensive invoice data with all dynamic values
+  const invoiceData = {
+    // Organization details (dynamic)
+    organization: {
+      name: organization?.name || "",
+      address: organization?.address || "",
+      flat: organization?.flat || "",
+      landmark: organization?.landmark || "",
+      road: organization?.road || "",
+      gstNum: organization?.gstNum || "",
+      email: organization?.email || "",
+      logo: organization?.logo || "",
+      state: organization?.state || "",
+      pin: organization?.pin || "",
+      mobile: organization?.mobile || "",
+      configurations: organization?.configurations || [],
+    },
+
+    // Checkout data (dynamic)
+    selectedCheckOutData: selectedCheckOutData,
+    
+    // Customer and booking info (dynamic)
+    customerName: selectedCheckOutData?.customerName || "",
+    totalPax: selectedCheckOutData?.selectedRooms?.reduce((acc, curr) => acc + Number(curr.pax || 0), 0) || 0,
+    
+    // Transaction data (dynamic)
+    outStanding: outStanding || [],
+    kotData: kotData || [],
+    dateWiseDisplayedData: dateWiseDisplayedData || [],
+    
+    // Calculated amounts (dynamic)
+    totals: {
+      roomTariffTotal: totals.roomTariffTotal,
+      advanceTotal: totals.advanceTotal,
+      kotTotal: totals.kotTotal,
+      balanceAmount: totals.balanceAmount,
+      totalTaxAmount: totals.totalTaxAmount,
+      balanceAmountToPay: totals.balanceAmountToPay,
+      taxData: totals.taxData,
+      totalAmountIncludeAllTax: totals.totalAmountIncludeAllTax,
+      sumOfRestaurantAndRoom: totals.sumOfRestaurantAndRoom,
+      taxableAmount: totals.taxableAmount,
+      taxRate: totals.taxRate,
+      taxRateFoodPlan: totals.taxRateFoodPlan,
+      taxAmount: totals.taxAmount,
+      taxAmountFoodPlan: totals.taxAmountFoodPlan,
+      planAmount: totals.planAmount,
+    },
+
+    // Tax amounts (dynamic)
+    taxAmountForRoom: taxAmountForRoom,
+    taxAmountForFood: taxAmountForFood,
+    taxAmountForAdditionalPax: taxAmountForAdditionalPax,
+    
+    // Food and additional charges (dynamic)
+    foodPlanAmount: foodPlanAmount,
+    additionalPaxAmount: additionalPaxAmount,
+
+    // User info (dynamic)
+    secondaryUser: secondaryUser,
+
+    // Additional data for comprehensive invoice
+    voucherNumber: selectedCheckOutData?.voucherNumber || "",
+    arrivalDate: selectedCheckOutData?.arrivalDate || "",
+    arrivalTime: selectedCheckOutData?.arrivalTime || "",
+    roomNumbers: selectedCheckOutData?.selectedRooms?.map(room => room.roomName).join(", ") || "",
+    roomType: selectedCheckOutData?.selectedRooms?.[0]?.roomType?.brand || "",
+    tariff: selectedCheckOutData?.selectedRooms?.[0]?.priceLevelRate || "",
+    agentName: selectedCheckOutData?.agentId?.name || "Walk-In Customer",
+    foodPlan: selectedCheckOutData?.foodPlan?.[0]?.foodPlan || "",
+  };
+
+  console.log("Complete Invoice Data:", invoiceData); // For debugging
+  
+  // Call the PDF generation function with all dynamic data
+  handlePrintInvoice(invoiceData);
+};
 
   return (
     <>
