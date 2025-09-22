@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import api from "@/api/api";// Adjust the import path according to your project structure
@@ -8,6 +9,7 @@ import {
   ArrowDownRight, Target, Clock, Users, Building2, ChefHat, Bed,
   RefreshCw, Loader2, AlertCircle, Smartphone, FileText, TrendingDown
 } from 'lucide-react';
+import TableSummary from './TableSummary';
 
 const SummaryDashboard = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
@@ -20,7 +22,8 @@ const SummaryDashboard = () => {
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
-
+ 
+  
   // Helper function to get the first day of the month for selected date
   const getMonthStartDate = (dateString) => {
     const date = new Date(dateString);
@@ -218,6 +221,34 @@ const SummaryDashboard = () => {
             </div>
             <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.bankReceipt)}</span>
           </div>
+            <div className="flex justify-between items-center">
+            <div className="flex items-center gap-1">
+              <CreditCard size={12} className="text-white/70" />
+              <span className="text-white/80 text-xs">Total Discount</span>
+            </div>
+            <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.totalDiscount)}</span>
+          </div>
+            <div className="flex justify-between items-center">
+            <div className="flex items-center gap-1">
+              <CreditCard size={12} className="text-white/70" />
+              <span className="text-white/80 text-xs">Total Tax</span>
+            </div>
+            <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.totalTax)}</span>
+          </div>
+            <div className="flex justify-between items-center">
+            <div className="flex items-center gap-1">
+              <CreditCard size={12} className="text-white/70" />
+              <span className="text-white/80 text-xs">Sale Count</span>
+            </div>
+            <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.transactionCount)}</span>
+          </div>
+            <div className="flex justify-between items-center">
+            <div className="flex items-center gap-1">
+              <CreditCard size={12} className="text-white/70" />
+              <span className="text-white/80 text-xs">Net Sales</span>
+            </div>
+            <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.netSales)}</span>
+          </div>
 
           {/* <div className="flex justify-between items-center">
             <div className="flex items-center gap-1">
@@ -300,6 +331,34 @@ const SummaryDashboard = () => {
               <span className="text-white/90 text-xs">Bank</span>
             </div>
             <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.bankReceipt)}</span>
+          </div>
+           <div className="flex justify-between items-center">
+            <div className="flex items-center gap-1">
+              <CreditCard size={12} className="text-white/70" />
+              <span className="text-white/80 text-xs">Total Discount</span>
+            </div>
+            <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.totalDiscount)}</span>
+          </div>
+            <div className="flex justify-between items-center">
+            <div className="flex items-center gap-1">
+              <CreditCard size={12} className="text-white/70" />
+              <span className="text-white/80 text-xs">Total Tax</span>
+            </div>
+            <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.totalTax)}</span>
+          </div>
+            <div className="flex justify-between items-center">
+            <div className="flex items-center gap-1">
+              <CreditCard size={12} className="text-white/70" />
+              <span className="text-white/80 text-xs">Sale Count</span>
+            </div>
+            <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.transactionCount)}</span>
+          </div>
+           <div className="flex justify-between items-center">
+            <div className="flex items-center gap-1">
+              <CreditCard size={12} className="text-white/70" />
+              <span className="text-white/80 text-xs">Net Sales</span>
+            </div>
+            <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.netSales)}</span>
           </div>
           {/* <div className="flex justify-between items-center">
             <div className="flex items-center gap-1">
@@ -462,6 +521,9 @@ const SummaryDashboard = () => {
             </div>
           </div>
 
+ <div className="mb-6">
+      <TableSummary dashboardData={dashboardData} selectedDate={selectedDate} />
+    </div>
             <div className="mb-6">
             <GraphHotelSummary dashboardData={dashboardData} selectedDate={selectedDate} />
           </div>
