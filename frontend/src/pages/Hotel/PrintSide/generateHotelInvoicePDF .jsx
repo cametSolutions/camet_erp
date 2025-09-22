@@ -467,6 +467,11 @@ export const handleDownloadPDF = async (invoiceData = {}, filename) => {
 };
 
 async function getBase64FromUrl(url) {
+  // Force HTTPS if it starts with http://
+  if (url.startsWith("http://")) {
+    url = url.replace("http://", "https://");
+  }
+
   const response = await fetch(url);
   const blob = await response.blob();
   return new Promise((resolve) => {
@@ -475,3 +480,4 @@ async function getBase64FromUrl(url) {
     reader.readAsDataURL(blob);
   });
 }
+
