@@ -520,10 +520,10 @@ const OrdersDashboard = () => {
     });
 
     let totalAmount = itemList.reduce(
-      (acc, item) => acc + Number(item.total),
+      (acc, item) => acc + (Number(item.total) * Number(item.quantity)),
       0
     );
-    console.log(saleVoucherData);
+    console.log(itemList);
     let newObject = {
       Date: new Date(),
       voucherType: "sales",
@@ -1563,7 +1563,7 @@ const OrdersDashboard = () => {
                     )}
                   </div>
                   <div className="border-t border-gray-200 pt-2 mt-2 flex justify-between font-semibold text-gray-800">
-                    <span className="text-sm">Total Amount</span>
+                    <span className="text-sm">Total Amount </span>
                     <span className="text-base text-blue-600">
                       ₹{selectedDataForPayment?.total}
                     </span>

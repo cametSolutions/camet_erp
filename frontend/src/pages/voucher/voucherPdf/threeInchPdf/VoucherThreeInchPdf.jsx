@@ -36,6 +36,8 @@ function VoucherThreeInchPdf({
     }
   };
 
+  console.log()
+
   const getConfigurationVoucherType = () => {
     const currentVoucherType = data?.voucherType;
 
@@ -70,9 +72,9 @@ function VoucherThreeInchPdf({
   useEffect(() => {
     if (data && data.items) {
       const subTotal = data.items
-        .reduce((acc, curr) => acc + parseFloat(curr?.total), 0)
-        .toFixed(2);
-      setSubTotal(subTotal);
+        .reduce((acc, curr) => acc + (Number(curr?.total) * Number(curr?.totalCount)), 0).toFixed(2);
+     setSubTotal(Number(subTotal));
+
 
       const addiTionalCharge = data?.additionalCharges
         ?.reduce((acc, curr) => {
@@ -118,6 +120,8 @@ function VoucherThreeInchPdf({
 
     return totalTax;
   };
+
+  console.log(data?.items)
   const calculateAddCess = () => {
     return data?.items?.reduce((acc, curr) => {
       return acc + curr?.totalAddlCessAmt;
@@ -413,7 +417,11 @@ function VoucherThreeInchPdf({
               {/* Items */}
               {data?.items?.length > 0 &&
                 data?.items.map((el, index) => {
-                  const total = el?.total || 0;
+
+                  console.log("welcome",el?.total)
+                   console.log("welcome",el?.totalCount)
+
+                  const total = (el?.total || 0) * el?.totalCount
                   const count = el?.totalCount || 0;
                   const rate = count > 0 ? (total / count).toFixed(1) : "0";
 
