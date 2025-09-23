@@ -197,6 +197,7 @@ const HotelDashboard = () => {
         );
 
         const roomsData = res.data || [];
+        console.log(roomsData)
         setTooltipData(roomsData);
       } catch (error) {
         console.log("Error fetching date based data:", error);

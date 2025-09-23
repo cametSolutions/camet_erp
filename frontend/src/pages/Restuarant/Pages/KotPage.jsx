@@ -767,7 +767,7 @@ const OrdersDashboard = () => {
                                   : "bg-gray-100 text-gray-700"
                               }`}
                             >
-                              {order.type} -{" "}
+                              {order.type} - {order?.tableNumber}
                               <span>{order.roomId?.roomName}</span>
                             </span>
                           </div>

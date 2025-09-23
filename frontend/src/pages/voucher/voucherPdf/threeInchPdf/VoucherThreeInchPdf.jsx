@@ -174,7 +174,7 @@ function VoucherThreeInchPdf({
     handlePrintData();
   };
 
-  console.log(data?.items);
+  console.log(data);
 
   return (
     <div className="grid">
@@ -309,7 +309,7 @@ function VoucherThreeInchPdf({
             }}
           >
             <div>No: {data?.[getVoucherNumber()]}</div>
-            <div>{new Date(data?.createdAt).toLocaleDateString("en-GB")}</div>
+            <div>{new Date(data?.Date || data?.createdAt).toLocaleDateString("en-GB")}</div>
           </div>
           <div
             className="order-info"
@@ -323,11 +323,11 @@ function VoucherThreeInchPdf({
           >
             <div>
               Table No:{" "}
-              {data?.convertedFrom?.map((item) => item?.tableNumber).join(", ")}
+              {data?.voucherNumber?.map((item) => item?.tableNumber).join(", ") || data?.convertedFrom?.map((item) => item?.tableNumber).join(", ")}
             </div>
 
             <div>
-              {new Date(data?.createdAt).toLocaleTimeString("en-GB", {
+              {new Date(data?.Date || data?.createdAt).toLocaleTimeString("en-GB", {
                 hour: "2-digit",
                 minute: "2-digit",
                 hour12: true,
@@ -346,7 +346,9 @@ function VoucherThreeInchPdf({
           >
             <div>
               KOT NO :{" "}
-              {data?.convertedFrom
+              {data?.voucherNumber 
+                ?.map((item) => item?.voucherNumber)
+                .join(", ") || data?.convertedFrom 
                 ?.map((item) => item?.voucherNumber)
                 .join(", ")}
             </div>

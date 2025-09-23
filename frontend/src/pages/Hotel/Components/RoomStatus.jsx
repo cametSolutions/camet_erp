@@ -20,7 +20,7 @@ const RoomStatus = ({
       border: "border-emerald-300/30",
       hoverBorder: "hover:border-emerald-200/50",
     },
-    occupied: {
+    "checkIn" : {
       gradient: "from-sky-400 to-violet-600",
       shadow: "shadow-sky-500/25",
       hoverShadow: "hover:shadow-sky-500/40",

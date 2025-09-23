@@ -699,8 +699,9 @@ export const getRooms = async (req, res) => {
       const isOccupied = occupiedRoomId.has(roomId);
 
       // exclude rooms with status 'dirty' or 'blocked'
-      const isCleanAndOpen =
-        room.status !== "dirty" && room.status !== "blocked";
+     const isCleanAndOpen =
+          (room.status !== "dirty" && room.status !== "blocked" && room.status !== "checkIn");
+
 
       return !isOccupied && isCleanAndOpen;
     });
@@ -1529,9 +1530,10 @@ export const getDateBasedRoomsWithStatus = async (req, res) => {
     const checkins = await CheckIn.find({
       cmp_id,
       status: { $ne: "checkOut" },
-      arrivalDate: { $lte: selectedDate },
-      checkOutDate: { $gte: selectedDate },
+      // arrivalDate: { $lte: selectedDate },
+      // checkOutDate: { $gte: selectedDate },
     });
+    console.log("checkins",checkins)
 
     // ✅ Send response
     return res.status(200).json({
