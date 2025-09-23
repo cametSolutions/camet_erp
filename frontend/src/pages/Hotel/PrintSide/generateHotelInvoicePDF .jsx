@@ -190,7 +190,7 @@ export const generateHotelInvoicePDF = async (invoiceData) => {
 
   // Room service header and entries
   if (invoiceData.kotData && invoiceData.kotData.length > 0) {
-    tableData.push(["", "", "ROOM SERVICE BILL DETAILS", "", "", "", ""]);
+    tableData.push(["", "", "RESTAURANT BILL DETAILS", "", "", "", ""]);
     
     // KOT entries
     invoiceData.kotData.forEach((kot) => {
@@ -258,7 +258,7 @@ export const generateHotelInvoicePDF = async (invoiceData) => {
         data.cell.styles.fontStyle = "bold";
       }
       
-      if (cellText.includes("ROOM SERVICE BILL DETAILS")) {
+      if (cellText.includes("RESTAURANT BILL DETAILS")) {
         data.cell.styles.fillColor = [200, 255, 200];
         data.cell.styles.fontStyle = "bold";
         data.cell.styles.halign = "center";

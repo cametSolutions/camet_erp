@@ -133,7 +133,7 @@ useEffect(() => {
       const newRooms = res.data?.roomData || [];
       
       console.log("Received vacant rooms from backend:", newRooms.length);
-      console.log("Sample room:", newRooms[0]);
+      console.log("Sample room:", bookings);
 
       // Filter out rooms that are already selected in current booking
       const availableRooms = newRooms.filter(room => {

@@ -1696,11 +1696,13 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
         isForPreview
       );
 
-      const docs = await salesModel.find({
-        "convertedFrom.checkInNumber": isForPreview
-          ? item.voucherNumber
-          : item?.checkInId?.voucherNumber,
-      });
+ const docs = await salesModel.find({
+  "convertedFrom.id": { $exists: true, $ne: null }, // only if id exists & not null
+  "convertedFrom.checkInNumber": isForPreview
+    ? item.voucherNumber
+    : item?.checkInId?.voucherNumber,
+});
+
       console.log("docs", docs);
       allKotData.push(...docs);
 
@@ -1714,12 +1716,14 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
         billId: checkInData.bookingId,
       });
 
+      console.log("bookingSideAdvanceDetails", item.checkInId);
+
       const checkInSideAdvanceDetails = await TallyData.find({
         billId: isForPreview ? item._id : item.checkInId?._id,
       });
-      const checkOutSideAdvanceDetails = await TallyData.find({
-        billId: item._id,
-      });
+      const checkOutSideAdvanceDetails = !isForPreview ? await TallyData.find({
+        bill_no: item.voucherNumber,
+      }) : []
 
       allAdvanceDetails.push(
         ...bookingSideAdvanceDetails,
@@ -2422,4 +2426,3 @@ export const getRoomSwapHistory = async (req, res) => {
     });
   }
 };
-
