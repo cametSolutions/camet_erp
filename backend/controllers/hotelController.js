@@ -656,13 +656,15 @@ export const getRooms = async (req, res) => {
       status: { $nin: ["CheckIn"] },
     });
 
-    console.log("Overlapping bookings found:", overlappingBookings.length);
+    console.log("Overlapping bookingees found:", endDate);
 
     // Find rooms that are currently checked-in for the specified checkout date
     const overlappingCheckIns = await CheckIn.find({
       cmp_id: req.params.cmp_id,
       checkOutDate: { $gt: startDate },
+      checkOutDate: { $lt: endDate },
     }).select("roomDetails");
+
 
     console.log("Overlapping check-ins found:", overlappingCheckIns.length);
 
@@ -699,9 +701,10 @@ export const getRooms = async (req, res) => {
       const isOccupied = occupiedRoomId.has(roomId);
 
       // exclude rooms with status 'dirty' or 'blocked'
-     const isCleanAndOpen =
-          (room.status !== "dirty" && room.status !== "blocked" && room.status !== "checkIn");
-
+      const isCleanAndOpen =
+        room.status !== "dirty" &&
+        room.status !== "blocked" &&
+        room.status !== "checkIn";
 
       return !isOccupied && isCleanAndOpen;
     });
@@ -1533,7 +1536,7 @@ export const getDateBasedRoomsWithStatus = async (req, res) => {
       // arrivalDate: { $lte: selectedDate },
       // checkOutDate: { $gte: selectedDate },
     });
-    console.log("checkins",checkins)
+    console.log("checkins", checkins);
 
     // ✅ Send response
     return res.status(200).json({
@@ -1698,12 +1701,12 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
         isForPreview
       );
 
- const docs = await salesModel.find({
-  "convertedFrom.id": { $exists: true, $ne: null }, // only if id exists & not null
-  "convertedFrom.checkInNumber": isForPreview
-    ? item.voucherNumber
-    : item?.checkInId?.voucherNumber,
-});
+      const docs = await salesModel.find({
+        "convertedFrom.id": { $exists: true, $ne: null }, // only if id exists & not null
+        "convertedFrom.checkInNumber": isForPreview
+          ? item.voucherNumber
+          : item?.checkInId?.voucherNumber,
+      });
 
       console.log("docs", docs);
       allKotData.push(...docs);
@@ -1723,16 +1726,17 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
       const checkInSideAdvanceDetails = await TallyData.find({
         billId: isForPreview ? item._id : item.checkInId?._id,
       });
-      const checkOutSideAdvanceDetails = !isForPreview ? await TallyData.find({
-        bill_no: item.voucherNumber,
-      }) : []
+      const checkOutSideAdvanceDetails = !isForPreview
+        ? await TallyData.find({
+            bill_no: item.voucherNumber,
+          })
+        : [];
 
       allAdvanceDetails.push(
         ...bookingSideAdvanceDetails,
         ...checkInSideAdvanceDetails,
         ...checkOutSideAdvanceDetails
       );
-      
     }
 
     console.log("allAdvanceDetails", allKotData);
