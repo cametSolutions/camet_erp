@@ -20,10 +20,10 @@ const SummaryDashboard = () => {
 
   // Replace with actual values from your auth context or props
   const cmp_id = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg._id
+  (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
  
-  
+ 
   // Helper function to get the first day of the month for selected date
   const getMonthStartDate = (dateString) => {
     const date = new Date(dateString);
@@ -68,7 +68,7 @@ const SummaryDashboard = () => {
       ]);
 
       if (dailyResponse.data.success && monthlyResponse.data.success) {
-           console.log(monthlyResponse.data)
+           console.log(dailyResponse.data)
         setDashboardData({
             
           daily: dailyResponse.data.data?.daily,
@@ -235,13 +235,13 @@ const SummaryDashboard = () => {
             </div>
             <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.totalTax)}</span>
           </div>
-            <div className="flex justify-between items-center">
+            {/* <div className="flex justify-between items-center">
             <div className="flex items-center gap-1">
               <CreditCard size={12} className="text-white/70" />
               <span className="text-white/80 text-xs">Sale Count</span>
             </div>
             <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.transactionCount)}</span>
-          </div>
+          </div> */}
             <div className="flex justify-between items-center">
             <div className="flex items-center gap-1">
               <CreditCard size={12} className="text-white/70" />
@@ -346,13 +346,13 @@ const SummaryDashboard = () => {
             </div>
             <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.totalTax)}</span>
           </div>
-            <div className="flex justify-between items-center">
+            {/* <div className="flex justify-between items-center">
             <div className="flex items-center gap-1">
               <CreditCard size={12} className="text-white/70" />
               <span className="text-white/80 text-xs">Sale Count</span>
             </div>
             <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.transactionCount)}</span>
-          </div>
+          </div> */}
            <div className="flex justify-between items-center">
             <div className="flex items-center gap-1">
               <CreditCard size={12} className="text-white/70" />
@@ -521,9 +521,9 @@ const SummaryDashboard = () => {
             </div>
           </div>
 
- <div className="mb-6">
+ {/* <div className="mb-6">
       <TableSummary dashboardData={dashboardData} selectedDate={selectedDate} />
-    </div>
+    </div> */}
             <div className="mb-6">
             <GraphHotelSummary dashboardData={dashboardData} selectedDate={selectedDate} />
           </div>
