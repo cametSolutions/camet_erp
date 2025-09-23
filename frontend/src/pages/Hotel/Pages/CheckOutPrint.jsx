@@ -29,7 +29,7 @@ export default function SattvaInvoice() {
   const selectedCustomerId = location.state?.customerId;
   const isForPreview = location.state?.isForPreview;
 
-  console.log(isForPreview);
+  console.log(selectedCheckOut);
   // const isForPreview = location.state?.isForPreview;
 
   // Component state
@@ -1311,7 +1311,7 @@ export default function SattvaInvoice() {
                         colSpan="7"
                         className="border-b-2 p-2 font-bold text-center"
                       >
-                        ROOM SERVICE BILL DETAILS
+                        RESTAURANT BILL DETAILS
                       </td>
                     </tr>
                   </>
@@ -1597,17 +1597,9 @@ export default function SattvaInvoice() {
           <div className="no-print w-full flex justify-end">
             {/* Container for the action buttons */}
             <div className="no-print flex flex-wrap gap-3 mb-4 p-4">
-              {/* Print */}
-              <button
-                onClick={()=>handlePrint(true)}
-                className="bg-black text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-500 transition-colors"
-              >
-                🖨️ Print Invoice
-              </button>
-
               {/* Download PDF */}
               <button
-                onClick={()=>handlePrint(false)}
+                onClick={() => handlePrint(false)}
                 className="bg-black text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-500 transition-colors"
               >
                 📄 Download PDF
@@ -1639,6 +1631,13 @@ export default function SattvaInvoice() {
                   ✅ Confirm
                 </button>
               )}
+              {/* Print */}
+              <button
+                onClick={() => handlePrint(true)}
+                className="bg-black text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-500 transition-colors"
+              >
+                🖨️ Print Invoice
+              </button>
             </div>
           </div>
         </div>
