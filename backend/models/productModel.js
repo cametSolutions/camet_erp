@@ -6,6 +6,10 @@ const productSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  product_image: {
+    type: String, // Store Cloudinary URL
+    default: "",
+  },
   cmp_id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Organization",

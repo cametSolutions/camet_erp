@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { MdDelete, MdPlaylistAdd } from "react-icons/md";
 import useFetch from "@/customHook/useFetch";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { TiTick } from "react-icons/ti";
 function AdditionalPaxDetails({
   cmp_id,
@@ -15,6 +15,7 @@ function AdditionalPaxDetails({
   ]);
   const [additionalPaxData, setAdditionalPaxData] = useState([]);
   const { data, error } = useFetch(`/api/sUsers/getAdditionalPax/${cmp_id}`);
+  // useEffect used to fetch the additional pax data
   useEffect(() => {
     if (data) {
       setAdditionalPaxData(data?.data);
@@ -28,50 +29,61 @@ function AdditionalPaxDetails({
   }, [error]);
 
   // useEffect used to manage the already selected values
-  // useEffect(() => {
-  //   console.log(formData);
-  //   if (
-  //     formData?.additionalPaxDetails?.length > 0 &&
-  //     selectedRoomId &&
-  //     formData.additionalPaxDetails !== []
-  //   ) {
-  //     let filteredData = formData.additionalPaxDetails?.filter(
-  //       (item) => item.roomId == selectedRoomId
-  //     );
-  //     if (filteredData.length > 0 && filteredData !== []) {
-  //       setAdditionalPax(filteredData);
-  //     }
-  //   }
-  // }, [selectedRoomId]);
+  useEffect(() => {
+    console.log(formData);
+    if (
+      formData?.additionalPaxDetails?.length > 0 &&
+      selectedRoomId &&
+      formData.additionalPaxDetails !== []
+    ) {
+      let filteredData = formData.additionalPaxDetails?.filter(
+        (item) => item.roomId == selectedRoomId
+      );
+      if (filteredData.length > 0 && filteredData !== []) {
+        setAdditionalPax(filteredData);
+      }
+    }
+  }, [selectedRoomId]);
 
+  // function used to send data to the parent
   useEffect(() => {
     if (additionalPax.length > 0) {
       let filteredData = additionalPax.filter((item) => item.paxID !== "");
-      sendDataToParent(filteredData);
+      sendDataToParent(filteredData);    
     }
   }, [additionalPax]);
 
+
+  // function used to handle the pax change
   const handlePaxChange = (index, value) => {
     let specificData = additionalPaxData?.find((item) => item._id === value);
     const updatedRows = [...additionalPax];
+    console.log(specificData);
     updatedRows[index].paxID = specificData._id;
     updatedRows[index].paxName = specificData.additionalPaxName;
     updatedRows[index].rate = specificData.amount;
     updatedRows[index].roomId = selectedRoomId;
     setAdditionalPax(updatedRows);
   };
+
+  //  function used to handle rate change
   const handleRateChange = (index, value) => {
     const updatedRows = [...additionalPax];
     updatedRows[index].rate = value;
     setAdditionalPax(updatedRows);
   };
+
+  // function used to delete the row
   const handleDeleteRow = (index) => {
     const updatedRows = additionalPax.slice(0, index);
     if (updatedRows.length === 0) {
       updatedRows.push({ paxID: "", paxName: 0, rate: "" });
     }
     setAdditionalPax(updatedRows);
+    
   };
+
+  // function used to add new row
   const handleAddRow = () => {
     const lastRow = additionalPax[additionalPax.length - 1];
     console.log(lastRow);
@@ -85,7 +97,7 @@ function AdditionalPaxDetails({
     setAdditionalPax([...additionalPax, { paxName: "", rate: 0, paxID: "" }]);
   };
 
-  console.log(additionalPax);
+
 
   return (
     <div className="">

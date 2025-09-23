@@ -9,7 +9,6 @@ import { useNavigate } from "react-router-dom";
 
 // Custom components
 import CallIcon from "../../../components/common/CallIcon";
-import CustomBarLoader from "@/components/common/CustomBarLoader";
 import TitleDiv from "@/components/common/TitleDiv";
 
 // Utils
@@ -19,18 +18,24 @@ import { addSettlementData } from "../../../../slices/voucherSlices/commonAccoun
 /**
  * Outstanding List Component
  * Handles bill selection and settlement calculation for payment processing
- * 
+ *
  * @param {boolean} loading - Loading state indicator
  * @param {Array} data - Array of outstanding bills
  * @param {number} total - Total outstanding amount
  * @param {Object} party - Party information (name, mobile number)
  */
-function OutstandingLIstComponent({ loading, data, total, party }) {
-  
+function OutstandingLIstComponent({
+  loading,
+  data,
+  total,
+  party,
+  showAmountChangeAlert,
+  mode,
+}) {
   // ============================================================================
   // REDUX STATE MANAGEMENT
   // ============================================================================
-  
+
   /**
    * Extract saved data from Redux store
    * - enteredAmount: Previously entered payment amount
@@ -41,6 +46,7 @@ function OutstandingLIstComponent({ loading, data, total, party }) {
     enteredAmount: enteredAmountFromRedux,
     billData: billDataFromRedux,
     advanceAmount: advanceAmountFromRedux,
+    isInitialRender: isInitialRenderFromRedux,
   } = useSelector((state) => state.commonAccountingVoucherSlice);
 
   const dispatch = useDispatch();
@@ -112,7 +118,7 @@ function OutstandingLIstComponent({ loading, data, total, party }) {
   /**
    * Calculate settlement amounts based on FIFO logic
    * Distributes entered amount across selected bills in order of selection
-   * 
+   *
    * @param {Set} selectedBillsSet - Set of selected bill IDs
    * @param {Array} billOrder - Array of bill IDs in selection order
    * @param {number} amount - Total amount to distribute
@@ -127,7 +133,7 @@ function OutstandingLIstComponent({ loading, data, total, party }) {
       if (selectedBillsSet.has(billId)) {
         const bill = data.find((b) => b?._id === billId);
         const billAmount = parseFloat(bill?.bill_pending_amt);
-        
+
         if (remainingAmount > 0) {
           // Settle minimum of bill amount or remaining amount
           const settlementAmount = Math.min(billAmount, remainingAmount);
@@ -175,7 +181,6 @@ function OutstandingLIstComponent({ loading, data, total, party }) {
    */
   useEffect(() => {
     if (data && data.length > 0) {
-      
       // SCENARIO 1: Initial load with saved Redux data
       if (isInitialLoad && billDataFromRedux?.length > 0) {
         // Restore previously saved state
@@ -194,7 +199,7 @@ function OutstandingLIstComponent({ loading, data, total, party }) {
         setAdvanceAmount(advanceAmountFromRedux || 0);
         setIsInitialLoad(false);
       }
-      
+
       // SCENARIO 2: Fresh FIFO calculation after user input
       else if (hasUserTyped && enteredAmount > 0) {
         const newSelectedBills = new Set();
@@ -225,7 +230,7 @@ function OutstandingLIstComponent({ loading, data, total, party }) {
         setBillSettlements(settlements);
         setAdvanceAmount(newAdvanceAmount);
       }
-      
+
       // SCENARIO 3: Clear everything when amount is invalid
       else if (enteredAmount <= 0) {
         setSelectedBills(new Set());
@@ -248,51 +253,75 @@ function OutstandingLIstComponent({ loading, data, total, party }) {
    * Sets user typing flag and updates entered amount
    * @param {Event} event - Input change event
    */
+
   const handleAmountChange = (event) => {
-    setHasUserTyped(true);
-    const amount = parseFloat(event.target.value) || 0;
-    setEnteredAmount(amount);
+    if (mode === "edit" && isInitialRenderFromRedux) {
+      showAmountChangeAlert().then((userConfirmed) => {
+        if (userConfirmed) {
+          setHasUserTyped(true);
+          const amount = 0;
+          setEnteredAmount(amount);
+        }
+      });
+    } else {
+      setHasUserTyped(true);
+      const amount = parseFloat(event.target.value) || 0;
+      setEnteredAmount(amount);
+    }
   };
 
   /**
    * Handle individual bill selection/deselection
    * Manages bill selection state and recalculates settlements
-   * 
+   *
    * @param {string} billId - ID of the bill to toggle
    */
   const handleBillSelection = (billId) => {
-    const newSelectedBills = new Set(selectedBills);
-    const newSelectionOrder = [...selectionOrder];
-
-    if (newSelectedBills.has(billId)) {
-      // DESELECTION: Always allow deselection
-      newSelectedBills.delete(billId);
-      const index = newSelectionOrder.indexOf(billId);
-      if (index > -1) {
-        newSelectionOrder.splice(index, 1);
-      }
+    if (mode === "edit" && isInitialRenderFromRedux) {
+      showAmountChangeAlert().then((userConfirmed) => {
+        if (userConfirmed) {
+          setHasUserTyped(true);
+          const amount = 0;
+          setEnteredAmount(amount);
+        }
+      });
     } else {
-      // SELECTION: Check if amount is already fully settled
-      if (isAmountFullySettled()) {
-        return; // Prevent selection if amount is already fully allocated
+      const newSelectedBills = new Set(selectedBills);
+      const newSelectionOrder = [...selectionOrder];
+
+      if (newSelectedBills.has(billId)) {
+        // DESELECTION: Always allow deselection
+        newSelectedBills.delete(billId);
+        const index = newSelectionOrder.indexOf(billId);
+        if (index > -1) {
+          newSelectionOrder.splice(index, 1);
+        }
+      } else {
+        // SELECTION: Check if amount is already fully settled
+        if (isAmountFullySettled()) {
+          return; // Prevent selection if amount is already fully allocated
+        }
+
+        // Add to selection
+        newSelectedBills.add(billId);
+        if (!newSelectionOrder.includes(billId)) {
+          newSelectionOrder.push(billId);
+        }
       }
-      
-      // Add to selection
-      newSelectedBills.add(billId);
-      if (!newSelectionOrder.includes(billId)) {
-        newSelectionOrder.push(billId);
-      }
+      // Update state
+      setSelectedBills(newSelectedBills);
+      setSelectionOrder(newSelectionOrder);
+
+      // Recalculate settlements based on new selection
+      const { settlements, advanceAmount: newAdvanceAmount } =
+        calculateSettlements(
+          newSelectedBills,
+          newSelectionOrder,
+          enteredAmount
+        );
+      setBillSettlements(settlements);
+      setAdvanceAmount(newAdvanceAmount);
     }
-
-    // Update state
-    setSelectedBills(newSelectedBills);
-    setSelectionOrder(newSelectionOrder);
-
-    // Recalculate settlements based on new selection
-    const { settlements, advanceAmount: newAdvanceAmount } =
-      calculateSettlements(newSelectedBills, newSelectionOrder, enteredAmount);
-    setBillSettlements(settlements);
-    setAdvanceAmount(newAdvanceAmount);
   };
 
   /**
@@ -337,7 +366,7 @@ function OutstandingLIstComponent({ loading, data, total, party }) {
   /**
    * Format selected bills data for next step processing
    * Creates standardized bill objects with settlement information
-   * 
+   *
    * @returns {Array} Array of formatted bill objects
    */
   const formatSelectedBillsData = () => {
@@ -351,7 +380,7 @@ function OutstandingLIstComponent({ loading, data, total, party }) {
         bill_no: bill?.bill_no,
         billId: bill?.billId,
         bill_date: bill?.bill_date,
-        billPending_amt: Number(billAmount?.toFixed(2)),
+        bill_pending_amt: Number(billAmount?.toFixed(2)),
         source: bill?.source,
         settledAmount: Number(settledAmount?.toFixed(2)),
         remainingAmount: Number((billAmount - settledAmount)?.toFixed(2)),
@@ -368,149 +397,148 @@ function OutstandingLIstComponent({ loading, data, total, party }) {
       {/* HEADER SECTION - Sticky header with party info and amount input */}
       <div className="sticky top-0 z-10 w-full shadow-lg flex flex-col rounded-[3px] gap-1">
         <div className="flex flex-col rounded-[3px] bg-white">
-          <TitleDiv title="Outstanding List" />
+          <TitleDiv loading={loading} title="Outstanding List" />
 
-          {/* Loading indicator */}
-          {loading && <CustomBarLoader />}
-
-          {/* Party information section */}
-          <div className="px-4 py-2 flex justify-between">
-            <div className="flex-col">
+          <div className={`${loading ?"opacity-80 cursor-pointer-events-none":"opacity-100"} `}>
+            {/* Party information section */}
+            <div className="px-4 py-2 flex justify-between">
+              <div className="flex-col">
+                <div className="flex items-center gap-2">
+                  <MdPeopleAlt />
+                  <p className="font-bold">{party?.partyName}</p>
+                </div>
+                <div className="flex items-center gap-2 mt-3">
+                  <p className="text-gray-500 test-sm mdd: text-md font-bold">
+                    Total
+                  </p>
+                  <p className="text-green-600 font-bold">₹{total}</p>
+                </div>
+              </div>
               <div className="flex items-center gap-2">
-                <MdPeopleAlt />
-                <p className="font-bold">{party?.partyName}</p>
-              </div>
-              <div className="flex items-center gap-2 mt-3">
-                <p className="text-gray-500 test-sm mdd: text-md font-bold">
-                  Total
+                <CallIcon
+                  phoneNumber={party?.mobileNumber}
+                  size={18}
+                  color="green"
+                />
+                <p className="text-sm font-bold text-gray-500">
+                  {party?.mobileNumber}
                 </p>
-                <p className="text-green-600 font-bold">₹{total}</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <CallIcon
-                phoneNumber={party?.mobileNumber}
-                size={18}
-                color="green"
-              />
-              <p className="text-sm font-bold text-gray-500">
-                {party?.mobileNumber}
-              </p>
-            </div>
-          </div>
 
-          <hr className="h-px my-0 bg-gray-200 border-0" />
+            <hr className="h-px my-0 bg-gray-200 border-0" />
 
-          {/* Amount input section */}
-          <div className="flex p-2 justify-between gap-3 items-center rounded-md">
-            <div className="flex items-center w-full md:w-3/4">
-              <label className="uppercase text-blueGray-600 text-sm font-bold px-3">
-                Amount
-              </label>
-              <input
-                onChange={handleAmountChange}
-                type="text"
-                value={enteredAmount}
-                placeholder="₹12,500"
-                className="px-3 py-4 placeholder-blueGray-300 bg-white rounded text-sm shadow-lg w-full ease-linear transition-all duration-150 no-focus-box outline-none border border-gray-200 focus:border-violet-500"
-              />
+            {/* Amount input section */}
+            <div className="flex p-2 justify-between gap-3 items-center rounded-md">
+              <div className="flex items-center w-full md:w-3/4">
+                <label className="uppercase text-blueGray-600 text-sm font-bold px-3">
+                  Amount
+                </label>
+                <input
+                  onChange={handleAmountChange}
+                  type="text"
+                  value={enteredAmount}
+                  placeholder="₹12,500"
+                  className="px-3 py-4 placeholder-blueGray-300 bg-white rounded text-sm shadow-lg w-full ease-linear transition-all duration-150 no-focus-box outline-none border border-gray-200 focus:border-violet-500"
+                />
+              </div>
+              <div className="flex-1">
+                <button
+                  onClick={handleNextClick}
+                  className="w-full hidden md:block text-white p-4 bg-violet-500 text-md rounded-lg"
+                >
+                  Next
+                </button>
+              </div>
             </div>
-            <div className="flex-1">
-              <button
-                onClick={handleNextClick}
-                className="w-full hidden md:block text-white p-4 bg-violet-500 text-md rounded-lg"
-              >
-                Next
-              </button>
-            </div>
-          </div>
 
-          <hr className="h-[1px] my-0 bg-gray-300 border-0" />
+            <hr className="h-[1px] my-0 bg-gray-300 border-0" />
 
-          {/* Selection summary section */}
-          <div className="bg-white px-4 py-2 pb-3 rounded-md flex gap-2 justify-between flex-wrap">
-            <div className="flex gap-2 items-center">
-              <p className="text-[11px] font-bold">
-                # Selected Bills ({selectedBills.size}/{data.length})
-              </p>
-              <FaChevronDown />
+            {/* Selection summary section */}
+            <div className="bg-white px-4 py-2 pb-3 rounded-md flex gap-2 justify-between flex-wrap">
+              <div className="flex gap-2 items-center">
+                <p className="text-[11px] font-bold">
+                  # Selected Bills ({selectedBills.size}/{data.length})
+                </p>
+                <FaChevronDown />
+              </div>
+              {/* Show advance amount if applicable */}
+              {advanceAmount > 0 && (
+                <p className="text-[11px] text-gray-600 font-bold">
+                  # Advance Amount:{" "}
+                  <span className="text-violet-500">
+                    ₹ {Number(advanceAmount.toFixed(2))}
+                  </span>
+                </p>
+              )}
             </div>
-            {/* Show advance amount if applicable */}
-            {advanceAmount > 0 && (
-              <p className="text-[11px] text-gray-600 font-bold">
-                # Advance Amount:{" "}
-                <span className="text-violet-500">
-                  ₹ {Number(advanceAmount.toFixed(2))}
-                </span>
-              </p>
-            )}
           </div>
         </div>
-      </div>
 
-      {/* BILLS LIST SECTION - Scrollable list of outstanding bills */}
-      <div className="grid grid-cols-1 gap-1 mt-2 text-center px-2 overflow-x-hidden pb-5">
-        {data?.map((bill, index) => {
-          const billAmount = parseFloat(bill.bill_pending_amt) || 0;
-          const isSelected = selectedBills.has(bill._id);
-          const settledAmount = isSelected
-            ? billSettlements.get(bill._id) || 0
-            : 0;
-          const remainingBillAmount = Math.max(0, billAmount - settledAmount);
+        {/* BILLS LIST SECTION - Scrollable list of outstanding bills */}
+        <div className="grid grid-cols-1 gap-1 mt-2 text-center px-2 overflow-x-hidden pb-5">
+          {data?.map((bill, index) => {
+            const billAmount = parseFloat(bill.bill_pending_amt) || 0;
+            const isSelected = selectedBills.has(bill._id);
+            const settledAmount = isSelected
+              ? billSettlements.get(bill._id) || 0
+              : 0;
+            const remainingBillAmount = Math.max(0, billAmount - settledAmount);
 
-          return (
-            <div
-              key={index}
-              className={`h-[110px] rounded-md shadow-xl border border-gray-300 flex justify-between px-4 transition-all duration-150 transform hover:translate-x-1 ease-in-out overflow-y-auto`}
-            >
-              {/* Bill information section */}
-              <div className="h-full px-2 py-8 lg:p-6 w-[200px] md:w-[180px] lg:w-[300px] relative">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    onChange={() => handleBillSelection(bill._id)}
-                    checked={isSelected}
-                    className="w-7 h-7 cursor-pointer"
-                  />
-                  <div className="flex flex-col items-start gap-1 ml-2">
-                    <p className="font-bold text-gray-700 text-[12px]">
-                      #{bill.bill_no}
+            return (
+              <div
+                key={index}
+                className={`h-[110px] rounded-md shadow-xl border border-gray-300 flex justify-between px-4 transition-all duration-150 transform hover:translate-x-1 ease-in-out overflow-y-auto`}
+              >
+                {/* Bill information section */}
+                <div className="h-full px-2 py-8 lg:p-6 w-[200px] md:w-[180px] lg:w-[300px] relative">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      onChange={() => handleBillSelection(bill._id)}
+                      checked={isSelected}
+                      className="w-7 h-7 cursor-pointer"
+                    />
+                    <div className="flex flex-col items-start gap-1 ml-2">
+                      <p className="font-bold text-gray-700 text-[12px]">
+                        #{bill.bill_no}
+                      </p>
+                      <p className="text-xs font-semibold text-violet-600">
+                        {dayjs(bill.bill_date).format("DD/MM/YYYY")}
+                      </p>
+                      <p className="text-xs font-semibold text-gray-500">
+                        #{camelToNormalCase(bill?.source)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bill amount section */}
+                <div className="font-semibold h-full p-2 lg:p-6 w-[150px] md:w-[180px] lg:w-[300px] flex justify-center items-end relative flex-col">
+                  <div className="flex-col justify-center text-end">
+                    <p className="text-sm font-bold text-gray-600">
+                      ₹{formatAmount(billAmount)}
                     </p>
-                    <p className="text-xs font-semibold text-violet-600">
-                      {dayjs(bill.bill_date).format("DD/MM/YYYY")}
+                    <p className="text-[12px] text-green-500">
+                      ₹{formatAmount(settledAmount)} Settled
                     </p>
-                    <p className="text-xs font-semibold text-gray-500">
-                      #{camelToNormalCase(bill?.source)}
+                    <p className="text-[12px] text-red-500">
+                      ₹{formatAmount(remainingBillAmount)} Remaining
                     </p>
                   </div>
                 </div>
               </div>
+            );
+          })}
 
-              {/* Bill amount section */}
-              <div className="font-semibold h-full p-2 lg:p-6 w-[150px] md:w-[180px] lg:w-[300px] flex justify-center items-end relative flex-col">
-                <div className="flex-col justify-center text-end">
-                  <p className="text-sm font-bold text-gray-600">
-                    ₹{formatAmount(billAmount)}
-                  </p>
-                  <p className="text-[12px] text-green-500">
-                    ₹{formatAmount(settledAmount)} Settled
-                  </p>
-                  <p className="text-[12px] text-red-500">
-                    ₹{formatAmount(remainingBillAmount)} Remaining
-                  </p>
-                </div>
-              </div>
+          {/* Mobile next button - Fixed at bottom on mobile devices */}
+          <div
+            onClick={handleNextClick}
+            className="md:hidden fixed bottom-0 p-4 left-0 w-full flex justify-center bg-white"
+          >
+            <div className="bg-violet-500 p-4 rounded-lg w-full text-white font-bold">
+              Next
             </div>
-          );
-        })}
-
-        {/* Mobile next button - Fixed at bottom on mobile devices */}
-        <div
-          onClick={handleNextClick}
-          className="md:hidden fixed bottom-0 p-4 left-0 w-full flex justify-center bg-white"
-        >
-          <div className="bg-violet-500 p-4 rounded-lg w-full text-white font-bold">
-            Next
           </div>
         </div>
       </div>

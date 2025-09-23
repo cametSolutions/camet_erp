@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { units } from "../../../../constants/units";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { MdPlaylistAdd, MdDelete } from "react-icons/md";
-function RoomRegisterComponent({ pageName, optionsData, sendToParent , editData}) {
+function RoomRegisterComponent({ pageName, optionsData, sendToParent , editData }) {
   const [priceLevelRows, setPriceLevelRows] = useState([
     { priceLevel: "", priceRate: "" },
   ]);
@@ -18,7 +18,7 @@ function RoomRegisterComponent({ pageName, optionsData, sendToParent , editData}
     if (editData) {
      setRoomData({
       roomName: editData.roomName,
-      roomType: editData.roomType,
+      roomType: editData.roomType?._id,
       bedType: editData.bedType,
       roomFloor: editData.roomFloor,
       unit: editData.unit,

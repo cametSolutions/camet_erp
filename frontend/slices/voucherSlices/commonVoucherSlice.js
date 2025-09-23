@@ -21,7 +21,6 @@ const initialState = {
   selectedPriceLevel: "",
   additionalCharges: [],
   allAdditionalCharges: [],
-  finalAmount: 0,
   persistScrollId: "",
   brand: "",
   category: "",
@@ -44,7 +43,25 @@ const initialState = {
   warrantyCardsList: null,
   note: null,
   isNoteOpen: false,
-  isScanOn:null
+  paymentSplittingData: [
+    { type: "cash", amount: 0, ref_id: null, ref_collection: "Cash" },
+    { type: "upi", amount: 0, ref_id: null, ref_collection: "BankDetails" },
+    { type: "cheque", amount: 0, ref_id: null, ref_collection: "BankDetails" },
+    {
+      type: "credit",
+      amount: 0,
+      ref_id: null,
+      ref_collection: "Party",
+      reference_name: "",
+    },
+  ],
+  isScanOn: null,
+  subTotal: 0,
+  totalAdditionalCharges: 0,
+  totalWithAdditionalCharges: 0,
+  totalPaymentSplits: 0,
+  finalAmount: 0,
+  finalOutstandingAmount: 0,
 };
 
 export const commonVoucherSlice = createSlice({
@@ -189,6 +206,9 @@ export const commonVoucherSlice = createSlice({
     },
     setFinalAmount: (state, action) => {
       state.finalAmount = action.payload;
+    },
+    setTotalAfterAdditionalCharges: (state, action) => {
+      state.totalAfterAdditionalCharges = action.payload;
     },
 
     saveId: (state, action) => {
@@ -477,8 +497,119 @@ export const commonVoucherSlice = createSlice({
     addIsNoteOpen: (state, action) => {
       state.isNoteOpen = action.payload;
     },
+
+    addPaymentSplits: (state, action) => {
+
+      const { changeFinalAmount, paymentSplits, totalPaymentSplits } =
+        action.payload;
+
+      state.paymentSplittingData = paymentSplits;
+      state.totalPaymentSplits = totalPaymentSplits;
+
+      if (changeFinalAmount) {
+        const total = paymentSplits?.reduce(
+          (acc, curr) => acc + parseInt(curr?.amount || 0),
+          0
+        );
+
+        const creditAmount = paymentSplits?.find((split) => split.type === "credit")?.amount || 0;
+
+        console.log(total);
+
+        state.totalAfterPaymentSplit = Number(
+          state.totalAfterAdditionalCharges - total
+        );
+        state.finalOutstandingAmount=creditAmount
+      }
+    },
+    addCreditInPaymentSplit: (state, action) => {
+      const { reference_name, ref_id,credit_reference_type } = action.payload;
+
+      // Ensure paymentSplittingData exists and is an array
+      if (
+        !state.paymentSplittingData ||
+        !Array.isArray(state.paymentSplittingData)
+      ) {
+        return;
+      }
+
+      // Find the index of the credit payment split
+      const creditIndex = state.paymentSplittingData.findIndex(
+        (el) => el.type === "credit"
+      );
+
+      if (creditIndex !== -1) {
+        // Update the existing credit entry
+        state.paymentSplittingData[creditIndex] = {
+          ...state.paymentSplittingData[creditIndex],
+          ref_id: ref_id,
+          reference_name: reference_name,
+          credit_reference_type: credit_reference_type,
+        };
+      } else {
+        // If no credit entry exists, create one
+        const updatedData = {
+          type: "credit",
+          amount: 0,
+          ref_id: ref_id,
+          ref_collection: "Party",
+          reference_name: reference_name,
+          credit_reference_type: credit_reference_type,
+        };
+        state.paymentSplittingData.push(updatedData);
+      }
+    },
+
     updateIsScanOn: (state, action) => {
       state.isScanOn = action.payload;
+    },
+
+    updateTotalValue: (state, action) => {
+      const { field, value } = action.payload;
+      if (field in state) {
+        state[field] = value;
+      }
+
+      // Always recalc dependent values
+      state.totalWithAdditionalCharges =
+        state.subTotal + (state.totalAdditionalCharges || 0);
+
+      state.finalAmount = state.totalWithAdditionalCharges;
+
+      const creditAmount = state.paymentSplittingData.find((split) => split.type === "credit")?.amount || 0;
+
+      state.finalOutstandingAmount =
+        state.totalWithAdditionalCharges - ((state.totalPaymentSplits || 0) - creditAmount);
+      state.totalAfterPaymentSplit =  state.totalWithAdditionalCharges - (state.totalPaymentSplits || 0)
+    },
+
+    resetPaymentSplit: (state) => {
+      state.totalPaymentSplits = 0;
+      state.paymentSplittingData = [
+        { type: "cash", amount: 0, ref_id: null, ref_collection: "Cash" },
+        {
+          type: "upi",
+          amount: 0,
+          ref_id: null,
+          ref_collection: "BankDetails",
+        },
+        {
+          type: "cheque",
+          amount: 0,
+          ref_id: null,
+          ref_collection: "BankDetails",
+        },
+        {
+          type: "credit",
+          amount: 0,
+          ref_id: null,
+          ref_collection: "Party",
+          reference_name: "",
+          credit_reference_type: "",
+        },
+      ];
+      state.totalAfterPaymentSplit = state.totalWithAdditionalCharges;
+      state.finalOutstandingAmount = state.totalWithAdditionalCharges
     },
   },
 });
@@ -542,7 +673,13 @@ export const {
   addWarrantyCardsList,
   addNote,
   addIsNoteOpen,
-  updateIsScanOn
+  addPaymentSplits,
+  updateIsScanOn,
+  addCreditInPaymentSplit,
+  setTotalAfterAdditionalCharges,
+  updateTotalValue,
+  resetPaymentSplit,
+  
 } = commonVoucherSlice.actions;
 
 export default commonVoucherSlice.reducer;

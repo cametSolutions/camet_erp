@@ -3,7 +3,7 @@ import React from "react";
 import Mail from "../../../../../assets/images/gmail.png";
 import WhatsApp from "../../../../../assets/images/whatsapp.png";
 import Download from "../../../../../assets/images/download.png";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { PDFDocument } from "pdf-lib";

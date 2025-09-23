@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from "react";
 import api from "../../../api/api";
 import { useLocation, useParams } from "react-router-dom";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import VoucherPdf from "./indian/VoucherPdf";
@@ -12,6 +12,7 @@ import { SharingMethodSelector } from "../voucherDetails/actionButtons/SharingMe
 import { FaShareAlt } from "react-icons/fa";
 import html2pdf from "html2pdf.js";
 import MobilePdfViewer from "./MobilePdfViewer"; // Import the new wrapper
+
 
 function VoucherPdfInitiator() {
   const [data, setData] = useState([]);
@@ -52,6 +53,8 @@ function VoucherPdfInitiator() {
     params.vanSale = true;
   }
 
+  console.log(voucherType)
+
   useEffect(() => {
     const getTransactionDetails = async () => {
       try {
@@ -73,7 +76,6 @@ function VoucherPdfInitiator() {
     getTransactionDetails();
   }, [id, voucherType]);
 
-  /////////////////////////////////////////////// handle download ///////////////////////////////////////////////
   const handleDownload = () => {
     const element = contentToPrint.current;
     if (!element) return;

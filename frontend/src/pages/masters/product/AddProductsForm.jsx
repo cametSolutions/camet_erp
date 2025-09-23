@@ -3,7 +3,7 @@
 /* eslint-disable react/no-unknown-property */
 import { useState, useEffect, useCallback } from "react";
 import { MdDelete, MdPlaylistAdd } from "react-icons/md";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import Swal from "sweetalert2";
 import { useSelector } from "react-redux";
 

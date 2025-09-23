@@ -3,7 +3,11 @@ import OragnizationModel from "../models/OragnizationModel.js";
 import productModel from "../models/productModel.js";
 import purchaseModel from "../models/purchaseModel.js";
 import TallyData from "../models/TallyData.js";
-import { formatToLocalDate, truncateToNDecimals } from "./helper.js";
+import {
+  formatToLocalDate,
+  getVoucherMultiplier,
+  truncateToNDecimals,
+} from "./helper.js";
 
 ///////////////////////// for stock update ////////////////////////////////
 export const handlePurchaseStockUpdates = async (
@@ -46,7 +50,7 @@ export const handlePurchaseStockUpdates = async (
         const godownCount =
           godown.actualCount !== undefined ? godown.actualCount : godown.count;
 
-        if (godown.newBatch && !godown?.created_by )  {
+        if (godown.newBatch && !godown?.created_by) {
           if (godownCount > 0) {
             // Handle new batch logic
             const newBatchStock = truncateToNDecimals(godownCount, 3);
@@ -636,3 +640,98 @@ export const removeNewBatchCreatedByThisPurchase = async (
     console.log("No products needed updating");
   }
 };
+
+// export const updateOutstandingBalance = async ({
+//   existingVoucher,
+//   valueToUpdateInOutstanding,
+//   orgId,
+//   voucherNumber,
+//   party,
+//   session,
+//   createdBy,
+//   transactionType,
+//   secondaryMobile,
+//   selectedDate,
+//   classification,
+//   isCancelled = false,
+// }) => {
+//   if (party?.partyType === "party") {
+//     // Calculate old bill balance
+//     let oldBillBalance =
+//       existingVoucher?.finalOutstandingAmount ||
+//       existingVoucher?.finalAmount ||
+//       0;
+//     let newBillBalance = valueToUpdateInOutstanding;
+
+//     // Find existing outstanding record
+//     const matchedOutStanding = await TallyData.findOne({
+//       party_id: existingVoucher?.party?._id,
+//       cmp_id: orgId,
+//       billId: existingVoucher?._id.toString(),
+//     }).session(session);
+
+//     // Calculate sum of applied receipts
+//     const appliedPayments = matchedOutStanding?.appliedPayments || [];
+//     const appliedReceipts = matchedOutStanding?.appliedReceipts || [];
+//     const sumOfAppliedPayments = appliedPayments.reduce((sum, receipt) => {
+//       return sum + (receipt.settledAmount || 0);
+//     }, 0);
+//     const sumOfAppliedReceipts = appliedReceipts.reduce((sum, receipt) => {
+//       return sum + (receipt.settledAmount || 0);
+//     }, 0);
+
+//     const totalSettlements = sumOfAppliedPayments + sumOfAppliedReceipts;
+
+//     const voucherTypeMultiplier = getVoucherMultiplier(transactionType);
+//     const billPendingAmount = Number(
+//       voucherTypeMultiplier * newBillBalance - totalSettlements
+//     );
+
+//     console.log(`New bill balance: ${newBillBalance}`);
+//     console.log(`old bill balance: ${oldBillBalance}`);
+//     console.log(`Sum of applied payments: ${sumOfAppliedPayments}`);
+//     console.log(`Sum of applied receipts: ${sumOfAppliedReceipts}`);
+//     console.log(`Total settlements: ${totalSettlements}`);
+//     console.log(`Bill pending amount: ${billPendingAmount}`);
+
+//     let updatedTallyData;
+
+//     if (matchedOutStanding?._id) {
+//       // Update existing document to preserve _id
+//       updatedTallyData = await TallyData.findByIdAndUpdate(
+//         matchedOutStanding._id,
+//         {
+//           party_id: existingVoucher?.party?._id,
+//           cmp_id: orgId,
+//           billId: existingVoucher?._id.toString(),
+//           bill_amount: newBillBalance,
+//           bill_pending_amt: billPendingAmount, // Updated calculation
+//           voucherNumber: voucherNumber,
+//           primaryUserId: existingVoucher.Primary_user_id,
+//           party: party,
+//           secondaryMobile: secondaryMobile,
+//           voucherType: existingVoucher?.voucherType,
+//           classification: billPendingAmount > 0 ? "Dr" : "Cr",
+//           createdBy: createdBy,
+//           transactionType: transactionType,
+//           updatedAt: new Date(),
+//           bill_date: new Date(selectedDate),
+//           bill_due_date: new Date(selectedDate),
+//           // appliedPayments: matchedOutStanding?.appliedPayments || [], // Ensure updated arrays are saved
+//           // appliedPayments: matchedOutStanding?.appliedPayments || [],
+//           isCancelled: isCancelled,
+//         },
+//         {
+//           new: true, // Return updated document
+//           session: session,
+//         }
+//       );
+
+//       // console.log("updatedTallyData", updatedTallyData);
+//     }
+
+//     return updatedTallyData;
+//   } else {
+//     return null;
+//   }
+// };

@@ -19,7 +19,12 @@ import debitNoteModel from "../models/debitNoteModel.js";
 import secondaryUserModel from "../models/secondaryUserModel.js";
 import mongoose from "mongoose";
 import TallyData from "../models/TallyData.js";
-import { generateVoucherNumber, getSeriesDetailsById } from "../helpers/voucherHelper.js";
+import {
+  generateVoucherNumber,
+  getSeriesDetailsById,
+} from "../helpers/voucherHelper.js";
+import settlementModel from "../models/settlementModel.js";
+import { createAdvanceReceiptsFromAppliedReceipts } from "../helpers/receiptHelper.js";
 
 // @desc create credit note
 // route GET/api/sUsers/createDebitNote
@@ -35,6 +40,7 @@ export const createDebitNote = async (req, res) => {
       additionalChargesFromRedux,
       note,
       finalAmount: lastAmount,
+
       selectedDate,
       voucherType,
       series_id,
@@ -90,20 +96,6 @@ export const createDebitNote = async (req, res) => {
       session // Pass session
     );
 
-    ///save settlement data
-    await saveSettlementData(
-      party,
-      orgId,
-      "normal debit note",
-      "debitNote",
-      debitNoteNumber,
-      result._id,
-      lastAmount,
-      result?.createdAt,
-      result?.party?.partyName,
-      session
-    );
-
     await updateTallyData(
       orgId,
       debitNoteNumber,
@@ -116,7 +108,8 @@ export const createDebitNote = async (req, res) => {
       lastAmount, ///valueToUpdateInTally is also last amount
       selectedDate,
       voucherType,
-      "Dr"
+      "Dr",
+      "DebitNote"
     );
 
     await session.commitTransaction();
@@ -144,6 +137,8 @@ export const createDebitNote = async (req, res) => {
 // route GET/api/sUsers/cancelDebitNote
 
 export const cancelDebitNote = async (req, res) => {
+  console.log("Cancel debit note request received");
+
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
@@ -162,33 +157,40 @@ export const cancelDebitNote = async (req, res) => {
     // Revert existing stock updates
     await revertDebitNoteStockUpdates(existingDebitNote.items, session);
 
-    //// revert settlement data
-    await revertSettlementData(
-      existingDebitNote?.party,
-      existingDebitNote?.cmp_id,
-      existingDebitNote?.debitNoteNumber,
-      existingDebitNote?._id.toString(),
-      session
-    );
+    /// delete  all the settlements
+    await settlementModel.deleteMany({ voucherId: debitNoteId }, { session });
 
-    const cancelOutstanding = await TallyData.findOneAndUpdate(
-      {
-        bill_no: existingDebitNote?.debitNoteNumber,
-        billId: debitNoteId?.toString(),
-      },
-      {
-        $set: {
-          isCancelled: true,
-        },
-      }
-    ).session(session);
+    ////// update the outstanding as isCancelled as true and make advance receipts form applied Receipts
+    const outstandingRecord = await TallyData.findOne({
+      billId: existingDebitNote._id.toString(),
+      bill_no: existingDebitNote.debitNoteNumber,
+      cmp_id: existingDebitNote.cmp_id,
+      Primary_user_id: existingDebitNote.Primary_user_id,
+    }).session(session);
+
+    console.log("outstandingRecord", outstandingRecord);
+
+    if (outstandingRecord) {
+      const outstandingResult = await updateOutstandingBalance({
+        existingVoucher: existingDebitNote,
+        valueToUpdateInOutstanding: 0,
+        orgId: existingDebitNote.cmp_id,
+        voucherNumber: existingDebitNote?.debitNoteNumber,
+        party: existingDebitNote?.party,
+        session,
+        createdBy: req.owner,
+        transactionType: "debitNote",
+        secondaryMobile: null,
+        selectedDate: existingDebitNote?.date,
+        classification: "Dr",
+      });
+      outstandingRecord.isCancelled = true;
+      await outstandingRecord.save({ session });
+    }
 
     // flagging is cancelled true
-
     existingDebitNote.isCancelled = true;
-
     const cancelledDebitNote = await existingDebitNote.save({ session });
-
     await session.commitTransaction();
 
     res.status(200).json({
@@ -227,8 +229,13 @@ export const editDebitNote = async (req, res) => {
       despatchDetails,
       additionalChargesFromRedux,
       finalAmount: lastAmount,
+      finalOutstandingAmount,
+      totalAdditionalCharges,
+      totalWithAdditionalCharges,
+      totalPaymentSplits,
       selectedDate,
-      note
+      subTotal,
+      note,
     } = req.body;
 
     let { debitNoteNumber, series_id, usedSeriesNumber } = req.body;
@@ -255,11 +262,9 @@ export const editDebitNote = async (req, res) => {
 
       debitNoteNumber = voucherNumber; // Always update when series changes
       usedSeriesNumber = newUsedSeriesNumber; // Always update when series changes
-    }
-    
-    else{
-      debitNoteNumber = existingDebitNote.debitNoteNumber
-      usedSeriesNumber = existingDebitNote.usedSeriesNumber
+    } else {
+      debitNoteNumber = existingDebitNote.debitNoteNumber;
+      usedSeriesNumber = existingDebitNote.usedSeriesNumber;
     }
 
     await revertDebitNoteStockUpdates(existingDebitNote.items, session);
@@ -285,6 +290,11 @@ export const editDebitNote = async (req, res) => {
       usedSeriesNumber,
       date: await formatToLocalDate(selectedDate, orgId, session),
       createdAt: existingDebitNote.createdAt,
+      finalOutstandingAmount,
+      totalAdditionalCharges,
+      totalWithAdditionalCharges,
+      totalPaymentSplits,
+      subTotal,
     };
 
     await debitNoteModel.findByIdAndUpdate(debitNoteId, updateData, {
@@ -292,54 +302,46 @@ export const editDebitNote = async (req, res) => {
       session,
     });
 
-    /// revert settlement data
-    await revertSettlementData(
-      existingDebitNote?.party,
-      orgId,
-      existingDebitNote?.debitNoteNumber,
-      existingDebitNote?._id.toString(),
-      session
-    );
-
+    /// delete  all the settlements
+    await settlementModel.deleteMany({ voucherId: debitNoteId }, { session });
     /// recreate the settlement data
-
-    ///save settlement data
-    await saveSettlementData(
-      party,
-      orgId,
-      "normal debit note",
-      "debitNote",
-      updateData?.debitNoteNumber,
-      debitNoteId,
-      lastAmount,
-      updateData?.createdAt,
-      updateData?.party?.partyName,
-      session
-    );
-
-    //// edit outstanding
 
     const secondaryUser = await secondaryUserModel
       .findById(req.sUserId)
       .session(session);
     const secondaryMobile = secondaryUser?.mobile;
 
-    const outstandingResult = await updateOutstandingBalance({
-      existingVoucher: existingDebitNote,
-      newVoucherData: {
-        paymentSplittingData: {},
+    console.log("lastAmount", lastAmount);
+
+    if (party?.partyType === "party") {
+      const outstandingResult = await updateOutstandingBalance({
+        existingVoucher: existingDebitNote,
+        valueToUpdateInOutstanding: lastAmount,
+        orgId,
+        voucherNumber: debitNoteNumber,
+        party,
+        session,
+        createdBy: req.owner,
+        transactionType: "debitNote",
+        secondaryMobile,
+        selectedDate,
+        classification: "Dr",
+      });
+    } else {
+      /// save settlements
+      await saveSettlementData(
+        debitNoteNumber,
+        series_id,
+        "Debit Note",
+        "debitNote",
         lastAmount,
-      },
-      orgId,
-      voucherNumber: debitNoteNumber,
-      party,
-      session,
-      createdBy: req.owner,
-      transactionType: "debitNote",
-      secondaryMobile,
-      selectedDate,
-      classification: "Dr",
-    });
+        party,
+        orgId,
+        Primary_user_id,
+        selectedDate,
+        session
+      );
+    }
 
     await session.commitTransaction();
     session.endSession();

@@ -1,32 +1,44 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import CustomBarLoader from "@/components/common/CustomBarLoader";
 import TitleDiv from "@/components/common/TitleDiv";
 import BookingForm from "../Components/BookingForm";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import api from "@/api/api";
+import { useQueryClient } from "@tanstack/react-query";
 function BookingPage() {
+  const location = useLocation();
+  const isSubmittingRef = useRef(false);
+  const roomId = location?.state?.roomId;
   const organization = useSelector(
     (state) => state?.secSelectedOrganization?.secSelectedOrg
   );
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate()
-  const handleSubmit = async (data) => {
-    console.log(data);
+  const [submitLoader, setSubmitLoader] = useState(false);
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const handleSubmit = async (data, paymentData) => {
     try {
       let response = await api.post(
-        `/api/sUsers/roomBooking/${organization._id}`,
-        data,
+        `/api/sUsers/saveData/${organization._id}`,
+        { data: data, modal: "bookingPage", paymentData: paymentData },
         { withCredentials: true }
       );
       if (response?.data?.success) {
         toast.success(response?.data?.message);
-        navigate("/sUsers/hotelDashBoard");
+        queryClient.invalidateQueries({
+        queryKey: ["todaysTransaction", organization._id, false],
+      });
+        navigate("/sUsers/bookingList");
       }
+      isSubmittingRef.current = false;
     } catch (error) {
       console.log(error);
       toast.error(error?.response?.data?.message);
+      isSubmittingRef.current = false;
+    } finally {
+      setSubmitLoader(false);
     }
   };
   return (
@@ -41,13 +53,23 @@ function BookingPage() {
             dropdownContents={[
               {
                 title: "New Guest",
-                onClick: () => {
-                  navigate("sUsers/partyList");
-                },
+                to: "/sUsers/addParty",
+                from: "/sUsers/bookingPage",
+              },
+              {
+                title: "Booking List",
+                to: "/sUsers/bookingList",
               },
             ]}
           />
-          <BookingForm handleSubmit={handleSubmit} setIsLoading={setLoading} />
+          <BookingForm
+            handleSubmit={handleSubmit}
+            setIsLoading={setLoading}
+            isSubmittingRef={isSubmittingRef}
+            isFor="saleOrder"
+            roomId={roomId}
+            submitLoader={submitLoader}
+          />
         </div>
       )}
     </>

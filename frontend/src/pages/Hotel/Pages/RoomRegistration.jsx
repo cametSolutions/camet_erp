@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect } from "react";
 import RoomRegisterComponent from "../Components/RoomRegisterComponent";
 import api from "@/api/api";
 import { useSelector } from "react-redux";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import CustomBarLoader from "@/components/common/CustomBarLoader";
 import { useNavigate } from "react-router-dom";
 import TitleDiv from "@/components/common/TitleDiv";

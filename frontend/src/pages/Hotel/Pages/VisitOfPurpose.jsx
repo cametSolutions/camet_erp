@@ -3,7 +3,7 @@ import TitleDiv from "@/components/common/TitleDiv";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import RoomSubDetailsManagement from "../Components/RoomSubDetailsManagement";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import api from "@/api/api";
 import useFetch from "@/customHook/useFetch";
 import Swal from "sweetalert2";
@@ -119,6 +119,7 @@ function VisitOfPurpose() {
           displayData={visitOfPurposeData}
           loading={loading}
           handleDelete={handleDelete}
+          
         />
       </div>
     </div>

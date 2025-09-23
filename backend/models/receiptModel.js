@@ -44,6 +44,7 @@ const receiptSchema = new mongoose.Schema(
     party: {
       _id: { type: Schema.Types.ObjectId, ref: "Party" },
       partyName: { type: String },
+      partyType: { type: String },
       accountGroupName: { type: String },
       accountGroup_id: {
         type: mongoose.Types.ObjectId,
@@ -68,7 +69,6 @@ const receiptSchema = new mongoose.Schema(
     // Bill data with references
     billData: [
       {
-
         /// id of the outstanding
         _id: {
           type: mongoose.Schema.Types.ObjectId,
@@ -80,7 +80,7 @@ const receiptSchema = new mongoose.Schema(
         /// id of the source of the outstanding
         billId: { type: String, required: true },
         bill_date: { type: Date, required: true },
-        billPending_amt: { type: Number, required: true },
+        bill_pending_amt: { type: Number, required: true },
         source: { type: String },
         settledAmount: { type: Number, required: true },
         remainingAmount: { type: Number, required: true },

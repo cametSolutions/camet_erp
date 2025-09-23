@@ -9,7 +9,7 @@ import {
 } from "react-icons/fi";
 import { IoBarcodeOutline } from "react-icons/io5";
 import api from "@/api/api";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { useDispatch, useSelector } from "react-redux";
 import { useEffect, useState } from "react";
 import { updateConfiguration } from "../../../../../slices/secSelectedOrgSlice";
@@ -39,96 +39,99 @@ const StockItem = () => {
 
 
   useEffect(() => {
-    setSettingsOptions([
-      {
-        title: industry === 6 || industry === 7 ? "Room Management" : "Stock Item Filter",
-        description:
-          "Filters only show product creation window if it's enabled",
-        icon: <FiSettings />,
-        to: "/sUsers/stockItemSettings",
-        active: true,
-      },
-       {
-        title: industry === 6 || industry === 7 ? "Restuarent  Management" : "Stock Item Filter",
-        description:
-          "Filters only show product creation window if it's enabled",
-        icon: <FiSettings />,
-        to: "/sUsers/restuarentSettings",
-        active: true,
-      },
-      {
-        title: "Add Location",
-        description: "Add location tracking for all vouchers",
-        icon: <FiMapPin />,
-        to: "/sUsers/godown",
-        active: configurations[0]?.gdnEnabled,
-      },
-      {
-        title: "Enable Location",
-        description: "Enable location tracking for all vouchers",
-        icon: <FiMapPin />,
-        active: true,
-        toggle: true,
-        toggleValue: configurations[0]?.gdnEnabled,
-        dbField: "gdnEnabled",
-      },
-      {
-        title: "Enable Batch",
-        description:
-          "Enable this to include batch while adding item in invoice",
-        icon: <FiPlusCircle />,
-        to: "/sUsers/addBatchSettings",
-        active: true,
-        toggle: true,
-        toggleValue: configurations[0]?.batchEnabled,
-        dbField: "batchEnabled",
-      },
-      {
-        title: "Enable Manufacturing Date",
-        description:
-          "Enable this to include batch while adding item in invoice",
-        icon: <BsCalendar2Date />,
-        to: "/sUsers/addBatchSettings",
-        active: configurations[0]?.batchEnabled,
-        toggle: true,
-        toggleValue: configurations[0]?.enableManufacturingDate || false,
-        dbField: "enableManufacturingDate",
-      },
-      {
-        title: "Enable Expiry Date",
-        description:
-          "Enable this to include batch while adding item in invoice",
-        icon: <BsCalendar2Date />,
-        to: "/sUsers/addBatchSettings",
-        active: configurations[0]?.batchEnabled,
-        toggle: true,
-        toggleValue: configurations[0]?.enableExpiryDate || false,
-        dbField: "enableExpiryDate",
-      },
-      {
-        title: "Price Level",
-        description: "Enable Multiple Price level for invoice",
-        icon: <FiDollarSign />,
-        to: "/sUsers/pricelevel",
-        active: true,
-      },
-      {
-        title: "Tax Classification",
-        description:
-          "Enable it to adding HSN and Tax details when creating a new stock item",
-        icon: <FiTag />,
-        to: "/sUsers/hsnList",
-        active: true,
-      },
-      {
-        title: "Barcode Management",
-        description: "Manage your product barcode effectively",
-        icon: <IoBarcodeOutline />,
-        to: "/sUsers/barcodeList",
-        active: true,
-      },
-    ]);
-  }, [configurations]);
+  setSettingsOptions([
+    {
+      title: industry === 6 || industry === 7 ? "Room Management" : "Stock Item Filter",
+      description: "Filters only show product creation window if it's enabled",
+      icon: <FiSettings />,
+      to: "/sUsers/stockItemSettings",
+      active: true,
+    },
+
+    // ✅ Conditionally add extra options
+    ...(industry === 6 || industry === 7
+      ? [
+          {
+            title: "Restaurant Management",
+            description: "Filters only show product creation window if it's enabled",
+            icon: <FiSettings />,
+            to: "/sUsers/restuarentSettings",
+            active: true,
+          },
+         
+        ]
+      : []),
+
+    {
+      title: "Add Location",
+      description: "Add location tracking for all vouchers",
+      icon: <FiMapPin />,
+      to: "/sUsers/godown",
+      active: configurations[0]?.gdnEnabled,
+    },
+    {
+      title: "Enable Location",
+      description: "Enable location tracking for all vouchers",
+      icon: <FiMapPin />,
+      active: true,
+      toggle: true,
+      toggleValue: configurations[0]?.gdnEnabled,
+      dbField: "gdnEnabled",
+    },
+    {
+      title: "Enable Batch",
+      description: "Enable this to include batch while adding item in invoice",
+      icon: <FiPlusCircle />,
+      to: "/sUsers/addBatchSettings",
+      active: true,
+      toggle: true,
+      toggleValue: configurations[0]?.batchEnabled,
+      dbField: "batchEnabled",
+    },
+    {
+      title: "Enable Manufacturing Date",
+      description: "Enable this to include batch while adding item in invoice",
+      icon: <BsCalendar2Date />,
+      to: "/sUsers/addBatchSettings",
+      active: configurations[0]?.batchEnabled,
+      toggle: true,
+      toggleValue: configurations[0]?.enableManufacturingDate || false,
+      dbField: "enableManufacturingDate",
+    },
+    {
+      title: "Enable Expiry Date",
+      description: "Enable this to include batch while adding item in invoice",
+      icon: <BsCalendar2Date />,
+      to: "/sUsers/addBatchSettings",
+      active: configurations[0]?.batchEnabled,
+      toggle: true,
+      toggleValue: configurations[0]?.enableExpiryDate || false,
+      dbField: "enableExpiryDate",
+    },
+    {
+      title: "Price Level",
+      description: "Enable Multiple Price level for invoice",
+      icon: <FiDollarSign />,
+      to: "/sUsers/pricelevel",
+      active: true,
+    },
+    {
+      title: "Tax Classification",
+      description: "Enable it to adding HSN and Tax details when creating a new stock item",
+      icon: <FiTag />,
+      to: "/sUsers/hsnList",
+      active: true,
+    },
+    {
+      title: "Barcode Management",
+      description: "Manage your product barcode effectively",
+      icon: <IoBarcodeOutline />,
+      to: "/sUsers/barcodeList",
+      active: true,
+    },
+  ]);
+}, [configurations, industry]); // ✅ also add `industry` as a dependency
+
 
   const dispatch = useDispatch();
 

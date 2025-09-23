@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useSelector } from "react-redux";
 import Swal from "sweetalert2";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 import PartyListComponent from "./PartyListComponent";
 import TitleDiv from "../../../components/common/TitleDiv";

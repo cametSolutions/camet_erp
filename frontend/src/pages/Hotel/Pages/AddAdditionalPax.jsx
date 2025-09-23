@@ -2,7 +2,7 @@ import TitleDiv from "@/components/common/TitleDiv";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import RoomSubDetailsManagement from "../Components/RoomSubDetailsManagement";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import api from "@/api/api";
 import useFetch from "@/customHook/useFetch";
 import Swal from "sweetalert2";
@@ -39,11 +39,11 @@ function AddAdditionalPax() {
       let res;
       if (isEdit) {
         res = await api.put(
-          `/api/sUsers/updateAdditionalPax/${organization._id}`,
+          `/api/sUsers/updateAdditionalPax`,
           {
             additionalPaxName: value,
             amount: price,
-            additionalPaxId: id,
+            id: id,
 
           },
           { withCredentials: true }

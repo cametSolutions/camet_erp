@@ -9,6 +9,7 @@ import {
   createOutstandingWithAdvanceAmount,
   saveSettlementData,
   revertSettlementData,
+  updateAdvanceOnEdit,
 } from "../helpers/receiptHelper.js";
 
 import {
@@ -20,6 +21,7 @@ import {
 import paymentModel from "../models/paymentModel.js";
 import { formatToLocalDate } from "../helpers/helper.js";
 import { generateVoucherNumber } from "../helpers/voucherHelper.js";
+import settlementModel from "../models/settlementModel.js";
 
 /**
  * @desc  create payment
@@ -114,18 +116,18 @@ export const createPayment = async (req, res) => {
 
     // /// save settlement data in cash or bank collection
     await saveSettlementData(
-      paymentMethod,
-      paymentDetails,
       paymentNumber,
       savedPayment._id.toString(),
-      enteredAmount,
-      cmp_id,
+      "Payment",
       "payment",
-      savedPayment?.date,
-      savedPayment?.party?.partyName,
-      session,
+      enteredAmount || 0,
+      paymentMethod,
+      paymentDetails,
       party,
-      "Payment"
+      cmp_id,
+      Primary_user_id,
+      date,
+      session
     );
 
     // // Use the helper function to update TallyData
@@ -152,8 +154,6 @@ export const createPayment = async (req, res) => {
           "Dr"
         );
     }
-
-    
 
     // Commit the transaction
     await session.commitTransaction();
@@ -208,26 +208,38 @@ export const cancelPayment = async (req, res) => {
     }
 
     // Revert tally updates
-    await revertTallyUpdates(payment.billData, cmp_id, session,paymentId.toString());
+    await revertTallyUpdates(
+      payment.billData,
+      cmp_id,
+      session,
+      paymentId.toString()
+    );
 
-    /// save settlement data in cash or bank collection
-    await revertSettlementData(
-      payment?.paymentMethod,
-      payment?.paymentDetails,
-      payment?.paymentNumber,
-      payment?._id.toString(),
+    /// delete  all the settlements
+    await settlementModel.deleteMany({ voucherId: paymentId }, { session });
+
+    await updateAdvanceOnEdit(
+      "payment",
+      0,
+      payment.party,
+      payment.cmp_id,
+      paymentId.toString(),
+      Primary_user_id,
+      payment.receiptNumber,
+      payment?._id?.toString(),
+      payment.date,
       session
     );
 
-    // Delete advance payment, if any
-    if (payment.advanceAmount > 0) {
-      await deleteAdvancePayment(
-        payment.paymentNumber,
-        payment._id.toString(),
-        Primary_user_id,
-        session
-      );
-    }
+    // // Delete advance payment, if any
+    // if (payment.advanceAmount > 0) {
+    //   await deleteAdvancePayment(
+    //     payment.paymentNumber,
+    //     payment._id.toString(),
+    //     Primary_user_id,
+    //     session
+    //   );
+    // }
 
     // Mark the payment as cancelled
     payment.isCancelled = true;
@@ -305,26 +317,29 @@ export const editPayment = async (req, res) => {
     }
 
     // Revert tally updates
-    await revertTallyUpdates(payment.billData, cmp_id, session,paymentId.toString());
-
-    /// save settlement data in cash or bank collection
-    await revertSettlementData(
-      payment?.paymentMethod,
-      payment?.paymentDetails,
-      payment?.paymentNumber,
-      payment?._id.toString(),
-      session
+    await revertTallyUpdates(
+      payment.billData,
+      cmp_id,
+      session,
+      paymentId.toString()
     );
 
-    // Delete advance payment, if any
-    if (payment.advanceAmount > 0) {
-      await deleteAdvancePayment(
-        payment.paymentNumber,
-        payment._id.toString(),
-        Primary_user_id,
-        session
-      );
-    }
+    /// delete  all the settlements
+    await settlementModel.deleteMany({ voucherId: paymentId }, { session });
+
+    // update advance payment / advance payment on edit of receipt or payment
+    await updateAdvanceOnEdit(
+      "payment",
+      advanceAmount,
+      payment.party,
+      cmp_id,
+      paymentId.toString(),
+      Primary_user_id,
+      payment?.paymentNumber,
+      payment?.id?.toString(),
+      date,
+      session
+    );
 
     // Use the helper function to update TallyData
     await updateTallyData(
@@ -353,37 +368,19 @@ export const editPayment = async (req, res) => {
 
     /// save settlement data in cash or bank collection
     await saveSettlementData(
-      paymentMethod,
-      paymentDetails,
       paymentNumber,
       savedPayment._id.toString(),
-      enteredAmount,
-      cmp_id,
+      "Payment",
       "payment",
-      savedPayment?.date,
-      savedPayment?.party?.partyName,
-      session,
+      enteredAmount || 0,
+      paymentMethod,
+      paymentDetails,
       party,
-      "Payment"
+      cmp_id,
+      Primary_user_id,
+      date,
+      session
     );
-
-    if (advanceAmount > 0) {
-      const outstandingWithAdvanceAmount =
-        await createOutstandingWithAdvanceAmount(
-          date,
-          cmp_id,
-          savedPayment.paymentNumber,
-          savedPayment._id.toString(),
-          Primary_user_id,
-          party,
-          secondaryUser.mobileNumber,
-          advanceAmount,
-          session,
-          "advancePayment",
-          "Dr"
-        );
-    }
-
 
     await session.commitTransaction();
     session.endSession();

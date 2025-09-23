@@ -3,7 +3,7 @@ import { MdPayment } from "react-icons/md";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import api from "../../api/api";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import DatePicker from "react-datepicker";
@@ -141,6 +141,7 @@ function Payment() {
       Swal.fire({
         title: "Success",
         text: res.data.message,
+        
         icon: "success",
         confirmButtonText: "OK",
       }).then((result) => {

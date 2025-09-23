@@ -3,8 +3,6 @@ import OragnizationModel from "../models/OragnizationModel.js";
 import { countries } from "../../frontend/constants/countries.js";
 import AccountGroup from "../models/accountGroup.js";
 
-
-
 /// truncate to n decimals
 export const truncateToNDecimals = (num, n) => {
   const parts = num.toString().split(".");
@@ -94,8 +92,12 @@ export const aggregateTransactions = (
             if: { $isArray: "$paymentSplittingData.balanceAmount" },
             then: {
               $cond: {
-                if: { $gt: [{ $size: "$paymentSplittingData.balanceAmount" }, 0] },
-                then: { $arrayElemAt: ["$paymentSplittingData.balanceAmount", 0] },
+                if: {
+                  $gt: [{ $size: "$paymentSplittingData.balanceAmount" }, 0],
+                },
+                then: {
+                  $arrayElemAt: ["$paymentSplittingData.balanceAmount", 0],
+                },
                 else: {
                   $cond: {
                     if: {
@@ -341,4 +343,53 @@ export const getFinancialYearDates = () => {
     startDate: new Date(startDateStr),
     endDate: new Date(endDateStr),
   };
+};
+
+/// get voucher multiplier for purchase and sales credit and debit notes
+export const getVoucherMultiplier = (transactionType) => {
+  const positiveTypes = ["sale", "debitNote"];
+  const negativeTypes = ["purchase", "creditNote"];
+
+  if (positiveTypes.includes(transactionType)) {
+    return 1; // Dr nature - increases receivables
+  } else if (negativeTypes.includes(transactionType)) {
+    return -1; // Cr nature - increases payables
+  } else {
+    throw new Error(`Unknown transaction type: ${transactionType}`);
+  }
+};
+
+/// get voucher multiplier for receipt and payment
+export const getReceiptPaymentMultiplier = (source) => {
+  const positiveSources = ["sales", "debitNote", "advancePayment"];
+  const negativeSources = ["purchase", "creditNote", "advanceReceipt"];
+
+  if (positiveSources.includes(source)) {
+    return 1; // Cr nature - decreases receivables
+  } else if (negativeSources.includes(source)) {
+    return -1; // Dr nature - decreases payables
+  } else {
+    throw new Error(`Unknown source type: ${source}`);
+  }
+};
+
+export const calculateBillPending = (voucherType, billAmount, receipts, payments) => {
+  // Ensure all values are numbers (default 0 if invalid)
+  const amount = Number(billAmount) || 0;
+  const rec = Number(receipts) || 0;
+  const pay = Number(payments) || 0;
+
+  console.log(
+    `calculateBillPending: voucherType=${voucherType}, billAmount=${amount}, receipts=${rec}, payments=${pay}`
+  );
+
+  if (voucherType === "sales" || voucherType === "debitNote" || voucherType === "advancePayment") {
+    // Dr vouchers: receipts reduce pending, payments increase pending
+    return amount - rec + pay;
+  } else if (voucherType === "purchase" || voucherType === "creditNote" || voucherType === "advanceReceipt") {
+    // Cr vouchers: payments reduce pending, receipts increase pending
+    return -(amount - pay + rec);
+  }
+
+  return 0; // default case
 };

@@ -30,6 +30,7 @@ function TitleDiv({
   const navigate = useNavigate()
   const [showModal, setShowModal] = useState(false)
 
+
   const handleNavigate = () => {
     if (customNavigate) {
       customNavigate()

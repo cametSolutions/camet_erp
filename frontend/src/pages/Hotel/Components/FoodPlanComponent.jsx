@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { MdDelete, MdPlaylistAdd } from "react-icons/md";
 import useFetch from "@/customHook/useFetch";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { TiTick } from "react-icons/ti";
 function FoodPlanComponent({
   cmp_id,
@@ -37,24 +37,23 @@ function FoodPlanComponent({
   }, [foodPlan]);
 
   // useEffect used to manage the already selected values
-  // useEffect(() => {
-  //   if (
-  //     formData?.foodPlan?.length > 0 &&
-  //     selectedRoomId &&
-  //     formData.foodPlan !== []
-  //   ) {
-  //     let filteredData = formData.foodPlan?.filter(
-  //       (item) => item.roomId == selectedRoomId
-  //     );
-  //     if (filteredData.length > 0 && filteredData !== []) {
-  //       setFoodPlan(filteredData);
-  //     }
-  //   }
-  // }, [selectedRoomId]);
+  useEffect(() => {
+    if (
+      formData?.foodPlan?.length > 0 &&
+      selectedRoomId &&
+      formData.foodPlan !== []
+    ) {
+      let filteredData = formData.foodPlan?.filter(
+        (item) => item.roomId == selectedRoomId
+      );
+      if (filteredData.length > 0 && filteredData !== []) {
+        setFoodPlan(filteredData);
+      }
+    }
+  }, [selectedRoomId]);
 
   const handlePaxChange = (index, value) => {
     let specificData = foodPlanData?.find((item) => item._id === value);
-    console.log(selectedRoomId);
     const updatedRows = [...foodPlan];
     updatedRows[index].foodPlan = specificData.foodPlan;
     updatedRows[index].foodPlanId = specificData._id;

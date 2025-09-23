@@ -11,6 +11,7 @@ import VoucherDetailsActionButtons from "./actionButtons/VoucherDetailsActionBut
 import VoucherDetailsToGodown from "./VoucherDetailsToGodown";
 import VoucherDetailsProduct from "./VoucherDetailsProduct";
 import VoucherDetailsNote from "./VoucherDetailsNote";
+import RemoveReduxData from "@/components/secUsers/RemoveReduxData";
 
 function VoucherDetails() {
   const [data, setData] = useState("");
@@ -28,6 +29,9 @@ function VoucherDetails() {
       return `get${pathName}`;
     }
   };
+
+
+  
 
   const params = {};
   if (location.pathname.split("/")[2] === "vanSaleDetails") {
@@ -79,6 +83,8 @@ function VoucherDetails() {
   
   return (
     <div className="bg-[rgb(244,246,254)] flex-1  relative  pb-2   ">
+
+      <RemoveReduxData/>
       {/* headinh section  */}
       <TitleDiv
         title={

@@ -13,7 +13,7 @@ import {
 import AddPartyTile from "../../voucher/voucherCreation/AddPartyTile";
 import AddAmountTile from "../../../components/secUsers/main/AddAmountTile";
 import PaymentModeTile from "../../../components/secUsers/main/PaymentModeTile";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { useLocation, useNavigate } from "react-router-dom";
 import TitleDiv from "../../../components/common/TitleDiv";
 import FooterButton from "../../voucher/voucherCreation/FooterButton";
@@ -64,6 +64,9 @@ function AccVoucherInitialPage() {
 
   /// get voucherType form location
   const voucherType = location.state?.voucherType;
+
+  console.log(voucherType);
+
   useEffect(() => {
     if (voucherType && voucherTypeFromRedux === "") {
       dispatch(addVoucherType(voucherType));

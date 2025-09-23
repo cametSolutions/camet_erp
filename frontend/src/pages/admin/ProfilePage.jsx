@@ -2,7 +2,7 @@ import  { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Building2, Users, Loader2, XCircle } from "lucide-react";
 import api from "../../api/api";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { useParams } from "react-router-dom";
 import PrimaryUserComponent from "./PrimaryUserComponent";
 import OrganizationComponent from "./OrganizationComponent";

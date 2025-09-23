@@ -2,7 +2,7 @@
 /* eslint-disable react/prop-types */
 import { useState, useEffect } from "react";
 import uploadImageToCloudinary from "../../../utils/uploadCloudinary.js";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import api from "../../api/api.js";
 import { HashLoader } from "react-spinners";
 import { industries } from "../../../constants/industries.js";

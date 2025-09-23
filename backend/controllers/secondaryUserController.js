@@ -127,24 +127,36 @@ export const login = async (req, res) => {
 export const getSecUserData = async (req, res) => {
   const userId = req.sUserId;
   try {
-    const userData = await SecondaryUser.findById(userId).populate({
-      path: "organization",
-      // select: "_id name",
-    });
+    // Populate organization fully
+    const userData = await SecondaryUser.findById(userId)
+      .populate({
+        path: "organization", // Assuming this is an array, otherwise remove [.0]
+      })
+      .lean(); // Use .lean() for easier manipulation
 
-    if (userData) {
-      return res
-        .status(200)
-        .json({ message: "secondaryUSerData fetched", data: { userData } });
-    } else {
+    if (!userData) {
       return res
         .status(404)
         .json({ message: "secondaryUSerData not found", data: { userData } });
     }
+
+    // If 'organization' is an array 
+    if (Array.isArray(userData.organization)) {
+      userData.organization = userData.organization.map(
+        (org, idx) =>
+          idx === 0
+            ? org // keep full data for first since it is selected as default company selected when user logged in ,so full details must be stored in local storage
+            : { _id: org._id, name: org.name } // keep only _id and name for the rest
+      );
+    } 
+
+    return res
+      .status(200)
+      .json({ message: "secondaryUSerData fetched", data: { userData } });
   } catch (error) {
     return res
       .status(500)
-      .json({ status: false, message: "internal sever error" });
+      .json({ status: false, message: "internal server error" });
   }
 };
 
@@ -351,12 +363,12 @@ export const cancelTransaction = async (req, res) => {
 export const fetchBanks = async (req, res) => {
   const cmp_id = req.params.cmp_id;
   try {
-    const bankData = await BankDetails.aggregate([
-      { $match: { cmp_id: new mongoose.Types.ObjectId(cmp_id) } },
+    const bankData = await partyModel.aggregate([
+      { $match: { cmp_id: new mongoose.Types.ObjectId(cmp_id), partyType: "bank"} },
       {
         $project: {
           bank_name: 1,
-          bank_ledname: 1,
+          partyName: 1,
           ifsc: 1,
           upi_id: 1,
           ac_no: 1,
@@ -733,8 +745,6 @@ export const fetchFilters = async (req, res) => {
     const configuredPriceLevels = secondaryUser.configurations.find(
       (config) => config?.organization?.toString() === cmp_id
     )?.selectedPriceLevels;
-
-    
 
     //// if configuredPriceLevels is empty, then return all price levels
     let filteredPriceLevels = priceLevels || [];
@@ -1276,9 +1286,7 @@ export const findGodownsNames = async (req, res) => {
       !configuration.selectedVanSaleGodowns ||
       configuration.selectedVanSaleGodowns.length === 0
     ) {
-      return res
-        .status(200)
-        .json({message: "No godowns found", data: [] });
+      return res.status(200).json({ message: "No godowns found", data: [] });
     }
 
     const firstGodown = configuration.selectedVanSaleGodowns[0];
@@ -1294,7 +1302,6 @@ export const findGodownsNames = async (req, res) => {
     res.status(500).json({ message: "Internal server error", data: null });
   }
 };
-
 
 // @desc get brands, categories, subcategories, godowns, priceLevels
 // route get/api/sUsers/getAllSubDetails
@@ -1312,9 +1319,9 @@ export const getAllSubDetails = async (req, res) => {
 
     const [brands, categories, subcategories, godowns, priceLevels] =
       await Promise.all([
-        Brand.find({ cmp_id, Primary_user_id }).select("_id brand"),
-        Category.find({ cmp_id, Primary_user_id }).select("_id category"),
-        Subcategory.find({ cmp_id, Primary_user_id }).select("_id subcategory"),
+        Brand.find({ cmp_id, Primary_user_id }).select("_id brand under"),
+        Category.find({ cmp_id, Primary_user_id }).select("_id category under"),
+        Subcategory.find({ cmp_id, Primary_user_id }).select("_id subcategory under"),
         Godown.find({ cmp_id, Primary_user_id }).select(
           "_id godown defaultGodown"
         ),
@@ -1323,10 +1330,11 @@ export const getAllSubDetails = async (req, res) => {
 
     const result = {
       brands: brands.map((b) => ({ _id: b._id, name: b.brand })),
-      categories: categories.map((c) => ({ _id: c._id, name: c.category })),
+      categories: categories.map((c) => ({ _id: c._id, name: c.category ,under:c.under })),
       subcategories: subcategories.map((s) => ({
         _id: s._id,
         name: s.subcategory,
+        under: s.under
       })),
       godowns: godowns.map((g) => ({
         _id: g._id,
@@ -1348,6 +1356,60 @@ export const getAllSubDetails = async (req, res) => {
   }
 };
 
+
+//function used ot fetch data for hotel and restrurent
+export const getAllSubDetailsBasedUnder = async (req, res) => {
+  try {
+    console.log(req.params)
+    console.log(req.query)
+    const cmp_id = req.params.orgId;
+    const under =req.query.under
+    const Primary_user_id = req.owner;
+    if (!cmp_id || !Primary_user_id) {
+      console.log(
+        "cmp_id and Primary_user_id are required in getAllSubDetails "
+      );
+      return;
+    }
+
+    const [brands, categories, subcategories, godowns, priceLevels] =
+      await Promise.all([
+        Brand.find({ cmp_id, Primary_user_id }).select("_id brand"),
+        Category.find({ cmp_id, Primary_user_id,under:under }).select("_id category"),
+        Subcategory.find({ cmp_id, Primary_user_id ,under:under }).select("_id subcategory category_id"),
+        Godown.find({ cmp_id, Primary_user_id,under:under }).select(
+          "_id godown defaultGodown"
+        ),
+        PriceLevel.find({ cmp_id, Primary_user_id }).select("_id pricelevel"),
+      ]);
+
+    const result = {
+      brands: brands.map((b) => ({ _id: b._id, name: b.brand })),
+      categories: categories.map((c) => ({ _id: c._id, name: c.category })),
+      subcategories: subcategories.map((s) => ({
+        _id: s._id,
+        name: s.subcategory,
+         category:s.category_id,
+      })),
+      godowns: godowns.map((g) => ({
+        _id: g._id,
+        name: g.godown,
+        defaultGodown: g.defaultGodown,
+      })),
+      priceLevels: priceLevels.map((p) => ({ _id: p._id, name: p.pricelevel })),
+    };
+
+    res.status(200).json({
+      message: "All subdetails retrieved successfully",
+      data: result,
+    });
+  } catch (error) {
+    console.error("Error in getAllSubDetails:", error);
+    res
+      .status(500)
+      .json({ message: "An error occurred while fetching the subdetails" });
+  }
+};
 // @desc to fetch godowns
 // route get/api/sUsers/fetchGodowns
 
@@ -1583,32 +1645,70 @@ export const cancelStockTransfer = async (req, res) => {
 
 export const getBankAndCashSources = async (req, res) => {
   const cmp_id = req.params.cmp_id;
-
+  const source = req.params.source || null;
+  
   try {
-    // Run both queries in parallel with filters for non-null and non-"null" fields
-    const [banks, cashs] = await Promise.all([
-      bankModel
-        .find({
-          cmp_id,
-          bank_ledname: { $nin: [null, "null"] },
-          bank_id: { $exists: true },
-          // bank_name: { $nin: [null, "null"] },
-        })
-        .select({ bank_ledname: 1, bank_id: 1, bank_name: 1 }),
+    let banks = [];
+    let cashs = [];
 
-      cashModel
-        .find({
-          cmp_id,
-          cash_ledname: { $nin: [null, "null"] },
-          cash_id: { $exists: true },
-        })
-        .select({ cash_ledname: 1, cash_id: 1 }),
-    ]);
+    // Common query conditions
+    const baseQuery = {
+      cmp_id,
+      partyName: { $nin: [null, "null", ""] },
+      party_master_id: { $exists: true },
+    };
+
+    const selectFields = {
+      partyName: 1,
+    };
+
+    if (source === 'bank') {
+      // Fetch only banks
+      banks = await partyModel.find({
+        ...baseQuery,
+        partyType: 'bank',
+      }).select(selectFields);
+    } else if (source === 'cash') {
+      // Fetch only cash
+      cashs = await partyModel.find({
+        ...baseQuery,
+        partyType: 'cash',
+      }).select(selectFields);
+    } else {
+      // Fetch both if no specific source is provided
+      [banks, cashs] = await Promise.all([
+        // Get Bank accounts
+        partyModel.find({
+          ...baseQuery,
+          partyType: 'bank',
+        }).select(selectFields),
+
+        // Get Cash accounts
+        partyModel.find({
+          ...baseQuery,
+          partyType: 'cash',
+        }).select(selectFields)
+      ]);
+    }
+
+    // Transform data to match expected format
+    const transformedBanks = banks.map(bank => ({
+      _id: bank._id,
+      bank_ledname: bank.partyName,
+    }));
+
+    const transformedCashs = cashs.map(cash => ({
+      _id: cash._id,
+      cash_ledname: cash.partyName,
+    }));
 
     // Return fetched data with a consistent structure
     res.status(200).json({
-      message: "Bank and Cash fetched",
-      data: { banks, cashs },
+      message: source ? `${source.charAt(0).toUpperCase() + source.slice(1)} accounts fetched` : "Bank and Cash fetched",
+      data: { 
+        banks: transformedBanks, 
+        cashs: transformedCashs 
+      },
     });
   } catch (error) {
     console.log("Error in getting bank and cash sources:", error);
@@ -2189,7 +2289,6 @@ export const getPartyOpening = async (req, res) => {
   }
 };
 
-
 // @desc   Get dashboard counts for products and customers
 // @route  GET /api/sUsers/getDashboardCounts/:cmp_id
 export const fetchDashboardCounts = async (req, res) => {
@@ -2199,13 +2298,13 @@ export const fetchDashboardCounts = async (req, res) => {
     if (!cmp_id) {
       return res.status(400).json({
         success: false,
-        message: 'Company ID is required'
+        message: "Company ID is required",
       });
     }
 
     const [productCount, customerCount] = await Promise.all([
       productModel.countDocuments({ cmp_id: cmp_id }),
-      partyModel.countDocuments({ cmp_id: cmp_id })
+      partyModel.countDocuments({ cmp_id: cmp_id }),
     ]);
 
     res.status(200).json({
@@ -2213,15 +2312,14 @@ export const fetchDashboardCounts = async (req, res) => {
       data: {
         productCount: productCount || 0,
         customerCount: customerCount || 0,
-        cmp_id
-      }
+        cmp_id,
+      },
     });
-
   } catch (error) {
-    console.error('Error fetching dashboard counts:', error);
+    console.error("Error fetching dashboard counts:", error);
     res.status(500).json({
       success: false,
-      message: 'Internal server error'
+      message: "Internal server error",
     });
   }
 };

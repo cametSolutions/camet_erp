@@ -107,15 +107,15 @@ export const transactions = async (req, res) => {
       ...(!isAdmin
         ? { Secondary_user_id: new mongoose.Types.ObjectId(userId) }
         : selectedSecondaryUser
-          ? {
+        ? {
             Secondary_user_id: new mongoose.Types.ObjectId(
               selectedSecondaryUser
             ),
           }
-          : {}),
+        : {}),
     };
     if (serialNumber !== "all") {
-      matchCriteria.series_id = new mongoose.Types.ObjectId(serialNumber)
+      matchCriteria.series_id = new mongoose.Types.ObjectId(serialNumber);
     }
     // Define voucher type mappings
     const voucherTypeMap = {
@@ -169,11 +169,19 @@ export const transactions = async (req, res) => {
           model: creditNoteModel,
           type: "Credit Note",
           numberField: "creditNoteNumber",
-        }
+        },
       ],
       purchaseType: [
-        { model: purchaseModel, type: "Purchase", numberField: "purchaseNumber" },
-        { model: debitNoteModel, type: "Debit Note", numberField: "debitNoteNumber" }
+        {
+          model: purchaseModel,
+          type: "Purchase",
+          numberField: "purchaseNumber",
+        },
+        {
+          model: debitNoteModel,
+          type: "Debit Note",
+          numberField: "debitNoteNumber",
+        },
       ],
       all: [
         { model: salesModel, type: "Tax Invoice", numberField: "salesNumber" },
@@ -206,7 +214,11 @@ export const transactions = async (req, res) => {
 
     // Get the appropriate models to query based on selectedVoucher
     let modelsToQuery = selectedVoucher
-      ? (selectedVoucher === "allType" && summaryType === "Sales Summary") ? voucherTypeMap.saleType : (selectedVoucher === "allType" && summaryType === "Purchase Summary") ? voucherTypeMap.purchaseType : voucherTypeMap[selectedVoucher]
+      ? selectedVoucher === "allType" && summaryType === "Sales Summary"
+        ? voucherTypeMap.saleType
+        : selectedVoucher === "allType" && summaryType === "Purchase Summary"
+        ? voucherTypeMap.purchaseType
+        : voucherTypeMap[selectedVoucher]
       : voucherTypeMap.all;
 
     // Filter out ignored collections
@@ -248,18 +260,20 @@ export const transactions = async (req, res) => {
     }, 0);
     if (combined.length > 0) {
       return res.status(200).json({
-        message: `${selectedVoucher === "all"
-          ? "All transactions"
-          : selectedVoucher === "allType"
+        message: `${
+          selectedVoucher === "all"
+            ? "All transactions"
+            : selectedVoucher === "allType"
             ? "All"
             : `${voucherTypeMap[selectedVoucher]?.[0]?.type} transactions`
-          } fetched${todayOnly === "true" ? " for today" : ""}`,
+        } fetched${todayOnly === "true" ? " for today" : ""}`,
         data: { combined, totalTransactionAmount },
       });
-
-   
     } else {
-      return res.status(200).json({ message: "Transactions not found",data: { combined: [], totalTransactionAmount: 0 } });
+      return res.status(200).json({
+        message: "Transactions not found",
+        data: { combined: [], totalTransactionAmount: 0 },
+      });
     }
   } catch (error) {
     console.error(error);
@@ -269,7 +283,6 @@ export const transactions = async (req, res) => {
     });
   }
 };
-
 
 // @desc adding new Hsn
 // route POst/api/pUsers/addHsn
@@ -306,7 +319,16 @@ export const addHsn = async (req, res) => {
       isRevisedChargeApplicable,
       rows,
     });
+    let findOne = await hsnModel.findOne({
+      hsn: { $regex: `^${hsn}$`, $options: "i" },
+    });
 
+    if (findOne) {
+      return res.status(400).json({
+        success: false,
+        message: "Hsn  with this name already exists",
+      });
+    }
     const result = await hsnCreation.save();
 
     if (result) {
@@ -356,11 +378,40 @@ export const editHsn = async (req, res) => {
   req.body.Primary_user_id = Primary_user_id.toString();
 
   try {
+    // Only check for duplicate HSN name if the HSN field is being updated
+    if (req.body.hsn) {
+      // Get the current record to compare
+      const currentRecord = await hsnModel.findById(hsnId);
+      
+      // Only check for duplicates if the HSN name is actually being changed
+      if (currentRecord && currentRecord.hsn !== req.body.hsn) {
+        let findOne = await hsnModel.findOne({
+          _id: { $ne: hsnId },
+          hsn: { $regex: `^${req.body.hsn}$`, $options: "i" },
+        });
+
+
+        if (findOne) {
+          return res.status(400).json({
+            success: false,
+            message: "HSN with this name already exists",
+          });
+        }
+      }
+    }
+
     const updateHsn = await hsnModel.findOneAndUpdate(
       { _id: hsnId },
       req.body,
       { new: true }
     );
+
+    if (!updateHsn) {
+      return res.status(404).json({
+        success: false,
+        message: "HSN record not found",
+      });
+    }
 
     res.status(200).json({
       success: true,
@@ -369,7 +420,10 @@ export const editHsn = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, message: "Internal Server Error" });
+    res.status(500).json({ 
+      success: false, 
+      message: "Internal Server Error" 
+    });
   }
 };
 
@@ -522,7 +576,6 @@ export const updateMissingBillIds = async (req, res) => {
     });
     results.total = outstandingDocs.length;
 
-
     // Create a map for model lookup with corresponding bill number fields
     const modelConfig = {
       sale: {
@@ -575,7 +628,6 @@ export const updateMissingBillIds = async (req, res) => {
       try {
         const sourceType = doc.source?.toLowerCase()?.trim();
 
-
         const config = modelConfig[sourceType];
 
         if (!config || !config.models?.length) {
@@ -597,7 +649,6 @@ export const updateMissingBillIds = async (req, res) => {
             [modelConfig.billField]: doc.bill_no,
             cmp_id: doc.cmp_id,
           };
-
 
           const foundDoc = await modelConfig.model.findOne(query);
           if (foundDoc) {
@@ -624,7 +675,9 @@ export const updateMissingBillIds = async (req, res) => {
           );
           results.updated++;
         } else {
-          console.log(`No matching document found for bill_no: ${doc.bill_no} `);
+          console.log(
+            `No matching document found for bill_no: ${doc.bill_no} `
+          );
           results.notFound++;
           results.errors.push({
             bill_no: doc.bill_no,
@@ -662,7 +715,9 @@ export const updateMissingBillIds = async (req, res) => {
         updated: results.updated,
         notFound: results.notFound,
         failed: results.failed,
-        successRate: `${((results.updated / results.total) * 100).toFixed(2)}% `,
+        successRate: `${((results.updated / results.total) * 100).toFixed(
+          2
+        )}% `,
       },
     });
   } catch (error) {

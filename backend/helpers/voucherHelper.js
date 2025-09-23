@@ -8,7 +8,7 @@ import StockTransferModel from "../models/stockTransferModel.js";
 import ReceiptModel from "../models/receiptModel.js";
 import PaymentModel from "../models/paymentModel.js";
 import SalesModel from "../models/salesModel.js";
-
+import SettlementModel from "../models/settlementModel.js";
 /**
  * Gets current voucher number, increments it, and returns formatted number
  * @param {string} cmp_id - Company ID
@@ -25,7 +25,8 @@ export const generateVoucherNumber = async (
   session = null
 ) => {
   const options = session ? { session } : {};
-
+  
+console.log("seriesId",seriesId,"cmp_id",cmp_id,"voucherType",voucherType)
   // 1. First find the current value
   const doc = await VoucherSeriesModel.findOne(
     {
@@ -97,6 +98,7 @@ const getVoucherModel = (voucherType) => {
     stockTransfer: StockTransferModel,
     receipt: ReceiptModel,
     payment: PaymentModel,
+    // deliveryNote: ,
   };
 
   return modelMap[voucherType];
@@ -156,3 +158,5 @@ export const getSeriesDetailsById = async (seriesId, cmp_id, voucherType) => {
     throw error;
   }
 };
+
+

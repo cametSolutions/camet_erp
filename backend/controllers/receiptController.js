@@ -13,10 +13,11 @@ import {
   revertTallyUpdates,
   deleteAdvanceReceipt,
   saveSettlementData,
-  revertSettlementData,
+  updateAdvanceOnEdit,
 } from "../helpers/receiptHelper.js";
 import { formatToLocalDate } from "../helpers/helper.js";
 import { generateVoucherNumber } from "../helpers/voucherHelper.js";
+import settlementModel from "../models/settlementModel.js";
 
 /**
  * @desc  create receipt
@@ -48,7 +49,6 @@ export const createReceipt = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
-
     /// generate voucher number(sales number)
     const { voucherNumber: receiptNumber, usedSeriesNumber } =
       await generateVoucherNumber(cmp_id, voucherType, series_id, session);
@@ -112,18 +112,18 @@ export const createReceipt = async (req, res) => {
 
     /// save settlement data in cash or bank collection
     await saveSettlementData(
-      paymentMethod,
-      paymentDetails,
       receiptNumber,
       savedReceipt._id.toString(),
-      enteredAmount,
-      cmp_id,
+      "Receipt",
       "receipt",
-      newReceipt?.date,
-      savedReceipt?.party?.partyName,
-      session,
+      enteredAmount || 0,
+      paymentMethod,
+      paymentDetails,
       party,
-      "Receipt"
+      cmp_id,
+      Primary_user_id,
+      date,
+      session
     );
 
     // Use the helper function to update TallyData
@@ -136,21 +136,19 @@ export const createReceipt = async (req, res) => {
     );
 
     if (advanceAmount > 0 && savedReceipt) {
-      const outstandingWithAdvanceAmount =
-        await createOutstandingWithAdvanceAmount(
-          date,
-          cmp_id,
-          savedReceipt.receiptNumber,
-          savedReceipt._id.toString(),
-
-          Primary_user_id,
-          party,
-          secondaryUser.mobileNumber,
-          advanceAmount,
-          session,
-          "advanceReceipt",
-          "Cr"
-        );
+      await createOutstandingWithAdvanceAmount(
+        date,
+        cmp_id,
+        savedReceipt.receiptNumber,
+        savedReceipt._id.toString(),
+        Primary_user_id,
+        party,
+        secondaryUser.mobileNumber,
+        advanceAmount,
+        session,
+        "advanceReceipt",
+        "Cr"
+      );
     }
 
     // Commit the transaction
@@ -206,26 +204,38 @@ export const cancelReceipt = async (req, res) => {
     }
 
     // Revert tally updates
-    await revertTallyUpdates(receipt.billData, session, receiptId.toString());
+    await revertTallyUpdates(
+      receipt.billData,
+      receipt.cmp_id,
+      session,
+      receiptId.toString()
+    );
 
-    /// save settlement data in cash or bank collection
-    await revertSettlementData(
-      receipt?.paymentMethod,
-      receipt?.paymentDetails,
-      receipt?.receiptNumber,
-      receiptId,
+    /// delete  all the settlements
+    await settlementModel.deleteMany({ voucherId: receiptId }, { session });
+
+    await updateAdvanceOnEdit(
+      "receipt",
+      0,
+      receipt.party,
+      receipt.cmp_id,
+      receiptId.toString(),
+      Primary_user_id,
+      receipt.receiptNumber,
+      receipt?._id?.toString(),
+      receipt.date,
       session
     );
 
-    // Delete advance receipt, if any
-    if (receipt.advanceAmount > 0) {
-      await deleteAdvanceReceipt(
-        receipt.receiptNumber,
-        receipt._id?.toString(),
-        Primary_user_id,
-        session
-      );
-    }
+    // // Delete advance receipt, if any
+    // if (receipt.advanceAmount > 0) {
+    //   await deleteAdvanceReceipt(
+    //     receipt.receiptNumber,
+    //     receipt._id?.toString(),
+    //     Primary_user_id,
+    //     session
+    //   );
+    // }
 
     // Mark the receipt as cancelled
     receipt.isCancelled = true;
@@ -247,6 +257,12 @@ export const cancelReceipt = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+/**
+ * @desc  Edit receipt
+ * @route PUT/api/sUsers/editReceipt/:receiptId
+ * @access Public
+ */
 
 export const editReceipt = async (req, res) => {
   const receiptId = req.params.receiptId;
@@ -302,29 +318,32 @@ export const editReceipt = async (req, res) => {
     }
 
     // Revert tally updates
-    await revertTallyUpdates(receipt.billData, session, receiptId.toString());
-
-    /// revert settlement data in cash or bank collection
-    await revertSettlementData(
-      receipt?.paymentMethod,
-      receipt?.paymentDetails,
-      receipt?.receiptNumber,
-      receiptId,
-      session
+    await revertTallyUpdates(
+      receipt.billData,
+      cmp_id,
+      session,
+      receiptId.toString()
     );
 
-    // Delete advance receipt, if any
-    if (receipt.advanceAmount > 0) {
-      await deleteAdvanceReceipt(
-        receipt.receiptNumber,
-        receipt._id?.toString(),
-        Primary_user_id,
-        session
-      );
-    }
+    /// delete  all the settlements
+    await settlementModel.deleteMany({ voucherId: receiptId }, { session });
 
     // Use the helper function to update TallyData
     await updateTallyData(billData, cmp_id, session, receiptNumber, receiptId);
+
+    // update advance receipt / advance payment on edit of receipt or payment
+    await updateAdvanceOnEdit(
+      "receipt",
+      advanceAmount,
+      receipt.party,
+      cmp_id,
+      receiptId.toString(),
+      Primary_user_id,
+      receipt.receiptNumber,
+      receipt?._id?.toString(),
+      date,
+      session
+    );
 
     ///update the existing receipt
     receipt.date = date;
@@ -344,35 +363,35 @@ export const editReceipt = async (req, res) => {
 
     /// save settlement data in cash or bank collection
     await saveSettlementData(
-      paymentMethod,
-      paymentDetails,
       receiptNumber,
       savedReceipt._id.toString(),
-      enteredAmount,
-      cmp_id,
+      "Receipt",
       "receipt",
-      receipt?.date,
-      receipt?.party?.partyName,
-      session,
+      enteredAmount || 0,
+      paymentMethod,
+      paymentDetails,
       party,
-      "Receipt"
+      cmp_id,
+      Primary_user_id,
+      date,
+      session
     );
 
-    if (advanceAmount > 0) {
-      const outstandingWithAdvanceAmount =
-        await createOutstandingWithAdvanceAmount(
-          cmp_id,
-          savedReceipt.receiptNumber,
-          savedReceipt._id.toString(),
-          Primary_user_id,
-          party,
-          secondaryUser.mobileNumber,
-          advanceAmount,
-          session,
-          "advanceReceipt",
-          "Cr"
-        );
-    }
+    // if (advanceAmount > 0 && savedReceipt) {
+    //   await createOutstandingWithAdvanceAmount(
+    //     date,
+    //     cmp_id,
+    //     savedReceipt.receiptNumber,
+    //     savedReceipt._id.toString(),
+    //     Primary_user_id,
+    //     party,
+    //     secondaryUser.mobileNumber,
+    //     advanceAmount,
+    //     session,
+    //     "advanceReceipt",
+    //     "Cr"
+    //   );
+    // }
 
     // console.log(receipt);
 
@@ -399,39 +418,77 @@ export const editReceipt = async (req, res) => {
  */
 
 export const getReceiptDetails = async (req, res) => {
-  const receiptNumber = req.params.id;
-  try {
-    const receiptDoc = await ReceiptModel.findById(receiptNumber);
+  const receiptId = req.params.id;
 
-    if (!receiptDoc) {
+  try {
+    /* -----------------------------------------------------------
+       1.  Load the receipt and populate ONLY appliedReceipts
+           from each referenced TallyData (outstanding) document.
+       ----------------------------------------------------------- */
+
+    /* -----------------------------------------------------------
+   WHY WE POPULATE appliedReceipts FROM OUTSTANDING DOCUMENTS:
+   
+   When a receipt is created, it stores settlement amounts in billData.
+   However, sales invoices can be edited AFTER receipt creation, which
+   updates the outstanding document but NOT the original receipt.
+   
+   This creates a data inconsistency:
+   - Receipt.billData.settledAmount = original amount when receipt was created
+   - Outstanding.appliedReceipts.settledAmount = current/actual applied amount
+   
+   Since outstanding documents are the "source of truth" for current
+   account balances and are updated when invoices are modified, we
+   prioritize the appliedReceipts data over the receipt's stored amounts.
+   
+   This ensures users always see the accurate, up-to-date settlement
+   amounts rather than stale data from the receipt creation time.
+   ----------------------------------------------------------- */
+
+    const receiptDoc = await ReceiptModel.findById(receiptId);
+    // .populate({
+    //   path: "billData._id", // ↳ nested reference
+    //   select: "appliedReceipts bill_pending_amt", // ↳ pull only what we actually need
+    // })
+    // .lean(); // ↳ returns plain JS objects, no Mongoose overhead
+
+    if (!receiptDoc)
       return res
         .status(404)
         .json({ success: false, message: "Receipt not found" });
-    }
 
-    const receipt = receiptDoc.toObject(); // Convert to plain object
+    /* -----------------------------------------------------------
+       2.  Flatten billData so that `_id` is the original ObjectId
+           and add appliedReceiptAmount (number) for each bill.
+       ----------------------------------------------------------- */
+    // receiptDoc.billData = receiptDoc.billData.map((bill) => {
+    //   // `populated` holds the TallyData stub; original bill props are at top level.
+    //   const { _id: populated, ...billFields } = bill;
 
-    // Check if any advance receipt is present with this receipt
-    const advanceReceipt = await TallyData.findOne({
-      billId: receipt._id.toString(),
-      source: "advanceReceipt",
-    });
+    //   // Find the matching appliedReceipts entry for THIS receipt.
+    //   const receiptMatch = populated?.appliedReceipts?.find(
+    //     (entry) => entry._id.toString() === receiptDoc._id.toString()
+    //   );
 
-    // Determine cancellation status
-    let isEditable = true;
-    if (advanceReceipt?.appliedPayments?.length > 0) {
-      isEditable = false;
-    }
-
-    // Attach the field
-    receipt.isEditable = isEditable;
+    //   return {
+    //     _id: populated?._id ?? billFields._id, // original ObjectId (not the whole object)
+    //     ...billFields, // bill_no, bill_date, etc.
+    //     appliedReceiptAmount: receiptMatch ? receiptMatch?.settledAmount : 0,
+    //     currentOutstandingAmount:
+    //       populated?.bill_pending_amt ?? billFields.bill_pending_amt, // latest outstanding balance
+    //     bill_pending_amt:
+    //       (receiptMatch?.settledAmount || 0) +
+    //       (Math.max(populated?.bill_pending_amt, 0) || 0),
+    //   };
+    // });
 
     return res.status(200).json({
-      receipt: receipt,
+      success: true,
       message: "Receipt details fetched",
+      receipt: receiptDoc,
     });
-  } catch (error) {
-    console.error(error);
+  } catch (err) {
+    console.error(err);
     return res
       .status(500)
       .json({ success: false, message: "Internal server error, try again!" });

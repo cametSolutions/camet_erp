@@ -140,6 +140,7 @@ export const createVoucherSeries = async (req, res) => {
     "stockTransfer",
     "receipt",
     "payment",
+    "deliveryNote"
   ];
 
   if (!voucherTypes.includes(voucherType)) {
@@ -315,6 +316,7 @@ export const editVoucherSeriesById = async (req, res) => {
           "series.$.currentNumber": updatedSeries.currentNumber || 1,
           "series.$.widthOfNumericalPart":
             updatedSeries.widthOfNumericalPart || 1,
+          "series.$.under":updatedSeries.under
         },
       },
       { new: true }

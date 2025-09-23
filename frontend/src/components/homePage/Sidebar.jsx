@@ -2,7 +2,7 @@
 /* eslint-disable react/no-unknown-property */
 import { useState, useEffect, useCallback, useRef } from "react";
 import api from "../../api/api";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { BsFillBuildingsFill } from "react-icons/bs";

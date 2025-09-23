@@ -1,4 +1,4 @@
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import api from "../../../api/api";
 import { useLocation } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
@@ -18,7 +18,7 @@ function AddPartySecondary() {
   const queryClient = useQueryClient();
 
   const from = location.state?.from;
-
+console.log(from);
   const companyId = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
@@ -41,6 +41,15 @@ function AddPartySecondary() {
       });
 
       if (from) {
+        if(from == "/sUsers/bookingPage"){
+          navigate("/sUsers/bookingPage", { replace: true });
+          return
+        }
+         if(from == "/sUsers/checkInPage"){
+          navigate("/sUsers/bookingPage", { replace: true });
+          return
+        }
+
         if (from === "accountingVoucher") {
           dispatch(addPartyInAccountingVouchers(res.data.result));
         } else if (from === "commonVoucher") {
@@ -62,7 +71,7 @@ function AddPartySecondary() {
     <div className=" ">
       <TitleDiv
         title={"Add Party"}
-        from="/sUsers/partylist"
+        from={from}
         loading={loading}
       />
 

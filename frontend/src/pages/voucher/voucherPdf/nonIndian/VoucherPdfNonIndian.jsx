@@ -107,7 +107,7 @@ function VoucherPdfNonIndian({ data, org, contentToPrint, bank, tab }) {
       const integerWords = numberToWords.toWords(parseInt(integerPart, 10));
       const decimalWords = decimalPart
         ? ` and ${numberToWords.toWords(parseInt(decimalPart, 10))} `
-        : " and Zero";
+        : " and Zero ";
 
       const mergedWord = [
         ...(integerWords + " "),

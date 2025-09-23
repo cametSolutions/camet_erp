@@ -2,7 +2,7 @@
 /* eslint-disable react/prop-types */
 import { useEffect, useState } from "react";
 import { FaEdit, FaTrash } from "react-icons/fa";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import api from "../../api/api";
 import Swal from "sweetalert2";
 import { useDispatch, useSelector } from "react-redux";
@@ -10,12 +10,19 @@ import Pagination from "../../components/common/Pagination";
 import { useLocation } from "react-router-dom";
 import { setSecSelectedOrganization } from "../../../slices/secSelectedOrgSlice";
 
-const ProductSubDetailsForm = ({ tab, handleLoader, isHotel,isRestaurants= false }) => {
+const ProductSubDetailsForm = ({
+  tab,
+  handleLoader,
+  isHotel,
+  isRestaurants = false,
+  categoriesData = [],
+}) => {
   const [value, setValue] = useState("");
   const [price, setPrice] = useState("");
   const [data, setData] = useState([]);
   const [reload, setReload] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState([]);
 
   const [edit, setEdit] = useState({
     id: "",
@@ -48,6 +55,8 @@ const ProductSubDetailsForm = ({ tab, handleLoader, isHotel,isRestaurants= false
     getSubDetails();
     setValue("");
     setPrice("");
+    setCategories("");
+    setEdit({ id: "", enabled: false });
   }, [reload]);
 
   useEffect(() => {
@@ -55,7 +64,7 @@ const ProductSubDetailsForm = ({ tab, handleLoader, isHotel,isRestaurants= false
       setEdit(false);
     }
   }, [value]);
-console.log(tab)
+  console.log(tab);
   const getSubDetails = async (data) => {
     try {
       setLoading(true);
@@ -75,12 +84,14 @@ console.log(tab)
       handleLoader(false);
     }
   };
-
+  console.log(categories)
+  console.log(data);
   const handleSubmit = async (value) => {
     const formData = {
       [tab]: value,
       ...(isHotel && { price }),
-      ...(isRestaurants && { under:"restaurant" }),
+      ...(isRestaurants && { under: "restaurant" }),
+      ...(tab === "foodItems" && { category_id: categories , under: "restaurant"}),
     };
 
     console.log(formData);
@@ -171,15 +182,21 @@ console.log(tab)
     }
   };
 
-  const handleEdit = async (id, value, data) => {
+  const handleEdit = async (id, value, data, categoriesData) => {
+    console.log(tab)
+    console.log(value)
     if (tab === "bedType") {
-      console.log(data);
       setValue(data?.category);
     } else if (tab === "roomFloor") {
       setValue(data?.subcategory);
     } else if (isHotel && tab === "roomType") {
       setPrice(data?.roomRent);
       setValue(data?.brand);
+    } else if(tab == "Regional Food Category"){
+      setValue(data?.category);
+    }else if(tab == "foodItems"){
+      setValue(data?.subcategory);
+      setCategories(data?.category_id);
     } else {
       setValue(value);
     }
@@ -207,6 +224,7 @@ console.log(tab)
     const formData = {
       [tab]: value,
       ...(isHotel && { price }),
+      ...(tab === "foodItems" && { category_id: categories }),
     };
 
     try {
@@ -231,7 +249,7 @@ console.log(tab)
       handleLoader(false);
     }
   };
-
+  console.log(data);
   return (
     <div className={`${loading ? "opacity-50 animate-pulse" : ""} `}>
       <div className="flex flex-col justify-center  sticky top-0 z-10 ">
@@ -277,6 +295,21 @@ console.log(tab)
               onChange={(e) => setPrice(e.target.value)}
             />
           )}
+          {tab === "foodItems" && (
+            <select
+              value={categories}
+              onChange={(e) => setCategories(e.target.value)}
+              className="w-4/6 sm:w-2/6 p-1 border border-gray-300 rounded-full mt-3 text-center  "
+            >
+              <option value="" className="">Select Category</option>
+              {categoriesData.map((cat) => (
+                <option className="text-black" key={cat._id} value={cat._id}>
+                  {cat.category}
+                </option>
+              ))}
+            </select>
+          )}
+
           <button
             onClick={
               edit?.enabled
@@ -291,10 +324,12 @@ console.log(tab)
         <div className="h-3 bg-gray-100 "></div>
       </div>
 
-      <section className="overflow-y-scroll h-[calc(100vh-273px)] px-4 scrollbar-thin ">
+    <section className="overflow-y-scroll h-[calc(100vh-273px)] px-4 pb-14 scrollbar-thin">
         <div className="mt-2 w-full">
           {data?.length > 0 && !loading ? (
-            data.map((el) => (
+            data.map((el,index) => {
+               console.log("Rendering item", index, el);
+              return (
               <div
                 key={el._id}
                 className="flex items-center justify-between border-t-0 align-middle  whitespace-nowrap p-4 mb-2 border-b cursor-pointer hover:bg-slate-100 hover:translate-y-[1px]"
@@ -311,6 +346,11 @@ console.log(tab)
                 {el?.roomRent && (
                   <div className=" px-6 text-left text-wrap text-blueGray-700 text-sm font-bold text-gray-500 w-1/3">
                     {el?.roomRent}
+                  </div>
+                )}
+                  {(el?.category_id && categoriesData.length > 0) && (
+                  <div className=" px-6 text-left text-wrap text-blueGray-700 text-sm font-bold text-gray-500 w-1/3">
+                    {categoriesData?.find((cat) => cat._id === el?.category_id)?.category}
                   </div>
                 )}
                 <div className="flex items-end gap-12 text-xs w-1/3 justify-end">
@@ -332,7 +372,8 @@ console.log(tab)
                   </div>
                 </div>
               </div>
-            ))
+            )})
+          
           ) : (
             <div className="text-center text-gray-500 font-bold  whitespace-nowrap p-4 ">
               {!loading && <p>Data not found</p>}

@@ -16,12 +16,13 @@ import {
   Package,
   Type,
   Coins,
-  ImagePlus
+  ImagePlus,
+   Scale
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import api from "../../../../api/api";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { updateConfiguration } from "../../../../../slices/secSelectedOrgSlice";
 import { useDispatch } from "react-redux";
 import PrintTitleModal from "./PrintTitleModal";
@@ -42,6 +43,8 @@ const SalePrintConfiguration = () => {
   const saleConfigurations = configurations[0]?.printConfiguration?.filter(
     (item) => item?.voucher === "sale"
   )[0];
+
+  console.log(saleConfigurations?.showUnit);
 
   useEffect(() => {
     if (saleConfigurations) {
@@ -226,6 +229,16 @@ const SalePrintConfiguration = () => {
           toggle: true,
           toggleValue: saleConfigurations.showNetAmount,
           dbField: "showNetAmount",
+        },
+         {
+          title: "Enable Unit",
+          description: "Display unit for quantity",
+          icon: < Scale />,
+          to: "/sUsers/EnableTaxAmount",
+          active: true,
+          toggle: true,
+          toggleValue: saleConfigurations.showUnit,
+          dbField: "showUnit",
         },
       ]);
     }

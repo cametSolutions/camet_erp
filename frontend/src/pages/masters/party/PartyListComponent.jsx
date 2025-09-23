@@ -6,7 +6,7 @@ import { Link } from "react-router-dom";
 import { FixedSizeList as List } from "react-window";
 import InfiniteLoader from "react-window-infinite-loader";
 import CallIcon from "../../../components/common/CallIcon";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import api from "@/api/api";
 import CustomBarLoader from "../../../components/common/CustomBarLoader";
 import SearchBar from "../../../components/common/SearchBar";
@@ -18,6 +18,7 @@ import {
   addBillToParty,
   addParty,
   addShipToParty,
+  addCreditInPaymentSplit,
 } from "../../../../slices/voucherSlices/commonVoucherSlice";
 import { addParty as addPartyInAccountingVouchers } from "../../../../slices/voucherSlices/commonAccountingVoucherSlice";
 
@@ -45,7 +46,10 @@ function PartyListComponent({ deleteHandler = () => {}, isVoucher = false }) {
       return "receipt";
     } else if (location.pathname === "/sUsers/searchPartyPayment") {
       return "payment";
-    } else if (location.pathname === "/sUsers/searchPartysales" || location.pathname === "/sUsers/searchPartyvanSale") {
+    } else if (
+      location.pathname === "/sUsers/searchPartysales" ||
+      location.pathname === "/sUsers/searchPartyvanSale"
+    ) {
       return "sale";
     } else if (location.pathname === "/sUsers/searchPartysaleOrder") {
       return "saleOrder";
@@ -61,8 +65,6 @@ function PartyListComponent({ deleteHandler = () => {}, isVoucher = false }) {
   };
 
   const allowAlteration = (accountGroupName) => {
-  
-
     if (
       accountGroupName === "Sundry Debtors" ||
       accountGroupName === "Sundry Creditors"
@@ -84,7 +86,6 @@ function PartyListComponent({ deleteHandler = () => {}, isVoucher = false }) {
     window.addEventListener("resize", calculateHeight);
     return () => window.removeEventListener("resize", calculateHeight);
   }, []);
-
 
   // Fetch data function
   const fetchParties = useCallback(
@@ -190,6 +191,20 @@ function PartyListComponent({ deleteHandler = () => {}, isVoucher = false }) {
       }
 
       navigate(-1, { replace: true });
+      return;
+    }
+    if (location?.state?.from === "paymentSplitting") {
+      const data = {
+        reference_name: el?.partyName,
+        credit_reference_type: el?.partyType,
+        ref_id: el?._id,
+      };
+
+      console.log(data);
+      
+
+      dispatch(addCreditInPaymentSplit(data));
+      navigate("/sUsers/sales/paymentSplitting", { replace: true });
       return;
     }
 
@@ -314,14 +329,14 @@ function PartyListComponent({ deleteHandler = () => {}, isVoucher = false }) {
             <p className="font-bold text-sm truncate">{el?.partyName}</p>
             <p className="font-medium text-gray-500 text-sm">Customer</p>
           </div>
-          {el?.totalOutstanding && el?.totalOutstanding > 0 && (
+          {el?.totalOutstanding  ? (
             <section>
               <p className="font-medium text-gray-500 text-md mr-3 flex items-center gap-2">
                 <IoMdArrowDown color="green" />
-                {formatAmount(el?.totalOutstanding)}
+                {formatAmount(el?.totalOutstanding || 0)}
               </p>
             </section>
-          )}
+          ):0}
         </div>
       </div>
     );

@@ -21,6 +21,7 @@ const categorySchema = new mongoose.Schema({
   category: { type: String, required: true },
   under:{type:String},
   category_id: { type: String, required: true, index: true }, // Add index: true here
+  under: { type: String},
   cmp_id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Organization",
@@ -36,7 +37,8 @@ const categorySchema = new mongoose.Schema({
 const subcategorySchema = new mongoose.Schema({
   subcategory: { type: String, required: true },
   under:{type:String},
-  subcategory_id: { type: String, required: true, index: true }, // Add index: true here
+  subcategory_id: { type: String, required: true, index: true },
+  category_id: { type: mongoose.Schema.Types.ObjectId, ref: "Category" },
   cmp_id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Organization",

@@ -2,6 +2,33 @@ import mongoose from "mongoose";
 import { convertToUTCMidnight } from "../utils/dateHelpers.js";
 const { Schema } = mongoose;
 
+// Payment Splitting Schema
+const paymentSplitSchema = new Schema(
+  {
+    type: {
+      type: String,
+      required: true,
+      enum: ["cash", "upi", "cheque", "credit"],
+    },
+    amount: { type: Number, default: 0 },
+    ref_id: {
+      type: Schema.Types.ObjectId,
+      ref: "Party",
+      default: null,
+    },
+
+    reference_name: {
+      type: String,
+      default: "", // Only relevant for credit
+    },
+    credit_reference_type: {
+      type: String,
+      default: "", // Only relevant for credit
+    },
+  },
+  { _id: false }
+);
+
 const salesSchema = new Schema(
   {
     date: {
@@ -53,6 +80,7 @@ const salesSchema = new Schema(
     party: {
       _id: { type: Schema.Types.ObjectId, ref: "Party" },
       partyName: { type: String },
+      partyType: { type: String, default: "party" },
       accountGroupName: { type: String },
       accountGroup_id: {
         type: mongoose.Types.ObjectId,
@@ -120,7 +148,11 @@ const salesSchema = new Schema(
               set: convertToUTCMidnight,
             },
             description: { type: String },
-            warrantyCard: { type: Schema.Types.ObjectId, ref: "WarrantyCard", default: null, },
+            warrantyCard: {
+              type: Schema.Types.ObjectId,
+              ref: "WarrantyCard",
+              default: null,
+            },
             selectedPriceRate: { type: Number },
             added: { type: Boolean },
             count: { type: Number },
@@ -220,12 +252,35 @@ const salesSchema = new Schema(
         finalValue: { type: Number },
       },
     ],
-    
 
     note: { type: String },
 
-    finalAmount: { type: Number, required: true },
-    paymentSplittingData: { type: Object },
+    subTotal: { type: Number, default: null },
+    totalAdditionalCharges: { type: Number, default: null },
+    totalWithAdditionalCharges: { type: Number, default: null },
+    totalPaymentSplits: { type: Number, default: null },
+    finalOutstandingAmount: { type: Number, default: null },
+    finalAmount: { type: Number, required: true, default: 0 },
+
+    paymentSplittingData: {
+      type: [paymentSplitSchema],
+      default: [
+        { type: "cash", amount: 0, ref_id: null },
+        { type: "upi", amount: 0, ref_id: null },
+        {
+          type: "cheque",
+          amount: 0,
+          ref_id: null,
+        },
+        {
+          type: "credit",
+          amount: 0,
+          ref_id: null,
+          reference_name: "",
+        },
+      ],
+    },
+
     isCancelled: { type: Boolean, default: false },
   },
   {

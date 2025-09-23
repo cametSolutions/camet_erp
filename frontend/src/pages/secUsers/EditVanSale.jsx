@@ -19,7 +19,7 @@ import {
   changeDate,
 } from "../../../slices/salesSecondary";
 import { useDispatch } from "react-redux";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../api/api";
 import DespatchDetails from "../voucher/voucherCreation/DespatchDetails";
