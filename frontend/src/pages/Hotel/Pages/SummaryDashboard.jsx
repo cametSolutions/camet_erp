@@ -521,9 +521,9 @@ const SummaryDashboard = () => {
             </div>
           </div>
 
- <div className="mb-6">
+ {/* <div className="mb-6">
       <TableSummary dashboardData={dashboardData} selectedDate={selectedDate} />
-    </div>
+    </div> */}
             <div className="mb-6">
             <GraphHotelSummary dashboardData={dashboardData} selectedDate={selectedDate} />
           </div>
