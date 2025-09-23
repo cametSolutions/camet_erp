@@ -1514,21 +1514,21 @@ export const updateConfigurationForKotApproval = async (req, res) => {
 
 export const getSummaryDashboard = async (req, res) => {
   try {
-    const { cmp_id, date, businessType, dateRange } = req.query;
-    console.log("query", req.query);
+    const { cmp_id, date, businessType, dateRange, owner, groupBy, includeOutlets } = req.query;
+    console.log("Summary dashboard query:", req.query);
     
-    if (!cmp_id) {
+    if (!owner) {
       return res.status(400).json({ 
         success: false,
-        error: "Company ID is required" 
+        error: "Owner ID is required" 
       });
     }
 
-    // Validate ObjectId format
-    if (!mongoose.Types.ObjectId.isValid(cmp_id)) {
+    // Validate ObjectId format for owner
+    if (!mongoose.Types.ObjectId.isValid(owner)) {
       return res.status(400).json({ 
         success: false,
-        error: "Invalid Company ID format" 
+        error: "Invalid Owner ID format" 
       });
     }
 
@@ -1553,11 +1553,10 @@ export const getSummaryDashboard = async (req, res) => {
       endDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0);
       endDate.setHours(23, 59, 59, 999);
     } else {
-      // FIXED: Single day should reset hours to 0
       startDate = new Date(selectedDate);
-      startDate.setHours(0, 0, 0, 0);  // Start of selected day
+      startDate.setHours(0, 0, 0, 0);
       endDate = new Date(selectedDate);
-      endDate.setHours(23, 59, 59, 999); // End of selected day
+      endDate.setHours(23, 59, 59, 999);
     }
     
     // Get start and end of current month for monthly comparison
@@ -1566,9 +1565,35 @@ export const getSummaryDashboard = async (req, res) => {
     const endOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0);
     endOfMonth.setHours(23, 59, 59, 999);
 
-    // Base match conditions
+    console.log("Date Range:", startDate, "to", endDate);
+
+    // Step 1: Find all organizations owned by this owner
+    const organizations = await Organization.find({ 
+      owner: new mongoose.Types.ObjectId(owner),
+      isBlocked: false,
+      isApproved: true
+    }).select('_id name companyName');
+
+    console.log(`Found ${organizations.length} organizations for owner ${owner}`);
+
+    if (organizations.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: "No organizations found for this owner"
+      });
+    }
+
+    // Extract organization IDs
+    const organizationIds = organizations.map(org => org._id);
+    
+    // If cmp_id is provided, filter to that specific organization
+    const targetOrgIds = cmp_id && mongoose.Types.ObjectId.isValid(cmp_id) 
+      ? [new mongoose.Types.ObjectId(cmp_id)]
+      : organizationIds;
+
+    // Base match conditions for all organizations owned by this owner
     const baseMatch = {
-      cmp_id: new mongoose.Types.ObjectId(cmp_id),
+      cmp_id: { $in: targetOrgIds },
       $or: [
         { isCancelled: { $exists: false } },
         { isCancelled: false },
@@ -1591,7 +1616,7 @@ export const getSummaryDashboard = async (req, res) => {
         }
       };
       
-      console.log("sales", sales);
+      console.log("Processing sales:", sales.length);
       
       sales.forEach(sale => {
         // Calculate payment splits with detailed breakdown
@@ -1608,12 +1633,12 @@ export const getSummaryDashboard = async (req, res) => {
                 break;
               case 'upi':
                 upiAmount += amount;
-                bankAmount += amount; // UPI counts as bank
+                bankAmount += amount;
                 break;
               case 'cheque':
               case 'check':
                 chequeAmount += amount;
-                bankAmount += amount; // Cheque counts as bank
+                bankAmount += amount;
                 break;
               case 'card':
               case 'debit':
@@ -1629,13 +1654,11 @@ export const getSummaryDashboard = async (req, res) => {
                 bankAmount += amount;
                 break;
               default:
-                // If payment type is not recognized, assume it's cash
                 cashAmount += amount;
                 break;
             }
           });
         } else {
-          // If no payment splitting data, assume full amount is cash
           cashAmount = Number(sale.finalAmount) || 0;
         }
 
@@ -1648,10 +1671,8 @@ export const getSummaryDashboard = async (req, res) => {
           itemCount = sale.items.length;
           
           sale.items.forEach(item => {
-            // Get IGST directly from item level
             totalTax += Number(item.totalIgstAmt || 0);
             
-            // Get discount from GodownList if available
             if (item.GodownList && Array.isArray(item.GodownList)) {
               item.GodownList.forEach(godown => {
                 totalDiscount += Number(godown.discountAmount || 0);
@@ -1661,10 +1682,8 @@ export const getSummaryDashboard = async (req, res) => {
         }
 
         const finalAmount = Number(sale.finalAmount) || 0;
-        
-        // Net Sales = Final Amount - Total Tax
         const netSales = finalAmount - totalTax;
-        const expense = finalAmount * 0.05; // Assuming 5% of sales as operational expense
+        const expense = finalAmount * 0.05;
 
         const saleData = {
           totalSales: finalAmount,
@@ -1681,10 +1700,9 @@ export const getSummaryDashboard = async (req, res) => {
           transactionId: sale._id
         };
 
-        // IMPROVED: Determine business type with better fallback logic
+        // Business type determination logic
         let targetCategory = null;
         
-        // Priority 1: Check if sale has a business type field directly
         if (sale.businessType) {
           const businessTypeValue = sale.businessType.toLowerCase();
           if (businessTypeValue === 'hotel' || businessTypeValue === 'accommodation') {
@@ -1694,7 +1712,6 @@ export const getSummaryDashboard = async (req, res) => {
           }
         }
         
-        // Priority 2: Check if party has business type information
         if (!targetCategory && sale.party?.businessType) {
           const partyBusinessType = sale.party.businessType.toLowerCase();
           if (partyBusinessType === 'hotel' || partyBusinessType === 'accommodation') {
@@ -1704,7 +1721,6 @@ export const getSummaryDashboard = async (req, res) => {
           }
         }
         
-        // Priority 3: Check department or category field
         if (!targetCategory && (sale.department || sale.category)) {
           const dept = (sale.department || sale.category || '').toLowerCase();
           if (dept === 'hotel' || dept === 'accommodation' || dept === 'rooms') {
@@ -1714,7 +1730,6 @@ export const getSummaryDashboard = async (req, res) => {
           }
         }
         
-        // Priority 4: Check account group for business type
         if (!targetCategory && sale.party?.accountGroupName) {
           const accountGroup = sale.party.accountGroupName.toLowerCase();
           if (accountGroup.includes('hotel') || accountGroup.includes('accommodation')) {
@@ -1724,7 +1739,6 @@ export const getSummaryDashboard = async (req, res) => {
           }
         }
         
-        // Priority 5: Check party name for keywords
         if (!targetCategory && sale.party?.partyName) {
           const partyName = sale.party.partyName.toLowerCase();
           if (partyName.includes('hotel') || partyName.includes('accommodation') || partyName.includes('room')) {
@@ -1734,9 +1748,7 @@ export const getSummaryDashboard = async (req, res) => {
           }
         }
         
-        // Ultimate fallback - amount-based categorization or default to restaurant
         if (!targetCategory) {
-          // Higher amounts more likely to be hotel transactions
           targetCategory = finalAmount > 3000 ? result.hotel : result.restaurant;
         }
 
@@ -1747,21 +1759,32 @@ export const getSummaryDashboard = async (req, res) => {
           }
         });
         targetCategory.transactionCount = (targetCategory.transactionCount || 0) + 1;
-        
-        // DEBUG: Log which category each sale went to
-        console.log(`Sale ${sale._id} (Amount: ${finalAmount}) -> ${targetCategory === result.hotel ? 'HOTEL' : 'RESTAURANT'}`);
       });
 
       return result;
     };
 
-    // Build aggregation pipeline with business type fields
+    // Build aggregation pipeline with enhanced lookups
     const buildAggregationPipeline = (dateMatchCondition) => [
       { 
         $match: { 
           ...baseMatch, 
           ...dateMatchCondition
         } 
+      },
+      {
+        $lookup: {
+          from: 'organizations',
+          localField: 'cmp_id',
+          foreignField: '_id',
+          as: 'organization'
+        }
+      },
+      {
+        $unwind: {
+          path: '$organization',
+          preserveNullAndEmptyArrays: true
+        }
       },
       {
         $lookup: {
@@ -1782,50 +1805,49 @@ export const getSummaryDashboard = async (req, res) => {
           finalAmount: 1,
           paymentSplittingData: 1,
           partyAccount: 1,
-          businessType: 1, // Direct business type field
-          department: 1,   // Department field
-          category: 1,     // Category field
+          businessType: 1,
+          department: 1,
+          category: 1,
           party: {
             partyName: 1,
             accountGroupName: 1,
-            businessType: 1  // Party's business type
+            businessType: 1
+          },
+          organization: {
+            _id: 1,
+            name: 1,
+            companyName: 1
           },
           items: 1,
           date: 1,
-          createdAt: 1
+          createdAt: 1,
+          cmp_id: 1
         }
       }
     ];
 
-    console.log("Date Range:", startDate, "to", endDate);
-
-    // FIXED: Separate queries for daily and monthly data
-    const dailySales = await salesModel.aggregate(
-      buildAggregationPipeline({ date: { $gte: startDate, $lte: endDate } })
-    );
-
-    const monthlySales = await salesModel.aggregate(
-      buildAggregationPipeline({ date: { $gte: startOfMonth, $lte: endOfMonth } })
-    );
+    // Execute queries for daily and monthly data
+    const [dailySales, monthlySales] = await Promise.all([
+      salesModel.aggregate(
+        buildAggregationPipeline({ date: { $gte: startDate, $lte: endDate } })
+      ),
+      salesModel.aggregate(
+        buildAggregationPipeline({ date: { $gte: startOfMonth, $lte: endOfMonth } })
+      )
+    ]);
 
     console.log(`Found ${dailySales.length} daily sales and ${monthlySales.length} monthly sales`);
 
-    // Process daily data
+    // Process daily and monthly data
     const dailyData = categorizeSales(dailySales);
     dailyData.hotel.balance = dailyData.hotel.totalSales - dailyData.hotel.expense;
     dailyData.restaurant.balance = dailyData.restaurant.totalSales - dailyData.restaurant.expense;
 
-    console.log("Daily Data:", {
-      hotel: { sales: dailyData.hotel.totalSales, transactions: dailyData.hotel.transactionCount },
-      restaurant: { sales: dailyData.restaurant.totalSales, transactions: dailyData.restaurant.transactionCount }
-    });
-
-    // Process monthly data
     const monthlyData = categorizeSales(monthlySales);
     monthlyData.hotel.balance = monthlyData.hotel.totalSales - monthlyData.hotel.expense;
     monthlyData.restaurant.balance = monthlyData.restaurant.totalSales - monthlyData.restaurant.expense;
 
-    // Calculate combined data with additional metrics
+    // Calculate combined data
     const calculateCombined = (data) => {
       const totalSales = data.hotel.totalSales + data.restaurant.totalSales;
       const totalTransactions = data.hotel.transactionCount + data.restaurant.transactionCount;
@@ -1841,8 +1863,7 @@ export const getSummaryDashboard = async (req, res) => {
         totalTax: data.hotel.totalTax + data.restaurant.totalTax,
         totalDiscount: data.hotel.totalDiscount + data.restaurant.totalDiscount,
         expense: data.hotel.expense + data.restaurant.expense,
-        balance: (data.hotel.totalSales + data.restaurant.totalSales) - 
-                 (data.hotel.expense + data.restaurant.expense),
+        balance: totalSales - (data.hotel.expense + data.restaurant.expense),
         transactionCount: totalTransactions,
         averageTicketSize: totalTransactions > 0 ? totalSales / totalTransactions : 0,
         itemCount: data.hotel.itemCount + data.restaurant.itemCount
@@ -1872,7 +1893,7 @@ export const getSummaryDashboard = async (req, res) => {
       }
     });
 
-    // Response data with enhanced metrics
+    // Prepare base dashboard data
     const dashboardData = {
       daily: {
         hotel: dailyData.hotel,
@@ -1901,12 +1922,254 @@ export const getSummaryDashboard = async (req, res) => {
           }
         },
         queryParams: {
-          cmp_id,
+          cmp_id: cmp_id || 'all_owner_organizations',
+          owner,
           businessType: businessType || null,
           dateRange: dateRange || 'day'
-        }
+        },
+        organizationCount: organizations.length
       }
     };
+
+    // If outlet data is requested, add outlet-wise breakdown
+    if (includeOutlets === 'true' || groupBy === 'outlet') {
+      console.log("Including outlet-wise data...");
+      
+      // Build outlet aggregation pipeline - FIXED VERSION
+      const outletAggregationPipeline = [
+        { 
+          $match: { 
+            ...baseMatch,
+            date: { $gte: startDate, $lte: endDate }
+          } 
+        },
+        {
+          $lookup: {
+            from: 'organizations',
+            localField: 'cmp_id',
+            foreignField: '_id',
+            as: 'organization'
+          }
+        },
+        {
+          $unwind: {
+            path: '$organization',
+            preserveNullAndEmptyArrays: true
+          }
+        },
+        {
+          $lookup: {
+            from: 'parties',
+            localField: 'party',
+            foreignField: '_id',
+            as: 'party'
+          }
+        },
+        {
+          $unwind: {
+            path: '$party',
+            preserveNullAndEmptyArrays: true
+          }
+        },
+        {
+          $addFields: {
+            outletName: {
+              $cond: {
+                if: { $ne: ['$party.partyName', null] },
+                then: '$party.partyName',
+                else: {
+                  $cond: {
+                    if: { $ne: ['$organization.name', null] },
+                    then: '$organization.name',
+                    else: '$organization.companyName'
+                  }
+                }
+              }
+            },
+            organizationName: {
+              $cond: {
+                if: { $ne: ['$organization.name', null] },
+                then: '$organization.name',
+                else: '$organization.companyName'
+              }
+            }
+          }
+        },
+        {
+          $group: {
+            _id: {
+              organizationId: '$organization._id',
+              organizationName: '$organizationName',
+              outletName: '$outletName'
+            },
+            sales: { 
+              $sum: { $ifNull: ['$finalAmount', 0] }
+            },
+            orders: { $sum: 1 },
+            
+            // Calculate payment totals directly in group stage
+            cashTotal: {
+              $sum: {
+                $reduce: {
+                  input: { $ifNull: ['$paymentSplittingData', []] },
+                  initialValue: 0,
+                  in: {
+                    $cond: [
+                      { $eq: [{ $toLower: '$$this.type' }, 'cash'] },
+                      { $add: ['$$value', { $toDouble: { $ifNull: ['$$this.amount', 0] } }] },
+                      '$$value'
+                    ]
+                  }
+                }
+              }
+            },
+            
+            bankTotal: {
+              $sum: {
+                $reduce: {
+                  input: { $ifNull: ['$paymentSplittingData', []] },
+                  initialValue: 0,
+                  in: {
+                    $cond: [
+                      { $in: [{ $toLower: '$$this.type' }, ['upi', 'cheque', 'card', 'debit', 'bank', 'online']] },
+                      { $add: ['$$value', { $toDouble: { $ifNull: ['$$this.amount', 0] } }] },
+                      '$$value'
+                    ]
+                  }
+                }
+              }
+            },
+            
+            upiTotal: {
+              $sum: {
+                $reduce: {
+                  input: { $ifNull: ['$paymentSplittingData', []] },
+                  initialValue: 0,
+                  in: {
+                    $cond: [
+                      { $eq: [{ $toLower: '$$this.type' }, 'upi'] },
+                      { $add: ['$$value', { $toDouble: { $ifNull: ['$$this.amount', 0] } }] },
+                      '$$value'
+                    ]
+                  }
+                }
+              }
+            },
+            
+            taxTotal: {
+              $sum: {
+                $reduce: {
+                  input: { $ifNull: ['$items', []] },
+                  initialValue: 0,
+                  in: { $add: ['$$value', { $toDouble: { $ifNull: ['$$this.totalIgstAmt', 0] } }] }
+                }
+              }
+            },
+            
+            discountTotal: {
+              $sum: {
+                $reduce: {
+                  input: { $ifNull: ['$items', []] },
+                  initialValue: 0,
+                  in: {
+                    $reduce: {
+                      input: { $ifNull: ['$$this.GodownList', []] },
+                      initialValue: '$$value',
+                      in: { $add: ['$$value', { $toDouble: { $ifNull: ['$$this.discountAmount', 0] } }] }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        // FIXED: Use only inclusion in $project
+        {
+          $project: {
+            id: '$_id.organizationId',
+            outletName: '$_id.outletName',
+            organizationName: '$_id.organizationName',
+            organizationId: '$_id.organizationId',
+            orders: '$orders',
+            sales: '$sales',
+            netSales: { $subtract: ['$sales', '$taxTotal'] },
+            tax: '$taxTotal',
+            discount: '$discountTotal',
+            cashReceipt: '$cashTotal',
+            bankReceipt: '$bankTotal',
+            upiAmount: '$upiTotal',
+            chequeAmount: { $literal: 0 }, // Use $literal instead of 0
+            creditAmount: { $literal: 0 },
+            modified: { $literal: 0 },
+            rePrinted: { $literal: 0 },
+            waivedOff: { $literal: 0 },
+            roundOff: { $literal: 0 },
+            charges: { $literal: 0 }
+          }
+        },
+        {
+          $sort: { organizationName: 1, sales: -1 }
+        }
+      ];
+
+      const outletData = await salesModel.aggregate(outletAggregationPipeline);
+
+      // If no outlet data, create placeholders
+      let finalOutletData = outletData;
+      if (outletData.length === 0) {
+        finalOutletData = organizations.map(org => ({
+          id: org._id,
+          outletName: org.name || org.companyName || 'Unknown Outlet',
+          organizationName: org.name || org.companyName,
+          organizationId: org._id,
+          orders: 0,
+          sales: 0,
+          netSales: 0,
+          tax: 0,
+          discount: 0,
+          cashReceipt: 0,
+          bankReceipt: 0,
+          upiAmount: 0,
+          chequeAmount: 0,
+          creditAmount: 0,
+          modified: 0,
+          rePrinted: 0,
+          waivedOff: 0,
+          roundOff: 0,
+          charges: 0
+        }));
+      }
+
+      // Calculate outlet summary
+      const outletSummary = finalOutletData.reduce((acc, outlet) => {
+        acc.totalOutlets = finalOutletData.length;
+        acc.totalOrganizations = new Set(finalOutletData.map(o => o.organizationId.toString())).size;
+        acc.totalSales += outlet.sales || 0;
+        acc.totalOrders += outlet.orders || 0;
+        acc.totalNetSales += outlet.netSales || 0;
+        acc.totalTax += outlet.tax || 0;
+        acc.totalDiscount += outlet.discount || 0;
+        return acc;
+      }, {
+        totalOutlets: 0,
+        totalOrganizations: 0,
+        totalSales: 0,
+        totalOrders: 0,
+        totalNetSales: 0,
+        totalTax: 0,
+        totalDiscount: 0
+      });
+
+      // Add outlet data to response
+      dashboardData.outlets = {
+        data: finalOutletData,
+        summary: outletSummary,
+        organizations: organizations.map(org => ({
+          id: org._id,
+          name: org.name || org.companyName
+        }))
+      };
+    }
 
     res.status(200).json({
       success: true,
@@ -1914,7 +2177,7 @@ export const getSummaryDashboard = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Dashboard API Error:', error);
+    console.error('Summary Dashboard API Error:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch dashboard data',
