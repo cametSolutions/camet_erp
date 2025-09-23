@@ -632,6 +632,10 @@ const RestaurantPOS = () => {
     setSelectedPriceLevel(value);
   };
 
+  const findOneCount = (id) => {
+    return orderItems.find((item) => item._id === id)?.quantity || 0;
+  };
+
   return (
     <>
       {showPriceLevelSelect && (
@@ -959,6 +963,8 @@ const RestaurantPOS = () => {
                   ) : (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-3">
                       {menuItems.map((item, index) => {
+                        const count = findOneCount(item._id);
+
                         return (
                           <motion.div
                             key={item._id}
@@ -969,7 +975,20 @@ const RestaurantPOS = () => {
                             onClick={() => addToOrder(item)}
                           >
                             <div className="p-3 flex flex-col items-center justify-center text-center h-full min-h-[120px] relative">
-                              <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-indigo-50/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                              {/* ✅ Always show count badge if count > 0 */}
+                              {count > 0 && (
+                                <div
+                                  className="absolute inset-0 flex 
+                            bg-gradient-to-br from-indigo-100/60 via-indigo-200/40 to-indigo-300/30
+                            transition-opacity duration-500 rounded-xl p-2"
+                                >
+                                  <span
+                                    className="text-lg sm:text-md md:text-md font-bold text-indigo-700 "
+                                  >
+                                    {count}
+                                  </span>
+                                </div>
+                              )}
 
                               {/* Food Image */}
                               <div className="w-12 h-12 md:w-16 md:h-16 rounded-full overflow-hidden border-2 border-gray-200 shadow-md mb-2 group-hover:border-indigo-300 transition-all duration-500 relative z-10">
