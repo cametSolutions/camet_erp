@@ -1514,7 +1514,7 @@ export const updateConfigurationForKotApproval = async (req, res) => {
 
 export const getSummaryDashboard = async (req, res) => {
   try {
-    const { cmp_id, date,  businessType, dateRange } = req.query;
+    const { cmp_id, date, businessType, dateRange } = req.query;
     console.log("query", req.query);
     
     if (!cmp_id) {
@@ -1534,6 +1534,7 @@ export const getSummaryDashboard = async (req, res) => {
 
     // Parse the selected date or use today
     const selectedDate = date ? new Date(date) : new Date();
+    console.log("selectedDate", selectedDate);
     
     // Validate date
     if (isNaN(selectedDate.getTime())) {
@@ -1552,11 +1553,11 @@ export const getSummaryDashboard = async (req, res) => {
       endDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0);
       endDate.setHours(23, 59, 59, 999);
     } else {
-      // Default: single day
+      // FIXED: Single day should reset hours to 0
       startDate = new Date(selectedDate);
-      startDate.setHours(0, 0, 0, 0);
+      startDate.setHours(0, 0, 0, 0);  // Start of selected day
       endDate = new Date(selectedDate);
-      endDate.setHours(23, 59, 59, 999);
+      endDate.setHours(23, 59, 59, 999); // End of selected day
     }
     
     // Get start and end of current month for monthly comparison
@@ -1581,15 +1582,17 @@ export const getSummaryDashboard = async (req, res) => {
         hotel: { 
           totalSales: 0, cashReceipt: 0, bankReceipt: 0, upiAmount: 0, 
           chequeAmount: 0, creditAmount: 0, totalTax: 0, totalDiscount: 0,
-          expense: 0, itemCount: 0, transactionCount: 0,netSales:0,
+          expense: 0, itemCount: 0, transactionCount: 0, netSales: 0,
         },
         restaurant: { 
           totalSales: 0, cashReceipt: 0, bankReceipt: 0, upiAmount: 0,
           chequeAmount: 0, creditAmount: 0, totalTax: 0, totalDiscount: 0,
-          expense: 0, itemCount: 0, transactionCount: 0,netSales:0,
+          expense: 0, itemCount: 0, transactionCount: 0, netSales: 0,
         }
       };
-console.log("sales",sales)
+      
+      console.log("sales", sales);
+      
       sales.forEach(sale => {
         // Calculate payment splits with detailed breakdown
         let cashAmount = 0, bankAmount = 0, creditAmount = 0, upiAmount = 0, chequeAmount = 0;
@@ -1637,35 +1640,35 @@ console.log("sales",sales)
         }
 
         // Calculate taxes and other details
-       let totalTax = 0;
-    let totalDiscount = 0;
-    let itemCount = 0;
-    
-    if (sale.items && Array.isArray(sale.items)) {
-      itemCount = sale.items.length;
-      
-      sale.items.forEach(item => {
-        // Get IGST directly from item level
-        totalTax += Number(item.totalIgstAmt || 0);
+        let totalTax = 0;
+        let totalDiscount = 0;
+        let itemCount = 0;
         
-        // Get discount from GodownList if available
-        if (item.GodownList && Array.isArray(item.GodownList)) {
-          item.GodownList.forEach(godown => {
-            totalDiscount += Number(godown.discountAmount || 0);
+        if (sale.items && Array.isArray(sale.items)) {
+          itemCount = sale.items.length;
+          
+          sale.items.forEach(item => {
+            // Get IGST directly from item level
+            totalTax += Number(item.totalIgstAmt || 0);
+            
+            // Get discount from GodownList if available
+            if (item.GodownList && Array.isArray(item.GodownList)) {
+              item.GodownList.forEach(godown => {
+                totalDiscount += Number(godown.discountAmount || 0);
+              });
+            }
           });
         }
-      });
-    }
 
-    const finalAmount = Number(sale.finalAmount) || 0;
-    
-    // CORRECTED: Net Sales = Final Amount - Total Tax
-    const netSales = finalAmount - totalTax;
+        const finalAmount = Number(sale.finalAmount) || 0;
+        
+        // Net Sales = Final Amount - Total Tax
+        const netSales = finalAmount - totalTax;
         const expense = finalAmount * 0.05; // Assuming 5% of sales as operational expense
 
         const saleData = {
           totalSales: finalAmount,
-          netSales:netSales,
+          netSales: netSales,
           cashReceipt: cashAmount,
           bankReceipt: bankAmount,
           upiAmount: upiAmount,
@@ -1678,59 +1681,63 @@ console.log("sales",sales)
           transactionId: sale._id
         };
 
-        // Determine business type from sale data directly
-        let targetCategory;
+        // IMPROVED: Determine business type with better fallback logic
+        let targetCategory = null;
         
-        // Check if sale has a business type field directly
+        // Priority 1: Check if sale has a business type field directly
         if (sale.businessType) {
           const businessTypeValue = sale.businessType.toLowerCase();
-          if (businessTypeValue === 'hotel') {
+          if (businessTypeValue === 'hotel' || businessTypeValue === 'accommodation') {
             targetCategory = result.hotel;
-          } else if (businessTypeValue === 'restaurant') {
-            targetCategory = result.restaurant;
-          } else {
-            // Default fallback - you can customize this logic
+          } else if (businessTypeValue === 'restaurant' || businessTypeValue === 'food') {
             targetCategory = result.restaurant;
           }
         }
-        // Check if party has business type information
-        else if (sale.party?.businessType) {
+        
+        // Priority 2: Check if party has business type information
+        if (!targetCategory && sale.party?.businessType) {
           const partyBusinessType = sale.party.businessType.toLowerCase();
-          if (partyBusinessType === 'hotel') {
+          if (partyBusinessType === 'hotel' || partyBusinessType === 'accommodation') {
             targetCategory = result.hotel;
-          } else if (partyBusinessType === 'restaurant') {
-            targetCategory = result.restaurant;
-          } else {
+          } else if (partyBusinessType === 'restaurant' || partyBusinessType === 'food') {
             targetCategory = result.restaurant;
           }
         }
-        // Check if there's a department or category field
-        else if (sale.department || sale.category) {
+        
+        // Priority 3: Check department or category field
+        if (!targetCategory && (sale.department || sale.category)) {
           const dept = (sale.department || sale.category || '').toLowerCase();
           if (dept === 'hotel' || dept === 'accommodation' || dept === 'rooms') {
             targetCategory = result.hotel;
           } else if (dept === 'restaurant' || dept === 'food' || dept === 'dining') {
             targetCategory = result.restaurant;
-          } else {
-            targetCategory = result.restaurant;
           }
         }
-        // Check account group for business type
-        else if (sale.party?.accountGroupName) {
+        
+        // Priority 4: Check account group for business type
+        if (!targetCategory && sale.party?.accountGroupName) {
           const accountGroup = sale.party.accountGroupName.toLowerCase();
           if (accountGroup.includes('hotel') || accountGroup.includes('accommodation')) {
             targetCategory = result.hotel;
           } else if (accountGroup.includes('restaurant') || accountGroup.includes('food')) {
             targetCategory = result.restaurant;
-          } else {
-            // Fallback: use amount-based logic or default to restaurant
-            targetCategory = finalAmount > 5000 ? result.hotel : result.restaurant;
           }
         }
-        // Ultimate fallback - amount-based categorization or default
-        else {
-          // You can customize this fallback logic based on your business rules
-          targetCategory = finalAmount > 5000 ? result.hotel : result.restaurant;
+        
+        // Priority 5: Check party name for keywords
+        if (!targetCategory && sale.party?.partyName) {
+          const partyName = sale.party.partyName.toLowerCase();
+          if (partyName.includes('hotel') || partyName.includes('accommodation') || partyName.includes('room')) {
+            targetCategory = result.hotel;
+          } else if (partyName.includes('restaurant') || partyName.includes('food') || partyName.includes('dining')) {
+            targetCategory = result.restaurant;
+          }
+        }
+        
+        // Ultimate fallback - amount-based categorization or default to restaurant
+        if (!targetCategory) {
+          // Higher amounts more likely to be hotel transactions
+          targetCategory = finalAmount > 3000 ? result.hotel : result.restaurant;
         }
 
         // Add to the appropriate category
@@ -1740,6 +1747,9 @@ console.log("sales",sales)
           }
         });
         targetCategory.transactionCount = (targetCategory.transactionCount || 0) + 1;
+        
+        // DEBUG: Log which category each sale went to
+        console.log(`Sale ${sale._id} (Amount: ${finalAmount}) -> ${targetCategory === result.hotel ? 'HOTEL' : 'RESTAURANT'}`);
       });
 
       return result;
@@ -1787,20 +1797,28 @@ console.log("sales",sales)
       }
     ];
 
-    // Fetch daily/selected range sales
+    console.log("Date Range:", startDate, "to", endDate);
+
+    // FIXED: Separate queries for daily and monthly data
     const dailySales = await salesModel.aggregate(
       buildAggregationPipeline({ date: { $gte: startDate, $lte: endDate } })
     );
 
-    // Fetch monthly sales for comparison
     const monthlySales = await salesModel.aggregate(
       buildAggregationPipeline({ date: { $gte: startOfMonth, $lte: endOfMonth } })
     );
+
+    console.log(`Found ${dailySales.length} daily sales and ${monthlySales.length} monthly sales`);
 
     // Process daily data
     const dailyData = categorizeSales(dailySales);
     dailyData.hotel.balance = dailyData.hotel.totalSales - dailyData.hotel.expense;
     dailyData.restaurant.balance = dailyData.restaurant.totalSales - dailyData.restaurant.expense;
+
+    console.log("Daily Data:", {
+      hotel: { sales: dailyData.hotel.totalSales, transactions: dailyData.hotel.transactionCount },
+      restaurant: { sales: dailyData.restaurant.totalSales, transactions: dailyData.restaurant.transactionCount }
+    });
 
     // Process monthly data
     const monthlyData = categorizeSales(monthlySales);
@@ -1814,6 +1832,7 @@ console.log("sales",sales)
       
       return {
         totalSales: totalSales,
+        netSales: data.hotel.netSales + data.restaurant.netSales,
         cashReceipt: data.hotel.cashReceipt + data.restaurant.cashReceipt,
         bankReceipt: data.hotel.bankReceipt + data.restaurant.bankReceipt,
         upiAmount: data.hotel.upiAmount + data.restaurant.upiAmount,
