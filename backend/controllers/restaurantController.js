@@ -985,6 +985,9 @@ async function getSelectedParty(
 ) {
   let partyId;
 
+  console.log("isPostToRoom", isPostToRoom);
+  console.log("paymentDetails", paymentDetails);
+  console.log(cashAmt, onlineAmt);
   if (isPostToRoom) {
     console.log("koptData", kotData?.voucherNumber[0]?.checkInNumber);
     let checkInData = await CheckIn.findOne({
@@ -994,7 +997,7 @@ async function getSelectedParty(
     partyId = checkInData?.customerId.toString();
     console.log("partyId", partyId);
   } else {
-    if (paymentDetails?.paymentMode === "single") {
+    if (paymentDetails?.paymentMode == "single") {
       if (cashAmt > 0) {
         partyId = paymentDetails?.selectedCash;
       } else if (onlineAmt > 0) {

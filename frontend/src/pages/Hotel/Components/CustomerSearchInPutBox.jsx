@@ -11,7 +11,8 @@ function CustomerSearchInputBox({
   isAgent=false,
   selectedParty = null,
   className = "",
-  disabled = false 
+  disabled = false ,
+  sendSearchToParent,
 }) {
   const [parties, setParties] = useState([]);
   const [search, setSearch] = useState("");
@@ -65,6 +66,7 @@ function CustomerSearchInputBox({
     debounceTimerRef.current = setTimeout(() => {
       fetchParties(1, term);
     }, 300);
+    sendSearchToParent(term);
   }, [fetchParties]);
 
   const loadMore = useCallback(() => {
@@ -84,7 +86,7 @@ function CustomerSearchInputBox({
     setSelectedValue(party);
     setIsOpen(false);
     setSearch("");
-    onSelect(party);
+    onSelect(party,search);
   };
 
   const handleClear = (e) => {
