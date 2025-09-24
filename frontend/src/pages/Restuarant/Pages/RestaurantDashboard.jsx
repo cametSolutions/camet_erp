@@ -532,7 +532,6 @@ const RestaurantPOS = () => {
     let url = isEdit
       ? `/api/sUsers/editKOT/${cmp_id}/${kotDataForEdit._id}`
       : `/api/sUsers/generateKOT/${cmp_id}`;
-console.log("newOrder", newOrder);
 
 
     try {
@@ -561,6 +560,7 @@ console.log("newOrder", newOrder);
     setOrderItems([]);
     setOrderNumber(orderNumber + 1);
     setShowKOTModal(false);
+    setIsEdit(false);
     setCustomerDetails({
       name: "",
       phone: "",
@@ -574,37 +574,7 @@ console.log("newOrder", newOrder);
     );
   };
 
-  // const processPayment = () => {
-  //   const updatedOrders = orders.map((order) =>
-  //     order.id === orderNumber - 1
-  //       ? { ...order, status: "paid", paymentMethod: paymentMethod }
-  //       : order
-  //   );
 
-  //   setOrders(updatedOrders);
-  //   setShowPaymentModal(false);
-
-  //   if (orderType === "roomService") {
-  //     setRoomDetails({
-  //       roomno: "",
-  //       guestName: "",
-  //       CheckInNumber: "",
-  //     });
-  //   } else {
-  //     setCustomerDetails({
-  //       name: "",
-  //       phone: "",
-  //       address: "",
-  //       tableNumber: customerDetails.tableNumber,
-  //     });
-  //   }
-
-  //   alert(
-  //     `Payment of ₹${
-  //       orders.find((order) => order.id === orderNumber - 1)?.total || 0
-  //     } processed successfully via ${paymentMethod}!`
-  //   );
-  // };
 
   const getOrderTypeDisplay = (type) => {
     const typeMap = {
