@@ -593,10 +593,11 @@ const OrdersDashboard = () => {
     if (kotData?.paymentCompleted) {
       toast.error("Kot Payment is completed so you can't edit");
       return;
-    } else if (kotData?.status === "completed") {
-      toast.error("Kot is already completed so you can't edit");
-      return;
-    }
+    } 
+    // else if (kotData?.status === "completed") {
+    //   toast.error("Kot is already completed so you can't edit");
+    //   return;
+    // }
     navigate("/sUsers/RestaurantDashboard", { state: { kotData } });
   };
 
