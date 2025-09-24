@@ -92,6 +92,7 @@ const RestaurantPOS = () => {
         guestName: kotDataForEdit?.customer?.name || "",
         CheckInNumber: kotDataForEdit?.checkInNumber || "",
       });
+
     }
   }, [kotDataForEdit]);
 
@@ -524,14 +525,16 @@ const RestaurantPOS = () => {
       customer: orderCustomerDetails,
       total: getTotalAmount(),
       timestamp: new Date(),
-      status: "pending",
+      status: kotDataForEdit?.status || "pending",
       paymentMethod: orderType === "dine-in" ? null : "cash",
     };
 
     let url = isEdit
       ? `/api/sUsers/editKOT/${cmp_id}/${kotDataForEdit._id}`
       : `/api/sUsers/generateKOT/${cmp_id}`;
-    console.log(url);
+console.log("newOrder", newOrder);
+
+
     try {
       let response = await api.post(url, newOrder, {
         withCredentials: true,
