@@ -6,6 +6,7 @@ import partyModel from "../models/partyModel.js";
 import secondaryUserModel from "../models/secondaryUserModel.js";
 import SubGroup from "../models/subGroup.js";
 import TallyData from "../models/TallyData.js";
+import AccountGroup from "../models/accountGroup.js";
 
 export const PartyList = async (req, res) => {
   const { cmp_id } = req.params;
@@ -228,6 +229,11 @@ export const addParty = async (req, res) => {
       pin,
       party_master_id, // Check if provided
     } = req.body;
+
+    if(!accountGroup || accountGroup === "") {
+      let findAccountGroup = await AccountGroup.findOne({accountGroup: "GSundry Debtorseneral",cmp_id: cmp_id}); 
+      accountGroup = findAccountGroup._id
+    };
 
     const generatedId = new mongoose.Types.ObjectId();
     const cleanSubGroup = subGroup === "" ? undefined : subGroup;
