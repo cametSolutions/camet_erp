@@ -23,6 +23,9 @@ const SummaryDashboard = () => {
   (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
  
+    const owner = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg.owner
+  );
  
   // Helper function to get the first day of the month for selected date
   const getMonthStartDate = (dateString) => {
@@ -44,9 +47,10 @@ const SummaryDashboard = () => {
       // Fetch daily data (for selected date)
       const dailyParams = {
         cmp_id,
+        owner,
         date: selectedDate,
         dateRange: 'day',
-        ...(cmp_id && { cmp_id })
+        ...(cmp_id,owner && { cmp_id,owner })
       };
 
       // Fetch monthly data (for selected date's month)
@@ -55,10 +59,11 @@ const SummaryDashboard = () => {
       
       const monthlyParams = {
         cmp_id,
+        owner,
         startDate: monthStartDate,
         endDate: monthEndDate,
         dateRange: 'month',
-        ...(cmp_id && { cmp_id })
+        ...(cmp_id,owner && { cmp_id,owner })
       };
 
       // Make both API calls
@@ -150,7 +155,7 @@ const SummaryDashboard = () => {
 
   useEffect(() => {
     fetchDashboardData();
-  }, [selectedDate, cmp_id]);
+  }, [selectedDate, cmp_id,owner]);
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-IN', {
@@ -521,9 +526,9 @@ const SummaryDashboard = () => {
             </div>
           </div>
 
- {/* <div className="mb-6">
+ <div className="mb-6">
       <TableSummary dashboardData={dashboardData} selectedDate={selectedDate} />
-    </div> */}
+    </div>
             <div className="mb-6">
             <GraphHotelSummary dashboardData={dashboardData} selectedDate={selectedDate} />
           </div>

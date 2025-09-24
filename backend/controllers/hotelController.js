@@ -10,7 +10,7 @@ import roomModal from "../models/roomModal.js";
 import { Booking, CheckIn, CheckOut } from "../models/bookingModal.js";
 import ReceiptModel from "../models/receiptModel.js";
 import { formatToLocalDate } from "../helpers/helper.js";
-
+import salesModel from "../models/salesModel.js";
 import {
   buildDatabaseFilterForRoom,
   sendRoomResponse,
@@ -29,7 +29,7 @@ import VoucherSeriesModel from "../models/VoucherSeriesModel.js";
 const { ObjectId } = mongoose.Types;
 import Party from "../models/partyModel.js";
 import { saveSettlementData } from "../helpers/salesHelper.js";
-import salesModel from "../models/salesModel.js";
+
 import Organization from "../models/OragnizationModel.js";
 import { getNewSerialNumber } from "../helpers/secondaryHelper.js";
 import partyModel from "../models/partyModel.js";
@@ -2429,6 +2429,150 @@ export const getRoomSwapHistory = async (req, res) => {
       success: false,
       message: "Failed to fetch room swap history",
       error: error.message,
+    });
+  }
+};
+
+
+ export const getHotelSalesDetails = async (req, res) => {
+  try {
+    const { cmp_id } = req.params;
+    const { startDate, endDate } = req.query;
+
+    // Validate required parameters
+    if (!cmp_id) {
+      return res.status(400).json({
+        success: false,
+        message: 'Company ID (cmp_id) is required'
+      });
+    }
+
+    // Build query filters
+    let query = {
+      cmp_id: cmp_id,
+      voucherType: 'sales',
+      isCancelled: false
+    };
+
+    // Add date range filter if provided
+    if (startDate && endDate) {
+      query.date = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate)
+      };
+    }
+
+    // MongoDB aggregation pipeline to get sales data
+    const salesData = await salesModel.aggregate([
+      { $match: query },
+      {
+        $lookup: {
+          from: 'parties',
+          localField: 'party._id',
+          foreignField: '_id',
+          as: 'partyDetails'
+        }
+      },
+      {
+        $project: {
+          _id: 1,
+          date: 1,
+          salesNumber: 1,
+          serialNumber: 1,
+          partyAccount: 1,
+          'party.partyName': 1,
+          items: 1,
+          subTotal: 1,
+          finalAmount: 1,
+          paymentSplittingData: 1,
+          // Calculate totals from items
+          totalCgst: {
+            $sum: '$items.totalCgstAmt'
+          },
+          totalSgst: {
+            $sum: '$items.totalSgstAmt'
+          },
+          totalIgst: {
+            $sum: '$items.totalIgstAmt'
+          },
+          totalDiscount: {
+            $sum: '$items.discountAmount'
+          }
+        }
+      },
+      { $sort: { date: -1, serialNumber: -1 } }
+    ]);
+
+    // Transform data for frontend consumption
+    const transformedData = salesData.map(sale => {
+      // Extract payment information
+      const paymentSplit = sale.paymentSplittingData?.[0] || {};
+      const cashAmount = paymentSplit.cash || 0;
+      const creditAmount = sale.finalAmount - cashAmount;
+
+      return {
+        billNo: sale.salesNumber || sale.serialNumber.toString(),
+        date: sale.date,
+        amount: sale.subTotal || 0,
+        disc: sale.totalDiscount || 0,
+        roundOff: (sale.finalAmount - sale.subTotal - sale.totalCgst - sale.totalSgst - sale.totalIgst) || 0,
+        total: sale.subTotal || 0,
+        cgst: sale.totalCgst || 0,
+        sgst: sale.totalSgst || 0,
+        igst: sale.totalIgst || 0,
+        totalWithTax: sale.finalAmount || 0,
+        cash: cashAmount,
+        credit: creditAmount,
+        creditDescription: creditAmount > 0 ? (sale.party?.partyName || 'Credit') : '-',
+        partyName: sale.party?.partyName || 'Cash',
+        partyAccount: sale.partyAccount || 'Cash-in-Hand',
+        items: sale.items || []
+      };
+    });
+
+    // Calculate summary totals
+    const summary = transformedData.reduce((acc, item) => ({
+      totalAmount: acc.totalAmount + item.amount,
+      totalDiscount: acc.totalDiscount + item.disc,
+      totalCgst: acc.totalCgst + item.cgst,
+      totalSgst: acc.totalSgst + item.sgst,
+      totalIgst: acc.totalIgst + item.igst,
+      totalCash: acc.totalCash + item.cash,
+      totalCredit: acc.totalCredit + item.credit,
+      totalFinalAmount: acc.totalFinalAmount + item.totalWithTax,
+      totalRoundOff: acc.totalRoundOff + item.roundOff
+    }), {
+      totalAmount: 0,
+      totalDiscount: 0,
+      totalCgst: 0,
+      totalSgst: 0,
+      totalIgst: 0,
+      totalCash: 0,
+      totalCredit: 0,
+      totalFinalAmount: 0,
+      totalRoundOff: 0
+    });
+
+    res.json({
+      success: true,
+      data: {
+        sales: transformedData,
+        summary: summary,
+        companyId: cmp_id,
+        dateRange: {
+          startDate: startDate || null,
+          endDate: endDate || null
+        },
+        totalRecords: transformedData.length
+      }
+    });
+
+  } catch (error) {
+    console.error('Error fetching hotel sales details:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message
     });
   }
 };
