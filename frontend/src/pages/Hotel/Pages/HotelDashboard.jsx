@@ -497,6 +497,21 @@ const scrollbarStyles = {
                 New Guest
               </button>
               <button
+                className="
+        flex items-center gap-2 px-4 py-1.5 rounded-xl
+        font-semibold text-xs transition-all duration-300
+        whitespace-nowrap flex-shrink-0
+        bg-gradient-to-r from-green-600 to-emerald-600 text-white 
+        border-transparent shadow-lg shadow-emerald-500/25
+        hover:scale-105 active:scale-95 transform
+        hover:from-green-700 hover:to-emerald-700
+      "
+                onClick={() => navigate("/sUsers/BillSummary?type=hotel")}
+              >
+                  <span className="text-sm">📊</span>
+              Hotel Daily Sales
+              </button>
+              <button
                 className="bg-gray-500 hover:bg-gray-600 text-white font-bold px-3 py-1 rounded text-sm flex items-center gap-1"
                 onClick={() => setShowFilters(!showFilters)}
               >

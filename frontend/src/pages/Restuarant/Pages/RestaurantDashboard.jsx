@@ -738,30 +738,48 @@ const RestaurantPOS = () => {
         </div>
 
         {/* Compact Cuisine Categories */}
-        <div className="bg-white/90 backdrop-blur-sm border-b border-gray-200/50 shadow-lg">
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide px-3 py-2.5">
-            {cuisines.map((cuisine) => (
-              <button
-                key={cuisine._id}
-                onClick={() => handleCategorySelect(cuisine._id, cuisine.name)}
-                className={`
-                flex items-center gap-2 px-3 py-1.5 rounded-xl
-                font-semibold text-xs transition-all duration-300
-                whitespace-nowrap flex-shrink-0 min-w-max
-                border hover:scale-105 active:scale-95 transform
-                ${
-                  selectedCuisine?.categoryName === cuisine.name
-                    ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-transparent shadow-lg shadow-indigo-500/25"
-                    : "bg-white/80 text-gray-700 border-gray-200 hover:border-indigo-300 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-blue-50 hover:shadow-md"
-                }
-              `}
-              >
-                <span className="text-sm">{cuisine.icon}</span>
-                <span>{cuisine.name}</span>
-              </button>
-            ))}
-          </div>
-        </div>
+       <div className="bg-white/90 backdrop-blur-sm border-b border-gray-200/50 shadow-lg">
+  <div className="flex justify-between items-center px-3 py-2.5">
+    <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+      {cuisines.map((cuisine) => (
+        <button
+          key={cuisine._id}
+          onClick={() => handleCategorySelect(cuisine._id, cuisine.name)}
+          className={`
+            flex items-center gap-2 px-3 py-1.5 rounded-xl
+            font-semibold text-xs transition-all duration-300
+            whitespace-nowrap flex-shrink-0 min-w-max
+            border hover:scale-105 active:scale-95 transform
+            ${
+              selectedCuisine?.categoryName === cuisine.name
+                ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-transparent shadow-lg shadow-indigo-500/25"
+                : "bg-white/80 text-gray-700 border-gray-200 hover:border-indigo-300 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-blue-50 hover:shadow-md"
+            }
+          `}
+        >
+          <span className="text-sm">{cuisine.icon}</span>
+          <span>{cuisine.name}</span>
+        </button>
+      ))}
+    </div>
+    
+    <button
+     onClick={() => navigate("/sUsers/BillSummary?type=restaurant")}
+      className="
+        flex items-center gap-2 px-4 py-1.5 rounded-xl
+        font-semibold text-xs transition-all duration-300
+        whitespace-nowrap flex-shrink-0
+        bg-gradient-to-r from-green-600 to-emerald-600 text-white 
+        border-transparent shadow-lg shadow-emerald-500/25
+        hover:scale-105 active:scale-95 transform
+        hover:from-green-700 hover:to-emerald-700
+      "
+    >
+      <span className="text-sm">📊</span>
+      <span>Daily Restaurant Sales</span>
+    </button>
+  </div>
+</div>
 
         {/* Main Content */}
         <div className="flex-1 flex min-h-0 relative">
