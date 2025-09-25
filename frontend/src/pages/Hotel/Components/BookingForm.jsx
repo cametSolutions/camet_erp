@@ -530,6 +530,16 @@ function BookingForm({
           (Number(formData.foodPlanTotal || 0) +
             Number(formData.paxTotal || 0)),
       }));
+    }else{
+      setFormData((prev) => ({
+        ...prev,
+        selectedRooms: [],
+        roomTotal: 0,
+        totalAmount:
+          0 +
+          (Number(formData.foodPlanTotal || 0) +
+            Number(formData.paxTotal || 0)),
+      }));
     }
   };
 
