@@ -150,9 +150,9 @@ const TableTiles = ({
   // Filter rooms based on search
   const filteredRooms = roomData?.filter(
     (room) =>
-      room.roomName.toLowerCase().includes(search.toLowerCase()) ||
-      room.customerName.toLowerCase().includes(search.toLowerCase()) ||
-      room.voucherNumber.toLowerCase().includes(search.toLowerCase())
+      room.roomName?.toLowerCase().includes(search.toLowerCase()) ||
+      room.customerName?.toLowerCase().includes(search.toLowerCase()) ||
+      room.voucherNumber?.toLowerCase().includes(search.toLowerCase())
   );
 
   const handleSelectRoom = (room) => {
