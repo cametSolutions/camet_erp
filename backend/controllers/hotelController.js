@@ -11,6 +11,7 @@ import { Booking, CheckIn, CheckOut } from "../models/bookingModal.js";
 import ReceiptModel from "../models/receiptModel.js";
 import { formatToLocalDate } from "../helpers/helper.js";
 import salesModel from "../models/salesModel.js";
+
 import {
   buildDatabaseFilterForRoom,
   sendRoomResponse,
@@ -665,7 +666,6 @@ export const getRooms = async (req, res) => {
       checkOutDate: { $lt: endDate },
     }).select("roomDetails");
 
-
     console.log("Overlapping check-ins found:", overlappingCheckIns.length);
 
     // Collect all occupied room IDs
@@ -1255,6 +1255,7 @@ export const updateBooking = async (req, res) => {
   try {
     const bookingData = req.body?.data;
     const modal = req.body?.modal;
+    const paymentData = req.body?.paymentData;
     const bookingId = req.params.id;
 
     if (!bookingData.arrivalDate) {
@@ -1417,13 +1418,18 @@ export const getAllRoomsWithStatusForDate = async (req, res) => {
       arrivalDate: { $lte: selectedDate },
       checkOutDate: { $gte: selectedDate },
     }).select("selectedRooms");
-
+    
+    const prevDay = new Date(selectedDate);
+    prevDay.setDate(prevDay.getDate() + 1);
+    const formattedPrevDay = prevDay.toISOString().split("T")[0];
+    console.log("prevDay", selectedDate);
+    console.log("formattedPrevDay", formattedPrevDay);
     // 3. CheckIns: status NOT 'checkOut' AND date overlaps selectedDate
     const checkins = await CheckIn.find({
       cmp_id,
       status: { $ne: "checkOut" }, // skip already checked out
-      arrivalDate: { $lte: selectedDate },
-      checkOutDate: { $gte: selectedDate },
+      // arrivalDate: { $lte: formattedPrevDay },
+      checkOutDate: { $lte: formattedPrevDay },
     }).select("selectedRooms");
 
     // --- Collect booked room IDs
@@ -2433,8 +2439,7 @@ export const getRoomSwapHistory = async (req, res) => {
   }
 };
 
-
- export const getHotelSalesDetails = async (req, res) => {
+export const getHotelSalesDetails = async (req, res) => {
   try {
     const { cmp_id } = req.params;
     const { startDate, endDate } = req.query;
@@ -2443,22 +2448,22 @@ export const getRoomSwapHistory = async (req, res) => {
     if (!cmp_id) {
       return res.status(400).json({
         success: false,
-        message: 'Company ID (cmp_id) is required'
+        message: "Company ID (cmp_id) is required",
       });
     }
 
     // Build query filters
     let query = {
       cmp_id: cmp_id,
-      voucherType: 'sales',
-      isCancelled: false
+      voucherType: "sales",
+      isCancelled: false,
     };
 
     // Add date range filter if provided
     if (startDate && endDate) {
       query.date = {
         $gte: new Date(startDate),
-        $lte: new Date(endDate)
+        $lte: new Date(endDate),
       };
     }
 
@@ -2467,11 +2472,11 @@ export const getRoomSwapHistory = async (req, res) => {
       { $match: query },
       {
         $lookup: {
-          from: 'parties',
-          localField: 'party._id',
-          foreignField: '_id',
-          as: 'partyDetails'
-        }
+          from: "parties",
+          localField: "party._id",
+          foreignField: "_id",
+          as: "partyDetails",
+        },
       },
       {
         $project: {
@@ -2480,31 +2485,31 @@ export const getRoomSwapHistory = async (req, res) => {
           salesNumber: 1,
           serialNumber: 1,
           partyAccount: 1,
-          'party.partyName': 1,
+          "party.partyName": 1,
           items: 1,
           subTotal: 1,
           finalAmount: 1,
           paymentSplittingData: 1,
           // Calculate totals from items
           totalCgst: {
-            $sum: '$items.totalCgstAmt'
+            $sum: "$items.totalCgstAmt",
           },
           totalSgst: {
-            $sum: '$items.totalSgstAmt'
+            $sum: "$items.totalSgstAmt",
           },
           totalIgst: {
-            $sum: '$items.totalIgstAmt'
+            $sum: "$items.totalIgstAmt",
           },
           totalDiscount: {
-            $sum: '$items.discountAmount'
-          }
-        }
+            $sum: "$items.discountAmount",
+          },
+        },
       },
-      { $sort: { date: -1, serialNumber: -1 } }
+      { $sort: { date: -1, serialNumber: -1 } },
     ]);
 
     // Transform data for frontend consumption
-    const transformedData = salesData.map(sale => {
+    const transformedData = salesData.map((sale) => {
       // Extract payment information
       const paymentSplit = sale.paymentSplittingData?.[0] || {};
       const cashAmount = paymentSplit.cash || 0;
@@ -2515,7 +2520,12 @@ export const getRoomSwapHistory = async (req, res) => {
         date: sale.date,
         amount: sale.subTotal || 0,
         disc: sale.totalDiscount || 0,
-        roundOff: (sale.finalAmount - sale.subTotal - sale.totalCgst - sale.totalSgst - sale.totalIgst) || 0,
+        roundOff:
+          sale.finalAmount -
+            sale.subTotal -
+            sale.totalCgst -
+            sale.totalSgst -
+            sale.totalIgst || 0,
         total: sale.subTotal || 0,
         cgst: sale.totalCgst || 0,
         sgst: sale.totalSgst || 0,
@@ -2523,35 +2533,39 @@ export const getRoomSwapHistory = async (req, res) => {
         totalWithTax: sale.finalAmount || 0,
         cash: cashAmount,
         credit: creditAmount,
-        creditDescription: creditAmount > 0 ? (sale.party?.partyName || 'Credit') : '-',
-        partyName: sale.party?.partyName || 'Cash',
-        partyAccount: sale.partyAccount || 'Cash-in-Hand',
-        items: sale.items || []
+        creditDescription:
+          creditAmount > 0 ? sale.party?.partyName || "Credit" : "-",
+        partyName: sale.party?.partyName || "Cash",
+        partyAccount: sale.partyAccount || "Cash-in-Hand",
+        items: sale.items || [],
       };
     });
 
     // Calculate summary totals
-    const summary = transformedData.reduce((acc, item) => ({
-      totalAmount: acc.totalAmount + item.amount,
-      totalDiscount: acc.totalDiscount + item.disc,
-      totalCgst: acc.totalCgst + item.cgst,
-      totalSgst: acc.totalSgst + item.sgst,
-      totalIgst: acc.totalIgst + item.igst,
-      totalCash: acc.totalCash + item.cash,
-      totalCredit: acc.totalCredit + item.credit,
-      totalFinalAmount: acc.totalFinalAmount + item.totalWithTax,
-      totalRoundOff: acc.totalRoundOff + item.roundOff
-    }), {
-      totalAmount: 0,
-      totalDiscount: 0,
-      totalCgst: 0,
-      totalSgst: 0,
-      totalIgst: 0,
-      totalCash: 0,
-      totalCredit: 0,
-      totalFinalAmount: 0,
-      totalRoundOff: 0
-    });
+    const summary = transformedData.reduce(
+      (acc, item) => ({
+        totalAmount: acc.totalAmount + item.amount,
+        totalDiscount: acc.totalDiscount + item.disc,
+        totalCgst: acc.totalCgst + item.cgst,
+        totalSgst: acc.totalSgst + item.sgst,
+        totalIgst: acc.totalIgst + item.igst,
+        totalCash: acc.totalCash + item.cash,
+        totalCredit: acc.totalCredit + item.credit,
+        totalFinalAmount: acc.totalFinalAmount + item.totalWithTax,
+        totalRoundOff: acc.totalRoundOff + item.roundOff,
+      }),
+      {
+        totalAmount: 0,
+        totalDiscount: 0,
+        totalCgst: 0,
+        totalSgst: 0,
+        totalIgst: 0,
+        totalCash: 0,
+        totalCredit: 0,
+        totalFinalAmount: 0,
+        totalRoundOff: 0,
+      }
+    );
 
     res.json({
       success: true,
@@ -2561,18 +2575,17 @@ export const getRoomSwapHistory = async (req, res) => {
         companyId: cmp_id,
         dateRange: {
           startDate: startDate || null,
-          endDate: endDate || null
+          endDate: endDate || null,
         },
-        totalRecords: transformedData.length
-      }
+        totalRecords: transformedData.length,
+      },
     });
-
   } catch (error) {
-    console.error('Error fetching hotel sales details:', error);
+    console.error("Error fetching hotel sales details:", error);
     res.status(500).json({
       success: false,
-      message: 'Internal server error',
-      error: error.message
+      message: "Internal server error",
+      error: error.message,
     });
   }
 };

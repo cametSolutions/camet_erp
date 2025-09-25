@@ -209,7 +209,7 @@ export const PartyList = async (req, res) => {
 // route POst/api/pUsers/addParty
 export const addParty = async (req, res) => {
   try {
-    const {
+    let {
       cpm_id: cmp_id,
       accountGroup,
       subGroup,
@@ -231,8 +231,9 @@ export const addParty = async (req, res) => {
     } = req.body;
 
     if(!accountGroup || accountGroup === "") {
-      let findAccountGroup = await AccountGroup.findOne({accountGroup: "GSundry Debtorseneral",cmp_id: cmp_id}); 
-      accountGroup = findAccountGroup._id
+      let findAccountGroup = await AccountGroup.findOne({accountGroup: "Sundry Debtors",cmp_id: cmp_id}); 
+      console.log(findAccountGroup);
+      accountGroup = findAccountGroup.accountGroup_id
     };
 
     const generatedId = new mongoose.Types.ObjectId();

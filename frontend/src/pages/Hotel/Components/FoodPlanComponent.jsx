@@ -32,7 +32,7 @@ function FoodPlanComponent({
   useEffect(() => {
     if (foodPlan.length > 0) {
       let filteredData = foodPlan.filter((item) => item.foodPlanId !== "");
-      sendDataToParent(filteredData);
+      sendDataToParent(filteredData,selectedRoomId);
     }
   }, [foodPlan]);
 
@@ -52,6 +52,7 @@ function FoodPlanComponent({
     }
   }, [selectedRoomId]);
 
+  console.log(selectedRoomId);
   const handlePaxChange = (index, value) => {
     let specificData = foodPlanData?.find((item) => item._id === value);
     const updatedRows = [...foodPlan];
@@ -71,7 +72,7 @@ function FoodPlanComponent({
     if (updatedRows.length === 0) {
       updatedRows.push({ foodPlanId: "", foodPlan: "", rate: 0 });
     }
-    setFoodPlan(updatedRows, selectedRoomId);
+    setFoodPlan(updatedRows);
   };
   const handleAddRow = () => {
     const lastRow = foodPlan[foodPlan.length - 1];

@@ -475,6 +475,7 @@ function BookingForm({
       ? formData.foodPlan
       : [];
 
+    console.log(selectedRoomId);
     const filterData = existingDetails.filter(
       (item) => item.roomId !== selectedRoomId
     );
@@ -485,7 +486,7 @@ function BookingForm({
 
     setFormData((prev) => ({
       ...prev,
-      foodPlan: [...details],
+      foodPlan: [...filterData, ...details],
       foodPlanTotal: totalAmount,
     }));
   };
@@ -534,16 +535,25 @@ function BookingForm({
 
   // handle submit function
   const submitHandler = async () => {
-    if (!formData.customerName || formData?.customerName.trim() === "") {
+    if (!formData.customerName || formData.customerName.trim() === "") {
       toast.error("please select a valid customer");
       return;
     }
-    let customerId;
-    if (!formData.customerId || formData?.customerId.trim() === "") {
+
+    let customerId = formData.customerId?.trim() || "";
+    let customerName = formData.customerName;
+    let country = formData.country;
+    let accountGroup = formData.accountGroup;
+    let state = formData.state;
+    let pinCode = formData.pinCode;
+    let detailedAddress = formData.detailedAddress;
+    let mobileNumber = formData.mobileNumber;
+
+    if (!customerId) {
       // ✅ Create party if customerId does not exist
       try {
-        let dataObject = {
-          accountGroup: "685e813492da9720ba535093",
+        const dataObject = {
+          accountGroup: "",
           partyName: formData.customerName,
           mobileNumber: formData.mobileNumber,
           emailID: "",
@@ -569,34 +579,54 @@ function BookingForm({
         });
 
         toast.success(res.data.message);
-        console.log(res.data);
-        // ✅ Assign new partyId to formData.customerId
-        customerId = res.data?.result._id; // <- make sure backend returns partyId
+
+        customerId = res.data?.result?._id;
+        customerName = res.data?.result?.partyName;
+        country = res.data?.result?.country;
+        accountGroup = res.data?.result?.accountGroup_id;
+        state = res.data?.result?.state;
+        pinCode = res.data?.result?.pin;
+        detailedAddress = res.data?.result?.billingAddress;
+        mobileNumber = res.data?.result?.mobileNumber;
       } catch (error) {
         toast.error("Failed to create customer");
         return;
       }
-    } else {
-      customerId = formData.customerId;
     }
 
-    console.log(customerId);
-
     // ✅ Continue with advance check only after customerId exists
-    if (Number(formData?.advanceAmount) <= 0) {
+    if (Number(formData.advanceAmount) <= 0) {
       if (isSubmittingRef.current) return;
       isSubmittingRef.current = true;
+
       const payload = {
         ...formData,
         customerId,
+        customerName,
+        country,
+        accountGroup,
+        state,
+        pinCode,
+        detailedAddress,
+        mobileNumber,
         voucherNumber,
       };
+
+      console.log(payload)
       handleSubmit(payload);
     } else {
       setFormData((prev) => ({
         ...prev,
         customerId,
-      }))
+        customerName,
+        country,
+        accountGroup,
+        state,
+        pinCode,
+        detailedAddress,
+        mobileNumber,
+        voucherNumber,
+      }));
       setShowPaymentModal(true);
     }
   };
