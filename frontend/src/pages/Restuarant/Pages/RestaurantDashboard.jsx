@@ -143,11 +143,11 @@ const RestaurantPOS = () => {
   const filteredRooms = Array.isArray(roomData)
     ? roomData.filter(
         (room) =>
-          room.roomName?.toLowerCase().includes(searchTerms.toLowerCase()) ||
+          room.roomName?.toLowerCase().includes(searchTerms?.toLowerCase()) ||
           room.customerName
             ?.toLowerCase()
-            .includes(searchTerms.toLowerCase()) ||
-          room.voucherNumber?.toLowerCase().includes(searchTerms.toLowerCase())
+            .includes(searchTerms?.toLowerCase()) ||
+          room.voucherNumber?.toLowerCase().includes(searchTerms?.toLowerCase())
       )
     : [];
 
@@ -310,14 +310,14 @@ const RestaurantPOS = () => {
     }
 
     if (searchTerm.trim()) {
-      const searchLower = searchTerm.toLowerCase().trim();
+      const searchLower = searchTerm?.toLowerCase().trim();
       filteredItems = filteredItems.filter(
         (item) =>
-          item.product_name.toLowerCase().includes(searchLower) ||
+          item.product_name?.toLowerCase().includes(searchLower) ||
           (item.description &&
-            item.description.toLowerCase().includes(searchLower)) ||
+            item.description?.toLowerCase().includes(searchLower)) ||
           (item.tags &&
-            item.tags.some((tag) => tag.toLowerCase().includes(searchLower)))
+            item.tags.some((tag) => tag?.toLowerCase().includes(searchLower)))
       );
     }
 
