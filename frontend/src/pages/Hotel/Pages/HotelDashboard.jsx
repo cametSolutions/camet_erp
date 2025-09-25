@@ -549,7 +549,7 @@ const scrollbarStyles = {
                     value={selectedDate}
                     onChange={(e) => setSelectedDate(e.target.value)}
                     className="bg-slate-700 text-white border border-slate-600 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    max={new Date().toISOString().split("T")[0]}
+                    
                   />
                 </div>
               </div>
