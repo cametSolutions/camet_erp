@@ -373,7 +373,7 @@ router.put("/swapRoom/:checkInId", swapRoom);
 router.get("/getRoomSwapHistory/:checkInId", getRoomSwapHistory);
 router.get("/getCheckedInGuests/:cmp_id", checkedInGuest);
 router.get('/summary', getSummaryDashboard);
-router.get('/hotel/:cmp_id',getHotelSalesDetails)
+router.get('/hotel-sales/:cmp_id', getHotelSalesDetails);
 
 // Route to get detailed booking information for a specific room and date
 
