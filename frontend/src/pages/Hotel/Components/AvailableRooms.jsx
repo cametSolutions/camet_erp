@@ -136,7 +136,7 @@ useEffect(() => {
       const availableRooms = newRooms.filter(room => {
         const isAlreadyBooked = bookings.some(booking => booking.roomId === room._id);
         if (isAlreadyBooked) {
-          console.log(`Filtering out already selected room: ${room._id}`);
+          console.log(`Filtering out already selected room: ${room.roomName}`);
         }
         return !isAlreadyBooked;
       });
@@ -304,8 +304,9 @@ useEffect(() => {
     setPendingRoomId(roomId);
   };
 
-  const handleDelete = (roomId) => {
-    setBookings((prev) => prev.filter((b) => b.roomId !== roomId));
+ const handleDelete = (roomId) => {
+    let filetedRoom = bookings.filter((b) => b.roomId !== roomId)
+    setBookings(filetedRoom);
   };
 
   const handleSelect = async (room) => {
