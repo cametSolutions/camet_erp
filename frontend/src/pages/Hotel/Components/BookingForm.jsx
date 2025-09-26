@@ -15,7 +15,6 @@ import useFetch from "@/customHook/useFetch";
 import OutStandingModal from "./OutStandingModal";
 import PaymentModal from "./PaymentModal";
 
-
 function BookingForm({
   isLoading,
   setIsLoading,
@@ -25,7 +24,7 @@ function BookingForm({
   isFor,
   outStanding = [],
   roomId,
-  submitLoader, 
+  submitLoader,
 }) {
   const [voucherNumber, setVoucherNumber] = useState("");
   const [selectedParty, setSelectedParty] = useState("");
@@ -395,11 +394,13 @@ function BookingForm({
   };
 
   // function used to handle customer selection
-  const handleSelection = (selectedParty) => {
+  const handleSelection = (selectedParty, search) => {
+    console.log(search);
     setSelectedParty(selectedParty);
     if (!selectedParty) {
       setFormData((prev) => ({
         ...prev,
+        customerName: search,
         customerId: "",
         country: "",
         state: "",
@@ -441,14 +442,20 @@ function BookingForm({
   };
 
   // handle additionalPax data form child
-  const handleAdditionalPaxDetails = (details) => {
+  const handleAdditionalPaxDetails = (details, selectedRoomId) => {
+    console.log(details.length);
     const existingDetails = Array.isArray(formData?.additionalPaxDetails)
       ? formData.additionalPaxDetails
       : [];
 
+    console.log(existingDetails);
+    console.log(details);
+
     const filterData = existingDetails.filter(
-      (item) => item.roomId !== details[0]?.roomId
+      (item) => item.roomId !== selectedRoomId
     );
+
+    console.log(filterData);
 
     const totalAmount = [...filterData, ...details].reduce(
       (acc, item) => acc + Number(item.rate),
@@ -463,13 +470,14 @@ function BookingForm({
   };
 
   // handle food plan data from the child
-  const handleFoodPlanData = (details) => {
+  const handleFoodPlanData = (details, selectedRoomId) => {
     const existingDetails = Array.isArray(formData?.foodPlan)
       ? formData.foodPlan
       : [];
 
+    console.log(selectedRoomId);
     const filterData = existingDetails.filter(
-      (item) => item.roomId !== details[0]?.roomId
+      (item) => item.roomId !== selectedRoomId
     );
     const totalAmount = [...filterData, ...details].reduce(
       (acc, item) => acc + Number(item.rate),
@@ -522,22 +530,113 @@ function BookingForm({
           (Number(formData.foodPlanTotal || 0) +
             Number(formData.paxTotal || 0)),
       }));
+    }else{
+      setFormData((prev) => ({
+        ...prev,
+        selectedRooms: [],
+        roomTotal: 0,
+        totalAmount:
+          0 +
+          (Number(formData.foodPlanTotal || 0) +
+            Number(formData.paxTotal || 0)),
+      }));
     }
   };
 
   // handle submit function
-  const submitHandler = () => {
-    console.log(Number(formData?.advanceAmount));
-    if (Number(formData?.advanceAmount) <= 0) {
+  const submitHandler = async () => {
+    if (!formData.customerName || formData.customerName.trim() === "") {
+      toast.error("please select a valid customer");
+      return;
+    }
+
+    let customerId = formData.customerId?.trim() || "";
+    let customerName = formData.customerName;
+    let country = formData.country;
+    let accountGroup = formData.accountGroup;
+    let state = formData.state;
+    let pinCode = formData.pinCode;
+    let detailedAddress = formData.detailedAddress;
+    let mobileNumber = formData.mobileNumber;
+
+    if (!customerId) {
+      // ✅ Create party if customerId does not exist
+      try {
+        const dataObject = {
+          accountGroup: "",
+          partyName: formData.customerName,
+          mobileNumber: formData.mobileNumber,
+          emailID: "",
+          gstNo: "",
+          panNo: "",
+          billingAddress: formData.detailedAddress,
+          shippingAddress: formData.detailedAddress,
+          creditPeriod: "",
+          creditLimit: "",
+          openingBalanceType: "",
+          openingBalanceAmount: 0,
+          country: formData.country,
+          state: formData.state,
+          pin: formData.pinCode,
+          subGroup: "",
+          isHotelAgent: false,
+          cpm_id: cmp_id,
+        };
+
+        const res = await api.post("/api/sUsers/addParty", dataObject, {
+          headers: { "Content-Type": "application/json" },
+          withCredentials: true,
+        });
+
+        toast.success(res.data.message);
+
+        customerId = res.data?.result?._id;
+        customerName = res.data?.result?.partyName;
+        country = res.data?.result?.country;
+        accountGroup = res.data?.result?.accountGroup_id;
+        state = res.data?.result?.state;
+        pinCode = res.data?.result?.pin;
+        detailedAddress = res.data?.result?.billingAddress;
+        mobileNumber = res.data?.result?.mobileNumber;
+      } catch (error) {
+        toast.error("Failed to create customer");
+        return;
+      }
+    }
+
+    // ✅ Continue with advance check only after customerId exists
+    if (Number(formData.advanceAmount) <= 0) {
       if (isSubmittingRef.current) return;
       isSubmittingRef.current = true;
+
       const payload = {
         ...formData,
+        customerId,
+        customerName,
+        country,
+        accountGroup,
+        state,
+        pinCode,
+        detailedAddress,
+        mobileNumber,
         voucherNumber,
       };
-      delete payload.roomType;
+
+      console.log(payload)
       handleSubmit(payload);
     } else {
+      setFormData((prev) => ({
+        ...prev,
+        customerId,
+        customerName,
+        country,
+        accountGroup,
+        state,
+        pinCode,
+        detailedAddress,
+        mobileNumber,
+        voucherNumber,
+      }));
       setShowPaymentModal(true);
     }
   };
@@ -558,6 +657,13 @@ function BookingForm({
     setShowPaymentModal(false);
   };
 
+  const handleSearchCustomer = (name) => {
+    setFormData((prev) => ({
+      ...prev,
+      customerName: name,
+    }));
+  };
+
   return (
     <>
       {isLoading || visitOfPurposeLoading || loading ? (
@@ -572,7 +678,6 @@ function BookingForm({
               onClose={handleClose}
               onPaymentSave={handlePayment}
               cmp_id={cmp_id}
-            
             />
           )}
           <>
@@ -598,6 +703,7 @@ function BookingForm({
                       selectedParty={selectedParty}
                       isAgent={false}
                       placeholder="Search customers..."
+                      sendSearchToParent={handleSearchCustomer}
                     />
                   </div>
                 </div>
