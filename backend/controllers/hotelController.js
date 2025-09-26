@@ -1908,14 +1908,7 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
     // Collect all advanceDetails across checkouts
     let allAdvanceDetails = [];
     let allKotData = [];
-    let finalCheckoutData;
-    if (!isForPreview) {
-      finalCheckoutData = [checkoutData[0]];
-    } else {
-      finalCheckoutData = checkoutData;
-    }
-    console.log("finalCheckoutData", finalCheckoutData);
-    for (const item of finalCheckoutData) {
+    for (const item of checkoutData) {
       console.log(
         "itemsd",
         checkoutData[0]?.checkInId?.voucherNumber,
@@ -1947,20 +1940,19 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
       const checkInSideAdvanceDetails = await TallyData.find({
         billId: isForPreview ? item._id : item.checkInId?._id,
       });
-      const checkOutSideAdvanceDetails = !isForPreview
-        ? await TallyData.find({
-            bill_no: item.voucherNumber,
-          })
-        : [];
 
       allAdvanceDetails.push(
         ...bookingSideAdvanceDetails,
         ...checkInSideAdvanceDetails,
-        ...checkOutSideAdvanceDetails
       );
     }
+    const checkOutSideAdvanceDetails = !isForPreview
+      ? await TallyData.find({
+          bill_no: checkoutData[0]?.voucherNumber,
+        })
+      : [];
 
-    console.log("allAdvanceDetails", allKotData);
+    allAdvanceDetails.push(...checkOutSideAdvanceDetails);
 
     if (allAdvanceDetails.length > 0 || allKotData.length > 0) {
       return res.status(200).json({
