@@ -436,18 +436,18 @@ const TableTiles = ({
       {!showVoucherPdf && (
         <>
           {/* Header */}
-          <div className="flex items-center justify-center gap-6 mb-4">
+          <div className=" md:flex items-center  justify-center gap-6 mb-4">
             {/* Title */}
-            <div className="text-center mb-0">
+            <div className="text-center mb-2">
               <h1 className="text-2xl font-bold bg-gradient-to-r from-violet-600 via-purple-600 to-blue-600 text-transparent bg-clip-text mb-2">
                 Restaurant Tables
               </h1>
               <div className="w-24 h-1 bg-gradient-to-r from-violet-500 to-blue-500 mx-auto rounded-full"></div>
             </div>
-            <div></div>
+            
             {/* Dropdown */}
             {roomData?.length > 0 && (
-              <div className="relative ">
+              <div className="relative mb-2">
                 <input
                   type="text"
                   placeholder="Search room..."
@@ -482,17 +482,7 @@ const TableTiles = ({
                 )}
               </div>
             )}
-            {/* {showKotNotification && selectedKotFromRedirect && (
-            <div
-              className="fixed top-6 inset-x-0 flex justify-center z-50 cursor-pointer"
-              onClick={() => setShowKotNotification(false)}
-            >
-              <div className="bg-yellow-100 border border-yellow-400 px-6 py-2 rounded-lg shadow text-yellow-900 font-medium">
-                KOT #{selectedKotFromRedirect.voucherNumber} was selected from
-                table. Click to close this notice.
-              </div>
-            </div>
-          )} */}
+       
             <>
               <div className="mb-3">
                 <div className="flex justify-center">

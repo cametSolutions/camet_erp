@@ -11,6 +11,7 @@ import { Booking, CheckIn, CheckOut } from "../models/bookingModal.js";
 import ReceiptModel from "../models/receiptModel.js";
 import { formatToLocalDate } from "../helpers/helper.js";
 import salesModel from "../models/salesModel.js";
+import Kot from "../models/kotModal.js";
 import {
   buildDatabaseFilterForRoom,
   sendRoomResponse,
@@ -2519,8 +2520,83 @@ export const getHotelSalesDetails = async (req, res) => {
           preserveNullAndEmptyArrays: true
         }
       },
-      {
-        $addFields: {
+   {
+    $lookup: {
+      from: 'kots',
+      let: { 
+        salesVoucherNumber: {
+          $arrayElemAt: ['$convertedFrom.voucherNumber', 0]
+        }
+      },
+      pipeline: [
+        {
+          $match: {
+            $expr: {
+              $and: [
+                { $ne: ['$$salesVoucherNumber', null] },
+                { $eq: ['$voucherNumber', '$$salesVoucherNumber'] }
+              ]
+            }
+          }
+        },
+        {
+          $project: {
+            type: 1,
+            voucherNumber: 1,
+            tableNumber: 1,
+            _id: 1
+          }
+        }
+      ],
+      as: 'kotDetails'
+    }
+  },
+        
+  {
+    $addFields: {
+          // Extract hour from createdAt for meal period classification
+          createdHour: { $hour: { date: "$createdAt", timezone: "+05:30" } }, // IST timezone
+           kotType: {
+        $ifNull: ['$kotDetails.type', null]
+      },
+      
+ 
+          // Meal period classification based on created time
+          mealPeriod: {
+            $switch: {
+              branches: [
+                {
+                  case: {
+                    $and: [
+                      { $gte: [{ $hour: { date: "$createdAt", timezone: "+05:30" } }, 7] },
+                      { $lt: [{ $hour: { date: "$createdAt", timezone: "+05:30" } }, 11] }
+                    ]
+                  },
+                  then: "Breakfast"
+                },
+                {
+                  case: {
+                    $and: [
+                      { $gte: [{ $hour: { date: "$createdAt", timezone: "+05:30" } }, 11] },
+                      { $lt: [{ $hour: { date: "$createdAt", timezone: "+05:30" } }, 15] }
+                    ]
+                  },
+                  then: "Lunch"
+                },
+                {
+                  case: {
+                    $and: [
+                      { $gte: [{ $hour: { date: "$createdAt", timezone: "+05:30" } }, 15] },
+                      { $lt: [{ $hour: { date: "$createdAt", timezone: "+05:30" } }, 18] }
+                    ]
+                  },
+                  then: "Snack"
+                }
+              ],
+              default: "Dinner" // For hours 18-6 (6 PM to 7 AM)
+            }
+          },
+          
           // Hotel sale classification
           isHotelSale: {
             $or: [
@@ -2581,6 +2657,10 @@ export const getHotelSalesDetails = async (req, res) => {
               { $regexMatch: { input: { $toLower: '$partyAccount' }, regex: 'restaurant' } },
               { $regexMatch: { input: { $toLower: '$partyAccount' }, regex: 'food' } },
               { $regexMatch: { input: { $toLower: '$partyAccount' }, regex: 'dining' } },
+               { $eq: [{ $toLower: '$kotType' }, 'dine-in'] },
+          { $eq: [{ $toLower: '$kotType' }, 'takeaway'] },
+          { $eq: [{ $toLower: '$kotType' }, 'delivery'] },
+          { $eq: [{ $toLower: '$kotType' }, 'restaurant'] },
               {
                 $gt: [
                   {
@@ -2636,8 +2716,12 @@ export const getHotelSalesDetails = async (req, res) => {
         $project: {
           _id: 1,
           date: 1,
+          createdAt: 1,
+          createdHour: 1,
+          mealPeriod: 1,
           salesNumber: 1,
           serialNumber: 1,
+            kotType: 1,
           partyAccount: 1,
           party: 1,
           partyDetails: {
@@ -2709,7 +2793,7 @@ export const getHotelSalesDetails = async (req, res) => {
       { $sort: { date: -1, serialNumber: -1 } }
     ]);
 
-    console.log(`Found ${salesData.length} ${businessType} sales records`);
+    console.log("salesData",salesData);
 
     // Transform data for frontend consumption
     const transformedData = salesData.map(sale => {
@@ -2756,19 +2840,19 @@ export const getHotelSalesDetails = async (req, res) => {
         cashAmount = Number(sale.finalAmount) || 0;
       }
 
+      let mode = 'Cash'; // default
+      if (upiAmount > 0 && upiAmount === bankAmount) {
+        mode = 'UPI';
+      } else if (chequeAmount > 0) {
+        mode = 'Cheque';
+      } else if (creditAmount > 0) {
+        mode = 'Credit';
+      } else if (bankAmount > 0) {
+        mode = 'Bank';
+      } else if (cashAmount > 0) {
+        mode = 'Cash';
+      }
 
-        let mode = 'Cash'; // default
-  if (upiAmount > 0 && upiAmount === bankAmount) {
-    mode = 'UPI';
-  } else if (chequeAmount > 0) {
-    mode = 'Cheque';
-  } else if (creditAmount > 0) {
-    mode = 'Credit';
-  } else if (bankAmount > 0) {
-    mode = 'Bank';
-  } else if (cashAmount > 0) {
-    mode = 'Cash';
-  }
       // Get party name from either nested party object or partyDetails
       const partyName = sale.party?.partyName || 
                        sale.partyDetails?.partyName || 
@@ -2823,6 +2907,10 @@ export const getHotelSalesDetails = async (req, res) => {
       return {
         billNo: sale.salesNumber || sale.serialNumber?.toString() || '',
         date: sale.date,
+        createdAt: sale.createdAt,
+        createdHour: sale.createdHour,
+        mealPeriod: sale.mealPeriod,
+           kotType: sale.kotType || '',
         amount: subTotal,
         disc: sale.totalDiscount || 0,
         roundOff: roundOff,
@@ -2836,7 +2924,7 @@ export const getHotelSalesDetails = async (req, res) => {
         upi: upiAmount,
         cheque: chequeAmount,
         bank: bankAmount,
-         mode,
+        mode,
         creditDescription: partyName,
         partyName: partyName,
         partyAccount: sale.partyAccount || 'Cash-in-Hand',
@@ -2864,7 +2952,7 @@ export const getHotelSalesDetails = async (req, res) => {
       };
     });
 
-    // Calculate summary totals with business type breakdown
+    // Calculate summary totals with business type breakdown and meal period breakdown
     const summary = transformedData.reduce((acc, item) => {
       // General totals
       acc.totalAmount += item.amount || 0;
@@ -2879,6 +2967,14 @@ export const getHotelSalesDetails = async (req, res) => {
       acc.totalBank += item.bank || 0;
       acc.totalFinalAmount += item.totalWithTax || 0;
       acc.totalRoundOff += item.roundOff || 0;
+
+      // Meal period breakdown
+      const mealPeriod = item.mealPeriod || 'Unknown';
+      if (!acc.mealPeriodBreakdown[mealPeriod]) {
+        acc.mealPeriodBreakdown[mealPeriod] = { amount: 0, count: 0 };
+      }
+      acc.mealPeriodBreakdown[mealPeriod].amount += item.totalWithTax || 0;
+      acc.mealPeriodBreakdown[mealPeriod].count += 1;
 
       // Business type breakdown
       if (item.businessClassification === 'Hotel') {
@@ -2910,6 +3006,9 @@ export const getHotelSalesDetails = async (req, res) => {
       totalBank: 0,
       totalFinalAmount: 0,
       totalRoundOff: 0,
+      
+      // Meal period breakdown
+      mealPeriodBreakdown: {},
       
       // Business type breakdown
       hotelSales: { amount: 0, count: 0, rooms: 0 },
@@ -2945,6 +3044,16 @@ export const getHotelSalesDetails = async (req, res) => {
           transactionCount: summary.otherSales.count
         }
       },
+      mealPeriodBreakdown: Object.keys(summary.mealPeriodBreakdown).reduce((acc, period) => {
+        acc[period] = {
+          amount: summary.mealPeriodBreakdown[period].amount,
+          count: summary.mealPeriodBreakdown[period].count,
+          percentage: totalSales > 0 ? (summary.mealPeriodBreakdown[period].amount / totalSales) * 100 : 0,
+          averageTicket: summary.mealPeriodBreakdown[period].count > 0 ? 
+            summary.mealPeriodBreakdown[period].amount / summary.mealPeriodBreakdown[period].count : 0
+        };
+        return acc;
+      }, {}),
       overallMetrics: {
         averageTicketSize: totalTransactions > 0 ? totalSales / totalTransactions : 0,
         totalTransactions: totalTransactions,
@@ -2983,6 +3092,7 @@ export const getHotelSalesDetails = async (req, res) => {
           other: summary.otherSales.count,
           total: totalTransactions
         },
+        mealPeriodSummary: summary.mealPeriodBreakdown,
         message: `Found ${transformedData.length} ${businessType === 'all' ? 'combined' : businessType} sales records`
       }
     });

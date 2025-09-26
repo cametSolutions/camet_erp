@@ -329,27 +329,7 @@ const BillSummary = () => {
   };
 
   // Helper functions for business type styling
-  const getBusinessTypeTitle = () => {
-    switch (businessType) {
-      case "hotel":
-        return "Hotel Sales Register - Accommodation & Room Service";
-      case "restaurant":
-        return "Restaurant Sales Register - Food & Beverage Service";
-      default:
-        return "Combined Sales Register - Hotel & Restaurant";
-    }
-  };
 
-  const getBusinessTypeColor = (classification) => {
-    switch (classification) {
-      case "Hotel":
-        return "bg-blue-100 text-blue-800 border-blue-200";
-      case "Restaurant":
-        return "bg-green-100 text-green-800 border-green-200";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
-    }
-  };
 
   const fetchSalesData = async (start = startDate, end = endDate) => {
     if (!start || !end) {
@@ -549,26 +529,10 @@ const BillSummary = () => {
           <div className="text-xs text-gray-600">
             {owner?.address || owner?.road || "Sales Register"}
           </div>
-          <div className="text-sm mt-2">{getBusinessTypeTitle()}</div>
-          {businessType !== "all" && (
-            <div className="mt-2">
-              <span
-                className={`px-3 py-1 rounded-full text-xs font-medium border ${
-                  businessType === "hotel"
-                    ? "bg-blue-100 text-blue-800 border-blue-200"
-                    : businessType === "restaurant"
-                    ? "bg-green-100 text-green-800 border-green-200"
-                    : "bg-gray-100 text-gray-800 border-gray-200"
-                }`}
-              >
-                {businessType === "hotel"
-                  ? "🏨 Hotel Sales Only"
-                  : businessType === "restaurant"
-                  ? "🍽️ Restaurant Sales Only"
-                  : "📊 All Sales"}
-              </span>
-            </div>
-          )}
+          <div className="text-sm mt-2">
+            Sale Register of the outlet - {salesData?.[0]?.kotType || ""}
+          </div>
+         
         </div>
 
         {/* Date Controls and Business Type Selector */}
@@ -688,6 +652,12 @@ const BillSummary = () => {
                   Mode
                 </th>
                 <th className="border-t border-black p-2 text-center font-bold">
+                 Meal Period
+                </th> 
+                <th className="border-t border-black p-2 text-center font-bold">
+                Kot Type
+                </th> 
+                <th className="border-t border-black p-2 text-center font-bold">
                   Credit
                 </th>
                 <th className="border-t border-r border-black p-2 text-center font-bold">
@@ -731,13 +701,13 @@ const BillSummary = () => {
                       {(row.total || 0).toFixed(2)}
                     </td>
                     <td className="border border-black p-2 text-center">
-                      {(row.totalCgstAmt || 0).toFixed(2)}
+                      {(row.items[0].cgst || 0).toFixed(2)}
                     </td>
                     <td className="border border-black p-2 text-center">
-                      {(row.totalSgstAmt || 0).toFixed(2)}
+                      {(row.items[0].sgst || 0).toFixed(2)}
                     </td>
                     <td className="border border-black p-2 text-center">
-                      {(row.totalIgstAmt || 0).toFixed(2)}
+                      {(row.items[0].igst || 0).toFixed(2)}
                     </td>
                     <td className="border border-black p-2 text-center">
                       {(row.totalWithTax || 0).toFixed(2)}
@@ -759,6 +729,12 @@ const BillSummary = () => {
                             </span>
                           ))
                         : "-"}
+                    </td>
+                     <td className="border border-black p-2 text-center">
+                      {row.mealPeriod || "-"}
+                    </td>
+                      <td className="border border-black p-2 text-center">
+                      {row.kotType || "-"}
                     </td>
                     <td className="border border-black p-2 text-center">
                       {row.credit > 0 ? (row.credit || 0).toFixed(2) : "-"}
@@ -811,6 +787,8 @@ const BillSummary = () => {
                     {totals.credit.toFixed(2)}
                   </td>
                   <td className="border border-black p-2 text-center">-</td>
+                    <td className="border border-black p-2 text-center">-</td>
+                    <td className="border border-black p-2 text-center">-</td>
                 </tr>
               )}
             </tbody>
