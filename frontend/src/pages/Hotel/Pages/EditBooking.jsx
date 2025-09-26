@@ -44,21 +44,20 @@ function EditBooking() {
   }, [data]);
 
   const handleSubmit = async (data,paymentData) => {
-    console.log(paymentData);
-    // try {
-    //   let response = await api.put(
-    //     `/api/sUsers/updateRoomBooking/${editData._id}`,
-      // { data: data, modal: "Booking", paymentData: paymentData },
-    //     { withCredentials: true }
-    //   );
-    //   if (response?.data?.success) {
-    //     toast.success(response?.data?.message);
-    //     navigate("/sUsers/bookingList");
-    //   }
-    // } catch (error) {
-    //   console.log(error);
-    //   toast.error(error?.response?.data?.message);
-    // }
+    try {
+      let response = await api.put(
+        `/api/sUsers/updateRoomBooking/${editData._id}`,
+      { data: data, modal: "Booking", paymentData: paymentData },
+        { withCredentials: true }
+      );
+      if (response?.data?.success) {
+        toast.success(response?.data?.message);
+        navigate("/sUsers/bookingList");
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error(error?.response?.data?.message);
+    }
   };
 
   console.log(editData?.bookingId)
