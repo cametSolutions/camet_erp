@@ -18,7 +18,7 @@ const generatePDF = async (salesData, summary, owner, reportPeriod, businessType
         return "Combined Sales Register - Hotel & Restaurant";
     }
   };
-
+console.log(businessType)
   const html = `
     <!DOCTYPE html>
     <html>
@@ -516,7 +516,7 @@ const BillSummary = () => {
     }
     exportToExcel(salesData, summary, owner, reportPeriod, businessType, totals);
   };
-
+console.log(summary)
   console.log(salesData);
   return (
     <div className="min-h-screen bg-gray-100 p-5">
@@ -877,72 +877,65 @@ const BillSummary = () => {
                 Business Type Breakdown
               </h3>
               <table className="w-full">
-                <tbody>
-                  {summary.hotelSales && (
-                    <>
-                      <tr className="bg-blue-50">
-                        <td className="font-bold py-2 px-2">Hotel Sales</td>
-                        <td className="text-right py-2 px-2">
-                          {summary.hotelSales.amount?.toFixed(2) || "0.00"}
-                        </td>
-                      </tr>
-                      <tr>
-                        <td className="py-1 px-2 text-gray-600">
-                          - Transactions
-                        </td>
-                        <td className="text-right py-1 px-2">
-                          {summary.hotelSales.count || 0}
-                        </td>
-                      </tr>
-                    </>
-                  )}
-                  {summary.restaurantSales && (
-                    <>
-                      <tr className="bg-green-50">
-                        <td className="font-bold py-2 px-2">
-                          Restaurant Sales
-                        </td>
-                        <td className="text-right py-2 px-2">
-                          {summary.restaurantSales.amount?.toFixed(2) || "0.00"}
-                        </td>
-                      </tr>
-                      <tr>
-                        <td className="py-1 px-2 text-gray-600">
-                          - Transactions
-                        </td>
-                        <td className="text-right py-1 px-2">
-                          {summary.restaurantSales.count || 0}
-                        </td>
-                      </tr>
-                    </>
-                  )}
-                  {summary.otherSales && summary.otherSales.count > 0 && (
-                    <>
-                      <tr className="bg-gray-50">
-                        <td className="font-bold py-2 px-2">Other Sales</td>
-                        <td className="text-right py-2 px-2">
-                          {summary.otherSales.amount?.toFixed(2) || "0.00"}
-                        </td>
-                      </tr>
-                      <tr>
-                        <td className="py-1 px-2 text-gray-600">
-                          - Transactions
-                        </td>
-                        <td className="text-right py-1 px-2">
-                          {summary.otherSales.count || 0}
-                        </td>
-                      </tr>
-                    </>
-                  )}
-                  <tr className="border-t-2 border-black">
-                    <td className="font-bold py-2 px-2 text-sm">
-                      Total Transactions
-                    </td>
-                    <td className="text-right py-2 px-2 font-bold text-sm">
-                      {salesData.length}
-                    </td>
-                  </tr>
-                </tbody>
+                   <tbody>
+      {businessType === "hotel" && summary.hotelSales && (
+        <>
+          <tr className="bg-blue-50">
+            <td className="font-bold py-2 px-2">Hotel Sales</td>
+            <td className="text-right py-2 px-2">
+              {summary.hotelSales.amount?.toFixed(2) || "0.00"}
+            </td>
+          </tr>
+          <tr>
+            <td className="py-1 px-2 text-gray-600">- Transactions</td>
+            <td className="text-right py-1 px-2">
+              {summary.hotelSales.count || 0}
+            </td>
+          </tr>
+        </>
+      )}
+
+      {businessType === "restaurant" && summary.restaurantSales && (
+        <>
+          <tr className="bg-green-50">
+            <td className="font-bold py-2 px-2">Restaurant Sales</td>
+            <td className="text-right py-2 px-2">
+              {summary.restaurantSales.amount?.toFixed(2) || "0.00"}
+            </td>
+          </tr>
+          <tr>
+            <td className="py-1 px-2 text-gray-600">- Transactions</td>
+            <td className="text-right py-1 px-2">
+              {summary.restaurantSales.count || 0}
+            </td>
+          </tr>
+        </>
+      )}
+
+      {summary.otherSales && summary.otherSales.count > 0 && (
+        <>
+          <tr className="bg-gray-50">
+            <td className="font-bold py-2 px-2">Other Sales</td>
+            <td className="text-right py-2 px-2">
+              {summary.otherSales.amount?.toFixed(2) || "0.00"}
+            </td>
+          </tr>
+          <tr>
+            <td className="py-1 px-2 text-gray-600">- Transactions</td>
+            <td className="text-right py-1 px-2">
+              {summary.otherSales.count || 0}
+            </td>
+          </tr>
+        </>
+      )}
+
+      <tr className="border-t-2 border-black">
+        <td className="font-bold py-2 px-2 text-sm">Total Transactions</td>
+        <td className="text-right py-2 px-2 font-bold text-sm">
+          {salesData.length}
+        </td>
+      </tr>
+    </tbody>
               </table>
             </div>
           </div>
