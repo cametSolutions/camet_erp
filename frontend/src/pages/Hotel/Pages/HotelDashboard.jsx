@@ -498,6 +498,7 @@ const scrollbarStyles = {
               </button>
               <button
                 className="
+                hidden md:flex
         flex items-center gap-2 px-4 py-1.5 rounded-xl
         font-semibold text-xs transition-all duration-300
         whitespace-nowrap flex-shrink-0

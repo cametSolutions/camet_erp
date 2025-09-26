@@ -634,40 +634,83 @@ const OrdersDashboard = () => {
       {!showVoucherPdf && (
         <div className="min-h-screen bg-gray-50">
           {/* Header */}
-          <div className="bg-white px-4 py-3 border-b border-gray-200 flex justify-between items-center">
-            <div className="flex items-center gap-4">
-              <h1 className="text-xl font-semibold text-black">
-                {userRole === "kitchen" ? "Kitchen Orders" : "Reception Orders"}{" "}
-                Display
-              </h1>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500">Role:</span>
-                <select
-                  value={userRole}
-                  onChange={(e) => {
-                    setUserRole(e.target.value);
-                    setActiveFilter("ON PROCESS");
-                  }}
-                  className="px-2 py-1 border border-gray-300 rounded text-sm"
-                >
-                  <option value="reception">Reception</option>
-                  <option value="kitchen">Kitchen</option>
-                </select>
-              </div>
-            </div>
-            <div className="flex items-center gap-4 mb-4">
-              <div className="text-gray-600 text-sm">
-                {dayjs(selectedDate).format("dddd, D MMMM YYYY")}
-              </div>
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="px-3 py-1 border rounded text-sm"
-                max={dayjs().format("YYYY-MM-DD")}
-              />
-            </div>
-          </div>
+     <div className="bg-white px-4 py-3 border-b border-gray-200">
+  {/* Mobile Layout */}
+  <div className="block sm:hidden">
+    {/* First Row - Title */}
+    <div className="mb-3">
+      <h1 className="text-lg font-semibold text-black text-center">
+        {userRole === "kitchen" ? "Kitchen Orders" : "Reception Orders"} Display
+      </h1>
+    </div>
+    
+    {/* Second Row - Role and Date */}
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center justify-center gap-2">
+        <span className="text-sm text-gray-500">Role:</span>
+        <select
+          value={userRole}
+          onChange={(e) => {
+            setUserRole(e.target.value);
+            setActiveFilter("ON PROCESS");
+          }}
+          className="px-2 py-1 border border-gray-300 rounded text-sm"
+        >
+          <option value="reception">Reception</option>
+          <option value="kitchen">Kitchen</option>
+        </select>
+      </div>
+      
+      <div className="flex flex-col items-center gap-2">
+        <div className="text-gray-600 text-sm">
+          {dayjs(selectedDate).format("dddd, D MMMM YYYY")}
+        </div>
+        <input
+          type="date"
+          value={selectedDate}
+          onChange={(e) => setSelectedDate(e.target.value)}
+          className="px-3 py-1 border rounded text-sm w-full max-w-[200px]"
+          max={dayjs().format("YYYY-MM-DD")}
+        />
+      </div>
+    </div>
+  </div>
+
+  {/* Desktop Layout (unchanged) */}
+  <div className="hidden sm:flex justify-between items-center">
+    <div className="flex items-center gap-4">
+      <h1 className="text-xl font-semibold text-black">
+        {userRole === "kitchen" ? "Kitchen Orders" : "Reception Orders"} Display
+      </h1>
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-gray-500">Role:</span>
+        <select
+          value={userRole}
+          onChange={(e) => {
+            setUserRole(e.target.value);
+            setActiveFilter("ON PROCESS");
+          }}
+          className="px-2 py-1 border border-gray-300 rounded text-sm"
+        >
+          <option value="reception">Reception</option>
+          <option value="kitchen">Kitchen</option>
+        </select>
+      </div>
+    </div>
+    <div className="flex items-center gap-4">
+      <div className="text-gray-600 text-sm">
+        {dayjs(selectedDate).format("dddd, D MMMM YYYY")}
+      </div>
+      <input
+        type="date"
+        value={selectedDate}
+        onChange={(e) => setSelectedDate(e.target.value)}
+        className="px-3 py-1 border rounded text-sm"
+        max={dayjs().format("YYYY-MM-DD")}
+      />
+    </div>
+  </div>
+</div>
 
           {/* Controls */}
           <div className="bg-white px-4 py-3 border-b border-gray-200 flex justify-between items-center">
