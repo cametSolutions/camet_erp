@@ -375,7 +375,8 @@ function BookingList() {
       <div className="flex items-center px-4 py-3 text-xs font-bold text-gray-800 uppercase tracking-wider md:hidden">
         <div className="w-18 text-center">SL.NO</div>
         <div className="w-32 text-center">BOOKING DATE</div>
-        <div className="w-32 text-center">BOOKING NO</div>
+        <div className="w-32 text-center">{location.pathname == "/sUsers/checkOutList" ? "CHECKOUT NO" : 
+        location.pathname == "/sUsers/checkInList" ? "CHECK-IN NO" : "BOOKING NO" }</div>
         <div className="w-32 text-center"> ACTIONS</div>
       </div>
 
@@ -383,7 +384,8 @@ function BookingList() {
       <div className="hidden md:flex items-center px-4 py-3 text-xs font-bold text-gray-800 uppercase tracking-wider">
         <div className="w-10 text-center">SL.NO</div>
         <div className="w-28 text-center">BOOKING DATE</div>
-        <div className="w-32 text-center">BOOKING NO</div>
+        <div className="w-32 text-center">{location.pathname == "/sUsers/checkOutList" ? "CHECKOUT NO" : 
+        location.pathname == "/sUsers/checkInList" ? "CHECK-IN NO" : "BOOKING NO" }</div>
         <div className="w-40 text-center">GUEST NAME</div>
         <div className="w-24 text-center">ROOM NO</div>
         <div className="w-36 text-center">ARRIVAL DATE</div>
