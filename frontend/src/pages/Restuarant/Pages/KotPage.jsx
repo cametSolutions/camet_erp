@@ -90,6 +90,7 @@ const OrdersDashboard = () => {
       const { bankDetails, cashDetails } = paymentTypeData?.data;
 
       setCashOrBank(paymentTypeData?.data);
+      console.log(paymentTypeData?.data);
       if (bankDetails && bankDetails.length > 0) {
         setSelectedBank(bankDetails[0]._id);
       }
@@ -358,29 +359,30 @@ const OrdersDashboard = () => {
       selectedDataForPayment.roomService &&
       Object.keys(selectedDataForPayment.roomService).length > 0
     ) {
-      if (paymentMode == "single") {
-        if (paymentMethod == "cash") {
+      // CASE 1: When roomService exists
+      if (paymentMode === "single") {
+        if (paymentMethod === "cash") {
           paymentDetails = {
             cashAmount: selectedDataForPayment?.total,
-            onlineAmount: onlineAmount,
-            selectedCash: selectedCash,
-            selectedBank: selectedBank,
-            paymentMode: paymentMode,
+            onlineAmount,
+            selectedCash,
+            selectedBank,
+            paymentMode,
           };
-          selectedKotData = selectedDataForPayment;
         } else {
           paymentDetails = {
-            cashAmount: cashAmount,
+            cashAmount,
             onlineAmount: selectedDataForPayment?.total,
-            selectedCash: selectedCash,
-            selectedBank: selectedBank,
-            paymentMode: paymentMode,
+            selectedCash,
+            selectedBank,
+            paymentMode,
           };
-          selectedKotData = selectedDataForPayment;
         }
+        selectedKotData = selectedDataForPayment;
       } else {
+        // Split payment mode
         if (
-          Number(cashAmount) + Number(onlineAmount) !=
+          Number(cashAmount) + Number(onlineAmount) !==
           selectedDataForPayment?.total
         ) {
           setPaymentError(
@@ -389,27 +391,55 @@ const OrdersDashboard = () => {
           return;
         }
         paymentDetails = {
-          cashAmount: cashAmount,
-          onlineAmount: onlineAmount,
-          selectedCash: selectedCash,
-          selectedBank: selectedBank,
-          paymentMode: paymentMode,
+          cashAmount,
+          onlineAmount,
+          selectedCash,
+          selectedBank,
+          paymentMode,
         };
         selectedKotData = selectedDataForPayment;
       }
     } else {
-      paymentDetails = {
-        cashAmount: previewForSales?.total,
-        onlineAmount: onlineAmount,
-        selectedCash: selectedCash,
-        selectedBank: selectedBank,
-        paymentMode: paymentMode,
-        isPostToRoom: true,
-      };
-      selectedKotData = previewForSales;
+      // CASE 2: When NO roomService
+      if (paymentMode === "single") {
+        if (paymentMethod === "cash") {
+          paymentDetails = {
+            cashAmount: selectedDataForPayment?.total,
+            onlineAmount,
+            selectedCash,
+            selectedBank,
+            paymentMode,
+          };
+        } else {
+          paymentDetails = {
+            cashAmount,
+            onlineAmount: selectedDataForPayment?.total,
+            selectedCash,
+            selectedBank,
+            paymentMode,
+          };
+        }
+        selectedKotData = previewForSales;
+      } else {
+        if (
+          Number(cashAmount) + Number(onlineAmount) !==
+          selectedDataForPayment?.total
+        ) {
+          setPaymentError(
+            "Cash and online amounts together equal the total amount."
+          );
+          return;
+        }
+        paymentDetails = {
+          cashAmount,
+          onlineAmount,
+          selectedCash,
+          selectedBank,
+          paymentMode,
+        };
+        selectedKotData = previewForSales;
+      }
     }
-
-    console.log(paymentDetails);
 
     try {
       const response = await api.put(
@@ -520,7 +550,7 @@ const OrdersDashboard = () => {
     });
 
     let totalAmount = itemList.reduce(
-      (acc, item) => acc + (Number(item.total) * Number(item.quantity)),
+      (acc, item) => acc + Number(item.total) * Number(item.quantity),
       0
     );
     console.log(itemList);
@@ -563,10 +593,11 @@ const OrdersDashboard = () => {
     if (kotData?.paymentCompleted) {
       toast.error("Kot Payment is completed so you can't edit");
       return;
-    } else if (kotData?.status === "completed") {
-      toast.error("Kot is already completed so you can't edit");
-      return;
-    }
+    } 
+    // else if (kotData?.status === "completed") {
+    //   toast.error("Kot is already completed so you can't edit");
+    //   return;
+    // }
     navigate("/sUsers/RestaurantDashboard", { state: { kotData } });
   };
 
@@ -574,7 +605,7 @@ const OrdersDashboard = () => {
     content: () => contentToPrint.current,
   });
 
-  console.log(filteredOrders)
+  console.log(selectedBank);
 
   return (
     <>
@@ -768,7 +799,7 @@ const OrdersDashboard = () => {
                               }`}
                             >
                               {order.type} - {order?.tableNumber}
-                              <span>{order.roomId?.roomName}</span>
+                              <span>{(order.roomId?.roomName && order?.tableNumber) ? "," : " "}{order.roomId?.roomName}</span>
                             </span>
                           </div>
 
@@ -1230,8 +1261,8 @@ const OrdersDashboard = () => {
                         setOnlineAmount(0);
                         setPaymentError("");
                         // Reset split payment selections
-                        setSelectedCash("");
-                        setSelectedBank("");
+                        // setSelectedCash("");
+                        // setSelectedBank("");
                       }}
                       className={`flex-1 px-3 py-2 rounded-lg border-2 text-xs font-medium transition-colors ${
                         paymentMode === "single"
@@ -1278,7 +1309,9 @@ const OrdersDashboard = () => {
                         <span className="text-xs font-medium">Cash</span>
                       </button>
                       <button
-                        onClick={() => setPaymentMethod("card")}
+                        onClick={() => {
+                          setPaymentMethod("card");
+                        }}
                         className={`flex flex-col items-center p-3 rounded-lg border-2 transition-colors ${
                           paymentMethod === "card"
                             ? "border-blue-500 bg-blue-50 text-blue-700"
@@ -1323,7 +1356,6 @@ const OrdersDashboard = () => {
                           value={selectedBank}
                           onChange={(e) => {
                             setSelectedBank(e.target.value);
-                            // setSelectedCash
                           }}
                         >
                           <option value="" disabled>

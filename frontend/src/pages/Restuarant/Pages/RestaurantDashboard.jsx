@@ -92,6 +92,7 @@ const RestaurantPOS = () => {
         guestName: kotDataForEdit?.customer?.name || "",
         CheckInNumber: kotDataForEdit?.checkInNumber || "",
       });
+
     }
   }, [kotDataForEdit]);
 
@@ -142,11 +143,11 @@ const RestaurantPOS = () => {
   const filteredRooms = Array.isArray(roomData)
     ? roomData.filter(
         (room) =>
-          room.roomName?.toLowerCase().includes(searchTerms.toLowerCase()) ||
+          room.roomName?.toLowerCase().includes(searchTerms?.toLowerCase()) ||
           room.customerName
             ?.toLowerCase()
-            .includes(searchTerms.toLowerCase()) ||
-          room.voucherNumber?.toLowerCase().includes(searchTerms.toLowerCase())
+            .includes(searchTerms?.toLowerCase()) ||
+          room.voucherNumber?.toLowerCase().includes(searchTerms?.toLowerCase())
       )
     : [];
 
@@ -309,14 +310,14 @@ const RestaurantPOS = () => {
     }
 
     if (searchTerm.trim()) {
-      const searchLower = searchTerm.toLowerCase().trim();
+      const searchLower = searchTerm?.toLowerCase().trim();
       filteredItems = filteredItems.filter(
         (item) =>
-          item.product_name.toLowerCase().includes(searchLower) ||
+          item.product_name?.toLowerCase().includes(searchLower) ||
           (item.description &&
-            item.description.toLowerCase().includes(searchLower)) ||
+            item.description?.toLowerCase().includes(searchLower)) ||
           (item.tags &&
-            item.tags.some((tag) => tag.toLowerCase().includes(searchLower)))
+            item.tags.some((tag) => tag?.toLowerCase().includes(searchLower)))
       );
     }
 
@@ -524,14 +525,15 @@ const RestaurantPOS = () => {
       customer: orderCustomerDetails,
       total: getTotalAmount(),
       timestamp: new Date(),
-      status: "pending",
+      status: kotDataForEdit?.status || "pending",
       paymentMethod: orderType === "dine-in" ? null : "cash",
     };
 
     let url = isEdit
       ? `/api/sUsers/editKOT/${cmp_id}/${kotDataForEdit._id}`
       : `/api/sUsers/generateKOT/${cmp_id}`;
-    console.log(url);
+
+
     try {
       let response = await api.post(url, newOrder, {
         withCredentials: true,
@@ -558,6 +560,7 @@ const RestaurantPOS = () => {
     setOrderItems([]);
     setOrderNumber(orderNumber + 1);
     setShowKOTModal(false);
+    setIsEdit(false);
     setCustomerDetails({
       name: "",
       phone: "",
@@ -571,37 +574,7 @@ const RestaurantPOS = () => {
     );
   };
 
-  // const processPayment = () => {
-  //   const updatedOrders = orders.map((order) =>
-  //     order.id === orderNumber - 1
-  //       ? { ...order, status: "paid", paymentMethod: paymentMethod }
-  //       : order
-  //   );
 
-  //   setOrders(updatedOrders);
-  //   setShowPaymentModal(false);
-
-  //   if (orderType === "roomService") {
-  //     setRoomDetails({
-  //       roomno: "",
-  //       guestName: "",
-  //       CheckInNumber: "",
-  //     });
-  //   } else {
-  //     setCustomerDetails({
-  //       name: "",
-  //       phone: "",
-  //       address: "",
-  //       tableNumber: customerDetails.tableNumber,
-  //     });
-  //   }
-
-  //   alert(
-  //     `Payment of ₹${
-  //       orders.find((order) => order.id === orderNumber - 1)?.total || 0
-  //     } processed successfully via ${paymentMethod}!`
-  //   );
-  // };
 
   const getOrderTypeDisplay = (type) => {
     const typeMap = {

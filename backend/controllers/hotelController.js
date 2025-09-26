@@ -11,7 +11,9 @@ import { Booking, CheckIn, CheckOut } from "../models/bookingModal.js";
 import ReceiptModel from "../models/receiptModel.js";
 import { formatToLocalDate } from "../helpers/helper.js";
 import salesModel from "../models/salesModel.js";
+
 import Kot from "../models/kotModal.js";
+
 import {
   buildDatabaseFilterForRoom,
   sendRoomResponse,
@@ -634,7 +636,7 @@ export const getRooms = async (req, res) => {
 
     // Only care about checkOutDate in further logic
     // Extract checkout only from params if given, else use today
-    let { checkOutDate } = params;
+    let { arrivalDate, checkOutDate } = params;
     let endDate;
     if (checkOutDate) {
       endDate = checkOutDate;
@@ -645,29 +647,37 @@ export const getRooms = async (req, res) => {
 
     const startDate = new Date(); // startDate is required for check date, but not for overlap logic
 
-    console.log("Checking availability for date (checkOutDate logic only):", {
-      endDate,
-    });
-    console.log("companyId", req.params.cmp_id);
-
     // Find rooms that are currently booked for the specified checkout date (ignore arrivalDate)
     const overlappingBookings = await Booking.find({
       cmp_id: req.params.cmp_id,
-      checkOutDate: { $gt: startDate }, // Only consider checkOutDate
-      status: { $nin: ["CheckIn"] },
+       status: { $ne: "checkIn" },
+       checkOutDate: { $lte: checkOutDate }, // Only consider checkOutDate
     });
 
-    console.log("Overlapping bookingees found:", endDate);
+    const AllCheckIns = await CheckIn.find({
+       cmp_id: req.params.cmp_id,
+      status: { $ne: "checkOut" },
+    }).select("selectedRooms checkOutDate arrivalDate roomDetails");
+
+    const overlappingCheckIns = AllCheckIns.filter((c) => {
+      const co = new Date(c.checkOutDate);
+      co.setDate(co.getDate() + 1); // add 1 day
+
+      // normalize both to YYYY-MM-DD
+      const checkoutPlusOne = co.toISOString().split("T")[0];
+      console.log("checkoutPlusOne", checkoutPlusOne, checkOutDate);
+      return checkoutPlusOne >= checkOutDate ;
+    });
 
     // Find rooms that are currently checked-in for the specified checkout date
-    const overlappingCheckIns = await CheckIn.find({
-      cmp_id: req.params.cmp_id,
-      checkOutDate: { $gt: startDate },
-      checkOutDate: { $lt: endDate },
-    }).select("roomDetails");
+    // const overlappingCheckIns = await CheckIn.find({
+    //   cmp_id: req.params.cmp_id,
+    //   checkOutDate: { $gt: startDate },
+    //   checkOutDate: { $lt: endDate },
+    //    status: { $nin: ["CheckOut"] },
+    // }).select("roomDetails");
 
-
-    console.log("Overlapping check-ins found:", overlappingCheckIns.length);
+    console.log("Overlapping check-ins found:", overlappingCheckIns);
 
     // Collect all occupied room IDs
     const occupiedRoomId = new Set();
@@ -695,7 +705,8 @@ export const getRooms = async (req, res) => {
         });
       }
     });
-
+   console.log("occupiedRoomId", overlappingBookings.length,overlappingCheckIns.length);
+    console.log("occupiedRoomId", occupiedRoomId);
     // Filter out occupied **and dirty/blocked** rooms
     const vacantRooms = rooms.filter((room) => {
       const roomId = room._id.toString();
@@ -704,12 +715,14 @@ export const getRooms = async (req, res) => {
       // exclude rooms with status 'dirty' or 'blocked'
       const isCleanAndOpen =
         room.status !== "dirty" &&
-        room.status !== "blocked" &&
-        room.status !== "checkIn";
+        room.status !== "blocked"
+        //  &&
+        // room.status !== "checkIn";
 
       return !isOccupied && isCleanAndOpen;
     });
-
+console.log("vacantRooms",vacantRooms.length)
+console.log("vacantRooms",rooms.length)
     // Add availability status
     const roomsWithStatus = vacantRooms.map((room) => ({
       ...room.toObject(),
@@ -1256,6 +1269,7 @@ export const updateBooking = async (req, res) => {
   try {
     const bookingData = req.body?.data;
     const modal = req.body?.modal;
+    const paymentData = req.body?.paymentData;
     const bookingId = req.params.id;
 
     if (!bookingData.arrivalDate) {
@@ -1419,13 +1433,20 @@ export const getAllRoomsWithStatusForDate = async (req, res) => {
       checkOutDate: { $gte: selectedDate },
     }).select("selectedRooms");
 
-    // 3. CheckIns: status NOT 'checkOut' AND date overlaps selectedDate
-    const checkins = await CheckIn.find({
+    const AllCheckIns = await CheckIn.find({
       cmp_id,
-      status: { $ne: "checkOut" }, // skip already checked out
-      arrivalDate: { $lte: selectedDate },
-      checkOutDate: { $gte: selectedDate },
-    }).select("selectedRooms");
+      status: { $ne: "checkOut" },
+    }).select("selectedRooms checkOutDate arrivalDate");
+
+    const checkins = AllCheckIns.filter((c) => {
+      const co = new Date(c.checkOutDate);
+      co.setDate(co.getDate() + 1); // add 1 day
+
+      // normalize both to YYYY-MM-DD
+      const checkoutPlusOne = co.toISOString().split("T")[0];
+      console.log("checkoutPlusOne", checkoutPlusOne, selectedDate);
+      return checkoutPlusOne >= selectedDate;
+    });
 
     // --- Collect booked room IDs
     const bookedRoomIds = new Set();
@@ -1446,6 +1467,8 @@ export const getAllRoomsWithStatusForDate = async (req, res) => {
         }
       }
     }
+
+    console.log("AllRooms", allRooms);
 
     // --- Mark each room's status
     const roomsWithStatus = allRooms.map((room) => {
@@ -2433,7 +2456,6 @@ export const getRoomSwapHistory = async (req, res) => {
     });
   }
 };
-
 
 export const getHotelSalesDetails = async (req, res) => {
   try {
