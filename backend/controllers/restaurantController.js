@@ -7,8 +7,7 @@ import kotModal from "../models/kotModal.js";
 import { generateVoucherNumber } from "../helpers/voucherHelper.js";
 import salesModel from "../models/salesModel.js";
 import TallyData from "../models/TallyData.js";
-import Receipt from "../models/receiptModel.js";
-
+import ReceiptModel from "../models/receiptModel.js";
 import bankModel from "../models/bankModel.js";
 import cashModel from "../models/cashModel.js";
 import Party from "../models/partyModel.js";
@@ -16,6 +15,7 @@ import { saveSettlementData } from "../helpers/salesHelper.js";
 import Organization from "../models/OragnizationModel.js";
 import Table from "../models/TableModel.js";
 import { Godown } from "../models/subDetails.js";
+import { buildReceipt } from "../helpers/restaurantHelper.js";
 // Helper functions (you may need to create these or adjust based on your existing ones)
 import {
   buildDatabaseFilterForRoom,
@@ -441,7 +441,7 @@ export const editKot = async (req, res) => {
       delete customer.roomId;
     }
 
-    console.log("req.body?.status",req.body?.status)
+    console.log("req.body?.status", req.body?.status);
 
     // Update the KOT
     const updatedKot = await kotModal.findOneAndUpdate(
@@ -455,13 +455,11 @@ export const editKot = async (req, res) => {
         status: req.body.status || "pending",
         paymentMethod: req.body.paymentMethod,
         roomId: req.body.customer?.roomId,
-        status:req.body?.status,
+        status: req.body?.status,
         checkInNumber: req.body.customer?.checkInNumber,
       },
       { new: true, session }
     );
-
-    
 
     // If previous KOT was dine-in, free up the old table
     if (previousKot.tableNumber && previousKot.type === "dine-in") {
@@ -828,6 +826,10 @@ export const updateKotPayment = async (req, res) => {
         paymentMethod = "mixed";
       }
 
+      if (paymentDetails?.paymentMode == "credit") {
+        paymentMethod = "credit";
+      }
+
       // Voucher series
       const specificVoucherSeries = await getRestaurantVoucherSeries(
         cmp_id,
@@ -841,17 +843,31 @@ export const updateKotPayment = async (req, res) => {
         specificVoucherSeries._id.toString(),
         session
       );
+      let creditParty;
+      if (paymentMethod == "credit") {
 
+        creditParty = await Party.findOne({
+          cmp_id,
+          _id: paymentDetails.selectedCreditor._id,
+        })
+          .populate("accountGroup")
+          .session(session);
+      }
+
+      console.log("creditParty", paymentMethod);
       // Selected party
-      const selectedParty = await getSelectedParty(
-        cmp_id,
-        paymentDetails,
-        cashAmt,
-        onlineAmt,
-        kotData,
-        isPostToRoom,
-        session
-      );
+      const selectedParty =
+        paymentMethod == "credit"
+          ? creditParty
+          : await getSelectedParty(
+              cmp_id,
+              paymentDetails,
+              cashAmt,
+              onlineAmt,
+              kotData,
+              isPostToRoom,
+              session
+            );
 
       // Payment splitting
       const paymentSplittingArray = createPaymentSplittingArray(
@@ -878,9 +894,9 @@ export const updateKotPayment = async (req, res) => {
       // Outstanding balance
       const paidAmount = isPostToRoom ? 0 : cashAmt + onlineAmt;
       const pendingAmount = Number(kotData?.total || 0) - paidAmount;
-
-      if (isPostToRoom) {
-        await createTallyEntry(
+      let tallyData;
+      if (isPostToRoom || paymentMethod == "credit") {
+        tallyData = await createTallyEntry(
           cmp_id,
           req,
           selectedParty,
@@ -891,7 +907,7 @@ export const updateKotPayment = async (req, res) => {
           session
         );
       }
-      if (party?.paymentType != "party") {
+      if (party?.paymentType != "party" && paymentMethod != "credit") {
         await saveSettlement(
           paymentDetails,
           selectedParty,
@@ -903,6 +919,19 @@ export const updateKotPayment = async (req, res) => {
           req,
           session
         );
+      }
+      if (paymentMethod == "credit") {
+        await buildReceipt({
+          cmp_id,
+          selectedParty: paymentDetails.selectedCreditor,
+          advanceObject: tallyData,
+          saleData: savedVoucherData[0],
+          amount: paymentDetails?.cashAmount,
+          paymentDetails,
+          paymentMethod,
+          req,
+          session,
+        });
       }
 
       // Update KOTs
@@ -1122,7 +1151,7 @@ async function createTallyEntry(
   pendingAmount,
   session
 ) {
-  await TallyData.create(
+  const tallyEntry = await TallyData.create(
     [
       {
         Primary_user_id: req.pUserId || req.owner,
@@ -1145,6 +1174,8 @@ async function createTallyEntry(
     ],
     { session }
   );
+
+  return tallyEntry[0]; // since .create with array returns an array
 }
 
 async function saveSettlement(
