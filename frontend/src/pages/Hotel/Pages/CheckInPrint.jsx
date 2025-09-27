@@ -34,7 +34,7 @@ const GuestRegistrationCard = () => {
               P G ANIL<br />
               <span className="text-xs text-gray-600">GSTNO: 32AABAT3079L1ZB</span>
             </div>
-            <div className="w-40 p-2 text-xs bg-gray-50">ARRIVED FROM</div>
+            <div className="w-40 p-2  font-bold text-xs bg-gray-50">ARRIVED FROM</div>
           </div>
 
           {/* Row 3 - Company/Travel Agent Headers */}

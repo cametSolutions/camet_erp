@@ -529,8 +529,8 @@ console.log(summary)
           <div className="text-xs text-gray-600">
             {owner?.address || owner?.road || "Sales Register"}
           </div>
-          <div className="text-sm mt-2">
-            Sale Register of the outlet - {salesData?.[0]?.kotType || ""}
+          <div className="text-sm font-bold mt-2">
+          SALES REGISTER OF THE OUTLET - {businessType} {salesData?.[0]?.kotType || ""}
           </div>
          
         </div>
@@ -701,13 +701,13 @@ console.log(summary)
                       {(row.total || 0).toFixed(2)}
                     </td>
                     <td className="border border-black p-2 text-center">
-                      {(row.items[0].cgst || 0).toFixed(2)}
+                      {(row.items[0].totalCgstAmt || 0).toFixed(2)}
                     </td>
                     <td className="border border-black p-2 text-center">
-                      {(row.items[0].sgst || 0).toFixed(2)}
+                      {(row.items[0].totalSgstAmt || 0).toFixed(2)}
                     </td>
                     <td className="border border-black p-2 text-center">
-                      {(row.items[0].igst || 0).toFixed(2)}
+                      {(row.items[0].totalIgstAmt || 0).toFixed(2)}
                     </td>
                     <td className="border border-black p-2 text-center">
                       {(row.totalWithTax || 0).toFixed(2)}
