@@ -1276,8 +1276,7 @@ export const updateBooking = async (req, res) => {
     const modal = req.body?.modal;
     const paymentData = req.body?.paymentData;
     const bookingId = req.params.id;
-    const orgId = bookingData?.cmp_id;
-
+    const orgId = req.body?.orgId;
     if (!bookingData?.arrivalDate) {
       return res.status(400).json({ message: "Missing required fields" });
     }
@@ -1297,6 +1296,8 @@ export const updateBooking = async (req, res) => {
       voucherType: "receipt",
     }).session(session);
 
+    console.log("voucherNumber", voucher);
+
     const series_idReceipt = voucher?.series
       ?.find((s) => s.under === "hotel")
       ?._id.toString();
@@ -1305,52 +1306,6 @@ export const updateBooking = async (req, res) => {
     const selectedParty = await partyModel
       .findOne({ _id: bookingData.customerId })
       .session(session);
-
-    // 🔹 Helper to build and save receipt
-    const buildReceipt = async (
-      receiptVoucher,
-      serialNumber,
-      paymentDetails,
-      amount,
-      paymentMethod
-    ) => {
-      let selectedParty = await partyModel
-        .findOne({ _id: bookingData?.customerId })
-        .populate("accountGroup")
-        .session(session);
-
-      if (selectedParty) {
-        selectedParty = selectedParty.toObject();
-        if (selectedParty.accountGroup?._id) {
-          selectedParty.accountGroup_id =
-            selectedParty.accountGroup._id.toString();
-        }
-        delete selectedParty.accountGroup;
-      }
-
-      const receipt = new ReceiptModel({
-        createdAt: new Date(),
-        date: await formatToLocalDate(new Date(), orgId, session),
-        receiptNumber: receiptVoucher?.usedSeriesNumber,
-        series_id: series_idReceipt,
-        usedSeriesNumber: receiptVoucher?.usedSeriesNumber || null,
-        serialNumber,
-        cmp_id: orgId,
-        party: selectedParty,
-        billData,
-        totalBillAmount: bookingData.advanceAmount,
-        enteredAmount: amount,
-        advanceAmount: 0,
-        remainingAmount: 0,
-        paymentMethod,
-        paymentDetails,
-        note: "",
-        Primary_user_id: req.pUserId || req.owner,
-        Secondary_user_id: req.sUserId,
-      });
-
-      return await receipt.save({ session });
-    };
 
     await session.withTransaction(async () => {
       // 🔹 Clean existing receipts & settlements if updating an existing booking
@@ -1372,7 +1327,6 @@ export const updateBooking = async (req, res) => {
           },
           { session, new: true } // new: true returns the updated doc
         );
-
         const billData = [
           {
             _id: updatedTallyData?._id, // ✅ now this works
@@ -1385,6 +1339,52 @@ export const updateBooking = async (req, res) => {
             remainingAmount: 0,
           },
         ];
+
+        // 🔹 Helper to build and save receipt
+        const buildReceipt = async (
+          receiptVoucher,
+          serialNumber,
+          paymentDetails,
+          amount,
+          paymentMethod
+        ) => {
+          let selectedParty = await partyModel
+            .findOne({ _id: bookingData?.customerId })
+            .populate("accountGroup")
+            .session(session);
+
+          if (selectedParty) {
+            selectedParty = selectedParty.toObject();
+            if (selectedParty.accountGroup?._id) {
+              selectedParty.accountGroup_id =
+                selectedParty.accountGroup._id.toString();
+            }
+            delete selectedParty.accountGroup;
+          }
+
+          const receipt = new ReceiptModel({
+            createdAt: new Date(),
+            date: await formatToLocalDate(new Date(), orgId, session),
+            receiptNumber: receiptVoucher?.usedSeriesNumber,
+            series_id: series_idReceipt,
+            usedSeriesNumber: receiptVoucher?.usedSeriesNumber || null,
+            serialNumber,
+            cmp_id: orgId,
+            party: selectedParty,
+            billData,
+            totalBillAmount: bookingData.advanceAmount,
+            enteredAmount: amount,
+            advanceAmount: 0,
+            remainingAmount: 0,
+            paymentMethod,
+            paymentDetails,
+            note: "",
+            Primary_user_id: req.pUserId || req.owner,
+            Secondary_user_id: req.sUserId,
+          });
+
+          return await receipt.save({ session });
+        };
 
         // ✅ Single Payment
         if (paymentData.mode === "single") {
@@ -1945,7 +1945,7 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
 
       allAdvanceDetails.push(
         ...bookingSideAdvanceDetails,
-        ...checkInSideAdvanceDetails,
+        ...checkInSideAdvanceDetails
       );
     }
     const checkOutSideAdvanceDetails = !isForPreview

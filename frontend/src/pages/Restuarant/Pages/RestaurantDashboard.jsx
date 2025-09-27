@@ -29,6 +29,7 @@ import useFetch from "@/customHook/useFetch";
 import { generateAndPrintKOT } from "../Helper/kotPrintHelper";
 import { taxCalculatorForRestaurant } from "@/pages/Hotel/Helper/taxCalculator";
 import { useLocation } from "react-router-dom";
+import { FaArrowLeft } from "react-icons/fa6";
 const RestaurantPOS = () => {
   const [selectedCuisine, setSelectedCuisine] = useState("");
   const [selectedSubcategory, setSelectedSubcategory] = useState("");
@@ -450,6 +451,7 @@ const RestaurantPOS = () => {
     } else {
       setShowKOTModal(true); // keep normal KOT flow for others
     }
+    setShowOrderSummary(false)
   };
 
   const generateKOT = async (selectedTableNumber, tableStatus) => {
@@ -646,6 +648,12 @@ const RestaurantPOS = () => {
         <div className="bg-gradient-to-r from-slate-900 via-gray-900 to-slate-800 text-white p-2 md:p-3 shadow-2xl border-b border-gray-700/30">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
+                 <button
+                className="md:hidden p-1.5 hover:bg-white/10 rounded-lg transition-colors duration-200"
+              onClick={() => navigate("/sUsers/dashboard")}
+              >
+                <FaArrowLeft className="w-5 h-5" />
+              </button>
               <button
                 className="md:hidden p-1.5 hover:bg-white/10 rounded-lg transition-colors duration-200"
                 onClick={() => setShowSidebar(!showSidebar)}
