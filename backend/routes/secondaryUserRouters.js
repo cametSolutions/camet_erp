@@ -61,7 +61,7 @@ import {saveAdditionalPax , getAdditionalPax ,updateAdditionalPax , deleteAdditi
     updateVisitOfPurpose,deleteVisitOfPurpose,saveIdProof,getIdProof,updateIdProof , deleteIdProof, saveFoodPlan , getFoodPlan
     ,updateFoodPlan,deleteFoodPlan,addRoom,getRooms,editRoom ,deleteRoom,getAllRooms,roomBooking,getBookings,deleteBooking,updateBooking,
 fetchAdvanceDetails,getAllRoomsWithStatusForDate,updateRoomStatus,getDateBasedRoomsWithStatus,checkoutWithArrayOfData,
-fetchOutStandingAndFoodData,convertCheckOutToSale , updateConfigurationForHotelAndRestaurant,swapRoom,getRoomSwapHistory,checkedInGuest,getHotelSalesDetails} from '../controllers/hotelController.js'
+fetchOutStandingAndFoodData,convertCheckOutToSale , updateConfigurationForHotelAndRestaurant,swapRoom,getRoomSwapHistory,checkedInGuest,getHotelSalesDetails,} from '../controllers/hotelController.js'
 import {addItem,getAllItems,getItems,getCategories,deleteItem,updateItem,generateKot,getKot,updateKotStatus,editKot,
     getRoomDataForRestaurant,updateKotPayment,getPaymentType,saveTableNumber,getSalePrintData,updateTable,getTables,deleteTable,
     updateTableStatus,getKotDataByTable,updateConfigurationForKotApproval ,getSummaryDashboard } from '../controllers/restaurantController.js'

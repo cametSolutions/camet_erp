@@ -3319,3 +3319,22 @@ export const getHotelSalesDetails = async (req, res) => {
     });
   }
 };
+
+
+
+export const getAllCheckIns = async (req, res) => {
+  try {
+    const checkIns = await CheckIn.find();
+    
+    res.status(200).json({
+      success: true,
+      data: checkIns
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching check-ins',
+      error: error.message
+    });
+  }
+};

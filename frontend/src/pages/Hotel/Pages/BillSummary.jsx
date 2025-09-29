@@ -444,9 +444,9 @@ const BillSummary = () => {
       disc: acc.disc + (item.disc || 0),
       roundOff: acc.roundOff + (item.roundOff || 0),
       total: acc.total + (item.total || 0),
-      cgst: acc.cgst + (item.totalCgstAmt || 0),
-      sgst: acc.sgst + (item.totalSgstAmt || 0),
-      igst: acc.igst + (item.totalIgstAmt || 0),
+     cgst: acc.cgst + (item.items?.[0]?.totalCgstAmt || 0), // Access nested items array
+    sgst: acc.sgst + (item.items?.[0]?.totalSgstAmt || 0), // Access nested items array
+    igst: acc.igst + (item.totalIgstAmt || 0),
       totalWithTax: acc.totalWithTax + (item.totalWithTax || 0),
       cash: acc.cash + (item.cash || 0),
       credit: acc.credit + (item.credit || 0),
@@ -707,7 +707,7 @@ console.log(summary)
                       {(row.items[0].totalSgstAmt || 0).toFixed(2)}
                     </td>
                     <td className="border border-black p-2 text-center">
-                      {(row.items[0].totalIgstAmt || 0).toFixed(2)}
+                     0.00
                     </td>
                     <td className="border border-black p-2 text-center">
                       {(row.totalWithTax || 0).toFixed(2)}

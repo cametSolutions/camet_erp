@@ -376,6 +376,10 @@ export const addProductSubDetails = async (req, res) => {
           // pricelevel_id: generatedId,
           cmp_id: orgId,
           Primary_user_id: req.pUserId || req.owner,
+           dineIn: subDetails.dineIn || "",      // store dropdown value
+    takeaway: subDetails.takeaway || "",  // store dropdown value
+    roomService: subDetails.roomService || "", // store dropdown value
+    delivery: subDetails.delivery || "",  // store dropdown value
         };
         break;
       default:
@@ -553,8 +557,9 @@ export const editProductSubDetails = async (req, res) => {
   try {
     const { orgId, id } = req.params;
     const { type } = req.query;
-    const updateData = req.body[type];
-    console.log(req.body);
+    console.log("Edit request - Type:", type);
+    console.log("Edit request - Body:", req.body);
+    console.log("Edit request - ID:", id);
 
     let Model;
     switch (type) {
@@ -583,8 +588,16 @@ export const editProductSubDetails = async (req, res) => {
     }
 
     const queryConditions = { _id: id, cmp_id: orgId };
-    const updateOperation = { [type]: updateData };
     let result;
+    
+    // Check if item exists first
+    const existingItem = await Model.findOne(queryConditions);
+    if (!existingItem) {
+      return res.status(404).json({ message: "Item not found" });
+    }
+    
+    console.log("Existing item:", existingItem);
+    
     if (type === "roomType") {
       result = await Model.updateOne(queryConditions, {
         brand: req.body.roomType,
@@ -602,35 +615,69 @@ export const editProductSubDetails = async (req, res) => {
       result = await Model.updateOne(queryConditions, {
         category: req.body["Regional Food Category"],
       });
-    } else if (type === "foodItems"){
+    } else if (type === "foodItems") {
       result = await Model.updateOne(queryConditions, {
         subcategory: req.body["foodItems"],
         category_id: req.body["category_id"],
       });
+    } else if (type === "pricelevel") {
+      // Build update object dynamically, only including changed fields
+      const updateFields = {};
+      
+      if (req.body.pricelevel !== undefined) {
+        updateFields.pricelevel = req.body.pricelevel;
+      }
+      if (req.body.dineIn !== undefined) {
+        updateFields.dineIn = req.body.dineIn;
+      }
+      if (req.body.takeaway !== undefined) {
+        updateFields.takeaway = req.body.takeaway;
+      }
+      if (req.body.roomService !== undefined) {
+        updateFields.roomService = req.body.roomService;
+      }
+      if (req.body.delivery !== undefined) {
+        updateFields.delivery = req.body.delivery;
+      }
+      
+      console.log("PriceLevel update fields:", updateFields);
+      
+      result = await Model.updateOne(queryConditions, updateFields);
     } else {
+      const updateOperation = { [type]: req.body[type] };
       result = await Model.updateOne(queryConditions, updateOperation);
     }
 
-    if (result.modifiedCount === 0) {
-      return res
-        .status(404)
-        .json({ message: "Item not found or not modified" });
+    console.log("Update result:", result);
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ message: "Item not found" });
     }
 
-    const updatedItem = await Model.findOne(queryConditions);
+    // For pricelevel, we might not have modifiedCount if values are the same
+    // So we'll consider it successful if matchedCount > 0
+    if (type === "pricelevel" || result.modifiedCount > 0) {
+      const updatedItem = await Model.findOne(queryConditions);
+      
+      return res.status(200).json({
+        message: `${type} updated successfully`,
+        data: updatedItem,
+      });
+    } else {
+      return res.status(200).json({
+        message: `${type} is already up to date`,
+        data: existingItem,
+      });
+    }
 
-    res.status(200).json({
-      message: `${type} updated successfully`,
-      data: updatedItem,
-    });
   } catch (error) {
     console.error("Error in editProductSubDetails:", error);
-    res
-      .status(500)
-      .json({ message: "An error occurred while updating the sub-detail" });
+    res.status(500).json({ 
+      message: "An error occurred while updating the sub-detail",
+      error: error.message 
+    });
   }
 };
-
 /**
  * Get products with filtering, pagination, and transformation
  * @param {Object} req - Express request object
