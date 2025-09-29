@@ -731,6 +731,25 @@ function BookingList() {
               </button>
             )}
 
+
+  {/* ADD THIS PRINT BUTTON FOR CHECK-IN LIST */}
+  {location.pathname === "/sUsers/checkInList" && (
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        navigate("/sUsers/CheckInPrint", {
+          state: {
+            selectedCheckOut: [el], // The booking data
+            customerId: el.customerId._id
+          }
+        });
+      }}
+      className="bg-purple-500 hover:bg-purple-600 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
+      title="Print Registration Card"
+    >
+      Print
+    </button>
+  )}
             {/* Status Button */}
             {((el?.status === "checkIn" &&
               location.pathname === "/sUsers/bookingList") ||

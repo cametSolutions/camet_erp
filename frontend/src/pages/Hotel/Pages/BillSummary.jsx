@@ -18,7 +18,7 @@ const generatePDF = async (salesData, summary, owner, reportPeriod, businessType
         return "Combined Sales Register - Hotel & Restaurant";
     }
   };
-
+console.log(businessType)
   const html = `
     <!DOCTYPE html>
     <html>
@@ -444,9 +444,9 @@ const BillSummary = () => {
       disc: acc.disc + (item.disc || 0),
       roundOff: acc.roundOff + (item.roundOff || 0),
       total: acc.total + (item.total || 0),
-      cgst: acc.cgst + (item.totalCgstAmt || 0),
-      sgst: acc.sgst + (item.totalSgstAmt || 0),
-      igst: acc.igst + (item.totalIgstAmt || 0),
+     cgst: acc.cgst + (item.items?.[0]?.totalCgstAmt || 0), // Access nested items array
+    sgst: acc.sgst + (item.items?.[0]?.totalSgstAmt || 0), // Access nested items array
+    igst: acc.igst + (item.totalIgstAmt || 0),
       totalWithTax: acc.totalWithTax + (item.totalWithTax || 0),
       cash: acc.cash + (item.cash || 0),
       credit: acc.credit + (item.credit || 0),
@@ -516,7 +516,7 @@ const BillSummary = () => {
     }
     exportToExcel(salesData, summary, owner, reportPeriod, businessType, totals);
   };
-
+console.log(summary)
   console.log(salesData);
   return (
     <div className="min-h-screen bg-gray-100 p-5">
@@ -529,8 +529,8 @@ const BillSummary = () => {
           <div className="text-xs text-gray-600">
             {owner?.address || owner?.road || "Sales Register"}
           </div>
-          <div className="text-sm mt-2">
-            Sale Register of the outlet - {salesData?.[0]?.kotType || ""}
+          <div className="text-sm font-bold mt-2">
+          SALES REGISTER OF THE OUTLET - {businessType} {salesData?.[0]?.kotType || ""}
           </div>
          
         </div>
@@ -701,13 +701,13 @@ const BillSummary = () => {
                       {(row.total || 0).toFixed(2)}
                     </td>
                     <td className="border border-black p-2 text-center">
-                      {(row.items[0].cgst || 0).toFixed(2)}
+                      {(row.items[0].totalCgstAmt || 0).toFixed(2)}
                     </td>
                     <td className="border border-black p-2 text-center">
-                      {(row.items[0].sgst || 0).toFixed(2)}
+                      {(row.items[0].totalSgstAmt || 0).toFixed(2)}
                     </td>
                     <td className="border border-black p-2 text-center">
-                      {(row.items[0].igst || 0).toFixed(2)}
+                     0.00
                     </td>
                     <td className="border border-black p-2 text-center">
                       {(row.totalWithTax || 0).toFixed(2)}
@@ -877,72 +877,65 @@ const BillSummary = () => {
                 Business Type Breakdown
               </h3>
               <table className="w-full">
-                <tbody>
-                  {summary.hotelSales && (
-                    <>
-                      <tr className="bg-blue-50">
-                        <td className="font-bold py-2 px-2">Hotel Sales</td>
-                        <td className="text-right py-2 px-2">
-                          {summary.hotelSales.amount?.toFixed(2) || "0.00"}
-                        </td>
-                      </tr>
-                      <tr>
-                        <td className="py-1 px-2 text-gray-600">
-                          - Transactions
-                        </td>
-                        <td className="text-right py-1 px-2">
-                          {summary.hotelSales.count || 0}
-                        </td>
-                      </tr>
-                    </>
-                  )}
-                  {summary.restaurantSales && (
-                    <>
-                      <tr className="bg-green-50">
-                        <td className="font-bold py-2 px-2">
-                          Restaurant Sales
-                        </td>
-                        <td className="text-right py-2 px-2">
-                          {summary.restaurantSales.amount?.toFixed(2) || "0.00"}
-                        </td>
-                      </tr>
-                      <tr>
-                        <td className="py-1 px-2 text-gray-600">
-                          - Transactions
-                        </td>
-                        <td className="text-right py-1 px-2">
-                          {summary.restaurantSales.count || 0}
-                        </td>
-                      </tr>
-                    </>
-                  )}
-                  {summary.otherSales && summary.otherSales.count > 0 && (
-                    <>
-                      <tr className="bg-gray-50">
-                        <td className="font-bold py-2 px-2">Other Sales</td>
-                        <td className="text-right py-2 px-2">
-                          {summary.otherSales.amount?.toFixed(2) || "0.00"}
-                        </td>
-                      </tr>
-                      <tr>
-                        <td className="py-1 px-2 text-gray-600">
-                          - Transactions
-                        </td>
-                        <td className="text-right py-1 px-2">
-                          {summary.otherSales.count || 0}
-                        </td>
-                      </tr>
-                    </>
-                  )}
-                  <tr className="border-t-2 border-black">
-                    <td className="font-bold py-2 px-2 text-sm">
-                      Total Transactions
-                    </td>
-                    <td className="text-right py-2 px-2 font-bold text-sm">
-                      {salesData.length}
-                    </td>
-                  </tr>
-                </tbody>
+                   <tbody>
+      {businessType === "hotel" && summary.hotelSales && (
+        <>
+          <tr className="bg-blue-50">
+            <td className="font-bold py-2 px-2">Hotel Sales</td>
+            <td className="text-right py-2 px-2">
+              {summary.hotelSales.amount?.toFixed(2) || "0.00"}
+            </td>
+          </tr>
+          <tr>
+            <td className="py-1 px-2 text-gray-600">- Transactions</td>
+            <td className="text-right py-1 px-2">
+              {summary.hotelSales.count || 0}
+            </td>
+          </tr>
+        </>
+      )}
+
+      {businessType === "restaurant" && summary.restaurantSales && (
+        <>
+          <tr className="bg-green-50">
+            <td className="font-bold py-2 px-2">Restaurant Sales</td>
+            <td className="text-right py-2 px-2">
+              {summary.restaurantSales.amount?.toFixed(2) || "0.00"}
+            </td>
+          </tr>
+          <tr>
+            <td className="py-1 px-2 text-gray-600">- Transactions</td>
+            <td className="text-right py-1 px-2">
+              {summary.restaurantSales.count || 0}
+            </td>
+          </tr>
+        </>
+      )}
+
+      {summary.otherSales && summary.otherSales.count > 0 && (
+        <>
+          <tr className="bg-gray-50">
+            <td className="font-bold py-2 px-2">Other Sales</td>
+            <td className="text-right py-2 px-2">
+              {summary.otherSales.amount?.toFixed(2) || "0.00"}
+            </td>
+          </tr>
+          <tr>
+            <td className="py-1 px-2 text-gray-600">- Transactions</td>
+            <td className="text-right py-1 px-2">
+              {summary.otherSales.count || 0}
+            </td>
+          </tr>
+        </>
+      )}
+
+      <tr className="border-t-2 border-black">
+        <td className="font-bold py-2 px-2 text-sm">Total Transactions</td>
+        <td className="text-right py-2 px-2 font-bold text-sm">
+          {salesData.length}
+        </td>
+      </tr>
+    </tbody>
               </table>
             </div>
           </div>
