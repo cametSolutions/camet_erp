@@ -69,7 +69,7 @@ function EditBooking() {
       ) : (
         <div className="">
           <TitleDiv
-            title="Room Booking"
+            title="Edit Booking"
             from="/sUsers/hotelDashBoard"
             dropdownContents={[
               {

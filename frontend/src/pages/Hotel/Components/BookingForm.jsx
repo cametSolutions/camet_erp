@@ -604,8 +604,12 @@ function BookingForm({
       }
     }
 
+    console.log(formData?.advanceAmount)
+    console.log(editData?.advanceAmount)
+
     // ✅ Continue with advance check only after customerId exists
-    if (Number(formData.advanceAmount) <= 0) {
+    if (Number(formData.advanceAmount) <= 0 || formData.advanceAmount == editData?.advanceAmount )
+       {
       if (isSubmittingRef.current) return;
       isSubmittingRef.current = true;
 
