@@ -583,8 +583,9 @@ const OrdersDashboard = () => {
     let totalAmount = itemList.reduce(
       (acc, item) => acc + Number(item.total) * Number(item.quantity),
       0
-    );
-    console.log(itemList);
+    ).toFixed(2);
+
+    console.log(totalAmount);
     let newObject = {
       Date: new Date(),
       voucherType: "sales",
