@@ -33,7 +33,7 @@ export const addItem = async (req, res) => {
 
   try {
     const { formData, tableData } = req.body;
-
+console.log("req.body",req.body)
     session.startTransaction(); // Step 2: Start transaction
 
     // Step 3: Fetch HSN data inside the session

@@ -1,27 +1,6 @@
 import mongoose from "mongoose";
 import { convertToUTCMidnight } from "../utils/dateHelpers.js";
-const serviceConfigSchema = new mongoose.Schema({
-  dineIn: { 
-    type: String, 
-    enum: ['enabled', 'disabled', ''],
-    default: ''
-  },
-  takeaway: { 
-    type: String, 
-    enum: ['enabled', 'disabled', ''],
-    default: ''
-  },
-  roomService: { 
-    type: String, 
-    enum: ['enabled', 'disabled', ''],
-    default: ''
-  },
-  delivery: { 
-    type: String, 
-    enum: ['enabled', 'disabled', ''],
-    default: ''
-  }
-}, { _id: false }); // No separate _id for sub-document
+ // No separate _id for sub-document
 
 const productSchema = new mongoose.Schema({
   product_name: {
@@ -109,7 +88,8 @@ const productSchema = new mongoose.Schema({
       applicabledt: {
         type: String,
       },
-       serviceConfig: serviceConfigSchema,
+      
+      
     }
   ],
 

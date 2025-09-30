@@ -36,6 +36,8 @@ function BookingForm({
   const [hotelAgent, setHotelAgent] = useState({});
   const [visitOfPurpose, setVisitOfPurpose] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
+  const [country, setCountry] = useState("");
+
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const navigate = useNavigate();
 
@@ -104,13 +106,29 @@ function BookingForm({
     foodPlan: [],
     grandTotal: 0,
     previousAdvance: 0,
+     // Foreign national fields
+    company: "",
+    nextDestination: "",
+    dateOfBirth: "",
+    dateOfArrivalInIndia: "",
+    visaNo: "",
+    visaPOI: "",
+    visaDOI: "",
+    visaExpDt: "",
+    certOfRegistrationNumber: "",
+    passportNo: "",
+    placeOfIssue: "",
+    dateOfIssue: "",
+    dateOfExpiry: "",
+    grcno:'',
   });
-
+console.log(formData)
   useEffect(() => {
     if (editData) {
       console.log(editData?.advanceAmount);
       setSelectedParty(editData?.customerId);
       setHotelAgent(editData?.agentId);
+       setCountry(editData?.country || "");
       setVoucherNumber(editData?.voucherNumber);
       setFormData((prev) => ({
         ...prev,
@@ -141,6 +159,20 @@ function BookingForm({
         balanceToPay: editData?.balanceToPay,
         advanceAmount: editData?.advanceAmount,
         previousAdvance: editData?.previousAdvance || 0,
+        company: editData?.company,
+    nextDestination: editData?.nextDestination,
+    dateOfBirth: editData?.dateOfBirth,
+    dateOfArrivalInIndia: editData?.dateOfArrivalInIndia,
+    visaNo:editData.visaNo ,
+    visaPOI:editData?.visaPOI,
+    visaDOI:editData?.visaDOI,
+    visaExpDt:editData?.visaExpDt,
+    certOfRegistrationNumber:editData?.certOfRegistrationNumber,
+    passportNo:editData,
+    placeOfIssue:editData?.passportNo,
+    dateOfIssue:editData?.dateOfIssue,
+    dateOfExpiry:editData?.dateOfExpiry,
+    grcno:editData?.grcno,
       }));
     }
   }, [editData]);
@@ -156,6 +188,10 @@ function BookingForm({
   // handle change function used to update form data
   const handleChange = (e) => {
     const { name, value } = e.target;
+
+    if (name === "country") {
+    setCountry(value); // store for conditional rendering
+  }
     if (name === "arrivalDate") {
       const checkout = new Date(value); // this is the arrivalDate
 
@@ -170,6 +206,7 @@ function BookingForm({
         ...prev,
         checkOutDate: formattedCheckout,
         arrivalDate: value,
+        country:value,
       }));
 
       return;
@@ -234,6 +271,8 @@ function BookingForm({
     }));
   };
   console.log(isFor);
+
+  const isForeign = country.trim().toLowerCase() !== "india" && country.trim() !== "";
 
   // function used to get voucher number with the help of useCallback
   const fetchData = useCallback(async () => {
@@ -691,250 +730,422 @@ function BookingForm({
               tab="booking"
             />
             <div className="flex-auto px-4 lg:px-10 py-10 pt-4">
-              <div className="flex flex-wrap">
+              <div className="flex flex-wrap gap-6">
                 {/* Booking Number */}
-                <div className="w-full lg:w-6/12 px-4">
-                  <div className="relative w-full mb-3">
-                    <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                      Guest Name
-                    </label>
-                    <CustomerSearchInputBox
-                      onSelect={handleSelection}
-                      selectedParty={selectedParty}
-                      isAgent={false}
-                      placeholder="Search customers..."
-                      sendSearchToParent={handleSearchCustomer}
-                    />
-                  </div>
-                </div>
+<div className="w-full bg-gray-50 border rounded-xl shadow-md p-6">
+  {/* Title */}
+  <h2 className="text-lg font-semibold text-blueGray-800 mb-6">
+    Guest Details
+  </h2>
 
-                {/* Bed Type */}
-                <div className="w-full lg:w-6/12 px-4">
-                  <div className="relative w-full mb-3">
-                    <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                      Country
-                    </label>
-                    <input
-                      name="country"
-                      value={formData.country}
-                      onChange={handleChange}
-                      className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                    />
-                  </div>
-                </div>
-                <div className="w-full lg:w-6/12 px-4">
-                  <div className="relative w-full mb-3">
-                    <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                      State
-                    </label>
-                    <input
-                      type="text"
-                      name="state"
-                      value={formData.state}
-                      onChange={handleChange}
-                      className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                    />
-                  </div>
-                </div>
-                <div className="w-full lg:w-6/12 px-4">
-                  <div className="relative w-full mb-3">
-                    <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                      PinCode
-                    </label>
-                    <input
-                      name="pinCode"
-                      value={formData.pinCode}
-                      onChange={handleChange}
-                      className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                    />
-                  </div>
-                </div>
-                <div className="w-full lg:w-6/12 px-4">
-                  <div className="relative w-full mb-3">
-                    <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                      Detailed Address
-                    </label>
-                    <input
-                      type="text"
-                      name="detailedAddress"
-                      value={formData.detailedAddress}
-                      onChange={handleChange}
-                      className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                    />
-                  </div>
-                </div>
-                <div className="w-full lg:w-6/12 px-4">
-                  <div className="relative w-full mb-3">
-                    <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                      Mobile Number
-                    </label>
-                    <input
-                      type="number"
-                      name="mobileNumber"
-                      value={formData.mobileNumber}
-                      onChange={handleChange}
-                      className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                    />
-                  </div>
-                </div>
+  {/* Main Guest Fields */}
+  <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-6">
+    {/* Guest Name */}
+    <div>
+      <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+        Guest Name
+      </label>
+      <CustomerSearchInputBox
+        onSelect={handleSelection}
+        selectedParty={selectedParty}
+        isAgent={false}
+        placeholder="Search customers..."
+        sendSearchToParent={handleSearchCustomer}
+      />
+    </div>
 
-                {/* Room Floor */}
-                <div className="w-full lg:w-6/12 px-4">
-                  <div className="relative w-full mb-3">
-                    <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                      Arrival Date
-                    </label>
-                    <input
-                      type="date"
-                      name="arrivalDate"
-                      value={formData.arrivalDate}
-                      onChange={handleChange}
-                      className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                    />
-                  </div>
-                </div>
-                <div className="w-full lg:w-6/12 px-4">
-                  <div className="relative w-full mb-3">
-                    <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                      Arrival Time
-                    </label>
-                    <TimeSelector
-                      initialTime={editData?.arrivalTime}
-                      onTimeChange={handleArrivalTimeChange}
-                    />
-                  </div>
-                </div>
-                <div className="w-full lg:w-6/12 px-4">
-                  <div className="relative w-full mb-3">
-                    <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                      Check Out Date
-                    </label>
-                    <input
-                      type="date"
-                      name="checkOutDate"
-                      value={formData.checkOutDate}
-                      onChange={handleChange}
-                      className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                    />
-                  </div>
-                </div>
-                <div className="w-full lg:w-6/12 px-4">
-                  <div className="relative w-full mb-3">
-                    <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                      Check Out Time
-                    </label>
-                    <TimeSelector
-                      initialTime={editData?.checkOutTime}
-                      onTimeChange={handleCheckOutTimeChange}
-                    />
-                  </div>
-                </div>
+    {/* Country */}
+    <div>
+      <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+        Country
+      </label>
+      <input
+        name="country"
+        value={formData.country}
+        onChange={handleChange}
+        className="w-full border border-gray-300 px-3 py-2 rounded text-sm shadow focus:outline-none focus:ring focus:ring-blue-200 bg-white"
+      />
+    </div>
 
-                {/* Booking Type */}
-                <div className="w-full lg:w-6/12 px-4">
-                  <div className="relative w-full mb-3">
-                    <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                      Booking Type
-                    </label>
-                    <select
-                      name="bookingType"
-                      value={formData.bookingType}
-                      onChange={handleChange}
-                      className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                    >
-                      <option value="offline">Offline Booking</option>
-                      <option value="online">Online Booking</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="w-full lg:w-6/12 px-4">
-                  <div className="relative w-full mb-3">
-                    <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                      Hotel Agent
-                    </label>
-                    <CustomerSearchInputBox
-                      key={"hotelAgent"}
-                      onSelect={handleAgentSelect}
-                      isAgent={true}
-                      selectedParty={hotelAgent}
-                      placeholder="Search customers..."
-                    />
-                  </div>
-                </div>
-                <div className="w-full lg:w-6/12 px-4">
-                  <div className="relative w-full mb-3">
-                    <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                      Stay Days
-                    </label>
-                    <input
-                      type="text"
-                      name="stayDays"
-                      value={formData.stayDays}
-                      onChange={handleChange}
-                      className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                    />
-                  </div>
-                </div>
-                <div className="w-full lg:w-6/12 px-4">
-                  <div className="relative w-full mb-3">
-                    <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                      Visit of purpose
-                    </label>
-                    <select
-                      name="visitOfPurpose"
-                      value={formData.visitOfPurpose}
-                      onChange={handleChange}
-                      className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                    >
-                      <option value="All">Select Room Type</option>
-                      {visitOfPurpose.map((data) => (
-                        <option key={data?._id} value={data?._id}>
-                          {data?.visitOfPurpose}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                <div className="w-full lg:w-6/12 px-4">
-                  <div className="relative w-full mb-3">
-                    <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                      Room Type
-                    </label>
-                    <select
-                      name="roomType"
-                      value={formData.roomType}
-                      onChange={handleChange}
-                      className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                    >
-                      <option value="All">Select Room Type</option>
-                      {roomType.map((roomType) => (
-                        <option key={roomType?._id} value={roomType?._id}>
-                          {roomType?.brand}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
+    {/* State */}
+    <div>
+      <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+        State
+      </label>
+      <input
+        type="text"
+        name="state"
+        value={formData.state}
+        onChange={handleChange}
+        className="w-full border border-gray-300 px-3 py-2 rounded text-sm shadow focus:outline-none focus:ring focus:ring-blue-200 bg-white"
+      />
+    </div>
 
-                {/* Available Rooms */}
-                <div className="w-full  px-4">
-                  <div className="relative  mb-3">
-                    <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                      Available Rooms
-                    </label>
-                    <AvailableRooms
-                      onSelect={handleAvailableRoomSelection}
-                      selectedParty={selectedParty}
-                      placeholder="Search customers..."
-                      selectedRoomData={selectedRoomData}
-                      setDisplayFoodPlan={setDisplayFoodPlan}
-                      sendToParent={handleAvailableRooms}
-                      formData={formData}
-                      selectedRoomId={selectedRoomId}
-                    />
-                  </div>
-                </div>
-              </div>
+    {/* PinCode */}
+    <div>
+      <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+        PinCode
+      </label>
+      <input
+        name="pinCode"
+        value={formData.pinCode}
+        onChange={handleChange}
+        className="w-full border border-gray-300 px-3 py-2 rounded text-sm shadow focus:outline-none focus:ring focus:ring-blue-200 bg-white"
+      />
+    </div>
+
+    {/* Detailed Address */}
+    <div>
+      <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+        Detailed Address
+      </label>
+      <input
+        type="text"
+        name="detailedAddress"
+        value={formData.detailedAddress}
+        onChange={handleChange}
+        className="w-full border border-gray-300 px-3 py-2 rounded text-sm shadow focus:outline-none focus:ring focus:ring-blue-200 bg-white"
+      />
+    </div>
+
+    {/* Mobile Number */}
+    <div>
+      <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+        Mobile Number
+      </label>
+      <input
+        type="number"
+        name="mobileNumber"
+        value={formData.mobileNumber}
+        onChange={handleChange}
+        className="w-full border border-gray-300 px-3 py-2 rounded text-sm shadow focus:outline-none focus:ring focus:ring-blue-200 bg-white"
+      />
+    </div>
+  </div>
+
+  {/* Foreign Guest Fields */}
+  {isForeign && (
+    <>
+      <hr className="my-8" />
+      <h3 className="text-base font-semibold text-gray-700 mb-4">
+        Foreign Guest Details
+      </h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+        {/* Company */}
+        <div>
+          <label className="block text-xs font-medium text-gray-600 mb-1">Company</label>
+          <input
+            type="text"
+            name="company"
+            value={formData.company || ""}
+            onChange={handleChange}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring focus:ring-blue-200 focus:outline-none"
+          />
+        </div>
+        {/* Next Destination */}
+        <div>
+          <label className="block text-xs font-medium text-gray-600 mb-1">Next Destination</label>
+          <input
+            type="text"
+            name="nextDestination"
+            value={formData.nextDestination || ""}
+            onChange={handleChange}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring focus:ring-blue-200 focus:outline-none"
+          />
+        </div>
+        {/* Date of Birth */}
+        <div>
+          <label className="block text-xs font-medium text-gray-600 mb-1">Date of Birth</label>
+          <input
+            type="date"
+            name="dateOfBirth"
+            value={formData.dateOfBirth || ""}
+            onChange={handleChange}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring focus:ring-blue-200 focus:outline-none"
+          />
+        </div>
+        {/* Date of Arrival in India */}
+        <div>
+          <label className="block text-xs font-medium text-gray-600 mb-1">Date of Arrival in India</label>
+          <input
+            type="date"
+            name="dateOfArrivalInIndia"
+            value={formData.dateOfArrivalInIndia || ""}
+            onChange={handleChange}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring focus:ring-blue-200 focus:outline-none"
+          />
+        </div>
+        {/* Visa No. */}
+        <div>
+          <label className="block text-xs font-medium text-gray-600 mb-1">Visa No.</label>
+          <input
+            type="text"
+            name="visaNo"
+            value={formData.visaNo || ""}
+            onChange={handleChange}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring focus:ring-blue-200 focus:outline-none"
+          />
+        </div>
+        {/* Visa POI */}
+        <div>
+          <label className="block text-xs font-medium text-gray-600 mb-1">Visa POI</label>
+          <input
+            type="text"
+            name="visaPOI"
+            value={formData.visaPOI || ""}
+            onChange={handleChange}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring focus:ring-blue-200 focus:outline-none"
+          />
+        </div>
+        {/* Visa DOI */}
+        <div>
+          <label className="block text-xs font-medium text-gray-600 mb-1">Visa DOI</label>
+          <input
+            type="date"
+            name="visaDOI"
+            value={formData.visaDOI || ""}
+            onChange={handleChange}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring focus:ring-blue-200 focus:outline-none"
+          />
+        </div>
+        {/* Visa Exp. Dt */}
+        <div>
+          <label className="block text-xs font-medium text-gray-600 mb-1">Visa Exp. Dt</label>
+          <input
+            type="date"
+            name="visaExpDt"
+            value={formData.visaExpDt || ""}
+            onChange={handleChange}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring focus:ring-blue-200 focus:outline-none"
+          />
+        </div>
+        {/* Registration No. */}
+        <div>
+          <label className="block text-xs font-medium text-gray-600 mb-1">Cert. of Registration Number</label>
+          <input
+            type="text"
+            name="certOfRegistrationNumber"
+            value={formData.certOfRegistrationNumber || ""}
+            onChange={handleChange}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring focus:ring-blue-200 focus:outline-none"
+          />
+        </div>
+        {/* Passport No. */}
+        <div>
+          <label className="block text-xs font-medium text-gray-600 mb-1">Passport No.</label>
+          <input
+            type="text"
+            name="passportNo"
+            value={formData.passportNo || ""}
+            onChange={handleChange}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring focus:ring-blue-200 focus:outline-none"
+          />
+        </div>
+        {/* Place of Issue */}
+        <div>
+          <label className="block text-xs font-medium text-gray-600 mb-1">Place of Issue</label>
+          <input
+            type="text"
+            name="placeOfIssue"
+            value={formData.placeOfIssue || ""}
+            onChange={handleChange}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring focus:ring-blue-200 focus:outline-none"
+          />
+        </div>
+        {/* Date of Issue */}
+        <div>
+          <label className="block text-xs font-medium text-gray-600 mb-1">Date of Issue</label>
+          <input
+            type="date"
+            name="dateOfIssue"
+            value={formData.dateOfIssue || ""}
+            onChange={handleChange}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring focus:ring-blue-200 focus:outline-none"
+          />
+        </div>
+        {/* Date of Expiry */}
+        <div>
+          <label className="block text-xs font-medium text-gray-600 mb-1">Date of Expiry</label>
+          <input
+            type="date"
+            name="dateOfExpiry"
+            value={formData.dateOfExpiry || ""}
+            onChange={handleChange}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring focus:ring-blue-200 focus:outline-none"
+          />
+        </div>
+
+
+         <div>
+          <label className="block text-xs font-medium text-gray-600 mb-1">GRC Number</label>
+          <input
+            type="text"
+            name="grcno"
+            value={formData.grcno || ""}
+            onChange={handleChange}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring focus:ring-blue-200 focus:outline-none"
+          />
+        </div> 
+      </div>
+    </>
+  )}
+</div>
+
+
+
+{/* Guest Info Box */}
+
+
+{/* Booking/Room Fields Box */}
+<div className="w-full bg-gray-50 border rounded-xl shadow-md ">
+  <h2 className="text-lg  font-semibold text-blueGray-800 mb-6 p-2">
+    Booking & Room Details
+  </h2>
+  <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-6 p-3">
+    {/* Arrival Date */}
+    <div>
+      <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+        Arrival Date
+      </label>
+      <input
+        type="date"
+        name="arrivalDate"
+        value={formData.arrivalDate}
+        onChange={handleChange}
+        className="w-full border border-gray-300 px-3 py-2 rounded text-sm shadow focus:outline-none focus:ring focus:ring-blue-200 bg-white"
+      />
+    </div>
+    {/* Arrival Time */}
+    <div>
+      <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+        Arrival Time
+      </label>
+      <TimeSelector
+        initialTime={editData?.arrivalTime}
+        onTimeChange={handleArrivalTimeChange}
+      />
+    </div>
+    {/* Check Out Date */}
+    <div>
+      <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+        Check Out Date
+      </label>
+      <input
+        type="date"
+        name="checkOutDate"
+        value={formData.checkOutDate}
+        onChange={handleChange}
+        className="w-full border border-gray-300 px-3 py-2 rounded text-sm shadow focus:outline-none focus:ring focus:ring-blue-200 bg-white"
+      />
+    </div>
+    {/* Check Out Time */}
+    <div>
+      <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+        Check Out Time
+      </label>
+      <TimeSelector
+        initialTime={editData?.checkOutTime}
+        onTimeChange={handleCheckOutTimeChange}
+      />
+    </div>
+    {/* Booking Type */}
+    <div>
+      <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+        Booking Type
+      </label>
+      <select
+        name="bookingType"
+        value={formData.bookingType}
+        onChange={handleChange}
+        className="w-full border border-gray-300 px-3 py-2 rounded text-sm shadow focus:outline-none focus:ring focus:ring-blue-200 bg-white"
+      >
+        <option value="offline">Offline Booking</option>
+        <option value="online">Online Booking</option>
+      </select>
+    </div>
+    {/* Hotel Agent */}
+    <div>
+      <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+        Hotel Agent
+      </label>
+      <CustomerSearchInputBox
+        key={"hotelAgent"}
+        onSelect={handleAgentSelect}
+        isAgent={true}
+        selectedParty={hotelAgent}
+        placeholder="Search customers..."
+      />
+    </div>
+    {/* Stay Days */}
+    <div>
+      <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+        Stay Days
+      </label>
+      <input
+        type="text"
+        name="stayDays"
+        value={formData.stayDays}
+        onChange={handleChange}
+        className="w-full border border-gray-300 px-3 py-2 rounded text-sm shadow focus:outline-none focus:ring focus:ring-blue-200 bg-white"
+      />
+    </div>
+    {/* Visit of Purpose */}
+    <div>
+      <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+        Visit of purpose
+      </label>
+      <select
+        name="visitOfPurpose"
+        value={formData.visitOfPurpose}
+        onChange={handleChange}
+        className="w-full border border-gray-300 px-3 py-2 rounded text-sm shadow focus:outline-none focus:ring focus:ring-blue-200 bg-white"
+      >
+        <option value="All">Select Room Type</option>
+        {visitOfPurpose.map((data) => (
+          <option key={data?._id} value={data?._id}>
+            {data?.visitOfPurpose}
+          </option>
+        ))}
+      </select>
+    </div>
+    {/* Room Type */}
+    <div>
+      <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+        Room Type
+      </label>
+      <select
+        name="roomType"
+        value={formData.roomType}
+        onChange={handleChange}
+        className="w-full border border-gray-300 px-3 py-2 rounded text-sm shadow focus:outline-none focus:ring focus:ring-blue-200 bg-white"
+      >
+        <option value="All">Select Room Type</option>
+        {roomType.map((roomType) => (
+          <option key={roomType?._id} value={roomType?._id}>
+            {roomType?.brand}
+          </option>
+        ))}
+      </select>
+    </div>
+    {/* Available Rooms (spans both columns if needed) */}
+    <div className="col-span-2">
+      <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+        Available Rooms
+      </label>
+      <AvailableRooms
+        onSelect={handleAvailableRoomSelection}
+        selectedParty={selectedParty}
+        placeholder="Search customers..."
+        selectedRoomData={selectedRoomData}
+        setDisplayFoodPlan={setDisplayFoodPlan}
+        sendToParent={handleAvailableRooms}
+        formData={formData}
+        selectedRoomId={selectedRoomId}
+      />
+    </div>
+  </div>
+</div>
+
 
               <div className="flex flex-wrap pt-4">
                 {/* Booking Number */}
@@ -1083,6 +1294,7 @@ function BookingForm({
                   {editData ? "Update" : "Save"}
                 </button>
               </div>
+            </div>
             </div>
           </>
 
