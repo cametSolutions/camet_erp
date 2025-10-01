@@ -618,17 +618,11 @@ console.log(summary)
                 <th className="border-t border-black p-2 text-center font-bold">
                   Date
                 </th>
+                  <th className="border-t border-black p-2 text-center font-bold">
+                  Agent Name
+                </th>
                 <th className="border-t border-black p-2 text-center font-bold">
                   Amount
-                </th>
-                <th className="border-t border-black p-2 text-center font-bold">
-                  Disc
-                </th>
-                <th className="border-t border-black p-2 text-center font-bold">
-                  Round off
-                </th>
-                <th className="border-t border-black p-2 text-center font-bold">
-                  Total
                 </th>
                 <th className="border-t border-black p-2 text-center font-bold">
                   CGST
@@ -639,9 +633,18 @@ console.log(summary)
                 <th className="border-t border-black p-2 text-center font-bold">
                   IGST
                 </th>
-                <th className="border-t border-black p-2 text-center font-bold">
-                  Total
+                  <th className="border-t border-black p-2 text-center font-bold">
+                  Disc
                 </th>
+                <th className="border-t border-black p-2 text-center font-bold">
+                  Round off
+                </th>
+                <th className="border-t border-black p-2 text-center font-bold">
+                Rounded Total
+                </th>
+                {/* <th className="border-t border-black p-2 text-center font-bold">
+                  Total
+                </th> */}
                 <th className="border-t border-black p-2 text-center font-bold">
                   Cash
                 </th>
@@ -687,6 +690,9 @@ console.log(summary)
                     </td>
                     <td className="border border-black p-2 text-center">
                       {row.date ? new Date(row.date).toLocaleDateString() : "-"}
+                    </td>
+                    <td className="border border-black p-2 text-right pr-3">
+                      {row.partyName}
                     </td>
                     <td className="border border-black p-2 text-right pr-3">
                       {(row.amount || 0).toFixed(2)}

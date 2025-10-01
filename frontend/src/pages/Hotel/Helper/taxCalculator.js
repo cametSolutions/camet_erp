@@ -1,5 +1,3 @@
-
-
 export const taxCalculator = (
   data,
   inclusive = false,
@@ -63,17 +61,15 @@ export const taxCalculator = (
     if (!applicableSlab && hsnDetails?.igstRate !== undefined) {
       taxRate = Number(hsnDetails.igstRate);
     }
-  
+
     const taxAmount = (totalAmount * taxRate) / 100;
-    let amountWithTax = inclusive
-      ? totalAmount 
-      : totalAmount + taxAmount;
+    let amountWithTax = inclusive ? totalAmount : totalAmount + taxAmount;
     console.log(amountWithTax);
     // Handle per-component tax for display or tracking
     let foodPlanTaxRate = formData?.bookingType == "offline" ? 5 : taxRate;
 
     let additionalPaxAmountWithTax = inclusive
-      ? reducedAdditionalPaxAmount 
+      ? reducedAdditionalPaxAmount
       : reducedAdditionalPaxAmount +
         (reducedAdditionalPaxAmount * taxRate) / 100;
 
@@ -81,8 +77,8 @@ export const taxCalculator = (
       ? reducedFoodPlanAmount
       : reducedFoodPlanAmount + (reducedFoodPlanAmount * foodPlanTaxRate) / 100;
 
-console.log(amountWithTax);
-console.log(foodPlanAmountWithTax)
+    console.log(amountWithTax);
+    console.log(foodPlanAmountWithTax);
     // For UI clarity, always return food plan in amountWithTax if booking is not offline
     if (formData?.bookingType == "offline") {
       amountWithTax = Number(amountWithTax) + Number(foodPlanAmountWithTax);
@@ -100,6 +96,9 @@ console.log(foodPlanAmountWithTax)
       foodPlanTaxRate:
         formData?.bookingType !== "offline" ? 5 : Number(taxRate.toFixed(2)),
       taxAmount: Number(taxAmount.toFixed(2)),
+      totalCgstAmt: Number(taxAmount.toFixed(2) / 2 || 0),
+      totalSgstAmt: Number(taxAmount.toFixed(2) / 2 || 0),
+      totalIgstAmt: Number(taxAmount.toFixed(2) || 0),
       additionalPaxAmountWithTax: Number(additionalPaxAmountWithTax.toFixed(2)),
       additionalPaxAmountWithOutTax: Number(reducedAdditionalPaxAmount),
       foodPlanAmountWithTax: Number(foodPlanAmountWithTax.toFixed(2)),
@@ -146,8 +145,10 @@ const getApplicableTaxSlab = (row, totalAmount) => {
   }
 };
 
-
-export const taxCalculatorForRestaurant = (tableData = [], inclusive = false) => {
+export const taxCalculatorForRestaurant = (
+  tableData = [],
+  inclusive = false
+) => {
   console.log(inclusive);
   return tableData.map((item) => {
     // Map through GodownList for each product
@@ -196,11 +197,26 @@ export const taxCalculatorForRestaurant = (tableData = [], inclusive = false) =>
     });
 
     // Sum up totals from GodownList
-    const total = updatedGodownList.reduce((sum, g) => sum + g.individualTotal, 0);
-    const totalCgstAmt = updatedGodownList.reduce((sum, g) => sum + g.cgstAmount, 0);
-    const totalSgstAmt = updatedGodownList.reduce((sum, g) => sum + g.sgstAmount, 0);
-    const totalIgstAmt = updatedGodownList.reduce((sum, g) => sum + g.igstAmount, 0);
-    const totalCessAmt = updatedGodownList.reduce((sum, g) => sum + g.cessAmount, 0);
+    const total = updatedGodownList.reduce(
+      (sum, g) => sum + g.individualTotal,
+      0
+    );
+    const totalCgstAmt = updatedGodownList.reduce(
+      (sum, g) => sum + g.cgstAmount,
+      0
+    );
+    const totalSgstAmt = updatedGodownList.reduce(
+      (sum, g) => sum + g.sgstAmount,
+      0
+    );
+    const totalIgstAmt = updatedGodownList.reduce(
+      (sum, g) => sum + g.igstAmount,
+      0
+    );
+    const totalCessAmt = updatedGodownList.reduce(
+      (sum, g) => sum + g.cessAmount,
+      0
+    );
     const totalAddlCessAmt = updatedGodownList.reduce(
       (sum, g) => sum + g.additionalCessAmount,
       0
@@ -221,7 +237,3 @@ export const taxCalculatorForRestaurant = (tableData = [], inclusive = false) =>
     };
   });
 };
-
-
-
-

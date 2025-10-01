@@ -175,6 +175,7 @@ useEffect(() => {
           formData,
           booking.roomId
         );
+        console.log(taxResponse);
 
         return {
           ...updatedRoom,
@@ -193,6 +194,9 @@ useEffect(() => {
           foodPlanAmountWithOutTax: taxResponse?.foodPlanAmountWithOutTax || 0,
           baseAmount: taxResponse?.baseAmount || 0,
           baseAmountWithTax: taxResponse?.baseAmountWithTax || 0,
+          totalCgstAmt: taxResponse?.totalCgstAmt || 0,
+          totalSgstAmt: taxResponse?.totalSgstAmt || 0,
+          totalIgstAmt: taxResponse?.totalIgstAmt || 0,
         };
       } catch (err) {
         console.error("Tax calculation failed:", err);
