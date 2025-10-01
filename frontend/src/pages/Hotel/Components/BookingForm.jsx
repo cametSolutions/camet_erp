@@ -168,11 +168,11 @@ console.log(formData)
     visaDOI:editData?.visaDOI,
     visaExpDt:editData?.visaExpDt,
     certOfRegistrationNumber:editData?.certOfRegistrationNumber,
-    passportNo:editData,
-    placeOfIssue:editData?.passportNo,
+    passportNo:editData.passportNo,
+    placeOfIssue:editData?.placeOfIssue,
     dateOfIssue:editData?.dateOfIssue,
     dateOfExpiry:editData?.dateOfExpiry,
-    grcno:editData?.grcno,
+    grcno:editData?.grcno
       }));
     }
   }, [editData]);
