@@ -91,6 +91,10 @@ const selectedRoomSchema = new mongoose.Schema({
   foodPlanAmountWithOutTax: Number,
   baseAmount: Number,
   baseAmountWithTax: Number,
+  totalCgstAmt: Number,
+  totalSgstAmt: Number,
+  totalIgstAmt: Number,
+  unit: String,
 });
 
 const bookingSchema = new mongoose.Schema(
@@ -138,10 +142,13 @@ const bookingSchema = new mongoose.Schema(
     balanceToPay: String,
     grandTotal: String,
     customerId: { type: mongoose.Schema.Types.ObjectId, ref: "Party" },
-    customerName:String,
+    customerName: String,
     mobileNumber: String,
     roomType: { type: mongoose.Schema.Types.ObjectId, ref: "RoomType" },
-    visitOfPurpose:{ type: mongoose.Schema.Types.ObjectId,ref: "VisitOfPurpose"},
+    visitOfPurpose: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "VisitOfPurpose",
+    },
     selectedRooms: [selectedRoomSchema],
     foodPlan: [foodPlanSchema],
     additionalPaxDetails: [paxDetailSchema],
@@ -151,14 +158,13 @@ const bookingSchema = new mongoose.Schema(
     agentId: { type: mongoose.Schema.Types.ObjectId, ref: "Party" },
     bookingId: { type: mongoose.Schema.Types.ObjectId, ref: "Booking" },
     checkInId: { type: mongoose.Schema.Types.ObjectId, ref: "CheckIn" },
-    checkInArray : [{type: mongoose.Schema.Types.ObjectId, ref: "CheckIn"}],
+    checkInArray: [{ type: mongoose.Schema.Types.ObjectId, ref: "CheckIn" }],
     status: String,
- roomSwapHistory: [roomSwapHistorySchema],
+    roomSwapHistory: [roomSwapHistorySchema],
   },
   { timestamps: true }
 );
 
-export const Booking = mongoose.model("Booking", bookingSchema, "bookings"); 
-export const CheckIn = mongoose.model("CheckIn", bookingSchema, "checkins");  
-export const CheckOut = mongoose.model("CheckOut", bookingSchema, "checkouts"); 
-
+export const Booking = mongoose.model("Booking", bookingSchema, "bookings");
+export const CheckIn = mongoose.model("CheckIn", bookingSchema, "checkins");
+export const CheckOut = mongoose.model("CheckOut", bookingSchema, "checkouts");

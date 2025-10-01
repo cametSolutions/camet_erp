@@ -558,6 +558,7 @@ const OrdersDashboard = () => {
             voucherNumber: order.voucherNumber,
             roomId: order?.roomId?._id, // keep roomId for validation
             checkInNumber: order?.checkInNumber,
+            customer: order?.customer,
           },
         ]);
       }
@@ -584,8 +585,10 @@ const OrdersDashboard = () => {
       (acc, item) => acc + Number(item.total) * Number(item.quantity),
       0
     ).toFixed(2);
+    console.log(itemList[0]);
 
-    console.log(totalAmount);
+    console.log(selectedKot);
+
     let newObject = {
       Date: new Date(),
       voucherType: "sales",
@@ -599,6 +602,11 @@ const OrdersDashboard = () => {
       finalAmount: totalAmount,
       total: totalAmount,
       voucherNumber: kotVoucherNumberArray,
+      party:{
+        partyName:selectedKot[0]?.customer?.name,
+        address:selectedKot[0]?.customer?.address,
+        mobile:selectedKot[0]?.customer?.phone,
+      }
     };
     setPreviewForSales(newObject);
   };

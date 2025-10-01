@@ -423,6 +423,7 @@ function BookingForm({
   };
   // function used to handle room selection
   const handleAvailableRoomSelection = (selectedRoom) => {
+    console.log(selectedRoom);
     setFormData((prev) => ({
       ...prev,
       selectedRoomId: selectedRoom?._id,
@@ -667,6 +668,7 @@ function BookingForm({
       customerName: name,
     }));
   };
+  console.log(formData.selectedRooms);
 
   return (
     <>

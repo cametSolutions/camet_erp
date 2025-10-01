@@ -1313,7 +1313,6 @@ export const updateBooking = async (req, res) => {
 
       // ✅ Advance Amount Present → Update Tally + Create Receipt + Settlement
       if (bookingData.advanceAmount && bookingData.advanceAmount > 0) {
-    
         // Update tally
         let updatedTallyData = await TallyData.findOneAndUpdate(
           { billId: bookingId.toString() }, // condition
@@ -2254,6 +2253,7 @@ async function createSalesVoucher(
   session
 ) {
   let items = selectedCheckOut.flatMap((item) => item.selectedRooms);
+
   let amount = selectedCheckOut.reduce(
     (acc, item) => acc + Number(item.grandTotal),
     0
@@ -2619,6 +2619,7 @@ export const getHotelSalesDetails = async (req, res) => {
   try {
     const { cmp_id } = req.params;
     const { startDate, endDate, owner, businessType = "all" } = req.query;
+    console.log("businessType", businessType);
 
     // Validate required parameters
     if (!cmp_id) {
@@ -2670,6 +2671,8 @@ export const getHotelSalesDetails = async (req, res) => {
     // MongoDB aggregation pipeline to get all sales data with classification
     const salesData = await salesModel.aggregate([
       { $match: query },
+
+      // Join with Party
       {
         $lookup: {
           from: "parties",
@@ -2678,12 +2681,9 @@ export const getHotelSalesDetails = async (req, res) => {
           as: "partyDetails",
         },
       },
-      {
-        $unwind: {
-          path: "$partyDetails",
-          preserveNullAndEmptyArrays: true,
-        },
-      },
+      { $unwind: { path: "$partyDetails", preserveNullAndEmptyArrays: true } },
+
+      // Join with Organization
       {
         $lookup: {
           from: "organizations",
@@ -2692,12 +2692,9 @@ export const getHotelSalesDetails = async (req, res) => {
           as: "organization",
         },
       },
-      {
-        $unwind: {
-          path: "$organization",
-          preserveNullAndEmptyArrays: true,
-        },
-      },
+      { $unwind: { path: "$organization", preserveNullAndEmptyArrays: true } },
+
+      // Join with KOT
       {
         $lookup: {
           from: "kots",
@@ -2717,28 +2714,20 @@ export const getHotelSalesDetails = async (req, res) => {
                 },
               },
             },
-            {
-              $project: {
-                type: 1,
-                voucherNumber: 1,
-                tableNumber: 1,
-                _id: 1,
-              },
-            },
+            { $project: { type: 1, voucherNumber: 1, tableNumber: 1 } },
           ],
           as: "kotDetails",
         },
       },
 
+      // Derived fields
       {
         $addFields: {
-          // Extract hour from createdAt for meal period classification
-          createdHour: { $hour: { date: "$createdAt", timezone: "+05:30" } }, // IST timezone
+          createdHour: { $hour: { date: "$createdAt", timezone: "+05:30" } },
           kotType: {
-            $ifNull: ["$kotDetails.type", null],
+            $ifNull: [{ $arrayElemAt: ["$kotDetails.type", 0] }, null],
           },
 
-          // Meal period classification based on created time
           mealPeriod: {
             $switch: {
               branches: [
@@ -2800,269 +2789,51 @@ export const getHotelSalesDetails = async (req, res) => {
                   then: "Snack",
                 },
               ],
-              default: "Dinner", // For hours 18-6 (6 PM to 7 AM)
+              default: "Dinner",
             },
           },
 
-          // Hotel sale classification
-          isHotelSale: {
-            $or: [
-              { $eq: [{ $toLower: "$businessType" }, "hotel"] },
-              { $eq: [{ $toLower: "$businessType" }, "accommodation"] },
-              { $eq: [{ $toLower: "$partyDetails.businessType" }, "hotel"] },
-              {
-                $eq: [
-                  { $toLower: "$partyDetails.businessType" },
-                  "accommodation",
-                ],
-              },
-              { $eq: [{ $toLower: "$department" }, "hotel"] },
-              { $eq: [{ $toLower: "$category" }, "hotel"] },
-              { $eq: [{ $toLower: "$department" }, "accommodation"] },
-              { $eq: [{ $toLower: "$category" }, "accommodation"] },
-              { $eq: [{ $toLower: "$department" }, "rooms"] },
-              { $eq: [{ $toLower: "$category" }, "rooms"] },
-              {
-                $regexMatch: {
-                  input: { $toLower: "$partyDetails.accountGroupName" },
-                  regex: "hotel",
-                },
-              },
-              {
-                $regexMatch: {
-                  input: { $toLower: "$partyDetails.accountGroupName" },
-                  regex: "accommodation",
-                },
-              },
-              {
-                $regexMatch: {
-                  input: { $toLower: "$partyDetails.partyName" },
-                  regex: "hotel",
-                },
-              },
-              {
-                $regexMatch: {
-                  input: { $toLower: "$partyDetails.partyName" },
-                  regex: "accommodation",
-                },
-              },
-              {
-                $regexMatch: {
-                  input: { $toLower: "$partyDetails.partyName" },
-                  regex: "room",
-                },
-              },
-              {
-                $regexMatch: {
-                  input: { $toLower: "$partyAccount" },
-                  regex: "hotel",
-                },
-              },
-              {
-                $regexMatch: {
-                  input: { $toLower: "$partyAccount" },
-                  regex: "accommodation",
-                },
-              },
-              {
-                $regexMatch: {
-                  input: { $toLower: "$partyAccount" },
-                  regex: "room",
-                },
-              },
-              { $gte: ["$finalAmount", 3000] },
-            ],
-          },
-          // Restaurant sale classification
-          isRestaurantSale: {
-            $or: [
-              { $eq: [{ $toLower: "$businessType" }, "restaurant"] },
-              { $eq: [{ $toLower: "$businessType" }, "food"] },
-              { $eq: [{ $toLower: "$businessType" }, "dining"] },
-              { $eq: [{ $toLower: "$businessType" }, "cafe"] },
-              { $eq: [{ $toLower: "$businessType" }, "bar"] },
-              {
-                $eq: [{ $toLower: "$partyDetails.businessType" }, "restaurant"],
-              },
-              { $eq: [{ $toLower: "$partyDetails.businessType" }, "food"] },
-              { $eq: [{ $toLower: "$partyDetails.businessType" }, "dining"] },
-              { $eq: [{ $toLower: "$partyDetails.businessType" }, "cafe"] },
-              { $eq: [{ $toLower: "$partyDetails.businessType" }, "bar"] },
-              { $eq: [{ $toLower: "$department" }, "restaurant"] },
-              { $eq: [{ $toLower: "$category" }, "restaurant"] },
-              { $eq: [{ $toLower: "$department" }, "food"] },
-              { $eq: [{ $toLower: "$category" }, "food"] },
-              { $eq: [{ $toLower: "$department" }, "dining"] },
-              { $eq: [{ $toLower: "$category" }, "dining"] },
-              { $eq: [{ $toLower: "$department" }, "kitchen"] },
-              { $eq: [{ $toLower: "$category" }, "kitchen"] },
-              { $eq: [{ $toLower: "$department" }, "cafe"] },
-              { $eq: [{ $toLower: "$category" }, "cafe"] },
-              { $eq: [{ $toLower: "$department" }, "bar"] },
-              { $eq: [{ $toLower: "$category" }, "bar"] },
-              {
-                $regexMatch: {
-                  input: { $toLower: "$partyDetails.accountGroupName" },
-                  regex: "restaurant",
-                },
-              },
-              {
-                $regexMatch: {
-                  input: { $toLower: "$partyDetails.accountGroupName" },
-                  regex: "food",
-                },
-              },
-              {
-                $regexMatch: {
-                  input: { $toLower: "$partyDetails.accountGroupName" },
-                  regex: "dining",
-                },
-              },
-              {
-                $regexMatch: {
-                  input: { $toLower: "$partyDetails.partyName" },
-                  regex: "restaurant",
-                },
-              },
-              {
-                $regexMatch: {
-                  input: { $toLower: "$partyDetails.partyName" },
-                  regex: "food",
-                },
-              },
-              {
-                $regexMatch: {
-                  input: { $toLower: "$partyDetails.partyName" },
-                  regex: "dining",
-                },
-              },
-              {
-                $regexMatch: {
-                  input: { $toLower: "$partyDetails.partyName" },
-                  regex: "cafe",
-                },
-              },
-              {
-                $regexMatch: {
-                  input: { $toLower: "$partyDetails.partyName" },
-                  regex: "bar",
-                },
-              },
-              {
-                $regexMatch: {
-                  input: { $toLower: "$partyAccount" },
-                  regex: "restaurant",
-                },
-              },
-              {
-                $regexMatch: {
-                  input: { $toLower: "$partyAccount" },
-                  regex: "food",
-                },
-              },
-              {
-                $regexMatch: {
-                  input: { $toLower: "$partyAccount" },
-                  regex: "dining",
-                },
-              },
-              { $eq: [{ $toLower: "$kotType" }, "dine-in"] },
-              { $eq: [{ $toLower: "$kotType" }, "takeaway"] },
-              { $eq: [{ $toLower: "$kotType" }, "delivery"] },
-              { $eq: [{ $toLower: "$kotType" }, "restaurant"] },
-              {
-                $gt: [
-                  {
-                    $size: {
-                      $filter: {
-                        input: "$items",
-                        cond: {
-                          $or: [
-                            {
-                              $regexMatch: {
-                                input: { $toLower: "$$this.itemName" },
-                                regex: "food",
-                              },
-                            },
-                            {
-                              $regexMatch: {
-                                input: { $toLower: "$$this.itemName" },
-                                regex: "meal",
-                              },
-                            },
-                            {
-                              $regexMatch: {
-                                input: { $toLower: "$$this.itemName" },
-                                regex: "drink",
-                              },
-                            },
-                            {
-                              $regexMatch: {
-                                input: { $toLower: "$$this.itemName" },
-                                regex: "beverage",
-                              },
-                            },
-                            {
-                              $regexMatch: {
-                                input: { $toLower: "$$this.itemName" },
-                                regex: "coffee",
-                              },
-                            },
-                            {
-                              $regexMatch: {
-                                input: { $toLower: "$$this.itemName" },
-                                regex: "tea",
-                              },
-                            },
-                          ],
-                        },
-                      },
-                    },
-                  },
-                  0,
-                ],
-              },
-              {
-                $and: [
-                  { $lt: ["$finalAmount", 3000] },
-                  { $gt: ["$finalAmount", 0] },
-                ],
-              },
-            ],
-          },
-        },
-      },
-      {
-        $addFields: {
+          // Classification (Hotel / Restaurant / Other)
           businessClassification: {
             $cond: {
-              if: "$isHotelSale",
-              then: "Hotel",
-              else: {
-                $cond: {
-                  if: "$isRestaurantSale",
-                  then: "Restaurant",
-                  else: "Other",
-                },
+              if: {
+                $and: [
+                  { $gt: [{ $size: "$convertedFrom" }, 0] }, // convertedFrom array is not empty
+                  {
+                    $ne: [
+                      {
+                        $ifNull: [
+                          { $arrayElemAt: ["$convertedFrom.id", 0] },
+                          "",
+                        ],
+                      },
+                      "",
+                    ],
+                  }, // checkInNumber is not empty
+                ],
               },
+              then: "Restaurant",
+              else: "Hotel",
             },
           },
         },
       },
-      // Filter based on businessType parameter
+
+      // Optional filter by classification
       {
         $match:
           businessType === "all"
             ? {}
             : businessType === "hotel"
-            ? { isHotelSale: true }
+            ? { businessClassification: "Hotel" }
             : businessType === "restaurant"
-            ? { isRestaurantSale: true }
-            : { $or: [{ isHotelSale: true }, { isRestaurantSale: true }] },
+            ? { businessClassification: "Restaurant" }
+            : { businessClassification: { $in: ["Hotel", "Restaurant"] } },
       },
+
+      // Final projection
       {
         $project: {
-          _id: 1,
           date: 1,
           createdAt: 1,
           createdHour: 1,
@@ -3071,12 +2842,9 @@ export const getHotelSalesDetails = async (req, res) => {
           serialNumber: 1,
           kotType: 1,
           partyAccount: 1,
-          party: 1,
-          partyDetails: {
-            partyName: 1,
-            businessType: 1,
-            accountGroupName: 1,
-          },
+          "partyDetails.partyName": 1,
+          "partyDetails.businessType": 1,
+          "partyDetails.accountGroupName": 1,
           items: 1,
           subTotal: 1,
           finalAmount: 1,
@@ -3089,15 +2857,14 @@ export const getHotelSalesDetails = async (req, res) => {
           roomNumber: 1,
           guestName: 1,
           businessClassification: 1,
-          isHotelSale: 1,
-          isRestaurantSale: 1,
-          // Calculate totals from items
+          party:1,
+
           totalCgst: {
             $sum: {
               $map: {
                 input: "$items",
                 as: "item",
-                in: { $toDouble: { $ifNull: ["$item.totalCgstAmt", 0] } },
+                in: { $toDouble: { $ifNull: ["$$item.totalCgstAmt", 0] } },
               },
             },
           },
@@ -3106,7 +2873,7 @@ export const getHotelSalesDetails = async (req, res) => {
               $map: {
                 input: "$items",
                 as: "item",
-                in: { $toDouble: { $ifNull: ["$item.totalSgstAmt", 0] } },
+                in: { $toDouble: { $ifNull: ["$$item.totalSgstAmt", 0] } },
               },
             },
           },
@@ -3115,7 +2882,7 @@ export const getHotelSalesDetails = async (req, res) => {
               $map: {
                 input: "$items",
                 as: "item",
-                in: { $toDouble: { $ifNull: ["$item.totalIgstAmt", 0] } },
+                in: { $toDouble: { $ifNull: ["$$item.totalIgstAmt", 0] } },
               },
             },
           },
@@ -3127,10 +2894,10 @@ export const getHotelSalesDetails = async (req, res) => {
                 in: {
                   $sum: {
                     $map: {
-                      input: { $ifNull: ["$item.GodownList", []] },
+                      input: { $ifNull: ["$$item.GodownList", []] },
                       as: "godown",
                       in: {
-                        $toDouble: { $ifNull: ["$godown.discountAmount", 0] },
+                        $toDouble: { $ifNull: ["$$godown.discountAmount", 0] },
                       },
                     },
                   },
@@ -3140,9 +2907,11 @@ export const getHotelSalesDetails = async (req, res) => {
           },
         },
       },
+
       { $sort: { date: -1, serialNumber: -1 } },
     ]);
 
+    console.log("salesData", salesData);
     // Transform data for frontend consumption
     const transformedData = salesData.map((sale) => {
       // Extract payment information
@@ -3217,68 +2986,9 @@ export const getHotelSalesDetails = async (req, res) => {
 
       const finalAmount = Number(sale.finalAmount) || 0;
       const subTotal = Number(sale.subTotal) || finalAmount;
-      const totalTax =
-        (sale.totalCgst || 0) + (sale.totalSgst || 0) + (sale.totalIgst || 0);
-      const roundOff =
-        Math.round((finalAmount - subTotal - totalTax) * 100) / 100;
-
-      // Categorize items based on business type
-      const foodItems =
-        sale.items?.filter((item) => {
-          const itemName = item.itemName?.toLowerCase() || "";
-          return (
-            itemName.includes("food") ||
-            itemName.includes("meal") ||
-            itemName.includes("breakfast") ||
-            itemName.includes("lunch") ||
-            itemName.includes("dinner") ||
-            itemName.includes("snack")
-          );
-        }) || [];
-
-      const beverageItems =
-        sale.items?.filter((item) => {
-          const itemName = item.itemName?.toLowerCase() || "";
-          return (
-            itemName.includes("drink") ||
-            itemName.includes("beverage") ||
-            itemName.includes("coffee") ||
-            itemName.includes("tea") ||
-            itemName.includes("juice") ||
-            itemName.includes("water")
-          );
-        }) || [];
-
-      const accommodationItems =
-        sale.items?.filter((item) => {
-          const itemName = item.itemName?.toLowerCase() || "";
-          return (
-            itemName.includes("room") ||
-            itemName.includes("accommodation") ||
-            itemName.includes("stay") ||
-            itemName.includes("night") ||
-            itemName.includes("suite") ||
-            itemName.includes("booking")
-          );
-        }) || [];
-
-      // Determine classification reason
-      let classificationReason = "Default";
-      if (sale.businessType) {
-        classificationReason = `Business Type: ${sale.businessType}`;
-      } else if (sale.department) {
-        classificationReason = `Department: ${sale.department}`;
-      } else if (sale.partyDetails?.businessType) {
-        classificationReason = `Party Type: ${sale.partyDetails.businessType}`;
-      } else if (finalAmount >= 3000) {
-        classificationReason = "Amount-based (High)";
-      } else if (finalAmount < 3000 && finalAmount > 0) {
-        classificationReason = "Amount-based (Low)";
-      } else if (accommodationItems.length > 0) {
-        classificationReason = "Accommodation Items";
-      } else if (foodItems.length > 0 || beverageItems.length > 0) {
-        classificationReason = "Food/Beverage Items";
-      }
+      const totalTax = (sale.totalCgst || 0) + (sale.totalSgst || 0);
+      const nearestInt = Math.round(finalAmount);
+      const roundOff = Number((nearestInt - finalAmount).toFixed(2));
 
       return {
         billNo: sale.salesNumber || sale.serialNumber?.toString() || "",
@@ -3308,18 +3018,18 @@ export const getHotelSalesDetails = async (req, res) => {
 
         // Business-specific fields
         businessClassification: sale.businessClassification,
-        classificationReason: classificationReason,
+        // classificationReason: classificationReason,
 
         // Restaurant-specific fields
         tableNumber: sale.tableNumber || "",
         waiterName: sale.waiterName || "",
-        foodItems: foodItems,
-        beverageItems: beverageItems,
+        // foodItems: foodItems,
+        // beverageItems: beverageItems,
 
         // Hotel-specific fields
         roomNumber: sale.roomNumber || "",
         guestName: sale.guestName || partyName,
-        accommodationItems: accommodationItems,
+        // accommodationItems: accommodationItems,
 
         // General fields
         itemCount: sale.items?.length || 0,
