@@ -25,6 +25,7 @@ import { toast } from "react-toastify";
 import { FaRegEdit } from "react-icons/fa";
 import VoucherThreeInchPdf from "@/pages/voucher/voucherPdf/threeInchPdf/VoucherThreeInchPdf";
 import { useReactToPrint } from "react-to-print";
+import CustomerSearchInputBox from "@/pages/Hotel/Components/CustomerSearchInPutBox";
 
 const OrdersDashboard = () => {
   const contentToPrint = useRef(null);
@@ -46,6 +47,7 @@ const OrdersDashboard = () => {
   const [paymentError, setPaymentError] = useState("");
   const [selectedCash, setSelectedCash] = useState("");
   const [selectedBank, setSelectedBank] = useState("");
+  const [selectedCreditor, setSelectedCreditor] = useState("");
   const [cashOrBank, setCashOrBank] = useState({});
   const [selectedKot, setSelectedKot] = useState([]);
   const [saleVoucherData, setSaleVoucherData] = useState();
@@ -90,6 +92,7 @@ const OrdersDashboard = () => {
       const { bankDetails, cashDetails } = paymentTypeData?.data;
 
       setCashOrBank(paymentTypeData?.data);
+      console.log(paymentTypeData?.data);
       if (bankDetails && bankDetails.length > 0) {
         setSelectedBank(bankDetails[0]._id);
       }
@@ -351,36 +354,48 @@ const OrdersDashboard = () => {
 
   const handleSavePayment = async (id) => {
     setSaveLoader(true);
-
     let paymentDetails;
     let selectedKotData;
     if (
       selectedDataForPayment.roomService &&
       Object.keys(selectedDataForPayment.roomService).length > 0
     ) {
-      if (paymentMode == "single") {
-        if (paymentMethod == "cash") {
+      // CASE 1: When roomService exists
+      if (paymentMode === "single") {
+        if (paymentMethod === "cash") {
           paymentDetails = {
             cashAmount: selectedDataForPayment?.total,
-            onlineAmount: onlineAmount,
-            selectedCash: selectedCash,
-            selectedBank: selectedBank,
-            paymentMode: paymentMode,
+            onlineAmount,
+            selectedCash,
+            selectedBank,
+            paymentMode,
           };
-          selectedKotData = selectedDataForPayment;
         } else {
           paymentDetails = {
-            cashAmount: cashAmount,
+            cashAmount,
             onlineAmount: selectedDataForPayment?.total,
-            selectedCash: selectedCash,
-            selectedBank: selectedBank,
-            paymentMode: paymentMode,
+            selectedCash,
+            selectedBank,
+            paymentMode,
           };
-          selectedKotData = selectedDataForPayment;
         }
+        selectedKotData = selectedDataForPayment;
+      } else if (paymentMode === "credit") {
+
+        if (!selectedCreditor || selectedCreditor == "") {
+          setPaymentError("Please select a creditor");
+          return;
+        }
+        paymentDetails = {
+          cashAmount: selectedDataForPayment?.total,
+          selectedCreditor,
+          paymentMode,
+        };
+           selectedKotData = selectedDataForPayment;
       } else {
+        // Split payment mode
         if (
-          Number(cashAmount) + Number(onlineAmount) !=
+          Number(cashAmount) + Number(onlineAmount) !==
           selectedDataForPayment?.total
         ) {
           setPaymentError(
@@ -389,27 +404,71 @@ const OrdersDashboard = () => {
           return;
         }
         paymentDetails = {
-          cashAmount: cashAmount,
-          onlineAmount: onlineAmount,
-          selectedCash: selectedCash,
-          selectedBank: selectedBank,
-          paymentMode: paymentMode,
+          cashAmount,
+          onlineAmount,
+          selectedCash,
+          selectedBank,
+          paymentMode,
         };
         selectedKotData = selectedDataForPayment;
       }
     } else {
-      paymentDetails = {
-        cashAmount: previewForSales?.total,
-        onlineAmount: onlineAmount,
-        selectedCash: selectedCash,
-        selectedBank: selectedBank,
-        paymentMode: paymentMode,
-        isPostToRoom: true,
-      };
-      selectedKotData = previewForSales;
+      // CASE 2: When NO roomService
+      if (paymentMode === "single") {
+        if (paymentMethod === "cash") {
+          paymentDetails = {
+            cashAmount: selectedDataForPayment?.total,
+            onlineAmount,
+            selectedCash,
+            selectedBank,
+            paymentMode,
+          };
+        } else {
+          paymentDetails = {
+            cashAmount,
+            onlineAmount: selectedDataForPayment?.total,
+            selectedCash,
+            selectedBank,
+            paymentMode,
+          };
+        }
+        selectedKotData = previewForSales;
+      } else if (paymentMode === "credit") {
+        if (!selectedCreditor || selectedCreditor == "") {
+          setPaymentError("Please select a creditor");
+          setSaveLoader(false);
+          return;
+        }
+        paymentDetails = {
+          cashAmount: selectedDataForPayment?.total,
+          selectedCreditor,
+          paymentMode,
+        };
+          selectedKotData = previewForSales;
+      } else {
+        if (
+          Number(cashAmount) + Number(onlineAmount) !==
+          selectedDataForPayment?.total
+        ) {
+          setPaymentError(
+            "Cash and online amounts together equal the total amount."
+          );
+          return;
+        }
+        paymentDetails = {
+          cashAmount,
+          onlineAmount,
+          selectedCash,
+          selectedBank,
+          paymentMode,
+        };
+        selectedKotData = previewForSales;
+      }
     }
 
+    console.log(paymentMethod);
     console.log(paymentDetails);
+    console.log(selectedKotData);
 
     try {
       const response = await api.put(
@@ -450,6 +509,8 @@ const OrdersDashboard = () => {
       setOnlineAmount(0);
       refreshHook();
       setShowPaymentModal(false);
+      setPaymentMode("single")
+      setSelectedCreditor("")
     }
   };
 
@@ -497,6 +558,7 @@ const OrdersDashboard = () => {
             voucherNumber: order.voucherNumber,
             roomId: order?.roomId?._id, // keep roomId for validation
             checkInNumber: order?.checkInNumber,
+            customer: order?.customer,
           },
         ]);
       }
@@ -520,10 +582,13 @@ const OrdersDashboard = () => {
     });
 
     let totalAmount = itemList.reduce(
-      (acc, item) => acc + Number(item.total),
+      (acc, item) => acc + Number(item.total) * Number(item.quantity),
       0
-    );
-    console.log(saleVoucherData);
+    ).toFixed(2);
+    console.log(itemList[0]);
+
+    console.log(selectedKot);
+
     let newObject = {
       Date: new Date(),
       voucherType: "sales",
@@ -537,6 +602,11 @@ const OrdersDashboard = () => {
       finalAmount: totalAmount,
       total: totalAmount,
       voucherNumber: kotVoucherNumberArray,
+      party:{
+        partyName:selectedKot[0]?.customer?.name,
+        address:selectedKot[0]?.customer?.address,
+        mobile:selectedKot[0]?.customer?.phone,
+      }
     };
     setPreviewForSales(newObject);
   };
@@ -563,16 +633,19 @@ const OrdersDashboard = () => {
     if (kotData?.paymentCompleted) {
       toast.error("Kot Payment is completed so you can't edit");
       return;
-    } else if (kotData?.status === "completed") {
-      toast.error("Kot is already completed so you can't edit");
-      return;
     }
+    // else if (kotData?.status === "completed") {
+    //   toast.error("Kot is already completed so you can't edit");
+    //   return;
+    // }
     navigate("/sUsers/RestaurantDashboard", { state: { kotData } });
   };
 
   const handlePrint = useReactToPrint({
     content: () => contentToPrint.current,
   });
+
+  console.log(selectedBank);
 
   return (
     <>
@@ -601,38 +674,87 @@ const OrdersDashboard = () => {
       {!showVoucherPdf && (
         <div className="min-h-screen bg-gray-50">
           {/* Header */}
-          <div className="bg-white px-4 py-3 border-b border-gray-200 flex justify-between items-center">
-            <div className="flex items-center gap-4">
-              <h1 className="text-xl font-semibold text-black">
-                {userRole === "kitchen" ? "Kitchen Orders" : "Reception Orders"}{" "}
-                Display
-              </h1>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500">Role:</span>
-                <select
-                  value={userRole}
-                  onChange={(e) => {
-                    setUserRole(e.target.value);
-                    setActiveFilter("ON PROCESS");
-                  }}
-                  className="px-2 py-1 border border-gray-300 rounded text-sm"
-                >
-                  <option value="reception">Reception</option>
-                  <option value="kitchen">Kitchen</option>
-                </select>
+          <div className="bg-white px-4 py-3 border-b border-gray-200">
+            {/* Mobile Layout */}
+            <div className="block sm:hidden">
+              {/* First Row - Title */}
+              <div className="mb-3">
+                <h1 className="text-lg font-semibold text-black text-center">
+                  {userRole === "kitchen"
+                    ? "Kitchen Orders"
+                    : "Reception Orders"}{" "}
+                  Display
+                </h1>
+              </div>
+
+              {/* Second Row - Role and Date */}
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-center gap-2">
+                  <span className="text-sm text-gray-500">Role:</span>
+                  <select
+                    value={userRole}
+                    onChange={(e) => {
+                      setUserRole(e.target.value);
+                      setActiveFilter("ON PROCESS");
+                    }}
+                    className="px-2 py-1 border border-gray-300 rounded text-sm"
+                  >
+                    <option value="reception">Reception</option>
+                    <option value="kitchen">Kitchen</option>
+                  </select>
+                </div>
+
+                <div className="flex flex-col items-center gap-2">
+                  <div className="text-gray-600 text-sm">
+                    {dayjs(selectedDate).format("dddd, D MMMM YYYY")}
+                  </div>
+                  <input
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    className="px-3 py-1 border rounded text-sm w-full max-w-[200px]"
+                    max={dayjs().format("YYYY-MM-DD")}
+                  />
+                </div>
               </div>
             </div>
-            <div className="flex items-center gap-4 mb-4">
-              <div className="text-gray-600 text-sm">
-                {dayjs(selectedDate).format("dddd, D MMMM YYYY")}
+
+            {/* Desktop Layout (unchanged) */}
+            <div className="hidden sm:flex justify-between items-center">
+              <div className="flex items-center gap-4">
+                <h1 className="text-xl font-semibold text-black">
+                  {userRole === "kitchen"
+                    ? "Kitchen Orders"
+                    : "Reception Orders"}{" "}
+                  Display
+                </h1>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-500">Role:</span>
+                  <select
+                    value={userRole}
+                    onChange={(e) => {
+                      setUserRole(e.target.value);
+                      setActiveFilter("ON PROCESS");
+                    }}
+                    className="px-2 py-1 border border-gray-300 rounded text-sm"
+                  >
+                    <option value="reception">Reception</option>
+                    <option value="kitchen">Kitchen</option>
+                  </select>
+                </div>
               </div>
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="px-3 py-1 border rounded text-sm"
-                max={dayjs().format("YYYY-MM-DD")}
-              />
+              <div className="flex items-center gap-4">
+                <div className="text-gray-600 text-sm">
+                  {dayjs(selectedDate).format("dddd, D MMMM YYYY")}
+                </div>
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="px-3 py-1 border rounded text-sm"
+                  max={dayjs().format("YYYY-MM-DD")}
+                />
+              </div>
             </div>
           </div>
 
@@ -765,8 +887,13 @@ const OrdersDashboard = () => {
                                   : "bg-gray-100 text-gray-700"
                               }`}
                             >
-                              {order.type} -{" "}
-                              <span>{order.roomId?.roomName}</span>
+                              {order.type} - {order?.tableNumber}
+                              <span>
+                                {order.roomId?.roomName && order?.tableNumber
+                                  ? ","
+                                  : " "}
+                                {order.roomId?.roomName}
+                              </span>
                             </span>
                           </div>
 
@@ -1228,8 +1355,8 @@ const OrdersDashboard = () => {
                         setOnlineAmount(0);
                         setPaymentError("");
                         // Reset split payment selections
-                        setSelectedCash("");
-                        setSelectedBank("");
+                        // setSelectedCash("");
+                        // setSelectedBank("");
                       }}
                       className={`flex-1 px-3 py-2 rounded-lg border-2 text-xs font-medium transition-colors ${
                         paymentMode === "single"
@@ -1254,6 +1381,24 @@ const OrdersDashboard = () => {
                     >
                       Split Payment
                     </button>
+                    <button
+                      onClick={() => {
+                        setPaymentMode("credit");
+                        setCashAmount(0);
+                        setOnlineAmount(0);
+                        setPaymentError("");
+                        // Reset split payment selections
+                        // setSelectedCash("");
+                        // setSelectedBank("");
+                      }}
+                      className={`flex-1 px-3 py-2 rounded-lg border-2 text-xs font-medium transition-colors ${
+                        paymentMode === "credit"
+                          ? "border-blue-500 bg-blue-50 text-blue-700"
+                          : "border-gray-200 hover:border-gray-300"
+                      }`}
+                    >
+                      Credit Payment
+                    </button>
                   </div>
                 </div>
 
@@ -1276,7 +1421,9 @@ const OrdersDashboard = () => {
                         <span className="text-xs font-medium">Cash</span>
                       </button>
                       <button
-                        onClick={() => setPaymentMethod("card")}
+                        onClick={() => {
+                          setPaymentMethod("card");
+                        }}
                         className={`flex flex-col items-center p-3 rounded-lg border-2 transition-colors ${
                           paymentMethod === "card"
                             ? "border-blue-500 bg-blue-50 text-blue-700"
@@ -1321,7 +1468,6 @@ const OrdersDashboard = () => {
                           value={selectedBank}
                           onChange={(e) => {
                             setSelectedBank(e.target.value);
-                            // setSelectedCash
                           }}
                         >
                           <option value="" disabled>
@@ -1499,6 +1645,29 @@ const OrdersDashboard = () => {
                     </div>
                   </div>
                 )}
+                {paymentMode === "credit" && (
+                  <div className="mb-3">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Creditor
+                    </label>
+
+                    {/* Cash Payment Dropdown */}
+                    <div className="mt-3">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Select Creditor
+                      </label>
+                      <CustomerSearchInputBox
+                        onSelect={(party) => {
+                          setSelectedCreditor(party);
+                        }}
+                        selectedParty={{}}
+                        isAgent={false}
+                        placeholder="Search customers..."
+                        sendSearchToParent={() => {}}
+                      />
+                    </div>
+                  </div>
+                )}
 
                 {/* Error Message */}
                 {paymentError && (
@@ -1561,7 +1730,7 @@ const OrdersDashboard = () => {
                     )}
                   </div>
                   <div className="border-t border-gray-200 pt-2 mt-2 flex justify-between font-semibold text-gray-800">
-                    <span className="text-sm">Total Amount</span>
+                    <span className="text-sm">Total Amount </span>
                     <span className="text-base text-blue-600">
                       ₹{selectedDataForPayment?.total}
                     </span>

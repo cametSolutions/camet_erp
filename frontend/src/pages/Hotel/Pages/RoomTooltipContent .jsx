@@ -2,11 +2,16 @@ const RoomTooltipContent = ({ room, tooltipData }) => {
   // Extract checkins and bookings arrays from tooltipData
   const checkins = tooltipData?.checkins || [];
   const bookings = tooltipData?.bookings || [];
+  console.log("tooltipData", tooltipData?.checkins);
+
 
   // Find the checkin record matching this room by roomId
   const checkin = checkins.find((c) =>
     c.selectedRooms?.some((sr) => sr.roomId === room._id)
   );
+
+  console.log("checkin", checkin);
+
 
   if (checkin) {
     return (

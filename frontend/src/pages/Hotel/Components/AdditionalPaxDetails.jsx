@@ -29,27 +29,26 @@ function AdditionalPaxDetails({
   }, [error]);
 
   // useEffect used to manage the already selected values
-  // useEffect(() => {
-  //   console.log(formData);
-  //   if (
-  //     formData?.additionalPaxDetails?.length > 0 &&
-  //     selectedRoomId &&
-  //     formData.additionalPaxDetails !== []
-  //   ) {
-  //     let filteredData = formData.additionalPaxDetails?.filter(
-  //       (item) => item.roomId == selectedRoomId
-  //     );
-  //     if (filteredData.length > 0 && filteredData !== []) {
-  //       setAdditionalPax(filteredData);
-  //     }
-  //   }
-  // }, [selectedRoomId]);
+  useEffect(() => {
+    console.log(formData);
+    if (
+      formData?.additionalPaxDetails?.length > 0 &&
+      selectedRoomId 
+    ) {
+      let filteredData = formData.additionalPaxDetails?.filter(
+        (item) => item.roomId == selectedRoomId
+      );
+      if (filteredData.length > 0 ) {
+        setAdditionalPax(filteredData);
+      }
+    }
+  }, [selectedRoomId]);
 
   // function used to send data to the parent
   useEffect(() => {
     if (additionalPax.length > 0) {
       let filteredData = additionalPax.filter((item) => item.paxID !== "");
-      sendDataToParent(filteredData);    
+      sendDataToParent(filteredData, selectedRoomId);    
     }
   }, [additionalPax]);
 
@@ -79,9 +78,11 @@ function AdditionalPaxDetails({
     if (updatedRows.length === 0) {
       updatedRows.push({ paxID: "", paxName: 0, rate: "" });
     }
+    console.log(updatedRows);
     setAdditionalPax(updatedRows);
     
   };
+  
 
   // function used to add new row
   const handleAddRow = () => {

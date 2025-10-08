@@ -6,7 +6,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { toast } from "sonner";
 import api from "@/api/api";
-
+import { useQueryClient } from "@tanstack/react-query";
 function BookingPage() {
   const location = useLocation();
   const isSubmittingRef = useRef(false);
@@ -17,7 +17,9 @@ function BookingPage() {
   const [loading, setLoading] = useState(false);
   const [submitLoader, setSubmitLoader] = useState(false);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const handleSubmit = async (data, paymentData) => {
+    console.log(data, paymentData);
     try {
       let response = await api.post(
         `/api/sUsers/saveData/${organization._id}`,
@@ -26,6 +28,9 @@ function BookingPage() {
       );
       if (response?.data?.success) {
         toast.success(response?.data?.message);
+        queryClient.invalidateQueries({
+        queryKey: ["todaysTransaction", organization._id, false],
+      });
         navigate("/sUsers/bookingList");
       }
       isSubmittingRef.current = false;

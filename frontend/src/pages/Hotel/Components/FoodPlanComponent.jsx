@@ -32,26 +32,27 @@ function FoodPlanComponent({
   useEffect(() => {
     if (foodPlan.length > 0) {
       let filteredData = foodPlan.filter((item) => item.foodPlanId !== "");
-      sendDataToParent(filteredData);
+      sendDataToParent(filteredData,selectedRoomId);
     }
   }, [foodPlan]);
 
   // useEffect used to manage the already selected values
-  // useEffect(() => {
-  //   if (
-  //     formData?.foodPlan?.length > 0 &&
-  //     selectedRoomId &&
-  //     formData.foodPlan !== []
-  //   ) {
-  //     let filteredData = formData.foodPlan?.filter(
-  //       (item) => item.roomId == selectedRoomId
-  //     );
-  //     if (filteredData.length > 0 && filteredData !== []) {
-  //       setFoodPlan(filteredData);
-  //     }
-  //   }
-  // }, [selectedRoomId]);
+  useEffect(() => {
+    if (
+      Array.isArray(formData?.foodPlan) &&
+      formData.foodPlan.length > 0 &&
+      selectedRoomId
+    ) {
+      let filteredData = formData.foodPlan?.filter(
+        (item) => item.roomId == selectedRoomId
+      );
+      if (filteredData.length > 0) {
+        setFoodPlan(filteredData);
+      }
+    }
+  }, [selectedRoomId]);
 
+  console.log(selectedRoomId);
   const handlePaxChange = (index, value) => {
     let specificData = foodPlanData?.find((item) => item._id === value);
     const updatedRows = [...foodPlan];
@@ -94,16 +95,16 @@ function FoodPlanComponent({
           >
             Food Plan
           </button>
-                  <div className="ml-auto flex gap-2">
+          <div className="ml-auto flex gap-2">
             <button
               className="ml-auto px-4 py-2 text-sm font-semibold text-white bg-black rounded-md hover:bg-gray-800 transition-all duration-200"
-             onClick={() => setDisplayFoodPlan(false)}
+              onClick={() => setDisplayFoodPlan(false)}
             >
               Save
             </button>
             <button
               className="ml-auto px-4 py-2 text-sm font-semibold text-white bg-yellow-500 rounded-md hover:bg-gray-800 transition-all duration-200"
-               onClick={() => setDisplayFoodPlan(false)}
+              onClick={() => setDisplayFoodPlan(false)}
             >
               Cancel
             </button>

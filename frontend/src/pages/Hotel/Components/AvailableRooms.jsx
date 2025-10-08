@@ -132,14 +132,11 @@ useEffect(() => {
 
       const newRooms = res.data?.roomData || [];
       
-      console.log("Received vacant rooms from backend:", newRooms.length);
-      console.log("Sample room:", newRooms[0]);
-
       // Filter out rooms that are already selected in current booking
       const availableRooms = newRooms.filter(room => {
         const isAlreadyBooked = bookings.some(booking => booking.roomId === room._id);
         if (isAlreadyBooked) {
-          console.log(`Filtering out already selected room: ${room._id}`);
+          console.log(`Filtering out already selected room: ${room.roomName}`);
         }
         return !isAlreadyBooked;
       });
@@ -178,6 +175,7 @@ useEffect(() => {
           formData,
           booking.roomId
         );
+        console.log(taxResponse);
 
         return {
           ...updatedRoom,
@@ -196,6 +194,9 @@ useEffect(() => {
           foodPlanAmountWithOutTax: taxResponse?.foodPlanAmountWithOutTax || 0,
           baseAmount: taxResponse?.baseAmount || 0,
           baseAmountWithTax: taxResponse?.baseAmountWithTax || 0,
+          totalCgstAmt: taxResponse?.totalCgstAmt || 0,
+          totalSgstAmt: taxResponse?.totalSgstAmt || 0,
+          totalIgstAmt: taxResponse?.totalIgstAmt || 0,
         };
       } catch (err) {
         console.error("Tax calculation failed:", err);
@@ -307,8 +308,9 @@ useEffect(() => {
     setPendingRoomId(roomId);
   };
 
-  const handleDelete = (roomId) => {
-    setBookings((prev) => prev.filter((b) => b.roomId !== roomId));
+ const handleDelete = (roomId) => {
+    let filetedRoom = bookings.filter((b) => b.roomId !== roomId)
+    setBookings(filetedRoom);
   };
 
   const handleSelect = async (room) => {
@@ -393,7 +395,7 @@ useEffect(() => {
   }
 }, [bookings.length]); // Triggers when rooms are added/removed from bookings
 
-  console.log(bookings);
+  console.log(bookings[0]);
   return (
     <>
       <div className={`relative w-full ${className}`} ref={dropdownRef}>
@@ -618,6 +620,7 @@ useEffect(() => {
                                 Number(booking.totalAmount || 0) /
                                 (1 + (booking.taxPercentage || 0) / 100)
                               ).toFixed(0)}
+                              
                             </span>
                           )}
                         </div>

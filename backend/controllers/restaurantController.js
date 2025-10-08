@@ -7,8 +7,7 @@ import kotModal from "../models/kotModal.js";
 import { generateVoucherNumber } from "../helpers/voucherHelper.js";
 import salesModel from "../models/salesModel.js";
 import TallyData from "../models/TallyData.js";
-import Receipt from "../models/receiptModel.js";
-
+import ReceiptModel from "../models/receiptModel.js";
 import bankModel from "../models/bankModel.js";
 import cashModel from "../models/cashModel.js";
 import Party from "../models/partyModel.js";
@@ -16,6 +15,7 @@ import { saveSettlementData } from "../helpers/salesHelper.js";
 import Organization from "../models/OragnizationModel.js";
 import Table from "../models/TableModel.js";
 import { Godown } from "../models/subDetails.js";
+import { buildReceipt } from "../helpers/restaurantHelper.js";
 // Helper functions (you may need to create these or adjust based on your existing ones)
 import {
   buildDatabaseFilterForRoom,
@@ -434,18 +434,28 @@ export const editKot = async (req, res) => {
       );
     }
 
+    let customer = req.body.customer;
+
+    // 🗑️ Remove roomId if it’s empty or invalid
+    if (!customer.roomId || customer.roomId.trim() === "") {
+      delete customer.roomId;
+    }
+
+    console.log("req.body?.status", req.body?.status);
+
     // Update the KOT
     const updatedKot = await kotModal.findOneAndUpdate(
       { _id: req.params.kotId, cmp_id },
       {
         items: req.body.items,
         type: req.body.type,
-        customer: req.body.customer,
+        customer: customer,
         tableNumber: req.body.customer?.tableNumber,
         total: req.body.total,
         status: req.body.status || "pending",
         paymentMethod: req.body.paymentMethod,
         roomId: req.body.customer?.roomId,
+        status: req.body?.status,
         checkInNumber: req.body.customer?.checkInNumber,
       },
       { new: true, session }
@@ -816,6 +826,10 @@ export const updateKotPayment = async (req, res) => {
         paymentMethod = "mixed";
       }
 
+      if (paymentDetails?.paymentMode == "credit") {
+        paymentMethod = "credit";
+      }
+
       // Voucher series
       const specificVoucherSeries = await getRestaurantVoucherSeries(
         cmp_id,
@@ -829,17 +843,31 @@ export const updateKotPayment = async (req, res) => {
         specificVoucherSeries._id.toString(),
         session
       );
+      let creditParty;
+      if (paymentMethod == "credit") {
 
+        creditParty = await Party.findOne({
+          cmp_id,
+          _id: paymentDetails.selectedCreditor._id,
+        })
+          .populate("accountGroup")
+          .session(session);
+      }
+
+      console.log("creditParty", paymentMethod);
       // Selected party
-      const selectedParty = await getSelectedParty(
-        cmp_id,
-        paymentDetails,
-        cashAmt,
-        onlineAmt,
-        kotData,
-        isPostToRoom,
-        session
-      );
+      const selectedParty =
+        paymentMethod == "credit"
+          ? creditParty
+          : await getSelectedParty(
+              cmp_id,
+              paymentDetails,
+              cashAmt,
+              onlineAmt,
+              kotData,
+              isPostToRoom,
+              session
+            );
 
       // Payment splitting
       const paymentSplittingArray = createPaymentSplittingArray(
@@ -866,9 +894,9 @@ export const updateKotPayment = async (req, res) => {
       // Outstanding balance
       const paidAmount = isPostToRoom ? 0 : cashAmt + onlineAmt;
       const pendingAmount = Number(kotData?.total || 0) - paidAmount;
-
-      if (isPostToRoom) {
-        await createTallyEntry(
+      let tallyData;
+      if (isPostToRoom || paymentMethod == "credit") {
+        tallyData = await createTallyEntry(
           cmp_id,
           req,
           selectedParty,
@@ -879,7 +907,7 @@ export const updateKotPayment = async (req, res) => {
           session
         );
       }
-      if (party?.paymentType != "party") {
+      if (party?.paymentType != "party" && paymentMethod != "credit") {
         await saveSettlement(
           paymentDetails,
           selectedParty,
@@ -892,7 +920,20 @@ export const updateKotPayment = async (req, res) => {
           session
         );
       }
-    
+      if (paymentMethod == "credit") {
+        await buildReceipt({
+          cmp_id,
+          selectedParty: paymentDetails.selectedCreditor,
+          advanceObject: tallyData,
+          saleData: savedVoucherData[0],
+          amount: paymentDetails?.cashAmount,
+          paymentDetails,
+          paymentMethod,
+          req,
+          session,
+        });
+      }
+
       // Update KOTs
       paymentCompleted = true;
       let selectedTableNumber = [];
@@ -985,6 +1026,9 @@ async function getSelectedParty(
 ) {
   let partyId;
 
+  console.log("isPostToRoom", isPostToRoom);
+  console.log("paymentDetails", paymentDetails);
+  console.log(cashAmt, onlineAmt);
   if (isPostToRoom) {
     console.log("koptData", kotData?.voucherNumber[0]?.checkInNumber);
     let checkInData = await CheckIn.findOne({
@@ -994,7 +1038,7 @@ async function getSelectedParty(
     partyId = checkInData?.customerId.toString();
     console.log("partyId", partyId);
   } else {
-    if (paymentDetails?.paymentMode === "single") {
+    if (paymentDetails?.paymentMode == "single") {
       if (cashAmt > 0) {
         partyId = paymentDetails?.selectedCash;
       } else if (onlineAmt > 0) {
@@ -1107,7 +1151,7 @@ async function createTallyEntry(
   pendingAmount,
   session
 ) {
-  await TallyData.create(
+  const tallyEntry = await TallyData.create(
     [
       {
         Primary_user_id: req.pUserId || req.owner,
@@ -1130,10 +1174,11 @@ async function createTallyEntry(
     ],
     { session }
   );
+
+  return tallyEntry[0]; // since .create with array returns an array
 }
 
 async function saveSettlement(
-
   paymentDetails,
   selectedParty,
   cmp_id,
@@ -1144,7 +1189,7 @@ async function saveSettlement(
   req,
   session
 ) {
-  console.log
+  console.log;
   if (paymentDetails?.paymentMode === "single") {
     await saveSettlementData(
       selectedParty,
@@ -1511,3 +1556,827 @@ export const updateConfigurationForKotApproval = async (req, res) => {
   }
 };
 
+export const getSummaryDashboard = async (req, res) => {
+  try {
+    const {
+      cmp_id,
+      date,
+      businessType,
+      dateRange,
+      owner,
+      groupBy,
+      includeOutlets,
+    } = req.query;
+    console.log("Summary dashboard query:", req.query);
+
+    if (!owner) {
+      return res.status(400).json({
+        success: false,
+        error: "Owner ID is required",
+      });
+    }
+
+    // Validate ObjectId format for owner
+    if (!mongoose.Types.ObjectId.isValid(owner)) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid Owner ID format",
+      });
+    }
+
+    // Parse the selected date or use today
+    const selectedDate = date ? new Date(date) : new Date();
+    console.log("selectedDate", selectedDate);
+
+    // Validate date
+    if (isNaN(selectedDate.getTime())) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid date format",
+      });
+    }
+
+    // Handle different date ranges for daily/selected period
+    let startDate, endDate;
+
+    if (dateRange === "month") {
+      startDate = new Date(
+        selectedDate.getFullYear(),
+        selectedDate.getMonth(),
+        1
+      );
+      startDate.setHours(0, 0, 0, 0);
+      endDate = new Date(
+        selectedDate.getFullYear(),
+        selectedDate.getMonth() + 1,
+        0
+      );
+      endDate.setHours(23, 59, 59, 999);
+    } else {
+      startDate = new Date(selectedDate);
+      startDate.setHours(0, 0, 0, 0);
+      endDate = new Date(selectedDate);
+      endDate.setHours(23, 59, 59, 999);
+    }
+
+    // Get start and end of current month for monthly comparison
+    const startOfMonth = new Date(
+      selectedDate.getFullYear(),
+      selectedDate.getMonth(),
+      1
+    );
+    startOfMonth.setHours(0, 0, 0, 0);
+    const endOfMonth = new Date(
+      selectedDate.getFullYear(),
+      selectedDate.getMonth() + 1,
+      0
+    );
+    endOfMonth.setHours(23, 59, 59, 999);
+
+    console.log("Date Range:", startDate, "to", endDate);
+
+    // Step 1: Find all organizations owned by this owner
+    const organizations = await Organization.find({
+      owner: new mongoose.Types.ObjectId(owner),
+      isBlocked: false,
+      isApproved: true,
+    }).select("_id name companyName");
+
+    console.log(
+      `Found ${organizations.length} organizations for owner ${owner}`
+    );
+
+    if (organizations.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: "No organizations found for this owner",
+      });
+    }
+
+    // Extract organization IDs
+    const organizationIds = organizations.map((org) => org._id);
+
+    // If cmp_id is provided, filter to that specific organization
+    const targetOrgIds =
+      cmp_id && mongoose.Types.ObjectId.isValid(cmp_id)
+        ? [new mongoose.Types.ObjectId(cmp_id)]
+        : organizationIds;
+
+    // Base match conditions for all organizations owned by this owner
+    const baseMatch = {
+      cmp_id: { $in: targetOrgIds },
+      $or: [
+        { isCancelled: { $exists: false } },
+        { isCancelled: false },
+        { isCancelled: null },
+      ],
+    };
+
+    // Enhanced function to categorize sales by direct business type
+    const categorizeSales = (sales) => {
+      const result = {
+        hotel: {
+          totalSales: 0,
+          cashReceipt: 0,
+          bankReceipt: 0,
+          upiAmount: 0,
+          chequeAmount: 0,
+          creditAmount: 0,
+          totalTax: 0,
+          totalDiscount: 0,
+          expense: 0,
+          itemCount: 0,
+          transactionCount: 0,
+          netSales: 0,
+        },
+        restaurant: {
+          totalSales: 0,
+          cashReceipt: 0,
+          bankReceipt: 0,
+          upiAmount: 0,
+          chequeAmount: 0,
+          creditAmount: 0,
+          totalTax: 0,
+          totalDiscount: 0,
+          expense: 0,
+          itemCount: 0,
+          transactionCount: 0,
+          netSales: 0,
+        },
+      };
+
+      console.log("Processing sales:", sales.length);
+
+      sales.forEach((sale) => {
+        // Calculate payment splits with detailed breakdown
+        let cashAmount = 0,
+          bankAmount = 0,
+          creditAmount = 0,
+          upiAmount = 0,
+          chequeAmount = 0;
+
+        if (
+          sale.paymentSplittingData &&
+          Array.isArray(sale.paymentSplittingData)
+        ) {
+          sale.paymentSplittingData.forEach((payment) => {
+            const amount = Number(payment.amount) || 0;
+            const paymentType = payment.type?.toLowerCase() || "";
+
+            switch (paymentType) {
+              case "cash":
+                cashAmount += amount;
+                break;
+              case "upi":
+                upiAmount += amount;
+                bankAmount += amount;
+                break;
+              case "cheque":
+              case "check":
+                chequeAmount += amount;
+                bankAmount += amount;
+                break;
+              case "card":
+              case "debit":
+              case "credit_card":
+                bankAmount += amount;
+                break;
+              case "credit":
+                creditAmount += amount;
+                break;
+              case "bank":
+              case "online":
+              case "netbanking":
+                bankAmount += amount;
+                break;
+              default:
+                cashAmount += amount;
+                break;
+            }
+          });
+        } else {
+          cashAmount = Number(sale.finalAmount) || 0;
+        }
+
+        // Calculate taxes and other details
+        let totalTax = 0;
+        let totalDiscount = 0;
+        let itemCount = 0;
+
+        if (sale.items && Array.isArray(sale.items)) {
+          itemCount = sale.items.length;
+
+          sale.items.forEach((item) => {
+            totalTax += Number(item.totalIgstAmt || 0);
+
+            if (item.GodownList && Array.isArray(item.GodownList)) {
+              item.GodownList.forEach((godown) => {
+                totalDiscount += Number(godown.discountAmount || 0);
+              });
+            }
+          });
+        }
+
+        const finalAmount = Number(sale.finalAmount) || 0;
+        const netSales = finalAmount - totalTax;
+        const expense = finalAmount * 0.05;
+
+        const saleData = {
+          totalSales: finalAmount,
+          netSales: netSales,
+          cashReceipt: cashAmount,
+          bankReceipt: bankAmount,
+          upiAmount: upiAmount,
+          chequeAmount: chequeAmount,
+          creditAmount: creditAmount,
+          totalTax: totalTax,
+          totalDiscount: totalDiscount,
+          expense: expense,
+          itemCount: itemCount,
+          transactionId: sale._id,
+        };
+
+        // Business type determination logic
+        let targetCategory = null;
+
+        if (sale.businessType) {
+          const businessTypeValue = sale.businessType.toLowerCase();
+          if (
+            businessTypeValue === "hotel" ||
+            businessTypeValue === "accommodation"
+          ) {
+            targetCategory = result.hotel;
+          } else if (
+            businessTypeValue === "restaurant" ||
+            businessTypeValue === "food"
+          ) {
+            targetCategory = result.restaurant;
+          }
+        }
+
+        if (!targetCategory && sale.party?.businessType) {
+          const partyBusinessType = sale.party.businessType.toLowerCase();
+          if (
+            partyBusinessType === "hotel" ||
+            partyBusinessType === "accommodation"
+          ) {
+            targetCategory = result.hotel;
+          } else if (
+            partyBusinessType === "restaurant" ||
+            partyBusinessType === "food"
+          ) {
+            targetCategory = result.restaurant;
+          }
+        }
+
+        if (!targetCategory && (sale.department || sale.category)) {
+          const dept = (sale.department || sale.category || "").toLowerCase();
+          if (
+            dept === "hotel" ||
+            dept === "accommodation" ||
+            dept === "rooms"
+          ) {
+            targetCategory = result.hotel;
+          } else if (
+            dept === "restaurant" ||
+            dept === "food" ||
+            dept === "dining"
+          ) {
+            targetCategory = result.restaurant;
+          }
+        }
+
+        if (!targetCategory && sale.party?.accountGroupName) {
+          const accountGroup = sale.party.accountGroupName.toLowerCase();
+          if (
+            accountGroup.includes("hotel") ||
+            accountGroup.includes("accommodation")
+          ) {
+            targetCategory = result.hotel;
+          } else if (
+            accountGroup.includes("restaurant") ||
+            accountGroup.includes("food")
+          ) {
+            targetCategory = result.restaurant;
+          }
+        }
+
+        if (!targetCategory && sale.party?.partyName) {
+          const partyName = sale.party.partyName.toLowerCase();
+          if (
+            partyName.includes("hotel") ||
+            partyName.includes("accommodation") ||
+            partyName.includes("room")
+          ) {
+            targetCategory = result.hotel;
+          } else if (
+            partyName.includes("restaurant") ||
+            partyName.includes("food") ||
+            partyName.includes("dining")
+          ) {
+            targetCategory = result.restaurant;
+          }
+        }
+
+        if (!targetCategory) {
+          targetCategory =
+            finalAmount > 3000 ? result.hotel : result.restaurant;
+        }
+
+        // Add to the appropriate category
+        Object.keys(saleData).forEach((key) => {
+          if (key !== "transactionId" && typeof saleData[key] === "number") {
+            targetCategory[key] = (targetCategory[key] || 0) + saleData[key];
+          }
+        });
+        targetCategory.transactionCount =
+          (targetCategory.transactionCount || 0) + 1;
+      });
+
+      return result;
+    };
+
+    // Build aggregation pipeline with enhanced lookups
+    const buildAggregationPipeline = (dateMatchCondition) => [
+      {
+        $match: {
+          ...baseMatch,
+          ...dateMatchCondition,
+        },
+      },
+      {
+        $lookup: {
+          from: "organizations",
+          localField: "cmp_id",
+          foreignField: "_id",
+          as: "organization",
+        },
+      },
+      {
+        $unwind: {
+          path: "$organization",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $lookup: {
+          from: "parties",
+          localField: "party",
+          foreignField: "_id",
+          as: "party",
+        },
+      },
+      {
+        $unwind: {
+          path: "$party",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $project: {
+          finalAmount: 1,
+          paymentSplittingData: 1,
+          partyAccount: 1,
+          businessType: 1,
+          department: 1,
+          category: 1,
+          party: {
+            partyName: 1,
+            accountGroupName: 1,
+            businessType: 1,
+          },
+          organization: {
+            _id: 1,
+            name: 1,
+            companyName: 1,
+          },
+          items: 1,
+          date: 1,
+          createdAt: 1,
+          cmp_id: 1,
+        },
+      },
+    ];
+
+    // Execute queries for daily and monthly data
+    const [dailySales, monthlySales] = await Promise.all([
+      salesModel.aggregate(
+        buildAggregationPipeline({ date: { $gte: startDate, $lte: endDate } })
+      ),
+      salesModel.aggregate(
+        buildAggregationPipeline({
+          date: { $gte: startOfMonth, $lte: endOfMonth },
+        })
+      ),
+    ]);
+
+    console.log(
+      `Found ${dailySales.length} daily sales and ${monthlySales.length} monthly sales`
+    );
+
+    // Process daily and monthly data
+    const dailyData = categorizeSales(dailySales);
+    dailyData.hotel.balance =
+      dailyData.hotel.totalSales - dailyData.hotel.expense;
+    dailyData.restaurant.balance =
+      dailyData.restaurant.totalSales - dailyData.restaurant.expense;
+
+    const monthlyData = categorizeSales(monthlySales);
+    monthlyData.hotel.balance =
+      monthlyData.hotel.totalSales - monthlyData.hotel.expense;
+    monthlyData.restaurant.balance =
+      monthlyData.restaurant.totalSales - monthlyData.restaurant.expense;
+
+    // Calculate combined data
+    const calculateCombined = (data) => {
+      const totalSales = data.hotel.totalSales + data.restaurant.totalSales;
+      const totalTransactions =
+        data.hotel.transactionCount + data.restaurant.transactionCount;
+
+      return {
+        totalSales: totalSales,
+        netSales: data.hotel.netSales + data.restaurant.netSales,
+        cashReceipt: data.hotel.cashReceipt + data.restaurant.cashReceipt,
+        bankReceipt: data.hotel.bankReceipt + data.restaurant.bankReceipt,
+        upiAmount: data.hotel.upiAmount + data.restaurant.upiAmount,
+        chequeAmount: data.hotel.chequeAmount + data.restaurant.chequeAmount,
+        creditAmount: data.hotel.creditAmount + data.restaurant.creditAmount,
+        totalTax: data.hotel.totalTax + data.restaurant.totalTax,
+        totalDiscount: data.hotel.totalDiscount + data.restaurant.totalDiscount,
+        expense: data.hotel.expense + data.restaurant.expense,
+        balance: totalSales - (data.hotel.expense + data.restaurant.expense),
+        transactionCount: totalTransactions,
+        averageTicketSize:
+          totalTransactions > 0 ? totalSales / totalTransactions : 0,
+        itemCount: data.hotel.itemCount + data.restaurant.itemCount,
+      };
+    };
+
+    const dailyCombined = calculateCombined(dailyData);
+    const monthlyCombined = calculateCombined(monthlyData);
+
+    // Calculate analytics
+    const calculateAnalytics = (combined) => ({
+      paymentMethodBreakdown: {
+        cashPercentage:
+          combined.totalSales > 0
+            ? (combined.cashReceipt / combined.totalSales) * 100
+            : 0,
+        bankPercentage:
+          combined.totalSales > 0
+            ? (combined.bankReceipt / combined.totalSales) * 100
+            : 0,
+        creditPercentage:
+          combined.totalSales > 0
+            ? (combined.creditAmount / combined.totalSales) * 100
+            : 0,
+        upiPercentage:
+          combined.totalSales > 0
+            ? (combined.upiAmount / combined.totalSales) * 100
+            : 0,
+      },
+      businessMix: {
+        hotelPercentage:
+          combined.totalSales > 0
+            ? (dailyData.hotel.totalSales / combined.totalSales) * 100
+            : 0,
+        restaurantPercentage:
+          combined.totalSales > 0
+            ? (dailyData.restaurant.totalSales / combined.totalSales) * 100
+            : 0,
+      },
+    });
+
+    // Prepare base dashboard data
+    const dashboardData = {
+      daily: {
+        hotel: dailyData.hotel,
+        restaurant: dailyData.restaurant,
+        combined: dailyCombined,
+      },
+      monthly: {
+        hotel: monthlyData.hotel,
+        restaurant: monthlyData.restaurant,
+        combined: monthlyCombined,
+      },
+      analytics: calculateAnalytics(dailyCombined),
+      metadata: {
+        selectedDate: selectedDate.toISOString().split("T")[0],
+        dateRange: dateRange || "day",
+        totalDailySales: dailySales.length,
+        totalMonthlySales: monthlySales.length,
+        dateRanges: {
+          daily: {
+            start: startDate.toISOString(),
+            end: endDate.toISOString(),
+          },
+          monthly: {
+            start: startOfMonth.toISOString(),
+            end: endOfMonth.toISOString(),
+          },
+        },
+        queryParams: {
+          cmp_id: cmp_id || "all_owner_organizations",
+          owner,
+          businessType: businessType || null,
+          dateRange: dateRange || "day",
+        },
+        organizationCount: organizations.length,
+      },
+    };
+
+    // If outlet data is requested, add outlet-wise breakdown
+    if (includeOutlets === "true" || groupBy === "outlet") {
+      console.log("Including outlet-wise data...");
+
+      // Build outlet aggregation pipeline - FIXED VERSION
+      const outletAggregationPipeline = [
+        {
+          $match: {
+            ...baseMatch,
+            date: { $gte: startDate, $lte: endDate },
+          },
+        },
+        {
+          $lookup: {
+            from: "organizations",
+            localField: "cmp_id",
+            foreignField: "_id",
+            as: "organization",
+          },
+        },
+        {
+          $unwind: {
+            path: "$organization",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $lookup: {
+            from: "parties",
+            localField: "party",
+            foreignField: "_id",
+            as: "party",
+          },
+        },
+        {
+          $unwind: {
+            path: "$party",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $addFields: {
+            outletName: {
+              $cond: {
+                if: { $ne: ["$party.partyName", null] },
+                then: "$party.partyName",
+                else: {
+                  $cond: {
+                    if: { $ne: ["$organization.name", null] },
+                    then: "$organization.name",
+                    else: "$organization.companyName",
+                  },
+                },
+              },
+            },
+            organizationName: {
+              $cond: {
+                if: { $ne: ["$organization.name", null] },
+                then: "$organization.name",
+                else: "$organization.companyName",
+              },
+            },
+          },
+        },
+        {
+          $group: {
+            _id: {
+              organizationId: "$organization._id",
+              organizationName: "$organizationName",
+              outletName: "$outletName",
+            },
+            sales: {
+              $sum: { $ifNull: ["$finalAmount", 0] },
+            },
+            orders: { $sum: 1 },
+
+            // Calculate payment totals directly in group stage
+            cashTotal: {
+              $sum: {
+                $reduce: {
+                  input: { $ifNull: ["$paymentSplittingData", []] },
+                  initialValue: 0,
+                  in: {
+                    $cond: [
+                      { $eq: [{ $toLower: "$$this.type" }, "cash"] },
+                      {
+                        $add: [
+                          "$$value",
+                          { $toDouble: { $ifNull: ["$$this.amount", 0] } },
+                        ],
+                      },
+                      "$$value",
+                    ],
+                  },
+                },
+              },
+            },
+
+            bankTotal: {
+              $sum: {
+                $reduce: {
+                  input: { $ifNull: ["$paymentSplittingData", []] },
+                  initialValue: 0,
+                  in: {
+                    $cond: [
+                      {
+                        $in: [
+                          { $toLower: "$$this.type" },
+                          ["upi", "cheque", "card", "debit", "bank", "online"],
+                        ],
+                      },
+                      {
+                        $add: [
+                          "$$value",
+                          { $toDouble: { $ifNull: ["$$this.amount", 0] } },
+                        ],
+                      },
+                      "$$value",
+                    ],
+                  },
+                },
+              },
+            },
+
+            upiTotal: {
+              $sum: {
+                $reduce: {
+                  input: { $ifNull: ["$paymentSplittingData", []] },
+                  initialValue: 0,
+                  in: {
+                    $cond: [
+                      { $eq: [{ $toLower: "$$this.type" }, "upi"] },
+                      {
+                        $add: [
+                          "$$value",
+                          { $toDouble: { $ifNull: ["$$this.amount", 0] } },
+                        ],
+                      },
+                      "$$value",
+                    ],
+                  },
+                },
+              },
+            },
+
+            taxTotal: {
+              $sum: {
+                $reduce: {
+                  input: { $ifNull: ["$items", []] },
+                  initialValue: 0,
+                  in: {
+                    $add: [
+                      "$$value",
+                      { $toDouble: { $ifNull: ["$$this.totalIgstAmt", 0] } },
+                    ],
+                  },
+                },
+              },
+            },
+
+            discountTotal: {
+              $sum: {
+                $reduce: {
+                  input: { $ifNull: ["$items", []] },
+                  initialValue: 0,
+                  in: {
+                    $reduce: {
+                      input: { $ifNull: ["$$this.GodownList", []] },
+                      initialValue: "$$value",
+                      in: {
+                        $add: [
+                          "$$value",
+                          {
+                            $toDouble: {
+                              $ifNull: ["$$this.discountAmount", 0],
+                            },
+                          },
+                        ],
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        // FIXED: Use only inclusion in $project
+        {
+          $project: {
+            id: "$_id.organizationId",
+            outletName: "$_id.outletName",
+            organizationName: "$_id.organizationName",
+            organizationId: "$_id.organizationId",
+            orders: "$orders",
+            sales: "$sales",
+            netSales: { $subtract: ["$sales", "$taxTotal"] },
+            tax: "$taxTotal",
+            discount: "$discountTotal",
+            cashReceipt: "$cashTotal",
+            bankReceipt: "$bankTotal",
+            upiAmount: "$upiTotal",
+            chequeAmount: { $literal: 0 }, // Use $literal instead of 0
+            creditAmount: { $literal: 0 },
+            modified: { $literal: 0 },
+            rePrinted: { $literal: 0 },
+            waivedOff: { $literal: 0 },
+            roundOff: { $literal: 0 },
+            charges: { $literal: 0 },
+          },
+        },
+        {
+          $sort: { organizationName: 1, sales: -1 },
+        },
+      ];
+
+      const outletData = await salesModel.aggregate(outletAggregationPipeline);
+
+      // If no outlet data, create placeholders
+      let finalOutletData = outletData;
+      if (outletData.length === 0) {
+        finalOutletData = organizations.map((org) => ({
+          id: org._id,
+          outletName: org.name || org.companyName || "Unknown Outlet",
+          organizationName: org.name || org.companyName,
+          organizationId: org._id,
+          orders: 0,
+          sales: 0,
+          netSales: 0,
+          tax: 0,
+          discount: 0,
+          cashReceipt: 0,
+          bankReceipt: 0,
+          upiAmount: 0,
+          chequeAmount: 0,
+          creditAmount: 0,
+          modified: 0,
+          rePrinted: 0,
+          waivedOff: 0,
+          roundOff: 0,
+          charges: 0,
+        }));
+      }
+
+      // Calculate outlet summary
+      const outletSummary = finalOutletData.reduce(
+        (acc, outlet) => {
+          acc.totalOutlets = finalOutletData.length;
+          acc.totalOrganizations = new Set(
+            finalOutletData.map((o) => o.organizationId.toString())
+          ).size;
+          acc.totalSales += outlet.sales || 0;
+          acc.totalOrders += outlet.orders || 0;
+          acc.totalNetSales += outlet.netSales || 0;
+          acc.totalTax += outlet.tax || 0;
+          acc.totalDiscount += outlet.discount || 0;
+          return acc;
+        },
+        {
+          totalOutlets: 0,
+          totalOrganizations: 0,
+          totalSales: 0,
+          totalOrders: 0,
+          totalNetSales: 0,
+          totalTax: 0,
+          totalDiscount: 0,
+        }
+      );
+
+      // Add outlet data to response
+      dashboardData.outlets = {
+        data: finalOutletData,
+        summary: outletSummary,
+        organizations: organizations.map((org) => ({
+          id: org._id,
+          name: org.name || org.companyName,
+        })),
+      };
+    }
+
+    res.status(200).json({
+      success: true,
+      data: dashboardData,
+    });
+  } catch (error) {
+    console.error("Summary Dashboard API Error:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch dashboard data",
+      message:
+        process.env.NODE_ENV === "development"
+          ? error.message
+          : "Internal server error",
+    });
+  }
+};
