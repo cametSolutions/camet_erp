@@ -1130,7 +1130,6 @@ export const saveSettlementData = async (
   }
 };
 
-
 export const revertSettlementData = async (
   party,
   orgId,
