@@ -474,7 +474,8 @@ export const updateTallyData = async (
   voucherType,
   classification,
   voucherModel = "Sales",
-  negative = false
+  negative = false,
+  hasPaymentSplittingData
 ) => {
   if (party?.partyType === "party") {
     try {
@@ -516,7 +517,10 @@ export const updateTallyData = async (
       console.error("Error updateTallyData sale stock updates:", error);
       throw error;
     }
-  } else if (party?.partyType === "cash" || party?.partyType === "bank") {
+  } else if (party?.partyType === "cash" || party?.partyType === "bank" && !hasPaymentSplittingData ) {
+
+    console.log("party?.partyType in updateTallyData", party?.partyType);
+    
     //// create settlement
 
     try {
@@ -734,6 +738,8 @@ const handleCreditMode = async (
 
   // Handle credit with cash or bank reference
   if (credit_reference_type === "cash" || credit_reference_type === "bank") {
+    console.log("came to credit mode");
+
     const settlementData = {
       voucherNumber: salesNumber,
       voucherId: saleId,
@@ -858,20 +864,20 @@ export const savePaymentSplittingDataInSources = async (
               voucherType,
               party
             );
+          } else {
+            // Handle non-credit modes (cash, upi, cheque)
+            return await handleNonCreditMode(
+              item,
+              mode,
+              salesNumber,
+              saleId,
+              party,
+              orgId,
+              Primary_user_id,
+              selectedDate,
+              session
+            );
           }
-
-          // Handle non-credit modes (cash, upi, cheque)
-          return await handleNonCreditMode(
-            item,
-            mode,
-            salesNumber,
-            saleId,
-            party,
-            orgId,
-            Primary_user_id,
-            selectedDate,
-            session
-          );
         })
     );
 
@@ -1106,7 +1112,7 @@ export const saveSettlementData = async (
       voucherNumber: voucherNumber,
       voucherId: voucherId,
       voucherModel: "Sales", // must match enum
-      voucherType: "sales",  // must match enum
+      voucherType: "sales", // must match enum
       amount: amount,
       payment_mode: paymentMethod?.toLowerCase() || null, // ✅ schema expects lowercase enum
       partyId: party?._id,
