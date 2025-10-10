@@ -499,7 +499,6 @@ export const commonVoucherSlice = createSlice({
     },
 
     addPaymentSplits: (state, action) => {
-
       const { changeFinalAmount, paymentSplits, totalPaymentSplits } =
         action.payload;
 
@@ -512,18 +511,19 @@ export const commonVoucherSlice = createSlice({
           0
         );
 
-        const creditAmount = paymentSplits?.find((split) => split.type === "credit")?.amount || 0;
+        const creditAmount =
+          paymentSplits?.find((split) => split.type === "credit")?.amount || 0;
 
         console.log(total);
 
         state.totalAfterPaymentSplit = Number(
           state.totalAfterAdditionalCharges - total
         );
-        state.finalOutstandingAmount=creditAmount
+        state.finalOutstandingAmount = creditAmount;
       }
     },
     addCreditInPaymentSplit: (state, action) => {
-      const { reference_name, ref_id,credit_reference_type } = action.payload;
+      const { reference_name, ref_id, credit_reference_type } = action.payload;
 
       // Ensure paymentSplittingData exists and is an array
       if (
@@ -576,11 +576,15 @@ export const commonVoucherSlice = createSlice({
 
       state.finalAmount = state.totalWithAdditionalCharges;
 
-      const creditAmount = state.paymentSplittingData.find((split) => split.type === "credit")?.amount || 0;
+      const creditAmount =
+        state.paymentSplittingData.find((split) => split.type === "credit")
+          ?.amount || 0;
 
       state.finalOutstandingAmount =
-        state.totalWithAdditionalCharges - ((state.totalPaymentSplits || 0) - creditAmount);
-      state.totalAfterPaymentSplit =  state.totalWithAdditionalCharges - (state.totalPaymentSplits || 0)
+        state.totalWithAdditionalCharges -
+        ((state.totalPaymentSplits || 0) - creditAmount);
+      state.totalAfterPaymentSplit =
+        state.totalWithAdditionalCharges - (state.totalPaymentSplits || 0);
     },
 
     resetPaymentSplit: (state) => {
@@ -609,7 +613,7 @@ export const commonVoucherSlice = createSlice({
         },
       ];
       state.totalAfterPaymentSplit = state.totalWithAdditionalCharges;
-      state.finalOutstandingAmount = state.totalWithAdditionalCharges
+      state.finalOutstandingAmount = state.totalWithAdditionalCharges;
     },
   },
 });
@@ -679,7 +683,6 @@ export const {
   setTotalAfterAdditionalCharges,
   updateTotalValue,
   resetPaymentSplit,
-  
 } = commonVoucherSlice.actions;
 
 export default commonVoucherSlice.reducer;
