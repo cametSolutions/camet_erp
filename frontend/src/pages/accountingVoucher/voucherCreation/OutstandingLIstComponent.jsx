@@ -395,8 +395,8 @@ function OutstandingLIstComponent({
   return (
     <>
       {/* HEADER SECTION - Sticky header with party info and amount input */}
-      <div className="sticky top-0 z-10 w-full shadow-lg flex flex-col rounded-[3px] gap-1">
-        <div className="flex flex-col rounded-[3px] bg-white">
+      <div className=" w-full shadow-lg flex flex-col rounded-[3px] gap-1">
+        <div className=" sticky top-0 z-10  flex flex-col rounded-[3px] bg-white">
           <TitleDiv loading={loading} title="Outstanding List" />
 
           <div className={`${loading ?"opacity-80 cursor-pointer-events-none":"opacity-100"} `}>
@@ -455,7 +455,7 @@ function OutstandingLIstComponent({
             <hr className="h-[1px] my-0 bg-gray-300 border-0" />
 
             {/* Selection summary section */}
-            <div className="bg-white px-4 py-2 pb-3 rounded-md flex gap-2 justify-between flex-wrap">
+            <div className="bg-white px-4 py-2 pb-3 rounded-md flex gap-2 justify-between flex-wrap shadow-lg">
               <div className="flex gap-2 items-center">
                 <p className="text-[11px] font-bold">
                   # Selected Bills ({selectedBills.size}/{data.length})
@@ -474,6 +474,7 @@ function OutstandingLIstComponent({
             </div>
           </div>
         </div>
+        
 
         {/* BILLS LIST SECTION - Scrollable list of outstanding bills */}
         <div className="grid grid-cols-1 gap-1 mt-2 text-center px-2 overflow-x-hidden pb-5">

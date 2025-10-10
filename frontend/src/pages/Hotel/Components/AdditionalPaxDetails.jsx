@@ -33,13 +33,12 @@ function AdditionalPaxDetails({
     console.log(formData);
     if (
       formData?.additionalPaxDetails?.length > 0 &&
-      selectedRoomId &&
-      formData.additionalPaxDetails !== []
+      selectedRoomId 
     ) {
       let filteredData = formData.additionalPaxDetails?.filter(
         (item) => item.roomId == selectedRoomId
       );
-      if (filteredData.length > 0 && filteredData !== []) {
+      if (filteredData.length > 0 ) {
         setAdditionalPax(filteredData);
       }
     }
@@ -49,7 +48,7 @@ function AdditionalPaxDetails({
   useEffect(() => {
     if (additionalPax.length > 0) {
       let filteredData = additionalPax.filter((item) => item.paxID !== "");
-      sendDataToParent(filteredData);    
+      sendDataToParent(filteredData, selectedRoomId);    
     }
   }, [additionalPax]);
 
@@ -79,9 +78,11 @@ function AdditionalPaxDetails({
     if (updatedRows.length === 0) {
       updatedRows.push({ paxID: "", paxName: 0, rate: "" });
     }
+    console.log(updatedRows);
     setAdditionalPax(updatedRows);
     
   };
+  
 
   // function used to add new row
   const handleAddRow = () => {

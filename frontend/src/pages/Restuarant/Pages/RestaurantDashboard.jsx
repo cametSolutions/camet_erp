@@ -29,6 +29,7 @@ import useFetch from "@/customHook/useFetch";
 import { generateAndPrintKOT } from "../Helper/kotPrintHelper";
 import { taxCalculatorForRestaurant } from "@/pages/Hotel/Helper/taxCalculator";
 import { useLocation } from "react-router-dom";
+import { FaArrowLeft } from "react-icons/fa6";
 const RestaurantPOS = () => {
   const [selectedCuisine, setSelectedCuisine] = useState("");
   const [selectedSubcategory, setSelectedSubcategory] = useState("");
@@ -92,6 +93,7 @@ const RestaurantPOS = () => {
         guestName: kotDataForEdit?.customer?.name || "",
         CheckInNumber: kotDataForEdit?.checkInNumber || "",
       });
+
     }
   }, [kotDataForEdit]);
 
@@ -142,11 +144,11 @@ const RestaurantPOS = () => {
   const filteredRooms = Array.isArray(roomData)
     ? roomData.filter(
         (room) =>
-          room.roomName?.toLowerCase().includes(searchTerms.toLowerCase()) ||
+          room.roomName?.toLowerCase().includes(searchTerms?.toLowerCase()) ||
           room.customerName
             ?.toLowerCase()
-            .includes(searchTerms.toLowerCase()) ||
-          room.voucherNumber?.toLowerCase().includes(searchTerms.toLowerCase())
+            .includes(searchTerms?.toLowerCase()) ||
+          room.voucherNumber?.toLowerCase().includes(searchTerms?.toLowerCase())
       )
     : [];
 
@@ -309,14 +311,14 @@ const RestaurantPOS = () => {
     }
 
     if (searchTerm.trim()) {
-      const searchLower = searchTerm.toLowerCase().trim();
+      const searchLower = searchTerm?.toLowerCase().trim();
       filteredItems = filteredItems.filter(
         (item) =>
-          item.product_name.toLowerCase().includes(searchLower) ||
+          item.product_name?.toLowerCase().includes(searchLower) ||
           (item.description &&
-            item.description.toLowerCase().includes(searchLower)) ||
+            item.description?.toLowerCase().includes(searchLower)) ||
           (item.tags &&
-            item.tags.some((tag) => tag.toLowerCase().includes(searchLower)))
+            item.tags.some((tag) => tag?.toLowerCase().includes(searchLower)))
       );
     }
 
@@ -449,6 +451,7 @@ const RestaurantPOS = () => {
     } else {
       setShowKOTModal(true); // keep normal KOT flow for others
     }
+    setShowOrderSummary(false)
   };
 
   const generateKOT = async (selectedTableNumber, tableStatus) => {
@@ -524,14 +527,15 @@ const RestaurantPOS = () => {
       customer: orderCustomerDetails,
       total: getTotalAmount(),
       timestamp: new Date(),
-      status: "pending",
+      status: kotDataForEdit?.status || "pending",
       paymentMethod: orderType === "dine-in" ? null : "cash",
     };
 
     let url = isEdit
       ? `/api/sUsers/editKOT/${cmp_id}/${kotDataForEdit._id}`
       : `/api/sUsers/generateKOT/${cmp_id}`;
-    console.log(url);
+
+
     try {
       let response = await api.post(url, newOrder, {
         withCredentials: true,
@@ -558,6 +562,7 @@ const RestaurantPOS = () => {
     setOrderItems([]);
     setOrderNumber(orderNumber + 1);
     setShowKOTModal(false);
+    setIsEdit(false);
     setCustomerDetails({
       name: "",
       phone: "",
@@ -571,37 +576,7 @@ const RestaurantPOS = () => {
     );
   };
 
-  // const processPayment = () => {
-  //   const updatedOrders = orders.map((order) =>
-  //     order.id === orderNumber - 1
-  //       ? { ...order, status: "paid", paymentMethod: paymentMethod }
-  //       : order
-  //   );
 
-  //   setOrders(updatedOrders);
-  //   setShowPaymentModal(false);
-
-  //   if (orderType === "roomService") {
-  //     setRoomDetails({
-  //       roomno: "",
-  //       guestName: "",
-  //       CheckInNumber: "",
-  //     });
-  //   } else {
-  //     setCustomerDetails({
-  //       name: "",
-  //       phone: "",
-  //       address: "",
-  //       tableNumber: customerDetails.tableNumber,
-  //     });
-  //   }
-
-  //   alert(
-  //     `Payment of ₹${
-  //       orders.find((order) => order.id === orderNumber - 1)?.total || 0
-  //     } processed successfully via ${paymentMethod}!`
-  //   );
-  // };
 
   const getOrderTypeDisplay = (type) => {
     const typeMap = {
@@ -630,6 +605,10 @@ const RestaurantPOS = () => {
   const handleSelectedPriceLevel = (value) => {
     setShowPriceLevelSelect(false);
     setSelectedPriceLevel(value);
+  };
+
+  const findOneCount = (id) => {
+    return orderItems.find((item) => item._id === id)?.quantity || 0;
   };
 
   return (
@@ -669,6 +648,12 @@ const RestaurantPOS = () => {
         <div className="bg-gradient-to-r from-slate-900 via-gray-900 to-slate-800 text-white p-2 md:p-3 shadow-2xl border-b border-gray-700/30">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
+                 <button
+                className="md:hidden p-1.5 hover:bg-white/10 rounded-lg transition-colors duration-200"
+              onClick={() => navigate("/sUsers/dashboard")}
+              >
+                <FaArrowLeft className="w-5 h-5" />
+              </button>
               <button
                 className="md:hidden p-1.5 hover:bg-white/10 rounded-lg transition-colors duration-200"
                 onClick={() => setShowSidebar(!showSidebar)}
@@ -734,30 +719,48 @@ const RestaurantPOS = () => {
         </div>
 
         {/* Compact Cuisine Categories */}
-        <div className="bg-white/90 backdrop-blur-sm border-b border-gray-200/50 shadow-lg">
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide px-3 py-2.5">
-            {cuisines.map((cuisine) => (
-              <button
-                key={cuisine._id}
-                onClick={() => handleCategorySelect(cuisine._id, cuisine.name)}
-                className={`
-                flex items-center gap-2 px-3 py-1.5 rounded-xl
-                font-semibold text-xs transition-all duration-300
-                whitespace-nowrap flex-shrink-0 min-w-max
-                border hover:scale-105 active:scale-95 transform
-                ${
-                  selectedCuisine?.categoryName === cuisine.name
-                    ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-transparent shadow-lg shadow-indigo-500/25"
-                    : "bg-white/80 text-gray-700 border-gray-200 hover:border-indigo-300 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-blue-50 hover:shadow-md"
-                }
-              `}
-              >
-                <span className="text-sm">{cuisine.icon}</span>
-                <span>{cuisine.name}</span>
-              </button>
-            ))}
-          </div>
-        </div>
+       <div className="bg-white/90 backdrop-blur-sm border-b border-gray-200/50 shadow-lg">
+  <div className="flex justify-between items-center px-3 py-2.5">
+    <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+      {cuisines.map((cuisine) => (
+        <button
+          key={cuisine._id}
+          onClick={() => handleCategorySelect(cuisine._id, cuisine.name)}
+          className={`
+            flex items-center gap-2 px-3 py-1.5 rounded-xl
+            font-semibold text-xs transition-all duration-300
+            whitespace-nowrap flex-shrink-0 min-w-max
+            border hover:scale-105 active:scale-95 transform
+            ${
+              selectedCuisine?.categoryName === cuisine.name
+                ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-transparent shadow-lg shadow-indigo-500/25"
+                : "bg-white/80 text-gray-700 border-gray-200 hover:border-indigo-300 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-blue-50 hover:shadow-md"
+            }
+          `}
+        >
+          <span className="text-sm">{cuisine.icon}</span>
+          <span>{cuisine.name}</span>
+        </button>
+      ))}
+    </div>
+    
+    <button
+     onClick={() => navigate("/sUsers/BillSummary?type=restaurant")}
+      className="hidden md:flex
+        flex items-center gap-2 px-4 py-1.5 rounded-xl
+        font-semibold text-xs transition-all duration-300
+        whitespace-nowrap flex-shrink-0
+        bg-gradient-to-r from-green-600 to-emerald-600 text-white 
+        border-transparent shadow-lg shadow-emerald-500/25
+        hover:scale-105 active:scale-95 transform
+        hover:from-green-700 hover:to-emerald-700
+      "
+    >
+      <span className="text-sm">📊</span>
+      <span>Daily Restaurant Sales</span>
+    </button>
+  </div>
+</div>
 
         {/* Main Content */}
         <div className="flex-1 flex min-h-0 relative">
@@ -959,6 +962,8 @@ const RestaurantPOS = () => {
                   ) : (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-3">
                       {menuItems.map((item, index) => {
+                        const count = findOneCount(item._id);
+
                         return (
                           <motion.div
                             key={item._id}
@@ -969,7 +974,20 @@ const RestaurantPOS = () => {
                             onClick={() => addToOrder(item)}
                           >
                             <div className="p-3 flex flex-col items-center justify-center text-center h-full min-h-[120px] relative">
-                              <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-indigo-50/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                              {/* ✅ Always show count badge if count > 0 */}
+                              {count > 0 && (
+                                <div
+                                  className="absolute inset-0 flex 
+                            bg-gradient-to-br from-indigo-100/60 via-indigo-200/40 to-indigo-300/30
+                            transition-opacity duration-500 rounded-xl p-2"
+                                >
+                                  <span
+                                    className="text-lg sm:text-md md:text-md font-bold text-indigo-700 "
+                                  >
+                                    {count}
+                                  </span>
+                                </div>
+                              )}
 
                               {/* Food Image */}
                               <div className="w-12 h-12 md:w-16 md:h-16 rounded-full overflow-hidden border-2 border-gray-200 shadow-md mb-2 group-hover:border-indigo-300 transition-all duration-500 relative z-10">

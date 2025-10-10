@@ -241,7 +241,7 @@ const HotelBillPrint = () => {
   console.log(location.state);
   console.log(outStanding);
   console.log(selectedCheckOutData);
-  console.log(dateWiseDisplayedData);
+  console.log(organization?.gstNum);
   // Dynamic bill data based on fetched information - FIXED VERSION
   const billData = {
     hotel: {
@@ -264,7 +264,7 @@ const HotelBillPrint = () => {
         .join(", "),
       billNo: selectedCheckOutData?.voucherNumber,
       travelAgent: selectedCheckOutData?.agentId?.name,
-      address: selectedCustomerData?.address || "",
+      address: selectedCustomerData?.billingAddress || "",
       phone: selectedCustomerData?.mobileNumber || "",
       gstNo: selectedCustomerData?.gstNo || "",
     },
@@ -589,7 +589,7 @@ const HotelBillPrint = () => {
                   <td style={{ padding: "2px 0", fontWeight: "bold" }}>
                     GST No
                   </td>
-                  <td style={{ padding: "2px 0" }}>{billData?.guest?.gstNo}</td>
+                  <td style={{ padding: "2px 0" }}>{billData?.hotel?.gstin}</td>
                   <td colSpan="4"></td>
                 </tr>
                 <tr>
@@ -597,7 +597,7 @@ const HotelBillPrint = () => {
                     Company
                   </td>
                   <td style={{ padding: "2px 0" }}>
-                    {billData?.guest?.company}
+                   {billData?.hotel?.name}
                   </td>
                   <td colSpan="4"></td>
                 </tr>

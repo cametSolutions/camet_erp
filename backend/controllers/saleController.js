@@ -105,8 +105,21 @@ export const createSale = async (req, res) => {
     /// add conversion status in sale order if the sale is converted from order
     if (convertedFrom.length > 0)
       await changeConversionStatusOfOrder(convertedFrom, session);
-
     const Primary_user_id = req.owner;
+
+    /// check if sale has  payment splitting data
+    let hasPaymentSplittingData = false;
+    if (
+      paymentSplittingData.length > 0 &&
+      paymentSplittingData.some((item) => item?.ref_id !== null )
+    ) {
+      hasPaymentSplittingData = true;
+    }
+
+    console.log("hasPaymentSplittingData",hasPaymentSplittingData);
+    
+
+    /// if payment splitting data is present it will do settlement in the next function else we do it in updateTallyData
 
     if (finalOutstandingAmount > 0) {
       await updateTallyData(
@@ -121,16 +134,16 @@ export const createSale = async (req, res) => {
         finalOutstandingAmount,
         selectedDate,
         voucherType,
-        "Dr"
+        "Dr",
+        undefined,
+        undefined,
+        hasPaymentSplittingData
       );
     }
 
     ////save payment splitting data in bank or cash model also
 
-    if (
-      paymentSplittingData.length > 0 &&
-      paymentSplittingData.some((item) => item?.ref_id !== "")
-    ) {
+    if (hasPaymentSplittingData) {
       await savePaymentSplittingDataInSources(
         paymentSplittingData,
         salesNumber,
@@ -404,7 +417,7 @@ export const cancelSale = async (req, res) => {
       //// update pending amount and
       const outstandingResult = await updateOutstandingBalance({
         existingVoucher: sale,
-        valueToUpdateInOutstanding:0,
+        valueToUpdateInOutstanding: 0,
         orgId: sale.cmp_id,
         voucherNumber: sale?.salesNumber,
         party: sale?.party,

@@ -12,6 +12,7 @@ import {
 import { motion } from "framer-motion";
 
 import Swal from "sweetalert2";
+import CheckoutDateModal from "../Components/CheckoutDateModal";
 
 import { FixedSizeList as List } from "react-window";
 import InfiniteLoader from "react-window-infinite-loader";
@@ -49,6 +50,7 @@ function BookingList() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [selectedDataForPayment, setSelectedDataForPayment] = useState(null);
+  const [showCheckOutDateModal, setShowCheckOutDateModal] = useState(false);
 
   const [paymentMode, setPaymentMode] = useState("single"); // "single" or "split" setPaymentMode("single");
   const [cashAmount, setCashAmount] = useState(0);
@@ -58,6 +60,7 @@ function BookingList() {
   const [selectedBank, setSelectedBank] = useState(null);
   const [cashOrBank, setCashOrBank] = useState({});
   const [restaurantBaseSaleData, setRestaurantBaseSaleData] = useState({});
+  const [showSelectionModal, setShowSelectionModal] = useState(true);
   const { _id: cmp_id, configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
@@ -369,13 +372,40 @@ function BookingList() {
     }
   };
 
+  const handleCheckOutData = async () => {
+    setShowSelectionModal(false);
+    let checkDateChanged = selectedCheckOut.filter(
+      (item) => item?.checkOutDate !== new Date().toISOString().split("T")[0]
+    );
+
+    if (checkDateChanged?.length > 0) {
+      setShowCheckOutDateModal(true);
+    } else {
+      setSaveLoader(true);
+      const hasPrint1 = configurations[0]?.defaultPrint?.print1;
+      navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
+        state: {
+          selectedCheckOut: selectedCheckOut,
+          customerId: selectedCustomer,
+          isForPreview: true,
+        },
+      });
+    }
+  };
+
   const TableHeader = () => (
     <div className="bg-gray-100 border-b border-gray-300 sticky top-0 z-10">
       {/* Mobile Header */}
       <div className="flex items-center px-4 py-3 text-xs font-bold text-gray-800 uppercase tracking-wider md:hidden">
         <div className="w-18 text-center">SL.NO</div>
         <div className="w-32 text-center">BOOKING DATE</div>
-        <div className="w-32 text-center">BOOKING NO</div>
+        <div className="w-32 text-center">
+          {location.pathname == "/sUsers/checkOutList"
+            ? "CHECKOUT NO"
+            : location.pathname == "/sUsers/checkInList"
+            ? "CHECK-IN NO"
+            : "BOOKING NO"}
+        </div>
         <div className="w-32 text-center"> ACTIONS</div>
       </div>
 
@@ -383,7 +413,13 @@ function BookingList() {
       <div className="hidden md:flex items-center px-4 py-3 text-xs font-bold text-gray-800 uppercase tracking-wider">
         <div className="w-10 text-center">SL.NO</div>
         <div className="w-28 text-center">BOOKING DATE</div>
-        <div className="w-32 text-center">BOOKING NO</div>
+        <div className="w-32 text-center">
+          {location.pathname == "/sUsers/checkOutList"
+            ? "CHECKOUT NO"
+            : location.pathname == "/sUsers/checkInList"
+            ? "CHECK-IN NO"
+            : "BOOKING NO"}
+        </div>
         <div className="w-40 text-center">GUEST NAME</div>
         <div className="w-24 text-center">ROOM NO</div>
         <div className="w-36 text-center">ARRIVAL DATE</div>
@@ -445,7 +481,6 @@ function BookingList() {
       return new Date(dateString).toLocaleDateString("en-GB");
     };
 
-   
     return (
       <div
         key={index}
@@ -456,8 +491,7 @@ function BookingList() {
   cursor-pointer transition-all duration-200 ease-in-out 
   bg-white hover:bg-gray-50 
   ${
-    isCheckOutSelected(el) &&
-    (location.pathname === "/sUsers/checkInList" )
+    isCheckOutSelected(el) && location.pathname === "/sUsers/checkInList"
       ? "bg-blue-400 border-blue-400 ring-2 ring-blue-200"
       : ""
   }
@@ -665,8 +699,11 @@ function BookingList() {
           {/* ACTIONS */}
           <div className="w-32 flex items-center justify-center gap-1">
             {/* Primary Action Button */}
-            {((location.pathname === "/sUsers/bookingList" && el?.status != "checkIn") ||
-              (el?.status != "checkOut" && location.pathname != "/sUsers/checkInList") && location.pathname != "/sUsers/checkOutList" ) && (
+            {((location.pathname === "/sUsers/bookingList" &&
+              el?.status != "checkIn") ||
+              (el?.status != "checkOut" &&
+                location.pathname != "/sUsers/checkInList" &&
+                location.pathname != "/sUsers/checkOutList")) && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -693,6 +730,24 @@ function BookingList() {
               </button>
             )}
 
+            {/* ADD THIS PRINT BUTTON FOR CHECK-IN LIST */}
+            {location.pathname === "/sUsers/checkInList" && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate("/sUsers/CheckInPrint", {
+                    state: {
+                      selectedCheckOut: [el], // The booking data
+                      customerId: el.customerId._id,
+                    },
+                  });
+                }}
+                className="bg-purple-500 hover:bg-purple-600 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
+                title="Print Registration Card"
+              >
+                Print
+              </button>
+            )}
             {/* Status Button */}
             {((el?.status === "checkIn" &&
               location.pathname === "/sUsers/bookingList") ||
@@ -708,19 +763,18 @@ function BookingList() {
                     setSelectedCheckOut([el]);
                     const hasPrint1 = configurations[0]?.defaultPrint?.print1;
 
-                      navigate(
-                        hasPrint1
-                          ? "/sUsers/CheckOutPrint"
-                          : "/sUsers/BillPrint",
-                   {
-                      state: {
-                        selectedCheckOut: bookings?.filter(
-                          (item) => item.voucherNumber === el.voucherNumber
-                        ),
-                        customerId: el.customerId?._id,
-                        isForPreview: false,
-                      },
-                    });
+                    navigate(
+                      hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint",
+                      {
+                        state: {
+                          selectedCheckOut: bookings?.filter(
+                            (item) => item.voucherNumber === el.voucherNumber
+                          ),
+                          customerId: el.customerId?._id,
+                          isForPreview: false,
+                        },
+                      }
+                    );
                   }
                 }}
                 className="bg-green-600 hover:bg-green-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
@@ -775,6 +829,24 @@ function BookingList() {
     );
   };
 
+  const handleCloseBasedOnDate = (checkouts) => {
+    console.log(checkouts);
+    setSaveLoader(true);
+    const hasPrint1 = configurations[0]?.defaultPrint?.print1;
+    navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
+      state: {
+        selectedCheckOut: checkouts?.length > 0 ? checkouts : selectedCheckOut,
+        customerId: selectedCustomer,
+        isForPreview: true,
+      },
+    });
+  };
+
+  // const handleCancelShowCheckOutDateModal = () => {
+  //   setShowCheckOutDateModal(false);
+  //   setSelectedCheckOut([])
+  // };
+
   // Main Component
   // const BookingListComponent = () => {
   return (
@@ -814,9 +886,18 @@ function BookingList() {
             Oops!!. No Bookings Found
           </div>
         )}
+        {showCheckOutDateModal && (
+          <CheckoutDateModal
+            isOpen={CheckoutDateModal}
+            onClose={handleCloseBasedOnDate}
+            checkoutData={selectedCheckOut}
+            // handleCancel={handleCancelShowCheckOutDateModal}
+          />
+        )}
 
         {/* Confirmation Modal */}
         {selectedCheckOut.length > 0 &&
+          showSelectionModal &&
           (location.pathname === "/sUsers/checkInList" ||
             location.pathname === "/sUsers/checkOutList") && (
             <div className="fixed bottom-6 right-6 z-50 animate-slideUp">
@@ -838,7 +919,7 @@ function BookingList() {
                 </div>
 
                 {/* Selected Items List */}
-  <div className="max-h-32 overflow-y-auto mb-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+                <div className="max-h-32 overflow-y-auto mb-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                   <div className="space-y-2">
                     {selectedCheckOut.map((item) => (
                       <div
@@ -851,7 +932,7 @@ function BookingList() {
                       </div>
                     ))}
                   </div>
-                </div>              
+                </div>
                 <div className="mb-6">
                   <label className="block text-xs font-semibold text-gray-700 mb-2">
                     Select Customer
@@ -883,21 +964,7 @@ function BookingList() {
                   <button
                     className="flex-2 px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg text-sm font-bold hover:from-green-600 hover:to-emerald-700 transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2 shadow-lg"
                     onClick={() => {
-                      console.log(configurations[0]?.defaultPrint?.print1);
-                      const hasPrint1 = configurations[0]?.defaultPrint?.print1;
-
-                      navigate(
-                        hasPrint1
-                          ? "/sUsers/CheckOutPrint"
-                          : "/sUsers/BillPrint",
-                        {
-                          state: {
-                            selectedCheckOut,
-                            customerId: selectedCustomer,
-                            isForPreview: true,
-                          },
-                        }
-                      );
+                      handleCheckOutData();
                     }}
                   >
                     <MdPayment className="w-4 h-4" />

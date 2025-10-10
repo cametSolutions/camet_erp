@@ -43,11 +43,11 @@ function EditBooking() {
     }
   }, [data]);
 
-  const handleSubmit = async (data) => {
+  const handleSubmit = async (data,paymentData) => {
     try {
       let response = await api.put(
         `/api/sUsers/updateRoomBooking/${editData._id}`,
-        {data:data, modal:"Booking"},
+      { data: data, modal: "Booking", paymentData: paymentData, orgId: organization._id },
         { withCredentials: true }
       );
       if (response?.data?.success) {
@@ -69,7 +69,7 @@ function EditBooking() {
       ) : (
         <div className="">
           <TitleDiv
-            title="Room Booking"
+            title="Edit Booking"
             from="/sUsers/hotelDashBoard"
             dropdownContents={[
               {

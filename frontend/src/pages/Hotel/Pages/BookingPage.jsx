@@ -19,6 +19,7 @@ function BookingPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const handleSubmit = async (data, paymentData) => {
+    console.log(data, paymentData);
     try {
       let response = await api.post(
         `/api/sUsers/saveData/${organization._id}`,

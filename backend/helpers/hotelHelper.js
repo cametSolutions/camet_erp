@@ -447,11 +447,14 @@ export const createReceiptForSales = async (
 
   console.log("series_id", restaurantBaseSaleData);
   // get all outstanding bills
-  const outStandingArray = await Promise.all(
-    restaurantBaseSaleData.map((sale) =>
-      TallyData.findOne({ billId: sale._id })
-    )
-  );
+const outStandingArrayRaw = await Promise.all(
+  restaurantBaseSaleData.map((sale) =>
+    TallyData.findOne({ billId: sale._id })
+  )
+);
+
+const outStandingArray = outStandingArrayRaw.filter(Boolean); // removes null/undefined
+
 
   // helper to distribute amounts across bills
   const distributeBills = (amountLeft) => {
@@ -460,7 +463,7 @@ export const createReceiptForSales = async (
     for (const out of outStandingArray) {
       if (amountLeft <= 0) break;
 
-      const settleAmt = Math.min(amountLeft, out.bill_amount || 0);
+      const settleAmt = Math.min(amountLeft, out?.bill_amount || 0);
       billData.push({
         _id: out._id,
         bill_no: out.bill_no,
@@ -693,7 +696,7 @@ export const saveSettlementDataHotel = async (
       partyName: partyName || party?.partyName,
       partyType: party?.partyType?.toLowerCase(), // must match ["cash","bank","party"]
       sourceId: selectedCashOrBank?._id,
-      sourceType:  paymentMethod?.toLowerCase() || null, // must match enum
+      sourceType: paymentMethod?.toLowerCase() || null, // must match enum
       cmp_id: orgId,
       Primary_user_id: req?.pUserId || req?.owner, // must not be null
       settlement_date: createdAt ? new Date(createdAt) : new Date(),
@@ -709,3 +712,56 @@ export const saveSettlementDataHotel = async (
     throw error;
   }
 };
+
+// helper function used to delete receipt and outstanding
+export const deleteReceipt = async (tallyId, session = null) => {
+  try {
+    if (!tallyId) {
+      throw new Error("tallyId is required to delete a receipt");
+    }
+
+    // Delete receipts by billId
+    const receiptQuery = receiptModel.deleteMany({ "billData.billId": tallyId });
+    if (session) {
+      receiptQuery.session(session);
+    }
+
+    const receiptResult = await receiptQuery;
+
+    return {
+      success: receiptResult.acknowledged === true,
+      deletedCount: receiptResult.deletedCount || 0,
+      tallyId,
+    };
+  } catch (error) {
+    console.error("Error in deleteReceipt:", error.message);
+    throw error;
+  }
+};
+export const deleteSettlements = async (tallyId, session = null) => {
+  try {
+    if (!tallyId) {
+      throw new Error("tallyId is required to delete a receipt");
+    }
+
+    // Delete receipts by billId
+    const settlementQuery = settlementModel.deleteMany({ voucherId: tallyId });
+    if (session) {
+      settlementQuery.session(session);
+    }
+
+    const settlementResult = await settlementQuery;
+
+    return {
+      success: settlementResult.acknowledged === true,
+      deletedCount: settlementResult.deletedCount || 0,
+      tallyId,
+    };
+  } catch (error) {
+    console.error("Error in settlementResult:", error.message);
+    throw error;
+  }
+};
+
+
+

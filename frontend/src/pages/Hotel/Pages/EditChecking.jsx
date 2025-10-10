@@ -18,6 +18,9 @@ function EditChecking() {
   const { data, loading: advanceLoading } = useFetch(
     `/api/sUsers/getBookingAdvanceData/${editData?._id}?type=${"EditChecking"}`
   );
+  const organization = useSelector(
+    (state) => state?.secSelectedOrganization?.secSelectedOrg
+  );
 
   useEffect(() => {
     if (data) {
@@ -37,11 +40,16 @@ function EditChecking() {
     }
   }, [editData]);
 
-  const handleSubmit = async (data) => {
+  const handleSubmit = async (data, paymentData) => {
     try {
       let response = await api.put(
         `/api/sUsers/updateRoomBooking/${editData._id}`,
-        { data: data, modal: "checkIn" },
+        {
+          data: data,
+          modal: "checkIn",
+          paymentData: paymentData,
+          orgId: organization._id,
+        },
         { withCredentials: true }
       );
       if (response?.data?.success) {

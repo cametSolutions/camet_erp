@@ -10,6 +10,9 @@ import roomModal from "../models/roomModal.js";
 import { Booking, CheckIn, CheckOut } from "../models/bookingModal.js";
 import ReceiptModel from "../models/receiptModel.js";
 import { formatToLocalDate } from "../helpers/helper.js";
+import salesModel from "../models/salesModel.js";
+
+import Kot from "../models/kotModal.js";
 
 import {
   buildDatabaseFilterForRoom,
@@ -29,13 +32,15 @@ import VoucherSeriesModel from "../models/VoucherSeriesModel.js";
 const { ObjectId } = mongoose.Types;
 import Party from "../models/partyModel.js";
 import { saveSettlementData } from "../helpers/salesHelper.js";
-import salesModel from "../models/salesModel.js";
+
 import Organization from "../models/OragnizationModel.js";
 import { getNewSerialNumber } from "../helpers/secondaryHelper.js";
 import partyModel from "../models/partyModel.js";
 import {
   updateReceiptForRooms,
   createReceiptForSales,
+  deleteReceipt,
+  deleteSettlements,
 } from "../helpers/hotelHelper.js";
 // function used to save additional pax details
 export const saveAdditionalPax = async (req, res) => {
@@ -622,7 +627,6 @@ export const addRoom = async (req, res) => {
 export const getRooms = async (req, res) => {
   try {
     const params = extractRequestParams(req);
-    console.log("Rooms params:", params);
     const filter = buildDatabaseFilterForRoom(params);
 
     // Get current date and time
@@ -633,7 +637,7 @@ export const getRooms = async (req, res) => {
 
     // Only care about checkOutDate in further logic
     // Extract checkout only from params if given, else use today
-    let { checkOutDate } = params;
+    let { arrivalDate, checkOutDate } = params;
     let endDate;
     if (checkOutDate) {
       endDate = checkOutDate;
@@ -644,27 +648,37 @@ export const getRooms = async (req, res) => {
 
     const startDate = new Date(); // startDate is required for check date, but not for overlap logic
 
-    console.log("Checking availability for date (checkOutDate logic only):", {
-      endDate,
-    });
-    console.log("companyId", req.params.cmp_id);
-
     // Find rooms that are currently booked for the specified checkout date (ignore arrivalDate)
     const overlappingBookings = await Booking.find({
       cmp_id: req.params.cmp_id,
-      checkOutDate: { $gt: startDate }, // Only consider checkOutDate
-      status: { $nin: ["CheckIn"] },
+      status: { $ne: "checkIn" },
+      checkOutDate: { $lte: checkOutDate }, // Only consider checkOutDate
     });
 
-    console.log("Overlapping bookings found:", overlappingBookings.length);
+    const AllCheckIns = await CheckIn.find({
+      cmp_id: req.params.cmp_id,
+      status: { $ne: "checkOut" },
+    }).select("selectedRooms checkOutDate arrivalDate roomDetails");
+
+    const overlappingCheckIns = AllCheckIns.filter((c) => {
+      const co = new Date(c.checkOutDate);
+      co.setDate(co.getDate() + 1); // add 1 day
+
+      // normalize both to YYYY-MM-DD
+      const checkoutPlusOne = co.toISOString().split("T")[0];
+
+      return checkoutPlusOne >= checkOutDate;
+    });
 
     // Find rooms that are currently checked-in for the specified checkout date
-    const overlappingCheckIns = await CheckIn.find({
-      cmp_id: req.params.cmp_id,
-      checkOutDate: { $gt: startDate },
-    }).select("roomDetails");
+    // const overlappingCheckIns = await CheckIn.find({
+    //   cmp_id: req.params.cmp_id,
+    //   checkOutDate: { $gt: startDate },
+    //   checkOutDate: { $lt: endDate },
+    //    status: { $nin: ["CheckOut"] },
+    // }).select("roomDetails");
 
-    console.log("Overlapping check-ins found:", overlappingCheckIns.length);
+    console.log("Overlapping check-ins found:", overlappingCheckIns);
 
     // Collect all occupied room IDs
     const occupiedRoomId = new Set();
@@ -701,6 +715,8 @@ export const getRooms = async (req, res) => {
       // exclude rooms with status 'dirty' or 'blocked'
       const isCleanAndOpen =
         room.status !== "dirty" && room.status !== "blocked";
+      //  &&
+      // room.status !== "checkIn";
 
       return !isOccupied && isCleanAndOpen;
     });
@@ -997,7 +1013,7 @@ export const roomBooking = async (req, res) => {
         // 🔹 Bill Data for Receipt
         const billData = [
           {
-            _id: savedBooking._id,
+            _id: advanceObject._id,
             bill_no: savedBooking?.voucherNumber,
             billId: savedBooking._id,
             bill_date: new Date(),
@@ -1060,7 +1076,7 @@ export const roomBooking = async (req, res) => {
           .session(session);
 
         // ✅ Single Payment Mode
-        if (paymentData.mode === "single") {
+        if (paymentData?.mode === "single") {
           const receiptVoucher = await generateVoucherNumber(
             orgId,
             "receipt",
@@ -1251,49 +1267,263 @@ export const updateBooking = async (req, res) => {
   try {
     const bookingData = req.body?.data;
     const modal = req.body?.modal;
+    const paymentData = req.body?.paymentData;
     const bookingId = req.params.id;
-
-    if (!bookingData.arrivalDate) {
+    const orgId = req.body?.orgId;
+    if (!bookingData?.arrivalDate) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
+    // 🔹 Select correct model based on modal type
     let selectedModal;
-    if (modal == "checkIn") {
+    if (modal === "checkIn") {
       selectedModal = CheckIn;
-    } else if (modal == "Booking") {
+    } else if (modal === "Booking") {
       selectedModal = Booking;
     } else {
       selectedModal = CheckOut;
     }
 
-    await session.withTransaction(async () => {
-      console.log("Booking Data:", bookingData);
-      // If advance amount is present, update TallyData
-      if (bookingData.advanceAmount && bookingData.advanceAmount > 0) {
-        let findOne = await TallyData.findOne({
-          billId: bookingId.toString(),
-        });
+    let findOne = await selectedModal
+      .findOne({ _id: bookingId })
+      .session(session);
 
-        const updatedTally = await TallyData.updateOne(
-          {
-            billId: bookingId.toString(), // ensure type match
-          },
+    // Get receipt series
+    const voucher = await VoucherSeriesModel.findOne({
+      cmp_id: orgId,
+      voucherType: "receipt",
+    }).session(session);
+
+    const series_idReceipt = voucher?.series
+      ?.find((s) => s.under === "hotel")
+      ?._id.toString();
+
+    // Party for settlement
+    const selectedParty = await partyModel
+      .findOne({ _id: bookingData.customerId })
+      .session(session);
+
+    await session.withTransaction(async () => {
+      // if(Number(findOne.advanceAmount) != Number(bookingData.advanceAmount || 0)){
+      // 🔹 Clean existing receipts & settlements if updating an existing booking
+      if (bookingId) {
+        await deleteReceipt(bookingId, session);
+        await deleteSettlements(bookingId, session);
+      }
+
+      // ✅ Advance Amount Present → Update Tally + Create Receipt + Settlement
+      if (bookingData.advanceAmount && bookingData.advanceAmount > 0) {
+        // Update tally
+        let updatedTallyData = await TallyData.findOneAndUpdate(
+          { billId: bookingId.toString() }, // condition
           {
             $set: {
               bill_amount: bookingData.advanceAmount,
               bill_pending_amt: 0,
             },
+            $setOnInsert: {
+              Primary_user_id: req.pUserId || req.owner,
+              cmp_id: orgId,
+              party_id: bookingData?.customerId,
+              party_name: bookingData?.customerName,
+              mobile_no: bookingData?.mobileNumber,
+              bill_date: new Date(),
+              bill_no: bookingData?.voucherNumber,
+              billId: bookingId,
+              accountGroup: bookingData.accountGroup,
+              user_id: req.sUserId,
+              advanceAmount: bookingData.advanceAmount,
+              advanceDate: new Date(),
+              classification: "Cr",
+              source: "hotel",
+              from: selectedModal,
+            },
           },
-          {
-            new: true, // return updated document
-            session, // required if using transaction
-            upsert: false, // set true if you want to create if not found
-          }
+          { session, new: true, upsert: true }
         );
-        console.log("updatedTally", updatedTally);
-      }
 
-      // Update booking data
+        console.log("updatedTallyData", updatedTallyData);
+
+        const billData = [
+          {
+            _id: updatedTallyData?._id, // ✅ now this works
+            bill_no: bookingData?.voucherNumber,
+            billId: bookingId,
+            bill_date: new Date(),
+            bill_pending_amt: 0,
+            source: "hotel",
+            settledAmount: bookingData.advanceAmount,
+            remainingAmount: 0,
+          },
+        ];
+
+        console.log("billData", billData);
+
+        // 🔹 Helper to build and save receipt
+        const buildReceipt = async (
+          receiptVoucher,
+          serialNumber,
+          paymentDetails,
+          amount,
+          paymentMethod
+        ) => {
+          let selectedParty = await partyModel
+            .findOne({ _id: bookingData?.customerId })
+            .populate("accountGroup")
+            .session(session);
+
+          if (selectedParty) {
+            selectedParty = selectedParty.toObject();
+            if (selectedParty.accountGroup?._id) {
+              selectedParty.accountGroup_id =
+                selectedParty.accountGroup._id.toString();
+            }
+            delete selectedParty.accountGroup;
+          }
+
+          const receipt = new ReceiptModel({
+            createdAt: new Date(),
+            date: await formatToLocalDate(new Date(), orgId, session),
+            receiptNumber: receiptVoucher?.usedSeriesNumber,
+            series_id: series_idReceipt,
+            usedSeriesNumber: receiptVoucher?.usedSeriesNumber || null,
+            serialNumber,
+            cmp_id: orgId,
+            party: selectedParty,
+            billData,
+            totalBillAmount: bookingData.advanceAmount,
+            enteredAmount: amount,
+            advanceAmount: 0,
+            remainingAmount: 0,
+            paymentMethod,
+            paymentDetails,
+            note: "",
+            Primary_user_id: req.pUserId || req.owner,
+            Secondary_user_id: req.sUserId,
+          });
+
+          return await receipt.save({ session });
+        };
+
+        // ✅ Single Payment
+        if (paymentData.mode === "single") {
+          const method = paymentData.payments[0]?.method;
+          const receiptVoucher = await generateVoucherNumber(
+            orgId,
+            "receipt",
+            series_idReceipt,
+            session
+          );
+          const serialNumber = await getNewSerialNumber(
+            ReceiptModel,
+            "serialNumber",
+            session
+          );
+          const selectedBankOrCashParty = await partyModel
+            .findOne({ _id: paymentData.payments[0]?.accountId })
+            .session(session);
+
+          const paymentDetails =
+            method === "cash"
+              ? {
+                  cash_ledname: bookingData?.customerName,
+                  cash_name: bookingData?.customerName,
+                }
+              : {
+                  bank_ledname: bookingData?.customerName,
+                  bank_name: bookingData?.customerName,
+                };
+
+          // Save receipt
+          await buildReceipt(
+            receiptVoucher,
+            serialNumber,
+            paymentDetails,
+            bookingData.advanceAmount,
+            method === "cash" ? "Cash" : "Online"
+          );
+
+          // Save settlement
+          await saveSettlementDataHotel(
+            selectedParty,
+            orgId,
+            method === "cash" ? "cash" : "bank",
+            selectedModal.modelName,
+            bookingData.voucherNumber,
+            bookingId,
+            bookingData.advanceAmount,
+            new Date(),
+            selectedParty?.partyName,
+            selectedBankOrCashParty,
+            selectedModal.modelName,
+            req,
+            session
+          );
+        }
+        // ✅ Multiple Payments
+        else {
+          for (const payment of paymentData?.payments || []) {
+            const receiptVoucher = await generateVoucherNumber(
+              orgId,
+              "receipt",
+              series_idReceipt,
+              session
+            );
+            const serialNumber = await getNewSerialNumber(
+              ReceiptModel,
+              "serialNumber",
+              session
+            );
+            const selectedBankOrCashParty = await partyModel
+              .findOne({ _id: payment.accountId })
+              .session(session);
+
+            // Save settlement
+            await saveSettlementDataHotel(
+              selectedParty,
+              orgId,
+              payment.method === "cash" ? "cash" : "bank",
+              selectedModal.modelName,
+              bookingData?.voucherNumber,
+              bookingId,
+              bookingData?.advanceAmount,
+              new Date(),
+              selectedParty?.partyName,
+              selectedBankOrCashParty,
+              selectedModal.modelName,
+              req,
+              session
+            );
+
+            // Payment details
+            const paymentDetails =
+              payment.method === "cash"
+                ? {
+                    cash_ledname: bookingData?.customerName,
+                    cash_name: bookingData?.customerName,
+                  }
+                : {
+                    bank_ledname: bookingData?.customerName,
+                    bank_name: bookingData?.customerName,
+                  };
+
+            // Save receipt
+            await buildReceipt(
+              receiptVoucher,
+              serialNumber,
+              paymentDetails,
+              payment.amount,
+              payment.method === "cash" ? "Cash" : "Online"
+            );
+          }
+        }
+      }
+      // ❌ No Advance Amount → Delete Tally
+      else {
+        await TallyData.deleteOne({ billId: bookingId.toString() });
+      }
+      // }
+      // 🔹 Update booking itself
       await selectedModal.findByIdAndUpdate(
         bookingId,
         { $set: bookingData },
@@ -1327,8 +1557,7 @@ export const fetchAdvanceDetails = async (req, res) => {
   try {
     const bookingId = req.params.id;
     const type = req.query?.type;
-    console.log("type", type);
-    console.log("bookingId", bookingId);
+
     let advanceDetails = null;
     if (type == "EditCheckOut") {
       let checkOutData = await CheckOut.findOne({ _id: bookingId });
@@ -1414,13 +1643,19 @@ export const getAllRoomsWithStatusForDate = async (req, res) => {
       checkOutDate: { $gte: selectedDate },
     }).select("selectedRooms");
 
-    // 3. CheckIns: status NOT 'checkOut' AND date overlaps selectedDate
-    const checkins = await CheckIn.find({
+    const AllCheckIns = await CheckIn.find({
       cmp_id,
-      status: { $ne: "checkOut" }, // skip already checked out
-      arrivalDate: { $lte: selectedDate },
-      checkOutDate: { $gte: selectedDate },
-    }).select("selectedRooms");
+      status: { $ne: "checkOut" },
+    }).select("selectedRooms checkOutDate arrivalDate");
+
+    const checkins = AllCheckIns.filter((c) => {
+      const co = new Date(c.checkOutDate);
+      co.setDate(co.getDate() + 1); // add 1 day
+
+      // normalize both to YYYY-MM-DD
+      const checkoutPlusOne = co.toISOString().split("T")[0];
+      return checkoutPlusOne >= selectedDate;
+    });
 
     // --- Collect booked room IDs
     const bookedRoomIds = new Set();
@@ -1469,8 +1704,6 @@ export const updateRoomStatus = async (req, res) => {
     const { id } = req.params; // Get room ID from URL
     const { status } = req.body; // Get status from request body
 
-    console.log("Updating room status:", { id, status }); // Debug log
-
     // Validate room ID
     if (!id) {
       return res.status(400).json({ message: "Room ID is required" });
@@ -1491,8 +1724,6 @@ export const updateRoomStatus = async (req, res) => {
       .populate("roomType")
       .populate("bedType")
       .populate("roomFloor");
-
-    console.log("Room found and updated:", updatedRoom); // Debug log
 
     if (!updatedRoom) {
       return res.status(404).json({ message: "Room not found" });
@@ -1529,8 +1760,8 @@ export const getDateBasedRoomsWithStatus = async (req, res) => {
     const checkins = await CheckIn.find({
       cmp_id,
       status: { $ne: "checkOut" },
-      arrivalDate: { $lte: selectedDate },
-      checkOutDate: { $gte: selectedDate },
+      // arrivalDate: { $lte: selectedDate },
+      // checkOutDate: { $gte: selectedDate },
     });
 
     // ✅ Send response
@@ -1592,8 +1823,6 @@ export const checkoutWithArrayOfData = async (req, res) => {
         let series_id = findSeries?.series
           .find((s) => s.under === under)
           ?._id.toString();
-
-        console.log("series_id", series_id);
 
         const bookingNumber = await generateVoucherNumber(
           orgId,
@@ -1678,7 +1907,6 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
   try {
     const checkoutData = req.body?.data;
     const isForPreview = req.body?.isForPreview;
-    console.log(isForPreview);
     if (!checkoutData || checkoutData.length === 0) {
       return res.status(400).json({
         success: false,
@@ -1690,18 +1918,13 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
     let allAdvanceDetails = [];
     let allKotData = [];
     for (const item of checkoutData) {
-      console.log(
-        "itemsd",
-        checkoutData[0]?.checkInId?.voucherNumber,
-        isForPreview
-      );
-
       const docs = await salesModel.find({
+        "convertedFrom.id": { $exists: true, $ne: null }, // only if id exists & not null
         "convertedFrom.checkInNumber": isForPreview
           ? item.voucherNumber
           : item?.checkInId?.voucherNumber,
       });
-      console.log("docs", docs);
+
       allKotData.push(...docs);
 
       const checkInData = await CheckIn.findOne({
@@ -1717,19 +1940,19 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
       const checkInSideAdvanceDetails = await TallyData.find({
         billId: isForPreview ? item._id : item.checkInId?._id,
       });
-      const checkOutSideAdvanceDetails = await TallyData.find({
-        billId: item._id,
-      });
 
       allAdvanceDetails.push(
         ...bookingSideAdvanceDetails,
-        ...checkInSideAdvanceDetails,
-        ...checkOutSideAdvanceDetails
+        ...checkInSideAdvanceDetails
       );
-      
     }
+    const checkOutSideAdvanceDetails = !isForPreview
+      ? await TallyData.find({
+          bill_no: checkoutData[0]?.voucherNumber,
+        })
+      : [];
 
-    console.log("allAdvanceDetails", allKotData);
+    allAdvanceDetails.push(...checkOutSideAdvanceDetails);
 
     if (allAdvanceDetails.length > 0 || allKotData.length > 0) {
       return res.status(200).json({
@@ -1975,7 +2198,6 @@ export const convertCheckOutToSale = async (req, res) => {
 
 function createPaymentSplittingArray(paymentDetails, cashAmt, onlineAmt) {
   const arr = [];
-  console.log("paymentDetails", paymentDetails);
   if (cashAmt > 0) {
     arr.push({
       type: "cash",
@@ -1996,7 +2218,6 @@ function createPaymentSplittingArray(paymentDetails, cashAmt, onlineAmt) {
 }
 
 function mapPartyData(selectedParty) {
-  console.log("selectedParty", selectedParty);
   return {
     _id: selectedParty._id,
     partyName: selectedParty.partyName,
@@ -2032,6 +2253,7 @@ async function createSalesVoucher(
   session
 ) {
   let items = selectedCheckOut.flatMap((item) => item.selectedRooms);
+
   let amount = selectedCheckOut.reduce(
     (acc, item) => acc + Number(item.grandTotal),
     0
@@ -2042,8 +2264,6 @@ async function createSalesVoucher(
       checkInNumber: item.voucherNumber,
     };
   });
-
-  console.log("paymentSplittingArray", selectedParty);
 
   return await salesModel.create(
     [
@@ -2085,7 +2305,6 @@ async function createTallyEntry(
 ) {
   const selectedOne = await Party.findOne({ _id: selectedParty });
 
-  console.log("saved", savedVoucher);
   // for (const item of selectedCheckOut) {
   return await TallyData.create(
     [
@@ -2143,7 +2362,6 @@ async function saveSettlement(
 }
 
 async function getSelectedParty(selected, cmp_id, session) {
-  console.log(selected, cmp_id);
   const selectedParty = await Party.findOne({ cmp_id, _id: selected })
     .populate("accountGroup")
     .session(session);
@@ -2251,8 +2469,6 @@ export const swapRoom = async (req, res) => {
   try {
     const { checkInId } = req.params;
     const { newRoomId, oldRoomId } = req.body;
-    console.log("body", req.body);
-    console.log("Swap Room Request:", { checkInId, newRoomId, oldRoomId });
 
     if (!newRoomId || !oldRoomId) {
       return res.status(400).json({
@@ -2270,12 +2486,6 @@ export const swapRoom = async (req, res) => {
       });
     }
 
-    console.log(
-      "CheckIn selectedRooms:",
-      JSON.stringify(checkIn.selectedRooms, null, 2)
-    );
-    console.log("Looking for oldRoomId:", oldRoomId, "Type:", typeof oldRoomId);
-
     // 🔹 Find the index of old room inside selectedRooms
     const checkInRoomIndex = checkIn.selectedRooms.findIndex((r) => {
       const currentId =
@@ -2284,8 +2494,6 @@ export const swapRoom = async (req, res) => {
           : r.roomId.toString();
       return currentId === oldRoomId.toString();
     });
-
-    console.log("CheckIn room index found:", checkInRoomIndex);
 
     if (checkInRoomIndex === -1) {
       return res.status(400).json({
@@ -2324,12 +2532,6 @@ export const swapRoom = async (req, res) => {
     await roomModal.findByIdAndUpdate(oldRoomId, { status: "dirty" });
     await roomModal.findByIdAndUpdate(newRoomId, { status: "occupied" });
 
-    // 🔹 Update CheckIn document selectedRooms
-    console.log(
-      "Old CheckIn room data:",
-      checkIn.selectedRooms[checkInRoomIndex]
-    );
-
     // Update roomId
     checkIn.selectedRooms[checkInRoomIndex].roomId = newRoomId;
 
@@ -2340,11 +2542,6 @@ export const swapRoom = async (req, res) => {
     if (checkIn.selectedRooms[checkInRoomIndex].hasOwnProperty("roomNumber")) {
       checkIn.selectedRooms[checkInRoomIndex].roomNumber = newRoom.roomNumber;
     }
-
-    console.log(
-      "Updated CheckIn room data:",
-      checkIn.selectedRooms[checkInRoomIndex]
-    );
 
     // 🔹 Add room swap history to CheckIn
     if (!checkIn.roomSwapHistory) {
@@ -2360,11 +2557,6 @@ export const swapRoom = async (req, res) => {
     // 🔹 Mark as modified and save CheckIn
     checkIn.markModified("selectedRooms");
     const savedCheckIn = await checkIn.save();
-
-    console.log(
-      "CheckIn after save:",
-      JSON.stringify(savedCheckIn.selectedRooms, null, 2)
-    );
 
     return res.status(200).json({
       success: true,
@@ -2419,6 +2611,648 @@ export const getRoomSwapHistory = async (req, res) => {
       success: false,
       message: "Failed to fetch room swap history",
       error: error.message,
+    });
+  }
+};
+
+export const getHotelSalesDetails = async (req, res) => {
+  try {
+    const { cmp_id } = req.params;
+    const { startDate, endDate, owner, businessType = "all" } = req.query;
+    console.log("businessType", businessType);
+
+    // Validate required parameters
+    if (!cmp_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Company ID (cmp_id) is required",
+      });
+    }
+
+    if (!owner) {
+      return res.status(400).json({
+        success: false,
+        message: "Owner ID is required",
+      });
+    }
+
+    // Validate ObjectId format for owner
+    if (!mongoose.Types.ObjectId.isValid(owner)) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid Owner ID format",
+      });
+    }
+
+    // Parse dates or use today
+    const today = new Date();
+    const parsedStartDate = startDate ? new Date(startDate) : today;
+    const parsedEndDate = endDate ? new Date(endDate) : today;
+
+    // Set time boundaries
+    parsedStartDate.setHours(0, 0, 0, 0);
+    parsedEndDate.setHours(23, 59, 59, 999);
+
+    // Build query filters
+    let query = {
+      cmp_id: new mongoose.Types.ObjectId(cmp_id),
+      voucherType: "sales",
+      date: {
+        $gte: parsedStartDate,
+        $lte: parsedEndDate,
+      },
+      $or: [
+        { isCancelled: { $exists: false } },
+        { isCancelled: false },
+        { isCancelled: null },
+      ],
+    };
+
+    // MongoDB aggregation pipeline to get all sales data with classification
+    const salesData = await salesModel.aggregate([
+      { $match: query },
+
+      // Join with Party
+      {
+        $lookup: {
+          from: "parties",
+          localField: "party",
+          foreignField: "_id",
+          as: "partyDetails",
+        },
+      },
+      { $unwind: { path: "$partyDetails", preserveNullAndEmptyArrays: true } },
+
+      // Join with Organization
+      {
+        $lookup: {
+          from: "organizations",
+          localField: "cmp_id",
+          foreignField: "_id",
+          as: "organization",
+        },
+      },
+      { $unwind: { path: "$organization", preserveNullAndEmptyArrays: true } },
+
+      // Join with KOT
+      {
+        $lookup: {
+          from: "kots",
+          let: {
+            salesVoucherNumber: {
+              $arrayElemAt: ["$convertedFrom.voucherNumber", 0],
+            },
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $ne: ["$$salesVoucherNumber", null] },
+                    { $eq: ["$voucherNumber", "$$salesVoucherNumber"] },
+                  ],
+                },
+              },
+            },
+            { $project: { type: 1, voucherNumber: 1, tableNumber: 1 } },
+          ],
+          as: "kotDetails",
+        },
+      },
+
+      // Derived fields
+      {
+        $addFields: {
+          createdHour: { $hour: { date: "$createdAt", timezone: "+05:30" } },
+          kotType: {
+            $ifNull: [{ $arrayElemAt: ["$kotDetails.type", 0] }, null],
+          },
+
+          mealPeriod: {
+            $switch: {
+              branches: [
+                {
+                  case: {
+                    $and: [
+                      {
+                        $gte: [
+                          { $hour: { date: "$createdAt", timezone: "+05:30" } },
+                          7,
+                        ],
+                      },
+                      {
+                        $lt: [
+                          { $hour: { date: "$createdAt", timezone: "+05:30" } },
+                          11,
+                        ],
+                      },
+                    ],
+                  },
+                  then: "Breakfast",
+                },
+                {
+                  case: {
+                    $and: [
+                      {
+                        $gte: [
+                          { $hour: { date: "$createdAt", timezone: "+05:30" } },
+                          11,
+                        ],
+                      },
+                      {
+                        $lt: [
+                          { $hour: { date: "$createdAt", timezone: "+05:30" } },
+                          15,
+                        ],
+                      },
+                    ],
+                  },
+                  then: "Lunch",
+                },
+                {
+                  case: {
+                    $and: [
+                      {
+                        $gte: [
+                          { $hour: { date: "$createdAt", timezone: "+05:30" } },
+                          15,
+                        ],
+                      },
+                      {
+                        $lt: [
+                          { $hour: { date: "$createdAt", timezone: "+05:30" } },
+                          18,
+                        ],
+                      },
+                    ],
+                  },
+                  then: "Snack",
+                },
+              ],
+              default: "Dinner",
+            },
+          },
+
+          // Classification (Hotel / Restaurant / Other)
+          businessClassification: {
+            $cond: {
+              if: {
+                $and: [
+                  { $gt: [{ $size: "$convertedFrom" }, 0] }, // convertedFrom array is not empty
+                  {
+                    $ne: [
+                      {
+                        $ifNull: [
+                          { $arrayElemAt: ["$convertedFrom.id", 0] },
+                          "",
+                        ],
+                      },
+                      "",
+                    ],
+                  }, // checkInNumber is not empty
+                ],
+              },
+              then: "Restaurant",
+              else: "Hotel",
+            },
+          },
+        },
+      },
+
+      // Optional filter by classification
+      {
+        $match:
+          businessType === "all"
+            ? {}
+            : businessType === "hotel"
+            ? { businessClassification: "Hotel" }
+            : businessType === "restaurant"
+            ? { businessClassification: "Restaurant" }
+            : { businessClassification: { $in: ["Hotel", "Restaurant"] } },
+      },
+
+      // Final projection
+      {
+        $project: {
+          date: 1,
+          createdAt: 1,
+          createdHour: 1,
+          mealPeriod: 1,
+          salesNumber: 1,
+          serialNumber: 1,
+          kotType: 1,
+          partyAccount: 1,
+          "partyDetails.partyName": 1,
+          "partyDetails.businessType": 1,
+          "partyDetails.accountGroupName": 1,
+          items: 1,
+          subTotal: 1,
+          finalAmount: 1,
+          paymentSplittingData: 1,
+          businessType: 1,
+          department: 1,
+          category: 1,
+          tableNumber: 1,
+          waiterName: 1,
+          roomNumber: 1,
+          guestName: 1,
+          businessClassification: 1,
+          party:1,
+
+          totalCgst: {
+            $sum: {
+              $map: {
+                input: "$items",
+                as: "item",
+                in: { $toDouble: { $ifNull: ["$$item.totalCgstAmt", 0] } },
+              },
+            },
+          },
+          totalSgst: {
+            $sum: {
+              $map: {
+                input: "$items",
+                as: "item",
+                in: { $toDouble: { $ifNull: ["$$item.totalSgstAmt", 0] } },
+              },
+            },
+          },
+          totalIgst: {
+            $sum: {
+              $map: {
+                input: "$items",
+                as: "item",
+                in: { $toDouble: { $ifNull: ["$$item.totalIgstAmt", 0] } },
+              },
+            },
+          },
+          totalDiscount: {
+            $sum: {
+              $map: {
+                input: "$items",
+                as: "item",
+                in: {
+                  $sum: {
+                    $map: {
+                      input: { $ifNull: ["$$item.GodownList", []] },
+                      as: "godown",
+                      in: {
+                        $toDouble: { $ifNull: ["$$godown.discountAmount", 0] },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+
+      { $sort: { date: -1, serialNumber: -1 } },
+    ]);
+
+    console.log("salesData", salesData);
+    // Transform data for frontend consumption
+    const transformedData = salesData.map((sale) => {
+      // Extract payment information
+      let cashAmount = 0,
+        bankAmount = 0,
+        creditAmount = 0,
+        upiAmount = 0,
+        chequeAmount = 0;
+
+      if (
+        sale.paymentSplittingData &&
+        Array.isArray(sale.paymentSplittingData)
+      ) {
+        sale.paymentSplittingData.forEach((payment) => {
+          const amount = Number(payment.amount) || 0;
+          const paymentType = payment.type?.toLowerCase() || "";
+
+          switch (paymentType) {
+            case "cash":
+              cashAmount += amount;
+              break;
+            case "upi":
+              upiAmount += amount;
+              bankAmount += amount;
+              break;
+            case "cheque":
+            case "check":
+              chequeAmount += amount;
+              bankAmount += amount;
+              break;
+            case "card":
+            case "debit":
+            case "credit_card":
+              bankAmount += amount;
+              break;
+            case "credit":
+              creditAmount += amount;
+              break;
+            case "bank":
+            case "online":
+            case "netbanking":
+              bankAmount += amount;
+              break;
+            default:
+              cashAmount += amount;
+              break;
+          }
+        });
+      } else {
+        cashAmount = Number(sale.finalAmount) || 0;
+      }
+
+      let mode = "Cash"; // default
+      if (upiAmount > 0 && upiAmount === bankAmount) {
+        mode = "UPI";
+      } else if (chequeAmount > 0) {
+        mode = "Cheque";
+      } else if (creditAmount > 0) {
+        mode = "Credit";
+      } else if (bankAmount > 0) {
+        mode = "Bank";
+      } else if (cashAmount > 0) {
+        mode = "Cash";
+      }
+
+      // Get party name from either nested party object or partyDetails
+      const partyName =
+        sale.party?.partyName ||
+        sale.partyDetails?.partyName ||
+        sale.partyAccount ||
+        "Cash";
+
+      const finalAmount = Number(sale.finalAmount) || 0;
+      const subTotal = Number(sale.subTotal) || finalAmount;
+      const totalTax = (sale.totalCgst || 0) + (sale.totalSgst || 0);
+      const nearestInt = Math.round(finalAmount);
+      const roundOff = Number((nearestInt - finalAmount).toFixed(2));
+
+      return {
+        billNo: sale.salesNumber || sale.serialNumber?.toString() || "",
+        date: sale.date,
+        createdAt: sale.createdAt,
+        createdHour: sale.createdHour,
+        mealPeriod: sale.mealPeriod,
+        kotType: sale.kotType || "",
+        amount: subTotal,
+        disc: sale.totalDiscount || 0,
+        roundOff: roundOff,
+        total: subTotal,
+        cgst: sale.totalCgst || 0,
+        sgst: sale.totalSgst || 0,
+        igst: sale.totalIgst || 0,
+        totalWithTax: finalAmount,
+        cash: cashAmount,
+        credit: creditAmount,
+        upi: upiAmount,
+        cheque: chequeAmount,
+        bank: bankAmount,
+        mode,
+        creditDescription: partyName,
+        partyName: partyName,
+        partyAccount: sale.partyAccount || "Cash-in-Hand",
+        items: sale.items || [],
+
+        // Business-specific fields
+        businessClassification: sale.businessClassification,
+        // classificationReason: classificationReason,
+
+        // Restaurant-specific fields
+        tableNumber: sale.tableNumber || "",
+        waiterName: sale.waiterName || "",
+        // foodItems: foodItems,
+        // beverageItems: beverageItems,
+
+        // Hotel-specific fields
+        roomNumber: sale.roomNumber || "",
+        guestName: sale.guestName || partyName,
+        // accommodationItems: accommodationItems,
+
+        // General fields
+        itemCount: sale.items?.length || 0,
+        isHotelSale: sale.isHotelSale || false,
+        isRestaurantSale: sale.isRestaurantSale || false,
+      };
+    });
+
+    // Calculate summary totals with business type breakdown and meal period breakdown
+    const summary = transformedData.reduce(
+      (acc, item) => {
+        // General totals
+        acc.totalAmount += item.amount || 0;
+        acc.totalDiscount += item.disc || 0;
+        acc.totalCgst += item.cgst || 0;
+        acc.totalSgst += item.sgst || 0;
+        acc.totalIgst += item.igst || 0;
+        acc.totalCash += item.cash || 0;
+        acc.totalCredit += item.credit || 0;
+        acc.totalUpi += item.upi || 0;
+        acc.totalCheque += item.cheque || 0;
+        acc.totalBank += item.bank || 0;
+        acc.totalFinalAmount += item.totalWithTax || 0;
+        acc.totalRoundOff += item.roundOff || 0;
+
+        // Meal period breakdown
+        const mealPeriod = item.mealPeriod || "Unknown";
+        if (!acc.mealPeriodBreakdown[mealPeriod]) {
+          acc.mealPeriodBreakdown[mealPeriod] = { amount: 0, count: 0 };
+        }
+        acc.mealPeriodBreakdown[mealPeriod].amount += item.totalWithTax || 0;
+        acc.mealPeriodBreakdown[mealPeriod].count += 1;
+
+        // Business type breakdown
+        if (item.businessClassification === "Hotel") {
+          acc.hotelSales.amount += item.totalWithTax || 0;
+          acc.hotelSales.count += 1;
+          acc.hotelSales.rooms += item.accommodationItems?.length || 0;
+        } else if (item.businessClassification === "Restaurant") {
+          acc.restaurantSales.amount += item.totalWithTax || 0;
+          acc.restaurantSales.count += 1;
+          acc.restaurantSales.foodItems += item.foodItems?.length || 0;
+          acc.restaurantSales.beverageItems += item.beverageItems?.length || 0;
+        } else {
+          acc.otherSales.amount += item.totalWithTax || 0;
+          acc.otherSales.count += 1;
+        }
+
+        return acc;
+      },
+      {
+        // General totals
+        totalAmount: 0,
+        totalDiscount: 0,
+        totalCgst: 0,
+        totalSgst: 0,
+        totalIgst: 0,
+        totalCash: 0,
+        totalCredit: 0,
+        totalUpi: 0,
+        totalCheque: 0,
+        totalBank: 0,
+        totalFinalAmount: 0,
+        totalRoundOff: 0,
+
+        // Meal period breakdown
+        mealPeriodBreakdown: {},
+
+        // Business type breakdown
+        hotelSales: { amount: 0, count: 0, rooms: 0 },
+        restaurantSales: {
+          amount: 0,
+          count: 0,
+          foodItems: 0,
+          beverageItems: 0,
+        },
+        otherSales: { amount: 0, count: 0 },
+      }
+    );
+
+    // Calculate analytics
+    const totalSales = summary.totalFinalAmount;
+    const totalTransactions = transformedData.length;
+
+    const analytics = {
+      paymentBreakdown: {
+        cashPercentage:
+          totalSales > 0 ? (summary.totalCash / totalSales) * 100 : 0,
+        creditPercentage:
+          totalSales > 0 ? (summary.totalCredit / totalSales) * 100 : 0,
+        upiPercentage:
+          totalSales > 0 ? (summary.totalUpi / totalSales) * 100 : 0,
+        bankPercentage:
+          totalSales > 0 ? (summary.totalBank / totalSales) * 100 : 0,
+      },
+      businessBreakdown: {
+        hotel: {
+          percentage:
+            totalSales > 0 ? (summary.hotelSales.amount / totalSales) * 100 : 0,
+          averageTicket:
+            summary.hotelSales.count > 0
+              ? summary.hotelSales.amount / summary.hotelSales.count
+              : 0,
+          transactionCount: summary.hotelSales.count,
+        },
+        restaurant: {
+          percentage:
+            totalSales > 0
+              ? (summary.restaurantSales.amount / totalSales) * 100
+              : 0,
+          averageTicket:
+            summary.restaurantSales.count > 0
+              ? summary.restaurantSales.amount / summary.restaurantSales.count
+              : 0,
+          transactionCount: summary.restaurantSales.count,
+        },
+        other: {
+          percentage:
+            totalSales > 0 ? (summary.otherSales.amount / totalSales) * 100 : 0,
+          averageTicket:
+            summary.otherSales.count > 0
+              ? summary.otherSales.amount / summary.otherSales.count
+              : 0,
+          transactionCount: summary.otherSales.count,
+        },
+      },
+      mealPeriodBreakdown: Object.keys(summary.mealPeriodBreakdown).reduce(
+        (acc, period) => {
+          acc[period] = {
+            amount: summary.mealPeriodBreakdown[period].amount,
+            count: summary.mealPeriodBreakdown[period].count,
+            percentage:
+              totalSales > 0
+                ? (summary.mealPeriodBreakdown[period].amount / totalSales) *
+                  100
+                : 0,
+            averageTicket:
+              summary.mealPeriodBreakdown[period].count > 0
+                ? summary.mealPeriodBreakdown[period].amount /
+                  summary.mealPeriodBreakdown[period].count
+                : 0,
+          };
+          return acc;
+        },
+        {}
+      ),
+      overallMetrics: {
+        averageTicketSize:
+          totalTransactions > 0 ? totalSales / totalTransactions : 0,
+        totalTransactions: totalTransactions,
+        averageItemsPerTransaction:
+          totalTransactions > 0
+            ? transformedData.reduce(
+                (sum, order) => sum + (order.itemCount || 0),
+                0
+              ) / totalTransactions
+            : 0,
+      },
+      serviceMetrics: {
+        // Restaurant metrics
+        tablesServed: [
+          ...new Set(
+            transformedData
+              .filter((s) => s.tableNumber)
+              .map((s) => s.tableNumber)
+          ),
+        ].length,
+        waitersActive: [
+          ...new Set(
+            transformedData.filter((s) => s.waiterName).map((s) => s.waiterName)
+          ),
+        ].length,
+        // Hotel metrics
+        roomsOccupied: [
+          ...new Set(
+            transformedData.filter((s) => s.roomNumber).map((s) => s.roomNumber)
+          ),
+        ].length,
+        guestsServed: [
+          ...new Set(
+            transformedData
+              .filter((s) => s.guestName && s.guestName !== "Cash")
+              .map((s) => s.guestName)
+          ),
+        ].length,
+      },
+    };
+
+    res.json({
+      success: true,
+      data: {
+        sales: transformedData,
+        summary: summary,
+        analytics: analytics,
+        companyId: cmp_id,
+        owner: owner,
+        dateRange: {
+          startDate: parsedStartDate.toISOString().split("T")[0],
+          endDate: parsedEndDate.toISOString().split("T")[0],
+        },
+        totalRecords: transformedData.length,
+        businessType: businessType,
+        businessBreakdown: {
+          hotel: summary.hotelSales.count,
+          restaurant: summary.restaurantSales.count,
+          other: summary.otherSales.count,
+          total: totalTransactions,
+        },
+        mealPeriodSummary: summary.mealPeriodBreakdown,
+        message: `Found ${transformedData.length} ${
+          businessType === "all" ? "combined" : businessType
+        } sales records`,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching combined sales details:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error:
+        process.env.NODE_ENV === "development"
+          ? error.message
+          : "Something went wrong",
     });
   }
 };

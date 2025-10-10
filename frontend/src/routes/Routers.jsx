@@ -187,6 +187,8 @@ const TableSelection  = lazy(() => import('@/pages/Restuarant/Pages/TableSelecti
 const CheckOutPrint   = lazy(() => import('@/pages/Hotel/Pages/CheckOutPrint'))
 const BillPrint=lazy(()=>import ('@/pages/Hotel/Pages/BillPrint'))
 const SummaryDashboard=lazy(()=>import ("@/pages/Hotel/Pages/SummaryDashboard"))
+const BillSummary=lazy(()=>import("@/pages/Hotel/Pages/BillSummary"))
+const CheckInPrint=lazy(()=>import("@/pages/Hotel/Pages/CheckInPrint"))
 const Routers = () => {
   return (
     <Suspense fallback={<SuspenseLoader />}>
@@ -482,7 +484,8 @@ const Routers = () => {
 <Route path='/sUsers/BillPrint' element={<ProtectedSecRoute><BillPrint/></ProtectedSecRoute>}/>
 
 <Route path='/sUsers/SummaryDashboard' element={<ProtectedSecRoute><SummaryDashboard/></ProtectedSecRoute>}/>
-
+<Route path='/sUsers/BillSummary' element={<ProtectedSecRoute><BillSummary/></ProtectedSecRoute>}/>
+<Route path="/sUsers/CheckInPrint" element={<ProtectedSecRoute><CheckInPrint/></ProtectedSecRoute>}/>
     </Routes>
     </Suspense>
   )
