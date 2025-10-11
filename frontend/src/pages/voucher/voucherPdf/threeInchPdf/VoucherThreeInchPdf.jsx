@@ -24,7 +24,8 @@ function VoucherThreeInchPdf({
     ) === "India";
 
   const party = data?.party;
-  const isSameState = org?.state === party?.state || !party?.state;
+  const isSameState =
+    org?.state?.toLowerCase() === party?.state?.toLowerCase() || !party?.state;
 
   const voucherType = data?.voucherType;
   const getVoucherNumber = () => {
@@ -400,11 +401,14 @@ function VoucherThreeInchPdf({
             </div>
             {(address?.billToAddress || data?.party?.address) && (
               <div style={{ fontSize: "12px" }}>
-               Address: {address.billToAddress || data?.party?.address}
+                Address: {address.billToAddress || data?.party?.address}
               </div>
             )}
             {data?.party?.mobile && (
-             <div style={{ fontSize: "12px" }}> Mob:  {data?.party?.mobile}</div>
+              <div style={{ fontSize: "12px" }}>
+                {" "}
+                Mob: {data?.party?.mobile}
+              </div>
             )}
           </div>
 

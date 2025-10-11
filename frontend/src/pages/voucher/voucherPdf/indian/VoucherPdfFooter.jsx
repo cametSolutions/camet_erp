@@ -110,7 +110,7 @@ function VoucherPdfFooter({
           {configurations?.showTaxAmount &&
             (() => {
               const totalTax = Number(calculateTotalTax()) || 0; // Validate total tax
-              const isSameState = org?.state === party?.state || !party?.state;
+              const isSameState = org?.state?.toLowerCase() === party?.state?.toLowerCase() || !party?.state;
 
               return isSameState ? (
                 <div className="flex flex-col items-end text-[9px] text-black font-bold gap-1 mt-3">
