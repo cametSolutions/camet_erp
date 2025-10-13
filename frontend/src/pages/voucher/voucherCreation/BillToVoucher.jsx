@@ -26,6 +26,7 @@ function BillToVoucher() {
   // const ship to
   const showShipTo = configurations[0]?.enableShipTo["sale"];
 
+
   // console.log(configurations);
 
   return (

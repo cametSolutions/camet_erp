@@ -112,6 +112,9 @@ export default function AdditionalChargesTile({
   // console.log(rows);
 
   const handleRateChange = (index, value) => {
+
+    console.log(value);
+    
     const newRows = [...rows];
     let updatedRow = { ...newRows[index], value: value }; // Create a new object with the updated value
 
@@ -173,7 +176,7 @@ export default function AdditionalChargesTile({
     dispatch(
       updateTotalValue({
         field: "totalAdditionalCharges",
-        value: Number(parseInt(additionalChargesTotal || 0).toFixed(2)),
+        value: Number(parseFloat(additionalChargesTotal || 0).toFixed(2)),
       })
     );
   }, [additionalChargesTotal]);

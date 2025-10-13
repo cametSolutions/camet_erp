@@ -36,7 +36,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         swipeDirections={["left", "right"]}
         closeButton={true}
          />
-        <ReactQueryDevtools initialIsOpen={false} />
+        {/* <ReactQueryDevtools initialIsOpen={false} /> */}
       </QueryClientProvider>
     </Provider>
   </BrowserRouter>
