@@ -348,7 +348,7 @@ function VoucherInitialPage() {
           usedSeriesNumber: selectedVoucherSeriesFromRedux?.currentNumber,
           orgId: cmp_id,
           finalAmount: Number(totalAmount.toFixed(2)),
-          finalOutstandingAmount: Number(finalOutstandingAmountFromRedux.toFixed(2)),
+          finalOutstandingAmount: Number(finalOutstandingAmountFromRedux.toFixed(2)) || Number(totalAmount.toFixed(2)),
           subTotal: Number(subTotalFromRedux.toFixed(2)),
           totalAdditionalCharges: Number(totalAdditionalChargesFromRedux.toFixed(2)),
           totalWithAdditionalCharges: Number(totalWithAdditionalChargesFromRedux.toFixed(2)),
