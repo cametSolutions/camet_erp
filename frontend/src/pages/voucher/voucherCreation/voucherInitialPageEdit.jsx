@@ -95,7 +95,6 @@ function VoucherInitialPageEdit() {
     note: noteFromRedux,
     isNoteOpen: isNoteOpenFromRedux,
     paymentSplittingData: paymentSplittingDataFromRedux,
-  
   } = useSelector((state) => state.commonVoucherSlice);
 
   // to find the current voucher
@@ -192,7 +191,7 @@ function VoucherInitialPageEdit() {
     } = location.state.data || {};
 
     try {
-      if (voucherIdFromState ) {
+      if (voucherIdFromState) {
         setVoucherId(voucherIdFromState);
       }
 
@@ -360,8 +359,8 @@ function VoucherInitialPageEdit() {
         dispatch(updateTotalValue({ field: "subTotal", value: subTotal }));
       }
 
-      if(!initializedFromRedux){
-        dispatch(saveId(_idFromState))
+      if (!initializedFromRedux) {
+        dispatch(saveId(_idFromState));
       }
 
       if (!initializedFromRedux) {
@@ -481,7 +480,8 @@ function VoucherInitialPageEdit() {
           orgId: cmp_id,
           finalAmount: Number(totalAmount.toFixed(2)),
           finalOutstandingAmount: Number(
-            finalOutstandingAmountFromRedux.toFixed(2)
+            finalOutstandingAmountFromRedux.toFixed(2) ||
+              Number(totalAmount.toFixed(2))
           ),
           subTotal: Number(subTotalFromRedux.toFixed(2)),
           totalAdditionalCharges: Number(

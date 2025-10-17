@@ -440,6 +440,13 @@ export const createSaleRecord = async (
       items: updatedItems,
       selectedPriceLevel: req.body.priceLevelFromRedux,
       additionalCharges: updateAdditionalCharge,
+      finalOutstandingAmount: req.body.finalOutstandingAmount,
+      subTotal: req.body.subTotal,
+      totalAdditionalCharges: req.body.totalAdditionalCharges,
+      totalPaymentSplits: req.body.totalPaymentSplittingAmount,
+      totalWithAdditionalCharges: req.body.totalWithAdditionalCharges,
+      totalPaymentSplits: req.body.totalPaymentSplits
+,
       note,
       finalAmount,
       Primary_user_id,
@@ -517,10 +524,12 @@ export const updateTallyData = async (
       console.error("Error updateTallyData sale stock updates:", error);
       throw error;
     }
-  } else if (party?.partyType === "cash" || party?.partyType === "bank" && !hasPaymentSplittingData ) {
-
+  } else if (
+    party?.partyType === "cash" ||
+    (party?.partyType === "bank" && !hasPaymentSplittingData)
+  ) {
     console.log("party?.partyType in updateTallyData", party?.partyType);
-    
+
     //// create settlement
 
     try {
