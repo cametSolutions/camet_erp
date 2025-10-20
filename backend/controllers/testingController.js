@@ -496,123 +496,12 @@ export const addAccountGroupIdToOutstanding = async (req, res) => {
   }
 };
 
-// export const deleteDuplicateParties = async (req, res) => {
-//   const session = await mongoose.startSession();
-//   session.startTransaction();
-
-//   try {
-//     // Step 1: Find all duplicate parties
-//     const duplicates = await Party.aggregate([
-//       {
-//         $group: {
-//           _id: "$partyName",
-//           count: { $sum: 1 },
-//           ids: { $push: "$_id" },
-//           docs: { $push: "$$ROOT" }
-//         }
-//       },
-//       {
-//         $match: {
-//           count: { $gt: 1 }
-//         }
-//       },
-//       {
-//         $sort: { _id: 1 }
-//       }
-//     ]);
-
-//     let deletedCount = 0;
-//     let updatedReferences = {
-//       sales: 0,
-//       saleOrders: 0,
-//       receipts: 0
-//     };
-
-//     // Step 2: Process each duplicate group
-//     for (const duplicate of duplicates) {
-//       const partyName = duplicate._id;
-//       const allIds = duplicate.ids;
-
-//       // Keep the first party (or choose based on your criteria)
-//       const keepId = allIds[0];
-//       const deleteIds = allIds.slice(1);
-
-//       console.log(`Processing: ${partyName}`);
-//       console.log(`Keeping: ${keepId}`);
-//       console.log(`Deleting: ${deleteIds.join(', ')}`);
-
-//       // Step 3: Update references in Sale collection
-//       const saleUpdateResult = await Sale.updateMany(
-//         { "party._id": { $in: deleteIds } },
-//         { $set: { "party._id": keepId } },
-//         { session }
-//       );
-//       updatedReferences.sales += saleUpdateResult.modifiedCount;
-
-//       // Step 4: Update references in SaleOrder collection
-//       const saleOrderUpdateResult = await SaleO.updateMany(
-//         { "party._id": { $in: deleteIds } },
-//         { $set: { "party._id": keepId } },
-//         { session }
-//       );
-//       updatedReferences.saleOrders += saleOrderUpdateResult.modifiedCount;
-
-//       // Step 5: Update references in Receipt collection
-//       const receiptUpdateResult = await Receipts.updateMany(
-//         { "party._id": { $in: deleteIds } },
-//         { $set: { "party._id": keepId } },
-//         { session }
-//       );
-//       updatedReferences.receipts += receiptUpdateResult.modifiedCount;
-
-//       // Step 6: Delete duplicate parties
-//       const deleteResult = await Party.deleteMany(
-//         { _id: { $in: deleteIds } },
-//         { session }
-//       );
-//       deletedCount += deleteResult.deletedCount;
-//     }
-
-//     // Commit the transaction
-//     await session.commitTransaction();
-
-//     res.status(200).json({
-//       success: true,
-//       message: 'Duplicate parties processed successfully',
-//       data: {
-//         duplicateGroupsProcessed: duplicates.length,
-//         partiesDeleted: deletedCount,
-//         referencesUpdated: updatedReferences,
-//         details: duplicates.map(d => ({
-//           partyName: d._id,
-//           duplicateCount: d.count
-//         }))
-//       }
-//     });
-
-//   } catch (error) {
-//     // Rollback transaction on error
-//     await session.abortTransaction();
-//     console.error('Error processing duplicates:', error);
-
-//     res.status(500).json({
-//       success: false,
-//       message: 'Failed to process duplicate parties',
-//       error: error.message
-//     });
-//   } finally {
-//     session.endSession();
-//   }
-// };
-
-// Optional: Preview what will be deleted without actually deleting
-// Preview function with cmp_id filter
 
 export const deleteDuplicateParties = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
 
-  const cmp_id = "67ff497cb995723dd2476a98";
+  const cmp_id = "688328045d8692c9405bee91";
 
   try {
     // Step 1: Find all duplicate parties for specific company
@@ -760,7 +649,7 @@ export const deleteDuplicateParties = async (req, res) => {
 
 // Preview function with cmp_id filter
 export const previewDuplicateParties = async (req, res) => {
-  const cmp_id = "67ff497cb995723dd2476a98";
+  const cmp_id = "688328045d8692c9405bee91";
 
   try {
     const duplicates = await Party.aggregate([
