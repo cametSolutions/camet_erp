@@ -5,7 +5,7 @@ export const companyAuthentication = async (req, res, next) => {
 
     try {
         const companyData = await Organization.findById(cmp_id);
-        if (companyData.isBlocked == false) {
+        if (companyData?.isBlocked == false) {
             next();
         } else {
             res.status(403).json({ message: "This company is restricted",companyRestricted:true });

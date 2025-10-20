@@ -485,6 +485,9 @@ export const updateTallyData = async (
   hasPaymentSplittingData
 ) => {
   if (party?.partyType === "party") {
+
+    console.log("create outstanding for bill_no:", salesNumber);
+    
     try {
       const billData = {
         Primary_user_id: Primary_user_id,
