@@ -445,8 +445,7 @@ export const createSaleRecord = async (
       totalAdditionalCharges: req.body.totalAdditionalCharges,
       totalPaymentSplits: req.body.totalPaymentSplittingAmount,
       totalWithAdditionalCharges: req.body.totalWithAdditionalCharges,
-      totalPaymentSplits: req.body.totalPaymentSplits
-,
+      totalPaymentSplits: req.body.totalPaymentSplits,
       note,
       finalAmount,
       Primary_user_id,
@@ -484,10 +483,16 @@ export const updateTallyData = async (
   negative = false,
   hasPaymentSplittingData
 ) => {
+  console.log("=== updateTallyData called ===");
+  console.log("party.partyType:", party?.partyType);
+  console.log(
+    "finalOutstandingAmount (valueToUpdateInTally):",
+    valueToUpdateInTally
+  );
+  console.log("hasPaymentSplittingData:", hasPaymentSplittingData);
   if (party?.partyType === "party") {
-
+    console.log("✅ ENTERING PARTY TYPE CONDITION");
     console.log("create outstanding for bill_no:", salesNumber);
-    
     try {
       const billData = {
         Primary_user_id: Primary_user_id,
@@ -512,6 +517,8 @@ export const updateTallyData = async (
         classification,
       };
 
+      console.log("📝 Bill Data to upsert:", JSON.stringify(billData, null, 2));
+
       const tallyUpdate = await TallyData.findOneAndUpdate(
         {
           cmp_id: orgId,
@@ -523,6 +530,17 @@ export const updateTallyData = async (
         { $set: billData },
         { upsert: true, new: true, session }
       );
+
+      console.log("✅ TallyData upserted successfully:", tallyUpdate);
+
+      if (!tallyUpdate) {
+        console.error("❌❌❌ UPSERT RETURNED NULL - THIS IS THE BUG!");
+        console.error("Query filter:", {
+          cmp_id: orgId,
+          bill_no: salesNumber,
+          billId: billId.toString(),
+        });
+      }
     } catch (error) {
       console.error("Error updateTallyData sale stock updates:", error);
       throw error;
