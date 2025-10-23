@@ -111,13 +111,14 @@ export const createSale = async (req, res) => {
     let hasPaymentSplittingData = false;
     if (
       paymentSplittingData.length > 0 &&
-      paymentSplittingData.some((item) => item?.ref_id !== null )
+      paymentSplittingData.some((item) => item?.ref_id !== null)
     ) {
       hasPaymentSplittingData = true;
     }
 
-    console.log("hasPaymentSplittingData",hasPaymentSplittingData);
-    
+    console.log("hasPaymentSplittingData", hasPaymentSplittingData);
+
+
 
     /// if payment splitting data is present it will do settlement in the next function else we do it in updateTallyData
 
