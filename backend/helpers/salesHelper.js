@@ -498,7 +498,7 @@ export const updateTallyData = async (
     console.log("✅ Party type missing, fetching from party master");
     const partyMaster = await partyModel.findById(party._id).lean();
     // console.log("partyMaster",partyMaster);
-    
+
     if (partyMaster) {
       party.partyType = partyMaster.partyType;
     } else {
@@ -507,7 +507,6 @@ export const updateTallyData = async (
   }
 
   console.log("party.partyType:", party?.partyType);
-
 
   if (party?.partyType === "party") {
     console.log("✅ ENTERING PARTY TYPE CONDITION");
@@ -892,6 +891,21 @@ export const savePaymentSplittingDataInSources = async (
   selectedDate,
   voucherType
 ) => {
+  /// check the party type is present in the request body if not find it from party master;
+  /// since we can across some issues where party type was missing in the request body
+  if (party && !party.partyType) {
+    ///
+    console.log("✅ Party type missing, fetching from party master");
+    const partyMaster = await partyModel.findById(party._id).lean();
+    // console.log("partyMaster",partyMaster);
+
+    if (partyMaster) {
+      party.partyType = partyMaster.partyType;
+    } else {
+      throw new Error("Party type is missing");
+    }
+  }
+
   try {
     const updates = await Promise.all(
       paymentSplittingData
