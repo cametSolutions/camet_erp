@@ -28,4 +28,8 @@ export const industries = [
     code: 7,
     industry: "Hotel & Restaurant",
   },
+  {
+    code: 8,
+    industry: "Cafe & Bakery",
+  },
 ];

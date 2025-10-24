@@ -290,7 +290,12 @@ const HotelDashboard = () => {
       });
       return;
     }
-
+if (action === "checkOut") {
+      navigate("/sUsers/checkInList", {
+        state: { roomId: selectedRoomData?._id },
+      });
+      return;
+    }
 
 
      if (action === "swapRoom") {
@@ -403,9 +408,9 @@ const HotelDashboard = () => {
 
   const setSelectedRoom = (room) => {
     // Prevent popup for occupied rooms
-    if (room.status === "occupied") {
-      return;
-    }
+    // if (room.status === "occupied") {
+    //   return;
+    // }
     setSelectedRoomData(room);
     setShowRoomModal(true);
   };
@@ -959,10 +964,16 @@ const scrollbarStyles = {
       {showRoomModal && selectedRoomData && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60 z-50">
           <div className="bg-slate-800 p-6 rounded-lg shadow-lg w-90 max-w-[150vw] ">
+             <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold text-white mb-4">
               Room: {selectedRoomData.roomName}
             </h2>
-
+  {selectedRoomData.status === "occupied" && (
+          <span className="px-3 py-1 bg-gradient-to-r from-sky-400 to-violet-600 text-white text-xs font-semibold rounded-full">
+            Occupied
+          </span>
+        )}
+        </div>
             <label className="text-gray-300 mb-2 block">Select Action:</label>
             <select
               className="w-full bg-slate-700 text-white border border-gray-600 rounded px-2 py-1 mb-4"
@@ -972,18 +983,25 @@ const scrollbarStyles = {
               <option value="" disabled>
                 Choose...
               </option>
-              {selectedRoomData.status != "booked" && (
-                <>
-                  <option value="booking">Booking</option>
-                  <option value="CheckIn">CheckIn</option>
-                </>
-              )}
-              <option value="dirty">Mark as Dirty</option>
-              <option value="blocked">Mark as Blocked</option>
-              <option value="vacant">Mark as available</option>
-              {/* {selectedRoomData.status === "vacant" && ( */}
-                <option value="swapRoom">Swap Room</option>
-              {/* )} */}
+               {selectedRoomData.status === "occupied" ? (
+          <>
+            <option value="checkOut">CheckOut</option>
+            <option value="swapRoom">Swap Room</option>
+          </>
+        ) : (
+          <>
+            {selectedRoomData.status !== "booked" && (
+              <>
+                <option value="booking">Booking</option>
+                <option value="CheckIn">CheckIn</option>
+              </>
+            )}
+            <option value="dirty">Mark as Dirty</option>
+            <option value="blocked">Mark as Blocked</option>
+            <option value="vacant">Mark as available</option>
+            <option value="swapRoom">Swap Room</option>
+          </>
+        )}
             </select>
 
             <button

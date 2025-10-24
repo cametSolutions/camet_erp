@@ -531,6 +531,7 @@ export const getKot = async (req, res) => {
       .find({
         cmp_id,
         createdAt: { $gte: start, $lte: end },
+          status: { $ne: "cancelled" },
       })
       .populate("roomId");
 
@@ -543,6 +544,40 @@ export const getKot = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Internal server error while fetching KOT",
+    });
+  }
+};
+
+
+export const cancelKot = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    const kot = await kotModal.findByIdAndUpdate(
+      id,
+      {
+        status: "cancelled",
+        cancelReason: reason,
+        cancelledAt: new Date(),
+      },
+      { new: true }
+    );
+
+    if (!kot) {
+      return res.status(404).json({ success: false, message: "KOT not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "KOT cancelled successfully",
+      data: kot,
+    });
+  } catch (error) {
+    console.error("Error cancelling KOT:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error while cancelling KOT",
     });
   }
 };
@@ -798,6 +833,113 @@ export const getRoomDataForRestaurant = async (req, res) => {
 //     await session.endSession();
 //   }
 // };
+
+// controllers/sUsersController.js
+
+
+export const directSale = async (req, res) => {
+  const session = await mongoose.startSession();
+
+  try {
+    await session.withTransaction(async () => {
+      const { cmp_id } = req.params;
+      const { paymentMethod, paymentDetails, selectedKotData, isDirectSale } = req.body;
+
+      if (!paymentDetails || !selectedKotData)
+        throw new Error("Missing payment details or selected data");
+
+      const cashAmt = Number(paymentDetails?.cashAmount || 0);
+      const onlineAmt = Number(paymentDetails?.onlineAmount || 0);
+
+      // Treat both payment modes as 'mixed'
+      let resolvedPaymentMethod = paymentMethod;
+      if (cashAmt > 0 && onlineAmt > 0) resolvedPaymentMethod = "mixed";
+
+      // Get voucher series for direct sales
+      const specificVoucherSeries = await getRestaurantVoucherSeries(cmp_id, session);
+
+      const saleNumber = await generateVoucherNumber(
+        cmp_id,
+        "sales",
+        specificVoucherSeries._id.toString(),
+        session
+      );
+
+      // Cash/Bank or Customer account
+      const selectedParty = await getSelectedParty(
+        cmp_id,
+        paymentDetails,
+        cashAmt,
+        onlineAmt,
+        selectedKotData,
+        false,
+        session
+      );
+
+      // Prepare structured party & payment arrays
+      const paymentSplittingArray = createPaymentSplittingArray(
+        paymentDetails,
+        cashAmt,
+        onlineAmt
+      );
+
+      const party = mapPartyData(selectedParty);
+
+      // Create a sales voucher entry (no KOT reference)
+      const savedVoucherData = await createSalesVoucher(
+        cmp_id,
+        specificVoucherSeries,
+        saleNumber,
+        req,
+        selectedKotData, // hold items + total
+        party,
+        selectedParty,
+        paymentSplittingArray,
+        session
+      );
+
+      // Settlement entries (cash/online)
+      if (party?.paymentType !== "party") {
+        await saveSettlement(
+          paymentDetails,
+          selectedParty,
+          cmp_id,
+          savedVoucherData[0],
+          cashAmt + onlineAmt,
+          cashAmt,
+          onlineAmt,
+          req,
+          session
+        );
+      }
+
+      // ✅ Convert Mongoose document to plain object and ensure _id is included
+      const salesRecordData = savedVoucherData[0].toObject 
+        ? savedVoucherData[0].toObject() 
+        : savedVoucherData[0];
+
+      // Return clean JSON response with properly formatted data
+      res.status(200).json({
+        success: true,
+        message: "Direct sale recorded successfully",
+          data: {
+          salesRecord: salesRecordData, // Return the full object as-is
+          _id: salesRecordData._id, // Also include _id at root for easy access
+          saleNumber: saleNumber
+        }
+      });
+    });
+  } catch (error) {
+    console.error("Error in direct sale:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "Internal server error during direct sale",
+    });
+  } finally {
+    await session.endSession();
+  }
+};
+
 
 export const updateKotPayment = async (req, res) => {
   const session = await mongoose.startSession();
@@ -1234,17 +1376,18 @@ export const getPaymentType = async (req, res) => {
 // function used to fetch sale data for print
 export const getSalePrintData = async (req, res) => {
   try {
-    const salesData = await salesModel.findOne({
-      cmp_id: req.params.cmp_id,
-      convertedFrom: {
-        $elemMatch: { id: req.params.kotId },
-      },
+      const { cmp_id, kotId } = req.params;
+   
+  let salesData = await salesModel.findOne({
+      _id: kotId, // kotId parameter is actually the saleId for direct sales
+      cmp_id: cmp_id,
     });
 
+    // If not found, try to find by convertedFrom (for KOT-based sales)
     if (!salesData) {
-      return res.status(404).json({
-        success: false,
-        message: "No sales record found",
+      salesData = await salesModel.findOne({
+        cmp_id: cmp_id,
+        "convertedFrom.id": kotId, // Here kotId is the actual KOT ID
       });
     }
 

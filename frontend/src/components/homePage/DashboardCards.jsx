@@ -67,7 +67,7 @@ const DashboardCards = ({
 
   let secondary = [];
 
-  if (organization?.industry === 6 || organization?.industry === 7) {
+  if (organization?.industry === 6 || organization?.industry === 7 || organization?.industry === 8) {
     secondary = [
       {
         icon: hotelImg,

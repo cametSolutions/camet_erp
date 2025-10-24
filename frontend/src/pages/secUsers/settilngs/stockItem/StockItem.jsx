@@ -49,7 +49,7 @@ const StockItem = () => {
     },
 
     // ✅ Conditionally add extra options
-    ...(industry === 6 || industry === 7
+    ...(industry === 6 || industry === 7 || industry === 8
       ? [
           {
             title: "Restaurant Management",

@@ -1260,19 +1260,27 @@ console.log(formData)
                   </div>
                 </div>
 
-                <div className="w-full lg:w-6/12 px-4">
-                  <div className="relative w-full mb-3">
-                    <label className=" block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                      Grand Total
-                    </label>
-                    <input
-                      type="number"
-                      name="grandTotal"
-                      value={formData.grandTotal}
-                      className=" text-green-500 border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                    />
-                  </div>
-                </div>
+               <div className="w-full lg:w-6/12 px-4">
+  <div className="relative w-full mb-3">
+    <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+      Grand Total
+    </label>
+    <div className="space-y-2">
+      {/* Original Amount */}
+      {/* <div className="text-xs text-gray-500">
+        Original: ₹(Number{formData?.grandTotal?.toFixed(2)})
+      </div> */}
+      {/* Rounded Amount */}
+      <input
+        type="number"
+        name="grandTotal"
+        value={Math.round(formData.grandTotal)}
+        className="text-green-500 border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+        readOnly
+      />
+    </div>
+  </div>
+</div>
               </div>
 
               {/* Save Button */}

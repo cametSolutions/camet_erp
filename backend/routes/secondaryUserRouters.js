@@ -64,7 +64,7 @@ fetchAdvanceDetails,getAllRoomsWithStatusForDate,updateRoomStatus,getDateBasedRo
 fetchOutStandingAndFoodData,convertCheckOutToSale , updateConfigurationForHotelAndRestaurant,swapRoom,getRoomSwapHistory,checkedInGuest,getHotelSalesDetails,} from '../controllers/hotelController.js'
 import {addItem,getAllItems,getItems,getCategories,deleteItem,updateItem,generateKot,getKot,updateKotStatus,editKot,
     getRoomDataForRestaurant,updateKotPayment,getPaymentType,saveTableNumber,getSalePrintData,updateTable,getTables,deleteTable,
-    updateTableStatus,getKotDataByTable,updateConfigurationForKotApproval ,getSummaryDashboard } from '../controllers/restaurantController.js'
+    updateTableStatus,getKotDataByTable,updateConfigurationForKotApproval ,getSummaryDashboard,cancelKot,directSale  } from '../controllers/restaurantController.js'
 
 
 router.post('/login',login)
@@ -350,6 +350,7 @@ router.get('/getKotData/:cmp_id',authSecondary,secondaryIsBlocked,getKot)
 router.put('/updateKotStatus/:cmp_id',authSecondary,secondaryIsBlocked,updateKotStatus)
 router.get('/getRoomBasedOnBooking/:cmp_id',authSecondary,secondaryIsBlocked,getRoomDataForRestaurant)
 router.put("/updateKotPayment/:cmp_id",authSecondary,secondaryIsBlocked,updateKotPayment)
+router.post("/directSale/:cmp_id",authSecondary,secondaryIsBlocked,directSale)
 router.get('/getAllRoomsWithStatus/:cmp_id',authSecondary,getAllRoomsWithStatusForDate)
 router.put("/updateStatus/:id", authSecondary, updateRoomStatus);
 router.get("/getPaymentType/:cmp_id",authSecondary,secondaryIsBlocked, getPaymentType)
@@ -359,7 +360,7 @@ router.put('/updateTable/:id', authSecondary,updateTable);
 router.get('/getTable/:cmp_id',authSecondary, getTables);
 
 router.delete('/deleteTable/:id', authSecondary,deleteTable);
-
+router.get("/getSalePrintData/:cmp_id/:saleId",authSecondary,secondaryIsBlocked,getSalePrintData)
 router.get("/getSalePrintData/:cmp_id/:kotId",authSecondary,secondaryIsBlocked,getSalePrintData)
 router.put('/updateTableStatus/:cmp_id',authSecondary,updateTableStatus )
 router.get('/getKotDataByTable/:cmp_id',authSecondary,getKotDataByTable )
@@ -374,7 +375,7 @@ router.get("/getRoomSwapHistory/:checkInId", getRoomSwapHistory);
 router.get("/getCheckedInGuests/:cmp_id", checkedInGuest);
 router.get('/summary', getSummaryDashboard);
 router.get('/hotel-sales/:cmp_id', getHotelSalesDetails);
-
+router.put("/cancel/:id", cancelKot);
 // Route to get detailed booking information for a specific room and date
 
 export default router
