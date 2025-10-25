@@ -218,7 +218,7 @@ export const getSummary = async (req, res) => {
           sale: []
         });
       }
-      const ratevalue = record.godownList[0].rate / record.godownList[0].count
+      const ratevalue = record.godownList[0].selectedPriceRate 
       const partySummary = groupedByParty.get(filtername);
       if (isGodown) {
 
