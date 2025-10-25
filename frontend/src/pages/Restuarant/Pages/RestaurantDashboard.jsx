@@ -1455,13 +1455,17 @@ const handleProcessDirectSalePayment = async () => {
               </div>
 
               {/* Action Button */}
-              <div className="flex space-x-2">
+             <div className="flex space-x-2">
                 <button
                   className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-2.5 rounded-xl font-bold hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm hover:scale-105 active:scale-95 transform shadow-lg shadow-indigo-500/25"
                   disabled={orderItems.length === 0}
                   onClick={handlePlaceOrder}
                 >
-                  {isEdit ? "Update Order" : "Place Order"}
+                  {isEdit 
+                    ? "Update Kot" 
+                    : orderType === "direct-sale" 
+                    ? "Generate Bill" 
+                    : " Kot"}
                 </button>
               </div>
             </div>
