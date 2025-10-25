@@ -447,11 +447,14 @@ export const createReceiptForSales = async (
 
   console.log("series_id", restaurantBaseSaleData);
   // get all outstanding bills
-  const outStandingArray = await Promise.all(
-    restaurantBaseSaleData.map((sale) =>
-      TallyData.findOne({ billId: sale._id })
-    )
-  );
+const outStandingArrayRaw = await Promise.all(
+  restaurantBaseSaleData.map((sale) =>
+    TallyData.findOne({ billId: sale._id })
+  )
+);
+
+const outStandingArray = outStandingArrayRaw.filter(Boolean); // removes null/undefined
+
 
   // helper to distribute amounts across bills
   const distributeBills = (amountLeft) => {
@@ -460,7 +463,7 @@ export const createReceiptForSales = async (
     for (const out of outStandingArray) {
       if (amountLeft <= 0) break;
 
-      const settleAmt = Math.min(amountLeft, out.bill_amount || 0);
+      const settleAmt = Math.min(amountLeft, out?.bill_amount || 0);
       billData.push({
         _id: out._id,
         bill_no: out.bill_no,

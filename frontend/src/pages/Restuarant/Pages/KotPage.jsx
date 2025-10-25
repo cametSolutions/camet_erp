@@ -33,7 +33,11 @@ import { toast } from "react-toastify";
 import { FaRegEdit } from "react-icons/fa";
 import VoucherThreeInchPdf from "@/pages/voucher/voucherPdf/threeInchPdf/VoucherThreeInchPdf";
 import { useReactToPrint } from "react-to-print";
- const OrdersDashboard = () => {
+import CustomerSearchInputBox from "@/pages/Hotel/Components/CustomerSearchInPutBox";
+
+
+
+const OrdersDashboard = () => {
   const contentToPrint = useRef(null);
   const [activeFilter, setActiveFilter] = useState("ON PROCESS");
   const [searchQuery, setSearchQuery] = useState("");
@@ -53,6 +57,7 @@ import { useReactToPrint } from "react-to-print";
   const [paymentError, setPaymentError] = useState("");
   const [selectedCash, setSelectedCash] = useState("");
   const [selectedBank, setSelectedBank] = useState("");
+  const [selectedCreditor, setSelectedCreditor] = useState("");
   const [cashOrBank, setCashOrBank] = useState({});
   const [selectedKot, setSelectedKot] = useState([]);
   const [saleVoucherData, setSaleVoucherData] = useState();
@@ -400,7 +405,6 @@ const handleKotCancel = async () => {
 
   const handleSavePayment = async (id) => {
     setSaveLoader(true);
-
     let paymentDetails;
     let selectedKotData;
      if (selectedDataForPayment?.isDirectSale) {
@@ -448,6 +452,18 @@ const handleKotCancel = async () => {
           };
         }
         selectedKotData = selectedDataForPayment;
+      } else if (paymentMode === "credit") {
+
+        if (!selectedCreditor || selectedCreditor == "") {
+          setPaymentError("Please select a creditor");
+          return;
+        }
+        paymentDetails = {
+          cashAmount: selectedDataForPayment?.total,
+          selectedCreditor,
+          paymentMode,
+        };
+           selectedKotData = selectedDataForPayment;
       } else {
         // Split payment mode
         if (
@@ -489,6 +505,18 @@ const handleKotCancel = async () => {
           };
         }
         selectedKotData = previewForSales;
+      } else if (paymentMode === "credit") {
+        if (!selectedCreditor || selectedCreditor == "") {
+          setPaymentError("Please select a creditor");
+          setSaveLoader(false);
+          return;
+        }
+        paymentDetails = {
+          cashAmount: selectedDataForPayment?.total,
+          selectedCreditor,
+          paymentMode,
+        };
+          selectedKotData = previewForSales;
       } else {
         if (
           Number(cashAmount) + Number(onlineAmount) !==
@@ -509,6 +537,10 @@ const handleKotCancel = async () => {
         selectedKotData = previewForSales;
       }
     }
+
+    console.log(paymentMethod);
+    console.log(paymentDetails);
+    console.log(selectedKotData);
 
     try {
       const response = await api.put(
@@ -550,6 +582,8 @@ const handleKotCancel = async () => {
       setOnlineAmount(0);
       refreshHook();
       setShowPaymentModal(false);
+      setPaymentMode("single")
+      setSelectedCreditor("")
     }
   }
 };
@@ -598,6 +632,7 @@ const handleKotCancel = async () => {
             voucherNumber: order.voucherNumber,
             roomId: order?.roomId?._id, // keep roomId for validation
             checkInNumber: order?.checkInNumber,
+            customer: order?.customer,
           },
         ]);
       }
@@ -623,8 +658,11 @@ const handleKotCancel = async () => {
     let totalAmount = itemList.reduce(
       (acc, item) => acc + Number(item.total) * Number(item.quantity),
       0
-    );
-    console.log(itemList);
+    ).toFixed(2);
+    console.log(itemList[0]);
+
+    console.log(selectedKot);
+
     let newObject = {
       Date: new Date(),
       voucherType: "sales",
@@ -638,6 +676,11 @@ const handleKotCancel = async () => {
       finalAmount: totalAmount,
       total: totalAmount,
       voucherNumber: kotVoucherNumberArray,
+      party:{
+        partyName:selectedKot[0]?.customer?.name,
+        address:selectedKot[0]?.customer?.address,
+        mobile:selectedKot[0]?.customer?.phone,
+      }
     };
     setPreviewForSales(newObject);
   };
@@ -664,7 +707,7 @@ const handleKotCancel = async () => {
     if (kotData?.paymentCompleted) {
       toast.error("Kot Payment is completed so you can't edit");
       return;
-    } 
+    }
     // else if (kotData?.status === "completed") {
     //   toast.error("Kot is already completed so you can't edit");
     //   return;
@@ -706,83 +749,89 @@ const handleKotCancel = async () => {
       {!showVoucherPdf && (
         <div className="min-h-screen bg-gray-50">
           {/* Header */}
-     <div className="bg-white px-4 py-3 border-b border-gray-200">
-  {/* Mobile Layout */}
-  <div className="block sm:hidden">
-    {/* First Row - Title */}
-    <div className="mb-3">
-      <h1 className="text-lg font-semibold text-black text-center">
-        {userRole === "kitchen" ? "Kitchen Orders" : "Reception Orders"} Display
-      </h1>
-    </div>
-    
-    {/* Second Row - Role and Date */}
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-center gap-2">
-        <span className="text-sm text-gray-500">Role:</span>
-        <select
-          value={userRole}
-          onChange={(e) => {
-            setUserRole(e.target.value);
-            setActiveFilter("ON PROCESS");
-          }}
-          className="px-2 py-1 border border-gray-300 rounded text-sm"
-        >
-          <option value="reception">Reception</option>
-          <option value="kitchen">Kitchen</option>
-        </select>
-      </div>
-      
-      <div className="flex flex-col items-center gap-2">
-        <div className="text-gray-600 text-sm">
-          {dayjs(selectedDate).format("dddd, D MMMM YYYY")}
-        </div>
-        <input
-          type="date"
-          value={selectedDate}
-          onChange={(e) => setSelectedDate(e.target.value)}
-          className="px-3 py-1 border rounded text-sm w-full max-w-[200px]"
-          max={dayjs().format("YYYY-MM-DD")}
-        />
-      </div>
-    </div>
-  </div>
+          <div className="bg-white px-4 py-3 border-b border-gray-200">
+            {/* Mobile Layout */}
+            <div className="block sm:hidden">
+              {/* First Row - Title */}
+              <div className="mb-3">
+                <h1 className="text-lg font-semibold text-black text-center">
+                  {userRole === "kitchen"
+                    ? "Kitchen Orders"
+                    : "Reception Orders"}{" "}
+                  Display
+                </h1>
+              </div>
 
-  {/* Desktop Layout (unchanged) */}
-  <div className="hidden sm:flex justify-between items-center">
-    <div className="flex items-center gap-4">
-      <h1 className="text-xl font-semibold text-black">
-        {userRole === "kitchen" ? "Kitchen Orders" : "Reception Orders"} Display
-      </h1>
-      <div className="flex items-center gap-2">
-        <span className="text-sm text-gray-500">Role:</span>
-        <select
-          value={userRole}
-          onChange={(e) => {
-            setUserRole(e.target.value);
-            setActiveFilter("ON PROCESS");
-          }}
-          className="px-2 py-1 border border-gray-300 rounded text-sm"
-        >
-          <option value="reception">Reception</option>
-          <option value="kitchen">Kitchen</option>
-        </select>
-      </div>
-    </div>
-    <div className="flex items-center gap-4">
-      <div className="text-gray-600 text-sm">
-        {dayjs(selectedDate).format("dddd, D MMMM YYYY")}
-      </div>
-      <input
-        type="date"
-        value={selectedDate}
-        onChange={(e) => setSelectedDate(e.target.value)}
-        className="px-3 py-1 border rounded text-sm"
-        max={dayjs().format("YYYY-MM-DD")}
-      />
-    </div>
-  </div>
-</div>
+              {/* Second Row - Role and Date */}
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-center gap-2">
+                  <span className="text-sm text-gray-500">Role:</span>
+                  <select
+                    value={userRole}
+                    onChange={(e) => {
+                      setUserRole(e.target.value);
+                      setActiveFilter("ON PROCESS");
+                    }}
+                    className="px-2 py-1 border border-gray-300 rounded text-sm"
+                  >
+                    <option value="reception">Reception</option>
+                    <option value="kitchen">Kitchen</option>
+                  </select>
+                </div>
+
+                <div className="flex flex-col items-center gap-2">
+                  <div className="text-gray-600 text-sm">
+                    {dayjs(selectedDate).format("dddd, D MMMM YYYY")}
+                  </div>
+                  <input
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    className="px-3 py-1 border rounded text-sm w-full max-w-[200px]"
+                    max={dayjs().format("YYYY-MM-DD")}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Desktop Layout (unchanged) */}
+            <div className="hidden sm:flex justify-between items-center">
+              <div className="flex items-center gap-4">
+                <h1 className="text-xl font-semibold text-black">
+                  {userRole === "kitchen"
+                    ? "Kitchen Orders"
+                    : "Reception Orders"}{" "}
+                  Display
+                </h1>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-500">Role:</span>
+                  <select
+                    value={userRole}
+                    onChange={(e) => {
+                      setUserRole(e.target.value);
+                      setActiveFilter("ON PROCESS");
+                    }}
+                    className="px-2 py-1 border border-gray-300 rounded text-sm"
+                  >
+                    <option value="reception">Reception</option>
+                    <option value="kitchen">Kitchen</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="text-gray-600 text-sm">
+                  {dayjs(selectedDate).format("dddd, D MMMM YYYY")}
+                </div>
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="px-3 py-1 border rounded text-sm"
+                  max={dayjs().format("YYYY-MM-DD")}
+                />
+              </div>
+            </div>
+          </div>
 
           {/* Controls */}
           <div className="bg-white px-4 py-3 border-b border-gray-200 flex justify-between items-center">
@@ -914,7 +963,12 @@ const handleKotCancel = async () => {
                               }`}
                             >
                               {order.type} - {order?.tableNumber}
-                              <span>{(order.roomId?.roomName && order?.tableNumber) ? "," : " "}{order.roomId?.roomName}</span>
+                              <span>
+                                {order.roomId?.roomName && order?.tableNumber
+                                  ? ","
+                                  : " "}
+                                {order.roomId?.roomName}
+                              </span>
                             </span>
                           </div>
 
@@ -1418,6 +1472,24 @@ const handleKotCancel = async () => {
                     >
                       Split Payment
                     </button>
+                    <button
+                      onClick={() => {
+                        setPaymentMode("credit");
+                        setCashAmount(0);
+                        setOnlineAmount(0);
+                        setPaymentError("");
+                        // Reset split payment selections
+                        // setSelectedCash("");
+                        // setSelectedBank("");
+                      }}
+                      className={`flex-1 px-3 py-2 rounded-lg border-2 text-xs font-medium transition-colors ${
+                        paymentMode === "credit"
+                          ? "border-blue-500 bg-blue-50 text-blue-700"
+                          : "border-gray-200 hover:border-gray-300"
+                      }`}
+                    >
+                      Credit Payment
+                    </button>
                   </div>
                 </div>
 
@@ -1661,6 +1733,29 @@ const handleKotCancel = async () => {
                           </div>
                         )}
                       </div>
+                    </div>
+                  </div>
+                )}
+                {paymentMode === "credit" && (
+                  <div className="mb-3">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Creditor
+                    </label>
+
+                    {/* Cash Payment Dropdown */}
+                    <div className="mt-3">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Select Creditor
+                      </label>
+                      <CustomerSearchInputBox
+                        onSelect={(party) => {
+                          setSelectedCreditor(party);
+                        }}
+                        selectedParty={{}}
+                        isAgent={false}
+                        placeholder="Search customers..."
+                        sendSearchToParent={() => {}}
+                      />
                     </div>
                   </div>
                 )}

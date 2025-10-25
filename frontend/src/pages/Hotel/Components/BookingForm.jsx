@@ -462,6 +462,7 @@ console.log(formData)
   };
   // function used to handle room selection
   const handleAvailableRoomSelection = (selectedRoom) => {
+    console.log(selectedRoom);
     setFormData((prev) => ({
       ...prev,
       selectedRoomId: selectedRoom?._id,
@@ -643,8 +644,12 @@ console.log(formData)
       }
     }
 
+    console.log(formData?.advanceAmount)
+    console.log(editData?.advanceAmount)
+
     // ✅ Continue with advance check only after customerId exists
-    if (Number(formData.advanceAmount) <= 0) {
+    if (Number(formData.advanceAmount) <= 0 || formData.advanceAmount == editData?.advanceAmount )
+       {
       if (isSubmittingRef.current) return;
       isSubmittingRef.current = true;
 
@@ -702,6 +707,7 @@ console.log(formData)
       customerName: name,
     }));
   };
+  console.log(formData.selectedRooms);
 
   return (
     <>

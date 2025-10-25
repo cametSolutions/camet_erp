@@ -16,13 +16,16 @@ function VoucherThreeInchPdf({
   const [additinalCharge, setAdditinalCharge] = useState("");
   const [inWords, setInWords] = useState("");
 
+  console.log(data);
+
   const IsIndian =
     useSelector(
       (state) => state?.secSelectedOrganization?.secSelectedOrg?.country
     ) === "India";
 
   const party = data?.party;
-  const isSameState = org?.state === party?.state || !party?.state;
+  const isSameState =
+    org?.state?.toLowerCase() === party?.state?.toLowerCase() || !party?.state;
 
   const voucherType = data?.voucherType;
   const getVoucherNumber = () => {
@@ -36,7 +39,7 @@ function VoucherThreeInchPdf({
     }
   };
 
-  console.log()
+  console.log();
 
   const getConfigurationVoucherType = () => {
     const currentVoucherType = data?.voucherType;
@@ -72,9 +75,12 @@ function VoucherThreeInchPdf({
   useEffect(() => {
     if (data && data.items) {
       const subTotal = data.items
-        .reduce((acc, curr) => acc + (Number(curr?.total) * Number(curr?.totalCount)), 0).toFixed(2);
-     setSubTotal(Number(subTotal));
-
+        .reduce(
+          (acc, curr) => acc + Number(curr?.total) * Number(curr?.totalCount),
+          0
+        )
+        .toFixed(2);
+      setSubTotal(Number(subTotal));
 
       const addiTionalCharge = data?.additionalCharges
         ?.reduce((acc, curr) => {
@@ -121,7 +127,7 @@ function VoucherThreeInchPdf({
     return totalTax;
   };
 
-  console.log(data?.items)
+  console.log(data?.items);
   const calculateAddCess = () => {
     return data?.items?.reduce((acc, curr) => {
       return acc + curr?.totalAddlCessAmt;
@@ -198,7 +204,7 @@ function VoucherThreeInchPdf({
       >
         <div style={{ width: "100%" }}>
           {/* Header */}
-          {(org?.industry != 6 && org?.industry != 7) && (
+          {org?.industry != 6 && org?.industry != 7 && (
             <div
               className="header"
               style={{ textAlign: "center", marginBottom: "10px" }}
@@ -286,78 +292,91 @@ function VoucherThreeInchPdf({
           <div style={{ textAlign: "center", marginBottom: "10px" }}>
             {(org?.industry == 6 || org?.industry == 7) && (
               <>
-              <div
-                className="header"
-                style={{ textAlign: "center", marginBottom: "10px" }}
-              >
                 <div
-                  className="restaurant-name"
+                  className="header"
+                  style={{ textAlign: "center", marginBottom: "10px" }}
+                >
+                  <div
+                    className="restaurant-name"
+                    style={{
+                      fontSize: "16px", // Large, readable header
+                      fontWeight: "bold",
+                      marginBottom: "6px",
+                      letterSpacing: "1px",
+                    }}
+                  >
+                    {configurations?.printTitle || ""}
+                  </div>
+                </div>
+                <div
+                  className="order-info"
                   style={{
-                    fontSize: "16px", // Large, readable header
+                    display: "flex",
+                    justifyContent: "space-between",
+                    marginBottom: "2px",
+                    fontSize: "12px", // Increased
                     fontWeight: "bold",
-                    marginBottom: "6px",
-                    letterSpacing: "1px",
                   }}
                 >
-                  {configurations?.printTitle || ""}
+                  <div>No: {data?.[getVoucherNumber()]}</div>
+                  <div>
+                    {new Date(data?.Date || data?.createdAt).toLocaleDateString(
+                      "en-GB"
+                    )}
+                  </div>
                 </div>
-              </div>
-                   <div
-            className="order-info"
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              marginBottom: "2px",
-              fontSize: "12px", // Increased
-              fontWeight: "bold",
-            }}
-          >
-            <div>No: {data?.[getVoucherNumber()]}</div>
-            <div>{new Date(data?.Date || data?.createdAt).toLocaleDateString("en-GB")}</div>
-          </div>
-          <div
-            className="order-info"
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              marginBottom: "4px",
-              fontSize: "12px", // Increased
-              fontWeight: "bold",
-            }}
-          >
-            <div>
-              Table No:{" "}
-              {data?.voucherNumber?.map((item) => item?.tableNumber).join(", ") || data?.convertedFrom?.map((item) => item?.tableNumber).join(", ")}
-            </div>
+                <div
+                  className="order-info"
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    marginBottom: "4px",
+                    fontSize: "12px", // Increased
+                    fontWeight: "bold",
+                  }}
+                >
+                  <div>
+                    Table No:{" "}
+                    {data?.voucherNumber
+                      ?.map((item) => item?.tableNumber)
+                      .join(", ") ||
+                      data?.convertedFrom
+                        ?.map((item) => item?.tableNumber)
+                        .join(", ")}
+                  </div>
 
-            <div>
-              {new Date(data?.Date || data?.createdAt).toLocaleTimeString("en-GB", {
-                hour: "2-digit",
-                minute: "2-digit",
-                hour12: true,
-              })}
-            </div>
-          </div>
-          <div
-            className="order-info"
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              marginBottom: "4px",
-              fontSize: "12px", // Increased
-              fontWeight: "bold",
-            }}
-          >
-            <div>
-              KOT NO :{" "}
-              {data?.voucherNumber 
-                ?.map((item) => item?.voucherNumber)
-                .join(", ") || data?.convertedFrom 
-                ?.map((item) => item?.voucherNumber)
-                .join(", ")}
-            </div>
-          </div>
-          </>
+                  <div>
+                    {new Date(data?.Date || data?.createdAt).toLocaleTimeString(
+                      "en-GB",
+                      {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        hour12: true,
+                      }
+                    )}
+                  </div>
+                </div>
+                <div
+                  className="order-info"
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    marginBottom: "4px",
+                    fontSize: "12px", // Increased
+                    fontWeight: "bold",
+                  }}
+                >
+                  <div>
+                    KOT NO :{" "}
+                    {data?.voucherNumber
+                      ?.map((item) => item?.voucherNumber)
+                      .join(", ") ||
+                      data?.convertedFrom
+                        ?.map((item) => item?.voucherNumber)
+                        .join(", ")}
+                  </div>
+                </div>
+              </>
             )}
           </div>
 
@@ -380,8 +399,16 @@ function VoucherThreeInchPdf({
             <div style={{ fontSize: "14px", marginBottom: "2px" }}>
               Customer: {data?.party?.partyName}
             </div>
-            {address?.billToAddress && (
-              <div style={{ fontSize: "14px" }}>{address.billToAddress}</div>
+            {(address?.billToAddress || data?.party?.address) && (
+              <div style={{ fontSize: "12px" }}>
+                Address: {address.billToAddress || data?.party?.address}
+              </div>
+            )}
+            {data?.party?.mobile && (
+              <div style={{ fontSize: "12px" }}>
+                {" "}
+                Mob: {data?.party?.mobile}
+              </div>
             )}
           </div>
 
@@ -417,11 +444,10 @@ function VoucherThreeInchPdf({
               {/* Items */}
               {data?.items?.length > 0 &&
                 data?.items.map((el, index) => {
+                  console.log("welcome", el?.total);
+                  console.log("welcome", el?.totalCount);
 
-                  console.log("welcome",el?.total)
-                   console.log("welcome",el?.totalCount)
-
-                  const total = (el?.total || 0) * el?.totalCount
+                  const total = (el?.total || 0) * el?.totalCount;
                   const count = el?.totalCount || 0;
                   const rate = count > 0 ? (total / count).toFixed(1) : "0";
 

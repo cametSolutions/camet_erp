@@ -3,7 +3,8 @@ import { useMemo } from "react";
 
 const TaxTable = ({ products, org = {}, party = {}, isIndian = true }) => {
   // New variable to handle state comparison
-  const isSameState = org?.state === party?.state || !party?.state;
+  const isSameState =
+    org?.state?.toLowerCase() === party?.state?.toLowerCase() || !party?.state;
 
   const consolidatedTaxData = useMemo(() => {
     if (products && products.length > 0) {
