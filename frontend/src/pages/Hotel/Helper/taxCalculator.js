@@ -151,48 +151,90 @@ export const taxCalculatorForRestaurant = (
 ) => {
   console.log(inclusive);
   return tableData.map((item) => {
+    console.log(item);
+
     // Map through GodownList for each product
     const updatedGodownList = item.GodownList.map((godown) => {
       const price = Number(item.price) || 0;
       const igst = Number(item.igst) || 0;
       const cgst = Number(item.cgst) || 0;
       const sgst = Number(item.sgst) || 0;
+      const count = Number(godown.count) || 1;
+      const cess = Number(item?.cess) || 0;
+      const addlCess = Number(item?.addl_cess) || 0;
 
-      let basePrice;
+      console.log(godown.count);
+
+      // Determine total tax rate
+      const totalTaxRate = igst || cgst + sgst;
+
+      let taxableAmount;
+      let igstAmount, cgstAmount, sgstAmount, cessAmount, additionalCessAmount;
+      let individualTotal;
 
       if (inclusive) {
-        // Price includes tax → remove tax from it
-        basePrice = price / (1 + igst / 100);
-      } else {
-        // Price excludes tax → keep price as base
-        basePrice = price;
-      }
+        // Tax Inclusive: Manager's Formula
+        // Total amount paid by customer
+        const totalAmount = price * count;
 
-      const igstAmount = (basePrice * igst) / 100;
-      const cgstAmount = (basePrice * cgst) / 100;
-      const sgstAmount = (basePrice * sgst) / 100;
+        // Calculate taxable amount: Total * 100 / (100 + Tax%)
+        taxableAmount = (totalAmount * 100) / (100 + totalTaxRate);
+
+        // Tax = Total - Taxable Amount
+        const totalTaxAmount = totalAmount - taxableAmount;
+
+        // Split tax based on IGST or CGST+SGST
+        igstAmount = totalTaxAmount;
+        cgstAmount = totalTaxAmount / 2;
+        sgstAmount = totalTaxAmount / 2;
+
+        // Cess calculation on taxable amount
+        cessAmount = (taxableAmount * cess) / 100;
+        additionalCessAmount = (taxableAmount * addlCess) / 100;
+
+        // Individual total remains the same (already inclusive)
+        individualTotal = totalAmount + cessAmount + additionalCessAmount;
+      } else {
+        // Tax Exclusive: Manager's Formula
+        // Taxable amount
+        taxableAmount = price * count;
+
+        // Calculate tax: Taxable * Tax% / 100
+        const totalTaxAmount = (taxableAmount * totalTaxRate) / 100;
+
+        // Split tax based on IGST or CGST+SGST
+        igstAmount = totalTaxAmount;
+        cgstAmount = totalTaxAmount / 2;
+        sgstAmount = totalTaxAmount / 2;
+
+        // Cess calculation
+        cessAmount = (taxableAmount * cess) / 100;
+        additionalCessAmount = (taxableAmount * addlCess) / 100;
+
+        // Individual total = Taxable + All Taxes
+        individualTotal =
+          taxableAmount + totalTaxAmount + cessAmount + additionalCessAmount;
+      }
 
       return {
         ...godown,
-        basePrice,
+        basePrice: price,
         discountAmount: 0,
         discountPercentage: 0,
         discountType: "none",
-        taxableAmount: basePrice,
+        taxableAmount,
         cgstValue: cgst,
         sgstValue: sgst,
         igstValue: igst,
-        cessValue: item?.cess || 0,
-        addlCessValue: item?.addl_cess || 0,
+        cessValue: cess,
+        addlCessValue: addlCess,
         igstAmount,
         cgstAmount,
         sgstAmount,
-        individualTotal: inclusive
-          ? price
-          : basePrice + igstAmount + cgstAmount + sgstAmount,
+        cessAmount,
+        additionalCessAmount,
+        individualTotal,
         isTaxIncluded: inclusive,
-        cessAmount: 0,
-        additionalCessAmount: 0,
       };
     });
 

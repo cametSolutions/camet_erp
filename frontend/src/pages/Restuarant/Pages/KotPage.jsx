@@ -1,6 +1,6 @@
 
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import  { useState, useEffect, useCallback, useRef } from "react";
 import dayjs from "dayjs";
 import useFetch from "@/customHook/useFetch";
 import { useQueryClient } from "@tanstack/react-query";
@@ -402,6 +402,8 @@ const handleKotCancel = async () => {
   }, [salePrintData, navigate]);
 
   const filteredOrders = getFilteredOrders();
+
+  console.log("filteredOrders", filteredOrders);
 
   const handleSavePayment = async (id) => {
     setSaveLoader(true);
@@ -1033,9 +1035,9 @@ const handleKotCancel = async () => {
                                 <div className="text-xs text-gray-800 font-medium leading-tight">
                                   {item?.product_name}
                                 </div>
-                                {item.description && (
+                                {item?.description && (
                                   <div className="text-xs text-gray-500 truncate mt-0.5">
-                                    {item.description}
+                                    {item?.description}
                                   </div>
                                 )}
                               </div>
@@ -1049,7 +1051,7 @@ const handleKotCancel = async () => {
                                         : "bg-blue-100 text-blue-800"
                                     }`}
                                   >
-                                    {item.quantity}
+                                    {item?.quantity}
                                   </span>
                                   <div className="text-xs text-gray-400 mt-0.5">
                                     qty
@@ -1059,10 +1061,10 @@ const handleKotCancel = async () => {
                                 {userRole === "reception" && (
                                   <div className="text-right min-w-[50px]">
                                     <div className="font-bold text-xs text-gray-900">
-                                      ₹{item.price.toFixed(2)}
+                                      ₹{item?.price?.toFixed(2)}
                                     </div>
                                     <div className="text-xs text-gray-500">
-                                      ₹{(item.price * item.quantity).toFixed(2)}
+                                      ₹{(item?.total)?.toFixed(2)}
                                     </div>
                                   </div>
                                 )}
