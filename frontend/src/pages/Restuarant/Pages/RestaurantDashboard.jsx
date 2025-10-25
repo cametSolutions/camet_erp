@@ -3,7 +3,6 @@ import { useReactToPrint } from "react-to-print";
 
 import VoucherThreeInchPdf from "@/pages/voucher/voucherPdf/threeInchPdf/VoucherThreeInchPdf";
 
-
 import {
   Plus,
   Minus,
@@ -15,7 +14,6 @@ import {
   Filter,
   X,
   MenuIcon,
-
   Receipt,
   Home,
   Package,
@@ -41,12 +39,12 @@ const RestaurantPOS = () => {
   const [selectedSubcategory, setSelectedSubcategory] = useState("");
   const [orderItems, setOrderItems] = useState([]);
   const [salePrintData, setSalePrintData] = useState(null);
-const [showVoucherPdf, setShowVoucherPdf] = useState(false);
-const contentToPrint = useRef(null);
+  const [showVoucherPdf, setShowVoucherPdf] = useState(false);
+  const contentToPrint = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
   const [showFullTableSelection, setShowFullTableSelection] = useState(false);
-const [selectedDataForPayment, setSelectedDataForPayment] = useState({});
+  const [selectedDataForPayment, setSelectedDataForPayment] = useState({});
   // Mobile responsive states
   const [isMobile, setIsMobile] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
@@ -72,18 +70,17 @@ const [selectedDataForPayment, setSelectedDataForPayment] = useState({});
   const [selectedPriceLevel, setSelectedPriceLevel] = useState(null);
   const kotDataForEdit = location.state?.kotData;
 
-
   // Add these states near the other state declarations
-const [showPaymentModal, setShowPaymentModal] = useState(false);
-const [paymentMethod, setPaymentMethod] = useState("cash");
-const [paymentMode, setPaymentMode] = useState("single");
-const [cashAmount, setCashAmount] = useState(0);
-const [onlineAmount, setOnlineAmount] = useState(0);
-const [paymentError, setPaymentError] = useState("");
-const [saveLoader, setSaveLoader] = useState(false);
-const [selectedCash, setSelectedCash] = useState("");
-const [selectedBank, setSelectedBank] = useState("");
-const [cashOrBank, setCashOrBank] = useState({});
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [paymentMode, setPaymentMode] = useState("single");
+  const [cashAmount, setCashAmount] = useState(0);
+  const [onlineAmount, setOnlineAmount] = useState(0);
+  const [paymentError, setPaymentError] = useState("");
+  const [saveLoader, setSaveLoader] = useState(false);
+  const [selectedCash, setSelectedCash] = useState("");
+  const [selectedBank, setSelectedBank] = useState("");
+  const [cashOrBank, setCashOrBank] = useState({});
 
   const [customerDetails, setCustomerDetails] = useState({
     name: "",
@@ -99,11 +96,11 @@ const [cashOrBank, setCashOrBank] = useState({});
   const [orders, setOrders] = useState([]);
   const [orderNumber, setOrderNumber] = useState(1001);
 
-const org = useSelector(
+  const org = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
 
-   const cmp_id = useSelector(
+  const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
   useEffect(() => {
@@ -122,30 +119,29 @@ const org = useSelector(
         guestName: kotDataForEdit?.customer?.name || "",
         CheckInNumber: kotDataForEdit?.checkInNumber || "",
       });
-
     }
   }, [kotDataForEdit]);
-// Add this useFetch hook with other data fetching
-const { data: paymentTypeData } = useFetch(
-  `/api/sUsers/getPaymentType/${cmp_id}`
-);
+  // Add this useFetch hook with other data fetching
+  const { data: paymentTypeData } = useFetch(
+    `/api/sUsers/getPaymentType/${cmp_id}`
+  );
 
-useEffect(() => {
-  if (paymentTypeData) {
-    const { bankDetails, cashDetails } = paymentTypeData?.data;
-    setCashOrBank(paymentTypeData?.data);
-    
-    if (bankDetails && bankDetails.length > 0) {
-      setSelectedBank(bankDetails[0]._id);
+  useEffect(() => {
+    if (paymentTypeData) {
+      const { bankDetails, cashDetails } = paymentTypeData?.data;
+      setCashOrBank(paymentTypeData?.data);
+
+      if (bankDetails && bankDetails.length > 0) {
+        setSelectedBank(bankDetails[0]._id);
+      }
+      if (cashDetails && cashDetails.length > 0) {
+        setSelectedCash(cashDetails[0]._id);
+      }
     }
-    if (cashDetails && cashDetails.length > 0) {
-      setSelectedCash(cashDetails[0]._id);
-    }
-  }
-}, [paymentTypeData]);
+  }, [paymentTypeData]);
 
   console.log(roomDetails, "roomDetails");
- 
+
   const companyName = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg?.name
   );
@@ -165,8 +161,7 @@ useEffect(() => {
     Default: "🍽️",
   };
 
-  
-     useEffect(() => {
+  useEffect(() => {
     if (salePrintData) {
       navigate(`/sUsers/sharesalesThreeInch/${salePrintData._id}`);
     }
@@ -213,12 +208,15 @@ useEffect(() => {
 
   const handlePrintData = async (saleId) => {
     try {
-      let res = await api.get(`/api/sUsers/getSalePrintData/${cmp_id}/${saleId}`, {
-        withCredentials: true,
-      });
+      let res = await api.get(
+        `/api/sUsers/getSalePrintData/${cmp_id}/${saleId}`,
+        {
+          withCredentials: true,
+        }
+      );
       setSalePrintData(res?.data?.data); // triggers navigation useEffect
       setShowVoucherPdf(true);
-console.log(res?.data?.data);
+      console.log(res?.data?.data);
       setTimeout(() => {
         handlePrint();
       }, 500);
@@ -402,91 +400,95 @@ console.log(res?.data?.data);
 
   const searchTimeoutRef = useRef(null);
 
-const handleProcessDirectSalePayment = async () => {
-  setSaveLoader(true);
+  const handleProcessDirectSalePayment = async () => {
+    setSaveLoader(true);
 
-  try {
-    // Step 1: Prepare paymentDetails
-    let paymentDetails;
-    if (paymentMethod === "cash") {
-      paymentDetails = {
-        cashAmount: selectedDataForPayment?.total,
-        onlineAmount: 0,
-        selectedCash,
-        selectedBank,
-        paymentMode: "single",
-      };
-    } else {
-      paymentDetails = {
-        cashAmount: 0,
-        onlineAmount: selectedDataForPayment?.total,
-        selectedCash,
-        selectedBank,
-        paymentMode: "single",
-      };
-    }
-
-    // Step 2: Make API call
-    const response = await api.post(
-      `/api/sUsers/directSale/${cmp_id}`,
-      {
-        paymentMethod: paymentMethod,
-        paymentDetails: paymentDetails,
-        selectedKotData: selectedDataForPayment,
-        isDirectSale: true,
-      },
-      { withCredentials: true }
-    );
-
-    // Step 3: Handle success and PRINT
-    if (response.status === 200 || response.status === 201) {
-        console.log("=== FULL RESPONSE ===");
-      console.log("response.data:", response.data);
-      console.log("response.data.data:", response.data.data);
-      console.log("response.data.data.salesRecord:", response.data.data.salesRecord);
-      
-      toast.success(response?.data?.message || "Direct sale completed successfully!");
-
-      // ✅ Get sale ID from response
-     const salesRecord = response?.data?.data?.salesRecord;
-      
-      
-       if (salesRecord && salesRecord._id) {
-        console.log("📄 Sale ID:", salesRecord._id);
-        console.log("📄 Full Sale Data:", salesRecord);
-        
-        setSalePrintData(salesRecord);
-        setShowVoucherPdf(true);
-        
-        setTimeout(() => {
-          handlePrint();
-        }, 500);
+    try {
+      // Step 1: Prepare paymentDetails
+      let paymentDetails;
+      if (paymentMethod === "cash") {
+        paymentDetails = {
+          cashAmount: selectedDataForPayment?.total,
+          onlineAmount: 0,
+          selectedCash,
+          selectedBank,
+          paymentMode: "single",
+        };
       } else {
-        console.error("❌ NO SALE ID FOUND IN RESPONSE");
-        toast.error("Sale saved but couldn't generate print");
+        paymentDetails = {
+          cashAmount: 0,
+          onlineAmount: selectedDataForPayment?.total,
+          selectedCash,
+          selectedBank,
+          paymentMode: "single",
+        };
       }
 
-      // Clear state
-      setOrderItems([]);
-      setSelectedDataForPayment(null);
-      setPaymentMethod("cash");
-      setPaymentMode("single");
-      setShowPaymentModal(false);
+      // Step 2: Make API call
+      const response = await api.post(
+        `/api/sUsers/directSale/${cmp_id}`,
+        {
+          paymentMethod: paymentMethod,
+          paymentDetails: paymentDetails,
+          selectedKotData: selectedDataForPayment,
+          isDirectSale: true,
+        },
+        { withCredentials: true }
+      );
 
-      // setTimeout(() => {
-      //   navigate("/sUsers/RestaurantDashboard");
-      // }, 1000);
-    } else {
-      toast.error(response?.data?.message || "Failed to process payment");
+      // Step 3: Handle success and PRINT
+      if (response.status === 200 || response.status === 201) {
+        console.log("=== FULL RESPONSE ===");
+        console.log("response.data:", response.data);
+        console.log("response.data.data:", response.data.data);
+        console.log(
+          "response.data.data.salesRecord:",
+          response.data.data.salesRecord
+        );
+
+        toast.success(
+          response?.data?.message || "Direct sale completed successfully!"
+        );
+
+        // ✅ Get sale ID from response
+        const salesRecord = response?.data?.data?.salesRecord;
+
+        if (salesRecord && salesRecord._id) {
+          console.log("📄 Sale ID:", salesRecord._id);
+          console.log("📄 Full Sale Data:", salesRecord);
+
+          setSalePrintData(salesRecord);
+          setShowVoucherPdf(true);
+
+          setTimeout(() => {
+            handlePrint();
+          }, 500);
+        } else {
+          console.error("❌ NO SALE ID FOUND IN RESPONSE");
+          toast.error("Sale saved but couldn't generate print");
+        }
+
+        // Clear state
+        setOrderItems([]);
+        setSelectedDataForPayment(null);
+        setPaymentMethod("cash");
+        setPaymentMode("single");
+        setShowPaymentModal(false);
+
+        // setTimeout(() => {
+        //   navigate("/sUsers/RestaurantDashboard");
+        // }, 1000);
+      } else {
+        toast.error(response?.data?.message || "Failed to process payment");
+      }
+    } catch (error) {
+      console.error("=== ERROR ===", error);
+      console.error("Error response:", error.response?.data);
+      toast.error(error.response?.data?.message || "Failed to process payment");
+    } finally {
+      setSaveLoader(false);
     }
-  } catch (error) {
-    console.error("=== ERROR ===", error);
-    console.error("Error response:", error.response?.data);
-    toast.error(error.response?.data?.message || "Failed to process payment");
-  } finally {
-    setSaveLoader(false);
-  }
-};
+  };
 
   const handleSearchChange = (value) => {
     setSearchTerm(value);
@@ -607,70 +609,69 @@ const handleProcessDirectSalePayment = async () => {
 
   const handlePlaceOrder = () => {
     if (orderItems.length === 0) return;
- if (orderType === "direct-sale") {
-    // Skip KOT generation and go directly to payment
-    handleDirectSale();
-    return;
- }
-    else  if (orderType === "dine-in") {
+    if (orderType === "direct-sale") {
+      // Skip KOT generation and go directly to payment
+      handleDirectSale();
+      return;
+    } else if (orderType === "dine-in") {
       setShowFullTableSelection(true); // show full-page table selection
     } else {
       setShowKOTModal(true); // keep normal KOT flow for others
     }
-    setShowOrderSummary(false)
+    setShowOrderSummary(false);
   };
-
-
 
   const handleDirectSale = async () => {
-  let updatedItems = orderItems.map((item) => {
-    return {
-      ...item,
-      GodownList: item.GodownList.map((g, index) =>
-        index === 0
-          ? {
-              ...g,
-              selectedPriceRate: item?.price,
-              godown_id: g?._id,
-              defaultGodown: true,
-              mfgdt: new Date(),
-              expdt: new Date(),
-              warrantyCard: g?.warrantyCard,
-              added: true,
-              count: item?.quantity,
-              actualCount: item?.quantity,
-            }
-          : g
-      ),
-      hasGodownOrBatch: false,
-      totalCount: item?.quantity,
-      totalActualCount: item?.quantity,
+    let updatedItems = orderItems.map((item) => {
+      return {
+        ...item,
+        GodownList: item.GodownList.map((g, index) =>
+          index === 0
+            ? {
+                ...g,
+                selectedPriceRate: item?.price,
+                godown_id: g?._id,
+                defaultGodown: true,
+                mfgdt: new Date(),
+                expdt: new Date(),
+                warrantyCard: g?.warrantyCard,
+                added: true,
+                count: item?.quantity,
+                actualCount: item?.quantity,
+              }
+            : g
+        ),
+        hasGodownOrBatch: false,
+        totalCount: item?.quantity,
+        totalActualCount: item?.quantity,
+      };
+    });
+
+    let finalProductData = await taxCalculatorForRestaurant(
+      updatedItems,
+      configurations[0]?.addRateWithTax?.restaurantSale
+    );
+
+
+
+    let newSaleObject = {
+      Date: new Date(),
+      voucherType: "sales",
+      serialNumber: orderNumber,
+      userLevelSerialNumber: orderNumber,
+      salesNumber: `SALE-${orderNumber}`,
+      partyAccount: "Cash-in-Hand",
+      items: finalProductData,
+      finalAmount: getTotalAmount(),
+      total: getTotalAmount(),
+      isDirectSale: true,
     };
-  });
 
-  let finalProductData = await taxCalculatorForRestaurant(
-    updatedItems,
-    configurations[0]?.addRateWithTax?.restaurantSale
-  );
-
-  let newSaleObject = {
-    Date: new Date(),
-    voucherType: "sales",
-    serialNumber: orderNumber,
-    userLevelSerialNumber: orderNumber,
-    salesNumber: `SALE-${orderNumber}`,
-    partyAccount: "Cash-in-Hand",
-    items: finalProductData,
-    finalAmount: getTotalAmount(),
-    total: getTotalAmount(),
-    isDirectSale: true,
+    setSelectedDataForPayment(newSaleObject);
+    setPaymentMode("single");
+    setPaymentMethod("cash");
+    setShowPaymentModal(true);
   };
-
-  setSelectedDataForPayment(newSaleObject);
-  setPaymentMode("single");
-  setPaymentMethod("cash");
-  setShowPaymentModal(true);
-};
   const generateKOT = async (selectedTableNumber, tableStatus) => {
     console.log("hi");
     let updatedItems = [];
@@ -707,6 +708,9 @@ const handleProcessDirectSalePayment = async () => {
       updatedItems,
       configurations[0]?.addRateWithTax?.restaurantSale
     );
+
+    console.log(finalProductData);
+    
     if (orderType === "dine-in") {
       if (roomDetails && Object.keys(roomDetails).length > 0) {
         orderCustomerDetails = {
@@ -733,9 +737,9 @@ const handleProcessDirectSalePayment = async () => {
       orderCustomerDetails = { ...customerDetails, tableStatus };
     }
 
-    console.log("orderCustomerDetails", orderItems);
+    // console.log("orderCustomerDetails", orderItems);
     console.log(orderType);
-    console.log("orderCustomerDetails", finalProductData);
+    // console.log("orderCustomerDetails", finalProductData);
 
     const newOrder = {
       id: orderNumber,
@@ -751,7 +755,6 @@ const handleProcessDirectSalePayment = async () => {
     let url = isEdit
       ? `/api/sUsers/editKOT/${cmp_id}/${kotDataForEdit._id}`
       : `/api/sUsers/generateKOT/${cmp_id}`;
-
 
     try {
       let response = await api.post(url, newOrder, {
@@ -792,8 +795,6 @@ const handleProcessDirectSalePayment = async () => {
         : "KOT generated successfully!"
     );
   };
-
-
 
   const getOrderTypeDisplay = (type) => {
     const typeMap = {
@@ -865,9 +866,9 @@ const handleProcessDirectSalePayment = async () => {
         <div className="bg-gradient-to-r from-slate-900 via-gray-900 to-slate-800 text-white p-2 md:p-3 shadow-2xl border-b border-gray-700/30">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-                 <button
+              <button
                 className="md:hidden p-1.5 hover:bg-white/10 rounded-lg transition-colors duration-200"
-              onClick={() => navigate("/sUsers/dashboard")}
+                onClick={() => navigate("/sUsers/dashboard")}
               >
                 <FaArrowLeft className="w-5 h-5" />
               </button>
@@ -936,14 +937,16 @@ const handleProcessDirectSalePayment = async () => {
         </div>
 
         {/* Compact Cuisine Categories */}
-       <div className="bg-white/90 backdrop-blur-sm border-b border-gray-200/50 shadow-lg">
-  <div className="flex justify-between items-center px-3 py-2.5">
-    <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-      {cuisines.map((cuisine) => (
-        <button
-          key={cuisine._id}
-          onClick={() => handleCategorySelect(cuisine._id, cuisine.name)}
-          className={`
+        <div className="bg-white/90 backdrop-blur-sm border-b border-gray-200/50 shadow-lg">
+          <div className="flex justify-between items-center px-3 py-2.5">
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+              {cuisines.map((cuisine) => (
+                <button
+                  key={cuisine._id}
+                  onClick={() =>
+                    handleCategorySelect(cuisine._id, cuisine.name)
+                  }
+                  className={`
             flex items-center gap-2 px-3 py-1.5 rounded-xl
             font-semibold text-xs transition-all duration-300
             whitespace-nowrap flex-shrink-0 min-w-max
@@ -954,16 +957,16 @@ const handleProcessDirectSalePayment = async () => {
                 : "bg-white/80 text-gray-700 border-gray-200 hover:border-indigo-300 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-blue-50 hover:shadow-md"
             }
           `}
-        >
-          <span className="text-sm">{cuisine.icon}</span>
-          <span>{cuisine.name}</span>
-        </button>
-      ))}
-    </div>
-    
-    <button
-     onClick={() => navigate("/sUsers/BillSummary?type=restaurant")}
-      className="hidden md:flex
+                >
+                  <span className="text-sm">{cuisine.icon}</span>
+                  <span>{cuisine.name}</span>
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={() => navigate("/sUsers/BillSummary?type=restaurant")}
+              className="hidden md:flex
         flex items-center gap-2 px-4 py-1.5 rounded-xl
         font-semibold text-xs transition-all duration-300
         whitespace-nowrap flex-shrink-0
@@ -972,12 +975,12 @@ const handleProcessDirectSalePayment = async () => {
         hover:scale-105 active:scale-95 transform
         hover:from-green-700 hover:to-emerald-700
       "
-    >
-      <span className="text-sm">📊</span>
-      <span>Daily Restaurant Sales</span>
-    </button>
-  </div>
-</div>
+            >
+              <span className="text-sm">📊</span>
+              <span>Daily Restaurant Sales</span>
+            </button>
+          </div>
+        </div>
 
         {/* Main Content */}
         <div className="flex-1 flex min-h-0 relative">
@@ -1198,9 +1201,7 @@ const handleProcessDirectSalePayment = async () => {
                             bg-gradient-to-br from-indigo-100/60 via-indigo-200/40 to-indigo-300/30
                             transition-opacity duration-500 rounded-xl p-2"
                                 >
-                                  <span
-                                    className="text-lg sm:text-md md:text-md font-bold text-indigo-700 "
-                                  >
+                                  <span className="text-lg sm:text-md md:text-md font-bold text-indigo-700 ">
                                     {count}
                                   </span>
                                 </div>
@@ -1438,19 +1439,19 @@ const handleProcessDirectSalePayment = async () => {
                     <span className="font-semibold text-xs">Room Service</span>
                   </button>
                   <button
-      onClick={() => {
-        console.log("Direct Sale button clicked"); // Debug log
-        setOrderType("direct-sale");
-      }}
-      className={`flex flex-col items-center justify-center h-12 rounded-xl border transition-all duration-300 transform hover:scale-105 col-span-2 ${
-        orderType === "direct-sale"
-          ? "border-transparent bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg shadow-emerald-500/25"
-          : "border-gray-200 bg-white/80 text-gray-700 hover:border-green-300 hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50"
-      }`}
-    >
-      <Receipt className="w-4 h-4 mb-0.5" />
-      <span className="font-semibold text-xs">Direct Sale</span>
-    </button>
+                    onClick={() => {
+                      console.log("Direct Sale button clicked"); // Debug log
+                      setOrderType("direct-sale");
+                    }}
+                    className={`flex flex-col items-center justify-center h-12 rounded-xl border transition-all duration-300 transform hover:scale-105 col-span-2 ${
+                      orderType === "direct-sale"
+                        ? "border-transparent bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg shadow-emerald-500/25"
+                        : "border-gray-200 bg-white/80 text-gray-700 hover:border-green-300 hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50"
+                    }`}
+                  >
+                    <Receipt className="w-4 h-4 mb-0.5" />
+                    <span className="font-semibold text-xs">Direct Sale</span>
+                  </button>
                 </div>
               </div>
 
@@ -1732,162 +1733,177 @@ const handleProcessDirectSalePayment = async () => {
         </div>
       )}
       {/* Direct Sale Payment Modal */}
-{showPaymentModal && (
-  <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-2">
-    <motion.div
-      initial={{ scale: 0.9, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      className="bg-white rounded-lg p-4 max-w-lg w-full mx-4 max-h-[95vh] overflow-y-auto"
-    >
-      <div className="flex justify-between items-center mb-3">
-        <h2 className="text-lg font-bold text-gray-800">
-          Direct Sale Payment
-        </h2>
-        <button
-          onClick={() => {
-            setShowPaymentModal(false);
-            setPaymentMode("single");
-            setCashAmount(0);
-            setOnlineAmount(0);
-            setPaymentError("");
-          }}
-          className="text-gray-400 hover:text-gray-600"
-        >
-          <X className="w-6 h-6" />
-        </button>
-      </div>
-
-      {/* Order Summary */}
-      <div className="mb-3 p-2 bg-blue-50 rounded-lg border border-blue-200">
-        <div className="flex justify-between items-center">
-          <span className="text-sm font-medium text-blue-700">Total Items:</span>
-          <span className="text-sm font-bold text-blue-900">{getTotalItems()}</span>
-        </div>
-      </div>
-
-      {/* Single Payment Method Selection */}
-      <div className="mb-3">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Payment Method
-        </label>
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            onClick={() => setPaymentMethod("cash")}
-            className={`flex flex-col items-center p-3 rounded-lg border-2 transition-colors ${
-              paymentMethod === "cash"
-                ? "border-blue-500 bg-blue-50 text-blue-700"
-                : "border-gray-200 hover:border-gray-300"
-            }`}
+      {showPaymentModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-2">
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-white rounded-lg p-4 max-w-lg w-full mx-4 max-h-[95vh] overflow-y-auto"
           >
-            <span className="text-2xl mb-1">💵</span>
-            <span className="text-xs font-medium">Cash</span>
-          </button>
-          <button
-            onClick={() => setPaymentMethod("card")}
-            className={`flex flex-col items-center p-3 rounded-lg border-2 transition-colors ${
-              paymentMethod === "card"
-                ? "border-blue-500 bg-blue-50 text-blue-700"
-                : "border-gray-200 hover:border-gray-300"
-            }`}
-          >
-            <span className="text-2xl mb-1">💳</span>
-            <span className="text-xs font-medium">Online Payment</span>
-          </button>
-        </div>
-
-        {/* Cash Payment Dropdown */}
-        {paymentMethod === "cash" && (
-          <div className="mt-3">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Select Cash Account
-            </label>
-            <select
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
-              value={selectedCash}
-              onChange={(e) => setSelectedCash(e.target.value)}
-            >
-              {cashOrBank?.cashDetails?.map((cashier) => (
-                <option key={cashier._id} value={cashier._id}>
-                  {cashier.partyName}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        {/* Online Payment Dropdown */}
-        {paymentMethod === "card" && (
-          <div className="mt-3">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Select Bank/Payment Method
-            </label>
-            <select
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
-              value={selectedBank}
-              onChange={(e) => setSelectedBank(e.target.value)}
-            >
-              <option value="" disabled>Select Payment Method</option>
-              {cashOrBank?.bankDetails?.map((bank) => (
-                <option key={bank._id} value={bank._id}>
-                  {bank.partyName}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-      </div>
-
-      {/* Error Message */}
-      {paymentError && (
-        <div className="mb-3 p-2 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-red-600 text-xs">{paymentError}</p>
-        </div>
-      )}
-
-      {/* Order Summary */}
-      <div className="bg-gray-50 p-3 rounded-lg">
-        <div className="space-y-2">
-          {orderItems.map((item) => (
-            <div key={item._id} className="flex justify-between text-xs">
-              <span>{item.product_name} x {item.quantity}</span>
-              <span className="font-medium">₹{(item.price * item.quantity).toFixed(2)}</span>
+            <div className="flex justify-between items-center mb-3">
+              <h2 className="text-lg font-bold text-gray-800">
+                Direct Sale Payment
+              </h2>
+              <button
+                onClick={() => {
+                  setShowPaymentModal(false);
+                  setPaymentMode("single");
+                  setCashAmount(0);
+                  setOnlineAmount(0);
+                  setPaymentError("");
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-6 h-6" />
+              </button>
             </div>
-          ))}
-        </div>
-        <div className="border-t border-gray-200 pt-2 mt-2 flex justify-between font-semibold text-gray-800">
-          <span className="text-sm">Total Amount</span>
-          <span className="text-base text-blue-600">₹{getTotalAmount()}</span>
-        </div>
-        
-        <button
-          onClick={handleProcessDirectSalePayment}
-          disabled={saveLoader}
-          className={`w-full mt-3 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-            saveLoader
-              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-              : "bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700"
-          }`}
-        >
-          {saveLoader ? (
-            <span className="flex items-center justify-center gap-2">
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              Processing...
-            </span>
-          ) : (
-            "Process Payment"
-          )}
-        </button>
-        
-      {showVoucherPdf && salePrintData && (
-        <div style={{ display: "none" }}>
-          <VoucherThreeInchPdf ref={contentToPrint} data={salePrintData} />
+
+            {/* Order Summary */}
+            <div className="mb-3 p-2 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-blue-700">
+                  Total Items:
+                </span>
+                <span className="text-sm font-bold text-blue-900">
+                  {getTotalItems()}
+                </span>
+              </div>
+            </div>
+
+            {/* Single Payment Method Selection */}
+            <div className="mb-3">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Payment Method
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => setPaymentMethod("cash")}
+                  className={`flex flex-col items-center p-3 rounded-lg border-2 transition-colors ${
+                    paymentMethod === "cash"
+                      ? "border-blue-500 bg-blue-50 text-blue-700"
+                      : "border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  <span className="text-2xl mb-1">💵</span>
+                  <span className="text-xs font-medium">Cash</span>
+                </button>
+                <button
+                  onClick={() => setPaymentMethod("card")}
+                  className={`flex flex-col items-center p-3 rounded-lg border-2 transition-colors ${
+                    paymentMethod === "card"
+                      ? "border-blue-500 bg-blue-50 text-blue-700"
+                      : "border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  <span className="text-2xl mb-1">💳</span>
+                  <span className="text-xs font-medium">Online Payment</span>
+                </button>
+              </div>
+
+              {/* Cash Payment Dropdown */}
+              {paymentMethod === "cash" && (
+                <div className="mt-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Select Cash Account
+                  </label>
+                  <select
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                    value={selectedCash}
+                    onChange={(e) => setSelectedCash(e.target.value)}
+                  >
+                    {cashOrBank?.cashDetails?.map((cashier) => (
+                      <option key={cashier._id} value={cashier._id}>
+                        {cashier.partyName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Online Payment Dropdown */}
+              {paymentMethod === "card" && (
+                <div className="mt-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Select Bank/Payment Method
+                  </label>
+                  <select
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                    value={selectedBank}
+                    onChange={(e) => setSelectedBank(e.target.value)}
+                  >
+                    <option value="" disabled>
+                      Select Payment Method
+                    </option>
+                    {cashOrBank?.bankDetails?.map((bank) => (
+                      <option key={bank._id} value={bank._id}>
+                        {bank.partyName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+
+            {/* Error Message */}
+            {paymentError && (
+              <div className="mb-3 p-2 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-600 text-xs">{paymentError}</p>
+              </div>
+            )}
+
+            {/* Order Summary */}
+            <div className="bg-gray-50 p-3 rounded-lg">
+              <div className="space-y-2">
+                {orderItems.map((item) => (
+                  <div key={item._id} className="flex justify-between text-xs">
+                    <span>
+                      {item.product_name} x {item.quantity}
+                    </span>
+                    <span className="font-medium">
+                      ₹{(item.price * item.quantity).toFixed(2)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <div className="border-t border-gray-200 pt-2 mt-2 flex justify-between font-semibold text-gray-800">
+                <span className="text-sm">Total Amount</span>
+                <span className="text-base text-blue-600">
+                  ₹{getTotalAmount()}
+                </span>
+              </div>
+
+              <button
+                onClick={handleProcessDirectSalePayment}
+                disabled={saveLoader}
+                className={`w-full mt-3 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                  saveLoader
+                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                    : "bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700"
+                }`}
+              >
+                {saveLoader ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Processing...
+                  </span>
+                ) : (
+                  "Process Payment"
+                )}
+              </button>
+
+              {showVoucherPdf && salePrintData && (
+                <div style={{ display: "none" }}>
+                  <VoucherThreeInchPdf
+                    ref={contentToPrint}
+                    data={salePrintData}
+                  />
+                </div>
+              )}
+            </div>
+          </motion.div>
         </div>
       )}
-      </div>
-    </motion.div>
-  </div>
-)}
-  {/* {showVoucherPdf && salePrintData && (
+      {/* {showVoucherPdf && salePrintData && (
       <div style={{ display: 'none' }}>
         <VoucherThreeInchPdf
           contentToPrint={contentToPrint}
@@ -1899,7 +1915,7 @@ const handleProcessDirectSalePayment = async () => {
         />
       </div>
     )} */}
-    
+
       {/* Optimized CSS */}
       <style jsx>{`
         .scrollbar-hide {

@@ -444,10 +444,11 @@ function VoucherThreeInchPdf({
               {/* Items */}
               {data?.items?.length > 0 &&
                 data?.items.map((el, index) => {
-                  console.log("welcome", el?.total);
-                  console.log("welcome", el?.totalCount);
+                  // console.log("welcome", el);
+                  // console.log("welcome", data);
+                  // console.log("welcome", el?.totalCount);
 
-                  const total = (el?.total || 0) * el?.totalCount;
+                  const total = (el?.total || 0)
                   const count = el?.totalCount || 0;
                   const rate = count > 0 ? (total / count).toFixed(1) : "0";
 
@@ -591,7 +592,7 @@ function VoucherThreeInchPdf({
               }}
             >
               <div>SUBTOTAL:</div>
-              <div>{subTotal}</div>
+              <div>{data?.finalAmount}</div>
             </div>
           )}
 
