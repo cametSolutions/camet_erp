@@ -160,7 +160,24 @@ const bookingSchema = new mongoose.Schema(
     checkInId: { type: mongoose.Schema.Types.ObjectId, ref: "CheckIn" },
     checkInArray: [{ type: mongoose.Schema.Types.ObjectId, ref: "CheckIn" }],
     status: String,
+
     roomSwapHistory: [roomSwapHistorySchema],
+
+    // Foreign National Fields (only for non-Indian guests)
+    company: String,
+    nextDestination: String,
+    dateOfBirth: String,
+    dateOfArrivalInIndia: String,
+    visaNo: String,
+    visaPOI: String,
+    visaDOI: String,
+    visaExpDt: String,
+    certOfRegistrationNumber: String,
+    passportNo: String,
+    placeOfIssue: String,
+    dateOfIssue: String,
+    dateOfExpiry: String,
+    grcno: String,
   },
   { timestamps: true }
 );

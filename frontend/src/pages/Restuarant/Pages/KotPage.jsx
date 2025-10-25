@@ -1,6 +1,9 @@
+
+
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import dayjs from "dayjs";
 import useFetch from "@/customHook/useFetch";
+import { useQueryClient } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
 import {
@@ -14,9 +17,14 @@ import {
   MdPrint,
   MdCheckCircle,
   MdPayment,
+    MdCancel,
+  MdClose,
 } from "react-icons/md";
 import api from "@/api/api";
-import { motion } from "framer-motion";
+
+
+import { motion, AnimatePresence } from "framer-motion";
+
 import { Check, CreditCard, X, Banknote } from "lucide-react";
 import { generateAndPrintKOT } from "@/pages/Restuarant/Helper/kotPrintHelper";
 import { useNavigate } from "react-router-dom";
@@ -26,6 +34,8 @@ import { FaRegEdit } from "react-icons/fa";
 import VoucherThreeInchPdf from "@/pages/voucher/voucherPdf/threeInchPdf/VoucherThreeInchPdf";
 import { useReactToPrint } from "react-to-print";
 import CustomerSearchInputBox from "@/pages/Hotel/Components/CustomerSearchInPutBox";
+
+
 
 const OrdersDashboard = () => {
   const contentToPrint = useRef(null);
@@ -63,6 +73,15 @@ const OrdersDashboard = () => {
   // state used for showing pdf print
 
   const [salePrintData, setSalePrintData] = useState(null);
+
+
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [selectedOrderForCancel, setSelectedOrderForCancel] = useState(null);
+  const [cancelledKots, setCancelledKots] = useState([]);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelError, setCancelError] = useState("");
+
+   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
   const { _id: cmp_id, name: companyName } = useSelector(
@@ -200,6 +219,9 @@ const OrdersDashboard = () => {
   const getFilteredOrders = () => {
     let filtered = orders;
 
+      filtered = filtered.filter(order => 
+      !cancelledKots.some(cancelled => cancelled.id === order._id)
+    );
     // Filter by status based on user role and active filter
     // if (userRole === "kitchen") {
     //   if (activeFilter === "All") {
@@ -304,6 +326,35 @@ const OrdersDashboard = () => {
     generateAndPrintKOT(orderData, true, false, companyName);
   };
 
+
+const handleKotCancel = async () => {
+  try {
+    if (!selectedOrderForCancel) return;
+
+    const response = await api.put(
+      `/api/kot/cancel/${selectedOrderForCancel._id}`,
+      { reason: cancelReason }
+    );
+
+    if (response.data.success) {
+      // ✅ Remove the cancelled order from UI immediately
+      setOrders((prevOrders) =>
+        prevOrders.filter((kot) => kot._id !== selectedOrderForCancel._id)
+      );
+
+      setShowCancelModal(false);
+      setCancelReason(""); // clear reason field
+      setSelectedOrderForCancel(null);
+    } else {
+      console.error("Cancel failed:", response.data.message);
+    }
+  } catch (error) {
+    console.error("Error cancelling KOT:", error);
+  }
+};
+
+
+
   const MenuIcon = () => (
     <svg
       className="w-4 h-4 text-gray-600"
@@ -356,6 +407,27 @@ const OrdersDashboard = () => {
     setSaveLoader(true);
     let paymentDetails;
     let selectedKotData;
+     if (selectedDataForPayment?.isDirectSale) {
+    // Direct sale payment processing
+    if (paymentMethod === "cash") {
+      paymentDetails = {
+        cashAmount: selectedDataForPayment?.total,
+        onlineAmount: 0,
+        selectedCash,
+        selectedBank,
+        paymentMode: "single",
+      };
+    } else {
+      paymentDetails = {
+        cashAmount: 0,
+        onlineAmount: selectedDataForPayment?.total,
+        selectedCash,
+        selectedBank,
+        paymentMode: "single",
+      };
+    }
+    selectedKotData = selectedDataForPayment;
+  } else {
     if (
       selectedDataForPayment.roomService &&
       Object.keys(selectedDataForPayment.roomService).length > 0
@@ -478,6 +550,7 @@ const OrdersDashboard = () => {
           paymentDetails: paymentDetails,
           selectedKotData: selectedKotData,
           isPostToRoom: isPostToRoom,
+              isDirectSale: selectedDataForPayment?.isDirectSale || false,
         },
         { withCredentials: true }
       );
@@ -512,7 +585,8 @@ const OrdersDashboard = () => {
       setPaymentMode("single")
       setSelectedCreditor("")
     }
-  };
+  }
+};
 
   const handlePrintData = async (kotId) => {
     try {
@@ -640,6 +714,7 @@ const OrdersDashboard = () => {
     // }
     navigate("/sUsers/RestaurantDashboard", { state: { kotData } });
   };
+
 
   const handlePrint = useReactToPrint({
     content: () => contentToPrint.current,
@@ -1119,6 +1194,22 @@ const OrdersDashboard = () => {
                           <MdPrint className="w-3 h-3 group-hover:rotate-12 transition-transform duration-200" />
                           Kot Print
                         </button>
+
+                           <button
+                            className="flex-1 group px-3 py-1.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg text-xs font-semibold hover:from-red-600 hover:to-red-700 transition-all duration-200 hover:scale-105 flex items-center justify-center gap-1"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              console.log('Cancel button clicked for order:', order);
+                              setSelectedOrderForCancel(order);
+                              setShowCancelModal(true);
+                              console.log('Modal should open now');
+                            }}
+                          >
+                            <MdCancel className="w-3 h-3 group-hover:rotate-12 transition-transform duration-200" />
+                            Cancel
+                          </button>
+                      
                       </div>
                     )}
 
@@ -1776,6 +1867,83 @@ const OrdersDashboard = () => {
               </div>
             </div>
           )}
+          <AnimatePresence>
+            {showCancelModal && selectedOrderForCancel && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
+                <motion.div
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.9, opacity: 0 }}
+                  className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-lg font-bold text-gray-800">
+                      Cancel KOT #{selectedOrderForCancel.voucherNumber}
+                    </h2>
+                    <button
+                      onClick={() => {
+                        setShowCancelModal(false);
+                        setSelectedOrderForCancel(null);
+                        setCancelReason('');
+                        setCancelError('');
+                      }}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      <MdClose className="w-6 h-6" />
+                    </button>
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Reason for Cancellation <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      value={cancelReason}
+                      onChange={(e) => {
+                        setCancelReason(e.target.value);
+                        setCancelError('');
+                      }}
+                      placeholder="Please provide a reason for cancelling this KOT..."
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
+                      rows="4"
+                    />
+                    {cancelError && (
+                      <p className="text-red-500 text-xs mt-1">{cancelError}</p>
+                    )}
+                  </div>
+
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                    <p className="text-xs text-yellow-800">
+                      <strong>Note:</strong> This will cancel the KOT from the report only. 
+                      The data will remain in the database.
+                    </p>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => {
+                        setShowCancelModal(false);
+                        setSelectedOrderForCancel(null);
+                        setCancelReason('');
+                        setCancelError('');
+                      }}
+                      className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-all duration-200"
+                    >
+                      Close
+                    </button>
+                    <button
+                      onClick={handleKotCancel}
+                      className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition-all duration-200 flex items-center justify-center gap-2"
+                    >
+                      <MdCancel className="w-4 h-4" />
+                      Confirm Cancel
+                    </button>
+                  </div>
+                </motion.div>
+              </div>
+            )}
+          </AnimatePresence>
         </div>
       )}
     </>

@@ -438,7 +438,7 @@ function PaymentSplitting() {
         /// these values are not getting latest data,so we need to take it directly form store
         finalAmount: Number(reduxData?.finalAmount?.toFixed(2) || 0),
         finalOutstandingAmount: Number(
-          reduxData?.finalOutstandingAmount?.toFixed(2) || 0
+          reduxData?.finalOutstandingAmount?.toFixed(2) || Number(reduxData?.finalAmount?.toFixed(2) || 0)
         ),
         subTotal: Number(reduxData?.subTotal?.toFixed(2) || 0),
         totalPaymentSplits: Number(

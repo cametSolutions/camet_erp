@@ -80,6 +80,26 @@ const priceLevelSchema = new mongoose.Schema({
     ref: "PrimaryUser",
     required: true,
   },
+    dineIn: {
+    type: String,
+    enum: ['enabled', ''],
+    default: ''
+  },
+  takeaway: {
+    type: String,
+    enum: ['enabled', ''],
+    default: ''
+  },
+  roomService: {
+    type: String,
+    enum: ['enabled', ''],
+    default: ''
+  },
+  delivery: {
+    type: String,
+    enum: ['enabled', ''],
+    default: ''
+  },
 });
 
 export const Brand = mongoose.model("Brand", brandSchema);

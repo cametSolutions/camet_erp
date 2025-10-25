@@ -749,16 +749,32 @@ function BookingList() {
               </button>
             )}
             {/* Status Button */}
-            {((el?.status === "checkIn" &&
-              location.pathname === "/sUsers/bookingList") ||
-              (el?.status === "checkOut" &&
-                location.pathname === "/sUsers/checkInList") ||
-              (Number(el?.balanceToPay) <= 0 &&
-                location.pathname === "/sUsers/checkOutList")) && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (location.pathname === "/sUsers/checkOutList") {
+            {/* Status/Action Button based on status */}
+            {el?.status === "checkIn" &&
+              location.pathname === "/sUsers/bookingList" && (
+                <button
+                  onClick={(e) => e.stopPropagation()}
+                  className="bg-green-600 hover:bg-green-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
+                >
+                  CheckedIn
+                </button>
+              )}
+
+            {el?.status === "checkOut" &&
+              location.pathname === "/sUsers/checkInList" && (
+                <button
+                  onClick={(e) => e.stopPropagation()}
+                  className="bg-green-600 hover:bg-green-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
+                >
+                  CheckedOut
+                </button>
+              )}
+
+            {Number(el?.balanceToPay) <= 0 &&
+              location.pathname === "/sUsers/checkOutList" && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
                     setSelectedCustomer(el.customerId?._id);
                     setSelectedCheckOut([el]);
                     const hasPrint1 = configurations[0]?.defaultPrint?.print1;
@@ -775,17 +791,12 @@ function BookingList() {
                         },
                       }
                     );
-                  }
-                }}
-                className="bg-green-600 hover:bg-green-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
-              >
-                {location.pathname === "/sUsers/checkInList" ||
-                location.pathname === "/sUsers/bookingList"
-                  ? "CheckedOut"
-                  : "Print"}
-              </button>
-            )}
-
+                  }}
+                  className="bg-green-600 hover:bg-green-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
+                >
+                  Print
+                </button>
+              )}
             {/* Edit and Delete Actions */}
             {(el?.status != "checkIn" &&
               location.pathname == "/sUsers/bookingList") ||

@@ -14,6 +14,10 @@ const GuestRegistrationCard = () => {
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
 
+
+  const  org = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg
+  );
   // Get checkin data from location state (navigated from BookingList)
   useEffect(() => {
     if (location?.state?.selectedCheckOut && location.state.selectedCheckOut[0]) {
@@ -88,15 +92,22 @@ console.log(selectedCheckin)
       <div className="max-w-4xl mx-auto bg-white border-2 border-black">
         {/* Header */}
         <div className="text-center p-4 border-b-2 border-black relative">
-          <div className="inline-block w-16 h-8 border-2 border-black rounded-full leading-6 font-bold mb-2">
-            HT
-          </div>
-          <div className="text-xs tracking-widest">KGPCS</div>
-          <div className="text-lg font-bold tracking-widest mb-1">HILLTOWN</div>
-          <div className="text-xs tracking-widest mb-3">HOTEL</div>
+          
+       <div className="flex justify-center items-center w-full">
+  <img
+    src={org?.logo}
+    alt="Company Logo"
+    style={{
+      maxWidth: "50mm", // thermal printer width
+      height: "auto",
+      objectFit: "contain",
+    }}
+  />
+</div>
+
           <div className="text-sm font-bold">GUEST REGISTRATION CARD</div>
           <div className="absolute left-5 top-32 text-xs">
-            GRC NO. : {selectedCheckin?.voucherNumber || selectedCheckin?.voucherNumber || '1117'}
+            GRC NO. : {selectedCheckin?.grcno }
           </div>
         </div>
 
@@ -120,7 +131,7 @@ console.log(selectedCheckin)
                 <span className="text-xs text-gray-600">GSTNO: {selectedCheckin.customerId.gstNumber}</span>
               )}
             </div>
-            <div className="w-40 p-2 font-bold text-xs bg-gray-50">
+            <div className="w-40 p-2  text-xs bg-gray-50">
               {selectedCheckin?.visitOfPurpose?.purpose || 'BUSINESS'}
             </div>
           </div>
@@ -135,12 +146,12 @@ console.log(selectedCheckin)
           {/* Row 4 - Company/Travel Agent Values */}
           <div className="flex border-b border-black">
             <div className="w-32 p-2 border-r border-black text-xs">
-              {selectedCheckin?.customerId?.companyName || ''}
+              {selectedCheckin?.company || ''}
             </div>
             <div className="flex-1 p-2 border-r border-black text-xs">
               {selectedCheckin?.agentId?.name || ''}
             </div>
-            <div className="w-40 p-2 text-xs"></div>
+            <div className="w-40 p-2 text-xs">{selectedCheckin?.nextDestination}</div>
           </div>
 
           {/* Row 5 - Address Header */}
@@ -158,7 +169,7 @@ console.log(selectedCheckin)
               {selectedCheckin?.pinCode && ` - ${selectedCheckin.pinCode}`}
             </div>
             <div className="w-40 p-2 text-xs">
-              {selectedCheckin?.customerId?.dateOfBirth ? formatDate(selectedCheckin.customerId.dateOfBirth) : ''}
+              {selectedCheckin?.dateOfBirth ? formatDate(selectedCheckin.dateOfBirth) : ''}
             </div>
           </div>
 
@@ -195,16 +206,16 @@ console.log(selectedCheckin)
           {/* Row 10 - Passport Values */}
           <div className="flex border-b border-black">
             <div className="w-32 p-2 border-r border-black text-xs">
-              {selectedCheckin?.customerId?.passportNumber || ''}
+              {selectedCheckin?.passportNo || ''}
             </div>
             <div className="w-32 p-2 border-r border-black text-xs">
-              {selectedCheckin?.customerId?.passportPlaceOfIssue || ''}
+              {selectedCheckin?.placeOfIssue || ''}
             </div>
             <div className="w-32 p-2 border-r border-black text-xs">
-              {selectedCheckin?.customerId?.passportDateOfIssue ? formatDate(selectedCheckin.customerId.passportDateOfIssue) : ''}
+              {selectedCheckin?.dateOfIssue ? formatDate(selectedCheckin.dateOfIssue) : ''}
             </div>
             <div className="flex-1 p-2 text-xs">
-              {selectedCheckin?.customerId?.passportExpiryDate ? formatDate(selectedCheckin.customerId.passportExpiryDate) : ''}
+              {selectedCheckin?.dateOfExpiry ? formatDate(selectedCheckin.dateOfExpiry) : ''}
             </div>
           </div>
 
@@ -224,7 +235,7 @@ console.log(selectedCheckin)
               {formatDate(selectedCheckin?.checkOutDate)}
             </div>
             <div className="flex-1 p-2 text-xs">
-              {selectedCheckin?.customerId?.arrivalInIndia ? formatDate(selectedCheckin.customerId.arrivalInIndia) : ''}
+              {selectedCheckin?.dateOfArrivalInIndia ? formatDate(selectedCheckin.dateOfArrivalInIndia) : ''}
             </div>
           </div>
 
@@ -239,16 +250,16 @@ console.log(selectedCheckin)
           {/* Row 14 - Visa Values */}
           <div className="flex border-b border-black">
             <div className="w-32 p-2 border-r border-black text-xs">
-              {selectedCheckin?.customerId?.visaNumber || ''}
+              {selectedCheckin?.visaNo || ''}
             </div>
             <div className="w-32 p-2 border-r border-black text-xs">
-              {selectedCheckin?.customerId?.visaPlaceOfIssue || ''}
+              {selectedCheckin?.visaPOI || ''}
             </div>
             <div className="w-32 p-2 border-r border-black text-xs">
-              {selectedCheckin?.customerId?.visaDateOfIssue ? formatDate(selectedCheckin.customerId.visaDateOfIssue) : ''}
+              {selectedCheckin?.visaDOI ? formatDate(selectedCheckin.visaDOI) : ''}
             </div>
             <div className="flex-1 p-2 text-xs">
-              {selectedCheckin?.customerId?.visaExpiryDate ? formatDate(selectedCheckin.customerId.visaExpiryDate) : ''}
+              {selectedCheckin?.visaExpDt ? formatDate(selectedCheckin.visaExpDt) : ''}
             </div>
           </div>
 
@@ -268,17 +279,17 @@ console.log(selectedCheckin)
 
           {/* Row 17 - Payment Values */}
           <div className="flex border-b border-black">
+           <div className="w-32 p-2 border-r border-black text-xs">
+  {selectedCheckin?.paymentMode || selectedCheckin?.bookingId?.paymentMode || '0' }
+</div>
             <div className="w-32 p-2 border-r border-black text-xs">
-              {selectedCheckin?.paymentMode || 'CASH'}
-            </div>
+  {selectedCheckin?.bookingId?.advanceAmount || selectedCheckin?.totalAmount || '0'}
+</div>
             <div className="w-32 p-2 border-r border-black text-xs">
-              {selectedCheckin?.advanceAmount || selectedCheckin?.totalAmount || ''}
-            </div>
-            <div className="w-32 p-2 border-r border-black text-xs">
-              {selectedCheckin?.receiptNumber || selectedCheckin?.voucherNumber || ''}
+              {selectedCheckin?.receiptNumber || selectedCheckin?.voucherNumber || '0'}
             </div>
             <div className="flex-1 p-2 text-xs">
-              {selectedCheckin?.registrationNumber || ''}
+              {selectedCheckin?.certOfRegistrationNumber || ''}
             </div>
           </div>
 

@@ -70,6 +70,14 @@ const kotSchema = new mongoose.Schema({
     default: "pending",
   },
 
+   cancelReason: {
+    type: String,
+    trim: true,
+  },
+
+  cancelledAt: {
+    type: Date,
+  },
   paymentMethod: {
     type: String,
   },
