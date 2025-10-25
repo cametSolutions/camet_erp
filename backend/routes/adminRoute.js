@@ -26,7 +26,7 @@ import {
   syncIndexes,
 } from "../controllers/adminController.js";
 import { authAdmin } from '../middlewares/authAdmin.js';
-import { deleteDuplicateParties, previewDuplicateParties } from '../controllers/testingController.js';
+import { createOutstandingFromSales, deleteDuplicateParties, previewDuplicateParties } from '../controllers/testingController.js';
 
 router.post('/login',adminLogin);
 router.post('/logout',logout);
@@ -62,6 +62,7 @@ router.patch('/updateUserCapacity/:userId', authAdmin, updateUserCapacity);
 router.get('/parties/duplicates/preview', previewDuplicateParties);
 // Actually delete duplicates (destructive operation)
 router.delete('/parties/duplicates', deleteDuplicateParties);
+router.post('/createOutstandingFromSales/:saleId', createOutstandingFromSales);
 
 
 export default router
