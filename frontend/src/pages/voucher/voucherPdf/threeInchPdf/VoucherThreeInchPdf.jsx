@@ -204,7 +204,7 @@ function VoucherThreeInchPdf({
       >
         <div style={{ width: "100%" }}>
           {/* Header */}
-          {org?.industry != 6 && org?.industry != 7 && (
+          {org?.industry != 6 && org?.industry != 7 && org?.industry != 8 (
             <div
               className="header"
               style={{ textAlign: "center", marginBottom: "10px" }}

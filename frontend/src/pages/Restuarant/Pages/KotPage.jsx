@@ -1031,7 +1031,7 @@ const handleKotCancel = async () => {
                             >
                               <div className="flex-1 min-w-0 pr-3">
                                 <div className="text-xs text-gray-800 font-medium leading-tight">
-                                  {item.product_name}
+                                  {item?.product_name}
                                 </div>
                                 {item.description && (
                                   <div className="text-xs text-gray-500 truncate mt-0.5">
