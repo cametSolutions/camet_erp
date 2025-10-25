@@ -369,7 +369,10 @@ function SalesSummaryTable() {
                         <td colSpan={selectedOption === "voucher" ? 24 : 22} className="h-1 bg-gray-300" />
                       </tr>
                     )}
-                    {party?.sale.map((saleItem, saleIndex) => (
+                    {party?.sale.map((saleItem, saleIndex) => {
+                      // console.log(saleItem);
+                      
+                      return (
                       <tr
                         key={`${partyIndex}-${saleIndex}`}
                         className="border-b hover:bg-gray-100 transition duration-200 text-sm"
@@ -455,7 +458,7 @@ function SalesSummaryTable() {
                           {saleItem?.netAmount}
                         </td>
                       </tr>
-                    ))}
+                    )})}
                   </>
                 ))}
               </tbody>
