@@ -126,9 +126,18 @@ const generatePDF = async (
               <td>${(row.sgst || 0).toFixed(2)}</td>
               <td>${(row.igst || 0).toFixed(2)}</td>
               <td>${(row.totalWithTax || 0).toFixed(2)}</td>
-              <td>${row.cash > 0 ? (row.cash || 0).toFixed(2) : "-"}</td>
-              <td>${row.upi > 0 ? (row.upi || 0).toFixed(2) : "-"}</td>
-              <td>${row.mode || "-"}</td>
+          
+              <td>${
+                row.partyAccount === "Cash-in-Hand"
+                  ? (row.totalWithTax || 0).toFixed(2)
+                  : "-"
+              }</td>
+              <td>${
+                row.partyAccount === "Bank Accounts"
+                  ? (row.totalWithTax || 0).toFixed(2)
+                  : "-"
+              }</td>
+              <td>${row.partyAccount === "Bank Accounts" ? "Upi" : "Cash"}</td>
               <td>${row.credit > 0 ? (row.credit || 0).toFixed(2) : "-"}</td>
               <td>${row.creditDescription || "-"}</td>
             </tr>
@@ -843,22 +852,19 @@ const BillSummary = () => {
                       {(row.totalWithTax || 0).toFixed(2)}
                     </td>
                     <td className="border border-black p-2 text-center">
-                      {row.cash > 0 ? (row.cash || 0).toFixed(2) : "-"}
-                    </td>
-                    <td className="border border-black p-2 text-center">
-                      {row.upi > 0 ? (row.upi || 0).toFixed(2) : "-"}
-                    </td>
-                    <td className="border border-black p-2 text-center">
-                      {row.mode
-                        ? row.mode.split(" + ").map((m, i) => (
-                            <span
-                              key={i}
-                              className="px-2 py-1 mx-1 rounded bg-blue-100 text-blue-800 text-xs font-semibold"
-                            >
-                              {m}
-                            </span>
-                          ))
+                      {row.partyAccount === "Cash-in-Hand"
+                        ? (row.totalWithTax || 0).toFixed(2)
                         : "-"}
+                    </td>
+                    <td className="border border-black p-2 text-center">
+                      {row.partyAccount === "Bank Accounts"
+                        ? (row.totalWithTax || 0).toFixed(2)
+                        : "-"}
+                    </td>
+                    <td className="border border-black p-2 text-center">
+                      <span className="px-2 py-1 mx-1 rounded bg-blue-100 text-blue-800 text-xs font-semibold">
+                        {row.partyAccount === "Bank Accounts" ? "Upi" : "Cash"}
+                      </span>
                     </td>
                     <td className="border border-black p-2 text-center">
                       {row.mealPeriod || "-"}
@@ -918,7 +924,7 @@ const BillSummary = () => {
                   <td className="border border-black p-2 text-center">
                     {totals.upi.toFixed(2)}
                   </td>
-              
+
                   <td className="border border-black p-2 text-center">-</td>
                   <td className="border border-black p-2 text-center">-</td>
                   <td className="border border-black p-2 text-center">-</td>
@@ -926,7 +932,6 @@ const BillSummary = () => {
                     {totals.credit.toFixed(2)}
                   </td>
                   <td className="border border-black p-2 text-center">-</td>
-                  
                 </tr>
               )}
             </tbody>
