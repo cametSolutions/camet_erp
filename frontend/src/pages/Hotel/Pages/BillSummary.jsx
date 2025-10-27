@@ -128,16 +128,23 @@ const generatePDF = async (
               <td>${(row.totalWithTax || 0).toFixed(2)}</td>
           
               <td>${
-                row.partyAccount === "Cash-in-Hand"
+                row.partyAccount === "Cash-in-Hand" ||
+                row.partyAccount === "CASH"
                   ? (row.totalWithTax || 0).toFixed(2)
                   : "-"
               }</td>
               <td>${
-                row.partyAccount === "Bank Accounts"
+                row.partyAccount === "Bank Accounts" ||
+                row.partyAccount === "Gpay"
                   ? (row.totalWithTax || 0).toFixed(2)
                   : "-"
               }</td>
-              <td>${row.partyAccount === "Bank Accounts" ? "Upi" : "Cash"}</td>
+              <td>${
+                row.partyAccount === "Bank Accounts" ||
+                row.partyAccount === "Gpay"
+                  ? "Upi"
+                  : "Cash"
+              }</td>
               <td>${row.credit > 0 ? (row.credit || 0).toFixed(2) : "-"}</td>
               <td>${row.creditDescription || "-"}</td>
             </tr>
@@ -852,18 +859,23 @@ const BillSummary = () => {
                       {(row.totalWithTax || 0).toFixed(2)}
                     </td>
                     <td className="border border-black p-2 text-center">
-                      {row.partyAccount === "Cash-in-Hand"
+                      {row.partyAccount === "Cash-in-Hand" ||
+                      row.partyAccount === "CASH"
                         ? (row.totalWithTax || 0).toFixed(2)
                         : "-"}
                     </td>
                     <td className="border border-black p-2 text-center">
-                      {row.partyAccount === "Bank Accounts"
+                      {row.partyAccount === "Bank Accounts" ||
+                      row.partyAccount === "Gpay"
                         ? (row.totalWithTax || 0).toFixed(2)
                         : "-"}
                     </td>
                     <td className="border border-black p-2 text-center">
                       <span className="px-2 py-1 mx-1 rounded bg-blue-100 text-blue-800 text-xs font-semibold">
-                        {row.partyAccount === "Bank Accounts" ? "Upi" : "Cash"}
+                        {row.partyAccount === "Bank Accounts" ||
+                        row.partyAccount === "Gpay"
+                          ? "Upi"
+                          : "Cash"}
                       </span>
                     </td>
                     <td className="border border-black p-2 text-center">
