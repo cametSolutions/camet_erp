@@ -570,21 +570,33 @@ const BillSummary = () => {
 
   // Calculate totals from the current salesData for display consistency
   const totals = salesData.reduce(
-    (acc, item) => ({
-      amount: acc.amount + (item.amount || 0),
-      disc: acc.disc + (item.disc || 0),
-      roundOff: acc.roundOff + (item.roundOff || 0),
-      total: acc.total + (item.total || 0),
-      cgst: acc.cgst + (item.cgst || 0), // Access nested items array
-      sgst: acc.sgst + (item.sgst || 0), // Access nested items array
-      igst: acc.igst + (item.igst || 0),
-      totalWithTax: acc.totalWithTax + (item.totalWithTax || 0),
-      cash: acc.cash + (item.cash || 0),
-      credit: acc.credit + (item.credit || 0),
-      upi: acc.upi + (item.upi || 0),
-      cheque: acc.cheque + (item.cheque || 0),
-      bank: acc.bank + (item.bank || 0),
-    }),
+    (acc, item) => {
+      const isCashSale =
+        item.partyAccount === "Cash-in-Hand" || item.partyAccount === "CASH";
+
+        const isBankSale=
+        item.partyAccount === "Bank" || item.partyAccount === "Bank Accounts" || item.partyAccount === "Gpay";
+
+      return {
+        amount: acc.amount + (item.amount || 0),
+        disc: acc.disc + (item.disc || 0),
+        roundOff: acc.roundOff + (item.roundOff || 0),
+        total: acc.total + (item.total || 0),
+        cgst: acc.cgst + (item.cgst || 0),
+        sgst: acc.sgst + (item.sgst || 0),
+        igst: acc.igst + (item.igst || 0),
+        totalWithTax: acc.totalWithTax + (item.totalWithTax || 0),
+
+        // ✅ Modified logic:
+        cash: acc.cash + (isCashSale ? item.totalWithTax || 0 : 0),
+
+        // Keep other payment modes the same
+        credit: acc.credit + (item.credit || 0),
+        upi: acc.upi + (isBankSale ? item.totalWithTax || 0 : 0),
+        cheque: acc.cheque + (isBankSale ? item.totalWithTax || 0 : 0),
+        bank: acc.bank + (isBankSale ? item.totalWithTax || 0 : 0),
+      };
+    },
     {
       amount: 0,
       disc: 0,
@@ -602,8 +614,8 @@ const BillSummary = () => {
     }
   );
 
-  console.log(totals);
-  console.log(salesData);
+  // console.log(totals);
+  // console.log(salesData);
 
   useEffect(() => {
     // Initialize with current date
