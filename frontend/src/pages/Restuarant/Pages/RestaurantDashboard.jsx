@@ -329,7 +329,7 @@ const fetchAllItems = useCallback(async (page = 1, append = false) => {
     const params = new URLSearchParams();
     params.append("under", "restaurant");
     params.append("page", page);
-    params.append("limit", "20");
+    params.append("limit", "10");
  
 
     const res = await api.get(`/api/sUsers/getAllItems/${cmp_id}?${params}`, {
@@ -363,34 +363,53 @@ const fetchAllItems = useCallback(async (page = 1, append = false) => {
   }
 }, [cmp_id]);
 
+
+
  // Intersection Observer for infinite scroll
-useEffect(() => {
-  const observer = new IntersectionObserver(
-    (entries) => {
-      if (entries[0].isIntersecting && hasMore && !isLoading) {
-        const nextPage = currentPage + 1;
-        setCurrentPage(nextPage);
-        fetchAllItems(nextPage, true);
-      }
-    },
-    { threshold: 0.1 }
-  );
+// useEffect(() => {
+//   const observer = new IntersectionObserver(
+//     (entries) => {
+//       if (entries[0].isIntersecting && hasMore && !isLoading) {
+//         const nextPage = currentPage + 1;
+//         setCurrentPage(nextPage);
+//         fetchAllItems(nextPage, true);
+//       }
+//     },
+//     { threshold: 0.1 }
+//   );
 
-  if (observerTarget.current) {
-    observer.observe(observerTarget.current);
-  }
+//   if (observerTarget.current) {
+//     observer.observe(observerTarget.current);
+//   }
 
-  return () => {
-    if (observerTarget.current) {
-      observer.unobserve(observerTarget.current);
-    }
-  };
-}, [hasMore, isLoading, currentPage, fetchAllItems]);
+//   return () => {
+//     if (observerTarget.current) {
+//       observer.unobserve(observerTarget.current);
+//     }
+//   };
+// }, [hasMore, isLoading, currentPage, fetchAllItems]);
 
 // Initial load
 useEffect(() => {
   fetchAllItems(1, false);
 }, [fetchAllItems]);
+  useEffect(() => {
+    if (!observerTarget.current || !hasMore || isLoading) return;
+    const observer = new IntersectionObserver(
+      entries => {
+        if (entries[0].isIntersecting && hasMore && !isLoading) {
+          const nextPage = currentPage + 1;
+          setCurrentPage(nextPage);
+          fetchAllItems(nextPage, true);
+        }
+      },
+      { threshold: 0.1 }
+    );
+    observer.observe(observerTarget.current);
+    return () => {
+      observer.disconnect();
+    };
+  }, [hasMore, isLoading, currentPage, fetchAllItems]);
 
   const {
     data: roomBookingData,
@@ -2145,7 +2164,12 @@ useEffect(() => {
             0 4px 15px rgba(99, 102, 241, 0.1);
         }
       `}</style>
+       <div ref={observerTarget} style={{ height: 1 }} />
+      {isLoading && <div>Loading...</div>}
+      {!hasMore && <div>No more items</div>}
+    
     </>
+     
   );
 };
 
