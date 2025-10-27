@@ -64,7 +64,7 @@ fetchAdvanceDetails,getAllRoomsWithStatusForDate,updateRoomStatus,getDateBasedRo
 fetchOutStandingAndFoodData,convertCheckOutToSale , updateConfigurationForHotelAndRestaurant,swapRoom,getRoomSwapHistory,checkedInGuest,getHotelSalesDetails,} from '../controllers/hotelController.js'
 import {addItem,getAllItems,getItems,getCategories,deleteItem,updateItem,generateKot,getKot,updateKotStatus,editKot,
     getRoomDataForRestaurant,updateKotPayment,getPaymentType,saveTableNumber,getSalePrintData,updateTable,getTables,deleteTable,
-    updateTableStatus,getKotDataByTable,updateConfigurationForKotApproval ,getSummaryDashboard,cancelKot,directSale  } from '../controllers/restaurantController.js'
+    updateTableStatus,getKotDataByTable,updateConfigurationForKotApproval ,getSummaryDashboard,cancelKot,directSale,searchItems   } from '../controllers/restaurantController.js'
 
 
 router.post('/login',login)
@@ -345,6 +345,7 @@ router.post('/editKOT/:cmp_id/:kotId',authSecondary,secondaryIsBlocked,editKot)
 
 router.post('/editItem/:cmp_id/:id',authSecondary,updateItem)
 router.get('/getItems/:cmp_id',authSecondary,getItems)
+router.get('/searchItems',authSecondary,searchItems )
 router.delete('/deleteItem/:id',authSecondary,deleteItem)
 router.get('/getKotData/:cmp_id',authSecondary,secondaryIsBlocked,getKot)
 router.put('/updateKotStatus/:cmp_id',authSecondary,secondaryIsBlocked,updateKotStatus)

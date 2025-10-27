@@ -134,20 +134,34 @@ export const getItems = async (req, res) => {
 
 export const getAllItems = async (req, res) => {
   try {
-    // Extract filters from req.query or req.params as needed
-    const params = extractRequestParams(req); // custom function or just use req.query directly
-    const filter = buildDatabaseFilterForRoom(params); // build your filter based on request
+    const params = extractRequestParams(req);
+    const filter = buildDatabaseFilterForRoom(params);
+    
+    // Pagination
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+  
+    const skip = (page - 1) * limit;
 
-    // Fetch all products matching the filter (NO pagination)
-    const products = await productModel.find(filter);
+    const products = await productModel
+      .find(filter)
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 });
 
-    // Optionally: return count too
-    // const totalItems = await ProductModel.countDocuments(filter);
+    const totalItems = await productModel.countDocuments(filter);
+    const hasMore = skip + products.length < totalItems;
 
     return res.status(200).json({
       success: true,
       items: products,
-      // totalItems, // include if you want to return count
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(totalItems / limit),
+        totalItems,
+        hasMore,
+        itemsPerPage: limit,
+      },
     });
   } catch (error) {
     console.error("Error in getAllProducts:", error);
@@ -157,6 +171,64 @@ export const getAllItems = async (req, res) => {
     });
   }
 };
+
+export const searchItems = async (req, res) => {
+  try {
+    const cmp_id = req.params.cmp_id || req.query.cmp_id; // ✅ FIX
+    const search = (req.query.search || "").trim();
+
+    if (!cmp_id) {
+      return res.status(400).json({
+        success: false,
+        message: "cmp_id required",
+      });
+    }
+
+    if (!search) {
+      return res.status(200).json({
+        success: true,
+        items: [],
+        message: "Please provide a search term",
+      });
+    }
+
+    const searchRegex = new RegExp(search, "i");
+
+    const searchFilter = {
+      cmp_id,
+      $or: [
+        { product_name: searchRegex },
+        { hsn_code: searchRegex },
+        { unit: searchRegex },
+      ],
+    };
+
+    console.log("Search filter:", JSON.stringify(searchFilter, null, 2));
+
+    const products = await productModel
+      .find(searchFilter)
+      .populate({
+        path: "Priceleveles.pricelevel",
+        select: "pricelevel dineIn takeaway roomService delivery",
+      })
+      .sort({ product_name: 1 })
+      .limit(100)
+      .lean();
+
+    return res.status(200).json({
+      success: true,
+      items: products,
+      totalResults: products.length,
+    });
+  } catch (error) {
+    console.error("Error in searchItems:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error, please try again!",
+    });
+  }
+};
+
 
 // Get Single Item Controller (for editing)
 export const getItemById = async (req, res) => {
