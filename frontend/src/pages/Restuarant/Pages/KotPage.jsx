@@ -658,12 +658,10 @@ const handleKotCancel = async () => {
     });
 
     let totalAmount = itemList.reduce(
-      (acc, item) => acc + Number(item.total) * Number(item.quantity),
+      (acc, item) => acc + Number(item.total) ,
       0
     ).toFixed(2);
-    console.log(itemList[0]);
 
-    console.log(selectedKot);
 
     let newObject = {
       Date: new Date(),
