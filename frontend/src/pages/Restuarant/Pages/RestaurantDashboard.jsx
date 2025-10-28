@@ -329,7 +329,7 @@ const fetchAllItems = useCallback(async (page = 1, append = false) => {
     const params = new URLSearchParams();
     params.append("under", "restaurant");
     params.append("page", page);
-    params.append("limit", "10");
+    params.append("limit", "100");
  
 
     const res = await api.get(`/api/sUsers/getAllItems/${cmp_id}?${params}`, {
@@ -340,14 +340,21 @@ const fetchAllItems = useCallback(async (page = 1, append = false) => {
     const hasMoreData = res?.data?.pagination?.hasMore ?? false;
 
     if (append) {
-      // Append new items for infinite scroll
-      setAllItems((prev) => [...prev, ...fetchedItems]);
-      setItems((prev) => [...prev, ...fetchedItems]);
-    } else {
-      // Replace items for initial load
-      setAllItems(fetchedItems);
-      setItems(fetchedItems);
-    }
+        // ✅ Prevent duplicates by filtering out existing items
+        setAllItems((prev) => {
+          const existingIds = new Set(prev.map(item => item._id));
+          const newItems = fetchedItems.filter(item => !existingIds.has(item._id));
+          return [...prev, ...newItems];
+        });
+        setItems((prev) => {
+          const existingIds = new Set(prev.map(item => item._id));
+          const newItems = fetchedItems.filter(item => !existingIds.has(item._id));
+          return [...prev, ...newItems];
+        });
+      } else {
+        setAllItems(fetchedItems);
+        setItems(fetchedItems);
+      }
     
     setHasMore(hasMoreData);
   } catch (error) {
@@ -365,34 +372,8 @@ const fetchAllItems = useCallback(async (page = 1, append = false) => {
 
 
 
- // Intersection Observer for infinite scroll
-// useEffect(() => {
-//   const observer = new IntersectionObserver(
-//     (entries) => {
-//       if (entries[0].isIntersecting && hasMore && !isLoading) {
-//         const nextPage = currentPage + 1;
-//         setCurrentPage(nextPage);
-//         fetchAllItems(nextPage, true);
-//       }
-//     },
-//     { threshold: 0.1 }
-//   );
 
-//   if (observerTarget.current) {
-//     observer.observe(observerTarget.current);
-//   }
 
-//   return () => {
-//     if (observerTarget.current) {
-//       observer.unobserve(observerTarget.current);
-//     }
-//   };
-// }, [hasMore, isLoading, currentPage, fetchAllItems]);
-
-// Initial load
-useEffect(() => {
-  fetchAllItems(1, false);
-}, [fetchAllItems]);
   useEffect(() => {
     if (!observerTarget.current || !hasMore || isLoading) return;
     const observer = new IntersectionObserver(
@@ -409,7 +390,12 @@ useEffect(() => {
     return () => {
       observer.disconnect();
     };
-  }, [hasMore, isLoading, currentPage, fetchAllItems]);
+  }, [hasMore, isLoading, currentPage,searchTerm, fetchAllItems]);
+
+  // Initial load only
+  useEffect(() => {
+    fetchAllItems(1, false);
+  }, [fetchAllItems]);
 
   const {
     data: roomBookingData,
@@ -556,22 +542,58 @@ useEffect(() => {
     }
   };
 
-  // const handleSearchChange = (value) => {
-  //   setSearchTerm(value);
 
-  //   if (searchTimeoutRef.current) {
-  //     clearTimeout(searchTimeoutRef.current);
-  //   }
+    const searchItems = useCallback(async (searchQuery) => {
+  setLoader(true);
+  setIsLoading(true);
+  
+  try {
+    const params = new URLSearchParams();
+    params.append("cmp_id", cmp_id);          // ✅ FIX: Add cmp_id here
+    params.append("under", "restaurant");
+    params.append("search", searchQuery.trim());
 
-  //   searchTimeoutRef.current = setTimeout(() => {
-  //     console.log("Search term:", value);
-  //   }, 300);
-  // };
+    const res = await api.get(`/api/sUsers/searchItems?${params.toString()}`, {
+      withCredentials: true,
+    });
 
-  // const clearSearch = () => {
-  //   setSearchTerm("");
-  // };
+    const searchResults = res?.data?.items || [];
+    setAllItems(searchResults);
+    setItems(searchResults);
+    setHasMore(false);
+  } catch (error) {
+    console.log("Error searching items:", error);
+    setAllItems([]);
+    setItems([]);
+    setHasMore(false);
+  } finally {
+    setIsLoading(false);
+    setLoader(false);
+  }
+}, [cmp_id]);
 
+  
+
+const handleSearchChange = (value) => {
+    setSearchTerm(value);
+
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    if (!value.trim()) {
+      // If search is cleared, reload normal items
+      setCurrentPage(1);
+      setHasMore(true);
+      fetchAllItems(1, false);
+      return;
+    }
+
+    searchTimeoutRef.current = setTimeout(() => {
+      // Call separate search endpoint
+      searchItems(value);
+    }, 500);
+  };
   useEffect(() => {
     return () => {
       if (searchTimeoutRef.current) {
@@ -863,56 +885,9 @@ useEffect(() => {
   };
 
 
-  const searchItems = useCallback(async (searchQuery) => {
-  setLoader(true);
-  setIsLoading(true);
-  
-  try {
-    const params = new URLSearchParams();
-    params.append("cmp_id", cmp_id);          // ✅ FIX: Add cmp_id here
-    params.append("under", "restaurant");
-    params.append("search", searchQuery.trim());
-
-    const res = await api.get(`/api/sUsers/searchItems?${params.toString()}`, {
-      withCredentials: true,
-    });
-
-    const searchResults = res?.data?.items || [];
-    setAllItems(searchResults);
-    setItems(searchResults);
-    setHasMore(false);
-  } catch (error) {
-    console.log("Error searching items:", error);
-    setAllItems([]);
-    setItems([]);
-    setHasMore(false);
-  } finally {
-    setIsLoading(false);
-    setLoader(false);
-  }
-}, [cmp_id]);
 
 // ✅ Handle search with debounce
-  const handleSearchChange = (value) => {
-    setSearchTerm(value);
-
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
-
-    if (!value.trim()) {
-      // If search is cleared, reload normal items
-      setCurrentPage(1);
-      setHasMore(true);
-      fetchAllItems(1, false);
-      return;
-    }
-
-    searchTimeoutRef.current = setTimeout(() => {
-      // Call separate search endpoint
-      searchItems(value);
-    }, 500);
-  };
+  
 
 
    const clearSearch = () => {
@@ -923,36 +898,10 @@ useEffect(() => {
   };
 
 
- useEffect(() => {
-    if (searchTerm.trim()) return; // Don't enable infinite scroll when searching
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasMore && !isLoading) {
-          const nextPage = currentPage + 1;
-          setCurrentPage(nextPage);
-          fetchAllItems(nextPage, true);
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    if (observerTarget.current) {
-      observer.observe(observerTarget.current);
-    }
-
-    return () => {
-      if (observerTarget.current) {
-        observer.unobserve(observerTarget.current);
-      }
-    };
-  }, [hasMore, isLoading, currentPage, fetchAllItems, searchTerm]);
 
 
 
-    useEffect(() => {
-    fetchAllItems(1, false);
-  }, [fetchAllItems]);
+
 
 
   useEffect(() => {
@@ -968,28 +917,8 @@ useEffect(() => {
   }, [allItems, selectedSubcategory]);
 
   // Cleanup
-  useEffect(() => {
-    return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  // const addToOrder = (item) => {
-  //   const existingItem = orderItems.find((orderItem) => orderItem._id === item._id);
-  //   if (existingItem) {
-  //     setOrderItems(
-  //       orderItems.map((orderItem) =>
-  //         orderItem._id === item._id
-  //           ? { ...orderItem, quantity: orderItem.quantity + 1 }
-  //           : orderItem
-  //       )
-  //     );
-  //   } else {
-  //     setOrderItems([...orderItems, { ...item, quantity: 1, price: item.price || 0 }]);
-  //   }
-  // };
+  
+  
 
   const getOrderTypeDisplay = (type) => {
     const typeMap = {
