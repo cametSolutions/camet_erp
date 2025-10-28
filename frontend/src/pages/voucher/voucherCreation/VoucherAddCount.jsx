@@ -461,9 +461,7 @@ function VoucherAddCount() {
       if (item?.isTaxInclusive || godownOrBatch.isTaxInclusive) {
         // Use total tax rate (IGST or CGST+SGST)
         const totalTaxRate = igstValue || 0;
-        taxBasePrice = Number(
-          (basePrice / (1 + totalTaxRate / 100)).toFixed(2)
-        );
+        taxBasePrice = Number(basePrice / (1 + totalTaxRate / 100));
       }
 
       // Calculate discount based on discountType
@@ -475,17 +473,13 @@ function VoucherAddCount() {
       if (discountType === "percentage" && godownOrBatch.discountPercentage) {
         // Percentage discount - the percentage stays the same, amount is calculated
         discountPercentage = Number(godownOrBatch.discountPercentage) || 0;
-        discountAmount = Number(
-          ((taxBasePrice * discountPercentage) / 100).toFixed(2)
-        );
+        discountAmount = Number((taxBasePrice * discountPercentage) / 100);
       } else if (discountType === "amount" && godownOrBatch.discountAmount) {
         // Fixed amount discount - the amount stays the same, percentage is calculated
         discountAmount = Number(godownOrBatch.discountAmount) || 0;
         // Calculate the equivalent percentage
         discountPercentage =
-          taxBasePrice > 0
-            ? Number(((discountAmount / taxBasePrice) * 100).toFixed(2))
-            : 0;
+          taxBasePrice > 0 ? Number((discountAmount / taxBasePrice) * 100) : 0;
       }
 
       discountedPrice = taxBasePrice - discountAmount;
@@ -505,22 +499,20 @@ function VoucherAddCount() {
 
       // Additional cess calculation - calculated as quantity * addl_cess
       if (item.addl_cess && item.addl_cess > 0) {
-        additionalCessAmount = Number((quantity * item.addl_cess).toFixed(2));
+        additionalCessAmount = Number(quantity * item.addl_cess);
       }
 
       // Combine cess amounts
-      const totalCessAmount = Number(
-        (cessAmount + additionalCessAmount).toFixed(2)
-      );
+      const totalCessAmount = Number(cessAmount + additionalCessAmount);
 
       // Calculate tax amounts
       let cgstAmt = 0;
       let sgstAmt = 0;
       let igstAmt = 0;
 
-      igstAmt = Number((taxableAmount * (igstValue / 100)).toFixed(2));
-      cgstAmt = Number((taxableAmount * (cgstValue / 100)).toFixed(2));
-      sgstAmt = Number((taxableAmount * (sgstValue / 100)).toFixed(2));
+      igstAmt = Number(taxableAmount * (igstValue / 100));
+      cgstAmt = Number(taxableAmount * (cgstValue / 100));
+      sgstAmt = Number(taxableAmount * (sgstValue / 100));
 
       // Calculate total tax amount
       // const taxAmount = Number((cgstAmt + sgstAmt + igstAmt).toFixed(2));
@@ -540,9 +532,9 @@ function VoucherAddCount() {
 
       individualTotals.push({
         index,
-        basePrice: taxBasePrice, // Original price × quantity before discount
-        discountAmount, // Discount amount
-        discountPercentage, // Discount percentage
+        basePrice: Number(taxBasePrice?.toFixed(2)),
+        discountAmount: Number(discountAmount?.toFixed(2)),
+        discountPercentage: Number(discountPercentage?.toFixed(2)),
         discountType:
           godownOrBatch.discountType ||
           (godownOrBatch.discount
@@ -550,21 +542,20 @@ function VoucherAddCount() {
             : godownOrBatch.discountPercentage
             ? "percentage"
             : "none"),
-        taxableAmount, // Amount after discount, before tax (basis for tax calculation)
-        cgstValue, // CGST percentage
-        sgstValue, // SGST percentage
-        igstValue, // IGST percentage
-        cessValue: item.cess || 0, // Standard cess percentage
-        addlCessValue: item.addl_cess || 0, // Additional cess per quantity
-        cgstAmount: cgstAmt, // CGST amount
-        sgstAmount: sgstAmt, // SGST amount
-        igstAmount: igstAmt, // IGST amount
-        cessAmount: cessAmount, // Standard cess amount (percentage based)
-        additionalCessAmount, // Additional cess amount (quantity based)
-        individualTotal, // Final amount including taxes and cess
-        quantity, // Quantity
-        isTaxInclusive: item?.isTaxInclusive || false, // Tax inclusive flag
-        // rate: priceRate, // Unit price
+        taxableAmount: Number(taxableAmount?.toFixed(2)),
+        cgstValue: Number(cgstValue?.toFixed(2)),
+        sgstValue: Number(sgstValue?.toFixed(2)),
+        igstValue: Number(igstValue?.toFixed(2)),
+        cessValue: Number((item.cess || 0).toFixed(2)),
+        addlCessValue: Number((item.addl_cess || 0).toFixed(2)),
+        cgstAmount: Number(cgstAmt?.toFixed(2)),
+        sgstAmount: Number(sgstAmt?.toFixed(2)),
+        igstAmount: Number(igstAmt?.toFixed(2)),
+        cessAmount: Number(cessAmount?.toFixed(2)),
+        additionalCessAmount: Number(additionalCessAmount?.toFixed(2)),
+        individualTotal: Number(individualTotal?.toFixed(2)),
+        quantity: Number(quantity?.toFixed(2)),
+        isTaxInclusive: Boolean(item?.isTaxInclusive) || false,
       });
     });
 
