@@ -54,6 +54,8 @@ export default function SattvaInvoice() {
     selectedCheckOut.forEach((item) => {
       item.selectedRooms.forEach((room) => {
         const stayDays = room.stayDays || 1;
+
+        
         const perDayAmount = room.baseAmountWithTax / stayDays;
         const baseAmount = room.baseAmount / stayDays;
         const taxAmount = room.taxAmount / stayDays;

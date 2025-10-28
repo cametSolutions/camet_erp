@@ -70,10 +70,15 @@ export const sendRoomResponse = (res, rooms, totalRooms, params) => {
 
 // helper function used to add search concept with booking
 export const buildDatabaseFilterForBooking = (params) => {
+
   let filter = {
     cmp_id: params.cmp_id,
     Primary_user_id: params.Primary_user_id,
   };
+
+  if (params.roomId) {
+    filter["selectedRooms.roomId"] = params.roomId;
+  }
 
   // Add search functionality if search term is provided
   if (params.searchTerm && params.searchTerm != "completed") {
@@ -93,6 +98,7 @@ export const buildDatabaseFilterForBooking = (params) => {
       filter = { ...filter, status: "checkOut" };
     }
   }
+
 
   return filter;
 };
@@ -158,7 +164,7 @@ export const sendBookingsResponse = (res, bookings, totalBookings, params) => {
 export const extractRequestParamsForBookings = (req) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 0;
-
+  
   return {
     Secondary_user_id: req.sUserId,
     cmp_id: new mongoose.Types.ObjectId(req.params.cmp_id),
@@ -168,6 +174,7 @@ export const extractRequestParamsForBookings = (req) => {
     limit,
     skip: limit > 0 ? (page - 1) * limit : 0,
     modal: req.query.modal,
+   roomId: req.query.roomId || null, 
   };
 };
 

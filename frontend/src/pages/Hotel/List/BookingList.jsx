@@ -61,6 +61,9 @@ function BookingList() {
   const [cashOrBank, setCashOrBank] = useState({});
   const [restaurantBaseSaleData, setRestaurantBaseSaleData] = useState({});
   const [showSelectionModal, setShowSelectionModal] = useState(true);
+
+ const { roomId, roomName, filterByRoom } = location.state || {};
+  
   const { _id: cmp_id, configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
@@ -138,6 +141,13 @@ function BookingList() {
         if (searchTerm) {
           params.append("search", searchTerm);
         }
+
+  // ✅ Add roomId filter if present
+        if (filterByRoom && roomId) {
+          params.append("roomId", roomId);
+        }
+
+
         if (location.pathname == "/sUsers/checkInList") {
           params.append("modal", "checkIn");
         } else if (location.pathname == "/sUsers/bookingList") {
@@ -174,7 +184,7 @@ function BookingList() {
         setLoader(false);
       }
     },
-    [cmp_id, activeTab]
+    [cmp_id, activeTab,filterByRoom, roomId]
   );
 
   useEffect(() => {
@@ -868,7 +878,9 @@ function BookingList() {
             loading={loader}
             title={
               location.pathname === "/sUsers/checkInList"
-                ? "Hotel Check In List "
+                ? filterByRoom 
+                  ? `Check In List - Room ${roomName}` 
+                  : "Hotel Check In List"
                 : location.pathname === "/sUsers/bookingList"
                 ? "Hotel Booking List"
                 : "Hotel Check Out List"
@@ -892,9 +904,12 @@ function BookingList() {
           />
         </div>
 
-        {!loader && !isLoading && bookings?.length === 0 && (
+           {!loader && !isLoading && bookings?.length === 0 && (
           <div className="flex justify-center items-center mt-20 overflow-hidden font-bold text-gray-500">
-            Oops!!. No Bookings Found
+            {filterByRoom 
+              ? `No check-ins found for Room ${roomName}`
+              : "Oops!!. No Bookings Found"
+            }
           </div>
         )}
         {showCheckOutDateModal && (

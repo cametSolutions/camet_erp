@@ -113,6 +113,10 @@ const HotelBillPrint = () => {
     return `${day}/${month}/${year}`;
   };
 
+
+
+
+
   // Calculate totals - FIXED VERSION
   const calculateTotals = () => {
     const roomTariffTotal = dateWiseDisplayedData.reduce(
@@ -315,7 +319,7 @@ const HotelBillPrint = () => {
         ? [
             {
               date: formatDate(new Date()),
-              description: "CGST on Rent",
+              description: "CGST on Rent@6%",
               docNo: "-",
               amount: totals.cgstAmount,
             },

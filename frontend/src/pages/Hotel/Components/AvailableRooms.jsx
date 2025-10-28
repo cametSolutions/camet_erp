@@ -239,19 +239,31 @@ useEffect(() => {
     };
   }, [pendingRoomQueue, bookings]);
 
-  useEffect(() => {
+ useEffect(() => {
     if (bookings.length > 0) {
       const total = bookings.reduce(
         (acc, b) => acc + Number(b.amountAfterTax || b.totalAmount || 0),
         0
       );
-      setTotalAmount(total);
-      sendToParent(bookings, total);
+      // Add pax total (multiplied by days for each booking)
+      const paxTotal = bookings.reduce(
+        (acc, b) => {
+          const paxPerDay = Number(b.additionalPaxAmountWithTax || 0);
+          const days = Number(b.stayDays || 1);
+          return acc + (paxPerDay * days);
+        },
+        0
+      );
+      // Add food plan total
+      const foodTotal = Number(formData?.foodPlanTotal || 0);
+      const finalTotal = total + paxTotal + foodTotal;
+      setTotalAmount(finalTotal);
+      sendToParent(bookings, finalTotal);
     } else {
       setTotalAmount(0);
       sendToParent([], 0);
     }
-  }, [bookings]);
+  }, [bookings, formData?.foodPlanTotal]);
 
   const handlePriceLevelChange = (e, roomId) => {
     const selectedLevelId = e.target.value;
@@ -672,11 +684,20 @@ useEffect(() => {
                                 <Users className="w-3 h-3" />
                                 Pax
                               </button>
-                              <p className="text-xs font-bold text-blue-700 mt-1">
-                                {Number(
-                                  booking?.additionalPaxAmountWithOutTax || 0
-                                ).toFixed(0)}
-                              </p>
+                              <div className="text-xs font-bold text-blue-700 mt-1">
+                                {booking?.stayDays > 1 ? (
+                                  <div className="flex flex-col items-center">
+                                    <span className="text-[10px] text-gray-500">
+                                      {booking?.stayDays} × ₹{Number(booking?.additionalPaxAmountWithOutTax || 0).toFixed(0)}
+                                    </span>
+                                    <span className="text-xs font-bold">
+                                      ₹{Number((booking?.additionalPaxAmountWithOutTax || 0) * (booking?.stayDays || 1)).toFixed(0)}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <span>₹{Number(booking?.additionalPaxAmountWithOutTax || 0).toFixed(0)}</span>
+                                )}
+                              </div>
                             </div>
 
                             <div className="text-center">

@@ -1,11 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, } from "react";
 import { units } from "../../../../constants/units";
+import { useLocation } from "react-router-dom";
+
 import { toast } from "sonner";
 import { MdPlaylistAdd, MdDelete, MdCloudUpload, MdImage } from "react-icons/md";
 import uploadImageToCloudinary from "../../../../utils/uploadCloudinary";
 
 function ItemRegisterComponent({ pageName, optionsData, sendToParent, editData }) {
   console.log("editData",editData);
+  
   const [priceLevelRows, setPriceLevelRows] = useState([
     { pricelevel: "", pricerate: "" },
   ]);
@@ -13,13 +16,20 @@ function ItemRegisterComponent({ pageName, optionsData, sendToParent, editData }
     itemName: "",
     foodCategory: "",
     foodType: "",
-    unit: "DAY",
+    unit: "NOS",
     hsn: "",
     imageUrl: "", // Add image URL field
   });
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+
+
+
+
+
+
+
 
   useEffect(() => {
 
@@ -44,6 +54,12 @@ function ItemRegisterComponent({ pageName, optionsData, sendToParent, editData }
       if (editData.product_image) {
         setImagePreview(editData.product_image);
       }
+       else {
+    setRoomData((prev) => ({
+      ...prev,
+      unit: "NOS"
+    }));
+  }
     }
   }, [editData]);
 
