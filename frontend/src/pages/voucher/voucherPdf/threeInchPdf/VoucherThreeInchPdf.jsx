@@ -180,7 +180,6 @@ function VoucherThreeInchPdf({
   }
 
   const handlePrint = () => {
-    console.log("welcome");
     handlePrintData();
   };
 

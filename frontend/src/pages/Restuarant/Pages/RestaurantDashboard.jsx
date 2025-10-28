@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useReactToPrint } from "react-to-print";
 
 import VoucherThreeInchPdf from "@/pages/voucher/voucherPdf/threeInchPdf/VoucherThreeInchPdf";
@@ -10,7 +10,6 @@ import {
   Search,
   Clock,
   Users,
-  TrendingUp,
   Filter,
   X,
   MenuIcon,
@@ -34,6 +33,7 @@ import { generateAndPrintKOT } from "../Helper/kotPrintHelper";
 import { taxCalculatorForRestaurant } from "@/pages/Hotel/Helper/taxCalculator";
 import { useLocation } from "react-router-dom";
 import { FaArrowLeft } from "react-icons/fa6";
+import { useQueryClient } from "@tanstack/react-query";
 const RestaurantPOS = () => {
   const [selectedCuisine, setSelectedCuisine] = useState("");
   const [selectedSubcategory, setSelectedSubcategory] = useState("");
@@ -107,6 +107,12 @@ const observerTarget = useRef(null);
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
+
+  const queryClient = useQueryClient();
+  const isAdmin =
+    JSON.parse(localStorage.getItem("sUserData")).role === "admin"
+      ? true
+      : false;
   useEffect(() => {
     if (kotDataForEdit) {
       setIsEdit(true);
@@ -740,8 +746,6 @@ const handleSearchChange = (value) => {
       configurations[0]?.addRateWithTax?.restaurantSale
     );
 
-
-
     let newSaleObject = {
       Date: new Date(),
       voucherType: "sales",
@@ -797,8 +801,9 @@ const handleSearchChange = (value) => {
       configurations[0]?.addRateWithTax?.restaurantSale
     );
 
-    console.log(finalProductData);
+    // console.log(finalProductData);
     
+
     if (orderType === "dine-in") {
       if (roomDetails && Object.keys(roomDetails).length > 0) {
         orderCustomerDetails = {
@@ -826,7 +831,7 @@ const handleSearchChange = (value) => {
     }
 
     // console.log("orderCustomerDetails", orderItems);
-    console.log(orderType);
+    // console.log(orderType);
     // console.log("orderCustomerDetails", finalProductData);
 
     const newOrder = {
@@ -860,6 +865,10 @@ const handleSearchChange = (value) => {
             { withCredentials: true }
           );
         }
+
+        queryClient.invalidateQueries({
+          queryKey: ["todaysTransaction", cmp_id, isAdmin],
+        });
       }
     } catch (error) {
       console.log(error);
@@ -1584,16 +1593,16 @@ const handleSearchChange = (value) => {
               </div>
 
               {/* Action Button */}
-               <div className="flex space-x-2">
+              <div className="flex space-x-2">
                 <button
                   className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-2.5 rounded-xl font-bold hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm hover:scale-105 active:scale-95 transform shadow-lg shadow-indigo-500/25"
                   disabled={orderItems.length === 0}
                   onClick={handlePlaceOrder}
                 >
-                  {isEdit 
-                    ? "Update Kot" 
-                    : orderType === "direct-sale" 
-                    ? "Generate Bill" 
+                  {isEdit
+                    ? "Update Kot"
+                    : orderType === "direct-sale"
+                    ? "Generate Bill"
                     : " Kot"}
                 </button>
               </div>

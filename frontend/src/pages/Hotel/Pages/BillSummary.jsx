@@ -4,10 +4,17 @@ import { useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
 
 // For PDF export
-const generatePDF = async (salesData, summary, owner, reportPeriod, businessType, totals) => {
+const generatePDF = async (
+  salesData,
+  summary,
+  owner,
+  reportPeriod,
+  businessType,
+  totals
+) => {
   // Create a new window for PDF generation
-  const printWindow = window.open('', '_blank');
-  
+  const printWindow = window.open("", "_blank");
+
   const businessTypeTitle = () => {
     switch (businessType) {
       case "hotel":
@@ -18,7 +25,7 @@ const generatePDF = async (salesData, summary, owner, reportPeriod, businessType
         return "Combined Sales Register - Hotel & Restaurant";
     }
   };
-console.log(businessType)
+  console.log(businessType);
   const html = `
     <!DOCTYPE html>
     <html>
@@ -51,16 +58,30 @@ console.log(businessType)
     </head>
     <body>
       <div class="header">
-        <div class="company-name">${owner?.companyName || owner?.name || "Sales Report"}</div>
-        <div class="company-address">${owner?.address || owner?.road || "Sales Register"}</div>
+        <div class="company-name">${
+          owner?.companyName || owner?.name || "Sales Report"
+        }</div>
+        <div class="company-address">${
+          owner?.address || owner?.road || "Sales Register"
+        }</div>
         <div class="report-title">${businessTypeTitle()}</div>
-        ${businessType !== "all" ? `
+        ${
+          businessType !== "all"
+            ? `
           <div class="business-type">
-            <span class="badge ${businessType === "hotel" ? "hotel-badge" : "restaurant-badge"}">
-              ${businessType === "hotel" ? "🏨 Hotel Sales Only" : "🍽️ Restaurant Sales Only"}
+            <span class="badge ${
+              businessType === "hotel" ? "hotel-badge" : "restaurant-badge"
+            }">
+              ${
+                businessType === "hotel"
+                  ? "🏨 Hotel Sales Only"
+                  : "🍽️ Restaurant Sales Only"
+              }
             </span>
           </div>
-        ` : ''}
+        `
+            : ""
+        }
       </div>
 
       <div class="report-info">
@@ -89,25 +110,47 @@ console.log(businessType)
           </tr>
         </thead>
         <tbody>
-          ${salesData.map(row => `
+          ${salesData
+            .map(
+              (row) => `
             <tr>
               <td class="text-left">${row.billNo || "-"}</td>
-              <td>${row.date ? new Date(row.date).toLocaleDateString() : "-"}</td>
+              <td>${
+                row.date ? new Date(row.date).toLocaleDateString() : "-"
+              }</td>
               <td class="text-right">${(row.amount || 0).toFixed(2)}</td>
               <td>${(row.disc || 0).toFixed(2)}</td>
               <td>${(row.roundOff || 0).toFixed(2)}</td>
               <td>${(row.total || 0).toFixed(2)}</td>
-              <td>${(row.totalCgstAmt || 0).toFixed(2)}</td>
-              <td>${(row.totalSgstAmt || 0).toFixed(2)}</td>
-              <td>${(row.totalIgstAmt || 0).toFixed(2)}</td>
+              <td>${(row.cgst || 0).toFixed(2)}</td>
+              <td>${(row.sgst || 0).toFixed(2)}</td>
+              <td>${(row.igst || 0).toFixed(2)}</td>
               <td>${(row.totalWithTax || 0).toFixed(2)}</td>
-              <td>${row.cash > 0 ? (row.cash || 0).toFixed(2) : "-"}</td>
-              <td>${row.upi > 0 ? (row.upi || 0).toFixed(2) : "-"}</td>
-              <td>${row.mode || "-"}</td>
+          
+              <td>${
+                row.partyAccount === "Cash-in-Hand" ||
+                row.partyAccount === "CASH"
+                  ? (row.totalWithTax || 0).toFixed(2)
+                  : "-"
+              }</td>
+              <td>${
+                row.partyAccount === "Bank Accounts" ||
+                row.partyAccount === "Gpay"
+                  ? (row.totalWithTax || 0).toFixed(2)
+                  : "-"
+              }</td>
+              <td>${
+                row.partyAccount === "Bank Accounts" ||
+                row.partyAccount === "Gpay"
+                  ? "Upi"
+                  : "Cash"
+              }</td>
               <td>${row.credit > 0 ? (row.credit || 0).toFixed(2) : "-"}</td>
               <td>${row.creditDescription || "-"}</td>
             </tr>
-          `).join('')}
+          `
+            )
+            .join("")}
           <tr class="totals-row">
             <td class="text-left">Total</td>
             <td>-</td>
@@ -132,35 +175,75 @@ console.log(businessType)
         <div>
           <div class="summary-title">Financial Summary</div>
           <table class="summary-table">
-            <tr><td><strong>Gross Amount</strong></td><td class="text-right">${totals.amount.toFixed(2)}</td></tr>
-            <tr><td><strong>Discount</strong></td><td class="text-right">${totals.disc.toFixed(2)}</td></tr>
-            <tr><td><strong>CGST</strong></td><td class="text-right">${totals.cgst.toFixed(2)}</td></tr>
-            <tr><td><strong>SGST</strong></td><td class="text-right">${totals.sgst.toFixed(2)}</td></tr>
-            <tr><td><strong>IGST</strong></td><td class="text-right">${totals.igst.toFixed(2)}</td></tr>
-            <tr><td><strong>Net Cash</strong></td><td class="text-right">${totals.cash.toFixed(2)}</td></tr>
-            <tr><td><strong>UPI</strong></td><td class="text-right">${totals.upi.toFixed(2)}</td></tr>
-            <tr><td><strong>Credit Amount</strong></td><td class="text-right">${totals.credit.toFixed(2)}</td></tr>
-            <tr style="border-top: 2px solid black;"><td><strong>Net Sale</strong></td><td class="text-right"><strong>${totals.totalWithTax.toFixed(2)}</strong></td></tr>
+            <tr><td><strong>Gross Amount</strong></td><td class="text-right">${totals.amount.toFixed(
+              2
+            )}</td></tr>
+            <tr><td><strong>Discount</strong></td><td class="text-right">${totals.disc.toFixed(
+              2
+            )}</td></tr>
+            <tr><td><strong>CGST</strong></td><td class="text-right">${totals.cgst.toFixed(
+              2
+            )}</td></tr>
+            <tr><td><strong>SGST</strong></td><td class="text-right">${totals.sgst.toFixed(
+              2
+            )}</td></tr>
+            <tr><td><strong>IGST</strong></td><td class="text-right">${totals.igst.toFixed(
+              2
+            )}</td></tr>
+            <tr><td><strong>Net Cash</strong></td><td class="text-right">${totals.cash.toFixed(
+              2
+            )}</td></tr>
+            <tr><td><strong>UPI</strong></td><td class="text-right">${totals.upi.toFixed(
+              2
+            )}</td></tr>
+            <tr><td><strong>Credit Amount</strong></td><td class="text-right">${totals.credit.toFixed(
+              2
+            )}</td></tr>
+            <tr style="border-top: 2px solid black;"><td><strong>Net Sale</strong></td><td class="text-right"><strong>${totals.totalWithTax.toFixed(
+              2
+            )}</strong></td></tr>
           </table>
         </div>
         <div>
           <div class="summary-title">Business Type Breakdown</div>
           <table class="summary-table">
-            ${summary.hotelSales ? `
-              <tr style="background-color: #dbeafe;"><td><strong>Hotel Sales</strong></td><td class="text-right">${summary.hotelSales.amount?.toFixed(2) || "0.00"}</td></tr>
-              <tr><td>- Transactions</td><td class="text-right">${summary.hotelSales.count || 0}</td></tr>
-            ` : ''}
-            ${summary.restaurantSales ? `
-              <tr style="background-color: #dcfce7;"><td><strong>Restaurant Sales</strong></td><td class="text-right">${summary.restaurantSales.amount?.toFixed(2) || "0.00"}</td></tr>
-              <tr><td>- Transactions</td><td class="text-right">${summary.restaurantSales.count || 0}</td></tr>
-            ` : ''}
-            <tr style="border-top: 2px solid black;"><td><strong>Total Transactions</strong></td><td class="text-right"><strong>${salesData.length}</strong></td></tr>
+            ${
+              summary.hotelSales
+                ? `
+              <tr style="background-color: #dbeafe;"><td><strong>Hotel Sales</strong></td><td class="text-right">${
+                summary.hotelSales.amount?.toFixed(2) || "0.00"
+              }</td></tr>
+              <tr><td>- Transactions</td><td class="text-right">${
+                summary.hotelSales.count || 0
+              }</td></tr>
+            `
+                : ""
+            }
+            ${
+              summary.restaurantSales
+                ? `
+              <tr style="background-color: #dcfce7;"><td><strong>Restaurant Sales</strong></td><td class="text-right">${
+                summary.restaurantSales.amount?.toFixed(2) || "0.00"
+              }</td></tr>
+              <tr><td>- Transactions</td><td class="text-right">${
+                summary.restaurantSales.count || 0
+              }</td></tr>
+            `
+                : ""
+            }
+            <tr style="border-top: 2px solid black;"><td><strong>Total Transactions</strong></td><td class="text-right"><strong>${
+              salesData.length
+            }</strong></td></tr>
           </table>
         </div>
       </div>
 
       <div class="notes">
-        <div>* This report shows ${businessType === "all" ? "all sales transactions" : `only ${businessType} sales transactions`}</div>
+        <div>* This report shows ${
+          businessType === "all"
+            ? "all sales transactions"
+            : `only ${businessType} sales transactions`
+        }</div>
         <div>* Sales are classified based on business type, party details, amount threshold, department, or item analysis</div>
         <div>* Complimentary and cancelled sales are not included in totals</div>
       </div>
@@ -174,25 +257,50 @@ console.log(businessType)
 };
 
 // For Excel export
-const exportToExcel = (salesData, summary, owner, reportPeriod, businessType, totals) => {
+const exportToExcel = (
+  salesData,
+  summary,
+  owner,
+  reportPeriod,
+  businessType,
+  totals
+) => {
   const csvContent = [
     // Header information
     [owner?.companyName || owner?.name || "Sales Report"],
     [owner?.address || owner?.road || ""],
     [`Report Period: ${reportPeriod}`],
-    [`Business Type: ${businessType === "all" ? "All Sales" : businessType.charAt(0).toUpperCase() + businessType.slice(1)}`],
+    [
+      `Business Type: ${
+        businessType === "all"
+          ? "All Sales"
+          : businessType.charAt(0).toUpperCase() + businessType.slice(1)
+      }`,
+    ],
     [`Generated: ${new Date().toLocaleString()}`],
     [], // Empty row
-    
+
     // Table headers
     [
-      "Bill No", "Date", "Amount", "Discount", "Round Off", "Total", 
-      "CGST", "SGST", "IGST", "Total with Tax", "Cash", "UPI", 
-      "Payment Mode", "Credit", "Credit Description"
+      "Bill No",
+      "Date",
+      "Amount",
+      "Discount",
+      "Round Off",
+      "Total",
+      "CGST",
+      "SGST",
+      "IGST",
+      "Total with Tax",
+      "Cash",
+      "UPI",
+      "Payment Mode",
+      "Credit",
+      "Credit Description",
     ],
-    
+
     // Data rows
-    ...salesData.map(row => [
+    ...salesData.map((row) => [
       row.billNo || "",
       row.date ? new Date(row.date).toLocaleDateString() : "",
       (row.amount || 0).toFixed(2),
@@ -207,20 +315,30 @@ const exportToExcel = (salesData, summary, owner, reportPeriod, businessType, to
       row.upi > 0 ? (row.upi || 0).toFixed(2) : "",
       row.mode || "",
       row.credit > 0 ? (row.credit || 0).toFixed(2) : "",
-      row.creditDescription || ""
+      row.creditDescription || "",
     ]),
-    
+
     // Totals row
     [
-      "TOTAL", "", totals.amount.toFixed(2), totals.disc.toFixed(2), 
-      totals.roundOff.toFixed(2), totals.total.toFixed(2), 
-      totals.cgst.toFixed(2), totals.sgst.toFixed(2), totals.igst.toFixed(2),
-      totals.totalWithTax.toFixed(2), totals.cash.toFixed(2), 
-      totals.upi.toFixed(2), "", totals.credit.toFixed(2), ""
+      "TOTAL",
+      "",
+      totals.amount.toFixed(2),
+      totals.disc.toFixed(2),
+      totals.roundOff.toFixed(2),
+      totals.total.toFixed(2),
+      totals.cgst.toFixed(2),
+      totals.sgst.toFixed(2),
+      totals.igst.toFixed(2),
+      totals.totalWithTax.toFixed(2),
+      totals.cash.toFixed(2),
+      totals.upi.toFixed(2),
+      "",
+      totals.credit.toFixed(2),
+      "",
     ],
-    
+
     [], // Empty row
-    
+
     // Summary section
     ["FINANCIAL SUMMARY"],
     ["Gross Amount", totals.amount.toFixed(2)],
@@ -232,36 +350,50 @@ const exportToExcel = (salesData, summary, owner, reportPeriod, businessType, to
     ["UPI", totals.upi.toFixed(2)],
     ["Credit Amount", totals.credit.toFixed(2)],
     ["Net Sale", totals.totalWithTax.toFixed(2)],
-    
+
     [], // Empty row
-    
+
     // Business breakdown
     ["BUSINESS TYPE BREAKDOWN"],
-    ...(summary.hotelSales ? [
-      ["Hotel Sales", summary.hotelSales.amount?.toFixed(2) || "0.00"],
-      ["Hotel Transactions", summary.hotelSales.count || 0]
-    ] : []),
-    ...(summary.restaurantSales ? [
-      ["Restaurant Sales", summary.restaurantSales.amount?.toFixed(2) || "0.00"],
-      ["Restaurant Transactions", summary.restaurantSales.count || 0]
-    ] : []),
-    ["Total Transactions", salesData.length]
+    ...(summary.hotelSales
+      ? [
+          ["Hotel Sales", summary.hotelSales.amount?.toFixed(2) || "0.00"],
+          ["Hotel Transactions", summary.hotelSales.count || 0],
+        ]
+      : []),
+    ...(summary.restaurantSales
+      ? [
+          [
+            "Restaurant Sales",
+            summary.restaurantSales.amount?.toFixed(2) || "0.00",
+          ],
+          ["Restaurant Transactions", summary.restaurantSales.count || 0],
+        ]
+      : []),
+    ["Total Transactions", salesData.length],
   ];
 
   // Convert to CSV format
-  const csv = csvContent.map(row => 
-    row.map(cell => 
-      typeof cell === 'string' && cell.includes(',') ? `"${cell}"` : cell
-    ).join(',')
-  ).join('\n');
+  const csv = csvContent
+    .map((row) =>
+      row
+        .map((cell) =>
+          typeof cell === "string" && cell.includes(",") ? `"${cell}"` : cell
+        )
+        .join(",")
+    )
+    .join("\n");
 
   // Create and download file
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const link = document.createElement("a");
   const url = URL.createObjectURL(blob);
-  link.setAttribute('href', url);
-  link.setAttribute('download', `Sales_Report_${reportPeriod.replace(/\s+/g, '_')}.csv`);
-  link.style.visibility = 'hidden';
+  link.setAttribute("href", url);
+  link.setAttribute(
+    "download",
+    `Sales_Report_${reportPeriod.replace(/\s+/g, "_")}.csv`
+  );
+  link.style.visibility = "hidden";
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
@@ -329,7 +461,6 @@ const BillSummary = () => {
   };
 
   // Helper functions for business type styling
-
 
   const fetchSalesData = async (start = startDate, end = endDate) => {
     if (!start || !end) {
@@ -439,21 +570,33 @@ const BillSummary = () => {
 
   // Calculate totals from the current salesData for display consistency
   const totals = salesData.reduce(
-    (acc, item) => ({
-      amount: acc.amount + (item.amount || 0),
-      disc: acc.disc + (item.disc || 0),
-      roundOff: acc.roundOff + (item.roundOff || 0),
-      total: acc.total + (item.total || 0),
-     cgst: acc.cgst + (item.items?.[0]?.totalCgstAmt || 0), // Access nested items array
-    sgst: acc.sgst + (item.items?.[0]?.totalSgstAmt || 0), // Access nested items array
-    igst: acc.igst + (item.totalIgstAmt || 0),
-      totalWithTax: acc.totalWithTax + (item.totalWithTax || 0),
-      cash: acc.cash + (item.cash || 0),
-      credit: acc.credit + (item.credit || 0),
-      upi: acc.upi + (item.upi || 0),
-      cheque: acc.cheque + (item.cheque || 0),
-      bank: acc.bank + (item.bank || 0),
-    }),
+    (acc, item) => {
+      const isCashSale =
+        item.partyAccount === "Cash-in-Hand" || item.partyAccount === "CASH";
+
+        const isBankSale=
+        item.partyAccount === "Bank" || item.partyAccount === "Bank Accounts" || item.partyAccount === "Gpay";
+
+      return {
+        amount: acc.amount + (item.amount || 0),
+        disc: acc.disc + (item.disc || 0),
+        roundOff: acc.roundOff + (item.roundOff || 0),
+        total: acc.total + (item.total || 0),
+        cgst: acc.cgst + (item.cgst || 0),
+        sgst: acc.sgst + (item.sgst || 0),
+        igst: acc.igst + (item.igst || 0),
+        totalWithTax: acc.totalWithTax + (item.totalWithTax || 0),
+
+        // ✅ Modified logic:
+        cash: acc.cash + (isCashSale ? item.totalWithTax || 0 : 0),
+
+        // Keep other payment modes the same
+        credit: acc.credit + (item.credit || 0),
+        upi: acc.upi + (isBankSale ? item.totalWithTax || 0 : 0),
+        cheque: acc.cheque + (isBankSale ? item.totalWithTax || 0 : 0),
+        bank: acc.bank + (isBankSale ? item.totalWithTax || 0 : 0),
+      };
+    },
     {
       amount: 0,
       disc: 0,
@@ -470,6 +613,9 @@ const BillSummary = () => {
       bank: 0,
     }
   );
+
+  // console.log(totals);
+  // console.log(salesData);
 
   useEffect(() => {
     // Initialize with current date
@@ -514,9 +660,16 @@ const BillSummary = () => {
       alert("No data to export");
       return;
     }
-    exportToExcel(salesData, summary, owner, reportPeriod, businessType, totals);
+    exportToExcel(
+      salesData,
+      summary,
+      owner,
+      reportPeriod,
+      businessType,
+      totals
+    );
   };
-console.log(summary)
+  console.log(summary);
   console.log(salesData);
   return (
     <div className="min-h-screen bg-gray-100 p-5">
@@ -530,9 +683,9 @@ console.log(summary)
             {owner?.address || owner?.road || "Sales Register"}
           </div>
           <div className="text-sm font-bold mt-2">
-          SALES REGISTER OF THE OUTLET - {businessType} {salesData?.[0]?.kotType || ""}
+            SALES REGISTER OF THE OUTLET - {businessType}{" "}
+            {salesData?.[0]?.kotType || ""}
           </div>
-         
         </div>
 
         {/* Date Controls and Business Type Selector */}
@@ -618,7 +771,7 @@ console.log(summary)
                 <th className="border-t border-black p-2 text-center font-bold">
                   Date
                 </th>
-                  <th className="border-t border-black p-2 text-center font-bold">
+                <th className="border-t border-black p-2 text-center font-bold">
                   Agent Name
                 </th>
                 <th className="border-t border-black p-2 text-center font-bold">
@@ -633,14 +786,14 @@ console.log(summary)
                 <th className="border-t border-black p-2 text-center font-bold">
                   IGST
                 </th>
-                  <th className="border-t border-black p-2 text-center font-bold">
+                <th className="border-t border-black p-2 text-center font-bold">
                   Disc
                 </th>
                 <th className="border-t border-black p-2 text-center font-bold">
                   Round off
                 </th>
                 <th className="border-t border-black p-2 text-center font-bold">
-                Rounded Total
+                  Rounded Total
                 </th>
                 {/* <th className="border-t border-black p-2 text-center font-bold">
                   Total
@@ -655,11 +808,11 @@ console.log(summary)
                   Mode
                 </th>
                 <th className="border-t border-black p-2 text-center font-bold">
-                 Meal Period
-                </th> 
+                  Meal Period
+                </th>
                 <th className="border-t border-black p-2 text-center font-bold">
-                Kot Type
-                </th> 
+                  Kot Type
+                </th>
                 <th className="border-t border-black p-2 text-center font-bold">
                   Credit
                 </th>
@@ -697,6 +850,17 @@ console.log(summary)
                     <td className="border border-black p-2 text-right pr-3">
                       {(row.amount || 0).toFixed(2)}
                     </td>
+
+                    <td className="border border-black p-2 text-center">
+                      {(row?.cgst || 0).toFixed(2)}
+                    </td>
+                    <td className="border border-black p-2 text-center">
+                      {(row?.sgst || 0).toFixed(2)}
+                    </td>
+                    <td className="border border-black p-2 text-center">
+                      {(row?.igst || 0).toFixed(2)}
+                    </td>
+
                     <td className="border border-black p-2 text-center">
                       {(row.disc || 0).toFixed(2)}
                     </td>
@@ -704,42 +868,32 @@ console.log(summary)
                       {(row.roundOff || 0).toFixed(2)}
                     </td>
                     <td className="border border-black p-2 text-center">
-                      {(row.total || 0).toFixed(2)}
-                    </td>
-                    <td className="border border-black p-2 text-center">
-                      {(row.items[0].totalCgstAmt || 0).toFixed(2)}
-                    </td>
-                    <td className="border border-black p-2 text-center">
-                      {(row.items[0].totalSgstAmt || 0).toFixed(2)}
-                    </td>
-                    <td className="border border-black p-2 text-center">
-                     0.00
-                    </td>
-                    <td className="border border-black p-2 text-center">
                       {(row.totalWithTax || 0).toFixed(2)}
                     </td>
                     <td className="border border-black p-2 text-center">
-                      {row.cash > 0 ? (row.cash || 0).toFixed(2) : "-"}
-                    </td>
-                    <td className="border border-black p-2 text-center">
-                      {row.upi > 0 ? (row.upi || 0).toFixed(2) : "-"}
-                    </td>
-                    <td className="border border-black p-2 text-center">
-                      {row.mode
-                        ? row.mode.split(" + ").map((m, i) => (
-                            <span
-                              key={i}
-                              className="px-2 py-1 mx-1 rounded bg-blue-100 text-blue-800 text-xs font-semibold"
-                            >
-                              {m}
-                            </span>
-                          ))
+                      {row.partyAccount === "Cash-in-Hand" ||
+                      row.partyAccount === "CASH"
+                        ? (row.totalWithTax || 0).toFixed(2)
                         : "-"}
                     </td>
-                     <td className="border border-black p-2 text-center">
+                    <td className="border border-black p-2 text-center">
+                      {row.partyAccount === "Bank Accounts" ||
+                      row.partyAccount === "Gpay"
+                        ? (row.totalWithTax || 0).toFixed(2)
+                        : "-"}
+                    </td>
+                    <td className="border border-black p-2 text-center">
+                      <span className="px-2 py-1 mx-1 rounded bg-blue-100 text-blue-800 text-xs font-semibold">
+                        {row.partyAccount === "Bank Accounts" ||
+                        row.partyAccount === "Gpay"
+                          ? "Upi"
+                          : "Cash"}
+                      </span>
+                    </td>
+                    <td className="border border-black p-2 text-center">
                       {row.mealPeriod || "-"}
                     </td>
-                      <td className="border border-black p-2 text-center">
+                    <td className="border border-black p-2 text-center">
                       {row.kotType || "-"}
                     </td>
                     <td className="border border-black p-2 text-center">
@@ -748,6 +902,13 @@ console.log(summary)
                     <td className="border border-black p-2 text-center">
                       {row.creditDescription || "-"}
                     </td>
+                    {/* <td className="border border-black p-2 text-center">
+                      {(row.total || 0).toFixed(2)}
+                    </td>
+
+                    <td className="border border-black p-2 text-center">
+                      0.00
+                    </td> */}
                   </tr>
                 ))
               )}
@@ -758,17 +919,9 @@ console.log(summary)
                     Total
                   </td>
                   <td className="border border-black p-2 text-center">-</td>
+                  <td className="border border-black p-2 text-center">-</td>
                   <td className="border border-black p-2 text-right pr-3">
                     {totals.amount.toFixed(2)}
-                  </td>
-                  <td className="border border-black p-2 text-center">
-                    {totals.disc.toFixed(2)}
-                  </td>
-                  <td className="border border-black p-2 text-center">
-                    {totals.roundOff.toFixed(2)}
-                  </td>
-                  <td className="border border-black p-2 text-center">
-                    {totals.total.toFixed(2)}
                   </td>
                   <td className="border border-black p-2 text-center">
                     {totals.cgst.toFixed(2)}
@@ -780,21 +933,29 @@ console.log(summary)
                     {totals.igst.toFixed(2)}
                   </td>
                   <td className="border border-black p-2 text-center">
+                    {totals.disc.toFixed(2)}
+                  </td>
+                  <td className="border border-black p-2 text-center">
+                    {totals.roundOff.toFixed(2)}
+                  </td>
+                  <td className="border border-black p-2 text-center">
                     {totals.totalWithTax.toFixed(2)}
                   </td>
+
                   <td className="border border-black p-2 text-center">
                     {totals.cash.toFixed(2)}
                   </td>
                   <td className="border border-black p-2 text-center">
                     {totals.upi.toFixed(2)}
                   </td>
+
+                  <td className="border border-black p-2 text-center">-</td>
+                  <td className="border border-black p-2 text-center">-</td>
                   <td className="border border-black p-2 text-center">-</td>
                   <td className="border border-black p-2 text-center">
                     {totals.credit.toFixed(2)}
                   </td>
                   <td className="border border-black p-2 text-center">-</td>
-                    <td className="border border-black p-2 text-center">-</td>
-                    <td className="border border-black p-2 text-center">-</td>
                 </tr>
               )}
             </tbody>
@@ -883,65 +1044,75 @@ console.log(summary)
                 Business Type Breakdown
               </h3>
               <table className="w-full">
-                   <tbody>
-      {businessType === "hotel" && summary.hotelSales && (
-        <>
-          <tr className="bg-blue-50">
-            <td className="font-bold py-2 px-2">Hotel Sales</td>
-            <td className="text-right py-2 px-2">
-              {summary.hotelSales.amount?.toFixed(2) || "0.00"}
-            </td>
-          </tr>
-          <tr>
-            <td className="py-1 px-2 text-gray-600">- Transactions</td>
-            <td className="text-right py-1 px-2">
-              {summary.hotelSales.count || 0}
-            </td>
-          </tr>
-        </>
-      )}
+                <tbody>
+                  {businessType === "hotel" && summary.hotelSales && (
+                    <>
+                      <tr className="bg-blue-50">
+                        <td className="font-bold py-2 px-2">Hotel Sales</td>
+                        <td className="text-right py-2 px-2">
+                          {summary.hotelSales.amount?.toFixed(2) || "0.00"}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="py-1 px-2 text-gray-600">
+                          - Transactions
+                        </td>
+                        <td className="text-right py-1 px-2">
+                          {summary.hotelSales.count || 0}
+                        </td>
+                      </tr>
+                    </>
+                  )}
 
-      {businessType === "restaurant" && summary.restaurantSales && (
-        <>
-          <tr className="bg-green-50">
-            <td className="font-bold py-2 px-2">Restaurant Sales</td>
-            <td className="text-right py-2 px-2">
-              {summary.restaurantSales.amount?.toFixed(2) || "0.00"}
-            </td>
-          </tr>
-          <tr>
-            <td className="py-1 px-2 text-gray-600">- Transactions</td>
-            <td className="text-right py-1 px-2">
-              {summary.restaurantSales.count || 0}
-            </td>
-          </tr>
-        </>
-      )}
+                  {businessType === "restaurant" && summary.restaurantSales && (
+                    <>
+                      <tr className="bg-green-50">
+                        <td className="font-bold py-2 px-2">
+                          Restaurant Sales
+                        </td>
+                        <td className="text-right py-2 px-2">
+                          {summary.restaurantSales.amount?.toFixed(2) || "0.00"}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="py-1 px-2 text-gray-600">
+                          - Transactions
+                        </td>
+                        <td className="text-right py-1 px-2">
+                          {summary.restaurantSales.count || 0}
+                        </td>
+                      </tr>
+                    </>
+                  )}
 
-      {summary.otherSales && summary.otherSales.count > 0 && (
-        <>
-          <tr className="bg-gray-50">
-            <td className="font-bold py-2 px-2">Other Sales</td>
-            <td className="text-right py-2 px-2">
-              {summary.otherSales.amount?.toFixed(2) || "0.00"}
-            </td>
-          </tr>
-          <tr>
-            <td className="py-1 px-2 text-gray-600">- Transactions</td>
-            <td className="text-right py-1 px-2">
-              {summary.otherSales.count || 0}
-            </td>
-          </tr>
-        </>
-      )}
+                  {summary.otherSales && summary.otherSales.count > 0 && (
+                    <>
+                      <tr className="bg-gray-50">
+                        <td className="font-bold py-2 px-2">Other Sales</td>
+                        <td className="text-right py-2 px-2">
+                          {summary.otherSales.amount?.toFixed(2) || "0.00"}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="py-1 px-2 text-gray-600">
+                          - Transactions
+                        </td>
+                        <td className="text-right py-1 px-2">
+                          {summary.otherSales.count || 0}
+                        </td>
+                      </tr>
+                    </>
+                  )}
 
-      <tr className="border-t-2 border-black">
-        <td className="font-bold py-2 px-2 text-sm">Total Transactions</td>
-        <td className="text-right py-2 px-2 font-bold text-sm">
-          {salesData.length}
-        </td>
-      </tr>
-    </tbody>
+                  <tr className="border-t-2 border-black">
+                    <td className="font-bold py-2 px-2 text-sm">
+                      Total Transactions
+                    </td>
+                    <td className="text-right py-2 px-2 font-bold text-sm">
+                      {salesData.length}
+                    </td>
+                  </tr>
+                </tbody>
               </table>
             </div>
           </div>

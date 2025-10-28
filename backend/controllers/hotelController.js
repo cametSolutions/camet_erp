@@ -2795,31 +2795,49 @@ export const getHotelSalesDetails = async (req, res) => {
 
           // Classification (Hotel / Restaurant / Other)
           businessClassification: {
-            $cond: {
-              if: {
-                $and: [
-                  { $gt: [{ $size: "$convertedFrom" }, 0] }, // convertedFrom array is not empty
-                  {
-                    $ne: [
+            $switch: {
+              branches: [
+                {
+                  case: {
+                    $and: [
+                      { $gt: [{ $size: "$convertedFrom" }, 0] }, // not empty
                       {
-                        $ifNull: [
-                          { $arrayElemAt: ["$convertedFrom.id", 0] },
+                        $ne: [
+                          {
+                            $ifNull: [
+                              {
+                                $arrayElemAt: ["$convertedFrom.tableNumber", 0],
+                              },
+                              "",
+                            ],
+                          },
                           "",
                         ],
                       },
-                      "",
                     ],
-                  }, // checkInNumber is not empty
-                ],
-              },
-              then: "Restaurant",
-              else: "Hotel",
+                  },
+                  then: "Restaurant",
+                },
+                {
+                  case: {
+                    $ne: [{ $ifNull: ["$checkInNumber", ""] }, ""],
+                  },
+                  then: "Hotel",
+                },
+                {
+                  case: {
+                    $eq: [{ $size: "$convertedFrom" }, 0], // empty array
+                  },
+                  then: "Restaurant",
+                },
+              ],
+              default: "Hotel", // fallback, if none match
             },
           },
         },
       },
 
-      // Optional filter by classification
+      // // Optional filter by classification
       {
         $match:
           businessType === "all"
@@ -2857,7 +2875,7 @@ export const getHotelSalesDetails = async (req, res) => {
           roomNumber: 1,
           guestName: 1,
           businessClassification: 1,
-          party:1,
+          party: 1,
 
           totalCgst: {
             $sum: {
@@ -2911,7 +2929,7 @@ export const getHotelSalesDetails = async (req, res) => {
       { $sort: { date: -1, serialNumber: -1 } },
     ]);
 
-    console.log("salesData", salesData);
+    // console.log("salesData", salesData);
     // Transform data for frontend consumption
     const transformedData = salesData.map((sale) => {
       // Extract payment information

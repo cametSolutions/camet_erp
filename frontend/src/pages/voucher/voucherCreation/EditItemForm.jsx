@@ -334,7 +334,7 @@ function EditItemForm({ ItemsFromRedux, from, taxInclusive = false, loading }) {
 
     if (taxInclusive) {
       setIsTaxInclusive(
-        selectedGodown?.isTaxInclusive || selectedItem[0]?.isTaxInclusive
+        selectedGodown?.isTaxInclusive || selectedItem[0]?.taxInclusive
       );
     }
   }, [selectedItem[0], enableActualAndBilledQuantity]);
