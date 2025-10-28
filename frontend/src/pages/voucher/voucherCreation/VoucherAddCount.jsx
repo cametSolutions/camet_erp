@@ -494,7 +494,7 @@ function VoucherAddCount() {
 
       // Standard cess calculation
       if (item.cess && item.cess > 0) {
-        cessAmount = Number((taxableAmount * (item.cess / 100)).toFixed(2));
+        cessAmount = Number(taxableAmount * (item.cess / 100));
       }
 
       // Additional cess calculation - calculated as quantity * addl_cess
@@ -522,6 +522,7 @@ function VoucherAddCount() {
         Number((taxableAmount + igstAmt + totalCessAmount).toFixed(2)),
         0
       );
+      
 
       subtotal += individualTotal;
       totalCessAmt += cessAmount;
