@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useReactToPrint } from "react-to-print";
 
 import VoucherThreeInchPdf from "@/pages/voucher/voucherPdf/threeInchPdf/VoucherThreeInchPdf";
@@ -10,7 +10,6 @@ import {
   Search,
   Clock,
   Users,
-  TrendingUp,
   Filter,
   X,
   MenuIcon,
@@ -82,6 +81,10 @@ const RestaurantPOS = () => {
   const [selectedCash, setSelectedCash] = useState("");
   const [selectedBank, setSelectedBank] = useState("");
   const [cashOrBank, setCashOrBank] = useState({});
+
+
+  const [currentPage, setCurrentPage] = useState(1);
+const observerTarget = useRef(null);
 
   const [customerDetails, setCustomerDetails] = useState({
     name: "",
@@ -322,34 +325,82 @@ const RestaurantPOS = () => {
     fetchAllData();
   }, [fetchAllData]);
 
-  const fetchAllItems = useCallback(async () => {
-    setIsLoading(true);
+const fetchAllItems = useCallback(async (page = 1, append = false) => {
+  if (!append) {
     setLoader(true);
-    try {
-      const params = new URLSearchParams();
-      params.append("under", "restaurant");
+  }
+  setIsLoading(true);
+  
+  try {
+    const params = new URLSearchParams();
+    params.append("under", "restaurant");
+    params.append("page", page);
+    params.append("limit", "100");
+ 
 
-      const res = await api.get(`/api/sUsers/getAllItems/${cmp_id}?${params}`, {
-        withCredentials: true,
-      });
+    const res = await api.get(`/api/sUsers/getAllItems/${cmp_id}?${params}`, {
+      withCredentials: true,
+    });
 
-      const fetchedItems = res?.data?.items || [];
-      setAllItems(fetchedItems);
-      setItems(fetchedItems);
-      setHasMore(false);
-    } catch (error) {
-      console.log("Error fetching items:", error);
-      setHasMore(false);
+    const fetchedItems = res?.data?.items || [];
+    const hasMoreData = res?.data?.pagination?.hasMore ?? false;
+
+    if (append) {
+        // ✅ Prevent duplicates by filtering out existing items
+        setAllItems((prev) => {
+          const existingIds = new Set(prev.map(item => item._id));
+          const newItems = fetchedItems.filter(item => !existingIds.has(item._id));
+          return [...prev, ...newItems];
+        });
+        setItems((prev) => {
+          const existingIds = new Set(prev.map(item => item._id));
+          const newItems = fetchedItems.filter(item => !existingIds.has(item._id));
+          return [...prev, ...newItems];
+        });
+      } else {
+        setAllItems(fetchedItems);
+        setItems(fetchedItems);
+      }
+    
+    setHasMore(hasMoreData);
+  } catch (error) {
+    console.log("Error fetching items:", error);
+    setHasMore(false);
+    if (!append) {
       setAllItems([]);
       setItems([]);
-    } finally {
-      setIsLoading(false);
-      setLoader(false);
     }
-  }, [cmp_id]);
+  } finally {
+    setIsLoading(false);
+    setLoader(false);
+  }
+}, [cmp_id]);
+
+
+
+
 
   useEffect(() => {
-    fetchAllItems();
+    if (!observerTarget.current || !hasMore || isLoading) return;
+    const observer = new IntersectionObserver(
+      entries => {
+        if (entries[0].isIntersecting && hasMore && !isLoading) {
+          const nextPage = currentPage + 1;
+          setCurrentPage(nextPage);
+          fetchAllItems(nextPage, true);
+        }
+      },
+      { threshold: 0.1 }
+    );
+    observer.observe(observerTarget.current);
+    return () => {
+      observer.disconnect();
+    };
+  }, [hasMore, isLoading, currentPage,searchTerm, fetchAllItems]);
+
+  // Initial load only
+  useEffect(() => {
+    fetchAllItems(1, false);
   }, [fetchAllItems]);
 
   const {
@@ -497,22 +548,58 @@ const RestaurantPOS = () => {
     }
   };
 
-  const handleSearchChange = (value) => {
+
+    const searchItems = useCallback(async (searchQuery) => {
+  setLoader(true);
+  setIsLoading(true);
+  
+  try {
+    const params = new URLSearchParams();
+    params.append("cmp_id", cmp_id);          // ✅ FIX: Add cmp_id here
+    params.append("under", "restaurant");
+    params.append("search", searchQuery.trim());
+
+    const res = await api.get(`/api/sUsers/searchItems?${params.toString()}`, {
+      withCredentials: true,
+    });
+
+    const searchResults = res?.data?.items || [];
+    setAllItems(searchResults);
+    setItems(searchResults);
+    setHasMore(false);
+  } catch (error) {
+    console.log("Error searching items:", error);
+    setAllItems([]);
+    setItems([]);
+    setHasMore(false);
+  } finally {
+    setIsLoading(false);
+    setLoader(false);
+  }
+}, [cmp_id]);
+
+  
+
+const handleSearchChange = (value) => {
     setSearchTerm(value);
 
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
     }
 
+    if (!value.trim()) {
+      // If search is cleared, reload normal items
+      setCurrentPage(1);
+      setHasMore(true);
+      fetchAllItems(1, false);
+      return;
+    }
+
     searchTimeoutRef.current = setTimeout(() => {
-      console.log("Search term:", value);
-    }, 300);
+      // Call separate search endpoint
+      searchItems(value);
+    }, 500);
   };
-
-  const clearSearch = () => {
-    setSearchTerm("");
-  };
-
   useEffect(() => {
     return () => {
       if (searchTimeoutRef.current) {
@@ -714,6 +801,9 @@ const RestaurantPOS = () => {
       configurations[0]?.addRateWithTax?.restaurantSale
     );
 
+    // console.log(finalProductData);
+    
+
     if (orderType === "dine-in") {
       if (roomDetails && Object.keys(roomDetails).length > 0) {
         orderCustomerDetails = {
@@ -741,7 +831,7 @@ const RestaurantPOS = () => {
     }
 
     // console.log("orderCustomerDetails", orderItems);
-    console.log(orderType);
+    // console.log(orderType);
     // console.log("orderCustomerDetails", finalProductData);
 
     const newOrder = {
@@ -802,6 +892,42 @@ const RestaurantPOS = () => {
         : "KOT generated successfully!"
     );
   };
+
+
+
+// ✅ Handle search with debounce
+  
+
+
+   const clearSearch = () => {
+    setSearchTerm("");
+    setCurrentPage(1);
+    setHasMore(true);
+    fetchAllItems(1, false);
+  };
+
+
+
+
+
+
+
+
+  useEffect(() => {
+    let filteredItems = [...allItems];
+
+    if (selectedSubcategory) {
+      filteredItems = filteredItems.filter(
+        (item) => item.sub_category === selectedSubcategory
+      );
+    }
+
+    setItems(filteredItems);
+  }, [allItems, selectedSubcategory]);
+
+  // Cleanup
+  
+  
 
   const getOrderTypeDisplay = (type) => {
     const typeMap = {
@@ -1112,28 +1238,33 @@ const RestaurantPOS = () => {
           <div className="flex-1 flex flex-col">
             {/* Compact Search Bar */}
             <div className="p-3 bg-white/90 backdrop-blur-sm border-b border-gray-200/50">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-indigo-400 w-4 h-4" />
-                <input
-                  type="text"
-                  placeholder={`Search items...${
-                    selectedSubcategory ? ` in ${selectedSubcategory}` : ""
-                  }`}
-                  value={searchTerm}
-                  onChange={(e) => handleSearchChange(e.target.value)}
-                  className="w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 text-sm bg-white/90 backdrop-blur-sm transition-all duration-200"
-                />
-                {searchTerm && (
-                  <button
-                    onClick={clearSearch}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-indigo-600 transition-colors p-0.5 rounded-full hover:bg-indigo-50"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
+           <div className="mb-6 relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-indigo-500 w-5 h-5" />
+          <input
+            type="text"
+            placeholder="Search items..."
+            value={searchTerm}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            className="w-full pl-12 pr-10 py-2.5 border border-indigo-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm shadow-sm transition-all duration-200"
+          />
+           {searchTerm && (
+    <button
+      onClick={clearSearch}
+       className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-indigo-600 transition-colors"
+    >
+     <X className="w-4 h-4" />
+    </button>
+  )}
+          {searchTerm && (
+          <div className="mb-4 text-sm text-indigo-600 bg-indigo-50 px-4 py-2 rounded-lg inline-block">
+            {items.length > 0
+              ? `Found ${items.length} item${items.length !== 1 ? "s" : ""} for "${searchTerm}"`
+              : `No items found for "${searchTerm}"`}
+          </div>
+        )}
+        </div>
 
-              {searchTerm && (
+              {/* {searchTerm && (
                 <div className="mt-2 text-xs text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full inline-block">
                   {menuItems.length > 0
                     ? `Found ${menuItems.length} item${
@@ -1141,21 +1272,19 @@ const RestaurantPOS = () => {
                       } for "${searchTerm}"`
                     : `No items found for "${searchTerm}"`}
                 </div>
-              )}
+              )} */}
             </div>
 
             {/* Menu Items Grid */}
             <div className="flex-1 p-3 overflow-y-auto">
               {loader ? (
-                <div className="flex items-center justify-center h-full">
-                  <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-2 border-indigo-200 border-t-indigo-600 mx-auto mb-4"></div>
-                    <p className="text-indigo-600 font-medium text-sm">
-                      Loading items...
-                    </p>
-                  </div>
-                </div>
-              ) : (
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-200 border-t-indigo-600 mx-auto mb-4"></div>
+              <p className="text-indigo-600 font-medium">Loading items...</p>
+            </div>
+          </div>
+        ) : (
                 <>
                   <div className="mb-3">
                     <h3 className="text-sm font-bold text-gray-700 flex items-center gap-1.5">
@@ -1255,6 +1384,7 @@ const RestaurantPOS = () => {
                         );
                       })}
                     </div>
+                    
                   )}
                 </>
               )}
@@ -1972,7 +2102,12 @@ const RestaurantPOS = () => {
             0 4px 15px rgba(99, 102, 241, 0.1);
         }
       `}</style>
+       <div ref={observerTarget} style={{ height: 1 }} />
+      {isLoading && <div>Loading...</div>}
+      {!hasMore && <div>No more items</div>}
+    
     </>
+     
   );
 };
 
