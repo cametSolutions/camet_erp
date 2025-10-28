@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useReactToPrint } from "react-to-print";
 
 import VoucherThreeInchPdf from "@/pages/voucher/voucherPdf/threeInchPdf/VoucherThreeInchPdf";
@@ -10,7 +10,6 @@ import {
   Search,
   Clock,
   Users,
-  TrendingUp,
   Filter,
   X,
   MenuIcon,
@@ -714,6 +713,9 @@ const RestaurantPOS = () => {
       configurations[0]?.addRateWithTax?.restaurantSale
     );
 
+    // console.log(finalProductData);
+    
+
     if (orderType === "dine-in") {
       if (roomDetails && Object.keys(roomDetails).length > 0) {
         orderCustomerDetails = {
@@ -741,7 +743,7 @@ const RestaurantPOS = () => {
     }
 
     // console.log("orderCustomerDetails", orderItems);
-    console.log(orderType);
+    // console.log(orderType);
     // console.log("orderCustomerDetails", finalProductData);
 
     const newOrder = {
