@@ -58,16 +58,18 @@ const handleStayDaysChange = (id, newDays) => {
       if (checkout._id === id) {
         const stayDays = parseFloat(newDays) || 0;
 
-        // Round up fractional days to nearest whole day
-        const roundedDays = Math.ceil(stayDays);
-
+        const updatedRooms = checkout.selectedRooms?.map((room) => ({
+          ...room,
+          stayDays: stayDays, // Keep the fractional value
+        })) || [];
         // Calculate new checkout date
         const arrival = new Date(checkout.arrivalDate);
         const newCheckoutDate = new Date(arrival);
-        newCheckoutDate.setDate(arrival.getDate() + roundedDays);
-
+        const daysToAdd = Math.ceil(stayDays); // Round up for checkout date
+        newCheckoutDate.setDate(arrival.getDate() + daysToAdd);
         return {
           ...checkout,
+            selectedRooms: updatedRooms,
           stayDays: stayDays, // keep original entered days (can be 2.5)
           checkOutDate: newCheckoutDate.toISOString().split("T")[0], // format as YYYY-MM-DD
         };

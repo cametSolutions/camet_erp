@@ -1,11 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, } from "react";
 import { units } from "../../../../constants/units";
+import { useLocation } from "react-router-dom";
+
 import { toast } from "sonner";
 import { MdPlaylistAdd, MdDelete, MdCloudUpload, MdImage } from "react-icons/md";
 import uploadImageToCloudinary from "../../../../utils/uploadCloudinary";
 
 function ItemRegisterComponent({ pageName, optionsData, sendToParent, editData }) {
   console.log("editData",editData);
+  
   const [priceLevelRows, setPriceLevelRows] = useState([
     { pricelevel: "", pricerate: "" },
   ]);
@@ -13,13 +16,20 @@ function ItemRegisterComponent({ pageName, optionsData, sendToParent, editData }
     itemName: "",
     foodCategory: "",
     foodType: "",
-    unit: "DAY",
+    unit: "NOS",
     hsn: "",
     imageUrl: "", // Add image URL field
   });
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+
+
+
+
+
+
+
 
   useEffect(() => {
 
@@ -44,6 +54,12 @@ function ItemRegisterComponent({ pageName, optionsData, sendToParent, editData }
       if (editData.product_image) {
         setImagePreview(editData.product_image);
       }
+       else {
+    setRoomData((prev) => ({
+      ...prev,
+      unit: "NOS"
+    }));
+  }
     }
   }, [editData]);
 
@@ -374,29 +390,34 @@ function ItemRegisterComponent({ pageName, optionsData, sendToParent, editData }
           </div>
 
           <div className="w-full lg:w-6/12 px-4">
-            <div className="relative w-full mb-3">
-              <label
-                className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
-                htmlFor="grid-password"
-              >
-                HSN
-              </label>
-              <select
-                type="text"
-                className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                name="hsn"
-                value={roomData.hsn}
-                onChange={handleChange}
-              >
-                <option value="">Select a hsn</option>
-                {optionsData?.hsn?.map((el, index) => (
-                  <option key={index} value={el?.hsn }>
-                    {el?.hsn}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
+  <div className="relative w-full mb-3">
+    <label
+      className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+      htmlFor="grid-password"
+    >
+      HSN
+    </label>
+
+    <select
+      className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+      name="hsn"
+      value={roomData.hsn}
+      onChange={handleChange}
+    >
+      <option value="">Select an HSN</option>
+
+      {optionsData?.hsn?.map((el, index) => {
+        const igstRate = el?.rows?.[0]?.igstRate || "";
+        return (
+          <option key={index} value={el.hsn}>
+            {`${el.hsn} — ${el.description || ""} — IGST: ${igstRate}%`}
+          </option>
+        );
+      })}
+    </select>
+  </div>
+</div>
+
         </div>
 
         {/* Price Level and Location Tabs */}
