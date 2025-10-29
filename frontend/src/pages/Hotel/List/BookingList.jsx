@@ -13,7 +13,7 @@ import { motion } from "framer-motion";
 
 import Swal from "sweetalert2";
 import CheckoutDateModal from "../Components/CheckoutDateModal";
-
+import CustomerSearchInputBox from "../Components/CustomerSearchInPutBox";
 import { FixedSizeList as List } from "react-window";
 import InfiniteLoader from "react-window-infinite-loader";
 import { useSelector } from "react-redux";
@@ -61,6 +61,9 @@ function BookingList() {
   const [cashOrBank, setCashOrBank] = useState({});
   const [restaurantBaseSaleData, setRestaurantBaseSaleData] = useState({});
   const [showSelectionModal, setShowSelectionModal] = useState(true);
+
+
+const [selectedCreditor, setSelectedCreditor] = useState("");
 
  const { roomId, roomName, filterByRoom } = location.state || {};
   
@@ -328,6 +331,18 @@ function BookingList() {
           paymentMode: paymentMode,
         };
       }
+        } else if (paymentMode === "credit") {
+    // NEW: Handle credit payment
+    if (!selectedCreditor || selectedCreditor === "") {
+      setPaymentError("Please select a creditor");
+      setSaveLoader(false);
+      return;
+    }
+    paymentDetails = {
+      cashAmount: selectedDataForPayment?.total,
+      selectedCreditor: selectedCreditor,
+      paymentMode: paymentMode,
+    };
     } else {
       if (
         Number(cashAmount) + Number(onlineAmount) !=
@@ -377,6 +392,8 @@ function BookingList() {
       setSaveLoader(false);
       setCashAmount(0);
       setOnlineAmount(0);
+        setSelectedCreditor(""); // Reset creditor
+         setPaymentMode("single"); // Reset payment mode
       setShowPaymentModal(false);
       fetchBookings(1, searchTerm);
     }
@@ -1022,6 +1039,7 @@ function BookingList() {
                     setPaymentError("");
                     setSelectedCash("");
                     setSelectedBank("");
+                     setSelectedCreditor(""); 
                   }}
                   className="text-gray-400 hover:text-gray-600"
                 >
@@ -1086,6 +1104,21 @@ function BookingList() {
                   >
                     Split Payment
                   </button>
+                   <button
+      onClick={() => {
+        setPaymentMode("credit");
+        setCashAmount(0);
+        setOnlineAmount(0);
+        setPaymentError("");
+      }}
+      className={`flex-1 px-3 py-2 rounded-lg border-2 text-xs font-medium transition-colors ${
+        paymentMode === "credit"
+          ? "border-blue-500 bg-blue-50 text-blue-700"
+          : "border-gray-200 hover:border-gray-300"
+      }`}
+    >
+      Credit Payment
+    </button>
                 </div>
               </div>
 
@@ -1349,6 +1382,30 @@ function BookingList() {
                   </div>
                 </div>
               )}
+
+
+{paymentMode === "credit" && (
+  <div className="mb-3">
+    <label className="block text-sm font-medium text-gray-700 mb-2">
+      Creditor
+    </label>
+    <div className="mt-3">
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        Select Creditor
+      </label>
+      <CustomerSearchInputBox
+        onSelect={(party) => {
+          setSelectedCreditor(party);
+          setPaymentError("");
+        }}
+        selectedParty={selectedCreditor}
+        isAgent={false}
+        placeholder="Search creditors..."
+        sendSearchToParent={() => {}}
+      />
+    </div>
+  </div>
+)}
 
               {/* Error Message */}
               {paymentError && (

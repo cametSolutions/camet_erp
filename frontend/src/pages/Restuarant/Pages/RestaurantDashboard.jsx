@@ -1019,8 +1019,41 @@ const handleSearchChange = (value) => {
                 <span className="sm:hidden">RMS</span>
               </h1>
             </div>
+            <div className="hidden md:block  backdrop-blur-sm border-b border-gray-200/50 shadow-lg">
+  <div className="px-3 py-2.5">
+    <div className="flex items-center gap-2">
+     
+      <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+        {priceLevelData.map((level) => (
+          <button
+            key={level._id}
+            onClick={() => {
+              setSelectedPriceLevel(level._id);
+              // Clear cart when changing price level
+              setOrderItems([]);
+            }}
+            className={`
+              flex items-center gap-2 px-2 py-2 rounded-xl
+              font-semibold text-xs transition-all duration-300
+              whitespace-nowrap flex-shrink-0 min-w-max
+              border hover:scale-105 active:scale-95 transform
+              ${
+                selectedPriceLevel === level._id
+                  ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white border-transparent shadow-lg shadow-purple-500/25"
+                  : "bg-white/15 text-white border-gray-200 hover:border-purple-300 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:shadow-md"
+              }
+            `}
+          >
+            <span className="text-base">{level.icon || "💰"}</span>
+            <span>{level.pricelevel}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  </div>
+</div>
             <div className="flex items-center space-x-2">
-              <div className="hidden sm:flex items-center space-x-1.5 bg-white/15 backdrop-blur-sm rounded-lg px-2 py-1.5 border border-white/10">
+              <div className="hidden sm:flex md:hidden items-center space-x-1.5 bg-white/15 backdrop-blur-sm rounded-lg px-2 py-1.5 border border-white/10">
                 <CiCircleList className="w-3.5 h-3.5" />
                 <button
                   className="text-xs font-medium hover:text-gray-200 transition-colors"

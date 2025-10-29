@@ -985,7 +985,9 @@ const HotelDashboard = () => {
                 onChange={(e) => handleRoomAction(e.target.value)}
                 defaultValue=""
               >
-             
+                <option value="" disabled>
+                  Choose...
+                </option>
                 {selectedRoomData.status === "occupied" ? (
                   <>
                     <option value="checkOut">CheckOut</option>
