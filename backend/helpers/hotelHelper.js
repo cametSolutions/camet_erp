@@ -178,15 +178,17 @@ export const extractRequestParamsForBookings = (req) => {
   };
 };
 
-export const updateStatus = async (roomData, status, session) => {
-  const ids = roomData.map((room) => room.roomId);
+ export const updateStatus = async (rooms, status, session) => {
+  if (!rooms || rooms.length === 0) return;
+  
+  const roomIds = rooms.map(room => room._id || room);
+  
   await roomModal.updateMany(
-    { _id: { $in: ids } },
-    { $set: { status } },
+    { _id: { $in: roomIds } },
+    { $set: { status: status } },
     { session }
   );
 };
-
 // hotelVoucherSeries.js
 export async function hotelVoucherSeries(cmp_id, session) {
   const SaleVoucher = await VoucherSeriesModel.findOne({

@@ -13,6 +13,7 @@ import { motion } from "framer-motion";
 
 import Swal from "sweetalert2";
 import CheckoutDateModal from "../Components/CheckoutDateModal";
+import EnhancedCheckoutModal from "../Components/EnhancedCheckoutModal";
 import CustomerSearchInputBox from "../Components/CustomerSearchInPutBox";
 import { FixedSizeList as List } from "react-window";
 import InfiniteLoader from "react-window-infinite-loader";
@@ -62,6 +63,8 @@ function BookingList() {
   const [restaurantBaseSaleData, setRestaurantBaseSaleData] = useState({});
   const [showSelectionModal, setShowSelectionModal] = useState(true);
 
+const [showEnhancedCheckoutModal, setShowEnhancedCheckoutModal] = useState(false);
+const [processedCheckoutData, setProcessedCheckoutData] = useState(null);
 
 const [selectedCreditor, setSelectedCreditor] = useState("");
 
@@ -399,27 +402,70 @@ const [selectedCreditor, setSelectedCreditor] = useState("");
     }
   };
 
-  const handleCheckOutData = async () => {
-    setShowSelectionModal(false);
-    let checkDateChanged = selectedCheckOut.filter(
-      (item) => item?.checkOutDate !== new Date().toISOString().split("T")[0]
-    );
+ const handleCheckOutData = async () => {
+  setShowSelectionModal(false);
+  
+  // First show the enhanced checkout modal to assign customers to rooms
+  setShowEnhancedCheckoutModal(true);
+};
+// Add this new handler for when the enhanced checkout modal confirms
+const handleEnhancedCheckoutConfirm = async (roomAssignments) => {
+  setShowEnhancedCheckoutModal(false);
+  
+  // Check if any checkout dates need to be changed
+  let checkDateChanged = selectedCheckOut.filter(
+    (item) => item?.checkOutDate !== new Date().toISOString().split("T")[0]
+  );
 
-    if (checkDateChanged?.length > 0) {
-      setShowCheckOutDateModal(true);
-    } else {
-      setSaveLoader(true);
-      const hasPrint1 = configurations[0]?.defaultPrint?.print1;
-      navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
-        state: {
-          selectedCheckOut: selectedCheckOut,
-          customerId: selectedCustomer,
-          isForPreview: true,
-        },
-      });
-    }
-  };
+  if (checkDateChanged?.length > 0) {
+    setProcessedCheckoutData(roomAssignments);
+    setShowCheckOutDateModal(true);
+  } else {
+    proceedToCheckout(roomAssignments);
+  }
+};
 
+
+const proceedToCheckout = (roomAssignments) => {
+  setSaveLoader(true);
+  const hasPrint1 = configurations[0]?.defaultPrint?.print1;
+  
+  // Transform the room assignments back to the format needed for checkout
+  const checkoutData = roomAssignments.flatMap(group => {
+    return group.checkIns.map(checkIn => {
+      const originalCheckIn = checkIn.originalCheckIn;
+      
+      // Get only the rooms being checked out for this customer
+      const roomsToCheckout = originalCheckIn.selectedRooms.filter(room =>
+        checkIn.rooms.some(r => r.roomId === room._id)
+      );
+      
+      // Check if this is a partial checkout
+      const isPartialCheckout = roomsToCheckout.length < originalCheckIn.selectedRooms.length;
+      
+      return {
+        ...originalCheckIn,
+        customerId: group.customer,
+        selectedRooms: roomsToCheckout, // Only rooms being checked out
+        isPartialCheckout: isPartialCheckout,
+        originalCheckInId: checkIn.checkInId,
+        remainingRooms: originalCheckIn.selectedRooms.filter(room =>
+          !checkIn.rooms.some(r => r.roomId === room._id)
+        ),
+      };
+    });
+  });
+
+  navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
+    state: {
+      selectedCheckOut: checkoutData,
+      customerId: checkoutData[0]?.customerId?._id,
+      isForPreview: true,
+      roomAssignments: roomAssignments,
+      isPartialCheckout: checkoutData.some(co => co.isPartialCheckout),
+    },
+  });
+};
   const TableHeader = () => (
     <div className="bg-gray-100 border-b border-gray-300 sticky top-0 z-10">
       {/* Mobile Header */}
@@ -867,9 +913,36 @@ const [selectedCreditor, setSelectedCreditor] = useState("");
     );
   };
 
-  const handleCloseBasedOnDate = (checkouts) => {
-    console.log(checkouts);
-    setSaveLoader(true);
+const handleCloseBasedOnDate = (checkouts) => {
+  console.log("Updated checkouts:", checkouts);
+  setSaveLoader(true);
+  
+  if (processedCheckoutData) {
+    // Transform the processed checkout data with updated stay days
+    const updatedCheckoutData = processedCheckoutData.map(group => ({
+      ...group,
+      checkIns: group.checkIns.map(checkIn => {
+        // Find the updated checkout data for this checkIn
+        const updatedData = checkouts.find(c => c._id === checkIn.checkInId);
+        
+        return {
+          ...checkIn,
+          originalCheckIn: {
+            ...checkIn.originalCheckIn,
+            selectedRooms: checkIn.originalCheckIn.selectedRooms.map(room => {
+              // Find updated room data
+              const updatedRoom = updatedData?.selectedRooms?.find(r => r._id === room._id);
+              return updatedRoom ? { ...room, ...updatedRoom } : room;
+            })
+          }
+        };
+      })
+    }));
+    
+    proceedToCheckout(updatedCheckoutData);
+    setProcessedCheckoutData(null);
+  } else {
+    // Normal flow without room assignments
     const hasPrint1 = configurations[0]?.defaultPrint?.print1;
     navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
       state: {
@@ -878,8 +951,8 @@ const [selectedCreditor, setSelectedCreditor] = useState("");
         isForPreview: true,
       },
     });
-  };
-
+  }
+};
   // const handleCancelShowCheckOutDateModal = () => {
   //   setShowCheckOutDateModal(false);
   //   setSelectedCheckOut([])
@@ -929,6 +1002,17 @@ const [selectedCreditor, setSelectedCreditor] = useState("");
             }
           </div>
         )}
+          {showEnhancedCheckoutModal && (
+        <EnhancedCheckoutModal
+          isOpen={showEnhancedCheckoutModal}
+          onClose={() => {
+            setShowEnhancedCheckoutModal(false);
+            setShowSelectionModal(true);
+          }}
+          selectedCheckIns={selectedCheckOut}
+          onConfirm={handleEnhancedCheckoutConfirm}
+        />
+      )}
         {showCheckOutDateModal && (
           <CheckoutDateModal
             isOpen={CheckoutDateModal}
