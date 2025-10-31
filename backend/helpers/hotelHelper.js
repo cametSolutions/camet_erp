@@ -178,14 +178,11 @@ export const extractRequestParamsForBookings = (req) => {
   };
 };
 
- export const updateStatus = async (rooms, status, session) => {
-  if (!rooms || rooms.length === 0) return;
-  
-  const roomIds = rooms.map(room => room._id || room);
-  
+ export const updateStatus = async (roomData, status, session) => {
+  const ids = roomData.map((room) => room.roomId);
   await roomModal.updateMany(
-    { _id: { $in: roomIds } },
-    { $set: { status: status } },
+    { _id: { $in: ids } },
+    { $set: { status } },
     { session }
   );
 };

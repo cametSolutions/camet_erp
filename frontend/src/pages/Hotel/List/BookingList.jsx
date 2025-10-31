@@ -13,9 +13,7 @@ import { motion } from "framer-motion";
 
 import Swal from "sweetalert2";
 import CheckoutDateModal from "../Components/CheckoutDateModal";
-
-import IntegratedCheckoutPanel from '../Components/IntegratedCheckoutPanel';
-
+import EnhancedCheckoutModal from "../Components/EnhancedCheckoutModal";
 import CustomerSearchInputBox from "../Components/CustomerSearchInPutBox";
 import { FixedSizeList as List } from "react-window";
 import InfiniteLoader from "react-window-infinite-loader";
@@ -171,14 +169,32 @@ const [selectedCreditor, setSelectedCreditor] = useState("");
           }
         );
 
-        if (pageNumber === 1) {
-          setBookings(res?.data?.bookingData);
-        } else if (res.data.bookingData) {
-          setBookings((prevBookings) => [
-            ...prevBookings,
-            ...res.data.bookingData,
-          ]);
-        }
+          let bookingData = res?.data?.bookingData || [];
+
+      // Handle partial checkout in pending checkin mode
+      if (location.pathname === "/sUsers/checkInList") {
+        // Expand any bookings with remainingRooms into separate bookings per room
+        bookingData = bookingData.flatMap((booking) => {
+          if (booking.remainingRooms && booking.remainingRooms.length > 0) {
+            return booking.remainingRooms.map((room) => ({
+              ...booking,
+              selectedRooms: [room],  // Override to only the remaining room
+              isPartialCheckout: true, // Flag UI for partial checkout status
+            }));
+          }
+          return [booking]; // No partial checkout, return as is
+        });
+      } else if (location.pathname === "/sUsers/checkOutList") {
+        // Filter to only fully checked out bookings for checkout list
+        bookingData = bookingData.filter((booking) => booking.status === "checkOut");
+      }
+
+
+     if (pageNumber === 1) {
+        setBookings(bookingData);
+      } else {
+        setBookings((prev) => [...prev, ...bookingData]);
+      }
 
         setHasMore(res.data.pagination?.hasMore);
         setPage(pageNumber);
@@ -438,8 +454,8 @@ const proceedToCheckout = (roomAssignments) => {
       const originalCheckIn = checkIn.originalCheckIn;
       
       // Get only the rooms being checked out for this customer
-        const roomsToCheckout = originalCheckIn.selectedRooms.filter(room =>
-        checkIn.rooms.some(r => r.roomId === room._id || r.roomId === room.roomId)
+      const roomsToCheckout = originalCheckIn.selectedRooms.filter(room =>
+        checkIn.rooms.some(r => r.roomId === room._id)
       );
       
       // Check if this is a partial checkout
@@ -448,26 +464,12 @@ const proceedToCheckout = (roomAssignments) => {
       return {
         ...originalCheckIn,
         customerId: group.customer,
-     selectedRooms: roomsToCheckout.map(room => ({
-  roomId: room._id || room.roomId,
-  roomName: room.roomName,
-  stayDays: room.stayDays,
-  pax: room.pax,
-  priceLevelRate: room.priceLevelRate,
-  totalAmount: room.totalAmount,
-  hsnDetails: room.hsnDetails,
-  taxPercentage: room.taxPercentage,
-  unit: room.unit || "DAY-DAYS",
-})),
-
+        selectedRooms: roomsToCheckout, // Only rooms being checked out
         isPartialCheckout: isPartialCheckout,
         originalCheckInId: checkIn.checkInId,
-        remainingRooms: originalCheckIn.selectedRooms
-          .filter(room => !checkIn.rooms.some(r => r.roomId === room._id || r.roomId === room.roomId))
-          .map(room => ({
-            ...room,
-            _id: room._id || room.roomId,
-          })),
+        remainingRooms: originalCheckIn.selectedRooms.filter(room =>
+          !checkIn.rooms.some(r => r.roomId === room._id)
+        ),
       };
     });
   });
@@ -1018,7 +1020,17 @@ const handleCloseBasedOnDate = (checkouts) => {
             }
           </div>
         )}
-       
+          {showEnhancedCheckoutModal && (
+        <EnhancedCheckoutModal
+          isOpen={showEnhancedCheckoutModal}
+          onClose={() => {
+            setShowEnhancedCheckoutModal(false);
+            setShowSelectionModal(true);
+          }}
+          selectedCheckIns={selectedCheckOut}
+          onConfirm={handleEnhancedCheckoutConfirm}
+        />
+      )}
         {showCheckOutDateModal && (
           <CheckoutDateModal
             isOpen={CheckoutDateModal}
@@ -1033,18 +1045,11 @@ const handleCloseBasedOnDate = (checkouts) => {
           showSelectionModal &&
           (location.pathname === "/sUsers/checkInList" ||
             location.pathname === "/sUsers/checkOutList") && (
-               <IntegratedCheckoutPanel
-      selectedCheckOut={selectedCheckOut}
-      onClose={() => setSelectedCheckOut([])}
-      onProceedToCheckout={handleEnhancedCheckoutConfirm}
-      selectedCustomer={selectedCustomer}
-      setSelectedCustomer={setSelectedCustomer}
-    />
-            )}
-            {/* <div className="fixed bottom-6 right-6 z-50 animate-slideUp">
+              
+            <div className="fixed bottom-6 right-6 z-50 animate-slideUp">
               <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-4 min-w-[280px]">
                 {/* Selected Items Count */}
-                {/* <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
                       <MdCheckCircle className="w-5 h-5 text-white" />
@@ -1057,10 +1062,10 @@ const handleCloseBasedOnDate = (checkouts) => {
                   >
                     ✕
                   </button>
-                </div> */}
+                </div>
 
                 {/* Selected Items List */}
-                {/* <div className="max-h-32 overflow-y-auto mb-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+                <div className="max-h-32 overflow-y-auto mb-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                   <div className="space-y-2">
                     {selectedCheckOut.map((item) => (
                       <div
@@ -1073,8 +1078,8 @@ const handleCloseBasedOnDate = (checkouts) => {
                       </div>
                     ))}
                   </div>
-                </div> */}
-                {/* <div className="mb-6">
+                </div>
+                <div className="mb-6">
                   <label className="block text-xs font-semibold text-gray-700 mb-2">
                     Select Customer
                   </label>
@@ -1093,9 +1098,9 @@ const handleCloseBasedOnDate = (checkouts) => {
                       </option>
                     ))}
                   </select>
-                </div> */}
+                </div>
                 {/* Action Buttons */}
-                {/* <div className="flex gap-2">
+                <div className="flex gap-2">
                   <button
                     onClick={() => setSelectedCheckOut([])}
                     className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-all duration-200"
@@ -1112,9 +1117,9 @@ const handleCloseBasedOnDate = (checkouts) => {
                     Checkout
                   </button>
                 </div>
-              </div> */}
-            {/* </div> */} 
-          
+              </div>
+            </div>
+          )}
 
         {/* Payment Modal */}
         {showPaymentModal && (
