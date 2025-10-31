@@ -389,7 +389,7 @@ function ItemRegisterComponent({ pageName, optionsData, sendToParent, editData }
             </div>
           </div>
 
-          <div className="w-full lg:w-6/12 px-4">
+       <div className="w-full lg:w-6/12 px-4">
   <div className="relative w-full mb-3">
     <label
       className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
@@ -407,7 +407,11 @@ function ItemRegisterComponent({ pageName, optionsData, sendToParent, editData }
       <option value="">Select an HSN</option>
 
       {optionsData?.hsn?.map((el, index) => {
-        const igstRate = el?.rows?.[0]?.igstRate || "";
+        // Check if it's onItemRate (rows array) or onValue (direct property)
+        const igstRate = el.tab === 'onItemRate' 
+          ? el?.rows?.[0]?.igstRate || "" 
+          : el?.igstRate || "";
+        
         return (
           <option key={index} value={el.hsn}>
             {`${el.hsn} — ${el.description || ""} — IGST: ${igstRate}%`}
