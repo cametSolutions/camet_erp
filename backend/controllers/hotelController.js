@@ -1997,8 +1997,9 @@ export const convertCheckOutToSale = async (req, res) => {
   const session = await mongoose.startSession();
   try {
     let saleNumber, savedVoucherData;
-
-    await session.withTransaction(async () => {
+  let isPartialCheckout = false; 
+   
+  await session.withTransaction(async () => {
       const { cmp_id } = req.params;
       let {
         paymentMethod,
@@ -2007,7 +2008,7 @@ export const convertCheckOutToSale = async (req, res) => {
         selectedParty,
         restaurantBaseSaleData,
         isPostToRoom = false,
-         isPartialCheckout = false,
+ isPartialCheckout: reqPartialCheckout = false, 
         roomAssignments = null,
       } = req.body;
 
@@ -2155,6 +2156,10 @@ export const convertCheckOutToSale = async (req, res) => {
             const isThisPartialCheckout = 
               item.isPartialCheckout || 
               roomsBeingCheckedOut.length < originalCheckIn.selectedRooms.length;
+
+ if (isThisPartialCheckout) {
+            isPartialCheckout = true; // ✅ global flag set
+          }
 
             // Get room IDs being checked out
             const roomIdsBeingCheckedOut = roomsBeingCheckedOut.map(r => 
