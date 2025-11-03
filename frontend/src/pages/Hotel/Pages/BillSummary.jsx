@@ -577,8 +577,10 @@ const BillSummary = () => {
         const isBankSale=
         item.partyAccount === "Bank" || item.partyAccount === "Bank Accounts" || item.partyAccount === "Gpay";
 
+ const grossAmount = (item.amount || 0)  - (item.igst || 0);
+
       return {
-        amount: acc.amount + (item.amount || 0),
+       amount: acc.amount + grossAmount,
         disc: acc.disc + (item.disc || 0),
         roundOff: acc.roundOff + (item.roundOff || 0),
         total: acc.total + (item.total || 0),
@@ -775,7 +777,7 @@ const BillSummary = () => {
                   Agent Name
                 </th>
                 <th className="border-t border-black p-2 text-center font-bold">
-                  Amount
+                 Gross Amount
                 </th>
                 <th className="border-t border-black p-2 text-center font-bold">
                   CGST
@@ -793,7 +795,7 @@ const BillSummary = () => {
                   Round off
                 </th>
                 <th className="border-t border-black p-2 text-center font-bold">
-                  Rounded Total
+                  Net Total
                 </th>
                 {/* <th className="border-t border-black p-2 text-center font-bold">
                   Total
@@ -847,9 +849,9 @@ const BillSummary = () => {
                     <td className="border border-black p-2 text-right pr-3">
                       {row.partyName}
                     </td>
-                    <td className="border border-black p-2 text-right pr-3">
-                      {(row.amount || 0).toFixed(2)}
-                    </td>
+                  <td className="border border-black p-2 text-right pr-3">
+  {((row.amount || 0) - (row.igst || 0)).toFixed(2)}
+</td>
 
                     <td className="border border-black p-2 text-center">
                       {(row?.cgst || 0).toFixed(2)}
