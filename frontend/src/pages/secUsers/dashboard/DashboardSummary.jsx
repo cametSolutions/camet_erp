@@ -27,9 +27,10 @@ const DashboardSummary = () => {
   // );
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { industry } = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg
-  );
+const industry = useSelector(
+  (state) => state.secSelectedOrganization?.secSelectedOrg?.industry
+);
+
   // const {
   //   data,
   //   // error,
