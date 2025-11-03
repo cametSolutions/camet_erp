@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import React, { useState, useEffect } from "react";
 import { X, Users, DoorOpen, Plus, Trash2 } from "lucide-react";
 import CustomerSearchInputBox from "../Components/CustomerSearchInPutBox";
@@ -31,6 +32,10 @@ export default function EnhancedCheckoutModal({
       setRoomAssignments(allRooms);
     }
   }, [selectedCheckIns]);
+
+
+  console.log(roomAssignments);
+  
 
   // Handle customer selection for a specific room
   const handleCustomerSelect = (index, customer) => {
@@ -129,13 +134,16 @@ export default function EnhancedCheckoutModal({
       checkIns: group.checkIns,
     }));
 
+    console.log("result", result);
+    
+
     onConfirm(result);
   };
 
   if (!isOpen) return null;
 
   // Get all available rooms (not currently in assignments)
-  const availableRooms = selectedCheckIns.flatMap((checkIn) =>
+   selectedCheckIns.flatMap((checkIn) =>
     checkIn.selectedRooms
       .filter(
         (room) =>

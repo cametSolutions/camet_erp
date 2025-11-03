@@ -385,6 +385,9 @@ const [selectedCreditor, setSelectedCreditor] = useState("");
     }
 
     try {
+
+      console.log("selectedCheckOut:", selectedCheckOut);
+      
       const response = await api.post(
         `/api/sUsers/convertCheckOutToSale/${cmp_id}`,
         {

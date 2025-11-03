@@ -1098,13 +1098,13 @@ export const roomBooking = async (req, res) => {
           const paymentDetails =
             method === "cash"
               ? {
-                  cash_ledname: bookingData?.customerName,
-                  cash_name: bookingData?.customerName,
-                }
+                cash_ledname: bookingData?.customerName,
+                cash_name: bookingData?.customerName,
+              }
               : {
-                  bank_ledname: bookingData?.customerName,
-                  bank_name: bookingData?.customerName,
-                };
+                bank_ledname: bookingData?.customerName,
+                bank_name: bookingData?.customerName,
+              };
 
           await buildReceipt(
             receiptVoucher,
@@ -1169,13 +1169,13 @@ export const roomBooking = async (req, res) => {
             const paymentDetails =
               payment.method === "cash"
                 ? {
-                    cash_ledname: bookingData?.customerName,
-                    cash_name: bookingData?.customerName,
-                  }
+                  cash_ledname: bookingData?.customerName,
+                  cash_name: bookingData?.customerName,
+                }
                 : {
-                    bank_ledname: bookingData?.customerName,
-                    bank_name: bookingData?.customerName,
-                  };
+                  bank_ledname: bookingData?.customerName,
+                  bank_name: bookingData?.customerName,
+                };
 
             await buildReceipt(
               receiptVoucher,
@@ -1426,13 +1426,13 @@ export const updateBooking = async (req, res) => {
           const paymentDetails =
             method === "cash"
               ? {
-                  cash_ledname: bookingData?.customerName,
-                  cash_name: bookingData?.customerName,
-                }
+                cash_ledname: bookingData?.customerName,
+                cash_name: bookingData?.customerName,
+              }
               : {
-                  bank_ledname: bookingData?.customerName,
-                  bank_name: bookingData?.customerName,
-                };
+                bank_ledname: bookingData?.customerName,
+                bank_name: bookingData?.customerName,
+              };
 
           // Save receipt
           await buildReceipt(
@@ -1499,13 +1499,13 @@ export const updateBooking = async (req, res) => {
             const paymentDetails =
               payment.method === "cash"
                 ? {
-                    cash_ledname: bookingData?.customerName,
-                    cash_name: bookingData?.customerName,
-                  }
+                  cash_ledname: bookingData?.customerName,
+                  cash_name: bookingData?.customerName,
+                }
                 : {
-                    bank_ledname: bookingData?.customerName,
-                    bank_name: bookingData?.customerName,
-                  };
+                  bank_ledname: bookingData?.customerName,
+                  bank_name: bookingData?.customerName,
+                };
 
             // Save receipt
             await buildReceipt(
@@ -1948,8 +1948,8 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
     }
     const checkOutSideAdvanceDetails = !isForPreview
       ? await TallyData.find({
-          bill_no: checkoutData[0]?.voucherNumber,
-        })
+        bill_no: checkoutData[0]?.voucherNumber,
+      })
       : [];
 
     allAdvanceDetails.push(...checkOutSideAdvanceDetails);
@@ -1997,9 +1997,9 @@ export const convertCheckOutToSale = async (req, res) => {
   const session = await mongoose.startSession();
   try {
     let saleNumber, savedVoucherData;
-  let isPartialCheckout = false; 
-   
-  await session.withTransaction(async () => {
+    let isPartialCheckout = false;
+
+    await session.withTransaction(async () => {
       const { cmp_id } = req.params;
       let {
         paymentMethod,
@@ -2008,7 +2008,7 @@ export const convertCheckOutToSale = async (req, res) => {
         selectedParty,
         restaurantBaseSaleData,
         isPostToRoom = false,
- isPartialCheckout: reqPartialCheckout = false, 
+        isPartialCheckout: reqPartialCheckout = false,
         roomAssignments = null,
       } = req.body;
 
@@ -2142,27 +2142,27 @@ export const convertCheckOutToSale = async (req, res) => {
       if (selectedCheckOut?.length > 0) {
         await Promise.all(
           selectedCheckOut.map(async (item) => {
-           const checkInId = item?._id;
+            const checkInId = item?._id;
             const roomsBeingCheckedOut = item?.selectedRooms || [];
 
-          
-           const originalCheckIn = await CheckIn.findById(checkInId).session(session);
-            
+
+            const originalCheckIn = await CheckIn.findById(checkInId).session(session);
+
             if (!originalCheckIn) {
               throw new Error(`Check-in ${checkInId} not found`);
             }
 
             // Determine if this is a partial checkout
-            const isThisPartialCheckout = 
-              item.isPartialCheckout || 
+            const isThisPartialCheckout =
+              item.isPartialCheckout ||
               roomsBeingCheckedOut.length < originalCheckIn.selectedRooms.length;
 
- if (isThisPartialCheckout) {
-            isPartialCheckout = true; // ✅ global flag set
-          }
+            if (isThisPartialCheckout) {
+              isPartialCheckout = true; // ✅ global flag set
+            }
 
             // Get room IDs being checked out
-            const roomIdsBeingCheckedOut = roomsBeingCheckedOut.map(r => 
+            const roomIdsBeingCheckedOut = roomsBeingCheckedOut.map(r =>
               r._id?.toString() || r.toString()
             );
 
@@ -2170,20 +2170,51 @@ export const convertCheckOutToSale = async (req, res) => {
             const remainingRooms = originalCheckIn.selectedRooms.filter(
               room => !roomIdsBeingCheckedOut.includes(room._id.toString())
             );
-          
+
+            const dataToSave = {
+
+              ...item,
+              _id: undefined,
+              cmp_id,
+              Primary_user_id: req.owner || req.pUserId,
+              voucherNumber: saleNumber?.voucherNumber,
+              checkInId: checkInId,
+              bookingId: item?.bookingId?._id,
+              customerId: item?.customerId?._id,
+              customerName: item?.customerId?.partyName,
+              selectedRooms: roomsBeingCheckedOut,
+              balanceToPay: 0,
+              isPartialCheckout: isThisPartialCheckout,
+              originalCheckInId: checkInId,
+              totalAmount: item?.selectedRooms?.reduce((acc, room) => acc + room?.amountAfterTax, 0),
+              roomTotal: item?.selectedRooms?.reduce((acc, room) => acc + room?.amountAfterTax, 0),
+
+            }
+
+
+            console.log('dataToSave', dataToSave.roomTotal);
+            // console.log('dataToSave', dataToSave);
+
+            const roomTotal = item?.selectedRooms?.reduce((acc, room) => acc + room?.amountAfterTax, 0);
+
+
             // ✅ Create CheckOut document (array + session + required fields)
             await CheckOut.create(
               [
                 {
-                    ...item,
+                  ...item,
                   _id: undefined,
                   cmp_id,
                   Primary_user_id: req.owner || req.pUserId,
                   voucherNumber: saleNumber?.voucherNumber,
                   checkInId: checkInId,
                   bookingId: item?.bookingId?._id || item?.bookingId,
-                  customerId: item?.customerId?._id || item?.customerId,
+                  customerId: item?.customerId?._id,
+                  customerName: item?.customerId?.partyName,
                   selectedRooms: roomsBeingCheckedOut,
+                  totalAmount: roomTotal,
+                  roomTotal: roomTotal,
+                  grandTotal: roomTotal,
                   balanceToPay: 0,
                   isPartialCheckout: isThisPartialCheckout,
                   originalCheckInId: checkInId,
@@ -2192,12 +2223,12 @@ export const convertCheckOutToSale = async (req, res) => {
               { session }
             );
 
-       if (isThisPartialCheckout && remainingRooms.length > 0) {
+            if (isThisPartialCheckout && remainingRooms.length > 0) {
               // ✅ PARTIAL CHECKOUT: Update CheckIn to keep remaining rooms
               await CheckIn.updateOne(
                 { _id: checkInId },
-                { 
-                  $set: { 
+                {
+                  $set: {
                     selectedRooms: remainingRooms,
                     status: "checkIn", // Keep in checkIn status
                     isPartiallyCheckedOut: true,
@@ -2222,7 +2253,7 @@ export const convertCheckOutToSale = async (req, res) => {
               // ✅ FULL CHECKOUT: Mark entire check-in as checked out
               await CheckIn.updateOne(
                 { _id: checkInId },
-                { 
+                {
                   status: "checkOut",
                   checkOutDate: new Date(),
                 },
@@ -2238,10 +2269,10 @@ export const convertCheckOutToSale = async (req, res) => {
     });
 
     // ✅ Send response after transaction completes
-      // ✅ Send response after transaction completes
+    // ✅ Send response after transaction completes
     res.status(200).json({
       success: true,
-      message: isPartialCheckout 
+      message: isPartialCheckout
         ? "Partial checkout completed successfully. Remaining rooms are still checked-in."
         : "Checkout converted to Sales successfully",
       data: { saleNumber, salesRecord: savedVoucherData[0] },
@@ -2904,10 +2935,10 @@ export const getHotelSalesDetails = async (req, res) => {
           businessType === "all"
             ? {}
             : businessType === "hotel"
-            ? { businessClassification: "Hotel" }
-            : businessType === "restaurant"
-            ? { businessClassification: "Restaurant" }
-            : { businessClassification: { $in: ["Hotel", "Restaurant"] } },
+              ? { businessClassification: "Hotel" }
+              : businessType === "restaurant"
+                ? { businessClassification: "Restaurant" }
+                : { businessClassification: { $in: ["Hotel", "Restaurant"] } },
       },
 
       // Final projection
@@ -3243,12 +3274,12 @@ export const getHotelSalesDetails = async (req, res) => {
             percentage:
               totalSales > 0
                 ? (summary.mealPeriodBreakdown[period].amount / totalSales) *
-                  100
+                100
                 : 0,
             averageTicket:
               summary.mealPeriodBreakdown[period].count > 0
                 ? summary.mealPeriodBreakdown[period].amount /
-                  summary.mealPeriodBreakdown[period].count
+                summary.mealPeriodBreakdown[period].count
                 : 0,
           };
           return acc;
@@ -3262,9 +3293,9 @@ export const getHotelSalesDetails = async (req, res) => {
         averageItemsPerTransaction:
           totalTransactions > 0
             ? transformedData.reduce(
-                (sum, order) => sum + (order.itemCount || 0),
-                0
-              ) / totalTransactions
+              (sum, order) => sum + (order.itemCount || 0),
+              0
+            ) / totalTransactions
             : 0,
       },
       serviceMetrics: {
@@ -3318,9 +3349,8 @@ export const getHotelSalesDetails = async (req, res) => {
           total: totalTransactions,
         },
         mealPeriodSummary: summary.mealPeriodBreakdown,
-        message: `Found ${transformedData.length} ${
-          businessType === "all" ? "combined" : businessType
-        } sales records`,
+        message: `Found ${transformedData.length} ${businessType === "all" ? "combined" : businessType
+          } sales records`,
       },
     });
   } catch (error) {
