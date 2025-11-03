@@ -160,9 +160,23 @@ const bookingSchema = new mongoose.Schema(
     checkInId: { type: mongoose.Schema.Types.ObjectId, ref: "CheckIn" },
     checkInArray: [{ type: mongoose.Schema.Types.ObjectId, ref: "CheckIn" }],
     status: String,
-
+ originalCheckInId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'CheckIn',
+  },
     roomSwapHistory: [roomSwapHistorySchema],
-
+ isPartiallyCheckedOut: {
+    type: Boolean,
+    default: false,
+  },
+  partialCheckoutHistory: [{
+    date: Date,
+    roomsCheckedOut: [{
+      roomId: mongoose.Schema.Types.ObjectId,
+      roomName: String,
+    }],
+    saleVoucherNumber: String,
+  }],
     // Foreign National Fields (only for non-Indian guests)
     company: String,
     nextDestination: String,

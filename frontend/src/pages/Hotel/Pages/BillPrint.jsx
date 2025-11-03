@@ -43,31 +43,32 @@ const [selected, setSelected] = useState("default");
 const isForPreview = location.state?.isForPreview;
 
 
-  // Utility function to transform checkout data
-  const transformCheckOutData = (selectedCheckOut) => {
-    let result = [];
 
-    selectedCheckOut.forEach((item) => {
-      item.selectedRooms.forEach((room) => {
-        const stayDays = room.stayDays || 1;
-        const perDayAmount = room.baseAmountWithTax / stayDays;
-        const baseAmount = room.baseAmount / stayDays;
-        const taxAmount = room.taxAmount / stayDays;
-        const foodPlanAmountWithTax = room.foodPlanAmountWithTax / stayDays;
-        const foodPlanAmountWithOutTax =
-          room.foodPlanAmountWithOutTax / stayDays;
-        const additionalPaxDataWithTax =
-          room.additionalPaxAmountWithTax / stayDays;
-        const additionalPaxDataWithOutTax =
-          room.additionalPaxAmountWithOutTax / stayDays;
 
-        const startDate = new Date(item.arrivalDate);
-        const endDate = new Date(item.checkOutDate);
+// For HotelBillPrint.jsx (Document 4) - Replace the transformCheckOutData function:
 
-         const fullDays = Math.floor(stayDays);
+const transformCheckOutData = (selectedCheckOut) => {
+  let result = [];
+
+  selectedCheckOut.forEach((item) => {
+    item.selectedRooms.forEach((room) => {
+      const stayDays = room.stayDays || 1;
+      const fullDays = Math.floor(stayDays);
       const fractionalDay = stayDays - fullDays;
+      
+      // Calculate per-day amounts for full days
+      const perDayAmount = room.priceLevelRate || (room.baseAmountWithTax / stayDays);
+      const baseAmountPerDay = room.baseAmount / stayDays;
+      const taxAmountPerDay = room.taxAmount / stayDays;
+      const foodPlanAmountWithTaxPerDay = room.foodPlanAmountWithTax / stayDays;
+      const foodPlanAmountWithOutTaxPerDay = room.foodPlanAmountWithOutTax / stayDays;
+      const additionalPaxDataWithTaxPerDay = room.additionalPaxAmountWithTax / stayDays;
+      const additionalPaxDataWithOutTaxPerDay = room.additionalPaxAmountWithOutTax / stayDays;
 
-        for (let i = 0; i < fullDays; i++) {
+      const startDate = new Date(item.arrivalDate);
+
+      // Add full days
+      for (let i = 0; i < fullDays; i++) {
         const currentDate = new Date(startDate);
         currentDate.setDate(startDate.getDate() + i);
         const formattedDate = currentDate.toLocaleDateString("en-GB").replace(/\//g, "-");
@@ -76,21 +77,23 @@ const isForPreview = location.state?.isForPreview;
           date: formattedDate,
           description: `Room Rent - Room ${room.roomName}`,
           docNo: item.voucherNumber,
-          amount: baseAmount,
+          amount: baseAmountPerDay,
           baseAmountWithTax: perDayAmount,
-          baseAmount: baseAmount,
-          taxAmount: taxAmount,
+          baseAmount: baseAmountPerDay,
+          taxAmount: taxAmountPerDay,
           voucherNumber: item.voucherNumber,
           roomName: room.roomName,
           hsn: room?.hsnDetails?.hsn,
           customerName: item.customerId?.partyName,
-          foodPlanAmountWithTax: foodPlanAmountWithTax,
-          foodPlanAmountWithOutTax: foodPlanAmountWithOutTax,
-          additionalPaxDataWithTax: additionalPaxDataWithTax,
-          additionalPaxDataWithOutTax: additionalPaxDataWithOutTax,
+          foodPlanAmountWithTax: foodPlanAmountWithTaxPerDay,
+          foodPlanAmountWithOutTax: foodPlanAmountWithOutTaxPerDay,
+          additionalPaxDataWithTax: additionalPaxDataWithTaxPerDay,
+          additionalPaxDataWithOutTax: additionalPaxDataWithOutTaxPerDay,
         });
       }
-       if (fractionalDay > 0) {
+
+      // Add fractional day at 50% rate
+      if (fractionalDay > 0) {
         const fractionalDate = new Date(startDate);
         fractionalDate.setDate(startDate.getDate() + fullDays);
         const formattedFractionalDate = fractionalDate
@@ -99,27 +102,27 @@ const isForPreview = location.state?.isForPreview;
 
         result.push({
           date: formattedFractionalDate,
-          description: `Room Rent - Room ${room.roomName} (${fractionalDay} day)`,
+          description: `Room Rent - Room ${room.roomName} (Half Day)`,
           docNo: item.voucherNumber,
-          amount: baseAmount * fractionalDay,
-          baseAmountWithTax: perDayAmount * fractionalDay,
-          baseAmount: baseAmount * fractionalDay,
-          taxAmount: taxAmount * fractionalDay,
+          amount: baseAmountPerDay * 0.5,
+          baseAmountWithTax: perDayAmount * 0.5,
+          baseAmount: baseAmountPerDay * 0.5,
+          taxAmount: taxAmountPerDay * 0.5,
           voucherNumber: item.voucherNumber,
           roomName: room.roomName,
           hsn: room?.hsnDetails?.hsn,
           customerName: item.customerId?.partyName,
-          foodPlanAmountWithTax: foodPlanAmountWithTax * fractionalDay,
-          foodPlanAmountWithOutTax: foodPlanAmountWithOutTax * fractionalDay,
-          additionalPaxDataWithTax: additionalPaxDataWithTax * fractionalDay,
-          additionalPaxDataWithOutTax: additionalPaxDataWithOutTax * fractionalDay,
+          foodPlanAmountWithTax: foodPlanAmountWithTaxPerDay * 0.5,
+          foodPlanAmountWithOutTax: foodPlanAmountWithOutTaxPerDay * 0.5,
+          additionalPaxDataWithTax: additionalPaxDataWithTaxPerDay * 0.5,
+          additionalPaxDataWithOutTax: additionalPaxDataWithOutTaxPerDay * 0.5,
         });
       }
-      });
     });
+  });
 
-    return result;
-  };
+  return result;
+};
 
 const handleSplitPayment = () => {
   setShowSplitPopUp(true);

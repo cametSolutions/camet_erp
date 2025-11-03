@@ -1997,8 +1997,9 @@ export const convertCheckOutToSale = async (req, res) => {
   const session = await mongoose.startSession();
   try {
     let saleNumber, savedVoucherData;
-
-    await session.withTransaction(async () => {
+  let isPartialCheckout = false; 
+   
+  await session.withTransaction(async () => {
       const { cmp_id } = req.params;
       let {
         paymentMethod,
@@ -2007,6 +2008,8 @@ export const convertCheckOutToSale = async (req, res) => {
         selectedParty,
         restaurantBaseSaleData,
         isPostToRoom = false,
+ isPartialCheckout: reqPartialCheckout = false, 
+        roomAssignments = null,
       } = req.body;
 
       if (!paymentDetails) {
@@ -2139,50 +2142,108 @@ export const convertCheckOutToSale = async (req, res) => {
       if (selectedCheckOut?.length > 0) {
         await Promise.all(
           selectedCheckOut.map(async (item) => {
-            item.bookingId = item?.bookingId ?? item?.bookingId?._id;
-            item.customerId = item?.customerId ?? item?.customerId?._id;
-            item.checkInId = item?._id;
-            item.balanceToPay = 0;
+           const checkInId = item?._id;
+            const roomsBeingCheckedOut = item?.selectedRooms || [];
 
+          
+           const originalCheckIn = await CheckIn.findById(checkInId).session(session);
+            
+            if (!originalCheckIn) {
+              throw new Error(`Check-in ${checkInId} not found`);
+            }
+
+            // Determine if this is a partial checkout
+            const isThisPartialCheckout = 
+              item.isPartialCheckout || 
+              roomsBeingCheckedOut.length < originalCheckIn.selectedRooms.length;
+
+ if (isThisPartialCheckout) {
+            isPartialCheckout = true; // ✅ global flag set
+          }
+
+            // Get room IDs being checked out
+            const roomIdsBeingCheckedOut = roomsBeingCheckedOut.map(r => 
+              r._id?.toString() || r.toString()
+            );
+
+            // Calculate remaining rooms
+            const remainingRooms = originalCheckIn.selectedRooms.filter(
+              room => !roomIdsBeingCheckedOut.includes(room._id.toString())
+            );
+          
             // ✅ Create CheckOut document (array + session + required fields)
             await CheckOut.create(
               [
                 {
-                  ...item,
+                    ...item,
                   _id: undefined,
                   cmp_id,
                   Primary_user_id: req.owner || req.pUserId,
                   voucherNumber: saleNumber?.voucherNumber,
-                  checkInId: item?._id,
-                  bookingId: item?.bookingId ?? item?.bookingId?._id,
+                  checkInId: checkInId,
+                  bookingId: item?.bookingId?._id || item?.bookingId,
+                  customerId: item?.customerId?._id || item?.customerId,
+                  selectedRooms: roomsBeingCheckedOut,
                   balanceToPay: 0,
+                  isPartialCheckout: isThisPartialCheckout,
+                  originalCheckInId: checkInId,
                 },
               ],
               { session }
             );
 
-            // ✅ Update CheckIn status
-            await CheckIn.updateOne(
-              { _id: item._id },
-              { status: "checkOut" },
-              { session }
-            );
+       if (isThisPartialCheckout && remainingRooms.length > 0) {
+              // ✅ PARTIAL CHECKOUT: Update CheckIn to keep remaining rooms
+              await CheckIn.updateOne(
+                { _id: checkInId },
+                { 
+                  $set: { 
+                    selectedRooms: remainingRooms,
+                    status: "checkIn", // Keep in checkIn status
+                    isPartiallyCheckedOut: true,
+                    partialCheckoutHistory: {
+                      $push: {
+                        date: new Date(),
+                        roomsCheckedOut: roomsBeingCheckedOut.map(r => ({
+                          roomId: r._id,
+                          roomName: r.roomName,
+                        })),
+                        saleVoucherNumber: saleNumber?.voucherNumber,
+                      }
+                    }
+                  }
+                },
+                { session }
+              );
+
+              // ✅ Update ONLY the checked-out rooms to dirty status
+              await updateStatus(roomsBeingCheckedOut, "dirty", session);
+            } else {
+              // ✅ FULL CHECKOUT: Mark entire check-in as checked out
+              await CheckIn.updateOne(
+                { _id: checkInId },
+                { 
+                  status: "checkOut",
+                  checkOutDate: new Date(),
+                },
+                { session }
+              );
+
+              // ✅ Update ALL rooms to dirty status
+              await updateStatus(roomsBeingCheckedOut, "dirty", session);
+            }
           })
         );
       }
-
-      // ✅ Update room status
-      await Promise.all(
-        selectedCheckOut.map((item) =>
-          updateStatus(item?.selectedRooms, "dirty", session)
-        )
-      );
     });
 
     // ✅ Send response after transaction completes
+      // ✅ Send response after transaction completes
     res.status(200).json({
       success: true,
-      message: "Checkout converted to Sales successfully",
+      message: isPartialCheckout 
+        ? "Partial checkout completed successfully. Remaining rooms are still checked-in."
+        : "Checkout converted to Sales successfully",
       data: { saleNumber, salesRecord: savedVoucherData[0] },
     });
   } catch (error) {
