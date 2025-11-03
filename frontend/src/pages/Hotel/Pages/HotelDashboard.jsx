@@ -290,13 +290,17 @@ const HotelDashboard = () => {
       });
       return;
     }
-    if (action === "checkOut") {
-      navigate("/sUsers/checkInList", {
-        state: { roomId: selectedRoomData?._id },
-      });
-      return;
-    }
-
+  if (action === "checkOut") {
+  // ✅ Pass the specific room data to filter check-ins
+  navigate("/sUsers/checkInList", {
+    state: { 
+      roomId: selectedRoomData?._id,
+      roomName: selectedRoomData?.roomName,
+      filterByRoom: true // Flag to indicate filtering is needed
+    },
+  });
+  return;
+}
     if (action === "swapRoom") {
       // Check if room is available for swap (should be vacant)
       // if (selectedRoomData.status !== "vacant") {

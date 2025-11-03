@@ -13,38 +13,60 @@ export default function CheckoutDateModal({
         checkOutDate: "2024-01-15",
         arrivalDate: "2024-01-10",
         voucherNumber: "V001",
-        stayDays: 2.5
-      },
-      {
-        _id: "2", 
-        checkOutDate: "2024-01-20",
-        arrivalDate: "2024-01-15",
-        voucherNumber: "V002",
-        stayDays: 3
-      },
-      {
-        _id: "3",
-        checkOutDate: "2024-01-25", 
-        arrivalDate: "2024-01-20",
-        voucherNumber: "V003",
-        stayDays: 4.5
+        stayDays: 2.5,
+        selectedRooms: [
+          { _id: "r1", roomName: "101", priceLevelRate: 2000 }
+        ]
       }
     ]
   );
 
+  const calculateRoomTariff = (priceLevelRate, stayDays) => {
+    if (stayDays <= 0) return 0;
+    
+    // First day is always full price
+    let totalTariff = priceLevelRate;
+    
+    // Remaining days calculation
+    const remainingDays = stayDays - 1;
+    
+    if (remainingDays > 0) {
+      const fullDays = Math.floor(remainingDays);
+      const hasHalfDay = remainingDays % 1 !== 0;
+      
+      // Add full days at full price
+      totalTariff += fullDays * priceLevelRate;
+      
+      // Add half day at 50% price
+      if (hasHalfDay) {
+        totalTariff += (priceLevelRate * 0.5);
+      }
+    }
+    
+    return totalTariff;
+  };
+
   const handleNewDateChange = (id, newDate) => {
     setCheckouts(
       checkouts.map((checkout) => {
-        if (checkout._id == id) {
+        if (checkout._id === id) {
           const arrival = new Date(checkout.arrivalDate);
           const checkoutDate = new Date(newDate);
           const diffTime = checkoutDate - arrival;
           const calculatedDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
           
+          // Update room tariffs based on new stay days
+          const updatedRooms = checkout.selectedRooms?.map((room) => ({
+            ...room,
+            stayDays: calculatedDays,
+            calculatedTariff: calculateRoomTariff(room.priceLevelRate, calculatedDays)
+          })) || [];
+          
           return { 
             ...checkout, 
             checkOutDate: newDate, 
-            stayDays: calculatedDays
+            stayDays: calculatedDays,
+            selectedRooms: updatedRooms
           };
         }
         return checkout;
@@ -52,59 +74,81 @@ export default function CheckoutDateModal({
     );
   };
 
-const handleStayDaysChange = (id, newDays) => {
+ const handleStayDaysChange = (id, newDays) => {
   setCheckouts(
     checkouts.map((checkout) => {
       if (checkout._id === id) {
         const stayDays = parseFloat(newDays) || 0;
+        const fullDays = Math.floor(stayDays);
+        const fractionalDay = stayDays - fullDays;
 
-        // Round up fractional days to nearest whole day
-        const roundedDays = Math.ceil(stayDays);
-
+        // Recalculate all room-related amounts based on new stay days
+        const updatedRooms = checkout.selectedRooms?.map((room) => {
+          // Get original total amounts
+          const originalBaseAmount = room.baseAmount || 0;
+          const originalTaxAmount = room.taxAmount || 0;
+          const originalFoodPlanWithTax = room.foodPlanAmountWithTax || 0;
+          const originalFoodPlanWithoutTax = room.foodPlanAmountWithOutTax || 0;
+          const originalPaxWithTax = room.additionalPaxAmountWithTax || 0;
+          const originalPaxWithoutTax = room.additionalPaxAmountWithOutTax || 0;
+          
+          // Calculate daily rates from original totals
+          const originalStayDays = room.stayDays || checkout.stayDays || 1;
+          const baseAmountPerDay = originalBaseAmount / originalStayDays;
+          const taxAmountPerDay = originalTaxAmount / originalStayDays;
+          const foodPlanWithTaxPerDay = originalFoodPlanWithTax / originalStayDays;
+          const foodPlanWithoutTaxPerDay = originalFoodPlanWithoutTax / originalStayDays;
+          const paxWithTaxPerDay = originalPaxWithTax / originalStayDays;
+          const paxWithoutTaxPerDay = originalPaxWithoutTax / originalStayDays;
+          
+          // Calculate new totals: full days + half day
+          let newBaseAmount = fullDays * baseAmountPerDay;
+          let newTaxAmount = fullDays * taxAmountPerDay;
+          let newFoodPlanWithTax = fullDays * foodPlanWithTaxPerDay;
+          let newFoodPlanWithoutTax = fullDays * foodPlanWithoutTaxPerDay;
+          let newPaxWithTax = fullDays * paxWithTaxPerDay;
+          let newPaxWithoutTax = fullDays * paxWithoutTaxPerDay;
+          
+          // Add half day amounts (50%)
+          if (fractionalDay > 0) {
+            newBaseAmount += baseAmountPerDay * 0.5;
+            newTaxAmount += taxAmountPerDay * 0.5;
+            newFoodPlanWithTax += foodPlanWithTaxPerDay * 0.5;
+            newFoodPlanWithoutTax += foodPlanWithoutTaxPerDay * 0.5;
+            newPaxWithTax += paxWithTaxPerDay * 0.5;
+            newPaxWithoutTax += paxWithoutTaxPerDay * 0.5;
+          }
+          
+          return {
+            ...room,
+            stayDays: stayDays,
+            baseAmount: newBaseAmount,
+            taxAmount: newTaxAmount,
+            baseAmountWithTax: newBaseAmount + newTaxAmount,
+            foodPlanAmountWithTax: newFoodPlanWithTax,
+            foodPlanAmountWithOutTax: newFoodPlanWithoutTax,
+            additionalPaxAmountWithTax: newPaxWithTax,
+            additionalPaxAmountWithOutTax: newPaxWithoutTax,
+          };
+        }) || [];
+        
         // Calculate new checkout date
         const arrival = new Date(checkout.arrivalDate);
         const newCheckoutDate = new Date(arrival);
-        newCheckoutDate.setDate(arrival.getDate() + roundedDays);
-
+        const daysToAdd = Math.ceil(stayDays);
+        newCheckoutDate.setDate(arrival.getDate() + daysToAdd);
+        
         return {
           ...checkout,
-          stayDays: stayDays, // keep original entered days (can be 2.5)
-          checkOutDate: newCheckoutDate.toISOString().split("T")[0], // format as YYYY-MM-DD
+          selectedRooms: updatedRooms,
+          stayDays: stayDays,
+          checkOutDate: newCheckoutDate.toISOString().split("T")[0],
         };
       }
       return checkout;
     })
   );
 };
-// const handleStayDaysChange = (checkoutId, newDays) => {
-//   console.log("checkouts", checkouts);
-//   setCheckouts(
-//     checkouts.map((checkout) => {
-//       if (checkout._id === checkoutId) {
-//         const stayDays = Math.ceil(parseFloat(newDays) || 0);
-
-//         // update ALL rooms with same stayDays
-//         const updatedRooms = checkout.selectedRooms.map((room) => ({
-//           ...room,
-//           stayDays,
-//         }));
-
-//         // calculate new checkout date
-//         const arrival = new Date(checkout.arrivalDate);
-//         const newCheckoutDate = new Date(arrival);
-//         newCheckoutDate.setDate(arrival.getDate() + stayDays);
-
-//         return {
-//           ...checkout,
-//           selectedRooms: updatedRooms,
-//           checkOutDate: newCheckoutDate.toISOString().split("T")[0],
-//           stayDays,
-//         };
-//       }
-//       return checkout;
-//     })
-//   );
-// };
 
   const handleConfirm = () => {
     onClose(checkouts);
