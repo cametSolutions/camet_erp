@@ -178,7 +178,7 @@ export const extractRequestParamsForBookings = (req) => {
   };
 };
 
-export const updateStatus = async (roomData, status, session) => {
+ export const updateStatus = async (roomData, status, session) => {
   const ids = roomData.map((room) => room.roomId);
   await roomModal.updateMany(
     { _id: { $in: ids } },
@@ -186,7 +186,6 @@ export const updateStatus = async (roomData, status, session) => {
     { session }
   );
 };
-
 // hotelVoucherSeries.js
 export async function hotelVoucherSeries(cmp_id, session) {
   const SaleVoucher = await VoucherSeriesModel.findOne({

@@ -48,60 +48,77 @@ export default function SattvaInvoice() {
   const [selected, setSelected] = useState(0);
 
   // Utility function to transform checkout data
-  const transformCheckOutData = (selectedCheckOut) => {
-    let result = [];
+  // For SattvaInvoice.jsx (Document 5) - Replace the transformCheckOutData function:
 
-    selectedCheckOut.forEach((item) => {
-      item.selectedRooms.forEach((room) => {
-        const stayDays = room.stayDays || 1;
+const transformCheckOutData = (selectedCheckOut) => {
+  let result = [];
 
-        
-        const perDayAmount = room.baseAmountWithTax / stayDays;
-        const baseAmount = room.baseAmount / stayDays;
-        const taxAmount = room.taxAmount / stayDays;
-        const foodPlanAmountWithTax = room.foodPlanAmountWithTax / stayDays;
-        const foodPlanAmountWithOutTax =
-          room.foodPlanAmountWithOutTax / stayDays;
+  selectedCheckOut.forEach((item) => {
+    item.selectedRooms.forEach((room) => {
+      const stayDays = room.stayDays || 1;
+      const fullDays = Math.floor(stayDays);
+      const fractionalDay = stayDays - fullDays;
 
-        const additionalPaxDataWithTax =
-          room.additionalPaxAmountWithTax / stayDays;
-        const additionalPaxDataWithOutTax =
-          room.additionalPaxAmountWithOutTax / stayDays;
+      // Calculate per-day amounts
+      const perDayAmount = room.baseAmountWithTax / stayDays;
+      const baseAmount = room.baseAmount / stayDays;
+      const taxAmount = room.taxAmount / stayDays;
+      const foodPlanAmountWithTax = room.foodPlanAmountWithTax / stayDays;
+      const foodPlanAmountWithOutTax = room.foodPlanAmountWithOutTax / stayDays;
+      const additionalPaxDataWithTax = room.additionalPaxAmountWithTax / stayDays;
+      const additionalPaxDataWithOutTax = room.additionalPaxAmountWithOutTax / stayDays;
 
-        // Calculate date range
-        const startDate = new Date(item.arrivalDate);
-        const endDate = new Date(item.checkOutDate);
+      const startDate = new Date(item.arrivalDate);
+      const endDate = new Date(item.checkOutDate);
 
-        // Create entry for each day
-        for (
-          let d = new Date(startDate);
-          d < endDate;
-          d.setDate(d.getDate() + 1)
-        ) {
-          const formattedDate = d
-            .toLocaleDateString("en-GB")
-            .replace(/\//g, "-");
+      // Add full days
+      for (let i = 0; i < fullDays; i++) {
+        const d = new Date(startDate);
+        d.setDate(startDate.getDate() + i);
+        const formattedDate = d.toLocaleDateString("en-GB").replace(/\//g, "-");
 
-          result.push({
-            date: formattedDate,
-            baseAmountWithTax: perDayAmount,
-            baseAmount: baseAmount,
-            taxAmount,
-            voucherNumber: item.voucherNumber,
-            roomName: room.roomName,
-            hsn: room?.hsnDetails?.hsn,
-            customerName: item.customerId?.partyName,
-            foodPlanAmountWithTax,
-            foodPlanAmountWithOutTax,
-            additionalPaxDataWithTax,
-            additionalPaxDataWithOutTax,
-          });
-        }
-      });
+        result.push({
+          date: formattedDate,
+          baseAmountWithTax: perDayAmount,
+          baseAmount: baseAmount,
+          taxAmount,
+          voucherNumber: item.voucherNumber,
+          roomName: room.roomName,
+          hsn: room?.hsnDetails?.hsn,
+          customerName: item.customerId?.partyName,
+          foodPlanAmountWithTax,
+          foodPlanAmountWithOutTax,
+          additionalPaxDataWithTax,
+          additionalPaxDataWithOutTax,
+        });
+      }
+
+      // Add fractional day at 50% rate
+      if (fractionalDay > 0) {
+        const d = new Date(startDate);
+        d.setDate(startDate.getDate() + fullDays);
+        const formattedDate = d.toLocaleDateString("en-GB").replace(/\//g, "-");
+
+        result.push({
+          date: formattedDate,
+          baseAmountWithTax: perDayAmount * 0.5,
+          baseAmount: baseAmount * 0.5,
+          taxAmount: taxAmount * 0.5,
+          voucherNumber: item.voucherNumber,
+          roomName: room.roomName,
+          hsn: room?.hsnDetails?.hsn,
+          customerName: item.customerId?.partyName,
+          foodPlanAmountWithTax: foodPlanAmountWithTax * 0.5,
+          foodPlanAmountWithOutTax: foodPlanAmountWithOutTax * 0.5,
+          additionalPaxDataWithTax: additionalPaxDataWithTax * 0.5,
+          additionalPaxDataWithOutTax: additionalPaxDataWithOutTax * 0.5,
+        });
+      }
     });
+  });
 
-    return result;
-  };
+  return result;
+};
 
   // API call to fetch debit data
   const fetchDebitData = async (data) => {
