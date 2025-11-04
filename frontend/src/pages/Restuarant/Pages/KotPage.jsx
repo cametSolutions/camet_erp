@@ -280,7 +280,7 @@ const OrdersDashboard = () => {
     return filtered;
   };
 
-  const handleStatusChange = async (orderId, newStatus) => {
+  const handleStatusChange = async (orderId, newStatus,tableNumber) => {
     setSaveLoader(true);
 
     try {
@@ -298,10 +298,24 @@ const OrdersDashboard = () => {
               : order
           )
         );
-      } else {
-        console.error("Failed to update backend:", response.data || response);
+         if (newStatus === "completed") {
+        const tableResponse = await api.put(
+          `/api/sUsers/updateTableStatus`,
+          { tableNumber: tableNumber, status: "available" },
+          { withCredentials: true }
+        );
+
+       if (tableResponse.status === 200 || tableResponse.status === 201) {
+          // Optionally update local table state here or refetch tables
+          console.log(`Table ${tableNumber} status updated to available`);
+        } else {
+          console.error("Failed to update table status:", tableResponse.data || tableResponse);
+        }
       }
-    } catch (error) {
+    } else {
+      console.error("Failed to update KOT status:", response.data || response);
+    }
+  }  catch (error) {
       console.error(
         "Error updating order status:",
         error.response?.data || error.message
@@ -309,7 +323,9 @@ const OrdersDashboard = () => {
     } finally {
       setSaveLoader(false);
     }
+    
   };
+
 
   // function used to perform print  with kot
   const handleKotPrint = (data) => {
@@ -936,9 +952,22 @@ const handleKotCancel = async () => {
                           }`}
                         >
                           <MdDescription className="w-4 h-4 text-blue-600" />
-                          <span className="text-sm font-bold text-blue-900">
-                            #{order.voucherNumber}
-                          </span>
+                          <span
+                              className={`px-2 py-1 rounded-md text-xs font-medium ${
+                                isOrderSelected(order)
+                                  ? "bg-blue-200 text-blue-800"
+                                  : "bg-gray-100 text-gray-700"
+                              }`}
+                            >
+                              {order.type} - {order?.tableNumber}
+                              <span>
+                                {order.roomId?.roomName && order?.tableNumber
+                                  ? ","
+                                  : " "}
+                                {order.roomId?.roomName}
+                              </span>
+                            </span>
+                         
                         </div>
                         <div className="flex items-center gap-2">
                           <FaRegEdit
@@ -955,21 +984,9 @@ const handleKotCancel = async () => {
                         {/* Order type and timestamp */}
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <span
-                              className={`px-2 py-1 rounded-md text-xs font-medium ${
-                                isOrderSelected(order)
-                                  ? "bg-blue-200 text-blue-800"
-                                  : "bg-gray-100 text-gray-700"
-                              }`}
-                            >
-                              {order.type} - {order?.tableNumber}
-                              <span>
-                                {order.roomId?.roomName && order?.tableNumber
-                                  ? ","
-                                  : " "}
-                                {order.roomId?.roomName}
-                              </span>
-                            </span>
+                           <span className="text-sm font-bold text-blue-900">
+                            #{order.voucherNumber}
+                          </span>
                           </div>
 
                           <div className="text-xs text-gray-500 flex items-center gap-1">
@@ -1194,7 +1211,7 @@ const handleKotCancel = async () => {
                           <MdPrint className="w-3 h-3 group-hover:rotate-12 transition-transform duration-200" />
                           Kot Print
                         </button>
-
+ {!order?.paymentCompleted && (
                            <button
                             className="flex-1 group px-3 py-1.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg text-xs font-semibold hover:from-red-600 hover:to-red-700 transition-all duration-200 hover:scale-105 flex items-center justify-center gap-1"
                             onClick={(e) => {
@@ -1209,7 +1226,7 @@ const handleKotCancel = async () => {
                             <MdCancel className="w-3 h-3 group-hover:rotate-12 transition-transform duration-200" />
                             Cancel
                           </button>
-                      
+ )}
                       </div>
                     )}
 

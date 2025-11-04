@@ -2816,11 +2816,31 @@ export const getHotelSalesDetails = async (req, res) => {
       {
         $addFields: {
           createdHour: { $hour: { date: "$createdAt", timezone: "+05:30" } },
-          kotType: {
-            $ifNull: [{ $arrayElemAt: ["$kotDetails.type", 0] }, null],
-          },
+            kotType: {
+      $cond: [
+        {
+          $and: [
+            { $ne: [ { $arrayElemAt: ["$convertedFrom.checkInNumber", 0] }, null ] },
+            { $ne: [ { $arrayElemAt: ["$convertedFrom.checkInNumber", 0] }, "" ] }
+          ]
+        },
+        "Room Service",
+        {
+          $cond: [
+            {
+              $and: [
+                { $ne: [ { $arrayElemAt: ["$convertedFrom.tableNumber", 0] }, null ] },
+                { $ne: [ { $arrayElemAt: ["$convertedFrom.tableNumber", 0] }, "" ] }
+              ]
+            },
+            "Dine In",
+            "Unknown"
+          ]
+        }
+      ]
+    },
 
-          mealPeriod: {
+   mealPeriod: {
             $switch: {
               branches: [
                 {
@@ -2854,31 +2874,12 @@ export const getHotelSalesDetails = async (req, res) => {
                       {
                         $lt: [
                           { $hour: { date: "$createdAt", timezone: "+05:30" } },
-                          15,
-                        ],
-                      },
-                    ],
-                  },
-                  then: "Lunch",
-                },
-                {
-                  case: {
-                    $and: [
-                      {
-                        $gte: [
-                          { $hour: { date: "$createdAt", timezone: "+05:30" } },
-                          15,
-                        ],
-                      },
-                      {
-                        $lt: [
-                          { $hour: { date: "$createdAt", timezone: "+05:30" } },
                           18,
                         ],
                       },
                     ],
                   },
-                  then: "Snack",
+                  then: "Lunch", // Changed from 15 to 18 to include snack time
                 },
               ],
               default: "Dinner",
