@@ -280,7 +280,7 @@ const OrdersDashboard = () => {
     return filtered;
   };
 
-  const handleStatusChange = async (orderId, newStatus,tableNumber) => {
+  const handleStatusChange = async (orderId, newStatus) => {
     setSaveLoader(true);
 
     try {
@@ -298,24 +298,10 @@ const OrdersDashboard = () => {
               : order
           )
         );
-         if (newStatus === "completed") {
-        const tableResponse = await api.put(
-          `/api/sUsers/updateTableStatus`,
-          { tableNumber: tableNumber, status: "available" },
-          { withCredentials: true }
-        );
-
-       if (tableResponse.status === 200 || tableResponse.status === 201) {
-          // Optionally update local table state here or refetch tables
-          console.log(`Table ${tableNumber} status updated to available`);
-        } else {
-          console.error("Failed to update table status:", tableResponse.data || tableResponse);
-        }
+      } else {
+        console.error("Failed to update backend:", response.data || response);
       }
-    } else {
-      console.error("Failed to update KOT status:", response.data || response);
-    }
-  }  catch (error) {
+    } catch (error) {
       console.error(
         "Error updating order status:",
         error.response?.data || error.message
@@ -323,9 +309,7 @@ const OrdersDashboard = () => {
     } finally {
       setSaveLoader(false);
     }
-    
   };
-
 
   // function used to perform print  with kot
   const handleKotPrint = (data) => {
@@ -578,10 +562,45 @@ const handleKotCancel = async () => {
         setOrders((prevOrders) =>
           prevOrders.map((order) =>
             order._id === id
-              ? { ...order, paymentMethod: data.paymentMethod }
+              ? { ...order,paymentCompleted: true , paymentMethod: data.paymentMethod }
               : order
           )
         );
+          const completedKots = selectedDataForPayment?.voucherNumber || [];
+      const tableNumbers = new Set();
+      
+      completedKots.forEach(kot => {
+        if (kot.tableNumber) {
+          tableNumbers.add(kot.tableNumber);
+        }
+      });
+
+      // For each table, check if all its KOTs are now completed
+      for (const tableNumber of tableNumbers) {
+        const tableKots = orders.filter(order => 
+          order.tableNumber === tableNumber && 
+          order.type === 'dine-in'
+        );
+        
+        const allCompleted = tableKots.every(kot => 
+          completedKots.some(completed => completed.id === kot._id) ||
+          kot.paymentCompleted
+        );
+
+        if (allCompleted) {
+          try {
+            await api.put(
+              `/api/sUsers/updateTableStatus/${cmp_id}/${tableNumber}`,
+              { status: "available" },
+              { withCredentials: true }
+            );
+            console.log(`Table ${tableNumber} status updated to available`);
+          } catch (tableError) {
+            console.error(`Error updating table ${tableNumber} status:`, tableError);
+          }
+        }
+      }
+
         setLoader(false);
         setSelectedKot([]);
         setShowVoucherPdf(false);
