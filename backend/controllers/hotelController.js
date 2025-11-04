@@ -2785,29 +2785,49 @@ export const getHotelSalesDetails = async (req, res) => {
       {
         $addFields: {
           createdHour: { $hour: { date: "$createdAt", timezone: "+05:30" } },
-            kotType: {
+    kotType: {
+  $cond: [
+    {
+      $and: [
+        { $ne: [ { $arrayElemAt: ["$convertedFrom.checkInNumber", 0] }, null ] },
+        { $ne: [ { $arrayElemAt: ["$convertedFrom.checkInNumber", 0] }, "" ] }
+      ]
+    },
+    "Room Service",
+    {
       $cond: [
         {
           $and: [
-            { $ne: [ { $arrayElemAt: ["$convertedFrom.checkInNumber", 0] }, null ] },
-            { $ne: [ { $arrayElemAt: ["$convertedFrom.checkInNumber", 0] }, "" ] }
+            { $ne: [ { $arrayElemAt: ["$convertedFrom.tableNumber", 0] }, null ] },
+            { $ne: [ { $arrayElemAt: ["$convertedFrom.tableNumber", 0] }, "" ] }
           ]
         },
-        "Room Service",
+        "Dine In",
         {
           $cond: [
             {
               $and: [
-                { $ne: [ { $arrayElemAt: ["$convertedFrom.tableNumber", 0] }, null ] },
-                { $ne: [ { $arrayElemAt: ["$convertedFrom.tableNumber", 0] }, "" ] }
+                { $eq: ["$isTakeaway", true] }
               ]
             },
-            "Dine In",
-            "Unknown"
+            "Takeaway",
+            {
+              $cond: [
+                {
+                  $and: [
+                    { $eq: ["$isDelivery", true] }
+                  ]
+                },
+                "Home Delivery",
+                "Unknown"
+              ]
+            }
           ]
         }
       ]
-    },
+    }
+  ]
+},
 
    mealPeriod: {
             $switch: {
@@ -3001,6 +3021,26 @@ export const getHotelSalesDetails = async (req, res) => {
         upiAmount = 0,
         chequeAmount = 0;
 
+          const partyName =
+        sale.party?.partyName ||
+        sale.partyDetails?.partyName ||
+        sale.partyAccount ||
+        "Cash";
+
+const isCreditSale = 
+  sale.partyAccount === "Sundry Debtors" ||
+  sale.partyDetails?.accountGroupName === "Sundry Debtors" ||
+  sale.party?.accountGroupName === "Sundry Debtors" ||
+  (partyName !== "Cash" && 
+   partyName !== "Cash-in-Hand" &&
+   partyName !== "CASH" &&
+   sale.partyAccount !== "Cash-in-Hand" &&
+   sale.partyAccount !== "CASH" &&
+   sale.partyAccount !== "Bank Accounts" &&
+   sale.partyAccount !== "Gpay" &&
+   sale.partyAccount !== "Bank");
+
+
       if (
         sale.paymentSplittingData &&
         Array.isArray(sale.paymentSplittingData)
@@ -3036,13 +3076,34 @@ export const getHotelSalesDetails = async (req, res) => {
               bankAmount += amount;
               break;
             default:
-              cashAmount += amount;
-              break;
+               if (isCreditSale) {
+          creditAmount += amount;
+        } else {
+          cashAmount += amount;
+        }
+        break;
           }
         });
       } else {
-        cashAmount = Number(sale.finalAmount) || 0;
-      }
+  // No payment splitting data - determine based on party account and name
+  const finalAmount = Number(sale.finalAmount) || 0;
+  
+  if (isCreditSale) {
+    // It's a credit sale
+    creditAmount = finalAmount;
+  } else if (
+    sale.partyAccount === "Bank Accounts" ||
+    sale.partyAccount === "Gpay" ||
+    sale.partyAccount === "Bank"
+  ) {
+    // Bank/UPI payment
+    upiAmount = finalAmount;
+    bankAmount = finalAmount;
+  } else {
+    // Default to cash
+    cashAmount = finalAmount;
+  }
+}
 
       let mode = "Cash"; // default
       if (upiAmount > 0 && upiAmount === bankAmount) {
@@ -3058,11 +3119,7 @@ export const getHotelSalesDetails = async (req, res) => {
       }
 
       // Get party name from either nested party object or partyDetails
-      const partyName =
-        sale.party?.partyName ||
-        sale.partyDetails?.partyName ||
-        sale.partyAccount ||
-        "Cash";
+    
 
       const finalAmount = Number(sale.finalAmount) || 0;
       const subTotal = Number(sale.subTotal) || finalAmount;
@@ -3318,6 +3375,7 @@ export const getHotelSalesDetails = async (req, res) => {
           other: summary.otherSales.count,
           total: totalTransactions,
         },
+          serviceBreakdown: summary.serviceBreakdown,
         mealPeriodSummary: summary.mealPeriodBreakdown,
         message: `Found ${transformedData.length} ${
           businessType === "all" ? "combined" : businessType
