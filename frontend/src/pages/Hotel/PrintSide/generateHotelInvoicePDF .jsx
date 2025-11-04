@@ -1,27 +1,207 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 
-export const generateHotelInvoicePDF = async (invoiceData) => {
-  const doc = new jsPDF("p", "mm", "a4");
+// Helper function to format date
+const formatDate = (date) => {
+  if (!date) return "";
+  return new Date(date).toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+};
+
+// Helper to get base64 from URL
+async function getBase64FromUrl(url) {
+  if (url.startsWith("http://")) {
+    url = url.replace("http://", "https://");
+  }
+  const response = await fetch(url);
+  const blob = await response.blob();
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.readAsDataURL(blob);
+  });
+}
+
+// Transform single checkout to date-wise rows
+const transformSingleCheckOut = (checkoutItem) => {
+  const result = [];
+  
+  checkoutItem.selectedRooms.forEach((room) => {
+    const stayDays = room.stayDays || 1;
+    const fullDays = Math.floor(stayDays);
+    const fractionalDay = stayDays - fullDays;
+    
+    const perDayAmount = room.baseAmountWithTax / stayDays;
+    const baseAmount = room.baseAmount / stayDays;
+    const taxAmount = room.taxAmount / stayDays;
+    const foodPlanAmountWithTax = (room.foodPlanAmountWithTax || 0) / stayDays;
+    const foodPlanAmountWithOutTax = (room.foodPlanAmountWithOutTax || 0) / stayDays;
+    const additionalPaxDataWithTax = (room.additionalPaxAmountWithTax || 0) / stayDays;
+    const additionalPaxDataWithOutTax = (room.additionalPaxAmountWithOutTax || 0) / stayDays;
+    
+    const startDate = new Date(checkoutItem.arrivalDate);
+    
+    // Full days
+    for (let i = 0; i < fullDays; i++) {
+      const d = new Date(startDate);
+      d.setDate(startDate.getDate() + i);
+      const formattedDate = d.toLocaleDateString("en-GB").replace(/\//g, "-");
+      
+      result.push({
+        date: formattedDate,
+        baseAmountWithTax: perDayAmount,
+        baseAmount,
+        taxAmount,
+        voucherNumber: checkoutItem.voucherNumber,
+        roomName: room.roomName,
+        hsn: room?.hsnDetails?.hsn,
+        customerName: checkoutItem.customerId?.partyName,
+        foodPlanAmountWithTax,
+        foodPlanAmountWithOutTax,
+        additionalPaxDataWithTax,
+        additionalPaxDataWithOutTax,
+      });
+    }
+    
+    // Fractional day (50%)
+    if (fractionalDay > 0) {
+      const d = new Date(startDate);
+      d.setDate(startDate.getDate() + fullDays);
+      const formattedDate = d.toLocaleDateString("en-GB").replace(/\//g, "-");
+      
+      result.push({
+        date: formattedDate,
+        baseAmountWithTax: perDayAmount * 0.5,
+        baseAmount: baseAmount * 0.5,
+        taxAmount: taxAmount * 0.5,
+        voucherNumber: checkoutItem.voucherNumber,
+        roomName: room.roomName,
+        hsn: room?.hsnDetails?.hsn,
+        customerName: checkoutItem.customerId?.partyName,
+        foodPlanAmountWithTax: foodPlanAmountWithTax * 0.5,
+        foodPlanAmountWithOutTax: foodPlanAmountWithOutTax * 0.5,
+        additionalPaxDataWithTax: additionalPaxDataWithTax * 0.5,
+        additionalPaxDataWithOutTax: additionalPaxDataWithOutTax * 0.5,
+      });
+    }
+  });
+  
+  return result;
+};
+
+// Scope outstanding to single checkout
+const scopeOutStanding = (allOutStanding, checkoutItem) => {
+  const cid = checkoutItem?.customerId?._id || checkoutItem?.customerId?.id;
+  const chkId = checkoutItem?.checkInId?._id || checkoutItem?.checkInId?.id;
+  const bookingId = checkoutItem?.bookingId;
+  
+  return (allOutStanding || []).filter(
+    (t) =>
+      (cid && (t?.customerId === cid || t?.customer_id === cid)) ||
+      (chkId && (t?.checkInId === chkId || t?.checkin_id === chkId)) ||
+      (bookingId && t?.bookingId === bookingId)
+  );
+};
+
+// Scope KOT to single checkout
+const scopeKot = (allKotData, checkoutItem) => {
+  const chkId = checkoutItem?.checkInId?._id || checkoutItem?.checkInId?.id;
+  const bookingId = checkoutItem?.bookingId;
+  
+  return (allKotData || []).filter(
+    (k) =>
+      (chkId && (k?.checkInId === chkId || k?.checkin_id === chkId)) ||
+      (bookingId && k?.bookingId === bookingId)
+  );
+};
+
+// Build invoice data for single checkout
+const buildInvoiceDataForCheckout = (checkoutItem, allOutStanding, allKotData, organization, secondaryUser) => {
+  const rows = transformSingleCheckOut(checkoutItem);
+  
+  // Calculate totals for this checkout only
+  const roomTariffTotal = rows.reduce((t, r) => t + Number(r.baseAmount || 0), 0);
+  const taxAmount = rows.reduce((t, r) => t + Number(r.taxAmount || 0), 0);
+  const planAmount = rows.reduce((t, r) => t + Number(r.foodPlanAmountWithOutTax || 0), 0);
+  const taxAmountFoodPlan = rows.reduce(
+    (t, r) => t + (Number(r.foodPlanAmountWithTax || 0) - Number(r.foodPlanAmountWithOutTax || 0)),
+    0
+  );
+  const paxAmount = rows.reduce((t, r) => t + Number(r.additionalPaxDataWithOutTax || 0), 0);
+  
+  const totalAmountIncludeAllTax = roomTariffTotal + planAmount + paxAmount + taxAmount + taxAmountFoodPlan;
+  
+  const scopedOut = scopeOutStanding(allOutStanding, checkoutItem);
+  const advanceTotal = scopedOut.reduce(
+    (t, tr) => t + Number(tr?.bill_amount ?? tr?.billamount ?? tr?.amount ?? 0),
+    0
+  );
+  
+  const scopedKot = scopeKot(allKotData, checkoutItem);
+  const kotTotal = scopedKot.reduce((t, k) => t + Number(k?.finalAmount || 0), 0);
+  
+  const taxableAmount = roomTariffTotal + paxAmount;
+  const taxRate = taxableAmount ? (taxAmount / taxableAmount) * 100 : 0;
+  const taxRateFoodPlan = planAmount ? (taxAmountFoodPlan / planAmount) * 100 : 0;
+  
+  const sumOfRestaurantAndRoom = totalAmountIncludeAllTax + kotTotal;
+  const balanceAmount = totalAmountIncludeAllTax - advanceTotal;
+  const balanceAmountToPay = sumOfRestaurantAndRoom - advanceTotal;
+  
+  const roomNumbers = checkoutItem.selectedRooms?.map((r) => r.roomName).join(", ");
+  const totalPax = checkoutItem.selectedRooms?.reduce((n, r) => n + Number(r.pax || 0), 0);
+  const roomType = checkoutItem.selectedRooms?.[0]?.roomType?.brand || "";
+  const tariff = checkoutItem.selectedRooms?.[0]?.priceLevelRate || "";
+  const foodPlan = checkoutItem.foodPlan?.[0]?.foodPlan || "";
+  
+  return {
+    organization,
+    secondaryUser,
+    selectedCheckOutData: checkoutItem,
+    dateWiseDisplayedData: rows,
+    outStanding: scopedOut,
+    kotData: scopedKot,
+    totals: {
+      roomTariffTotal,
+      advanceTotal,
+      kotTotal,
+      balanceAmount,
+      totalTaxAmount: taxAmount + taxAmountFoodPlan,
+      balanceAmountToPay,
+      taxData: taxAmount + taxAmountFoodPlan,
+      totalAmountIncludeAllTax,
+      sumOfRestaurantAndRoom,
+      taxableAmount,
+      taxRate,
+      taxRateFoodPlan,
+      taxAmount,
+      taxAmountFoodPlan,
+      planAmount,
+      paxAmount,
+    },
+    roomNumbers,
+    totalPax,
+    roomType,
+    tariff,
+    foodPlan,
+    foodPlanAmount: planAmount,
+    additionalPaxAmount: paxAmount,
+  };
+};
+
+// Generate single page in existing PDF doc
+const generatePageForCheckout = async (doc, invoiceData, isFirstPage) => {
   const pageWidth = doc.internal.pageSize.width;
   const pageHeight = doc.internal.pageSize.height;
   const margin = 10;
   let currentY = 0;
 
-  // Helper function to format date
-  const formatDate = (date) => {
-    if (!date) return "";
-    return new Date(date).toLocaleDateString("en-GB", {
-      day: "2-digit",
-      month: "2-digit", 
-      year: "numeric",
-    });
-  };
-
-  // Add header to each page
+  // Add header
   const addHeader = async () => {
     const startY = 10;
-    const margin = 10;
     const maxWidth = pageWidth - (margin + 5) * 2;
 
     // Add Logo
@@ -47,7 +227,11 @@ export const generateHotelInvoicePDF = async (invoiceData) => {
     let headerY = startY + 10 + nameLines.length * 6;
 
     const orgDetails = [
-      invoiceData.organization?.address || `${invoiceData.organization?.flat || ""}, ${invoiceData.organization?.landmark || ""}`.replace(/^,\s*|,\s*$/g, ''),
+      invoiceData.organization?.address ||
+        `${invoiceData.organization?.flat || ""}, ${invoiceData.organization?.landmark || ""}`.replace(
+          /^,\s*|,\s*$/g,
+          ""
+        ),
       invoiceData.organization?.road,
       invoiceData.organization?.gstNum ? `GSTIN: ${invoiceData.organization.gstNum}` : null,
       `State Name: ${invoiceData.organization?.state || ""}, Pin: ${invoiceData.organization?.pin || ""}`,
@@ -72,7 +256,7 @@ export const generateHotelInvoicePDF = async (invoiceData) => {
     doc.text(`Page ${doc.internal.getNumberOfPages()}`, pageWidth / 2, footerY + 5, { align: "center" });
   };
 
-  // Start PDF generation
+  // Start generation
   currentY = await addHeader();
 
   // Invoice Details Section - 3 column grid
@@ -80,24 +264,30 @@ export const generateHotelInvoicePDF = async (invoiceData) => {
   doc.setFont("helvetica", "normal");
   const columnWidth = (pageWidth - 2 * margin) / 3;
 
-  // Dynamic column data from your component
   const leftDetails = [
     `GRC No: ${invoiceData.selectedCheckOutData?.voucherNumber || ""}`,
     `Pax: ${invoiceData.totalPax || ""}`,
-    `Guest: ${invoiceData.selectedCheckOutData?.customerName || ""}`,
+    `Guest: ${invoiceData.selectedCheckOutData?.customerId?.partyName || ""}`,
     `Agent: ${invoiceData.selectedCheckOutData?.agentId?.name || "Walk-In Customer"}`,
   ];
 
   const middleDetails = [
     `Bill No: ${invoiceData.selectedCheckOutData?.voucherNumber || ""}`,
-    `Arrival: ${formatDate(invoiceData.selectedCheckOutData?.arrivalDate)} / ${invoiceData.selectedCheckOutData?.arrivalTime || ""}`,
+    `Arrival: ${formatDate(invoiceData.selectedCheckOutData?.arrivalDate)} / ${
+      invoiceData.selectedCheckOutData?.arrivalTime || ""
+    }`,
     `Room No: ${invoiceData.roomNumbers || ""}`,
     `Plan: ${invoiceData.foodPlan || ""}`,
   ];
 
   const rightDetails = [
     `Bill Date: ${formatDate(new Date())}`,
-    `Departure: ${formatDate(new Date())} / ${new Date().toLocaleTimeString("en-US", { hour12: true, hour: "2-digit", minute: "2-digit", second: "2-digit" })}`,
+    `Departure: ${formatDate(new Date())} / ${new Date().toLocaleTimeString("en-US", {
+      hour12: true,
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    })}`,
     `Room Type: ${invoiceData.roomType || ""}`,
     `Tariff: ${invoiceData.tariff || ""}`,
   ];
@@ -118,11 +308,11 @@ export const generateHotelInvoicePDF = async (invoiceData) => {
   doc.line(margin + 2 * columnWidth, currentY - 5, margin + 2 * columnWidth, currentY - 5 + 21);
   currentY += 16;
 
-  // Main Transaction Table - Dynamic Data
+  // Main Transaction Table
   const tableHeaders = ["DATE", "VOUCHER", "DESCRIPTION", "HSN", "DEBIT", "CREDIT", "AMOUNT"];
   const tableData = [];
 
-  // Outstanding Transactions (Advances)
+  // Outstanding Transactions
   if (invoiceData.outStanding && invoiceData.outStanding.length > 0) {
     invoiceData.outStanding.forEach((transaction) => {
       tableData.push([
@@ -174,10 +364,10 @@ export const generateHotelInvoicePDF = async (invoiceData) => {
 
   // Room summary
   const roomNumbers = invoiceData.roomNumbers || "";
-  const totalDebit = (invoiceData.totals?.totalAmountIncludeAllTax || 0);
-  const totalCredit = (invoiceData.totals?.advanceTotal || 0);
-  const balanceAmount = (invoiceData.totals?.balanceAmount || 0);
-  
+  const totalDebit = invoiceData.totals?.totalAmountIncludeAllTax || 0;
+  const totalCredit = invoiceData.totals?.advanceTotal || 0;
+  const balanceAmount = invoiceData.totals?.balanceAmount || 0;
+
   tableData.push([
     "",
     "",
@@ -191,8 +381,7 @@ export const generateHotelInvoicePDF = async (invoiceData) => {
   // Room service header and entries
   if (invoiceData.kotData && invoiceData.kotData.length > 0) {
     tableData.push(["", "", "RESTAURANT BILL DETAILS", "", "", "", ""]);
-    
-    // KOT entries
+
     invoiceData.kotData.forEach((kot) => {
       tableData.push([
         formatDate(kot?.createdAt),
@@ -209,7 +398,7 @@ export const generateHotelInvoicePDF = async (invoiceData) => {
   // Final totals
   const kotTotal = invoiceData.totals?.kotTotal || 0;
   const grandTotal = invoiceData.totals?.sumOfRestaurantAndRoom || 0;
-  
+
   tableData.push(["", "", "", "Total", (roomTariffTotal + kotTotal).toFixed(2), "", grandTotal.toFixed(2)]);
   tableData.push(["", "", "", "", "", "TOTAL", grandTotal.toFixed(2)]);
 
@@ -242,13 +431,9 @@ export const generateHotelInvoicePDF = async (invoiceData) => {
       halign: "center",
     },
     margin: { left: margin, right: margin },
-    didDrawPage: () => {
-      addHeader();
-      addFooter();
-    },
     didParseCell: (data) => {
       const cellText = data.cell.text[0] || "";
-      
+
       if (
         cellText.includes("Room Tariff Assessable Value") ||
         cellText.includes("Total") ||
@@ -257,13 +442,13 @@ export const generateHotelInvoicePDF = async (invoiceData) => {
         data.cell.styles.fillColor = [240, 240, 240];
         data.cell.styles.fontStyle = "bold";
       }
-      
+
       if (cellText.includes("RESTAURANT BILL DETAILS")) {
         data.cell.styles.fillColor = [200, 255, 200];
         data.cell.styles.fontStyle = "bold";
         data.cell.styles.halign = "center";
       }
-      
+
       if (cellText.includes("ROOM NO :")) {
         data.cell.styles.fontStyle = "bold";
       }
@@ -272,9 +457,9 @@ export const generateHotelInvoicePDF = async (invoiceData) => {
 
   currentY = doc.lastAutoTable.finalY + 5;
 
-  // Dynamic Tax Breakdown Table
+  // Tax Breakdown Table
   const taxTableData = [];
-  
+
   // Room tariff tax
   if (roomTariffTotal > 0) {
     const roomTaxRate = invoiceData.totals?.taxRate || 0;
@@ -289,7 +474,7 @@ export const generateHotelInvoicePDF = async (invoiceData) => {
     ]);
   }
 
-  // Food plan tax (if applicable)
+  // Food plan tax
   if (invoiceData.foodPlanAmount && invoiceData.foodPlanAmount > 0) {
     const foodTaxRate = invoiceData.totals?.taxRateFoodPlan || 0;
     const foodTaxAmount = (invoiceData.totals?.taxAmountFoodPlan || 0) / 2;
@@ -320,17 +505,12 @@ export const generateHotelInvoicePDF = async (invoiceData) => {
     ]);
   }
 
-  // Create tax breakdown table only if there's tax data
+  // Create tax breakdown table
   if (taxTableData.length > 0) {
     autoTable(doc, {
       head: [
-        [
-          "Taxable",
-          { content: "CGST", colSpan: 2 },
-          { content: "SGST", colSpan: 2 },
-          "Total"
-        ],
-        ["Amount", "Rate", "Amount", "Rate", "Amount", "Tax"]
+        [{ content: "Taxable", colSpan: 1 }, { content: "CGST", colSpan: 2 }, { content: "SGST", colSpan: 2 }, "Total"],
+        ["Amount", "Rate", "Amount", "Rate", "Amount", "Tax"],
       ],
       body: taxTableData,
       startY: currentY,
@@ -366,11 +546,11 @@ export const generateHotelInvoicePDF = async (invoiceData) => {
 
   currentY = Math.max(currentY + 30, doc.lastAutoTable.finalY + 15);
 
-  // Dynamic Footer Details
+  // Footer Details
   doc.setFontSize(8);
   doc.setFont("helvetica", "normal");
 
-  // Left side - Settlement details
+  // Left side
   const leftColumn1 = [
     "Settlement: Cash",
     `Prepared By: ${invoiceData.secondaryUser?.name || "System"}`,
@@ -391,7 +571,7 @@ export const generateHotelInvoicePDF = async (invoiceData) => {
     doc.text(detail, margin + 65, currentY + index * 4);
   });
 
-  // Right side - Dynamic Bank Details
+  // Right side - Bank Details
   const bankX = pageWidth / 2 + 30;
   doc.setFont("helvetica", "bold");
   doc.text("Bank Details", bankX + 25, currentY, { align: "center" });
@@ -400,11 +580,11 @@ export const generateHotelInvoicePDF = async (invoiceData) => {
 
   doc.setFont("helvetica", "normal");
   const bankDetails = [
-    `Bank Name: ${invoiceData.organization?.configurations[0]?.bank?.acholder_name || ""}`,
-    `A/C Number: ${invoiceData.organization?.configurations[0]?.bank?.ac_no || ""}`,
+    `Bank Name: ${invoiceData.organization?.configurations?.[0]?.bank?.acholder_name || ""}`,
+    `A/C Number: ${invoiceData.organization?.configurations?.[0]?.bank?.ac_no || ""}`,
     `Branch & IFSC: ${invoiceData.organization?.configurations?.[0]?.bank?.branch || ""}${
-      invoiceData.organization?.configurations?.[0]?.bank?.ifsc 
-        ? ", " + invoiceData.organization.configurations[0].bank.ifsc 
+      invoiceData.organization?.configurations?.[0]?.bank?.ifsc
+        ? ", " + invoiceData.organization.configurations[0].bank.ifsc
         : ""
     }`,
   ];
@@ -423,20 +603,32 @@ export const generateHotelInvoicePDF = async (invoiceData) => {
   doc.text("Cashier Signature", margin + 35, sigY + 4, { align: "center" });
   doc.text("Guest Signature", pageWidth - 55, sigY + 4, { align: "center" });
 
-  // Add footer to all pages
-  const totalPages = doc.internal.getNumberOfPages();
-  for (let i = 1; i <= totalPages; i++) {
-    doc.setPage(i);
-    addFooter();
-  }
-
-  return doc;
+  addFooter();
 };
 
-// Updated handler functions with proper data extraction
-export const handlePrintInvoice = async (invoiceData = {}) => {
+// Main batch print handler
+export const handlePrintInvoice = async (batchContext) => {
   try {
-    const doc = await generateHotelInvoicePDF(invoiceData);
+    const { selectedCheckOutList, organization, secondaryUser, allOutStanding, allKotData } = batchContext;
+
+    if (!selectedCheckOutList || selectedCheckOutList.length === 0) {
+      alert("No checkouts to print");
+      return;
+    }
+
+    const doc = new jsPDF("p", "mm", "a4");
+    let isFirstPage = true;
+
+    for (const checkout of selectedCheckOutList) {
+      if (!isFirstPage) {
+        doc.addPage();
+      }
+      isFirstPage = false;
+
+      const invoiceData = buildInvoiceDataForCheckout(checkout, allOutStanding, allKotData, organization, secondaryUser);
+      await generatePageForCheckout(doc, invoiceData, isFirstPage);
+    }
+
     const pdfBlob = doc.output("blob");
     const pdfUrl = URL.createObjectURL(pdfBlob);
     const printWindow = window.open(pdfUrl, "_blank");
@@ -455,29 +647,37 @@ export const handlePrintInvoice = async (invoiceData = {}) => {
   }
 };
 
-export const handleDownloadPDF = async (invoiceData = {}, filename) => {
+// Main batch download handler
+export const handleDownloadPDF = async (batchContext, filename) => {
   try {
-    const doc = await generateHotelInvoicePDF(invoiceData);
-    const defaultFilename = `CheckOut-${invoiceData.selectedCheckOutData?.voucherNumber || "CO-001-2025"}.pdf`;
+    const { selectedCheckOutList, organization, secondaryUser, allOutStanding, allKotData } = batchContext;
+
+    if (!selectedCheckOutList || selectedCheckOutList.length === 0) {
+      alert("No checkouts to download");
+      return;
+    }
+
+    const doc = new jsPDF("p", "mm", "a4");
+    let isFirstPage = true;
+
+    for (const checkout of selectedCheckOutList) {
+      if (!isFirstPage) {
+        doc.addPage();
+      }
+      isFirstPage = false;
+
+      const invoiceData = buildInvoiceDataForCheckout(checkout, allOutStanding, allKotData, organization, secondaryUser);
+      await generatePageForCheckout(doc, invoiceData, isFirstPage);
+    }
+
+    const defaultFilename =
+      selectedCheckOutList.length === 1
+        ? `CheckOut-${selectedCheckOutList[0].voucherNumber}.pdf`
+        : `CheckOuts-${selectedCheckOutList[0].voucherNumber}-x${selectedCheckOutList.length}.pdf`;
+
     doc.save(filename || defaultFilename);
   } catch (error) {
     console.error("Error generating PDF:", error);
     alert("Error generating PDF. Please check console for details.");
   }
 };
-
-async function getBase64FromUrl(url) {
-  // Force HTTPS if it starts with http://
-  if (url.startsWith("http://")) {
-    url = url.replace("http://", "https://");
-  }
-
-  const response = await fetch(url);
-  const blob = await response.blob();
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result);
-    reader.readAsDataURL(blob);
-  });
-}
-
