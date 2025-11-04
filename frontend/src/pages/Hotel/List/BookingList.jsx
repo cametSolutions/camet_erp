@@ -184,10 +184,11 @@ const [selectedCreditor, setSelectedCreditor] = useState("");
           }
           return [booking]; // No partial checkout, return as is
         });
-      } else if (location.pathname === "/sUsers/checkOutList") {
-        // Filter to only fully checked out bookings for checkout list
-        bookingData = bookingData.filter((booking) => booking.status === "checkOut");
-      }
+      } 
+      // else if (location.pathname === "/sUsers/checkOutList") {
+      //   // Filter to only fully checked out bookings for checkout list
+      //   bookingData = bookingData.filter((booking) => booking.status === "checkOut");
+      // }
 
 
      if (pageNumber === 1) {
