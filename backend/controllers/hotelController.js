@@ -1996,286 +1996,255 @@ async function hotelVoucherSeries(cmp_id, session) {
 export const convertCheckOutToSale = async (req, res) => {
   const session = await mongoose.startSession();
   try {
-    let saleNumber, savedVoucherData;
-    let isPartialCheckout = false;
+    let isAnyPartial = false;
 
     await session.withTransaction(async () => {
       const { cmp_id } = req.params;
-      let {
-        paymentMethod,
-        paymentDetails,
-        selectedCheckOut,
-        selectedParty,
+      const {
+        paymentDetails,              // expects per-checkout usage
+        selectedCheckOut = [],
         restaurantBaseSaleData,
         isPostToRoom = false,
-        isPartialCheckout: reqPartialCheckout = false,
         roomAssignments = null,
       } = req.body;
 
-      if (!paymentDetails) {
-        throw new Error("Missing payment details");
-      }
+      if (!paymentDetails) throw new Error("Missing payment details");
 
-      const cashAmt = Number(paymentDetails?.cashAmount || 0);
-      const onlineAmt = Number(paymentDetails?.onlineAmount || 0);
-
-      if (cashAmt > 0 && onlineAmt > 0) {
-        paymentMethod = "mixed";
-      }
-
-      // ✅ Fetch voucher series correctly
+      // Fetch voucher series once
       const specificVoucherSeries = await hotelVoucherSeries(cmp_id, session);
 
-      // ✅ Generate sale number
-      saleNumber = await generateVoucherNumber(
-        cmp_id,
-        "sales",
-        specificVoucherSeries._id.toString(),
-        session
-      );
+      // Process each checkout separately
+      const results = [];
+      for (const item of selectedCheckOut) {
+        // Per-item: party from item.customerId._id
+        const selectedPartyId = item?.customerId?._id || item?.customerId;
+        if (!selectedPartyId) throw new Error("Missing customerId._id in checkout item");
 
-      // ✅ Payment splitting
-      const paymentSplittingArray = createPaymentSplittingArray(
-        paymentDetails,
-        cashAmt,
-        onlineAmt
-      );
+        // Payment split for this item (simple: use full provided amounts per item)
+        const cashAmt = Number(paymentDetails?.cashAmount || 0);
+        const onlineAmt = Number(paymentDetails?.onlineAmount || 0);
+        const paymentMethod =
+          cashAmt > 0 && onlineAmt > 0 ? "mixed" :
+            cashAmt > 0 ? "cash" :
+              onlineAmt > 0 ? "bank" : (isPostToRoom ? "credit" : "unknown");
 
-      // ✅ Party info
-      const partyData = await getSelectedParty(selectedParty, cmp_id, session);
-      const party = mapPartyData(partyData);
+        const paymentSplittingArray = createPaymentSplittingArray(
+          paymentDetails, cashAmt, onlineAmt
+        );
 
-      // ✅ Save Sales Voucher
-      savedVoucherData = await createSalesVoucher(
-        cmp_id,
-        specificVoucherSeries,
-        saleNumber,
-        req,
-        selectedCheckOut,
-        party,
-        partyData,
-        paymentSplittingArray,
-        session
-      );
-      // // ✅ Handle Outstanding
-      const paidAmount = isPostToRoom ? 0 : cashAmt + onlineAmt;
-      const pendingAmount = selectedCheckOut.reduce(
-        (acc, item) => acc + (item.balanceToPay || 0),
-        0
-      );
+        // Party info (per-item)
+        const partyData = await getSelectedParty(selectedPartyId, cmp_id, session);
+        const party = mapPartyData(partyData);
 
-      let createdTallyData = await createTallyEntry(
-        cmp_id,
-        req,
-        selectedParty,
-        selectedCheckOut,
-        savedVoucherData[0],
-        paidAmount,
-        pendingAmount,
-        session
-      );
+        // Generate sale number (per-item)
+        const saleNumber = await generateVoucherNumber(
+          cmp_id, "sales", specificVoucherSeries._id.toString(), session
+        );
 
-      await createReceiptForSales(
-        cmp_id,
-        paymentDetails,
-        paymentMethod,
-        party?.customerName,
-        Number(cashAmt || 0) + Number(onlineAmt || 0),
-        party._id,
-        savedVoucherData[0],
-        createdTallyData[0],
-        req,
-        restaurantBaseSaleData,
-        session
-      );
-      let selectedCashOrBank;
-
-      if (cashAmt > 0) {
-        selectedCashOrBank = await Party.findOne({
-          _id: paymentDetails?.selectedCash,
-        }).session(session);
-        // ✅ Save Settlement
-        await saveSettlement(
-          paymentDetails,
-          selectedParty,
-          selectedCashOrBank,
+        // Create Sales Voucher (per-item)
+        const savedVoucherData = await createSalesVoucher(
           cmp_id,
-          savedVoucherData[0],
-          cashAmt,
-          "cash",
+          specificVoucherSeries,
+          saleNumber,
           req,
+          [item],                    // only this checkout’s lines
+          party,
+          partyData,
+          paymentSplittingArray,
           session
         );
-      }
-      if (onlineAmt > 0) {
-        selectedCashOrBank = await Party.findOne({
-          _id: paymentDetails?.selectedBank,
-        }).session(session);
-        await saveSettlement(
-          paymentDetails,
-          selectedParty,
-          selectedCashOrBank,
+
+        // const paidAmount = isPostToRoom ? 0 : cashAmt + onlineAmt;
+        // const pendingAmount = Number(item?.balanceToPay || 0);
+
+
+          const itemTotal = item.selectedRooms.reduce(
+            (acc, room) => acc + room.amountAfterTax,
+            0
+          );
+
+        const paidAmount =itemTotal;
+        const pendingAmount = Number(item?.balanceToPay || 0);
+
+        // Create Tally Entry (per-item)
+        const tallyRows = await createTallyEntry(
           cmp_id,
-          savedVoucherData[0],
-          onlineAmt,
-          "bank",
           req,
+          selectedPartyId,
+          [item],                    // scope to this item
+          savedVoucherData[0],
+          paidAmount,
+          pendingAmount,
           session
         );
-      }
 
-      if (selectedCheckOut?.length > 0) {
-        await Promise.all(
-          selectedCheckOut.map((item) =>
-            updateReceiptForRooms(
-              item?.voucherNumber,
-              item?.bookingId?.voucherNumber,
-              saleNumber?.voucherNumber,
-              savedVoucherData[0]?._id,
-              session
-            )
-          )
+        // Receipt (per-item, when not posting to room)
+        if (!isPostToRoom && (cashAmt > 0 || onlineAmt > 0)) {
+          await createReceiptForSales(
+            cmp_id,
+            paymentDetails,
+            paymentMethod,
+            party?.customerName,
+            Number(itemTotal),
+            party._id,
+            savedVoucherData[0],
+            tallyRows[0],
+            req,
+            restaurantBaseSaleData,
+            session
+          );
+        }
+
+        // Settlements (per-item)
+        if (!isPostToRoom && cashAmt > 0) {
+          const selectedCash = await Party.findOne({
+            _id: paymentDetails?.selectedCash,
+          }).session(session);
+          await saveSettlement(
+            paymentDetails,
+            selectedPartyId,
+            selectedCash,
+            cmp_id,
+            savedVoucherData[0],
+            cashAmt,
+            "cash",
+            req,
+            session
+          );
+        }
+
+        
+        if (!isPostToRoom && onlineAmt > 0) {
+          const selectedBank = await Party.findOne({
+            _id: paymentDetails?.selectedBank,
+          }).session(session);
+          await saveSettlement(
+            paymentDetails,
+            selectedPartyId,
+            selectedBank,
+            cmp_id,
+            savedVoucherData[0],
+            onlineAmt,
+            "bank",
+            req,
+            session
+          );
+        }
+
+        // Link room receipts (per-item)
+        await updateReceiptForRooms(
+          item?.voucherNumber,
+          item?.bookingId?.voucherNumber || item?.bookingId,
+          saleNumber?.voucherNumber,
+          savedVoucherData[0]?._id,
+          session
         );
-      }
 
-      // ✅ Save CheckOut and update CheckIn
-      if (selectedCheckOut?.length > 0) {
-        await Promise.all(
-          selectedCheckOut.map(async (item) => {
-            const checkInId = item?._id;
-            const roomsBeingCheckedOut = item?.selectedRooms || [];
+        // CheckOut insert and CheckIn update (per-item)
+        const checkInId = item?._id;
+        const roomsBeingCheckedOut = item?.selectedRooms || [];
+        const originalCheckIn = await CheckIn.findById(checkInId).session(session);
+        if (!originalCheckIn) throw new Error(`Check-in ${checkInId} not found`);
 
+        const isThisPartial =
+          item.isPartialCheckout ||
+          roomsBeingCheckedOut.length < (originalCheckIn.selectedRooms?.length || 0);
 
-            const originalCheckIn = await CheckIn.findById(checkInId).session(session);
+        if (isThisPartial) isAnyPartial = true;
 
-            if (!originalCheckIn) {
-              throw new Error(`Check-in ${checkInId} not found`);
-            }
-
-            // Determine if this is a partial checkout
-            const isThisPartialCheckout =
-              item.isPartialCheckout ||
-              roomsBeingCheckedOut.length < originalCheckIn.selectedRooms.length;
-
-            if (isThisPartialCheckout) {
-              isPartialCheckout = true; // ✅ global flag set
-            }
-
-            // Get room IDs being checked out
-            const roomIdsBeingCheckedOut = roomsBeingCheckedOut.map(r =>
-              r._id?.toString() || r.toString()
-            );
-
-            // Calculate remaining rooms
-            const remainingRooms = originalCheckIn.selectedRooms.filter(
-              room => !roomIdsBeingCheckedOut.includes(room._id.toString())
-            );
-
-            const dataToSave = {
-
-              ...item,
-              _id: undefined,
-              cmp_id,
-              Primary_user_id: req.owner || req.pUserId,
-              voucherNumber: saleNumber?.voucherNumber,
-              checkInId: checkInId,
-              bookingId: item?.bookingId?._id,
-              customerId: item?.customerId?._id,
-              customerName: item?.customerId?.partyName,
-              selectedRooms: roomsBeingCheckedOut,
-              balanceToPay: 0,
-              isPartialCheckout: isThisPartialCheckout,
-              originalCheckInId: checkInId,
-              totalAmount: item?.selectedRooms?.reduce((acc, room) => acc + room?.amountAfterTax, 0),
-              roomTotal: item?.selectedRooms?.reduce((acc, room) => acc + room?.amountAfterTax, 0),
-
-            }
-
-
-            console.log('dataToSave', dataToSave.roomTotal);
-            // console.log('dataToSave', dataToSave);
-
-            const roomTotal = item?.selectedRooms?.reduce((acc, room) => acc + room?.amountAfterTax, 0);
-
-
-            // ✅ Create CheckOut document (array + session + required fields)
-            await CheckOut.create(
-              [
-                {
-                  ...item,
-                  _id: undefined,
-                  cmp_id,
-                  Primary_user_id: req.owner || req.pUserId,
-                  voucherNumber: saleNumber?.voucherNumber,
-                  checkInId: checkInId,
-                  bookingId: item?.bookingId?._id || item?.bookingId,
-                  customerId: item?.customerId?._id,
-                  customerName: item?.customerId?.partyName,
-                  selectedRooms: roomsBeingCheckedOut,
-                  totalAmount: roomTotal,
-                  roomTotal: roomTotal,
-                  grandTotal: roomTotal,
-                  balanceToPay: 0,
-                  isPartialCheckout: isThisPartialCheckout,
-                  originalCheckInId: checkInId,
-                },
-              ],
-              { session }
-            );
-
-            if (isThisPartialCheckout && remainingRooms.length > 0) {
-              // ✅ PARTIAL CHECKOUT: Update CheckIn to keep remaining rooms
-              await CheckIn.updateOne(
-                { _id: checkInId },
-                {
-                  $set: {
-                    selectedRooms: remainingRooms,
-                    status: "checkIn", // Keep in checkIn status
-                    isPartiallyCheckedOut: true,
-                    partialCheckoutHistory: {
-                      $push: {
-                        date: new Date(),
-                        roomsCheckedOut: roomsBeingCheckedOut.map(r => ({
-                          roomId: r._id,
-                          roomName: r.roomName,
-                        })),
-                        saleVoucherNumber: saleNumber?.voucherNumber,
-                      }
-                    }
-                  }
-                },
-                { session }
-              );
-
-              // ✅ Update ONLY the checked-out rooms to dirty status
-              await updateStatus(roomsBeingCheckedOut, "dirty", session);
-            } else {
-              // ✅ FULL CHECKOUT: Mark entire check-in as checked out
-              await CheckIn.updateOne(
-                { _id: checkInId },
-                {
-                  status: "checkOut",
-                  checkOutDate: new Date(),
-                },
-                { session }
-              );
-
-              // ✅ Update ALL rooms to dirty status
-              await updateStatus(roomsBeingCheckedOut, "dirty", session);
-            }
-          })
+        const roomIdsBeingCheckedOut = roomsBeingCheckedOut.map(r =>
+          r._id?.toString() || r.toString()
         );
+        const remainingRooms = (originalCheckIn.selectedRooms || []).filter(
+          room => !roomIdsBeingCheckedOut.includes(room._id.toString())
+        );
+
+        const roomTotal = (item?.selectedRooms || []).reduce(
+          (acc, room) => acc + Number(room?.amountAfterTax || 0), 0
+        );
+
+        // Create CheckOut doc for this item
+        await CheckOut.create(
+          [{
+            ...item,
+            _id: undefined,
+            cmp_id,
+            Primary_user_id: req.owner || req.pUserId,
+            voucherNumber: saleNumber?.voucherNumber,
+            checkInId,
+            bookingId: item?.bookingId?._id || item?.bookingId,
+            customerId: selectedPartyId,
+            customerName: item?.customerId?.partyName || party?.customerName,
+            selectedRooms: roomsBeingCheckedOut,
+            totalAmount: roomTotal,
+            roomTotal,
+            grandTotal: roomTotal,
+            balanceToPay: 0,
+            isPartialCheckout: isThisPartial,
+            originalCheckInId: checkInId,
+          }],
+          { session }
+        );
+
+        // Update CheckIn and room statuses
+        if (isThisPartial && remainingRooms.length > 0) {
+          await CheckIn.updateOne(
+            { _id: checkInId },
+            {
+              $set: {
+                selectedRooms: remainingRooms,
+                status: "checkIn",
+                isPartiallyCheckedOut: true,
+              },
+              $push: {
+                partialCheckoutHistory: {
+                  date: new Date(),
+                  roomsCheckedOut: roomsBeingCheckedOut.map(r => ({
+                    roomId: r._id,
+                    roomName: r.roomName,
+                  })),
+                  saleVoucherNumber: saleNumber?.voucherNumber,
+                }
+              }
+            },
+            { session }
+          );
+
+          await updateStatus(roomsBeingCheckedOut, "dirty", session);
+        } else {
+          await CheckIn.updateOne(
+            { _id: checkInId },
+            { status: "checkOut", checkOutDate: new Date() },
+            { session }
+          );
+          await updateStatus(roomsBeingCheckedOut, "dirty", session);
+        }
+
+        results.push({
+          saleNumber,
+          salesRecord: savedVoucherData[0],
+          tallyId: tallyRows?.[0]?._id,
+          checkInId,
+          isPartial: isThisPartial,
+        });
       }
+
+      // attach results to request-local for response
+      req._multiCheckoutResults = results;
+      req._isAnyPartial = isAnyPartial;
     });
 
-    // ✅ Send response after transaction completes
-    // ✅ Send response after transaction completes
+
+
+
     res.status(200).json({
       success: true,
-      message: isPartialCheckout
-        ? "Partial checkout completed successfully. Remaining rooms are still checked-in."
-        : "Checkout converted to Sales successfully",
-      data: { saleNumber, salesRecord: savedVoucherData[0] },
+      message: req._isAnyPartial
+        ? "Partial checkout(s) completed. Remaining rooms stay checked-in."
+        : "Checkout(s) converted to Sales successfully",
+      data: {
+        results: req._multiCheckoutResults
+      },
     });
   } catch (error) {
     console.error("Error converting checkout:", error);
@@ -2287,6 +2256,7 @@ export const convertCheckOutToSale = async (req, res) => {
     await session.endSession();
   }
 };
+
 
 function createPaymentSplittingArray(paymentDetails, cashAmt, onlineAmt) {
   const arr = [];
@@ -2346,10 +2316,21 @@ async function createSalesVoucher(
 ) {
   let items = selectedCheckOut.flatMap((item) => item.selectedRooms);
 
-  let amount = selectedCheckOut.reduce(
-    (acc, item) => acc + Number(item.grandTotal),
-    0
-  );
+
+  const amount = selectedCheckOut.reduce((total, item) => {
+    const itemTotal = item.selectedRooms.reduce(
+      (acc, room) => acc + room.amountAfterTax,
+      0
+    );
+    return total + itemTotal;
+  }, 0);
+
+
+
+
+
+
+
   let convertedFrom = selectedCheckOut.map((item) => {
     return {
       voucherNumber: item.voucherNumber,
@@ -2457,7 +2438,7 @@ async function getSelectedParty(selected, cmp_id, session) {
   const selectedParty = await Party.findOne({ cmp_id, _id: selected })
     .populate("accountGroup")
     .session(session);
-  if (!selectedParty) throw new Error(`Party not found: ${partyName}`);
+  if (!selectedParty) throw new Error(`Party not found`);
 
   return selectedParty;
 }
