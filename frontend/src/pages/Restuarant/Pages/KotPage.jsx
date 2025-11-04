@@ -1681,7 +1681,7 @@ const handleKotCancel = async () => {
                       <div className="flex items-center gap-2">
                         <div className="flex items-center gap-1 w-16">
                           <CreditCard className="w-4 h-4 text-gray-600" />
-                          <span className="text-xs font-medium">Online:</span>
+                          <span className="text-xs font-medium">Gpay:</span>
                         </div>
                         <div className="flex-1">
                           <div className="relative">
