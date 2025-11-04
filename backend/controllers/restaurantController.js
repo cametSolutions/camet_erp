@@ -1026,6 +1026,8 @@ export const updateKotPayment = async (req, res) => {
 
       console.log("table", kotData);
 
+
+      
       if (!paymentDetails || !kotData) {
         throw new Error("Missing payment details or KOT data");
       }
@@ -1156,15 +1158,14 @@ export const updateKotPayment = async (req, res) => {
         kotData?.voucherNumber.map(async (item) => {
           // Find the KOT first
           const kot = await kotModal.findById(item.id).lean();
-
-          if (!selectedTableNumber.includes(kot?.tableNumber)) {
+  if (kot?.tableNumber && !selectedTableNumber.includes(kot.tableNumber)) {
             selectedTableNumber.push(kot.tableNumber);
           }
 
           // Then update it
           return kotModal.updateOne(
             { _id: item.id },
-            { paymentMethod, paymentCompleted },
+            { paymentMethod, paymentCompleted,  status: 'completed'  },
             { session }
           );
         })
@@ -1173,25 +1174,36 @@ export const updateKotPayment = async (req, res) => {
       console.log("Selected Table Numbers:", selectedTableNumber);
 
       // Check pending
+      let updatedTables = [];
       for (const tableNumber of selectedTableNumber) {
+        if (!tableNumber) continue; // Skip if tableNumber is null/undefined
+        
         const pendingCount = await kotModal
           .countDocuments({
-            "customer.tableNumber": tableNumber,
+            cmp_id,
+            tableNumber: tableNumber,  // ✅ Direct field, not nested
             paymentCompleted: false,
           })
           .session(session);
 
-        console.log("pendingCount", pendingCount);
-        console.log("kotData.tableNumber", kotData);
+        console.log(`Pending KOTs for table ${tableNumber}:`, pendingCount);
 
-        if (pendingCount < 1) {
+        // ✅ If no pending KOTs, mark table as available
+        if (pendingCount === 0) {
           const updateTableStatus = await Table.findOneAndUpdate(
             { cmp_id, tableNumber },
-            { status: "available" },
+            { 
+              status: "available",
+              currentOrders: 0,  // ✅ Reset order count
+              updatedAt: new Date()
+            },
             { new: true, session }
           );
 
-          console.log("updated table", updateTableStatus);
+          if (updateTableStatus) {
+            updatedTables.push(tableNumber);
+            console.log(`Table ${tableNumber} status updated to available`);
+          }
         }
       }
 
@@ -1693,26 +1705,15 @@ export const updateTableStatus = async (req, res) => {
     const { cmp_id } = req.params;
     const { tableNumber, status } = req.body;
 
-    if (!tableNumber || !status) {
-      return res
-        .status(400)
-        .json({ message: "Table number and status are required" });
-    }
-
-    const table = await Table.findOneAndUpdate(
+     const updatedTable = await Table.findOneAndUpdate(
       { cmp_id, tableNumber },
-      { $set: { status } },
+      { status },
       { new: true }
     );
-
-    if (!table) {
-      return res.status(404).json({ message: "Table not found" });
-    }
-
-    res.json({ message: "Table status updated", table });
+    
+    res.status(200).json({ success: true, data: updatedTable });
   } catch (error) {
-    console.error("Error updating table status:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 

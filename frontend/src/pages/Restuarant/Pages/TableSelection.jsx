@@ -387,16 +387,44 @@ const TableTiles = ({
             order._id === id ? { ...order, paymentCompleted: true } : order
           )
         );
-        console.log(response.data.tableAvailable);
-        setTableAvailable(response.data.tableAvailable);
-        setSelectedKot([]);
-        setShowVoucherPdf(false);
-        toast.success(response?.data?.message);
+      const tableNumber = selectedDataForPayment?.tableNumber;
+      const remainingPendingKOTs = tableKOTs.filter(
+        (kot) => 
+          kot.tableNumber === tableNumber && 
+          kot._id !== id && 
+          !kot.paymentCompleted
+      );
 
+      // If no more pending KOTs, update table status to available
+      if (remainingPendingKOTs.length === 0 && tableNumber) {
+        try {
+          await api.put(
+            `/api/sUsers/updateTableStatus/${cmp_id}/${tableNumber}`,
+            { status: "available" },
+            { withCredentials: true }
+          );
+          
+          // Refresh tables list to show updated status
+          await fetchTables();
+          
+          toast.success("Payment completed and table is now available");
+        } catch (tableError) {
+          console.error("Error updating table status:", tableError);
+          toast.warning("Payment completed but table status update failed");
+        }
+      } else {
+        toast.success(response?.data?.message);
+      }
+
+      setSelectedKot([]);
+      setShowVoucherPdf(false);
         // Refresh the KOTs for the selected table
         if (selectedTable) {
           handleTableClick(selectedTable);
         }
+    
+      
+     
       }
     } catch (error) {
       console.error(
