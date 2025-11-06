@@ -7,6 +7,7 @@ import Tooltip from "./ToolTip";
 import RoomTooltipContent from "./RoomTooltipContent ";
 import { useNavigate } from "react-router-dom";
 import api from "@/api/api";
+import {toast} from "sonner";
 import CalenderComponent from "../Components/CalenderComponent";
 import ReactDOM from "react-dom";
 import RoomSwapModal from "./RoomSwapModal ";
@@ -301,6 +302,30 @@ const HotelDashboard = () => {
   });
   return;
 }
+
+if (action === "editChecking") {
+  setShowRoomModal(false);
+  
+  try {
+    const checkInDetails = await fetchRoomCheckInDetails(selectedRoomData._id);
+    
+    if (checkInDetails?.success && checkInDetails?.checkIn) {
+      // Navigate to edit checking page with tariff rate change flag
+      navigate("/sUsers/editChecking", {
+        state: {
+          ...checkInDetails.checkIn,
+          fromDashboard: true  // ✅ Flag to indicate tariff rate change
+        }
+      });
+    } else {
+      toast.error("No active check-in found for this room");
+    }
+  } catch (error) {
+    console.error("Error navigating to edit checking:", error);
+    toast.error("Failed to load check-in details");
+  }
+  return;
+}
     if (action === "swapRoom") {
       // Check if room is available for swap (should be vacant)
       // if (selectedRoomData.status !== "vacant") {
@@ -376,6 +401,22 @@ const HotelDashboard = () => {
       }
     }
   };
+  const fetchRoomCheckInDetails = async (roomId) => {
+  try {
+    setIsLoading(true);
+    const res = await api.get(
+      `/api/sUsers/getRoomCheckInDetails/${cmp_id}/${roomId}`,
+      { withCredentials: true }
+    );
+    return res.data;
+  } catch (error) {
+    console.error("Error fetching check-in details:", error);
+    toast.error(error?.response?.data?.message || "Failed to fetch room details");
+    return null;
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const handleRoomSwapConfirm = async () => {
     try {
@@ -990,6 +1031,7 @@ const HotelDashboard = () => {
                 </option>
                 {selectedRoomData.status === "occupied" ? (
                   <>
+                    <option value="editChecking">Edit Tarrif Rate</option>
                     <option value="checkOut">CheckOut</option>
                     <option value="swapRoom">Swap Room</option>
                   </>

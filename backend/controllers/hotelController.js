@@ -1406,7 +1406,7 @@ export const updateBooking = async (req, res) => {
         };
 
         // ✅ Single Payment
-        if (paymentData.mode === "single") {
+        if (paymentData?.mode === "single") {
           const method = paymentData.payments[0]?.method;
           const receiptVoucher = await generateVoucherNumber(
             orgId,
@@ -3402,6 +3402,84 @@ const isCreditSale =
         process.env.NODE_ENV === "development"
           ? error.message
           : "Something went wrong",
+    });
+  }
+};
+
+
+export const getRoomCheckInDetails = async (req, res) => {
+  try {
+    const { roomId } = req.params;
+
+    if (!roomId) {
+      return res.status(400).json({
+        success: false,
+        message: "Room ID is required",
+      });
+    }
+
+    // Validate if roomId is a valid ObjectId
+    if (!mongoose.Types.ObjectId.isValid(roomId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid Room ID format",
+      });
+    }
+
+    // Find active check-in for this specific room
+    const checkIn = await CheckIn.findOne({
+      "selectedRooms.roomId": new mongoose.Types.ObjectId(roomId),
+      status: { $ne: "checkOut" }, // Only active check-ins
+    })
+      .populate("bookingId") // Populate booking details
+      .populate({
+        path: "selectedRooms.roomId",
+        populate: [
+          { path: "roomType" },
+          { path: "bedType" },
+          { path: "roomFloor" },
+          { path: "priceLevel.priceLevel" }
+        ]
+      })
+      .populate("customerId") // Populate customer details
+      .lean();
+
+    if (!checkIn) {
+      return res.status(404).json({
+        success: false,
+        message: "No active check-in found for this room",
+      });
+    }
+
+    // Filter to only include the selected room's details
+    const selectedRoom = checkIn.selectedRooms.find(
+      (room) => room.roomId._id.toString() === roomId.toString()
+    );
+
+    if (!selectedRoom) {
+      return res.status(404).json({
+        success: false,
+        message: "Room not found in check-in details",
+      });
+    }
+
+    // Create a filtered check-in object with only the selected room
+    const filteredCheckIn = {
+      ...checkIn,
+      selectedRooms: [selectedRoom], // Only the room that was clicked
+    };
+
+    return res.status(200).json({
+      success: true,
+      message: "Check-in details fetched successfully",
+      checkIn: filteredCheckIn,
+    });
+  } catch (error) {
+    console.error("Error fetching room check-in details:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch check-in details",
+      error: error.message,
     });
   }
 };

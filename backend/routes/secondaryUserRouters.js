@@ -61,7 +61,7 @@ import {saveAdditionalPax , getAdditionalPax ,updateAdditionalPax , deleteAdditi
     updateVisitOfPurpose,deleteVisitOfPurpose,saveIdProof,getIdProof,updateIdProof , deleteIdProof, saveFoodPlan , getFoodPlan
     ,updateFoodPlan,deleteFoodPlan,addRoom,getRooms,editRoom ,deleteRoom,getAllRooms,roomBooking,getBookings,deleteBooking,updateBooking,
 fetchAdvanceDetails,getAllRoomsWithStatusForDate,updateRoomStatus,getDateBasedRoomsWithStatus,checkoutWithArrayOfData,
-fetchOutStandingAndFoodData,convertCheckOutToSale , updateConfigurationForHotelAndRestaurant,swapRoom,getRoomSwapHistory,checkedInGuest,getHotelSalesDetails,} from '../controllers/hotelController.js'
+fetchOutStandingAndFoodData,convertCheckOutToSale , updateConfigurationForHotelAndRestaurant,swapRoom,getRoomSwapHistory,checkedInGuest,getHotelSalesDetails,getRoomCheckInDetails} from '../controllers/hotelController.js'
 import {addItem,getAllItems,getItems,getCategories,deleteItem,updateItem,generateKot,getKot,updateKotStatus,editKot,
     getRoomDataForRestaurant,updateKotPayment,getPaymentType,saveTableNumber,getSalePrintData,updateTable,getTables,deleteTable,
     updateTableStatus,getKotDataByTable,updateConfigurationForKotApproval ,getSummaryDashboard,cancelKot,directSale,searchItems   } from '../controllers/restaurantController.js'
@@ -377,6 +377,7 @@ router.get("/getCheckedInGuests/:cmp_id", checkedInGuest);
 router.get('/summary', getSummaryDashboard);
 router.get('/hotel-sales/:cmp_id', getHotelSalesDetails);
 router.put("/cancel/:id", cancelKot);
+router.get('/getRoomCheckInDetails/:cmp_id/:roomId', getRoomCheckInDetails);
 // Route to get detailed booking information for a specific room and date
 
 export default router
