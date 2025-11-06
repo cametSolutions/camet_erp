@@ -2058,12 +2058,12 @@ export const convertCheckOutToSale = async (req, res) => {
         // const pendingAmount = Number(item?.balanceToPay || 0);
 
 
-          const itemTotal = item.selectedRooms.reduce(
-            (acc, room) => acc + room.amountAfterTax,
-            0
-          );
+        const itemTotal = item.selectedRooms.reduce(
+          (acc, room) => acc + room.amountAfterTax,
+          0
+        );
 
-        const paidAmount =itemTotal;
+        const paidAmount = itemTotal;
         const pendingAmount = Number(item?.balanceToPay || 0);
 
         // Create Tally Entry (per-item)
@@ -2113,7 +2113,7 @@ export const convertCheckOutToSale = async (req, res) => {
           );
         }
 
-        
+
         if (!isPostToRoom && onlineAmt > 0) {
           const selectedBank = await Party.findOne({
             _id: paymentDetails?.selectedBank,
