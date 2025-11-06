@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+/* eslint-disable react/prop-types */
+import  { useState } from "react";
 import { X, Calendar } from "lucide-react";
 
 export default function CheckoutDateModal({

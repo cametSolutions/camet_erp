@@ -38,11 +38,9 @@ function BookingList() {
   const [selectedCheckOut, setSelectedCheckOut] = useState(
     location?.state?.selectedCheckOut || []
   );
-  const [conformationModal, setConformationModal] = useState(false);
-  const [paymentType, setPaymentType] = useState("cash");
+
   const [selectedCustomer, setSelectedCustomer] = useState({});
-  const [splitCustomerName, setSplitCustomerName] = useState([]);
-  const [checkOutModal, setCheckOutModal] = useState(false);
+
   const [saveLoader, setSaveLoader] = useState(false);
   const listRef = useRef();
   const searchTimeoutRef = useRef(null);
@@ -119,7 +117,7 @@ const [selectedCreditor, setSelectedCreditor] = useState("");
 
   useEffect(() => {
     if (paymentTypeData) {
-      const { bankDetails, cashDetails } = paymentTypeData?.data;
+      const { bankDetails, cashDetails } = paymentTypeData.data;
 
       setCashOrBank(paymentTypeData?.data);
       if (bankDetails && bankDetails.length > 0) {
@@ -461,6 +459,8 @@ const proceedToCheckout = (roomAssignments) => {
       const roomsToCheckout = originalCheckIn.selectedRooms.filter(room =>
         checkIn.rooms.some(r => r.roomId === room._id)
       );
+
+      const originalCustomerId = originalCheckIn.customerId?._id;
       
       // Check if this is a partial checkout
       const isPartialCheckout = roomsToCheckout.length < originalCheckIn.selectedRooms.length;
@@ -471,12 +471,16 @@ const proceedToCheckout = (roomAssignments) => {
         selectedRooms: roomsToCheckout, // Only rooms being checked out
         isPartialCheckout: isPartialCheckout,
         originalCheckInId: checkIn.checkInId,
+        originalCustomerId: originalCustomerId,
         remainingRooms: originalCheckIn.selectedRooms.filter(room =>
           !checkIn.rooms.some(r => r.roomId === room._id)
         ),
       };
     });
   });
+
+  console.log("checkoutData",checkoutData);
+  
 
   navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
     state: {

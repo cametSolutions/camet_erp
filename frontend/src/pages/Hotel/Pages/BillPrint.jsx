@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import  { useEffect, useState, useRef, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
@@ -7,97 +7,135 @@ import api from "@/api/api";
 import Logo from "../../../assets/images/hill.png";
 import TitleDiv from "@/components/common/TitleDiv";
 import { jsPDF } from "jspdf";
-
 import "jspdf-autotable";
-import {
-  handlePrintInvoice,
-  handleDownloadPDF,
-} from "../PrintSide/generateHotelInvoicePDF ";
+// import {
+//   handlePrintInvoice,
+//   handleDownloadPDF,
+// } from "../PrintSide/generateHotelInvoicePDF ";
 import {
   handleBillPrintInvoice,
   handleBillDownloadPDF,
-} from "../PrintSide/generateBillPrintPDF"; 
+} from "../PrintSide/generateBillPrintPDF";
+// import { Title } from "@radix-ui/react-dialog";
 
-import { Title } from "@radix-ui/react-dialog";
 const HotelBillPrint = () => {
   // Router and Redux state
   const location = useLocation();
   const organization = useSelector(
     (state) => state?.secSelectedOrganization?.secSelectedOrg
   );
- const navigate = useNavigate();
-  // Props from location state
-  const selectedCheckOut = location.state?.selectedCheckOut;
-  const selectedCustomerId = location.state?.customerId;
-  // const isForPreview = location.state?.isForPreview;
+  const navigate = useNavigate();
 
-  // Component state
+  // Props from location state
+  const selectedCheckOut = location.state?.selectedCheckOut || [];
+
+  console.log("selectedCheckOut in print",selectedCheckOut);
+  
+  // const selectedCustomerId = location.state?.customerId;
+  const isForPreview = location.state?.isForPreview;
+
+  // Component state (global for fetch results used across docs)
   const [outStanding, setOutStanding] = useState([]);
   const [kotData, setKotData] = useState([]);
-  const [selectedCustomerData, setSelectedCustomerData] = useState({});
-  const [selectedCheckOutData, setSelectedCheckOutData] = useState({});
-  const [dateWiseDisplayedData, setDateWiseDisplayedData] = useState([]);
-  const [taxAmountForRoom, setTaxAmountForRoom] = useState(0);
-  const [taxAmountForFood, setTaxAmountForFood] = useState(0);
-  const [foodPlanAmount, setFoodPlanAmount] = useState(0);
-  const [additionalPaxAmount, setAdditionalPaxAmount] = useState(0);
+  const [showSplitPopUp, setShowSplitPopUp] = useState(false);
+  const [selected, setSelected] = useState("default");
   const printReference = useRef(null);
 
-const [showSplitPopUp, setShowSplitPopUp] = useState(false);
-const [selected, setSelected] = useState("default");
-const isForPreview = location.state?.isForPreview;
+  // Fetch debit and KOT once for all docs shown
+  const fetchDebitData = async (data) => {
+    try {
+      const res = await api.post(
+        `/api/sUsers/fetchOutStandingAndFoodData`,
+        { data },
+        { withCredentials: true }
+      );
+      if (res.data.success) {
+        setOutStanding(res.data.data || []);
+        setKotData(res.data.kotData || []);
+      }
+    } catch (error) {
+      toast.error(error.message);
+      console.error("Error fetching debit data:", error);
+    }
+  };
 
+  useEffect(() => {
+    if (selectedCheckOut?.length > 0) {
+      fetchDebitData(selectedCheckOut);
+    }
+  }, [selectedCheckOut]);
 
+  // Split handlers
+  const handleSplitPayment = () => setShowSplitPopUp(true);
+  const handleChange = (value) => setSelected(value);
+  const handleSplit = () => {
+    setShowSplitPopUp(false);
+    if (selected === "room") {
+      setKotData([]);
+    } else if (selected === "restaurant") {
+      setOutStanding([]);
+    }
+  };
 
+  // Utils
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
 
-// For HotelBillPrint.jsx (Document 4) - Replace the transformCheckOutData function:
-
-const transformCheckOutData = (selectedCheckOut) => {
-  let result = [];
-
-  selectedCheckOut.forEach((item) => {
-    item.selectedRooms.forEach((room) => {
+  // Per-doc transforms
+  const transformDocToDateWiseLines = (doc) => {
+    const result = [];
+    const startDate = new Date(doc.arrivalDate);
+    (doc.selectedRooms || []).forEach((room) => {
       const stayDays = room.stayDays || 1;
       const fullDays = Math.floor(stayDays);
       const fractionalDay = stayDays - fullDays;
-      
-      // Calculate per-day amounts for full days
-      const perDayAmount = room.priceLevelRate || (room.baseAmountWithTax / stayDays);
-      const baseAmountPerDay = room.baseAmount / stayDays;
-      const taxAmountPerDay = room.taxAmount / stayDays;
-      const foodPlanAmountWithTaxPerDay = room.foodPlanAmountWithTax / stayDays;
-      const foodPlanAmountWithOutTaxPerDay = room.foodPlanAmountWithOutTax / stayDays;
-      const additionalPaxDataWithTaxPerDay = room.additionalPaxAmountWithTax / stayDays;
-      const additionalPaxDataWithOutTaxPerDay = room.additionalPaxAmountWithOutTax / stayDays;
 
-      const startDate = new Date(item.arrivalDate);
+      const perDayAmount =
+        Number(room.priceLevelRate || 0) ||
+        Number(room.baseAmountWithTax || 0) / stayDays;
+      const baseAmountPerDay = Number(room.baseAmount || 0) / stayDays;
+      const taxAmountPerDay = Number(room.taxAmount || 0) / stayDays;
+      const foodPlanAmountWithTaxPerDay =
+        Number(room.foodPlanAmountWithTax || 0) / stayDays;
+      const foodPlanAmountWithOutTaxPerDay =
+        Number(room.foodPlanAmountWithOutTax || 0) / stayDays;
+      const additionalPaxDataWithTaxPerDay =
+        Number(room.additionalPaxAmountWithTax || 0) / stayDays;
+      const additionalPaxDataWithOutTaxPerDay =
+        Number(room.additionalPaxAmountWithOutTax || 0) / stayDays;
 
-      // Add full days
       for (let i = 0; i < fullDays; i++) {
         const currentDate = new Date(startDate);
         currentDate.setDate(startDate.getDate() + i);
-        const formattedDate = currentDate.toLocaleDateString("en-GB").replace(/\//g, "-");
+        const formattedDate = currentDate
+          .toLocaleDateString("en-GB")
+          .replace(/\//g, "-");
 
         result.push({
           date: formattedDate,
           description: `Room Rent - Room ${room.roomName}`,
-          docNo: item.voucherNumber,
+          docNo: doc.voucherNumber,
           amount: baseAmountPerDay,
           baseAmountWithTax: perDayAmount,
           baseAmount: baseAmountPerDay,
           taxAmount: taxAmountPerDay,
-          voucherNumber: item.voucherNumber,
+          voucherNumber: doc.voucherNumber,
           roomName: room.roomName,
           hsn: room?.hsnDetails?.hsn,
-          customerName: item.customerId?.partyName,
+          customerName: doc.customerId?.partyName,
           foodPlanAmountWithTax: foodPlanAmountWithTaxPerDay,
           foodPlanAmountWithOutTax: foodPlanAmountWithOutTaxPerDay,
           additionalPaxDataWithTax: additionalPaxDataWithTaxPerDay,
           additionalPaxDataWithOutTax: additionalPaxDataWithOutTaxPerDay,
+          roomId: room?.roomId || room?._id,
         });
       }
 
-      // Add fractional day at 50% rate
       if (fractionalDay > 0) {
         const fractionalDate = new Date(startDate);
         fractionalDate.setDate(startDate.getDate() + fullDays);
@@ -108,416 +146,140 @@ const transformCheckOutData = (selectedCheckOut) => {
         result.push({
           date: formattedFractionalDate,
           description: `Room Rent - Room ${room.roomName} (Half Day)`,
-          docNo: item.voucherNumber,
+          docNo: doc.voucherNumber,
           amount: baseAmountPerDay * 0.5,
           baseAmountWithTax: perDayAmount * 0.5,
           baseAmount: baseAmountPerDay * 0.5,
           taxAmount: taxAmountPerDay * 0.5,
-          voucherNumber: item.voucherNumber,
+          voucherNumber: doc.voucherNumber,
           roomName: room.roomName,
           hsn: room?.hsnDetails?.hsn,
-          customerName: item.customerId?.partyName,
+          customerName: doc.customerId?.partyName,
           foodPlanAmountWithTax: foodPlanAmountWithTaxPerDay * 0.5,
           foodPlanAmountWithOutTax: foodPlanAmountWithOutTaxPerDay * 0.5,
           additionalPaxDataWithTax: additionalPaxDataWithTaxPerDay * 0.5,
           additionalPaxDataWithOutTax: additionalPaxDataWithOutTaxPerDay * 0.5,
+          roomId: room?.roomId || room?._id,
         });
       }
     });
-  });
 
-  return result;
-};
+    return result;
+  };
 
-const handleSplitPayment = () => {
-  setShowSplitPopUp(true);
-};
+  // Per-doc KOT totals aggregation helper
+  const getKotTotalsByRoom = (kots = []) => {
+    const map = new Map();
+    kots.forEach((kot) => {
+      const roomId = kot?.kotDetails?.roomId;
+      if (!roomId) return;
+      const amount = Number(kot?.finalAmount ?? kot?.subTotal ?? kot?.total ?? 0);
+      const key = String(roomId);
+      map.set(key, (map.get(key) ?? 0) + amount);
+    });
+    return map;
+  };
 
-const handleChange = (value) => {
-  setSelected(value);
-};
+  // Build per-room restaurant line for a doc’s rooms only
+  const buildPerRoomRestaurantLinesForDoc = (doc) => {
+    const roomIdSet = new Set(
+      (doc.selectedRooms || [])
+        .map((r) => String(r?.roomId || r?._id))
+        .filter(Boolean)
+    );
 
+    const filteredKots = (kotData || []).filter((k) =>
+      roomIdSet.has(String(k?.kotDetails?.roomId || ""))
+    );
 
-const handleSplit = () => {
-  setShowSplitPopUp(false);
-  console.log(selected);
-  if (selected === "room") {
-    setKotData([]);
-  } else if (selected === "restaurant") {
-    setOutStanding([]);
-    setDateWiseDisplayedData([]);
-    setTaxAmountForFood(0);
-    setTaxAmountForRoom(0);
-    setFoodPlanAmount(0);
-    setAdditionalPaxAmount(0);
-  }
-};
+    const kotTotalsByRoom = getKotTotalsByRoom(filteredKots);
 
-
-
-  // Prepare comprehensive invoice data with all dynamic values
-   const handlePrintPDF = (isPrint) => {
-  const totals = calculateTotals();
-  const secondaryUser = JSON.parse(localStorage.getItem("sUserData"));
-
-  // Prepare bill data (already exists in your code)
-   const billDataForPDF = prepareBillData();
-
-  console.log("Bill Data for PDF:", billDataForPDF);
-
-  // Call the BILL PRINT PDF functions (matches the bill print format)
-  if (!isPrint) {
-    handleBillDownloadPDF(billDataForPDF);
-  } else {
-    handleBillPrintInvoice(billDataForPDF);
-  }
-};
-
-
-  // API call to fetch debit data
-  const fetchDebitData = async (data) => {
-    try {
-      const res = await api.post(
-        `/api/sUsers/fetchOutStandingAndFoodData`,
-        { data: data },
-        { withCredentials: true }
+    const lines = [];
+    for (const [roomId, amount] of kotTotalsByRoom.entries()) {
+      const roomName =
+        (doc.selectedRooms || []).find(
+          (r) => String(r?.roomId || r?._id) === roomId
+        )?.roomName || "";
+      const firstKot = filteredKots.find(
+        (k) => String(k?.kotDetails?.roomId) === roomId
       );
+      const docNo = firstKot?.salesNumber || "-";
 
-      if (res.data.success) {
-        setOutStanding(res.data.data);
-        setKotData(res.data.kotData);
-      }
-    } catch (error) {
-      toast.error(error.message);
-      console.error("Error fetching debit data:", error);
-    }
-  };
-
-  // Utility function to format date
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
-  };
-
-
-
-
-
-  // Calculate totals - FIXED VERSION
-  const calculateTotals = () => {
-    const roomTariffTotal = dateWiseDisplayedData.reduce(
-      (total, order) => total + (order.baseAmount || 0),
-      0
-    );
-
-    const planAmount = dateWiseDisplayedData.reduce(
-      (total, order) => total + (order?.foodPlanAmountWithOutTax || 0),
-      0
-    );
-
-    const additionalPaxAmount = dateWiseDisplayedData.reduce(
-      (total, order) => total + (order?.additionalPaxDataWithOutTax || 0),
-      0
-    );
-
-    const advanceTotal =
-      outStanding?.reduce(
-        (total, transaction) => total + (transaction?.bill_amount || 0),
-        0
-      ) || 0;
-
-    const kotTotal =
-      kotData?.reduce((total, kot) => total + (kot?.total || 0), 0) || 0;
-
-    const sgstAmount = taxAmountForRoom;
-    const cgstAmount = taxAmountForRoom;
-    const totalTaxAmount = sgstAmount + cgstAmount;
-
-    const grandTotal =
-      roomTariffTotal +
-      planAmount +
-      additionalPaxAmount +
-      totalTaxAmount +
-      kotTotal;
-    const netPay = grandTotal - advanceTotal;
-
-    return {
-      roomTariffTotal,
-      advanceTotal,
-      kotTotal,
-      sgstAmount,
-      cgstAmount,
-      totalTaxAmount,
-      grandTotal,
-      netPay,
-      planAmount,
-      additionalPaxAmount,
-    };
-  };
-
-  // Add keyboard shortcut for printing
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.ctrlKey && e.key === "p") {
-        e.preventDefault();
-        window.print();
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, []);
-
-  // Print handler
-  const handlePrint = useReactToPrint({
-    content: () => printReference.current,
-    documentTitle: "Hotel Bill",
-    removeAfterPrint: true,
-  });
-
-const restaurantCharges = kotData.flatMap(kot =>
-  kot.items.map(item => ({
-    date: kot.selectedDate,
-    description: item.product_name,
-    docNo: kot.salesNumber || "-",
-    amount: item.total || 0,
-    taxes: Number(item.totalCgstAmt || 0) + Number(item.totalSgstAmt || 0) + Number(item.totalIgstAmt || 0),
-    advance: 0,
-  }))
-);
-
-
-  const prepareBillData = () => {
-  const totals = calculateTotals();
-
-  // Charges aggregation - push room, food plan, additional pax, and importantly, restaurant charges (KOT/posttoroom),
-  // into the charges array displayed on the bill
-  const charges = calculateCumulativeBalances([
-    ...dateWiseDisplayedData.map(item => ({
-      date: item.date,
-      description: item.description,
-      amount: (item.baseAmount || 0) + (item.additionalPaxDataWithOutTax || 0) + (item.foodPlanAmountWithOutTax || 0),
-      taxes: item.taxAmount || 0,
-    })),
-    // Add posttoroom restaurant charges here as separate charge lines
-   ...restaurantCharges,
-    // Add advance payments as negative amounts
-    ...outStanding.map(transaction => ({
-      date: formatDate(transaction.billdate),
-      description: 'Advance',
-      amount: -Math.abs(transaction.billamount),
-      docNo: transaction.billno,
-    })),
-  ], totals);
-const restaurantTotal = kotData.reduce((sum, kot) => sum + (kot.finalAmount || kot.subTotal || 0), 0);
-
-  return {
-    hotel: {
-      name: organization?.name,
-      address: organization?.flat + ' ' + organization?.road + ' ' + organization?.landmark,
-      phone: organization?.mobile,
-      email: organization?.email,
-      website: organization?.website,
-      pan: organization?.pan,
-      gstin: organization?.gstNum,
-      sacCode: 996311,
-      logo: organization?.logo,
-    },
-    guest: {
-      name: selectedCustomerData?.partyName,
-      roomNo: selectedCheckOutData?.selectedRooms?.map(room => room.roomName).join(', '),
-      billNo: selectedCheckOutData?.voucherNumber,
-      travelAgent: selectedCheckOutData?.agentId?.name,
-      address: selectedCustomerData?.billingAddress,
-      phone: selectedCustomerData?.mobileNumber,
-      gstNo: selectedCustomerData?.gstNo,
-    },
-    stay: {
-      billDate: formatDate(new Date()),
-      arrival: formatDate(selectedCheckOutData?.arrivalDate),
-      departure: new Date().toLocaleTimeString(),
-      days: selectedCheckOutData?.selectedRooms?.[0]?.stayDays,
-      plan: selectedCheckOutData?.foodPlanAmount,
-      pax: selectedCheckOutData?.selectedRooms?.reduce((acc, curr) => acc + Number(curr.pax || 0), 0),
-      tariff: selectedCheckOutData?.selectedRooms?.[0]?.baseAmount,
-    },
-    charges,
-    summary: {
-      roomRent: totals.roomTariffTotal,
-      sgst: totals.sgstAmount,
-      cgst: totals.cgstAmount,
-      restaurant: restaurantTotal, // Add restaurant charge here
-      roomService: 0,
-      foodPlan: totals.planAmount,
-      additionalPax: totals.additionalPaxAmount,
-      total: totals.grandTotal,
-      totalWords: convertNumberToWords(totals.grandTotal),
-    },
-    payment: {
-      mode: 'Credit',
-      total: totals.grandTotal,
-      advance: totals.advanceTotal,
-      netPay: totals.netPay,
-    },
-  };
-};
-
-const calculateCumulativeBalances = (charges, totals) => {
-  let cumulativeBalance = 0;
-  
-  return charges.map((charge) => {
-    let currentAmount = charge.amount || 0;
-    
-    // For room charges, add the daily tax portion
-    if (charge.description.includes('Room Rent')) {
-      const taxForRoom = charge.taxes ? parseFloat(charge.taxes) : 0;
-      cumulativeBalance += currentAmount + taxForRoom;
-    }
-    // For advance (negative amount)
-    else if (charge.description === 'Advance') {
-      cumulativeBalance += currentAmount; // already negative
-    }
-    // For separate tax entries (CGST/SGST) - don't add to balance as already included in room
-    else if (charge.description.includes('CGST') || charge.description.includes('SGST')) {
-      // Don't change balance, tax already counted in room charges
-    }
-    // For other charges (Restaurant, Food Plan, Additional Pax)
-    else {
-      cumulativeBalance += currentAmount;
-    }
-    
-    return {
-      ...charge,
-      balance: cumulativeBalance.toFixed(2)
-    };
-  });
-};
-
-
-  // Main effect to process checkout data - FIXED VERSION
-  useEffect(() => {
-    if (selectedCustomerId && selectedCheckOut?.length > 0) {
-      const findCustomerFullData = selectedCheckOut.find(
-        (item) => item.customerId?._id === selectedCustomerId
-      );
-
-      if (findCustomerFullData) {
-        setSelectedCustomerData(findCustomerFullData.customerId);
-        setSelectedCheckOutData(findCustomerFullData);
-
-        const selectedCheckOutData = transformCheckOutData(selectedCheckOut);
-        setDateWiseDisplayedData(selectedCheckOutData);
-
-        const taxAmountBasedOnRoom = selectedCheckOutData.reduce(
-          (acc, item) => acc + Number(item.taxAmount || 0),
-          0
-        );
-        setTaxAmountForRoom(taxAmountBasedOnRoom);
-
-        const foodPlanAmountWithOutTax = selectedCheckOutData.reduce(
-          (acc, item) => acc + Number(item.foodPlanAmountWithOutTax || 0),
-          0
-        );
-        const paxAmount = selectedCheckOutData.reduce(
-          (acc, item) => acc + Number(item.additionalPaxDataWithTax || 0),
-          0
-        );
-        setFoodPlanAmount(foodPlanAmountWithOutTax);
-        setAdditionalPaxAmount(paxAmount);
-
-        const foodPlanTaxAmount = selectedCheckOutData.reduce(
-          (acc, item) =>
-            acc +
-            Number(item.foodPlanAmountWithOutTax || 0) -
-            Number(item.taxAmountForFoodPlan || 0),
-          0
-        );
-
-        setTaxAmountForFood(foodPlanTaxAmount - foodPlanAmountWithOutTax);
-      }
-    }
-  }, [selectedCustomerId, selectedCheckOut]);
-
-  // Effect to fetch debit data
-  useEffect(() => {
-    if (selectedCheckOut?.length > 0) {
-      fetchDebitData(selectedCheckOut);
-    }
-  }, [selectedCheckOut]);
-
-  const totals = calculateTotals();
-
-  console.log(location.state);
-  console.log(outStanding);
-  console.log(selectedCheckOutData);
-  console.log(organization?.gstNum);
-  // Dynamic bill data based on fetched information - FIXED VERSION
-  const billData = {
-    hotel: {
-      name: organization?.name,
-      address:
-        `${organization?.flat || ""} ${organization?.road || ""} ${
-          organization?.landmark || ""
-        }`.trim() || "Erattayar road, Kattapana, Kerala India",
-      phone: organization?.mobile,
-      email: organization?.email,
-      website: organization?.website,
-      pan: organization?.pan,
-      gstin: organization?.gstNum,
-      sacCode: "996311",
-    },
-    guest: {
-      name: selectedCustomerData?.partyName,
-      roomNo: selectedCheckOutData?.selectedRooms
-        ?.map((room) => room.roomName)
-        .join(", "),
-      billNo: selectedCheckOutData?.voucherNumber,
-      travelAgent: selectedCheckOutData?.agentId?.name,
-      address: selectedCustomerData?.billingAddress || "",
-      phone: selectedCustomerData?.mobileNumber || "",
-      gstNo: selectedCustomerData?.gstNo || "",
-    },
-    stay: {
-      billDate: formatDate(new Date()),
-      arrival: `${formatDate(selectedCheckOutData?.arrivalDate)} ${
-        selectedCheckOutData?.arrivalTime || ""
-      }`,
-      departure: `${formatDate(new Date())} ${new Date().toLocaleTimeString()}`,
-      days: selectedCheckOutData?.selectedRooms?.[0]?.stayDays,
-      plan: selectedCheckOutData?.foodPlanAmount,
-      pax:
-        selectedCheckOutData?.selectedRooms?.reduce(
-          (acc, curr) => acc + Number(curr.pax || 0),
-          0
-        ) || 1,
-      tariff: selectedCheckOutData?.selectedRooms?.[0]?.baseAmount || 0,
-    },
-
-     charges: calculateCumulativeBalances([
-    // Group charges by room and date
-    ...(() => {
-      const roomCharges = [];
-      const roomGroups = {};
-      
-      // Group by room
-      dateWiseDisplayedData.forEach((item) => {
-        const roomKey = item.roomName;
-        if (!roomGroups[roomKey]) {
-          roomGroups[roomKey] = [];
-        }
-        roomGroups[roomKey].push(item);
+      lines.push({
+        date: formatDate(new Date()),
+        description: `Restaurant - Room ${roomName}`,
+        docNo,
+        amount: Number(amount || 0),
+        taxes: 0,
+        advance: "",
+        roomName,
+        roomId,
       });
-      
-      // Process each room group
-      Object.keys(roomGroups).forEach((roomName) => {
-        const roomDays = roomGroups[roomName];
-        
-        // Add all days for this room
+    }
+    return lines;
+  };
+
+  // Helpers to decide where to show advances
+  const docOwnsAdvances = (doc) => {
+    const originalId = doc?.originalCustomerId;
+    const custId = doc?.customerId?._id || doc?.customerId;
+    if (!custId) return false;
+    // If originalId exists, match it; if not provided, treat as original/primary and allow
+    return originalId ? String(originalId) === String(custId) : true;
+  };
+
+  const findFirstPrimaryIdx = (docs) => {
+    const idx = (docs || []).findIndex((d) => docOwnsAdvances(d));
+    return idx >= 0 ? idx : 0;
+  };
+
+  // Build bill payload per doc; gate advances via useAdvances
+  const prepareBillDataForDoc = (doc, useAdvances) => {
+    // Lines from room stay
+    const dateWiseLines = transformDocToDateWiseLines(doc);
+
+    // Totals for room parts
+    const roomTariffTotal = dateWiseLines.reduce(
+      (t, i) => t + Number(i.baseAmount || 0),
+      0
+    );
+    const planAmount = dateWiseLines.reduce(
+      (t, i) => t + Number(i.foodPlanAmountWithOutTax || 0),
+      0
+    );
+    const additionalPaxAmount = dateWiseLines.reduce(
+      (t, i) => t + Number(i.additionalPaxDataWithOutTax || 0),
+      0
+    );
+    const roomTaxTotal = dateWiseLines.reduce(
+      (t, i) => t + Number(i.taxAmount || 0),
+      0
+    );
+    const sgstAmount = roomTaxTotal / 2;
+    const cgstAmount = roomTaxTotal / 2;
+
+    // Per-room restaurant lines (for this doc’s rooms)
+    const perRoomRestaurantLines = buildPerRoomRestaurantLinesForDoc(doc);
+    const restaurantTotal = perRoomRestaurantLines.reduce(
+      (t, l) => t + Number(l.amount || 0),
+      0
+    );
+
+    // Build grouped charges
+    const groupedRoomCharges = (() => {
+      const charges = [];
+      const groups = {};
+      dateWiseLines.forEach((i) => {
+        const k = i.roomName;
+        if (!groups[k]) groups[k] = [];
+        groups[k].push(i);
+      });
+
+      Object.keys(groups).forEach((roomName) => {
+        const roomDays = groups[roomName];
+
         roomDays.forEach((item) => {
-          roomCharges.push({
+          charges.push({
             date: item.date,
             description: item.description,
             docNo: item.docNo || "-",
@@ -530,566 +292,511 @@ const calculateCumulativeBalances = (charges, totals) => {
             roomName: item.roomName,
           });
         });
-        
-        // Calculate total tax for this room
-        const roomTotalTax = roomDays.reduce((sum, item) => sum + (item.taxAmount || 0), 0);
+
+        const roomTotalTax = roomDays.reduce(
+          (sum, i) => sum + (i.taxAmount || 0),
+          0
+        );
         const roomCGST = roomTotalTax / 2;
         const roomSGST = roomTotalTax / 2;
-        
-        // Add CGST for this room
+
         if (roomCGST > 0) {
-          roomCharges.push({
+          charges.push({
             date: formatDate(new Date()),
             description: `CGST on Rent@6% (${roomName})`,
             docNo: "-",
             amount: 0,
             taxes: roomCGST.toFixed(2),
             advance: "",
-            roomName: roomName,
+            roomName,
           });
         }
-        
-        // Add SGST for this room
+
         if (roomSGST > 0) {
-          roomCharges.push({
+          charges.push({
             date: formatDate(new Date()),
             description: `SGST on Rent@6% (${roomName})`,
             docNo: "-",
             amount: 0,
             taxes: roomSGST.toFixed(2),
             advance: "",
-            roomName: roomName,
+            roomName,
+          });
+        }
+
+        const roomKot = perRoomRestaurantLines.find((l) => l.roomName === roomName);
+        if (roomKot && Number(roomKot.amount) > 0) {
+          charges.push({
+            date: roomKot.date,
+            description: roomKot.description,
+            docNo: roomKot.docNo,
+            amount: roomKot.amount,
+            taxes: 0,
+            advance: "",
+            roomName,
           });
         }
       });
-      
-      return roomCharges;
-    })(),
-    
-    // Advance entries from outStanding
-    ...outStanding.map((transaction) => ({
-      date: formatDate(transaction.bill_date),
-      description: "Advance",
-      docNo: transaction.bill_no,
-      amount: -Math.abs(transaction.bill_amount || 0),
-      taxes: "",
-      advance: Math.abs(transaction.bill_amount || 0).toFixed(2),
-    })),
-      ], totals),
-      // Food plan charges if any
-      ...(totals.planAmount > 0
-        ? [
-            {
-              date: formatDate(new Date()),
-              description: "Food Plan",
-              docNo: "-",
-              amount: totals.planAmount,
-            },
-          ]
-        : []),
-      // Additional pax charges if any
-      ...(totals.additionalPaxAmount > 0
-        ? [
-            {
-              date: formatDate(new Date()),
-              description: "Additional Pax",
-              docNo: "-",
-              amount: totals.additionalPaxAmount,
-            },
-          ]
-        : []),
-    
-    summary: {
-      roomRent: totals.roomTariffTotal,
-      sgst: totals.sgstAmount,
-      cgst: totals.cgstAmount,
-      restaurant: totals.kotTotal,
-      roomService: 0,
-      foodPlan: totals.planAmount,
-      additionalPax: totals.additionalPaxAmount,
-      total: totals.grandTotal,
-      totalWords: convertNumberToWords(totals.grandTotal),
-    },
-    payment: {
-      mode: "Credit",
-      total: totals.grandTotal,
-      advance: totals.advanceTotal,
-      netPay: totals.netPay,
-    },
+
+      return charges;
+    })();
+
+    // Advances only on the decided bill
+    const advanceEntries = useAdvances
+      ? (outStanding || []).map((t) => ({
+          date: formatDate(t.bill_date || t.billdate || new Date()),
+          description: "Advance",
+          docNo: t.bill_no || t.billno || "-",
+          amount: -Math.abs(t.bill_amount || t.billamount || 0),
+          taxes: "",
+          advance: Math.abs(t.bill_amount || t.billamount || 0).toFixed(2),
+        }))
+      : [];
+
+    const advanceTotal = useAdvances
+      ? (outStanding || []).reduce(
+          (sum, t) => sum + Number(t.bill_amount || t.billamount || 0),
+          0
+        )
+      : 0;
+
+    // Combine charges and compute balances
+    const allCharges = [...groupedRoomCharges, ...advanceEntries];
+    let cumulativeBalance = 0;
+    const chargesWithBalance = allCharges.map((charge) => {
+      let currentAmount = Number(charge.amount || 0);
+      const lineTaxes = Number(charge.taxes || 0);
+
+      if (String(charge.description).includes("Room Rent")) {
+        cumulativeBalance += currentAmount + lineTaxes;
+      } else if (charge.description === "Advance") {
+        cumulativeBalance += currentAmount;
+      } else if (
+        String(charge.description).includes("CGST") ||
+        String(charge.description).includes("SGST")
+      ) {
+        // don't add amount (0) again
+      } else {
+        cumulativeBalance += currentAmount;
+      }
+
+      return {
+        ...charge,
+        balance: Number.isFinite(cumulativeBalance)
+          ? cumulativeBalance.toFixed(2)
+          : "0.00",
+      };
+    });
+
+    const grandTotal =
+      roomTariffTotal + planAmount + additionalPaxAmount + roomTaxTotal + restaurantTotal;
+    const netPay = grandTotal - advanceTotal;
+
+    // Compose hotel/guest info per doc
+    const guestRooms = (doc.selectedRooms || []).map((r) => r.roomName).join(", ");
+    const pax =
+      (doc.selectedRooms || []).reduce((acc, curr) => acc + Number(curr.pax || 0), 0) || 1;
+
+    const convertNumberToWords = (amount) => `${Math.round(amount || 0)} Rupees Only`;
+
+    return {
+      hotel: {
+        name: organization?.name,
+        address:
+          `${organization?.flat || ""} ${organization?.road || ""} ${organization?.landmark || ""}`.trim() ||
+          "Erattayar road, Kattapana, Kerala India",
+        phone: organization?.mobile,
+        email: organization?.email,
+        website: organization?.website,
+        pan: organization?.pan,
+        gstin: organization?.gstNum,
+        sacCode: "996311",
+        logo: organization?.logo,
+      },
+      guest: {
+        name: doc?.customerId?.partyName,
+        roomNo: guestRooms,
+        billNo: doc?.voucherNumber,
+        travelAgent: doc?.agentId?.name,
+        address: doc?.customerId?.billingAddress || "",
+        phone: doc?.customerId?.mobileNumber || "",
+        gstNo: doc?.customerId?.gstNo || "",
+      },
+      stay: {
+        billDate: formatDate(new Date()),
+        arrival: `${formatDate(doc?.arrivalDate)} ${doc?.arrivalTime || ""}`,
+        departure: `${formatDate(doc?.checkOutDate || new Date())} ${doc?.checkOutTime || new Date().toLocaleTimeString()}`,
+        days: doc?.selectedRooms?.[0]?.stayDays,
+        plan: planAmount,
+        pax,
+        tariff: doc?.selectedRooms?.[0]?.baseAmount || 0,
+      },
+      charges: chargesWithBalance,
+      summary: {
+        roomRent: roomTariffTotal,
+        sgst: sgstAmount,
+        cgst: cgstAmount,
+        restaurant: restaurantTotal,
+        roomService: 0,
+        foodPlan: planAmount,
+        additionalPax: additionalPaxAmount,
+        total: grandTotal,
+        totalWords: convertNumberToWords(grandTotal),
+      },
+      payment: {
+        mode: "Credit",
+        total: grandTotal,
+        advance: advanceTotal,
+        netPay,
+      },
+    };
   };
 
-// Add this helper function before creating billData object
+  // Build all billData per doc; decide where advances appear
+  const bills = useMemo(() => {
+    const docs = selectedCheckOut || [];
+    if (!docs.length) return [];
+    const firstPrimaryIdx = findFirstPrimaryIdx(docs);
 
+    return docs.map((doc, idx) => {
+      // Rule: if this doc owns advances, show here; else show on firstPrimaryIdx
+      const owns = docOwnsAdvances(doc);
+      const useAdvances = owns ? true : idx === firstPrimaryIdx;
+      return prepareBillDataForDoc(doc, useAdvances);
+    });
+  }, [selectedCheckOut, outStanding, kotData, organization]);
 
-  // Function to convert number to words (simplified version)
-  function convertNumberToWords(amount) {
-    // This is a simplified version - you might want to use a proper number-to-words library
-    return `${Math.round(amount)} Rupees Only`;
+  // Print handlers use first bill by default for metadata
+  const handlePrint = useReactToPrint({
+    content: () => printReference.current,
+    documentTitle: "Hotel Bill",
+    removeAfterPrint: true,
+  });
+
+const handlePrintPDF = (isPrint) => {
+  const multi = bills && bills.length ? bills : [];
+  if (!multi.length) return;
+
+  if (!isPrint) {
+    handleBillDownloadPDF(multi); // pass array
+  } else {
+    handleBillPrintInvoice(multi); // pass array
   }
+};
 
-  console.log(billData);
 
   return (
     <>
-    <TitleDiv title="Bill Print"/>
+      <TitleDiv title="Bill Print" />
 
+      {showSplitPopUp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 w-80">
+            <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
+              Select Option
+            </h2>
 
-      {/* Split Payment Modal */}
-    {showSplitPopUp && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 w-80">
-          <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
-            Select Option
-          </h2>
+            <div className="flex items-center mb-3">
+              <input
+                id="opt-default"
+                type="radio"
+                name="split-option"
+                value="default"
+                checked={selected === "default"}
+                onChange={() => setSelected("default")}
+                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-full focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+              />
+              <label
+                htmlFor="opt-default"
+                className="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300"
+              >
+                Default Print
+              </label>
+            </div>
 
-          {/* Default Print */}
-          <div className="flex items-center mb-3">
-            <input
-              id="opt-default"
-              type="radio"
-              name="split-option"
-              value="default"
-              checked={selected === "default"}
-              onChange={() => handleChange("default")}
-              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-full focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-            />
-            <label
-              htmlFor="opt-default"
-              className="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300"
-            >
-              Default Print
-            </label>
-          </div>
+            <div className="flex items-center mb-3">
+              <input
+                id="opt-room"
+                type="radio"
+                name="split-option"
+                value="room"
+                checked={selected === "room"}
+                onChange={() => setSelected("room")}
+                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-full focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+              />
+              <label
+                htmlFor="opt-room"
+                className="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300"
+              >
+                Room based
+              </label>
+            </div>
 
-          {/* Room Based */}
-          <div className="flex items-center mb-3">
-            <input
-              id="opt-room"
-              type="radio"
-              name="split-option"
-              value="room"
-              checked={selected === "room"}
-              onChange={() => handleChange("room")}
-              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-full focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-            />
-            <label
-              htmlFor="opt-room"
-              className="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300"
-            >
-              Room based
-            </label>
-          </div>
+            <div className="flex items-center mb-5">
+              <input
+                id="opt-restaurant"
+                type="radio"
+                name="split-option"
+                value="restaurant"
+                checked={selected === "restaurant"}
+                onChange={() => setSelected("restaurant")}
+                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-full focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+              />
+              <label
+                htmlFor="opt-restaurant"
+                className="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300"
+              >
+                Restaurant based
+              </label>
+            </div>
 
-          {/* Restaurant Based */}
-          <div className="flex items-center mb-5">
-            <input
-              id="opt-restaurant"
-              type="radio"
-              name="split-option"
-              value="restaurant"
-              checked={selected === "restaurant"}
-              onChange={() => handleChange("restaurant")}
-              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-full focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-            />
-            <label
-              htmlFor="opt-restaurant"
-              className="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300"
-            >
-              Restaurant based
-            </label>
-          </div>
-
-          {/* Buttons */}
-          <div className="flex justify-end gap-3">
-            <button
-              onClick={() => setShowSplitPopUp(false)}
-              className="px-4 py-2 text-sm rounded-lg bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSplit}
-              className="px-4 py-2 text-sm rounded-lg bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50"
-              disabled={!selected}
-            >
-              Save
-            </button>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowSplitPopUp(false)}
+                className="px-4 py-2 text-sm rounded-lg bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSplit}
+                className="px-4 py-2 text-sm rounded-lg bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50"
+                disabled={!selected}
+              >
+                Save
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-    )}
+      )}
 
-    <div className="font-sans bg-gray-100 p-5 min-h-screen" ref={printReference}></div>
-      <div
-        className="font-sans bg-gray-100 p-5 min-h-screen"
-        ref={printReference}
-      >
-        <div
-          style={{
-            maxWidth: "21cm",
-            margin: "0 auto",
-            padding: "0.5cm",
-            backgroundColor: "white",
-            fontFamily: "Arial, sans-serif",
-            fontSize: "11px",
-            lineHeight: "1.1",
-            color: "#000",
-          }}
-        >
-          {/* Header Section - Repeats on every page */}
+      <div className="font-sans bg-gray-100 p-5 min-h-screen" ref={printReference}>
+        {/* Render one complete bill per selectedCheckOut doc */}
+        {bills.map((billData, pageIdx) => (
           <div
-            className="page-header flex"
+            key={pageIdx}
             style={{
-              textAlign: "center",
-              borderBottom: "1px solid #000",
-              paddingBottom: "8px",
-              marginBottom: "10px",
+              maxWidth: "21cm",
+              margin: "0 auto",
+              padding: "0.5cm",
+              backgroundColor: "white",
+              fontFamily: "Arial, sans-serif",
+              fontSize: "11px",
+              lineHeight: "1.1",
+              color: "#000",
+              pageBreakAfter: pageIdx < bills.length - 1 ? "always" : "auto",
             }}
           >
-            <div style={{ flex: "0 0 120px" }}>
-              {Logo && (
-                <img
-                  src={Logo}
-                  alt="Logo"
-                  style={{ width: "120px", height: "auto" }}
-                />
-              )}
-            </div>
-            <div className="ml-auto">
-              <div
-                style={{
-                  fontSize: "18px",
-                  fontWeight: "bold",
-                  marginBottom: "4px",
-                  textTransform: "uppercase",
-                }}
-              >
-                {billData?.hotel?.name}
-              </div>
-              <div
-                style={{
-                  fontSize: "10px",
-                  marginBottom: "2px",
-                  lineHeight: "1.2",
-                }}
-              >
-                {billData?.hotel?.address}
-              </div>
-              <div
-                style={{
-                  fontSize: "10px",
-                  marginBottom: "2px",
-                  lineHeight: "1.2",
-                }}
-              >
-                Phone: {billData?.hotel?.phone}
-              </div>
-              <div
-                style={{
-                  fontSize: "10px",
-                  marginBottom: "3px",
-                  lineHeight: "1.2",
-                }}
-              >
-                E-mail: {billData?.hotel?.email} | Website:{" "}
-                {billData?.hotel?.website}
-              </div>
-              <div
-                style={{
-                  fontSize: "9px",
-                  lineHeight: "1.1",
-                }}
-              >
-                PAN NO: {billData?.hotel?.pan} | GSTIN: {billData?.hotel?.gstin}
-              </div>
-              <div
-                style={{
-                  fontSize: "9px",
-                  lineHeight: "1.1",
-                }}
-              >
-                SAC CODE-{billData?.hotel?.sacCode}
-              </div>
-            </div>
-          </div>
-
-          {/* Guest Information Section */}
-          <div style={{ marginBottom: "10px" }}>
-            <table
+            {/* Header */}
+            <div
+              className="page-header flex"
               style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                fontSize: "10px",
+                textAlign: "center",
+                borderBottom: "1px solid #000",
+                paddingBottom: "8px",
+                marginBottom: "10px",
               }}
             >
-              <tbody>
-                <tr>
-                  <td
-                    style={{
-                      width: "15%",
-                      padding: "2px 0",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    GRC No
-                  </td>
-                  <td style={{ width: "15%", padding: "2px 0" }}>
-                    {billData?.guest?.billNo}
-                  </td>
-                  <td
-                    style={{
-                      width: "15%",
-                      padding: "2px 0",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    Bill No
-                  </td>
-                  <td style={{ width: "15%", padding: "2px 0" }}>
-                    {billData?.guest?.billNo}
-                  </td>
-                  <td
-                    style={{
-                      width: "10%",
-                      padding: "2px 0",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    Date
-                  </td>
-                  <td style={{ width: "30%", padding: "2px 0" }}>
-                    {billData?.stay?.billDate}
-                  </td>
-                </tr>
-                <tr>
-                  <td style={{ padding: "2px 0", fontWeight: "bold" }}>
-                    GUEST
-                  </td>
-                  <td style={{ padding: "2px 0" }}>{billData?.guest?.name}</td>
-                  <td style={{ padding: "2px 0", fontWeight: "bold" }}>
-                    Arrival
-                  </td>
-                  <td style={{ padding: "2px 0" }}>
-                    {billData?.stay?.arrival}
-                  </td>
-                  <td style={{ padding: "2px 0", fontWeight: "bold" }}>
-                    Departure
-                  </td>
-                  <td style={{ padding: "2px 0" }}>
-                    {billData?.stay?.departure}
-                  </td>
-                </tr>
-                <tr>
-                  <td style={{ padding: "2px 0", fontWeight: "bold" }}>
-                    Address
-                  </td>
-                  <td colSpan="3" style={{ padding: "2px 0" }}>
-                    {billData?.guest?.address}
-                  </td>
-                  <td style={{ padding: "2px 0", fontWeight: "bold" }}>Plan</td>
-                  <td style={{ padding: "2px 0" }}>
-                    {billData?.stay?.plan} Pax {billData?.stay?.pax}
-                  </td>
-                </tr>
-                <tr>
-                  <td style={{ padding: "2px 0", fontWeight: "bold" }}>
-                    Phone
-                  </td>
-                  <td style={{ padding: "2px 0" }}>{billData?.guest?.phone}</td>
-                  <td style={{ padding: "2px 0", fontWeight: "bold" }}>
-                    Tariff
-                  </td>
-                  <td style={{ padding: "2px 0" }}>{billData?.stay?.tariff}</td>
-                  <td style={{ padding: "2px 0", fontWeight: "bold" }}>
-                    No. of Days
-                  </td>
-                  <td style={{ padding: "2px 0" }}>{billData?.stay?.days}</td>
-                </tr>
-                <tr>
-                  <td style={{ padding: "2px 0", fontWeight: "bold" }}>
-                    Travel Agent
-                  </td>
-                  <td style={{ padding: "2px 0" }}>
-                    {billData?.guest?.travelAgent}
-                  </td>
-                  <td colSpan="4"></td>
-                </tr>
-                <tr>
-                  <td style={{ padding: "2px 0", fontWeight: "bold" }}>
-                    GST No
-                  </td>
-                  <td style={{ padding: "2px 0" }}>{billData?.hotel?.gstin}</td>
-                  <td colSpan="4"></td>
-                </tr>
-                <tr>
-                  <td style={{ padding: "2px 0", fontWeight: "bold" }}>
-                    Company
-                  </td>
-                  <td style={{ padding: "2px 0" }}>
-                   {billData?.hotel?.name}
-                  </td>
-                  <td colSpan="4"></td>
-                </tr>
-                <tr>
-                  <td style={{ padding: "2px 0", fontWeight: "bold" }}>
-                    Room No
-                  </td>
-                  <td style={{ padding: "2px 0" }}>
-                    {billData?.guest?.roomNo}
-                  </td>
-                  <td colSpan="4"></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+              <div style={{ flex: "0 0 120px" }}>
+                {Logo && (
+                  <img
+                    src={Logo}
+                    alt="Logo"
+                    style={{ width: "120px", height: "auto" }}
+                  />
+                )}
+              </div>
+              <div className="ml-auto">
+                <div
+                  style={{
+                    fontSize: "18px",
+                    fontWeight: "bold",
+                    marginBottom: "4px",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  {billData?.hotel?.name}
+                </div>
+                <div
+                  style={{
+                    fontSize: "10px",
+                    marginBottom: "2px",
+                    lineHeight: "1.2",
+                  }}
+                >
+                  {billData?.hotel?.address}
+                </div>
+                <div
+                  style={{
+                    fontSize: "10px",
+                    marginBottom: "2px",
+                    lineHeight: "1.2",
+                  }}
+                >
+                  Phone: {billData?.hotel?.phone}
+                </div>
+                <div
+                  style={{
+                    fontSize: "10px",
+                    marginBottom: "3px",
+                    lineHeight: "1.2",
+                  }}
+                >
+                  E-mail: {billData?.hotel?.email} | Website{" "}
+                  {billData?.hotel?.website}
+                </div>
+                <div
+                  style={{
+                    fontSize: "9px",
+                    lineHeight: "1.1",
+                  }}
+                >
+                  PAN NO: {billData?.hotel?.pan} | GSTIN: {billData?.hotel?.gstin}
+                </div>
+                <div
+                  style={{
+                    fontSize: "9px",
+                    lineHeight: "1.1",
+                  }}
+                >
+                  SAC CODE-{billData?.hotel?.sacCode}
+                </div>
+              </div>
+            </div>
 
-          {/* Charges Table */}
-          <div style={{ marginBottom: "10px" }}>
-            <table
-              style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                border: "1px solid #000",
-                fontSize: "10px",
-              }}
-            >
-              <thead>
-                <tr style={{ backgroundColor: "#f5f5f5" }}>
-                  <th
-                    style={{
-                      border: "1px solid #000",
-                      padding: "4px",
-                      textAlign: "left",
-                    }}
-                  >
-                    Date
-                  </th>
-                  <th
-                    style={{
-                      border: "1px solid #000",
-                      padding: "4px",
-                      textAlign: "left",
-                    }}
-                  >
-                    Doc No
-                  </th>
-                  <th
-                    style={{
-                      border: "1px solid #000",
-                      padding: "4px",
-                      textAlign: "left",
-                    }}
-                  >
-                    Description
-                  </th>
-                  <th
-                    style={{
-                      border: "1px solid #000",
-                      padding: "4px",
-                      textAlign: "right",
-                    }}
-                  >
-                    Amount
-                  </th>
-                  <th
-                    style={{
-                      border: "1px solid #000",
-                      padding: "4px",
-                      textAlign: "right",
-                    }}
-                  >
-                    Taxes
-                  </th>
-                  <th
-                    style={{
-                      border: "1px solid #000",
-                      padding: "4px",
-                      textAlign: "right",
-                    }}
-                  >
-                    Advance
-                  </th>
-                  <th
-                    style={{
-                      border: "1px solid #000",
-                      padding: "4px",
-                      textAlign: "right",
-                    }}
-                  >
-                    Balance
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {billData?.charges?.map((charge, index) => (
-                  <tr key={index}>
-                    <td style={{ border: "1px solid #000", padding: "3px" }}>
-                      {charge.date}
+            {/* Guest Info */}
+            <div style={{ marginBottom: "10px" }}>
+              <table
+                style={{
+                  width: "100%",
+                  borderCollapse: "collapse",
+                  fontSize: "10px",
+                }}
+              >
+                <tbody>
+                  <tr>
+                    <td
+                      style={{
+                        width: "15%",
+                        padding: "2px 0",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      GRC No
+                    </td>
+                    <td style={{ width: "15%", padding: "2px 0" }}>
+                      {billData?.guest?.billNo}
                     </td>
                     <td
                       style={{
-                        border: "1px solid #000",
-                        padding: "3px",
-                        textAlign: "center",
+                        width: "15%",
+                        padding: "2px 0",
+                        fontWeight: "bold",
                       }}
                     >
-                      {charge.docNo}
+                      Bill No
                     </td>
-                    <td style={{ border: "1px solid #000", padding: "3px" }}>
-                      {charge.description}
-                    </td>
-                    <td
-                      style={{
-                        border: "1px solid #000",
-                        padding: "3px",
-                        textAlign: "right",
-                      }}
-                    >
-                      {charge.amount?.toFixed(2)}
+                    <td style={{ width: "15%", padding: "2px 0" }}>
+                      {billData?.guest?.billNo}
                     </td>
                     <td
                       style={{
-                        border: "1px solid #000",
-                        padding: "3px",
-                        textAlign: "right",
+                        width: "10%",
+                        padding: "2px 0",
+                        fontWeight: "bold",
                       }}
                     >
-                      {charge.taxes}
+                      Date
                     </td>
-                    <td
-                      style={{
-                        border: "1px solid #000",
-                        padding: "3px",
-                        textAlign: "right",
-                      }}
-                    >
-                      {charge.advance}
-                    </td>
-                    <td
-                      style={{
-                        border: "1px solid #000",
-                        padding: "3px",
-                        textAlign: "right",
-                      }}
-                    >
-                      {charge.balance}
+                    <td style={{ width: "30%", padding: "2px 0" }}>
+                      {billData?.stay?.billDate}
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                  <tr>
+                    <td style={{ padding: "2px 0", fontWeight: "bold" }}>GUEST</td>
+                    <td style={{ padding: "2px 0" }}>{billData?.guest?.name}</td>
+                    <td style={{ padding: "2px 0", fontWeight: "bold" }}>
+                      Arrival
+                    </td>
+                    <td style={{ padding: "2px 0" }}>
+                      {billData?.stay?.arrival}
+                    </td>
+                    <td style={{ padding: "2px 0", fontWeight: "bold" }}>
+                      Departure
+                    </td>
+                    <td style={{ padding: "2px 0" }}>
+                      {billData?.stay?.departure}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: "2px 0", fontWeight: "bold" }}>
+                      Address
+                    </td>
+                    <td colSpan="3" style={{ padding: "2px 0" }}>
+                      {billData?.guest?.address}
+                    </td>
+                    <td style={{ padding: "2px 0", fontWeight: "bold" }}>Plan</td>
+                    <td style={{ padding: "2px 0" }}>
+                      {billData?.stay?.plan} Pax {billData?.stay?.pax}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: "2px 0", fontWeight: "bold" }}>
+                      Phone
+                    </td>
+                    <td style={{ padding: "2px 0" }}>{billData?.guest?.phone}</td>
+                    <td style={{ padding: "2px 0", fontWeight: "bold" }}>
+                      Tariff
+                    </td>
+                    <td style={{ padding: "2px 0" }}>{billData?.stay?.tariff}</td>
+                    <td style={{ padding: "2px 0", fontWeight: "bold" }}>
+                      No. of Days
+                    </td>
+                    <td style={{ padding: "2px 0" }}>{billData?.stay?.days}</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: "2px 0", fontWeight: "bold" }}>
+                      Travel Agent
+                    </td>
+                    <td style={{ padding: "2px 0" }}>
+                      {billData?.guest?.travelAgent}
+                    </td>
+                    <td colSpan="4"></td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: "2px 0", fontWeight: "bold" }}>
+                      GST No
+                    </td>
+                    <td style={{ padding: "2px 0" }}>{billData?.hotel?.gstin}</td>
+                    <td colSpan="4"></td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: "2px 0", fontWeight: "bold" }}>
+                      Company
+                    </td>
+                    <td style={{ padding: "2px 0" }}>{billData?.hotel?.name}</td>
+                    <td colSpan="4"></td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: "2px 0", fontWeight: "bold" }}>
+                      Room No
+                    </td>
+                    <td style={{ padding: "2px 0" }}>
+                      {billData?.guest?.roomNo}
+                    </td>
+                    <td colSpan="4"></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
 
-          {/* Summary and Payment in two columns */}
-          <div style={{ display: "flex", gap: "20px", marginBottom: "10px" }}>
-            {/* Summary Section */}
-            <div style={{ flex: "1" }}>
+            {/* Charges Table */}
+            <div style={{ marginBottom: "10px" }}>
               <table
                 style={{
                   width: "100%",
                   borderCollapse: "collapse",
                   border: "1px solid #000",
-                  fontSize: "11px",
+                  fontSize: "10px",
                 }}
               >
                 <thead>
@@ -1097,47 +804,168 @@ const calculateCumulativeBalances = (charges, totals) => {
                     <th
                       style={{
                         border: "1px solid #000",
-                        padding: "6px",
+                        padding: "4px",
                         textAlign: "left",
-                        fontWeight: "bold",
                       }}
                     >
-                      Summary
+                      Date
                     </th>
                     <th
                       style={{
                         border: "1px solid #000",
-                        padding: "6px",
-                        textAlign: "right",
-                        fontWeight: "bold",
+                        padding: "4px",
+                        textAlign: "left",
                       }}
                     >
-                      Amount
+                      Doc No
                     </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td style={{ border: "1px solid #000", padding: "4px" }}>
-                      Room Rent
-                    </td>
-                    <td
+                    <th
+                      style={{
+                        border: "1px solid #000",
+                        padding: "4px",
+                        textAlign: "left",
+                      }}
+                    >
+                      Description
+                    </th>
+                    <th
                       style={{
                         border: "1px solid #000",
                         padding: "4px",
                         textAlign: "right",
                       }}
                     >
-                      {billData?.summary?.roomRent?.toLocaleString("en-IN", {
-                        minimumFractionDigits: 2,
-                      })}
-                    </td>
+                      Amount
+                    </th>
+                    <th
+                      style={{
+                        border: "1px solid #000",
+                        padding: "4px",
+                        textAlign: "right",
+                      }}
+                    >
+                      Taxes
+                    </th>
+                    <th
+                      style={{
+                        border: "1px solid #000",
+                        padding: "4px",
+                        textAlign: "right",
+                      }}
+                    >
+                      Advance
+                    </th>
+                    <th
+                      style={{
+                        border: "1px solid #000",
+                        padding: "4px",
+                        textAlign: "right",
+                      }}
+                    >
+                      Balance
+                    </th>
                   </tr>
+                </thead>
+                <tbody>
+                  {billData?.charges?.map((charge, index) => (
+                    <tr key={index}>
+                      <td style={{ border: "1px solid #000", padding: "3px" }}>
+                        {charge.date}
+                      </td>
+                      <td
+                        style={{
+                          border: "1px solid #000",
+                          padding: "3px",
+                          textAlign: "center",
+                        }}
+                      >
+                        {charge.docNo}
+                      </td>
+                      <td style={{ border: "1px solid #000", padding: "3px" }}>
+                        {charge.description}
+                      </td>
+                      <td
+                        style={{
+                          border: "1px solid #000",
+                          padding: "3px",
+                          textAlign: "right",
+                        }}
+                      >
+                        {Number(charge.amount || 0).toFixed(2)}
+                      </td>
+                      <td
+                        style={{
+                          border: "1px solid #000",
+                          padding: "3px",
+                          textAlign: "right",
+                        }}
+                      >
+                        {charge.taxes}
+                      </td>
+                      <td
+                        style={{
+                          border: "1px solid #000",
+                          padding: "3px",
+                          textAlign: "right",
+                        }}
+                      >
+                        {charge.advance}
+                      </td>
+                      <td
+                        style={{
+                          border: "1px solid #000",
+                          padding: "3px",
+                          textAlign: "right",
+                        }}
+                      >
+                        {charge.balance}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-                  {billData?.summary?.foodPlan > 0 && (
+            {/* Summary + Payment */}
+            <div style={{ display: "flex", gap: "20px", marginBottom: "10px" }}>
+              {/* Summary */}
+              <div style={{ flex: "1" }}>
+                <table
+                  style={{
+                    width: "100%",
+                    borderCollapse: "collapse",
+                    border: "1px solid #000",
+                    fontSize: "11px",
+                  }}
+                >
+                  <thead>
+                    <tr style={{ backgroundColor: "#f5f5f5" }}>
+                      <th
+                        style={{
+                          border: "1px solid #000",
+                          padding: "6px",
+                          textAlign: "left",
+                          fontWeight: "bold",
+                        }}
+                      >
+                        Summary
+                      </th>
+                      <th
+                        style={{
+                          border: "1px solid #000",
+                          padding: "6px",
+                          textAlign: "right",
+                          fontWeight: "bold",
+                        }}
+                      >
+                        Amount
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
                     <tr>
                       <td style={{ border: "1px solid #000", padding: "4px" }}>
-                        Food Plan
+                        Room Rent
                       </td>
                       <td
                         style={{
@@ -1146,366 +974,361 @@ const calculateCumulativeBalances = (charges, totals) => {
                           textAlign: "right",
                         }}
                       >
-                        {billData?.summary?.foodPlan?.toLocaleString("en-IN", {
+                        {billData?.summary?.roomRent?.toLocaleString("en-IN", {
                           minimumFractionDigits: 2,
                         })}
                       </td>
                     </tr>
-                  )}
 
-                  <tr>
-                    <td style={{ border: "1px solid #000", padding: "4px" }}>
-                      SGST on Rent
-                    </td>
-                    <td
-                      style={{
-                        border: "1px solid #000",
-                        padding: "4px",
-                        textAlign: "right",
-                      }}
-                    >
-                      {billData?.summary?.sgst?.toLocaleString("en-IN", {
-                        minimumFractionDigits: 2,
-                      })}
-                    </td>
-                  </tr>
+                    {billData?.summary?.foodPlan > 0 && (
+                      <tr>
+                        <td style={{ border: "1px solid #000", padding: "4px" }}>
+                          Food Plan
+                        </td>
+                        <td
+                          style={{
+                            border: "1px solid #000",
+                            padding: "4px",
+                            textAlign: "right",
+                          }}
+                        >
+                          {billData?.summary?.foodPlan?.toLocaleString("en-IN", {
+                            minimumFractionDigits: 2,
+                          })}
+                        </td>
+                      </tr>
+                    )}
 
-                  <tr>
-                    <td style={{ border: "1px solid #000", padding: "4px" }}>
-                      CGST on Rent
-                    </td>
-                    <td
-                      style={{
-                        border: "1px solid #000",
-                        padding: "4px",
-                        textAlign: "right",
-                      }}
-                    >
-                      {billData?.summary?.cgst?.toLocaleString("en-IN", {
-                        minimumFractionDigits: 2,
-                      })}
-                    </td>
-                  </tr>
+                    <tr>
+                      <td style={{ border: "1px solid #000", padding: "4px" }}>
+                        SGST on Rent
+                      </td>
+                      <td
+                        style={{
+                          border: "1px solid #000",
+                          padding: "4px",
+                          textAlign: "right",
+                        }}
+                      >
+                        {billData?.summary?.sgst?.toLocaleString("en-IN", {
+                          minimumFractionDigits: 2,
+                        })}
+                      </td>
+                    </tr>
 
-                  <tr>
-                    <td style={{ border: "1px solid #000", padding: "4px" }}>
-                      Ac Restaurant
-                    </td>
-                    <td
-                      style={{
-                        border: "1px solid #000",
-                        padding: "4px",
-                        textAlign: "right",
-                      }}
-                    >
-                      {billData?.summary?.restaurant?.toLocaleString("en-IN", {
-                        minimumFractionDigits: 2,
-                      })}
-                    </td>
-                  </tr>
+                    <tr>
+                      <td style={{ border: "1px solid #000", padding: "4px" }}>
+                        CGST on Rent
+                      </td>
+                      <td
+                        style={{
+                          border: "1px solid #000",
+                          padding: "4px",
+                          textAlign: "right",
+                        }}
+                      >
+                        {billData?.summary?.cgst?.toLocaleString("en-IN", {
+                          minimumFractionDigits: 2,
+                        })}
+                      </td>
+                    </tr>
 
-                  <tr>
-                    <td style={{ border: "1px solid #000", padding: "4px" }}>
-                      Room Service
-                    </td>
-                    <td
-                      style={{
-                        border: "1px solid #000",
-                        padding: "4px",
-                        textAlign: "right",
-                      }}
-                    >
-                      {billData?.summary?.roomService?.toLocaleString("en-IN", {
-                        minimumFractionDigits: 2,
-                      })}
-                    </td>
-                  </tr>
+                    <tr>
+                      <td style={{ border: "1px solid #000", padding: "4px" }}>
+                        Ac Restaurant
+                      </td>
+                      <td
+                        style={{
+                          border: "1px solid #000",
+                          padding: "4px",
+                          textAlign: "right",
+                        }}
+                      >
+                        {billData?.summary?.restaurant?.toLocaleString("en-IN", {
+                          minimumFractionDigits: 2,
+                        })}
+                      </td>
+                    </tr>
 
-                  <tr style={{ backgroundColor: "#f5f5f5" }}>
-                    <td
-                      style={{
-                        border: "1px solid #000",
-                        padding: "4px",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      Total
-                    </td>
-                    <td
-                      style={{
-                        border: "1px solid #000",
-                        padding: "4px",
-                        textAlign: "right",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      {billData?.summary?.total?.toLocaleString("en-IN", {
-                        minimumFractionDigits: 2,
-                      })}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+                    <tr>
+                      <td style={{ border: "1px solid #000", padding: "4px" }}>
+                        Room Service
+                      </td>
+                      <td
+                        style={{
+                          border: "1px solid #000",
+                          padding: "4px",
+                          textAlign: "right",
+                        }}
+                      >
+                        {billData?.summary?.roomService?.toLocaleString("en-IN", {
+                          minimumFractionDigits: 2,
+                        })}
+                      </td>
+                    </tr>
 
-            {/* Payment Details Section */}
-            <div style={{ flex: "1" }}>
-              <table
-                style={{
-                  width: "100%",
-                  borderCollapse: "collapse",
-                  border: "1px solid #000",
-                  fontSize: "11px",
-                }}
-              >
-                <thead>
-                  <tr style={{ backgroundColor: "#f5f5f5" }}>
-                    <th
-                      colSpan="2"
-                      style={{
-                        border: "1px solid #000",
-                        padding: "6px",
-                        textAlign: "left",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      Payment Details
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td
-                      style={{
-                        border: "1px solid #000",
-                        padding: "4px",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      PAYMODE
-                    </td>
-                    <td
-                      style={{
-                        border: "1px solid #000",
-                        padding: "4px",
-                        fontWeight: "bold",
-                        textAlign: "center",
-                      }}
-                    >
-                      AMOUNT
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style={{ border: "1px solid #000", padding: "4px" }}>
-                      {billData?.payment?.mode}
-                    </td>
-                    <td
-                      style={{
-                        border: "1px solid #000",
-                        padding: "4px",
-                        textAlign: "right",
-                      }}
-                    >
-                      {billData?.payment?.total?.toLocaleString("en-IN", {
-                        minimumFractionDigits: 2,
-                      })}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td
-                      style={{
-                        border: "1px solid #000",
-                        padding: "4px",
-                        fontWeight: "bold",
-                        textAlign: "center",
-                      }}
-                      colSpan="2"
-                    >
-                      {billData?.guest?.name}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td
-                      style={{ border: "1px solid #000", padding: "4px" }}
-                      colSpan="2"
-                    >
-                      <div style={{ fontSize: "10px", fontWeight: "bold" }}>
-                        {billData?.summary?.totalWords}
-                      </div>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style={{ border: "1px solid #000", padding: "4px" }}>
-                      <div>Total :</div>
-                      <div>Less Advance:</div>
-                      <div style={{ fontWeight: "bold" }}>Net Pay :</div>
-                    </td>
-                    <td
-                      style={{
-                        border: "1px solid #000",
-                        padding: "4px",
-                        textAlign: "right",
-                      }}
-                    >
-                      <div>{billData?.payment?.total?.toFixed(2)}</div>
-                      <div>{billData?.payment?.advance?.toFixed(2)}</div>
-                      <div style={{ fontWeight: "bold" }}>
-                        {billData?.payment?.netPay?.toFixed(2)}
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Footer Section */}
-          <div style={{ border: "1px solid #000" }}>
-            <div style={{ display: "flex", borderBottom: "1px solid #000" }}>
-              <div
-                style={{
-                  flex: "1",
-                  padding: "8px",
-                  borderRight: "1px solid #000",
-                  fontSize: "10px",
-                  fontWeight: "bold",
-                }}
-              >
-                Please Deposit Your Room and Locker Keys
+                    <tr style={{ backgroundColor: "#f5f5f5" }}>
+                      <td
+                        style={{
+                          border: "1px solid #000",
+                          padding: "4px",
+                          fontWeight: "bold",
+                        }}
+                      >
+                        Total
+                      </td>
+                      <td
+                        style={{
+                          border: "1px solid #000",
+                          padding: "4px",
+                          textAlign: "right",
+                          fontWeight: "bold",
+                        }}
+                      >
+                        {billData?.summary?.total?.toLocaleString("en-IN", {
+                          minimumFractionDigits: 2,
+                        })}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
-              <div style={{ flex: "1", padding: "8px", fontSize: "10px" }}>
-                Regardless of charge instructions, I agree to be held personally
-                liable for the payment of total amount of bill. Please collect
-                receipt if you have paid cash.
+
+              {/* Payment */}
+              <div style={{ flex: "1" }}>
+                <table
+                  style={{
+                    width: "100%",
+                    borderCollapse: "collapse",
+                    border: "1px solid #000",
+                    fontSize: "11px",
+                  }}
+                >
+                  <thead>
+                    <tr style={{ backgroundColor: "#f5f5f5" }}>
+                      <th
+                        colSpan="2"
+                        style={{
+                          border: "1px solid #000",
+                          padding: "6px",
+                          textAlign: "left",
+                          fontWeight: "bold",
+                        }}
+                      >
+                        Payment Details
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td
+                        style={{
+                          border: "1px solid #000",
+                          padding: "4px",
+                          fontWeight: "bold",
+                        }}
+                      >
+                        PAYMODE
+                      </td>
+                      <td
+                        style={{
+                          border: "1px solid #000",
+                          padding: "4px",
+                          fontWeight: "bold",
+                          textAlign: "center",
+                        }}
+                      >
+                        AMOUNT
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ border: "1px solid #000", padding: "4px" }}>
+                        {billData?.payment?.mode}
+                      </td>
+                      <td
+                        style={{
+                          border: "1px solid #000",
+                          padding: "4px",
+                          textAlign: "right",
+                        }}
+                      >
+                        {billData?.payment?.total?.toLocaleString("en-IN", {
+                          minimumFractionDigits: 2,
+                        })}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td
+                        style={{
+                          border: "1px solid #000",
+                          padding: "4px",
+                          fontWeight: "bold",
+                          textAlign: "center",
+                        }}
+                        colSpan="2"
+                      >
+                        {billData?.guest?.name}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td
+                        style={{ border: "1px solid #000", padding: "4px" }}
+                        colSpan="2"
+                      >
+                        <div style={{ fontSize: "10px", fontWeight: "bold" }}>
+                          {billData?.summary?.totalWords}
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ border: "1px solid #000", padding: "4px" }}>
+                        <div>Total :</div>
+                        <div>Less Advance:</div>
+                        <div style={{ fontWeight: "bold" }}>Net Pay :</div>
+                      </td>
+                      <td
+                        style={{
+                          border: "1px solid #000",
+                          padding: "4px",
+                          textAlign: "right",
+                        }}
+                      >
+                        <div>{Number(billData?.payment?.total || 0).toFixed(2)}</div>
+                        <div>{Number(billData?.payment?.advance || 0).toFixed(2)}</div>
+                        <div style={{ fontWeight: "bold" }}>
+                          {Number(billData?.payment?.netPay || 0).toFixed(2)}
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
 
-            <div style={{ display: "flex", borderBottom: "1px solid #000" }}>
-              <div
-                style={{
-                  flex: "1",
-                  padding: "12px",
-                  borderRight: "1px solid #000",
-                  textAlign: "left",
-                  fontSize: "10px",
-                }}
-              >
-                <div style={{ fontWeight: "bold", marginBottom: "15px" }}>
-                  Prepared By
+            {/* Footer */}
+            <div style={{ border: "1px solid #000" }}>
+              <div style={{ display: "flex", borderBottom: "1px solid #000" }}>
+                <div
+                  style={{
+                    flex: "1",
+                    padding: "8px",
+                    borderRight: "1px solid #000",
+                    fontSize: "10px",
+                    fontWeight: "bold",
+                  }}
+                >
+                  Please Deposit Your Room and Locker Keys
                 </div>
-                <div>FO</div>
+                <div style={{ flex: "1", padding: "8px", fontSize: "10px" }}>
+                  Regardless of charge instructions, I agree to be held personally
+                  liable for the payment of total amount of bill. Please collect
+                  receipt if you have paid cash.
+                </div>
               </div>
-              <div
-                style={{
-                  flex: "1",
-                  padding: "12px",
-                  borderRight: "1px solid #000",
-                  textAlign: "left",
-                  fontSize: "10px",
-                }}
-              >
-                <div style={{ fontWeight: "bold", marginBottom: "15px" }}>
-                  Manager
+
+              <div style={{ display: "flex", borderBottom: "1px solid #000" }}>
+                <div
+                  style={{
+                    flex: "1",
+                    padding: "12px",
+                    borderRight: "1px solid #000",
+                    textAlign: "left",
+                    fontSize: "10px",
+                  }}
+                >
+                  <div style={{ fontWeight: "bold", marginBottom: "15px" }}>
+                    Prepared By
+                  </div>
+                  <div>FO</div>
                 </div>
                 <div
                   style={{
-                    height: "15px",
-                    borderBottom: "1px solid #000",
-                    margin: "10px 0",
+                    flex: "1",
+                    padding: "12px",
+                    borderRight: "1px solid #000",
+                    textAlign: "left",
+                    fontSize: "10px",
                   }}
-                ></div>
-              </div>
-              <div
-                style={{
-                  flex: "1",
-                  padding: "12px",
-                  textAlign: "left",
-                  fontSize: "10px",
-                }}
-              >
-                <div style={{ fontWeight: "bold", marginBottom: "15px" }}>
-                  Guest Signature & Date
+                >
+                  <div style={{ fontWeight: "bold", marginBottom: "15px" }}>
+                    Manager
+                  </div>
+                  <div
+                    style={{
+                      height: "15px",
+                      borderBottom: "1px solid #000",
+                      margin: "10px 0",
+                    }}
+                  ></div>
                 </div>
                 <div
                   style={{
-                    height: "15px",
-                    borderBottom: "1px solid #000",
-                    margin: "10px 0",
+                    flex: "1",
+                    padding: "12px",
+                    textAlign: "left",
+                    fontSize: "10px",
                   }}
-                ></div>
+                >
+                  <div style={{ fontWeight: "bold", marginBottom: "15px" }}>
+                    Guest Signature & Date
+                  </div>
+                  <div
+                    style={{
+                      height: "15px",
+                      borderBottom: "1px solid #000",
+                      margin: "10px 0",
+                    }}
+                  ></div>
+                </div>
               </div>
-            </div>
 
-            <div style={{ display: "flex" }}>
-              <div
-                style={{
-                  flex: "1",
-                  padding: "8px",
-                  borderRight: "1px solid #000",
-                  fontStyle: "italic",
-                  fontSize: "10px",
-                }}
-              >
-                We hope you enjoyed your stay and would like to welcome you
-                back...
-              </div>
-              <div
-                style={{
-                  padding: "8px",
-                  fontSize: "10px",
-                  textAlign: "center",
-                  minWidth: "120px",
-                }}
-              >
-                Original Bill
-                <br />
-                Page 1
+              <div style={{ display: "flex" }}>
+                <div
+                  style={{
+                    flex: "1",
+                    padding: "8px",
+                    borderRight: "1px solid #000",
+                    fontStyle: "italic",
+                    fontSize: "10px",
+                  }}
+                >
+                  We hope you enjoyed your stay and would like to welcome you
+                  back...
+                </div>
+                <div
+                  style={{
+                    padding: "8px",
+                    fontSize: "10px",
+                    textAlign: "center",
+                    minWidth: "120px",
+                  }}
+                >
+                  Original Bill
+                  <br />
+                  Page {pageIdx + 1}
+                </div>
               </div>
             </div>
           </div>
+        ))}
 
-          {/* Print Styles */}
-          <style>{`
-        @media print {
-          * {
-            -webkit-print-color-adjust: exact !important;
-            color-adjust: exact !important;
-          }
-          
-          body {
-            margin: 0;
-            padding: 0;
-          }
-          
-          @page {
-            margin: 0.5cm;
-            size: A4;
-          }
-          
-          .page-header {
-            position: running(header);
-          }
-          
-          @page {
-            @top {
-              content: element(header);
+        {/* Print Styles */}
+        <style>{`
+          @media print {
+            * {
+              -webkit-print-color-adjust: exact !important;
+              color-adjust: exact !important;
             }
+            body { margin: 0; padding: 0; }
+            @page { margin: 0.5cm; size: A4; }
+            .page-header { position: running(header); page-break-inside: avoid; break-inside: avoid; }
+            .charges-table, .summary-section, .payment-section { page-break-inside: avoid; }
           }
-          
-          .page-header {
-            page-break-inside: avoid;
-            break-inside: avoid;
-          }
-          
-          .charges-table,
-          .summary-section,
-          .payment-section {
-            page-break-inside: avoid;
-          }
-        }
-      `}</style>
-        </div>
-          <div className="no-print w-full flex justify-center">
+        `}</style>
+      </div>
+
+      {/* Action buttons */}
+      <div className="no-print w-full flex justify-center">
         <div className="no-print flex flex-wrap gap-3 mb-4 p-4">
           <button
             onClick={() => handlePrintPDF(false)}
@@ -1524,12 +1347,15 @@ const calculateCumulativeBalances = (charges, totals) => {
           {isForPreview && (
             <button
               onClick={() => {
-                const totals = calculateTotals();
+                // For preview confirm, use first bill’s netPay as balanceToPay
+                const first = bills[0];
+                const balanceToPay = first?.payment?.netPay || 0;
+                const firstDoc = selectedCheckOut[0];
                 navigate("/sUsers/checkInList", {
                   state: {
                     selectedCheckOut,
-                    selectedCustomer: selectedCustomerData,
-                    balanceToPay: totals?.netPay,
+                    selectedCustomer: firstDoc?.customerId,
+                    balanceToPay,
                     kotData,
                   },
                 });
@@ -1548,9 +1374,8 @@ const calculateCumulativeBalances = (charges, totals) => {
           </button>
         </div>
       </div>
-      </div>
     </>
   );
 };
 
-export default HotelBillPrint
+export default HotelBillPrint;
