@@ -1917,42 +1917,107 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
     // Collect all advanceDetails across checkouts
     let allAdvanceDetails = [];
     let allKotData = [];
-    for (const item of checkoutData) {
-      const docs = await salesModel.find({
-        "convertedFrom.id": { $exists: true, $ne: null }, // only if id exists & not null
-        "convertedFrom.checkInNumber": isForPreview
-          ? item.voucherNumber
-          : item?.checkInId?.voucherNumber,
-      });
 
-      allKotData.push(...docs);
+    const docs = await salesModel.aggregate([
+      {
+        $match: {
+          "convertedFrom.id": { $exists: true, $ne: null },
+          "convertedFrom.checkInNumber": checkoutData[0].voucherNumber,
+        }
+      },
+
+      // ✅ Convert convertedFrom.id (string) → ObjectId
+      {
+        $addFields: {
+          convertedFromObjId: {
+            $map: {
+              input: "$convertedFrom",
+              as: "cf",
+              in: { $toObjectId: "$$cf.id" }
+            }
+          }
+        }
+      },
+
+      // ✅ Lookup only roomId from kot
+      {
+        $lookup: {
+          from: "kots",
+          let: { cfIds: "$convertedFromObjId" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $in: ["$_id", "$$cfIds"]   // match any id from list
+                }
+              }
+            },
+            {
+              $project: {
+                _id: 0,
+                roomId: 1   // ✅ only roomId
+              }
+            }
+          ],
+          as: "kotDetails"
+        }
+      },
+
+      // ✅ Flatten
+      {
+        $unwind: {
+          path: "$kotDetails",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+
+      // ✅ Optional: output only what you need
+      // {
+      //   $project: {
+      //     _id: 1,
+      //     convertedFrom: 1,
+      //     roomId: "$kotDetails.roomId"   // ✅ only roomId
+      //   }
+      // }
+    ]);
+
+    allKotData.push(...docs);
+
+    // console.log("allKotData", allKotData);
+    // for (const item of checkoutData) {
 
       const checkInData = await CheckIn.findOne({
-        _id: isForPreview ? item._id : item?.checkInId?._id,
+        _id: isForPreview ? checkoutData[0]._id : checkoutData[0]?.originalCheckInId,
       });
 
-      if (!checkInData) continue;
+      // if (!checkInData) {
+      //   continue;
+      // }
 
       const bookingSideAdvanceDetails = await TallyData.find({
         billId: checkInData.bookingId,
       });
 
       const checkInSideAdvanceDetails = await TallyData.find({
-        billId: isForPreview ? item._id : item.checkInId?._id,
+        billId: isForPreview ? checkoutData[0]._id : checkoutData[0]?.originalCheckInId,
       });
+
+      // console.log("checkInSideAdvanceDetails", checkInSideAdvanceDetails);
+      // console.log("bookingSideAdvanceDetails", bookingSideAdvanceDetails);
+      
 
       allAdvanceDetails.push(
         ...bookingSideAdvanceDetails,
         ...checkInSideAdvanceDetails
       );
-    }
-    const checkOutSideAdvanceDetails = !isForPreview
-      ? await TallyData.find({
-        bill_no: checkoutData[0]?.voucherNumber,
-      })
-      : [];
+    // }
+    // const checkOutSideAdvanceDetails = !isForPreview
+    //   ? await TallyData.find({
+    //     bill_no: checkoutData[0]?.voucherNumber,
+    //   })
+    //   : [];
 
-    allAdvanceDetails.push(...checkOutSideAdvanceDetails);
+    // allAdvanceDetails.push(...checkOutSideAdvanceDetails);
 
     if (allAdvanceDetails.length > 0 || allKotData.length > 0) {
       return res.status(200).json({
@@ -2058,12 +2123,12 @@ export const convertCheckOutToSale = async (req, res) => {
         // const pendingAmount = Number(item?.balanceToPay || 0);
 
 
-          const itemTotal = item.selectedRooms.reduce(
-            (acc, room) => acc + room.amountAfterTax,
-            0
-          );
+        const itemTotal = item.selectedRooms.reduce(
+          (acc, room) => acc + room.amountAfterTax,
+          0
+        );
 
-        const paidAmount =itemTotal;
+        const paidAmount = itemTotal;
         const pendingAmount = Number(item?.balanceToPay || 0);
 
         // Create Tally Entry (per-item)
@@ -2113,7 +2178,7 @@ export const convertCheckOutToSale = async (req, res) => {
           );
         }
 
-        
+
         if (!isPostToRoom && onlineAmt > 0) {
           const selectedBank = await Party.findOne({
             _id: paymentDetails?.selectedBank,
@@ -2797,51 +2862,51 @@ export const getHotelSalesDetails = async (req, res) => {
       {
         $addFields: {
           createdHour: { $hour: { date: "$createdAt", timezone: "+05:30" } },
-    kotType: {
-  $cond: [
-    {
-      $and: [
-        { $ne: [ { $arrayElemAt: ["$convertedFrom.checkInNumber", 0] }, null ] },
-        { $ne: [ { $arrayElemAt: ["$convertedFrom.checkInNumber", 0] }, "" ] }
-      ]
-    },
-    "Room Service",
-    {
-      $cond: [
-        {
-          $and: [
-            { $ne: [ { $arrayElemAt: ["$convertedFrom.tableNumber", 0] }, null ] },
-            { $ne: [ { $arrayElemAt: ["$convertedFrom.tableNumber", 0] }, "" ] }
-          ]
-        },
-        "Dine In",
-        {
-          $cond: [
-            {
-              $and: [
-                { $eq: ["$isTakeaway", true] }
-              ]
-            },
-            "Takeaway",
-            {
-              $cond: [
-                {
-                  $and: [
-                    { $eq: ["$isDelivery", true] }
-                  ]
-                },
-                "Home Delivery",
-                "Unknown"
-              ]
-            }
-          ]
-        }
-      ]
-    }
-  ]
-},
+          kotType: {
+            $cond: [
+              {
+                $and: [
+                  { $ne: [{ $arrayElemAt: ["$convertedFrom.checkInNumber", 0] }, null] },
+                  { $ne: [{ $arrayElemAt: ["$convertedFrom.checkInNumber", 0] }, ""] }
+                ]
+              },
+              "Room Service",
+              {
+                $cond: [
+                  {
+                    $and: [
+                      { $ne: [{ $arrayElemAt: ["$convertedFrom.tableNumber", 0] }, null] },
+                      { $ne: [{ $arrayElemAt: ["$convertedFrom.tableNumber", 0] }, ""] }
+                    ]
+                  },
+                  "Dine In",
+                  {
+                    $cond: [
+                      {
+                        $and: [
+                          { $eq: ["$isTakeaway", true] }
+                        ]
+                      },
+                      "Takeaway",
+                      {
+                        $cond: [
+                          {
+                            $and: [
+                              { $eq: ["$isDelivery", true] }
+                            ]
+                          },
+                          "Home Delivery",
+                          "Unknown"
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
 
-   mealPeriod: {
+          mealPeriod: {
             $switch: {
               branches: [
                 {
@@ -3033,24 +3098,24 @@ export const getHotelSalesDetails = async (req, res) => {
         upiAmount = 0,
         chequeAmount = 0;
 
-          const partyName =
+      const partyName =
         sale.party?.partyName ||
         sale.partyDetails?.partyName ||
         sale.partyAccount ||
         "Cash";
 
-const isCreditSale = 
-  sale.partyAccount === "Sundry Debtors" ||
-  sale.partyDetails?.accountGroupName === "Sundry Debtors" ||
-  sale.party?.accountGroupName === "Sundry Debtors" ||
-  (partyName !== "Cash" && 
-   partyName !== "Cash-in-Hand" &&
-   partyName !== "CASH" &&
-   sale.partyAccount !== "Cash-in-Hand" &&
-   sale.partyAccount !== "CASH" &&
-   sale.partyAccount !== "Bank Accounts" &&
-   sale.partyAccount !== "Gpay" &&
-   sale.partyAccount !== "Bank");
+      const isCreditSale =
+        sale.partyAccount === "Sundry Debtors" ||
+        sale.partyDetails?.accountGroupName === "Sundry Debtors" ||
+        sale.party?.accountGroupName === "Sundry Debtors" ||
+        (partyName !== "Cash" &&
+          partyName !== "Cash-in-Hand" &&
+          partyName !== "CASH" &&
+          sale.partyAccount !== "Cash-in-Hand" &&
+          sale.partyAccount !== "CASH" &&
+          sale.partyAccount !== "Bank Accounts" &&
+          sale.partyAccount !== "Gpay" &&
+          sale.partyAccount !== "Bank");
 
 
       if (
@@ -3088,34 +3153,34 @@ const isCreditSale =
               bankAmount += amount;
               break;
             default:
-               if (isCreditSale) {
-          creditAmount += amount;
-        } else {
-          cashAmount += amount;
-        }
-        break;
+              if (isCreditSale) {
+                creditAmount += amount;
+              } else {
+                cashAmount += amount;
+              }
+              break;
           }
         });
       } else {
-  // No payment splitting data - determine based on party account and name
-  const finalAmount = Number(sale.finalAmount) || 0;
-  
-  if (isCreditSale) {
-    // It's a credit sale
-    creditAmount = finalAmount;
-  } else if (
-    sale.partyAccount === "Bank Accounts" ||
-    sale.partyAccount === "Gpay" ||
-    sale.partyAccount === "Bank"
-  ) {
-    // Bank/UPI payment
-    upiAmount = finalAmount;
-    bankAmount = finalAmount;
-  } else {
-    // Default to cash
-    cashAmount = finalAmount;
-  }
-}
+        // No payment splitting data - determine based on party account and name
+        const finalAmount = Number(sale.finalAmount) || 0;
+
+        if (isCreditSale) {
+          // It's a credit sale
+          creditAmount = finalAmount;
+        } else if (
+          sale.partyAccount === "Bank Accounts" ||
+          sale.partyAccount === "Gpay" ||
+          sale.partyAccount === "Bank"
+        ) {
+          // Bank/UPI payment
+          upiAmount = finalAmount;
+          bankAmount = finalAmount;
+        } else {
+          // Default to cash
+          cashAmount = finalAmount;
+        }
+      }
 
       let mode = "Cash"; // default
       if (upiAmount > 0 && upiAmount === bankAmount) {
@@ -3131,7 +3196,7 @@ const isCreditSale =
       }
 
       // Get party name from either nested party object or partyDetails
-    
+
 
       const finalAmount = Number(sale.finalAmount) || 0;
       const subTotal = Number(sale.subTotal) || finalAmount;
@@ -3387,7 +3452,7 @@ const isCreditSale =
           other: summary.otherSales.count,
           total: totalTransactions,
         },
-          serviceBreakdown: summary.serviceBreakdown,
+        serviceBreakdown: summary.serviceBreakdown,
         mealPeriodSummary: summary.mealPeriodBreakdown,
         message: `Found ${transformedData.length} ${businessType === "all" ? "combined" : businessType
           } sales records`,

@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
-import React, { useState, useEffect } from "react";
-import { X, Users, DoorOpen, Plus, Trash2 } from "lucide-react";
+import  { useState, useEffect } from "react";
+import { X, Users, DoorOpen,  Trash2 } from "lucide-react";
 import CustomerSearchInputBox from "../Components/CustomerSearchInPutBox";
 
 export default function EnhancedCheckoutModal({
@@ -35,14 +35,14 @@ export default function EnhancedCheckoutModal({
 
 
   console.log(roomAssignments);
-  
+
 
   // Handle customer selection for a specific room
   const handleCustomerSelect = (index, customer) => {
     const updated = [...roomAssignments];
     updated[index].selectedCustomer = customer;
     setRoomAssignments(updated);
-    
+
     // Clear error for this room if exists
     const newErrors = { ...errors };
     delete newErrors[index];
@@ -56,20 +56,20 @@ export default function EnhancedCheckoutModal({
   };
 
   // Add room back if needed
-  const handleAddRoom = (checkInId, room) => {
-    setRoomAssignments([
-      ...roomAssignments,
-      {
-        checkInId,
-        checkInNumber: room.voucherNumber,
-        roomId: room._id,
-        roomName: room.roomName,
-        roomType: room.roomType?.brand || "Standard",
-        originalCustomer: room.originalCustomer,
-        selectedCustomer: room.originalCustomer,
-      },
-    ]);
-  };
+  // const handleAddRoom = (checkInId, room) => {
+  //   setRoomAssignments([
+  //     ...roomAssignments,
+  //     {
+  //       checkInId,
+  //       checkInNumber: room.voucherNumber,
+  //       roomId: room._id,
+  //       roomName: room.roomName,
+  //       roomType: room.roomType?.brand || "Standard",
+  //       originalCustomer: room.originalCustomer,
+  //       selectedCustomer: room.originalCustomer,
+  //     },
+  //   ]);
+  // };
 
   // Validate before proceeding
   const validateAssignments = () => {
@@ -127,15 +127,21 @@ export default function EnhancedCheckoutModal({
     });
 
     // Convert to array format
-    const result = Object.values(groupedByCustomer).map((group) => ({
-      customerId: group.customer._id,
-      customerName: group.customer.partyName,
-      customer: group.customer,
-      checkIns: group.checkIns,
-    }));
+    const result = Object.values(groupedByCustomer).map((group) => {
+      // console.log("customer", group.customer);
+      return {
+
+        customerId: group.customer._id,
+        customerName: group.customer.partyName,
+        // customerId: group.customer._id,
+        customer: group.customer,
+        checkIns: group.checkIns,
+      }
+    });
 
     console.log("result", result);
-    
+
+
 
     onConfirm(result);
   };
@@ -143,7 +149,7 @@ export default function EnhancedCheckoutModal({
   if (!isOpen) return null;
 
   // Get all available rooms (not currently in assignments)
-   selectedCheckIns.flatMap((checkIn) =>
+  selectedCheckIns.flatMap((checkIn) =>
     checkIn.selectedRooms
       .filter(
         (room) =>
@@ -187,9 +193,8 @@ export default function EnhancedCheckoutModal({
             roomAssignments.map((a, i) => (
               <div
                 key={i}
-                className={`border rounded-md p-3 ${
-                  errors[i] ? "border-red-300 bg-red-50" : "border-gray-200"
-                }`}
+                className={`border rounded-md p-3 ${errors[i] ? "border-red-300 bg-red-50" : "border-gray-200"
+                  }`}
               >
                 <div className="flex justify-between items-center mb-2">
                   <div className="flex items-center gap-2">
