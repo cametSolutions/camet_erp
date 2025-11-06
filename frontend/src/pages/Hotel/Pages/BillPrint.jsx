@@ -7,11 +7,16 @@ import api from "@/api/api";
 import Logo from "../../../assets/images/hill.png";
 import TitleDiv from "@/components/common/TitleDiv";
 import { jsPDF } from "jspdf";
+
 import "jspdf-autotable";
 import {
   handlePrintInvoice,
   handleDownloadPDF,
 } from "../PrintSide/generateHotelInvoicePDF ";
+import {
+  handleBillPrintInvoice,
+  handleBillDownloadPDF,
+} from "../PrintSide/generateBillPrintPDF"; 
 
 import { Title } from "@radix-ui/react-dialog";
 const HotelBillPrint = () => {
@@ -148,90 +153,23 @@ const handleSplit = () => {
   }
 };
 
-const handlePrintPDF = (isPrint) => {
+
+
+  // Prepare comprehensive invoice data with all dynamic values
+   const handlePrintPDF = (isPrint) => {
   const totals = calculateTotals();
   const secondaryUser = JSON.parse(localStorage.getItem("sUserData"));
 
-  // Prepare comprehensive invoice data with all dynamic values
-  const invoiceData = {
-    // Organization details (dynamic)
-    organization: {
-      name: organization?.name || "",
-      address: organization?.address || "",
-      flat: organization?.flat || "",
-      landmark: organization?.landmark || "",
-      road: organization?.road || "",
-      gstNum: organization?.gstNum || "",
-      email: organization?.email || "",
-      logo: organization?.logo || "",
-      state: organization?.state || "",
-      pin: organization?.pin || "",
-      mobile: organization?.mobile || "",
-      configurations: organization?.configurations || [],
-    },
+  // Prepare bill data (already exists in your code)
+   const billDataForPDF = prepareBillData();
 
-    // Checkout data (dynamic)
-    selectedCheckOutData: selectedCheckOutData,
+  console.log("Bill Data for PDF:", billDataForPDF);
 
-    // Customer and booking info (dynamic)
-    customerName: selectedCheckOutData?.customerName || "",
-    totalPax:
-      selectedCheckOutData?.selectedRooms?.reduce(
-        (acc, curr) => acc + Number(curr.pax || 0),
-        0
-      ) || 0,
-
-    // Transaction data (dynamic)
-    outStanding: outStanding || [],
-    kotData: kotData || [],
-    dateWiseDisplayedData: dateWiseDisplayedData || [],
-
-    // Calculated amounts (dynamic)
-    totals: {
-      roomTariffTotal: totals.roomTariffTotal,
-      advanceTotal: totals.advanceTotal,
-      kotTotal: totals.kotTotal,
-      sgstAmount: totals.sgstAmount,
-      cgstAmount: totals.cgstAmount,
-      totalTaxAmount: totals.totalTaxAmount,
-      grandTotal: totals.grandTotal,
-      netPay: totals.netPay,
-      planAmount: totals.planAmount,
-      additionalPaxAmount: totals.additionalPaxAmount,
-    },
-
-    // Tax amounts (dynamic)
-    taxAmountForRoom: taxAmountForRoom,
-    taxAmountForFood: taxAmountForFood,
-
-    // Food and additional charges (dynamic)
-    foodPlanAmount: foodPlanAmount,
-    additionalPaxAmount: additionalPaxAmount,
-
-    // User info (dynamic)
-    secondaryUser: secondaryUser,
-
-    // Additional data for comprehensive invoice
-    voucherNumber: selectedCheckOutData?.voucherNumber || "",
-    arrivalDate: selectedCheckOutData?.arrivalDate || "",
-    arrivalTime: selectedCheckOutData?.arrivalTime || "",
-    roomNumbers:
-      selectedCheckOutData?.selectedRooms
-        ?.map((room) => room.roomName)
-        .join(", ") || "",
-    roomType: selectedCheckOutData?.selectedRooms?.[0]?.roomType?.brand || "",
-    tariff: selectedCheckOutData?.selectedRooms?.[0]?.priceLevelRate || "",
-    agentName: selectedCheckOutData?.agentId?.name || "Walk-In Customer",
-    foodPlan: selectedCheckOutData?.foodPlan?.[0]?.foodPlan || "",
-  };
-
-  console.log("Complete Invoice Data:", invoiceData);
-
-  // Call the PDF generation function with all dynamic data
+  // Call the BILL PRINT PDF functions (matches the bill print format)
   if (!isPrint) {
-    handleDownloadPDF(invoiceData);
+    handleBillDownloadPDF(billDataForPDF);
   } else {
-    handlePrintInvoice(invoiceData);
+    handleBillPrintInvoice(billDataForPDF);
   }
 };
 
@@ -340,25 +278,109 @@ const handlePrintPDF = (isPrint) => {
     removeAfterPrint: true,
   });
 
+const restaurantCharges = kotData.flatMap(kot =>
+  kot.items.map(item => ({
+    date: kot.selectedDate,
+    description: item.product_name,
+    docNo: kot.salesNumber || "-",
+    amount: item.total || 0,
+    taxes: Number(item.totalCgstAmt || 0) + Number(item.totalSgstAmt || 0) + Number(item.totalIgstAmt || 0),
+    advance: 0,
+  }))
+);
+
+
+  const prepareBillData = () => {
+  const totals = calculateTotals();
+
+  // Charges aggregation - push room, food plan, additional pax, and importantly, restaurant charges (KOT/posttoroom),
+  // into the charges array displayed on the bill
+  const charges = calculateCumulativeBalances([
+    ...dateWiseDisplayedData.map(item => ({
+      date: item.date,
+      description: item.description,
+      amount: (item.baseAmount || 0) + (item.additionalPaxDataWithOutTax || 0) + (item.foodPlanAmountWithOutTax || 0),
+      taxes: item.taxAmount || 0,
+    })),
+    // Add posttoroom restaurant charges here as separate charge lines
+   ...restaurantCharges,
+    // Add advance payments as negative amounts
+    ...outStanding.map(transaction => ({
+      date: formatDate(transaction.billdate),
+      description: 'Advance',
+      amount: -Math.abs(transaction.billamount),
+      docNo: transaction.billno,
+    })),
+  ], totals);
+const restaurantTotal = kotData.reduce((sum, kot) => sum + (kot.finalAmount || kot.subTotal || 0), 0);
+
+  return {
+    hotel: {
+      name: organization?.name,
+      address: organization?.flat + ' ' + organization?.road + ' ' + organization?.landmark,
+      phone: organization?.mobile,
+      email: organization?.email,
+      website: organization?.website,
+      pan: organization?.pan,
+      gstin: organization?.gstNum,
+      sacCode: 996311,
+      logo: organization?.logo,
+    },
+    guest: {
+      name: selectedCustomerData?.partyName,
+      roomNo: selectedCheckOutData?.selectedRooms?.map(room => room.roomName).join(', '),
+      billNo: selectedCheckOutData?.voucherNumber,
+      travelAgent: selectedCheckOutData?.agentId?.name,
+      address: selectedCustomerData?.billingAddress,
+      phone: selectedCustomerData?.mobileNumber,
+      gstNo: selectedCustomerData?.gstNo,
+    },
+    stay: {
+      billDate: formatDate(new Date()),
+      arrival: formatDate(selectedCheckOutData?.arrivalDate),
+      departure: new Date().toLocaleTimeString(),
+      days: selectedCheckOutData?.selectedRooms?.[0]?.stayDays,
+      plan: selectedCheckOutData?.foodPlanAmount,
+      pax: selectedCheckOutData?.selectedRooms?.reduce((acc, curr) => acc + Number(curr.pax || 0), 0),
+      tariff: selectedCheckOutData?.selectedRooms?.[0]?.baseAmount,
+    },
+    charges,
+    summary: {
+      roomRent: totals.roomTariffTotal,
+      sgst: totals.sgstAmount,
+      cgst: totals.cgstAmount,
+      restaurant: restaurantTotal, // Add restaurant charge here
+      roomService: 0,
+      foodPlan: totals.planAmount,
+      additionalPax: totals.additionalPaxAmount,
+      total: totals.grandTotal,
+      totalWords: convertNumberToWords(totals.grandTotal),
+    },
+    payment: {
+      mode: 'Credit',
+      total: totals.grandTotal,
+      advance: totals.advanceTotal,
+      netPay: totals.netPay,
+    },
+  };
+};
+
 const calculateCumulativeBalances = (charges, totals) => {
   let cumulativeBalance = 0;
-  const dailyRoomCount = dateWiseDisplayedData.length;
-  const taxPerDay = dailyRoomCount > 0 ? totals.totalTaxAmount / dailyRoomCount : 0;
   
   return charges.map((charge) => {
     let currentAmount = charge.amount || 0;
-    let currentTax = 0;
     
     // For room charges, add the daily tax portion
     if (charge.description.includes('Room Rent')) {
-      currentTax = taxPerDay;
-      cumulativeBalance += currentAmount + currentTax;
+      const taxForRoom = charge.taxes ? parseFloat(charge.taxes) : 0;
+      cumulativeBalance += currentAmount + taxForRoom;
     }
     // For advance (negative amount)
     else if (charge.description === 'Advance') {
       cumulativeBalance += currentAmount; // already negative
     }
-    // For separate tax entries (CGST/SGST) - don't add to balance as already included
+    // For separate tax entries (CGST/SGST) - don't add to balance as already included in room
     else if (charge.description.includes('CGST') || charge.description.includes('SGST')) {
       // Don't change balance, tax already counted in room charges
     }
@@ -475,18 +497,75 @@ const calculateCumulativeBalances = (charges, totals) => {
     },
 
      charges: calculateCumulativeBalances([
-    // Room charges from dateWiseDisplayedData
-    ...dateWiseDisplayedData.map((item) => ({
-      date: item.date,
-      description: item.description,
-      docNo: item.docNo || "-",
-      amount:
-        (item.baseAmount || 0) +
-        (item.additionalPaxDataWithOutTax || 0) +
-        (item.foodPlanAmountWithOutTax || 0),
-      taxes: (item.taxAmount || 0).toFixed(2),
-      advance: "",
-    })),
+    // Group charges by room and date
+    ...(() => {
+      const roomCharges = [];
+      const roomGroups = {};
+      
+      // Group by room
+      dateWiseDisplayedData.forEach((item) => {
+        const roomKey = item.roomName;
+        if (!roomGroups[roomKey]) {
+          roomGroups[roomKey] = [];
+        }
+        roomGroups[roomKey].push(item);
+      });
+      
+      // Process each room group
+      Object.keys(roomGroups).forEach((roomName) => {
+        const roomDays = roomGroups[roomName];
+        
+        // Add all days for this room
+        roomDays.forEach((item) => {
+          roomCharges.push({
+            date: item.date,
+            description: item.description,
+            docNo: item.docNo || "-",
+            amount:
+              (item.baseAmount || 0) +
+              (item.additionalPaxDataWithOutTax || 0) +
+              (item.foodPlanAmountWithOutTax || 0),
+            taxes: (item.taxAmount || 0).toFixed(2),
+            advance: "",
+            roomName: item.roomName,
+          });
+        });
+        
+        // Calculate total tax for this room
+        const roomTotalTax = roomDays.reduce((sum, item) => sum + (item.taxAmount || 0), 0);
+        const roomCGST = roomTotalTax / 2;
+        const roomSGST = roomTotalTax / 2;
+        
+        // Add CGST for this room
+        if (roomCGST > 0) {
+          roomCharges.push({
+            date: formatDate(new Date()),
+            description: `CGST on Rent@6% (${roomName})`,
+            docNo: "-",
+            amount: 0,
+            taxes: roomCGST.toFixed(2),
+            advance: "",
+            roomName: roomName,
+          });
+        }
+        
+        // Add SGST for this room
+        if (roomSGST > 0) {
+          roomCharges.push({
+            date: formatDate(new Date()),
+            description: `SGST on Rent@6% (${roomName})`,
+            docNo: "-",
+            amount: 0,
+            taxes: roomSGST.toFixed(2),
+            advance: "",
+            roomName: roomName,
+          });
+        }
+      });
+      
+      return roomCharges;
+    })(),
+    
     // Advance entries from outStanding
     ...outStanding.map((transaction) => ({
       date: formatDate(transaction.bill_date),
@@ -495,42 +574,6 @@ const calculateCumulativeBalances = (charges, totals) => {
       amount: -Math.abs(transaction.bill_amount || 0),
       taxes: "",
       advance: Math.abs(transaction.bill_amount || 0).toFixed(2),
-    })),
-      // Tax charges
-       ...(totals.cgstAmount > 0
-      ? [
-          {
-            date: formatDate(new Date()),
-            description: "CGST on Rent@6%",
-            docNo: "-",
-            amount: 0,
-            taxes: totals.cgstAmount.toFixed(2),
-            advance: "",
-          },
-        ]
-      : []),
-         ...(totals.sgstAmount > 0
-      ? [
-          {
-            date: formatDate(new Date()),
-            description: "SGST on Rent @6%",
-            docNo: "-",
-            amount: 0,
-            taxes: totals.sgstAmount.toFixed(2),
-            advance: "",
-          },
-        ]
-      : []),
-
-      // Restaurant charges from kotData
-        // Restaurant charges from kotData
-    ...kotData.map((kot) => ({
-      date: formatDate(kot.createdAt),
-      description: kot.description || "Restaurant",
-      docNo: kot.voucherNumber,
-      amount: kot.total || 0,
-      taxes: "",
-      advance: "",
     })),
       ], totals),
       // Food plan charges if any
@@ -899,21 +942,6 @@ const calculateCumulativeBalances = (charges, totals) => {
               </tbody>
             </table>
           </div>
-
-          {/* Bill Title */}
-          {/* <div
-            style={{
-              textAlign: "center",
-              fontSize: "14px",
-              fontWeight: "bold",
-              margin: "10px 0",
-              border: "1px solid #000",
-              padding: "5px",
-              backgroundColor: "#f5f5f5",
-            }}
-          >
-            &lt;&lt; BILL &gt;&gt;
-          </div> */}
 
           {/* Charges Table */}
           <div style={{ marginBottom: "10px" }}>
@@ -1464,13 +1492,11 @@ const calculateCumulativeBalances = (charges, totals) => {
             }
           }
           
-          /* Ensure header repeats on every page */
           .page-header {
             page-break-inside: avoid;
             break-inside: avoid;
           }
           
-          /* Page break controls */
           .charges-table,
           .summary-section,
           .payment-section {
@@ -1481,7 +1507,6 @@ const calculateCumulativeBalances = (charges, totals) => {
         </div>
           <div className="no-print w-full flex justify-center">
         <div className="no-print flex flex-wrap gap-3 mb-4 p-4">
-          {/* Download PDF */}
           <button
             onClick={() => handlePrintPDF(false)}
             className="bg-black text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-500 transition-colors"
@@ -1489,7 +1514,6 @@ const calculateCumulativeBalances = (charges, totals) => {
             📄 Download PDF
           </button>
 
-          {/* Split Payment */}
           <button
             onClick={handleSplitPayment}
             className="bg-black text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-500 transition-colors"
@@ -1497,7 +1521,6 @@ const calculateCumulativeBalances = (charges, totals) => {
             💳 Split Payment
           </button>
 
-          {/* Confirm – only if preview */}
           {isForPreview && (
             <button
               onClick={() => {
@@ -1517,21 +1540,12 @@ const calculateCumulativeBalances = (charges, totals) => {
             </button>
           )}
 
-          {/* Print Invoice */}
           <button
             onClick={() => handlePrintPDF(true)}
             className="bg-black text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-500 transition-colors"
           >
             🖨️ Print Invoice
           </button>
-
-          {/* Regular Print (Browser Print) */}
-          {/* <button
-            onClick={handlePrint}
-            className="bg-gradient-to-r from-gray-700 to-gray-900 hover:from-blue-600 hover:to-blue-500 text-white font-medium py-2 px-6 rounded-lg shadow-lg transform transition duration-200 hover:scale-105 active:scale-95"
-          >
-            🖨️ Browser Print
-          </button> */}
         </div>
       </div>
       </div>
@@ -1539,4 +1553,4 @@ const calculateCumulativeBalances = (charges, totals) => {
   );
 };
 
-export default HotelBillPrint;
+export default HotelBillPrint
