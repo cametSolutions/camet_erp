@@ -87,8 +87,9 @@ export const buildDatabaseFilterForBooking = (params) => {
         { voucherNumber: { $regex: params.searchTerm, $options: "i" } },
         { customerName: { $regex: params.searchTerm, $options: "i" } },
       ];
-    } else {
-      filter = { ...filter, status: { $exists: false } };
+    } 
+    else {
+      filter = { ...filter,status: "checkIn" };
     }
   } else if (params.searchTerm == "completed") {
     if (params.modal == "booking") {

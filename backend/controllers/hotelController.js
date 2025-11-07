@@ -1215,6 +1215,8 @@ export const getBookings = async (req, res) => {
   try {
     const params = extractRequestParamsForBookings(req);
     const filter = buildDatabaseFilterForBooking(params);
+
+    
     const { bookings, totalBookings } = await fetchBookingsFromDatabase(
       filter,
       params
