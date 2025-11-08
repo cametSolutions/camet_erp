@@ -496,115 +496,214 @@ function BookingForm({
     setFormData((prev) => ({ ...prev, agentId: agent ? agent._id : "" }));
   };
 
-  const handleAvailableRooms = (rooms, total) => {
-    if (rooms.length > 0) {
-      setFormData((prev) => ({
-        ...prev,
-        selectedRooms: rooms,
-        roomTotal: total,
-        updatedDate: currentDateDefault,
-      }));
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        selectedRooms: [],
-        roomTotal: 0,
-        updatedDate: currentDateDefault,
-      }));
-    }
-  };
-
-  const submitHandler = async () => {
-    if (!formData.customerName || formData.customerName.trim() === "") {
-      toast.error("please select a valid customer");
-      return;
-    }
-
-    let customerId = formData.customerId?.trim?.() || formData.customerId || "";
-    let customerName = formData.customerName;
-    let country = formData.country;
-    let accountGroup = formData.accountGroup;
-    let state = formData.state;
-    let pinCode = formData.pinCode;
-    let detailedAddress = formData.detailedAddress;
-    let mobileNumber = formData.mobileNumber;
-
-    if (!customerId) {
-      try {
-        const dataObject = {
-          accountGroup: "",
-          partyName: formData.customerName,
-          mobileNumber: formData.mobileNumber,
-          emailID: "",
-          gstNo: "",
-          panNo: "",
-          billingAddress: formData.detailedAddress,
-          shippingAddress: formData.detailedAddress,
-          creditPeriod: "",
-          creditLimit: "",
-          openingBalanceType: "",
-          openingBalanceAmount: 0,
-          country: formData.country,
-          state: formData.state,
-          pin: formData.pinCode,
-          subGroup: "",
-          isHotelAgent: false,
-          cpm_id: cmp_id,
-        };
-
-        const res = await api.post("/api/sUsers/addParty", dataObject, {
-          headers: { "Content-Type": "application/json" },
-          withCredentials: true,
+const handleAvailableRooms = (rooms, total) => {
+  console.log("=== handleAvailableRooms called ===");
+  console.log("Incoming rooms:", rooms);
+  console.log("Incoming total:", total);
+  console.log("isTariffRateChange:", isTariffRateChange);
+  console.log("roomId:", roomId);
+  
+  if (rooms.length > 0) {
+    // ✅ CRITICAL: If in tariff rate change mode, merge with existing rooms
+    if (isTariffRateChange && roomId && editData?.selectedRooms) {
+      console.log("=== Tariff mode - merging rooms ===");
+      console.log("Original rooms from editData:", editData.selectedRooms);
+      
+      // Get the updated room (should be rooms[0] in tariff change mode)
+      const updatedRoom = rooms[0];
+      
+      console.log("Updated room from AvailableRooms:", updatedRoom);
+      console.log("Looking for roomId:", roomId);
+      
+      if (updatedRoom) {
+        // Find and replace only the edited room, keep all others
+        const mergedRooms = editData.selectedRooms.map(originalRoom => {
+          // Get the room ID from various possible structures
+          const originalRoomId = 
+            originalRoom.roomId?._id?.toString() || 
+            originalRoom.roomId?.toString() || 
+            originalRoom._id?.toString();
+          
+          console.log("Comparing originalRoomId:", originalRoomId, "with roomId:", roomId?.toString());
+          
+          // If this is the room being edited, replace it
+          if (originalRoomId === roomId?.toString()) {
+            console.log("Found room to update:", originalRoom.roomName);
+            return {
+              ...updatedRoom,
+              _id: originalRoom._id, // Preserve original _id
+              roomId: originalRoom.roomId, // Preserve roomId reference
+            };
+          }
+          
+          // Keep all other rooms unchanged
+          return originalRoom;
         });
-
-        toast.success(res.data.message);
-
-        customerId = res.data?.result?._id;
-        customerName = res.data?.result?.partyName;
-        country = res.data?.result?.country;
-        accountGroup = res.data?.result?.accountGroup_id;
-        state = res.data?.result?.state;
-        pinCode = res.data?.result?.pin;
-        detailedAddress = res.data?.result?.billingAddress;
-        mobileNumber = res.data?.result?.mobileNumber;
-      } catch {
-        toast.error("Failed to create customer");
+        
+        // Recalculate total for ALL rooms
+        const newTotal = mergedRooms.reduce(
+          (sum, room) => sum + Number(room.amountAfterTax || room.totalAmount || 0),
+          0
+        );
+        
+        console.log("Final merged rooms count:", mergedRooms.length);
+        console.log("Final rooms:", mergedRooms.map(r => r.roomName));
+        console.log("New total:", newTotal);
+        
+        setFormData((prev) => ({
+          ...prev,
+          selectedRooms: mergedRooms, // ✅ Use ALL rooms
+          roomTotal: newTotal,
+          updatedDate: currentDateDefault,
+        }));
         return;
       }
     }
+    
+    // Normal flow - replace all rooms (for non-tariff change scenarios)
+    console.log("Normal mode - replacing all rooms");
+    setFormData((prev) => ({
+      ...prev,
+      selectedRooms: rooms,
+      roomTotal: total,
+      updatedDate: currentDateDefault,
+    }));
+  } else {
+    console.log("No rooms - clearing");
+    setFormData((prev) => ({
+      ...prev,
+      selectedRooms: [],
+      roomTotal: 0,
+      updatedDate: currentDateDefault,
+    }));
+  }
+  
+  console.log("=== handleAvailableRooms end ===");
+};
 
-    const payload = {
-      ...formData,
-      customerId,
-      customerName,
-      country,
-      accountGroup,
-      state,
-      pinCode,
-      detailedAddress,
-      mobileNumber,
-      voucherNumber,
-    };
+const submitHandler = async () => {
+  if (!formData.customerName || formData.customerName.trim() === "") {
+    toast.error("please select a valid customer");
+    return;
+  }
 
-    if (Number(formData.advanceAmount) <= 0 || formData.advanceAmount == editData?.advanceAmount) {
-      if (isSubmittingRef.current) return;
-      isSubmittingRef.current = true;
-      handleSubmit(payload);
-    } else {
-      setFormData((prev) => ({ ...prev, ...payload }));
-      setShowPaymentModal(true);
+  let customerId = formData.customerId?.trim?.() || formData.customerId || "";
+  let customerName = formData.customerName;
+  let country = formData.country;
+  let accountGroup = formData.accountGroup;
+  let state = formData.state;
+  let pinCode = formData.pinCode;
+  let detailedAddress = formData.detailedAddress;
+  let mobileNumber = formData.mobileNumber;
+
+  if (!customerId) {
+    try {
+      const dataObject = {
+        accountGroup: "",
+        partyName: formData.customerName,
+        mobileNumber: formData.mobileNumber,
+        emailID: "",
+        gstNo: "",
+        panNo: "",
+        billingAddress: formData.detailedAddress,
+        shippingAddress: formData.detailedAddress,
+        creditPeriod: "",
+        creditLimit: "",
+        openingBalanceType: "",
+        openingBalanceAmount: 0,
+        country: formData.country,
+        state: formData.state,
+        pin: formData.pinCode,
+        subGroup: "",
+        isHotelAgent: false,
+        cpm_id: cmp_id,
+      };
+
+      const res = await api.post("/api/sUsers/addParty", dataObject, {
+        headers: { "Content-Type": "application/json" },
+        withCredentials: true,
+      });
+
+      toast.success(res.data.message);
+
+      customerId = res.data?.result?._id;
+      customerName = res.data?.result?.partyName;
+      country = res.data?.result?.country;
+      accountGroup = res.data?.result?.accountGroup_id;
+      state = res.data?.result?.state;
+      pinCode = res.data?.result?.pin;
+      detailedAddress = res.data?.result?.billingAddress;
+      mobileNumber = res.data?.result?.mobileNumber;
+    } catch {
+      toast.error("Failed to create customer");
+      return;
     }
+  }
+
+  // ✅ CRITICAL: Verify we have all rooms before submission
+  console.log("=== SUBMIT HANDLER - BEFORE PAYLOAD ===");
+  console.log("isTariffRateChange:", isTariffRateChange);
+  console.log("roomId:", roomId);
+  console.log("formData.selectedRooms:", formData.selectedRooms);
+  console.log("formData.selectedRooms.length:", formData.selectedRooms?.length);
+  
+  // Verify room count hasn't decreased
+  if (isTariffRateChange && editData?.selectedRooms) {
+    const originalCount = editData.selectedRooms.length;
+    const currentCount = formData.selectedRooms?.length || 0;
+    
+    if (currentCount < originalCount) {
+      console.error("❌ ROOM LOSS DETECTED!");
+      console.error(`Original: ${originalCount}, Current: ${currentCount}`);
+      toast.error("Error: Some rooms were lost during update. Please try again.");
+      return;
+    }
+  }
+
+  const payload = {
+    ...formData,
+    customerId,
+    customerName,
+    country,
+    accountGroup,
+    state,
+    pinCode,
+    detailedAddress,
+    mobileNumber,
+    voucherNumber,
+    selectedRooms: formData.selectedRooms, // Should contain ALL rooms
   };
 
-  const handlePayment = (paymentData) => {
-    setSaveLoader(true);
+  console.log("=== FINAL PAYLOAD ===");
+  console.log("Total rooms in payload:", payload.selectedRooms?.length);
+  console.log("Room names:", payload.selectedRooms?.map(r => r.roomName));
+  console.log("====================");
+
+  if (Number(formData.advanceAmount) <= 0 || formData.advanceAmount == editData?.advanceAmount) {
     if (isSubmittingRef.current) return;
     isSubmittingRef.current = true;
-    const payload = { ...formData, voucherNumber };
-    delete payload.roomType;
-    handleSubmit(payload, paymentData);
-  };
+    handleSubmit(payload);
+  } else {
+    setFormData((prev) => ({ ...prev, ...payload }));
+    setShowPaymentModal(true);
+  }
+};
 
+
+const handlePayment = (paymentData) => {
+  let finalSelectedRooms = formData.selectedRooms;
+  
+  if (isTariffRateChange && roomId && editData?.selectedRooms) {
+    // Same merging logic as submitHandler
+  }
+  
+  const payload = { 
+    ...formData, 
+    selectedRooms: finalSelectedRooms 
+  };
+  
+  handleSubmit(payload, paymentData);
+};
   const handleClose = () => setShowPaymentModal(false);
   const handleSearchCustomer = (name) =>
     setFormData((prev) => ({ ...prev, customerName: name }));
@@ -1052,6 +1151,8 @@ function BookingForm({
         sendToParent={handleAvailableRooms}
         formData={formData}
         selectedRoomId={selectedRoomId}
+         isTariffRateChange={isTariffRateChange}
+  roomIdToUpdate={roomId}
       />
     </div>
   </div>

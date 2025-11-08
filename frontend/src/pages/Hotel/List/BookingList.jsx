@@ -63,6 +63,9 @@ function BookingList() {
   const [restaurantBaseSaleData, setRestaurantBaseSaleData] = useState({});
   const [showSelectionModal, setShowSelectionModal] = useState(true);
 
+
+
+
 const [showEnhancedCheckoutModal, setShowEnhancedCheckoutModal] = useState(false);
 const [processedCheckoutData, setProcessedCheckoutData] = useState(null);
 
@@ -209,7 +212,7 @@ const [selectedCreditor, setSelectedCreditor] = useState("");
         setLoader(false);
       }
     },
-    [cmp_id, activeTab,filterByRoom, roomId]
+    [cmp_id, activeTab,filterByRoom, roomId, location.pathname]
   );
 
   useEffect(() => {
@@ -228,6 +231,57 @@ const [selectedCreditor, setSelectedCreditor] = useState("");
   //     setSelectedDataForPayment(prevObject);
   //   }
   // }, [selectedCheckOut]);
+
+const handleCancelBooking = async (id, voucherNumber) => {
+  const confirmation = await Swal.fire({
+    title: "Cancel Booking?",
+    html: `
+      <p>Are you sure you want to cancel booking <strong>${voucherNumber}</strong>?</p>
+      <p class="text-sm text-gray-600 mt-2">This will mark the booking as cancelled but keep it in the system for records.</p>
+    `,
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#f59e0b",
+    cancelButtonColor: "#6b7280",
+    confirmButtonText: "Yes, cancel it!",
+    cancelButtonText: "No, keep it",
+  });
+
+  if (confirmation.isConfirmed) {
+    setLoader(true);
+    try {
+      const res = await api.put(
+        `/api/sUsers/cancelBooking/${id}`,
+        { status: "cancelled" },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          withCredentials: true,
+        }
+      );
+
+      await Swal.fire({
+        title: "Cancelled!",
+        text: res.data.message || "Booking has been cancelled successfully.",
+        icon: "success",
+        timer: 2000,
+        timerProgressBar: true,
+        showConfirmButton: false,
+      });
+
+      fetchBookings(1, searchTerm);
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Failed to cancel booking"
+      );
+      console.log(error);
+    } finally {
+      setLoader(false);
+    }
+  }
+};
+
 
   const handleDelete = async (id) => {
     // Show confirmation dialog
@@ -618,8 +672,9 @@ const proceedToCheckout = (roomAssignments) => {
           <div className="w-32 flex items-center justify-center gap-1">
             {/* Primary Action Button */}
             {((location.pathname === "/sUsers/bookingList" &&
-              el?.status != "checkIn") ||
-              (el?.status != "checkOut" &&
+             el?.status != "checkIn" &&
+    el?.status != "cancelled") ||
+    (el?.status != "checkOut" &&
                 location.pathname === "/sUsers/checkInList") ||
               (Number(el?.balanceToPay) > 0 &&
                 location.pathname === "/sUsers/checkOutList")) && (
@@ -751,8 +806,8 @@ const proceedToCheckout = (roomAssignments) => {
 
           {/* ROOM NO */}
           <div className="w-24 text-center text-gray-600 font-medium">
-            {el?.selectedRooms?.map((r) => r.roomName).join(", ") || "-"}
-          </div>
+  {el?.selectedRooms?.map((r) => r.roomName).join(", ") || "-"}
+</div>
 
           {/* ARRIVAL DATE/TIME */}
           <div className="w-36 text-center text-gray-600 text-xs">
@@ -929,7 +984,26 @@ const proceedToCheckout = (roomAssignments) => {
                 />
               </div>
             ) : null}
+            {location.pathname === "/sUsers/bookingList" && 
+   el?.status !== "checkIn" && 
+   el?.status !== "cancelled" && (
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        handleCancelBooking(el._id, el.voucherNumber);
+      }}
+      className="bg-amber-500 hover:bg-amber-600 text-white font-semibold py-1 px-2 rounded text-xs transition duration-300"
+      title="Cancel booking"
+    >
+      Cancel
+    </button>
+  )} {el?.status === "cancelled" && (
+    <span className="bg-red-100 text-red-700 font-semibold py-1 px-3 rounded text-xs">
+      Cancelled
+    </span>
+  )}
           </div>
+
         </div>
       </div>
     );
@@ -937,6 +1011,11 @@ const proceedToCheckout = (roomAssignments) => {
 
 const handleCloseBasedOnDate = (checkouts) => {
   console.log("Updated checkouts:", checkouts);
+   if (!checkouts) {
+    setShowCheckOutDateModal(false);
+    setShowSelectionModal(true);
+    return;
+  }
   setSaveLoader(true);
   
   if (processedCheckoutData) {
@@ -1040,16 +1119,16 @@ const handleCloseBasedOnDate = (checkouts) => {
             isOpen={CheckoutDateModal}
             onClose={handleCloseBasedOnDate}
             checkoutData={selectedCheckOut}
-            // handleCancel={handleCancelShowCheckOutDateModal}
+           
           />
         )}
 
         {/* Confirmation Modal */}
-        {selectedCheckOut.length > 0 &&
-          showSelectionModal &&
-          (location.pathname === "/sUsers/checkInList" ||
-            location.pathname === "/sUsers/checkOutList") && (
-              
+      {selectedCheckOut.length > 0 &&
+  showSelectionModal &&
+  (location.pathname === "/sUsers/checkInList" ||
+    location.pathname === "/sUsers/checkOutList") &&
+  searchTerm !== "completed" && (
             <div className="fixed bottom-6 right-6 z-50 animate-slideUp">
               <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-4 min-w-[280px]">
                 {/* Selected Items Count */}

@@ -13,6 +13,7 @@ function EditChecking() {
   const location = useLocation();
   const editData = location?.state;
   const isTariffRateChange = location?.state?.fromDashboard === true;
+const roomIdToEdit = location?.state?.roomId; 
 
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -50,16 +51,25 @@ function EditChecking() {
           modal: "checkIn",
           paymentData: paymentData,
           orgId: organization._id,
+          isTariffRateChange: isTariffRateChange, // ✅ Pass flag
+          roomIdToEdit: roomIdToEdit,
         },
         { withCredentials: true }
       );
       if (response?.data?.success) {
-        toast.success(response?.data?.message);
+        toast.success(isTariffRateChange 
+            ? `Room tariff updated successfully. ${response.data.roomsCount} room(s) in check-in.`
+            : response?.data?.message
+        );
         navigate("/sUsers/checkInList");
       }
     } catch (error) {
       toast.error(error?.response?.data?.message || "Update failed");
     }
+       finally {
+    // Reset the submitting flag
+    isSubmittingRef.current = false;
+  }
   };
 
   return (
@@ -90,6 +100,7 @@ function EditChecking() {
             isFor={"deliveryNote"}
             outStanding={outStanding}
             isTariffRateChange={isTariffRateChange}
+             roomId={roomIdToEdit}
           />
         </div>
       )}

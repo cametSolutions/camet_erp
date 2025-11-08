@@ -5,6 +5,7 @@ export default function CheckoutDateModal({
   isOpen = true,
   onClose,
   checkoutData = [],
+  
 }) {
   const [checkouts, setCheckouts] = useState(
     checkoutData.length > 0 ? checkoutData : [
@@ -154,8 +155,10 @@ export default function CheckoutDateModal({
     onClose(checkouts);
   };
 
-  const handleCancel = () => {
-    onClose(null);
+ const handleCancel = () => {
+    // Reset to original data and close without processing
+    setCheckouts(checkoutData);
+    onClose(null); // Pass null to indicate cancellation
   };
 
   if (!isOpen) return null;
@@ -169,12 +172,13 @@ export default function CheckoutDateModal({
             <Calendar size={18} />
             Update Checkout Dates
           </h2>
-          <button
-            onClick={handleCancel}
-            className="text-gray-400 hover:text-gray-600 transition-colors p-1"
-          >
-            <X size={20} />
-          </button>
+<button onClick={handleCancel} className="text-gray-400 hover:text-gray-600 transition-colors p-1">
+  <X size={20} />
+</button>
+
+
+
+
         </div>
 
         {/* Compact Table Body with Fixed Height */}
