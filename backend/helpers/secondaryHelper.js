@@ -535,7 +535,7 @@ export const updateAdditionalChargeInSale = async (
       const { value, taxPercentage } = charge;
 
       const taxAmt = parseFloat(
-        ((parseFloat(value) * parseFloat(taxPercentage)) / 100).toFixed(2)
+        ((parseFloat(value) * parseFloat(taxPercentage || 0)) / 100).toFixed(2)
       );
 
       return {

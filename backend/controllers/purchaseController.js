@@ -82,19 +82,19 @@ export const createPurchase = async (req, res) => {
       session
     );
 
-    const updateAdditionalCharge = additionalChargesFromRedux.map((charge) => {
-      const { value, taxPercentage } = charge;
-      const taxAmt = parseFloat(
-        ((parseFloat(value) * parseFloat(taxPercentage)) / 100).toFixed(2)
-      );
-      return { ...charge, taxAmt };
-    });
+    // const updateAdditionalCharge = additionalChargesFromRedux.map((charge) => {
+    //   const { value, taxPercentage } = charge;
+    //   const taxAmt = parseFloat(
+    //     ((parseFloat(value) * parseFloat(taxPercentage || 0)) / 100).toFixed(2)
+    //   );
+    //   return { ...charge, taxAmt };
+    // });
 
     const result = await createPurchaseRecord(
       req,
       purchaseNumber,
       items,
-      updateAdditionalCharge,
+      additionalChargesFromRedux,
       session,
       purchase_id
     );

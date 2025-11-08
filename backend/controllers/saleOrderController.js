@@ -65,10 +65,10 @@ export const createInvoice = async (req, res) => {
           )
         );
 
-        const updateAdditionalCharge =
-          additionalChargesFromRedux.length > 0
-            ? calculateAdditionalCharges(additionalChargesFromRedux)
-            : [];
+        // const updateAdditionalCharge =
+        //   additionalChargesFromRedux.length > 0
+        //     ? calculateAdditionalCharges(additionalChargesFromRedux)
+        //     : [];
 
         const invoice = new invoiceModel({
           serialNumber: newSerialNumber,
@@ -77,7 +77,7 @@ export const createInvoice = async (req, res) => {
           party,
           items: updatedItems,
           priceLevel: priceLevelFromRedux,
-          additionalCharges: updateAdditionalCharge,
+          additionalCharges: additionalChargesFromRedux,
           note,
           finalAmount: lastAmount,
           Primary_user_id: owner,

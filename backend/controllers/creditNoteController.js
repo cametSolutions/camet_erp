@@ -74,19 +74,19 @@ export const createCreditNote = async (req, res) => {
       session
     );
 
-    const updateAdditionalCharge = additionalChargesFromRedux.map((charge) => {
-      const { value, taxPercentage } = charge;
-      const taxAmt = parseFloat(
-        ((parseFloat(value) * parseFloat(taxPercentage)) / 100).toFixed(2)
-      );
-      return { ...charge, taxAmt };
-    });
+    // const updateAdditionalCharge = additionalChargesFromRedux.map((charge) => {
+    //   const { value, taxPercentage } = charge;
+    //   const taxAmt = parseFloat(
+    //     ((parseFloat(value) * parseFloat(taxPercentage)) / 100).toFixed(2)
+    //   );
+    //   return { ...charge, taxAmt };
+    // });
 
     const result = await createCreditNoteRecord(
       req,
       creditNoteNumber,
       items,
-      updateAdditionalCharge,
+      additionalChargesFromRedux,
       session
     );
 
