@@ -350,15 +350,16 @@ export const editCreditNote = async (req, res) => {
     } else {
       /// save settlements
       await saveSettlementData(
-        creditNoteNumber,
-        series_id,
-        "Credit Note",
-        "creditNote",
-        lastAmount,
         party,
         orgId,
-        existingCreditNote?.Primary_user_id,
-        selectedDate,
+        null,/// payment mode,
+        "creditNote", /// voucher type
+        "CreditNote", /// voucher Model
+        creditNoteNumber,
+        series_id,
+        lastAmount,
+        existingCreditNote.createdAt,
+        req,
         session
       );
     }

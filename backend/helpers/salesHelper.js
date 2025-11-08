@@ -1161,12 +1161,12 @@ export const saveSettlementData = async (
   party,
   orgId,
   paymentMethod,
-  type,
+  voucherType,
+  voucherModel,
   voucherNumber,
   voucherId,
   amount,
   createdAt,
-  partyName,
   req,
   session
 ) => {
@@ -1174,12 +1174,12 @@ export const saveSettlementData = async (
     const object = {
       voucherNumber: voucherNumber,
       voucherId: voucherId,
-      voucherModel: "Sales", // must match enum
-      voucherType: "sales", // must match enum
+      voucherModel: voucherModel, // must match enum
+      voucherType: voucherType, // must match enum
       amount: amount,
       payment_mode: paymentMethod?.toLowerCase() || null, // ✅ schema expects lowercase enum
       partyId: party?._id,
-      partyName: partyName || party?.partyName,
+      partyName:party?.partyName,
       partyType: party?.partyType?.toLowerCase(), // must match ["cash","bank","party"]
       sourceId: party?._id,
       sourceType: party?.partyType?.toLowerCase(), // must match enum

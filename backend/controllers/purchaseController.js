@@ -249,17 +249,18 @@ export const editPurchase = async (req, res) => {
         classification: "Cr",
       });
     } else {
-      ///save settlement data
+
       await saveSettlementData(
-        purchaseNumber,
-        series_id,
-        "Purchase",
-        "CreditNote",
-        lastAmount,
         party,
         orgId,
-        existingPurchase?.Primary_user_id,
-        selectedDate,
+        null,/// payment mode,
+        "purchase", /// voucher type
+        "Purchase", /// voucher Model
+        purchaseNumber,
+        series_id,
+        lastAmount,
+        existingPurchase.createdAt,
+        req,
         session
       );
     }

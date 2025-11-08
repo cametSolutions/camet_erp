@@ -328,17 +328,19 @@ export const editDebitNote = async (req, res) => {
         classification: "Dr",
       });
     } else {
-      /// save settlements
+
+
       await saveSettlementData(
-        debitNoteNumber,
-        series_id,
-        "Debit Note",
-        "debitNote",
-        lastAmount,
         party,
         orgId,
-        Primary_user_id,
-        selectedDate,
+        null,/// payment mode,
+        "debitNote", /// voucher type
+        "DebitNote", /// voucher Model
+        debitNoteNumber,
+        series_id,
+        lastAmount,
+        existingDebitNote.createdAt,
+        req,
         session
       );
     }
