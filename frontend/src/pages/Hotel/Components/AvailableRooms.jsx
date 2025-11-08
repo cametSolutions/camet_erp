@@ -18,6 +18,8 @@ function AvailableRooms({
   sendToParent,
   formData,
   selectedRoomId,
+   isTariffRateChange = false,  // ✅ Add this
+  roomIdToUpdate = null,
 }) {
   const [rooms, setRooms] = useState([]);
   const [search, setSearch] = useState("");
@@ -32,31 +34,164 @@ function AvailableRooms({
   const [pendingRoomId, setPendingRoomId] = useState(null);
   const [pendingRoomQueue, setPendingRoomQueue] = useState([]);
 
+const [isEditingSingleRoom, setIsEditingSingleRoom] = useState(false);
+
   const debounceTimerRef = useRef(null);
   const dropdownRef = useRef(null);
   const PAGE_SIZE = 50;
 
+
 useEffect(() => {
   const fetchBookings = async () => {
     if (formData?.selectedRooms?.length > 0) {
-      const updatedBookings = await Promise.all(
-        formData.selectedRooms.map(async (booking) => {
-          const taxCalculation = await calculateTax(booking);
-          return taxCalculation;
-        })
-      );
-      console.log(updatedBookings);
-      setBookings(updatedBookings);
-    }else if(rooms?.length > 0){
-      console.log("rooms",rooms);
+      // Check if we're in tariff rate change mode for a specific room
+      if (isTariffRateChange && roomIdToUpdate) {
+        setIsEditingSingleRoom(true);
+        
+        // Find the specific room being edited
+         let specificRoom = formData.selectedRooms.find(
+          (room) => {
+            const roomId = room.roomId?._id?.toString() || 
+                          room.roomId?.toString() || 
+                          room._id?.toString();
+            return roomId === roomIdToUpdate.toString();
+          }
+        );
+        
+        if (specificRoom) {
+          // If priceLevel is missing or incomplete, fetch full room details
+          if (!specificRoom.priceLevel || specificRoom.priceLevel.length === 0) {
+            try {
+              console.log("Fetching full room details for:", specificRoom.roomId);
+              
+              // Option 1: If you have a getRoomById endpoint
+              // const response = await api.get(
+              //   `/api/sUsers/getRoomById/${specificRoom.roomId || specificRoom._id}`,
+              //   { withCredentials: true }
+              // );
+              
+              // Option 2: Use existing getRooms endpoint with search
+              const response = await api.get(
+                `/api/sUsers/getRooms/${cmp_id}`,
+                { 
+                  params: { roomId: specificRoom.roomId || specificRoom._id },
+                  withCredentials: true 
+                }
+              );
+              
+              const roomData = response.data?.roomData?.[0] || response.data?.room;
+              
+              if (roomData) {
+                // Merge fetched data with existing room data
+                specificRoom = {
+                  ...specificRoom,
+                  priceLevel: roomData.priceLevel || [],
+                  roomType: roomData.roomType || specificRoom.roomType,
+                  hsnDetails: roomData.hsn || specificRoom.hsnDetails,
+                  roomName: roomData.roomName || specificRoom.roomName,
+                };
+                console.log("Merged room data:", specificRoom);
+              }
+            } catch (error) {
+              console.error("Error fetching room details:", error);
+              // Continue with existing data even if fetch fails
+            }
+          }
+          // Normalize the room data structure
+          const normalizedRoom = {
+            roomId: specificRoom.roomId || specificRoom._id,
+            roomName: specificRoom.roomName,
+            priceLevel: specificRoom.priceLevel || [],
+            selectedPriceLevel: specificRoom.selectedPriceLevel || specificRoom.priceLevelId,
+            roomType: specificRoom.roomType,
+            pax: specificRoom.pax || 2,
+            priceLevelRate: specificRoom.priceLevelRate || 0,
+            stayDays: specificRoom.stayDays || formData.stayDays || 1,
+            hsnDetails: specificRoom.hsnDetails || specificRoom.hsn,
+            totalAmount: specificRoom.totalAmount || 0,
+            // Preserve existing tax data if available
+            amountAfterTax: specificRoom.amountAfterTax,
+            amountWithOutTax: specificRoom.amountWithOutTax,
+            taxPercentage: specificRoom.taxPercentage,
+            foodPlanTaxRate: specificRoom.foodPlanTaxRate,
+            additionalPaxAmount: specificRoom.additionalPaxAmount,
+            foodPlanAmount: specificRoom.foodPlanAmount,
+            taxAmount: specificRoom.taxAmount,
+            additionalPaxAmountWithTax: specificRoom.additionalPaxAmountWithTax,
+            additionalPaxAmountWithOutTax: specificRoom.additionalPaxAmountWithOutTax,
+            foodPlanAmountWithTax: specificRoom.foodPlanAmountWithTax,
+            foodPlanAmountWithOutTax: specificRoom.foodPlanAmountWithOutTax,
+            baseAmount: specificRoom.baseAmount,
+            baseAmountWithTax: specificRoom.baseAmountWithTax,
+            totalCgstAmt: specificRoom.totalCgstAmt,
+            totalSgstAmt: specificRoom.totalSgstAmt,
+            totalIgstAmt: specificRoom.totalIgstAmt,
+          };
+          
+          // Recalculate tax for this room
+          const taxCalculation = await calculateTax(normalizedRoom);
+          console.log("Tariff Rate Change - Normalized Room:", taxCalculation);
+          setBookings([taxCalculation]);
+        }
+      } else {
+        // Normal mode - show all rooms
+        setIsEditingSingleRoom(false);
+        const updatedBookings = await Promise.all(
+          formData.selectedRooms.map(async (booking) => {
+            // Normalize each booking's data structure
+            const normalizedBooking = {
+              roomId: booking.roomId || booking._id,
+              roomName: booking.roomName,
+              priceLevel: booking.priceLevel || [],
+              selectedPriceLevel: booking.selectedPriceLevel || booking.priceLevelId,
+              roomType: booking.roomType,
+              pax: booking.pax || 2,
+              priceLevelRate: booking.priceLevelRate || 0,
+              stayDays: booking.stayDays || formData.stayDays || 1,
+              hsnDetails: booking.hsnDetails || booking.hsn,
+              totalAmount: booking.totalAmount || 0,
+              // Preserve existing tax data
+              amountAfterTax: booking.amountAfterTax,
+              amountWithOutTax: booking.amountWithOutTax,
+              taxPercentage: booking.taxPercentage,
+              foodPlanTaxRate: booking.foodPlanTaxRate,
+              additionalPaxAmount: booking.additionalPaxAmount,
+              foodPlanAmount: booking.foodPlanAmount,
+              taxAmount: booking.taxAmount,
+              additionalPaxAmountWithTax: booking.additionalPaxAmountWithTax,
+              additionalPaxAmountWithOutTax: booking.additionalPaxAmountWithOutTax,
+              foodPlanAmountWithTax: booking.foodPlanAmountWithTax,
+              foodPlanAmountWithOutTax: booking.foodPlanAmountWithOutTax,
+              baseAmount: booking.baseAmount,
+              baseAmountWithTax: booking.baseAmountWithTax,
+              totalCgstAmt: booking.totalCgstAmt,
+              totalSgstAmt: booking.totalSgstAmt,
+              totalIgstAmt: booking.totalIgstAmt,
+            };
+            
+            const taxCalculation = await calculateTax(normalizedBooking);
+            return taxCalculation;
+          })
+        );
+        console.log("Normal Mode - All Bookings:", updatedBookings);
+        setBookings(updatedBookings);
+      }
+    } else if (rooms?.length > 0 && selectedRoomId) {
       let specificRoom = rooms.find((room) => room._id === selectedRoomId);
-      console.log(specificRoom);
-      handleSelect(specificRoom);
+      if (specificRoom) {
+        handleSelect(specificRoom);
+      }
     }
   };
 
   fetchBookings();
-}, [formData?.selectedRooms?.length,formData?.stayDays,rooms?.length]);
+}, [
+  formData?.selectedRooms?.length,
+  formData?.stayDays,
+  rooms?.length,
+  isTariffRateChange,
+  roomIdToUpdate,
+]);
 
 
   useEffect(() => {
@@ -239,14 +374,43 @@ useEffect(() => {
     };
   }, [pendingRoomQueue, bookings]);
 
- useEffect(() => {
-    if (bookings.length > 0) {
-      const total = bookings.reduce(
+useEffect(() => {
+  if (bookings.length > 0) {
+    // Calculate totals for currently displayed bookings
+    const total = bookings.reduce(
+      (acc, b) => acc + Number(b.amountAfterTax || b.totalAmount || 0),
+      0
+    );
+    
+    const paxTotal = bookings.reduce(
+      (acc, b) => {
+        const paxPerDay = Number(b.additionalPaxAmountWithTax || 0);
+        const days = Number(b.stayDays || 1);
+        return acc + (paxPerDay * days);
+      },
+      0
+    );
+    
+    const foodTotal = Number(formData?.foodPlanTotal || 0);
+    const finalTotal = total + paxTotal + foodTotal;
+    
+    // If in single-room edit mode, merge with other rooms before sending to parent
+    if (isEditingSingleRoom && roomIdToUpdate && formData?.selectedRooms?.length > 1) {
+      // Get all other rooms except the one being edited
+      const otherRooms = formData.selectedRooms.filter(
+        (room) => room.roomId !== roomIdToUpdate && room._id !== roomIdToUpdate
+      );
+      
+      // Merge the edited room with other rooms
+      const allRooms = [...otherRooms, ...bookings];
+      
+      // Recalculate total for all rooms
+      const allRoomsTotal = allRooms.reduce(
         (acc, b) => acc + Number(b.amountAfterTax || b.totalAmount || 0),
         0
       );
-      // Add pax total (multiplied by days for each booking)
-      const paxTotal = bookings.reduce(
+      
+      const allRoomsPaxTotal = allRooms.reduce(
         (acc, b) => {
           const paxPerDay = Number(b.additionalPaxAmountWithTax || 0);
           const days = Number(b.stayDays || 1);
@@ -254,35 +418,68 @@ useEffect(() => {
         },
         0
       );
-      // Add food plan total
-      const foodTotal = Number(formData?.foodPlanTotal || 0);
-      const finalTotal = total + paxTotal + foodTotal;
+      
+      const allRoomsFinalTotal = allRoomsTotal + allRoomsPaxTotal + foodTotal;
+      
+      setTotalAmount(allRoomsFinalTotal);
+      sendToParent(allRooms, allRoomsFinalTotal);
+    } else {
+      // Normal mode - send as is
       setTotalAmount(finalTotal);
       sendToParent(bookings, finalTotal);
-    } else {
-      setTotalAmount(0);
-      sendToParent([], 0);
     }
-  }, [bookings, formData?.foodPlanTotal]);
+  } else {
+    setTotalAmount(0);
+    sendToParent([], 0);
+  }
+}, [bookings, formData?.foodPlanTotal, isEditingSingleRoom, roomIdToUpdate, formData?.selectedRooms]);
 
-  const handlePriceLevelChange = (e, roomId) => {
-    const selectedLevelId = e.target.value;
-    setBookings((prev) =>
-      prev.map((booking) => {
-        if (booking.roomId !== roomId) return booking;
-        const level = booking.priceLevel.find((p) => p._id === selectedLevelId);
-        const newRate = level?.priceRate || booking.roomType?.roomRent || 0;
-        return {
-          ...booking,
-          selectedPriceLevel: selectedLevelId,
-          priceLevelRate: newRate,
-          totalAmount: Number(booking.stayDays || 0) * Number(newRate),
-        };
-      })
-    );
-    // setPendingRoomId(roomId);
-  };
 
+const handlePriceLevelChange = (e, roomId) => {
+  const selectedLevelId = e.target.value;
+  
+  setBookings((prev) =>
+    prev.map((booking) => {
+      if (booking.roomId !== roomId) return booking;
+      
+      // Find the selected price level
+      const level = booking.priceLevel.find((p) => {
+        // Handle both normalized and non-normalized price level structures
+        return p._id === selectedLevelId || 
+               p.priceLevel?._id === selectedLevelId;
+      });
+      
+      // Determine the new rate
+      let newRate = 0;
+      if (level) {
+        // Price level found
+        newRate = level?.priceRate || level?.priceLevel?.priceRate || 0;
+      } else if (selectedLevelId === booking?.roomType?._id) {
+        // "Normal" rate selected (room type base rate)
+        newRate = booking.roomType?.roomRent || 0;
+      }
+      
+      console.log("Price Level Change:", {
+        selectedLevelId,
+        level,
+        newRate,
+        booking
+      });
+      
+      return {
+        ...booking,
+        selectedPriceLevel: selectedLevelId,
+        priceLevelRate: newRate,
+        totalAmount: Number(booking.stayDays || 0) * Number(newRate),
+      };
+    })
+  );
+  
+  // Queue for tax recalculation
+  setPendingRoomQueue((prev) =>
+    prev.includes(roomId) ? prev : [...prev, roomId]
+  );
+};
   const handleDaysChange = (e, roomId) => {
     const newDays = Number(e.target.value || 0) 
     setBookings((prev) =>
@@ -297,20 +494,27 @@ useEffect(() => {
     );
   };
 
-  const handlePriceLevelRateChange = (e, roomId) => {
-    const newRate = e.target.value;
-    console.log(newRate);
-    setBookings((prev) =>
-      prev.map((b) =>
-        b.roomId === roomId
-          ? { ...b, priceLevelRate: newRate, totalAmount: newRate * b.stayDays }
-          : b
-      )
-    );
-    setPendingRoomQueue((prev) =>
-      prev.includes(roomId) ? prev : [...prev, roomId]
-    );
-  };
+ const handlePriceLevelRateChange = (e, roomId) => {
+  const newRate = Number(e.target.value);
+  console.log("Rate Change - New Rate:", newRate, "for Room:", roomId);
+  
+  setBookings((prev) =>
+    prev.map((b) =>
+      b.roomId === roomId
+        ? { 
+            ...b, 
+            priceLevelRate: newRate, 
+            totalAmount: newRate * (b.stayDays || 1)
+          }
+        : b
+    )
+  );
+  
+  // Queue for tax recalculation
+  setPendingRoomQueue((prev) =>
+    prev.includes(roomId) ? prev : [...prev, roomId]
+  );
+};
 
   const handlePaxChange = (e, roomId) => {
     const newPax = Number(e.target.value) || 0;
@@ -320,10 +524,15 @@ useEffect(() => {
     setPendingRoomId(roomId);
   };
 
- const handleDelete = (roomId) => {
-    let filetedRoom = bookings.filter((b) => b.roomId !== roomId)
-    setBookings(filetedRoom);
-  };
+const handleDelete = (roomId) => {
+  if (isEditingSingleRoom) {
+    // Show message or prevent deletion when editing single room
+    toast.error("Cannot delete room while in tariff rate change mode");
+    return;
+  }
+  let filteredRoom = bookings.filter((b) => b.roomId !== roomId);
+  setBookings(filteredRoom);
+};
 
   const handleSelect = async (room) => {
     const defaultRate =
@@ -407,24 +616,24 @@ useEffect(() => {
   }
 }, [bookings.length]); // Triggers when rooms are added/removed from bookings
 
-  console.log(bookings[0]);
+  console.log(formData);
   return (
     <>
       <div className={`relative w-full ${className}`} ref={dropdownRef}>
         <div className="relative">
-          <input
+          <input	
             type="text"
             value={selectedValue ? selectedValue.roomName : search}
             onChange={(e) => handleSearch(e.target.value)}
-            onClick={() => {
-              if (!disabled) setIsOpen(true);
-            }}
-            placeholder={placeholder}
-            disabled={disabled}
-            className={`w-full px-4 py-3 pr-20 border rounded-lg bg-white ${
-              disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
-            } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-          />
+             onClick={() => {
+    if (!disabled && !isEditingSingleRoom) setIsOpen(true);
+  }}
+           placeholder={isEditingSingleRoom ? "Room selection disabled during rate change" : placeholder}
+  disabled={disabled || isEditingSingleRoom}
+  className={`w-full px-4 py-3 pr-20 border rounded-lg bg-white ${
+    disabled || isEditingSingleRoom ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+  } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+/>
           <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
             {selectedValue && !disabled && (
               <button
@@ -554,38 +763,36 @@ useEffect(() => {
                         </div>
                       </td>
 
-                      <td className="px-1 py-1">
-                        {booking.priceLevel && booking.priceLevel.length > 0 ? (
-                          <select
-                            value={
-                              booking.selectedPriceLevel
-                                ? booking.selectedPriceLevel?._id
-                                : booking?.selectedPriceLevel?._id
-                            }
-                            onChange={(e) =>
-                              handlePriceLevelChange(e, booking.roomId)
-                            }
-                            className="w-full px-1 py-1 border  border-red-300 rounded text-red-600 bg-red-50 text-xs focus:outline-none focus:ring-1 focus:ring-red-500"
-                          >
-                            {booking.priceLevel.map((priceLevel) => (
-                              <option
-                                key={priceLevel?._id}
-                                value={priceLevel?._id}
-                              >
-                                {priceLevel?.priceLevel?.pricelevel ||
-                                  priceLevel?.pricelevel}
-                              </option>
-                            ))}
-                            {booking?.roomType && (
-                              <option value={booking?.roomType?._id}>
-                                Normal
-                              </option>
-                            )}
-                          </select>
-                        ) : (
-                          <span className="text-red-500 text-xs">No Level</span>
-                        )}
-                      </td>
+  <td className="px-1 py-1">
+  {booking.priceLevel && booking.priceLevel.length > 0 ? (
+    <select
+      value={booking.selectedPriceLevel || ""}
+      onChange={(e) => handlePriceLevelChange(e, booking.roomId)}
+      className="w-full px-1 py-1 border border-red-300 rounded text-red-600 bg-red-50 text-xs focus:outline-none focus:ring-1 focus:ring-red-500"
+    >
+      {booking.priceLevel.map((priceLevel) => {
+        // Handle both data structures
+        const levelId = priceLevel._id || priceLevel.priceLevel?._id;
+        const levelName = priceLevel.pricelevel || 
+                         priceLevel.priceLevel?.pricelevel || 
+                         "Unknown";
+        
+        return (
+          <option key={levelId} value={levelId}>
+            {levelName}
+          </option>
+        );
+      })}
+      {booking?.roomType && (
+        <option value={booking?.roomType?._id}>
+          Normal (₹{booking?.roomType?.roomRent || 0})
+        </option>
+      )}
+    </select>
+  ) : (
+    <span className="text-red-500 text-xs">No Level</span>
+  )}
+</td>
 
                       <td className="px-1 py-1">
                         <input
@@ -749,7 +956,7 @@ useEffect(() => {
                       <div className="flex  gap-2">
                         {formData?.paxTotal && (
                           <span>
-                            Pax ₹{Number(formData.paxTotal).toFixed(0)}
+                            Pax ₹{Number(formData.paxTotal * formData.stayDays).toFixed(0)}
                           </span>
                         )}
                         {formData?.foodPlanTotal && (
@@ -768,7 +975,7 @@ useEffect(() => {
         </div>
       )}
     </>
-  );
-}
+  )
+};
 
 export default AvailableRooms;

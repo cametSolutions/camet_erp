@@ -76,6 +76,9 @@ export const buildDatabaseFilterForBooking = (params) => {
     Primary_user_id: params.Primary_user_id,
   };
 
+    if (params.modal === "checkIn") {
+    filter.status = { $nin: ["checkOut"] };
+  }
   if (params.roomId) {
     filter["selectedRooms.roomId"] = params.roomId;
   }
@@ -165,6 +168,9 @@ export const extractRequestParamsForBookings = (req) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 0;
   
+   const modal = parseInt(req.query.modal) || 0;
+    const roomId = parseInt(req.query.roomId) || 0;
+   
   return {
     Secondary_user_id: req.sUserId,
     cmp_id: new mongoose.Types.ObjectId(req.params.cmp_id),

@@ -486,6 +486,7 @@ const Routers = () => {
 <Route path='/sUsers/SummaryDashboard' element={<ProtectedSecRoute><SummaryDashboard/></ProtectedSecRoute>}/>
 <Route path='/sUsers/BillSummary' element={<ProtectedSecRoute><BillSummary/></ProtectedSecRoute>}/>
 <Route path="/sUsers/CheckInPrint" element={<ProtectedSecRoute><CheckInPrint/></ProtectedSecRoute>}/>
+
     </Routes>
     </Suspense>
   )
