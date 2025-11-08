@@ -756,10 +756,10 @@ const getSourceType = (item) => {
   let updatedSourceType;
 
   if (item?.type === "credit") {
-    updatedSourceType = item?.credit_reference_type || null;
-  } else if (item?.ref_collection === "Cash") {
+    updatedSourceType = "party";
+  } else if (item?.type === "cash") {
     updatedSourceType = "cash";
-  } else if (item?.ref_collection === "BankDetails") {
+  } else if (item?.type=="upi" || item?.type=="cheque") {
     updatedSourceType = "bank";
   } else {
     updatedSourceType = "party";
@@ -848,6 +848,8 @@ const handleNonCreditMode = async (
   selectedDate,
   session
 ) => {
+
+  console.log("here came call in non credit mode");
   const validModes = ["cash", "upi", "cheque"];
 
   if (!validModes.includes(mode)) {
@@ -871,6 +873,9 @@ const handleNonCreditMode = async (
     settlement_date: selectedDate,
     voucher_date: selectedDate,
   };
+
+  console.log("settlementData",settlementData);
+  
 
   const settlement = new settlementModel(settlementData);
   await settlement.save({ session });
