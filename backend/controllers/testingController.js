@@ -1,14 +1,16 @@
 import mongoose from "mongoose";
 import Sales from "../models/salesModel.js";
+import SaleOrder from "../models/invoiceModel.js";
+import Party from "../models/partyModel.js";
 import Purchases from "../models/purchaseModel.js";
 import Invoices from "../models/invoiceModel.js";
 import CreditNotes from "../models/creditNoteModel.js";
+import Settlement from "../models/settlementModel.js";
 import DebitNotes from "../models/debitNoteModel.js";
 import VanSales from "../models/vanSaleModel.js";
 import Receipts from "../models/receiptModel.js";
 import Payments from "../models/paymentModel.js";
 import ProductModel from "../models/productModel.js";
-import salesModel from "../models/salesModel.js";
 import purchaseModel from "../models/purchaseModel.js";
 import primaryUserModel from "../models/primaryUserModel.js";
 import OragnizationModel from "../models/OragnizationModel.js";
@@ -16,7 +18,6 @@ import secondaryUserModel from "../models/secondaryUserModel.js";
 import AccountGroup from "../models/accountGroup.js";
 import PartyModel from "../models/partyModel.js";
 import { accountGroups03 } from "../../frontend/constants/accountGroups.js";
-import { login } from "./secondaryUserController.js";
 import TallyData from "../models/TallyData.js";
 
 /**
@@ -495,3 +496,283 @@ export const addAccountGroupIdToOutstanding = async (req, res) => {
   }
 };
 
+export const deleteDuplicateParties = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  const cmp_id = "688328045d8692c9405bee91";
+
+  try {
+    // Step 1: Find all duplicate parties for specific company
+    const duplicates = await Party.aggregate([
+      {
+        $match: { cmp_id: new mongoose.Types.ObjectId(cmp_id) },
+      },
+      {
+        $group: {
+          _id: "$partyName",
+          count: { $sum: 1 },
+          ids: { $push: "$_id" },
+          docs: { $push: "$$ROOT" },
+        },
+      },
+      {
+        $match: {
+          count: { $gt: 1 },
+        },
+      },
+      {
+        $sort: { _id: 1 },
+      },
+    ]);
+
+    let deletedCount = 0;
+    let updatedReferences = {
+      sales: 0,
+      saleOrders: 0,
+      receipts: 0,
+      outstandings: 0,
+      settlements: 0, // Add settlement counter
+    };
+
+    // Step 2: Process each duplicate group
+    for (const duplicate of duplicates) {
+      const partyName = duplicate._id;
+      const allIds = duplicate.ids;
+
+      // Keep the first party
+      const keepId = allIds[0];
+      const deleteIds = allIds.slice(1);
+
+      console.log(`Processing: ${partyName}`);
+      console.log(`Keeping: ${keepId}`);
+      console.log(`Deleting: ${deleteIds.join(", ")}`);
+
+      // Step 3: Update references in Sale collection
+      const saleUpdateResult = await Sales.updateMany(
+        {
+          "party._id": { $in: deleteIds },
+          cmp_id: new mongoose.Types.ObjectId(cmp_id),
+        },
+        { $set: { "party._id": keepId } },
+        { session }
+      );
+      updatedReferences.sales += saleUpdateResult.modifiedCount;
+
+      // Step 4: Update references in SaleOrder collection
+      const saleOrderUpdateResult = await SaleOrder.updateMany(
+        {
+          "party._id": { $in: deleteIds },
+          cmp_id: new mongoose.Types.ObjectId(cmp_id),
+        },
+        { $set: { "party._id": keepId } },
+        { session }
+      );
+      updatedReferences.saleOrders += saleOrderUpdateResult.modifiedCount;
+
+      // Step 5: Update references in Receipt collection
+      const receiptUpdateResult = await Receipts.updateMany(
+        {
+          "party._id": { $in: deleteIds },
+          cmp_id: new mongoose.Types.ObjectId(cmp_id),
+        },
+        { $set: { "party._id": keepId } },
+        { session }
+      );
+      updatedReferences.receipts += receiptUpdateResult.modifiedCount;
+
+      // Step 6: Update references in Outstanding collection (party_id field)
+      const outstandingUpdateResult = await TallyData.updateMany(
+        {
+          party_id: { $in: deleteIds },
+          cmp_id: new mongoose.Types.ObjectId(cmp_id),
+        },
+        { $set: { party_id: keepId } },
+        { session }
+      );
+      updatedReferences.outstandings += outstandingUpdateResult.modifiedCount;
+
+      // Step 7: Update references in Settlement collection (party_id field)
+      const settlementUpdateResult = await Settlement.updateMany(
+        {
+          partyId: { $in: deleteIds },
+          cmp_id: new mongoose.Types.ObjectId(cmp_id),
+        },
+        { $set: { partyId: keepId } },
+        { session }
+      );
+      updatedReferences.settlements += settlementUpdateResult.modifiedCount;
+
+      // Step 8: Delete duplicate parties (only from this company)
+      const deleteResult = await Party.deleteMany(
+        {
+          _id: { $in: deleteIds },
+          cmp_id: new mongoose.Types.ObjectId(cmp_id),
+        },
+        { session }
+      );
+      deletedCount += deleteResult.deletedCount;
+    }
+
+    // Commit the transaction
+    await session.commitTransaction();
+
+    res.status(200).json({
+      success: true,
+      message: "Duplicate parties processed successfully",
+      data: {
+        companyId: cmp_id,
+        duplicateGroupsProcessed: duplicates.length,
+        partiesDeleted: deletedCount,
+        referencesUpdated: updatedReferences,
+        details: duplicates.map((d) => ({
+          partyName: d._id,
+          duplicateCount: d.count,
+        })),
+      },
+    });
+  } catch (error) {
+    // Rollback transaction on error
+    await session.abortTransaction();
+    console.error("Error processing duplicates:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to process duplicate parties",
+      error: error.message,
+    });
+  } finally {
+    session.endSession();
+  }
+};
+
+// Preview function with cmp_id filter
+export const previewDuplicateParties = async (req, res) => {
+  const cmp_id = "688328045d8692c9405bee91";
+
+  try {
+    const duplicates = await Party.aggregate([
+      {
+        $match: { cmp_id: new mongoose.Types.ObjectId(cmp_id) },
+      },
+      {
+        $group: {
+          _id: "$partyName",
+          count: { $sum: 1 },
+          ids: { $push: "$_id" },
+        },
+      },
+      {
+        $match: {
+          count: { $gt: 1 },
+        },
+      },
+      {
+        $sort: { _id: 1 },
+      },
+    ]);
+
+    const preview = [];
+
+    for (const duplicate of duplicates) {
+      const deleteIds = duplicate.ids.slice(1);
+
+      // Check references with cmp_id filter
+      const salesCount = await Sales.countDocuments({
+        "party._id": { $in: deleteIds },
+        cmp_id: new mongoose.Types.ObjectId(cmp_id),
+      });
+
+      const saleOrdersCount = await SaleOrder.countDocuments({
+        "party._id": { $in: deleteIds },
+        cmp_id: new mongoose.Types.ObjectId(cmp_id),
+      });
+
+      const receiptsCount = await Receipts.countDocuments({
+        "party._id": { $in: deleteIds },
+        cmp_id: new mongoose.Types.ObjectId(cmp_id),
+      });
+
+      // Check outstanding references (party_id field)
+      const outstandingsCount = await TallyData.countDocuments({
+        party_id: { $in: deleteIds },
+        cmp_id: new mongoose.Types.ObjectId(cmp_id),
+      });
+
+      // Check settlement references (party_id field)
+      const settlementsCount = await Settlement.countDocuments({
+        partyId: { $in: deleteIds },
+        cmp_id: new mongoose.Types.ObjectId(cmp_id),
+      });
+
+      preview.push({
+        partyName: duplicate._id,
+        totalDuplicates: duplicate.count,
+        keepId: duplicate.ids[0],
+        deleteIds: deleteIds,
+        affectedRecords: {
+          sales: salesCount,
+          saleOrders: saleOrdersCount,
+          receipts: receiptsCount,
+          outstandings: outstandingsCount,
+          settlements: settlementsCount,
+        },
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      companyId: cmp_id,
+      totalDuplicateGroups: duplicates.length,
+      preview: preview,
+    });
+  } catch (error) {
+    console.error("Error previewing duplicates:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to preview duplicates",
+      error: error.message,
+    });
+  }
+};
+
+//// creating outstanding form a sale
+export const createOutstandingFromSales = async (req, res) => {
+  try {
+    const { saleId } = req.params;
+    const sale = await Sales.findById(saleId);
+
+    if (!sale) {
+      return res.status(404).json({ message: "Sale not found" });
+    }
+
+    const outstanding = new TallyData({
+      cmp_id: sale.cmp_id,
+      Primary_user_id: sale.Primary_user_id,
+      accountGroup: sale.party.accountGroup_id,
+      subGroup: sale.party.subGroup,
+      party_id: sale.party._id,
+      party_name: sale.party.partyName,
+      mobile_no: sale.party?.mobileNumber,
+      bill_date: sale.date,
+      bill_due_date: sale.date,
+      bill_no: sale.salesNumber,
+      source: "sale",
+      classification: "Dr",
+      bill_amount: sale.finalOutstandingAmount,
+      bill_pending_amt: sale.finalOutstandingAmount,
+    });
+
+    await outstanding.save();
+    res.status(201).json({
+      message: "Outstanding created from sale successfully",
+      outstanding,
+    });
+  } catch (error) {
+    console.error("Error creating outstanding from sale:", error);
+    res.status(500).json({
+      message: "Failed to create outstanding from sale",
+      error: error.message,
+    });
+  }
+};

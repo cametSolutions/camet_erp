@@ -46,7 +46,7 @@ export const updateItemStockAndCalculatePrice = async (
 export const calculateAdditionalCharges = (additionalChargesFromRedux) => {
   return additionalChargesFromRedux.map((charge) => {
     const { value, taxPercentage } = charge;
-    const taxAmt = (parseFloat(value) * parseFloat(taxPercentage)) / 100;
+    const taxAmt = (parseFloat(value) * parseFloat(taxPercentage || 0)) / 100;
     return { ...charge, taxAmt };
   });
 };

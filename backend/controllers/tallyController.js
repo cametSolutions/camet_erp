@@ -1465,9 +1465,12 @@ export const savePartyFromTally = async (req, res) => {
 
         // Check if party already exists
         const existingParty = await partyModel.findOne({
-          party_master_id: party.party_master_id,
           cmp_id: party.cmp_id,
           Primary_user_id: party.Primary_user_id,
+          $or: [
+            { partyName: party.partyName },
+            { party_master_id: party.party_master_id },
+          ],
         });
 
         if (existingParty) {

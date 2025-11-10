@@ -445,8 +445,7 @@ export const createSaleRecord = async (
       totalAdditionalCharges: req.body.totalAdditionalCharges,
       totalPaymentSplits: req.body.totalPaymentSplittingAmount,
       totalWithAdditionalCharges: req.body.totalWithAdditionalCharges,
-      totalPaymentSplits: req.body.totalPaymentSplits
-,
+      totalPaymentSplits: req.body.totalPaymentSplits,
       note,
       finalAmount,
       Primary_user_id,
@@ -484,7 +483,34 @@ export const updateTallyData = async (
   negative = false,
   hasPaymentSplittingData
 ) => {
+  console.log("=== updateTallyData called ===");
+  console.log("party.partyType:", party?.partyType);
+  console.log(
+    "finalOutstandingAmount (valueToUpdateInTally):",
+    valueToUpdateInTally
+  );
+  console.log("hasPaymentSplittingData:", hasPaymentSplittingData);
+
+  /// check the party type is present in the request body if not find it from party master;
+  /// since we can across some issues where party type was missing in the request body
+  if (party && !party.partyType) {
+    ///
+    console.log("✅ Party type missing, fetching from party master");
+    const partyMaster = await partyModel.findById(party._id).lean();
+    // console.log("partyMaster",partyMaster);
+
+    if (partyMaster) {
+      party.partyType = partyMaster.partyType;
+    } else {
+      throw new Error("Party type is missing");
+    }
+  }
+
+  console.log("party.partyType:", party?.partyType);
+
   if (party?.partyType === "party") {
+    console.log("✅ ENTERING PARTY TYPE CONDITION");
+    console.log("create outstanding for bill_no:", salesNumber);
     try {
       const billData = {
         Primary_user_id: Primary_user_id,
@@ -509,6 +535,8 @@ export const updateTallyData = async (
         classification,
       };
 
+      console.log("📝 Bill Data to upsert:", JSON.stringify(billData, null, 2));
+
       const tallyUpdate = await TallyData.findOneAndUpdate(
         {
           cmp_id: orgId,
@@ -520,6 +548,17 @@ export const updateTallyData = async (
         { $set: billData },
         { upsert: true, new: true, session }
       );
+
+      console.log("✅ TallyData upserted successfully:", tallyUpdate);
+
+      if (!tallyUpdate) {
+        console.error("❌❌❌ UPSERT RETURNED NULL - THIS IS THE BUG!");
+        console.error("Query filter:", {
+          cmp_id: orgId,
+          bill_no: salesNumber,
+          billId: billId.toString(),
+        });
+      }
     } catch (error) {
       console.error("Error updateTallyData sale stock updates:", error);
       throw error;
@@ -717,10 +756,10 @@ const getSourceType = (item) => {
   let updatedSourceType;
 
   if (item?.type === "credit") {
-    updatedSourceType = item?.credit_reference_type || null;
-  } else if (item?.ref_collection === "Cash") {
+    updatedSourceType = "party";
+  } else if (item?.type === "cash") {
     updatedSourceType = "cash";
-  } else if (item?.ref_collection === "BankDetails") {
+  } else if (item?.type=="upi" || item?.type=="cheque") {
     updatedSourceType = "bank";
   } else {
     updatedSourceType = "party";
@@ -809,6 +848,8 @@ const handleNonCreditMode = async (
   selectedDate,
   session
 ) => {
+
+  console.log("here came call in non credit mode");
   const validModes = ["cash", "upi", "cheque"];
 
   if (!validModes.includes(mode)) {
@@ -833,6 +874,9 @@ const handleNonCreditMode = async (
     voucher_date: selectedDate,
   };
 
+  console.log("settlementData",settlementData);
+  
+
   const settlement = new settlementModel(settlementData);
   await settlement.save({ session });
   return settlement;
@@ -852,6 +896,21 @@ export const savePaymentSplittingDataInSources = async (
   selectedDate,
   voucherType
 ) => {
+  /// check the party type is present in the request body if not find it from party master;
+  /// since we can across some issues where party type was missing in the request body
+  if (party && !party.partyType) {
+    ///
+    console.log("✅ Party type missing, fetching from party master");
+    const partyMaster = await partyModel.findById(party._id).lean();
+    // console.log("partyMaster",partyMaster);
+
+    if (partyMaster) {
+      party.partyType = partyMaster.partyType;
+    } else {
+      throw new Error("Party type is missing");
+    }
+  }
+
   try {
     const updates = await Promise.all(
       paymentSplittingData
@@ -1107,12 +1166,12 @@ export const saveSettlementData = async (
   party,
   orgId,
   paymentMethod,
-  type,
+  voucherType,
+  voucherModel,
   voucherNumber,
   voucherId,
   amount,
   createdAt,
-  partyName,
   req,
   session
 ) => {
@@ -1120,12 +1179,12 @@ export const saveSettlementData = async (
     const object = {
       voucherNumber: voucherNumber,
       voucherId: voucherId,
-      voucherModel: "Sales", // must match enum
-      voucherType: "sales", // must match enum
+      voucherModel: voucherModel, // must match enum
+      voucherType: voucherType, // must match enum
       amount: amount,
       payment_mode: paymentMethod?.toLowerCase() || null, // ✅ schema expects lowercase enum
       partyId: party?._id,
-      partyName: partyName || party?.partyName,
+      partyName:party?.partyName,
       partyType: party?.partyType?.toLowerCase(), // must match ["cash","bank","party"]
       sourceId: party?._id,
       sourceType: party?.partyType?.toLowerCase(), // must match enum
