@@ -82,19 +82,19 @@ export const createPurchase = async (req, res) => {
       session
     );
 
-    const updateAdditionalCharge = additionalChargesFromRedux.map((charge) => {
-      const { value, taxPercentage } = charge;
-      const taxAmt = parseFloat(
-        ((parseFloat(value) * parseFloat(taxPercentage)) / 100).toFixed(2)
-      );
-      return { ...charge, taxAmt };
-    });
+    // const updateAdditionalCharge = additionalChargesFromRedux.map((charge) => {
+    //   const { value, taxPercentage } = charge;
+    //   const taxAmt = parseFloat(
+    //     ((parseFloat(value) * parseFloat(taxPercentage || 0)) / 100).toFixed(2)
+    //   );
+    //   return { ...charge, taxAmt };
+    // });
 
     const result = await createPurchaseRecord(
       req,
       purchaseNumber,
       items,
-      updateAdditionalCharge,
+      additionalChargesFromRedux,
       session,
       purchase_id
     );
@@ -249,17 +249,18 @@ export const editPurchase = async (req, res) => {
         classification: "Cr",
       });
     } else {
-      ///save settlement data
+
       await saveSettlementData(
-        purchaseNumber,
-        series_id,
-        "Purchase",
-        "CreditNote",
-        lastAmount,
         party,
         orgId,
-        existingPurchase?.Primary_user_id,
-        selectedDate,
+        null,/// payment mode,
+        "purchase", /// voucher type
+        "Purchase", /// voucher Model
+        purchaseNumber,
+        series_id,
+        lastAmount,
+        existingPurchase.createdAt,
+        req,
         session
       );
     }
