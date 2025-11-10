@@ -82,19 +82,19 @@ export const createSale = async (req, res) => {
     // const updatedItems = processSaleItems(items);
     await handleSaleStockUpdates(items, session); // Include session
 
-    const updateAdditionalCharge = additionalChargesFromRedux.map((charge) => {
-      const { value, taxPercentage } = charge;
-      const taxAmt = parseFloat(
-        ((parseFloat(value) * parseFloat(taxPercentage)) / 100).toFixed(2)
-      );
-      return { ...charge, taxAmt };
-    });
+    // const updateAdditionalCharge = additionalChargesFromRedux.map((charge) => {
+    //   const { value, taxPercentage } = charge;
+    //   const taxAmt = parseFloat(
+    //     ((parseFloat(value) * parseFloat(taxPercentage || 0)) / 100).toFixed(2)
+    //   );
+    //   return { ...charge, taxAmt };
+    // });
 
     const result = await createSaleRecord(
       req,
       salesNumber,
       items,
-      updateAdditionalCharge,
+      additionalChargesFromRedux,
       session, // Pass session
       totalAdditionalCharges,
       totalWithAdditionalCharges,

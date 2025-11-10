@@ -496,7 +496,6 @@ export const addAccountGroupIdToOutstanding = async (req, res) => {
   }
 };
 
-
 export const deleteDuplicateParties = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -732,6 +731,47 @@ export const previewDuplicateParties = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to preview duplicates",
+      error: error.message,
+    });
+  }
+};
+
+//// creating outstanding form a sale
+export const createOutstandingFromSales = async (req, res) => {
+  try {
+    const { saleId } = req.params;
+    const sale = await Sales.findById(saleId);
+
+    if (!sale) {
+      return res.status(404).json({ message: "Sale not found" });
+    }
+
+    const outstanding = new TallyData({
+      cmp_id: sale.cmp_id,
+      Primary_user_id: sale.Primary_user_id,
+      accountGroup: sale.party.accountGroup_id,
+      subGroup: sale.party.subGroup,
+      party_id: sale.party._id,
+      party_name: sale.party.partyName,
+      mobile_no: sale.party?.mobileNumber,
+      bill_date: sale.date,
+      bill_due_date: sale.date,
+      bill_no: sale.salesNumber,
+      source: "sale",
+      classification: "Dr",
+      bill_amount: sale.finalOutstandingAmount,
+      bill_pending_amt: sale.finalOutstandingAmount,
+    });
+
+    await outstanding.save();
+    res.status(201).json({
+      message: "Outstanding created from sale successfully",
+      outstanding,
+    });
+  } catch (error) {
+    console.error("Error creating outstanding from sale:", error);
+    res.status(500).json({
+      message: "Failed to create outstanding from sale",
       error: error.message,
     });
   }

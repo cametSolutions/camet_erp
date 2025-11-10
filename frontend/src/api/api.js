@@ -17,7 +17,7 @@ if (ENV === "development") {
   baseUrl = "https://www.app.camet.in/";
 }
 
-console.log(`Base URL: ${baseUrl}`);
+// console.log(`Base URL: ${baseUrl}`);
 
 
 const api = axios.create({

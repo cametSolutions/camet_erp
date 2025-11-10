@@ -756,10 +756,10 @@ const getSourceType = (item) => {
   let updatedSourceType;
 
   if (item?.type === "credit") {
-    updatedSourceType = item?.credit_reference_type || null;
-  } else if (item?.ref_collection === "Cash") {
+    updatedSourceType = "party";
+  } else if (item?.type === "cash") {
     updatedSourceType = "cash";
-  } else if (item?.ref_collection === "BankDetails") {
+  } else if (item?.type=="upi" || item?.type=="cheque") {
     updatedSourceType = "bank";
   } else {
     updatedSourceType = "party";
@@ -848,6 +848,8 @@ const handleNonCreditMode = async (
   selectedDate,
   session
 ) => {
+
+  console.log("here came call in non credit mode");
   const validModes = ["cash", "upi", "cheque"];
 
   if (!validModes.includes(mode)) {
@@ -871,6 +873,9 @@ const handleNonCreditMode = async (
     settlement_date: selectedDate,
     voucher_date: selectedDate,
   };
+
+  console.log("settlementData",settlementData);
+  
 
   const settlement = new settlementModel(settlementData);
   await settlement.save({ session });
@@ -1161,12 +1166,12 @@ export const saveSettlementData = async (
   party,
   orgId,
   paymentMethod,
-  type,
+  voucherType,
+  voucherModel,
   voucherNumber,
   voucherId,
   amount,
   createdAt,
-  partyName,
   req,
   session
 ) => {
@@ -1174,12 +1179,12 @@ export const saveSettlementData = async (
     const object = {
       voucherNumber: voucherNumber,
       voucherId: voucherId,
-      voucherModel: "Sales", // must match enum
-      voucherType: "sales", // must match enum
+      voucherModel: voucherModel, // must match enum
+      voucherType: voucherType, // must match enum
       amount: amount,
       payment_mode: paymentMethod?.toLowerCase() || null, // ✅ schema expects lowercase enum
       partyId: party?._id,
-      partyName: partyName || party?.partyName,
+      partyName:party?.partyName,
       partyType: party?.partyType?.toLowerCase(), // must match ["cash","bank","party"]
       sourceId: party?._id,
       sourceType: party?.partyType?.toLowerCase(), // must match enum

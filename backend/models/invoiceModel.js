@@ -203,6 +203,7 @@ const invoiceSchema = new Schema(
         value: { type: String },
         action: { type: String },
         taxPercentage: { type: Number },
+        taxAmt: { type: Number }, 
         hsn: { type: String },
         finalValue: { type: Number },
       },
