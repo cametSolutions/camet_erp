@@ -80,18 +80,50 @@ function BookingList() {
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
 
+  // ADD THIS FUNCTION: Calculate total from all checkouts
+  const calculateTotalAmount = (checkouts) => {
+    if (!checkouts || checkouts.length === 0) return 0;
+    
+    return checkouts.reduce((total, checkout) => {
+      if (checkout.selectedRooms && Array.isArray(checkout.selectedRooms)) {
+        const checkoutTotal = checkout.selectedRooms.reduce((sum, room) => {
+          return sum + (parseFloat(room.amountAfterTax) || 0);
+        }, 0);
+        return total + checkoutTotal;
+      }
+      return total;
+    }, 0);
+  };
+
   useEffect(() => {
     if (location?.state?.selectedCheckOut) {
       setSelectedCheckOut(location?.state?.selectedCheckOut);
       setSelectedCustomer(location?.state?.selectedCustomer?._id);
       setRestaurantBaseSaleData(location?.state?.kotData);
+      
+      // CHANGED: Calculate total from all checkouts' selectedRooms
+      const totalAmount = calculateTotalAmount(location?.state?.selectedCheckOut);
+      
       setSelectedDataForPayment((prevData) => ({
         ...prevData,
-        total: location?.state?.balanceToPay,
+        total: totalAmount,
       }));
       setShowPaymentModal(true);
     }
   }, [location?.state?.selectedCheckOut]);
+
+  // ADD THIS: Update total whenever selectedCheckOut changes
+  useEffect(() => {
+    if (selectedCheckOut && selectedCheckOut.length > 0) {
+      const totalAmount = calculateTotalAmount(selectedCheckOut);
+      setSelectedDataForPayment((prevData) => ({
+        ...prevData,
+        total: totalAmount,
+      }));
+    }
+  }, [selectedCheckOut]);
+
+  console.log( "location.state.selectedCheckOut",location?.state?.selectedCheckOut);
 
   const searchData = (data) => {
     if (searchTimeoutRef.current) {
@@ -366,14 +398,14 @@ function BookingList() {
           cashAmount: selectedDataForPayment?.total,
           onlineAmount: onlineAmount,
           selectedCash: selectedCash,
-          selectedBank: selectedBank,
+          selectedBank: "",
           paymentMode: paymentMode,
         };
       } else {
         paymentDetails = {
           cashAmount: cashAmount,
           onlineAmount: selectedDataForPayment?.total,
-          selectedCash: selectedCash,
+          selectedCash: "",
           selectedBank: selectedBank,
           paymentMode: paymentMode,
         };
@@ -425,15 +457,24 @@ function BookingList() {
       paymentDetails = {
         cashAmount: totalCash,
         onlineAmount: totalOnline,
-        selectedCash: selectedCash,
-        selectedBank: selectedBank,
         paymentMode: paymentMode,
         splitDetails: splitPaymentRows, // Include split details
       };
 
-      console.log("paymentDetails:", paymentDetails);
+      console.log("paymentMode:", paymentMethod);
       
     }
+
+    console.log(
+       {
+          paymentMethod: paymentMode,
+          paymentDetails: paymentDetails,
+          selectedCheckOut: selectedCheckOut,
+          paidBalance: selectedDataForPayment?.total,
+          selectedParty: selectedCustomer,
+          restaurantBaseSaleData: restaurantBaseSaleData,
+        }
+    )
 
     try {
       console.log("selectedCheckOut:", selectedCheckOut);
@@ -1440,7 +1481,7 @@ function BookingList() {
                     </div>
                     <div className="flex justify-between text-xs font-medium">
                       <span>Order Total:</span>
-                      <span>₹{selectedDataForPayment?.total}</span>
+                      <span>₹{selectedDataForPayment?.total?.toFixed(2)}</span>
                     </div>
                     {splitPaymentRows.reduce((sum, row) => sum + (parseFloat(row.amount) || 0), 0) !==
                       selectedDataForPayment?.total && (
@@ -1492,7 +1533,7 @@ function BookingList() {
                 <div className="border-t border-gray-200 pt-2 mt-2 flex justify-between font-semibold text-gray-800">
                   <span className="text-sm">Total Amount</span>
                   <span className="text-base text-blue-600">
-                    ₹{selectedDataForPayment?.total}
+                    ₹{selectedDataForPayment?.total?.toFixed(2)}
                   </span>
                 </div>
                 <div className="flex gap-2 mt-2">
@@ -1500,7 +1541,7 @@ function BookingList() {
                     onClick={() => {
                       handleSavePayment();
                     }}
-                    disabled={saveLoader}
+                    // disabled={saveLoader}
                     className={`flex-1 group px-3 py-1.5 border rounded-lg text-xs font-semibold transition-all duration-200 flex items-center justify-center gap-1 ${saveLoader
                         ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
                         : "bg-white text-emerald-700 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 hover:scale-105"
