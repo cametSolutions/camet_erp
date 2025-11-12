@@ -970,6 +970,7 @@ export const directSale = async (req, res) => {
 
       // Settlement entries (cash/online)
       if (party?.paymentType !== "party") {
+        console.log("hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh")
         await saveSettlement(
           paymentDetails,
           selectedParty,
@@ -1023,8 +1024,9 @@ export const updateKotPayment = async (req, res) => {
         selectedKotData: kotData,
         isPostToRoom,
       } = req.body;
+    
 
-      console.log("table", kotData);
+      // console.log("table", kotData);
 
 
       
@@ -1032,6 +1034,11 @@ export const updateKotPayment = async (req, res) => {
         throw new Error("Missing payment details or KOT data");
       }
 
+       if (paymentDetails?.paymentMode === "credit") {
+        if (!paymentDetails.selectedCreditor || !paymentDetails.selectedCreditor._id) {
+          throw new Error("Please select a creditor for credit payment");
+        }
+      }
       let paymentCompleted = false;
 
       // Determine payment method
@@ -1070,7 +1077,7 @@ export const updateKotPayment = async (req, res) => {
           .session(session);
       }
 
-      console.log("creditParty", paymentMethod);
+      // console.log("creditParty", paymentMethod);
       // Selected party
       const selectedParty =
         paymentMethod == "credit"
@@ -1124,6 +1131,8 @@ export const updateKotPayment = async (req, res) => {
         );
       }
       if (party?.paymentType != "party" && paymentMethod != "credit") {
+        console.log("undddd")
+       
         await saveSettlement(
           paymentDetails,
           selectedParty,
@@ -1171,7 +1180,7 @@ export const updateKotPayment = async (req, res) => {
         })
       );
 
-      console.log("Selected Table Numbers:", selectedTableNumber);
+      // console.log("Selected Table Numbers:", selectedTableNumber);
 
       // Check pending
       let updatedTables = [];
@@ -1186,7 +1195,7 @@ export const updateKotPayment = async (req, res) => {
           })
           .session(session);
 
-        console.log(`Pending KOTs for table ${tableNumber}:`, pendingCount);
+        // console.log(`Pending KOTs for table ${tableNumber}:`, pendingCount);
 
         // ✅ If no pending KOTs, mark table as available
         if (pendingCount === 0) {
@@ -1215,7 +1224,7 @@ export const updateKotPayment = async (req, res) => {
       });
     });
   } catch (error) {
-    console.error("Error updating KOT:", error);
+    // console.error("Error updating KOT:", error);
     res.status(500).json({
       success: false,
       message: error.message || "Internal server error while updating KOT",
@@ -1415,18 +1424,21 @@ async function saveSettlement(
   req,
   session
 ) {
-  console.log;
+
   if (paymentDetails?.paymentMode === "single") {
+    console.log("hhh")
+    console.log("bbbbbbbbbbbbbbbbbbbbbb",req)
     await saveSettlementData(
       selectedParty,
       cmp_id,
       "cash",
-      "sale",
+      "sales",
+      "Sales",
       savedVoucher?.salesNumber,
       savedVoucher?._id,
       paidAmount,
       new Date(),
-      selectedParty?.partyName,
+      // selectedParty?.partyName,
       req,
       session
     );
