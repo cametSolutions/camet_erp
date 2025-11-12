@@ -60,6 +60,7 @@ function BookingList() {
   const [restaurantBaseSaleData, setRestaurantBaseSaleData] = useState({});
   const [showSelectionModal, setShowSelectionModal] = useState(true);
 
+
   const [showEnhancedCheckoutModal, setShowEnhancedCheckoutModal] = useState(false);
   const [processedCheckoutData, setProcessedCheckoutData] = useState(null);
   const [selectedCreditor, setSelectedCreditor] = useState("");
@@ -73,6 +74,7 @@ function BookingList() {
     cashs: []
   });
   const [combinedSources, setCombinedSources] = useState([]);
+
 
   const { roomId, roomName, filterByRoom } = location.state || {};
 
@@ -271,12 +273,78 @@ function BookingList() {
         setLoader(false);
       }
     },
-    [cmp_id, activeTab, filterByRoom, roomId]
+
+    [cmp_id, activeTab,filterByRoom, roomId, location.pathname]
+
   );
 
   useEffect(() => {
     fetchBookings(1, searchTerm);
   }, [fetchBookings, searchTerm, activeTab]);
+
+
+  // useEffect(() => {
+  //   if (selectedCheckOut.length > 0) {
+  //     let prevObject = {};
+  //     let total = selectedCheckOut.reduce(
+  //       (acc, item) => acc + Number(item.balanceToPay),
+  //       0
+  //     );
+  //     prevObject.total = total;
+  //     setSelectedDataForPayment(prevObject);
+  //   }
+  // }, [selectedCheckOut]);
+
+const handleCancelBooking = async (id, voucherNumber) => {
+  const confirmation = await Swal.fire({
+    title: "Cancel Booking?",
+    html: `
+      <p>Are you sure you want to cancel booking <strong>${voucherNumber}</strong>?</p>
+      <p class="text-sm text-gray-600 mt-2">This will mark the booking as cancelled but keep it in the system for records.</p>
+    `,
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#f59e0b",
+    cancelButtonColor: "#6b7280",
+    confirmButtonText: "Yes, cancel it!",
+    cancelButtonText: "No, keep it",
+  });
+
+  if (confirmation.isConfirmed) {
+    setLoader(true);
+    try {
+      const res = await api.put(
+        `/api/sUsers/cancelBooking/${id}`,
+        { status: "cancelled" },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          withCredentials: true,
+        }
+      );
+
+      await Swal.fire({
+        title: "Cancelled!",
+        text: res.data.message || "Booking has been cancelled successfully.",
+        icon: "success",
+        timer: 2000,
+        timerProgressBar: true,
+        showConfirmButton: false,
+      });
+
+      fetchBookings(1, searchTerm);
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Failed to cancel booking"
+      );
+      console.log(error);
+    } finally {
+      setLoader(false);
+    }
+  }
+};
+
 
   const handleDelete = async (id) => {
     const confirmation = await Swal.fire({
@@ -703,8 +771,9 @@ function BookingList() {
           </div>
           <div className="w-32 flex items-center justify-center gap-1">
             {((location.pathname === "/sUsers/bookingList" &&
-              el?.status != "checkIn") ||
-              (el?.status != "checkOut" &&
+             el?.status != "checkIn" &&
+    el?.status != "cancelled") ||
+    (el?.status != "checkOut" &&
                 location.pathname === "/sUsers/checkInList") ||
               (Number(el?.balanceToPay) > 0 &&
                 location.pathname === "/sUsers/checkOutList")) && (
@@ -829,8 +898,8 @@ function BookingList() {
           </div>
 
           <div className="w-24 text-center text-gray-600 font-medium">
-            {el?.selectedRooms?.map((r) => r.roomName).join(", ") || "-"}
-          </div>
+  {el?.selectedRooms?.map((r) => r.roomName).join(", ") || "-"}
+</div>
 
           <div className="w-36 text-center text-gray-600 text-xs">
             {formatDate(el?.arrivalDate)}
@@ -994,49 +1063,76 @@ function BookingList() {
                 />
               </div>
             ) : null}
+            {location.pathname === "/sUsers/bookingList" && 
+   el?.status !== "checkIn" && 
+   el?.status !== "cancelled" && (
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        handleCancelBooking(el._id, el.voucherNumber);
+      }}
+      className="bg-amber-500 hover:bg-amber-600 text-white font-semibold py-1 px-2 rounded text-xs transition duration-300"
+      title="Cancel booking"
+    >
+      Cancel
+    </button>
+  )} {el?.status === "cancelled" && (
+    <span className="bg-red-100 text-red-700 font-semibold py-1 px-3 rounded text-xs">
+      Cancelled
+    </span>
+  )}
           </div>
+
         </div>
       </div>
     );
   };
 
-  const handleCloseBasedOnDate = (checkouts) => {
-    console.log("Updated checkouts:", checkouts);
-    setSaveLoader(true);
-
-    if (processedCheckoutData) {
-      const updatedCheckoutData = processedCheckoutData.map(group => ({
-        ...group,
-        checkIns: group.checkIns.map(checkIn => {
-          const updatedData = checkouts.find(c => c._id === checkIn.checkInId);
-
-          return {
-            ...checkIn,
-            originalCheckIn: {
-              ...checkIn.originalCheckIn,
-              selectedRooms: checkIn.originalCheckIn.selectedRooms.map(room => {
-                const updatedRoom = updatedData?.selectedRooms?.find(r => r._id === room._id);
-                return updatedRoom ? { ...room, ...updatedRoom } : room;
-              })
-            }
-          };
-        })
-      }));
-
-      proceedToCheckout(updatedCheckoutData);
-      setProcessedCheckoutData(null);
-    } else {
-      const hasPrint1 = configurations[0]?.defaultPrint?.print1;
-      navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
-        state: {
-          selectedCheckOut: checkouts?.length > 0 ? checkouts : selectedCheckOut,
-          customerId: selectedCustomer,
-          isForPreview: true,
-        },
-      });
-    }
-  };
-
+const handleCloseBasedOnDate = (checkouts) => {
+  console.log("Updated checkouts:", checkouts);
+   if (!checkouts) {
+    setShowCheckOutDateModal(false);
+    setShowSelectionModal(true);
+    return;
+  }
+  setSaveLoader(true);
+  
+  if (processedCheckoutData) {
+    // Transform the processed checkout data with updated stay days
+    const updatedCheckoutData = processedCheckoutData.map(group => ({
+      ...group,
+      checkIns: group.checkIns.map(checkIn => {
+        // Find the updated checkout data for this checkIn
+        const updatedData = checkouts.find(c => c._id === checkIn.checkInId);
+        
+        return {
+          ...checkIn,
+          originalCheckIn: {
+            ...checkIn.originalCheckIn,
+            selectedRooms: checkIn.originalCheckIn.selectedRooms.map(room => {
+              // Find updated room data
+              const updatedRoom = updatedData?.selectedRooms?.find(r => r._id === room._id);
+              return updatedRoom ? { ...room, ...updatedRoom } : room;
+            })
+          }
+        };
+      })
+    }));
+    
+    proceedToCheckout(updatedCheckoutData);
+    setProcessedCheckoutData(null);
+  } else {
+    // Normal flow without room assignments
+    const hasPrint1 = configurations[0]?.defaultPrint?.print1;
+    navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
+      state: {
+        selectedCheckOut: checkouts?.length > 0 ? checkouts : selectedCheckOut,
+        customerId: selectedCustomer,
+        isForPreview: true,
+      },
+    });
+  }
+};
   return (
     <>
       <div className="flex-1 bg-slate-50 h-screen overflow-hidden">
@@ -1095,14 +1191,16 @@ function BookingList() {
             isOpen={CheckoutDateModal}
             onClose={handleCloseBasedOnDate}
             checkoutData={selectedCheckOut}
+           
           />
         )}
 
-        {selectedCheckOut.length > 0 &&
-          showSelectionModal &&
-          (location.pathname === "/sUsers/checkInList" ||
-            location.pathname === "/sUsers/checkOutList") && (
-
+        {/* Confirmation Modal */}
+      {selectedCheckOut.length > 0 &&
+  showSelectionModal &&
+  (location.pathname === "/sUsers/checkInList" ||
+    location.pathname === "/sUsers/checkOutList") &&
+  searchTerm !== "completed" && (
             <div className="fixed bottom-6 right-6 z-50 animate-slideUp">
               <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-4 min-w-[280px]">
                 <div className="flex items-center justify-between mb-3">

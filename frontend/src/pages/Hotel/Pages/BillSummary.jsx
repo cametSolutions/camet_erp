@@ -758,29 +758,38 @@ const [mealPeriodFilter, setMealPeriodFilter] = useState("all");
     }
   }, [startDate, endDate, cmp_id, businessType]);
 
-  const handlePDFExport = () => {
-    if (salesData.length === 0) {
-      alert("No data to export");
-      return;
-    }
-    generatePDF(salesData, summary, owner, reportPeriod, businessType, totals);
-  };
-
-  const handleExcelExport = () => {
-    if (salesData.length === 0) {
-      alert("No data to export");
-      return;
-    }
-    exportToExcel(
-      salesData,
-      summary,
-      owner,
-      reportPeriod,
-      businessType,
-      totals
-    );
-  };
-  console.log(summary);
+ const handlePDFExport = () => {
+  if (filteredSalesData.length === 0) {  // ✅ Changed
+    alert("No data to export");
+    return;
+  }
+  generatePDF(
+    filteredSalesData,  // ✅ Changed
+    summary, 
+    owner, 
+    reportPeriod, 
+    businessType, 
+    totals,
+    kotTypeFilter,      // ✅ Pass filters
+    mealPeriodFilter    // ✅ Pass filters
+  );
+};
+ const handleExcelExport = () => {
+  if (filteredSalesData.length === 0) {  // ✅ Changed
+    alert("No data to export");
+    return;
+  }
+  exportToExcel(
+    filteredSalesData,  // ✅ Changed
+    summary,
+    owner,
+    reportPeriod,
+    businessType,
+    totals,
+    kotTypeFilter,      // ✅ Pass filters
+    mealPeriodFilter    // ✅ Pass filters
+  );
+};
   console.log(salesData);
   return (
     <div className="min-h-screen bg-gray-100 p-5">
@@ -833,6 +842,7 @@ const [mealPeriodFilter, setMealPeriodFilter] = useState("all");
     </div>
 
     {/* Right side - KOT Type and Meal Period filters */}
+        {businessType !== "hotel" && (
     <div className="flex flex-wrap items-center gap-4 justify-end">
       <div className="flex items-center gap-2">
         <label className="font-bold text-sm">KOT Type:</label>
@@ -866,6 +876,7 @@ const [mealPeriodFilter, setMealPeriodFilter] = useState("all");
         </select>
       </div>
     </div>
+        )}
   </div>
   
   {/* Active filters display */}
@@ -996,12 +1007,16 @@ const [mealPeriodFilter, setMealPeriodFilter] = useState("all");
                 <th className="border-t border-black p-2 text-center font-bold">
                   Mode
                 </th>
+                  {businessType !== "hotel" && (
                 <th className="border-t border-black p-2 text-center font-bold">
                   Meal Period
                 </th>
+              )}
+               {businessType !== "hotel" && (
                 <th className="border-t border-black p-2 text-center font-bold">
                   Kot Type
                 </th>
+                  )}
                 <th className="border-t border-black p-2 text-center font-bold">
                   Credit
                 </th>
@@ -1089,12 +1104,16 @@ const [mealPeriodFilter, setMealPeriodFilter] = useState("all");
           {isCreditSale ? "Credit" : isBankSale ? "UPI" : "Cash"}
         </span>
       </td>
+       {businessType !== "hotel" && (
                     <td className="border border-black p-2 text-center">
                       {row.mealPeriod || "-"}
                     </td>
+       )}
+        {businessType !== "hotel" && (
                     <td className="border border-black p-2 text-center">
                       {row.kotType || "-"}
                     </td>
+        )}
                      <td className="border border-black p-2 text-center">
             {isCreditSale ? (row.totalWithTax || 0).toFixed(2) : "-"}
           </td>
@@ -1150,8 +1169,8 @@ const [mealPeriodFilter, setMealPeriodFilter] = useState("all");
                   </td>
 
                   <td className="border border-black p-2 text-center">-</td>
-                  <td className="border border-black p-2 text-center">-</td>
-                  <td className="border border-black p-2 text-center">-</td>
+                  {/* <td className="border border-black p-2 text-center">-</td>
+                  <td className="border border-black p-2 text-center">-</td> */}
                   <td className="border border-black p-2 text-center">
                     {totals.credit.toFixed(2)}
                   </td>
@@ -1370,14 +1389,14 @@ const [mealPeriodFilter, setMealPeriodFilter] = useState("all");
             </button> */}
             <button
               onClick={handlePDFExport}
-              disabled={salesData.length === 0}
+              disabled={filteredSalesData.length === 0}
               className="px-6 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:bg-gray-400 text-sm font-medium flex items-center gap-2"
             >
               📄 Export PDF
             </button>
             <button
               onClick={handleExcelExport}
-              disabled={salesData.length === 0}
+              disabled={filteredSalesData.length === 0}
               className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 text-sm font-medium flex items-center gap-2"
             >
               📊 Export Excel
