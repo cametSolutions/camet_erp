@@ -10,6 +10,7 @@ import Party from "../models/partyModel.js";
 import { formatToLocalDate } from "../helpers/helper.js";
 import TallyData from "../models/TallyData.js";
 import settlementModel from "../models/settlementModel.js";
+import salesModel from "../models/salesModel.js";
 // helper function used to add search concept with room
 export const buildDatabaseFilterForRoom = (params) => {
   console.log("params", params);
@@ -69,6 +70,7 @@ export const sendRoomResponse = (res, rooms, totalRooms, params) => {
 };
 
 // helper function used to add search concept with booking
+// helper function used to add search concept with booking
 export const buildDatabaseFilterForBooking = (params) => {
 
   let filter = {
@@ -105,6 +107,7 @@ export const buildDatabaseFilterForBooking = (params) => {
 
   return filter;
 };
+
 
 // function used to fetch booking
 export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
@@ -444,9 +447,10 @@ export const createReceiptForSales = async (
   restaurantBaseSaleData = [],
   session
 ) => {
+  console.log("call for create receipt");
   const receipts = [];
 
-  // find voucher series for receipt
+  // Find voucher series for receipt
   const voucher = await VoucherSeriesModel.findOne({
     cmp_id,
     voucherType: "receipt",
@@ -457,44 +461,361 @@ export const createReceiptForSales = async (
     ?._id.toString();
   if (!series_id) throw new Error("No valid receipt series found for hotel");
 
-  console.log("series_id", restaurantBaseSaleData);
-  // get all outstanding bills
-const outStandingArrayRaw = await Promise.all(
-  restaurantBaseSaleData.map((sale) =>
-    TallyData.findOne({ billId: sale._id })
-  )
-);
+  // Get checkInId from request
+  const checkInId = req.body.selectedCheckOut?.[0]?._id;
+  if (!checkInId) {
+    throw new Error("Missing checkInId in selectedCheckOut");
+  }
 
-const outStandingArray = outStandingArrayRaw.filter(Boolean); // removes null/undefined
+  // Find all sales with this checkInId
+  const allSales = await salesModel.find({
+    checkInId: checkInId,
+    cmp_id,
+  })
+    .sort({ createdAt: 1 }) // FIFO: oldest first
+    .session(session);
 
+  const saleIds = allSales.map((s) => s._id);
 
-  // helper to distribute amounts across bills
-  const distributeBills = (amountLeft) => {
-    const billData = [];
-    console.log("outStandingArray", outStandingArray);
-    for (const out of outStandingArray) {
-      if (amountLeft <= 0) break;
+  // ============ CASE 1: SPLIT PAYMENT MODE ============
+  if (payment?.paymentMode === "split") {
+    const splitDetails = payment?.splitDetails || [];
 
-      const settleAmt = Math.min(amountLeft, out?.bill_amount || 0);
-      billData.push({
-        _id: out._id,
-        bill_no: out.bill_no,
-        billId: out.billId,
-        bill_date: new Date(),
-        bill_pending_amt: out.bill_amount,
-        source: "hotel",
-        settledAmount: settleAmt,
-        remainingAmount: out.bill_amount - settleAmt,
-      });
-      amountLeft -= settleAmt;
+    // Process each split detail
+    for (const split of splitDetails) {
+      const splitCustomerId = split.customer;
+      const splitAmount = Number(split.amount || 0);
+      const splitSourceType = split.sourceType; // "cash" or "bank"
+
+      if (splitAmount <= 0) continue;
+
+      // Find all outstandings for this customer from sales with this checkInId
+      const outstandings = await TallyData.find({
+        billId: { $in: saleIds },
+        party_id: splitCustomerId,
+        bill_pending_amt: { $gt: 0 },
+        cmp_id,
+        source: "sales",
+      })
+        .sort({ bill_date: 1, createdAt: 1 }) // FIFO: oldest first
+        .session(session);
+
+      if (outstandings.length === 0) {
+        console.log(`No outstanding found for customer ${splitCustomerId}`);
+        continue;
+      }
+
+      // Get customer details
+      const customer = await Party.findOne({ _id: splitCustomerId })
+        .populate("accountGroup")
+        .session(session);
+
+      if (!customer) continue;
+
+      // Distribute split amount across customer's outstandings in FIFO
+      let amountLeft = splitAmount;
+      const billData = [];
+      const outstandingsToUpdate = [];
+
+      for (const outstanding of outstandings) {
+        if (amountLeft <= 0) break;
+
+        const billPendingAmount = outstanding.bill_pending_amt || 0;
+        const settledAmount = Math.min(amountLeft, billPendingAmount);
+
+        billData.push({
+          _id: outstanding._id,
+          bill_no: outstanding.bill_no,
+          billId: outstanding.billId,
+          bill_date: outstanding.bill_date,
+          bill_pending_amt: billPendingAmount,
+          source: "hotel",
+          settledAmount: settledAmount,
+          remainingAmount: billPendingAmount - settledAmount,
+        });
+
+        outstandingsToUpdate.push({
+          outstandingId: outstanding._id,
+          settledAmount: settledAmount,
+          newPendingAmount: billPendingAmount - settledAmount,
+        });
+
+        amountLeft -= settledAmount;
+      }
+
+      // Create advance tally BEFORE receipt if there's excess
+      let advanceTallyId = null;
+      if (amountLeft > 0) {
+        const advanceTally = await TallyData.create(
+          [
+            {
+              Primary_user_id: req.pUserId || req.owner,
+              cmp_id,
+              party_id: splitCustomerId,
+              party_name: customer.partyName,
+              mobile_no: customer.mobileNumber,
+              bill_date: new Date(),
+              bill_no: `ADV-${Date.now()}`, // Temporary, will update after receipt
+              billId: null, // No sale, this IS the advance
+              bill_amount: 0,
+              bill_pending_amt: -amountLeft, // Negative for advance
+              accountGroup: customer.accountGroup?._id?.toString() || customer.accountGroup_id,
+              user_id: req.sUserId,
+              advanceAmount: amountLeft,
+              advanceDate: new Date(),
+              classification: "Cr",
+              source: "advanceReceipt",
+            },
+          ],
+          { session }
+        );
+
+        advanceTallyId = advanceTally[0]._id;
+
+        // Add to billData with proper reference
+        billData.push({
+          _id: advanceTallyId,
+          bill_no: `ADV-${Date.now()}`,
+          billId: null, // Advance has no sale billId
+          bill_date: new Date(),
+          bill_pending_amt: 0,
+          source: "hotel",
+          settledAmount: amountLeft,
+          remainingAmount: 0,
+        });
+      }
+
+      // Create receipt for this split
+      const receiptVoucher = await generateVoucherNumber(
+        cmp_id,
+        "receipt",
+        series_id,
+        session
+      );
+      const serialNumber = await getNewSerialNumber(
+        receiptModel,
+        "serialNumber",
+        session
+      );
+
+      const paymentDetails =
+        splitSourceType === "cash"
+          ? { cash_ledname: customer.partyName, cash_name: customer.partyName }
+          : { bank_ledname: customer.partyName, bank_name: customer.partyName };
+
+      const newReceipt = await buildReceipt(
+        receiptVoucher,
+        serialNumber,
+        paymentDetails,
+        splitAmount,
+        splitSourceType === "cash" ? "Cash" : "Online",
+        splitCustomerId,
+        cmp_id,
+        series_id,
+        billData,
+        req,
+        session
+      );
+
+      receipts.push(newReceipt);
+
+      // Update all affected outstandings
+      for (const update of outstandingsToUpdate) {
+        await TallyData.updateOne(
+          { _id: update.outstandingId },
+          {
+            $set: {
+              bill_pending_amt: update.newPendingAmount,
+              billId: newReceipt._id,
+            },
+            $push: {
+              appliedReceipts: {
+                _id: newReceipt._id,
+                receiptNumber: newReceipt.receiptNumber,
+                settledAmount: update.settledAmount,
+                date: new Date(),
+              },
+            },
+          },
+          { session }
+        );
+      }
+
+      // Update advance tally with receipt number
+      if (advanceTallyId) {
+        await TallyData.updateOne(
+          { _id: advanceTallyId },
+          {
+            $set: {
+              bill_no: newReceipt.receiptNumber,
+            },
+          },
+          { session }
+        );
+      }
+    }
+  }
+
+  // ============ CASE 2: SINGLE PAYMENT MODE (FIFO) ============
+  else if (payment?.paymentMode === "single") {
+    // Find all outstanding bills for sales with this checkInId (FIFO order)
+    const outstandings = await TallyData.find({
+      billId: { $in: saleIds },
+      bill_pending_amt: { $gt: 0 }, // Only pending bills
+      cmp_id,
+      source: "sales", // Only sales outstandings
+    })
+      .sort({ bill_date: 1, createdAt: 1 }) // FIFO: oldest first
+      .session(session);
+
+    // If no pending outstandings, create advance only
+    if (outstandings.length === 0) {
+      const advanceTally = await TallyData.create(
+        [
+          {
+            Primary_user_id: req.pUserId || req.owner,
+            cmp_id,
+            party_id: partyId,
+            party_name: customerName,
+            bill_date: new Date(),
+            bill_no: `ADV-${Date.now()}`, // Temporary
+            billId: null,
+            bill_amount: 0,
+            bill_pending_amt: -amount,
+            accountGroup: createdTallyData.accountGroup,
+            user_id: req.sUserId,
+            advanceAmount: amount,
+            advanceDate: new Date(),
+            classification: "Cr",
+            source: "receipt",
+          },
+        ],
+        { session }
+      );
+
+      const billData = [
+        {
+          _id: advanceTally[0]._id,
+          bill_no: `ADV-${Date.now()}`,
+          billId: null,
+          bill_date: new Date(),
+          bill_pending_amt: 0,
+          source: "hotel",
+          settledAmount: amount,
+          remainingAmount: 0,
+        },
+      ];
+
+      const receiptVoucher = await generateVoucherNumber(
+        cmp_id,
+        "receipt",
+        series_id,
+        session
+      );
+      const serialNumber = await getNewSerialNumber(
+        receiptModel,
+        "serialNumber",
+        session
+      );
+
+      const paymentDetails =
+        paymentMethod === "cash"
+          ? { cash_ledname: customerName, cash_name: customerName }
+          : { bank_ledname: customerName, bank_name: customerName };
+
+      const newReceipt = await buildReceipt(
+        receiptVoucher,
+        serialNumber,
+        paymentDetails,
+        amount,
+        paymentMethod === "cash" ? "Cash" : "Online",
+        partyId,
+        cmp_id,
+        series_id,
+        billData,
+        req,
+        session
+      );
+
+      receipts.push(newReceipt);
+
+      // Update advance tally with receipt number
+      await TallyData.updateOne(
+        { _id: advanceTally[0]._id },
+        {
+          $set: {
+            bill_no: newReceipt.receiptNumber,
+          },
+        },
+        { session }
+      );
+
+      return receipts;
     }
 
-    // if still extra amount → assign to new tally data (like advance)
-    if (amountLeft > 0) {
+    // Distribute amount across bills using FIFO
+    let amountLeft = amount;
+    const billData = [];
+    const outstandingsToUpdate = [];
+
+    for (const outstanding of outstandings) {
+      if (amountLeft <= 0) break;
+
+      const pendingAmount = outstanding.bill_pending_amt || 0;
+      const settleAmount = Math.min(amountLeft, pendingAmount);
+
       billData.push({
-        _id: createdTallyData._id,
-        bill_no: saleData?.salesNumber,
-        billId: saleData._id,
+        _id: outstanding._id,
+        bill_no: outstanding.bill_no,
+        billId: outstanding.billId,
+        bill_date: outstanding.bill_date,
+        bill_pending_amt: pendingAmount,
+        source: "hotel",
+        settledAmount: settleAmount,
+        remainingAmount: pendingAmount - settleAmount,
+      });
+
+      outstandingsToUpdate.push({
+        outstandingId: outstanding._id,
+        settledAmount: settleAmount,
+        newPendingAmount: pendingAmount - settleAmount,
+      });
+
+      amountLeft -= settleAmount;
+    }
+
+    // Create advance tally BEFORE receipt if still amount left
+    let advanceTallyId = null;
+    if (amountLeft > 0) {
+      const advanceTally = await TallyData.create(
+        [
+          {
+            Primary_user_id: req.pUserId || req.owner,
+            cmp_id,
+            party_id: partyId,
+            party_name: customerName,
+            bill_date: new Date(),
+            bill_no: `ADV-${Date.now()}`, // Temporary
+            billId: null,
+            bill_amount: 0,
+            bill_pending_amt: -amountLeft,
+            accountGroup: createdTallyData.accountGroup,
+            user_id: req.sUserId,
+            advanceAmount: amountLeft,
+            advanceDate: new Date(),
+            classification: "Cr",
+            source: "receipt",
+          },
+        ],
+        { session }
+      );
+
+      advanceTallyId = advanceTally[0]._id;
+
+      billData.push({
+        _id: advanceTallyId,
+        bill_no: `ADV-${Date.now()}`,
+        billId: null,
         bill_date: new Date(),
         bill_pending_amt: 0,
         source: "hotel",
@@ -503,11 +824,7 @@ const outStandingArray = outStandingArrayRaw.filter(Boolean); // removes null/un
       });
     }
 
-    return billData;
-  };
-
-  // ---------------- SINGLE PAYMENT ----------------
-  if (payment?.paymentMode === "single") {
+    // Create single receipt
     const receiptVoucher = await generateVoucherNumber(
       cmp_id,
       "receipt",
@@ -519,8 +836,6 @@ const outStandingArray = outStandingArrayRaw.filter(Boolean); // removes null/un
       "serialNumber",
       session
     );
-
-    const billData = distributeBills(amount);
 
     const paymentDetails =
       paymentMethod === "cash"
@@ -542,84 +857,39 @@ const outStandingArray = outStandingArrayRaw.filter(Boolean); // removes null/un
     );
 
     receipts.push(newReceipt);
-  }
 
-  // ---------------- MULTIPLE PAYMENT ----------------
-  else if (payment?.paymentMode === "multiple") {
-    // online part
-    if (Number(payment?.onlineAmount) > 0) {
-      const receiptVoucher = await generateVoucherNumber(
-        cmp_id,
-        "receipt",
-        series_id,
-        session
+    // Update all affected outstandings with receipt info
+    for (const update of outstandingsToUpdate) {
+      await TallyData.updateOne(
+        { _id: update.outstandingId },
+        {
+          $set: {
+            bill_pending_amt: update.newPendingAmount,
+          },
+          $push: {
+            appliedReceipts: {
+              _id: newReceipt._id,
+              receiptNumber: newReceipt.receiptNumber,
+              settledAmount: update.settledAmount,
+              date: new Date(),
+            },
+          },
+        },
+        { session }
       );
-      const serialNumber = await getNewSerialNumber(
-        receiptModel,
-        "serialNumber",
-        session
-      );
-
-      const billData = distributeBills(Number(payment?.onlineAmount));
-
-      const paymentDetails = {
-        bank_ledname: customerName,
-        bank_name: customerName,
-      };
-
-      const newReceipt = await buildReceipt(
-        receiptVoucher,
-        serialNumber,
-        paymentDetails,
-        Number(payment?.onlineAmount),
-        "Online",
-        partyId,
-        cmp_id,
-        series_id,
-        billData,
-        req,
-        session
-      );
-
-      receipts.push(newReceipt);
     }
 
-    // cash part
-    if (Number(payment?.cashAmount) > 0) {
-      const receiptVoucher = await generateVoucherNumber(
-        cmp_id,
-        "receipt",
-        series_id,
-        session
+    // Update advance tally with receipt number if exists
+    if (advanceTallyId) {
+      await TallyData.updateOne(
+        { _id: advanceTallyId },
+        {
+          $set: {
+            bill_no: newReceipt.receiptNumber,
+          },
+        },
+        { session }
       );
-      const serialNumber = await getNewSerialNumber(
-        receiptModel,
-        "serialNumber",
-        session
-      );
-
-      const billData = distributeBills(Number(payment?.cashAmount));
-
-      const paymentDetails = {
-        cash_ledname: customerName,
-        cash_name: customerName,
-      };
-
-      const newReceipt = await buildReceipt(
-        receiptVoucher,
-        serialNumber,
-        paymentDetails,
-        Number(payment?.cashAmount),
-        "Cash",
-        partyId,
-        cmp_id,
-        series_id,
-        billData,
-        req,
-        session
-      );
-
-      receipts.push(newReceipt);
     }
   }
 
@@ -642,20 +912,16 @@ const buildReceipt = async (
   let selectedParty = await Party.findOne({ _id: partyId })
     .populate("accountGroup")
     .session(session);
+
   if (selectedParty) {
-    // Convert to plain object to allow modifications
     selectedParty = selectedParty.toObject();
 
-    // Extract only the id from accountGroup
     if (selectedParty.accountGroup && selectedParty.accountGroup._id) {
       selectedParty.accountGroup_id = selectedParty.accountGroup._id.toString();
     }
 
-    // Remove the nested object
     delete selectedParty.accountGroup;
   }
-
-  console.log("selectedParty", selectedParty);
 
   const receipt = new receiptModel({
     createdAt: new Date(),
@@ -668,7 +934,7 @@ const buildReceipt = async (
     party: selectedParty,
     billData,
     totalBillAmount: amount,
-    enteredAmount: amount, // each receipt has its own amount
+    enteredAmount: amount,
     advanceAmount: 0,
     remainingAmount: 0,
     paymentMethod,
@@ -680,6 +946,10 @@ const buildReceipt = async (
 
   return await receipt.save({ session });
 };
+
+
+
+
 
 export const saveSettlementDataHotel = async (
   party,

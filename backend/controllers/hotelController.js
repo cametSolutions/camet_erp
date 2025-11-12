@@ -1215,6 +1215,8 @@ export const getBookings = async (req, res) => {
   try {
     const params = extractRequestParamsForBookings(req);
     const filter = buildDatabaseFilterForBooking(params);
+
+
     const { bookings, totalBookings } = await fetchBookingsFromDatabase(
       filter,
       params
@@ -1885,30 +1887,30 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
     // console.log("allKotData", allKotData);
     // for (const item of checkoutData) {
 
-      const checkInData = await CheckIn.findOne({
-        _id: isForPreview ? checkoutData[0]._id : checkoutData[0]?.originalCheckInId,
-      });
+    const checkInData = await CheckIn.findOne({
+      _id: isForPreview ? checkoutData[0]._id : checkoutData[0]?.originalCheckInId,
+    });
 
-      // if (!checkInData) {
-      //   continue;
-      // }
+    // if (!checkInData) {
+    //   continue;
+    // }
 
-      const bookingSideAdvanceDetails = await TallyData.find({
-        billId: checkInData.bookingId,
-      });
+    const bookingSideAdvanceDetails = await TallyData.find({
+      billId: checkInData.bookingId,
+    });
 
-      const checkInSideAdvanceDetails = await TallyData.find({
-        billId: isForPreview ? checkoutData[0]._id : checkoutData[0]?.originalCheckInId,
-      });
+    const checkInSideAdvanceDetails = await TallyData.find({
+      billId: isForPreview ? checkoutData[0]._id : checkoutData[0]?.originalCheckInId,
+    });
 
-      // console.log("checkInSideAdvanceDetails", checkInSideAdvanceDetails);
-      // console.log("bookingSideAdvanceDetails", bookingSideAdvanceDetails);
-      
+    // console.log("checkInSideAdvanceDetails", checkInSideAdvanceDetails);
+    // console.log("bookingSideAdvanceDetails", bookingSideAdvanceDetails);
 
-      allAdvanceDetails.push(
-        ...bookingSideAdvanceDetails,
-        ...checkInSideAdvanceDetails
-      );
+
+    allAdvanceDetails.push(
+      ...bookingSideAdvanceDetails,
+      ...checkInSideAdvanceDetails
+    );
     // }
     // const checkOutSideAdvanceDetails = !isForPreview
     //   ? await TallyData.find({
@@ -1965,7 +1967,7 @@ export const convertCheckOutToSale = async (req, res) => {
     await session.withTransaction(async () => {
       const { cmp_id } = req.params;
       const {
-        paymentDetails,              // expects per-checkout usage
+        paymentDetails,
         selectedCheckOut = [],
         restaurantBaseSaleData,
         isPostToRoom = false,
@@ -1974,137 +1976,79 @@ export const convertCheckOutToSale = async (req, res) => {
 
       if (!paymentDetails) throw new Error("Missing payment details");
 
-      // Fetch voucher series once
+      const paymentMode = paymentDetails?.paymentMode;
+      const splitDetails = paymentDetails?.splitDetails || [];
+
       const specificVoucherSeries = await hotelVoucherSeries(cmp_id, session);
 
       // Process each checkout separately
       const results = [];
       for (const item of selectedCheckOut) {
-        // Per-item: party from item.customerId._id
         const selectedPartyId = item?.customerId?._id || item?.customerId;
         if (!selectedPartyId) throw new Error("Missing customerId._id in checkout item");
 
-        // Payment split for this item (simple: use full provided amounts per item)
-        const cashAmt = Number(paymentDetails?.cashAmount || 0);
-        const onlineAmt = Number(paymentDetails?.onlineAmount || 0);
-        const paymentMethod =
-          cashAmt > 0 && onlineAmt > 0 ? "mixed" :
-            cashAmt > 0 ? "cash" :
-              onlineAmt > 0 ? "bank" : (isPostToRoom ? "credit" : "unknown");
-
-        const paymentSplittingArray = createPaymentSplittingArray(
-          paymentDetails, cashAmt, onlineAmt
-        );
-
-        // Party info (per-item)
-        const partyData = await getSelectedParty(selectedPartyId, cmp_id, session);
-        const party = mapPartyData(partyData);
-
-        // Generate sale number (per-item)
-        const saleNumber = await generateVoucherNumber(
-          cmp_id, "sales", specificVoucherSeries._id.toString(), session
-        );
-
-        // Create Sales Voucher (per-item)
-        const savedVoucherData = await createSalesVoucher(
-          cmp_id,
-          specificVoucherSeries,
-          saleNumber,
-          req,
-          [item],                    // only this checkout’s lines
-          party,
-          partyData,
-          paymentSplittingArray,
-          session
-        );
-
-        // const paidAmount = isPostToRoom ? 0 : cashAmt + onlineAmt;
-        // const pendingAmount = Number(item?.balanceToPay || 0);
-
-
-        const itemTotal = item.selectedRooms.reduce(
-          (acc, room) => acc + room.amountAfterTax,
+        const itemTotal = (item.selectedRooms || []).reduce(
+          (acc, room) => acc + Number(room.amountAfterTax || 0),
           0
         );
 
-        const paidAmount = itemTotal;
-        const pendingAmount = Number(item?.balanceToPay || 0);
+        const partyData = await getSelectedParty(selectedPartyId, cmp_id, session);
+        const party = mapPartyData(partyData);
 
-        // Create Tally Entry (per-item)
-        const tallyRows = await createTallyEntry(
+        // ============ DETERMINE PAYMENT FOR THIS SALE ============
+        let cashAmt = 0;
+        let onlineAmt = 0;
+        let paymentMethod = "";
+        let paidAmount = 0;
+        let pendingAmount = 0;
+        let applicableSplits = [];
+
+        if (paymentMode === "single") {
+          cashAmt = Number(paymentDetails?.cashAmount || 0);
+          onlineAmt = Number(paymentDetails?.onlineAmount || 0);
+          paymentMethod = cashAmt > 0 ? "cash" : onlineAmt > 0 ? "bank" : "unknown";
+          paidAmount = cashAmt + onlineAmt;
+          pendingAmount = itemTotal - paidAmount;
+        } else if (paymentMode === "split") {
+          applicableSplits = splitDetails.filter(
+            (split) => split.customer === selectedPartyId.toString()
+          );
+
+          paidAmount = applicableSplits.reduce(
+            (sum, split) => sum + Number(split.amount || 0),
+            0
+          );
+
+          cashAmt = applicableSplits
+            .filter((s) => s.sourceType === "cash")
+            .reduce((sum, s) => sum + Number(s.amount || 0), 0);
+
+          onlineAmt = applicableSplits
+            .filter((s) => s.sourceType === "bank")
+            .reduce((sum, s) => sum + Number(s.amount || 0), 0);
+
+          paymentMethod = cashAmt > 0 && onlineAmt > 0 ? "mixed" : cashAmt > 0 ? "cash" : "bank";
+          pendingAmount = 0;
+        } else if (isPostToRoom || paymentMode === "credit") {
+          paymentMethod = "credit";
+          paidAmount = 0;
+          pendingAmount = itemTotal;
+        }
+
+        const paymentSplittingArray = createPaymentSplittingArray(
+          paymentDetails,
+          cashAmt,
+          onlineAmt,
+          applicableSplits
+        );
+
+        const saleNumber = await generateVoucherNumber(
           cmp_id,
-          req,
-          selectedPartyId,
-          [item],                    // scope to this item
-          savedVoucherData[0],
-          paidAmount,
-          pendingAmount,
+          "sales",
+          specificVoucherSeries._id.toString(),
           session
         );
 
-        // Receipt (per-item, when not posting to room)
-        if (!isPostToRoom && (cashAmt > 0 || onlineAmt > 0)) {
-          await createReceiptForSales(
-            cmp_id,
-            paymentDetails,
-            paymentMethod,
-            party?.customerName,
-            Number(itemTotal),
-            party._id,
-            savedVoucherData[0],
-            tallyRows[0],
-            req,
-            restaurantBaseSaleData,
-            session
-          );
-        }
-
-        // Settlements (per-item)
-        if (!isPostToRoom && cashAmt > 0) {
-          const selectedCash = await Party.findOne({
-            _id: paymentDetails?.selectedCash,
-          }).session(session);
-          await saveSettlement(
-            paymentDetails,
-            selectedPartyId,
-            selectedCash,
-            cmp_id,
-            savedVoucherData[0],
-            cashAmt,
-            "cash",
-            req,
-            session
-          );
-        }
-
-
-        if (!isPostToRoom && onlineAmt > 0) {
-          const selectedBank = await Party.findOne({
-            _id: paymentDetails?.selectedBank,
-          }).session(session);
-          await saveSettlement(
-            paymentDetails,
-            selectedPartyId,
-            selectedBank,
-            cmp_id,
-            savedVoucherData[0],
-            onlineAmt,
-            "bank",
-            req,
-            session
-          );
-        }
-
-        // Link room receipts (per-item)
-        await updateReceiptForRooms(
-          item?.voucherNumber,
-          item?.bookingId?.voucherNumber || item?.bookingId,
-          saleNumber?.voucherNumber,
-          savedVoucherData[0]?._id,
-          session
-        );
-
-        // CheckOut insert and CheckIn update (per-item)
         const checkInId = item?._id;
         const roomsBeingCheckedOut = item?.selectedRooms || [];
         const originalCheckIn = await CheckIn.findById(checkInId).session(session);
@@ -2116,38 +2060,106 @@ export const convertCheckOutToSale = async (req, res) => {
 
         if (isThisPartial) isAnyPartial = true;
 
-        const roomIdsBeingCheckedOut = roomsBeingCheckedOut.map(r =>
+        const roomIdsBeingCheckedOut = roomsBeingCheckedOut.map((r) =>
           r._id?.toString() || r.toString()
         );
         const remainingRooms = (originalCheckIn.selectedRooms || []).filter(
-          room => !roomIdsBeingCheckedOut.includes(room._id.toString())
+          (room) => !roomIdsBeingCheckedOut.includes(room._id.toString())
         );
 
-        const roomTotal = (item?.selectedRooms || []).reduce(
-          (acc, room) => acc + Number(room?.amountAfterTax || 0), 0
-        );
+        const roomTotal = itemTotal;
 
-        // Create CheckOut doc for this item
-        await CheckOut.create(
-          [{
-            ...item,
-            _id: undefined,
-            cmp_id,
-            Primary_user_id: req.owner || req.pUserId,
-            voucherNumber: saleNumber?.voucherNumber,
-            checkInId,
-            bookingId: item?.bookingId?._id || item?.bookingId,
-            customerId: selectedPartyId,
-            customerName: item?.customerId?.partyName || party?.customerName,
-            selectedRooms: roomsBeingCheckedOut,
-            totalAmount: roomTotal,
-            roomTotal,
-            grandTotal: roomTotal,
-            balanceToPay: 0,
-            isPartialCheckout: isThisPartial,
-            originalCheckInId: checkInId,
-          }],
+        // Create CheckOut FIRST
+        const checkOutDoc = await CheckOut.create(
+          [
+            {
+              ...item,
+              _id: undefined,
+              cmp_id,
+              Primary_user_id: req.owner || req.pUserId,
+              voucherNumber: saleNumber?.voucherNumber,
+              checkInId,
+              bookingId: item?.bookingId?._id || item?.bookingId,
+              customerId: selectedPartyId,
+              customerName: item?.customerId?.partyName || party?.customerName,
+              selectedRooms: roomsBeingCheckedOut,
+              totalAmount: roomTotal,
+              roomTotal,
+              grandTotal: roomTotal,
+              balanceToPay: pendingAmount,
+              isPartialCheckout: isThisPartial,
+              originalCheckInId: checkInId,
+            },
+          ],
           { session }
+        );
+
+        const amount = [item].reduce((total, el) => {
+          const itemTotal = el.selectedRooms.reduce(
+            (acc, room) => acc + room.amountAfterTax,
+            0
+          );
+          return total + itemTotal;
+        }, 0);
+
+        // Create Sales Voucher with both checkInId and checkOutId
+        const savedVoucherData = await createSalesVoucher(
+          cmp_id,
+          specificVoucherSeries,
+          saleNumber,
+          req,
+          [item],
+          party,
+          partyData,
+          paymentSplittingArray,
+          session,
+          checkInId,
+          checkOutDoc[0]._id,
+          amount
+        );
+
+        // Create Tally Entry
+        const tallyRows = await createTallyEntry(
+          cmp_id,
+          req,
+          selectedPartyId,
+          [item],
+          savedVoucherData[0],
+          amount,
+          session
+        );
+
+        // ============ HANDLE SETTLEMENTS (NOT RECEIPTS YET) ============
+
+        if (paymentMode === "split") {
+          // Create settlements for matching splits only
+          for (const split of applicableSplits) {
+            const splitAmount = Number(split.amount || 0);
+            const splitSourceType = split.sourceType;
+            const splitSource = await Party.findOne({ _id: split.source }).session(session);
+
+            await saveSettlement(
+              paymentDetails,
+              selectedPartyId,
+              splitSource,
+              cmp_id,
+              savedVoucherData[0],
+              splitAmount,
+              splitSourceType,
+              req,
+              session
+            );
+          }
+        }
+        // NOTE: For single payment mode, settlement will be created ONCE after the loop
+
+        // Link room receipts
+        await updateReceiptForRooms(
+          item?.voucherNumber,
+          item?.bookingId?.voucherNumber || item?.bookingId,
+          saleNumber?.voucherNumber,
+          savedVoucherData[0]?._id,
+          session
         );
 
         // Update CheckIn and room statuses
@@ -2163,13 +2175,13 @@ export const convertCheckOutToSale = async (req, res) => {
               $push: {
                 partialCheckoutHistory: {
                   date: new Date(),
-                  roomsCheckedOut: roomsBeingCheckedOut.map(r => ({
+                  roomsCheckedOut: roomsBeingCheckedOut.map((r) => ({
                     roomId: r._id,
                     roomName: r.roomName,
                   })),
                   saleVoucherNumber: saleNumber?.voucherNumber,
-                }
-              }
+                },
+              },
             },
             { session }
           );
@@ -2189,17 +2201,121 @@ export const convertCheckOutToSale = async (req, res) => {
           salesRecord: savedVoucherData[0],
           tallyId: tallyRows?.[0]?._id,
           checkInId,
+          checkOutId: checkOutDoc[0]._id,
           isPartial: isThisPartial,
+          paymentMode,
+          itemTotal,
+          paidAmount,
+          pendingAmount,
+          applicableSplitsCount: applicableSplits.length,
         });
       }
 
-      // attach results to request-local for response
+      // ============ CREATE SINGLE SETTLEMENT FOR SINGLE PAYMENT MODE ============
+      if (paymentMode === "single" && !isPostToRoom) {
+        const cashAmt = Number(paymentDetails?.cashAmount || 0);
+        const onlineAmt = Number(paymentDetails?.onlineAmount || 0);
+        const totalPaidAmount = cashAmt + onlineAmt;
+
+        if (totalPaidAmount > 0) {
+          // Determine primary source and type
+          let primarySource;
+          let sourceType;
+
+          if (cashAmt > 0 && onlineAmt > 0) {
+            // Both cash and bank - use cash as primary, mark as "mixed"
+            primarySource = await Party.findOne({
+              _id: paymentDetails?.selectedCash,
+            }).session(session);
+            sourceType = "mixed";
+          } else if (cashAmt > 0) {
+            // Cash only
+            primarySource = await Party.findOne({
+              _id: paymentDetails?.selectedCash,
+            }).session(session);
+            sourceType = "cash";
+          } else {
+            // Bank only
+            primarySource = await Party.findOne({
+              _id: paymentDetails?.selectedBank,
+            }).session(session);
+            sourceType = "bank";
+          }
+
+          // Create ONE settlement for all sales
+          await saveSettlement(
+            paymentDetails,
+            selectedCheckOut[0]?.customerId?._id || selectedCheckOut[0]?.customerId,
+            primarySource,
+            cmp_id,
+            results[0]?.salesRecord, // Use first sale as reference
+            totalPaidAmount, // Total amount (cash + bank)
+            sourceType,
+            req,
+            session
+          );
+        }
+      }
+
+      // ============ CREATE RECEIPTS AFTER ALL SALES ARE CREATED ============
+
+      // For SPLIT mode: Create receipt(s)
+      if (paymentMode === "split") {
+        const totalPaidAmount = splitDetails.reduce(
+          (sum, split) => sum + Number(split.amount || 0),
+          0
+        );
+
+        if (totalPaidAmount > 0) {
+          await createReceiptForSales(
+            cmp_id,
+            paymentDetails,
+            "mixed", // Since split can have both cash and bank
+            selectedCheckOut[0]?.customerId?.partyName || "Customer",
+            totalPaidAmount,
+            selectedCheckOut[0]?.customerId?._id || selectedCheckOut[0]?.customerId,
+            results[0]?.salesRecord,
+            results[0]?.tallyId,
+            req,
+            restaurantBaseSaleData,
+            session
+          );
+        }
+      }
+
+      // For SINGLE mode: Create ONE receipt for all sales
+      else if (paymentMode === "single") {
+        const totalPaidAmount = Number(paymentDetails?.cashAmount || 0) +
+          Number(paymentDetails?.onlineAmount || 0);
+
+        if (!isPostToRoom && totalPaidAmount > 0) {
+          const cashAmt = Number(paymentDetails?.cashAmount || 0);
+          const onlineAmt = Number(paymentDetails?.onlineAmount || 0);
+          const paymentMethod = cashAmt > 0 && onlineAmt > 0 
+            ? "mixed" 
+            : cashAmt > 0 
+            ? "cash" 
+            : "bank";
+
+          await createReceiptForSales(
+            cmp_id,
+            paymentDetails,
+            paymentMethod,
+            selectedCheckOut[0]?.customerId?.partyName || "Customer",
+            totalPaidAmount,
+            selectedCheckOut[0]?.customerId?._id || selectedCheckOut[0]?.customerId,
+            results[0]?.salesRecord,
+            results.find(r => r.tallyId)?.tallyId,
+            req,
+            restaurantBaseSaleData,
+            session
+          );
+        }
+      }
+
       req._multiCheckoutResults = results;
       req._isAnyPartial = isAnyPartial;
     });
-
-
-
 
     res.status(200).json({
       success: true,
@@ -2207,7 +2323,7 @@ export const convertCheckOutToSale = async (req, res) => {
         ? "Partial checkout(s) completed. Remaining rooms stay checked-in."
         : "Checkout(s) converted to Sales successfully",
       data: {
-        results: req._multiCheckoutResults
+        results: req._multiCheckoutResults,
       },
     });
   } catch (error) {
@@ -2221,27 +2337,40 @@ export const convertCheckOutToSale = async (req, res) => {
   }
 };
 
-
-function createPaymentSplittingArray(paymentDetails, cashAmt, onlineAmt) {
+function createPaymentSplittingArray(paymentDetails, cashAmt, onlineAmt, applicableSplits = []) {
   const arr = [];
-  if (cashAmt > 0) {
-    arr.push({
-      type: "cash",
-      amount: cashAmt,
-      ref_id: paymentDetails?.selectedCash,
-      // ref_collection: "Cash",
-    });
+  const paymentMode = paymentDetails?.paymentMode;
+
+  if (paymentMode === "split" && applicableSplits.length > 0) {
+    // For split payment: use applicableSplits (customer-matched splits)
+    for (const split of applicableSplits) {
+      arr.push({
+        type: split.sourceType === "cash" ? "cash" : "upi",
+        amount: Number(split.amount || 0),
+        ref_id: split.source,
+      });
+    }
+  } else {
+    // For single payment: use selectedCash/selectedBank
+    if (cashAmt > 0) {
+      arr.push({
+        type: "cash",
+        amount: cashAmt,
+        ref_id: paymentDetails?.selectedCash,
+      });
+    }
+    if (onlineAmt > 0) {
+      arr.push({
+        type: "upi",
+        amount: onlineAmt,
+        ref_id: paymentDetails?.selectedBank,
+      });
+    }
   }
-  if (onlineAmt > 0) {
-    arr.push({
-      type: "upi",
-      amount: onlineAmt,
-      ref_id: paymentDetails?.selectedBank,
-      // ref_collection: "BankDetails",
-    });
-  }
+
   return arr;
 }
+
 
 function mapPartyData(selectedParty) {
   return {
@@ -2276,18 +2405,21 @@ async function createSalesVoucher(
   party,
   selectedParty,
   paymentSplittingArray,
-  session
+  session,
+  checkInId = null,
+  checkOutId = null,
+  amount = 0
 ) {
   let items = selectedCheckOut.flatMap((item) => item.selectedRooms);
 
 
-  const amount = selectedCheckOut.reduce((total, item) => {
-    const itemTotal = item.selectedRooms.reduce(
-      (acc, room) => acc + room.amountAfterTax,
-      0
-    );
-    return total + itemTotal;
-  }, 0);
+  // const amount = selectedCheckOut.reduce((total, item) => {
+  //   const itemTotal = item.selectedRooms.reduce(
+  //     (acc, room) => acc + room.amountAfterTax,
+  //     0
+  //   );
+  //   return total + itemTotal;
+  // }, 0);
 
 
 
@@ -2301,6 +2433,9 @@ async function createSalesVoucher(
       checkInNumber: item.voucherNumber,
     };
   });
+
+
+
 
   return await salesModel.create(
     [
@@ -2324,6 +2459,8 @@ async function createSalesVoucher(
         subTotal: amount,
         paymentSplittingData: paymentSplittingArray,
         convertedFrom,
+        checkInId: checkInId,
+        checkOutId: checkOutId,
       },
     ],
     { session }
@@ -2336,13 +2473,33 @@ async function createTallyEntry(
   selectedParty,
   selectedCheckOut,
   savedVoucher,
-  paidAmount,
-  pendingAmount,
+  amount,
   session
 ) {
-  const selectedOne = await Party.findOne({ _id: selectedParty });
+  const selectedOne = await Party.findOne({ _id: selectedParty }).session(session);
 
-  // for (const item of selectedCheckOut) {
+  // console.log("selectedOne",    {
+  //       Primary_user_id: req.pUserId || req.owner,
+  //       cmp_id,
+  //       party_id: selectedOne?._id,
+  //       party_name: selectedOne?.partyName,
+  //       mobile_no: selectedOne?.mobileNumber,
+  //       bill_date: new Date(),
+  //       bill_no: savedVoucher?.salesNumber,
+  //       billId: savedVoucher?._id,
+  //       bill_amount: amount, // CHANGED: Total sale amount
+  //       bill_pending_amt: amount, // CHANGED: Actual outstanding amount
+  //       accountGroup: selectedOne?.accountGroup.toString(),
+  //       user_id: req.sUserId,
+  //       advanceAmount: 0,
+  //       advanceDate: new Date(),
+  //       classification: "Dr",
+  //       source: "sales",
+  //     },);
+
+
+
+
   return await TallyData.create(
     [
       {
@@ -2354,20 +2511,20 @@ async function createTallyEntry(
         bill_date: new Date(),
         bill_no: savedVoucher?.salesNumber,
         billId: savedVoucher?._id,
-        bill_amount: paidAmount,
-        bill_pending_amt: 0,
+        bill_amount: amount, // CHANGED: Total sale amount
+        bill_pending_amt: amount, // CHANGED: Actual outstanding amount
         accountGroup: selectedOne?.accountGroup.toString(),
         user_id: req.sUserId,
         advanceAmount: 0,
         advanceDate: new Date(),
-        classification: "Cr",
+        classification: "Dr",
         source: "sales",
       },
     ],
     { session }
   );
-  // }
 }
+
 
 async function saveSettlement(
   paymentDetails,
