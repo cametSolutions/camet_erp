@@ -407,6 +407,14 @@ const handleKotCancel = async () => {
 
   const handleSavePayment = async (id) => {
     setSaveLoader(true);
+
+     if (paymentMode === "credit") {
+    if (!selectedCreditor || selectedCreditor === "" || !selectedCreditor._id) {
+      setPaymentError("Please select a creditor");
+      setSaveLoader(false);
+      return;
+    }
+  }
     let paymentDetails;
     let selectedKotData;
      if (selectedDataForPayment?.isDirectSale) {
@@ -545,11 +553,16 @@ const handleKotCancel = async () => {
     console.log(selectedKotData);
 
     try {
+      console.log(paymentDetails)
+      const payment={...paymentDetails,cashAmount:Number(paymentDetails.cashAmount)}
+      console.log(payment)
+  
+    
       const response = await api.put(
         `/api/sUsers/updateKotPayment/${cmp_id}`,
         {
           paymentMethod: paymentMethod,
-          paymentDetails: paymentDetails,
+          paymentDetails: payment,
           selectedKotData: selectedKotData,
           isPostToRoom: isPostToRoom,
               isDirectSale: selectedDataForPayment?.isDirectSale || false,
