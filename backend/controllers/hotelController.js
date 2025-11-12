@@ -2077,10 +2077,9 @@ export const convertCheckOutToSale = async (req, res) => {
 
       if (!paymentDetails) throw new Error("Missing payment details");
 
-      const paymentMode = paymentDetails?.paymentMode; // "single", "split", or "credit"
+      const paymentMode = paymentDetails?.paymentMode;
       const splitDetails = paymentDetails?.splitDetails || [];
 
-      // Fetch voucher series once
       const specificVoucherSeries = await hotelVoucherSeries(cmp_id, session);
 
       // Process each checkout separately
@@ -2089,13 +2088,11 @@ export const convertCheckOutToSale = async (req, res) => {
         const selectedPartyId = item?.customerId?._id || item?.customerId;
         if (!selectedPartyId) throw new Error("Missing customerId._id in checkout item");
 
-        // Calculate item total from selectedRooms amountAfterTax
         const itemTotal = (item.selectedRooms || []).reduce(
           (acc, room) => acc + Number(room.amountAfterTax || 0),
           0
         );
 
-        // Party info
         const partyData = await getSelectedParty(selectedPartyId, cmp_id, session);
         const party = mapPartyData(partyData);
 
@@ -2108,25 +2105,21 @@ export const convertCheckOutToSale = async (req, res) => {
         let applicableSplits = [];
 
         if (paymentMode === "single") {
-          // Single payment: either cash OR bank
           cashAmt = Number(paymentDetails?.cashAmount || 0);
           onlineAmt = Number(paymentDetails?.onlineAmount || 0);
           paymentMethod = cashAmt > 0 ? "cash" : onlineAmt > 0 ? "bank" : "unknown";
           paidAmount = cashAmt + onlineAmt;
           pendingAmount = itemTotal - paidAmount;
         } else if (paymentMode === "split") {
-          // Find all splits matching this sale's customer
           applicableSplits = splitDetails.filter(
             (split) => split.customer === selectedPartyId.toString()
           );
 
-          // Calculate total paid amount from matching splits
           paidAmount = applicableSplits.reduce(
             (sum, split) => sum + Number(split.amount || 0),
             0
           );
 
-          // Calculate cash and online totals from matching splits
           cashAmt = applicableSplits
             .filter((s) => s.sourceType === "cash")
             .reduce((sum, s) => sum + Number(s.amount || 0), 0);
@@ -2136,15 +2129,13 @@ export const convertCheckOutToSale = async (req, res) => {
             .reduce((sum, s) => sum + Number(s.amount || 0), 0);
 
           paymentMethod = cashAmt > 0 && onlineAmt > 0 ? "mixed" : cashAmt > 0 ? "cash" : "bank";
-          pendingAmount = 0; // No outstanding for split
+          pendingAmount = 0;
         } else if (isPostToRoom || paymentMode === "credit") {
-          // Credit payment / Post to Room
           paymentMethod = "credit";
           paidAmount = 0;
           pendingAmount = itemTotal;
         }
 
-        // Create payment splitting array with applicable splits
         const paymentSplittingArray = createPaymentSplittingArray(
           paymentDetails,
           cashAmt,
@@ -2152,7 +2143,6 @@ export const convertCheckOutToSale = async (req, res) => {
           applicableSplits
         );
 
-        // Generate sale number
         const saleNumber = await generateVoucherNumber(
           cmp_id,
           "sales",
@@ -2160,7 +2150,6 @@ export const convertCheckOutToSale = async (req, res) => {
           session
         );
 
-        // CheckOut insert and CheckIn update
         const checkInId = item?._id;
         const roomsBeingCheckedOut = item?.selectedRooms || [];
         const originalCheckIn = await CheckIn.findById(checkInId).session(session);
@@ -2181,7 +2170,7 @@ export const convertCheckOutToSale = async (req, res) => {
 
         const roomTotal = itemTotal;
 
-        // ============ CREATE CHECKOUT FIRST ============
+        // Create CheckOut FIRST
         const checkOutDoc = await CheckOut.create(
           [
             {
@@ -2206,8 +2195,6 @@ export const convertCheckOutToSale = async (req, res) => {
           { session }
         );
 
-        // ============ NOW CREATE SALES VOUCHER WITH BOTH IDs ============
-
         const amount = [item].reduce((total, el) => {
           const itemTotal = el.selectedRooms.reduce(
             (acc, room) => acc + room.amountAfterTax,
@@ -2216,7 +2203,7 @@ export const convertCheckOutToSale = async (req, res) => {
           return total + itemTotal;
         }, 0);
 
-
+        // Create Sales Voucher with both checkInId and checkOutId
         const savedVoucherData = await createSalesVoucher(
           cmp_id,
           specificVoucherSeries,
@@ -2227,12 +2214,12 @@ export const convertCheckOutToSale = async (req, res) => {
           partyData,
           paymentSplittingArray,
           session,
-          checkInId, // Pass checkInId
-          checkOutDoc[0]._id,// Pass newly created checkOutId,
+          checkInId,
+          checkOutDoc[0]._id,
           amount
         );
 
-        // Create Tally Entry (for outstanding/accounting)
+        // Create Tally Entry
         const tallyRows = await createTallyEntry(
           cmp_id,
           req,
@@ -2243,78 +2230,18 @@ export const convertCheckOutToSale = async (req, res) => {
           session
         );
 
-        // console.log(
-        //   "tallyRows",tallyRows
-        // );
-        
+        // ============ HANDLE SETTLEMENTS (NOT RECEIPTS YET) ============
 
-        // ============ HANDLE SETTLEMENTS BASED ON PAYMENT MODE ============
-
-        if (paymentMode === "single") {
-          // Single payment: create receipt if not posting to room
-          if (!isPostToRoom && paidAmount > 0) {
-            await createReceiptForSales(
-              cmp_id,
-              paymentDetails,
-              paymentMethod,
-              party?.partyName,
-              paidAmount,
-              party._id,
-              savedVoucherData[0],
-              tallyRows[0],
-              req,
-              restaurantBaseSaleData,
-              session
-            );
-          }
-
-          // Save settlement for cash
-          if (cashAmt > 0 && !isPostToRoom) {
-            const selectedCash = await Party.findOne({
-              _id: paymentDetails?.selectedCash,
-            }).session(session);
-
-            await saveSettlement(
-              paymentDetails,
-              selectedPartyId,
-              selectedCash,
-              cmp_id,
-              savedVoucherData[0],
-              cashAmt,
-              "cash",
-              req,
-              session
-            );
-          }
-
-          // Save settlement for bank
-          if (onlineAmt > 0 && !isPostToRoom) {
-            const selectedBank = await Party.findOne({
-              _id: paymentDetails?.selectedBank,
-            }).session(session);
-
-            await saveSettlement(
-              paymentDetails,
-              selectedPartyId,
-              selectedBank,
-              cmp_id,
-              savedVoucherData[0],
-              onlineAmt,
-              "bank",
-              req,
-              session
-            );
-          }
-        } else if (paymentMode === "split") {
-          // Split payment: Create settlements for matching splits only
+        if (paymentMode === "split") {
+          // Create settlements for matching splits only
           for (const split of applicableSplits) {
             const splitAmount = Number(split.amount || 0);
-            const splitSourceType = split.sourceType; // "cash" or "bank"
+            const splitSourceType = split.sourceType;
             const splitSource = await Party.findOne({ _id: split.source }).session(session);
 
             await saveSettlement(
               paymentDetails,
-              selectedPartyId, // Use the sale's customer
+              selectedPartyId,
               splitSource,
               cmp_id,
               savedVoucherData[0],
@@ -2324,72 +2251,51 @@ export const convertCheckOutToSale = async (req, res) => {
               session
             );
           }
-
-          // Create a receipt for the paid amount (from matching splits)
-          console.log("paidAmount", paidAmount);
-
-          if (paidAmount > 0) {
-            await createReceiptForSales(
-              cmp_id,
-              paymentDetails,
-              paymentMethod,
-              party?.customerName,
-              paidAmount, // Total from matching splits
-              party._id,
-              savedVoucherData[0],
-              tallyRows[0],
-              req,
-              restaurantBaseSaleData,
-              session
-            );
-          }
-        } else if (isPostToRoom || paymentMode === "credit") {
-          // Credit payment: no settlement, no receipt
-          // Outstanding will be tracked via tally entry
         }
+        // NOTE: For single payment mode, settlement will be created ONCE after the loop
 
-        // // Link room receipts
-        // await updateReceiptForRooms(
-        //   item?.voucherNumber,
-        //   item?.bookingId?.voucherNumber || item?.bookingId,
-        //   saleNumber?.voucherNumber,
-        //   savedVoucherData[0]?._id,
-        //   session
-        // );
+        // Link room receipts
+        await updateReceiptForRooms(
+          item?.voucherNumber,
+          item?.bookingId?.voucherNumber || item?.bookingId,
+          saleNumber?.voucherNumber,
+          savedVoucherData[0]?._id,
+          session
+        );
 
-        // // Update CheckIn and room statuses
-        // if (isThisPartial && remainingRooms.length > 0) {
-        //   await CheckIn.updateOne(
-        //     { _id: checkInId },
-        //     {
-        //       $set: {
-        //         selectedRooms: remainingRooms,
-        //         status: "checkIn",
-        //         isPartiallyCheckedOut: true,
-        //       },
-        //       $push: {
-        //         partialCheckoutHistory: {
-        //           date: new Date(),
-        //           roomsCheckedOut: roomsBeingCheckedOut.map((r) => ({
-        //             roomId: r._id,
-        //             roomName: r.roomName,
-        //           })),
-        //           saleVoucherNumber: saleNumber?.voucherNumber,
-        //         },
-        //       },
-        //     },
-        //     { session }
-        //   );
+        // Update CheckIn and room statuses
+        if (isThisPartial && remainingRooms.length > 0) {
+          await CheckIn.updateOne(
+            { _id: checkInId },
+            {
+              $set: {
+                selectedRooms: remainingRooms,
+                status: "checkIn",
+                isPartiallyCheckedOut: true,
+              },
+              $push: {
+                partialCheckoutHistory: {
+                  date: new Date(),
+                  roomsCheckedOut: roomsBeingCheckedOut.map((r) => ({
+                    roomId: r._id,
+                    roomName: r.roomName,
+                  })),
+                  saleVoucherNumber: saleNumber?.voucherNumber,
+                },
+              },
+            },
+            { session }
+          );
 
-        //   await updateStatus(roomsBeingCheckedOut, "dirty", session);
-        // } else {
-        //   await CheckIn.updateOne(
-        //     { _id: checkInId },
-        //     { status: "checkOut", checkOutDate: new Date() },
-        //     { session }
-        //   );
-        //   await updateStatus(roomsBeingCheckedOut, "dirty", session);
-        // }
+          await updateStatus(roomsBeingCheckedOut, "dirty", session);
+        } else {
+          await CheckIn.updateOne(
+            { _id: checkInId },
+            { status: "checkOut", checkOutDate: new Date() },
+            { session }
+          );
+          await updateStatus(roomsBeingCheckedOut, "dirty", session);
+        }
 
         results.push({
           saleNumber,
@@ -2404,6 +2310,108 @@ export const convertCheckOutToSale = async (req, res) => {
           pendingAmount,
           applicableSplitsCount: applicableSplits.length,
         });
+      }
+
+      // ============ CREATE SINGLE SETTLEMENT FOR SINGLE PAYMENT MODE ============
+      if (paymentMode === "single" && !isPostToRoom) {
+        const cashAmt = Number(paymentDetails?.cashAmount || 0);
+        const onlineAmt = Number(paymentDetails?.onlineAmount || 0);
+        const totalPaidAmount = cashAmt + onlineAmt;
+
+        if (totalPaidAmount > 0) {
+          // Determine primary source and type
+          let primarySource;
+          let sourceType;
+
+          if (cashAmt > 0 && onlineAmt > 0) {
+            // Both cash and bank - use cash as primary, mark as "mixed"
+            primarySource = await Party.findOne({
+              _id: paymentDetails?.selectedCash,
+            }).session(session);
+            sourceType = "mixed";
+          } else if (cashAmt > 0) {
+            // Cash only
+            primarySource = await Party.findOne({
+              _id: paymentDetails?.selectedCash,
+            }).session(session);
+            sourceType = "cash";
+          } else {
+            // Bank only
+            primarySource = await Party.findOne({
+              _id: paymentDetails?.selectedBank,
+            }).session(session);
+            sourceType = "bank";
+          }
+
+          // Create ONE settlement for all sales
+          await saveSettlement(
+            paymentDetails,
+            selectedCheckOut[0]?.customerId?._id || selectedCheckOut[0]?.customerId,
+            primarySource,
+            cmp_id,
+            results[0]?.salesRecord, // Use first sale as reference
+            totalPaidAmount, // Total amount (cash + bank)
+            sourceType,
+            req,
+            session
+          );
+        }
+      }
+
+      // ============ CREATE RECEIPTS AFTER ALL SALES ARE CREATED ============
+
+      // For SPLIT mode: Create receipt(s)
+      if (paymentMode === "split") {
+        const totalPaidAmount = splitDetails.reduce(
+          (sum, split) => sum + Number(split.amount || 0),
+          0
+        );
+
+        if (totalPaidAmount > 0) {
+          await createReceiptForSales(
+            cmp_id,
+            paymentDetails,
+            "mixed", // Since split can have both cash and bank
+            selectedCheckOut[0]?.customerId?.partyName || "Customer",
+            totalPaidAmount,
+            selectedCheckOut[0]?.customerId?._id || selectedCheckOut[0]?.customerId,
+            results[0]?.salesRecord,
+            results[0]?.tallyId,
+            req,
+            restaurantBaseSaleData,
+            session
+          );
+        }
+      }
+
+      // For SINGLE mode: Create ONE receipt for all sales
+      else if (paymentMode === "single") {
+        const totalPaidAmount = Number(paymentDetails?.cashAmount || 0) +
+          Number(paymentDetails?.onlineAmount || 0);
+
+        if (!isPostToRoom && totalPaidAmount > 0) {
+          const cashAmt = Number(paymentDetails?.cashAmount || 0);
+          const onlineAmt = Number(paymentDetails?.onlineAmount || 0);
+          const paymentMethod = cashAmt > 0 && onlineAmt > 0 
+            ? "mixed" 
+            : cashAmt > 0 
+            ? "cash" 
+            : "bank";
+
+          await createReceiptForSales(
+            cmp_id,
+            paymentDetails,
+            paymentMethod,
+            selectedCheckOut[0]?.customerId?.partyName || "Customer",
+            totalPaidAmount,
+            selectedCheckOut[0]?.customerId?._id || selectedCheckOut[0]?.customerId,
+            results[0]?.salesRecord,
+            results.find(r => r.tallyId)?.tallyId,
+            req,
+            restaurantBaseSaleData,
+            session
+          );
+        }
       }
 
       req._multiCheckoutResults = results;
@@ -2429,12 +2437,6 @@ export const convertCheckOutToSale = async (req, res) => {
     await session.endSession();
   }
 };
-
-
-
-
-
-
 
 function createPaymentSplittingArray(paymentDetails, cashAmt, onlineAmt, applicableSplits = []) {
   const arr = [];
@@ -2533,6 +2535,9 @@ async function createSalesVoucher(
     };
   });
 
+
+
+
   return await salesModel.create(
     [
       {
@@ -2592,7 +2597,7 @@ async function createTallyEntry(
   //       classification: "Dr",
   //       source: "sales",
   //     },);
-  
+
 
 
 
