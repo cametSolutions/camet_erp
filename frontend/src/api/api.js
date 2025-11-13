@@ -4,10 +4,13 @@ import Swal from "sweetalert2";
 let baseUrl;
 
 const ENV = import.meta.env.VITE_ENV;
+const a = import.meta.env
+console.log("aaaaaa", a)
+console.log("ENV", ENV)
 
 // console.log(ENV);
 if (ENV === "development") {
-  
+  console.log("j")
   baseUrl = "http://localhost:7000";
 } else if (ENV === "erp") {
   baseUrl = "https://www.erp.camet.in/";
@@ -17,7 +20,7 @@ if (ENV === "development") {
   baseUrl = "https://www.app.camet.in/";
 }
 
-// console.log(`Base URL: ${baseUrl}`);
+console.log(`Base URL: ${baseUrl}`);
 
 
 const api = axios.create({

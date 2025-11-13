@@ -7,12 +7,13 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { PropagateLoader } from "react-spinners";
 import api from "../../../api/api";
-import { FaRegEye } from "react-icons/fa";
+import { FaRegEye } from "react-icons/fa";1
 import { IoMdEyeOff } from "react-icons/io";
 import { useNavigate, Link } from "react-router-dom";
 import Footer from "../footer/Footer";
 
 function LoginForm({ user }) {
+console.log("H")
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
