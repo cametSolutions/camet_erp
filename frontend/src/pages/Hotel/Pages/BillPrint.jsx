@@ -29,7 +29,10 @@ const HotelBillPrint = () => {
 
   // Props from location state
   const selectedCheckOut = location.state?.selectedCheckOut || []
-
+  const checkoutmode = location?.state?.checkoutMode || null
+  const cheinids = location?.state?.checkinIds
+  console.log(checkoutmode)
+  console.log(cheinids)
   console.log("selectedCheckOut in print", selectedCheckOut)
   console.log("h")
   // const selectedCustomerId = location.state?.customerId;
@@ -93,8 +96,10 @@ const HotelBillPrint = () => {
   // Per-doc transforms
   const transformDocToDateWiseLines = (doc) => {
     const result = []
+console.log(doc)
     const startDate = new Date(doc.arrivalDate)
     ;(doc.selectedRooms || []).forEach((room) => {
+console.log(room)
       const stayDays = room.stayDays || 1
       const fullDays = Math.floor(stayDays)
       const fractionalDay = stayDays - fullDays
@@ -1414,7 +1419,9 @@ const HotelBillPrint = () => {
                     selectedCheckOut,
                     selectedCustomer: firstDoc?.customerId,
                     balanceToPay,
-                    kotData
+                    kotData,
+                    checkoutmode,
+                    cheinids
                   }
                 })
               }}

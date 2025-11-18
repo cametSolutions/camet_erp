@@ -1993,7 +1993,16 @@ export const convertCheckOutToSale = async (req, res) => {
         restaurantBaseSaleData,
         isPostToRoom = false,
         roomAssignments = null,
+        checkoutMode,
+        checkinIds
       } = req.body;
+      console.log("chekmode", checkoutMode)
+      console.log("idarray", checkinIds)
+      if (checkoutMode === "single") {
+        console.log("anuuuuu")
+      }
+      
+
       // console.log("selectedcheckout", selectedCheckOut)
       // console.log("restbasedata", restaurantBaseSaleData)
       // console.log("isposttoroom", isPostToRoom)
@@ -2075,7 +2084,7 @@ export const convertCheckOutToSale = async (req, res) => {
         );
 
         const checkInId = item?._id;
-console.log("checkinidddd",checkInId)
+        console.log("checkinidddd", checkInId)
         const roomsBeingCheckedOut = item?.selectedRooms || [];
         const originalCheckIn = await CheckIn.findById(checkInId).session(session);
         if (!originalCheckIn) throw new Error(`Check-in ${checkInId} not found`);
@@ -2214,11 +2223,22 @@ console.log("checkinidddd",checkInId)
 
           await updateStatus(roomsBeingCheckedOut, "dirty", session);
         } else {
-          await CheckIn.updateOne(
-            { _id: checkInId },
-            { status: "checkOut", checkOutDate: new Date() },
-            { session }
-          );
+          if (checkoutMode === "single") {
+console.log("entereeeed")
+            await CheckIn.updateMany(
+              { _id: { $in: checkinIds } },
+              { $set: { status: "checkOut", checkOutDate: new Date() } },
+              { session }
+            );
+
+          } else {
+            await CheckIn.updateOne(
+              { _id: checkInId },
+              { status: "checkOut", checkOutDate: new Date() },
+              { session }
+            );
+          }
+
           await updateStatus(roomsBeingCheckedOut, "dirty", session);
         }
 

@@ -59,6 +59,7 @@ function BookingList() {
   const [selectedCash, setSelectedCash] = useState(null)
   const [selectedBank, setSelectedBank] = useState(null)
   const [cashOrBank, setCashOrBank] = useState({})
+  const [checkinidsarray, setcheckinids] = useState(null)
   const [restaurantBaseSaleData, setRestaurantBaseSaleData] = useState({})
   const [showSelectionModal, setShowSelectionModal] = useState(true)
   console.log(restaurantBaseSaleData)
@@ -130,10 +131,12 @@ function BookingList() {
     if (location?.state?.selectedCheckOut) {
       console.log("jjj")
       setSelectedCheckOut(location?.state?.selectedCheckOut)
-console.log(location.state.selectedCustomer)
+      console.log(location.state.selectedCustomer)
       setSelectedCustomer(location?.state?.selectedCustomer?._id)
       setRestaurantBaseSaleData(location?.state?.kotData)
-
+console.log(location?.state)
+      setCheckoutMode(location?.state?.checkoutmode)
+      setcheckinids(location?.state?.cheinids)
       // CHANGED: Calculate total from all checkouts' selectedRooms
       const totalAmount = calculateTotalAmount(
         location?.state?.selectedCheckOut
@@ -146,7 +149,7 @@ console.log(location.state.selectedCustomer)
       setShowPaymentModal(true)
     }
   }, [location?.state?.selectedCheckOut])
-console.log(selectedCustomer)
+  console.log(selectedCustomer)
   // ADD THIS: Update total whenever selectedCheckOut changes
   useEffect(() => {
     if (selectedCheckOut && selectedCheckOut.length > 0) {
@@ -503,8 +506,10 @@ console.log(selectedCustomer)
       setPaymentError("")
     }
   }
-
+console.log(checkoutMode)
+console.log(checkinidsarray)
   const handleSavePayment = async () => {
+
     setSaveLoader(true)
     let paymentDetails
 
@@ -610,7 +615,9 @@ console.log(selectedCustomer)
           selectedCheckOut: selectedCheckOut,
           paidBalance: selectedDataForPayment?.total,
           selectedParty: selectedCustomer,
-          restaurantBaseSaleData: restaurantBaseSaleData
+          restaurantBaseSaleData: restaurantBaseSaleData,
+          checkoutMode,
+          checkinIds: checkinidsarray
         },
         { withCredentials: true }
       )
@@ -661,10 +668,10 @@ console.log(selectedCustomer)
       proceedToCheckout(roomAssignments)
     }
   }
-
+  console.log(checkoutMode)
   const proceedToCheckout = (roomAssignments) => {
     console.log(roomAssignments[0]?._id)
-console.log(roomAssignments)
+    console.log(roomAssignments)
     console.log(roomAssignments.length)
     setSaveLoader(true)
     const hasPrint1 = configurations[0]?.defaultPrint?.print1
@@ -727,9 +734,10 @@ console.log(roomAssignments)
         }
       })
     })
-console.log(allCheckouts)
-const checkinids=allCheckouts.map((item)=>item._id)
-console.log(checkinids)
+    console.log(allCheckouts)
+    const checkinids = allCheckouts.map((item) => item._id)
+    setcheckinids(checkinids)
+    console.log(checkinids)
     // 2️⃣ GROUP BY selectedCustomer (customerId._id)
     const grouped = {}
 
@@ -749,12 +757,13 @@ console.log(checkinids)
         grouped[custId].remainingRooms.push(...item.remainingRooms)
       }
     })
-console.log(grouped)
+    console.log(grouped)
 
     // 3️⃣ Convert grouped object → final array
     const checkoutData = Object.values(grouped)
 
     console.log("checkoutData", checkoutData)
+    
 
     /////
     navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
@@ -762,6 +771,8 @@ console.log(grouped)
         selectedCheckOut: checkoutData,
         customerId: checkoutData[0]?.customerId?._id,
         isForPreview: true,
+        checkoutMode,
+        checkinIds: checkinids,
         roomAssignments: roomAssignments,
         isPartialCheckout: checkoutData.some((co) => co.isPartialCheckout)
       }
