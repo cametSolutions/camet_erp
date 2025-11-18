@@ -4,8 +4,10 @@ export const taxCalculator = (
   formData = null,
   taxCalculationRoomId = null
 ) => {
+console.log(data)
+console.log(inclusive)
   console.log(formData);
-  console.log(inclusive);
+  console.log(taxCalculationRoomId);
   try {
     if (!data || typeof data !== "object") {
       console.error("Invalid data provided to taxCalculator");
@@ -35,7 +37,8 @@ export const taxCalculator = (
           0
         ) || 0
       : 0;
-
+console.log(reducedFoodPlanAmount)
+console.log(reducedAdditionalPaxAmount)
     const baseAmount = Number(data?.totalAmount || 0);
     let totalAmount = baseAmount + reducedAdditionalPaxAmount;
 
@@ -61,18 +64,21 @@ export const taxCalculator = (
     if (!applicableSlab && hsnDetails?.igstRate !== undefined) {
       taxRate = Number(hsnDetails.igstRate);
     }
-
+console.log(inclusive)
     const taxAmount = (totalAmount * taxRate) / 100;
+console.log(totalAmount)
+console.log(taxAmount)
     let amountWithTax = inclusive ? totalAmount : totalAmount + taxAmount;
     console.log(amountWithTax);
     // Handle per-component tax for display or tracking
-    let foodPlanTaxRate = formData?.bookingType == "offline" ? 5 : taxRate;
+    let foodPlanTaxRate = formData?.bookingType == "offline" ? 5 : taxRate.toFixed(2)
+console.log(foodPlanTaxRate)
 
     let additionalPaxAmountWithTax = inclusive
       ? reducedAdditionalPaxAmount
       : reducedAdditionalPaxAmount +
         (reducedAdditionalPaxAmount * taxRate) / 100;
-
+console.log(inclusive)
     let foodPlanAmountWithTax = inclusive
       ? reducedFoodPlanAmount
       : reducedFoodPlanAmount + (reducedFoodPlanAmount * foodPlanTaxRate) / 100;
@@ -94,7 +100,7 @@ export const taxCalculator = (
         Number(reducedFoodPlanAmount),
       taxRate: Number(taxRate.toFixed(2)),
       foodPlanTaxRate:
-        formData?.bookingType !== "offline" ? 5 : Number(taxRate.toFixed(2)),
+        formData?.bookingType == "offline" ? 5 : Number(taxRate.toFixed(2)),
       taxAmount: Number(taxAmount.toFixed(2)),
       totalCgstAmt: Number(taxAmount.toFixed(2) / 2 || 0),
       totalSgstAmt: Number(taxAmount.toFixed(2) / 2 || 0),

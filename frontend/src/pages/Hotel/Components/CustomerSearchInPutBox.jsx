@@ -14,6 +14,7 @@ function CustomerSearchInputBox({
   disabled = false ,
   sendSearchToParent,
 }) {
+console.log("jj")
   const [parties, setParties] = useState([]);
   const [search, setSearch] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -44,6 +45,7 @@ function CustomerSearchInputBox({
     setLoading(true);
     setError(null);
     try {
+
       const res = await api.get(`/api/sUsers/PartyList/${cmp_id}`, {
         params: { page: pageNum, limit: PAGE_SIZE, search: searchTerm, voucher: getVoucherType(),isAgent:isAgent },
         withCredentials: true,

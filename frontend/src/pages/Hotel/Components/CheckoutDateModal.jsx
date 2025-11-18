@@ -8,6 +8,10 @@ export default function CheckoutDateModal({
   checkoutData = [],
   
 }) {
+console.log(checkoutData)
+const a=checkoutData.map((item)=>item.originalCustomerId)
+console.log(a)
+console.log("H")
   const [checkouts, setCheckouts] = useState(
     checkoutData.length > 0 ? checkoutData : [
       {
@@ -153,6 +157,7 @@ export default function CheckoutDateModal({
 };
 
   const handleConfirm = () => {
+console.log(checkouts)
     onClose(checkouts);
   };
 

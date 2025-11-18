@@ -51,7 +51,7 @@ import { fetchOutstandingDetails, fetchOutstandingTotal, getOutstandingSummary }
 import { addProduct, deleteProduct, productDetails, editProduct, getProducts, addProductSubDetails, getProductSubDetails, deleteProductSubDetails, editProductSubDetails, getAllProductsForExcel} from '../controllers/productController.js';
 import { getstockDetails } from '../controllers/stockController.js';
 import { addOrganizations, editOrg, getOrganizations } from '../controllers/organizationController.js';
-import { addParty, addSubGroup, deleteParty, deleteSubGroup, editParty, editSubGroup, getSinglePartyDetails, getSubGroup, PartyList } from '../controllers/partyController.js';
+import { addParty, addSubGroup, deleteParty, deleteSubGroup, editParty, editSubGroup, getSinglePartyDetails, getSubGroup, PartyList ,checkoutPartyList} from '../controllers/partyController.js';
 import { addBankEntry, addCash, editBankEntry, editCash, findSourceBalance, findSourceDetails, findSourceTransactions, getBankEntryDetails, getCashDetails } from '../controllers/bankAndCashController.js';
 import { addAditionalCharge, deleteAdditionalCharge, EditAditionalCharge, fetchAdditionalCharges, fetchSingleAdditionalCharge } from '../controllers/additionalChargeContoller.js';
 import { createVoucherSeries, getSeriesByVoucher, deleteVoucherSeriesById, editVoucherSeriesById, makeTheSeriesAsCurrentlySelected, } from '../controllers/voucherSeriesController.js';
@@ -83,6 +83,7 @@ router.get('/getTransactionDetails/:id', authSecondary, secondaryIsBlocked, getT
 router.post('/cancelTransaction/:id', authSecondary, secondaryIsBlocked, cancelTransaction)
 router.get('/fetchBanks/:cmp_id', authSecondary, secondaryIsBlocked, companyAuthentication, fetchBanks)
 router.get('/PartyList/:cmp_id', authSecondary, secondaryIsBlocked, companyAuthentication, PartyList)
+router.get('/singlecheckoutpartylist/:cmp_id',authSecondary,secondaryIsBlocked,companyAuthentication,checkoutPartyList)
 router.post('/addParty', authSecondary, secondaryIsBlocked, addParty)
 router.get('/getProducts/:cmp_id', authSecondary, secondaryIsBlocked, companyAuthentication, getProducts)
 router.get('/getAllProductsForExcel/:cmp_id', authSecondary, secondaryIsBlocked, companyAuthentication, getAllProductsForExcel)

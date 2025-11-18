@@ -34,7 +34,7 @@ export default function SattvaInvoice() {
   // Global fetch of KOT and outstanding for all provided checkouts (will be scoped per table)
   const [allOutStanding, setAllOutStanding] = useState([]);
   const [allKotData, setAllKotData] = useState([]);
-
+console.log("j")
   // ================= transform function (original) =================
   const transformCheckOutData = (list) => {
     let result = [];

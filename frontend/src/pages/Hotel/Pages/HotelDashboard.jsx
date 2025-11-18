@@ -153,6 +153,7 @@ const HotelDashboard = () => {
         const roomsData = res.data.rooms || [];
         console.log(roomsData);
         setRooms(roomsData);
+console.log("j")
         setFilteredRooms(roomsData);
 
         // Extract filter options
@@ -438,9 +439,10 @@ if (action === "editChecking") {
       dirty: 0,
       blocked: 0,
     };
-
+console.log(filteredRooms)
     filteredRooms.forEach((room) => {
       if (counts.hasOwnProperty(room.status)) {
+
         counts[room.status]++;
       }
     });
@@ -483,7 +485,7 @@ if (action === "editChecking") {
     scrollbarWidth: "thin",
     scrollbarColor: "rgba(0, 0, 0, 0.7) rgba(0, 0, 0, 0.2)", // black thumb, lighter black track
   };
-
+console.log("j")
   return (
     <>
       <style>

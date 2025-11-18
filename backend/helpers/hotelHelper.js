@@ -13,12 +13,12 @@ import settlementModel from "../models/settlementModel.js";
 import salesModel from "../models/salesModel.js";
 // helper function used to add search concept with room
 export const buildDatabaseFilterForRoom = (params) => {
-  console.log("params", params);
+  // console.log("params", params);
   const filter = {
     cmp_id: params.cmp_id,
     primary_user_id: params.Primary_user_id,
   };
-  console.log("params.type", params);
+  // console.log("params.type", params);
   if (params?.type && params?.type !== "All") {
     filter.roomType = params.type;
   }
@@ -112,7 +112,6 @@ export const buildDatabaseFilterForBooking = (params) => {
 // function used to fetch booking
 export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
   const { skip = 0, limit = 0 } = params;
-  console.log("filter", filter);
   try {
     let selectedModal;
     if (params?.modal == "booking") {
@@ -122,8 +121,8 @@ export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
     } else {
       selectedModal = CheckOut;
     }
-    console.log("selectedModal", selectedModal);
-    console.log("params", params);
+  
+    // console.log("params", params);
     const [bookings, totalBookings] = await Promise.all([
       selectedModal
         .find(filter)
@@ -227,7 +226,7 @@ export const updateReceiptForRooms = async (
     .find({ "billData.bill_no": { $in: [bookingNumberStr, checkInNumberStr] } })
     .session(session);
 
-  console.log("Found receipts:", receiptArray.length);
+  // console.log("Found receipts:", receiptArray.length);
 
   // Update each receipt
   await Promise.all(
@@ -252,7 +251,7 @@ export const updateReceiptForRooms = async (
     })
   );
 
-  console.log("Receipts updated successfully.");
+  // console.log("Receipts updated successfully.");
 };
 
 // export const createReceiptForSales = async (
@@ -985,7 +984,7 @@ export const saveSettlementDataHotel = async (
       voucher_date: createdAt ? new Date(createdAt) : new Date(),
     };
 
-    console.log("Saving settlement object:", object);
+    // console.log("Saving settlement object:", object);
 
     const updatedData = await settlementModel.create([object], { session });
     return updatedData;

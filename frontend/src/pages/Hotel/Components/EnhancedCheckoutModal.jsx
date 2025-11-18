@@ -1,17 +1,19 @@
 /* eslint-disable react/prop-types */
-import  { useState, useEffect } from "react";
-import { X, Users, DoorOpen,  Trash2 } from "lucide-react";
-import CustomerSearchInputBox from "../Components/CustomerSearchInPutBox";
+import { useState, useEffect } from "react"
+import { X, Users, DoorOpen, Trash2 } from "lucide-react"
+import CustomerSearchInputBox from "../Components/CustomerSearchInPutBox"
 
 export default function EnhancedCheckoutModal({
   isOpen = true,
   onClose,
   selectedCheckIns = [],
-  onConfirm,
+  onConfirm
 }) {
+  console.log(selectedCheckIns)
+  console.log("jk")
   // State to manage room-customer assignments
-  const [roomAssignments, setRoomAssignments] = useState([]);
-  const [errors, setErrors] = useState({});
+  const [roomAssignments, setRoomAssignments] = useState([])
+  const [errors, setErrors] = useState({})
 
   // Initialize room assignments when selectedCheckIns change
   useEffect(() => {
@@ -25,35 +27,35 @@ export default function EnhancedCheckoutModal({
           roomName: room.roomName,
           roomType: room.roomType?.brand || "Standard",
           originalCustomer: checkIn.customerId,
-          selectedCustomer: checkIn.customerId, // Default to original customer
+          selectedCustomer: checkIn.selectedCustomer
+            ? checkIn.selectedCustomer
+            : checkIn.customerId // Default to original customer
         }))
-      );
+      )
 
-      setRoomAssignments(allRooms);
+      setRoomAssignments(allRooms)
     }
-  }, [selectedCheckIns]);
+  }, [selectedCheckIns])
 
-
-  console.log(roomAssignments);
-
+  console.log(roomAssignments)
 
   // Handle customer selection for a specific room
   const handleCustomerSelect = (index, customer) => {
-    const updated = [...roomAssignments];
-    updated[index].selectedCustomer = customer;
-    setRoomAssignments(updated);
+    const updated = [...roomAssignments]
+    updated[index].selectedCustomer = customer
+    setRoomAssignments(updated)
 
     // Clear error for this room if exists
-    const newErrors = { ...errors };
-    delete newErrors[index];
-    setErrors(newErrors);
-  };
+    const newErrors = { ...errors }
+    delete newErrors[index]
+    setErrors(newErrors)
+  }
 
   // Remove a room from checkout (partial checkout)
   const handleRemoveRoom = (index) => {
-    const updated = roomAssignments.filter((_, i) => i !== index);
-    setRoomAssignments(updated);
-  };
+    const updated = roomAssignments.filter((_, i) => i !== index)
+    setRoomAssignments(updated)
+  }
 
   // Add room back if needed
   // const handleAddRoom = (checkInId, room) => {
@@ -73,80 +75,167 @@ export default function EnhancedCheckoutModal({
 
   // Validate before proceeding
   const validateAssignments = () => {
-    const newErrors = {};
+    const newErrors = {}
     roomAssignments.forEach((assignment, index) => {
       if (!assignment.selectedCustomer || !assignment.selectedCustomer._id) {
-        newErrors[index] = "Please select a customer for this room";
+        newErrors[index] = "Please select a customer for this room"
       }
-    });
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+    })
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
 
   // Handle proceed to checkout
   const handleProceed = () => {
     if (!validateAssignments()) {
-      return;
+      return
     }
+    console.log(roomAssignments)
+    // Step 1: Check if all selectedCustomer are same
+    const firstCustomer = roomAssignments[0]?.selectedCustomer
+    const isSameCustomer = roomAssignments.every(
+      (item) => item.selectedCustomer._id === firstCustomer._id
+    )
 
-    // Group rooms by customer
-    const groupedByCustomer = {};
-    roomAssignments.forEach((assignment) => {
-      const customerId = assignment.selectedCustomer._id;
-      if (!groupedByCustomer[customerId]) {
-        groupedByCustomer[customerId] = {
-          customer: assignment.selectedCustomer,
-          checkIns: [],
-        };
-      }
+    let result
 
-      // Find if this checkIn already exists in the group
-      let checkInGroup = groupedByCustomer[customerId].checkIns.find(
-        (ci) => ci.checkInId === assignment.checkInId
-      );
+    if (isSameCustomer) {
+      // 🔥 Merge ALL into ONE customer
+      const checkInMap = {}
 
-      if (!checkInGroup) {
-        // Find the original checkIn data
-        const originalCheckIn = selectedCheckIns.find(
-          (ci) => ci._id === assignment.checkInId
-        );
-        checkInGroup = {
-          checkInId: assignment.checkInId,
-          checkInNumber: assignment.checkInNumber,
-          originalCheckIn: originalCheckIn,
-          rooms: [],
-        };
-        groupedByCustomer[customerId].checkIns.push(checkInGroup);
-      }
+      roomAssignments.forEach((assignment) => {
+        if (!checkInMap[assignment.checkInId]) {
+          const originalCheckIn = selectedCheckIns.find(
+            (ci) => ci._id === assignment.checkInId
+          )
 
-      checkInGroup.rooms.push({
-        roomId: assignment.roomId,
-        roomName: assignment.roomName,
-        roomType: assignment.roomType,
-      });
-    });
+          checkInMap[assignment.checkInId] = {
+            checkInId: assignment.checkInId,
+            checkInNumber: assignment.checkInNumber,
+            originalCheckIn,
+            rooms: []
+          }
+        }
 
-    // Convert to array format
-    const result = Object.values(groupedByCustomer).map((group) => {
-      // console.log("customer", group.customer);
-      return {
+        checkInMap[assignment.checkInId].rooms.push({
+          roomId: assignment.roomId,
+          roomName: assignment.roomName,
+          roomType: assignment.roomType
+        })
+      })
 
+      result = [{
+        customerId: firstCustomer._id,
+        customerName: firstCustomer.partyName,
+        customer: firstCustomer,
+        checkIns: Object.values(checkInMap)
+      }]
+    } else {
+      // 🔵 fallback → group by customers (old logic)
+      const grouped = {}
+
+      roomAssignments.forEach((assignment) => {
+        const customerId = assignment.selectedCustomer._id
+
+        if (!grouped[customerId]) {
+          grouped[customerId] = {
+            customer: assignment.selectedCustomer,
+            checkIns: []
+          }
+        }
+
+        let checkInGroup = grouped[customerId].checkIns.find(
+          (ci) => ci.checkInId === assignment.checkInId
+        )
+
+        if (!checkInGroup) {
+          const originalCheckIn = selectedCheckIns.find(
+            (ci) => ci._id === assignment.checkInId
+          )
+
+          checkInGroup = {
+            checkInId: assignment.checkInId,
+            checkInNumber: assignment.checkInNumber,
+            originalCheckIn,
+            rooms: []
+          }
+
+          grouped[customerId].checkIns.push(checkInGroup)
+        }
+
+        checkInGroup.rooms.push({
+          roomId: assignment.roomId,
+          roomName: assignment.roomName,
+          roomType: assignment.roomType
+        })
+      })
+
+      result = Object.values(grouped).map((group) => ({
         customerId: group.customer._id,
         customerName: group.customer.partyName,
-        // customerId: group.customer._id,
         customer: group.customer,
-        checkIns: group.checkIns,
-      }
-    });
+        checkIns: group.checkIns
+      }))
+    }
 
-    console.log("result", result);
+    // return result
 
+    // Group rooms by customer
+    // const groupedByCustomer = {};
+    // roomAssignments.forEach((assignment) => {
+    //   const customerId = assignment.selectedCustomer._id;
+    //   if (!groupedByCustomer[customerId]) {
+    //     groupedByCustomer[customerId] = {
+    //       customer: assignment.selectedCustomer,
+    //       checkIns: [],
+    //     };
+    //   }
 
+    //   // Find if this checkIn already exists in the group
+    //   let checkInGroup = groupedByCustomer[customerId].checkIns.find(
+    //     (ci) => ci.checkInId === assignment.checkInId
+    //   );
 
-    onConfirm(result);
-  };
+    //   if (!checkInGroup) {
+    //     // Find the original checkIn data
+    //     const originalCheckIn = selectedCheckIns.find(
+    //       (ci) => ci._id === assignment.checkInId
+    //     );
+    //     checkInGroup = {
+    //       checkInId: assignment.checkInId,
+    //       checkInNumber: assignment.checkInNumber,
+    //       originalCheckIn: originalCheckIn,
+    //       rooms: [],
+    //     };
+    //     groupedByCustomer[customerId].checkIns.push(checkInGroup);
+    //   }
 
-  if (!isOpen) return null;
+    //   checkInGroup.rooms.push({
+    //     roomId: assignment.roomId,
+    //     roomName: assignment.roomName,
+    //     roomType: assignment.roomType,
+    //   });
+    // });
+
+    // // Convert to array format
+    // const result = Object.values(groupedByCustomer).map((group) => {
+    //   // console.log("customer", group.customer);
+    //   return {
+
+    //     customerId: group.customer._id,
+    //     customerName: group.customer.partyName,
+    //     // customerId: group.customer._id,
+    //     customer: group.customer,
+    //     checkIns: group.checkIns,
+    //   }
+    // });
+
+    console.log("result", result)
+
+    onConfirm(result)
+  }
+
+  if (!isOpen) return null
 
   // Get all available rooms (not currently in assignments)
   selectedCheckIns.flatMap((checkIn) =>
@@ -163,9 +252,9 @@ export default function EnhancedCheckoutModal({
         checkInId: checkIn._id,
         voucherNumber: checkIn.voucherNumber,
         ...room,
-        originalCustomer: checkIn.customerId,
+        originalCustomer: checkIn.customerId
       }))
-  );
+  )
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
@@ -193,8 +282,9 @@ export default function EnhancedCheckoutModal({
             roomAssignments.map((a, i) => (
               <div
                 key={i}
-                className={`border rounded-md p-3 ${errors[i] ? "border-red-300 bg-red-50" : "border-gray-200"
-                  }`}
+                className={`border rounded-md p-3 ${
+                  errors[i] ? "border-red-300 bg-red-50" : "border-gray-200"
+                }`}
               >
                 <div className="flex justify-between items-center mb-2">
                   <div className="flex items-center gap-2">
@@ -247,5 +337,5 @@ export default function EnhancedCheckoutModal({
         </div>
       </div>
     </div>
-  );
+  )
 }
