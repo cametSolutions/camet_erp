@@ -13,12 +13,12 @@ import settlementModel from "../models/settlementModel.js";
 import salesModel from "../models/salesModel.js";
 // helper function used to add search concept with room
 export const buildDatabaseFilterForRoom = (params) => {
-  console.log("params", params);
+  // console.log("params", params);
   const filter = {
     cmp_id: params.cmp_id,
     primary_user_id: params.Primary_user_id,
   };
-  console.log("params.type", params);
+  // console.log("params.type", params);
   if (params?.type && params?.type !== "All") {
     filter.roomType = params.type;
   }
@@ -112,7 +112,6 @@ export const buildDatabaseFilterForBooking = (params) => {
 // function used to fetch booking
 export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
   const { skip = 0, limit = 0 } = params;
-  console.log("filter", filter);
   try {
     let selectedModal;
     if (params?.modal == "booking") {
@@ -122,8 +121,8 @@ export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
     } else {
       selectedModal = CheckOut;
     }
-    console.log("selectedModal", selectedModal);
-    console.log("params", params);
+  
+    // console.log("params", params);
     const [bookings, totalBookings] = await Promise.all([
       selectedModal
         .find(filter)
@@ -227,7 +226,7 @@ export const updateReceiptForRooms = async (
     .find({ "billData.bill_no": { $in: [bookingNumberStr, checkInNumberStr] } })
     .session(session);
 
-  console.log("Found receipts:", receiptArray.length);
+  // console.log("Found receipts:", receiptArray.length);
 
   // Update each receipt
   await Promise.all(
@@ -252,7 +251,7 @@ export const updateReceiptForRooms = async (
     })
   );
 
-  console.log("Receipts updated successfully.");
+  // console.log("Receipts updated successfully.");
 };
 
 // export const createReceiptForSales = async (
@@ -492,7 +491,7 @@ export const createReceiptForSales = async (
       // Find all outstandings for this customer from sales with this checkInId
       const outstandings = await TallyData.find({
         billId: { $in: saleIds },
-        party_id: splitCustomerId,
+        party_id: splitCustomerId,                                     
         bill_pending_amt: { $gt: 0 },
         cmp_id,
         source: "sales",
@@ -515,7 +514,7 @@ export const createReceiptForSales = async (
       // Distribute split amount across customer's outstandings in FIFO
       let amountLeft = splitAmount;
       const billData = [];
-      const outstandingsToUpdate = [];
+      const outstandingsToUpdate = [];    
 
       for (const outstanding of outstandings) {
         if (amountLeft <= 0) break;
@@ -682,7 +681,7 @@ export const createReceiptForSales = async (
             billId: null,
             bill_amount: 0,
             bill_pending_amt: -amount,
-            accountGroup: createdTallyData.accountGroup,
+            accountGroup: createdTallyData,
             user_id: req.sUserId,
             advanceAmount: amount,
             advanceDate: new Date(),
@@ -799,7 +798,7 @@ export const createReceiptForSales = async (
             billId: null,
             bill_amount: 0,
             bill_pending_amt: -amountLeft,
-            accountGroup: createdTallyData.accountGroup,
+            accountGroup: createdTallyData,
             user_id: req.sUserId,
             advanceAmount: amountLeft,
             advanceDate: new Date(),
@@ -985,7 +984,7 @@ export const saveSettlementDataHotel = async (
       voucher_date: createdAt ? new Date(createdAt) : new Date(),
     };
 
-    console.log("Saving settlement object:", object);
+    // console.log("Saving settlement object:", object);
 
     const updatedData = await settlementModel.create([object], { session });
     return updatedData;

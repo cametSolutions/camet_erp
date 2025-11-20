@@ -1742,7 +1742,6 @@ export const getKotDataByTable = async (req, res) => {
       filter.status = status;
     }
 
-    console.log("filter", filter);
 
     const kots = await kotModal.find(filter).sort({ createdAt: -1 });
     res.json({ success: true, data: kots });

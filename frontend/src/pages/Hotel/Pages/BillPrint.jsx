@@ -1,45 +1,45 @@
-import  { useEffect, useState, useRef, useMemo } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
-import { toast } from "react-toastify";
-import { useReactToPrint } from "react-to-print";
-import api from "@/api/api";
-import Logo from "../../../assets/images/hill.png";
-import TitleDiv from "@/components/common/TitleDiv";
-import { jsPDF } from "jspdf";
-import "jspdf-autotable";
+import { useEffect, useState, useRef, useMemo } from "react"
+import { useLocation, useNavigate } from "react-router-dom"
+import { useSelector } from "react-redux"
+import { toast } from "react-toastify"
+import { useReactToPrint } from "react-to-print"
+import api from "@/api/api"
+import Logo from "../../../assets/images/hill.png"
+import TitleDiv from "@/components/common/TitleDiv"
+import { jsPDF } from "jspdf"
+import "jspdf-autotable"
 // import {
 //   handlePrintInvoice,
 //   handleDownloadPDF,
 // } from "../PrintSide/generateHotelInvoicePDF ";
 import {
   handleBillPrintInvoice,
-  handleBillDownloadPDF,
-} from "../PrintSide/generateBillPrintPDF";
+  handleBillDownloadPDF
+} from "../PrintSide/generateBillPrintPDF"
 // import { Title } from "@radix-ui/react-dialog";
 
 const HotelBillPrint = () => {
   // Router and Redux state
-  const location = useLocation();
+  const location = useLocation()
   const organization = useSelector(
     (state) => state?.secSelectedOrganization?.secSelectedOrg
-  );
-  const navigate = useNavigate();
+  )
+  const navigate = useNavigate()
 
   // Props from location state
-  const selectedCheckOut = location.state?.selectedCheckOut || [];
+  const selectedCheckOut = location.state?.selectedCheckOut || []
+  const checkoutmode = location?.state?.checkoutMode || null
+  const cheinids = location?.state?.checkinIds
 
-  console.log("selectedCheckOut in print",selectedCheckOut);
-  
   // const selectedCustomerId = location.state?.customerId;
-  const isForPreview = location.state?.isForPreview;
+  const isForPreview = location.state?.isForPreview
 
   // Component state (global for fetch results used across docs)
-  const [outStanding, setOutStanding] = useState([]);
-  const [kotData, setKotData] = useState([]);
-  const [showSplitPopUp, setShowSplitPopUp] = useState(false);
-  const [selected, setSelected] = useState("default");
-  const printReference = useRef(null);
+  const [outStanding, setOutStanding] = useState([])
+  const [kotData, setKotData] = useState([])
+  const [showSplitPopUp, setShowSplitPopUp] = useState(false)
+  const [selected, setSelected] = useState("default")
+  const printReference = useRef(null)
 
   // Fetch debit and KOT once for all docs shown
   const fetchDebitData = async (data) => {
@@ -48,73 +48,74 @@ const HotelBillPrint = () => {
         `/api/sUsers/fetchOutStandingAndFoodData`,
         { data },
         { withCredentials: true }
-      );
+      )
       if (res.data.success) {
-        setOutStanding(res.data.data || []);
-        setKotData(res.data.kotData || []);
+      
+        setOutStanding(res.data.data || [])
+        setKotData(res.data.kotData || [])
       }
     } catch (error) {
-      toast.error(error.message);
-      console.error("Error fetching debit data:", error);
+      toast.error(error.message)
+      console.error("Error fetching debit data:", error)
     }
-  };
+  }
 
   useEffect(() => {
     if (selectedCheckOut?.length > 0) {
-      fetchDebitData(selectedCheckOut);
+      fetchDebitData(selectedCheckOut)
     }
-  }, [selectedCheckOut]);
+  }, [selectedCheckOut])
 
   // Split handlers
-  const handleSplitPayment = () => setShowSplitPopUp(true);
-  const handleChange = (value) => setSelected(value);
+  const handleSplitPayment = () => setShowSplitPopUp(true)
+  const handleChange = (value) => setSelected(value)
   const handleSplit = () => {
-    setShowSplitPopUp(false);
+    setShowSplitPopUp(false)
     if (selected === "room") {
-      setKotData([]);
+      setKotData([])
     } else if (selected === "restaurant") {
-      setOutStanding([]);
+      setOutStanding([])
     }
-  };
+  }
 
   // Utils
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
-  };
+    const date = new Date(dateString)
+    const day = String(date.getDate()).padStart(2, "0")
+    const month = String(date.getMonth() + 1).padStart(2, "0")
+    const year = date.getFullYear()
+    return `${day}/${month}/${year}`
+  }
 
   // Per-doc transforms
   const transformDocToDateWiseLines = (doc) => {
-    const result = [];
-    const startDate = new Date(doc.arrivalDate);
-    (doc.selectedRooms || []).forEach((room) => {
-      const stayDays = room.stayDays || 1;
-      const fullDays = Math.floor(stayDays);
-      const fractionalDay = stayDays - fullDays;
+    const result = []
+    const startDate = new Date(doc.arrivalDate)
+    ;(doc.selectedRooms || []).forEach((room) => {
+      const stayDays = room.stayDays || 1
+      const fullDays = Math.floor(stayDays)
+      const fractionalDay = stayDays - fullDays
 
       const perDayAmount =
         Number(room.priceLevelRate || 0) ||
-        Number(room.baseAmountWithTax || 0) / stayDays;
-      const baseAmountPerDay = Number(room.baseAmount || 0) / stayDays;
-      const taxAmountPerDay = Number(room.taxAmount || 0) / stayDays;
+        Number(room.baseAmountWithTax || 0) / stayDays
+      const baseAmountPerDay = Number(room.baseAmount || 0) / stayDays
+      const taxAmountPerDay = Number(room.taxAmount || 0) / stayDays
       const foodPlanAmountWithTaxPerDay =
-        Number(room.foodPlanAmountWithTax || 0) / stayDays;
+        Number(room.foodPlanAmountWithTax || 0) / stayDays
       const foodPlanAmountWithOutTaxPerDay =
-        Number(room.foodPlanAmountWithOutTax || 0) / stayDays;
+        Number(room.foodPlanAmountWithOutTax || 0) / stayDays
       const additionalPaxDataWithTaxPerDay =
-        Number(room.additionalPaxAmountWithTax || 0) / stayDays;
+        Number(room.additionalPaxAmountWithTax || 0) / stayDays
       const additionalPaxDataWithOutTaxPerDay =
-        Number(room.additionalPaxAmountWithOutTax || 0) / stayDays;
+        Number(room.additionalPaxAmountWithOutTax || 0) / stayDays
 
       for (let i = 0; i < fullDays; i++) {
-        const currentDate = new Date(startDate);
-        currentDate.setDate(startDate.getDate() + i);
+        const currentDate = new Date(startDate)
+        currentDate.setDate(startDate.getDate() + i)
         const formattedDate = currentDate
           .toLocaleDateString("en-GB")
-          .replace(/\//g, "-");
+          .replace(/\//g, "-")
 
         result.push({
           date: formattedDate,
@@ -132,16 +133,16 @@ const HotelBillPrint = () => {
           foodPlanAmountWithOutTax: foodPlanAmountWithOutTaxPerDay,
           additionalPaxDataWithTax: additionalPaxDataWithTaxPerDay,
           additionalPaxDataWithOutTax: additionalPaxDataWithOutTaxPerDay,
-          roomId: room?.roomId || room?._id,
-        });
+          roomId: room?.roomId || room?._id
+        })
       }
 
       if (fractionalDay > 0) {
-        const fractionalDate = new Date(startDate);
-        fractionalDate.setDate(startDate.getDate() + fullDays);
+        const fractionalDate = new Date(startDate)
+        fractionalDate.setDate(startDate.getDate() + fullDays)
         const formattedFractionalDate = fractionalDate
           .toLocaleDateString("en-GB")
-          .replace(/\//g, "-");
+          .replace(/\//g, "-")
 
         result.push({
           date: formattedFractionalDate,
@@ -159,26 +160,28 @@ const HotelBillPrint = () => {
           foodPlanAmountWithOutTax: foodPlanAmountWithOutTaxPerDay * 0.5,
           additionalPaxDataWithTax: additionalPaxDataWithTaxPerDay * 0.5,
           additionalPaxDataWithOutTax: additionalPaxDataWithOutTaxPerDay * 0.5,
-          roomId: room?.roomId || room?._id,
-        });
+          roomId: room?.roomId || room?._id
+        })
       }
-    });
+    })
 
-    return result;
-  };
+    return result
+  }
 
   // Per-doc KOT totals aggregation helper
   const getKotTotalsByRoom = (kots = []) => {
-    const map = new Map();
+    const map = new Map()
     kots.forEach((kot) => {
-      const roomId = kot?.kotDetails?.roomId;
-      if (!roomId) return;
-      const amount = Number(kot?.finalAmount ?? kot?.subTotal ?? kot?.total ?? 0);
-      const key = String(roomId);
-      map.set(key, (map.get(key) ?? 0) + amount);
-    });
-    return map;
-  };
+      const roomId = kot?.kotDetails?.roomId
+      if (!roomId) return
+      const amount = Number(
+        kot?.finalAmount ?? kot?.subTotal ?? kot?.total ?? 0
+      )
+      const key = String(roomId)
+      map.set(key, (map.get(key) ?? 0) + amount)
+    })
+    return map
+  }
 
   // Build per-room restaurant line for a doc’s rooms only
   const buildPerRoomRestaurantLinesForDoc = (doc) => {
@@ -186,24 +189,24 @@ const HotelBillPrint = () => {
       (doc.selectedRooms || [])
         .map((r) => String(r?.roomId || r?._id))
         .filter(Boolean)
-    );
+    )
 
     const filteredKots = (kotData || []).filter((k) =>
       roomIdSet.has(String(k?.kotDetails?.roomId || ""))
-    );
+    )
 
-    const kotTotalsByRoom = getKotTotalsByRoom(filteredKots);
+    const kotTotalsByRoom = getKotTotalsByRoom(filteredKots)
 
-    const lines = [];
+    const lines = []
     for (const [roomId, amount] of kotTotalsByRoom.entries()) {
       const roomName =
         (doc.selectedRooms || []).find(
           (r) => String(r?.roomId || r?._id) === roomId
-        )?.roomName || "";
+        )?.roomName || ""
       const firstKot = filteredKots.find(
         (k) => String(k?.kotDetails?.roomId) === roomId
-      );
-      const docNo = firstKot?.salesNumber || "-";
+      )
+      const docNo = firstKot?.salesNumber || "-"
 
       lines.push({
         date: formatDate(new Date()),
@@ -213,70 +216,70 @@ const HotelBillPrint = () => {
         taxes: 0,
         advance: "",
         roomName,
-        roomId,
-      });
+        roomId
+      })
     }
-    return lines;
-  };
+    return lines
+  }
 
   // Helpers to decide where to show advances
   const docOwnsAdvances = (doc) => {
-    const originalId = doc?.originalCustomerId;
-    const custId = doc?.customerId?._id || doc?.customerId;
-    if (!custId) return false;
+    const originalId = doc?.originalCustomerId
+    const custId = doc?.customerId?._id || doc?.customerId
+    if (!custId) return false
     // If originalId exists, match it; if not provided, treat as original/primary and allow
-    return originalId ? String(originalId) === String(custId) : true;
-  };
+    return originalId ? String(originalId) === String(custId) : true
+  }
 
   const findFirstPrimaryIdx = (docs) => {
-    const idx = (docs || []).findIndex((d) => docOwnsAdvances(d));
-    return idx >= 0 ? idx : 0;
-  };
+    const idx = (docs || []).findIndex((d) => docOwnsAdvances(d))
+    return idx >= 0 ? idx : 0
+  }
 
   // Build bill payload per doc; gate advances via useAdvances
   const prepareBillDataForDoc = (doc, useAdvances) => {
     // Lines from room stay
-    const dateWiseLines = transformDocToDateWiseLines(doc);
+    const dateWiseLines = transformDocToDateWiseLines(doc)
 
     // Totals for room parts
     const roomTariffTotal = dateWiseLines.reduce(
       (t, i) => t + Number(i.baseAmount || 0),
       0
-    );
+    )
     const planAmount = dateWiseLines.reduce(
       (t, i) => t + Number(i.foodPlanAmountWithOutTax || 0),
       0
-    );
+    )
     const additionalPaxAmount = dateWiseLines.reduce(
       (t, i) => t + Number(i.additionalPaxDataWithOutTax || 0),
       0
-    );
+    )
     const roomTaxTotal = dateWiseLines.reduce(
       (t, i) => t + Number(i.taxAmount || 0),
       0
-    );
-    const sgstAmount = roomTaxTotal / 2;
-    const cgstAmount = roomTaxTotal / 2;
+    )
+    const sgstAmount = roomTaxTotal / 2
+    const cgstAmount = roomTaxTotal / 2
 
     // Per-room restaurant lines (for this doc’s rooms)
-    const perRoomRestaurantLines = buildPerRoomRestaurantLinesForDoc(doc);
+    const perRoomRestaurantLines = buildPerRoomRestaurantLinesForDoc(doc)
     const restaurantTotal = perRoomRestaurantLines.reduce(
       (t, l) => t + Number(l.amount || 0),
       0
-    );
+    )
 
     // Build grouped charges
     const groupedRoomCharges = (() => {
-      const charges = [];
-      const groups = {};
+      const charges = []
+      const groups = {}
       dateWiseLines.forEach((i) => {
-        const k = i.roomName;
-        if (!groups[k]) groups[k] = [];
-        groups[k].push(i);
-      });
+        const k = i.roomName
+        if (!groups[k]) groups[k] = []
+        groups[k].push(i)
+      })
 
       Object.keys(groups).forEach((roomName) => {
-        const roomDays = groups[roomName];
+        const roomDays = groups[roomName]
 
         roomDays.forEach((item) => {
           charges.push({
@@ -289,16 +292,16 @@ const HotelBillPrint = () => {
               (item.foodPlanAmountWithOutTax || 0),
             taxes: (item.taxAmount || 0).toFixed(2),
             advance: "",
-            roomName: item.roomName,
-          });
-        });
+            roomName: item.roomName
+          })
+        })
 
         const roomTotalTax = roomDays.reduce(
           (sum, i) => sum + (i.taxAmount || 0),
           0
-        );
-        const roomCGST = roomTotalTax / 2;
-        const roomSGST = roomTotalTax / 2;
+        )
+        const roomCGST = roomTotalTax / 2
+        const roomSGST = roomTotalTax / 2
 
         if (roomCGST > 0) {
           charges.push({
@@ -308,8 +311,8 @@ const HotelBillPrint = () => {
             amount: 0,
             taxes: roomCGST.toFixed(2),
             advance: "",
-            roomName,
-          });
+            roomName
+          })
         }
 
         if (roomSGST > 0) {
@@ -320,11 +323,13 @@ const HotelBillPrint = () => {
             amount: 0,
             taxes: roomSGST.toFixed(2),
             advance: "",
-            roomName,
-          });
+            roomName
+          })
         }
 
-        const roomKot = perRoomRestaurantLines.find((l) => l.roomName === roomName);
+        const roomKot = perRoomRestaurantLines.find(
+          (l) => l.roomName === roomName
+        )
         if (roomKot && Number(roomKot.amount) > 0) {
           charges.push({
             date: roomKot.date,
@@ -333,13 +338,13 @@ const HotelBillPrint = () => {
             amount: roomKot.amount,
             taxes: 0,
             advance: "",
-            roomName,
-          });
+            roomName
+          })
         }
-      });
+      })
 
-      return charges;
-    })();
+      return charges
+    })()
 
     // Advances only on the decided bill
     const advanceEntries = useAdvances
@@ -349,69 +354,80 @@ const HotelBillPrint = () => {
           docNo: t.bill_no || t.billno || "-",
           amount: -Math.abs(t.bill_amount || t.billamount || 0),
           taxes: "",
-          advance: Math.abs(t.bill_amount || t.billamount || 0).toFixed(2),
+          advance: Math.abs(t.bill_amount || t.billamount || 0).toFixed(2)
         }))
-      : [];
+      : []
 
     const advanceTotal = useAdvances
       ? (outStanding || []).reduce(
           (sum, t) => sum + Number(t.bill_amount || t.billamount || 0),
           0
         )
-      : 0;
-
+      : 0
+  
     // Combine charges and compute balances
-    const allCharges = [...groupedRoomCharges, ...advanceEntries];
-    let cumulativeBalance = 0;
+    const allCharges = [...groupedRoomCharges, ...advanceEntries]
+    let cumulativeBalance = 0
     const chargesWithBalance = allCharges.map((charge) => {
-      let currentAmount = Number(charge.amount || 0);
-      const lineTaxes = Number(charge.taxes || 0);
+      let currentAmount = Number(charge.amount || 0)
+      const lineTaxes = Number(charge.taxes || 0)
 
       if (String(charge.description).includes("Room Rent")) {
-        cumulativeBalance += currentAmount + lineTaxes;
+        cumulativeBalance += currentAmount + lineTaxes
       } else if (charge.description === "Advance") {
-        cumulativeBalance += currentAmount;
+        cumulativeBalance += currentAmount
       } else if (
         String(charge.description).includes("CGST") ||
         String(charge.description).includes("SGST")
       ) {
         // don't add amount (0) again
       } else {
-        cumulativeBalance += currentAmount;
+        cumulativeBalance += currentAmount
       }
 
       return {
         ...charge,
         balance: Number.isFinite(cumulativeBalance)
           ? cumulativeBalance.toFixed(2)
-          : "0.00",
-      };
-    });
+          : "0.00"
+      }
+    })
 
     const grandTotal =
-      roomTariffTotal + planAmount + additionalPaxAmount + roomTaxTotal + restaurantTotal;
-    const netPay = grandTotal - advanceTotal;
+      roomTariffTotal +
+      planAmount +
+      additionalPaxAmount +
+      roomTaxTotal +
+      restaurantTotal
+    const netPay = grandTotal - advanceTotal
 
     // Compose hotel/guest info per doc
-    const guestRooms = (doc.selectedRooms || []).map((r) => r.roomName).join(", ");
+    const guestRooms = (doc.selectedRooms || [])
+      .map((r) => r.roomName)
+      .join(", ")
     const pax =
-      (doc.selectedRooms || []).reduce((acc, curr) => acc + Number(curr.pax || 0), 0) || 1;
+      (doc.selectedRooms || []).reduce(
+        (acc, curr) => acc + Number(curr.pax || 0),
+        0
+      ) || 1
 
-    const convertNumberToWords = (amount) => `${Math.round(amount || 0)} Rupees Only`;
+    const convertNumberToWords = (amount) =>
+      `${Math.round(amount || 0)} Rupees Only`
 
     return {
       hotel: {
         name: organization?.name,
         address:
-          `${organization?.flat || ""} ${organization?.road || ""} ${organization?.landmark || ""}`.trim() ||
-          "Erattayar road, Kattapana, Kerala India",
+          `${organization?.flat || ""} ${organization?.road || ""} ${
+            organization?.landmark || ""
+          }`.trim() || "Erattayar road, Kattapana, Kerala India",
         phone: organization?.mobile,
         email: organization?.email,
         website: organization?.website,
         pan: organization?.pan,
         gstin: organization?.gstNum,
         sacCode: "996311",
-        logo: organization?.logo,
+        logo: organization?.logo
       },
       guest: {
         name: doc?.customerId?.partyName,
@@ -420,16 +436,18 @@ const HotelBillPrint = () => {
         travelAgent: doc?.agentId?.name,
         address: doc?.customerId?.billingAddress || "",
         phone: doc?.customerId?.mobileNumber || "",
-        gstNo: doc?.customerId?.gstNo || "",
+        gstNo: doc?.customerId?.gstNo || ""
       },
       stay: {
         billDate: formatDate(new Date()),
         arrival: `${formatDate(doc?.arrivalDate)} ${doc?.arrivalTime || ""}`,
-        departure: `${formatDate(doc?.checkOutDate || new Date())} ${doc?.checkOutTime || new Date().toLocaleTimeString()}`,
+        departure: `${formatDate(doc?.checkOutDate || new Date())} ${
+          doc?.checkOutTime || new Date().toLocaleTimeString()
+        }`,
         days: doc?.selectedRooms?.[0]?.stayDays,
         plan: planAmount,
         pax,
-        tariff: doc?.selectedRooms?.[0]?.baseAmount || 0,
+        tariff: doc?.selectedRooms?.[0]?.baseAmount || 0
       },
       charges: chargesWithBalance,
       summary: {
@@ -441,49 +459,49 @@ const HotelBillPrint = () => {
         foodPlan: planAmount,
         additionalPax: additionalPaxAmount,
         total: grandTotal,
-        totalWords: convertNumberToWords(grandTotal),
+        totalWords: convertNumberToWords(grandTotal)
       },
       payment: {
         mode: "Credit",
         total: grandTotal,
         advance: advanceTotal,
-        netPay,
-      },
-    };
-  };
+        netPay
+      }
+    }
+  }
 
   // Build all billData per doc; decide where advances appear
   const bills = useMemo(() => {
-    const docs = selectedCheckOut || [];
-    if (!docs.length) return [];
-    const firstPrimaryIdx = findFirstPrimaryIdx(docs);
+    const docs = selectedCheckOut || []
+
+    if (!docs.length) return []
+    const firstPrimaryIdx = findFirstPrimaryIdx(docs)
 
     return docs.map((doc, idx) => {
       // Rule: if this doc owns advances, show here; else show on firstPrimaryIdx
-      const owns = docOwnsAdvances(doc);
-      const useAdvances = owns ? true : idx === firstPrimaryIdx;
-      return prepareBillDataForDoc(doc, useAdvances);
-    });
-  }, [selectedCheckOut, outStanding, kotData, organization]);
+      const owns = docOwnsAdvances(doc)
+      const useAdvances = owns ? true : idx === firstPrimaryIdx
+      return prepareBillDataForDoc(doc, useAdvances)
+    })
+  }, [selectedCheckOut, outStanding, kotData, organization])
 
   // Print handlers use first bill by default for metadata
   const handlePrint = useReactToPrint({
     content: () => printReference.current,
     documentTitle: "Hotel Bill",
-    removeAfterPrint: true,
-  });
+    removeAfterPrint: true
+  })
 
-const handlePrintPDF = (isPrint) => {
-  const multi = bills && bills.length ? bills : [];
-  if (!multi.length) return;
+  const handlePrintPDF = (isPrint) => {
+    const multi = bills && bills.length ? bills : []
+    if (!multi.length) return
 
-  if (!isPrint) {
-    handleBillDownloadPDF(multi); // pass array
-  } else {
-    handleBillPrintInvoice(multi); // pass array
+    if (!isPrint) {
+      handleBillDownloadPDF(multi) // pass array
+    } else {
+      handleBillPrintInvoice(multi) // pass array
+    }
   }
-};
-
 
   return (
     <>
@@ -569,7 +587,10 @@ const handlePrintPDF = (isPrint) => {
         </div>
       )}
 
-      <div className="font-sans bg-gray-100 p-5 min-h-screen" ref={printReference}>
+      <div
+        className="font-sans bg-gray-100 p-5 min-h-screen"
+        ref={printReference}
+      >
         {/* Render one complete bill per selectedCheckOut doc */}
         {bills.map((billData, pageIdx) => (
           <div
@@ -583,7 +604,7 @@ const handlePrintPDF = (isPrint) => {
               fontSize: "11px",
               lineHeight: "1.1",
               color: "#000",
-              pageBreakAfter: pageIdx < bills.length - 1 ? "always" : "auto",
+              pageBreakAfter: pageIdx < bills.length - 1 ? "always" : "auto"
             }}
           >
             {/* Header */}
@@ -593,7 +614,7 @@ const handlePrintPDF = (isPrint) => {
                 textAlign: "center",
                 borderBottom: "1px solid #000",
                 paddingBottom: "8px",
-                marginBottom: "10px",
+                marginBottom: "10px"
               }}
             >
               <div style={{ flex: "0 0 120px" }}>
@@ -611,7 +632,7 @@ const handlePrintPDF = (isPrint) => {
                     fontSize: "18px",
                     fontWeight: "bold",
                     marginBottom: "4px",
-                    textTransform: "uppercase",
+                    textTransform: "uppercase"
                   }}
                 >
                   {billData?.hotel?.name}
@@ -620,7 +641,7 @@ const handlePrintPDF = (isPrint) => {
                   style={{
                     fontSize: "10px",
                     marginBottom: "2px",
-                    lineHeight: "1.2",
+                    lineHeight: "1.2"
                   }}
                 >
                   {billData?.hotel?.address}
@@ -629,7 +650,7 @@ const handlePrintPDF = (isPrint) => {
                   style={{
                     fontSize: "10px",
                     marginBottom: "2px",
-                    lineHeight: "1.2",
+                    lineHeight: "1.2"
                   }}
                 >
                   Phone: {billData?.hotel?.phone}
@@ -638,7 +659,7 @@ const handlePrintPDF = (isPrint) => {
                   style={{
                     fontSize: "10px",
                     marginBottom: "3px",
-                    lineHeight: "1.2",
+                    lineHeight: "1.2"
                   }}
                 >
                   E-mail: {billData?.hotel?.email} | Website{" "}
@@ -647,15 +668,16 @@ const handlePrintPDF = (isPrint) => {
                 <div
                   style={{
                     fontSize: "9px",
-                    lineHeight: "1.1",
+                    lineHeight: "1.1"
                   }}
                 >
-                  PAN NO: {billData?.hotel?.pan} | GSTIN: {billData?.hotel?.gstin}
+                  PAN NO: {billData?.hotel?.pan} | GSTIN:{" "}
+                  {billData?.hotel?.gstin}
                 </div>
                 <div
                   style={{
                     fontSize: "9px",
-                    lineHeight: "1.1",
+                    lineHeight: "1.1"
                   }}
                 >
                   SAC CODE-{billData?.hotel?.sacCode}
@@ -669,7 +691,7 @@ const handlePrintPDF = (isPrint) => {
                 style={{
                   width: "100%",
                   borderCollapse: "collapse",
-                  fontSize: "10px",
+                  fontSize: "10px"
                 }}
               >
                 <tbody>
@@ -678,7 +700,7 @@ const handlePrintPDF = (isPrint) => {
                       style={{
                         width: "15%",
                         padding: "2px 0",
-                        fontWeight: "bold",
+                        fontWeight: "bold"
                       }}
                     >
                       GRC No
@@ -690,7 +712,7 @@ const handlePrintPDF = (isPrint) => {
                       style={{
                         width: "15%",
                         padding: "2px 0",
-                        fontWeight: "bold",
+                        fontWeight: "bold"
                       }}
                     >
                       Bill No
@@ -702,7 +724,7 @@ const handlePrintPDF = (isPrint) => {
                       style={{
                         width: "10%",
                         padding: "2px 0",
-                        fontWeight: "bold",
+                        fontWeight: "bold"
                       }}
                     >
                       Date
@@ -712,8 +734,12 @@ const handlePrintPDF = (isPrint) => {
                     </td>
                   </tr>
                   <tr>
-                    <td style={{ padding: "2px 0", fontWeight: "bold" }}>GUEST</td>
-                    <td style={{ padding: "2px 0" }}>{billData?.guest?.name}</td>
+                    <td style={{ padding: "2px 0", fontWeight: "bold" }}>
+                      GUEST
+                    </td>
+                    <td style={{ padding: "2px 0" }}>
+                      {billData?.guest?.name}
+                    </td>
                     <td style={{ padding: "2px 0", fontWeight: "bold" }}>
                       Arrival
                     </td>
@@ -734,7 +760,9 @@ const handlePrintPDF = (isPrint) => {
                     <td colSpan="3" style={{ padding: "2px 0" }}>
                       {billData?.guest?.address}
                     </td>
-                    <td style={{ padding: "2px 0", fontWeight: "bold" }}>Plan</td>
+                    <td style={{ padding: "2px 0", fontWeight: "bold" }}>
+                      Plan
+                    </td>
                     <td style={{ padding: "2px 0" }}>
                       {billData?.stay?.plan} Pax {billData?.stay?.pax}
                     </td>
@@ -743,11 +771,15 @@ const handlePrintPDF = (isPrint) => {
                     <td style={{ padding: "2px 0", fontWeight: "bold" }}>
                       Phone
                     </td>
-                    <td style={{ padding: "2px 0" }}>{billData?.guest?.phone}</td>
+                    <td style={{ padding: "2px 0" }}>
+                      {billData?.guest?.phone}
+                    </td>
                     <td style={{ padding: "2px 0", fontWeight: "bold" }}>
                       Tariff
                     </td>
-                    <td style={{ padding: "2px 0" }}>{billData?.stay?.tariff}</td>
+                    <td style={{ padding: "2px 0" }}>
+                      {billData?.stay?.tariff}
+                    </td>
                     <td style={{ padding: "2px 0", fontWeight: "bold" }}>
                       No. of Days
                     </td>
@@ -766,14 +798,18 @@ const handlePrintPDF = (isPrint) => {
                     <td style={{ padding: "2px 0", fontWeight: "bold" }}>
                       GST No
                     </td>
-                    <td style={{ padding: "2px 0" }}>{billData?.hotel?.gstin}</td>
+                    <td style={{ padding: "2px 0" }}>
+                      {billData?.hotel?.gstin}
+                    </td>
                     <td colSpan="4"></td>
                   </tr>
                   <tr>
                     <td style={{ padding: "2px 0", fontWeight: "bold" }}>
                       Company
                     </td>
-                    <td style={{ padding: "2px 0" }}>{billData?.hotel?.name}</td>
+                    <td style={{ padding: "2px 0" }}>
+                      {billData?.hotel?.name}
+                    </td>
                     <td colSpan="4"></td>
                   </tr>
                   <tr>
@@ -796,7 +832,7 @@ const handlePrintPDF = (isPrint) => {
                   width: "100%",
                   borderCollapse: "collapse",
                   border: "1px solid #000",
-                  fontSize: "10px",
+                  fontSize: "10px"
                 }}
               >
                 <thead>
@@ -805,7 +841,7 @@ const handlePrintPDF = (isPrint) => {
                       style={{
                         border: "1px solid #000",
                         padding: "4px",
-                        textAlign: "left",
+                        textAlign: "left"
                       }}
                     >
                       Date
@@ -814,7 +850,7 @@ const handlePrintPDF = (isPrint) => {
                       style={{
                         border: "1px solid #000",
                         padding: "4px",
-                        textAlign: "left",
+                        textAlign: "left"
                       }}
                     >
                       Doc No
@@ -823,7 +859,7 @@ const handlePrintPDF = (isPrint) => {
                       style={{
                         border: "1px solid #000",
                         padding: "4px",
-                        textAlign: "left",
+                        textAlign: "left"
                       }}
                     >
                       Description
@@ -832,7 +868,7 @@ const handlePrintPDF = (isPrint) => {
                       style={{
                         border: "1px solid #000",
                         padding: "4px",
-                        textAlign: "right",
+                        textAlign: "right"
                       }}
                     >
                       Amount
@@ -841,7 +877,7 @@ const handlePrintPDF = (isPrint) => {
                       style={{
                         border: "1px solid #000",
                         padding: "4px",
-                        textAlign: "right",
+                        textAlign: "right"
                       }}
                     >
                       Taxes
@@ -850,7 +886,7 @@ const handlePrintPDF = (isPrint) => {
                       style={{
                         border: "1px solid #000",
                         padding: "4px",
-                        textAlign: "right",
+                        textAlign: "right"
                       }}
                     >
                       Advance
@@ -859,7 +895,7 @@ const handlePrintPDF = (isPrint) => {
                       style={{
                         border: "1px solid #000",
                         padding: "4px",
-                        textAlign: "right",
+                        textAlign: "right"
                       }}
                     >
                       Balance
@@ -876,7 +912,7 @@ const handlePrintPDF = (isPrint) => {
                         style={{
                           border: "1px solid #000",
                           padding: "3px",
-                          textAlign: "center",
+                          textAlign: "center"
                         }}
                       >
                         {charge.docNo}
@@ -888,7 +924,7 @@ const handlePrintPDF = (isPrint) => {
                         style={{
                           border: "1px solid #000",
                           padding: "3px",
-                          textAlign: "right",
+                          textAlign: "right"
                         }}
                       >
                         {Number(charge.amount || 0).toFixed(2)}
@@ -897,7 +933,7 @@ const handlePrintPDF = (isPrint) => {
                         style={{
                           border: "1px solid #000",
                           padding: "3px",
-                          textAlign: "right",
+                          textAlign: "right"
                         }}
                       >
                         {charge.taxes}
@@ -906,7 +942,7 @@ const handlePrintPDF = (isPrint) => {
                         style={{
                           border: "1px solid #000",
                           padding: "3px",
-                          textAlign: "right",
+                          textAlign: "right"
                         }}
                       >
                         {charge.advance}
@@ -915,7 +951,7 @@ const handlePrintPDF = (isPrint) => {
                         style={{
                           border: "1px solid #000",
                           padding: "3px",
-                          textAlign: "right",
+                          textAlign: "right"
                         }}
                       >
                         {charge.balance}
@@ -935,7 +971,7 @@ const handlePrintPDF = (isPrint) => {
                     width: "100%",
                     borderCollapse: "collapse",
                     border: "1px solid #000",
-                    fontSize: "11px",
+                    fontSize: "11px"
                   }}
                 >
                   <thead>
@@ -945,7 +981,7 @@ const handlePrintPDF = (isPrint) => {
                           border: "1px solid #000",
                           padding: "6px",
                           textAlign: "left",
-                          fontWeight: "bold",
+                          fontWeight: "bold"
                         }}
                       >
                         Summary
@@ -955,7 +991,7 @@ const handlePrintPDF = (isPrint) => {
                           border: "1px solid #000",
                           padding: "6px",
                           textAlign: "right",
-                          fontWeight: "bold",
+                          fontWeight: "bold"
                         }}
                       >
                         Amount
@@ -971,30 +1007,35 @@ const handlePrintPDF = (isPrint) => {
                         style={{
                           border: "1px solid #000",
                           padding: "4px",
-                          textAlign: "right",
+                          textAlign: "right"
                         }}
                       >
                         {billData?.summary?.roomRent?.toLocaleString("en-IN", {
-                          minimumFractionDigits: 2,
+                          minimumFractionDigits: 2
                         })}
                       </td>
                     </tr>
 
                     {billData?.summary?.foodPlan > 0 && (
                       <tr>
-                        <td style={{ border: "1px solid #000", padding: "4px" }}>
+                        <td
+                          style={{ border: "1px solid #000", padding: "4px" }}
+                        >
                           Food Plan
                         </td>
                         <td
                           style={{
                             border: "1px solid #000",
                             padding: "4px",
-                            textAlign: "right",
+                            textAlign: "right"
                           }}
                         >
-                          {billData?.summary?.foodPlan?.toLocaleString("en-IN", {
-                            minimumFractionDigits: 2,
-                          })}
+                          {billData?.summary?.foodPlan?.toLocaleString(
+                            "en-IN",
+                            {
+                              minimumFractionDigits: 2
+                            }
+                          )}
                         </td>
                       </tr>
                     )}
@@ -1007,11 +1048,11 @@ const handlePrintPDF = (isPrint) => {
                         style={{
                           border: "1px solid #000",
                           padding: "4px",
-                          textAlign: "right",
+                          textAlign: "right"
                         }}
                       >
                         {billData?.summary?.sgst?.toLocaleString("en-IN", {
-                          minimumFractionDigits: 2,
+                          minimumFractionDigits: 2
                         })}
                       </td>
                     </tr>
@@ -1024,11 +1065,11 @@ const handlePrintPDF = (isPrint) => {
                         style={{
                           border: "1px solid #000",
                           padding: "4px",
-                          textAlign: "right",
+                          textAlign: "right"
                         }}
                       >
                         {billData?.summary?.cgst?.toLocaleString("en-IN", {
-                          minimumFractionDigits: 2,
+                          minimumFractionDigits: 2
                         })}
                       </td>
                     </tr>
@@ -1041,12 +1082,15 @@ const handlePrintPDF = (isPrint) => {
                         style={{
                           border: "1px solid #000",
                           padding: "4px",
-                          textAlign: "right",
+                          textAlign: "right"
                         }}
                       >
-                        {billData?.summary?.restaurant?.toLocaleString("en-IN", {
-                          minimumFractionDigits: 2,
-                        })}
+                        {billData?.summary?.restaurant?.toLocaleString(
+                          "en-IN",
+                          {
+                            minimumFractionDigits: 2
+                          }
+                        )}
                       </td>
                     </tr>
 
@@ -1058,12 +1102,15 @@ const handlePrintPDF = (isPrint) => {
                         style={{
                           border: "1px solid #000",
                           padding: "4px",
-                          textAlign: "right",
+                          textAlign: "right"
                         }}
                       >
-                        {billData?.summary?.roomService?.toLocaleString("en-IN", {
-                          minimumFractionDigits: 2,
-                        })}
+                        {billData?.summary?.roomService?.toLocaleString(
+                          "en-IN",
+                          {
+                            minimumFractionDigits: 2
+                          }
+                        )}
                       </td>
                     </tr>
 
@@ -1072,7 +1119,7 @@ const handlePrintPDF = (isPrint) => {
                         style={{
                           border: "1px solid #000",
                           padding: "4px",
-                          fontWeight: "bold",
+                          fontWeight: "bold"
                         }}
                       >
                         Total
@@ -1082,11 +1129,11 @@ const handlePrintPDF = (isPrint) => {
                           border: "1px solid #000",
                           padding: "4px",
                           textAlign: "right",
-                          fontWeight: "bold",
+                          fontWeight: "bold"
                         }}
                       >
                         {billData?.summary?.total?.toLocaleString("en-IN", {
-                          minimumFractionDigits: 2,
+                          minimumFractionDigits: 2
                         })}
                       </td>
                     </tr>
@@ -1101,7 +1148,7 @@ const handlePrintPDF = (isPrint) => {
                     width: "100%",
                     borderCollapse: "collapse",
                     border: "1px solid #000",
-                    fontSize: "11px",
+                    fontSize: "11px"
                   }}
                 >
                   <thead>
@@ -1112,7 +1159,7 @@ const handlePrintPDF = (isPrint) => {
                           border: "1px solid #000",
                           padding: "6px",
                           textAlign: "left",
-                          fontWeight: "bold",
+                          fontWeight: "bold"
                         }}
                       >
                         Payment Details
@@ -1125,7 +1172,7 @@ const handlePrintPDF = (isPrint) => {
                         style={{
                           border: "1px solid #000",
                           padding: "4px",
-                          fontWeight: "bold",
+                          fontWeight: "bold"
                         }}
                       >
                         PAYMODE
@@ -1135,7 +1182,7 @@ const handlePrintPDF = (isPrint) => {
                           border: "1px solid #000",
                           padding: "4px",
                           fontWeight: "bold",
-                          textAlign: "center",
+                          textAlign: "center"
                         }}
                       >
                         AMOUNT
@@ -1149,11 +1196,11 @@ const handlePrintPDF = (isPrint) => {
                         style={{
                           border: "1px solid #000",
                           padding: "4px",
-                          textAlign: "right",
+                          textAlign: "right"
                         }}
                       >
                         {billData?.payment?.total?.toLocaleString("en-IN", {
-                          minimumFractionDigits: 2,
+                          minimumFractionDigits: 2
                         })}
                       </td>
                     </tr>
@@ -1163,7 +1210,7 @@ const handlePrintPDF = (isPrint) => {
                           border: "1px solid #000",
                           padding: "4px",
                           fontWeight: "bold",
-                          textAlign: "center",
+                          textAlign: "center"
                         }}
                         colSpan="2"
                       >
@@ -1190,11 +1237,15 @@ const handlePrintPDF = (isPrint) => {
                         style={{
                           border: "1px solid #000",
                           padding: "4px",
-                          textAlign: "right",
+                          textAlign: "right"
                         }}
                       >
-                        <div>{Number(billData?.payment?.total || 0).toFixed(2)}</div>
-                        <div>{Number(billData?.payment?.advance || 0).toFixed(2)}</div>
+                        <div>
+                          {Number(billData?.payment?.total || 0).toFixed(2)}
+                        </div>
+                        <div>
+                          {Number(billData?.payment?.advance || 0).toFixed(2)}
+                        </div>
                         <div style={{ fontWeight: "bold" }}>
                           {Number(billData?.payment?.netPay || 0).toFixed(2)}
                         </div>
@@ -1214,15 +1265,15 @@ const handlePrintPDF = (isPrint) => {
                     padding: "8px",
                     borderRight: "1px solid #000",
                     fontSize: "10px",
-                    fontWeight: "bold",
+                    fontWeight: "bold"
                   }}
                 >
                   Please Deposit Your Room and Locker Keys
                 </div>
                 <div style={{ flex: "1", padding: "8px", fontSize: "10px" }}>
-                  Regardless of charge instructions, I agree to be held personally
-                  liable for the payment of total amount of bill. Please collect
-                  receipt if you have paid cash.
+                  Regardless of charge instructions, I agree to be held
+                  personally liable for the payment of total amount of bill.
+                  Please collect receipt if you have paid cash.
                 </div>
               </div>
 
@@ -1233,7 +1284,7 @@ const handlePrintPDF = (isPrint) => {
                     padding: "12px",
                     borderRight: "1px solid #000",
                     textAlign: "left",
-                    fontSize: "10px",
+                    fontSize: "10px"
                   }}
                 >
                   <div style={{ fontWeight: "bold", marginBottom: "15px" }}>
@@ -1247,7 +1298,7 @@ const handlePrintPDF = (isPrint) => {
                     padding: "12px",
                     borderRight: "1px solid #000",
                     textAlign: "left",
-                    fontSize: "10px",
+                    fontSize: "10px"
                   }}
                 >
                   <div style={{ fontWeight: "bold", marginBottom: "15px" }}>
@@ -1257,7 +1308,7 @@ const handlePrintPDF = (isPrint) => {
                     style={{
                       height: "15px",
                       borderBottom: "1px solid #000",
-                      margin: "10px 0",
+                      margin: "10px 0"
                     }}
                   ></div>
                 </div>
@@ -1266,7 +1317,7 @@ const handlePrintPDF = (isPrint) => {
                     flex: "1",
                     padding: "12px",
                     textAlign: "left",
-                    fontSize: "10px",
+                    fontSize: "10px"
                   }}
                 >
                   <div style={{ fontWeight: "bold", marginBottom: "15px" }}>
@@ -1276,7 +1327,7 @@ const handlePrintPDF = (isPrint) => {
                     style={{
                       height: "15px",
                       borderBottom: "1px solid #000",
-                      margin: "10px 0",
+                      margin: "10px 0"
                     }}
                   ></div>
                 </div>
@@ -1289,7 +1340,7 @@ const handlePrintPDF = (isPrint) => {
                     padding: "8px",
                     borderRight: "1px solid #000",
                     fontStyle: "italic",
-                    fontSize: "10px",
+                    fontSize: "10px"
                   }}
                 >
                   We hope you enjoyed your stay and would like to welcome you
@@ -1300,7 +1351,7 @@ const handlePrintPDF = (isPrint) => {
                     padding: "8px",
                     fontSize: "10px",
                     textAlign: "center",
-                    minWidth: "120px",
+                    minWidth: "120px"
                   }}
                 >
                   Original Bill
@@ -1348,17 +1399,19 @@ const handlePrintPDF = (isPrint) => {
             <button
               onClick={() => {
                 // For preview confirm, use first bill’s netPay as balanceToPay
-                const first = bills[0];
-                const balanceToPay = first?.payment?.netPay || 0;
-                const firstDoc = selectedCheckOut[0];
+                const first = bills[0]
+                const balanceToPay = first?.payment?.netPay || 0
+                const firstDoc = selectedCheckOut[0]
                 navigate("/sUsers/checkInList", {
                   state: {
                     selectedCheckOut,
                     selectedCustomer: firstDoc?.customerId,
                     balanceToPay,
                     kotData,
-                  },
-                });
+                    checkoutmode,
+                    cheinids
+                  }
+                })
               }}
               className="bg-black text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-500 transition-colors"
             >
@@ -1375,7 +1428,7 @@ const handlePrintPDF = (isPrint) => {
         </div>
       </div>
     </>
-  );
-};
+  )
+}
 
-export default HotelBillPrint;
+export default HotelBillPrint

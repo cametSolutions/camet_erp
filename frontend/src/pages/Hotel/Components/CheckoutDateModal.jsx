@@ -8,6 +8,7 @@ export default function CheckoutDateModal({
   checkoutData = [],
   
 }) {
+
   const [checkouts, setCheckouts] = useState(
     checkoutData.length > 0 ? checkoutData : [
       {

@@ -44,6 +44,7 @@ function CustomerSearchInputBox({
     setLoading(true);
     setError(null);
     try {
+
       const res = await api.get(`/api/sUsers/PartyList/${cmp_id}`, {
         params: { page: pageNum, limit: PAGE_SIZE, search: searchTerm, voucher: getVoucherType(),isAgent:isAgent },
         withCredentials: true,

@@ -9,6 +9,7 @@ const RoomStatus = ({
   onClick,
   type,
 }) => {
+console.log(status)
   const statusConfig = {
     vacant: {
       gradient: "from-emerald-500 to-teal-600",
