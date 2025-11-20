@@ -654,12 +654,12 @@ export const getRooms = async (req, res) => {
       status: { $ne: "checkIn" },
       checkOutDate: { $lte: checkOutDate }, // Only consider checkOutDate
     });
-
+console.log("overlappingbookings",overlappingBookings)
     const AllCheckIns = await CheckIn.find({
       cmp_id: req.params.cmp_id,
       status: { $ne: "checkOut" },
     }).select("selectedRooms checkOutDate arrivalDate roomDetails");
-
+console.log("allchekins",AllCheckIns)
     const overlappingCheckIns = AllCheckIns.filter((c) => {
       const co = new Date(c.checkOutDate);
       co.setDate(co.getDate() + 1); // add 1 day
@@ -726,7 +726,7 @@ export const getRooms = async (req, res) => {
       status: "vacant",
       checkedAt: now,
     }));
-
+console.log("roomswithstatus",roomsWithStatus.length)
     // Send response
     const sendRoomResponseData = sendRoomResponse(
       res,
