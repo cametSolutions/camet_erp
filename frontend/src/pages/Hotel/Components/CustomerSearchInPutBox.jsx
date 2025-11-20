@@ -14,7 +14,6 @@ function CustomerSearchInputBox({
   disabled = false ,
   sendSearchToParent,
 }) {
-console.log("jj")
   const [parties, setParties] = useState([]);
   const [search, setSearch] = useState("");
   const [isOpen, setIsOpen] = useState(false);

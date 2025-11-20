@@ -7,10 +7,10 @@ export default function EnhancedCheckoutModal({
   isOpen = true,
   onClose,
   selectedCheckIns = [],
-  onConfirm
+  onConfirm,
+  checkoutMode
 }) {
-  console.log(selectedCheckIns)
-  console.log("jk")
+  
   // State to manage room-customer assignments
   const [roomAssignments, setRoomAssignments] = useState([])
   const [errors, setErrors] = useState({})
@@ -37,7 +37,6 @@ export default function EnhancedCheckoutModal({
     }
   }, [selectedCheckIns])
 
-  console.log(roomAssignments)
 
   // Handle customer selection for a specific room
   const handleCustomerSelect = (index, customer) => {
@@ -90,7 +89,6 @@ export default function EnhancedCheckoutModal({
     if (!validateAssignments()) {
       return
     }
-    console.log(roomAssignments)
     // Step 1: Check if all selectedCustomer are same
     const firstCustomer = roomAssignments[0]?.selectedCustomer
     const isSameCustomer = roomAssignments.every(
@@ -124,12 +122,14 @@ export default function EnhancedCheckoutModal({
         })
       })
 
-      result = [{
-        customerId: firstCustomer._id,
-        customerName: firstCustomer.partyName,
-        customer: firstCustomer,
-        checkIns: Object.values(checkInMap)
-      }]
+      result = [
+        {
+          customerId: firstCustomer._id,
+          customerName: firstCustomer.partyName,
+          customer: firstCustomer,
+          checkIns: Object.values(checkInMap)
+        }
+      ]
     } else {
       // 🔵 fallback → group by customers (old logic)
       const grouped = {}
@@ -230,7 +230,6 @@ export default function EnhancedCheckoutModal({
     //   }
     // });
 
-    console.log("result", result)
 
     onConfirm(result)
   }
@@ -306,6 +305,7 @@ export default function EnhancedCheckoutModal({
                 </p>
 
                 <CustomerSearchInputBox
+                  disabled={checkoutMode === "single"}
                   onSelect={(c) => handleCustomerSelect(i, c)}
                   selectedParty={a.selectedCustomer}
                   isAgent={false}

@@ -19,7 +19,6 @@ import {
 // import { Title } from "@radix-ui/react-dialog";
 
 const HotelBillPrint = () => {
-  console.log("h")
   // Router and Redux state
   const location = useLocation()
   const organization = useSelector(
@@ -31,10 +30,7 @@ const HotelBillPrint = () => {
   const selectedCheckOut = location.state?.selectedCheckOut || []
   const checkoutmode = location?.state?.checkoutMode || null
   const cheinids = location?.state?.checkinIds
-  console.log(checkoutmode)
-  console.log(cheinids)
-  console.log("selectedCheckOut in print", selectedCheckOut)
-  console.log("h")
+
   // const selectedCustomerId = location.state?.customerId;
   const isForPreview = location.state?.isForPreview
 
@@ -47,7 +43,6 @@ const HotelBillPrint = () => {
 
   // Fetch debit and KOT once for all docs shown
   const fetchDebitData = async (data) => {
-    console.log(data.length)
     try {
       const res = await api.post(
         `/api/sUsers/fetchOutStandingAndFoodData`,
@@ -55,8 +50,7 @@ const HotelBillPrint = () => {
         { withCredentials: true }
       )
       if (res.data.success) {
-        console.log(res.data.data)
-        console.log(res.data.kotData)
+      
         setOutStanding(res.data.data || [])
         setKotData(res.data.kotData || [])
       }
@@ -96,10 +90,8 @@ const HotelBillPrint = () => {
   // Per-doc transforms
   const transformDocToDateWiseLines = (doc) => {
     const result = []
-console.log(doc)
     const startDate = new Date(doc.arrivalDate)
     ;(doc.selectedRooms || []).forEach((room) => {
-console.log(room)
       const stayDays = room.stayDays || 1
       const fullDays = Math.floor(stayDays)
       const fractionalDay = stayDays - fullDays
@@ -271,7 +263,6 @@ console.log(room)
 
     // Per-room restaurant lines (for this doc’s rooms)
     const perRoomRestaurantLines = buildPerRoomRestaurantLinesForDoc(doc)
-    console.log(perRoomRestaurantLines)
     const restaurantTotal = perRoomRestaurantLines.reduce(
       (t, l) => t + Number(l.amount || 0),
       0
@@ -373,8 +364,7 @@ console.log(room)
           0
         )
       : 0
-    console.log(advanceEntries)
-    console.log(groupedRoomCharges)
+  
     // Combine charges and compute balances
     const allCharges = [...groupedRoomCharges, ...advanceEntries]
     let cumulativeBalance = 0
@@ -479,7 +469,6 @@ console.log(room)
       }
     }
   }
-  console.log(selectedCheckOut)
 
   // Build all billData per doc; decide where advances appear
   const bills = useMemo(() => {
@@ -514,7 +503,6 @@ console.log(room)
     }
   }
 
-  console.log(bills)
   return (
     <>
       <TitleDiv title="Bill Print" />

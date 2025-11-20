@@ -1824,8 +1824,7 @@ export const checkoutWithArrayOfData = async (req, res) => {
 export const fetchOutStandingAndFoodData = async (req, res) => {
   try {
     const checkoutData = req.body?.data;
-    const a = checkoutData.map((item) => item.voucherNumber)
-    console.log("vouchernumber", a)
+
     const isForPreview = req.body?.isForPreview;
     if (!checkoutData || checkoutData.length === 0) {
       return res.status(400).json({
@@ -1938,8 +1937,8 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
     //   : [];
 
     // allAdvanceDetails.push(...checkOutSideAdvanceDetails);
-    console.log("alladvance", allAdvanceDetails.length > 0)
-    console.log("allktot", allKotData.length > 0)
+    // console.log("alladvance", allAdvanceDetails.length > 0)
+    // console.log("allktot", allKotData.length > 0)
     if (allAdvanceDetails.length > 0 || allKotData.length > 0) {
       return res.status(200).json({
         success: true,
@@ -1996,12 +1995,7 @@ export const convertCheckOutToSale = async (req, res) => {
         checkoutMode,
         checkinIds
       } = req.body;
-      console.log("chekmode", checkoutMode)
-      console.log("idarray", checkinIds)
-      if (checkoutMode === "single") {
-        console.log("anuuuuu")
-      }
-      
+
 
       // console.log("selectedcheckout", selectedCheckOut)
       // console.log("restbasedata", restaurantBaseSaleData)
@@ -2016,8 +2010,9 @@ export const convertCheckOutToSale = async (req, res) => {
       const specificVoucherSeries = await hotelVoucherSeries(cmp_id, session);
 
       // Process each checkout separately
-      const results = [];
+      let results
       for (const item of selectedCheckOut) {
+        results = []
         const selectedPartyId = item?.customerId?._id || item?.customerId;
         if (!selectedPartyId) throw new Error("Missing customerId._id in checkout item");
 
@@ -2084,7 +2079,7 @@ export const convertCheckOutToSale = async (req, res) => {
         );
 
         const checkInId = item?._id;
-        console.log("checkinidddd", checkInId)
+        // console.log("checkinidddd", checkInId)
         const roomsBeingCheckedOut = item?.selectedRooms || [];
         const originalCheckIn = await CheckIn.findById(checkInId).session(session);
         if (!originalCheckIn) throw new Error(`Check-in ${checkInId} not found`);
@@ -2124,6 +2119,7 @@ export const convertCheckOutToSale = async (req, res) => {
               balanceToPay: pendingAmount,
               isPartialCheckout: isThisPartial,
               originalCheckInId: checkInId,
+              checkoutType: checkoutMode === "single" ? "singleCheckout" : "individualCheckout"
             },
           ],
           { session }
@@ -2152,6 +2148,7 @@ export const convertCheckOutToSale = async (req, res) => {
           checkOutDoc[0]._id,
           amount
         );
+        // console.log("savedsale", savedVoucherData)
 
         // Create Tally Entry
         const tallyRows = await createTallyEntry(
@@ -2224,7 +2221,7 @@ export const convertCheckOutToSale = async (req, res) => {
           await updateStatus(roomsBeingCheckedOut, "dirty", session);
         } else {
           if (checkoutMode === "single") {
-console.log("entereeeed")
+            console.log("its a multiple checkin single checkoutmode")
             await CheckIn.updateMany(
               { _id: { $in: checkinIds } },
               { $set: { status: "checkOut", checkOutDate: new Date() } },
@@ -2255,109 +2252,120 @@ console.log("entereeeed")
           pendingAmount,
           applicableSplitsCount: applicableSplits.length,
         });
-      }
 
-      // ============ CREATE SINGLE SETTLEMENT FOR SINGLE PAYMENT MODE ============
-      if (paymentMode === "single" && !isPostToRoom) {
-        const cashAmt = Number(paymentDetails?.cashAmount || 0);
-        const onlineAmt = Number(paymentDetails?.onlineAmount || 0);
-        const totalPaidAmount = cashAmt + onlineAmt;
 
-        if (totalPaidAmount > 0) {
-          // Determine primary source and type
-          let primarySource;
-          let sourceType;
 
-          if (cashAmt > 0 && onlineAmt > 0) {
-            // Both cash and bank - use cash as primary, mark as "mixed"
-            primarySource = await Party.findOne({
-              _id: paymentDetails?.selectedCash,
-            }).session(session);
-            sourceType = "mixed";
-          } else if (cashAmt > 0) {
-            // Cash only
-            primarySource = await Party.findOne({
-              _id: paymentDetails?.selectedCash,
-            }).session(session);
-            sourceType = "cash";
-          } else {
-            // Bank only
-            primarySource = await Party.findOne({
-              _id: paymentDetails?.selectedBank,
-            }).session(session);
-            sourceType = "bank";
-          }
 
-          // Create ONE settlement for all sales
-          await saveSettlement(
-            paymentDetails,
-            selectedCheckOut[0]?.customerId?._id || selectedCheckOut[0]?.customerId,
-            primarySource,
-            cmp_id,
-            results[0]?.salesRecord, // Use first sale as reference
-            totalPaidAmount, // Total amount (cash + bank)
-            sourceType,
-            req,
-            session
-          );
-        }
-      }
 
-      // ============ CREATE RECEIPTS AFTER ALL SALES ARE CREATED ============
-
-      // For SPLIT mode: Create receipt(s)
-      if (paymentMode === "split") {
-        const totalPaidAmount = splitDetails.reduce(
-          (sum, split) => sum + Number(split.amount || 0),
-          0
-        );
-
-        if (totalPaidAmount > 0) {
-          await createReceiptForSales(
-            cmp_id,
-            paymentDetails,
-            "mixed", // Since split can have both cash and bank
-            selectedCheckOut[0]?.customerId?.partyName || "Customer",
-            totalPaidAmount,
-            selectedCheckOut[0]?.customerId?._id || selectedCheckOut[0]?.customerId,
-            results[0]?.salesRecord,
-            results[0]?.tallyId,
-            req,
-            restaurantBaseSaleData,
-            session
-          );
-        }
-      }
-
-      // For SINGLE mode: Create ONE receipt for all sales
-      else if (paymentMode === "single") {
-        const totalPaidAmount = Number(paymentDetails?.cashAmount || 0) +
-          Number(paymentDetails?.onlineAmount || 0);
-
-        if (!isPostToRoom && totalPaidAmount > 0) {
+        // ============ CREATE SINGLE SETTLEMENT FOR SINGLE PAYMENT MODE ============
+        if (paymentMode === "single" && !isPostToRoom) {
           const cashAmt = Number(paymentDetails?.cashAmount || 0);
           const onlineAmt = Number(paymentDetails?.onlineAmount || 0);
-          const paymentMethod = cashAmt > 0 && onlineAmt > 0
-            ? "mixed"
-            : cashAmt > 0
-              ? "cash"
-              : "bank";
+          const totalPaidAmount = cashAmt + onlineAmt;
 
-          await createReceiptForSales(
-            cmp_id,
-            paymentDetails,
-            paymentMethod,
-            selectedCheckOut[0]?.customerId?.partyName || "Customer",
-            totalPaidAmount,
-            selectedCheckOut[0]?.customerId?._id || selectedCheckOut[0]?.customerId,
-            results[0]?.salesRecord,
-            results.find(r => r.tallyId)?.tallyId,
-            req,
-            restaurantBaseSaleData,
-            session
+          if (totalPaidAmount > 0) {
+            // Determine primary source and type
+            let primarySource;
+            let sourceType;
+
+            if (cashAmt > 0 && onlineAmt > 0) {
+              // Both cash and bank - use cash as primary, mark as "mixed"
+              primarySource = await Party.findOne({
+                _id: paymentDetails?.selectedCash,
+              }).session(session);
+              sourceType = "mixed";
+            } else if (cashAmt > 0) {
+              // Cash only
+              primarySource = await Party.findOne({
+                _id: paymentDetails?.selectedCash,
+              }).session(session);
+              sourceType = "cash";
+            } else {
+              // Bank only
+              primarySource = await Party.findOne({
+                _id: paymentDetails?.selectedBank,
+              }).session(session);
+              sourceType = "bank";
+            }
+
+            // Create ONE settlement for all sales
+            await saveSettlement(
+              paymentDetails,
+              selectedCheckOut[0]?.customerId?._id || selectedCheckOut[0]?.customerId,
+              primarySource,
+              cmp_id,
+              results[0]?.salesRecord, // Use first sale as reference
+              totalPaidAmount, // Total amount (cash + bank)
+              sourceType,
+              req,
+              session
+            );
+          }
+        }
+
+        // ============ CREATE RECEIPTS AFTER ALL SALES ARE CREATED ============
+
+        // For SPLIT mode: Create receipt(s)
+        if (paymentMode === "split") {
+          const totalPaidAmount = splitDetails.reduce(
+            (sum, split) => sum + Number(split.amount || 0),
+            0
           );
+
+          if (totalPaidAmount > 0) {
+            await createReceiptForSales(
+              cmp_id,
+              paymentDetails,
+              "mixed", // Since split can have both cash and bank
+              item?.customerId?.partyName || "Customer",
+              totalPaidAmount,
+              item?.customerId?._id || selectedCheckOut[0]?.customerId,
+              results[0]?.salesRecord,
+              results[0]?.tallyId,
+              req,
+              restaurantBaseSaleData,
+              session
+            );
+          }
+        }
+
+        // For SINGLE mode: Create ONE receipt for all sales
+        else if (paymentMode === "single") {
+          const totalPaidAmount = Number(paymentDetails?.cashAmount || 0) +
+            Number(paymentDetails?.onlineAmount || 0);
+
+          if (!isPostToRoom && totalPaidAmount > 0) {
+            const cashAmt = Number(paymentDetails?.cashAmount || 0);
+            const onlineAmt = Number(paymentDetails?.onlineAmount || 0);
+            const paymentMethod = cashAmt > 0 && onlineAmt > 0
+              ? "mixed"
+              : cashAmt > 0
+                ? "cash"
+                : "bank";
+           
+            const agId = results[0]?.salesRecord?.party?.accountGroup_id;
+
+            // console.log(JSON.stringify(results, null, 2));
+
+            // console.log("dddddddddddddddddddddddddddd", results[0]?.salesRecord?.party?.accountGroup_id)
+            await createReceiptForSales(
+              cmp_id,
+              paymentDetails,
+              paymentMethod,
+              selectedCheckOut[0]?.customerId?.partyName || "Customer",
+              totalPaidAmount,
+              selectedCheckOut[0]?.customerId?._id || selectedCheckOut[0]?.customerId,
+              results[0]?.salesRecord,
+              agId,
+              req,
+              restaurantBaseSaleData,
+              session
+            );
+          }
         }
       }
+
+
 
       req._multiCheckoutResults = results;
       req._isAnyPartial = isAnyPartial;
@@ -2523,6 +2531,7 @@ async function createTallyEntry(
   session
 ) {
   const selectedOne = await Party.findOne({ _id: selectedParty }).session(session);
+  // console.log("selectedone", selectedOne)
 
   // console.log("selectedOne",    {
   //       Primary_user_id: req.pUserId || req.owner,

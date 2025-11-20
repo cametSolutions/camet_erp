@@ -27,9 +27,7 @@ function BookingForm({
   isTariffRateChange,
   submitLoader
 }) {
-  console.log(isTariffRateChange)
-  console.log("h")
-  console.log(submitLoader)
+ 
   const [voucherNumber, setVoucherNumber] = useState("")
   const [selectedParty, setSelectedParty] = useState("")
   const [displayFoodPlan, setDisplayFoodPlan] = useState(false)
@@ -52,7 +50,6 @@ function BookingForm({
     `/api/sUsers/getProductSubDetails/${cmp_id}?type=roomType`
   )
   useEffect(() => {
-    console.log("h")
     if (data) setRoomType(data?.data)
   }, [data])
 
@@ -61,7 +58,6 @@ function BookingForm({
   )
   useEffect(() => {
     if (visitOfPurposeData) setVisitOfPurpose(visitOfPurposeData?.data)
-    console.log("h")
   }, [visitOfPurposeData])
 
   const today = new Date()
@@ -74,7 +70,6 @@ function BookingForm({
 
   useEffect(() => {
     if (submitLoader) {
-      console.log("h")
       setShowPaymentModal(true)
       setSaveLoader(true)
     }
@@ -127,11 +122,9 @@ function BookingForm({
     dateOfExpiry: "",
     grcno: ""
   })
-  console.log(formData)
 
   useEffect(() => {
     if (editData) {
-      console.log("h")
       setSelectedParty(editData?.customerId)
       setHotelAgent(editData?.agentId)
       setCountry(editData?.country || "")
@@ -188,11 +181,9 @@ function BookingForm({
 
   useEffect(() => {
     if (roomId) setSelectedRoomId(roomId)
-    console.log("H")
   }, [roomId])
 
   const handleChange = (e) => {
-    console.log("h")
     const { name, value } = e.target
 
     if (name === "country") setCountry(value)
@@ -324,13 +315,10 @@ function BookingForm({
   useEffect(() => {
     if (!editData || isFor === "deliveryNote" || isFor === "sales") {
       fetchData()
-      console.log("h")
     }
   }, [fetchData, editData, isFor])
-  console.log(formData)
   // Fixed calculation: Room total + Pax + Food Plan = Total Amount, then apply discount
   useEffect(() => {
-    console.log("H")
     const handler = setTimeout(() => {
       const roomTotal = Number(formData?.roomTotal || 0)
       const paxTotal = Number(formData?.paxTotal || 0)

@@ -491,7 +491,7 @@ export const createReceiptForSales = async (
       // Find all outstandings for this customer from sales with this checkInId
       const outstandings = await TallyData.find({
         billId: { $in: saleIds },
-        party_id: splitCustomerId,
+        party_id: splitCustomerId,                                     
         bill_pending_amt: { $gt: 0 },
         cmp_id,
         source: "sales",
@@ -514,7 +514,7 @@ export const createReceiptForSales = async (
       // Distribute split amount across customer's outstandings in FIFO
       let amountLeft = splitAmount;
       const billData = [];
-      const outstandingsToUpdate = [];
+      const outstandingsToUpdate = [];    
 
       for (const outstanding of outstandings) {
         if (amountLeft <= 0) break;
@@ -681,7 +681,7 @@ export const createReceiptForSales = async (
             billId: null,
             bill_amount: 0,
             bill_pending_amt: -amount,
-            accountGroup: createdTallyData.accountGroup,
+            accountGroup: createdTallyData,
             user_id: req.sUserId,
             advanceAmount: amount,
             advanceDate: new Date(),
@@ -798,7 +798,7 @@ export const createReceiptForSales = async (
             billId: null,
             bill_amount: 0,
             bill_pending_amt: -amountLeft,
-            accountGroup: createdTallyData.accountGroup,
+            accountGroup: createdTallyData,
             user_id: req.sUserId,
             advanceAmount: amountLeft,
             advanceDate: new Date(),

@@ -8,7 +8,6 @@ import { toast } from "sonner";
 import api from "@/api/api";
 import { useQueryClient } from "@tanstack/react-query";
 function BookingPage() {
-console.log("h")
   const location = useLocation();
 console.log(location)
   const isSubmittingRef = useRef(false);
@@ -21,8 +20,7 @@ console.log(location)
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const handleSubmit = async (data, paymentData) => {
-    console.log(data);
-console.log(paymentData)
+  
     try {
       let response = await api.post(
         `/api/sUsers/saveData/${organization._id}`,
