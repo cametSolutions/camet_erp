@@ -50,7 +50,6 @@ const HotelBillPrint = () => {
         { withCredentials: true }
       )
       if (res.data.success) {
-      
         setOutStanding(res.data.data || [])
         setKotData(res.data.kotData || [])
       }
@@ -364,7 +363,7 @@ const HotelBillPrint = () => {
           0
         )
       : 0
-  
+
     // Combine charges and compute balances
     const allCharges = [...groupedRoomCharges, ...advanceEntries]
     let cumulativeBalance = 0
