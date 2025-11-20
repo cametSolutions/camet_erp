@@ -105,6 +105,24 @@ function BookingList() {
       return total
     }, 0)
   }
+  console.log(selectedCheckOut)
+
+  useEffect(() => {
+    // when global selectedCustomer changes, sync into selectedCheckOut
+    //     if (!selectedCustomer) return
+    // console.log("hhhh")
+    //     const match = parties.find((p) => p._id === selectedCustomer)
+    //     if (!match) return
+    // console.log(match)
+    // console.log("hhh")
+    //     setSelectedCheckOut((prev) =>
+    //       prev.map((item) => ({
+    //         ...item,
+    //         selectedCustomer: match
+    //       }))
+    //     )
+  }, [selectedCustomer])
+
   useEffect(() => {
     if (partylist && partylist.partyList.length) {
       setPartylist(partylist.partyList)
@@ -305,9 +323,11 @@ function BookingList() {
   //     setSelectedDataForPayment(prevObject);
   //   }
   // }, [selectedCheckOut]);
+  console.log(selectedCustomer)
   const handleSingleCheckoutformultiplechekin = (selectcustomer) => {
     const match = parties.find((item) => item._id === selectcustomer)
     if (!match) return
+    console.log(match)
 
     setSelectedCheckOut((prev) =>
       prev.map((item) => ({
@@ -608,12 +628,12 @@ function BookingList() {
       fetchBookings(1, searchTerm)
     }
   }
-console.log("h")
+  console.log("h")
   const handleCheckOutData = async () => {
     setShowSelectionModal(false)
     setShowEnhancedCheckoutModal(true)
   }
-
+  console.log()
   const handleEnhancedCheckoutConfirm = async (roomAssignments) => {
     setShowEnhancedCheckoutModal(false)
     let checkDateChanged = selectedCheckOut.filter(
@@ -729,6 +749,32 @@ console.log("h")
     rooms.forEach((it) => (count += it.pax))
 
     return count
+  }
+
+  const handletoogle = () => {
+    if (!selectedCustomer) return
+    if (checkoutMode === "multiple") {
+      console.log("hhhh")
+      const match = parties.find((p) => p._id === selectedCustomer)
+      if (!match) return
+      console.log(match)
+      console.log("hhh")
+      setSelectedCheckOut((prev) =>
+        prev.map((item) => ({
+          ...item,
+          selectedCustomer: match
+        }))
+      )
+    } else {
+      setSelectedCheckOut((prev) =>
+        prev.map((item) => {
+          const { selectedCustomer, ...rest } = item
+          return rest
+        })
+      )
+    }
+
+    setCheckoutMode(checkoutMode === "single" ? "multiple" : "single")
   }
   const TableHeader = () => (
     <div className="bg-gray-100 border-b border-gray-300 sticky top-0 z-10">
@@ -1332,11 +1378,7 @@ console.log("h")
 
                       {/* Toggle Switch */}
                       <div
-                        onClick={() =>
-                          setCheckoutMode(
-                            checkoutMode === "single" ? "multiple" : "single"
-                          )
-                        }
+                        onClick={() => handletoogle()}
                         className={`w-8 h-4 flex items-center rounded-full p-[2px] cursor-pointer transition-all
                    ${
                      checkoutMode === "single" ? "bg-blue-500" : "bg-green-500"
