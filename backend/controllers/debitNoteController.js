@@ -80,19 +80,19 @@ export const createDebitNote = async (req, res) => {
       session
     );
 
-    const updateAdditionalCharge = additionalChargesFromRedux.map((charge) => {
-      const { value, taxPercentage } = charge;
-      const taxAmt = parseFloat(
-        ((parseFloat(value) * parseFloat(taxPercentage)) / 100).toFixed(2)
-      );
-      return { ...charge, taxAmt };
-    });
+    // const updateAdditionalCharge = additionalChargesFromRedux.map((charge) => {
+    //   const { value, taxPercentage } = charge;
+    //   const taxAmt = parseFloat(
+    //     ((parseFloat(value) * parseFloat(taxPercentage || 0)) / 100).toFixed(2)
+    //   );
+    //   return { ...charge, taxAmt };
+    // });
 
     const result = await createDebitNoteRecord(
       req,
       debitNoteNumber,
       items,
-      updateAdditionalCharge,
+      additionalChargesFromRedux,
       session // Pass session
     );
 
@@ -328,17 +328,19 @@ export const editDebitNote = async (req, res) => {
         classification: "Dr",
       });
     } else {
-      /// save settlements
+
+
       await saveSettlementData(
-        debitNoteNumber,
-        series_id,
-        "Debit Note",
-        "debitNote",
-        lastAmount,
         party,
         orgId,
-        Primary_user_id,
-        selectedDate,
+        null,/// payment mode,
+        "debitNote", /// voucher type
+        "DebitNote", /// voucher Model
+        debitNoteNumber,
+        series_id,
+        lastAmount,
+        existingDebitNote.createdAt,
+        req,
         session
       );
     }
