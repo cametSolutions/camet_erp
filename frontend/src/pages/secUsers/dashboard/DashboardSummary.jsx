@@ -28,8 +28,8 @@ const DashboardSummary = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { industry } = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg
-  );
+    (state) => state?.secSelectedOrganization?.secSelectedOrg
+  ) || {};
   // const {
   //   data,
   //   // error,
@@ -106,6 +106,11 @@ const DashboardSummary = () => {
         currencyIcon: "₹",
       },
     ];
+
+    if (industry == null) {
+      setSummaryData(baseData);
+      return;
+    }
 
     // If industry is 6 or 7 → add Dashboard
     const extraData =
