@@ -976,7 +976,7 @@ export const saveSettlementDataHotel = async (
       partyId: party?._id,
       partyName: partyName || party?.partyName,
       partyType: party?.partyType?.toLowerCase(), // must match ["cash","bank","party"]
-      sourceId: selectedCashOrBank?._id,
+      sourceId: selectedCashOrBank,
       sourceType: paymentMethod?.toLowerCase() || null, // must match enum
       cmp_id: orgId,
       Primary_user_id: req?.pUserId || req?.owner, // must not be null

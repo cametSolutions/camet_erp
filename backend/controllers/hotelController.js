@@ -1099,20 +1099,20 @@ export const roomBooking = async (req, res) => {
             session
           );
 
-          const method = paymentData.payments[0]?.method;
-          const selectedBankOrCashParty = await partyModel
-            .findOne({ _id: paymentData.payments[0]?.accountId })
-            .session(session);
+          const singlePaymentDetails = paymentData.payments[0];
+
+          const method = singlePaymentDetails?.method;
+          const selectedBankOrCashParty = singlePaymentDetails?.accountId;
 
           const paymentDetails =
             method === "cash"
               ? {
-                cash_ledname: bookingData?.customerName,
-                cash_name: bookingData?.customerName,
+                cash_ledname: singlePaymentDetails?.accountName,
+                cash_name: singlePaymentDetails?.accountName,
               }
               : {
-                bank_ledname: bookingData?.customerName,
-                bank_name: bookingData?.customerName,
+                bank_ledname: singlePaymentDetails?.accountName,
+                bank_name: singlePaymentDetails?.accountName,
               };
 
           await buildReceipt(
@@ -1155,9 +1155,7 @@ export const roomBooking = async (req, res) => {
               session
             );
 
-            const selectedBankOrCashParty = await partyModel
-              .findOne({ _id: payment.accountId })
-              .session(session);
+            const selectedBankOrCashParty = payment?.accountId;
 
             await saveSettlementDataHotel(
               selectedParty,
@@ -1178,12 +1176,12 @@ export const roomBooking = async (req, res) => {
             const paymentDetails =
               payment.method === "cash"
                 ? {
-                  cash_ledname: bookingData?.customerName,
-                  cash_name: bookingData?.customerName,
+                  cash_ledname: payment?.accountName,
+                  cash_name: payment?.accountName,
                 }
                 : {
-                  bank_ledname: bookingData?.customerName,
-                  bank_name: bookingData?.customerName,
+                  bank_ledname: payment?.accountName,
+                  bank_name: payment?.accountName,
                 };
 
             await buildReceipt(
