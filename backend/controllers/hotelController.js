@@ -654,12 +654,12 @@ export const getRooms = async (req, res) => {
       status: { $ne: "checkIn" },
       checkOutDate: { $lte: checkOutDate }, // Only consider checkOutDate
     });
-console.log("overlappingbookings",overlappingBookings)
+    console.log("overlappingbookings", overlappingBookings)
     const AllCheckIns = await CheckIn.find({
       cmp_id: req.params.cmp_id,
       status: { $ne: "checkOut" },
     }).select("selectedRooms checkOutDate arrivalDate roomDetails");
-console.log("allchekins",AllCheckIns)
+    console.log("allchekins", AllCheckIns)
     const overlappingCheckIns = AllCheckIns.filter((c) => {
       const co = new Date(c.checkOutDate);
       co.setDate(co.getDate() + 1); // add 1 day
@@ -726,7 +726,7 @@ console.log("allchekins",AllCheckIns)
       status: "vacant",
       checkedAt: now,
     }));
-console.log("roomswithstatus",roomsWithStatus.length)
+    console.log("roomswithstatus", roomsWithStatus.length)
     // Send response
     const sendRoomResponseData = sendRoomResponse(
       res,
@@ -1905,30 +1905,30 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
     // console.log("allKotData", allKotData);
     // for (const item of checkoutData) {
 
-    const checkInData = await CheckIn.findOne({
-      _id: isForPreview ? checkoutData[0]._id : checkoutData[0]?.originalCheckInId,
-    });
+    //     const checkInData = await CheckIn.findOne({
+    //       _id: isForPreview ? checkoutData[0]._id : checkoutData[0]?.originalCheckInId,
+    //     });
 
-    // if (!checkInData) {
-    //   continue;
-    // }
+    //     // if (!checkInData) {
+    //     //   continue;
+    //     // }
+    // console.log("isforpreview",isForPreview)
+    //     const bookingSideAdvanceDetails = await TallyData.find({
+    //       billId: checkInData.bookingId,
+    //     });
 
-    const bookingSideAdvanceDetails = await TallyData.find({
-      billId: checkInData.bookingId,
-    });
+    //     const checkInSideAdvanceDetails = await TallyData.find({
+    //       billId: isForPreview ? checkoutData[0]._id : checkoutData[0]?.originalCheckInId,
+    //     });
 
-    const checkInSideAdvanceDetails = await TallyData.find({
-      billId: isForPreview ? checkoutData[0]._id : checkoutData[0]?.originalCheckInId,
-    });
-
-    // console.log("checkInSideAdvanceDetails", checkInSideAdvanceDetails);
-    // console.log("bookingSideAdvanceDetails", bookingSideAdvanceDetails);
+    //     // console.log("checkInSideAdvanceDetails", checkInSideAdvanceDetails);
+    //     // console.log("bookingSideAdvanceDetails", bookingSideAdvanceDetails);
 
 
-    allAdvanceDetails.push(
-      ...bookingSideAdvanceDetails,
-      ...checkInSideAdvanceDetails
-    );
+    //     allAdvanceDetails.push(
+    //       ...bookingSideAdvanceDetails,
+    //       ...checkInSideAdvanceDetails
+    //     );
     // }
     // const checkOutSideAdvanceDetails = !isForPreview
     //   ? await TallyData.find({
@@ -1939,6 +1939,30 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
     // allAdvanceDetails.push(...checkOutSideAdvanceDetails);
     // console.log("alladvance", allAdvanceDetails.length > 0)
     // console.log("allktot", allKotData.length > 0)
+    ///check not only for first index all checkout data unless gets only the advance of the first guest or customer
+    
+
+    for (const item of checkoutData) {
+      const checkInData = await CheckIn.findOne({
+        _id: isForPreview ? item._id : item?.originalCheckInId,
+      });
+
+      if (!checkInData) continue;
+
+      const bookingSideAdvanceDetails = await TallyData.find({
+        billId: checkInData.bookingId,
+      });
+
+      const checkInSideAdvanceDetails = await TallyData.find({
+        billId: isForPreview ? item._id : item?.originalCheckInId,
+      });
+
+      allAdvanceDetails.push(
+        ...bookingSideAdvanceDetails,
+        ...checkInSideAdvanceDetails
+      );
+    }
+
     if (allAdvanceDetails.length > 0 || allKotData.length > 0) {
       return res.status(200).json({
         success: true,
@@ -2008,7 +2032,8 @@ export const convertCheckOutToSale = async (req, res) => {
       const splitDetails = paymentDetails?.splitDetails || [];
 
       const specificVoucherSeries = await hotelVoucherSeries(cmp_id, session);
-
+console.log(selectedCheckOut.length)
+console.log(selectedCheckOut)
       // Process each checkout separately
       let results
       for (const item of selectedCheckOut) {
@@ -2342,7 +2367,7 @@ export const convertCheckOutToSale = async (req, res) => {
               : cashAmt > 0
                 ? "cash"
                 : "bank";
-           
+
             const agId = results[0]?.salesRecord?.party?.accountGroup_id;
 
             // console.log(JSON.stringify(results, null, 2));

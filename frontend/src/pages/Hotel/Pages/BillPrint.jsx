@@ -16,6 +16,7 @@ import {
   handleBillPrintInvoice,
   handleBillDownloadPDF
 } from "../PrintSide/generateBillPrintPDF"
+import Outstanding from "@/pages/voucherReports/outstanding/Outstanding"
 // import { Title } from "@radix-ui/react-dialog";
 
 const HotelBillPrint = () => {
@@ -28,6 +29,9 @@ const HotelBillPrint = () => {
 
   // Props from location state
   const selectedCheckOut = location.state?.selectedCheckOut || []
+console.log(selectedCheckOut)
+const a=selectedCheckOut.some((it)=>it.originalCheckInId)
+console.log(a)
   const checkoutmode = location?.state?.checkoutMode || null
   const cheinids = location?.state?.checkinIds
 
@@ -50,6 +54,7 @@ const HotelBillPrint = () => {
         { withCredentials: true }
       )
       if (res.data.success) {
+        console.log(res.data.data)
         setOutStanding(res.data.data || [])
         setKotData(res.data.kotData || [])
       }
@@ -61,6 +66,7 @@ const HotelBillPrint = () => {
 
   useEffect(() => {
     if (selectedCheckOut?.length > 0) {
+console.log(selectedCheckOut)
       fetchDebitData(selectedCheckOut)
     }
   }, [selectedCheckOut])
@@ -184,6 +190,7 @@ const HotelBillPrint = () => {
 
   // Build per-room restaurant line for a doc’s rooms only
   const buildPerRoomRestaurantLinesForDoc = (doc) => {
+console.log(doc)
     const roomIdSet = new Set(
       (doc.selectedRooms || [])
         .map((r) => String(r?.roomId || r?._id))
@@ -344,10 +351,18 @@ const HotelBillPrint = () => {
 
       return charges
     })()
-
+console.log(doc)
+// const a=doc.some((item)=>item.originalCheckInId)
+console.log(a)
+console.log(doc.customerId?.party_master_id)
+console.log(doc.originalCustomerId)
+console.log(doc.originalCheckInId)
+console.log(doc.customerId.party_master_id)
+console.log(outStanding)
+console.log(Outstanding.length)
     // Advances only on the decided bill
     const advanceEntries = useAdvances
-      ? (outStanding || []).map((t) => ({
+      ? (outStanding || []).filter((item)=>doc.customerId?.party_master_id===item?.party_id).map((t) => ({
           date: formatDate(t.bill_date || t.billdate || new Date()),
           description: "Advance",
           docNo: t.bill_no || t.billno || "-",
@@ -358,14 +373,15 @@ const HotelBillPrint = () => {
       : []
 
     const advanceTotal = useAdvances
-      ? (outStanding || []).reduce(
+      ? (outStanding || []).filter((item)=>doc.customerId?.party_master_id===item?.party_id).reduce(
           (sum, t) => sum + Number(t.bill_amount || t.billamount || 0),
           0
         )
       : 0
-
+console.log(advanceEntries)
     // Combine charges and compute balances
     const allCharges = [...groupedRoomCharges, ...advanceEntries]
+    console.log(allCharges)
     let cumulativeBalance = 0
     const chargesWithBalance = allCharges.map((charge) => {
       let currentAmount = Number(charge.amount || 0)
@@ -391,6 +407,7 @@ const HotelBillPrint = () => {
           : "0.00"
       }
     })
+    console.log(chargesWithBalance)
 
     const grandTotal =
       roomTariffTotal +

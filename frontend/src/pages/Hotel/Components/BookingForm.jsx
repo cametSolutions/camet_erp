@@ -27,7 +27,7 @@ function BookingForm({
   isTariffRateChange,
   submitLoader
 }) {
- 
+ console.log(editData)
   const [voucherNumber, setVoucherNumber] = useState("")
   const [selectedParty, setSelectedParty] = useState("")
   const [displayFoodPlan, setDisplayFoodPlan] = useState(false)

@@ -91,18 +91,21 @@ function BookingList() {
     `/api/sUsers/singlecheckoutpartylist/${cmp_id}`,
     { params: { voucher: getVoucherType() } }
   )
+  console.log(selectedCheckOut)
   // ADD THIS FUNCTION: Calculate total from all checkouts
   const calculateTotalAmount = (checkouts) => {
     if (!checkouts || checkouts.length === 0) return 0
 
     return checkouts.reduce((total, checkout) => {
-      if (checkout.selectedRooms && Array.isArray(checkout.selectedRooms)) {
-        const checkoutTotal = checkout.selectedRooms.reduce((sum, room) => {
-          return sum + (parseFloat(room.amountAfterTax) || 0)
-        }, 0)
-        return total + checkoutTotal
-      }
-      return total
+      const checkoutTotal = total + Number(checkout?.balanceToPay)
+      console.log(checkoutTotal)
+      // if (checkout.selectedRooms && Array.isArray(checkout.selectedRooms)) {
+      //   const checkoutTotal = checkout.selectedRooms.reduce((sum, room) => {
+      //     return sum + (parseFloat(room.amountAfterTax) || 0)
+      //   }, 0)
+      //   return total + checkoutTotal
+      // }
+      return checkoutTotal
     }, 0)
   }
   console.log(selectedCheckOut)
@@ -498,6 +501,10 @@ function BookingList() {
   }
 
   const handleSavePayment = async () => {
+    console.log("h")
+    console.log(selectedCheckOut)
+console.log(selectedCheckOut.length)
+  
     setSaveLoader(true)
     let paymentDetails
 
@@ -586,7 +593,9 @@ function BookingList() {
       selectedParty: selectedCustomer,
       restaurantBaseSaleData: restaurantBaseSaleData
     })
-
+    console.log(selectedCheckOut)
+console.log(selectedCheckOut.length)
+  
     try {
       const response = await api.post(
         `/api/sUsers/convertCheckOutToSale/${cmp_id}`,
