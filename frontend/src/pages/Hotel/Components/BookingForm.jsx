@@ -782,6 +782,10 @@ console.log("jjj")
               onClose={handleClose}
               onPaymentSave={handlePayment}
               cmp_id={cmp_id}
+               customers={selectedParty ? [{
+      _id: selectedParty._id || formData.customerId,
+      partyName: selectedParty.partyName || formData.customerName
+    }] : []}
             />
           )}
 
