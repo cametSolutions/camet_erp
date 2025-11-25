@@ -1269,23 +1269,225 @@ export const deleteBooking = async (req, res) => {
 // function used to update booking details
 // In hotelController.js, replace the updateBooking function with this fixed version:
 
+// export const updateBooking = async (req, res) => {
+//   const session = await Booking.startSession();
+
+//   try {
+//     const bookingData = req.body?.data;
+//     const modal = req.body?.modal;
+//     const paymentData = req.body?.paymentData;
+//     const bookingId = req.params.id;
+//     const orgId = req.body?.orgId;
+//     const isTariffRateChange = req.body?.isTariffRateChange || false;
+//     const roomIdToEdit = req.body?.roomIdToEdit;
+
+//     // console.log("=== UPDATE BOOKING STARTED ===");
+//     // console.log("isTariffRateChange:", isTariffRateChange);
+//     // console.log("roomIdToEdit:", roomIdToEdit);
+//     // console.log("Incoming selectedRooms count:", bookingData.selectedRooms?.length);
+//     // console.log("Incoming room names:", bookingData.selectedRooms?.map(r => r.roomName));
+
+//     if (!bookingData?.arrivalDate) {
+//       return res.status(400).json({ message: "Missing required fields" });
+//     }
+
+//     // Select correct model
+//     let selectedModal;
+//     if (modal === "checkIn") {
+//       selectedModal = CheckIn;
+//     } else if (modal === "Booking") {
+//       selectedModal = Booking;
+//     } else {
+//       selectedModal = CheckOut;
+//     }
+
+//     let findOne = await selectedModal
+//       .findOne({ _id: bookingId })
+//       .session(session);
+
+//     // console.log("Original DB rooms count:", findOne?.selectedRooms?.length);
+//     // console.log("Original DB room names:", findOne?.selectedRooms?.map(r => r.roomName));
+
+//     // ✅ CRITICAL SAFETY CHECK: Verify room count
+//     let finalSelectedRooms = bookingData.selectedRooms;
+
+//     if (isTariffRateChange && roomIdToEdit) {
+//       const originalRoomCount = findOne?.selectedRooms?.length || 0;
+//       const incomingRoomCount = finalSelectedRooms?.length || 0;
+
+//       console.log(
+//         "Room count check - Original:",
+//         originalRoomCount,
+//         "Incoming:",
+//         incomingRoomCount
+//       );
+
+//       // ⚠️ SAFETY: If room count doesn't match, backend merge as fallback
+//       if (incomingRoomCount !== originalRoomCount) {
+//         console.warn(
+//           "⚠️ Room count mismatch detected! Applying backend safety merge..."
+//         );
+
+//         // Find the edited room in incoming data
+//         const editedRoom = finalSelectedRooms.find((room) => {
+//           const roomId =
+//             room.roomId?._id?.toString() ||
+//             room.roomId?.toString() ||
+//             room._id?.toString();
+//           return roomId === roomIdToEdit.toString();
+//         });
+
+//         if (editedRoom) {
+//           // console.log("Found edited room:", editedRoom.roomName);
+
+//           // Merge: Replace only the edited room, keep all others
+//           finalSelectedRooms = findOne.selectedRooms.map((originalRoom) => {
+//             const originalRoomId =
+//               originalRoom.roomId?._id?.toString() ||
+//               originalRoom.roomId?.toString() ||
+//               originalRoom._id?.toString();
+
+//             if (originalRoomId === roomIdToEdit.toString()) {
+//               console.log(
+//                 "Replacing room:",
+//                 originalRoom.roomName,
+//                 "with updated data"
+//               );
+//               return {
+//                 ...(originalRoom.toObject
+//                   ? originalRoom.toObject()
+//                   : originalRoom),
+//                 ...editedRoom,
+//                 _id: originalRoom._id,
+//                 roomId: originalRoom.roomId,
+//               };
+//             }
+//             return originalRoom.toObject
+//               ? originalRoom.toObject()
+//               : originalRoom;
+//           });
+
+//           // console.log("✅ Backend merge completed. Final room count:", finalSelectedRooms.length);
+//           // console.log("Final room names:", finalSelectedRooms.map(r => r.roomName));
+//         } else {
+//           console.error("❌ Could not find edited room in incoming data!");
+//           throw new Error("Room data integrity check failed");
+//         }
+//       } else {
+//         console.log("✅ Room count matches. Using incoming data.");
+//       }
+//     }
+
+//     // Recalculate totals with final merged rooms
+//     const newRoomTotal = finalSelectedRooms.reduce(
+//       (sum, room) => sum + Number(room.amountAfterTax || room.totalAmount || 0),
+//       0
+//     );
+
+//     bookingData.selectedRooms = finalSelectedRooms;
+//     bookingData.roomTotal = newRoomTotal;
+
+//     // Recalculate grand total
+//     const paxTotal = Number(bookingData.paxTotal || 0);
+//     const foodPlanTotal = Number(bookingData.foodPlanTotal || 0);
+//     const totalBeforeDiscount = newRoomTotal + paxTotal + foodPlanTotal;
+//     const discountAmount = Number(bookingData.discountAmount || 0);
+//     bookingData.grandTotal = totalBeforeDiscount - discountAmount;
+//     bookingData.totalAmount = totalBeforeDiscount;
+
+//     // console.log("Final calculated totals:");
+//     // console.log("  Room Total:", newRoomTotal);
+//     // console.log("  Grand Total:", bookingData.grandTotal);
+//     // console.log("  Final room count:", finalSelectedRooms.length);
+
+//     // Get receipt series
+//     const voucher = await VoucherSeriesModel.findOne({
+//       cmp_id: orgId,
+//       voucherType: "receipt",
+//     }).session(session);
+
+//     const series_idReceipt = voucher?.series
+//       ?.find((s) => s.under === "hotel")
+//       ?._id.toString();
+
+//     const selectedParty = await partyModel
+//       .findOne({ _id: bookingData.customerId })
+//       .session(session);
+
+//     await session.withTransaction(async () => {
+//       // Clean existing receipts & settlements if updating
+//       if (bookingId) {
+//         await deleteReceipt(bookingId, session);
+//         await deleteSettlements(bookingId, session);
+//       }
+
+//       // Handle advance payment logic (existing code remains same)
+//       if (bookingData.advanceAmount && bookingData.advanceAmount > 0) {
+//         // ... existing advance payment logic ...
+//       } else {
+//         await TallyData.deleteOne({ billId: bookingId.toString() });
+//       }
+
+//       // ✅ Update booking with final merged rooms
+//       const updateResult = await selectedModal.findByIdAndUpdate(
+//         bookingId,
+//         { $set: bookingData },
+//         { new: true, session }
+//       );
+
+//       // console.log("✅ Update completed successfully");
+//       // console.log("Saved rooms count:", updateResult?.selectedRooms?.length);
+//       // console.log("Saved room names:", updateResult?.selectedRooms?.map(r => r.roomName));
+
+//       // Final verification
+//       if (isTariffRateChange && roomIdToEdit) {
+//         const savedCount = updateResult?.selectedRooms?.length || 0;
+//         const originalCount = findOne?.selectedRooms?.length || 0;
+
+//         if (savedCount !== originalCount) {
+//           throw new Error(
+//             `Room count mismatch after save! Original: ${originalCount}, Saved: ${savedCount}`
+//           );
+//         }
+//       }
+//     });
+
+//     // console.log("=== UPDATE BOOKING COMPLETED SUCCESSFULLY ===");
+
+//     res.status(200).json({
+//       success: true,
+//       message: isTariffRateChange
+//         ? `Room tariff rate updated successfully. All ${finalSelectedRooms?.length} rooms preserved.`
+//         : "Booking updated successfully",
+//       roomsCount: finalSelectedRooms?.length,
+//     });
+//   } catch (error) {
+//     console.error("❌ Error updating booking:", {
+//       error: error.message,
+//       bookingId: req.params.id,
+//     });
+//     res.status(500).json({
+//       success: false,
+//       message: "Server error: " + error.message,
+//       error: error.message,
+//     });
+//   } finally {
+//     await session.endSession();
+//   }
+// };
+
+
 export const updateBooking = async (req, res) => {
   const session = await Booking.startSession();
 
   try {
     const bookingData = req.body?.data;
-    const modal = req.body?.modal;
+    const modal = req.body?.modal;            // "checkIn" | "Booking" | "checkOut"
     const paymentData = req.body?.paymentData;
     const bookingId = req.params.id;
     const orgId = req.body?.orgId;
     const isTariffRateChange = req.body?.isTariffRateChange || false;
     const roomIdToEdit = req.body?.roomIdToEdit;
-
-    // console.log("=== UPDATE BOOKING STARTED ===");
-    // console.log("isTariffRateChange:", isTariffRateChange);
-    // console.log("roomIdToEdit:", roomIdToEdit);
-    // console.log("Incoming selectedRooms count:", bookingData.selectedRooms?.length);
-    // console.log("Incoming room names:", bookingData.selectedRooms?.map(r => r.roomName));
 
     if (!bookingData?.arrivalDate) {
       return res.status(400).json({ message: "Missing required fields" });
@@ -1301,34 +1503,25 @@ export const updateBooking = async (req, res) => {
       selectedModal = CheckOut;
     }
 
-    let findOne = await selectedModal
+    // Get existing booking/checkIn/checkOut
+    const findOne = await selectedModal
       .findOne({ _id: bookingId })
       .session(session);
 
-    // console.log("Original DB rooms count:", findOne?.selectedRooms?.length);
-    // console.log("Original DB room names:", findOne?.selectedRooms?.map(r => r.roomName));
-
-    // ✅ CRITICAL SAFETY CHECK: Verify room count
+    // -----------------------------
+    // ROOM MERGE + TOTAL RECALC
+    // -----------------------------
     let finalSelectedRooms = bookingData.selectedRooms;
 
     if (isTariffRateChange && roomIdToEdit) {
       const originalRoomCount = findOne?.selectedRooms?.length || 0;
       const incomingRoomCount = finalSelectedRooms?.length || 0;
 
-      console.log(
-        "Room count check - Original:",
-        originalRoomCount,
-        "Incoming:",
-        incomingRoomCount
-      );
-
-      // ⚠️ SAFETY: If room count doesn't match, backend merge as fallback
       if (incomingRoomCount !== originalRoomCount) {
         console.warn(
           "⚠️ Room count mismatch detected! Applying backend safety merge..."
         );
 
-        // Find the edited room in incoming data
         const editedRoom = finalSelectedRooms.find((room) => {
           const roomId =
             room.roomId?._id?.toString() ||
@@ -1338,9 +1531,6 @@ export const updateBooking = async (req, res) => {
         });
 
         if (editedRoom) {
-          // console.log("Found edited room:", editedRoom.roomName);
-
-          // Merge: Replace only the edited room, keep all others
           finalSelectedRooms = findOne.selectedRooms.map((originalRoom) => {
             const originalRoomId =
               originalRoom.roomId?._id?.toString() ||
@@ -1348,11 +1538,6 @@ export const updateBooking = async (req, res) => {
               originalRoom._id?.toString();
 
             if (originalRoomId === roomIdToEdit.toString()) {
-              console.log(
-                "Replacing room:",
-                originalRoom.roomName,
-                "with updated data"
-              );
               return {
                 ...(originalRoom.toObject
                   ? originalRoom.toObject()
@@ -1366,9 +1551,6 @@ export const updateBooking = async (req, res) => {
               ? originalRoom.toObject()
               : originalRoom;
           });
-
-          // console.log("✅ Backend merge completed. Final room count:", finalSelectedRooms.length);
-          // console.log("Final room names:", finalSelectedRooms.map(r => r.roomName));
         } else {
           console.error("❌ Could not find edited room in incoming data!");
           throw new Error("Room data integrity check failed");
@@ -1378,7 +1560,7 @@ export const updateBooking = async (req, res) => {
       }
     }
 
-    // Recalculate totals with final merged rooms
+    // Recalculate room / grand totals with finalSelectedRooms
     const newRoomTotal = finalSelectedRooms.reduce(
       (sum, room) => sum + Number(room.amountAfterTax || room.totalAmount || 0),
       0
@@ -1387,7 +1569,6 @@ export const updateBooking = async (req, res) => {
     bookingData.selectedRooms = finalSelectedRooms;
     bookingData.roomTotal = newRoomTotal;
 
-    // Recalculate grand total
     const paxTotal = Number(bookingData.paxTotal || 0);
     const foodPlanTotal = Number(bookingData.foodPlanTotal || 0);
     const totalBeforeDiscount = newRoomTotal + paxTotal + foodPlanTotal;
@@ -1395,12 +1576,9 @@ export const updateBooking = async (req, res) => {
     bookingData.grandTotal = totalBeforeDiscount - discountAmount;
     bookingData.totalAmount = totalBeforeDiscount;
 
-    // console.log("Final calculated totals:");
-    // console.log("  Room Total:", newRoomTotal);
-    // console.log("  Grand Total:", bookingData.grandTotal);
-    // console.log("  Final room count:", finalSelectedRooms.length);
-
-    // Get receipt series
+    // -----------------------------
+    // ADVANCE / RECEIPT CONTEXT
+    // -----------------------------
     const voucher = await VoucherSeriesModel.findOne({
       cmp_id: orgId,
       voucherType: "receipt",
@@ -1410,36 +1588,255 @@ export const updateBooking = async (req, res) => {
       ?.find((s) => s.under === "hotel")
       ?._id.toString();
 
-    const selectedParty = await partyModel
+    // Common party used in multiple places
+    let selectedParty = await partyModel
       .findOne({ _id: bookingData.customerId })
+      .populate("accountGroup")
       .session(session);
 
+    // convert to plain object & flatten accountGroup -> accountGroup_id
+    if (selectedParty) {
+      selectedParty = selectedParty.toObject();
+      if (selectedParty.accountGroup?._id) {
+        selectedParty.accountGroup_id =
+          selectedParty.accountGroup._id.toString();
+      }
+      delete selectedParty.accountGroup;
+    }
+
+    // Helper: build receipt (same pattern as create)
+    const buildReceipt = async (
+      receiptVoucher,
+      serialNumber,
+      paymentDetails,
+      amount,
+      paymentMethod,
+      billData,
+      orgId,
+      series_idReceipt,
+      selectedParty,
+      bookingData,
+      req,
+      session
+    ) => {
+      const receipt = new ReceiptModel({
+        createdAt: new Date(),
+        date: await formatToLocalDate(new Date(), orgId, session),
+        receiptNumber: receiptVoucher?.usedSeriesNumber,
+        series_id: series_idReceipt,
+        usedSeriesNumber: receiptVoucher?.usedSeriesNumber || null,
+        serialNumber,
+        cmp_id: orgId,
+        party: selectedParty,
+        billData,
+        totalBillAmount: bookingData.advanceAmount,
+        enteredAmount: amount,
+        advanceAmount: 0,
+        remainingAmount: 0,
+        paymentMethod,
+        paymentDetails,
+        note: "",
+        Primary_user_id: req.pUserId || req.owner,
+        Secondary_user_id: req.sUserId,
+      });
+
+      return await receipt.save({ session });
+    };
+
+    // -----------------------------
+    // TRANSACTION
+    // -----------------------------
     await session.withTransaction(async () => {
-      // Clean existing receipts & settlements if updating
+      // 1) Delete existing receipts & settlements & advance (TallyData)
       if (bookingId) {
         await deleteReceipt(bookingId, session);
         await deleteSettlements(bookingId, session);
+        await TallyData.deleteMany({ billId: bookingId.toString() }).session(
+          session
+        );
       }
 
-      // Handle advance payment logic (existing code remains same)
+      // 2) Handle advance logic (delete-only vs delete+recreate)
       if (bookingData.advanceAmount && bookingData.advanceAmount > 0) {
-        // ... existing advance payment logic ...
+        // a) Create new TallyData advance object
+        const advanceObject = new TallyData({
+          Primary_user_id: req.pUserId || req.owner,
+          cmp_id: orgId,
+          party_id: bookingData?.customerId,
+          party_name: bookingData?.customerName,
+          mobile_no: bookingData?.mobileNumber,
+          bill_date: new Date(),
+          bill_no: findOne?.voucherNumber || bookingData.voucherNumber,
+          billId: bookingId,
+          bill_amount: bookingData.advanceAmount,
+          bill_pending_amt: 0,
+          accountGroup: bookingData.accountGroup,
+          user_id: req.sUserId,
+          advanceAmount: bookingData.advanceAmount,
+          advanceDate: new Date(),
+          classification: "Cr",
+          source: "hotel",
+          from: selectedModal.modelName,
+        });
+
+        await advanceObject.save({ session });
+
+        // b) Bill data for receipts
+        const billData = [
+          {
+            _id: advanceObject._id,
+            bill_no: findOne?.voucherNumber || bookingData.voucherNumber,
+            billId: bookingId,
+            bill_date: new Date(),
+            bill_pending_amt: 0,
+            source: "hotel",
+            settledAmount: bookingData.advanceAmount,
+            remainingAmount: 0,
+          },
+        ];
+
+        // c) Party for settlement (raw doc for saveSettlementDataHotel, not flattened)
+        const rawParty = await partyModel
+          .findOne({ _id: bookingData.customerId })
+          .session(session);
+
+        // d) Single vs Multiple payment creation (same pattern as create)
+        if (paymentData?.mode === "single") {
+          const singlePaymentDetails = paymentData.payments[0];
+          const method = singlePaymentDetails?.method; // "cash" | "bank" / "online"
+          const selectedBankOrCashParty = singlePaymentDetails?.accountId;
+
+          const receiptVoucher = await generateVoucherNumber(
+            orgId,
+            "receipt",
+            series_idReceipt,
+            session
+          );
+
+          const serialNumber = await getNewSerialNumber(
+            ReceiptModel,
+            "serialNumber",
+            session
+          );
+
+          const paymentDetails =
+            method === "cash"
+              ? {
+                  cash_ledname: singlePaymentDetails?.accountName,
+                  cash_name: singlePaymentDetails?.accountName,
+                }
+              : {
+                  bank_ledname: singlePaymentDetails?.accountName,
+                  bank_name: singlePaymentDetails?.accountName,
+                };
+
+          // Receipt
+          await buildReceipt(
+            receiptVoucher,
+            serialNumber,
+            paymentDetails,
+            bookingData.advanceAmount,
+            method === "cash" ? "Cash" : "Online",
+            billData,
+            orgId,
+            series_idReceipt,
+            selectedParty,
+            bookingData,
+            req,
+            session
+          );
+
+          // Settlement
+          await saveSettlementDataHotel(
+            rawParty,
+            orgId,
+            method === "cash" ? "cash" : "bank",
+            selectedModal.modelName,
+            findOne?.voucherNumber || bookingData.voucherNumber,
+            bookingId,
+            bookingData.advanceAmount,
+            new Date(),
+            rawParty?.partyName,
+            selectedBankOrCashParty,
+            selectedModal.modelName,
+            req,
+            session
+          );
+        } else {
+          // multiple payments
+          for (const payment of paymentData?.payments || []) {
+            const receiptVoucher = await generateVoucherNumber(
+              orgId,
+              "receipt",
+              series_idReceipt,
+              session
+            );
+
+            const serialNumber = await getNewSerialNumber(
+              ReceiptModel,
+              "serialNumber",
+              session
+            );
+
+            const selectedBankOrCashParty = payment?.accountId;
+
+            await saveSettlementDataHotel(
+              rawParty,
+              orgId,
+              payment.method === "cash" ? "cash" : "bank",
+              selectedModal.modelName,
+              findOne?.voucherNumber || bookingData.voucherNumber,
+              bookingId,
+              payment.amount,
+              new Date(),
+              rawParty?.partyName,
+              selectedBankOrCashParty,
+              selectedModal.modelName,
+              req,
+              session
+            );
+
+            const paymentDetails =
+              payment.method === "cash"
+                ? {
+                    cash_ledname: payment?.accountName,
+                    cash_name: payment?.accountName,
+                  }
+                : {
+                    bank_ledname: payment?.accountName,
+                    bank_name: payment?.accountName,
+                  };
+
+            await buildReceipt(
+              receiptVoucher,
+              serialNumber,
+              paymentDetails,
+              payment.amount,
+              payment.method === "cash" ? "Cash" : "Online",
+              billData,
+              orgId,
+              series_idReceipt,
+              selectedParty,
+              bookingData,
+              req,
+              session
+            );
+          }
+        }
       } else {
-        await TallyData.deleteOne({ billId: bookingId.toString() });
+        // No advance now -> ensure old advance records are gone
+        await TallyData.deleteMany({ billId: bookingId.toString() }).session(
+          session
+        );
       }
 
-      // ✅ Update booking with final merged rooms
+      // 3) Finally, update booking/checkIn/checkOut document
       const updateResult = await selectedModal.findByIdAndUpdate(
         bookingId,
         { $set: bookingData },
         { new: true, session }
       );
 
-      // console.log("✅ Update completed successfully");
-      // console.log("Saved rooms count:", updateResult?.selectedRooms?.length);
-      // console.log("Saved room names:", updateResult?.selectedRooms?.map(r => r.roomName));
-
-      // Final verification
       if (isTariffRateChange && roomIdToEdit) {
         const savedCount = updateResult?.selectedRooms?.length || 0;
         const originalCount = findOne?.selectedRooms?.length || 0;
@@ -1450,9 +1847,13 @@ export const updateBooking = async (req, res) => {
           );
         }
       }
-    });
 
-    // console.log("=== UPDATE BOOKING COMPLETED SUCCESSFULLY ===");
+      // 4) Optionally update room status if your edit flow needs it:
+      //    (if required, uncomment & adapt)
+      // let status =
+      //   selectedModal.modelName === "CheckIn" ? "checkIn" : "booking";
+      // await updateStatus(bookingData?.selectedRooms, status, session);
+    });
 
     res.status(200).json({
       success: true,
@@ -1475,6 +1876,7 @@ export const updateBooking = async (req, res) => {
     await session.endSession();
   }
 };
+
 // function used to fetch booking advance details
 
 export const fetchAdvanceDetails = async (req, res) => {
