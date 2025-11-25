@@ -353,6 +353,9 @@ console.log(selectedCheckOut)
       return charges
     })()
     console.log(outStanding)
+const a=outStanding.map((item)=>item._id)
+console.log(a)
+console.log(outStanding.length)
     console.log(doc?.allCheckInIds)
     console.log(doc)
     const allcheckinids = doc?.allCheckInIds
