@@ -655,11 +655,13 @@ export const getRooms = async (req, res) => {
       checkOutDate: { $lte: checkOutDate }, // Only consider checkOutDate
     });
     console.log("overlappingbookings", overlappingBookings);
+
     const AllCheckIns = await CheckIn.find({
       cmp_id: req.params.cmp_id,
       status: { $ne: "checkOut" },
     }).select("selectedRooms checkOutDate arrivalDate roomDetails");
-    console.log("allchekins", AllCheckIns);
+
+
     const overlappingCheckIns = AllCheckIns.filter((c) => {
       const co = new Date(c.checkOutDate);
       co.setDate(co.getDate() + 1); // add 1 day
@@ -725,7 +727,7 @@ export const getRooms = async (req, res) => {
       status: "vacant",
       checkedAt: now,
     }));
-    console.log("roomswithstatus", roomsWithStatus.length);
+
     // Send response
     const sendRoomResponseData = sendRoomResponse(
       res,
@@ -2318,46 +2320,42 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
 
     allKotData.push(...docs);
 
-    // console.log("allKotData", allKotData);
-    // for (const item of checkoutData) {
 
-    const checkInData = await CheckIn.findOne({
-      _id: isForPreview
-        ? checkoutData[0]._id
-        : checkoutData[0]?.originalCheckInId,
-    });
+  
 
-    // if (!checkInData) {
-    //   continue;
-    // }
 
-    const bookingSideAdvanceDetails = await TallyData.find({
-      billId: checkInData.bookingId,
-    });
 
-    const checkInSideAdvanceDetails = await TallyData.find({
-      billId: isForPreview
-        ? checkoutData[0]._id
-        : checkoutData[0]?.originalCheckInId,
-    });
 
-    // console.log("checkInSideAdvanceDetails", checkInSideAdvanceDetails);
-    // console.log("bookingSideAdvanceDetails", bookingSideAdvanceDetails);
+    // 1️⃣ Collect all check-in IDs in a global Set
+    const uniqueIds = new Set();
 
-    allAdvanceDetails.push(
-      ...bookingSideAdvanceDetails,
-      ...checkInSideAdvanceDetails
-    );
-    // }
-    // const checkOutSideAdvanceDetails = !isForPreview
-    //   ? await TallyData.find({
-    //     bill_no: checkoutData[0]?.voucherNumber,
-    //   })
-    //   : [];
+    for (const checkout of checkoutData) {
+      checkout.allCheckInIds.forEach(id => uniqueIds.add(id.toString()));
+    }
 
-    // allAdvanceDetails.push(...checkOutSideAdvanceDetails);
-    // console.log("alladvance", allAdvanceDetails.length > 0)
-    // console.log("allktot", allKotData.length > 0)
+    console.log("ALL UNIQUE CHECK-IN IDS:", [...uniqueIds]);
+
+    // 2️⃣ Loop only unique IDs
+    for (const checkInId of uniqueIds) {
+      const checkInData = await CheckIn.findOne({ _id: checkInId });
+      if (!checkInData) continue;
+
+      const bookingSideAdvanceDetails = await TallyData.find({
+        billId: checkInData.bookingId,
+      });
+
+      const checkInSideAdvanceDetails = await TallyData.find({
+        billId: checkInId,
+      });
+
+      allAdvanceDetails.push(
+        ...bookingSideAdvanceDetails,
+        ...checkInSideAdvanceDetails
+      );
+    }
+console.log("lenthhh",allAdvanceDetails.length)
+
+  
     if (allAdvanceDetails.length > 0 || allKotData.length > 0) {
       return res.status(200).json({
         success: true,
