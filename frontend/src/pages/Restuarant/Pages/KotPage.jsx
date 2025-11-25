@@ -6,7 +6,6 @@ import useFetch from "@/customHook/useFetch";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
-import SplitPayment from "../../Hotel/Pages/SplitPayment.jsx";
 import {
   MdDescription,
   MdAccessTime,
@@ -81,8 +80,6 @@ const OrdersDashboard = () => {
   const [cancelledKots, setCancelledKots] = useState([]);
   const [cancelReason, setCancelReason] = useState("");
   const [cancelError, setCancelError] = useState("");
-  
-const [splitPaymentData, setSplitPaymentData] = useState(null);
 
    const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -469,7 +466,6 @@ const handleKotCancel = async () => {
 
         if (!selectedCreditor || selectedCreditor == "") {
           setPaymentError("Please select a creditor");
-          setSaveLoader(false);
           return;
         }
         paymentDetails = {
@@ -478,23 +474,27 @@ const handleKotCancel = async () => {
           paymentMode,
         };
            selectedKotData = selectedDataForPayment;
-      } else if (paymentMode === "split") {
-        // NEW: Handle split payment
-        if (!splitPaymentData || !splitPaymentData.isValid) {
-          setPaymentError(splitPaymentData?.error || "Please complete all split payment details.");
-          setSaveLoader(false);
+      } else {
+        // Split payment mode
+        if (
+          Number(cashAmount) + Number(onlineAmount) !==
+          selectedDataForPayment?.total
+        ) {
+          setPaymentError(
+            "Cash and online amounts together equal the total amount."
+          );
           return;
         }
-
         paymentDetails = {
-          cashAmount: splitPaymentData.totalCash,
-          onlineAmount: splitPaymentData.totalOnline,
-          paymentMode: "split",
-          payments: splitPaymentData.payments // Include detailed payment breakdown
+          cashAmount,
+          onlineAmount,
+          selectedCash,
+          selectedBank,
+          paymentMode,
         };
         selectedKotData = selectedDataForPayment;
       }
-    }  else {
+    } else {
       // CASE 2: When NO roomService
       if (paymentMode === "single") {
         if (paymentMethod === "cash") {
@@ -527,23 +527,27 @@ const handleKotCancel = async () => {
           paymentMode,
         };
           selectedKotData = previewForSales;
-      } else if (paymentMode === "split") {
-        // NEW: Handle split payment for non-room service
-        if (!splitPaymentData || !splitPaymentData.isValid) {
-          setPaymentError(splitPaymentData?.error || "Please complete all split payment details.");
-          setSaveLoader(false);
+      } else {
+        if (
+          Number(cashAmount) + Number(onlineAmount) !==
+          selectedDataForPayment?.total
+        ) {
+          setPaymentError(
+            "Cash and online amounts together equal the total amount."
+          );
           return;
         }
-
         paymentDetails = {
-          cashAmount: splitPaymentData.totalCash,
-          onlineAmount: splitPaymentData.totalOnline,
-          paymentMode: "split",
-          payments: splitPaymentData.payments
+          cashAmount,
+          onlineAmount,
+          selectedCash,
+          selectedBank,
+          paymentMode,
         };
         selectedKotData = previewForSales;
       }
     }
+
     console.log(paymentMethod);
     console.log(paymentDetails);
     console.log(selectedKotData);
@@ -557,11 +561,11 @@ const handleKotCancel = async () => {
       const response = await api.put(
         `/api/sUsers/updateKotPayment/${cmp_id}`,
         {
-          paymentMethod:paymentMode === "split" ? "split" : paymentMethod,
+          paymentMethod: paymentMethod,
           paymentDetails: payment,
           selectedKotData: selectedKotData,
           isPostToRoom: isPostToRoom,
-         isDirectSale: selectedDataForPayment?.isDirectSale || false,
+              isDirectSale: selectedDataForPayment?.isDirectSale || false,
         },
         { withCredentials: true }
       );
@@ -626,7 +630,6 @@ const handleKotCancel = async () => {
       setSaveLoader(false);
       setCashAmount(0);
       setOnlineAmount(0);
-        setSplitPaymentData(null); 
       refreshHook();
       setShowPaymentModal(false);
       setPaymentMode("single")
@@ -1622,40 +1625,166 @@ const handleKotCancel = async () => {
                 )}
 
                 {/* Split Payment Amount Inputs */}
-             {paymentMode === "split" && (
-  <div className="mb-3">
-    <label className="block text-sm font-medium text-gray-700 mb-2">
-      Split Payment Details
-    </label>
-    <SplitPayment
-      customers={
-        selectedDataForPayment?.party
-          ? [
-              {
-                _id: "direct-customer",
-                partyName: selectedDataForPayment.party.partyName,
-              },
-            ]
-          : selectedKot.map((kot) => ({
-              _id: kot.customer?._id || `customer-${kot.id}`,
-              partyName: kot.customer?.name || "Guest",
-            }))
-      }
-      cashOrBank={cashOrBank}
-      totalAmount={Number(selectedDataForPayment?.total || 0)}
-      onChange={(data) => {
-        setSplitPaymentData(data);
-        if (data.error && data.totalSplitAmount !== Number(selectedDataForPayment?.total)) {
-          setPaymentError(data.error);
-        } else {
-          setPaymentError("");
-        }
-      }}
-    />
-  </div>
-)}
-             
-             
+                {paymentMode === "split" && (
+                  <div className="mb-3">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Split Payment Amounts
+                    </label>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1 w-16">
+                          <Banknote className="w-4 h-4 text-gray-600" />
+                          <span className="text-xs font-medium">Cash:</span>
+                        </div>
+                        <div className="flex-1">
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                              ₹
+                            </span>
+                            <input
+                              type="number"
+                              value={cashAmount}
+                              onChange={(e) => {
+                                if (
+                                  Number(e.target.value) +
+                                    Number(onlineAmount || 0) <=
+                                  Number(selectedDataForPayment?.total)
+                                ) {
+                                  setCashAmount(e.target.value);
+                                  setPaymentError("");
+                                  return;
+                                } else {
+                                  setPaymentError(
+                                    "Sum of cash and online amount should be less than or equal to order total."
+                                  );
+                                }
+                              }}
+                              className="w-full pl-6 pr-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                              placeholder="0.00"
+                              min="0"
+                              step="0.01"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Cash Payment Dropdown - Show when cash amount > 0 */}
+                      {cashAmount > 0 && (
+                        <div className="ml-20">
+                          <label className="block text-xs font-medium text-gray-600 mb-1">
+                            Select Cash
+                          </label>
+                          <select
+                            className="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
+                            value={selectedCash}
+                            onChange={(e) => setSelectedCash(e.target.value)}
+                          >
+                            <option value="" disabled>
+                              Select Cash
+                            </option>
+                            {cashOrBank?.cashDetails?.map((cashier) => (
+                              <option key={cashier._id} value={cashier._id}>
+                                {cashier.partyName}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1 w-16">
+                          <CreditCard className="w-4 h-4 text-gray-600" />
+                          <span className="text-xs font-medium">Gpay:</span>
+                        </div>
+                        <div className="flex-1">
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                              ₹
+                            </span>
+                            <input
+                              type="number"
+                              value={onlineAmount}
+                              onChange={(e) => {
+                                if (
+                                  Number(e.target.value) + Number(cashAmount) <=
+                                  Number(selectedDataForPayment?.total)
+                                ) {
+                                  setOnlineAmount(e.target.value);
+                                  setPaymentError("");
+                                  return;
+                                } else {
+                                  setPaymentError(
+                                    "Sum of cash and online amount should be less than or equal to order total."
+                                  );
+                                }
+                              }}
+                              className="w-full pl-6 pr-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                              placeholder="0.00"
+                              min="0"
+                              step="0.01"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Online Payment Dropdown - Show when online amount > 0 */}
+                      {onlineAmount > 0 && (
+                        <div className="ml-20">
+                          <label className="block text-xs font-medium text-gray-600 mb-1">
+                            Select Bank
+                          </label>
+                          <select
+                            className="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
+                            value={selectedBank}
+                            onChange={(e) => setSelectedBank(e.target.value)}
+                          >
+                            <option value="" disabled>
+                              Select Bank
+                            </option>
+                            {cashOrBank?.bankDetails?.map((cashier) => (
+                              <option key={cashier._id} value={cashier._id}>
+                                {cashier.partyName}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      {/* Payment Summary for Split */}
+                      <div className="bg-gray-50 p-2 rounded-lg border">
+                        <div className="flex justify-between text-xs text-gray-600 mb-1">
+                          <span>Total Entered:</span>
+                          <span>
+                            ₹
+                            {(
+                              parseFloat(cashAmount || 0) +
+                              parseFloat(onlineAmount || 0)
+                            ).toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-xs font-medium">
+                          <span>Order Total:</span>
+                          <span>₹{selectedDataForPayment?.total}</span>
+                        </div>
+                        {parseFloat(cashAmount || 0) +
+                          parseFloat(onlineAmount || 0) !==
+                          selectedDataForPayment?.total && (
+                          <div className="flex justify-between text-xs text-amber-600 mt-1">
+                            <span>Difference:</span>
+                            <span>
+                              ₹
+                              {(
+                                selectedDataForPayment?.total -
+                                (parseFloat(cashAmount || 0) +
+                                  parseFloat(onlineAmount || 0))
+                              ).toFixed(2)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
                 {paymentMode === "credit" && (
                   <div className="mb-3">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
