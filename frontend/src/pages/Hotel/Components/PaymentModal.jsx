@@ -152,7 +152,7 @@ function PaymentModal({
         });
       }
     }
-
+console.log("newpayment")
     onPaymentSave?.(paymentData);
   };
 
