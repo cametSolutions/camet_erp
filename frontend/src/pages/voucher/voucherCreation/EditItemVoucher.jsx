@@ -33,7 +33,8 @@ function EditItemVoucher() {
 
 
   let modifiedVoucherType = voucherType;
-  if (voucherType === "sales") {
+  /// for sales and van sale both we have to check sale configuration
+  if (voucherType === "sales" || voucherType === "vanSale") {
     modifiedVoucherType = "sale";
   }
 
