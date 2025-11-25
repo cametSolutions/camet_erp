@@ -1903,73 +1903,23 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
     allKotData.push(...docs);
 
 
-    // const checkInData = await CheckIn.findOne({
-    //   _id: isForPreview ? checkoutData[0]._id : checkoutData[0]?.originalCheckInId,
-    // });
+  
 
 
 
-    // const bookingSideAdvanceDetails = await TallyData.find({
-    //   billId: checkInData.bookingId,
-    // });
 
-    // const checkInSideAdvanceDetails = await TallyData.find({
-    //   billId: isForPreview ? checkoutData[0]._id : checkoutData[0]?.originalCheckInId,
-    // });
-
-
-
-    // allAdvanceDetails.push(
-    //   ...bookingSideAdvanceDetails,
-    //   ...checkInSideAdvanceDetails
-    // );
-
-
-
+    // 1️⃣ Collect all check-in IDs in a global Set
+    const uniqueIds = new Set();
 
     for (const checkout of checkoutData) {
-      const allCheckinIds = checkout.allCheckInIds;   // array for this customer
-      // console.log("allidsd", allCheckinIds)
-
-
-      for (const checkInId of allCheckinIds) {
-        const checkInData = await CheckIn.findOne({ _id: checkInId });
-        if (!checkInData) continue;
-        // console.log("checkinob", checkInData)
-
-        const bookingSideAdvanceDetails = await TallyData.find({
-          billId: checkInData.bookingId,
-        });
-
-        const checkInSideAdvanceDetails = await TallyData.find({
-          billId: checkInId,
-        });
-
-        allAdvanceDetails.push(
-          ...bookingSideAdvanceDetails,
-          ...checkInSideAdvanceDetails
-        );
-      }
+      checkout.allCheckInIds.forEach(id => uniqueIds.add(id.toString()));
     }
 
-    // }
-    // const checkOutSideAdvanceDetails = !isForPreview
-    //   ? await TallyData.find({
-    //     bill_no: checkoutData[0]?.voucherNumber,
-    //   })
-    //   : [];
+    console.log("ALL UNIQUE CHECK-IN IDS:", [...uniqueIds]);
 
-    // allAdvanceDetails.push(...checkOutSideAdvanceDetails);
-    // console.log("alladvance", allAdvanceDetails.length > 0)
-    // console.log("allktot", allKotData.length > 0)
-    ///check not only for first index all checkout data unless gets only the advance of the first guest or customer
-    
-
-    for (const item of checkoutData) {
-      const checkInData = await CheckIn.findOne({
-        _id: isForPreview ? item._id : item?.originalCheckInId,
-      });
-
+    // 2️⃣ Loop only unique IDs
+    for (const checkInId of uniqueIds) {
+      const checkInData = await CheckIn.findOne({ _id: checkInId });
       if (!checkInData) continue;
 
       const bookingSideAdvanceDetails = await TallyData.find({
@@ -1977,7 +1927,7 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
       });
 
       const checkInSideAdvanceDetails = await TallyData.find({
-        billId: isForPreview ? item._id : item?.originalCheckInId,
+        billId: checkInId,
       });
 
       allAdvanceDetails.push(
@@ -1985,7 +1935,9 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
         ...checkInSideAdvanceDetails
       );
     }
+console.log("lenthhh",allAdvanceDetails.length)
 
+  
     if (allAdvanceDetails.length > 0 || allKotData.length > 0) {
       return res.status(200).json({
         success: true,
@@ -2055,8 +2007,7 @@ export const convertCheckOutToSale = async (req, res) => {
       const splitDetails = paymentDetails?.splitDetails || [];
 
       const specificVoucherSeries = await hotelVoucherSeries(cmp_id, session);
-console.log(selectedCheckOut.length)
-console.log(selectedCheckOut)
+    
       // Process each checkout separately
       let results
       for (const item of selectedCheckOut) {
