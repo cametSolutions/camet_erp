@@ -10,7 +10,7 @@ export default function EnhancedCheckoutModal({
   onConfirm,
   checkoutMode
 }) {
-  
+  console.log("h")
   // State to manage room-customer assignments
   const [roomAssignments, setRoomAssignments] = useState([])
   const [errors, setErrors] = useState({})
@@ -96,8 +96,9 @@ export default function EnhancedCheckoutModal({
     )
 
     let result
-
+console.log("HHHh")
     if (isSameCustomer) {
+console.log("HHHhh")
       // 🔥 Merge ALL into ONE customer
       const checkInMap = {}
 
@@ -133,7 +134,8 @@ export default function EnhancedCheckoutModal({
     } else {
       // 🔵 fallback → group by customers (old logic)
       const grouped = {}
-
+console.log(roomAssignments)
+console.log(roomAssignments.length)
       roomAssignments.forEach((assignment) => {
         const customerId = assignment.selectedCustomer._id
 
@@ -229,7 +231,7 @@ export default function EnhancedCheckoutModal({
     //     checkIns: group.checkIns,
     //   }
     // });
-
+console.log(result)
 
     onConfirm(result)
   }

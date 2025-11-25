@@ -109,7 +109,7 @@ function PaymentModal({
       // Use the split payment data (no need for splitDetails as payments already has everything)
       paymentData.payments = splitPaymentData.payments;
     }
-
+console.log("newpayment")
     onPaymentSave?.(paymentData);
   };
 
