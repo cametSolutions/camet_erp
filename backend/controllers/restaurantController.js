@@ -1012,6 +1012,10 @@ export const directSale = async (req, res) => {
 };
 
 
+// Update your updateKotPayment function in the backend
+
+// Update your updateKotPayment function - ADD DETAILED LOGGING
+
 export const updateKotPayment = async (req, res) => {
   const session = await mongoose.startSession();
 
@@ -1024,32 +1028,52 @@ export const updateKotPayment = async (req, res) => {
         selectedKotData: kotData,
         isPostToRoom,
       } = req.body;
-    
 
-      // console.log("table", kotData);
+      console.log('=== PAYMENT DEBUG ===');
+      console.log('Payment Method:', paymentMethod);
+      console.log('Payment Details:', JSON.stringify(paymentDetails, null, 2));
+      console.log('Payment Mode:', paymentDetails?.paymentMode);
 
-
-      
       if (!paymentDetails || !kotData) {
         throw new Error("Missing payment details or KOT data");
       }
 
-       if (paymentDetails?.paymentMode === "credit") {
+      if (paymentDetails?.paymentMode === "credit") {
         if (!paymentDetails.selectedCreditor || !paymentDetails.selectedCreditor._id) {
           throw new Error("Please select a creditor for credit payment");
         }
       }
+
       let paymentCompleted = false;
 
       // Determine payment method
       const cashAmt = Number(paymentDetails?.cashAmount || 0);
       const onlineAmt = Number(paymentDetails?.onlineAmount || 0);
 
-      if (cashAmt > 0 && onlineAmt > 0) {
-        paymentMethod = "mixed";
-      }
+      // Handle split payment
+      if (paymentDetails?.paymentMode === "split") {
+        console.log('Processing split payment...');
+        paymentMethod = "split";
+        
+        // Validate split payment
+        if (!paymentDetails.payments || paymentDetails.payments.length === 0) {
+          throw new Error("Split payment details are missing");
+        }
 
-      if (paymentDetails?.paymentMode == "credit") {
+        console.log('Split payments array:', JSON.stringify(paymentDetails.payments, null, 2));
+
+        // Validate total amounts match
+        const splitTotal = paymentDetails.payments.reduce(
+          (sum, payment) => sum + Number(payment.amount || 0),
+          0
+        );
+
+        if (Math.abs(splitTotal - Number(kotData?.total || 0)) > 0.01) {
+          throw new Error("Split payment total does not match order total");
+        }
+      } else if (cashAmt > 0 && onlineAmt > 0) {
+        paymentMethod = "mixed";
+      } else if (paymentDetails?.paymentMode === "credit") {
         paymentMethod = "credit";
       }
 
@@ -1066,9 +1090,9 @@ export const updateKotPayment = async (req, res) => {
         specificVoucherSeries._id.toString(),
         session
       );
-      let creditParty;
-      if (paymentMethod == "credit") {
 
+      let creditParty;
+      if (paymentMethod === "credit") {
         creditParty = await Party.findOne({
           cmp_id,
           _id: paymentDetails.selectedCreditor._id,
@@ -1077,10 +1101,31 @@ export const updateKotPayment = async (req, res) => {
           .session(session);
       }
 
-      // console.log("creditParty", paymentMethod);
-      // Selected party
-      const selectedParty =
-        paymentMethod == "credit"
+      // Selected party - FIX FOR SPLIT PAYMENT
+      let selectedParty;
+      if (paymentMethod === "split") {
+        // For split payment, use a default cash party or create a generic party
+        selectedParty = await Party.findOne({
+          cmp_id,
+          partyName: "Cash-in-Hand" // or your default cash account name
+        })
+          .populate("accountGroup")
+          .session(session);
+
+        if (!selectedParty) {
+          // If no default cash account, use the first payment's account
+          const firstPaymentAccountId = paymentDetails.payments[0]?.accountId;
+          selectedParty = await Party.findOne({
+            cmp_id,
+            _id: firstPaymentAccountId
+          })
+            .populate("accountGroup")
+            .session(session);
+        }
+
+        console.log('Selected party for split:', selectedParty?.partyName);
+      } else {
+        selectedParty = paymentMethod === "credit"
           ? creditParty
           : await getSelectedParty(
               cmp_id,
@@ -1091,15 +1136,36 @@ export const updateKotPayment = async (req, res) => {
               isPostToRoom,
               session
             );
+      }
 
-      // Payment splitting
-      const paymentSplittingArray = createPaymentSplittingArray(
-        paymentDetails,
-        cashAmt,
-        onlineAmt
-      );
+      if (!selectedParty) {
+        throw new Error("Could not determine payment party");
+      }
+
+      console.log('Selected Party Name:', selectedParty.partyName);
+
+      // Payment splitting array
+      let paymentSplittingArray;
+      
+      if (paymentMethod === "split") {
+        console.log('Creating split payment array...');
+        // NEW: Create payment splitting array from split payment details
+        paymentSplittingArray = await createSplitPaymentArray(
+          paymentDetails.payments,
+          cmp_id,
+          session
+        );
+        console.log('Payment splitting array:', JSON.stringify(paymentSplittingArray, null, 2));
+      } else {
+        paymentSplittingArray = createPaymentSplittingArray(
+          paymentDetails,
+          cashAmt,
+          onlineAmt
+        );
+      }
 
       const party = mapPartyData(selectedParty);
+      console.log('Mapped party data:', JSON.stringify(party, null, 2));
 
       // Save voucher
       const savedVoucherData = await createSalesVoucher(
@@ -1117,8 +1183,9 @@ export const updateKotPayment = async (req, res) => {
       // Outstanding balance
       const paidAmount = isPostToRoom ? 0 : cashAmt + onlineAmt;
       const pendingAmount = Number(kotData?.total || 0) - paidAmount;
+      
       let tallyData;
-      if (isPostToRoom || paymentMethod == "credit") {
+      if (isPostToRoom || paymentMethod === "credit") {
         tallyData = await createTallyEntry(
           cmp_id,
           req,
@@ -1130,9 +1197,19 @@ export const updateKotPayment = async (req, res) => {
           session
         );
       }
-      if (party?.paymentType != "party" && paymentMethod != "credit") {
-        console.log("undddd")
-       
+
+      // Handle settlements based on payment method
+      if (paymentMethod === "split") {
+        console.log('Processing split payment settlements...');
+        // NEW: Process each split payment separately
+        await processSplitPaymentSettlements(
+          paymentDetails.payments,
+          cmp_id,
+          savedVoucherData[0],
+          req,
+          session
+        );
+      } else if (party?.paymentType !== "party" && paymentMethod !== "credit") {
         await saveSettlement(
           paymentDetails,
           selectedParty,
@@ -1145,7 +1222,8 @@ export const updateKotPayment = async (req, res) => {
           session
         );
       }
-      if (paymentMethod == "credit") {
+
+      if (paymentMethod === "credit") {
         await buildReceipt({
           cmp_id,
           selectedParty: paymentDetails.selectedCreditor,
@@ -1165,45 +1243,38 @@ export const updateKotPayment = async (req, res) => {
 
       await Promise.all(
         kotData?.voucherNumber.map(async (item) => {
-          // Find the KOT first
           const kot = await kotModal.findById(item.id).lean();
-  if (kot?.tableNumber && !selectedTableNumber.includes(kot.tableNumber)) {
+          if (kot?.tableNumber && !selectedTableNumber.includes(kot.tableNumber)) {
             selectedTableNumber.push(kot.tableNumber);
           }
 
-          // Then update it
           return kotModal.updateOne(
             { _id: item.id },
-            { paymentMethod, paymentCompleted,  status: 'completed'  },
+            { paymentMethod, paymentCompleted, status: 'completed' },
             { session }
           );
         })
       );
 
-      // console.log("Selected Table Numbers:", selectedTableNumber);
-
-      // Check pending
+      // Check pending and update table status
       let updatedTables = [];
       for (const tableNumber of selectedTableNumber) {
-        if (!tableNumber) continue; // Skip if tableNumber is null/undefined
+        if (!tableNumber) continue;
         
         const pendingCount = await kotModal
           .countDocuments({
             cmp_id,
-            tableNumber: tableNumber,  // ✅ Direct field, not nested
+            tableNumber: tableNumber,
             paymentCompleted: false,
           })
           .session(session);
 
-        // console.log(`Pending KOTs for table ${tableNumber}:`, pendingCount);
-
-        // ✅ If no pending KOTs, mark table as available
         if (pendingCount === 0) {
           const updateTableStatus = await Table.findOneAndUpdate(
             { cmp_id, tableNumber },
             { 
               status: "available",
-              currentOrders: 0,  // ✅ Reset order count
+              currentOrders: 0,
               updatedAt: new Date()
             },
             { new: true, session }
@@ -1216,7 +1287,7 @@ export const updateKotPayment = async (req, res) => {
         }
       }
 
-      // ✅ No manual commit here
+      console.log('=== PAYMENT SUCCESS ===');
       res.status(200).json({
         success: true,
         message: "KOT payment updated successfully",
@@ -1224,7 +1295,9 @@ export const updateKotPayment = async (req, res) => {
       });
     });
   } catch (error) {
-    // console.error("Error updating KOT:", error);
+    console.error("=== PAYMENT ERROR ===");
+    console.error("Error:", error.message);
+    console.error("Stack:", error.stack);
     res.status(500).json({
       success: false,
       message: error.message || "Internal server error while updating KOT",
@@ -1233,6 +1306,115 @@ export const updateKotPayment = async (req, res) => {
     await session.endSession();
   }
 };
+
+// NEW: Helper function to create split payment array
+async function createSplitPaymentArray(payments, cmp_id, session) {
+  const paymentArray = [];
+
+  for (const payment of payments) {
+    console.log('Processing payment:', JSON.stringify(payment, null, 2));
+    
+    // Find the account (cash or bank) from the database
+    const account = await Party.findOne({
+      cmp_id,
+      _id: payment.accountId,
+    })
+      .populate('accountGroup')
+      .session(session)
+      .lean();
+
+    console.log('Found account:', JSON.stringify(account, null, 2));
+
+    if (!account) {
+      throw new Error(`Payment account ${payment.accountName} (ID: ${payment.accountId}) not found in database`);
+    }
+
+    const accountName = account.partyName || account.name || account.ledgerName || payment.accountName;
+    
+    if (!accountName) {
+      console.error('Account object:', account);
+      throw new Error(`Account has no name field. Available fields: ${Object.keys(account).join(', ')}`);
+    }
+
+    // ✅ FIX: Map payment method to the correct type field
+    let paymentType;
+    const method = payment.method.toLowerCase();
+    
+    if (method === 'cash') {
+      paymentType = 'cash';
+    } else if (['upi', 'online', 'card', 'bank'].includes(method)) {
+      paymentType = 'upi';
+    } else {
+      paymentType = 'upi'; // Default to upi for online payments
+    }
+
+    // ✅ FIX: Create object matching the schema
+    paymentArray.push({
+      type: paymentType,              // ✅ Required field
+      amount: Number(payment.amount),
+      ref_id: account._id,           // ✅ Required field
+      // Optional: Store additional info in a separate field if needed
+      _metadata: {
+        partyName: accountName,
+        accountGroup: account.accountGroup,
+        method: payment.method
+      }
+    });
+
+    console.log('Added to payment array:', paymentArray[paymentArray.length - 1]);
+  }
+
+  return paymentArray;
+}
+
+// NEW: Helper function to process split payment settlements
+async function processSplitPaymentSettlements(
+  payments,
+  cmp_id,
+  savedVoucher,
+  req,
+  session
+) {
+  console.log('Processing settlements for', payments.length, 'payments');
+  
+  for (const payment of payments) {
+    // Find the account
+    const account = await Party.findOne({
+      cmp_id,
+      _id: payment.accountId,
+    })
+      .populate("accountGroup")
+      .session(session);
+
+    if (!account) {
+      console.warn(`Account ${payment.accountId} not found for settlement, skipping...`);
+      continue;
+    }
+
+    const amount = Number(payment.amount);
+    
+    // ✅ Map method to settlement type
+    const settlementType = payment.method === 'cash' ? 'cash' : 'bank';
+
+    // Create settlement entry using the helper function
+    await saveSettlementData(
+      account,
+      cmp_id,
+      settlementType,
+      "sales",
+      "Sales",
+      savedVoucher.salesNumber,
+      savedVoucher._id,
+      amount,
+      new Date(),
+      req,
+      session
+    );
+
+    console.log(`Settlement created for ${account.partyName || account.name}: ₹${amount}`);
+  }
+}
+
 
 async function getRestaurantVoucherSeries(cmp_id, session) {
   const SaleVoucher = await VoucherSeriesModel.findOne({
@@ -1312,6 +1494,87 @@ function createPaymentSplittingArray(paymentDetails, cashAmt, onlineAmt) {
   }
   return arr;
 }
+
+// async function createSplitPaymentArray(payments, cmp_id, session) {
+//   const paymentArray = [];
+
+//   for (const payment of payments) {
+//     // Find the account (cash or bank) from the database
+//     const account = await Party.findOne({
+//       cmp_id,
+//       _id: payment.accountId,
+//     })
+//       .populate('accountGroup')
+//       .session(session);
+
+//     if (account) {
+//       paymentArray.push({
+//         party: {
+//           _id: account._id,
+//           partyName: account.partyName || account.name || payment.accountName,
+//           accountGroup: account.accountGroup,
+//         },
+//         amount: Number(payment.amount),
+//         paymentType: payment.method === "cash" ? "cash" : "bank",
+//       });
+//     } else {
+//       console.error(`Account not found for payment:`, payment);
+//       throw new Error(`Payment account ${payment.accountName} not found`);
+//     }
+//   }
+
+//   return paymentArray;
+// }
+
+
+// // NEW: Helper function to process split payment settlements
+// async function processSplitPaymentSettlements(
+//   payments,
+//   cmp_id,
+//   savedVoucher,
+//   req,
+//   session
+// ) {
+//   for (const payment of payments) {
+//     // Find the account
+//     const account = await Party.findOne({
+//       cmp_id,
+//       _id: payment.accountId,
+//     })
+//       .populate("accountGroup")
+//       .session(session);
+
+//     if (!account) continue;
+
+//     const amount = Number(payment.amount);
+
+//     // Create settlement entry for each payment
+//     const settlementData = {
+//       cmp_id,
+//       party: account._id,
+//       amount: amount,
+//       voucherId: savedVoucher._id,
+//       voucherType: "sales",
+//       paymentMethod: payment.method,
+//       transactionDate: new Date(),
+//       createdBy: req.user?._id,
+//       description: `Split payment - ${payment.accountName}`,
+//     };
+
+//     // Save settlement
+//     await Settlement.create([settlementData], { session });
+
+//     // Update party balance if needed
+//     if (account.accountGroup?.name === "Cash-in-Hand" || 
+//         account.accountGroup?.name === "Bank Accounts") {
+//       await Party.updateOne(
+//         { _id: account._id },
+//         { $inc: { currentBalance: amount } },
+//         { session }
+//       );
+//     }
+//   }
+// }
 
 function mapPartyData(selectedParty) {
   return {
