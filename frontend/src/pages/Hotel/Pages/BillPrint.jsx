@@ -16,6 +16,7 @@ import {
   handleBillPrintInvoice,
   handleBillDownloadPDF
 } from "../PrintSide/generateBillPrintPDF"
+import Outstanding from "@/pages/voucherReports/outstanding/Outstanding"
 // import { Title } from "@radix-ui/react-dialog";
 
 const HotelBillPrint = () => {
@@ -28,9 +29,12 @@ const HotelBillPrint = () => {
 
   // Props from location state
   const selectedCheckOut = location.state?.selectedCheckOut || []
+console.log(selectedCheckOut)
+const a=selectedCheckOut.some((it)=>it.originalCheckInId)
+console.log(a)
   const checkoutmode = location?.state?.checkoutMode || null
   const cheinids = location?.state?.checkinIds
-
+  console.log(selectedCheckOut)
   // const selectedCustomerId = location.state?.customerId;
   const isForPreview = location.state?.isForPreview
 
@@ -43,6 +47,7 @@ const HotelBillPrint = () => {
 
   // Fetch debit and KOT once for all docs shown
   const fetchDebitData = async (data) => {
+    console.log(data)
     try {
       const res = await api.post(
         `/api/sUsers/fetchOutStandingAndFoodData`,
@@ -50,6 +55,7 @@ const HotelBillPrint = () => {
         { withCredentials: true }
       )
       if (res.data.success) {
+        console.log(res.data.data)
         setOutStanding(res.data.data || [])
         setKotData(res.data.kotData || [])
       }
@@ -61,6 +67,7 @@ const HotelBillPrint = () => {
 
   useEffect(() => {
     if (selectedCheckOut?.length > 0) {
+console.log(selectedCheckOut)
       fetchDebitData(selectedCheckOut)
     }
   }, [selectedCheckOut])
@@ -184,6 +191,7 @@ const HotelBillPrint = () => {
 
   // Build per-room restaurant line for a doc’s rooms only
   const buildPerRoomRestaurantLinesForDoc = (doc) => {
+    console.log(doc)
     const roomIdSet = new Set(
       (doc.selectedRooms || [])
         .map((r) => String(r?.roomId || r?._id))
@@ -344,28 +352,42 @@ const HotelBillPrint = () => {
 
       return charges
     })()
-
+    console.log(outStanding)
+const a=outStanding.map((item)=>item._id)
+console.log(a)
+console.log(outStanding.length)
+    console.log(doc?.allCheckInIds)
+    console.log(doc)
+    const allcheckinids = doc?.allCheckInIds
+    const allpartyid = doc?.partyArray
+    console.log(allpartyid)
+    console.log(allcheckinids)
     // Advances only on the decided bill
     const advanceEntries = useAdvances
-      ? (outStanding || []).map((t) => ({
-          date: formatDate(t.bill_date || t.billdate || new Date()),
-          description: "Advance",
-          docNo: t.bill_no || t.billno || "-",
-          amount: -Math.abs(t.bill_amount || t.billamount || 0),
-          taxes: "",
-          advance: Math.abs(t.bill_amount || t.billamount || 0).toFixed(2)
-        }))
+      ? (outStanding || [])
+          .filter((t) => allpartyid.includes(t.party_id))
+          .map((t) => ({
+            date: formatDate(t.bill_date || t.billdate || new Date()),
+            description: "Advance",
+            docNo: t.bill_no || t.billno || "-",
+            amount: -Math.abs(t.bill_amount || t.billamount || 0),
+            taxes: "",
+            advance: Math.abs(t.bill_amount || t.billamount || 0).toFixed(2)
+          }))
       : []
 
     const advanceTotal = useAdvances
-      ? (outStanding || []).reduce(
-          (sum, t) => sum + Number(t.bill_amount || t.billamount || 0),
-          0
-        )
+      ? (outStanding || [])
+          .filter((t) => allpartyid.includes(t.party_id))
+          .reduce(
+            (sum, t) => sum + Number(t.bill_amount || t.billamount || 0),
+            0
+          )
       : 0
-
+console.log(advanceEntries)
     // Combine charges and compute balances
     const allCharges = [...groupedRoomCharges, ...advanceEntries]
+    console.log(allCharges)
     let cumulativeBalance = 0
     const chargesWithBalance = allCharges.map((charge) => {
       let currentAmount = Number(charge.amount || 0)
@@ -391,6 +413,7 @@ const HotelBillPrint = () => {
           : "0.00"
       }
     })
+    console.log(chargesWithBalance)
 
     const grandTotal =
       roomTariffTotal +
@@ -1398,8 +1421,10 @@ const HotelBillPrint = () => {
             <button
               onClick={() => {
                 // For preview confirm, use first bill’s netPay as balanceToPay
-                const first = bills[0]
-                const balanceToPay = first?.payment?.netPay || 0
+
+                let balanceToPay = 0
+                bills.forEach((item) => (balanceToPay += item.payment.netPay))
+                console.log(balanceToPay)
                 const firstDoc = selectedCheckOut[0]
                 navigate("/sUsers/checkInList", {
                   state: {

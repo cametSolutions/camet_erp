@@ -8,7 +8,9 @@ export default function CheckoutDateModal({
   checkoutData = [],
   
 }) {
-
+console.log("h")
+console.log(checkoutData)
+console.log(checkoutData.length)
   const [checkouts, setCheckouts] = useState(
     checkoutData.length > 0 ? checkoutData : [
       {

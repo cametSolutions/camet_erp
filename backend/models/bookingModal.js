@@ -113,7 +113,7 @@ const bookingSchema = new mongoose.Schema(
       ref: "Organization",
       required: true,
     },
-    checkoutType: String,
+    checkoutType: String,//only for checkout and its for knowing that if this checkout is single checkout for multiple checkins,we have for single checkings have separate checkout with distinguis with this and former
     bookingDate: String,
     voucherNumber: String,
     voucherId: mongoose.Schema.Types.ObjectId,
@@ -160,6 +160,8 @@ const bookingSchema = new mongoose.Schema(
     bookingId: { type: mongoose.Schema.Types.ObjectId, ref: "Booking" },
     checkInId: { type: mongoose.Schema.Types.ObjectId, ref: "CheckIn" },
     checkInArray: [{ type: mongoose.Schema.Types.ObjectId, ref: "CheckIn" }],
+    arrayCheckIn: [{ type: mongoose.Schema.Types.ObjectId, ref: "CheckIn" }],
+    arrayBookIn: [{ type: mongoose.Schema.Types.ObjectId, ref: "Booking" }],
     status: String,
     originalCheckInId: {
       type: mongoose.Schema.Types.ObjectId,

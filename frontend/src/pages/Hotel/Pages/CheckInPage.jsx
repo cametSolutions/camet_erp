@@ -20,6 +20,7 @@ function CheckInPage() {
   const organization = useSelector(
     (state) => state?.secSelectedOrganization?.secSelectedOrg
   )
+  console.log("j")
   const { data, loading: advanceLoading } = useFetch(
     `/api/sUsers/getBookingAdvanceData/${bookingData?._id}?type=${"checkIn"}`
   )
@@ -36,6 +37,7 @@ function CheckInPage() {
       bookingData.advanceAmount = 0
     }
   }, [bookingData])
+console.log("HHH")
   const handleSubmit = async (data, paymentData) => {
     let updatedData
     if (bookingData) {
@@ -43,9 +45,10 @@ function CheckInPage() {
     } else {
       updatedData = data
     }
-    
 
     try {
+      console.log(updatedData)
+      
       let response = await api.post(
         `/api/sUsers/saveData/${organization._id}`,
         { data: updatedData, modal: "checkIn", paymentData: paymentData },
