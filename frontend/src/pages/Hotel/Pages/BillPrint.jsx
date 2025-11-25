@@ -34,7 +34,7 @@ const a=selectedCheckOut.some((it)=>it.originalCheckInId)
 console.log(a)
   const checkoutmode = location?.state?.checkoutMode || null
   const cheinids = location?.state?.checkinIds
-
+  console.log(selectedCheckOut)
   // const selectedCustomerId = location.state?.customerId;
   const isForPreview = location.state?.isForPreview
 
@@ -47,6 +47,7 @@ console.log(a)
 
   // Fetch debit and KOT once for all docs shown
   const fetchDebitData = async (data) => {
+    console.log(data)
     try {
       const res = await api.post(
         `/api/sUsers/fetchOutStandingAndFoodData`,
@@ -190,7 +191,7 @@ console.log(selectedCheckOut)
 
   // Build per-room restaurant line for a doc’s rooms only
   const buildPerRoomRestaurantLinesForDoc = (doc) => {
-console.log(doc)
+    console.log(doc)
     const roomIdSet = new Set(
       (doc.selectedRooms || [])
         .map((r) => String(r?.roomId || r?._id))
@@ -351,32 +352,34 @@ console.log(doc)
 
       return charges
     })()
-console.log(doc)
-// const a=doc.some((item)=>item.originalCheckInId)
-console.log(a)
-console.log(doc.customerId?.party_master_id)
-console.log(doc.originalCustomerId)
-console.log(doc.originalCheckInId)
-console.log(doc.customerId.party_master_id)
-console.log(outStanding)
-console.log(Outstanding.length)
+    console.log(outStanding)
+    console.log(doc?.allCheckInIds)
+    console.log(doc)
+    const allcheckinids = doc?.allCheckInIds
+    const allpartyid = doc?.partyArray
+    console.log(allpartyid)
+    console.log(allcheckinids)
     // Advances only on the decided bill
     const advanceEntries = useAdvances
-      ? (outStanding || []).filter((item)=>doc.customerId?.party_master_id===item?.party_id).map((t) => ({
-          date: formatDate(t.bill_date || t.billdate || new Date()),
-          description: "Advance",
-          docNo: t.bill_no || t.billno || "-",
-          amount: -Math.abs(t.bill_amount || t.billamount || 0),
-          taxes: "",
-          advance: Math.abs(t.bill_amount || t.billamount || 0).toFixed(2)
-        }))
+      ? (outStanding || [])
+          .filter((t) => allpartyid.includes(t.party_id))
+          .map((t) => ({
+            date: formatDate(t.bill_date || t.billdate || new Date()),
+            description: "Advance",
+            docNo: t.bill_no || t.billno || "-",
+            amount: -Math.abs(t.bill_amount || t.billamount || 0),
+            taxes: "",
+            advance: Math.abs(t.bill_amount || t.billamount || 0).toFixed(2)
+          }))
       : []
 
     const advanceTotal = useAdvances
-      ? (outStanding || []).filter((item)=>doc.customerId?.party_master_id===item?.party_id).reduce(
-          (sum, t) => sum + Number(t.bill_amount || t.billamount || 0),
-          0
-        )
+      ? (outStanding || [])
+          .filter((t) => allpartyid.includes(t.party_id))
+          .reduce(
+            (sum, t) => sum + Number(t.bill_amount || t.billamount || 0),
+            0
+          )
       : 0
 console.log(advanceEntries)
     // Combine charges and compute balances
@@ -1415,8 +1418,10 @@ console.log(advanceEntries)
             <button
               onClick={() => {
                 // For preview confirm, use first bill’s netPay as balanceToPay
-                const first = bills[0]
-                const balanceToPay = first?.payment?.netPay || 0
+
+                let balanceToPay = 0
+                bills.forEach((item) => (balanceToPay += item.payment.netPay))
+                console.log(balanceToPay)
                 const firstDoc = selectedCheckOut[0]
                 navigate("/sUsers/checkInList", {
                   state: {

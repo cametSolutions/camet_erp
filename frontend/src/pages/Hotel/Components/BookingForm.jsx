@@ -27,7 +27,8 @@ function BookingForm({
   isTariffRateChange,
   submitLoader
 }) {
- console.log(editData)
+  console.log(editData)
+  console.log("J")
   const [voucherNumber, setVoucherNumber] = useState("")
   const [selectedParty, setSelectedParty] = useState("")
   const [displayFoodPlan, setDisplayFoodPlan] = useState(false)
@@ -122,9 +123,11 @@ function BookingForm({
     dateOfExpiry: "",
     grcno: ""
   })
-
+console.log(voucherNumber)
+  console.log(formData)
   useEffect(() => {
     if (editData) {
+      console.log(editData)
       setSelectedParty(editData?.customerId)
       setHotelAgent(editData?.agentId)
       setCountry(editData?.country || "")
@@ -133,6 +136,7 @@ function BookingForm({
         ...prev,
         country: editData?.country,
         customerId: editData?.customerId?._id,
+        voucherNumber: editData?.voucherNumber,
         state: editData?.state,
         pinCode: editData?.pinCode,
         detailedAddress: editData?.detailedAddress,
@@ -182,7 +186,7 @@ function BookingForm({
   useEffect(() => {
     if (roomId) setSelectedRoomId(roomId)
   }, [roomId])
-
+  console.log(formData)
   const handleChange = (e) => {
     const { name, value } = e.target
 
@@ -287,6 +291,7 @@ function BookingForm({
         const specificSeries = response.data.series?.find(
           (item) => item.under === "hotel"
         )
+        console.log(specificSeries)
         if (specificSeries) {
           const {
             prefix = "",
@@ -294,8 +299,12 @@ function BookingForm({
             suffix = "",
             width = 3
           } = specificSeries
+          console.log("HHH")
           const paddedNumber = String(currentNumber).padStart(width, "0")
+          console.log(currentNumber)
+          console.log(paddedNumber)
           const specificNumber = `${prefix}${paddedNumber}${suffix}`
+          console.log(specificNumber)
           setFormData((prev) => ({
             ...prev,
             voucherNumber: specificNumber,
@@ -311,9 +320,13 @@ function BookingForm({
       setIsLoading(false)
     }
   }, [cmp_id, isFor, setIsLoading])
-
+console.log(formData)
+console.log(isFor)
+console.log(editData)
   useEffect(() => {
-    if (!editData || isFor === "deliveryNote" || isFor === "sales") {
+    if (!editData ||(isFor === "deliveryNote" || isFor === "sales")) {
+      console.log(isFor)
+      console.log("HHs")
       fetchData()
     }
   }, [fetchData, editData, isFor])
@@ -492,7 +505,7 @@ function BookingForm({
       updatedDate: currentDateDefault
     }))
   }
-console.log(formData)
+  console.log(formData)
   const handleFoodPlanData = (details, room) => {
     console.log(details)
     console.log(room)
@@ -506,7 +519,7 @@ console.log(formData)
       0
     )
     console.log(totalAmount)
-console.log(formData)
+    console.log(formData)
     setFormData((prev) => ({
       ...prev,
       foodPlan: [...filterData, ...details],
@@ -737,7 +750,7 @@ console.log(formData)
     ) {
       if (isSubmittingRef.current) return
       isSubmittingRef.current = true
-console.log("jjj")
+      console.log("jjj")
 
       handleSubmit(payload)
     } else {
@@ -757,7 +770,7 @@ console.log("jjj")
       ...formData,
       selectedRooms: finalSelectedRooms
     }
-
+    console.log("hhhhh")
     handleSubmit(payload, paymentData)
   }
   console.log(formData)

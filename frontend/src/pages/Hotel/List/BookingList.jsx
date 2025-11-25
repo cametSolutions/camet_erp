@@ -95,17 +95,17 @@ function BookingList() {
   // ADD THIS FUNCTION: Calculate total from all checkouts
   const calculateTotalAmount = (checkouts) => {
     if (!checkouts || checkouts.length === 0) return 0
-
+    console.log(checkouts)
     return checkouts.reduce((total, checkout) => {
-      const checkoutTotal = total + Number(checkout?.balanceToPay)
-      console.log(checkoutTotal)
+      console.log(checkout.balanceToPay)
+      const checkouttotal = parseFloat(checkout.balanceToPay) || 0
       // if (checkout.selectedRooms && Array.isArray(checkout.selectedRooms)) {
       //   const checkoutTotal = checkout.selectedRooms.reduce((sum, room) => {
       //     return sum + (parseFloat(room.amountAfterTax) || 0)
       //   }, 0)
       //   return total + checkoutTotal
       // }
-      return checkoutTotal
+      return total + checkouttotal
     }, 0)
   }
   console.log(selectedCheckOut)
@@ -138,6 +138,7 @@ function BookingList() {
       setSelectedCustomer(location?.state?.selectedCustomer?._id)
       setRestaurantBaseSaleData(location?.state?.kotData)
       setCheckoutMode(location?.state?.checkoutmode)
+      console.log(location.state.balanceToPay)
       setcheckinids(location?.state?.cheinids)
       // CHANGED: Calculate total from all checkouts' selectedRooms
       const totalAmount = calculateTotalAmount(
@@ -146,21 +147,22 @@ function BookingList() {
 
       setSelectedDataForPayment((prevData) => ({
         ...prevData,
-        total: totalAmount
+        total: location?.state?.balanceToPay
       }))
       setShowPaymentModal(true)
     }
   }, [location?.state?.selectedCheckOut])
   // ADD THIS: Update total whenever selectedCheckOut changes
-  useEffect(() => {
-    if (selectedCheckOut && selectedCheckOut.length > 0) {
-      const totalAmount = calculateTotalAmount(selectedCheckOut)
-      setSelectedDataForPayment((prevData) => ({
-        ...prevData,
-        total: totalAmount
-      }))
-    }
-  }, [selectedCheckOut])
+//   useEffect(() => {
+//     if (selectedCheckOut && selectedCheckOut.length > 0) {
+// console.log("H")
+//       const totalAmount = calculateTotalAmount(selectedCheckOut)
+//       setSelectedDataForPayment((prevData) => ({
+//         ...prevData,
+//         total: totalAmount
+//       }))
+//     }
+//   }, [selectedCheckOut])
 
   const searchData = (data) => {
     if (searchTimeoutRef.current) {
@@ -242,6 +244,7 @@ function BookingList() {
 
   const fetchBookings = useCallback(
     async (pageNumber = 1, searchTerm = "") => {
+      console.log("h")
       if (isLoading) return
 
       setIsLoading(true)
@@ -266,6 +269,7 @@ function BookingList() {
         } else if (location.pathname == "/sUsers/bookingList") {
           params.append("modal", "booking")
         } else {
+          console.log("h")
           params.append("modal", "checkOut")
         }
         const res = await api.get(
@@ -341,6 +345,7 @@ function BookingList() {
 
     setSelectedCustomer(selectcustomer)
   }
+  console.log(selectedCheckOut)
   const handleCancelBooking = async (id, voucherNumber) => {
     const confirmation = await Swal.fire({
       title: "Cancel Booking?",
@@ -499,7 +504,7 @@ function BookingList() {
       setPaymentError("")
     }
   }
-
+  console.log("h")
   const handleSavePayment = async () => {
     console.log("h")
     console.log(selectedCheckOut)
@@ -644,28 +649,34 @@ console.log(selectedCheckOut.length)
   }
   console.log()
   const handleEnhancedCheckoutConfirm = async (roomAssignments) => {
+    console.log(roomAssignments)
     setShowEnhancedCheckoutModal(false)
     let checkDateChanged = selectedCheckOut.filter(
       (item) => item?.checkOutDate !== new Date().toISOString().split("T")[0]
     )
 
     if (checkDateChanged?.length > 0) {
+      console.log("KK")
       setProcessedCheckoutData(roomAssignments)
       setShowCheckOutDateModal(true)
     } else {
+      console.log("K")
       proceedToCheckout(roomAssignments)
     }
   }
+  console.log(bookings)
   const proceedToCheckout = (roomAssignments) => {
     setSaveLoader(true)
     const hasPrint1 = configurations[0]?.defaultPrint?.print1
-
+    console.log(roomAssignments)
     let checkoutData
     let checkinids = null
     if (checkoutMode === "multiple") {
+      console.log("hhh")
       checkoutData = roomAssignments.flatMap((group) => {
         return group.checkIns.map((checkIn) => {
           const originalCheckIn = checkIn.originalCheckIn
+          const id = checkIn?.checkInId
           const roomsToCheckout = originalCheckIn.selectedRooms.filter((room) =>
             checkIn.rooms.some((r) => r.roomId === room._id)
           )
@@ -674,7 +685,9 @@ console.log(selectedCheckOut.length)
             roomsToCheckout.length < originalCheckIn.selectedRooms.length
           return {
             ...originalCheckIn,
+            partyArray: checkIn.originalCheckIn.customerId.party_master_id,
             customerId: group.customer,
+            allCheckInIds: [id],
             selectedRooms: roomsToCheckout,
             isPartialCheckout: isPartialCheckout,
             originalCheckInId: checkIn.checkInId,
@@ -685,7 +698,10 @@ console.log(selectedCheckOut.length)
           }
         })
       })
+      console.log("Hh")
     } else if (checkoutMode === "single") {
+      console.log(roomAssignments)
+      console.log(roomAssignments.length)
       let allCheckouts = roomAssignments.flatMap((group) => {
         return group.checkIns.map((checkIn) => {
           const originalCheckIn = checkIn.originalCheckIn
@@ -701,7 +717,9 @@ console.log(selectedCheckOut.length)
 
           return {
             ...originalCheckIn,
+            partyId: checkIn.originalCheckIn.customerId.party_master_id,
             customerId: group.customer,
+
             selectedRooms: roomsToCheckout,
             isPartialCheckout,
             originalCheckInId: checkIn.checkInId,
@@ -713,18 +731,24 @@ console.log(selectedCheckOut.length)
         })
       })
       checkinids = allCheckouts.map((item) => item._id)
+
       setcheckinids(checkinids)
       // 2️⃣ GROUP BY selectedCustomer (customerId._id)
       const grouped = {}
-
+      console.log(allCheckouts)
       allCheckouts.forEach((item) => {
         const custId = item.customerId?._id
 
         if (!grouped[custId]) {
-          grouped[custId] = { ...item, selectedRooms: [...item.selectedRooms] }
+          grouped[custId] = {
+            ...item,
+            selectedRooms: [...item.selectedRooms],
+            partyArray: [item.partyId]
+          }
         } else {
           // Merge rooms
           grouped[custId].selectedRooms.push(...item.selectedRooms)
+          grouped[custId].partyArray.push(item.partyId)
 
           // If ANY one check-in is partial, mark as partial
           if (item.isPartialCheckout) grouped[custId].isPartialCheckout = true
@@ -736,8 +760,9 @@ console.log(selectedCheckOut.length)
 
       // 3️⃣ Convert grouped object → final array
       checkoutData = Object.values(grouped)
+      checkoutData[0].allCheckInIds = checkinids
     }
-
+    console.log(checkoutData)
     ////
 
     /////
@@ -1258,7 +1283,13 @@ console.log(selectedCheckOut.length)
           }
         })
       }))
-
+      console.log(processedCheckoutData)
+      console.log(processedCheckoutData.length)
+      console.log(checkouts)
+      console.log(checkouts.length)
+      console.log("hhhh")
+      console.log(updatedCheckoutData)
+      console.log(updatedCheckoutData.length)
       proceedToCheckout(updatedCheckoutData)
       setProcessedCheckoutData(null)
     } else {
