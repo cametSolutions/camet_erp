@@ -654,12 +654,14 @@ export const getRooms = async (req, res) => {
       status: { $ne: "checkIn" },
       checkOutDate: { $lte: checkOutDate }, // Only consider checkOutDate
     });
-    console.log("overlappingbookings", overlappingBookings)
+    console.log("overlappingbookings", overlappingBookings);
+
     const AllCheckIns = await CheckIn.find({
       cmp_id: req.params.cmp_id,
       status: { $ne: "checkOut" },
     }).select("selectedRooms checkOutDate arrivalDate roomDetails");
-    console.log("allchekins", AllCheckIns)
+
+
     const overlappingCheckIns = AllCheckIns.filter((c) => {
       const co = new Date(c.checkOutDate);
       co.setDate(co.getDate() + 1); // add 1 day
@@ -677,7 +679,6 @@ export const getRooms = async (req, res) => {
     //   checkOutDate: { $lt: endDate },
     //    status: { $nin: ["CheckOut"] },
     // }).select("roomDetails");
-
 
     // Collect all occupied room IDs
     const occupiedRoomId = new Set();
@@ -726,7 +727,7 @@ export const getRooms = async (req, res) => {
       status: "vacant",
       checkedAt: now,
     }));
-    console.log("roomswithstatus", roomsWithStatus.length)
+
     // Send response
     const sendRoomResponseData = sendRoomResponse(
       res,
@@ -920,7 +921,7 @@ export const roomBooking = async (req, res) => {
       selectedModal = Booking;
       voucherType = "saleOrder";
     } else if (isFor === "checkIn") {
-      console.log("enter")
+      console.log("enter");
       if (bookingData?.bookingId) {
         const updateBookingData = await Booking.findByIdAndUpdate(
           bookingData.bookingId,
@@ -929,7 +930,7 @@ export const roomBooking = async (req, res) => {
         ).session(session);
 
         if (!updateBookingData) {
-          console.log("notfound")
+          console.log("notfound");
           return res.status(400).json({
             success: false,
             message: "Booking not found",
@@ -973,8 +974,7 @@ export const roomBooking = async (req, res) => {
       bookingData.voucherNumber = bookingNumber?.voucherNumber;
       bookingData.voucherId = series_id;
       // 🔹 Save Booking
-      console.log("modaaaaaaaa", selectedModal)
-      console.log("bookindata", bookingData)
+
       const newBooking = new selectedModal({
         cmp_id: orgId,
         Primary_user_id: req.pUserId || req.owner,
@@ -1044,7 +1044,7 @@ export const roomBooking = async (req, res) => {
             .findOne({ _id: bookingData?.customerId })
             .populate("accountGroup")
             .session(session);
-          console.log("selectedpartyinroombookingcontroller", selectedParty)
+          console.log("selectedpartyinroombookingcontroller", selectedParty);
 
           if (selectedParty) {
             selectedParty = selectedParty.toObject();
@@ -1099,21 +1099,21 @@ export const roomBooking = async (req, res) => {
             session
           );
 
-          const method = paymentData.payments[0]?.method;
-          const selectedBankOrCashParty = await partyModel
-            .findOne({ _id: paymentData.payments[0]?.accountId })
-            .session(session);
+          const singlePaymentDetails = paymentData.payments[0];
+
+          const method = singlePaymentDetails?.method;
+          const selectedBankOrCashParty = singlePaymentDetails?.accountId;
 
           const paymentDetails =
             method === "cash"
               ? {
-                cash_ledname: bookingData?.customerName,
-                cash_name: bookingData?.customerName,
-              }
+                  cash_ledname: singlePaymentDetails?.accountName,
+                  cash_name: singlePaymentDetails?.accountName,
+                }
               : {
-                bank_ledname: bookingData?.customerName,
-                bank_name: bookingData?.customerName,
-              };
+                  bank_ledname: singlePaymentDetails?.accountName,
+                  bank_name: singlePaymentDetails?.accountName,
+                };
 
           await buildReceipt(
             receiptVoucher,
@@ -1155,9 +1155,7 @@ export const roomBooking = async (req, res) => {
               session
             );
 
-            const selectedBankOrCashParty = await partyModel
-              .findOne({ _id: payment.accountId })
-              .session(session);
+            const selectedBankOrCashParty = payment?.accountId;
 
             await saveSettlementDataHotel(
               selectedParty,
@@ -1166,7 +1164,7 @@ export const roomBooking = async (req, res) => {
               selectedModal.modelName,
               newBooking.voucherNumber,
               newBooking?._id,
-              newBooking.advanceAmount,
+              payment.amount,
               new Date(),
               selectedParty?.partyName,
               selectedBankOrCashParty,
@@ -1178,13 +1176,13 @@ export const roomBooking = async (req, res) => {
             const paymentDetails =
               payment.method === "cash"
                 ? {
-                  cash_ledname: bookingData?.customerName,
-                  cash_name: bookingData?.customerName,
-                }
+                    cash_ledname: payment?.accountName,
+                    cash_name: payment?.accountName,
+                  }
                 : {
-                  bank_ledname: bookingData?.customerName,
-                  bank_name: bookingData?.customerName,
-                };
+                    bank_ledname: payment?.accountName,
+                    bank_name: payment?.accountName,
+                  };
 
             await buildReceipt(
               receiptVoucher,
@@ -1224,7 +1222,6 @@ export const getBookings = async (req, res) => {
   try {
     const params = extractRequestParamsForBookings(req);
     const filter = buildDatabaseFilterForBooking(params);
-
 
     const { bookings, totalBookings } = await fetchBookingsFromDatabase(
       filter,
@@ -1274,23 +1271,225 @@ export const deleteBooking = async (req, res) => {
 // function used to update booking details
 // In hotelController.js, replace the updateBooking function with this fixed version:
 
+// export const updateBooking = async (req, res) => {
+//   const session = await Booking.startSession();
+
+//   try {
+//     const bookingData = req.body?.data;
+//     const modal = req.body?.modal;
+//     const paymentData = req.body?.paymentData;
+//     const bookingId = req.params.id;
+//     const orgId = req.body?.orgId;
+//     const isTariffRateChange = req.body?.isTariffRateChange || false;
+//     const roomIdToEdit = req.body?.roomIdToEdit;
+
+//     // console.log("=== UPDATE BOOKING STARTED ===");
+//     // console.log("isTariffRateChange:", isTariffRateChange);
+//     // console.log("roomIdToEdit:", roomIdToEdit);
+//     // console.log("Incoming selectedRooms count:", bookingData.selectedRooms?.length);
+//     // console.log("Incoming room names:", bookingData.selectedRooms?.map(r => r.roomName));
+
+//     if (!bookingData?.arrivalDate) {
+//       return res.status(400).json({ message: "Missing required fields" });
+//     }
+
+//     // Select correct model
+//     let selectedModal;
+//     if (modal === "checkIn") {
+//       selectedModal = CheckIn;
+//     } else if (modal === "Booking") {
+//       selectedModal = Booking;
+//     } else {
+//       selectedModal = CheckOut;
+//     }
+
+//     let findOne = await selectedModal
+//       .findOne({ _id: bookingId })
+//       .session(session);
+
+//     // console.log("Original DB rooms count:", findOne?.selectedRooms?.length);
+//     // console.log("Original DB room names:", findOne?.selectedRooms?.map(r => r.roomName));
+
+//     // ✅ CRITICAL SAFETY CHECK: Verify room count
+//     let finalSelectedRooms = bookingData.selectedRooms;
+
+//     if (isTariffRateChange && roomIdToEdit) {
+//       const originalRoomCount = findOne?.selectedRooms?.length || 0;
+//       const incomingRoomCount = finalSelectedRooms?.length || 0;
+
+//       console.log(
+//         "Room count check - Original:",
+//         originalRoomCount,
+//         "Incoming:",
+//         incomingRoomCount
+//       );
+
+//       // ⚠️ SAFETY: If room count doesn't match, backend merge as fallback
+//       if (incomingRoomCount !== originalRoomCount) {
+//         console.warn(
+//           "⚠️ Room count mismatch detected! Applying backend safety merge..."
+//         );
+
+//         // Find the edited room in incoming data
+//         const editedRoom = finalSelectedRooms.find((room) => {
+//           const roomId =
+//             room.roomId?._id?.toString() ||
+//             room.roomId?.toString() ||
+//             room._id?.toString();
+//           return roomId === roomIdToEdit.toString();
+//         });
+
+//         if (editedRoom) {
+//           // console.log("Found edited room:", editedRoom.roomName);
+
+//           // Merge: Replace only the edited room, keep all others
+//           finalSelectedRooms = findOne.selectedRooms.map((originalRoom) => {
+//             const originalRoomId =
+//               originalRoom.roomId?._id?.toString() ||
+//               originalRoom.roomId?.toString() ||
+//               originalRoom._id?.toString();
+
+//             if (originalRoomId === roomIdToEdit.toString()) {
+//               console.log(
+//                 "Replacing room:",
+//                 originalRoom.roomName,
+//                 "with updated data"
+//               );
+//               return {
+//                 ...(originalRoom.toObject
+//                   ? originalRoom.toObject()
+//                   : originalRoom),
+//                 ...editedRoom,
+//                 _id: originalRoom._id,
+//                 roomId: originalRoom.roomId,
+//               };
+//             }
+//             return originalRoom.toObject
+//               ? originalRoom.toObject()
+//               : originalRoom;
+//           });
+
+//           // console.log("✅ Backend merge completed. Final room count:", finalSelectedRooms.length);
+//           // console.log("Final room names:", finalSelectedRooms.map(r => r.roomName));
+//         } else {
+//           console.error("❌ Could not find edited room in incoming data!");
+//           throw new Error("Room data integrity check failed");
+//         }
+//       } else {
+//         console.log("✅ Room count matches. Using incoming data.");
+//       }
+//     }
+
+//     // Recalculate totals with final merged rooms
+//     const newRoomTotal = finalSelectedRooms.reduce(
+//       (sum, room) => sum + Number(room.amountAfterTax || room.totalAmount || 0),
+//       0
+//     );
+
+//     bookingData.selectedRooms = finalSelectedRooms;
+//     bookingData.roomTotal = newRoomTotal;
+
+//     // Recalculate grand total
+//     const paxTotal = Number(bookingData.paxTotal || 0);
+//     const foodPlanTotal = Number(bookingData.foodPlanTotal || 0);
+//     const totalBeforeDiscount = newRoomTotal + paxTotal + foodPlanTotal;
+//     const discountAmount = Number(bookingData.discountAmount || 0);
+//     bookingData.grandTotal = totalBeforeDiscount - discountAmount;
+//     bookingData.totalAmount = totalBeforeDiscount;
+
+//     // console.log("Final calculated totals:");
+//     // console.log("  Room Total:", newRoomTotal);
+//     // console.log("  Grand Total:", bookingData.grandTotal);
+//     // console.log("  Final room count:", finalSelectedRooms.length);
+
+//     // Get receipt series
+//     const voucher = await VoucherSeriesModel.findOne({
+//       cmp_id: orgId,
+//       voucherType: "receipt",
+//     }).session(session);
+
+//     const series_idReceipt = voucher?.series
+//       ?.find((s) => s.under === "hotel")
+//       ?._id.toString();
+
+//     const selectedParty = await partyModel
+//       .findOne({ _id: bookingData.customerId })
+//       .session(session);
+
+//     await session.withTransaction(async () => {
+//       // Clean existing receipts & settlements if updating
+//       if (bookingId) {
+//         await deleteReceipt(bookingId, session);
+//         await deleteSettlements(bookingId, session);
+//       }
+
+//       // Handle advance payment logic (existing code remains same)
+//       if (bookingData.advanceAmount && bookingData.advanceAmount > 0) {
+//         // ... existing advance payment logic ...
+//       } else {
+//         await TallyData.deleteOne({ billId: bookingId.toString() });
+//       }
+
+//       // ✅ Update booking with final merged rooms
+//       const updateResult = await selectedModal.findByIdAndUpdate(
+//         bookingId,
+//         { $set: bookingData },
+//         { new: true, session }
+//       );
+
+//       // console.log("✅ Update completed successfully");
+//       // console.log("Saved rooms count:", updateResult?.selectedRooms?.length);
+//       // console.log("Saved room names:", updateResult?.selectedRooms?.map(r => r.roomName));
+
+//       // Final verification
+//       if (isTariffRateChange && roomIdToEdit) {
+//         const savedCount = updateResult?.selectedRooms?.length || 0;
+//         const originalCount = findOne?.selectedRooms?.length || 0;
+
+//         if (savedCount !== originalCount) {
+//           throw new Error(
+//             `Room count mismatch after save! Original: ${originalCount}, Saved: ${savedCount}`
+//           );
+//         }
+//       }
+//     });
+
+//     // console.log("=== UPDATE BOOKING COMPLETED SUCCESSFULLY ===");
+
+//     res.status(200).json({
+//       success: true,
+//       message: isTariffRateChange
+//         ? `Room tariff rate updated successfully. All ${finalSelectedRooms?.length} rooms preserved.`
+//         : "Booking updated successfully",
+//       roomsCount: finalSelectedRooms?.length,
+//     });
+//   } catch (error) {
+//     console.error("❌ Error updating booking:", {
+//       error: error.message,
+//       bookingId: req.params.id,
+//     });
+//     res.status(500).json({
+//       success: false,
+//       message: "Server error: " + error.message,
+//       error: error.message,
+//     });
+//   } finally {
+//     await session.endSession();
+//   }
+// };
+
+
 export const updateBooking = async (req, res) => {
   const session = await Booking.startSession();
 
   try {
     const bookingData = req.body?.data;
-    const modal = req.body?.modal;
+    const modal = req.body?.modal;            // "checkIn" | "Booking" | "checkOut"
     const paymentData = req.body?.paymentData;
     const bookingId = req.params.id;
     const orgId = req.body?.orgId;
     const isTariffRateChange = req.body?.isTariffRateChange || false;
     const roomIdToEdit = req.body?.roomIdToEdit;
-
-    // console.log("=== UPDATE BOOKING STARTED ===");
-    // console.log("isTariffRateChange:", isTariffRateChange);
-    // console.log("roomIdToEdit:", roomIdToEdit);
-    // console.log("Incoming selectedRooms count:", bookingData.selectedRooms?.length);
-    // console.log("Incoming room names:", bookingData.selectedRooms?.map(r => r.roomName));
 
     if (!bookingData?.arrivalDate) {
       return res.status(400).json({ message: "Missing required fields" });
@@ -1306,57 +1505,54 @@ export const updateBooking = async (req, res) => {
       selectedModal = CheckOut;
     }
 
-    let findOne = await selectedModal
+    // Get existing booking/checkIn/checkOut
+    const findOne = await selectedModal
       .findOne({ _id: bookingId })
       .session(session);
 
-    // console.log("Original DB rooms count:", findOne?.selectedRooms?.length);
-    // console.log("Original DB room names:", findOne?.selectedRooms?.map(r => r.roomName));
-
-    // ✅ CRITICAL SAFETY CHECK: Verify room count
+    // -----------------------------
+    // ROOM MERGE + TOTAL RECALC
+    // -----------------------------
     let finalSelectedRooms = bookingData.selectedRooms;
 
     if (isTariffRateChange && roomIdToEdit) {
       const originalRoomCount = findOne?.selectedRooms?.length || 0;
       const incomingRoomCount = finalSelectedRooms?.length || 0;
 
-      console.log("Room count check - Original:", originalRoomCount, "Incoming:", incomingRoomCount);
-
-      // ⚠️ SAFETY: If room count doesn't match, backend merge as fallback
       if (incomingRoomCount !== originalRoomCount) {
-        console.warn("⚠️ Room count mismatch detected! Applying backend safety merge...");
+        console.warn(
+          "⚠️ Room count mismatch detected! Applying backend safety merge..."
+        );
 
-        // Find the edited room in incoming data
-        const editedRoom = finalSelectedRooms.find(room => {
-          const roomId = room.roomId?._id?.toString() ||
+        const editedRoom = finalSelectedRooms.find((room) => {
+          const roomId =
+            room.roomId?._id?.toString() ||
             room.roomId?.toString() ||
             room._id?.toString();
           return roomId === roomIdToEdit.toString();
         });
 
         if (editedRoom) {
-          // console.log("Found edited room:", editedRoom.roomName);
-
-          // Merge: Replace only the edited room, keep all others
-          finalSelectedRooms = findOne.selectedRooms.map(originalRoom => {
-            const originalRoomId = originalRoom.roomId?._id?.toString() ||
+          finalSelectedRooms = findOne.selectedRooms.map((originalRoom) => {
+            const originalRoomId =
+              originalRoom.roomId?._id?.toString() ||
               originalRoom.roomId?.toString() ||
               originalRoom._id?.toString();
 
             if (originalRoomId === roomIdToEdit.toString()) {
-              console.log("Replacing room:", originalRoom.roomName, "with updated data");
               return {
-                ...originalRoom.toObject ? originalRoom.toObject() : originalRoom,
+                ...(originalRoom.toObject
+                  ? originalRoom.toObject()
+                  : originalRoom),
                 ...editedRoom,
                 _id: originalRoom._id,
-                roomId: originalRoom.roomId
+                roomId: originalRoom.roomId,
               };
             }
-            return originalRoom.toObject ? originalRoom.toObject() : originalRoom;
+            return originalRoom.toObject
+              ? originalRoom.toObject()
+              : originalRoom;
           });
-
-          // console.log("✅ Backend merge completed. Final room count:", finalSelectedRooms.length);
-          // console.log("Final room names:", finalSelectedRooms.map(r => r.roomName));
         } else {
           console.error("❌ Could not find edited room in incoming data!");
           throw new Error("Room data integrity check failed");
@@ -1366,7 +1562,7 @@ export const updateBooking = async (req, res) => {
       }
     }
 
-    // Recalculate totals with final merged rooms
+    // Recalculate room / grand totals with finalSelectedRooms
     const newRoomTotal = finalSelectedRooms.reduce(
       (sum, room) => sum + Number(room.amountAfterTax || room.totalAmount || 0),
       0
@@ -1375,7 +1571,6 @@ export const updateBooking = async (req, res) => {
     bookingData.selectedRooms = finalSelectedRooms;
     bookingData.roomTotal = newRoomTotal;
 
-    // Recalculate grand total
     const paxTotal = Number(bookingData.paxTotal || 0);
     const foodPlanTotal = Number(bookingData.foodPlanTotal || 0);
     const totalBeforeDiscount = newRoomTotal + paxTotal + foodPlanTotal;
@@ -1383,12 +1578,9 @@ export const updateBooking = async (req, res) => {
     bookingData.grandTotal = totalBeforeDiscount - discountAmount;
     bookingData.totalAmount = totalBeforeDiscount;
 
-    // console.log("Final calculated totals:");
-    // console.log("  Room Total:", newRoomTotal);
-    // console.log("  Grand Total:", bookingData.grandTotal);
-    // console.log("  Final room count:", finalSelectedRooms.length);
-
-    // Get receipt series
+    // -----------------------------
+    // ADVANCE / RECEIPT CONTEXT
+    // -----------------------------
     const voucher = await VoucherSeriesModel.findOne({
       cmp_id: orgId,
       voucherType: "receipt",
@@ -1398,47 +1590,272 @@ export const updateBooking = async (req, res) => {
       ?.find((s) => s.under === "hotel")
       ?._id.toString();
 
-    const selectedParty = await partyModel
+    // Common party used in multiple places
+    let selectedParty = await partyModel
       .findOne({ _id: bookingData.customerId })
+      .populate("accountGroup")
       .session(session);
 
+    // convert to plain object & flatten accountGroup -> accountGroup_id
+    if (selectedParty) {
+      selectedParty = selectedParty.toObject();
+      if (selectedParty.accountGroup?._id) {
+        selectedParty.accountGroup_id =
+          selectedParty.accountGroup._id.toString();
+      }
+      delete selectedParty.accountGroup;
+    }
+
+    // Helper: build receipt (same pattern as create)
+    const buildReceipt = async (
+      receiptVoucher,
+      serialNumber,
+      paymentDetails,
+      amount,
+      paymentMethod,
+      billData,
+      orgId,
+      series_idReceipt,
+      selectedParty,
+      bookingData,
+      req,
+      session
+    ) => {
+      const receipt = new ReceiptModel({
+        createdAt: new Date(),
+        date: await formatToLocalDate(new Date(), orgId, session),
+        receiptNumber: receiptVoucher?.usedSeriesNumber,
+        series_id: series_idReceipt,
+        usedSeriesNumber: receiptVoucher?.usedSeriesNumber || null,
+        serialNumber,
+        cmp_id: orgId,
+        party: selectedParty,
+        billData,
+        totalBillAmount: bookingData.advanceAmount,
+        enteredAmount: amount,
+        advanceAmount: 0,
+        remainingAmount: 0,
+        paymentMethod,
+        paymentDetails,
+        note: "",
+        Primary_user_id: req.pUserId || req.owner,
+        Secondary_user_id: req.sUserId,
+      });
+
+      return await receipt.save({ session });
+    };
+
+    // -----------------------------
+    // TRANSACTION
+    // -----------------------------
     await session.withTransaction(async () => {
-      // Clean existing receipts & settlements if updating
+      // 1) Delete existing receipts & settlements & advance (TallyData)
       if (bookingId) {
         await deleteReceipt(bookingId, session);
         await deleteSettlements(bookingId, session);
+        await TallyData.deleteMany({ billId: bookingId.toString() }).session(
+          session
+        );
       }
 
-      // Handle advance payment logic (existing code remains same)
+      // 2) Handle advance logic (delete-only vs delete+recreate)
       if (bookingData.advanceAmount && bookingData.advanceAmount > 0) {
-        // ... existing advance payment logic ...
+        // a) Create new TallyData advance object
+        const advanceObject = new TallyData({
+          Primary_user_id: req.pUserId || req.owner,
+          cmp_id: orgId,
+          party_id: bookingData?.customerId,
+          party_name: bookingData?.customerName,
+          mobile_no: bookingData?.mobileNumber,
+          bill_date: new Date(),
+          bill_no: findOne?.voucherNumber || bookingData.voucherNumber,
+          billId: bookingId,
+          bill_amount: bookingData.advanceAmount,
+          bill_pending_amt: 0,
+          accountGroup: bookingData.accountGroup,
+          user_id: req.sUserId,
+          advanceAmount: bookingData.advanceAmount,
+          advanceDate: new Date(),
+          classification: "Cr",
+          source: "hotel",
+          from: selectedModal.modelName,
+        });
+
+        await advanceObject.save({ session });
+
+        // b) Bill data for receipts
+        const billData = [
+          {
+            _id: advanceObject._id,
+            bill_no: findOne?.voucherNumber || bookingData.voucherNumber,
+            billId: bookingId,
+            bill_date: new Date(),
+            bill_pending_amt: 0,
+            source: "hotel",
+            settledAmount: bookingData.advanceAmount,
+            remainingAmount: 0,
+          },
+        ];
+
+        // c) Party for settlement (raw doc for saveSettlementDataHotel, not flattened)
+        const rawParty = await partyModel
+          .findOne({ _id: bookingData.customerId })
+          .session(session);
+
+        // d) Single vs Multiple payment creation (same pattern as create)
+        if (paymentData?.mode === "single") {
+          const singlePaymentDetails = paymentData.payments[0];
+          const method = singlePaymentDetails?.method; // "cash" | "bank" / "online"
+          const selectedBankOrCashParty = singlePaymentDetails?.accountId;
+
+          const receiptVoucher = await generateVoucherNumber(
+            orgId,
+            "receipt",
+            series_idReceipt,
+            session
+          );
+
+          const serialNumber = await getNewSerialNumber(
+            ReceiptModel,
+            "serialNumber",
+            session
+          );
+
+          const paymentDetails =
+            method === "cash"
+              ? {
+                  cash_ledname: singlePaymentDetails?.accountName,
+                  cash_name: singlePaymentDetails?.accountName,
+                }
+              : {
+                  bank_ledname: singlePaymentDetails?.accountName,
+                  bank_name: singlePaymentDetails?.accountName,
+                };
+
+          // Receipt
+          await buildReceipt(
+            receiptVoucher,
+            serialNumber,
+            paymentDetails,
+            bookingData.advanceAmount,
+            method === "cash" ? "Cash" : "Online",
+            billData,
+            orgId,
+            series_idReceipt,
+            selectedParty,
+            bookingData,
+            req,
+            session
+          );
+
+          // Settlement
+          await saveSettlementDataHotel(
+            rawParty,
+            orgId,
+            method === "cash" ? "cash" : "bank",
+            selectedModal.modelName,
+            findOne?.voucherNumber || bookingData.voucherNumber,
+            bookingId,
+            bookingData.advanceAmount,
+            new Date(),
+            rawParty?.partyName,
+            selectedBankOrCashParty,
+            selectedModal.modelName,
+            req,
+            session
+          );
+        } else {
+          // multiple payments
+          for (const payment of paymentData?.payments || []) {
+            const receiptVoucher = await generateVoucherNumber(
+              orgId,
+              "receipt",
+              series_idReceipt,
+              session
+            );
+
+            const serialNumber = await getNewSerialNumber(
+              ReceiptModel,
+              "serialNumber",
+              session
+            );
+
+            const selectedBankOrCashParty = payment?.accountId;
+
+            await saveSettlementDataHotel(
+              rawParty,
+              orgId,
+              payment.method === "cash" ? "cash" : "bank",
+              selectedModal.modelName,
+              findOne?.voucherNumber || bookingData.voucherNumber,
+              bookingId,
+              payment.amount,
+              new Date(),
+              rawParty?.partyName,
+              selectedBankOrCashParty,
+              selectedModal.modelName,
+              req,
+              session
+            );
+
+            const paymentDetails =
+              payment.method === "cash"
+                ? {
+                    cash_ledname: payment?.accountName,
+                    cash_name: payment?.accountName,
+                  }
+                : {
+                    bank_ledname: payment?.accountName,
+                    bank_name: payment?.accountName,
+                  };
+
+            await buildReceipt(
+              receiptVoucher,
+              serialNumber,
+              paymentDetails,
+              payment.amount,
+              payment.method === "cash" ? "Cash" : "Online",
+              billData,
+              orgId,
+              series_idReceipt,
+              selectedParty,
+              bookingData,
+              req,
+              session
+            );
+          }
+        }
       } else {
-        await TallyData.deleteOne({ billId: bookingId.toString() });
+        // No advance now -> ensure old advance records are gone
+        await TallyData.deleteMany({ billId: bookingId.toString() }).session(
+          session
+        );
       }
 
-      // ✅ Update booking with final merged rooms
+      // 3) Finally, update booking/checkIn/checkOut document
       const updateResult = await selectedModal.findByIdAndUpdate(
         bookingId,
         { $set: bookingData },
         { new: true, session }
       );
 
-      // console.log("✅ Update completed successfully");
-      // console.log("Saved rooms count:", updateResult?.selectedRooms?.length);
-      // console.log("Saved room names:", updateResult?.selectedRooms?.map(r => r.roomName));
-
-      // Final verification
       if (isTariffRateChange && roomIdToEdit) {
         const savedCount = updateResult?.selectedRooms?.length || 0;
         const originalCount = findOne?.selectedRooms?.length || 0;
 
         if (savedCount !== originalCount) {
-          throw new Error(`Room count mismatch after save! Original: ${originalCount}, Saved: ${savedCount}`);
+          throw new Error(
+            `Room count mismatch after save! Original: ${originalCount}, Saved: ${savedCount}`
+          );
         }
       }
-    });
 
-    // console.log("=== UPDATE BOOKING COMPLETED SUCCESSFULLY ===");
+      // 4) Optionally update room status if your edit flow needs it:
+      //    (if required, uncomment & adapt)
+      // let status =
+      //   selectedModal.modelName === "CheckIn" ? "checkIn" : "booking";
+      // await updateStatus(bookingData?.selectedRooms, status, session);
+    });
 
     res.status(200).json({
       success: true,
@@ -1461,6 +1878,7 @@ export const updateBooking = async (req, res) => {
     await session.endSession();
   }
 };
+
 // function used to fetch booking advance details
 
 export const fetchAdvanceDetails = async (req, res) => {
@@ -1571,7 +1989,7 @@ export const getAllRoomsWithStatusForDate = async (req, res) => {
       const checkoutPlusOne = co.toISOString().split("T")[0];
       return checkoutPlusOne >= selectedDate;
     });
-    console.log("cheins", checkins)
+    console.log("cheins", checkins);
     // --- Collect booked room IDs
     const bookedRoomIds = new Set();
     for (const booking of bookings) {
@@ -1591,7 +2009,7 @@ export const getAllRoomsWithStatusForDate = async (req, res) => {
         }
       }
     }
-    console.log("occupiedroomids", occupiedRoomIds)
+    console.log("occupiedroomids", occupiedRoomIds);
     // console.log("occupiedroomids", occupiedRoomIds)
     // console.log("bookedroomids", bookedRoomIds)
 
@@ -1842,7 +2260,7 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
         $match: {
           "convertedFrom.id": { $exists: true, $ne: null },
           "convertedFrom.checkInNumber": checkoutData[0].voucherNumber,
-        }
+        },
       },
 
       // ✅ Convert convertedFrom.id (string) → ObjectId
@@ -1852,10 +2270,10 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
             $map: {
               input: "$convertedFrom",
               as: "cf",
-              in: { $toObjectId: "$$cf.id" }
-            }
-          }
-        }
+              in: { $toObjectId: "$$cf.id" },
+            },
+          },
+        },
       },
 
       // ✅ Lookup only roomId from kot
@@ -1867,27 +2285,27 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
             {
               $match: {
                 $expr: {
-                  $in: ["$_id", "$$cfIds"]   // match any id from list
-                }
-              }
+                  $in: ["$_id", "$$cfIds"], // match any id from list
+                },
+              },
             },
             {
               $project: {
                 _id: 0,
-                roomId: 1   // ✅ only roomId
-              }
-            }
+                roomId: 1, // ✅ only roomId
+              },
+            },
           ],
-          as: "kotDetails"
-        }
+          as: "kotDetails",
+        },
       },
 
       // ✅ Flatten
       {
         $unwind: {
           path: "$kotDetails",
-          preserveNullAndEmptyArrays: true
-        }
+          preserveNullAndEmptyArrays: true,
+        },
       },
 
       // ✅ Optional: output only what you need
@@ -1992,14 +2410,12 @@ export const convertCheckOutToSale = async (req, res) => {
         isPostToRoom = false,
         roomAssignments = null,
         checkoutMode,
-        checkinIds
+        checkinIds,
       } = req.body;
-
 
       // console.log("selectedcheckout", selectedCheckOut)
       // console.log("restbasedata", restaurantBaseSaleData)
       // console.log("isposttoroom", isPostToRoom)
-
 
       if (!paymentDetails) throw new Error("Missing payment details");
 
@@ -2007,20 +2423,25 @@ export const convertCheckOutToSale = async (req, res) => {
       const splitDetails = paymentDetails?.splitDetails || [];
 
       const specificVoucherSeries = await hotelVoucherSeries(cmp_id, session);
-    
+
       // Process each checkout separately
-      let results
+      let results;
       for (const item of selectedCheckOut) {
-        results = []
+        results = [];
         const selectedPartyId = item?.customerId?._id || item?.customerId;
-        if (!selectedPartyId) throw new Error("Missing customerId._id in checkout item");
+        if (!selectedPartyId)
+          throw new Error("Missing customerId._id in checkout item");
 
         const itemTotal = (item.selectedRooms || []).reduce(
           (acc, room) => acc + Number(room.amountAfterTax || 0),
           0
         );
 
-        const partyData = await getSelectedParty(selectedPartyId, cmp_id, session);
+        const partyData = await getSelectedParty(
+          selectedPartyId,
+          cmp_id,
+          session
+        );
         const party = mapPartyData(partyData);
 
         // ============ DETERMINE PAYMENT FOR THIS SALE ============
@@ -2034,7 +2455,8 @@ export const convertCheckOutToSale = async (req, res) => {
         if (paymentMode === "single") {
           cashAmt = Number(paymentDetails?.cashAmount || 0);
           onlineAmt = Number(paymentDetails?.onlineAmount || 0);
-          paymentMethod = cashAmt > 0 ? "cash" : onlineAmt > 0 ? "bank" : "unknown";
+          paymentMethod =
+            cashAmt > 0 ? "cash" : onlineAmt > 0 ? "bank" : "unknown";
           paidAmount = cashAmt + onlineAmt;
           pendingAmount = itemTotal - paidAmount;
         } else if (paymentMode === "split") {
@@ -2055,7 +2477,12 @@ export const convertCheckOutToSale = async (req, res) => {
             .filter((s) => s.sourceType === "bank")
             .reduce((sum, s) => sum + Number(s.amount || 0), 0);
 
-          paymentMethod = cashAmt > 0 && onlineAmt > 0 ? "mixed" : cashAmt > 0 ? "cash" : "bank";
+          paymentMethod =
+            cashAmt > 0 && onlineAmt > 0
+              ? "mixed"
+              : cashAmt > 0
+              ? "cash"
+              : "bank";
           pendingAmount = 0;
         } else if (isPostToRoom || paymentMode === "credit") {
           paymentMethod = "credit";
@@ -2080,17 +2507,21 @@ export const convertCheckOutToSale = async (req, res) => {
         const checkInId = item?._id;
         // console.log("checkinidddd", checkInId)
         const roomsBeingCheckedOut = item?.selectedRooms || [];
-        const originalCheckIn = await CheckIn.findById(checkInId).session(session);
-        if (!originalCheckIn) throw new Error(`Check-in ${checkInId} not found`);
+        const originalCheckIn = await CheckIn.findById(checkInId).session(
+          session
+        );
+        if (!originalCheckIn)
+          throw new Error(`Check-in ${checkInId} not found`);
 
         const isThisPartial =
           item.isPartialCheckout ||
-          roomsBeingCheckedOut.length < (originalCheckIn.selectedRooms?.length || 0);
+          roomsBeingCheckedOut.length <
+            (originalCheckIn.selectedRooms?.length || 0);
 
         if (isThisPartial) isAnyPartial = true;
 
-        const roomIdsBeingCheckedOut = roomsBeingCheckedOut.map((r) =>
-          r._id?.toString() || r.toString()
+        const roomIdsBeingCheckedOut = roomsBeingCheckedOut.map(
+          (r) => r._id?.toString() || r.toString()
         );
         const remainingRooms = (originalCheckIn.selectedRooms || []).filter(
           (room) => !roomIdsBeingCheckedOut.includes(room._id.toString())
@@ -2118,7 +2549,10 @@ export const convertCheckOutToSale = async (req, res) => {
               balanceToPay: pendingAmount,
               isPartialCheckout: isThisPartial,
               originalCheckInId: checkInId,
-              checkoutType: checkoutMode === "single" ? "singleCheckout" : "individualCheckout"
+              checkoutType:
+                checkoutMode === "single"
+                  ? "singleCheckout"
+                  : "individualCheckout",
             },
           ],
           { session }
@@ -2167,7 +2601,9 @@ export const convertCheckOutToSale = async (req, res) => {
           for (const split of applicableSplits) {
             const splitAmount = Number(split.amount || 0);
             const splitSourceType = split.sourceType;
-            const splitSource = await Party.findOne({ _id: split.source }).session(session);
+            const splitSource = await Party.findOne({
+              _id: split.source,
+            }).session(session);
 
             await saveSettlement(
               paymentDetails,
@@ -2220,13 +2656,12 @@ export const convertCheckOutToSale = async (req, res) => {
           await updateStatus(roomsBeingCheckedOut, "dirty", session);
         } else {
           if (checkoutMode === "single") {
-            console.log("its a multiple checkin single checkoutmode")
+            console.log("its a multiple checkin single checkoutmode");
             await CheckIn.updateMany(
               { _id: { $in: checkinIds } },
               { $set: { status: "checkOut", checkOutDate: new Date() } },
               { session }
             );
-
           } else {
             await CheckIn.updateOne(
               { _id: checkInId },
@@ -2252,122 +2687,117 @@ export const convertCheckOutToSale = async (req, res) => {
           applicableSplitsCount: applicableSplits.length,
         });
 
-
-
-
-
-
-      }
-
-      /////undo code
-      // ============ CREATE SINGLE SETTLEMENT FOR SINGLE PAYMENT MODE ============
-      if (paymentMode === "single" && !isPostToRoom) {
-        const cashAmt = Number(paymentDetails?.cashAmount || 0);
-        const onlineAmt = Number(paymentDetails?.onlineAmount || 0);
-        const totalPaidAmount = cashAmt + onlineAmt;
-
-        if (totalPaidAmount > 0) {
-          // Determine primary source and type
-          let primarySource;
-          let sourceType;
-
-          if (cashAmt > 0 && onlineAmt > 0) {
-            // Both cash and bank - use cash as primary, mark as "mixed"
-            primarySource = await Party.findOne({
-              _id: paymentDetails?.selectedCash,
-            }).session(session);
-            sourceType = "mixed";
-          } else if (cashAmt > 0) {
-            // Cash only
-            primarySource = await Party.findOne({
-              _id: paymentDetails?.selectedCash,
-            }).session(session);
-            sourceType = "cash";
-          } else {
-            // Bank only
-            primarySource = await Party.findOne({
-              _id: paymentDetails?.selectedBank,
-            }).session(session);
-            sourceType = "bank";
-          }
-
-          // Create ONE settlement for all sales
-          await saveSettlement(
-            paymentDetails,
-            selectedCheckOut[0]?.customerId?._id || selectedCheckOut[0]?.customerId,
-            primarySource,
-            cmp_id,
-            results[0]?.salesRecord, // Use first sale as reference
-            totalPaidAmount, // Total amount (cash + bank)
-            sourceType,
-            req,
-            session
-          );
-        }
-      }
-
-      // ============ CREATE RECEIPTS AFTER ALL SALES ARE CREATED ============
-
-      // For SPLIT mode: Create receipt(s)
-      if (paymentMode === "split") {
-        const totalPaidAmount = splitDetails.reduce(
-          (sum, split) => sum + Number(split.amount || 0),
-          0
-        );
-
-        if (totalPaidAmount > 0) {
-          await createReceiptForSales(
-            cmp_id,
-            paymentDetails,
-            "mixed", // Since split can have both cash and bank
-            item?.customerId?.partyName || "Customer",
-            totalPaidAmount,
-            item?.customerId?._id || selectedCheckOut[0]?.customerId,
-            results[0]?.salesRecord,
-            results[0]?.tallyId,
-            req,
-            restaurantBaseSaleData,
-            session
-          );
-        }
-      }
-
-      // For SINGLE mode: Create ONE receipt for all sales
-      else if (paymentMode === "single") {
-        const totalPaidAmount = Number(paymentDetails?.cashAmount || 0) +
-          Number(paymentDetails?.onlineAmount || 0);
-
-        if (!isPostToRoom && totalPaidAmount > 0) {
+        // ============ CREATE SINGLE SETTLEMENT FOR SINGLE PAYMENT MODE ============
+        if (paymentMode === "single" && !isPostToRoom) {
           const cashAmt = Number(paymentDetails?.cashAmount || 0);
           const onlineAmt = Number(paymentDetails?.onlineAmount || 0);
-          const paymentMethod = cashAmt > 0 && onlineAmt > 0
-            ? "mixed"
-            : cashAmt > 0
-              ? "cash"
-              : "bank";
+          const totalPaidAmount = cashAmt + onlineAmt;
 
-          const agId = results[0]?.salesRecord?.party?.accountGroup_id;
+          if (totalPaidAmount > 0) {
+            // Determine primary source and type
+            let primarySource;
+            let sourceType;
 
-          // console.log(JSON.stringify(results, null, 2));
+            if (cashAmt > 0 && onlineAmt > 0) {
+              // Both cash and bank - use cash as primary, mark as "mixed"
+              primarySource = await Party.findOne({
+                _id: paymentDetails?.selectedCash,
+              }).session(session);
+              sourceType = "mixed";
+            } else if (cashAmt > 0) {
+              // Cash only
+              primarySource = await Party.findOne({
+                _id: paymentDetails?.selectedCash,
+              }).session(session);
+              sourceType = "cash";
+            } else {
+              // Bank only
+              primarySource = await Party.findOne({
+                _id: paymentDetails?.selectedBank,
+              }).session(session);
+              sourceType = "bank";
+            }
 
-          // console.log("dddddddddddddddddddddddddddd", results[0]?.salesRecord?.party?.accountGroup_id)
-          await createReceiptForSales(
-            cmp_id,
-            paymentDetails,
-            paymentMethod,
-            selectedCheckOut[0]?.customerId?.partyName || "Customer",
-            totalPaidAmount,
-            selectedCheckOut[0]?.customerId?._id || selectedCheckOut[0]?.customerId,
-            results[0]?.salesRecord,
-            agId,
-            req,
-            restaurantBaseSaleData,
-            session
+            // Create ONE settlement for all sales
+            await saveSettlement(
+              paymentDetails,
+              selectedCheckOut[0]?.customerId?._id ||
+                selectedCheckOut[0]?.customerId,
+              primarySource,
+              cmp_id,
+              results[0]?.salesRecord, // Use first sale as reference
+              totalPaidAmount, // Total amount (cash + bank)
+              sourceType,
+              req,
+              session
+            );
+          }
+        }
+
+        // ============ CREATE RECEIPTS AFTER ALL SALES ARE CREATED ============
+
+        // For SPLIT mode: Create receipt(s)
+        if (paymentMode === "split") {
+          const totalPaidAmount = splitDetails.reduce(
+            (sum, split) => sum + Number(split.amount || 0),
+            0
           );
+
+          if (totalPaidAmount > 0) {
+            await createReceiptForSales(
+              cmp_id,
+              paymentDetails,
+              "mixed", // Since split can have both cash and bank
+              item?.customerId?.partyName || "Customer",
+              totalPaidAmount,
+              item?.customerId?._id || selectedCheckOut[0]?.customerId,
+              results[0]?.salesRecord,
+              results[0]?.tallyId,
+              req,
+              restaurantBaseSaleData,
+              session
+            );
+          }
+        }
+
+        // For SINGLE mode: Create ONE receipt for all sales
+        else if (paymentMode === "single") {
+          const totalPaidAmount =
+            Number(paymentDetails?.cashAmount || 0) +
+            Number(paymentDetails?.onlineAmount || 0);
+
+          if (!isPostToRoom && totalPaidAmount > 0) {
+            const cashAmt = Number(paymentDetails?.cashAmount || 0);
+            const onlineAmt = Number(paymentDetails?.onlineAmount || 0);
+            const paymentMethod =
+              cashAmt > 0 && onlineAmt > 0
+                ? "mixed"
+                : cashAmt > 0
+                ? "cash"
+                : "bank";
+
+            const agId = results[0]?.salesRecord?.party?.accountGroup_id;
+
+            // console.log(JSON.stringify(results, null, 2));
+
+            // console.log("dddddddddddddddddddddddddddd", results[0]?.salesRecord?.party?.accountGroup_id)
+            await createReceiptForSales(
+              cmp_id,
+              paymentDetails,
+              paymentMethod,
+              selectedCheckOut[0]?.customerId?.partyName || "Customer",
+              totalPaidAmount,
+              selectedCheckOut[0]?.customerId?._id ||
+                selectedCheckOut[0]?.customerId,
+              results[0]?.salesRecord,
+              agId,
+              req,
+              restaurantBaseSaleData,
+              session
+            );
+          }
         }
       }
-
-
 
       req._multiCheckoutResults = results;
       req._isAnyPartial = isAnyPartial;
@@ -2393,7 +2823,12 @@ export const convertCheckOutToSale = async (req, res) => {
   }
 };
 
-function createPaymentSplittingArray(paymentDetails, cashAmt, onlineAmt, applicableSplits = []) {
+function createPaymentSplittingArray(
+  paymentDetails,
+  cashAmt,
+  onlineAmt,
+  applicableSplits = []
+) {
   const arr = [];
   const paymentMode = paymentDetails?.paymentMode;
 
@@ -2426,7 +2861,6 @@ function createPaymentSplittingArray(paymentDetails, cashAmt, onlineAmt, applica
 
   return arr;
 }
-
 
 function mapPartyData(selectedParty) {
   return {
@@ -2468,7 +2902,6 @@ async function createSalesVoucher(
 ) {
   let items = selectedCheckOut.flatMap((item) => item.selectedRooms);
 
-
   // const amount = selectedCheckOut.reduce((total, item) => {
   //   const itemTotal = item.selectedRooms.reduce(
   //     (acc, room) => acc + room.amountAfterTax,
@@ -2477,21 +2910,12 @@ async function createSalesVoucher(
   //   return total + itemTotal;
   // }, 0);
 
-
-
-
-
-
-
   let convertedFrom = selectedCheckOut.map((item) => {
     return {
       voucherNumber: item.voucherNumber,
       checkInNumber: item.voucherNumber,
     };
   });
-
-
-
 
   return await salesModel.create(
     [
@@ -2532,7 +2956,9 @@ async function createTallyEntry(
   amount,
   session
 ) {
-  const selectedOne = await Party.findOne({ _id: selectedParty }).session(session);
+  const selectedOne = await Party.findOne({ _id: selectedParty }).session(
+    session
+  );
   // console.log("selectedone", selectedOne)
 
   // console.log("selectedOne",    {
@@ -2553,9 +2979,6 @@ async function createTallyEntry(
   //       classification: "Dr",
   //       source: "sales",
   //     },);
-
-
-
 
   return await TallyData.create(
     [
@@ -2581,7 +3004,6 @@ async function createTallyEntry(
     { session }
   );
 }
-
 
 async function saveSettlement(
   paymentDetails,
@@ -2978,44 +3400,60 @@ export const getHotelSalesDetails = async (req, res) => {
             $cond: [
               {
                 $and: [
-                  { $ne: [{ $arrayElemAt: ["$convertedFrom.checkInNumber", 0] }, null] },
-                  { $ne: [{ $arrayElemAt: ["$convertedFrom.checkInNumber", 0] }, ""] }
-                ]
+                  {
+                    $ne: [
+                      { $arrayElemAt: ["$convertedFrom.checkInNumber", 0] },
+                      null,
+                    ],
+                  },
+                  {
+                    $ne: [
+                      { $arrayElemAt: ["$convertedFrom.checkInNumber", 0] },
+                      "",
+                    ],
+                  },
+                ],
               },
               "Room Service",
               {
                 $cond: [
                   {
                     $and: [
-                      { $ne: [{ $arrayElemAt: ["$convertedFrom.tableNumber", 0] }, null] },
-                      { $ne: [{ $arrayElemAt: ["$convertedFrom.tableNumber", 0] }, ""] }
-                    ]
+                      {
+                        $ne: [
+                          { $arrayElemAt: ["$convertedFrom.tableNumber", 0] },
+                          null,
+                        ],
+                      },
+                      {
+                        $ne: [
+                          { $arrayElemAt: ["$convertedFrom.tableNumber", 0] },
+                          "",
+                        ],
+                      },
+                    ],
                   },
                   "Dine In",
                   {
                     $cond: [
                       {
-                        $and: [
-                          { $eq: ["$isTakeaway", true] }
-                        ]
+                        $and: [{ $eq: ["$isTakeaway", true] }],
                       },
                       "Takeaway",
                       {
                         $cond: [
                           {
-                            $and: [
-                              { $eq: ["$isDelivery", true] }
-                            ]
+                            $and: [{ $eq: ["$isDelivery", true] }],
                           },
                           "Home Delivery",
-                          "Unknown"
-                        ]
-                      }
-                    ]
-                  }
-                ]
-              }
-            ]
+                          "Unknown",
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
           },
 
           mealPeriod: {
@@ -3075,7 +3513,9 @@ export const getHotelSalesDetails = async (req, res) => {
                       $ne: [
                         {
                           $ifNull: [
-                            { $arrayElemAt: ["$convertedFrom.checkInNumber", 0] },
+                            {
+                              $arrayElemAt: ["$convertedFrom.checkInNumber", 0],
+                            },
                             "",
                           ],
                         },
@@ -3104,9 +3544,9 @@ export const getHotelSalesDetails = async (req, res) => {
                   $cond: [
                     { $gt: [{ $size: "$kotDetails" }, 0] },
                     { $arrayElemAt: ["$kotDetails.type", 0] },
-                    null
-                  ]
-                }
+                    null,
+                  ],
+                },
               },
               in: {
                 $switch: {
@@ -3116,10 +3556,10 @@ export const getHotelSalesDetails = async (req, res) => {
                       case: {
                         $and: [
                           "$$hasCheckIn",
-                          { $eq: ["$$kotType", "Room Service"] }
-                        ]
+                          { $eq: ["$$kotType", "Room Service"] },
+                        ],
                       },
-                      then: "Restaurant"
+                      then: "Restaurant",
                     },
                     // ✅ Rule 2: Has checkInNumber + KOT type is NOT "Room Service" → Hotel
                     {
@@ -3127,45 +3567,41 @@ export const getHotelSalesDetails = async (req, res) => {
                         $and: [
                           "$$hasCheckIn",
                           { $ne: ["$$kotType", "Room Service"] },
-                          { $ne: ["$$kotType", null] }
-                        ]
+                          { $ne: ["$$kotType", null] },
+                        ],
                       },
-                      then: "Hotel"
+                      then: "Hotel",
                     },
                     // ✅ Rule 3: Has checkInNumber but no KOT (direct checkout) → Hotel
                     {
                       case: {
-                        $and: [
-                          "$$hasCheckIn",
-                          { $eq: ["$$kotType", null] }
-                        ]
+                        $and: ["$$hasCheckIn", { $eq: ["$$kotType", null] }],
                       },
-                      then: "Hotel"
+                      then: "Hotel",
                     },
                     // ✅ Rule 4: Has tableNumber → Restaurant
                     {
                       case: "$$hasTable",
-                      then: "Restaurant"
+                      then: "Restaurant",
                     },
                     // ✅ Rule 5: Takeaway → Restaurant
                     {
                       case: { $eq: ["$isTakeaway", true] },
-                      then: "Restaurant"
+                      then: "Restaurant",
                     },
                     // ✅ Rule 6: Delivery → Restaurant
                     {
                       case: { $eq: ["$isDelivery", true] },
-                      then: "Restaurant"
-                    }
+                      then: "Restaurant",
+                    },
                   ],
-                  default: "Restaurant"
-                }
-              }
-            }
+                  default: "Restaurant",
+                },
+              },
+            },
           },
         },
       },
-
 
       // // Optional filter by classification
       {
@@ -3173,10 +3609,10 @@ export const getHotelSalesDetails = async (req, res) => {
           businessType === "all"
             ? {}
             : businessType === "hotel"
-              ? { businessClassification: "Hotel" }
-              : businessType === "restaurant"
-                ? { businessClassification: "Restaurant" }
-                : { businessClassification: { $in: ["Hotel", "Restaurant"] } },
+            ? { businessClassification: "Hotel" }
+            : businessType === "restaurant"
+            ? { businessClassification: "Restaurant" }
+            : { businessClassification: { $in: ["Hotel", "Restaurant"] } },
       },
 
       // Final projection
@@ -3288,7 +3724,6 @@ export const getHotelSalesDetails = async (req, res) => {
           sale.partyAccount !== "Gpay" &&
           sale.partyAccount !== "Bank");
 
-
       if (
         sale.paymentSplittingData &&
         Array.isArray(sale.paymentSplittingData)
@@ -3367,7 +3802,6 @@ export const getHotelSalesDetails = async (req, res) => {
       }
 
       // Get party name from either nested party object or partyDetails
-
 
       const finalAmount = Number(sale.finalAmount) || 0;
       const subTotal = Number(sale.subTotal) || finalAmount;
@@ -3549,12 +3983,12 @@ export const getHotelSalesDetails = async (req, res) => {
             percentage:
               totalSales > 0
                 ? (summary.mealPeriodBreakdown[period].amount / totalSales) *
-                100
+                  100
                 : 0,
             averageTicket:
               summary.mealPeriodBreakdown[period].count > 0
                 ? summary.mealPeriodBreakdown[period].amount /
-                summary.mealPeriodBreakdown[period].count
+                  summary.mealPeriodBreakdown[period].count
                 : 0,
           };
           return acc;
@@ -3568,9 +4002,9 @@ export const getHotelSalesDetails = async (req, res) => {
         averageItemsPerTransaction:
           totalTransactions > 0
             ? transformedData.reduce(
-              (sum, order) => sum + (order.itemCount || 0),
-              0
-            ) / totalTransactions
+                (sum, order) => sum + (order.itemCount || 0),
+                0
+              ) / totalTransactions
             : 0,
       },
       serviceMetrics: {
@@ -3625,8 +4059,9 @@ export const getHotelSalesDetails = async (req, res) => {
         },
         serviceBreakdown: summary.serviceBreakdown,
         mealPeriodSummary: summary.mealPeriodBreakdown,
-        message: `Found ${transformedData.length} ${businessType === "all" ? "combined" : businessType
-          } sales records`,
+        message: `Found ${transformedData.length} ${
+          businessType === "all" ? "combined" : businessType
+        } sales records`,
       },
     });
   } catch (error) {
@@ -3641,7 +4076,6 @@ export const getHotelSalesDetails = async (req, res) => {
     });
   }
 };
-
 
 export const getRoomCheckInDetails = async (req, res) => {
   try {
@@ -3674,8 +4108,8 @@ export const getRoomCheckInDetails = async (req, res) => {
           { path: "roomType" },
           { path: "bedType" },
           { path: "roomFloor" },
-          { path: "priceLevel.priceLevel" }
-        ]
+          { path: "priceLevel.priceLevel" },
+        ],
       })
       .populate("customerId") // Populate customer details
       .lean();
@@ -3730,34 +4164,34 @@ export const cancelBooking = async (req, res) => {
     if (!booking) {
       return res.status(404).json({
         success: false,
-        message: 'Booking not found'
+        message: "Booking not found",
       });
     }
 
     // Check if booking can be cancelled
-    if (booking.status === 'checkIn') {
+    if (booking.status === "checkIn") {
       return res.status(400).json({
         success: false,
-        message: 'Cannot cancel a booking that has already been checked in'
+        message: "Cannot cancel a booking that has already been checked in",
       });
     }
 
-    if (booking.status === 'checkOut') {
+    if (booking.status === "checkOut") {
       return res.status(400).json({
         success: false,
-        message: 'Cannot cancel a completed booking'
+        message: "Cannot cancel a completed booking",
       });
     }
 
-    if (booking.status === 'cancelled') {
+    if (booking.status === "cancelled") {
       return res.status(400).json({
         success: false,
-        message: 'This booking is already cancelled'
+        message: "This booking is already cancelled",
       });
     }
 
     // Update the booking status to cancelled
-    booking.status = 'cancelled';
+    booking.status = "cancelled";
     booking.cancelledAt = new Date();
     await booking.save();
 
@@ -3770,15 +4204,14 @@ export const cancelBooking = async (req, res) => {
     res.status(200).json({
       success: true,
       message: `Booking ${booking.voucherNumber} has been cancelled successfully`,
-      data: booking
+      data: booking,
     });
-
   } catch (error) {
-    console.error('Error cancelling booking:', error);
+    console.error("Error cancelling booking:", error);
     res.status(500).json({
       success: false,
-      message: 'Failed to cancel booking',
-      error: error.message
+      message: "Failed to cancel booking",
+      error: error.message,
     });
   }
 };
