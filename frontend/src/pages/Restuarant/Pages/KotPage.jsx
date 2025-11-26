@@ -530,7 +530,7 @@ const handleKotCancel = async () => {
       } else {
         if (
           Number(cashAmount) + Number(onlineAmount) !==
-          selectedDataForPayment?.total
+        Number(selectedDataForPayment?.total)
         ) {
           setPaymentError(
             "Cash and online amounts together equal the total amount."
