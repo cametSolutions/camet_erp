@@ -329,7 +329,7 @@ const groupedRoomCharges = (() => {
     // Add SGST row for room rent (SGST comes before CGST in image)
     if (roomSGST > 0) {
       charges.push({
-        date: formatDate(new Date()),
+        date: formatDate(doc.arrivalDate),
         description: `SGST on Rent@${halfRoomTaxPercentage}%`, // Dynamic percentage
         docNo: "-",
         amount: 0,
@@ -342,7 +342,7 @@ const groupedRoomCharges = (() => {
     // Add CGST row for room rent
     if (roomCGST > 0) {
       charges.push({
-        date: formatDate(new Date()),
+        date: formatDate(doc.arrivalDate),
         description: `CGST on Rent@${halfRoomTaxPercentage}%`, // Dynamic percentage
         docNo: "-",
         amount: 0,
@@ -417,7 +417,7 @@ const groupedRoomCharges = (() => {
     
     if (totalAdditionalPaxWithoutTax > 0) {
       charges.push({
-        date: formatDate(new Date()),
+        date:formatDate(doc.arrivalDate),
         description: `Extra Person`,
         docNo: "-",
         amount: totalAdditionalPaxWithoutTax,
@@ -453,7 +453,7 @@ const groupedRoomCharges = (() => {
       const paxCGST = roomAdditionalPaxTax / 2;
 
       charges.push({
-        date: formatDate(new Date()),
+        date: formatDate(doc.arrivalDate),
         description: `CGST on Extra Person@${halfAdditionalPaxTaxPercentage.toFixed(1)}%`,
         docNo: "-",
         amount: 0,
@@ -463,7 +463,7 @@ const groupedRoomCharges = (() => {
       })
 
       charges.push({
-        date: formatDate(new Date()),
+        date: formatDate(doc.arrivalDate),
         description: `SGST on Extra Person@${halfAdditionalPaxTaxPercentage.toFixed(1)}%`,
         docNo: "-",
         amount: 0,

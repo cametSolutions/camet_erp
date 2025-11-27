@@ -583,13 +583,19 @@ const handleKotCancel = async () => {
       const tableNumbers = new Set();
       
       completedKots.forEach(kot => {
-        if (kot.tableNumber) {
-          tableNumbers.add(kot.tableNumber);
+          const kotOrder = orders.find(order => order._id === kot.id);
+        if (kotOrder?.tableNumber && kotOrder?.type === 'dine-in') {
+          tableNumbers.add(kotOrder.tableNumber);
         }
       });
 
       // For each table, check if all its KOTs are now completed
       for (const tableNumber of tableNumbers) {
+
+        if (!tableNumber) {
+          console.log('Skipping undefined/null tableNumber');
+          continue; // Skip if tableNumber is undefined/null
+        }
         const tableKots = orders.filter(order => 
           order.tableNumber === tableNumber && 
           order.type === 'dine-in'
@@ -602,12 +608,12 @@ const handleKotCancel = async () => {
 
         if (allCompleted) {
           try {
-            await api.put(
+              const tableUpdateResponse = await api.put(
               `/api/sUsers/updateTableStatus/${cmp_id}/${tableNumber}`,
               { status: "available" },
               { withCredentials: true }
             );
-            console.log(`Table ${tableNumber} status updated to available`);
+ console.log(`Table ${tableNumber} status updated successfully:`, tableUpdateResponse.data);
           } catch (tableError) {
             console.error(`Error updating table ${tableNumber} status:`, tableError);
           }

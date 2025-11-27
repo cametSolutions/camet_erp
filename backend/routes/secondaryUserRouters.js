@@ -365,7 +365,7 @@ router.get('/getTable/:cmp_id',authSecondary, getTables);
 router.delete('/deleteTable/:id', authSecondary,deleteTable);
 router.get("/getSalePrintData/:cmp_id/:saleId",authSecondary,secondaryIsBlocked,getSalePrintData)
 router.get("/getSalePrintData/:cmp_id/:kotId",authSecondary,secondaryIsBlocked,getSalePrintData)
-router.put('/updateTableStatus/:cmp_id:tableNumber',authSecondary,updateTableStatus )
+router.put('/updateTableStatus/:cmp_id/:tableNumber',authSecondary,updateTableStatus )
 router.get('/getKotDataByTable/:cmp_id',authSecondary,getKotDataByTable )
 router.get('/getDateBasedRoomsWithStatus/:cmp_id',authSecondary,getDateBasedRoomsWithStatus)
 router.put('/checkOutWithArray/:cmp_id',authSecondary,checkoutWithArrayOfData)
