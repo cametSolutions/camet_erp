@@ -79,7 +79,7 @@ const drawSingleBill = async (doc, billData, pageNo, totalPages) => {
     [`Phone: ${billData?.guest?.phone || ""}`, `Tariff: ${billData?.stay?.tariff || ""}`, `No. of Days: ${billData?.stay?.days || ""}`],
     [`Travel Agent: ${billData?.guest?.travelAgent || ""}`, "", ""],
     [`GST No: ${billData?.guest?.gstNo || ""}`, "", ""],
-    [`Company: ${billData?.hotel?.name || ""}`, "", ""],
+    // [`Company: ${billData?.hotel?.name || ""}`, "", ""],
     [`Room No: ${billData?.guest?.roomNo || ""}`, "", ""],
   ];
   const INNER_CELL_MARGIN = 3;
