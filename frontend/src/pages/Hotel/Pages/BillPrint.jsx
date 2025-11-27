@@ -304,9 +304,12 @@ const groupedRoomCharges = (() => {
     roomDays.forEach((item, index) => {
       charges.push({
         date: item.date,
-        description: `Room Rent :${item.roomName}`, // Changed format
+     description: item.description?.includes('Half Day') || item.description?.includes('Half Tariff')
+  ? ` Half Tariff`
+  : `Room Rent :${item.roomName}`,
+// Changed format
         docNo: item.docNo || "-",
-        amount: item.baseAmount || 0,
+        amount: (item.baseAmount +item.foodPlanAmountWithTax).toFixed(2),
         taxes: (item.taxAmount || 0).toFixed(2),
         advance: "",
         roomName: item.roomName
@@ -350,61 +353,61 @@ const groupedRoomCharges = (() => {
     }
 
     // Add Food Plan amount if applicable (before taxes)
-    const totalFoodPlanWithoutTax = roomDays.reduce(
-      (sum, i) => sum + (i.foodPlanAmountWithOutTax || 0),
-      0
-    )
+    // const totalFoodPlanWithoutTax = roomDays.reduce(
+    //   (sum, i) => sum + (i.foodPlanAmountWithOutTax || 0),
+    //   0
+    // )
     
-    if (totalFoodPlanWithoutTax > 0) {
-      charges.push({
-        date: formatDate(new Date()),
-        description: `Food Plan`,
-        docNo: "-",
-        amount: totalFoodPlanWithoutTax,
-        taxes: 0,
-        advance: "",
-        roomName
-      })
-    }
+    // if (totalFoodPlanWithoutTax > 0) {
+    //   charges.push({
+    //     date: formatDate(new Date()),
+    //     description: `Food Plan`,
+    //     docNo: "-",
+    //     amount: totalFoodPlanWithoutTax,
+    //     taxes: 0,
+    //     advance: "",
+    //     roomName
+    //   })
+    // }
 
-    // Add food plan tax rows if applicable
-    const roomFoodPlanTax = roomDays.reduce(
-      (sum, i) => {
-        const foodPlanWithTax = i.foodPlanAmountWithTax || 0;
-        const foodPlanWithoutTax = i.foodPlanAmountWithOutTax || 0;
-        return sum + (foodPlanWithTax - foodPlanWithoutTax);
-      },
-      0
-    )
+    // // Add food plan tax rows if applicable
+    // const roomFoodPlanTax = roomDays.reduce(
+    //   (sum, i) => {
+    //     const foodPlanWithTax = i.foodPlanAmountWithTax || 0;
+    //     const foodPlanWithoutTax = i.foodPlanAmountWithOutTax || 0;
+    //     return sum + (foodPlanWithTax - foodPlanWithoutTax);
+    //   },
+    //   0
+    // )
 
-    // Get food plan tax percentage
-    const foodPlanTaxPercentage = originalRoom?.foodPlanTaxRate || 0;
-    const halfFoodPlanTaxPercentage = foodPlanTaxPercentage / 2;
+    // // Get food plan tax percentage
+    // const foodPlanTaxPercentage = originalRoom?.foodPlanTaxRate || 0;
+    // const halfFoodPlanTaxPercentage = foodPlanTaxPercentage / 2;
 
-    if (roomFoodPlanTax > 0) {
-      const foodPlanSGST = roomFoodPlanTax / 2;
-      const foodPlanCGST = roomFoodPlanTax / 2;
+    // if (roomFoodPlanTax > 0) {
+    //   const foodPlanSGST = roomFoodPlanTax / 2;
+    //   const foodPlanCGST = roomFoodPlanTax / 2;
 
-      charges.push({
-        date: formatDate(new Date()),
-        description: `SGST on Food Plan@${halfFoodPlanTaxPercentage}%`,
-        docNo: "-",
-        amount: 0,
-        taxes: foodPlanSGST.toFixed(2),
-        advance: "",
-        roomName
-      })
+    //   charges.push({
+    //     date: formatDate(new Date()),
+    //     description: `SGST on Food Plan@${halfFoodPlanTaxPercentage}%`,
+    //     docNo: "-",
+    //     amount: 0,
+    //     taxes: foodPlanSGST.toFixed(2),
+    //     advance: "",
+    //     roomName
+    //   })
 
-      charges.push({
-        date: formatDate(new Date()),
-        description: `CGST on Food Plan@${halfFoodPlanTaxPercentage}%`,
-        docNo: "-",
-        amount: 0,
-        taxes: foodPlanCGST.toFixed(2),
-        advance: "",
-        roomName
-      })
-    }
+    //   charges.push({
+    //     date: formatDate(new Date()),
+    //     description: `CGST on Food Plan@${halfFoodPlanTaxPercentage}%`,
+    //     docNo: "-",
+    //     amount: 0,
+    //     taxes: foodPlanCGST.toFixed(2),
+    //     advance: "",
+    //     roomName
+    //   })
+    // }
 
     // Add Additional Pax amount if applicable (before taxes)
     const totalAdditionalPaxWithoutTax = roomDays.reduce(
