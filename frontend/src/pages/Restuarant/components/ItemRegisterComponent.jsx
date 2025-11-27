@@ -1,14 +1,24 @@
-import { useEffect, useState, } from "react";
+import { useEffect, useState } from "react";
 import { units } from "../../../../constants/units";
 import { useLocation } from "react-router-dom";
 
 import { toast } from "sonner";
-import { MdPlaylistAdd, MdDelete, MdCloudUpload, MdImage } from "react-icons/md";
+import {
+  MdPlaylistAdd,
+  MdDelete,
+  MdCloudUpload,
+  MdImage,
+} from "react-icons/md";
 import uploadImageToCloudinary from "../../../../utils/uploadCloudinary";
 
-function ItemRegisterComponent({ pageName, optionsData, sendToParent, editData }) {
-  console.log("editData",editData);
-  
+function ItemRegisterComponent({
+  pageName,
+  optionsData,
+  sendToParent,
+  editData,
+}) {
+  console.log("editData", editData);
+
   const [priceLevelRows, setPriceLevelRows] = useState([
     { pricelevel: "", pricerate: "" },
   ]);
@@ -24,19 +34,11 @@ function ItemRegisterComponent({ pageName, optionsData, sendToParent, editData }
   const [imagePreview, setImagePreview] = useState("");
   const [isUploading, setIsUploading] = useState(false);
 
-
-
-
-
-
-
-
   useEffect(() => {
-
     if (editData) {
-      console.log(editData)
+      // console.log(editData);
       setRoomData({
-        itemName: editData. product_name,
+        itemName: editData.product_name,
         foodCategory: editData.category,
         foodType: editData.sub_category,
         unit: editData.unit,
@@ -44,32 +46,36 @@ function ItemRegisterComponent({ pageName, optionsData, sendToParent, editData }
         imageUrl: editData.product_image || "", // Set existing image URL
       });
       let updatedPriceLevel = editData.Priceleveles.map((item) => ({
-        pricelevel: item.pricelevel,
+        pricelevel: item.pricelevel?._id,
         pricerate: item.pricerate,
-      }))
-      console.log("updatedPriceLevel",updatedPriceLevel)
+      }));
+      // console.log("updatedPriceLevel", updatedPriceLevel);
       setPriceLevelRows(updatedPriceLevel);
-      
+
       // Set image preview for existing data
       if (editData.product_image) {
         setImagePreview(editData.product_image);
+      } else {
+        setRoomData((prev) => ({
+          ...prev,
+          unit: "NOS",
+        }));
       }
-       else {
-    setRoomData((prev) => ({
-      ...prev,
-      unit: "NOS"
-    }));
-  }
     }
   }, [editData]);
 
-  console.log("roomData",roomData)
+  console.log("roomData", roomData);
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       // Validate file type
-      const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+      const allowedTypes = [
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+        "image/webp",
+      ];
       if (!allowedTypes.includes(file.type)) {
         toast.error("Please select a valid image file (JPEG, PNG, WebP)");
         return;
@@ -83,7 +89,7 @@ function ItemRegisterComponent({ pageName, optionsData, sendToParent, editData }
       }
 
       setImageFile(file);
-      
+
       // Create preview
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -100,7 +106,7 @@ function ItemRegisterComponent({ pageName, optionsData, sendToParent, editData }
     }
 
     setIsUploading(true);
-    
+
     try {
       const imageUrl = await uploadImageToCloudinary(imageFile);
       setRoomData({ ...roomData, imageUrl });
@@ -166,13 +172,19 @@ function ItemRegisterComponent({ pageName, optionsData, sendToParent, editData }
     const { name, value } = e.target;
     if (name === "roomName") {
       setRoomData({ ...roomData, roomName: value });
-    }else if(name === "hsn"){
-      let selectedHsn = optionsData?.hsn?.find((hsn) => hsn.hsn== value)
-      setRoomData({ ...roomData, cgst: selectedHsn?.cgstRate, sgst: selectedHsn?.sgstUtgstRate, igst: selectedHsn?.igstRate, hsn: selectedHsn?.hsn });
+    } else if (name === "hsn") {
+      let selectedHsn = optionsData?.hsn?.find((hsn) => hsn.hsn == value);
+      setRoomData({
+        ...roomData,
+        cgst: selectedHsn?.cgstRate,
+        sgst: selectedHsn?.sgstUtgstRate,
+        igst: selectedHsn?.igstRate,
+        hsn: selectedHsn?.hsn,
+      });
     } else {
       setRoomData({ ...roomData, [name]: value });
     }
-  }; 
+  };
 
   const isNonEmptyString = (value) =>
     typeof value === "string" && value.trim() !== "";
@@ -223,8 +235,8 @@ function ItemRegisterComponent({ pageName, optionsData, sendToParent, editData }
     sendToParent(roomData, newPriceLevelRows);
   };
 
-  console.log("priceLevelRows", roomData)
-  console.log("ca",optionsData)
+  console.log("priceLevelRows", roomData);
+  console.log("ca", optionsData);
 
   return (
     <div className="flex-auto px-4 lg:px-10 py-10 pt-0">
@@ -258,7 +270,7 @@ function ItemRegisterComponent({ pageName, optionsData, sendToParent, editData }
               <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
                 Item Image
               </label>
-              
+
               {/* Image Preview */}
               {imagePreview && (
                 <div className="mb-3 relative inline-block">
@@ -293,7 +305,7 @@ function ItemRegisterComponent({ pageName, optionsData, sendToParent, editData }
                   <MdImage className="mr-2" />
                   Choose Image
                 </label>
-                
+
                 {imageFile && !roomData.imageUrl && (
                   <button
                     onClick={handleImageUpload}
@@ -306,7 +318,7 @@ function ItemRegisterComponent({ pageName, optionsData, sendToParent, editData }
                   </button>
                 )}
               </div>
-              
+
               {roomData.imageUrl && (
                 <p className="text-green-600 text-xs mt-1">
                   ✓ Image uploaded successfully
@@ -389,43 +401,45 @@ function ItemRegisterComponent({ pageName, optionsData, sendToParent, editData }
             </div>
           </div>
 
-       <div className="w-full lg:w-6/12 px-4">
-  <div className="relative w-full mb-3">
-    <label
-      className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
-      htmlFor="grid-password"
-    >
-      HSN
-    </label>
+          <div className="w-full lg:w-6/12 px-4">
+            <div className="relative w-full mb-3">
+              <label
+                className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+                htmlFor="grid-password"
+              >
+                HSN
+              </label>
 
-    <select
-      className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-      name="hsn"
-      value={roomData.hsn}
-      onChange={handleChange}
-    >
-      <option value="">Select an HSN</option>
+              <select
+                className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                name="hsn"
+                value={roomData.hsn}
+                onChange={handleChange}
+              >
+                <option value="">Select an HSN</option>
 
-      {optionsData?.hsn?.map((el, index) => {
-        // Check if it's onItemRate (rows array) or onValue (direct property)
-        const igstRate = el.tab === 'onItemRate' 
-          ? el?.rows?.[0]?.igstRate || "" 
-          : el?.igstRate || "";
-        
-        return (
-          <option key={index} value={el.hsn}>
-            {`${el.hsn} — ${el.description || ""} — IGST: ${igstRate}%`}
-          </option>
-        );
-      })}
-    </select>
-  </div>
-</div>
+                {optionsData?.hsn?.map((el, index) => {
+                  // Check if it's onItemRate (rows array) or onValue (direct property)
+                  const igstRate =
+                    el.tab === "onItemRate"
+                      ? el?.rows?.[0]?.igstRate || ""
+                      : el?.igstRate || "";
 
+                  return (
+                    <option key={index} value={el.hsn}>
+                      {`${el.hsn} — ${
+                        el.description || ""
+                      } — IGST: ${igstRate}%`}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+          </div>
         </div>
 
         {/* Price Level and Location Tabs */}
-        <div className="opacity-50 pointer-events-none?">
+        <div className=" pointer-events-none?">
           <div className="relative flex flex-col min-w-0 break-words w-full pb-3 rounded-lg bg-blueGray-100 border-0">
             <div className="flex start mx-10 ">
               <div className="mt-[10px] border-b border-solid border-[#0066ff43]">
