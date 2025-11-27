@@ -396,31 +396,54 @@ const OrdersDashboard = () => {
 
   console.log("filteredOrders", filteredOrders);
 
-  const handleSavePayment = async (id) => {
-    setSaveLoader(true);
+ const handleSavePayment = async (id) => {
+  setSaveLoader(true);
 
-    if (paymentMode === "credit") {
-      if (
-        !selectedCreditor ||
-        selectedCreditor === "" ||
-        !selectedCreditor._id
-      ) {
-        setPaymentError("Please select a creditor");
-        setSaveLoader(false);
-        return;
-      }
+  if (paymentMode === "credit") {
+    if (
+      !selectedCreditor ||
+      selectedCreditor === "" ||
+      !selectedCreditor._id
+    ) {
+      setPaymentError("Please select a creditor");
+      setSaveLoader(false);
+      return;
     }
-    let paymentDetails;
-    let selectedKotData;
-    if (selectedDataForPayment?.isDirectSale) {
-      // Direct sale payment processing
+  }
+  
+  let paymentDetails;
+  let selectedKotData;
+  
+  if (selectedDataForPayment?.isDirectSale) {
+    // Direct sale payment processing
+    if (paymentMethod === "cash") {
+      paymentDetails = {
+        cashAmount: selectedDataForPayment?.total,
+        onlineAmount: 0,
+        selectedCash,
+        selectedBank,
+        paymentMode: "single",
+      };
+    } else {
+      paymentDetails = {
+        cashAmount: 0,
+        onlineAmount: selectedDataForPayment?.total,
+        selectedCash,
+        selectedBank,
+        paymentMode: "single",
+      };
+    }
+    selectedKotData = selectedDataForPayment;
+  } else {
+    // Regular payment processing
+    if (paymentMode === "single") {
       if (paymentMethod === "cash") {
         paymentDetails = {
           cashAmount: selectedDataForPayment?.total,
           onlineAmount: 0,
           selectedCash,
           selectedBank,
-          paymentMode: "single",
+          paymentMode,
         };
       } else {
         paymentDetails = {
@@ -428,100 +451,89 @@ const OrdersDashboard = () => {
           onlineAmount: selectedDataForPayment?.total,
           selectedCash,
           selectedBank,
-          paymentMode: "single",
+          paymentMode,
         };
       }
-      selectedKotData = selectedDataForPayment;
+      selectedKotData = previewForSales;
+    } else if (paymentMode === "credit") {
+      if (!selectedCreditor || selectedCreditor === "") {
+        setPaymentError("Please select a creditor");
+        setSaveLoader(false);
+        return;
+      }
+      paymentDetails = {
+        cashAmount: selectedDataForPayment?.total,
+        selectedCreditor,
+        paymentMode,
+      };
+      selectedKotData = previewForSales;
     } else {
-      // CASE 2: When NO roomService
-      if (paymentMode === "single") {
-        if (paymentMethod === "cash") {
-          paymentDetails = {
-            cashAmount: selectedDataForPayment?.total,
-            onlineAmount,
-            selectedCash,
-            selectedBank,
-            paymentMode,
-          };
-        } else {
-          paymentDetails = {
-            cashAmount,
-            onlineAmount: selectedDataForPayment?.total,
-            selectedCash,
-            selectedBank,
-            paymentMode,
-          };
-        }
-        selectedKotData = previewForSales;
-      } else if (paymentMode === "credit") {
-        if (!selectedCreditor || selectedCreditor == "") {
-          setPaymentError("Please select a creditor");
-          setSaveLoader(false);
-          return;
-        }
-        paymentDetails = {
-          cashAmount: selectedDataForPayment?.total,
-          selectedCreditor,
-          paymentMode,
-        };
-          selectedKotData = previewForSales;
-      } else {
-        if (
-          Number(cashAmount) + Number(onlineAmount) !==
+      // Split payment
+      if (
+        Number(cashAmount) + Number(onlineAmount) !==
         Number(selectedDataForPayment?.total)
-        ) {
-          setPaymentError(
-            "Cash and online amounts together equal the total amount."
-          );
-          return;
-        }
-        paymentDetails = {
-          cashAmount,
-          onlineAmount,
-          selectedCash,
-          selectedBank,
-          paymentMode,
-        };
-        selectedKotData = previewForSales;
-      }
-    }
-
-    console.log(paymentMethod);
-    console.log(paymentDetails);
-    console.log(selectedKotData);
-
-    try {
-      console.log(paymentDetails)
-      const payment={...paymentDetails,cashAmount:Number(paymentDetails.cashAmount)}
-      console.log(payment)
-  
-    
-      const response = await api.put(
-        `/api/sUsers/updateKotPayment/${cmp_id}`,
-        {
-          paymentMethod: paymentMethod,
-          paymentDetails: payment,
-          selectedKotData: selectedKotData,
-          isPostToRoom: isPostToRoom,
-              isDirectSale: selectedDataForPayment?.isDirectSale || false,
-        },
-        { withCredentials: true }
-      );
-      // Check if the response was successful
-      if (response.status === 200 || response.status === 201) {
-        // Update the local state with the new status
-        setOrders((prevOrders) =>
-          prevOrders.map((order) =>
-            order._id === id
-              ? { ...order,paymentCompleted: true , paymentMethod: data.paymentMethod }
-              : order
-          )
+      ) {
+        setPaymentError(
+          "Cash and online amounts together must equal the total amount."
         );
-          const completedKots = selectedDataForPayment?.voucherNumber || [];
-      const tableNumbers = new Set();
+        setSaveLoader(false);
+        return;
+      }
+      paymentDetails = {
+        cashAmount,
+        onlineAmount,
+        selectedCash,
+        selectedBank,
+        paymentMode,
+      };
+      selectedKotData = previewForSales;
+    }
+  }
+
+  console.log(paymentMethod);
+  console.log(paymentDetails);
+  console.log(selectedKotData);
+
+  try {
+    console.log(paymentDetails);
+    const payment = {
+      ...paymentDetails,
+      cashAmount: Number(paymentDetails.cashAmount),
+    };
+    console.log(payment);
+
+    const response = await api.put(
+      `/api/sUsers/updateKotPayment/${cmp_id}`,
+      {
+        paymentMethod: paymentMethod,
+        paymentDetails: payment,
+        selectedKotData: selectedKotData,
+        isPostToRoom: isPostToRoom,
+        isDirectSale: selectedDataForPayment?.isDirectSale || false,
+      },
+      { withCredentials: true }
+    );
+    
+    // Check if the response was successful
+    if (response.status === 200 || response.status === 201) {
+      // Update the local state with the new status
+      setOrders((prevOrders) =>
+        prevOrders.map((order) =>
+          order._id === id
+            ? {
+                ...order,
+                paymentCompleted: true,
+                paymentMethod: paymentMethod,
+              }
+            : order
+        )
+      );
       
-      completedKots.forEach(kot => {
-          const kotOrder = orders.find(order => order._id === kot.id);
+      const completedKots = selectedDataForPayment?.voucherNumber || [];
+      const tableNumbers = new Set();
+
+      completedKots.forEach((kot) => {
+        const kotOrder = orders.find(order => order._id === kot.id);
         if (kotOrder?.tableNumber && kotOrder?.type === 'dine-in') {
           tableNumbers.add(kotOrder.tableNumber);
         }
@@ -529,217 +541,59 @@ const OrdersDashboard = () => {
 
       // For each table, check if all its KOTs are now completed
       for (const tableNumber of tableNumbers) {
-
         if (!tableNumber) {
           console.log('Skipping undefined/null tableNumber');
-          continue; // Skip if tableNumber is undefined/null
+          continue;
         }
-        const tableKots = orders.filter(order => 
-          order.tableNumber === tableNumber && 
-          order.type === 'dine-in'
-        );
         
-        const allCompleted = tableKots.every(kot => 
-          completedKots.some(completed => completed.id === kot._id) ||
-          kot.paymentCompleted
+        const tableKots = orders.filter(
+          (order) =>
+            order.tableNumber === tableNumber && order.type === "dine-in"
+        );
+
+        const allCompleted = tableKots.every(
+          (kot) =>
+            completedKots.some((completed) => completed.id === kot._id) ||
+            kot.paymentCompleted
         );
 
         if (allCompleted) {
           try {
-              const tableUpdateResponse = await api.put(
+            const tableUpdateResponse = await api.put(
               `/api/sUsers/updateTableStatus/${cmp_id}/${tableNumber}`,
               { status: "available" },
               { withCredentials: true }
             );
- console.log(`Table ${tableNumber} status updated successfully:`, tableUpdateResponse.data);
+            console.log(`Table ${tableNumber} status updated successfully:`, tableUpdateResponse.data);
           } catch (tableError) {
             console.error(`Error updating table ${tableNumber} status:`, tableError);
           }
-          selectedKotData = selectedDataForPayment;
-        } else if (paymentMode === "credit") {
-          if (!selectedCreditor || selectedCreditor == "") {
-            setPaymentError("Please select a creditor");
-            return;
-          }
-          paymentDetails = {
-            cashAmount: selectedDataForPayment?.total,
-            selectedCreditor,
-            paymentMode,
-          };
-          selectedKotData = selectedDataForPayment;
-        } else {
-          // Split payment mode
-          if (
-            Number(cashAmount) + Number(onlineAmount) !==
-            selectedDataForPayment?.total
-          ) {
-            setPaymentError(
-              "Cash and online amounts together equal the total amount."
-            );
-            return;
-          }
-          paymentDetails = {
-            cashAmount,
-            onlineAmount,
-            selectedCash,
-            selectedBank,
-            paymentMode,
-          };
-          selectedKotData = selectedDataForPayment;
-        }
-      } else {
-        // CASE 2: When NO roomService
-        if (paymentMode === "single") {
-          if (paymentMethod === "cash") {
-            paymentDetails = {
-              cashAmount: selectedDataForPayment?.total,
-              onlineAmount,
-              selectedCash,
-              selectedBank,
-              paymentMode,
-            };
-          } else {
-            paymentDetails = {
-              cashAmount,
-              onlineAmount: selectedDataForPayment?.total,
-              selectedCash,
-              selectedBank,
-              paymentMode,
-            };
-          }
-          selectedKotData = previewForSales;
-        } else if (paymentMode === "credit") {
-          if (!selectedCreditor || selectedCreditor == "") {
-            setPaymentError("Please select a creditor");
-            setSaveLoader(false);
-            return;
-          }
-          paymentDetails = {
-            cashAmount: selectedDataForPayment?.total,
-            selectedCreditor,
-            paymentMode,
-          };
-          selectedKotData = previewForSales;
-        } else {
-          if (
-            Number(cashAmount) + Number(onlineAmount) !==
-            Number(selectedDataForPayment?.total)
-          ) {
-            setPaymentError(
-              "Cash and online amounts together equal the total amount."
-            );
-            return;
-          }
-          paymentDetails = {
-            cashAmount,
-            onlineAmount,
-            selectedCash,
-            selectedBank,
-            paymentMode,
-          };
-          selectedKotData = previewForSales;
         }
       }
 
-      console.log(paymentMethod);
-      console.log(paymentDetails);
-      console.log(selectedKotData);
-
-      try {
-        console.log(paymentDetails);
-        const payment = {
-          ...paymentDetails,
-          cashAmount: Number(paymentDetails.cashAmount),
-        };
-        console.log(payment);
-
-        const response = await api.put(
-          `/api/sUsers/updateKotPayment/${cmp_id}`,
-          {
-            paymentMethod: paymentMethod,
-            paymentDetails: payment,
-            selectedKotData: selectedKotData,
-            isPostToRoom: isPostToRoom,
-            isDirectSale: selectedDataForPayment?.isDirectSale || false,
-          },
-          { withCredentials: true }
-        );
-        // Check if the response was successful
-        if (response.status === 200 || response.status === 201) {
-          // Update the local state with the new status
-          setOrders((prevOrders) =>
-            prevOrders.map((order) =>
-              order._id === id
-                ? {
-                    ...order,
-                    paymentCompleted: true,
-                    paymentMethod: data.paymentMethod,
-                  }
-                : order
-            )
-          );
-          const completedKots = selectedDataForPayment?.voucherNumber || [];
-          const tableNumbers = new Set();
-
-          completedKots.forEach((kot) => {
-            if (kot.tableNumber) {
-              tableNumbers.add(kot.tableNumber);
-            }
-          });
-
-          // For each table, check if all its KOTs are now completed
-          for (const tableNumber of tableNumbers) {
-            const tableKots = orders.filter(
-              (order) =>
-                order.tableNumber === tableNumber && order.type === "dine-in"
-            );
-
-            const allCompleted = tableKots.every(
-              (kot) =>
-                completedKots.some((completed) => completed.id === kot._id) ||
-                kot.paymentCompleted
-            );
-
-            if (allCompleted) {
-              try {
-                await api.put(
-                  `/api/sUsers/updateTableStatus/${cmp_id}/${tableNumber}`,
-                  { status: "available" },
-                  { withCredentials: true }
-                );
-                console.log(`Table ${tableNumber} status updated to available`);
-              } catch (tableError) {
-                console.error(
-                  `Error updating table ${tableNumber} status:`,
-                  tableError
-                );
-              }
-            }
-          }
-
-          setLoader(false);
-          setSelectedKot([]);
-          setShowVoucherPdf(false);
-          toast.success(response?.data?.message);
-        } else {
-          console.error("Failed to update backend:", response.data || response);
-        }
-      } catch (error) {
-        console.error(
-          "Error updating order status:",
-          error.response?.data || error.message
-        );
-      } finally {
-        setSaveLoader(false);
-        setCashAmount(0);
-        setOnlineAmount(0);
-        refreshHook();
-        setShowPaymentModal(false);
-        setPaymentMode("single");
-        setSelectedCreditor("");
-      }
+      setLoader(false);
+      setSelectedKot([]);
+      setShowVoucherPdf(false);
+      toast.success(response?.data?.message);
+    } else {
+      console.error("Failed to update backend:", response.data || response);
     }
-  };
+  } catch (error) {
+    console.error(
+      "Error updating order status:",
+      error.response?.data || error.message
+    );
+    toast.error(error.response?.data?.message || "Payment processing failed");
+  } finally {
+    setSaveLoader(false);
+    setCashAmount(0);
+    setOnlineAmount(0);
+    refreshHook();
+    setShowPaymentModal(false);
+    setPaymentMode("single");
+    setSelectedCreditor("");
+  }
+};
 
   const handlePrintData = async (kotId) => {
     try {
