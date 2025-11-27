@@ -1017,6 +1017,225 @@ export const directSale = async (req, res) => {
 // Update your updateKotPayment function - ADD DETAILED LOGGING
 
 export const updateKotPayment = async (req, res) => {
+  const session = await mongoose.startSession();
+
+  try {
+    await session.withTransaction(async () => {
+      const { cmp_id } = req.params;
+      let {
+        paymentMethod,
+        paymentDetails,
+        selectedKotData: kotData,
+        isPostToRoom,
+      } = req.body;
+    
+
+      // console.log("table", kotData);
+
+
+      
+      if (!paymentDetails || !kotData) {
+        throw new Error("Missing payment details or KOT data");
+      }
+
+       if (paymentDetails?.paymentMode === "credit") {
+        if (!paymentDetails.selectedCreditor || !paymentDetails.selectedCreditor._id) {
+          throw new Error("Please select a creditor for credit payment");
+        }
+      }
+      let paymentCompleted = false;
+
+      // Determine payment method
+      const cashAmt = Number(paymentDetails?.cashAmount || 0);
+      const onlineAmt = Number(paymentDetails?.onlineAmount || 0);
+
+      if (cashAmt > 0 && onlineAmt > 0) {
+        paymentMethod = "mixed";
+      }
+
+      if (paymentDetails?.paymentMode == "credit") {
+        paymentMethod = "credit";
+      }
+
+      // Voucher series
+      const specificVoucherSeries = await getRestaurantVoucherSeries(
+        cmp_id,
+        session
+      );
+
+      // Voucher number
+      const saleNumber = await generateVoucherNumber(
+        cmp_id,
+        "sales",
+        specificVoucherSeries._id.toString(),
+        session
+      );
+      let creditParty;
+      if (paymentMethod == "credit") {
+
+        creditParty = await Party.findOne({
+          cmp_id,
+          _id: paymentDetails.selectedCreditor._id,
+        })
+          .populate("accountGroup")
+          .session(session);
+      }
+
+      // console.log("creditParty", paymentMethod);
+      // Selected party
+      const selectedParty =
+        paymentMethod == "credit"
+          ? creditParty
+          : await getSelectedParty(
+              cmp_id,
+              paymentDetails,
+              cashAmt,
+              onlineAmt,
+              kotData,
+              isPostToRoom,
+              session
+            );
+
+      // Payment splitting
+      const paymentSplittingArray = createPaymentSplittingArray(
+        paymentDetails,
+        cashAmt,
+        onlineAmt
+      );
+
+      const party = mapPartyData(selectedParty);
+
+      // Save voucher
+      const savedVoucherData = await createSalesVoucher(
+        cmp_id,
+        specificVoucherSeries,
+        saleNumber,
+        req,
+        kotData,
+        party,
+        selectedParty,
+        paymentSplittingArray,
+        session
+      );
+
+      // Outstanding balance
+      const paidAmount = isPostToRoom ? 0 : cashAmt + onlineAmt;
+      const pendingAmount = Number(kotData?.total || 0) - paidAmount;
+      let tallyData;
+      if (isPostToRoom || paymentMethod == "credit") {
+        tallyData = await createTallyEntry(
+          cmp_id,
+          req,
+          selectedParty,
+          kotData,
+          savedVoucherData[0],
+          paidAmount,
+          pendingAmount,
+          session
+        );
+      }
+      if (party?.paymentType != "party" && paymentMethod != "credit") {
+        console.log("undddd")
+       
+        await saveSettlement(
+          paymentDetails,
+          selectedParty,
+          cmp_id,
+          savedVoucherData[0],
+          paidAmount,
+          cashAmt,
+          onlineAmt,
+          req,
+          session
+        );
+      }
+      if (paymentMethod == "credit") {
+        await buildReceipt({
+          cmp_id,
+          selectedParty: paymentDetails.selectedCreditor,
+          advanceObject: tallyData,
+          saleData: savedVoucherData[0],
+          amount: paymentDetails?.cashAmount,
+          paymentDetails,
+          paymentMethod,
+          req,
+          session,
+        });
+      }
+
+      // Update KOTs
+      paymentCompleted = true;
+      let selectedTableNumber = [];
+
+      await Promise.all(
+        kotData?.voucherNumber.map(async (item) => {
+          // Find the KOT first
+          const kot = await kotModal.findById(item.id).lean();
+  if (kot?.tableNumber && !selectedTableNumber.includes(kot.tableNumber)) {
+            selectedTableNumber.push(kot.tableNumber);
+          }
+
+          // Then update it
+          return kotModal.updateOne(
+            { _id: item.id },
+            { paymentMethod, paymentCompleted,  status: 'completed'  },
+            { session }
+          );
+        })
+      );
+
+      // console.log("Selected Table Numbers:", selectedTableNumber);
+
+      // Check pending
+      let updatedTables = [];
+      for (const tableNumber of selectedTableNumber) {
+        if (!tableNumber) continue; // Skip if tableNumber is null/undefined
+        
+        const pendingCount = await kotModal
+          .countDocuments({
+            cmp_id,
+            tableNumber: tableNumber,  // ✅ Direct field, not nested
+            paymentCompleted: false,
+          })
+          .session(session);
+
+        // console.log(`Pending KOTs for table ${tableNumber}:`, pendingCount);
+
+        // ✅ If no pending KOTs, mark table as available
+        if (pendingCount === 0) {
+          const updateTableStatus = await Table.findOneAndUpdate(
+            { cmp_id, tableNumber },
+            { 
+              status: "available",
+              currentOrders: 0,  // ✅ Reset order count
+              updatedAt: new Date()
+            },
+            { new: true, session }
+          );
+
+          if (updateTableStatus) {
+            updatedTables.push(tableNumber);
+            console.log(`Table ${tableNumber} status updated to available`);
+          }
+        }
+      }
+
+      // ✅ No manual commit here
+      res.status(200).json({
+        success: true,
+        message: "KOT payment updated successfully",
+        data: { saleNumber, salesRecord: savedVoucherData[0] },
+      });
+    });
+  } catch (error) {
+    // console.error("Error updating KOT:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "Internal server error while updating KOT",
+    });
+  } finally {
+    await session.endSession();
+  }
 };
 // NEW: Helper function to create split payment array
 async function createSplitPaymentArray(payments, cmp_id, session) {
