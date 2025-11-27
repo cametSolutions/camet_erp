@@ -8,7 +8,7 @@ export default function CheckoutDateModal({
   checkoutData = [],
   
 }) {
-console.log("h")
+console.log("hafdsfd")
 console.log(checkoutData)
 console.log(checkoutData.length)
   const [checkouts, setCheckouts] = useState(

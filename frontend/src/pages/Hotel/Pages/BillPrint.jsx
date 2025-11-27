@@ -29,9 +29,9 @@ const HotelBillPrint = () => {
 
   // Props from location state
   const selectedCheckOut = location.state?.selectedCheckOut || []
-console.log(selectedCheckOut)
-const a=selectedCheckOut.some((it)=>it.originalCheckInId)
-console.log(a)
+  console.log(selectedCheckOut)
+  const a = selectedCheckOut.some((it) => it.originalCheckInId)
+  console.log(a)
   const checkoutmode = location?.state?.checkoutMode || null
   const cheinids = location?.state?.checkinIds
   console.log(selectedCheckOut)
@@ -67,7 +67,7 @@ console.log(a)
 
   useEffect(() => {
     if (selectedCheckOut?.length > 0) {
-console.log(selectedCheckOut)
+      console.log(selectedCheckOut)
       fetchDebitData(selectedCheckOut)
     }
   }, [selectedCheckOut])
@@ -97,7 +97,10 @@ console.log(selectedCheckOut)
   const transformDocToDateWiseLines = (doc) => {
     const result = []
     const startDate = new Date(doc.arrivalDate)
+    console.log(startDate)
     ;(doc.selectedRooms || []).forEach((room) => {
+      console.log(room.taxAmount)
+      console.log(room)
       const stayDays = room.stayDays || 1
       const fullDays = Math.floor(stayDays)
       const fractionalDay = stayDays - fullDays
@@ -106,7 +109,15 @@ console.log(selectedCheckOut)
         Number(room.priceLevelRate || 0) ||
         Number(room.baseAmountWithTax || 0) / stayDays
       const baseAmountPerDay = Number(room.baseAmount || 0) / stayDays
-      const taxAmountPerDay = Number(room.taxAmount || 0) / stayDays
+      const foodplantax = (
+        Number(room?.foodPlanAmountWithTax) -
+        Number(room?.foodPlanAmountWithOutTax)
+      ).toFixed(2)
+      console.log(foodplantax)
+      const taxAmountPerDay =
+        Number(room.taxAmount || 0) + Number(foodplantax || 0) / stayDays
+
+      console.log(taxAmountPerDay)
       const foodPlanAmountWithTaxPerDay =
         Number(room.foodPlanAmountWithTax || 0) / stayDays
       const foodPlanAmountWithOutTaxPerDay =
@@ -115,10 +126,10 @@ console.log(selectedCheckOut)
         Number(room.additionalPaxAmountWithTax || 0) / stayDays
       const additionalPaxDataWithOutTaxPerDay =
         Number(room.additionalPaxAmountWithOutTax || 0) / stayDays
-
+      console.log(fullDays)
       for (let i = 0; i < fullDays; i++) {
         const currentDate = new Date(startDate)
-        currentDate.setDate(startDate.getDate() + i)
+        currentDate.setDate(startDate.getDate())
         const formattedDate = currentDate
           .toLocaleDateString("en-GB")
           .replace(/\//g, "-")
@@ -267,13 +278,19 @@ console.log(selectedCheckOut)
     )
     const sgstAmount = roomTaxTotal / 2
     const cgstAmount = roomTaxTotal / 2
-
+    console.log(doc)
     // Per-room restaurant lines (for this doc’s rooms)
     const perRoomRestaurantLines = buildPerRoomRestaurantLinesForDoc(doc)
+    console.log(perRoomRestaurantLines)
     const restaurantTotal = perRoomRestaurantLines.reduce(
       (t, l) => t + Number(l.amount || 0),
       0
     )
+    let allroomfoodplanwithtax = 0
+    doc.selectedRooms.map(
+      (item) => (allroomfoodplanwithtax += Number(item?.foodPlanAmountWithTax))
+    )
+    console.log(allroomfoodplanwithtax)
 
     // Build grouped charges
     const groupedRoomCharges = (() => {
@@ -301,38 +318,37 @@ console.log(selectedCheckOut)
             advance: "",
             roomName: item.roomName
           })
+          const roomTotalTax = roomDays.reduce(
+            (sum, i) => sum + (i.taxAmount || 0),
+            0
+          )
+          const roomCGST = roomTotalTax / 2
+          const roomSGST = roomTotalTax / 2
+
+          if (roomCGST > 0) {
+            charges.push({
+              date:item.date,
+              description: `CGST on Rent@6% (${roomName})`,
+              docNo: "-",
+              amount: 0,
+              taxes: roomCGST.toFixed(2),
+              advance: "",
+              roomName
+            })
+          }
+
+          if (roomSGST > 0) {
+            charges.push({
+              date:item?.date,
+              description: `SGST on Rent@6% (${roomName})`,
+              docNo: "-",
+              amount: 0,
+              taxes: roomSGST.toFixed(2),
+              advance: "",
+              roomName
+            })
+          }
         })
-
-        const roomTotalTax = roomDays.reduce(
-          (sum, i) => sum + (i.taxAmount || 0),
-          0
-        )
-        const roomCGST = roomTotalTax / 2
-        const roomSGST = roomTotalTax / 2
-
-        if (roomCGST > 0) {
-          charges.push({
-            date: formatDate(new Date()),
-            description: `CGST on Rent@6% (${roomName})`,
-            docNo: "-",
-            amount: 0,
-            taxes: roomCGST.toFixed(2),
-            advance: "",
-            roomName
-          })
-        }
-
-        if (roomSGST > 0) {
-          charges.push({
-            date: formatDate(new Date()),
-            description: `SGST on Rent@6% (${roomName})`,
-            docNo: "-",
-            amount: 0,
-            taxes: roomSGST.toFixed(2),
-            advance: "",
-            roomName
-          })
-        }
 
         const roomKot = perRoomRestaurantLines.find(
           (l) => l.roomName === roomName
@@ -353,9 +369,9 @@ console.log(selectedCheckOut)
       return charges
     })()
     console.log(outStanding)
-const a=outStanding.map((item)=>item._id)
-console.log(a)
-console.log(outStanding.length)
+    const a = outStanding.map((item) => item._id)
+    console.log(a)
+    console.log(outStanding.length)
     console.log(doc?.allCheckInIds)
     console.log(doc)
     const allcheckinids = doc?.allCheckInIds
@@ -384,9 +400,10 @@ console.log(outStanding.length)
             0
           )
       : 0
-console.log(advanceEntries)
+    console.log(advanceEntries)
     // Combine charges and compute balances
     const allCharges = [...groupedRoomCharges, ...advanceEntries]
+    console.log(groupedRoomCharges)
     console.log(allCharges)
     let cumulativeBalance = 0
     const chargesWithBalance = allCharges.map((charge) => {
@@ -414,13 +431,16 @@ console.log(advanceEntries)
       }
     })
     console.log(chargesWithBalance)
-
+    console.log(restaurantTotal)
     const grandTotal =
       roomTariffTotal +
       planAmount +
       additionalPaxAmount +
       roomTaxTotal +
       restaurantTotal
+    console.log(roomTaxTotal)
+    console.log(grandTotal)
+    console.log(advanceTotal)
     const netPay = grandTotal - advanceTotal
 
     // Compose hotel/guest info per doc
