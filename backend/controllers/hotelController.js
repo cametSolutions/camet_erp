@@ -628,13 +628,14 @@ export const getRooms = async (req, res) => {
   try {
     const params = extractRequestParams(req);
     const filter = buildDatabaseFilterForRoom(params);
+    console.log("fiter", filter)
 
     // Get current date and time
     const now = new Date();
 
     // Get all rooms based on basic filters
     const { rooms, totalRooms } = await fetchRoomsFromDatabase(filter, params);
-
+    console.log("romms", rooms.length)
     // Only care about checkOutDate in further logic
     // Extract checkout only from params if given, else use today
     let { arrivalDate, checkOutDate } = params;
@@ -652,13 +653,26 @@ export const getRooms = async (req, res) => {
     const overlappingBookings = await Booking.find({
       cmp_id: req.params.cmp_id,
       status: { $ne: "checkIn" },
-      checkOutDate: { $lte: checkOutDate }, // Only consider checkOutDate
+      //to check the date range for booking if already have a booking
+      arrivalDate: { $lte: checkOutDate },
+      checkOutDate: { $gte: arrivalDate },
     });
-    console.log("overlappingbookings", overlappingBookings);
-
+    // console.log("overlappingbookings", overlappingBookings);
+    console.log("arrivaldate", arrivalDate)
+    console.log("checkoutdate", checkOutDate)
+    console.log("cmpid", req.params.cmp_id)
+    const a = await CheckIn.find({
+      cmp_id: req.params.cmp_id,
+      status: { $ne: "checkOut" }
+    })
+    // console.log("checkindrommmmssss", a)
+    const d2 = a.filter((item) => item.voucherNumber === "CHI-241-2025")
+    console.log("d22", d2)
     const AllCheckIns = await CheckIn.find({
       cmp_id: req.params.cmp_id,
       status: { $ne: "checkOut" },
+      arrivalDate: { $lte: checkOutDate },
+      checkOutDate: { $gte: arrivalDate },
     }).select("selectedRooms checkOutDate arrivalDate roomDetails");
 
 
@@ -694,9 +708,10 @@ export const getRooms = async (req, res) => {
         });
       }
     });
-
+    console.log("occupedbookiid", occupiedRoomId)
+    // console.log("allcheckins", AllCheckIns)
     // Add checked-in room IDs
-    overlappingCheckIns.forEach((checkIn) => {
+    AllCheckIns.forEach((checkIn) => {
       if (checkIn.selectedRooms && Array.isArray(checkIn.selectedRooms)) {
         checkIn.selectedRooms.forEach((room) => {
           const roomId = room.roomId || room._id || room;
@@ -706,8 +721,11 @@ export const getRooms = async (req, res) => {
         });
       }
     });
+    // console.log("occupiedbookingid", occupiedRoomId)
+    // console.log("overlappingchekins", overlappingCheckIns)
 
     // Filter out occupied **and dirty/blocked** rooms
+
     const vacantRooms = rooms.filter((room) => {
       const roomId = room._id.toString();
       const isOccupied = occupiedRoomId.has(roomId);
@@ -1107,13 +1125,13 @@ export const roomBooking = async (req, res) => {
           const paymentDetails =
             method === "cash"
               ? {
-                  cash_ledname: singlePaymentDetails?.accountName,
-                  cash_name: singlePaymentDetails?.accountName,
-                }
+                cash_ledname: singlePaymentDetails?.accountName,
+                cash_name: singlePaymentDetails?.accountName,
+              }
               : {
-                  bank_ledname: singlePaymentDetails?.accountName,
-                  bank_name: singlePaymentDetails?.accountName,
-                };
+                bank_ledname: singlePaymentDetails?.accountName,
+                bank_name: singlePaymentDetails?.accountName,
+              };
 
           await buildReceipt(
             receiptVoucher,
@@ -1176,13 +1194,13 @@ export const roomBooking = async (req, res) => {
             const paymentDetails =
               payment.method === "cash"
                 ? {
-                    cash_ledname: payment?.accountName,
-                    cash_name: payment?.accountName,
-                  }
+                  cash_ledname: payment?.accountName,
+                  cash_name: payment?.accountName,
+                }
                 : {
-                    bank_ledname: payment?.accountName,
-                    bank_name: payment?.accountName,
-                  };
+                  bank_ledname: payment?.accountName,
+                  bank_name: payment?.accountName,
+                };
 
             await buildReceipt(
               receiptVoucher,
@@ -1724,13 +1742,13 @@ export const updateBooking = async (req, res) => {
           const paymentDetails =
             method === "cash"
               ? {
-                  cash_ledname: singlePaymentDetails?.accountName,
-                  cash_name: singlePaymentDetails?.accountName,
-                }
+                cash_ledname: singlePaymentDetails?.accountName,
+                cash_name: singlePaymentDetails?.accountName,
+              }
               : {
-                  bank_ledname: singlePaymentDetails?.accountName,
-                  bank_name: singlePaymentDetails?.accountName,
-                };
+                bank_ledname: singlePaymentDetails?.accountName,
+                bank_name: singlePaymentDetails?.accountName,
+              };
 
           // Receipt
           await buildReceipt(
@@ -1801,13 +1819,13 @@ export const updateBooking = async (req, res) => {
             const paymentDetails =
               payment.method === "cash"
                 ? {
-                    cash_ledname: payment?.accountName,
-                    cash_name: payment?.accountName,
-                  }
+                  cash_ledname: payment?.accountName,
+                  cash_name: payment?.accountName,
+                }
                 : {
-                    bank_ledname: payment?.accountName,
-                    bank_name: payment?.accountName,
-                  };
+                  bank_ledname: payment?.accountName,
+                  bank_name: payment?.accountName,
+                };
 
             await buildReceipt(
               receiptVoucher,
@@ -1946,7 +1964,42 @@ export const fetchAdvanceDetails = async (req, res) => {
     });
   }
 };
+export const getallroomsCurrentStatus = async (req, res) => {
+  try {
+    const { cmp_id } = req.params
+    const allroomswithstatus = await roomModal.find({ cmp_id })
+    if (allroomswithstatus && allroomswithstatus.length) {
+      return res.json({ success: true, data: allroomswithstatus })
+    }
+  } catch (error) {
+    console.log("error:", error.message)
+    return res.status(500).json({
+      success: false,
+      message: "Failed fetch rooms",
+      error: error.message
+    })
+  }
 
+}
+export const getallnoncheckoutCheckins = async (req, res) => {
+  const { cmp_id } = req.params
+  try {
+    const allnocheckoutcheckins = await CheckIn.find({
+      cmp_id,
+      status: { $ne: "checkOut" },
+    })
+    if (allnocheckoutcheckins && allnocheckoutcheckins.length) {
+      return res.json({ success: true, data: allnocheckoutcheckins })
+    }
+  } catch (error) {
+    console.log("error", error.message)
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch rooms",
+      error: error.message
+    })
+  }
+}
 export const getAllRoomsWithStatusForDate = async (req, res) => {
   const { cmp_id } = req.params;
   const { selectedDate } = req.query; // expected format: "YYYY-MM-DD"
@@ -1970,26 +2023,14 @@ export const getAllRoomsWithStatusForDate = async (req, res) => {
       arrivalDate: { $lte: selectedDate },
       checkOutDate: { $gte: selectedDate },
     }).select("selectedRooms");
-    // console.log("bookings",bookings)
-
-    // console.log("booking", bookings)
-    // console.log("cmpid", cmp_id)
+    
     const AllCheckIns = await CheckIn.find({
       cmp_id,
       status: { $ne: "checkOut" },
     }).select("selectedRooms checkOutDate arrivalDate");
-    // console.log("allchekcins",AllCheckIns)
-    // console.log("selcteddate", selectedDate)
-    const checkins = AllCheckIns.filter((c) => {
-      const co = new Date(c.checkOutDate);
-      // console.log("date", co, c.checkOutDate)
-      co.setDate(co.getDate() + 1); // add 1 day
-      // console.log("date", co.toISOString().split("T")[0], c.checkOutDate)
-      // normalize both to YYYY-MM-DD
-      const checkoutPlusOne = co.toISOString().split("T")[0];
-      return checkoutPlusOne >= selectedDate;
-    });
-    console.log("cheins", checkins);
+   
+   
+ 
     // --- Collect booked room IDs
     const bookedRoomIds = new Set();
     for (const booking of bookings) {
@@ -1999,19 +2040,16 @@ export const getAllRoomsWithStatusForDate = async (req, res) => {
         }
       }
     }
-    // console.log("checking", checkins)
-    // --- Collect occupied room IDs
+
     const occupiedRoomIds = new Set();
-    for (const checkin of checkins) {
+    for (const checkin of AllCheckIns) {
       for (const selRoom of checkin.selectedRooms) {
         if (selRoom.roomId) {
           occupiedRoomIds.add(selRoom.roomId.toString());
         }
       }
     }
-    console.log("occupiedroomids", occupiedRoomIds);
-    // console.log("occupiedroomids", occupiedRoomIds)
-    // console.log("bookedroomids", bookedRoomIds)
+ 
 
     // --- Mark each room's status
     const roomsWithStatus = allRooms.map((room) => {
@@ -2021,6 +2059,7 @@ export const getAllRoomsWithStatusForDate = async (req, res) => {
       } else if (bookedRoomIds.has(room._id.toString())) {
         status = "booked";
       }
+ 
       return { ...room, status };
     });
 
@@ -2321,7 +2360,7 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
     allKotData.push(...docs);
 
 
-  
+
 
 
 
@@ -2353,9 +2392,9 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
         ...checkInSideAdvanceDetails
       );
     }
-console.log("lenthhh",allAdvanceDetails.length)
+    console.log("lenthhh", allAdvanceDetails.length)
 
-  
+
     if (allAdvanceDetails.length > 0 || allKotData.length > 0) {
       return res.status(200).json({
         success: true,
@@ -2481,8 +2520,8 @@ export const convertCheckOutToSale = async (req, res) => {
             cashAmt > 0 && onlineAmt > 0
               ? "mixed"
               : cashAmt > 0
-              ? "cash"
-              : "bank";
+                ? "cash"
+                : "bank";
           pendingAmount = 0;
         } else if (isPostToRoom || paymentMode === "credit") {
           paymentMethod = "credit";
@@ -2516,7 +2555,7 @@ export const convertCheckOutToSale = async (req, res) => {
         const isThisPartial =
           item.isPartialCheckout ||
           roomsBeingCheckedOut.length <
-            (originalCheckIn.selectedRooms?.length || 0);
+          (originalCheckIn.selectedRooms?.length || 0);
 
         if (isThisPartial) isAnyPartial = true;
 
@@ -2722,7 +2761,7 @@ export const convertCheckOutToSale = async (req, res) => {
             await saveSettlement(
               paymentDetails,
               selectedCheckOut[0]?.customerId?._id ||
-                selectedCheckOut[0]?.customerId,
+              selectedCheckOut[0]?.customerId,
               primarySource,
               cmp_id,
               results[0]?.salesRecord, // Use first sale as reference
@@ -2773,8 +2812,8 @@ export const convertCheckOutToSale = async (req, res) => {
               cashAmt > 0 && onlineAmt > 0
                 ? "mixed"
                 : cashAmt > 0
-                ? "cash"
-                : "bank";
+                  ? "cash"
+                  : "bank";
 
             const agId = results[0]?.salesRecord?.party?.accountGroup_id;
 
@@ -2788,7 +2827,7 @@ export const convertCheckOutToSale = async (req, res) => {
               selectedCheckOut[0]?.customerId?.partyName || "Customer",
               totalPaidAmount,
               selectedCheckOut[0]?.customerId?._id ||
-                selectedCheckOut[0]?.customerId,
+              selectedCheckOut[0]?.customerId,
               results[0]?.salesRecord,
               agId,
               req,
@@ -3609,10 +3648,10 @@ export const getHotelSalesDetails = async (req, res) => {
           businessType === "all"
             ? {}
             : businessType === "hotel"
-            ? { businessClassification: "Hotel" }
-            : businessType === "restaurant"
-            ? { businessClassification: "Restaurant" }
-            : { businessClassification: { $in: ["Hotel", "Restaurant"] } },
+              ? { businessClassification: "Hotel" }
+              : businessType === "restaurant"
+                ? { businessClassification: "Restaurant" }
+                : { businessClassification: { $in: ["Hotel", "Restaurant"] } },
       },
 
       // Final projection
@@ -3983,12 +4022,12 @@ export const getHotelSalesDetails = async (req, res) => {
             percentage:
               totalSales > 0
                 ? (summary.mealPeriodBreakdown[period].amount / totalSales) *
-                  100
+                100
                 : 0,
             averageTicket:
               summary.mealPeriodBreakdown[period].count > 0
                 ? summary.mealPeriodBreakdown[period].amount /
-                  summary.mealPeriodBreakdown[period].count
+                summary.mealPeriodBreakdown[period].count
                 : 0,
           };
           return acc;
@@ -4002,9 +4041,9 @@ export const getHotelSalesDetails = async (req, res) => {
         averageItemsPerTransaction:
           totalTransactions > 0
             ? transformedData.reduce(
-                (sum, order) => sum + (order.itemCount || 0),
-                0
-              ) / totalTransactions
+              (sum, order) => sum + (order.itemCount || 0),
+              0
+            ) / totalTransactions
             : 0,
       },
       serviceMetrics: {
@@ -4059,9 +4098,8 @@ export const getHotelSalesDetails = async (req, res) => {
         },
         serviceBreakdown: summary.serviceBreakdown,
         mealPeriodSummary: summary.mealPeriodBreakdown,
-        message: `Found ${transformedData.length} ${
-          businessType === "all" ? "combined" : businessType
-        } sales records`,
+        message: `Found ${transformedData.length} ${businessType === "all" ? "combined" : businessType
+          } sales records`,
       },
     });
   } catch (error) {

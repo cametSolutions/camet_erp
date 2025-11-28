@@ -139,6 +139,7 @@ const HotelDashboard = () => {
   // Fetch all rooms
   const fetchRooms = useCallback(
     async (date) => {
+console.log(date)
       setIsLoading(true);
       setLoader(true);
 
@@ -150,6 +151,7 @@ const HotelDashboard = () => {
             withCredentials: true,
           }
         );
+
         const roomsData = res.data.rooms || [];
         setRooms(roomsData);
         setFilteredRooms(roomsData);
@@ -197,6 +199,7 @@ const HotelDashboard = () => {
         );
 
         const roomsData = res.data || [];
+console.log(roomsData)
         setTooltipData(roomsData);
       } catch (error) {
         console.log("Error fetching date based data:", error);
@@ -470,6 +473,7 @@ if (action === "editChecking") {
 
   const statusCounts = getStatusCounts();
   const grouped = groupRoomsByType(filteredRooms);
+console.log(grouped)
 
   const handleCalenderDate = (date, show) => {
     console.log(date.toISOString().split("T")[0], show);
