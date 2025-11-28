@@ -28,6 +28,7 @@ function BookingList() {
   const location = useLocation()
   const navigate = useNavigate()
   const [bookings, setBookings] = useState([])
+  const [roomswithCurrentstatus, setroomswithCurrentStatus] = useState([])
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(true)
   const [parties, setPartylist] = useState([])
@@ -91,6 +92,7 @@ function BookingList() {
     `/api/sUsers/singlecheckoutpartylist/${cmp_id}`,
     { params: { voucher: getVoucherType() } }
   )
+
   console.log(selectedCheckOut)
   // ADD THIS FUNCTION: Calculate total from all checkouts
   const calculateTotalAmount = (checkouts) => {
@@ -109,6 +111,44 @@ function BookingList() {
     }, 0)
   }
   console.log(selectedCheckOut)
+  useEffect(() => {
+    if (location.pathname === "/sUsers/bookingList") {
+      const fetchStatus = async () => {
+        console.log("H", cmp_id)
+        try {
+          const res = await api.get(
+            `/api/sUsers/getallnoncheckoutCheckins/${cmp_id}`,
+            {
+              withCredentials: true
+            }
+          )
+          console.log(res.data.data)
+          const a = res.data.data.map((item) => {
+            return {
+              roomId: item._id,
+              status: item.status
+            }
+          })
+          const ids = []
+          res.data.data.forEach((item) => {
+            item.selectedRooms?.forEach((room) => {
+              if (room.roomId) {
+                ids.push(room.roomId)
+              }
+            })
+          })
+          console.log(ids)
+          setroomswithCurrentStatus(ids)
+          console.log(a)
+          console.log(res.data)
+        } catch (error) {
+          console.log(error.message)
+        }
+      }
+
+      fetchStatus()
+    }
+  }, [location.pathname, cmp_id])
 
   useEffect(() => {
     // when global selectedCustomer changes, sync into selectedCheckOut
@@ -153,16 +193,16 @@ function BookingList() {
     }
   }, [location?.state?.selectedCheckOut])
   // ADD THIS: Update total whenever selectedCheckOut changes
-//   useEffect(() => {
-//     if (selectedCheckOut && selectedCheckOut.length > 0) {
-// console.log("H")
-//       const totalAmount = calculateTotalAmount(selectedCheckOut)
-//       setSelectedDataForPayment((prevData) => ({
-//         ...prevData,
-//         total: totalAmount
-//       }))
-//     }
-//   }, [selectedCheckOut])
+  //   useEffect(() => {
+  //     if (selectedCheckOut && selectedCheckOut.length > 0) {
+  // console.log("H")
+  //       const totalAmount = calculateTotalAmount(selectedCheckOut)
+  //       setSelectedDataForPayment((prevData) => ({
+  //         ...prevData,
+  //         total: totalAmount
+  //       }))
+  //     }
+  //   }, [selectedCheckOut])
 
   const searchData = (data) => {
     if (searchTimeoutRef.current) {
@@ -508,8 +548,8 @@ function BookingList() {
   const handleSavePayment = async () => {
     console.log("h")
     console.log(selectedCheckOut)
-console.log(selectedCheckOut.length)
-  
+    console.log(selectedCheckOut.length)
+
     setSaveLoader(true)
     let paymentDetails
 
@@ -599,8 +639,8 @@ console.log(selectedCheckOut.length)
       restaurantBaseSaleData: restaurantBaseSaleData
     })
     console.log(selectedCheckOut)
-console.log(selectedCheckOut.length)
-  
+    console.log(selectedCheckOut.length)
+
     try {
       const response = await api.post(
         `/api/sUsers/convertCheckOutToSale/${cmp_id}`,
@@ -784,15 +824,45 @@ console.log(selectedCheckOut.length)
 
     return count
   }
+  const handleCheckin = (e, el) => {
+    console.log(el)
+    const roomIds = el.selectedRooms.map((item) => item.roomId)
+    console.log(roomIds)
+    console.log(roomswithCurrentstatus)
+    // const allVacant = roomids.every((id) => {
+    //   const room = roomswithCurrentstatus.find((r) => r.roomId === id)
+    // })
+    const anyPresent = roomIds.some((id) => roomswithCurrentstatus.includes(id))
 
+    if (anyPresent) {
+      toast.error("Rooms are not vaccant")
+      return
+    } else {
+      e.stopPropagation()
+      if (location.pathname == "/sUsers/bookingList") {
+        navigate(`/sUsers/checkInPage`, {
+          state: { bookingData: el }
+        })
+      } else if (location.pathname === "/sUsers/checkOutList" && el.checkInId) {
+        navigate(`/sUsers/EditCheckOut`, {
+          state: el
+        })
+      } else {
+        navigate(`/sUsers/CheckOutPage`, {
+          state: { bookingData: el }
+        })
+      }
+    }
+
+    console.log("HH")
+  }
   const handletoogle = () => {
     if (!selectedCustomer) return
     if (checkoutMode === "multiple") {
       console.log("hhhh")
       const match = parties.find((p) => p._id === selectedCustomer)
       if (!match) return
-      console.log(match)
-      console.log("hhh")
+     
       setSelectedCheckOut((prev) =>
         prev.map((item) => ({
           ...item,
@@ -941,25 +1011,7 @@ console.log(selectedCheckOut.length)
               (Number(el?.balanceToPay) > 0 &&
                 location.pathname === "/sUsers/checkOutList")) && (
               <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  if (location.pathname == "/sUsers/bookingList") {
-                    navigate(`/sUsers/checkInPage`, {
-                      state: { bookingData: el }
-                    })
-                  } else if (
-                    location.pathname === "/sUsers/checkOutList" &&
-                    el.checkInId
-                  ) {
-                    navigate(`/sUsers/EditCheckOut`, {
-                      state: el
-                    })
-                  } else {
-                    navigate(`/sUsers/CheckOutPage`, {
-                      state: { bookingData: el }
-                    })
-                  }
-                }}
+                onClick={(e) => handleCheckin(e, el)}
                 className="bg-black hover:bg-blue-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
               >
                 {location.pathname === "/sUsers/checkInList"
@@ -1106,22 +1158,7 @@ console.log(selectedCheckOut.length)
                 location.pathname != "/sUsers/checkInList" &&
                 location.pathname != "/sUsers/checkOutList")) && (
               <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  if (location.pathname == "/sUsers/bookingList") {
-                    navigate(`/sUsers/checkInPage`, {
-                      state: { bookingData: el }
-                    })
-                  } else if (
-                    location.pathname === "/sUsers/checkOutList" &&
-                    el.checkInId
-                  ) {
-                  } else {
-                    navigate(`/sUsers/CheckOutPage`, {
-                      state: { bookingData: el }
-                    })
-                  }
-                }}
+                onClick={(e) => handleCheckin(e, el)}
                 className="bg-black hover:bg-blue-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
               >
                 CheckIn
@@ -1283,13 +1320,7 @@ console.log(selectedCheckOut.length)
           }
         })
       }))
-      console.log(processedCheckoutData)
-      console.log(processedCheckoutData.length)
-      console.log(checkouts)
-      console.log(checkouts.length)
-      console.log("hhhh")
-      console.log(updatedCheckoutData)
-      console.log(updatedCheckoutData.length)
+  
       proceedToCheckout(updatedCheckoutData)
       setProcessedCheckoutData(null)
     } else {
