@@ -3,6 +3,8 @@ import { ChevronDown, X } from "lucide-react"
 import { useSelector } from "react-redux"
 import { useLocation } from "react-router-dom"
 import api from "@/api/api"
+import { toast } from "sonner"
+
 import { Users, Utensils, Trash2 } from "lucide-react"
 import { taxCalculator } from "../Helper/taxCalculator"
 import { GrFormAdd } from "react-icons/gr"
@@ -21,7 +23,7 @@ function AvailableRooms({
   isTariffRateChange = false, // ✅ Add this
   roomIdToUpdate = null
 }) {
-console.log(formData)
+  console.log(formData)
   console.log("h")
   const [rooms, setRooms] = useState([])
   const [search, setSearch] = useState("")
@@ -41,13 +43,14 @@ console.log(formData)
   const debounceTimerRef = useRef(null)
   const dropdownRef = useRef(null)
   const PAGE_SIZE = 50
-console.log(rooms)
+  console.log(rooms)
   useEffect(() => {
     const fetchBookings = async () => {
       if (formData?.selectedRooms?.length > 0) {
+        console.log("H")
         // Check if we're in tariff rate change mode for a specific room
         if (isTariffRateChange && roomIdToUpdate) {
-console.log("h")
+          console.log("h")
           setIsEditingSingleRoom(true)
 
           // Find the specific room being edited
@@ -85,7 +88,7 @@ console.log("h")
                     withCredentials: true
                   }
                 )
-
+                console.log("h")
                 const roomData =
                   response.data?.roomData?.[0] || response.data?.room
 
@@ -145,7 +148,7 @@ console.log("h")
             setBookings([taxCalculation])
           }
         } else {
-console.log("h")
+          console.log("h")
           // Normal mode - show all rooms
           setIsEditingSingleRoom(false)
           const updatedBookings = await Promise.all(
@@ -191,7 +194,7 @@ console.log("h")
           setBookings(updatedBookings)
         }
       } else if (rooms?.length > 0 && selectedRoomId) {
-console.log("h")
+        console.log("h")
         let specificRoom = rooms.find((room) => room._id === selectedRoomId)
         if (specificRoom) {
           handleSelect(specificRoom)
@@ -211,12 +214,12 @@ console.log("h")
   useEffect(() => {
     if (!formData?.additionalPaxDetails && !formData?.foodPlan) return
     if (!selectedRoomId) return
-console.log("h")
+    console.log("h")
     const bookingData = bookings?.find((item) => item.roomId === selectedRoomId)
 
     const recalculateTax = async () => {
       if (bookingData) {
-console.log("h")
+        console.log("h")
         const taxCalculation = await calculateTax(bookingData)
         setBookings((prev) =>
           prev.map((b) => (b.roomId === selectedRoomId ? taxCalculation : b))
@@ -228,8 +231,9 @@ console.log("h")
   }, [formData?.additionalPaxDetails, formData?.foodPlan, selectedRoomId])
 
   useEffect(() => {
+    console.log(!formData?.bookingType)
     if (!formData?.bookingType) return
-
+    console.log("H")
     const handleBookingTypeChange = async () => {
       if (bookings?.length > 0) {
         const updatedBookings = await Promise.all(
@@ -245,6 +249,9 @@ console.log("h")
 
     handleBookingTypeChange()
   }, [formData?.bookingType])
+  console.log(bookings)
+  console.log(formData?.bookingType)
+  console.log("Hhh")
 
   const { _id: cmp_id, configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
@@ -257,7 +264,7 @@ console.log("h")
       setLoading(true)
       setError(null)
       try {
-console.log("Hhh")
+        console.log("Hhh")
         const params = {
           page: pageNum,
           limit: PAGE_SIZE,
@@ -272,7 +279,7 @@ console.log("Hhh")
         if (formData?.checkOutDate) {
           params.checkOutDate = formData.checkOutDate
         }
-console.log(params)
+        console.log(params)
         console.log("Sending params to backend:", params)
 
         const res = await api.get(`/api/sUsers/getRooms/${cmp_id}`, {
@@ -281,6 +288,8 @@ console.log(params)
         })
 
         const newRooms = res.data?.roomData || []
+        console.log(newRooms)
+        console.log(newRooms.length)
 
         // Filter out rooms that are already selected in current booking
         const availableRooms = newRooms.filter((room) => {
@@ -330,7 +339,7 @@ console.log(params)
   const calculateTax = useCallback(
     async (booking) => {
       if (!booking) return booking
-console.log(booking)
+      console.log(booking)
       const updatedRoom = recalculateBookingTotals(booking)
 
       try {
@@ -379,7 +388,7 @@ console.log(booking)
 
   useEffect(() => {
     if (pendingRoomQueue.length === 0) return
-
+    console.log("jjj")
     const roomIdToUpdate = pendingRoomQueue[0]
     const roomToUpdate = bookings.find((b) => b.roomId === roomIdToUpdate)
 
@@ -420,10 +429,10 @@ console.log(booking)
       }, 0)
 
       const foodTotal = Number(formData?.foodPlanTotal || 0)
-      const finalTotal = total 
-console.log(foodTotal)
-console.log(total)
-console.log(paxTotal)
+      const finalTotal = total
+      console.log(foodTotal)
+      console.log(total)
+      console.log(paxTotal)
       // If in single-room edit mode, merge with other rooms before sending to parent
       if (
         isEditingSingleRoom &&
@@ -457,7 +466,7 @@ console.log(paxTotal)
         setTotalAmount(allRoomsFinalTotal)
         sendToParent(allRooms, allRoomsFinalTotal)
       } else {
-console.log("{h")
+        console.log("{h")
         // Normal mode - send as is
         setTotalAmount(finalTotal)
         console.log(finalTotal)
@@ -567,6 +576,7 @@ console.log("{h")
   }
 
   const handleDelete = (roomId) => {
+    console.log(isEditingSingleRoom)
     if (isEditingSingleRoom) {
       // Show message or prevent deletion when editing single room
       toast.error("Cannot delete room while in tariff rate change mode")
@@ -602,7 +612,7 @@ console.log("{h")
     setSearch("")
     onSelect(room)
   }
-console.log(bookings)
+  console.log(bookings)
   const handleClear = (e) => {
     e.stopPropagation()
     setSelectedValue(null)
@@ -612,7 +622,7 @@ console.log(bookings)
 
   const handleSearch = useCallback(
     (term) => {
-      console.log("termmmm",term)
+      console.log("termmmm", term)
       setSearch(term)
       setPage(1)
       clearTimeout(debounceTimerRef.current)
@@ -657,7 +667,7 @@ console.log(bookings)
       fetchRooms(1, search)
     }
   }, [bookings.length]) // Triggers when rooms are added/removed from bookings
-console.log(bookings)
+  console.log(bookings)
   console.log(formData)
   return (
     <>
