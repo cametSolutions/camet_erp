@@ -2395,16 +2395,13 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
         ...checkInSideAdvanceDetails
       );
     }
-<<<<<<< HEAD
 
-    console.log("Total Advance Details:", allAdvanceDetails.length);
-    console.log("Total KOT Data:", allKotData.length);
+    // console.log("Total Advance Details:", allAdvanceDetails.length);
+    // console.log("Total KOT Data:", allKotData.length);
 
-=======
-    console.log("lenthhh", allAdvanceDetails.length)
+    // console.log("lenthhh", allAdvanceDetails.length)
 
 
->>>>>>> 0938cd2304e4dc1a1cb6ec98cbbac3a40358290e
     if (allAdvanceDetails.length > 0 || allKotData.length > 0) {
       return res.status(200).json({
         success: true,
