@@ -1,4 +1,6 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+
+
+import  { useState, useEffect, useCallback, useRef } from "react";
 import dayjs from "dayjs";
 import useFetch from "@/customHook/useFetch";
 import { useQueryClient } from "@tanstack/react-query";
@@ -15,10 +17,11 @@ import {
   MdPrint,
   MdCheckCircle,
   MdPayment,
-  MdCancel,
+    MdCancel,
   MdClose,
 } from "react-icons/md";
 import api from "@/api/api";
+
 
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -31,6 +34,8 @@ import { FaRegEdit } from "react-icons/fa";
 import VoucherThreeInchPdf from "@/pages/voucher/voucherPdf/threeInchPdf/VoucherThreeInchPdf";
 import { useReactToPrint } from "react-to-print";
 import CustomerSearchInputBox from "@/pages/Hotel/Components/CustomerSearchInPutBox";
+
+
 
 const OrdersDashboard = () => {
   const contentToPrint = useRef(null);
@@ -69,13 +74,14 @@ const OrdersDashboard = () => {
 
   const [salePrintData, setSalePrintData] = useState(null);
 
+
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [selectedOrderForCancel, setSelectedOrderForCancel] = useState(null);
   const [cancelledKots, setCancelledKots] = useState([]);
   const [cancelReason, setCancelReason] = useState("");
   const [cancelError, setCancelError] = useState("");
 
-  const queryClient = useQueryClient();
+   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
   const { _id: cmp_id, name: companyName } = useSelector(
@@ -213,8 +219,8 @@ const OrdersDashboard = () => {
   const getFilteredOrders = () => {
     let filtered = orders;
 
-    filtered = filtered.filter(
-      (order) => !cancelledKots.some((cancelled) => cancelled.id === order._id)
+      filtered = filtered.filter(order => 
+      !cancelledKots.some(cancelled => cancelled.id === order._id)
     );
     // Filter by status based on user role and active filter
     // if (userRole === "kitchen") {
@@ -320,31 +326,34 @@ const OrdersDashboard = () => {
     generateAndPrintKOT(orderData, true, false, companyName);
   };
 
-  const handleKotCancel = async () => {
-    try {
-      if (!selectedOrderForCancel) return;
 
-      const response = await api.put(
-        `/api/kot/cancel/${selectedOrderForCancel._id}`,
-        { reason: cancelReason }
+const handleKotCancel = async () => {
+  try {
+    if (!selectedOrderForCancel) return;
+
+    const response = await api.put(
+      `/api/kot/cancel/${selectedOrderForCancel._id}`,
+      { reason: cancelReason }
+    );
+
+    if (response.data.success) {
+      // ✅ Remove the cancelled order from UI immediately
+      setOrders((prevOrders) =>
+        prevOrders.filter((kot) => kot._id !== selectedOrderForCancel._id)
       );
 
-      if (response.data.success) {
-        // ✅ Remove the cancelled order from UI immediately
-        setOrders((prevOrders) =>
-          prevOrders.filter((kot) => kot._id !== selectedOrderForCancel._id)
-        );
-
-        setShowCancelModal(false);
-        setCancelReason(""); // clear reason field
-        setSelectedOrderForCancel(null);
-      } else {
-        console.error("Cancel failed:", response.data.message);
-      }
-    } catch (error) {
-      console.error("Error cancelling KOT:", error);
+      setShowCancelModal(false);
+      setCancelReason(""); // clear reason field
+      setSelectedOrderForCancel(null);
+    } else {
+      console.error("Cancel failed:", response.data.message);
     }
-  };
+  } catch (error) {
+    console.error("Error cancelling KOT:", error);
+  }
+};
+
+
 
   const MenuIcon = () => (
     <svg
@@ -396,25 +405,19 @@ const OrdersDashboard = () => {
 
   console.log("filteredOrders", filteredOrders);
 
- const handleSavePayment = async (id) => {
-  setSaveLoader(true);
+  const handleSavePayment = async (id) => {
+    setSaveLoader(true);
 
-  if (paymentMode === "credit") {
-    if (
-      !selectedCreditor ||
-      selectedCreditor === "" ||
-      !selectedCreditor._id
-    ) {
+     if (paymentMode === "credit") {
+    if (!selectedCreditor || selectedCreditor === "" || !selectedCreditor._id) {
       setPaymentError("Please select a creditor");
       setSaveLoader(false);
       return;
     }
   }
-  
-  let paymentDetails;
-  let selectedKotData;
-  
-  if (selectedDataForPayment?.isDirectSale) {
+    let paymentDetails;
+    let selectedKotData;
+     if (selectedDataForPayment?.isDirectSale) {
     // Direct sale payment processing
     if (paymentMethod === "cash") {
       paymentDetails = {
@@ -435,105 +438,152 @@ const OrdersDashboard = () => {
     }
     selectedKotData = selectedDataForPayment;
   } else {
-    // Regular payment processing
-    if (paymentMode === "single") {
-      if (paymentMethod === "cash") {
+    if (
+      selectedDataForPayment.roomService &&
+      Object.keys(selectedDataForPayment.roomService).length > 0
+    ) {
+      // CASE 1: When roomService exists
+      if (paymentMode === "single") {
+        if (paymentMethod === "cash") {
+          paymentDetails = {
+            cashAmount: selectedDataForPayment?.total,
+            onlineAmount,
+            selectedCash,
+            selectedBank,
+            paymentMode,
+          };
+        } else {
+          paymentDetails = {
+            cashAmount,
+            onlineAmount: selectedDataForPayment?.total,
+            selectedCash,
+            selectedBank,
+            paymentMode,
+          };
+        }
+        selectedKotData = selectedDataForPayment;
+      } else if (paymentMode === "credit") {
+
+        if (!selectedCreditor || selectedCreditor == "") {
+          setPaymentError("Please select a creditor");
+          return;
+        }
         paymentDetails = {
           cashAmount: selectedDataForPayment?.total,
-          onlineAmount: 0,
-          selectedCash,
-          selectedBank,
+          selectedCreditor,
           paymentMode,
         };
+           selectedKotData = selectedDataForPayment;
       } else {
+        // Split payment mode
+        if (
+          Number(cashAmount) + Number(onlineAmount) !==
+          selectedDataForPayment?.total
+        ) {
+          setPaymentError(
+            "Cash and online amounts together equal the total amount."
+          );
+          return;
+        }
         paymentDetails = {
-          cashAmount: 0,
-          onlineAmount: selectedDataForPayment?.total,
+          cashAmount,
+          onlineAmount,
           selectedCash,
           selectedBank,
           paymentMode,
         };
+        selectedKotData = selectedDataForPayment;
       }
-      selectedKotData = previewForSales;
-    } else if (paymentMode === "credit") {
-      if (!selectedCreditor || selectedCreditor === "") {
-        setPaymentError("Please select a creditor");
-        setSaveLoader(false);
-        return;
-      }
-      paymentDetails = {
-        cashAmount: selectedDataForPayment?.total,
-        selectedCreditor,
-        paymentMode,
-      };
-      selectedKotData = previewForSales;
     } else {
-      // Split payment
-      if (
-        Number(cashAmount) + Number(onlineAmount) !==
+      // CASE 2: When NO roomService
+      if (paymentMode === "single") {
+        if (paymentMethod === "cash") {
+          paymentDetails = {
+            cashAmount: selectedDataForPayment?.total,
+            onlineAmount,
+            selectedCash,
+            selectedBank,
+            paymentMode,
+          };
+        } else {
+          paymentDetails = {
+            cashAmount,
+            onlineAmount: selectedDataForPayment?.total,
+            selectedCash,
+            selectedBank,
+            paymentMode,
+          };
+        }
+        selectedKotData = previewForSales;
+      } else if (paymentMode === "credit") {
+        if (!selectedCreditor || selectedCreditor == "") {
+          setPaymentError("Please select a creditor");
+          setSaveLoader(false);
+          return;
+        }
+        paymentDetails = {
+          cashAmount: selectedDataForPayment?.total,
+          selectedCreditor,
+          paymentMode,
+        };
+          selectedKotData = previewForSales;
+      } else {
+        if (
+          Number(cashAmount) + Number(onlineAmount) !==
         Number(selectedDataForPayment?.total)
-      ) {
-        setPaymentError(
-          "Cash and online amounts together must equal the total amount."
-        );
-        setSaveLoader(false);
-        return;
+        ) {
+          setPaymentError(
+            "Cash and online amounts together equal the total amount."
+          );
+          return;
+        }
+        paymentDetails = {
+          cashAmount,
+          onlineAmount,
+          selectedCash,
+          selectedBank,
+          paymentMode,
+        };
+        selectedKotData = previewForSales;
       }
-      paymentDetails = {
-        cashAmount,
-        onlineAmount,
-        selectedCash,
-        selectedBank,
-        paymentMode,
-      };
-      selectedKotData = previewForSales;
     }
-  }
 
-  console.log(paymentMethod);
-  console.log(paymentDetails);
-  console.log(selectedKotData);
-
-  try {
+    console.log(paymentMethod);
     console.log(paymentDetails);
-    const payment = {
-      ...paymentDetails,
-      cashAmount: Number(paymentDetails.cashAmount),
-    };
-    console.log(payment);
+    console.log(selectedKotData);
 
-    const response = await api.put(
-      `/api/sUsers/updateKotPayment/${cmp_id}`,
-      {
-        paymentMethod: paymentMethod,
-        paymentDetails: payment,
-        selectedKotData: selectedKotData,
-        isPostToRoom: isPostToRoom,
-        isDirectSale: selectedDataForPayment?.isDirectSale || false,
-      },
-      { withCredentials: true }
-    );
+    try {
+      console.log(paymentDetails)
+      const payment={...paymentDetails,cashAmount:Number(paymentDetails.cashAmount)}
+      console.log(payment)
+  
     
-    // Check if the response was successful
-    if (response.status === 200 || response.status === 201) {
-      // Update the local state with the new status
-      setOrders((prevOrders) =>
-        prevOrders.map((order) =>
-          order._id === id
-            ? {
-                ...order,
-                paymentCompleted: true,
-                paymentMethod: paymentMethod,
-              }
-            : order
-        )
+      const response = await api.put(
+        `/api/sUsers/updateKotPayment/${cmp_id}`,
+        {
+          paymentMethod: paymentMethod,
+          paymentDetails: payment,
+          selectedKotData: selectedKotData,
+          isPostToRoom: isPostToRoom,
+              isDirectSale: selectedDataForPayment?.isDirectSale || false,
+        },
+        { withCredentials: true }
       );
-      
-      const completedKots = selectedDataForPayment?.voucherNumber || [];
+      // Check if the response was successful
+      if (response.status === 200 || response.status === 201) {
+        // Update the local state with the new status
+        setOrders((prevOrders) =>
+          prevOrders.map((order) =>
+            order._id === id
+              ? { ...order,paymentCompleted: true , paymentMethod: data.paymentMethod }
+              : order
+          )
+        );
+          const completedKots = selectedDataForPayment?.voucherNumber || [];
       const tableNumbers = new Set();
-
-      completedKots.forEach((kot) => {
-        const kotOrder = orders.find(order => order._id === kot.id);
+      
+      completedKots.forEach(kot => {
+          const kotOrder = orders.find(order => order._id === kot.id);
         if (kotOrder?.tableNumber && kotOrder?.type === 'dine-in') {
           tableNumbers.add(kotOrder.tableNumber);
         }
@@ -541,57 +591,56 @@ const OrdersDashboard = () => {
 
       // For each table, check if all its KOTs are now completed
       for (const tableNumber of tableNumbers) {
+
         if (!tableNumber) {
           console.log('Skipping undefined/null tableNumber');
-          continue;
+          continue; // Skip if tableNumber is undefined/null
         }
-        
-        const tableKots = orders.filter(
-          (order) =>
-            order.tableNumber === tableNumber && order.type === "dine-in"
+        const tableKots = orders.filter(order => 
+          order.tableNumber === tableNumber && 
+          order.type === 'dine-in'
         );
-
-        const allCompleted = tableKots.every(
-          (kot) =>
-            completedKots.some((completed) => completed.id === kot._id) ||
-            kot.paymentCompleted
+        
+        const allCompleted = tableKots.every(kot => 
+          completedKots.some(completed => completed.id === kot._id) ||
+          kot.paymentCompleted
         );
 
         if (allCompleted) {
           try {
-            const tableUpdateResponse = await api.put(
+              const tableUpdateResponse = await api.put(
               `/api/sUsers/updateTableStatus/${cmp_id}/${tableNumber}`,
               { status: "available" },
               { withCredentials: true }
             );
-            console.log(`Table ${tableNumber} status updated successfully:`, tableUpdateResponse.data);
+ console.log(`Table ${tableNumber} status updated successfully:`, tableUpdateResponse.data);
           } catch (tableError) {
             console.error(`Error updating table ${tableNumber} status:`, tableError);
           }
         }
       }
 
-      setLoader(false);
-      setSelectedKot([]);
-      setShowVoucherPdf(false);
-      toast.success(response?.data?.message);
-    } else {
-      console.error("Failed to update backend:", response.data || response);
+        setLoader(false);
+        setSelectedKot([]);
+        setShowVoucherPdf(false);
+        toast.success(response?.data?.message);
+      } else {
+        console.error("Failed to update backend:", response.data || response);
+      }
+    } catch (error) {
+      console.error(
+        "Error updating order status:",
+        error.response?.data || error.message
+      );
+    } finally {
+      setSaveLoader(false);
+      setCashAmount(0);
+      setOnlineAmount(0);
+      refreshHook();
+      setShowPaymentModal(false);
+      setPaymentMode("single")
+      setSelectedCreditor("")
     }
-  } catch (error) {
-    console.error(
-      "Error updating order status:",
-      error.response?.data || error.message
-    );
-    toast.error(error.response?.data?.message || "Payment processing failed");
-  } finally {
-    setSaveLoader(false);
-    setCashAmount(0);
-    setOnlineAmount(0);
-    refreshHook();
-    setShowPaymentModal(false);
-    setPaymentMode("single");
-    setSelectedCreditor("");
   }
 };
 
@@ -662,9 +711,11 @@ const OrdersDashboard = () => {
       return findOne?.items || []; // return empty array if not found
     });
 
-    let totalAmount = itemList
-      .reduce((acc, item) => acc + Number(item.total), 0)
-      .toFixed(2);
+    let totalAmount = itemList.reduce(
+      (acc, item) => acc + Number(item.total) ,
+      0
+    ).toFixed(2);
+
 
     let newObject = {
       Date: new Date(),
@@ -679,11 +730,11 @@ const OrdersDashboard = () => {
       finalAmount: totalAmount,
       total: totalAmount,
       voucherNumber: kotVoucherNumberArray,
-      party: {
-        partyName: selectedKot[0]?.customer?.name,
-        address: selectedKot[0]?.customer?.address,
-        mobile: selectedKot[0]?.customer?.phone,
-      },
+      party:{
+        partyName:selectedKot[0]?.customer?.name,
+        address:selectedKot[0]?.customer?.address,
+        mobile:selectedKot[0]?.customer?.phone,
+      }
     };
     setPreviewForSales(newObject);
   };
@@ -717,6 +768,7 @@ const OrdersDashboard = () => {
     // }
     navigate("/sUsers/RestaurantDashboard", { state: { kotData } });
   };
+
 
   const handlePrint = useReactToPrint({
     content: () => contentToPrint.current,
@@ -939,20 +991,21 @@ const OrdersDashboard = () => {
                         >
                           <MdDescription className="w-4 h-4 text-blue-600" />
                           <span
-                            className={`px-2 py-1 rounded-md text-xs font-medium ${
-                              isOrderSelected(order)
-                                ? "bg-blue-200 text-blue-800"
-                                : "bg-gray-100 text-gray-700"
-                            }`}
-                          >
-                            {order.type} - {order?.tableNumber}
-                            <span>
-                              {order.roomId?.roomName && order?.tableNumber
-                                ? ","
-                                : " "}
-                              {order.roomId?.roomName}
+                              className={`px-2 py-1 rounded-md text-xs font-medium ${
+                                isOrderSelected(order)
+                                  ? "bg-blue-200 text-blue-800"
+                                  : "bg-gray-100 text-gray-700"
+                              }`}
+                            >
+                              {order.type} - {order?.tableNumber}
+                              <span>
+                                {order.roomId?.roomName && order?.tableNumber
+                                  ? ","
+                                  : " "}
+                                {order.roomId?.roomName}
+                              </span>
                             </span>
-                          </span>
+                         
                         </div>
                         <div className="flex items-center gap-2">
                           <FaRegEdit
@@ -969,9 +1022,9 @@ const OrdersDashboard = () => {
                         {/* Order type and timestamp */}
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="text-sm font-bold text-blue-900">
-                              #{order.voucherNumber}
-                            </span>
+                           <span className="text-sm font-bold text-blue-900">
+                            #{order.voucherNumber}
+                          </span>
                           </div>
 
                           <div className="text-xs text-gray-500 flex items-center gap-1">
@@ -1064,7 +1117,7 @@ const OrdersDashboard = () => {
                                       ₹{item?.price?.toFixed(2)}
                                     </div>
                                     <div className="text-xs text-gray-500">
-                                      ₹{item?.total?.toFixed(2)}
+                                      ₹{(item?.total)?.toFixed(2)}
                                     </div>
                                   </div>
                                 )}
@@ -1196,25 +1249,22 @@ const OrdersDashboard = () => {
                           <MdPrint className="w-3 h-3 group-hover:rotate-12 transition-transform duration-200" />
                           Kot Print
                         </button>
-                        {!order?.paymentCompleted && (
-                          <button
+ {!order?.paymentCompleted && (
+                           <button
                             className="flex-1 group px-3 py-1.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg text-xs font-semibold hover:from-red-600 hover:to-red-700 transition-all duration-200 hover:scale-105 flex items-center justify-center gap-1"
                             onClick={(e) => {
                               e.stopPropagation();
                               e.preventDefault();
-                              console.log(
-                                "Cancel button clicked for order:",
-                                order
-                              );
+                              console.log('Cancel button clicked for order:', order);
                               setSelectedOrderForCancel(order);
                               setShowCancelModal(true);
-                              console.log("Modal should open now");
+                              console.log('Modal should open now');
                             }}
                           >
                             <MdCancel className="w-3 h-3 group-hover:rotate-12 transition-transform duration-200" />
                             Cancel
                           </button>
-                        )}
+ )}
                       </div>
                     )}
 
@@ -1890,8 +1940,8 @@ const OrdersDashboard = () => {
                       onClick={() => {
                         setShowCancelModal(false);
                         setSelectedOrderForCancel(null);
-                        setCancelReason("");
-                        setCancelError("");
+                        setCancelReason('');
+                        setCancelError('');
                       }}
                       className="text-gray-400 hover:text-gray-600"
                     >
@@ -1901,14 +1951,13 @@ const OrdersDashboard = () => {
 
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Reason for Cancellation{" "}
-                      <span className="text-red-500">*</span>
+                      Reason for Cancellation <span className="text-red-500">*</span>
                     </label>
                     <textarea
                       value={cancelReason}
                       onChange={(e) => {
                         setCancelReason(e.target.value);
-                        setCancelError("");
+                        setCancelError('');
                       }}
                       placeholder="Please provide a reason for cancelling this KOT..."
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
@@ -1921,8 +1970,8 @@ const OrdersDashboard = () => {
 
                   <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
                     <p className="text-xs text-yellow-800">
-                      <strong>Note:</strong> This will cancel the KOT from the
-                      report only. The data will remain in the database.
+                      <strong>Note:</strong> This will cancel the KOT from the report only. 
+                      The data will remain in the database.
                     </p>
                   </div>
 
@@ -1931,8 +1980,8 @@ const OrdersDashboard = () => {
                       onClick={() => {
                         setShowCancelModal(false);
                         setSelectedOrderForCancel(null);
-                        setCancelReason("");
-                        setCancelError("");
+                        setCancelReason('');
+                        setCancelError('');
                       }}
                       className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-all duration-200"
                     >
