@@ -371,17 +371,17 @@ router.post("/Table/:cmp_id", authSecondary, saveTableNumber)
 router.put('/updateTable/:id', authSecondary, updateTable);
 router.get('/getTable/:cmp_id', authSecondary, getTables);
 
-router.delete('/deleteTable/:id', authSecondary, deleteTable);
-router.get("/getSalePrintData/:cmp_id/:saleId", authSecondary, secondaryIsBlocked, getSalePrintData)
-router.get("/getSalePrintData/:cmp_id/:kotId", authSecondary, secondaryIsBlocked, getSalePrintData)
-router.put('/updateTableStatus/:cmp_id:tableNumber', authSecondary, updateTableStatus)
-router.get('/getKotDataByTable/:cmp_id', authSecondary, getKotDataByTable)
-router.get('/getDateBasedRoomsWithStatus/:cmp_id', authSecondary, getDateBasedRoomsWithStatus)
-router.put('/checkOutWithArray/:cmp_id', authSecondary, checkoutWithArrayOfData)
-router.post('/fetchOutStandingAndFoodData', authSecondary, fetchOutStandingAndFoodData)
-router.post('/convertCheckOutToSale/:cmp_id', authSecondary, convertCheckOutToSale)
-router.put('/updateConfigurationForHotelAndRestaurant/:cmp_id', authSecondary, updateConfigurationForHotelAndRestaurant)
-router.put('/updateConfigurationForKotApproval/:cmp_id', authSecondary, updateConfigurationForKotApproval)
+router.delete('/deleteTable/:id', authSecondary,deleteTable);
+router.get("/getSalePrintData/:cmp_id/:saleId",authSecondary,secondaryIsBlocked,getSalePrintData)
+router.get("/getSalePrintData/:cmp_id/:kotId",authSecondary,secondaryIsBlocked,getSalePrintData)
+router.put('/updateTableStatus/:cmp_id/:tableNumber',authSecondary,updateTableStatus )
+router.get('/getKotDataByTable/:cmp_id',authSecondary,getKotDataByTable )
+router.get('/getDateBasedRoomsWithStatus/:cmp_id',authSecondary,getDateBasedRoomsWithStatus)
+router.put('/checkOutWithArray/:cmp_id',authSecondary,checkoutWithArrayOfData)
+router.post('/fetchOutStandingAndFoodData',authSecondary,fetchOutStandingAndFoodData)
+router.post('/convertCheckOutToSale/:cmp_id',authSecondary,convertCheckOutToSale)
+router.put('/updateConfigurationForHotelAndRestaurant/:cmp_id',authSecondary,updateConfigurationForHotelAndRestaurant)
+router.put('/updateConfigurationForKotApproval/:cmp_id',authSecondary,updateConfigurationForKotApproval)
 router.put("/swapRoom/:checkInId", swapRoom);
 router.get("/getRoomSwapHistory/:checkInId", getRoomSwapHistory);
 router.get("/getCheckedInGuests/:cmp_id", checkedInGuest);

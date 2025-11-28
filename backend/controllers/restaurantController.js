@@ -1298,52 +1298,52 @@ async function createSplitPaymentArray(payments, cmp_id, session) {
 }
 
 // NEW: Helper function to process split payment settlements
-async function processSplitPaymentSettlements(
-  payments,
-  cmp_id,
-  savedVoucher,
-  req,
-  session
-) {
-  console.log('Processing settlements for', payments.length, 'payments');
+// async function processSplitPaymentSettlements(
+//   payments,
+//   cmp_id,
+//   savedVoucher,
+//   req,
+//   session
+// ) {
+//   console.log('Processing settlements for', payments.length, 'payments');
   
-  for (const payment of payments) {
-    // Find the account
-    const account = await Party.findOne({
-      cmp_id,
-      _id: payment.accountId,
-    })
-      .populate("accountGroup")
-      .session(session);
+//   for (const payment of payments) {
+//     // Find the account
+//     const account = await Party.findOne({
+//       cmp_id,
+//       _id: payment.accountId,
+//     })
+//       .populate("accountGroup")
+//       .session(session);
 
-    if (!account) {
-      console.warn(`Account ${payment.accountId} not found for settlement, skipping...`);
-      continue;
-    }
+//     if (!account) {
+//       console.warn(`Account ${payment.accountId} not found for settlement, skipping...`);
+//       continue;
+//     }
 
-    const amount = Number(payment.amount);
+//     const amount = Number(payment.amount);
     
-    // ✅ Map method to settlement type
-    const settlementType = payment.method === 'cash' ? 'cash' : 'bank';
+//     // ✅ Map method to settlement type
+//     const settlementType = payment.method === 'cash' ? 'cash' : 'bank';
 
-    // Create settlement entry using the helper function
-    await saveSettlementData(
-      account,
-      cmp_id,
-      settlementType,
-      "sales",
-      "Sales",
-      savedVoucher.salesNumber,
-      savedVoucher._id,
-      amount,
-      new Date(),
-      req,
-      session
-    );
+//     // Create settlement entry using the helper function
+//     await saveSettlementData(
+//       account,
+//       cmp_id,
+//       settlementType,
+//       "sales",
+//       "Sales",
+//       savedVoucher.salesNumber,
+//       savedVoucher._id,
+//       amount,
+//       new Date(),
+//       req,
+//       session
+//     );
 
-    console.log(`Settlement created for ${account.partyName || account.name}: ₹${amount}`);
-  }
-}
+//     console.log(`Settlement created for ${account.partyName || account.name}: ₹${amount}`);
+//   }
+// }
 
 
 async function getRestaurantVoucherSeries(cmp_id, session) {
@@ -1641,12 +1641,13 @@ async function saveSettlement(
         selectedParty,
         cmp_id,
         "cash",
-        "sale",
+        "sales",
+         "Sales",
         savedVoucher?.salesNumber,
         savedVoucher?._id,
         cashAmt,
         new Date(),
-        selectedParty?.partyName,
+        // selectedParty?.partyName,
         req,
         session
       );
@@ -1656,12 +1657,13 @@ async function saveSettlement(
         selectedParty,
         cmp_id,
         "bank",
-        "sale",
+        "sales",
+         "Sales",
         savedVoucher?.salesNumber,
         savedVoucher?._id,
         onlineAmt,
         new Date(),
-        selectedParty?.partyName,
+        // selectedParty?.partyName,
         req,
         session
       );
