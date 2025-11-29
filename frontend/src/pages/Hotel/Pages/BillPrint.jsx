@@ -65,12 +65,13 @@ console.log(a)
     }
   }
 
-  useEffect(() => {
-    if (selectedCheckOut?.length > 0) {
-console.log(selectedCheckOut)
-      fetchDebitData(selectedCheckOut)
-    }
-  }, [selectedCheckOut])
+useEffect(() => {
+  if (selectedCheckOut?.length > 0) {
+    console.log(selectedCheckOut)
+    fetchDebitData(selectedCheckOut)
+  }
+}, [JSON.stringify(selectedCheckOut)])  // ✅ CHANGED: Added JSON.stringify
+
 
   // Split handlers
   const handleSplitPayment = () => setShowSplitPopUp(true)
