@@ -41,8 +41,15 @@ const drawSingleBill = async (doc, billData, pageNo, totalPages) => {
     if (billData?.hotel?.logo) {
       try {
         const base64Logo = await getBase64FromUrl(billData?.hotel?.logo);
+        console.log("logo base64 length", base64Logo?.length);
         doc.addImage(base64Logo, "PNG", MARGIN + 2, headerStartY + 2, 32, 32);
-      } catch {}
+      } catch (err) {
+        console.error(
+          "Failed to load logo for PDF",
+          err,
+          billData?.hotel?.logo
+        );
+      }
     }
 
     const rightX = pageWidth - MARGIN;
