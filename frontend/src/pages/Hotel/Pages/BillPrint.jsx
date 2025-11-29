@@ -30,12 +30,12 @@ const HotelBillPrint = () => {
 
   // Props from location state
   const selectedCheckOut = location.state?.selectedCheckOut || [];
-  console.log(selectedCheckOut);
+  // console.log(selectedCheckOut);
   const a = selectedCheckOut.some((it) => it.originalCheckInId);
   console.log(a);
   const checkoutmode = location?.state?.checkoutMode || null;
   const cheinids = location?.state?.checkinIds;
-  console.log(selectedCheckOut);
+  // console.log(selectedCheckOut);
   // const selectedCustomerId = location.state?.customerId;
   const isForPreview = location.state?.isForPreview;
 
@@ -56,7 +56,7 @@ const HotelBillPrint = () => {
         { withCredentials: true }
       );
       if (res.data.success) {
-        console.log(res.data.data);
+        // console.log(res.data.data);
         setOutStanding(res.data.data || []);
         setKotData(res.data.kotData || []);
       }
@@ -68,7 +68,7 @@ const HotelBillPrint = () => {
 
   useEffect(() => {
     if (selectedCheckOut?.length > 0) {
-      console.log(selectedCheckOut);
+      // console.log(selectedCheckOut);
       fetchDebitData(selectedCheckOut);
     }
   }, [JSON.stringify(selectedCheckOut)]); // ✅ CHANGED: Added JSON.stringify
