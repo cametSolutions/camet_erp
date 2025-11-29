@@ -2,11 +2,10 @@ import { useEffect, useState, useRef, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
-import { useReactToPrint } from "react-to-print";
+// import { useReactToPrint } from "react-to-print";
 import api from "@/api/api";
 import Logo from "../../../assets/images/hill.png";
 import TitleDiv from "@/components/common/TitleDiv";
-import { jsPDF } from "jspdf";
 import "jspdf-autotable";
 // import {
 //   handlePrintInvoice,
@@ -16,7 +15,7 @@ import {
   handleBillPrintInvoice,
   handleBillDownloadPDF,
 } from "../PrintSide/generateBillPrintPDF";
-import Outstanding from "@/pages/voucherReports/outstanding/Outstanding";
+
 // import { Title } from "@radix-ui/react-dialog";
 
 const HotelBillPrint = () => {
@@ -74,7 +73,7 @@ const HotelBillPrint = () => {
 
   // Split handlers
   const handleSplitPayment = () => setShowSplitPopUp(true);
-  const handleChange = (value) => setSelected(value);
+
   const handleSplit = () => {
     setShowSplitPopUp(false);
     if (selected === "room") {
@@ -583,11 +582,11 @@ const HotelBillPrint = () => {
     const guestRooms = (doc.selectedRooms || [])
       .map((r) => r.roomName)
       .join(", ");
-    const pax =
-      (doc.selectedRooms || []).reduce(
-        (acc, curr) => acc + Number(curr.pax || 0),
-        0
-      ) || 1;
+    // const pax =
+    //   (doc.selectedRooms || []).reduce(
+    //     (acc, curr) => acc + Number(curr.pax || 0),
+    //     0
+    //   ) || 1;
 
     const basePax =
       (doc.selectedRooms || []).reduce(
@@ -674,11 +673,11 @@ const HotelBillPrint = () => {
   }, [selectedCheckOut, outStanding, kotData, organization]);
 
   // Print handlers use first bill by default for metadata
-  const handlePrint = useReactToPrint({
-    content: () => printReference.current,
-    documentTitle: "Hotel Bill",
-    removeAfterPrint: true,
-  });
+  // const handlePrint = useReactToPrint({
+  //   content: () => printReference.current,
+  //   documentTitle: "Hotel Bill",
+  //   removeAfterPrint: true,
+  // });
 
   const handlePrintPDF = (isPrint) => {
     const multi = bills && bills.length ? bills : [];
@@ -808,7 +807,7 @@ const HotelBillPrint = () => {
               <div style={{ flex: "0 0 120px" }}>
                 {Logo && (
                   <img
-                    src={Logo}
+                    src={billData?.hotel?.logo }
                     alt="Logo"
                     style={{ width: "120px", height: "auto" }}
                   />
