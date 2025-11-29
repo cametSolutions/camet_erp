@@ -648,22 +648,15 @@ console.log(selectedCheckOut.length)
     setShowEnhancedCheckoutModal(true)
   }
   console.log()
-  const handleEnhancedCheckoutConfirm = async (roomAssignments) => {
-    console.log(roomAssignments)
-    setShowEnhancedCheckoutModal(false)
-    let checkDateChanged = selectedCheckOut.filter(
-      (item) => item?.checkOutDate !== new Date().toISOString().split("T")[0]
-    )
+ const handleEnhancedCheckoutConfirm = async (roomAssignments) => {
+  console.log(roomAssignments);
+  setShowEnhancedCheckoutModal(false);
+  
+  // ✅ ALWAYS show checkout date modal - no condition
+  setProcessedCheckoutData(roomAssignments);
+  setShowCheckOutDateModal(true);
+}
 
-    if (checkDateChanged?.length > 0) {
-      console.log("KK")
-      setProcessedCheckoutData(roomAssignments)
-      setShowCheckOutDateModal(true)
-    } else {
-      console.log("K")
-      proceedToCheckout(roomAssignments)
-    }
-  }
   console.log(bookings)
   const proceedToCheckout = (roomAssignments) => {
     setSaveLoader(true)
