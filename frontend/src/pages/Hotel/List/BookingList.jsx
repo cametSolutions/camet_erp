@@ -174,6 +174,7 @@ function BookingList() {
 
   useEffect(() => {
     if (location?.state?.selectedCheckOut) {
+console.log(location?.state?.selectedCheckOut)
       setSelectedCheckOut(location?.state?.selectedCheckOut)
       setSelectedCustomer(location?.state?.selectedCustomer?._id)
       setRestaurantBaseSaleData(location?.state?.kotData)
@@ -550,6 +551,7 @@ function BookingList() {
     console.log("h")
     console.log(selectedCheckOut)
     console.log(selectedCheckOut.length)
+  
 
     setSaveLoader(true)
     let paymentDetails
@@ -641,6 +643,7 @@ function BookingList() {
     })
     console.log(selectedCheckOut)
     console.log(selectedCheckOut.length)
+    console.log(paymentDetails)
     
 
     try {
@@ -877,7 +880,7 @@ function BookingList() {
       console.log("hhhh")
       const match = parties.find((p) => p._id === selectedCustomer)
       if (!match) return
-     
+
       setSelectedCheckOut((prev) =>
         prev.map((item) => ({
           ...item,
@@ -1337,7 +1340,7 @@ function BookingList() {
           }
         })
       }))
-  
+
       proceedToCheckout(updatedCheckoutData)
       setProcessedCheckoutData(null)
     } else {
