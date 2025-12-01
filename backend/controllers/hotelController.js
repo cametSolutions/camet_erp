@@ -657,17 +657,7 @@ export const getRooms = async (req, res) => {
       arrivalDate: { $lte: checkOutDate },
       checkOutDate: { $gte: arrivalDate },
     });
-    // console.log("overlappingbookings", overlappingBookings);
-    console.log("arrivaldate", arrivalDate)
-    console.log("checkoutdate", checkOutDate)
-    console.log("cmpid", req.params.cmp_id)
-    const a = await CheckIn.find({
-      cmp_id: req.params.cmp_id,
-      status: { $ne: "checkOut" }
-    })
-    // console.log("checkindrommmmssss", a)
-    const d2 = a.filter((item) => item.voucherNumber === "CHI-241-2025")
-    console.log("d22", d2)
+    // console.log("overlappingbookings", overlappingBookings)
     const AllCheckIns = await CheckIn.find({
       cmp_id: req.params.cmp_id,
       status: { $ne: "checkOut" },
@@ -745,7 +735,6 @@ export const getRooms = async (req, res) => {
       status: "vacant",
       checkedAt: now,
     }));
-
     // Send response
     const sendRoomResponseData = sendRoomResponse(
       res,
@@ -992,7 +981,6 @@ export const roomBooking = async (req, res) => {
       bookingData.voucherNumber = bookingNumber?.voucherNumber;
       bookingData.voucherId = series_id;
       // 🔹 Save Booking
-
       const newBooking = new selectedModal({
         cmp_id: orgId,
         Primary_user_id: req.pUserId || req.owner,
@@ -1062,7 +1050,7 @@ export const roomBooking = async (req, res) => {
             .findOne({ _id: bookingData?.customerId })
             .populate("accountGroup")
             .session(session);
-          console.log("selectedpartyinroombookingcontroller", selectedParty);
+          // console.log("selectedpartyinroombookingcontroller", selectedParty)
 
           if (selectedParty) {
             selectedParty = selectedParty.toObject();
@@ -2282,6 +2270,7 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
   try {
     const checkoutData = req.body?.data;
 
+
     const isForPreview = req.body?.isForPreview;
     if (!checkoutData || checkoutData.length === 0) {
       return res.status(400).json({
@@ -2392,7 +2381,7 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
         ...checkInSideAdvanceDetails
       );
     }
-    console.log("lenthhh", allAdvanceDetails.length)
+    // console.log("lenthhh", allAdvanceDetails.length)
 
 
     if (allAdvanceDetails.length > 0 || allKotData.length > 0) {
@@ -2435,6 +2424,9 @@ async function hotelVoucherSeries(cmp_id, session) {
 }
 
 export const convertCheckOutToSale = async (req, res) => {
+  const { selectedCheckOut } = req.body
+  console.log(selectedCheckOut)
+
   // console.log("convertchecktouttosale")
   const session = await mongoose.startSession();
   try {
@@ -2488,8 +2480,9 @@ export const convertCheckOutToSale = async (req, res) => {
         let onlineAmt = 0;
         let paymentMethod = "";
         let paidAmount = 0;
-        let pendingAmount = 0;
+        // let pendingAmount = 0;
         let applicableSplits = [];
+
 
         if (paymentMode === "single") {
           cashAmt = Number(paymentDetails?.cashAmount || 0);
@@ -2497,7 +2490,7 @@ export const convertCheckOutToSale = async (req, res) => {
           paymentMethod =
             cashAmt > 0 ? "cash" : onlineAmt > 0 ? "bank" : "unknown";
           paidAmount = cashAmt + onlineAmt;
-          pendingAmount = itemTotal - paidAmount;
+
         } else if (paymentMode === "split") {
           applicableSplits = splitDetails.filter(
             (split) => split.customer === selectedPartyId.toString()
@@ -2516,18 +2509,20 @@ export const convertCheckOutToSale = async (req, res) => {
             .filter((s) => s.sourceType === "bank")
             .reduce((sum, s) => sum + Number(s.amount || 0), 0);
 
-          paymentMethod =
-            cashAmt > 0 && onlineAmt > 0
-              ? "mixed"
-              : cashAmt > 0
-                ? "cash"
-                : "bank";
-          pendingAmount = 0;
+          paymentMethod = cashAmt > 0 && onlineAmt > 0 ? "mixed" : cashAmt > 0 ? "cash" : "bank";
+
         } else if (isPostToRoom || paymentMode === "credit") {
           paymentMethod = "credit";
           paidAmount = 0;
-          pendingAmount = itemTotal;
+          // pendingAmount = itemTotal;
         }
+        console.log("itemtotal", itemTotal)
+        console.log("paidamount", paidAmount)
+        console.log("totaladvance", item?.Totaladvance)
+        const pendingAmount = itemTotal - (paidAmount + Number(item?.Totaladvance))
+        console.log("pendingamouit",
+          pendingAmount)
+console.log(pendingAmount <= 0 ? 0 : pendingAmount)
 
         const paymentSplittingArray = createPaymentSplittingArray(
           paymentDetails,
@@ -2585,7 +2580,7 @@ export const convertCheckOutToSale = async (req, res) => {
               totalAmount: roomTotal,
               roomTotal,
               grandTotal: roomTotal,
-              balanceToPay: pendingAmount,
+              balanceToPay: pendingAmount <= 0 ? 0 : pendingAmount,
               isPartialCheckout: isThisPartial,
               originalCheckInId: checkInId,
               checkoutType:
@@ -2660,13 +2655,13 @@ export const convertCheckOutToSale = async (req, res) => {
         // NOTE: For single payment mode, settlement will be created ONCE after the loop
 
         // Link room receipts
-        await updateReceiptForRooms(
-          item?.voucherNumber,
-          item?.bookingId?.voucherNumber || item?.bookingId,
-          saleNumber?.voucherNumber,
-          savedVoucherData[0]?._id,
-          session
-        );
+        // await updateReceiptForRooms(
+        //   item?.voucherNumber,
+        //   item?.bookingId?.voucherNumber || item?.bookingId,
+        //   saleNumber?.voucherNumber,
+        //   savedVoucherData[0]?._id,
+        //   session
+        // );
 
         // Update CheckIn and room statuses
         if (isThisPartial && remainingRooms.length > 0) {

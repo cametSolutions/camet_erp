@@ -28,13 +28,13 @@ const HotelBillPrint = () => {
   const navigate = useNavigate();
 
   // Props from location state
-  const selectedCheckOut = location.state?.selectedCheckOut || [];
-  console.log(selectedCheckOut);
-  const a = selectedCheckOut.some((it) => it.originalCheckInId);
-  console.log(a);
-  const checkoutmode = location?.state?.checkoutMode || null;
-  const cheinids = location?.state?.checkinIds;
-  console.log(selectedCheckOut);
+  const selectedCheckOut = location.state?.selectedCheckOut || []
+  console.log(selectedCheckOut)
+  const a = selectedCheckOut.some((it) => it.originalCheckInId)
+  console.log(a)
+  const checkoutmode = location?.state?.checkoutMode || null
+  const cheinids = location?.state?.checkinIds
+  console.log(selectedCheckOut)
   // const selectedCustomerId = location.state?.customerId;
   const isForPreview = location.state?.isForPreview;
 
@@ -67,8 +67,8 @@ const HotelBillPrint = () => {
 
   useEffect(() => {
     if (selectedCheckOut?.length > 0) {
-      console.log(selectedCheckOut);
-      fetchDebitData(selectedCheckOut);
+      console.log(selectedCheckOut)
+      fetchDebitData(selectedCheckOut)
     }
   }, [selectedCheckOut]);
 
@@ -95,18 +95,29 @@ const HotelBillPrint = () => {
 
   // Per-doc transforms
   const transformDocToDateWiseLines = (doc) => {
-    const result = [];
-    const startDate = new Date(doc.arrivalDate);
-    (doc.selectedRooms || []).forEach((room) => {
-      const stayDays = room.stayDays || 1;
-      const fullDays = Math.floor(stayDays);
-      const fractionalDay = stayDays - fullDays;
+    const result = []
+    const startDate = new Date(doc.arrivalDate)
+    console.log(startDate)
+    ;(doc.selectedRooms || []).forEach((room) => {
+      console.log(room.taxAmount)
+      console.log(room)
+      const stayDays = room.stayDays || 1
+      const fullDays = Math.floor(stayDays)
+      const fractionalDay = stayDays - fullDays
 
       const perDayAmount =
         Number(room.priceLevelRate || 0) ||
-        Number(room.baseAmountWithTax || 0) / stayDays;
-      const baseAmountPerDay = Number(room.baseAmount || 0) / stayDays;
-      const taxAmountPerDay = Number(room.taxAmount || 0) / stayDays;
+        Number(room.baseAmountWithTax || 0) / stayDays
+      const baseAmountPerDay = Number(room.baseAmount || 0) / stayDays
+      const foodplantax = (
+        Number(room?.foodPlanAmountWithTax) -
+        Number(room?.foodPlanAmountWithOutTax)
+      ).toFixed(2)
+      console.log(foodplantax)
+      const taxAmountPerDay =
+        Number(room.taxAmount || 0) + Number(foodplantax || 0) / stayDays
+
+      console.log(taxAmountPerDay)
       const foodPlanAmountWithTaxPerDay =
         Number(room.foodPlanAmountWithTax || 0) / stayDays;
       const foodPlanAmountWithOutTaxPerDay =
@@ -114,11 +125,11 @@ const HotelBillPrint = () => {
       const additionalPaxDataWithTaxPerDay =
         Number(room.additionalPaxAmountWithTax || 0) / stayDays;
       const additionalPaxDataWithOutTaxPerDay =
-        Number(room.additionalPaxAmountWithOutTax || 0) / stayDays;
-
+        Number(room.additionalPaxAmountWithOutTax || 0) / stayDays
+      console.log(fullDays)
       for (let i = 0; i < fullDays; i++) {
-        const currentDate = new Date(startDate);
-        currentDate.setDate(startDate.getDate() + i);
+        const currentDate = new Date(startDate)
+        currentDate.setDate(startDate.getDate())
         const formattedDate = currentDate
           .toLocaleDateString("en-GB")
           .replace(/\//g, "-");
@@ -264,16 +275,22 @@ const HotelBillPrint = () => {
     const roomTaxTotal = dateWiseLines.reduce(
       (t, i) => t + Number(i.taxAmount || 0),
       0
-    );
-    const sgstAmount = roomTaxTotal / 2;
-    const cgstAmount = roomTaxTotal / 2;
-
+    )
+    const sgstAmount = roomTaxTotal / 2
+    const cgstAmount = roomTaxTotal / 2
+    console.log(doc)
     // Per-room restaurant lines (for this doc’s rooms)
-    const perRoomRestaurantLines = buildPerRoomRestaurantLinesForDoc(doc);
+    const perRoomRestaurantLines = buildPerRoomRestaurantLinesForDoc(doc)
+    console.log(perRoomRestaurantLines)
     const restaurantTotal = perRoomRestaurantLines.reduce(
       (t, l) => t + Number(l.amount || 0),
       0
-    );
+    )
+    let allroomfoodplanwithtax = 0
+    doc.selectedRooms.map(
+      (item) => (allroomfoodplanwithtax += Number(item?.foodPlanAmountWithTax))
+    )
+    console.log(allroomfoodplanwithtax)
 
     // Build grouped charges
     // Build grouped charges
@@ -314,172 +331,40 @@ const HotelBillPrint = () => {
             amount: (item.baseAmount + item.foodPlanAmountWithTax).toFixed(2),
             taxes: (item.taxAmount || 0).toFixed(2),
             advance: "",
-            roomName: item.roomName,
-          });
-        });
+            roomName: item.roomName
+          })
+          const roomTotalTax = roomDays.reduce(
+            (sum, i) => sum + (i.taxAmount || 0),
+            0
+          )
+          const roomCGST = roomTotalTax / 2
+          const roomSGST = roomTotalTax / 2
 
-        // Calculate total tax for room rent
-        const roomTotalTax = roomDays.reduce(
-          (sum, i) => sum + (i.taxAmount || 0),
-          0
-        );
+          if (roomCGST > 0) {
+            charges.push({
+              date:item.date,
+              description: `CGST on Rent@6% (${roomName})`,
+              docNo: "-",
+              amount: 0,
+              taxes: roomCGST.toFixed(2),
+              advance: "",
+              roomName
+            })
+          }
 
-        // Calculate CGST and SGST for room rent
-        const roomCGST = roomTotalTax / 2;
-        const roomSGST = roomTotalTax / 2;
+          if (roomSGST > 0) {
+            charges.push({
+              date:item?.date,
+              description: `SGST on Rent@6% (${roomName})`,
+              docNo: "-",
+              amount: 0,
+              taxes: roomSGST.toFixed(2),
+              advance: "",
+              roomName
+            })
+          }
+        })
 
-        // Add SGST row for room rent (SGST comes before CGST in image)
-        if (roomSGST > 0) {
-          charges.push({
-            date: formatDate(new Date()),
-            description: `SGST on Rent@${halfRoomTaxPercentage}%`, // Dynamic percentage
-            docNo: "-",
-            amount: 0,
-            taxes: roomSGST.toFixed(2),
-            advance: "",
-            roomName,
-          });
-        }
-
-        // Add CGST row for room rent
-        if (roomCGST > 0) {
-          charges.push({
-            date: formatDate(new Date()),
-            description: `CGST on Rent@${halfRoomTaxPercentage}%`, // Dynamic percentage
-            docNo: "-",
-            amount: 0,
-            taxes: roomCGST.toFixed(2),
-            advance: "",
-            roomName,
-          });
-        }
-
-        // Add Food Plan amount if applicable (before taxes)
-        // const totalFoodPlanWithoutTax = roomDays.reduce(
-        //   (sum, i) => sum + (i.foodPlanAmountWithOutTax || 0),
-        //   0
-        // )
-
-        // if (totalFoodPlanWithoutTax > 0) {
-        //   charges.push({
-        //     date: formatDate(new Date()),
-        //     description: `Food Plan`,
-        //     docNo: "-",
-        //     amount: totalFoodPlanWithoutTax,
-        //     taxes: 0,
-        //     advance: "",
-        //     roomName
-        //   })
-        // }
-
-        // // Add food plan tax rows if applicable
-        // const roomFoodPlanTax = roomDays.reduce(
-        //   (sum, i) => {
-        //     const foodPlanWithTax = i.foodPlanAmountWithTax || 0;
-        //     const foodPlanWithoutTax = i.foodPlanAmountWithOutTax || 0;
-        //     return sum + (foodPlanWithTax - foodPlanWithoutTax);
-        //   },
-        //   0
-        // )
-
-        // // Get food plan tax percentage
-        // const foodPlanTaxPercentage = originalRoom?.foodPlanTaxRate || 0;
-        // const halfFoodPlanTaxPercentage = foodPlanTaxPercentage / 2;
-
-        // if (roomFoodPlanTax > 0) {
-        //   const foodPlanSGST = roomFoodPlanTax / 2;
-        //   const foodPlanCGST = roomFoodPlanTax / 2;
-
-        //   charges.push({
-        //     date: formatDate(new Date()),
-        //     description: `SGST on Food Plan@${halfFoodPlanTaxPercentage}%`,
-        //     docNo: "-",
-        //     amount: 0,
-        //     taxes: foodPlanSGST.toFixed(2),
-        //     advance: "",
-        //     roomName
-        //   })
-
-        //   charges.push({
-        //     date: formatDate(new Date()),
-        //     description: `CGST on Food Plan@${halfFoodPlanTaxPercentage}%`,
-        //     docNo: "-",
-        //     amount: 0,
-        //     taxes: foodPlanCGST.toFixed(2),
-        //     advance: "",
-        //     roomName
-        //   })
-        // }
-
-        // Add Additional Pax amount if applicable (before taxes)
-        const totalAdditionalPaxWithoutTax = roomDays.reduce(
-          (sum, i) => sum + (i.additionalPaxDataWithOutTax || 0),
-          0
-        );
-
-        if (totalAdditionalPaxWithoutTax > 0) {
-          charges.push({
-            date: formatDate(new Date()),
-            description: `Extra Person`,
-            docNo: "-",
-            amount: totalAdditionalPaxWithoutTax,
-            taxes: 0,
-            advance: "",
-            roomName,
-          });
-        }
-
-        // Add additional pax tax rows if applicable
-        const roomAdditionalPaxTax = roomDays.reduce((sum, i) => {
-          const paxWithTax = i.additionalPaxDataWithTax || 0;
-          const paxWithoutTax = i.additionalPaxDataWithOutTax || 0;
-          return sum + (paxWithTax - paxWithoutTax);
-        }, 0);
-
-        // Calculate additional pax tax percentage from the data
-        // If we have the tax amount and base amount, we can derive the percentage
-        const totalPaxWithTax = roomDays.reduce(
-          (sum, i) => sum + (i.additionalPaxDataWithTax || 0),
-          0
-        );
-        const additionalPaxTaxPercentage =
-          totalAdditionalPaxWithoutTax > 0
-            ? ((totalPaxWithTax - totalAdditionalPaxWithoutTax) /
-                totalAdditionalPaxWithoutTax) *
-              100
-            : 0;
-        const halfAdditionalPaxTaxPercentage = additionalPaxTaxPercentage / 2;
-
-        if (roomAdditionalPaxTax > 0) {
-          const paxSGST = roomAdditionalPaxTax / 2;
-          const paxCGST = roomAdditionalPaxTax / 2;
-
-          charges.push({
-            date: formatDate(new Date()),
-            description: `CGST on Extra Person@${halfAdditionalPaxTaxPercentage.toFixed(
-              1
-            )}%`,
-            docNo: "-",
-            amount: 0,
-            taxes: paxCGST.toFixed(2),
-            advance: "",
-            roomName,
-          });
-
-          charges.push({
-            date: formatDate(new Date()),
-            description: `SGST on Extra Person@${halfAdditionalPaxTaxPercentage.toFixed(
-              1
-            )}%`,
-            docNo: "-",
-            amount: 0,
-            taxes: paxSGST.toFixed(2),
-            advance: "",
-            roomName,
-          });
-        }
-
-        // Add restaurant charges for this room
         const roomKot = perRoomRestaurantLines.find(
           (l) => l.roomName === roomName
         );
@@ -496,18 +381,18 @@ const HotelBillPrint = () => {
         }
       });
 
-      return charges;
-    })();
-    console.log(outStanding);
-    const a = outStanding.map((item) => item._id);
-    console.log(a);
-    console.log(outStanding.length);
-    console.log(doc?.allCheckInIds);
-    console.log(doc);
-    const allcheckinids = doc?.allCheckInIds;
-    const allpartyid = doc?.partyArray;
-    console.log(allpartyid);
-    console.log(allcheckinids);
+      return charges
+    })()
+    console.log(outStanding)
+    const a = outStanding.map((item) => item._id)
+    console.log(a)
+    console.log(outStanding.length)
+    console.log(doc?.allCheckInIds)
+    console.log(doc)
+    const allcheckinids = doc?.allCheckInIds
+    const allpartyid = doc?.partyArray
+    console.log(allpartyid)
+    console.log(allcheckinids)
     // Advances only on the decided bill
     const advanceEntries = useAdvances
       ? (outStanding || [])
@@ -529,10 +414,13 @@ const HotelBillPrint = () => {
             (sum, t) => sum + Number(t.bill_amount || t.billamount || 0),
             0
           )
-      : 0;
+      : 0
+    console.log(advanceEntries)
     // Combine charges and compute balances
-    const allCharges = [...groupedRoomCharges, ...advanceEntries];
-    let cumulativeBalance = 0;
+    const allCharges = [...groupedRoomCharges, ...advanceEntries]
+    console.log(groupedRoomCharges)
+    console.log(allCharges)
+    let cumulativeBalance = 0
     const chargesWithBalance = allCharges.map((charge) => {
       let currentAmount = Number(charge.amount || 0);
       const lineTaxes = Number(charge.taxes || 0);
@@ -566,18 +454,21 @@ const HotelBillPrint = () => {
         ...charge,
         balance: Number.isFinite(cumulativeBalance)
           ? cumulativeBalance.toFixed(2)
-          : "0.00",
-      };
-    });
-    console.log(doc?.checkOutTime);
-
+          : "0.00"
+      }
+    })
+    console.log(chargesWithBalance)
+    console.log(restaurantTotal)
     const grandTotal =
       roomTariffTotal +
       planAmount +
       additionalPaxAmount +
       roomTaxTotal +
-      restaurantTotal;
-    const netPay = grandTotal - advanceTotal;
+      restaurantTotal
+    console.log(roomTaxTotal)
+    console.log(grandTotal)
+    console.log(advanceTotal)
+    const netPay = grandTotal - advanceTotal
 
     // Compose hotel/guest info per doc
     const guestRooms = (doc.selectedRooms || [])

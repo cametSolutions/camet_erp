@@ -335,6 +335,7 @@ function BookingList() {
         }
 
         if (pageNumber === 1) {
+          console.log("a")
           setBookings(bookingData)
         } else {
           setBookings((prev) => [...prev, ...bookingData])
@@ -640,6 +641,7 @@ function BookingList() {
     })
     console.log(selectedCheckOut)
     console.log(selectedCheckOut.length)
+    
 
     try {
       const response = await api.post(
@@ -712,6 +714,7 @@ function BookingList() {
     let checkoutData
     let checkinids = null
     if (checkoutMode === "multiple") {
+      console.log(roomAssignments)
       console.log("hhh")
       checkoutData = roomAssignments.flatMap((group) => {
         return group.checkIns.map((checkIn) => {
@@ -726,6 +729,9 @@ function BookingList() {
           return {
             ...originalCheckIn,
             partyArray: checkIn.originalCheckIn.customerId.party_master_id,
+            Totaladvance:
+              Number(checkIn?.originalCheckIn?.advanceAmount) +
+              Number(checkIn?.originalCheckIn?.bookingId?.advanceAmount),
             customerId: group.customer,
             allCheckInIds: [id],
             selectedRooms: roomsToCheckout,
@@ -754,12 +760,15 @@ function BookingList() {
 
           const isPartialCheckout =
             roomsToCheckout.length < originalCheckIn.selectedRooms.length
-
+          console.log(checkIn?.originalCheckIn?.advanceAmount)
+          console.log(checkIn?.originalCheckIn?.bookingId?.advanceAmount)
           return {
             ...originalCheckIn,
             partyId: checkIn.originalCheckIn.customerId.party_master_id,
             customerId: group.customer,
-
+            Totaladvance:
+              Number(checkIn?.originalCheckIn?.advanceAmount) +
+              Number(checkIn?.originalCheckIn?.bookingId?.advanceAmount),
             selectedRooms: roomsToCheckout,
             isPartialCheckout,
             originalCheckInId: checkIn.checkInId,
@@ -783,12 +792,17 @@ function BookingList() {
           grouped[custId] = {
             ...item,
             selectedRooms: [...item.selectedRooms],
-            partyArray: [item.partyId]
+            partyArray: [item.partyId],
+            advanceTotal: item?.Totaladvance
           }
         } else {
+          console.log(grouped[custId].advanceTotal)
           // Merge rooms
           grouped[custId].selectedRooms.push(...item.selectedRooms)
           grouped[custId].partyArray.push(item.partyId)
+          // ✅ ADD NEXT TOTAL ADVANCE
+          grouped[custId].advanceTotal =
+            (grouped[custId].advanceTotal || 0) + (item?.Totaladvance || 0)
 
           // If ANY one check-in is partial, mark as partial
           if (item.isPartialCheckout) grouped[custId].isPartialCheckout = true
@@ -803,6 +817,7 @@ function BookingList() {
       checkoutData[0].allCheckInIds = checkinids
     }
     console.log(checkoutData)
+
     ////
 
     /////
@@ -1199,7 +1214,7 @@ function BookingList() {
                   CheckedOut
                 </button>
               )}
-            {Number(el?.balanceToPay) <= 0 &&
+            {el?.balanceToPay <= 0 &&
               location.pathname === "/sUsers/checkOutList" && (
                 <button
                   onClick={(e) => {
@@ -1289,6 +1304,7 @@ function BookingList() {
 
   const handleCloseBasedOnDate = (checkouts) => {
     if (!checkouts) {
+      console.log("HH")
       setShowCheckOutDateModal(false)
       setShowSelectionModal(true)
       return
@@ -1296,6 +1312,7 @@ function BookingList() {
     setSaveLoader(true)
 
     if (processedCheckoutData) {
+      console.log("dfaf")
       // Transform the processed checkout data with updated stay days
       const updatedCheckoutData = processedCheckoutData.map((group) => ({
         ...group,
@@ -1324,6 +1341,7 @@ function BookingList() {
       proceedToCheckout(updatedCheckoutData)
       setProcessedCheckoutData(null)
     } else {
+      console.log("HHHh")
       // Normal flow without room assignments
       const hasPrint1 = configurations[0]?.defaultPrint?.print1
       navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
@@ -1336,6 +1354,7 @@ function BookingList() {
       })
     }
   }
+  console.log(bookings[0])
 
   return (
     <>
