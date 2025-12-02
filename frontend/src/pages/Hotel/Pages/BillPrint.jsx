@@ -108,9 +108,17 @@ const HotelBillPrint = () => {
 
       const perDayAmount =
         Number(room.priceLevelRate || 0) ||
-        Number(room.baseAmountWithTax || 0) / stayDays;
-      const baseAmountPerDay = Number(room.baseAmount || 0) / stayDays;
-      const taxAmountPerDay = Number(room.taxAmount || 0) / stayDays;
+        Number(room.baseAmountWithTax || 0) / stayDays
+      const baseAmountPerDay = Number(room.baseAmount || 0) / stayDays
+      const foodplantax = (
+        Number(room?.foodPlanAmountWithTax) -
+        Number(room?.foodPlanAmountWithOutTax)
+      ).toFixed(2)
+      console.log(foodplantax)
+      const taxAmountPerDay =
+        Number(room.taxAmount || 0) + Number(foodplantax || 0) / stayDays
+
+      console.log(taxAmountPerDay)
       const foodPlanAmountWithTaxPerDay =
         Number(room.foodPlanAmountWithTax || 0) / stayDays;
       const foodPlanAmountWithOutTaxPerDay =
@@ -118,8 +126,8 @@ const HotelBillPrint = () => {
       const additionalPaxDataWithTaxPerDay =
         Number(room.additionalPaxAmountWithTax || 0) / stayDays;
       const additionalPaxDataWithOutTaxPerDay =
-        Number(room.additionalPaxAmountWithOutTax || 0) / stayDays;
-
+        Number(room.additionalPaxAmountWithOutTax || 0) / stayDays
+      console.log(fullDays)
       for (let i = 0; i < fullDays; i++) {
         const currentDate = new Date(roomStartDate); // ✅ Use room's start date
         currentDate.setDate(roomStartDate.getDate() + i);
@@ -386,10 +394,10 @@ const HotelBillPrint = () => {
     const roomTaxTotal = dateWiseLines.reduce(
       (t, i) => t + Number(i.taxAmount || 0),
       0
-    );
-    const sgstAmount = roomTaxTotal / 2;
-    const cgstAmount = roomTaxTotal / 2;
-
+    )
+    const sgstAmount = roomTaxTotal / 2
+    const cgstAmount = roomTaxTotal / 2
+    console.log(doc)
     // Per-room restaurant lines (for this doc’s rooms)
     const perRoomRestaurantLines = buildPerRoomRestaurantLinesForDoc(doc);
     const roomServiceTotal = perRoomRestaurantLines
@@ -653,19 +661,18 @@ const HotelBillPrint = () => {
         }
       }); // End of roomNames.forEach
 
-      return charges;
-    })();
-
-    console.log(outStanding);
-    const a = outStanding.map((item) => item._id);
-    console.log(a);
-    console.log(outStanding.length);
-    console.log(doc?.allCheckInIds);
-    console.log(doc);
-    const allcheckinids = doc?.allCheckInIds;
-    const allpartyid = doc?.partyArray;
-    console.log(allpartyid);
-    console.log(allcheckinids);
+      return charges
+    })()
+    console.log(outStanding)
+    const a = outStanding.map((item) => item._id)
+    console.log(a)
+    console.log(outStanding.length)
+    console.log(doc?.allCheckInIds)
+    console.log(doc)
+    const allcheckinids = doc?.allCheckInIds
+    const allpartyid = doc?.partyArray
+    console.log(allpartyid)
+    console.log(allcheckinids)
     // Advances only on the decided bill
     const advanceEntries = useAdvances
       ? (outStanding || [])
@@ -726,18 +733,21 @@ const HotelBillPrint = () => {
         ...charge,
         balance: Number.isFinite(cumulativeBalance)
           ? cumulativeBalance.toFixed(2)
-          : "0.00",
-      };
-    });
-    console.log(doc?.checkOutTime);
-
+          : "0.00"
+      }
+    })
+    console.log(chargesWithBalance)
+    console.log(restaurantTotal)
     const grandTotal =
       roomTariffTotal +
       planAmount +
       additionalPaxAmount +
       roomTaxTotal +
-      restaurantTotal;
-    const netPay = grandTotal - advanceTotal;
+      restaurantTotal
+    console.log(roomTaxTotal)
+    console.log(grandTotal)
+    console.log(advanceTotal)
+    const netPay = grandTotal - advanceTotal
 
     // Compose hotel/guest info per doc
     const guestRooms = (doc.selectedRooms || [])
