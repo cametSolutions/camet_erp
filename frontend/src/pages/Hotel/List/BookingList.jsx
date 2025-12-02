@@ -28,7 +28,6 @@ function BookingList() {
   const location = useLocation()
   const navigate = useNavigate()
   const [bookings, setBookings] = useState([])
-  const [roomswithCurrentstatus, setroomswithCurrentStatus] = useState([])
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(true)
   const [parties, setPartylist] = useState([])
@@ -92,7 +91,6 @@ function BookingList() {
     `/api/sUsers/singlecheckoutpartylist/${cmp_id}`,
     { params: { voucher: getVoucherType() } }
   )
-
   console.log(selectedCheckOut)
   // ADD THIS FUNCTION: Calculate total from all checkouts
   const calculateTotalAmount = (checkouts) => {
@@ -111,44 +109,6 @@ function BookingList() {
     }, 0)
   }
   console.log(selectedCheckOut)
-  useEffect(() => {
-    if (location.pathname === "/sUsers/bookingList") {
-      const fetchStatus = async () => {
-        console.log("H", cmp_id)
-        try {
-          const res = await api.get(
-            `/api/sUsers/getallnoncheckoutCheckins/${cmp_id}`,
-            {
-              withCredentials: true
-            }
-          )
-          console.log(res.data.data)
-          const a = res.data.data.map((item) => {
-            return {
-              roomId: item._id,
-              status: item.status
-            }
-          })
-          const ids = []
-          res.data.data.forEach((item) => {
-            item.selectedRooms?.forEach((room) => {
-              if (room.roomId) {
-                ids.push(room.roomId)
-              }
-            })
-          })
-          console.log(ids)
-          setroomswithCurrentStatus(ids)
-          console.log(a)
-          console.log(res.data)
-        } catch (error) {
-          console.log(error.message)
-        }
-      }
-
-      fetchStatus()
-    }
-  }, [location.pathname, cmp_id])
 
   useEffect(() => {
     // when global selectedCustomer changes, sync into selectedCheckOut
@@ -194,16 +154,16 @@ console.log(location?.state?.selectedCheckOut)
     }
   }, [location?.state?.selectedCheckOut])
   // ADD THIS: Update total whenever selectedCheckOut changes
-  //   useEffect(() => {
-  //     if (selectedCheckOut && selectedCheckOut.length > 0) {
-  // console.log("H")
-  //       const totalAmount = calculateTotalAmount(selectedCheckOut)
-  //       setSelectedDataForPayment((prevData) => ({
-  //         ...prevData,
-  //         total: totalAmount
-  //       }))
-  //     }
-  //   }, [selectedCheckOut])
+//   useEffect(() => {
+//     if (selectedCheckOut && selectedCheckOut.length > 0) {
+// console.log("H")
+//       const totalAmount = calculateTotalAmount(selectedCheckOut)
+//       setSelectedDataForPayment((prevData) => ({
+//         ...prevData,
+//         total: totalAmount
+//       }))
+//     }
+//   }, [selectedCheckOut])
 
   const searchData = (data) => {
     if (searchTimeoutRef.current) {
@@ -550,9 +510,8 @@ console.log(location?.state?.selectedCheckOut)
   const handleSavePayment = async () => {
     console.log("h")
     console.log(selectedCheckOut)
-    console.log(selectedCheckOut.length)
+console.log(selectedCheckOut.length)
   
-
     setSaveLoader(true)
     let paymentDetails
 
@@ -642,10 +601,8 @@ console.log(location?.state?.selectedCheckOut)
       restaurantBaseSaleData: restaurantBaseSaleData
     })
     console.log(selectedCheckOut)
-    console.log(selectedCheckOut.length)
-    console.log(paymentDetails)
-    
-
+console.log(selectedCheckOut.length)
+  
     try {
       const response = await api.post(
         `/api/sUsers/convertCheckOutToSale/${cmp_id}`,
@@ -693,22 +650,15 @@ console.log(location?.state?.selectedCheckOut)
     setShowEnhancedCheckoutModal(true)
   }
   console.log()
-  const handleEnhancedCheckoutConfirm = async (roomAssignments) => {
-    console.log(roomAssignments)
-    setShowEnhancedCheckoutModal(false)
-    let checkDateChanged = selectedCheckOut.filter(
-      (item) => item?.checkOutDate !== new Date().toISOString().split("T")[0]
-    )
+ const handleEnhancedCheckoutConfirm = async (roomAssignments) => {
+  console.log(roomAssignments);
+  setShowEnhancedCheckoutModal(false);
+  
+  // ✅ ALWAYS show checkout date modal - no condition
+  setProcessedCheckoutData(roomAssignments);
+  setShowCheckOutDateModal(true);
+}
 
-    if (checkDateChanged?.length > 0) {
-      console.log("KK")
-      setProcessedCheckoutData(roomAssignments)
-      setShowCheckOutDateModal(true)
-    } else {
-      console.log("K")
-      proceedToCheckout(roomAssignments)
-    }
-  }
   console.log(bookings)
   const proceedToCheckout = (roomAssignments) => {
     setSaveLoader(true)
@@ -842,38 +792,7 @@ console.log(location?.state?.selectedCheckOut)
 
     return count
   }
-  const handleCheckin = (e, el) => {
-    console.log(el)
-    const roomIds = el.selectedRooms.map((item) => item.roomId)
-    console.log(roomIds)
-    console.log(roomswithCurrentstatus)
-    // const allVacant = roomids.every((id) => {
-    //   const room = roomswithCurrentstatus.find((r) => r.roomId === id)
-    // })
-    const anyPresent = roomIds.some((id) => roomswithCurrentstatus.includes(id))
 
-    if (anyPresent) {
-      toast.error("Rooms are not vaccant")
-      return
-    } else {
-      e.stopPropagation()
-      if (location.pathname == "/sUsers/bookingList") {
-        navigate(`/sUsers/checkInPage`, {
-          state: { bookingData: el }
-        })
-      } else if (location.pathname === "/sUsers/checkOutList" && el.checkInId) {
-        navigate(`/sUsers/EditCheckOut`, {
-          state: el
-        })
-      } else {
-        navigate(`/sUsers/CheckOutPage`, {
-          state: { bookingData: el }
-        })
-      }
-    }
-
-    console.log("HH")
-  }
   const handletoogle = () => {
     if (!selectedCustomer) return
     if (checkoutMode === "multiple") {
@@ -1029,7 +948,25 @@ console.log(location?.state?.selectedCheckOut)
               (Number(el?.balanceToPay) > 0 &&
                 location.pathname === "/sUsers/checkOutList")) && (
               <button
-                onClick={(e) => handleCheckin(e, el)}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  if (location.pathname == "/sUsers/bookingList") {
+                    navigate(`/sUsers/checkInPage`, {
+                      state: { bookingData: el }
+                    })
+                  } else if (
+                    location.pathname === "/sUsers/checkOutList" &&
+                    el.checkInId
+                  ) {
+                    navigate(`/sUsers/EditCheckOut`, {
+                      state: el
+                    })
+                  } else {
+                    navigate(`/sUsers/CheckOutPage`, {
+                      state: { bookingData: el }
+                    })
+                  }
+                }}
                 className="bg-black hover:bg-blue-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
               >
                 {location.pathname === "/sUsers/checkInList"
@@ -1176,7 +1113,22 @@ console.log(location?.state?.selectedCheckOut)
                 location.pathname != "/sUsers/checkInList" &&
                 location.pathname != "/sUsers/checkOutList")) && (
               <button
-                onClick={(e) => handleCheckin(e, el)}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  if (location.pathname == "/sUsers/bookingList") {
+                    navigate(`/sUsers/checkInPage`, {
+                      state: { bookingData: el }
+                    })
+                  } else if (
+                    location.pathname === "/sUsers/checkOutList" &&
+                    el.checkInId
+                  ) {
+                  } else {
+                    navigate(`/sUsers/CheckOutPage`, {
+                      state: { bookingData: el }
+                    })
+                  }
+                }}
                 className="bg-black hover:bg-blue-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
               >
                 CheckIn
@@ -1305,59 +1257,57 @@ console.log(location?.state?.selectedCheckOut)
     )
   }
 
-  const handleCloseBasedOnDate = (checkouts) => {
-    if (!checkouts) {
-      console.log("HH")
-      setShowCheckOutDateModal(false)
-      setShowSelectionModal(true)
-      return
-    }
-    setSaveLoader(true)
+const handleCloseBasedOnDate = (checkouts) => {
+  if (!checkouts) {
+    setShowCheckOutDateModal(false)
+    setShowSelectionModal(true)
+    return
+  }
+  setSaveLoader(true)
 
-    if (processedCheckoutData) {
-      console.log("dfaf")
-      // Transform the processed checkout data with updated stay days
-      const updatedCheckoutData = processedCheckoutData.map((group) => ({
-        ...group,
-        checkIns: group.checkIns.map((checkIn) => {
-          // Find the updated checkout data for this checkIn
-          const updatedData = checkouts.find((c) => c._id === checkIn.checkInId)
+  if (processedCheckoutData) {
+    // Transform the processed checkout data with updated stay days
+    const updatedCheckoutData = processedCheckoutData.map((group) => ({
+      ...group,
+      checkIns: group.checkIns.map((checkIn) => {
+        const updatedData = checkouts.find((c) => c._id === checkIn.checkInId)
 
-          return {
-            ...checkIn,
-            originalCheckIn: {
-              ...checkIn.originalCheckIn,
-              selectedRooms: checkIn.originalCheckIn.selectedRooms.map(
-                (room) => {
-                  // Find updated room data
-                  const updatedRoom = updatedData?.selectedRooms?.find(
-                    (r) => r._id === room._id
-                  )
-                  return updatedRoom ? { ...room, ...updatedRoom } : room
-                }
-              )
-            }
+        return {
+          ...checkIn,
+          originalCheckIn: {
+            ...checkIn.originalCheckIn,
+            // ✅ ADDED: Update checkout date and stay days
+            checkOutDate: updatedData?.checkOutDate || checkIn.originalCheckIn.checkOutDate,
+            stayDays: updatedData?.stayDays || checkIn.originalCheckIn.stayDays,
+            selectedRooms: checkIn.originalCheckIn.selectedRooms.map(
+              (room) => {
+                const updatedRoom = updatedData?.selectedRooms?.find(
+                  (r) => r._id === room._id
+                )
+                return updatedRoom ? { ...room, ...updatedRoom } : room
+              }
+            )
           }
-        })
-      }))
-
-      proceedToCheckout(updatedCheckoutData)
-      setProcessedCheckoutData(null)
-    } else {
-      console.log("HHHh")
-      // Normal flow without room assignments
-      const hasPrint1 = configurations[0]?.defaultPrint?.print1
-      navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
-        state: {
-          selectedCheckOut:
-            checkouts?.length > 0 ? checkouts : selectedCheckOut,
-          customerId: selectedCustomer,
-          isForPreview: true
         }
       })
-    }
+    }))
+
+    proceedToCheckout(updatedCheckoutData)
+    setProcessedCheckoutData(null)
+  } else {
+    const hasPrint1 = configurations[0]?.defaultPrint?.print1
+    navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
+      state: {
+        selectedCheckOut:
+          checkouts?.length > 0 ? checkouts : selectedCheckOut,
+        customerId: selectedCustomer,
+        isForPreview: true
+      }
+    })
   }
-  console.log(bookings[0])
+  
+  setShowCheckOutDateModal(false)  // ✅ ADDED: Close modal
+}
 
   return (
     <>

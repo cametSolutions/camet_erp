@@ -2269,9 +2269,8 @@ export const checkoutWithArrayOfData = async (req, res) => {
 export const fetchOutStandingAndFoodData = async (req, res) => {
   try {
     const checkoutData = req.body?.data;
-
-
     const isForPreview = req.body?.isForPreview;
+    
     if (!checkoutData || checkoutData.length === 0) {
       return res.status(400).json({
         success: false,
@@ -2279,10 +2278,10 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
       });
     }
 
-    // Collect all advanceDetails across checkouts
     let allAdvanceDetails = [];
     let allKotData = [];
 
+    // ✅ CORRECTED: Get roomId and serviceType from ROOT level, not kotDetails
     const docs = await salesModel.aggregate([
       {
         $match: {
@@ -2291,7 +2290,7 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
         },
       },
 
-      // ✅ Convert convertedFrom.id (string) → ObjectId
+      // Convert convertedFrom.id (string) → ObjectId
       {
         $addFields: {
           convertedFromObjId: {
@@ -2304,7 +2303,7 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
         },
       },
 
-      // ✅ Lookup only roomId from kot
+      // ✅ UPDATED: Lookup from KOT collection using ROOT level fields
       {
         $lookup: {
           from: "kots",
@@ -2313,14 +2312,16 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
             {
               $match: {
                 $expr: {
-                  $in: ["$_id", "$$cfIds"], // match any id from list
+                  $in: ["$_id", "$$cfIds"],
                 },
               },
             },
             {
               $project: {
                 _id: 0,
-                roomId: 1, // ✅ only roomId
+                roomId: "$roomId",           // ✅ From root level
+                tableNumber: "$tableNumber", // ✅ From root level
+                serviceType: "$serviceType", // ✅ From root level
               },
             },
           ],
@@ -2328,26 +2329,30 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
         },
       },
 
-      // ✅ Flatten
+      // Flatten
       {
         $unwind: {
           path: "$kotDetails",
           preserveNullAndEmptyArrays: true,
         },
       },
-
-      // ✅ Optional: output only what you need
-      // {
-      //   $project: {
-      //     _id: 1,
-      //     convertedFrom: 1,
-      //     roomId: "$kotDetails.roomId"   // ✅ only roomId
-      //   }
-      // }
     ]);
+
+    console.log("=== KOT DATA WITH SERVICE TYPE ===");
+    console.log("Total KOTs found:", docs.length);
+    docs.forEach((doc, idx) => {
+      console.log(`KOT ${idx + 1}:`, {
+        salesNumber: doc.salesNumber,
+        roomId: doc.kotDetails?.roomId,
+        tableNumber: doc.kotDetails?.tableNumber,
+        serviceType: doc.kotDetails?.serviceType,
+        amount: doc.finalAmount
+      });
+    });
 
     allKotData.push(...docs);
 
+    // Collect all check-in IDs
 
 
 
@@ -2356,14 +2361,11 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
 
     // 1️⃣ Collect all check-in IDs in a global Set
     const uniqueIds = new Set();
-
     for (const checkout of checkoutData) {
       checkout.allCheckInIds.forEach(id => uniqueIds.add(id.toString()));
     }
 
-    console.log("ALL UNIQUE CHECK-IN IDS:", [...uniqueIds]);
-
-    // 2️⃣ Loop only unique IDs
+    // Fetch advance details
     for (const checkInId of uniqueIds) {
       const checkInData = await CheckIn.findOne({ _id: checkInId });
       if (!checkInData) continue;
@@ -2381,6 +2383,10 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
         ...checkInSideAdvanceDetails
       );
     }
+
+    // console.log("Total Advance Details:", allAdvanceDetails.length);
+    // console.log("Total KOT Data:", allKotData.length);
+
     // console.log("lenthhh", allAdvanceDetails.length)
 
 
@@ -2406,6 +2412,7 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
     });
   }
 };
+
 
 async function hotelVoucherSeries(cmp_id, session) {
   const SaleVoucher = await VoucherSeriesModel.findOne({

@@ -2,12 +2,13 @@ import { useEffect, useState, useRef, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
-import { useReactToPrint } from "react-to-print";
+// import { useReactToPrint } from "react-to-print"
 import api from "@/api/api";
 import Logo from "../../../assets/images/hill.png";
 import TitleDiv from "@/components/common/TitleDiv";
-import { jsPDF } from "jspdf";
+// import { jsPDF } from "jspdf"
 import "jspdf-autotable";
+
 // import {
 //   handlePrintInvoice,
 //   handleDownloadPDF,
@@ -16,7 +17,7 @@ import {
   handleBillPrintInvoice,
   handleBillDownloadPDF,
 } from "../PrintSide/generateBillPrintPDF";
-import Outstanding from "@/pages/voucherReports/outstanding/Outstanding";
+
 // import { Title } from "@radix-ui/react-dialog";
 
 const HotelBillPrint = () => {
@@ -28,13 +29,13 @@ const HotelBillPrint = () => {
   const navigate = useNavigate();
 
   // Props from location state
-  const selectedCheckOut = location.state?.selectedCheckOut || []
-  console.log(selectedCheckOut)
-  const a = selectedCheckOut.some((it) => it.originalCheckInId)
-  console.log(a)
-  const checkoutmode = location?.state?.checkoutMode || null
-  const cheinids = location?.state?.checkinIds
-  console.log(selectedCheckOut)
+  const selectedCheckOut = location.state?.selectedCheckOut || [];
+  // console.log(selectedCheckOut);
+  const a = selectedCheckOut.some((it) => it.originalCheckInId);
+  console.log(a);
+  const checkoutmode = location?.state?.checkoutMode || null;
+  const cheinids = location?.state?.checkinIds;
+  // console.log(selectedCheckOut);
   // const selectedCustomerId = location.state?.customerId;
   const isForPreview = location.state?.isForPreview;
 
@@ -55,7 +56,7 @@ const HotelBillPrint = () => {
         { withCredentials: true }
       );
       if (res.data.success) {
-        console.log(res.data.data);
+        // console.log(res.data.data);
         setOutStanding(res.data.data || []);
         setKotData(res.data.kotData || []);
       }
@@ -67,14 +68,14 @@ const HotelBillPrint = () => {
 
   useEffect(() => {
     if (selectedCheckOut?.length > 0) {
-      console.log(selectedCheckOut)
-      fetchDebitData(selectedCheckOut)
+      // console.log(selectedCheckOut);
+      fetchDebitData(selectedCheckOut);
     }
-  }, [selectedCheckOut]);
+  }, [JSON.stringify(selectedCheckOut)]); // ✅ CHANGED: Added JSON.stringify
 
   // Split handlers
   const handleSplitPayment = () => setShowSplitPopUp(true);
-  const handleChange = (value) => setSelected(value);
+  // const handleChange = (value) => setSelected(value)
   const handleSplit = () => {
     setShowSplitPopUp(false);
     if (selected === "room") {
@@ -94,16 +95,16 @@ const HotelBillPrint = () => {
   };
 
   // Per-doc transforms
+  // Per-doc transforms
   const transformDocToDateWiseLines = (doc) => {
-    const result = []
-    const startDate = new Date(doc.arrivalDate)
-    console.log(startDate)
-    ;(doc.selectedRooms || []).forEach((room) => {
-      console.log(room.taxAmount)
-      console.log(room)
-      const stayDays = room.stayDays || 1
-      const fullDays = Math.floor(stayDays)
-      const fractionalDay = stayDays - fullDays
+    const result = [];
+    (doc.selectedRooms || []).forEach((room) => {
+      // ✅ Each room gets its own start date
+      const roomStartDate = new Date(room.arrivalDate || doc.arrivalDate);
+
+      const stayDays = room.stayDays || 1;
+      const fullDays = Math.floor(stayDays);
+      const fractionalDay = stayDays - fullDays;
 
       const perDayAmount =
         Number(room.priceLevelRate || 0) ||
@@ -128,8 +129,8 @@ const HotelBillPrint = () => {
         Number(room.additionalPaxAmountWithOutTax || 0) / stayDays
       console.log(fullDays)
       for (let i = 0; i < fullDays; i++) {
-        const currentDate = new Date(startDate)
-        currentDate.setDate(startDate.getDate())
+        const currentDate = new Date(roomStartDate); // ✅ Use room's start date
+        currentDate.setDate(roomStartDate.getDate() + i);
         const formattedDate = currentDate
           .toLocaleDateString("en-GB")
           .replace(/\//g, "-");
@@ -151,12 +152,13 @@ const HotelBillPrint = () => {
           additionalPaxDataWithTax: additionalPaxDataWithTaxPerDay,
           additionalPaxDataWithOutTax: additionalPaxDataWithOutTaxPerDay,
           roomId: room?.roomId || room?._id,
+          roomArrivalDate: formattedDate, // ✅ Store the room's arrival date in first entry
         });
       }
 
       if (fractionalDay > 0) {
-        const fractionalDate = new Date(startDate);
-        fractionalDate.setDate(startDate.getDate() + fullDays);
+        const fractionalDate = new Date(roomStartDate); // ✅ Use room's start date
+        fractionalDate.setDate(roomStartDate.getDate() + fullDays);
         const formattedFractionalDate = fractionalDate
           .toLocaleDateString("en-GB")
           .replace(/\//g, "-");
@@ -201,42 +203,159 @@ const HotelBillPrint = () => {
   };
 
   // Build per-room restaurant line for a doc’s rooms only
+  // Build per-room restaurant line for a doc's rooms only
+  // Build per-room restaurant line for a doc's rooms only
   const buildPerRoomRestaurantLinesForDoc = (doc) => {
-    console.log(doc);
+    console.log("=== Building restaurant lines ===");
+    console.log("Doc:", doc);
+    console.log("All KOT Data:", kotData);
+
+    const lines = [];
+
+    // Get all room IDs from this document
     const roomIdSet = new Set(
       (doc.selectedRooms || [])
-        .map((r) => String(r?.roomId || r?._id))
+        .map((r) => String(r?.roomId || r?._id || r?.id))
         .filter(Boolean)
     );
 
-    const filteredKots = (kotData || []).filter((k) =>
-      roomIdSet.has(String(k?.kotDetails?.roomId || ""))
-    );
+    console.log("Room IDs in this checkout:", Array.from(roomIdSet));
 
-    const kotTotalsByRoom = getKotTotalsByRoom(filteredKots);
+    // Split KOTs based on available fields
+    const roomServiceKots = [];
+    const dineInKots = [];
 
-    const lines = [];
-    for (const [roomId, amount] of kotTotalsByRoom.entries()) {
+    kotData.forEach((kot) => {
+      const kotRoomId = String(kot?.kotDetails?.roomId || kot?.roomId || "");
+      const tableNumber =
+        kot?.kotDetails?.tableNumber ||
+        kot?.tableNumber ||
+        kot?.customer?.tableNumber;
+      const type = kot?.type || "";
+
+      console.log(
+        `KOT ${kot?.salesNumber}: roomId=${kotRoomId}, tableNumber=${tableNumber}, type=${type}`
+      );
+
+      // CLASSIFICATION LOGIC:
+      // 1. If KOT has tableNumber -> it's DINE IN (even if it has roomId)
+      // 2. If KOT has roomId but NO tableNumber -> it's ROOM SERVICE
+      // 3. If type is "takeaway" or "delivery" -> treat as DINE IN
+
+      if (tableNumber) {
+        // Has table number = Dine In
+        dineInKots.push(kot);
+        console.log(`  -> RESTAURANT DINE IN (has tableNumber)`);
+      } else if (type === "takeaway" || type === "delivery") {
+        // Takeaway/Delivery = Dine In
+        dineInKots.push(kot);
+        console.log(`  -> RESTAURANT DINE IN (takeaway/delivery)`);
+      } else if (kotRoomId && roomIdSet.has(kotRoomId)) {
+        // Has roomId but no table = Room Service
+        roomServiceKots.push(kot);
+        console.log(`  -> ROOM SERVICE (has roomId, no table)`);
+      } else {
+        // Default to Dine In if unclear
+        dineInKots.push(kot);
+        console.log(`  -> RESTAURANT DINE IN (default)`);
+      }
+    });
+
+    console.log("Room Service KOTs:", roomServiceKots.length);
+    console.log("Dine In KOTs:", dineInKots.length);
+
+    // 1. Add Room Service charges (grouped by room)
+    const roomServiceTotals = {};
+    roomServiceKots.forEach((kot) => {
+      const roomId = String(kot?.kotDetails?.roomId || kot?.roomId || "");
+      const amount = Number(
+        kot?.finalAmount ?? kot?.subTotal ?? kot?.total ?? 0
+      );
+
+      if (!roomServiceTotals[roomId]) {
+        roomServiceTotals[roomId] = {
+          amount: 0,
+          docNos: [],
+        };
+      }
+
+      roomServiceTotals[roomId].amount += amount;
+      if (kot?.salesNumber) {
+        roomServiceTotals[roomId].docNos.push(kot.salesNumber);
+      }
+    });
+
+    Object.keys(roomServiceTotals).forEach((roomId) => {
       const roomName =
         (doc.selectedRooms || []).find(
-          (r) => String(r?.roomId || r?._id) === roomId
-        )?.roomName || "";
-      const firstKot = filteredKots.find(
-        (k) => String(k?.kotDetails?.roomId) === roomId
+          (r) => String(r?.roomId || r?._id || r?.id) === roomId
+        )?.roomName || "Unknown Room";
+
+      const docNo = roomServiceTotals[roomId].docNos.join(", ") || "-";
+
+      console.log(
+        `Adding Room Service line: ${roomName} = ${roomServiceTotals[roomId].amount}`
       );
-      const docNo = firstKot?.salesNumber || "-";
 
       lines.push({
         date: formatDate(new Date()),
-        description: `Restaurant - Room ${roomName}`,
-        docNo,
-        amount: Number(amount || 0),
+        description: `Room Service - ${roomName}`,
+        docNo: docNo,
+        amount: Number(roomServiceTotals[roomId].amount || 0),
         taxes: 0,
         advance: "",
-        roomName,
-        roomId,
+        roomName: roomName,
+        roomId: roomId,
+        type: "roomService",
       });
-    }
+    });
+
+    // 2. Add Restaurant Dine In charges (grouped by table or as one line)
+    const dineInTotals = {};
+    dineInKots.forEach((kot) => {
+      const tableNo =
+        kot?.kotDetails?.tableNumber ||
+        kot?.tableNumber ||
+        kot?.customer?.tableNumber ||
+        "Restaurant";
+      const amount = Number(
+        kot?.finalAmount ?? kot?.subTotal ?? kot?.total ?? 0
+      );
+
+      if (!dineInTotals[tableNo]) {
+        dineInTotals[tableNo] = {
+          amount: 0,
+          docNos: [],
+        };
+      }
+
+      dineInTotals[tableNo].amount += amount;
+      if (kot?.salesNumber) {
+        dineInTotals[tableNo].docNos.push(kot.salesNumber);
+      }
+    });
+
+    Object.keys(dineInTotals).forEach((tableNo) => {
+      const docNo = dineInTotals[tableNo].docNos.join(", ") || "-";
+
+      console.log(
+        `Adding Dine In line: Table ${tableNo} = ${dineInTotals[tableNo].amount}`
+      );
+
+      lines.push({
+        date: formatDate(new Date()),
+        description: `Restaurant Dine In - ${tableNo}`,
+        docNo: docNo,
+        amount: Number(dineInTotals[tableNo].amount || 0),
+        taxes: 0,
+        advance: "",
+        roomName: "",
+        roomId: "",
+        type: "dineIn",
+      });
+    });
+
+    console.log("=== Final restaurant lines ===", lines);
     return lines;
   };
 
@@ -280,106 +399,267 @@ const HotelBillPrint = () => {
     const cgstAmount = roomTaxTotal / 2
     console.log(doc)
     // Per-room restaurant lines (for this doc’s rooms)
-    const perRoomRestaurantLines = buildPerRoomRestaurantLinesForDoc(doc)
-    console.log(perRoomRestaurantLines)
-    const restaurantTotal = perRoomRestaurantLines.reduce(
-      (t, l) => t + Number(l.amount || 0),
-      0
-    )
-    let allroomfoodplanwithtax = 0
-    doc.selectedRooms.map(
-      (item) => (allroomfoodplanwithtax += Number(item?.foodPlanAmountWithTax))
-    )
-    console.log(allroomfoodplanwithtax)
+    const perRoomRestaurantLines = buildPerRoomRestaurantLinesForDoc(doc);
+    const roomServiceTotal = perRoomRestaurantLines
+      .filter((l) => l.type === "roomService")
+      .reduce((t, l) => t + Number(l.amount || 0), 0);
 
-    // Build grouped charges
-    // Build grouped charges
-    // Build grouped charges
-    // Build grouped charges
-    // Build grouped charges
+    const dineInTotal = perRoomRestaurantLines
+      .filter((l) => l.type === "dineIn")
+      .reduce((t, l) => t + Number(l.amount || 0), 0);
+
+    const restaurantTotal = roomServiceTotal + dineInTotal;
+
+    console.log("Room Service Total:", roomServiceTotal);
+    console.log("Dine In Total:", dineInTotal);
+    console.log("Restaurant Total:", restaurantTotal);
+    console.log(perRoomRestaurantLines);
+    console.log(perRoomRestaurantLines);
+
     const groupedRoomCharges = (() => {
       const charges = [];
       const groups = {};
+
+      // Group charges by room
       dateWiseLines.forEach((i) => {
         const k = i.roomName;
         if (!groups[k]) groups[k] = [];
         groups[k].push(i);
       });
 
-      Object.keys(groups).forEach((roomName) => {
+      // Get array of room names to track first room
+      const roomNames = Object.keys(groups);
+
+      // Process each room's charges in order
+      roomNames.forEach((roomName, roomIndex) => {
         const roomDays = groups[roomName];
 
-        // Get the original room data once for this room
+        // Get the original room data for this room
         const originalRoom = doc.selectedRooms?.find(
           (r) => r.roomName === roomName
         );
 
-        // Get the tax percentage from original room
+        // Get tax percentages
         const roomTaxPercentage = originalRoom?.taxPercentage || 0;
-        const halfRoomTaxPercentage = roomTaxPercentage / 2; // For CGST and SGST
+        const halfRoomTaxPercentage = roomTaxPercentage / 2;
 
-        roomDays.forEach((item, index) => {
+        // Get THIS specific room's arrival date
+        const roomArrivalDate =
+          roomDays[0]?.roomArrivalDate ||
+          roomDays[0]?.date ||
+          formatDate(doc.arrivalDate);
+
+        // Separate full days and half days
+        const fullDayCharges = roomDays.filter(
+          (item) =>
+            !item.description?.includes("Half Day") &&
+            !item.description?.includes("Half Tariff")
+        );
+        const halfDayCharges = roomDays.filter(
+          (item) =>
+            item.description?.includes("Half Day") ||
+            item.description?.includes("Half Tariff")
+        );
+
+        // 1. Add FULL DAY room rent charges
+        fullDayCharges.forEach((item) => {
           charges.push({
             date: item.date,
-            description:
-              item.description?.includes("Half Day") ||
-              item.description?.includes("Half Tariff")
-                ? ` Half Tariff`
-                : `Room Rent :${item.roomName}`,
-            // Changed format
+            description: `Room Rent :${item.roomName}`,
             docNo: item.docNo || "-",
             amount: (item.baseAmount + item.foodPlanAmountWithTax).toFixed(2),
             taxes: (item.taxAmount || 0).toFixed(2),
             advance: "",
-            roomName: item.roomName
-          })
-          const roomTotalTax = roomDays.reduce(
+            roomName: item.roomName,
+          });
+        });
+
+        // 2. Add CGST and SGST for FULL DAYS (if any)
+        if (fullDayCharges.length > 0) {
+          const fullDayTotalTax = fullDayCharges.reduce(
             (sum, i) => sum + (i.taxAmount || 0),
             0
-          )
-          const roomCGST = roomTotalTax / 2
-          const roomSGST = roomTotalTax / 2
+          );
 
-          if (roomCGST > 0) {
+          if (fullDayTotalTax > 0) {
+            const fullDayCGST = fullDayTotalTax / 2;
+            const fullDaySGST = fullDayTotalTax / 2;
+
             charges.push({
-              date:item.date,
-              description: `CGST on Rent@6% (${roomName})`,
+              date: roomArrivalDate,
+              description: `CGST on Rent@${halfRoomTaxPercentage}%`,
               docNo: "-",
               amount: 0,
-              taxes: roomCGST.toFixed(2),
+              taxes: fullDayCGST.toFixed(2),
               advance: "",
-              roomName
-            })
-          }
+              roomName,
+            });
 
-          if (roomSGST > 0) {
             charges.push({
-              date:item?.date,
-              description: `SGST on Rent@6% (${roomName})`,
+              date: roomArrivalDate,
+              description: `SGST on Rent@${halfRoomTaxPercentage}%`,
               docNo: "-",
               amount: 0,
-              taxes: roomSGST.toFixed(2),
+              taxes: fullDaySGST.toFixed(2),
               advance: "",
-              roomName
-            })
+              roomName,
+            });
           }
-        })
+        }
 
-        const roomKot = perRoomRestaurantLines.find(
-          (l) => l.roomName === roomName
-        );
-        if (roomKot && Number(roomKot.amount) > 0) {
+        // 3. Add HALF DAY room rent charges
+        halfDayCharges.forEach((item) => {
           charges.push({
-            date: roomKot.date,
-            description: roomKot.description, // Keep as is (Restaurant - Room X)
-            docNo: roomKot.docNo,
-            amount: roomKot.amount,
+            date: roomArrivalDate,
+            description: `Half Tariff :${item.roomName}`,
+            docNo: item.docNo || "-",
+            amount: (item.baseAmount + item.foodPlanAmountWithTax).toFixed(2),
+            taxes: (item.taxAmount || 0).toFixed(2),
+            advance: "",
+            roomName: item.roomName,
+          });
+        });
+
+        // 4. Add CGST and SGST for HALF DAYS (if any)
+        if (halfDayCharges.length > 0) {
+          const halfDayTotalTax = halfDayCharges.reduce(
+            (sum, i) => sum + (i.taxAmount || 0),
+            0
+          );
+
+          if (halfDayTotalTax > 0) {
+            const halfDayCGST = halfDayTotalTax / 2;
+            const halfDaySGST = halfDayTotalTax / 2;
+
+            charges.push({
+              date: roomArrivalDate,
+              description: `CGST on Half Tariff@${halfRoomTaxPercentage}%`,
+              docNo: "-",
+              amount: 0,
+              taxes: halfDayCGST.toFixed(2),
+              advance: "",
+              roomName,
+            });
+
+            charges.push({
+              date: roomArrivalDate,
+              description: `SGST on Half Tariff@${halfRoomTaxPercentage}%`,
+              docNo: "-",
+              amount: 0,
+              taxes: halfDaySGST.toFixed(2),
+              advance: "",
+              roomName,
+            });
+          }
+        }
+
+        // 5. Add Additional Pax amount if applicable
+        const totalAdditionalPaxWithoutTax = roomDays.reduce(
+          (sum, i) => sum + (i.additionalPaxDataWithOutTax || 0),
+          0
+        );
+
+        if (totalAdditionalPaxWithoutTax > 0) {
+          charges.push({
+            date: roomArrivalDate,
+            description: `Extra Person`,
+            docNo: "-",
+            amount: totalAdditionalPaxWithoutTax,
             taxes: 0,
             advance: "",
             roomName,
           });
         }
-      });
+
+        // 6. Add CGST and SGST for Additional Pax (if any)
+        const roomAdditionalPaxTax = roomDays.reduce((sum, i) => {
+          const paxWithTax = i.additionalPaxDataWithTax || 0;
+          const paxWithoutTax = i.additionalPaxDataWithOutTax || 0;
+          return sum + (paxWithTax - paxWithoutTax);
+        }, 0);
+
+        if (roomAdditionalPaxTax > 0) {
+          const totalPaxWithTax = roomDays.reduce(
+            (sum, i) => sum + (i.additionalPaxDataWithTax || 0),
+            0
+          );
+          const additionalPaxTaxPercentage =
+            totalAdditionalPaxWithoutTax > 0
+              ? ((totalPaxWithTax - totalAdditionalPaxWithoutTax) /
+                  totalAdditionalPaxWithoutTax) *
+                100
+              : 0;
+          const halfAdditionalPaxTaxPercentage = additionalPaxTaxPercentage / 2;
+
+          const paxCGST = roomAdditionalPaxTax / 2;
+          const paxSGST = roomAdditionalPaxTax / 2;
+
+          charges.push({
+            date: roomArrivalDate,
+            description: `CGST on Extra Person@${halfAdditionalPaxTaxPercentage.toFixed(
+              1
+            )}%`,
+            docNo: "-",
+            amount: 0,
+            taxes: paxCGST.toFixed(2),
+            advance: "",
+            roomName,
+          });
+
+          charges.push({
+            date: roomArrivalDate,
+            description: `SGST on Extra Person@${halfAdditionalPaxTaxPercentage.toFixed(
+              1
+            )}%`,
+            docNo: "-",
+            amount: 0,
+            taxes: paxSGST.toFixed(2),
+            advance: "",
+            roomName,
+          });
+        }
+
+        // 7. Add Room Service charges for this specific room
+        const roomServiceLines = perRoomRestaurantLines.filter(
+          (l) => l.roomName === roomName && l.type === "roomService"
+        );
+
+        roomServiceLines.forEach((serviceLine) => {
+          if (Number(serviceLine.amount) > 0) {
+            charges.push({
+              date: serviceLine.date,
+              description: serviceLine.description,
+              docNo: serviceLine.docNo,
+              amount: serviceLine.amount,
+              taxes: 0,
+              advance: "",
+              roomName: roomName,
+            });
+          }
+        });
+
+        // ✅ 8. After FIRST room only, add ALL Dine In charges
+        if (roomIndex === 0) {
+          const dineInLines = perRoomRestaurantLines.filter(
+            (l) => l.type === "dineIn"
+          );
+          console.log("Adding dine-in lines after first room:", dineInLines);
+
+          dineInLines.forEach((dineInLine) => {
+            if (Number(dineInLine.amount) > 0) {
+              charges.push({
+                date: dineInLine.date,
+                description: dineInLine.description,
+                docNo: dineInLine.docNo,
+                amount: dineInLine.amount,
+                taxes: 0,
+                advance: "",
+                roomName: "", // Dine-in not tied to room
+              });
+            }
+          });
+        }
+      }); // End of roomNames.forEach
 
       return charges
     })()
@@ -414,13 +694,12 @@ const HotelBillPrint = () => {
             (sum, t) => sum + Number(t.bill_amount || t.billamount || 0),
             0
           )
-      : 0
-    console.log(advanceEntries)
+      : 0;
+    console.log(advanceEntries);
     // Combine charges and compute balances
-    const allCharges = [...groupedRoomCharges, ...advanceEntries]
-    console.log(groupedRoomCharges)
-    console.log(allCharges)
-    let cumulativeBalance = 0
+    const allCharges = [...groupedRoomCharges, ...advanceEntries];
+    console.log(allCharges);
+    let cumulativeBalance = 0;
     const chargesWithBalance = allCharges.map((charge) => {
       let currentAmount = Number(charge.amount || 0);
       const lineTaxes = Number(charge.taxes || 0);
@@ -533,13 +812,14 @@ const HotelBillPrint = () => {
         roomRent: roomTariffTotal,
         sgst: sgstAmount,
         cgst: cgstAmount,
-        restaurant: restaurantTotal,
-        roomService: 0,
+        restaurant: dineInTotal, // ✅ Only dine-in restaurant amount
+        roomService: roomServiceTotal, // ✅ Only room service amount
         foodPlan: planAmount,
         additionalPax: additionalPaxAmount,
         total: grandTotal,
         totalWords: convertNumberToWords(grandTotal),
       },
+
       payment: {
         mode: "Credit",
         total: grandTotal,
@@ -565,11 +845,11 @@ const HotelBillPrint = () => {
   }, [selectedCheckOut, outStanding, kotData, organization]);
 
   // Print handlers use first bill by default for metadata
-  const handlePrint = useReactToPrint({
-    content: () => printReference.current,
-    documentTitle: "Hotel Bill",
-    removeAfterPrint: true,
-  });
+  // const handlePrint = useReactToPrint({
+  //   content: () => printReference.current,
+  //   documentTitle: "Hotel Bill",
+  //   removeAfterPrint: true
+  // })
 
   const handlePrintPDF = (isPrint) => {
     const multi = bills && bills.length ? bills : [];
@@ -699,7 +979,7 @@ const HotelBillPrint = () => {
               <div style={{ flex: "0 0 120px" }}>
                 {Logo && (
                   <img
-                    src={Logo}
+                    src={billData?.hotel?.logo}
                     alt="Logo"
                     style={{ width: "120px", height: "auto" }}
                   />
@@ -708,6 +988,7 @@ const HotelBillPrint = () => {
               <div className="ml-auto">
                 <div
                   style={{
+                    textAlign: "right",
                     fontSize: "18px",
                     fontWeight: "bold",
                     marginBottom: "4px",
@@ -718,15 +999,20 @@ const HotelBillPrint = () => {
                 </div>
                 <div
                   style={{
+                    textAlign: "right",
                     fontSize: "10px",
                     marginBottom: "2px",
                     lineHeight: "1.2",
                   }}
                 >
-                  {billData?.hotel?.address}
+                  {billData?.hotel?.address?.split(",").map((line, index) => (
+                    <div key={index}>{line.trim()}</div>
+                  ))}
                 </div>
+
                 <div
                   style={{
+                    textAlign: "right",
                     fontSize: "10px",
                     marginBottom: "2px",
                     lineHeight: "1.2",
@@ -736,6 +1022,7 @@ const HotelBillPrint = () => {
                 </div>
                 <div
                   style={{
+                    textAlign: "right",
                     fontSize: "10px",
                     marginBottom: "3px",
                     lineHeight: "1.2",
@@ -746,6 +1033,7 @@ const HotelBillPrint = () => {
                 </div>
                 <div
                   style={{
+                    textAlign: "right",
                     fontSize: "9px",
                     lineHeight: "1.1",
                   }}
@@ -755,6 +1043,7 @@ const HotelBillPrint = () => {
                 </div>
                 <div
                   style={{
+                    textAlign: "right",
                     fontSize: "9px",
                     lineHeight: "1.1",
                   }}
@@ -771,6 +1060,7 @@ const HotelBillPrint = () => {
                   width: "100%",
                   borderCollapse: "collapse",
                   fontSize: "10px",
+                  tableLayout: "fixed", // helps keep columns stable [web:18]
                 }}
               >
                 <tbody>
@@ -812,6 +1102,7 @@ const HotelBillPrint = () => {
                       {billData?.stay?.billDate}
                     </td>
                   </tr>
+
                   <tr>
                     <td style={{ padding: "2px 0", fontWeight: "bold" }}>
                       GUEST
@@ -832,13 +1123,29 @@ const HotelBillPrint = () => {
                       {billData?.stay?.departure}
                     </td>
                   </tr>
+
                   <tr>
                     <td style={{ padding: "2px 0", fontWeight: "bold" }}>
                       Address
                     </td>
-                    <td colSpan="3" style={{ padding: "2px 0" }}>
-                      {billData?.guest?.address}
+                    <td
+                      colSpan={1}
+                      style={{
+                        padding: "2px 0",
+                        fontSize: "10px",
+                        lineHeight: "1.2",
+                        whiteSpace: "normal", // allow wrapping [web:10]
+                        wordWrap: "break-word", // legacy but supported [web:22]
+                        overflowWrap: "break-word", // modern property [web:33]
+                      }}
+                    >
+                      {billData?.guest?.address
+                        ?.split(",")
+                        .map((line, index) => (
+                          <div key={index}>{line.trim()}</div>
+                        ))}
                     </td>
+
                     <td style={{ padding: "2px 0", fontWeight: "bold" }}>
                       Plan
                     </td>
@@ -846,6 +1153,7 @@ const HotelBillPrint = () => {
                       {billData?.stay?.plan} Pax {billData?.stay?.pax}
                     </td>
                   </tr>
+
                   <tr>
                     <td style={{ padding: "2px 0", fontWeight: "bold" }}>
                       Phone
@@ -864,6 +1172,7 @@ const HotelBillPrint = () => {
                     </td>
                     <td style={{ padding: "2px 0" }}>{billData?.stay?.days}</td>
                   </tr>
+
                   <tr>
                     <td style={{ padding: "2px 0", fontWeight: "bold" }}>
                       Travel Agent
@@ -871,8 +1180,9 @@ const HotelBillPrint = () => {
                     <td style={{ padding: "2px 0" }}>
                       {billData?.guest?.travelAgent}
                     </td>
-                    <td colSpan="4"></td>
+                    <td colSpan={4}></td>
                   </tr>
+
                   <tr>
                     <td style={{ padding: "2px 0", fontWeight: "bold" }}>
                       GST No
@@ -880,17 +1190,9 @@ const HotelBillPrint = () => {
                     <td style={{ padding: "2px 0" }}>
                       {billData?.guest?.gstNo}
                     </td>
-                    <td colSpan="4"></td>
+                    <td colSpan={4}></td>
                   </tr>
-                  {/* <tr>
-                    <td style={{ padding: "2px 0", fontWeight: "bold" }}>
-                      Company
-                    </td>
-                    <td style={{ padding: "2px 0" }}>
-                      {billData?.guest?.gstNo}
-                    </td>
-                    <td colSpan="4"></td>
-                  </tr> */}
+
                   <tr>
                     <td style={{ padding: "2px 0", fontWeight: "bold" }}>
                       Room No
@@ -898,7 +1200,7 @@ const HotelBillPrint = () => {
                     <td style={{ padding: "2px 0" }}>
                       {billData?.guest?.roomNo}
                     </td>
-                    <td colSpan="4"></td>
+                    <td colSpan={4}></td>
                   </tr>
                 </tbody>
               </table>
