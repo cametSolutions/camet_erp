@@ -78,7 +78,7 @@ export const buildDatabaseFilterForBooking = (params) => {
     Primary_user_id: params.Primary_user_id,
   };
 
-    if (params.modal === "checkIn") {
+  if (params.modal === "checkIn") {
     filter.status = { $nin: ["checkOut"] };
   }
   if (params.roomId) {
@@ -121,7 +121,7 @@ export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
     } else {
       selectedModal = CheckOut;
     }
-  
+
     // console.log("params", params);
     const [bookings, totalBookings] = await Promise.all([
       selectedModal
@@ -169,10 +169,10 @@ export const sendBookingsResponse = (res, bookings, totalBookings, params) => {
 export const extractRequestParamsForBookings = (req) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 0;
-  
-   const modal = parseInt(req.query.modal) || 0;
-    const roomId = parseInt(req.query.roomId) || 0;
-   
+
+  const modal = parseInt(req.query.modal) || 0;
+  const roomId = parseInt(req.query.roomId) || 0;
+
   return {
     Secondary_user_id: req.sUserId,
     cmp_id: new mongoose.Types.ObjectId(req.params.cmp_id),
@@ -182,11 +182,11 @@ export const extractRequestParamsForBookings = (req) => {
     limit,
     skip: limit > 0 ? (page - 1) * limit : 0,
     modal: req.query.modal,
-   roomId: req.query.roomId || null, 
+    roomId: req.query.roomId || null,
   };
 };
 
- export const updateStatus = async (roomData, status, session) => {
+export const updateStatus = async (roomData, status, session) => {
   const ids = roomData.map((room) => room.roomId);
   await roomModal.updateMany(
     { _id: { $in: ids } },
@@ -461,14 +461,17 @@ export const createReceiptForSales = async (
   if (!series_id) throw new Error("No valid receipt series found for hotel");
 
   // Get checkInId from request
-  const checkInId = req.body.selectedCheckOut?.[0]?._id;
+  // const checkInId = req.body.selectedCheckOut?.map((it) => it.allCheckInIds)
+  const checkInId = req.body.selectedCheckOut
+    ?.flatMap((it) => it.allCheckInIds);
+
   if (!checkInId) {
     throw new Error("Missing checkInId in selectedCheckOut");
   }
 
   // Find all sales with this checkInId
   const allSales = await salesModel.find({
-    checkInId: checkInId,
+    checkInId: { $in: checkInId },
     cmp_id,
   })
     .sort({ createdAt: 1 }) // FIFO: oldest first
@@ -482,6 +485,7 @@ export const createReceiptForSales = async (
 
     // Process each split detail
     for (const split of splitDetails) {
+      const billData = [];
       const splitCustomerId = split.customer;
       const splitAmount = Number(split.amount || 0);
       const splitSourceType = split.sourceType; // "cash" or "bank"
@@ -491,7 +495,7 @@ export const createReceiptForSales = async (
       // Find all outstandings for this customer from sales with this checkInId
       const outstandings = await TallyData.find({
         billId: { $in: saleIds },
-        party_id: splitCustomerId,                                     
+        party_id: splitCustomerId,
         bill_pending_amt: { $gt: 0 },
         cmp_id,
         source: "sales",
@@ -504,85 +508,85 @@ export const createReceiptForSales = async (
         continue;
       }
 
-      // Get customer details
-      const customer = await Party.findOne({ _id: splitCustomerId })
-        .populate("accountGroup")
-        .session(session);
+      // // Get customer details
+      // const customer = await Party.findOne({ _id: splitCustomerId })
+      //   .populate("accountGroup")
+      //   .session(session);
 
-      if (!customer) continue;
+      // if (!customer) continue;
 
-      // Distribute split amount across customer's outstandings in FIFO
-      let amountLeft = splitAmount;
-      const billData = [];
-      const outstandingsToUpdate = [];    
+      // // Distribute split amount across customer's outstandings in FIFO
+      // let amountLeft = splitAmount;
+      // // const billData = [];
+      // const outstandingsToUpdate = [];
 
-      for (const outstanding of outstandings) {
-        if (amountLeft <= 0) break;
+      // for (const outstanding of outstandings) {
+      //   if (amountLeft <= 0) break;
 
-        const billPendingAmount = outstanding.bill_pending_amt || 0;
-        const settledAmount = Math.min(amountLeft, billPendingAmount);
+      //   const billPendingAmount = outstanding.bill_pending_amt || 0;
+      //   const settledAmount = Math.min(amountLeft, billPendingAmount);
 
-        billData.push({
-          _id: outstanding._id,
-          bill_no: outstanding.bill_no,
-          billId: outstanding.billId,
-          bill_date: outstanding.bill_date,
-          bill_pending_amt: billPendingAmount,
-          source: "hotel",
-          settledAmount: settledAmount,
-          remainingAmount: billPendingAmount - settledAmount,
-        });
+      //   billData.push({
+      //     _id: outstanding._id,
+      //     bill_no: outstanding.bill_no,
+      //     billId: outstanding.billId,
+      //     bill_date: outstanding.bill_date,
+      //     bill_pending_amt: billPendingAmount,
+      //     source: "hotel",
+      //     settledAmount: settledAmount,
+      //     remainingAmount: billPendingAmount - settledAmount,
+      //   });
 
-        outstandingsToUpdate.push({
-          outstandingId: outstanding._id,
-          settledAmount: settledAmount,
-          newPendingAmount: billPendingAmount - settledAmount,
-        });
+      //   outstandingsToUpdate.push({
+      //     outstandingId: outstanding._id,
+      //     settledAmount: settledAmount,
+      //     newPendingAmount: billPendingAmount - settledAmount,
+      //   });
 
-        amountLeft -= settledAmount;
-      }
+      //   amountLeft -= settledAmount;
+      // }
 
-      // Create advance tally BEFORE receipt if there's excess
-      let advanceTallyId = null;
-      if (amountLeft > 0) {
-        const advanceTally = await TallyData.create(
-          [
-            {
-              Primary_user_id: req.pUserId || req.owner,
-              cmp_id,
-              party_id: splitCustomerId,
-              party_name: customer.partyName,
-              mobile_no: customer.mobileNumber,
-              bill_date: new Date(),
-              bill_no: `ADV-${Date.now()}`, // Temporary, will update after receipt
-              billId: null, // No sale, this IS the advance
-              bill_amount: 0,
-              bill_pending_amt: -amountLeft, // Negative for advance
-              accountGroup: customer.accountGroup?._id?.toString() || customer.accountGroup_id,
-              user_id: req.sUserId,
-              advanceAmount: amountLeft,
-              advanceDate: new Date(),
-              classification: "Cr",
-              source: "advanceReceipt",
-            },
-          ],
-          { session }
-        );
+      // // Create advance tally BEFORE receipt if there's excess
+      // let advanceTallyId = null;
+      // if (amountLeft > 0) {
+      //   const advanceTally = await TallyData.create(
+      //     [
+      //       {
+      //         Primary_user_id: req.pUserId || req.owner,
+      //         cmp_id,
+      //         party_id: splitCustomerId,
+      //         party_name: customer.partyName,
+      //         mobile_no: customer.mobileNumber,
+      //         bill_date: new Date(),
+      //         bill_no: `ADV-${Date.now()}`, // Temporary, will update after receipt
+      //         billId: null, // No sale, this IS the advance
+      //         bill_amount: 0,
+      //         bill_pending_amt: -amountLeft, // Negative for advance
+      //         accountGroup: customer.accountGroup?._id?.toString() || customer.accountGroup_id,
+      //         user_id: req.sUserId,
+      //         advanceAmount: amountLeft,
+      //         advanceDate: new Date(),
+      //         classification: "Cr",
+      //         source: "advanceReceipt",
+      //       },
+      //     ],
+      //     { session }
+      //   );
 
-        advanceTallyId = advanceTally[0]._id;
+      //   advanceTallyId = advanceTally[0]._id;
 
-        // Add to billData with proper reference
-        billData.push({
-          _id: advanceTallyId,
-          bill_no: `ADV-${Date.now()}`,
-          billId: null, // Advance has no sale billId
-          bill_date: new Date(),
-          bill_pending_amt: 0,
-          source: "hotel",
-          settledAmount: amountLeft,
-          remainingAmount: 0,
-        });
-      }
+      //   // Add to billData with proper reference
+      //   billData.push({
+      //     _id: advanceTallyId,
+      //     bill_no: `ADV-${Date.now()}`,
+      //     billId: null, // Advance has no sale billId
+      //     bill_date: new Date(),
+      //     bill_pending_amt: 0,
+      //     source: "hotel",
+      //     settledAmount: amountLeft,
+      //     remainingAmount: 0,
+      //   });
+      // }
 
       // Create receipt for this split
       const receiptVoucher = await generateVoucherNumber(
@@ -601,6 +605,16 @@ export const createReceiptForSales = async (
         splitSourceType === "cash"
           ? { cash_ledname: customer.partyName, cash_name: customer.partyName }
           : { bank_ledname: customer.partyName, bank_name: customer.partyName };
+      billData.push({
+        _id: outstandings[0]._id,
+        bill_no: allSales[0].bill_no,
+        billId: allSales[0].billId,
+        bill_date: outstandings[0].bill_date,
+        bill_pending_amt: 0,
+        source: "hotel",
+        settledAmount: splitAmount,
+        remainingAmount: 0,
+      })
 
       const newReceipt = await buildReceipt(
         receiptVoucher,
@@ -619,14 +633,11 @@ export const createReceiptForSales = async (
       receipts.push(newReceipt);
 
       // Update all affected outstandings
-      for (const update of outstandingsToUpdate) {
+      for (const update of outstandings) {
         await TallyData.updateOne(
-          { _id: update.outstandingId },
+          { _id: update._id },
           {
-            $set: {
-              bill_pending_amt: update.newPendingAmount,
-              billId: newReceipt._id,
-            },
+
             $push: {
               appliedReceipts: {
                 _id: newReceipt._id,
@@ -641,17 +652,17 @@ export const createReceiptForSales = async (
       }
 
       // Update advance tally with receipt number
-      if (advanceTallyId) {
-        await TallyData.updateOne(
-          { _id: advanceTallyId },
-          {
-            $set: {
-              bill_no: newReceipt.receiptNumber,
-            },
-          },
-          { session }
-        );
-      }
+      // if (advanceTallyId) {
+      //   await TallyData.updateOne(
+      //     { _id: advanceTallyId },
+      //     {
+      //       $set: {
+      //         bill_no: newReceipt.receiptNumber,
+      //       },
+      //     },
+      //     { session }
+      //   );
+      // }
     }
   }
 
@@ -754,6 +765,7 @@ export const createReceiptForSales = async (
 
     // Distribute amount across bills using FIFO
     let amountLeft = amount;
+    console.log("amountleft", amountLeft)
     const billData = [];
     const outstandingsToUpdate = [];
 
@@ -762,6 +774,7 @@ export const createReceiptForSales = async (
 
       const pendingAmount = outstanding.bill_pending_amt || 0;
       const settleAmount = Math.min(amountLeft, pendingAmount);
+      console.log("pendingandsettle", pendingAmount, settleAmount)
 
       billData.push({
         _id: outstanding._id,

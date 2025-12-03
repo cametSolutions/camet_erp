@@ -64,6 +64,8 @@ console.log(reducedAdditionalPaxAmount)
     if (!applicableSlab && hsnDetails?.igstRate !== undefined) {
       taxRate = Number(hsnDetails.igstRate);
     }
+console.log(taxRate)
+console.log(totalAmount)
 console.log(inclusive)
     const taxAmount = (totalAmount * taxRate) / 100;
 console.log(totalAmount)
