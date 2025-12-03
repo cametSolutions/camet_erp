@@ -2443,7 +2443,7 @@ async function hotelVoucherSeries(cmp_id, session) {
 }
 
 export const convertCheckOutToSale = async (req, res) => {
-  // console.log("convertchecktouttosale")
+  // console.log("convert check touttosale")
   const session = await mongoose.startSession();
   try {
     let isAnyPartial = false;
