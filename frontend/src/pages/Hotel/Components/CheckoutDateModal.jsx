@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { X, Calendar } from "lucide-react";
 
 export default function CheckoutDateModal({
@@ -19,7 +19,6 @@ export default function CheckoutDateModal({
  const [checkouts, setCheckouts] = useState(
   checkoutData.length > 0
     ? checkoutData.map(checkout => {
-        // Ensure stayDays is at least 1 if arrival and checkout are same day
         const arrival = new Date(checkout.arrivalDate);
         const checkoutDate = new Date(checkout.checkOutDate);
         const diffTime = checkoutDate - arrival;
@@ -44,31 +43,6 @@ export default function CheckoutDateModal({
       ]
 );
 
-  const calculateRoomTariff = (priceLevelRate, stayDays) => {
-    if (stayDays <= 0) return 0;
-
-    // First day is always full price
-    let totalTariff = priceLevelRate;
-
-    // Remaining days calculation
-    const remainingDays = stayDays - 1;
-
-    if (remainingDays > 0) {
-      const fullDays = Math.floor(remainingDays);
-      const hasHalfDay = remainingDays % 1 !== 0;
-
-      // Add full days at full price
-      totalTariff += fullDays * priceLevelRate;
-
-      // Add half day at 50% price
-      if (hasHalfDay) {
-        totalTariff += priceLevelRate * 0.5;
-      }
-    }
-
-    return totalTariff;
-  };
-
  const handleNewDateChange = (id, newDate) => {
   setCheckouts(
     checkouts.map((checkout) => {
@@ -76,24 +50,19 @@ export default function CheckoutDateModal({
         const arrival = new Date(checkout.arrivalDate);
         const checkoutDate = new Date(newDate);
         const diffTime = checkoutDate - arrival;
-        // Change: If same day, set to 1 day minimum, otherwise calculate
         const calculatedDays = diffTime === 0 ? 1 : Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-        // Find original checkout data
         const originalCheckout = originalCheckouts.find((oc) => oc._id === id);
         if (!originalCheckout) return checkout;
 
-        // Update room tariffs based on new stay days using ORIGINAL data
         const updatedRooms =
           checkout.selectedRooms?.map((room) => {
-            // Find the corresponding original room
             const originalRoom = originalCheckout.selectedRooms?.find(
               (or) => or._id === room._id || or.roomName === room.roomName
             );
 
             if (!originalRoom) return room;
 
-            // Get original values and stay days
             const originalStayDays =
               originalRoom.stayDays || originalCheckout.stayDays || 1;
             const originalBaseAmount = originalRoom.baseAmount || 0;
@@ -114,9 +83,11 @@ export default function CheckoutDateModal({
               originalFoodPlanWithTax / originalStayDays;
             const foodPlanWithoutTaxPerDay =
               originalFoodPlanWithoutTax / originalStayDays;
-            const paxWithTaxPerDay = originalPaxWithTax / originalStayDays;
-            const paxWithoutTaxPerDay =
-              originalPaxWithoutTax / originalStayDays;
+
+            // ✅ FIX: Calculate pax per day based on ORIGINAL FULL DAYS only
+            const originalFullDays = Math.floor(originalStayDays);
+            const paxWithTaxPerDay = originalFullDays > 0 ? originalPaxWithTax / originalFullDays : 0;
+            const paxWithoutTaxPerDay = originalFullDays > 0 ? originalPaxWithoutTax / originalFullDays : 0;
 
             // Calculate new totals based on calculatedDays
             const fullDays = Math.floor(calculatedDays);
@@ -126,17 +97,18 @@ export default function CheckoutDateModal({
             let newTaxAmount = fullDays * taxAmountPerDay;
             let newFoodPlanWithTax = fullDays * foodPlanWithTaxPerDay;
             let newFoodPlanWithoutTax = fullDays * foodPlanWithoutTaxPerDay;
+            
+            // ✅ FIX: Only multiply by FULL days for pax
             let newPaxWithTax = fullDays * paxWithTaxPerDay;
             let newPaxWithoutTax = fullDays * paxWithoutTaxPerDay;
 
-            // Add fractional day amounts (50%)
+            // Add fractional day amounts (50%) - but NOT for pax
             if (fractionalDay > 0) {
               newBaseAmount += baseAmountPerDay * 0.5;
               newTaxAmount += taxAmountPerDay * 0.5;
               newFoodPlanWithTax += foodPlanWithTaxPerDay * 0.5;
               newFoodPlanWithoutTax += foodPlanWithoutTaxPerDay * 0.5;
-              newPaxWithTax += paxWithTaxPerDay * 0.5;
-              newPaxWithoutTax += paxWithoutTaxPerDay * 0.5;
+              // ✅ NO pax charges for fractional day
             }
 
             return {
@@ -173,21 +145,27 @@ export default function CheckoutDateModal({
     setCheckouts(
       checkouts.map((checkout) => {
         if (checkout._id === id) {
+          // Allow empty string or incomplete decimal input
+          if (newDays === "" || newDays === "." || newDays.endsWith(".")) {
+            return {
+              ...checkout,
+              stayDays: newDays,
+            };
+          }
+
           const stayDays = parseFloat(newDays);
 
           // Validate input
           if (isNaN(stayDays) || stayDays <= 0) {
-            // If invalid input, just update the display value but keep original amounts
             return {
               ...checkout,
-              stayDays: newDays === "" ? "" : stayDays,
+              stayDays: newDays,
             };
           }
 
           const fullDays = Math.floor(stayDays);
           const fractionalDay = stayDays - fullDays;
 
-          // Find the original checkout data
           const originalCheckout = originalCheckouts.find(
             (oc) => oc._id === id
           );
@@ -197,10 +175,8 @@ export default function CheckoutDateModal({
             return checkout;
           }
 
-          // Recalculate all room-related amounts based on new stay days
           const updatedRooms =
             checkout.selectedRooms?.map((room) => {
-              // Find the corresponding original room
               const originalRoom = originalCheckout.selectedRooms?.find(
                 (or) => or._id === room._id || or.roomName === room.roomName
               );
@@ -210,7 +186,6 @@ export default function CheckoutDateModal({
                 return room;
               }
 
-              // Get original values and stay days
               const originalStayDays =
                 originalRoom.stayDays || originalCheckout.stayDays || 1;
               const originalBaseAmount = originalRoom.baseAmount || 0;
@@ -238,31 +213,36 @@ export default function CheckoutDateModal({
                 originalFoodPlanWithTax / originalStayDays;
               const foodPlanWithoutTaxPerDay =
                 originalFoodPlanWithoutTax / originalStayDays;
-              const paxWithTaxPerDay = originalPaxWithTax / originalStayDays;
-              const paxWithoutTaxPerDay =
-                originalPaxWithoutTax / originalStayDays;
+              
+              // ✅ FIX: Calculate pax per day based on ORIGINAL FULL DAYS only
+              const originalFullDays = Math.floor(originalStayDays);
+              const paxWithTaxPerDay = originalFullDays > 0 ? originalPaxWithTax / originalFullDays : 0;
+              const paxWithoutTaxPerDay = originalFullDays > 0 ? originalPaxWithoutTax / originalFullDays : 0;
 
               // Calculate new totals: full days + fractional day
               let newBaseAmount = fullDays * baseAmountPerDay;
               let newTaxAmount = fullDays * taxAmountPerDay;
               let newFoodPlanWithTax = fullDays * foodPlanWithTaxPerDay;
               let newFoodPlanWithoutTax = fullDays * foodPlanWithoutTaxPerDay;
+              
+              // ✅ FIX: Only multiply by FULL days for pax
               let newPaxWithTax = fullDays * paxWithTaxPerDay;
               let newPaxWithoutTax = fullDays * paxWithoutTaxPerDay;
 
-              // Add fractional day amounts (50%)
+              // Add fractional day amounts (50%) - but NOT for pax
               if (fractionalDay > 0) {
                 newBaseAmount += baseAmountPerDay * 0.5;
                 newTaxAmount += taxAmountPerDay * 0.5;
                 newFoodPlanWithTax += foodPlanWithTaxPerDay * 0.5;
                 newFoodPlanWithoutTax += foodPlanWithoutTaxPerDay * 0.5;
-                newPaxWithTax += paxWithTaxPerDay * 0.5;
-                newPaxWithoutTax += paxWithoutTaxPerDay * 0.5;
+                // ✅ NO pax charges for fractional day
               }
 
               console.log("Calculated New Amounts:", {
                 newBaseAmount,
                 newTaxAmount,
+                newPaxWithTax,
+                newPaxWithoutTax,
                 baseAmountPerDay,
                 fullDays,
                 fractionalDay,
@@ -289,7 +269,7 @@ export default function CheckoutDateModal({
           // Calculate new checkout date
           const arrival = new Date(checkout.arrivalDate);
           const newCheckoutDate = new Date(arrival);
-          const daysToAdd = Math.ceil(stayDays);
+          const daysToAdd = Math.floor(stayDays);
           newCheckoutDate.setDate(arrival.getDate() + daysToAdd);
 
           return {
@@ -309,9 +289,8 @@ export default function CheckoutDateModal({
   };
 
   const handleCancel = () => {
-    // Reset to original data and close without processing
     setCheckouts(JSON.parse(JSON.stringify(checkoutData)));
-    onClose(null); // Pass null to indicate cancellation
+    onClose(null);
   };
 
   if (!isOpen) return null;
@@ -319,7 +298,6 @@ export default function CheckoutDateModal({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
-        {/* Compact Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
           <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
             <Calendar size={18} />
@@ -333,7 +311,6 @@ export default function CheckoutDateModal({
           </button>
         </div>
 
-        {/* Compact Table Body with Fixed Height */}
         <div className="flex-1 overflow-auto">
           <div className="min-w-full">
             <table className="w-full text-sm">
@@ -426,7 +403,6 @@ export default function CheckoutDateModal({
           </div>
         )}
 
-        {/* Compact Footer */}
         <div className="p-4 border-t border-gray-200 bg-gray-50 flex gap-2">
           <button
             onClick={handleCancel}

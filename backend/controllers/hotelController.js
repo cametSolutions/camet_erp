@@ -4261,3 +4261,167 @@ export const cancelBooking = async (req, res) => {
     });
   }
 };
+
+// controllers/hotelController.js
+
+
+// controllers/hotelController.js
+export const getCheckoutStatementByDate = async (req, res) => {
+  try {
+    const { date, cmp_id } = req.query;
+    
+    console.log('====== DEBUG INFO ======');
+    console.log('Received date:', date);
+    console.log('Received cmp_id:', cmp_id);
+    
+    if (!date) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Date parameter is required' 
+      });
+    }
+
+    // Build match criteria
+    const matchCriteria = {
+      checkOutDate: date
+    };
+
+    
+
+    console.log('Match Criteria:', matchCriteria);
+
+    // Count raw documents
+    const rawCount = await CheckOut.countDocuments(matchCriteria);
+    console.log('Raw document count:', rawCount);
+
+    // Fetch all checkouts and manually process
+    const checkouts = await CheckOut.find(matchCriteria)
+      .lean()
+      .sort({ voucherNumber: 1 });
+
+    console.log('Found checkouts from find():', checkouts.length);
+
+    // Process each checkout - expand rooms
+    const checkoutData = [];
+    
+    checkouts.forEach(checkout => {
+      if (checkout.selectedRooms && checkout.selectedRooms.length > 0) {
+        // If checkout has rooms, create one row per room
+        checkout.selectedRooms.forEach(room => {
+          checkoutData.push({
+            billNo: checkout.voucherNumber,
+            date: checkout.checkOutDate,
+            customerName: checkout.customerName,
+            roomName: room.roomName || 'N/A',
+            roomId: room.roomId,
+            totalAmount: parseFloat(checkout.totalAmount || 0),
+            grandTotal: parseFloat(checkout.grandTotal || 0),
+            advanceAmount: parseFloat(checkout.advanceAmount || 0),
+            balanceToPay: parseFloat(checkout.balanceToPay || 0),
+            paymentMode: checkout.paymentMode || 'N/A',
+            checkOutDate: checkout.checkOutDate,
+            checkOutTime: checkout.checkOutTime,
+            roomTotal: parseFloat(room.roomTotal || 0),
+            // Payment details (if you have them in the schema)
+            cash: parseFloat(checkout.paymentDetails?.cash || 0),
+            card: parseFloat(checkout.paymentDetails?.card || 0),
+            upi: parseFloat(checkout.paymentDetails?.upi || 0),
+            bank: parseFloat(checkout.paymentDetails?.bank || 0),
+            credit: parseFloat(checkout.paymentDetails?.credit || 0)
+          });
+        });
+      } else {
+        // If no rooms, create one row with the checkout data
+        checkoutData.push({
+          billNo: checkout.voucherNumber,
+          date: checkout.checkOutDate,
+          customerName: checkout.customerName,
+          roomName: 'N/A',
+          roomId: null,
+          totalAmount: parseFloat(checkout.totalAmount || 0),
+          grandTotal: parseFloat(checkout.grandTotal || 0),
+          advanceAmount: parseFloat(checkout.advanceAmount || 0),
+          balanceToPay: parseFloat(checkout.balanceToPay || 0),
+          paymentMode: checkout.paymentMode || 'N/A',
+          checkOutDate: checkout.checkOutDate,
+          checkOutTime: checkout.checkOutTime,
+          roomTotal: 0,
+          cash: parseFloat(checkout.paymentDetails?.cash || 0),
+          card: parseFloat(checkout.paymentDetails?.card || 0),
+          upi: parseFloat(checkout.paymentDetails?.upi || 0),
+          bank: parseFloat(checkout.paymentDetails?.bank || 0),
+          credit: parseFloat(checkout.paymentDetails?.credit || 0)
+        });
+      }
+    });
+
+    console.log('Processed checkout rows:', checkoutData.length);
+
+    // Calculate summary based on unique checkouts (not rows)
+    const summaryData = {
+      totalCheckoutAmount: 0,
+      totalAdvanceAmount: 0,
+      totalBalanceToPay: 0,
+      count: checkouts.length, // Count unique checkouts, not rows
+      cashTotal: 0,
+      cardTotal: 0,
+      upiTotal: 0,
+      bankTotal: 0,
+      creditTotal: 0
+    };
+
+    // Sum from original checkouts to avoid double counting
+    checkouts.forEach(checkout => {
+      const grandTotal = parseFloat(checkout.grandTotal || 0);
+      const advanceAmount = parseFloat(checkout.advanceAmount || 0);
+      const balanceToPay = parseFloat(checkout.balanceToPay || 0);
+      
+      summaryData.totalCheckoutAmount += grandTotal;
+      summaryData.totalAdvanceAmount += advanceAmount;
+      summaryData.totalBalanceToPay += balanceToPay;
+
+      // Group by payment mode
+      const mode = checkout.paymentMode?.toUpperCase();
+      switch(mode) {
+        case 'CASH':
+          summaryData.cashTotal += grandTotal;
+          break;
+        case 'CARD':
+          summaryData.cardTotal += grandTotal;
+          break;
+        case 'UPI':
+          summaryData.upiTotal += grandTotal;
+          break;
+        case 'BANK':
+          summaryData.bankTotal += grandTotal;
+          break;
+        case 'CREDIT':
+          summaryData.creditTotal += grandTotal;
+          break;
+      }
+    });
+
+    console.log('Summary:', summaryData);
+    console.log('====== END DEBUG ======');
+
+    res.status(200).json({
+      success: true,
+      date: date,
+      checkoutBills: checkoutData, // Rows with room details
+      summary: summaryData, // Summary from unique checkouts
+      debug: {
+        uniqueCheckouts: checkouts.length,
+        totalRows: checkoutData.length,
+        difference: checkoutData.length - checkouts.length
+      }
+    });
+
+  } catch (error) {
+    console.error('Error fetching checkout statement:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error fetching checkout data',
+      error: error.message
+    });
+  }
+};

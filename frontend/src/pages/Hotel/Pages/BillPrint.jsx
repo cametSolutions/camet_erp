@@ -96,10 +96,12 @@ useEffect(() => {
 
   // Per-doc transforms
  // Per-doc transforms
+// Replace your transformDocToDateWiseLines function with this complete version:
+
 const transformDocToDateWiseLines = (doc) => {
-  const result = []
-;(doc.selectedRooms || []).forEach((room) => {
-    // ✅ Each room gets its own start date
+  const result = [];
+  
+  (doc.selectedRooms || []).forEach((room) => {
     const roomStartDate = new Date(room.arrivalDate || doc.arrivalDate)
     
     const stayDays = room.stayDays || 1
@@ -115,13 +117,17 @@ const transformDocToDateWiseLines = (doc) => {
       Number(room.foodPlanAmountWithTax || 0) / stayDays
     const foodPlanAmountWithOutTaxPerDay =
       Number(room.foodPlanAmountWithOutTax || 0) / stayDays
-    const additionalPaxDataWithTaxPerDay =
-      Number(room.additionalPaxAmountWithTax || 0) / stayDays
-    const additionalPaxDataWithOutTaxPerDay =
-      Number(room.additionalPaxAmountWithOutTax || 0) / stayDays
+    
+    // ✅ FIX: Calculate additional pax per day based on FULL DAYS ONLY
+    const totalAdditionalPaxWithTax = Number(room.additionalPaxAmountWithTax || 0)
+    const totalAdditionalPaxWithOutTax = Number(room.additionalPaxAmountWithOutTax || 0)
+    
+    const additionalPaxDataWithTaxPerDay = fullDays > 0 ? totalAdditionalPaxWithTax / fullDays : 0
+    const additionalPaxDataWithOutTaxPerDay = fullDays > 0 ? totalAdditionalPaxWithOutTax / fullDays : 0
 
+    // Add full days
     for (let i = 0; i < fullDays; i++) {
-      const currentDate = new Date(roomStartDate) // ✅ Use room's start date
+      const currentDate = new Date(roomStartDate)
       currentDate.setDate(roomStartDate.getDate() + i)
       const formattedDate = currentDate
         .toLocaleDateString("en-GB")
@@ -144,12 +150,13 @@ const transformDocToDateWiseLines = (doc) => {
         additionalPaxDataWithTax: additionalPaxDataWithTaxPerDay,
         additionalPaxDataWithOutTax: additionalPaxDataWithOutTaxPerDay,
         roomId: room?.roomId || room?._id,
-        roomArrivalDate: formattedDate // ✅ Store the room's arrival date in first entry
+        roomArrivalDate: formattedDate
       })
     }
 
+    // Add fractional day (half day) - NO additional pax charges
     if (fractionalDay > 0) {
-      const fractionalDate = new Date(roomStartDate) // ✅ Use room's start date
+      const fractionalDate = new Date(roomStartDate)
       fractionalDate.setDate(roomStartDate.getDate() + fullDays)
       const formattedFractionalDate = fractionalDate
         .toLocaleDateString("en-GB")
@@ -169,8 +176,8 @@ const transformDocToDateWiseLines = (doc) => {
         customerName: doc.customerId?.partyName,
         foodPlanAmountWithTax: foodPlanAmountWithTaxPerDay * 0.5,
         foodPlanAmountWithOutTax: foodPlanAmountWithOutTaxPerDay * 0.5,
-        additionalPaxDataWithTax: additionalPaxDataWithTaxPerDay * 0.5,
-        additionalPaxDataWithOutTax: additionalPaxDataWithOutTaxPerDay * 0.5,
+        additionalPaxDataWithTax: 0,
+        additionalPaxDataWithOutTax: 0,
         roomId: room?.roomId || room?._id
       })
     }
@@ -179,7 +186,8 @@ const transformDocToDateWiseLines = (doc) => {
   return result
 }
 
-  // Per-doc KOT totals aggregation helper
+
+
   const getKotTotalsByRoom = (kots = []) => {
     const map = new Map()
     kots.forEach((kot) => {
@@ -361,10 +369,14 @@ const buildPerRoomRestaurantLinesForDoc = (doc) => {
       (t, i) => t + Number(i.foodPlanAmountWithOutTax || 0),
       0
     )
-    const additionalPaxAmount = dateWiseLines.reduce(
-      (t, i) => t + Number(i.additionalPaxDataWithOutTax || 0),
-      0
-    )
+  const additionalPaxAmount = (doc.selectedRooms || []).reduce((total, room) => {
+  const stayDays = room.stayDays || 1
+  const fullDays = Math.floor(stayDays) // Only count full days
+  const totalPaxWithoutTax = Number(room.additionalPaxAmountWithOutTax || 0)
+  
+  // If there are full days, use the full amount; otherwise 0
+  return total + (fullDays > 0 ? totalPaxWithoutTax : 0)
+}, 0)
     const roomTaxTotal = dateWiseLines.reduce(
       (t, i) => t + Number(i.taxAmount || 0),
       0
