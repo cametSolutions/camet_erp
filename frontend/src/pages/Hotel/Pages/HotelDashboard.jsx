@@ -278,6 +278,9 @@ console.log(roomsData)
   };
 
   const handleRoomAction = async (action) => {
+console.log("HH")
+console.log(action)
+
     if (!selectedRoomData) return;
 
     if (action === "booking") {

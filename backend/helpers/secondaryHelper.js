@@ -277,8 +277,8 @@ export const updateSaleableStock = async (
     const itemBalanceStock = Number(product.balance_stock || 0);
     const itemCountDiff = parseFloat(itemCount) - (existingItemCount || 0);
 
-    console.log("itemCountDiff", itemCountDiff);
-    console.log("itemBalanceStock", itemBalanceStock);
+    // console.log("itemCountDiff", itemCountDiff);
+    // console.log("itemBalanceStock", itemBalanceStock);
 
     let itemUpdatedStock;
 
@@ -308,7 +308,7 @@ export const addingAnItemInSale = async (items) => {
     const godownUpdates = [];
 
     for (const item of items) {
-      console.log("addingAnItemInSale", item?.product_name);
+      // console.log("addingAnItemInSale", item?.product_name);
 
       const product = await productModel.findOne({ _id: item._id });
       if (!product) {
