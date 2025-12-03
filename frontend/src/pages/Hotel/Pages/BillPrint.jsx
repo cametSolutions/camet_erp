@@ -150,7 +150,8 @@ const transformDocToDateWiseLines = (doc) => {
         additionalPaxDataWithTax: additionalPaxDataWithTaxPerDay,
         additionalPaxDataWithOutTax: additionalPaxDataWithOutTaxPerDay,
         roomId: room?.roomId || room?._id,
-        roomArrivalDate: formattedDate
+        roomArrivalDate: formattedDate,
+          isFullDay: true
       })
     }
 
@@ -178,7 +179,9 @@ const transformDocToDateWiseLines = (doc) => {
         foodPlanAmountWithOutTax: foodPlanAmountWithOutTaxPerDay * 0.5,
         additionalPaxDataWithTax: 0,
         additionalPaxDataWithOutTax: 0,
-        roomId: room?.roomId || room?._id
+        roomId: room?.roomId || room?._id,
+         isFullDay: false, // ✅ Mark as half day
+        checkoutDate: formattedFractionalDate 
       })
     }
   })
@@ -430,7 +433,7 @@ const groupedRoomCharges = (() => {
     const halfRoomTaxPercentage = roomTaxPercentage / 2
     
     // Get THIS specific room's arrival date
-    const roomArrivalDate = roomDays[0]?.roomArrivalDate || roomDays[0]?.date || formatDate(doc.arrivalDate)
+    const roomArrivalDate = roomDays[0]?.date || formatDate(doc.arrivalDate)
     
     // Separate full days and half days
     const fullDayCharges = roomDays.filter(
@@ -441,6 +444,11 @@ const groupedRoomCharges = (() => {
       item => item.description?.includes('Half Day') || 
               item.description?.includes('Half Tariff')
     )
+
+    // Get the half day date (checkout date) - it's the last day in the room charges
+    const halfDayDate = halfDayCharges.length > 0 
+      ? halfDayCharges[0]?.date  // Use the actual date from the half day charge
+      : roomArrivalDate;
 
     // 1. Add FULL DAY room rent charges
     fullDayCharges.forEach((item) => {
@@ -467,7 +475,7 @@ const groupedRoomCharges = (() => {
         const fullDaySGST = fullDayTotalTax / 2
 
         charges.push({
-          date: roomArrivalDate,
+          // date: roomArrivalDate, // Use arrival date for full day taxes
           description: `CGST on Rent@${halfRoomTaxPercentage}%`,
           docNo: "-",
           amount: 0,
@@ -477,7 +485,7 @@ const groupedRoomCharges = (() => {
         })
 
         charges.push({
-          date: roomArrivalDate,
+          // date: roomArrivalDate, // Use arrival date for full day taxes
           description: `SGST on Rent@${halfRoomTaxPercentage}%`,
           docNo: "-",
           amount: 0,
@@ -488,10 +496,10 @@ const groupedRoomCharges = (() => {
       }
     }
 
-    // 3. Add HALF DAY room rent charges
+    // 3. Add HALF DAY room rent charges with CHECKOUT DATE
     halfDayCharges.forEach((item) => {
       charges.push({
-        date: roomArrivalDate,
+        date: item.date, // ✅ Use the actual half day date (checkout date)
         description: `Half Tariff :${item.roomName}`,
         docNo: item.docNo || "-",
         amount: (item.baseAmount + item.foodPlanAmountWithTax).toFixed(2),
@@ -501,7 +509,7 @@ const groupedRoomCharges = (() => {
       })
     })
 
-    // 4. Add CGST and SGST for HALF DAYS (if any)
+    // 4. Add CGST and SGST for HALF DAYS with CHECKOUT DATE (if any)
     if (halfDayCharges.length > 0) {
       const halfDayTotalTax = halfDayCharges.reduce(
         (sum, i) => sum + (i.taxAmount || 0),
@@ -513,7 +521,7 @@ const groupedRoomCharges = (() => {
         const halfDaySGST = halfDayTotalTax / 2
 
         charges.push({
-          date: roomArrivalDate,
+          // date: halfDayDate, // ✅ Use checkout date for half tariff taxes
           description: `CGST on Half Tariff@${halfRoomTaxPercentage}%`,
           docNo: "-",
           amount: 0,
@@ -523,7 +531,7 @@ const groupedRoomCharges = (() => {
         })
 
         charges.push({
-          date: roomArrivalDate,
+          // date: halfDayDate, // ✅ Use checkout date for half tariff taxes
           description: `SGST on Half Tariff@${halfRoomTaxPercentage}%`,
           docNo: "-",
           amount: 0,
@@ -576,7 +584,7 @@ const groupedRoomCharges = (() => {
       const paxSGST = roomAdditionalPaxTax / 2
 
       charges.push({
-        date: roomArrivalDate,
+        // date: roomArrivalDate,
         description: `CGST on Extra Person@${halfAdditionalPaxTaxPercentage.toFixed(1)}%`,
         docNo: "-",
         amount: 0,
@@ -586,7 +594,7 @@ const groupedRoomCharges = (() => {
       })
 
       charges.push({
-        date: roomArrivalDate,
+        // date: roomArrivalDate,
         description: `SGST on Extra Person@${halfAdditionalPaxTaxPercentage.toFixed(1)}%`,
         docNo: "-",
         amount: 0,
