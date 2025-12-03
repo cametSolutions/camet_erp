@@ -95,99 +95,99 @@ const HotelBillPrint = () => {
   };
 
   // Per-doc transforms
-  // Per-doc transforms
-  const transformDocToDateWiseLines = (doc) => {
-    const result = [];
-    (doc.selectedRooms || []).forEach((room) => {
-      // ✅ Each room gets its own start date
-      const roomStartDate = new Date(room.arrivalDate || doc.arrivalDate);
+ // Per-doc transforms
+// Replace your transformDocToDateWiseLines function with this complete version:
 
-      const stayDays = room.stayDays || 1;
-      const fullDays = Math.floor(stayDays);
-      const fractionalDay = stayDays - fullDays;
+const transformDocToDateWiseLines = (doc) => {
+  const result = [];
+  
+  (doc.selectedRooms || []).forEach((room) => {
+    const roomStartDate = new Date(room.arrivalDate || doc.arrivalDate)
+    
+    const stayDays = room.stayDays || 1
+    const fullDays = Math.floor(stayDays)
+    const fractionalDay = stayDays - fullDays
 
-      const perDayAmount =
-        Number(room.priceLevelRate || 0) ||
-        Number(room.baseAmountWithTax || 0) / stayDays
-      const baseAmountPerDay = Number(room.baseAmount || 0) / stayDays
-      const foodplantax = (
-        Number(room?.foodPlanAmountWithTax) -
-        Number(room?.foodPlanAmountWithOutTax)
-      ).toFixed(2)
-      console.log(foodplantax)
-      const taxAmountPerDay =
-        Number(room.taxAmount || 0) + Number(foodplantax || 0) / stayDays
+    const perDayAmount =
+      Number(room.priceLevelRate || 0) ||
+      Number(room.baseAmountWithTax || 0) / stayDays
+    const baseAmountPerDay = Number(room.baseAmount || 0) / stayDays
+    const taxAmountPerDay = Number(room.taxAmount || 0) / stayDays
+    const foodPlanAmountWithTaxPerDay =
+      Number(room.foodPlanAmountWithTax || 0) / stayDays
+    const foodPlanAmountWithOutTaxPerDay =
+      Number(room.foodPlanAmountWithOutTax || 0) / stayDays
+    
+    // ✅ FIX: Calculate additional pax per day based on FULL DAYS ONLY
+    const totalAdditionalPaxWithTax = Number(room.additionalPaxAmountWithTax || 0)
+    const totalAdditionalPaxWithOutTax = Number(room.additionalPaxAmountWithOutTax || 0)
+    
+    const additionalPaxDataWithTaxPerDay = fullDays > 0 ? totalAdditionalPaxWithTax / fullDays : 0
+    const additionalPaxDataWithOutTaxPerDay = fullDays > 0 ? totalAdditionalPaxWithOutTax / fullDays : 0
 
-      console.log(taxAmountPerDay)
-      const foodPlanAmountWithTaxPerDay =
-        Number(room.foodPlanAmountWithTax || 0) / stayDays;
-      const foodPlanAmountWithOutTaxPerDay =
-        Number(room.foodPlanAmountWithOutTax || 0) / stayDays;
-      const additionalPaxDataWithTaxPerDay =
-        Number(room.additionalPaxAmountWithTax || 0) / stayDays;
-      const additionalPaxDataWithOutTaxPerDay =
-        Number(room.additionalPaxAmountWithOutTax || 0) / stayDays
-      console.log(fullDays)
-      for (let i = 0; i < fullDays; i++) {
-        const currentDate = new Date(roomStartDate); // ✅ Use room's start date
-        currentDate.setDate(roomStartDate.getDate() + i);
-        const formattedDate = currentDate
-          .toLocaleDateString("en-GB")
-          .replace(/\//g, "-");
+    // Add full days
+    for (let i = 0; i < fullDays; i++) {
+      const currentDate = new Date(roomStartDate)
+      currentDate.setDate(roomStartDate.getDate() + i)
+      const formattedDate = currentDate
+        .toLocaleDateString("en-GB")
+        .replace(/\//g, "-")
 
-        result.push({
-          date: formattedDate,
-          description: `Room Rent - Room ${room.roomName}`,
-          docNo: doc.voucherNumber,
-          amount: baseAmountPerDay,
-          baseAmountWithTax: perDayAmount,
-          baseAmount: baseAmountPerDay,
-          taxAmount: taxAmountPerDay,
-          voucherNumber: doc.voucherNumber,
-          roomName: room.roomName,
-          hsn: room?.hsnDetails?.hsn,
-          customerName: doc.customerId?.partyName,
-          foodPlanAmountWithTax: foodPlanAmountWithTaxPerDay,
-          foodPlanAmountWithOutTax: foodPlanAmountWithOutTaxPerDay,
-          additionalPaxDataWithTax: additionalPaxDataWithTaxPerDay,
-          additionalPaxDataWithOutTax: additionalPaxDataWithOutTaxPerDay,
-          roomId: room?.roomId || room?._id,
-          roomArrivalDate: formattedDate, // ✅ Store the room's arrival date in first entry
-        });
-      }
+      result.push({
+        date: formattedDate,
+        description: `Room Rent - Room ${room.roomName}`,
+        docNo: doc.voucherNumber,
+        amount: baseAmountPerDay,
+        baseAmountWithTax: perDayAmount,
+        baseAmount: baseAmountPerDay,
+        taxAmount: taxAmountPerDay,
+        voucherNumber: doc.voucherNumber,
+        roomName: room.roomName,
+        hsn: room?.hsnDetails?.hsn,
+        customerName: doc.customerId?.partyName,
+        foodPlanAmountWithTax: foodPlanAmountWithTaxPerDay,
+        foodPlanAmountWithOutTax: foodPlanAmountWithOutTaxPerDay,
+        additionalPaxDataWithTax: additionalPaxDataWithTaxPerDay,
+        additionalPaxDataWithOutTax: additionalPaxDataWithOutTaxPerDay,
+        roomId: room?.roomId || room?._id,
+        roomArrivalDate: formattedDate
+      })
+    }
 
-      if (fractionalDay > 0) {
-        const fractionalDate = new Date(roomStartDate); // ✅ Use room's start date
-        fractionalDate.setDate(roomStartDate.getDate() + fullDays);
-        const formattedFractionalDate = fractionalDate
-          .toLocaleDateString("en-GB")
-          .replace(/\//g, "-");
+    // Add fractional day (half day) - NO additional pax charges
+    if (fractionalDay > 0) {
+      const fractionalDate = new Date(roomStartDate)
+      fractionalDate.setDate(roomStartDate.getDate() + fullDays)
+      const formattedFractionalDate = fractionalDate
+        .toLocaleDateString("en-GB")
+        .replace(/\//g, "-")
 
-        result.push({
-          date: formattedFractionalDate,
-          description: `Room Rent - Room ${room.roomName} (Half Day)`,
-          docNo: doc.voucherNumber,
-          amount: baseAmountPerDay * 0.5,
-          baseAmountWithTax: perDayAmount * 0.5,
-          baseAmount: baseAmountPerDay * 0.5,
-          taxAmount: taxAmountPerDay * 0.5,
-          voucherNumber: doc.voucherNumber,
-          roomName: room.roomName,
-          hsn: room?.hsnDetails?.hsn,
-          customerName: doc.customerId?.partyName,
-          foodPlanAmountWithTax: foodPlanAmountWithTaxPerDay * 0.5,
-          foodPlanAmountWithOutTax: foodPlanAmountWithOutTaxPerDay * 0.5,
-          additionalPaxDataWithTax: additionalPaxDataWithTaxPerDay * 0.5,
-          additionalPaxDataWithOutTax: additionalPaxDataWithOutTaxPerDay * 0.5,
-          roomId: room?.roomId || room?._id,
-        });
-      }
-    });
+      result.push({
+        date: formattedFractionalDate,
+        description: `Room Rent - Room ${room.roomName} (Half Day)`,
+        docNo: doc.voucherNumber,
+        amount: baseAmountPerDay * 0.5,
+        baseAmountWithTax: perDayAmount * 0.5,
+        baseAmount: baseAmountPerDay * 0.5,
+        taxAmount: taxAmountPerDay * 0.5,
+        voucherNumber: doc.voucherNumber,
+        roomName: room.roomName,
+        hsn: room?.hsnDetails?.hsn,
+        customerName: doc.customerId?.partyName,
+        foodPlanAmountWithTax: foodPlanAmountWithTaxPerDay * 0.5,
+        foodPlanAmountWithOutTax: foodPlanAmountWithOutTaxPerDay * 0.5,
+        additionalPaxDataWithTax: 0,
+        additionalPaxDataWithOutTax: 0,
+        roomId: room?.roomId || room?._id
+      })
+    }
+  })
 
     return result;
   };
 
-  // Per-doc KOT totals aggregation helper
+
+
   const getKotTotalsByRoom = (kots = []) => {
     const map = new Map();
     kots.forEach((kot) => {
@@ -386,11 +386,15 @@ const HotelBillPrint = () => {
     const planAmount = dateWiseLines.reduce(
       (t, i) => t + Number(i.foodPlanAmountWithOutTax || 0),
       0
-    );
-    const additionalPaxAmount = dateWiseLines.reduce(
-      (t, i) => t + Number(i.additionalPaxDataWithOutTax || 0),
-      0
-    );
+    )
+  const additionalPaxAmount = (doc.selectedRooms || []).reduce((total, room) => {
+  const stayDays = room.stayDays || 1
+  const fullDays = Math.floor(stayDays) // Only count full days
+  const totalPaxWithoutTax = Number(room.additionalPaxAmountWithOutTax || 0)
+  
+  // If there are full days, use the full amount; otherwise 0
+  return total + (fullDays > 0 ? totalPaxWithoutTax : 0)
+}, 0)
     const roomTaxTotal = dateWiseLines.reduce(
       (t, i) => t + Number(i.taxAmount || 0),
       0
