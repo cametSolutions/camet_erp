@@ -10,7 +10,7 @@ export default function EnhancedCheckoutModal({
   onConfirm,
   checkoutMode
 }) {
-  console.log("h")
+  console.log("hfaf")
   // State to manage room-customer assignments
   const [roomAssignments, setRoomAssignments] = useState([])
   const [errors, setErrors] = useState({})

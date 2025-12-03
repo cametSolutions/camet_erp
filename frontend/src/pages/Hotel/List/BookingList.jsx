@@ -134,6 +134,7 @@ function BookingList() {
 
   useEffect(() => {
     if (location?.state?.selectedCheckOut) {
+console.log(location?.state?.selectedCheckOut)
       setSelectedCheckOut(location?.state?.selectedCheckOut)
       setSelectedCustomer(location?.state?.selectedCustomer?._id)
       setRestaurantBaseSaleData(location?.state?.kotData)
@@ -295,6 +296,7 @@ function BookingList() {
         }
 
         if (pageNumber === 1) {
+          console.log("a")
           setBookings(bookingData)
         } else {
           setBookings((prev) => [...prev, ...bookingData])
@@ -665,6 +667,7 @@ console.log(selectedCheckOut.length)
     let checkoutData
     let checkinids = null
     if (checkoutMode === "multiple") {
+      console.log(roomAssignments)
       console.log("hhh")
       checkoutData = roomAssignments.flatMap((group) => {
         return group.checkIns.map((checkIn) => {
@@ -679,6 +682,9 @@ console.log(selectedCheckOut.length)
           return {
             ...originalCheckIn,
             partyArray: checkIn.originalCheckIn.customerId.party_master_id,
+            Totaladvance:
+              Number(checkIn?.originalCheckIn?.advanceAmount) +
+              Number(checkIn?.originalCheckIn?.bookingId?.advanceAmount),
             customerId: group.customer,
             allCheckInIds: [id],
             selectedRooms: roomsToCheckout,
@@ -707,12 +713,15 @@ console.log(selectedCheckOut.length)
 
           const isPartialCheckout =
             roomsToCheckout.length < originalCheckIn.selectedRooms.length
-
+          console.log(checkIn?.originalCheckIn?.advanceAmount)
+          console.log(checkIn?.originalCheckIn?.bookingId?.advanceAmount)
           return {
             ...originalCheckIn,
             partyId: checkIn.originalCheckIn.customerId.party_master_id,
             customerId: group.customer,
-
+            Totaladvance:
+              Number(checkIn?.originalCheckIn?.advanceAmount) +
+              Number(checkIn?.originalCheckIn?.bookingId?.advanceAmount),
             selectedRooms: roomsToCheckout,
             isPartialCheckout,
             originalCheckInId: checkIn.checkInId,
@@ -736,12 +745,17 @@ console.log(selectedCheckOut.length)
           grouped[custId] = {
             ...item,
             selectedRooms: [...item.selectedRooms],
-            partyArray: [item.partyId]
+            partyArray: [item.partyId],
+            advanceTotal: item?.Totaladvance
           }
         } else {
+          console.log(grouped[custId].advanceTotal)
           // Merge rooms
           grouped[custId].selectedRooms.push(...item.selectedRooms)
           grouped[custId].partyArray.push(item.partyId)
+          // ✅ ADD NEXT TOTAL ADVANCE
+          grouped[custId].advanceTotal =
+            (grouped[custId].advanceTotal || 0) + (item?.Totaladvance || 0)
 
           // If ANY one check-in is partial, mark as partial
           if (item.isPartialCheckout) grouped[custId].isPartialCheckout = true
@@ -756,6 +770,7 @@ console.log(selectedCheckOut.length)
       checkoutData[0].allCheckInIds = checkinids
     }
     console.log(checkoutData)
+
     ////
 
     /////
@@ -784,8 +799,7 @@ console.log(selectedCheckOut.length)
       console.log("hhhh")
       const match = parties.find((p) => p._id === selectedCustomer)
       if (!match) return
-      console.log(match)
-      console.log("hhh")
+
       setSelectedCheckOut((prev) =>
         prev.map((item) => ({
           ...item,
@@ -1155,7 +1169,7 @@ console.log(selectedCheckOut.length)
                   CheckedOut
                 </button>
               )}
-            {Number(el?.balanceToPay) <= 0 &&
+            {el?.balanceToPay <= 0 &&
               location.pathname === "/sUsers/checkOutList" && (
                 <button
                   onClick={(e) => {
