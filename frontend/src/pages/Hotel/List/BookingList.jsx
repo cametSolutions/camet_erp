@@ -134,7 +134,7 @@ function BookingList() {
 
   useEffect(() => {
     if (location?.state?.selectedCheckOut) {
-console.log(location?.state?.selectedCheckOut)
+      console.log(location?.state?.selectedCheckOut)
       setSelectedCheckOut(location?.state?.selectedCheckOut)
       setSelectedCustomer(location?.state?.selectedCustomer?._id)
       setRestaurantBaseSaleData(location?.state?.kotData)
@@ -154,16 +154,16 @@ console.log(location?.state?.selectedCheckOut)
     }
   }, [location?.state?.selectedCheckOut])
   // ADD THIS: Update total whenever selectedCheckOut changes
-//   useEffect(() => {
-//     if (selectedCheckOut && selectedCheckOut.length > 0) {
-// console.log("H")
-//       const totalAmount = calculateTotalAmount(selectedCheckOut)
-//       setSelectedDataForPayment((prevData) => ({
-//         ...prevData,
-//         total: totalAmount
-//       }))
-//     }
-//   }, [selectedCheckOut])
+  //   useEffect(() => {
+  //     if (selectedCheckOut && selectedCheckOut.length > 0) {
+  // console.log("H")
+  //       const totalAmount = calculateTotalAmount(selectedCheckOut)
+  //       setSelectedDataForPayment((prevData) => ({
+  //         ...prevData,
+  //         total: totalAmount
+  //       }))
+  //     }
+  //   }, [selectedCheckOut])
 
   const searchData = (data) => {
     if (searchTimeoutRef.current) {
@@ -510,8 +510,8 @@ console.log(location?.state?.selectedCheckOut)
   const handleSavePayment = async () => {
     console.log("h")
     console.log(selectedCheckOut)
-console.log(selectedCheckOut.length)
-  
+    console.log(selectedCheckOut.length)
+
     setSaveLoader(true)
     let paymentDetails
 
@@ -600,9 +600,11 @@ console.log(selectedCheckOut.length)
       selectedParty: selectedCustomer,
       restaurantBaseSaleData: restaurantBaseSaleData
     })
+    console.log(paymentDetails)
+    return
     console.log(selectedCheckOut)
-console.log(selectedCheckOut.length)
-  
+    console.log(selectedCheckOut.length)
+
     try {
       const response = await api.post(
         `/api/sUsers/convertCheckOutToSale/${cmp_id}`,
@@ -650,14 +652,14 @@ console.log(selectedCheckOut.length)
     setShowEnhancedCheckoutModal(true)
   }
   console.log()
- const handleEnhancedCheckoutConfirm = async (roomAssignments) => {
-  console.log(roomAssignments);
-  setShowEnhancedCheckoutModal(false);
-  
-  // ✅ ALWAYS show checkout date modal - no condition
-  setProcessedCheckoutData(roomAssignments);
-  setShowCheckOutDateModal(true);
-}
+  const handleEnhancedCheckoutConfirm = async (roomAssignments) => {
+    console.log(roomAssignments)
+    setShowEnhancedCheckoutModal(false)
+
+    // ✅ ALWAYS show checkout date modal - no condition
+    setProcessedCheckoutData(roomAssignments)
+    setShowCheckOutDateModal(true)
+  }
 
   console.log(bookings)
   const proceedToCheckout = (roomAssignments) => {
@@ -1257,57 +1259,60 @@ console.log(selectedCheckOut.length)
     )
   }
 
-const handleCloseBasedOnDate = (checkouts) => {
-  if (!checkouts) {
-    setShowCheckOutDateModal(false)
-    setShowSelectionModal(true)
-    return
-  }
-  setSaveLoader(true)
+  const handleCloseBasedOnDate = (checkouts) => {
+    if (!checkouts) {
+      setShowCheckOutDateModal(false)
+      setShowSelectionModal(true)
+      return
+    }
+    setSaveLoader(true)
 
-  if (processedCheckoutData) {
-    // Transform the processed checkout data with updated stay days
-    const updatedCheckoutData = processedCheckoutData.map((group) => ({
-      ...group,
-      checkIns: group.checkIns.map((checkIn) => {
-        const updatedData = checkouts.find((c) => c._id === checkIn.checkInId)
+    if (processedCheckoutData) {
+      // Transform the processed checkout data with updated stay days
+      const updatedCheckoutData = processedCheckoutData.map((group) => ({
+        ...group,
+        checkIns: group.checkIns.map((checkIn) => {
+          const updatedData = checkouts.find((c) => c._id === checkIn.checkInId)
 
-        return {
-          ...checkIn,
-          originalCheckIn: {
-            ...checkIn.originalCheckIn,
-            // ✅ ADDED: Update checkout date and stay days
-            checkOutDate: updatedData?.checkOutDate || checkIn.originalCheckIn.checkOutDate,
-            stayDays: updatedData?.stayDays || checkIn.originalCheckIn.stayDays,
-            selectedRooms: checkIn.originalCheckIn.selectedRooms.map(
-              (room) => {
-                const updatedRoom = updatedData?.selectedRooms?.find(
-                  (r) => r._id === room._id
-                )
-                return updatedRoom ? { ...room, ...updatedRoom } : room
-              }
-            )
+          return {
+            ...checkIn,
+            originalCheckIn: {
+              ...checkIn.originalCheckIn,
+              // ✅ ADDED: Update checkout date and stay days
+              checkOutDate:
+                updatedData?.checkOutDate ||
+                checkIn.originalCheckIn.checkOutDate,
+              stayDays:
+                updatedData?.stayDays || checkIn.originalCheckIn.stayDays,
+              selectedRooms: checkIn.originalCheckIn.selectedRooms.map(
+                (room) => {
+                  const updatedRoom = updatedData?.selectedRooms?.find(
+                    (r) => r._id === room._id
+                  )
+                  return updatedRoom ? { ...room, ...updatedRoom } : room
+                }
+              )
+            }
           }
+        })
+      }))
+
+      proceedToCheckout(updatedCheckoutData)
+      setProcessedCheckoutData(null)
+    } else {
+      const hasPrint1 = configurations[0]?.defaultPrint?.print1
+      navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
+        state: {
+          selectedCheckOut:
+            checkouts?.length > 0 ? checkouts : selectedCheckOut,
+          customerId: selectedCustomer,
+          isForPreview: true
         }
       })
-    }))
+    }
 
-    proceedToCheckout(updatedCheckoutData)
-    setProcessedCheckoutData(null)
-  } else {
-    const hasPrint1 = configurations[0]?.defaultPrint?.print1
-    navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
-      state: {
-        selectedCheckOut:
-          checkouts?.length > 0 ? checkouts : selectedCheckOut,
-        customerId: selectedCustomer,
-        isForPreview: true
-      }
-    })
+    setShowCheckOutDateModal(false) // ✅ ADDED: Close modal
   }
-  
-  setShowCheckOutDateModal(false)  // ✅ ADDED: Close modal
-}
 
   return (
     <>

@@ -482,188 +482,105 @@ export const createReceiptForSales = async (
   // ============ CASE 1: SPLIT PAYMENT MODE ============
   if (payment?.paymentMode === "split") {
     const splitDetails = payment?.splitDetails || [];
+    // Find all outstandings for this customer from sales with this checkInId
+    const outstandings = await TallyData.find({
+      billId: { $in: saleIds },
+      party_id: splitCustomerId,
+      bill_pending_amt: { $gt: 0 },
+      cmp_id,
+      source: "sales",
+    })
+      .sort({ bill_date: 1, createdAt: 1 }) // FIFO: oldest first
+      .session(session);
 
-    // Process each split detail
-    for (const split of splitDetails) {
-      const billData = [];
-      const splitCustomerId = split.customer;
-      const splitAmount = Number(split.amount || 0);
-      const splitSourceType = split.sourceType; // "cash" or "bank"
+    if (outstandings.length === 0) {
+      console.log(`No outstanding found for customer ${splitCustomerId}`);
 
-      if (splitAmount <= 0) continue;
+    }
+    for (const item of outstandings) {
+      // Process each split detail
+      for (const split of splitDetails) {
+        const billData = [];
+        const splitCustomerId = split.customer;
+        const splitAmount = Number(split.amount || 0);
+        const splitSourceType = split.sourceType; // "cash" or "bank"
 
-      // Find all outstandings for this customer from sales with this checkInId
-      const outstandings = await TallyData.find({
-        billId: { $in: saleIds },
-        party_id: splitCustomerId,
-        bill_pending_amt: { $gt: 0 },
-        cmp_id,
-        source: "sales",
-      })
-        .sort({ bill_date: 1, createdAt: 1 }) // FIFO: oldest first
-        .session(session);
+        if (splitAmount <= 0) continue;
 
-      if (outstandings.length === 0) {
-        console.log(`No outstanding found for customer ${splitCustomerId}`);
-        continue;
-      }
 
-      // // Get customer details
-      // const customer = await Party.findOne({ _id: splitCustomerId })
-      //   .populate("accountGroup")
-      //   .session(session);
 
-      // if (!customer) continue;
 
-      // // Distribute split amount across customer's outstandings in FIFO
-      // let amountLeft = splitAmount;
-      // // const billData = [];
-      // const outstandingsToUpdate = [];
 
-      // for (const outstanding of outstandings) {
-      //   if (amountLeft <= 0) break;
+        // Create receipt for this split
+        const receiptVoucher = await generateVoucherNumber(
+          cmp_id,
+          "receipt",
+          series_id,
+          session
+        );
+        const serialNumber = await getNewSerialNumber(
+          receiptModel,
+          "serialNumber",
+          session
+        );
 
-      //   const billPendingAmount = outstanding.bill_pending_amt || 0;
-      //   const settledAmount = Math.min(amountLeft, billPendingAmount);
+        const paymentDetails =
+          splitSourceType === "cash"
+            ? { cash_ledname: customer.partyName, cash_name: customer.partyName }
+            : { bank_ledname: customer.partyName, bank_name: customer.partyName };
+        const matchedoutstanding = outstandings.find((item) => item.party_id === splitCustomerId)
+        const matchedsale = allSales.find((item) => item.party?._id === splitCustomerId)
 
-      //   billData.push({
-      //     _id: outstanding._id,
-      //     bill_no: outstanding.bill_no,
-      //     billId: outstanding.billId,
-      //     bill_date: outstanding.bill_date,
-      //     bill_pending_amt: billPendingAmount,
-      //     source: "hotel",
-      //     settledAmount: settledAmount,
-      //     remainingAmount: billPendingAmount - settledAmount,
-      //   });
+        billData.push({
+          _id: outstandings[0]._id,
+          bill_no: matchedsale?.salesNumber,
+          billId: allSales[0].billId,
+          bill_date: outstandings[0].bill_date,
+          bill_pending_amt: 0,
+          source: "hotel",
+          settledAmount: splitAmount,
+          remainingAmount: 0,
+        })
 
-      //   outstandingsToUpdate.push({
-      //     outstandingId: outstanding._id,
-      //     settledAmount: settledAmount,
-      //     newPendingAmount: billPendingAmount - settledAmount,
-      //   });
+        const newReceipt = await buildReceipt(
+          receiptVoucher,
+          serialNumber,
+          paymentDetails,
+          splitAmount,
+          splitSourceType === "cash" ? "Cash" : "Online",
+          splitCustomerId,
+          cmp_id,
+          series_id,
+          billData,
+          req,
+          session
+        );
 
-      //   amountLeft -= settledAmount;
-      // }
+        receipts.push(newReceipt);
 
-      // // Create advance tally BEFORE receipt if there's excess
-      // let advanceTallyId = null;
-      // if (amountLeft > 0) {
-      //   const advanceTally = await TallyData.create(
-      //     [
-      //       {
-      //         Primary_user_id: req.pUserId || req.owner,
-      //         cmp_id,
-      //         party_id: splitCustomerId,
-      //         party_name: customer.partyName,
-      //         mobile_no: customer.mobileNumber,
-      //         bill_date: new Date(),
-      //         bill_no: `ADV-${Date.now()}`, // Temporary, will update after receipt
-      //         billId: null, // No sale, this IS the advance
-      //         bill_amount: 0,
-      //         bill_pending_amt: -amountLeft, // Negative for advance
-      //         accountGroup: customer.accountGroup?._id?.toString() || customer.accountGroup_id,
-      //         user_id: req.sUserId,
-      //         advanceAmount: amountLeft,
-      //         advanceDate: new Date(),
-      //         classification: "Cr",
-      //         source: "advanceReceipt",
-      //       },
-      //     ],
-      //     { session }
-      //   );
+        // Update all affected outstandings
+        for (const update of outstandings) {
+          await TallyData.updateOne(
+            { _id: update._id },
+            {
 
-      //   advanceTallyId = advanceTally[0]._id;
-
-      //   // Add to billData with proper reference
-      //   billData.push({
-      //     _id: advanceTallyId,
-      //     bill_no: `ADV-${Date.now()}`,
-      //     billId: null, // Advance has no sale billId
-      //     bill_date: new Date(),
-      //     bill_pending_amt: 0,
-      //     source: "hotel",
-      //     settledAmount: amountLeft,
-      //     remainingAmount: 0,
-      //   });
-      // }
-
-      // Create receipt for this split
-      const receiptVoucher = await generateVoucherNumber(
-        cmp_id,
-        "receipt",
-        series_id,
-        session
-      );
-      const serialNumber = await getNewSerialNumber(
-        receiptModel,
-        "serialNumber",
-        session
-      );
-
-      const paymentDetails =
-        splitSourceType === "cash"
-          ? { cash_ledname: customer.partyName, cash_name: customer.partyName }
-          : { bank_ledname: customer.partyName, bank_name: customer.partyName };
-      billData.push({
-        _id: outstandings[0]._id,
-        bill_no: allSales[0].bill_no,
-        billId: allSales[0].billId,
-        bill_date: outstandings[0].bill_date,
-        bill_pending_amt: 0,
-        source: "hotel",
-        settledAmount: splitAmount,
-        remainingAmount: 0,
-      })
-
-      const newReceipt = await buildReceipt(
-        receiptVoucher,
-        serialNumber,
-        paymentDetails,
-        splitAmount,
-        splitSourceType === "cash" ? "Cash" : "Online",
-        splitCustomerId,
-        cmp_id,
-        series_id,
-        billData,
-        req,
-        session
-      );
-
-      receipts.push(newReceipt);
-
-      // Update all affected outstandings
-      for (const update of outstandings) {
-        await TallyData.updateOne(
-          { _id: update._id },
-          {
-
-            $push: {
-              appliedReceipts: {
-                _id: newReceipt._id,
-                receiptNumber: newReceipt.receiptNumber,
-                settledAmount: update.settledAmount,
-                date: new Date(),
+              $push: {
+                appliedReceipts: {
+                  _id: newReceipt._id,
+                  receiptNumber: newReceipt.receiptNumber,
+                  settledAmount: update.settledAmount,
+                  date: new Date(),
+                },
               },
             },
-          },
-          { session }
-        );
-      }
+            { session }
+          );
+        }
 
-      // Update advance tally with receipt number
-      // if (advanceTallyId) {
-      //   await TallyData.updateOne(
-      //     { _id: advanceTallyId },
-      //     {
-      //       $set: {
-      //         bill_no: newReceipt.receiptNumber,
-      //       },
-      //     },
-      //     { session }
-      //   );
-      // }
+
+      }
     }
+
   }
 
   // ============ CASE 2: SINGLE PAYMENT MODE (FIFO) ============
