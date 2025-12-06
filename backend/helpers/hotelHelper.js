@@ -497,7 +497,7 @@ export const createReceiptForSales = async (
       console.log(`No outstanding found for customer ${splitCustomerId}`);
 
     }
-    for (const item of outstandings) {
+    let balancetoset=amount
       // Process each split detail
       for (const split of splitDetails) {
         const billData = [];
@@ -506,11 +506,6 @@ export const createReceiptForSales = async (
         const splitSourceType = split.sourceType; // "cash" or "bank"
 
         if (splitAmount <= 0) continue;
-
-
-
-
-
         // Create receipt for this split
         const receiptVoucher = await generateVoucherNumber(
           cmp_id,
@@ -532,11 +527,11 @@ export const createReceiptForSales = async (
         const matchedsale = allSales.find((item) => item.party?._id === splitCustomerId)
 
         billData.push({
-          _id: outstandings[0]._id,
+          _id: matchedoutstanding[0]._id,
           bill_no: matchedsale?.salesNumber,
-          billId: allSales[0].billId,
-          bill_date: outstandings[0].bill_date,
-          bill_pending_amt: 0,
+          billId: matchedsale[0]._id,
+          bill_date: matchedoutstanding[0].bill_date,
+          bill_pending_amt: splitAmount,
           source: "hotel",
           settledAmount: splitAmount,
           remainingAmount: 0,
@@ -546,6 +541,7 @@ export const createReceiptForSales = async (
           receiptVoucher,
           serialNumber,
           paymentDetails,
+          balancetoset,
           splitAmount,
           splitSourceType === "cash" ? "Cash" : "Online",
           splitCustomerId,
@@ -559,27 +555,27 @@ export const createReceiptForSales = async (
         receipts.push(newReceipt);
 
         // Update all affected outstandings
-        for (const update of outstandings) {
+      
           await TallyData.updateOne(
-            { _id: update._id },
+            { _id: matchedoutstanding[0]._id },
             {
 
               $push: {
                 appliedReceipts: {
                   _id: newReceipt._id,
                   receiptNumber: newReceipt.receiptNumber,
-                  settledAmount: update.settledAmount,
+                  settledAmount: splitAmount,
                   date: new Date(),
                 },
               },
             },
             { session }
           );
-        }
-
+        
+balancetoset -=splitAmount
 
       }
-    }
+    
 
   }
 
@@ -692,11 +688,11 @@ export const createReceiptForSales = async (
       const pendingAmount = outstanding.bill_pending_amt || 0;
       const settleAmount = Math.min(amountLeft, pendingAmount);
       console.log("pendingandsettle", pendingAmount, settleAmount)
-
+const matchedsale=allSales.find((item)=>item.party?._id===outstanding.allSales)
       billData.push({
         _id: outstanding._id,
-        bill_no: outstanding.bill_no,
-        billId: outstanding.billId,
+        bill_no: matchedsale[0].bill_no,
+        billId: matchedsale[0]._id,
         bill_date: outstanding.bill_date,
         bill_pending_amt: pendingAmount,
         source: "hotel",
@@ -829,6 +825,7 @@ const buildReceipt = async (
   receiptVoucher,
   serialNumber,
   paymentDetails,
+  balancetoset=null,
   amount,
   paymentMethod,
   partyId,
@@ -858,11 +855,11 @@ const buildReceipt = async (
     receiptNumber: receiptVoucher?.usedSeriesNumber,
     series_id,
     usedSeriesNumber: receiptVoucher?.usedSeriesNumber || null,
-    serialNumber,
+    serialNumber, 
     cmp_id,
     party: selectedParty,
     billData,
-    totalBillAmount: amount,
+    totalBillAmount:balancetoset?? amount,
     enteredAmount: amount,
     advanceAmount: 0,
     remainingAmount: 0,
