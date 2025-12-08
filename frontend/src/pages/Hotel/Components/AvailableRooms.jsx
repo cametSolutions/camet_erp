@@ -23,7 +23,7 @@ function AvailableRooms({
   isTariffRateChange = false, // ✅ Add this
   roomIdToUpdate = null
 }) {
-  console.log(formData)
+  console.log(roomIdToUpdate)
   console.log("h")
   const [rooms, setRooms] = useState([])
   const [search, setSearch] = useState("")

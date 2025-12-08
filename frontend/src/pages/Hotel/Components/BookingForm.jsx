@@ -27,7 +27,7 @@ function BookingForm({
   isTariffRateChange,
   submitLoader
 }) {
-  console.log(editData)
+  console.log(roomId)
   console.log("J")
   const [voucherNumber, setVoucherNumber] = useState("")
   const [selectedParty, setSelectedParty] = useState("")
@@ -1467,6 +1467,7 @@ console.log(editData)
                   sendToParent={handleAvailableRooms}
                   formData={formData}
                   selectedRoomId={selectedRoomId}
+                  roomIdToUpdate={roomId}
                 />
               </div>
 
