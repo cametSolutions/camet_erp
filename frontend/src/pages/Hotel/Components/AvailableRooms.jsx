@@ -470,7 +470,7 @@ function AvailableRooms({
         // Normal mode - send as is
         setTotalAmount(finalTotal)
         console.log(finalTotal)
-        sendToParent(bookings, finalTotal)
+        // sendToParent(bookings, finalTotal)
       }
     } else {
       console.log("h")

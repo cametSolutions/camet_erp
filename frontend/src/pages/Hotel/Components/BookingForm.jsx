@@ -331,48 +331,48 @@ console.log(editData)
     }
   }, [fetchData, editData, isFor])
   // Fixed calculation: Room total + Pax + Food Plan = Total Amount, then apply discount
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      const roomTotal = Number(formData?.roomTotal || 0)
-      const paxTotal = Number(formData?.paxTotal || 0)
-      const foodPlanTotal = Number(formData?.foodPlanTotal || 0)
-      console.log(roomTotal)
-      console.log(paxTotal)
-      console.log(foodPlanTotal)
-      console.log(roomTotal)
-      // Total before discount
-      const totalAmount = roomTotal
+  // useEffect(() => {
+  //   const handler = setTimeout(() => {
+  //     const roomTotal = Number(formData?.roomTotal || 0)
+  //     const paxTotal = Number(formData?.paxTotal || 0)
+  //     const foodPlanTotal = Number(formData?.foodPlanTotal || 0)
+  //     console.log(roomTotal)
+  //     console.log(paxTotal)
+  //     console.log(foodPlanTotal)
+  //     console.log(roomTotal)
+  //     // Total before discount
+  //     const totalAmount = roomTotal
 
-      // Apply discount
-      const discountAmount = Number(formData.discountAmount || 0)
-      const grandTotal = (totalAmount - discountAmount).toFixed(2)
+  //     // Apply discount
+  //     const discountAmount = Number(formData.discountAmount || 0)
+  //     const grandTotal = (totalAmount - discountAmount).toFixed(2)
 
-      // Calculate balance
-      const totalAdvance = Number(formData.totalAdvance || 0)
-      const balanceToPay = (grandTotal - totalAdvance).toFixed(2)
+  //     // Calculate balance
+  //     const totalAdvance = Number(formData.totalAdvance || 0)
+  //     const balanceToPay = (grandTotal - totalAdvance).toFixed(2)
 
-      // Calculate discount percentage
-      const discountPercentage =
-        totalAmount > 0 ? ((discountAmount / totalAmount) * 100).toFixed(2) : 0
-      console.log(totalAmount)
-      console.log(formData)
-      setFormData((prev) => ({
-        ...prev,
-        totalAmount: totalAmount.toFixed(2),
-        discountPercentage,
-        grandTotal,
-        balanceToPay
-      }))
-    }, 300)
-    console.log("jjjj")
-    return () => clearTimeout(handler)
-  }, [
-    formData.roomTotal,
-    formData.paxTotal,
-    formData.foodPlanTotal,
-    formData.discountAmount,
-    formData.totalAdvance
-  ])
+  //     // Calculate discount percentage
+  //     const discountPercentage =
+  //       totalAmount > 0 ? ((discountAmount / totalAmount) * 100).toFixed(2) : 0
+  //     console.log(totalAmount)
+  //     console.log(formData)
+  //     setFormData((prev) => ({
+  //       ...prev,
+  //       totalAmount: totalAmount.toFixed(2),
+  //       discountPercentage,
+  //       grandTotal,
+  //       balanceToPay
+  //     }))
+  //   }, 300)
+  //   console.log("jjjj")
+  //   return () => clearTimeout(handler)
+  // }, [
+  //   formData.roomTotal,
+  //   formData.paxTotal,
+  //   formData.foodPlanTotal,
+  //   formData.discountAmount,
+  //   formData.totalAdvance
+  // ])
   console.log(formData)
   const handleDiscountPercentageChange = (e) => {
     const { value } = e.target

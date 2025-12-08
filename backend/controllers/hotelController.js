@@ -4179,7 +4179,7 @@ export const getRoomCheckInDetails = async (req, res) => {
     // Create a filtered check-in object with only the selected room
     const filteredCheckIn = {
       ...checkIn,
-      selectedRooms: [selectedRoom], // Only the room that was clicked
+      // selectedRooms: [selectedRoom], // Only the room that was clicked
     };
 
     return res.status(200).json({
