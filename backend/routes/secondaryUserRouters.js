@@ -65,7 +65,7 @@ import {
     fetchOutStandingAndFoodData, convertCheckOutToSale, updateConfigurationForHotelAndRestaurant, swapRoom, getRoomSwapHistory, checkedInGuest,
     getallroomsCurrentStatus,
     getallnoncheckoutCheckins,
-    getHotelSalesDetails, getRoomCheckInDetails, cancelBooking
+    getHotelSalesDetails, getRoomCheckInDetails, cancelBooking,getCheckoutStatementByDate
 } from '../controllers/hotelController.js'
 import {
     addItem, getAllItems, getItems, getCategories, deleteItem, updateItem, generateKot, getKot, updateKotStatus, editKot,
@@ -389,7 +389,8 @@ router.get('/summary', getSummaryDashboard);
 router.get('/hotel-sales/:cmp_id', getHotelSalesDetails);
 router.put("/cancel/:id", cancelKot);
 router.get('/getRoomCheckInDetails/:cmp_id/:roomId', getRoomCheckInDetails);
-router.put('/cancelBooking/:id', cancelBooking)
+router.put('/cancelBooking/:id', cancelBooking);
+router.get('/statement', getCheckoutStatementByDate);
 // Route to get detailed booking information for a specific room and date
 
 export default router
