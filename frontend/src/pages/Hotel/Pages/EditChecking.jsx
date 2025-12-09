@@ -63,10 +63,10 @@ console.log(payload)
             ? `Room tariff updated successfully. ${response.data.roomsCount} room(s) in check-in.`
             : response?.data?.message
         );
-        navigate("/sUsers/checkInList");
+      isTariffRateChange ? navigate("/sUsers/hotelDashBoard") :  navigate("/sUsers/checkInList");
       }
     } catch (error) {
-      toast.error(error?.response?.data?.message || "Update failed");
+      toast.error(error?.response?.data?.message || "Update faile`d");
     }
        finally {
     // Reset the submitting flag

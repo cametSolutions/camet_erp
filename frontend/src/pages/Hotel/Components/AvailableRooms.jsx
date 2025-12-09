@@ -38,7 +38,6 @@ function AvailableRooms({
   const [pendingRoomId, setPendingRoomId] = useState(null)
   const [pendingRoomQueue, setPendingRoomQueue] = useState([])
 
-  const [isEditingSingleRoom, setIsEditingSingleRoom] = useState(false)
 
   const debounceTimerRef = useRef(null)
   const dropdownRef = useRef(null)
@@ -47,110 +46,6 @@ function AvailableRooms({
   useEffect(() => {
     const fetchBookings = async () => {
       if (formData?.selectedRooms?.length > 0) {
-        console.log("H")
-        // Check if we're in tariff rate change mode for a specific room
-        if (isTariffRateChange && roomIdToUpdate) {
-          console.log("h")
-          setIsEditingSingleRoom(true)
-
-          // Find the specific room being edited
-          let specificRoom = formData.selectedRooms.find((room) => {
-            const roomId =
-              room.roomId?._id?.toString() ||
-              room.roomId?.toString() ||
-              room._id?.toString()
-            return roomId === roomIdToUpdate.toString()
-          })
-
-          if (specificRoom) {
-            // If priceLevel is missing or incomplete, fetch full room details
-            if (
-              !specificRoom.priceLevel ||
-              specificRoom.priceLevel.length === 0
-            ) {
-              try {
-                console.log(
-                  "Fetching full room details for:",
-                  specificRoom.roomId
-                )
-
-                // Option 1: If you have a getRoomById endpoint
-                // const response = await api.get(
-                //   `/api/sUsers/getRoomById/${specificRoom.roomId || specificRoom._id}`,
-                //   { withCredentials: true }
-                // );
-
-                // Option 2: Use existing getRooms endpoint with search
-                const response = await api.get(
-                  `/api/sUsers/getRooms/${cmp_id}`,
-                  {
-                    params: { roomId: specificRoom.roomId || specificRoom._id },
-                    withCredentials: true
-                  }
-                )
-                console.log("h")
-                const roomData =
-                  response.data?.roomData?.[0] || response.data?.room
-
-                if (roomData) {
-                  // Merge fetched data with existing room data
-                  specificRoom = {
-                    ...specificRoom,
-                    priceLevel: roomData.priceLevel || [],
-                    roomType: roomData.roomType || specificRoom.roomType,
-                    hsnDetails: roomData.hsn || specificRoom.hsnDetails,
-                    roomName: roomData.roomName || specificRoom.roomName
-                  }
-                  console.log("Merged room data:", specificRoom)
-                }
-              } catch (error) {
-                console.error("Error fetching room details:", error)
-                // Continue with existing data even if fetch fails
-              }
-            }
-            // Normalize the room data structure
-            const normalizedRoom = {
-              roomId: specificRoom.roomId || specificRoom._id,
-              roomName: specificRoom.roomName,
-              priceLevel: specificRoom.priceLevel || [],
-              selectedPriceLevel:
-                specificRoom.selectedPriceLevel || specificRoom.priceLevelId,
-              roomType: specificRoom.roomType,
-              pax: specificRoom.pax || 2,
-              priceLevelRate: specificRoom.priceLevelRate || 0,
-              stayDays: specificRoom.stayDays || formData.stayDays || 1,
-              hsnDetails: specificRoom.hsnDetails || specificRoom.hsn,
-              totalAmount: specificRoom.totalAmount || 0,
-              // Preserve existing tax data if available
-              amountAfterTax: specificRoom.amountAfterTax,
-              amountWithOutTax: specificRoom.amountWithOutTax,
-              taxPercentage: specificRoom.taxPercentage,
-              foodPlanTaxRate: specificRoom.foodPlanTaxRate,
-              additionalPaxAmount: specificRoom.additionalPaxAmount,
-              foodPlanAmount: specificRoom.foodPlanAmount,
-              taxAmount: specificRoom.taxAmount,
-              additionalPaxAmountWithTax:
-                specificRoom.additionalPaxAmountWithTax,
-              additionalPaxAmountWithOutTax:
-                specificRoom.additionalPaxAmountWithOutTax,
-              foodPlanAmountWithTax: specificRoom.foodPlanAmountWithTax,
-              foodPlanAmountWithOutTax: specificRoom.foodPlanAmountWithOutTax,
-              baseAmount: specificRoom.baseAmount,
-              baseAmountWithTax: specificRoom.baseAmountWithTax,
-              totalCgstAmt: specificRoom.totalCgstAmt,
-              totalSgstAmt: specificRoom.totalSgstAmt,
-              totalIgstAmt: specificRoom.totalIgstAmt
-            }
-
-            // Recalculate tax for this room
-            const taxCalculation = await calculateTax(normalizedRoom)
-            console.log("Tariff Rate Change - Normalized Room:", taxCalculation)
-            setBookings([taxCalculation])
-          }
-        } else {
-          console.log("h")
-          // Normal mode - show all rooms
-          setIsEditingSingleRoom(false)
           const updatedBookings = await Promise.all(
             formData.selectedRooms.map(async (booking) => {
               // Normalize each booking's data structure
@@ -192,9 +87,7 @@ function AvailableRooms({
           )
           console.log("Normal Mode - All Bookings:", updatedBookings)
           setBookings(updatedBookings)
-        }
       } else if (rooms?.length > 0 && selectedRoomId) {
-        console.log("h")
         let specificRoom = rooms.find((room) => room._id === selectedRoomId)
         if (specificRoom) {
           handleSelect(specificRoom)
@@ -435,7 +328,6 @@ function AvailableRooms({
       console.log(paxTotal)
       // If in single-room edit mode, merge with other rooms before sending to parent
       if (
-        isEditingSingleRoom &&
         roomIdToUpdate &&
         formData?.selectedRooms?.length > 1
       ) {
@@ -462,7 +354,6 @@ function AvailableRooms({
         }, 0)
 
         const allRoomsFinalTotal = allRoomsTotal + allRoomsPaxTotal + foodTotal
-
         setTotalAmount(allRoomsFinalTotal)
         sendToParent(allRooms, allRoomsFinalTotal)
       } else {
@@ -470,19 +361,18 @@ function AvailableRooms({
         // Normal mode - send as is
         setTotalAmount(finalTotal)
         console.log(finalTotal)
-        // sendToParent(bookings, finalTotal)
+        sendToParent(bookings, finalTotal)
       }
     } else {
       console.log("h")
       setTotalAmount(0)
-      // sendToParent([], 0);
+      sendToParent([], 0);
     }
   }, [
     bookings,
     formData?.foodPlanTotal,
-    isEditingSingleRoom,
     roomIdToUpdate,
-    formData?.selectedRooms
+    // formData?.selectedRooms
   ])
 
   const handlePriceLevelChange = (e, roomId) => {
@@ -576,8 +466,8 @@ function AvailableRooms({
   }
 
   const handleDelete = (roomId) => {
-    console.log(isEditingSingleRoom)
-    if (isEditingSingleRoom) {
+
+    if (isTariffRateChange) {
       // Show message or prevent deletion when editing single room
       toast.error("Cannot delete room while in tariff rate change mode")
       return
@@ -667,10 +557,11 @@ function AvailableRooms({
       fetchRooms(1, search)
     }
   }, [bookings.length]) // Triggers when rooms are added/removed from bookings
-  console.log(bookings)
+  console.log(isTariffRateChange)
   console.log(formData)
   return (
     <>
+    {!isTariffRateChange && (
       <div className={`relative w-full ${className}`} ref={dropdownRef}>
         <div className="relative">
           <input
@@ -678,19 +569,15 @@ function AvailableRooms({
             value={selectedValue ? selectedValue.roomName : search}
             onChange={(e) => handleSearch(e.target.value)}
             onClick={() => {
-              if (!disabled && !isEditingSingleRoom) {
+              if (!disabled) {
                 setIsOpen(true)
                 console.log("H")
               }
             }}
-            placeholder={
-              isEditingSingleRoom
-                ? "Room selection disabled during rate change"
-                : placeholder
-            }
-            disabled={disabled || isEditingSingleRoom}
+            placeholder={ placeholder}
+            disabled={disabled }
             className={`w-full px-4 py-3 pr-20 border rounded-lg bg-white ${
-              disabled || isEditingSingleRoom
+              disabled 
                 ? "opacity-50 cursor-not-allowed"
                 : "cursor-pointer"
             } focus:outline-none focus:ring-2 focus:ring-blue-500`}
@@ -758,6 +645,7 @@ function AvailableRooms({
           </div>
         )}
       </div>
+      )}
       {bookings.length > 0 && (
         <div className="w-full max-w-full mx-auto p-2">
           <div className="bg-white/95 backdrop-blur-md shadow-2xl overflow-hidden border border-white/20 rounded-lg">
@@ -804,7 +692,16 @@ function AvailableRooms({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {bookings.map((booking, index) => (
+                  {bookings
+                    .filter((booking) => {
+                      // If roomId exists (tariff rate change mode), show only that room
+                      if (roomIdToUpdate) {
+                         
+                        return booking.roomId?.toString()  === roomIdToUpdate.toString() || booking.roomId?._id?.toString() === roomIdToUpdate.toString();
+                      }
+                      // Otherwise show all bookings
+                      return true;
+                    }).map((booking, index) => (
                     <tr
                       key={booking?.roomId}
                       className="hover:bg-blue-50/50 transition-all duration-200"
@@ -1027,7 +924,7 @@ function AvailableRooms({
                       Total Amount:
                     </td>
                     <td className="px-1 py-2 text-center font-bold text-blue-700 text-sm">
-                      ₹{Number(totalAmount).toFixed(2)}
+                     {roomIdToUpdate ? "₹"+ bookings.find((item) => item.roomId === roomIdToUpdate)?.amountAfterTax : "₹" + Number(totalAmount).toFixed(2)}
                     </td>
                     <td colSpan={2}></td>
                     <td className="px-1 py-2 font-bold text-blue-700 text-center text-xs">
