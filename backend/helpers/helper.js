@@ -13,6 +13,7 @@ export const truncateToNDecimals = (num, n) => {
 
 ///// formatting  date to local date
 export const formatToLocalDate = async (date, cmp_id, session) => {
+  console.log("companyid in the formattolocatedatedd",cmp_id)
   try {
     // Fetch the organization details using the company ID and session
     const company = await OragnizationModel.findById(cmp_id).session(session);

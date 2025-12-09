@@ -628,14 +628,12 @@ export const getRooms = async (req, res) => {
   try {
     const params = extractRequestParams(req);
     const filter = buildDatabaseFilterForRoom(params);
-    console.log("fiter", filter)
 
     // Get current date and time
     const now = new Date();
 
     // Get all rooms based on basic filters
     const { rooms, totalRooms } = await fetchRoomsFromDatabase(filter, params);
-    console.log("romms", rooms.length)
     // Only care about checkOutDate in further logic
     // Extract checkout only from params if given, else use today
     let { arrivalDate, checkOutDate } = params;
@@ -698,7 +696,6 @@ export const getRooms = async (req, res) => {
         });
       }
     });
-    console.log("occupedbookiid", occupiedRoomId)
     // console.log("allcheckins", AllCheckIns)
     // Add checked-in room IDs
     AllCheckIns.forEach((checkIn) => {
@@ -928,7 +925,6 @@ export const roomBooking = async (req, res) => {
       selectedModal = Booking;
       voucherType = "saleOrder";
     } else if (isFor === "checkIn") {
-      console.log("enter");
       if (bookingData?.bookingId) {
         const updateBookingData = await Booking.findByIdAndUpdate(
           bookingData.bookingId,
@@ -2431,8 +2427,8 @@ async function hotelVoucherSeries(cmp_id, session) {
 }
 
 export const convertCheckOutToSale = async (req, res) => {
-  const { selectedCheckOut } = req.body
-  console.log(selectedCheckOut)
+  console.log("enteeeeeeeeeeeeeered")
+  
 
   // console.log("convertchecktouttosale")
   const session = await mongoose.startSession();
@@ -2441,6 +2437,7 @@ export const convertCheckOutToSale = async (req, res) => {
 
     await session.withTransaction(async () => {
       const { cmp_id } = req.params;
+      console.log("cmpidinnnnnnnnnnnnn",cmp_id)
       const {
         paymentDetails,
         selectedCheckOut = [],
@@ -2451,9 +2448,7 @@ export const convertCheckOutToSale = async (req, res) => {
         checkinIds,
       } = req.body;
 
-      // console.log("selectedcheckout", selectedCheckOut)
-      // console.log("restbasedata", restaurantBaseSaleData)
-      // console.log("isposttoroom", isPostToRoom)
+     
 
       if (!paymentDetails) throw new Error("Missing payment details");
 
@@ -2523,13 +2518,9 @@ export const convertCheckOutToSale = async (req, res) => {
           paidAmount = 0;
           // pendingAmount = itemTotal;
         }
-        console.log("itemtotal", itemTotal)
-        console.log("paidamount", paidAmount)
-        console.log("totaladvance", item?.Totaladvance)
+    
         const pendingAmount = itemTotal - (paidAmount + Number(item?.Totaladvance))
-        console.log("pendingamouit",
-          pendingAmount)
-        console.log(pendingAmount <= 0 ? 0 : pendingAmount)
+       
 
         const paymentSplittingArray = createPaymentSplittingArray(
           paymentDetails,
@@ -2590,6 +2581,11 @@ export const convertCheckOutToSale = async (req, res) => {
               balanceToPay: pendingAmount <= 0 ? 0 : pendingAmount,
               isPartialCheckout: isThisPartial,
               originalCheckInId: checkInId,
+              cash,
+              bank,
+              card,
+              credit,
+              upi,
               checkoutType:
                 checkoutMode === "single"
                   ? "singleCheckout"
@@ -2743,25 +2739,29 @@ export const convertCheckOutToSale = async (req, res) => {
           let sourceType;
 
           if (cashAmt > 0 && onlineAmt > 0) {
+            console.log("cashamount>0&&onlineamt>0")
             // Both cash and bank - use cash as primary, mark as "mixed"
             primarySource = await Party.findOne({
               _id: paymentDetails?.selectedCash,
             }).session(session);
             sourceType = "mixed";
           } else if (cashAmt > 0) {
+            console.log("cashamount>0")
             // Cash only
             primarySource = await Party.findOne({
               _id: paymentDetails?.selectedCash,
             }).session(session);
             sourceType = "cash";
           } else {
+            console.log("elseconditions")
             // Bank only
             primarySource = await Party.findOne({
               _id: paymentDetails?.selectedBank,
             }).session(session);
             sourceType = "bank";
           }
-
+console.log("sourcetype",sourceType)
+console.log("primarysourece",primarySource)
           // Create ONE settlement for all sales
           await saveSettlement(
             paymentDetails,
@@ -2786,7 +2786,7 @@ export const convertCheckOutToSale = async (req, res) => {
           (sum, split) => sum + Number(split.amount || 0),
           0
         );
-
+console.log("cmpidbefore createreceptforsale",cmp_id)
         if (totalPaidAmount > 0) {
           await createReceiptForSales(
             cmp_id,
@@ -4285,18 +4285,16 @@ export const getCheckoutStatementByDate = async (req, res) => {
 
     
 
-    console.log('Match Criteria:', matchCriteria);
 
     // Count raw documents
     const rawCount = await CheckOut.countDocuments(matchCriteria);
-    console.log('Raw document count:', rawCount);
 
     // Fetch all checkouts and manually process
     const checkouts = await CheckOut.find(matchCriteria)
       .lean()
       .sort({ voucherNumber: 1 });
+      console.log("chekcoutsss",checkouts)
 
-    console.log('Found checkouts from find():', checkouts.length);
 
     // Process each checkout - expand rooms
     const checkoutData = [];
@@ -4352,7 +4350,6 @@ export const getCheckoutStatementByDate = async (req, res) => {
       }
     });
 
-    console.log('Processed checkout rows:', checkoutData.length);
 
     // Calculate summary based on unique checkouts (not rows)
     const summaryData = {
@@ -4398,7 +4395,6 @@ export const getCheckoutStatementByDate = async (req, res) => {
       }
     });
 
-    console.log('Summary:', summaryData);
     console.log('====== END DEBUG ======');
 
     res.status(200).json({

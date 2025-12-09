@@ -446,6 +446,7 @@ export const createReceiptForSales = async (
   restaurantBaseSaleData = [],
   session
 ) => {
+  console.log("cmpidin the createreceiptforsale",cmp_id)
   console.log("call for create receipt");
   const receipts = [];
 
@@ -524,11 +525,11 @@ export const createReceiptForSales = async (
             ? { cash_ledname: customer.partyName, cash_name: customer.partyName }
             : { bank_ledname: customer.partyName, bank_name: customer.partyName };
         const matchedoutstanding = outstandings.find((item) => item.party_id === splitCustomerId)
-        const matchedsale = allSales.find((item) => item.party?._id === splitCustomerId)
+        const matchedsale = allSales.find((item) => String(item.party?._id) === String(splitCustomerId))
 
         billData.push({
           _id: matchedoutstanding[0]._id,
-          bill_no: matchedsale?.salesNumber,
+          bill_no: matchedsale[0]?.salesNumber,
           billId: matchedsale[0]._id,
           bill_date: matchedoutstanding[0].bill_date,
           bill_pending_amt: splitAmount,
@@ -678,7 +679,6 @@ balancetoset -=splitAmount
 
     // Distribute amount across bills using FIFO
     let amountLeft = amount;
-    console.log("amountleft", amountLeft)
     const billData = [];
     const outstandingsToUpdate = [];
 
@@ -687,12 +687,13 @@ balancetoset -=splitAmount
 
       const pendingAmount = outstanding.bill_pending_amt || 0;
       const settleAmount = Math.min(amountLeft, pendingAmount);
-      console.log("pendingandsettle", pendingAmount, settleAmount)
-const matchedsale=allSales.find((item)=>item.party?._id===outstanding.allSales)
+     
+const matchedsale=allSales.find((item)=>String(item.party?._id) === String(outstanding.party_id))
+
       billData.push({
         _id: outstanding._id,
-        bill_no: matchedsale[0].bill_no,
-        billId: matchedsale[0]._id,
+        bill_no: matchedsale.salesNumber,
+        billId: matchedsale._id,
         bill_date: outstanding.bill_date,
         bill_pending_amt: pendingAmount,
         source: "hotel",
@@ -766,11 +767,13 @@ const matchedsale=allSales.find((item)=>item.party?._id===outstanding.allSales)
       paymentMethod === "cash"
         ? { cash_ledname: customerName, cash_name: customerName }
         : { bank_ledname: customerName, bank_name: customerName };
-
+console.log("cmpid before buildreceipt",cmp_id)
+const balancetoset=null
     const newReceipt = await buildReceipt(
       receiptVoucher,
       serialNumber,
       paymentDetails,
+      balancetoset,
       amount,
       paymentMethod === "cash" ? "Cash" : "Online",
       partyId,
@@ -835,6 +838,7 @@ const buildReceipt = async (
   req,
   session
 ) => {
+  console.log("cmpid in the buld receipt",cmp_id)
   let selectedParty = await Party.findOne({ _id: partyId })
     .populate("accountGroup")
     .session(session);

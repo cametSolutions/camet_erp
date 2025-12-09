@@ -67,7 +67,7 @@ function BookingList() {
 
   // NEW: State for split payment rows and sources
   const [splitPaymentRows, setSplitPaymentRows] = useState([
-    { customer: "", source: "", sourceType: "", amount: "" }
+    { customer: "", source: "", sourceType: "", amount: "",subsource:"" }
   ])
   const [bankAndCashSources, setBankAndCashSources] = useState({
     banks: [],
@@ -87,6 +87,7 @@ function BookingList() {
     if (path.includes("Payment")) return "payment"
     return "sale"
   }
+  console.log(paymentMethod)
   const { data: partylist } = useFetch(
     `/api/sUsers/singlecheckoutpartylist/${cmp_id}`,
     { params: { voucher: getVoucherType() } }
@@ -189,6 +190,7 @@ function BookingList() {
   const { data: paymentTypeData } = useFetch(
     `/api/sUsers/getPaymentType/${cmp_id}`
   )
+  console.log(paymentTypeData)
 
   // NEW: Fetch bank and cash sources
   useEffect(() => {
@@ -201,6 +203,8 @@ function BookingList() {
 
         if (response.data && response.data.data) {
           const { banks, cashs } = response.data.data
+          console.log(banks)
+          console.log(cashs)
           setBankAndCashSources({ banks, cashs })
 
           // Combine banks and cash into a single array for the dropdown
@@ -483,16 +487,20 @@ function BookingList() {
 
   const updateSplitPaymentRow = (index, field, value) => {
     const updatedRows = [...splitPaymentRows]
-
+    console.log(index)
+console.log(field)
     if (field === "source") {
+      console.log(updatedRows)
+      console.log(combinedSources)
       // When source changes, find the source details and update sourceType
       const selectedSource = combinedSources.find((s) => s.id === value)
       updatedRows[index].source = value
       updatedRows[index].sourceType = selectedSource ? selectedSource.type : ""
+      updatedRows[index].subsource=(selectedSource.name==="paytm"||selectedSource.name==="gpay")?"upi":selectedSource.name==="card"?"card":selectedSource.type
     } else {
       updatedRows[index][field] = value
     }
-
+console.log(updatedRows)
     setSplitPaymentRows(updatedRows)
 
     // Calculate total and validate
@@ -511,6 +519,7 @@ function BookingList() {
     console.log("h")
     console.log(selectedCheckOut)
     console.log(selectedCheckOut.length)
+    
 
     setSaveLoader(true)
     let paymentDetails
@@ -522,7 +531,14 @@ function BookingList() {
           onlineAmount: onlineAmount,
           selectedCash: selectedCash,
           selectedBank: "",
-          paymentMode: paymentMode
+          paymentMode: paymentMode,
+          paymenttypeDetails:{
+            cash:selectedDataForPayment?.total,
+            bank:0,
+            card:0,
+            upi:0,
+            credit:0
+          }
         }
       } else {
         paymentDetails = {
@@ -530,7 +546,10 @@ function BookingList() {
           onlineAmount: selectedDataForPayment?.total,
           selectedCash: "",
           selectedBank: selectedBank,
-          paymentMode: paymentMode
+          paymentMode: paymentMode,
+          paymenttypeDetails:{
+            cash:""
+          }
         }
       }
     } else if (paymentMode === "credit") {
@@ -545,6 +564,7 @@ function BookingList() {
         paymentMode: paymentMode
       }
     } else {
+
       // NEW: Handle split payment with rows
       const totalSplitAmount = splitPaymentRows.reduce(
         (sum, row) => sum + (parseFloat(row.amount) || 0),
@@ -575,12 +595,23 @@ function BookingList() {
       // Aggregate cash and online amounts from split rows
       let totalCash = 0
       let totalOnline = 0
+      let totalbank=0
+      let totalcard=0
+      let totalupi=0
+    
 
       splitPaymentRows.forEach((row) => {
         if (row.sourceType === "cash") {
           totalCash += parseFloat(row.amount) || 0
         } else if (row.sourceType === "bank") {
           totalOnline += parseFloat(row.amount) || 0
+          if(row.subsource==="bank"){
+            totalbank +=parseFloat(row.amount)||0
+          }else if(row.subsource==="upi"){
+            totalupi +=parseFloat(row.amount)||0
+          }else if(row.subsource==="card"){
+            totalcard +=parseFloat(row.amount)||0
+          }
         }
       })
 
@@ -588,7 +619,14 @@ function BookingList() {
         cashAmount: totalCash,
         onlineAmount: totalOnline,
         paymentMode: paymentMode,
-        splitDetails: splitPaymentRows // Include split details
+        splitDetails: splitPaymentRows, // Include split details
+        paymenttypeDetails:{
+          cash:totalCash,
+          bank:totalbank,
+          card:totalcard,
+          upi:totalupi,
+          
+        }
       }
     }
 
@@ -601,9 +639,9 @@ function BookingList() {
       restaurantBaseSaleData: restaurantBaseSaleData
     })
     console.log(paymentDetails)
-    return
     console.log(selectedCheckOut)
     console.log(selectedCheckOut.length)
+    return
 
     try {
       const response = await api.post(
@@ -1707,7 +1745,7 @@ function BookingList() {
               {paymentMode === "split" && (
                 <div className="mb-3">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Split Payment Details
+                    Split Payment Detailss
                   </label>
 
                   {/* Header Row */}
@@ -1754,12 +1792,16 @@ function BookingList() {
                         <div className="col-span-3">
                           <select
                             value={row.source}
-                            onChange={(e) =>
-                              updateSplitPaymentRow(
+                            onChange={(e) =>{
+                              console.log("HHHh")
+                               updateSplitPaymentRow(
                                 index,
                                 "source",
                                 e.target.value
                               )
+
+                            }
+                             
                             }
                             className="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
                           >

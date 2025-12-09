@@ -37,7 +37,7 @@ const HotelCheckoutStatement = () => {
     try {
       console.log('Fetching checkout data for date:', selectedDate);
       console.log('Company ID:', cmp_id);
-      
+      console.log(selectedDate)
       const response = await api.get('/api/sUsers/statement', {
         params: {
           date: selectedDate, // Format: YYYY-MM-DD [web:42]
