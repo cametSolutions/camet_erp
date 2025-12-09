@@ -698,7 +698,38 @@ console.log(updatedRows)
     setProcessedCheckoutData(roomAssignments)
     setShowCheckOutDateModal(true)
   }
+const handleCheckin = (e, el) => {
+    console.log(el)
+    const roomIds = el.selectedRooms.map((item) => item.roomId)
+    console.log(roomIds)
+    console.log(roomswithCurrentstatus)
+    // const allVacant = roomids.every((id) => {
+    //   const room = roomswithCurrentstatus.find((r) => r.roomId === id)
+    // })
+    const anyPresent = roomIds.some((id) => roomswithCurrentstatus.includes(id))
 
+    if (anyPresent) {
+      toast.error("Rooms are not vaccant")
+      return
+    } else {
+      e.stopPropagation()
+      if (location.pathname == "/sUsers/bookingList") {
+        navigate(`/sUsers/checkInPage`, {
+          state: { bookingData: el }
+        })
+      } else if (location.pathname === "/sUsers/checkOutList" && el.checkInId) {
+        navigate(`/sUsers/EditCheckOut`, {
+          state: el
+        })
+      } else {
+        navigate(`/sUsers/CheckOutPage`, {
+          state: { bookingData: el }
+        })
+      }
+    }
+
+    console.log("HH")
+  }
   console.log(bookings)
   const proceedToCheckout = (roomAssignments) => {
     setSaveLoader(true)
