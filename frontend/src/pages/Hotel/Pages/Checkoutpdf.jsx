@@ -48,6 +48,7 @@ const HotelCheckoutStatement = () => {
       console.log('API Response:', response.data);
 
       if (response.data.success) {
+        console.log(response.data.checkoutBills)
         setCheckoutData(response.data.checkoutBills);
         setSummary(response.data.summary);
         
@@ -192,11 +193,11 @@ const HotelCheckoutStatement = () => {
                   <td className="py-1 px-1">{formatDate(item.date)}</td>
                   <td className="py-1 px-1">{item.customerName}</td>
                   <td className="py-1 px-1">{item.roomName || '-'}</td>
-                  <td className="py-1 px-1">{item.cash > 0 ? item.cash.toFixed(2) : ''}</td>
-                  <td className="py-1 px-1">{item.bank > 0 ? item.bank.toFixed(2) : ''}</td>
-                  <td className="py-1 px-1">{item.card > 0 ? item.card.toFixed(2) : ''}</td>
-                  <td className="py-1 px-1">{item.credit > 0 ? item.credit.toFixed(2) : ''}</td>
-                  <td className="py-1 px-1">{item.upi > 0 ? item.upi.toFixed(2) : ''}</td>
+                  <td className="py-1 px-1">{Number(item?.cash) > 0 ? item.cash.toFixed(2) : ''}</td>
+                  <td className="py-1 px-1">{Number(item?.bank) > 0 ? item.bank.toFixed(2) : ''}</td>
+                  <td className="py-1 px-1">{Number(item?.card) > 0 ? item.card.toFixed(2) : ''}</td>
+                  <td className="py-1 px-1">{Number(item?.credit) > 0 ? item.credit.toFixed(2) : ''}</td>
+                  <td className="py-1 px-1">{Number(item?.upi)>0?item?.upi.toFixed(2):""}</td>
                   <td className="text-right py-1 px-1 font-medium">{item.grandTotal.toFixed(2)}</td>
                   <td className="py-1 px-1">{item.paymentMode || 'N/A'}</td>
                 </tr>

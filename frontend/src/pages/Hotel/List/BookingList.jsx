@@ -39,6 +39,8 @@ function BookingList() {
   const [selectedCheckOut, setSelectedCheckOut] = useState(
     location?.state?.selectedCheckOut || []
   )
+  const [selectedonlinePartyname,setselectedOnlinepartyName]=useState(null)
+  const [selectedOnlinetype,setselectedOnlinetype]=useState(null)
   const [selectedCustomer, setSelectedCustomer] = useState({})
   const [saveLoader, setSaveLoader] = useState(false)
   const listRef = useRef()
@@ -80,7 +82,7 @@ function BookingList() {
   const { _id: cmp_id, configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   )
-
+console.log(selectedBank)
   const getVoucherType = () => {
     const path = location.pathname
     if (path.includes("Receipt")) return "receipt"
@@ -239,14 +241,18 @@ function BookingList() {
 
       setCashOrBank(paymentTypeData?.data)
       if (bankDetails && bankDetails.length > 0) {
+        console.log(bankDetails[0])
         setSelectedBank(bankDetails[0]._id)
+        setselectedOnlinepartyName(bankDetails[0].partyName)
+        setselectedOnlinetype(bankDetails[0].partyType)
       }
       if (cashDetails && cashDetails.length > 0) {
         setSelectedCash(cashDetails[0]._id)
       }
     }
   }, [paymentTypeData])
-
+  console.log(selectedOnlinetype)
+console.log(selectedBank)
   const fetchBookings = useCallback(
     async (pageNumber = 1, searchTerm = "") => {
       console.log("h")
@@ -514,6 +520,7 @@ console.log(updatedRows)
       setPaymentError("")
     }
   }
+  console.log(selectedOnlinetype)
   console.log("h")
   const handleSavePayment = async () => {
     console.log("h")
@@ -548,7 +555,11 @@ console.log(updatedRows)
           selectedBank: selectedBank,
           paymentMode: paymentMode,
           paymenttypeDetails:{
-            cash:""
+            cash:0,
+            bank:((selectedonlinePartyname !=="paytm"&& selectedonlinePartyname !=="gpay"&&selectedonlinePartyname !=="card")&&selectedOnlinetype ==="bank")?selectedDataForPayment?.total:0,
+            upi:(selectedonlinePartyname==="paytm"||selectedonlinePartyname==="gpay")?selectedDataForPayment?.total:0,
+            card:selectedonlinePartyname==="card"?selectedDataForPayment?.total:0,
+            credit:0
           }
         }
       }
@@ -561,7 +572,14 @@ console.log(updatedRows)
       paymentDetails = {
         cashAmount: selectedDataForPayment?.total,
         selectedCreditor: selectedCreditor,
-        paymentMode: paymentMode
+        paymentMode: paymentMode,
+        paymenttypeDetails:{
+          cash:0,
+          bank:0,
+          upi:0,
+          credit:selectedDataForPayment?.total,
+          card:0
+        }
       }
     } else {
 
@@ -598,6 +616,7 @@ console.log(updatedRows)
       let totalbank=0
       let totalcard=0
       let totalupi=0
+      
     
 
       splitPaymentRows.forEach((row) => {
@@ -625,6 +644,7 @@ console.log(updatedRows)
           bank:totalbank,
           card:totalcard,
           upi:totalupi,
+          credit:0
           
         }
       }
@@ -641,7 +661,7 @@ console.log(updatedRows)
     console.log(paymentDetails)
     console.log(selectedCheckOut)
     console.log(selectedCheckOut.length)
-    return
+return
 
     try {
       const response = await api.post(
@@ -1019,25 +1039,9 @@ const handleCheckin = (e, el) => {
               (Number(el?.balanceToPay) > 0 &&
                 location.pathname === "/sUsers/checkOutList")) && (
               <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  if (location.pathname == "/sUsers/bookingList") {
-                    navigate(`/sUsers/checkInPage`, {
-                      state: { bookingData: el }
-                    })
-                  } else if (
-                    location.pathname === "/sUsers/checkOutList" &&
-                    el.checkInId
-                  ) {
-                    navigate(`/sUsers/EditCheckOut`, {
-                      state: el
-                    })
-                  } else {
-                    navigate(`/sUsers/CheckOutPage`, {
-                      state: { bookingData: el }
-                    })
-                  }
-                }}
+                onClick={(e) =>handleCheckin(e, el)
+                  
+              }
                 className="bg-black hover:bg-blue-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
               >
                 {location.pathname === "/sUsers/checkInList"
@@ -1184,22 +1188,9 @@ const handleCheckin = (e, el) => {
                 location.pathname != "/sUsers/checkInList" &&
                 location.pathname != "/sUsers/checkOutList")) && (
               <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  if (location.pathname == "/sUsers/bookingList") {
-                    navigate(`/sUsers/checkInPage`, {
-                      state: { bookingData: el }
-                    })
-                  } else if (
-                    location.pathname === "/sUsers/checkOutList" &&
-                    el.checkInId
-                  ) {
-                  } else {
-                    navigate(`/sUsers/CheckOutPage`, {
-                      state: { bookingData: el }
-                    })
-                  }
-                }}
+                onClick={(e) => handleCheckin(e, el)
+                 
+              }
                 className="bg-black hover:bg-blue-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
               >
                 CheckIn
@@ -1327,7 +1318,7 @@ const handleCheckin = (e, el) => {
       </div>
     )
   }
-
+console.log(selectedOnlinetype)
   const handleCloseBasedOnDate = (checkouts) => {
     if (!checkouts) {
       setShowCheckOutDateModal(false)
@@ -1755,14 +1746,26 @@ const handleCheckin = (e, el) => {
                       <select
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                         onChange={(e) => {
+                          
+                          const selectedOption=e.target.selectedOptions[0]
+                            const selectedName=selectedOption?.getAttribute('data-partyName')||""
+                            const selectedPartytype=selectedOption?.getAttribute('data-partyType')
+                            setselectedOnlinetype(selectedPartytype)
+                            setselectedOnlinepartyName(selectedName)
+                          
                           setSelectedBank(e.target.value)
                         }}
                       >
-                        <option value="" disabled>
+                        <option value="" disabled
+                       
+                        >
                           Select Payment Method
                         </option>
                         {cashOrBank?.bankDetails?.map((cashier) => (
-                          <option key={cashier._id} value={cashier._id}>
+                          <option key={cashier._id} value={cashier._id}
+                        
+                        data-partyname={cashier.partyName}
+                        data-partyType={cashier.partyType}>
                             {cashier.partyName}
                           </option>
                         ))}

@@ -911,6 +911,7 @@ export const roomBooking = async (req, res) => {
     const paymentData = req.body?.paymentData;
     // console.log("paymentdata", paymentData)
     const orgId = req.params.cmp_id;
+    const paymenttypeDetails=req.body?.paymenttypeDetails
 
     if (!bookingData.arrivalDate) {
       return res.status(400).json({ message: "Missing required fields" });
@@ -981,6 +982,7 @@ export const roomBooking = async (req, res) => {
         cmp_id: orgId,
         Primary_user_id: req.pUserId || req.owner,
         Secondary_user_id: req.sUserId,
+        paymenttypeDetails,
         ...bookingData,
       });
 
@@ -2581,11 +2583,14 @@ export const convertCheckOutToSale = async (req, res) => {
               balanceToPay: pendingAmount <= 0 ? 0 : pendingAmount,
               isPartialCheckout: isThisPartial,
               originalCheckInId: checkInId,
-              cash,
-              bank,
-              card,
-              credit,
-              upi,
+              paymenttypeDetails:{
+                cash:paymentDetails?.paymenttypeDetails?.cash,
+                bank:paymentDetails?.paymenttypeDetails?.bank,
+                upi:paymentDetails?.paymenttypeDetails?.upi,
+                card:paymentDetails?.paymenttypeDetails?.card,
+                credit:paymentDetails?.paymenttypeDetails?.credit
+              },
+              
               checkoutType:
                 checkoutMode === "single"
                   ? "singleCheckout"
@@ -2659,13 +2664,13 @@ export const convertCheckOutToSale = async (req, res) => {
         // NOTE: For single payment mode, settlement will be created ONCE after the loop
 
         // Link room receipts
-        // await updateReceiptForRooms(
-        //   item?.voucherNumber,
-        //   item?.bookingId?.voucherNumber || item?.bookingId,
-        //   saleNumber?.voucherNumber,
-        //   savedVoucherData[0]?._id,
-        //   session
-        // );
+       await updateReceiptForRooms(
+           item?.voucherNumber,
+          item?.bookingId?.voucherNumber || item?.bookingId,
+          saleNumber?.voucherNumber,
+          savedVoucherData[0]?._id,
+          session
+        );
 
         // Update CheckIn and room statuses
         if (isThisPartial && remainingRooms.length > 0) {
@@ -4298,17 +4303,16 @@ export const getCheckoutStatementByDate = async (req, res) => {
 
     // Process each checkout - expand rooms
     const checkoutData = [];
-    
-    checkouts.forEach(checkout => {
-      if (checkout.selectedRooms && checkout.selectedRooms.length > 0) {
-        // If checkout has rooms, create one row per room
-        checkout.selectedRooms.forEach(room => {
-          checkoutData.push({
+    checkouts.forEach(checkout=>{
+      if(checkout.selectedRooms&&checkout.selectedRooms.length>0){
+        const roomNames=checkout.selectedRooms.map(room=>room.roomName).join(',')
+        const totalRoomamount=checkout.selectedRooms.reduce((sum,room)=>sum+parseFloat(room.roomTotal||0,0))
+        checkoutData.push({
             billNo: checkout.voucherNumber,
             date: checkout.checkOutDate,
             customerName: checkout.customerName,
-            roomName: room.roomName || 'N/A',
-            roomId: room.roomId,
+            roomName: roomNames ,
+            
             totalAmount: parseFloat(checkout.totalAmount || 0),
             grandTotal: parseFloat(checkout.grandTotal || 0),
             advanceAmount: parseFloat(checkout.advanceAmount || 0),
@@ -4316,39 +4320,67 @@ export const getCheckoutStatementByDate = async (req, res) => {
             paymentMode: checkout.paymentMode || 'N/A',
             checkOutDate: checkout.checkOutDate,
             checkOutTime: checkout.checkOutTime,
-            roomTotal: parseFloat(room.roomTotal || 0),
+            roomTotal:totalRoomamount,
             // Payment details (if you have them in the schema)
-            cash: parseFloat(checkout.paymentDetails?.cash || 0),
-            card: parseFloat(checkout.paymentDetails?.card || 0),
-            upi: parseFloat(checkout.paymentDetails?.upi || 0),
-            bank: parseFloat(checkout.paymentDetails?.bank || 0),
-            credit: parseFloat(checkout.paymentDetails?.credit || 0)
+            cash: parseFloat(checkout?.paymenttypeDetails?.cash || 0),
+            card: parseFloat(checkout?.paymenttypeDetails?.card || 0),
+            upi: parseFloat(checkout?.paymenttypeDetails?.upi || 0),
+            bank: parseFloat(checkout?.paymenttypeDetails?.bank || 0),
+            credit: parseFloat(checkout?.paymenttypeDetails?.credit || 0)
           });
-        });
-      } else {
-        // If no rooms, create one row with the checkout data
-        checkoutData.push({
-          billNo: checkout.voucherNumber,
-          date: checkout.checkOutDate,
-          customerName: checkout.customerName,
-          roomName: 'N/A',
-          roomId: null,
-          totalAmount: parseFloat(checkout.totalAmount || 0),
-          grandTotal: parseFloat(checkout.grandTotal || 0),
-          advanceAmount: parseFloat(checkout.advanceAmount || 0),
-          balanceToPay: parseFloat(checkout.balanceToPay || 0),
-          paymentMode: checkout.paymentMode || 'N/A',
-          checkOutDate: checkout.checkOutDate,
-          checkOutTime: checkout.checkOutTime,
-          roomTotal: 0,
-          cash: parseFloat(checkout.paymentDetails?.cash || 0),
-          card: parseFloat(checkout.paymentDetails?.card || 0),
-          upi: parseFloat(checkout.paymentDetails?.upi || 0),
-          bank: parseFloat(checkout.paymentDetails?.bank || 0),
-          credit: parseFloat(checkout.paymentDetails?.credit || 0)
-        });
       }
-    });
+    })
+    
+    // checkouts.forEach(checkout => {
+    //   if (checkout.selectedRooms && checkout.selectedRooms.length > 0) {
+    //     // If checkout has rooms, create one row per room
+    //     checkout.selectedRooms.forEach(room => {
+    //       checkoutData.push({
+    //         billNo: checkout.voucherNumber,
+    //         date: checkout.checkOutDate,
+    //         customerName: checkout.customerName,
+    //         roomName: room.roomName || 'N/A',
+    //         roomId: room.roomId,
+    //         totalAmount: parseFloat(checkout.totalAmount || 0),
+    //         grandTotal: parseFloat(checkout.grandTotal || 0),
+    //         advanceAmount: parseFloat(checkout.advanceAmount || 0),
+    //         balanceToPay: parseFloat(checkout.balanceToPay || 0),
+    //         paymentMode: checkout.paymentMode || 'N/A',
+    //         checkOutDate: checkout.checkOutDate,
+    //         checkOutTime: checkout.checkOutTime,
+    //         roomTotal: parseFloat(room.roomTotal || 0),
+    //         // Payment details (if you have them in the schema)
+    //         cash: parseFloat(checkout.paymentDetails?.cash || 0),
+    //         card: parseFloat(checkout.paymentDetails?.card || 0),
+    //         upi: parseFloat(checkout.paymentDetails?.upi || 0),
+    //         bank: parseFloat(checkout.paymentDetails?.bank || 0),
+    //         credit: parseFloat(checkout.paymentDetails?.credit || 0)
+    //       });
+    //     });
+    //   } else {
+    //     // If no rooms, create one row with the checkout data
+    //     checkoutData.push({
+    //       billNo: checkout.voucherNumber,
+    //       date: checkout.checkOutDate,
+    //       customerName: checkout.customerName,
+    //       roomName: 'N/A',
+    //       roomId: null,
+    //       totalAmount: parseFloat(checkout.totalAmount || 0),
+    //       grandTotal: parseFloat(checkout.grandTotal || 0),
+    //       advanceAmount: parseFloat(checkout.advanceAmount || 0),
+    //       balanceToPay: parseFloat(checkout.balanceToPay || 0),
+    //       paymentMode: checkout.paymentMode || 'N/A',
+    //       checkOutDate: checkout.checkOutDate,
+    //       checkOutTime: checkout.checkOutTime,
+    //       roomTotal: 0,
+    //       cash: parseFloat(checkout.paymentDetails?.cash || 0),
+    //       card: parseFloat(checkout.paymentDetails?.card || 0),
+    //       upi: parseFloat(checkout.paymentDetails?.upi || 0),
+    //       bank: parseFloat(checkout.paymentDetails?.bank || 0),
+    //       credit: parseFloat(checkout.paymentDetails?.credit || 0)
+    //     });
+    //   }
+    // });
 
 
     // Calculate summary based on unique checkouts (not rows)
