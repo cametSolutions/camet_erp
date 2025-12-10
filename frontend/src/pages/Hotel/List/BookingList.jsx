@@ -39,6 +39,7 @@ function BookingList() {
   const [selectedCheckOut, setSelectedCheckOut] = useState(
     location?.state?.selectedCheckOut || []
   )
+   const [roomswithCurrentstatus, setroomswithCurrentStatus] = useState([])
   const [selectedonlinePartyname,setselectedOnlinepartyName]=useState(null)
   const [selectedOnlinetype,setselectedOnlinetype]=useState(null)
   const [selectedCustomer, setSelectedCustomer] = useState({})
