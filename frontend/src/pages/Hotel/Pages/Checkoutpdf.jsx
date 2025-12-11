@@ -37,7 +37,7 @@ const HotelCheckoutStatement = () => {
     try {
       console.log('Fetching checkout data for date:', selectedDate);
       console.log('Company ID:', cmp_id);
-      
+      console.log(selectedDate)
       const response = await api.get('/api/sUsers/statement', {
         params: {
           date: selectedDate, // Format: YYYY-MM-DD [web:42]
@@ -87,7 +87,11 @@ const HotelCheckoutStatement = () => {
       hour12: true 
     }).replace(',', '');
   };
-
+  console.log(summary?.totalotherPayments)
+  console.log(summary?.totalreceiptsAmount)
+  console.log(summary?.totalbookingAdvance)
+  console.log(summary?.totalcheckingAdvance)
+console.log(summary?.totalAdvanceAmount)
   const handleDateChange = (e) => {
     const newDate = e.target.value;
     console.log('Date changed to:', newDate);
@@ -192,11 +196,11 @@ const HotelCheckoutStatement = () => {
                   <td className="py-1 px-1">{formatDate(item.date)}</td>
                   <td className="py-1 px-1">{item.customerName}</td>
                   <td className="py-1 px-1">{item.roomName || '-'}</td>
-                  <td className="py-1 px-1">{item.cash > 0 ? item.cash.toFixed(2) : ''}</td>
-                  <td className="py-1 px-1">{item.bank > 0 ? item.bank.toFixed(2) : ''}</td>
-                  <td className="py-1 px-1">{item.card > 0 ? item.card.toFixed(2) : ''}</td>
-                  <td className="py-1 px-1">{item.credit > 0 ? item.credit.toFixed(2) : ''}</td>
-                  <td className="py-1 px-1">{item.upi > 0 ? item.upi.toFixed(2) : ''}</td>
+                  <td className="py-1 px-1">{Number(item?.cash) > 0 ? item.cash.toFixed(2) : ''}</td>
+                  <td className="py-1 px-1">{Number(item?.bank) > 0 ? item.bank.toFixed(2) : ''}</td>
+                  <td className="py-1 px-1">{Number(item?.card) > 0 ? item.card.toFixed(2) : ''}</td>
+                  <td className="py-1 px-1">{Number(item?.credit) > 0 ? item.credit.toFixed(2) : ''}</td>
+                  <td className="py-1 px-1">{Number(item?.upi)>0?item?.upi.toFixed(2):""}</td>
                   <td className="text-right py-1 px-1 font-medium">{item.grandTotal.toFixed(2)}</td>
                   <td className="py-1 px-1">{item.paymentMode || 'N/A'}</td>
                 </tr>
@@ -233,18 +237,18 @@ const HotelCheckoutStatement = () => {
             <div>
               <div className="flex justify-between py-1">
                 <span>Total Reservation Adv :</span>
-                <span>0.00</span>
+                <span>{summary?.totalbookingAdvance}</span>
               </div>
               <div className="flex justify-between py-1">
                 <span>Total Checkin Adv :</span>
-                <span>0.00</span>
+                <span>{summary?.totalcheckingAdvance}</span>
               </div>
               <div className="flex justify-between py-1">
                 <span>Total Before Res Adv :</span>
                 <span>0.00</span>
               </div>
               <div className="flex justify-between py-1 mt-4 font-semibold border-t pt-2">
-                <span>Total Advance Amt :</span>
+                <span>Total Advance Amtddd :</span>
                 <span>{(summary?.totalAdvanceAmount || 0).toFixed(2)}</span>
               </div>
             </div>
@@ -257,7 +261,7 @@ const HotelCheckoutStatement = () => {
               </div>
               <div className="flex justify-between py-1">
                 <span>Total Other Receipts :</span>
-                <span>0.00</span>
+                <span>{summary?.totalreceiptsAmount}</span>
                 <span className="ml-4 text-gray-600">Credit Card</span>
                 <span>{(summary?.cardTotal || 0).toFixed(2)}</span>
               </div>
@@ -279,7 +283,7 @@ const HotelCheckoutStatement = () => {
               </div>
               <div className="flex justify-between py-1">
                 <span>Total Other Payments Amt :</span>
-                <span>0.00</span>
+                <span>{summary?.totalotherPayments}</span>
               </div>
               <div className="flex justify-between py-1 mt-4 font-semibold border-t pt-2">
                 <span>Net Sale :</span>

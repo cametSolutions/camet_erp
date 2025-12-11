@@ -39,6 +39,9 @@ function BookingList() {
   const [selectedCheckOut, setSelectedCheckOut] = useState(
     location?.state?.selectedCheckOut || []
   )
+   const [roomswithCurrentstatus, setroomswithCurrentStatus] = useState([])
+  const [selectedonlinePartyname,setselectedOnlinepartyName]=useState(null)
+  const [selectedOnlinetype,setselectedOnlinetype]=useState(null)
   const [selectedCustomer, setSelectedCustomer] = useState({})
   const [saveLoader, setSaveLoader] = useState(false)
   const listRef = useRef()
@@ -67,7 +70,7 @@ function BookingList() {
 
   // NEW: State for split payment rows and sources
   const [splitPaymentRows, setSplitPaymentRows] = useState([
-    { customer: "", source: "", sourceType: "", amount: "" }
+    { customer: "", source: "", sourceType: "", amount: "",subsource:"" }
   ])
   const [bankAndCashSources, setBankAndCashSources] = useState({
     banks: [],
@@ -80,13 +83,14 @@ function BookingList() {
   const { _id: cmp_id, configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   )
-
+console.log(selectedBank)
   const getVoucherType = () => {
     const path = location.pathname
     if (path.includes("Receipt")) return "receipt"
     if (path.includes("Payment")) return "payment"
     return "sale"
   }
+  console.log(paymentMethod)
   const { data: partylist } = useFetch(
     `/api/sUsers/singlecheckoutpartylist/${cmp_id}`,
     { params: { voucher: getVoucherType() } }
@@ -109,6 +113,44 @@ function BookingList() {
     }, 0)
   }
   console.log(selectedCheckOut)
+    useEffect(() => {
+    if (location.pathname === "/sUsers/bookingList") {
+      const fetchStatus = async () => {
+        console.log("H", cmp_id)
+        try {
+          const res = await api.get(
+            `/api/sUsers/getallnoncheckoutCheckins/${cmp_id}`,
+            {
+              withCredentials: true
+            }
+          )
+          console.log(res.data.data)
+          const a = res.data.data.map((item) => {
+            return {
+              roomId: item._id,
+              status: item.status
+            }
+          })
+          const ids = []
+          res.data.data.forEach((item) => {
+            item.selectedRooms?.forEach((room) => {
+              if (room.roomId) {
+                ids.push(room.roomId)
+              }
+            })
+          })
+          console.log(ids)
+          setroomswithCurrentStatus(ids)
+          console.log(a)
+          console.log(res.data)
+        } catch (error) {
+          console.log(error.message)
+        }
+      }
+
+      fetchStatus()
+    }
+  }, [location.pathname, cmp_id])
 
   useEffect(() => {
     // when global selectedCustomer changes, sync into selectedCheckOut
@@ -134,7 +176,7 @@ function BookingList() {
 
   useEffect(() => {
     if (location?.state?.selectedCheckOut) {
-console.log(location?.state?.selectedCheckOut)
+      console.log(location?.state?.selectedCheckOut)
       setSelectedCheckOut(location?.state?.selectedCheckOut)
       setSelectedCustomer(location?.state?.selectedCustomer?._id)
       setRestaurantBaseSaleData(location?.state?.kotData)
@@ -154,16 +196,16 @@ console.log(location?.state?.selectedCheckOut)
     }
   }, [location?.state?.selectedCheckOut])
   // ADD THIS: Update total whenever selectedCheckOut changes
-//   useEffect(() => {
-//     if (selectedCheckOut && selectedCheckOut.length > 0) {
-// console.log("H")
-//       const totalAmount = calculateTotalAmount(selectedCheckOut)
-//       setSelectedDataForPayment((prevData) => ({
-//         ...prevData,
-//         total: totalAmount
-//       }))
-//     }
-//   }, [selectedCheckOut])
+  //   useEffect(() => {
+  //     if (selectedCheckOut && selectedCheckOut.length > 0) {
+  // console.log("H")
+  //       const totalAmount = calculateTotalAmount(selectedCheckOut)
+  //       setSelectedDataForPayment((prevData) => ({
+  //         ...prevData,
+  //         total: totalAmount
+  //       }))
+  //     }
+  //   }, [selectedCheckOut])
 
   const searchData = (data) => {
     if (searchTimeoutRef.current) {
@@ -189,6 +231,7 @@ console.log(location?.state?.selectedCheckOut)
   const { data: paymentTypeData } = useFetch(
     `/api/sUsers/getPaymentType/${cmp_id}`
   )
+  console.log(paymentTypeData)
 
   // NEW: Fetch bank and cash sources
   useEffect(() => {
@@ -201,6 +244,8 @@ console.log(location?.state?.selectedCheckOut)
 
         if (response.data && response.data.data) {
           const { banks, cashs } = response.data.data
+          console.log(banks)
+          console.log(cashs)
           setBankAndCashSources({ banks, cashs })
 
           // Combine banks and cash into a single array for the dropdown
@@ -235,14 +280,18 @@ console.log(location?.state?.selectedCheckOut)
 
       setCashOrBank(paymentTypeData?.data)
       if (bankDetails && bankDetails.length > 0) {
+        console.log(bankDetails[0])
         setSelectedBank(bankDetails[0]._id)
+        setselectedOnlinepartyName(bankDetails[0].partyName)
+        setselectedOnlinetype(bankDetails[0].partyType)
       }
       if (cashDetails && cashDetails.length > 0) {
         setSelectedCash(cashDetails[0]._id)
       }
     }
   }, [paymentTypeData])
-
+  console.log(selectedOnlinetype)
+console.log(selectedBank)
   const fetchBookings = useCallback(
     async (pageNumber = 1, searchTerm = "") => {
       console.log("h")
@@ -483,16 +532,20 @@ console.log(location?.state?.selectedCheckOut)
 
   const updateSplitPaymentRow = (index, field, value) => {
     const updatedRows = [...splitPaymentRows]
-
+    console.log(index)
+console.log(field)
     if (field === "source") {
+      console.log(updatedRows)
+      console.log(combinedSources)
       // When source changes, find the source details and update sourceType
       const selectedSource = combinedSources.find((s) => s.id === value)
       updatedRows[index].source = value
       updatedRows[index].sourceType = selectedSource ? selectedSource.type : ""
+      updatedRows[index].subsource=(selectedSource.name==="paytm"||selectedSource.name==="gpay")?"upi":selectedSource.name==="card"?"card":selectedSource.type
     } else {
       updatedRows[index][field] = value
     }
-
+console.log(updatedRows)
     setSplitPaymentRows(updatedRows)
 
     // Calculate total and validate
@@ -506,12 +559,14 @@ console.log(location?.state?.selectedCheckOut)
       setPaymentError("")
     }
   }
+  console.log(selectedOnlinetype)
   console.log("h")
   const handleSavePayment = async () => {
     console.log("h")
     console.log(selectedCheckOut)
-console.log(selectedCheckOut.length)
-  
+    console.log(selectedCheckOut.length)
+    
+
     setSaveLoader(true)
     let paymentDetails
 
@@ -522,7 +577,14 @@ console.log(selectedCheckOut.length)
           onlineAmount: onlineAmount,
           selectedCash: selectedCash,
           selectedBank: "",
-          paymentMode: paymentMode
+          paymentMode: paymentMode,
+          paymenttypeDetails:{
+            cash:selectedDataForPayment?.total,
+            bank:0,
+            card:0,
+            upi:0,
+            credit:0
+          }
         }
       } else {
         paymentDetails = {
@@ -530,7 +592,14 @@ console.log(selectedCheckOut.length)
           onlineAmount: selectedDataForPayment?.total,
           selectedCash: "",
           selectedBank: selectedBank,
-          paymentMode: paymentMode
+          paymentMode: paymentMode,
+          paymenttypeDetails:{
+            cash:0,
+            bank:((selectedonlinePartyname !=="paytm"&& selectedonlinePartyname !=="gpay"&&selectedonlinePartyname !=="card")&&selectedOnlinetype ==="bank")?selectedDataForPayment?.total:0,
+            upi:(selectedonlinePartyname==="paytm"||selectedonlinePartyname==="gpay")?selectedDataForPayment?.total:0,
+            card:selectedonlinePartyname==="card"?selectedDataForPayment?.total:0,
+            credit:0
+          }
         }
       }
     } else if (paymentMode === "credit") {
@@ -542,9 +611,17 @@ console.log(selectedCheckOut.length)
       paymentDetails = {
         cashAmount: selectedDataForPayment?.total,
         selectedCreditor: selectedCreditor,
-        paymentMode: paymentMode
+        paymentMode: paymentMode,
+        paymenttypeDetails:{
+          cash:0,
+          bank:0,
+          upi:0,
+          credit:selectedDataForPayment?.total,
+          card:0
+        }
       }
     } else {
+
       // NEW: Handle split payment with rows
       const totalSplitAmount = splitPaymentRows.reduce(
         (sum, row) => sum + (parseFloat(row.amount) || 0),
@@ -575,12 +652,24 @@ console.log(selectedCheckOut.length)
       // Aggregate cash and online amounts from split rows
       let totalCash = 0
       let totalOnline = 0
+      let totalbank=0
+      let totalcard=0
+      let totalupi=0
+      
+    
 
       splitPaymentRows.forEach((row) => {
         if (row.sourceType === "cash") {
           totalCash += parseFloat(row.amount) || 0
         } else if (row.sourceType === "bank") {
           totalOnline += parseFloat(row.amount) || 0
+          if(row.subsource==="bank"){
+            totalbank +=parseFloat(row.amount)||0
+          }else if(row.subsource==="upi"){
+            totalupi +=parseFloat(row.amount)||0
+          }else if(row.subsource==="card"){
+            totalcard +=parseFloat(row.amount)||0
+          }
         }
       })
 
@@ -588,7 +677,15 @@ console.log(selectedCheckOut.length)
         cashAmount: totalCash,
         onlineAmount: totalOnline,
         paymentMode: paymentMode,
-        splitDetails: splitPaymentRows // Include split details
+        splitDetails: splitPaymentRows, // Include split details
+        paymenttypeDetails:{
+          cash:totalCash,
+          bank:totalbank,
+          card:totalcard,
+          upi:totalupi,
+          credit:0
+          
+        }
       }
     }
 
@@ -600,9 +697,11 @@ console.log(selectedCheckOut.length)
       selectedParty: selectedCustomer,
       restaurantBaseSaleData: restaurantBaseSaleData
     })
+    console.log(paymentDetails)
     console.log(selectedCheckOut)
-console.log(selectedCheckOut.length)
-  
+    console.log(selectedCheckOut.length)
+
+
     try {
       const response = await api.post(
         `/api/sUsers/convertCheckOutToSale/${cmp_id}`,
@@ -650,15 +749,46 @@ console.log(selectedCheckOut.length)
     setShowEnhancedCheckoutModal(true)
   }
   console.log()
- const handleEnhancedCheckoutConfirm = async (roomAssignments) => {
-  console.log(roomAssignments);
-  setShowEnhancedCheckoutModal(false);
-  
-  // ✅ ALWAYS show checkout date modal - no condition
-  setProcessedCheckoutData(roomAssignments);
-  setShowCheckOutDateModal(true);
-}
+  const handleEnhancedCheckoutConfirm = async (roomAssignments) => {
+    console.log(roomAssignments)
+    setShowEnhancedCheckoutModal(false)
 
+    // ✅ ALWAYS show checkout date modal - no condition
+    setProcessedCheckoutData(roomAssignments)
+    setShowCheckOutDateModal(true)
+  }
+const handleCheckin = (e, el) => {
+    console.log(el)
+    const roomIds = el.selectedRooms.map((item) => item.roomId)
+    console.log(roomIds)
+    console.log(roomswithCurrentstatus)
+    // const allVacant = roomids.every((id) => {
+    //   const room = roomswithCurrentstatus.find((r) => r.roomId === id)
+    // })
+    const anyPresent = roomIds.some((id) => roomswithCurrentstatus.includes(id))
+
+    if (anyPresent) {
+      toast.error("Rooms are not vaccant")
+      return
+    } else {
+      e.stopPropagation()
+      if (location.pathname == "/sUsers/bookingList") {
+        navigate(`/sUsers/checkInPage`, {
+          state: { bookingData: el }
+        })
+      } else if (location.pathname === "/sUsers/checkOutList" && el.checkInId) {
+        navigate(`/sUsers/EditCheckOut`, {
+          state: el
+        })
+      } else {
+        navigate(`/sUsers/CheckOutPage`, {
+          state: { bookingData: el }
+        })
+      }
+    }
+
+    console.log("HH")
+  }
   console.log(bookings)
   const proceedToCheckout = (roomAssignments) => {
     setSaveLoader(true)
@@ -948,25 +1078,9 @@ console.log(selectedCheckOut.length)
               (Number(el?.balanceToPay) > 0 &&
                 location.pathname === "/sUsers/checkOutList")) && (
               <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  if (location.pathname == "/sUsers/bookingList") {
-                    navigate(`/sUsers/checkInPage`, {
-                      state: { bookingData: el }
-                    })
-                  } else if (
-                    location.pathname === "/sUsers/checkOutList" &&
-                    el.checkInId
-                  ) {
-                    navigate(`/sUsers/EditCheckOut`, {
-                      state: el
-                    })
-                  } else {
-                    navigate(`/sUsers/CheckOutPage`, {
-                      state: { bookingData: el }
-                    })
-                  }
-                }}
+                onClick={(e) =>handleCheckin(e, el)
+                  
+              }
                 className="bg-black hover:bg-blue-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
               >
                 {location.pathname === "/sUsers/checkInList"
@@ -1113,22 +1227,9 @@ console.log(selectedCheckOut.length)
                 location.pathname != "/sUsers/checkInList" &&
                 location.pathname != "/sUsers/checkOutList")) && (
               <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  if (location.pathname == "/sUsers/bookingList") {
-                    navigate(`/sUsers/checkInPage`, {
-                      state: { bookingData: el }
-                    })
-                  } else if (
-                    location.pathname === "/sUsers/checkOutList" &&
-                    el.checkInId
-                  ) {
-                  } else {
-                    navigate(`/sUsers/CheckOutPage`, {
-                      state: { bookingData: el }
-                    })
-                  }
-                }}
+                onClick={(e) => handleCheckin(e, el)
+                 
+              }
                 className="bg-black hover:bg-blue-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
               >
                 CheckIn
@@ -1256,58 +1357,61 @@ console.log(selectedCheckOut.length)
       </div>
     )
   }
+console.log(selectedOnlinetype)
+  const handleCloseBasedOnDate = (checkouts) => {
+    if (!checkouts) {
+      setShowCheckOutDateModal(false)
+      setShowSelectionModal(true)
+      return
+    }
+    setSaveLoader(true)
 
-const handleCloseBasedOnDate = (checkouts) => {
-  if (!checkouts) {
-    setShowCheckOutDateModal(false)
-    setShowSelectionModal(true)
-    return
-  }
-  setSaveLoader(true)
+    if (processedCheckoutData) {
+      // Transform the processed checkout data with updated stay days
+      const updatedCheckoutData = processedCheckoutData.map((group) => ({
+        ...group,
+        checkIns: group.checkIns.map((checkIn) => {
+          const updatedData = checkouts.find((c) => c._id === checkIn.checkInId)
 
-  if (processedCheckoutData) {
-    // Transform the processed checkout data with updated stay days
-    const updatedCheckoutData = processedCheckoutData.map((group) => ({
-      ...group,
-      checkIns: group.checkIns.map((checkIn) => {
-        const updatedData = checkouts.find((c) => c._id === checkIn.checkInId)
-
-        return {
-          ...checkIn,
-          originalCheckIn: {
-            ...checkIn.originalCheckIn,
-            // ✅ ADDED: Update checkout date and stay days
-            checkOutDate: updatedData?.checkOutDate || checkIn.originalCheckIn.checkOutDate,
-            stayDays: updatedData?.stayDays || checkIn.originalCheckIn.stayDays,
-            selectedRooms: checkIn.originalCheckIn.selectedRooms.map(
-              (room) => {
-                const updatedRoom = updatedData?.selectedRooms?.find(
-                  (r) => r._id === room._id
-                )
-                return updatedRoom ? { ...room, ...updatedRoom } : room
-              }
-            )
+          return {
+            ...checkIn,
+            originalCheckIn: {
+              ...checkIn.originalCheckIn,
+              // ✅ ADDED: Update checkout date and stay days
+              checkOutDate:
+                updatedData?.checkOutDate ||
+                checkIn.originalCheckIn.checkOutDate,
+              stayDays:
+                updatedData?.stayDays || checkIn.originalCheckIn.stayDays,
+              selectedRooms: checkIn.originalCheckIn.selectedRooms.map(
+                (room) => {
+                  const updatedRoom = updatedData?.selectedRooms?.find(
+                    (r) => r._id === room._id
+                  )
+                  return updatedRoom ? { ...room, ...updatedRoom } : room
+                }
+              )
+            }
           }
+        })
+      }))
+
+      proceedToCheckout(updatedCheckoutData)
+      setProcessedCheckoutData(null)
+    } else {
+      const hasPrint1 = configurations[0]?.defaultPrint?.print1
+      navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
+        state: {
+          selectedCheckOut:
+            checkouts?.length > 0 ? checkouts : selectedCheckOut,
+          customerId: selectedCustomer,
+          isForPreview: true
         }
       })
-    }))
+    }
 
-    proceedToCheckout(updatedCheckoutData)
-    setProcessedCheckoutData(null)
-  } else {
-    const hasPrint1 = configurations[0]?.defaultPrint?.print1
-    navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
-      state: {
-        selectedCheckOut:
-          checkouts?.length > 0 ? checkouts : selectedCheckOut,
-        customerId: selectedCustomer,
-        isForPreview: true
-      }
-    })
+    setShowCheckOutDateModal(false) // ✅ ADDED: Close modal
   }
-  
-  setShowCheckOutDateModal(false)  // ✅ ADDED: Close modal
-}
 
   return (
     <>
@@ -1681,14 +1785,26 @@ const handleCloseBasedOnDate = (checkouts) => {
                       <select
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                         onChange={(e) => {
+                          
+                          const selectedOption=e.target.selectedOptions[0]
+                            const selectedName=selectedOption?.getAttribute('data-partyName')||""
+                            const selectedPartytype=selectedOption?.getAttribute('data-partyType')
+                            setselectedOnlinetype(selectedPartytype)
+                            setselectedOnlinepartyName(selectedName)
+                          
                           setSelectedBank(e.target.value)
                         }}
                       >
-                        <option value="" disabled>
+                        <option value="" disabled
+                       
+                        >
                           Select Payment Method
                         </option>
                         {cashOrBank?.bankDetails?.map((cashier) => (
-                          <option key={cashier._id} value={cashier._id}>
+                          <option key={cashier._id} value={cashier._id}
+                        
+                        data-partyname={cashier.partyName}
+                        data-partyType={cashier.partyType}>
                             {cashier.partyName}
                           </option>
                         ))}
@@ -1702,7 +1818,7 @@ const handleCloseBasedOnDate = (checkouts) => {
               {paymentMode === "split" && (
                 <div className="mb-3">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Split Payment Details
+                    Split Payment Detailss
                   </label>
 
                   {/* Header Row */}
@@ -1749,12 +1865,16 @@ const handleCloseBasedOnDate = (checkouts) => {
                         <div className="col-span-3">
                           <select
                             value={row.source}
-                            onChange={(e) =>
-                              updateSplitPaymentRow(
+                            onChange={(e) =>{
+                              console.log("HHHh")
+                               updateSplitPaymentRow(
                                 index,
                                 "source",
                                 e.target.value
                               )
+
+                            }
+                             
                             }
                             className="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
                           >

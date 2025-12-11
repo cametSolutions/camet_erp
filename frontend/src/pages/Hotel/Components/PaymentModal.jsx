@@ -17,6 +17,9 @@ function PaymentModal({
   customers = [], // NEW: Add customers prop
 }) {
   const [paymentMode, setPaymentMode] = useState("single");
+  const [paymentype,setpaymentType]=useState(null)
+  const [selectedonlinepartyName,setselectedOnlinepartyName]=useState(null)
+  const [selectedonlinetype,setselectedonlinetype]=useState(null)
   const [cashAmount, setCashAmount] = useState("");
   const [onlineAmount, setOnlineAmount] = useState("");
   const [paymentError, setPaymentError] = useState("");
@@ -36,7 +39,10 @@ function PaymentModal({
       setCashOrBank(paymentTypeData?.data);
       
       if (bankDetails && bankDetails.length > 0) {
+        console.log(bankDetails)
         setSelectedBank(bankDetails[0]._id);
+        setselectedOnlinepartyName(bankDetails[0].partyName)
+        setselectedonlinetype(bankDetails[0].partyType)
       }
       if (cashDetails && cashDetails.length > 0) {
         setSelectedCash(cashDetails[0]._id);
@@ -98,6 +104,7 @@ function PaymentModal({
     if (paymentMode === "single") {
       paymentData.payments.push({
         method: paymentMethod,
+        paymentType:(selectedonlinepartyName==="paytm"||selectedonlinepartyName==="gpay")?"upi":selectedonlinepartyName==="card"?"card":paymentMethod==="cash"?"cash":(selectedonlinepartyName!=="paytm"&&selectedonlinepartyName!=="gpay"&&selectedonlinepartyName !=="card")&&selectedonlinetype==="bank"?"bank":"credit",
         amount: totalAmount,
         accountId: paymentMethod === "cash" ? selectedCash : selectedBank,
         accountName:
@@ -271,11 +278,20 @@ console.log("newpayment")
                   onChange={(e) => {
                     setSelectedBank(e.target.value);
                     setPaymentError("");
+                    const selectedOption=e.target.selectedOptions[0]
+                    const selectedName=selectedOption?.getAttribute('data-partyname')||""
+
+                    const selectedPartytype=selectedOption?.getAttribute('data-partyType')||""
+                    setselectedonlinetype(selectedPartytype)
+                    setselectedOnlinepartyName(selectedName)
                   }}
                 >
-                  <option value="">Select Payment Method</option>
+                  <option value=""
+                  >Select Payment Method</option>
                   {cashOrBank?.bankDetails?.map((cashier) => (
-                    <option key={cashier._id} value={cashier._id}>
+                    <option key={cashier._id} value={cashier._id}
+                    data-partyname={cashier.partyName}
+                    data-partyType={cashier.partyType}>
                       {cashier.partyName}
                     </option>
                   ))}

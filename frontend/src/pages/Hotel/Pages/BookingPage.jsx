@@ -20,14 +20,14 @@ function BookingPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
 console.log("J")
-  const handleSubmit = async (data, paymentData) => {
+  const handleSubmit = async (data, paymentData,paymenttypeDetails) => {
     console.log(data)
     
 
     try {
       let response = await api.post(
         `/api/sUsers/saveData/${organization._id}`,
-        { data: data, modal: "bookingPage", paymentData: paymentData },
+        { data: data, modal: "bookingPage", paymentData: paymentData,paymenttypeDetails },
         { withCredentials: true }
       )
       if (response?.data?.success) {

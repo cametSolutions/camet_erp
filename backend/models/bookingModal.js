@@ -142,6 +142,14 @@ const bookingSchema = new mongoose.Schema(
     advanceAmount: String,
     totalAmount: String,
     balanceToPay: String,
+    paymenttypeDetails: {
+  cash: { type: String, default: '0' },
+  bank: { type: String, default: '0' },
+  upi: { type: String, default: '0' },
+  credit: { type: String, default: '0' },
+  card: { type: String, default: '0' }
+}
+,
     grandTotal: String,
     customerId: { type: mongoose.Schema.Types.ObjectId, ref: "Party" },
     customerName: String,
