@@ -803,7 +803,7 @@ bank +=item.bank
 
   }
   console.log(paymenttypeDetails)
-    return
+    
     console.log("hhhhh")
     handleSubmit(payload, paymentData,paymenttypeDetails)
   }

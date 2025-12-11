@@ -433,7 +433,7 @@ export const updateReceiptForRooms = async (
 //   return receipts;
 // };
 
-export const createReceiptForSales = async (
+export const  createReceiptForSales = async (
   cmp_id,
   payment,
   paymentMethod,
@@ -483,11 +483,12 @@ export const createReceiptForSales = async (
   // ============ CASE 1: SPLIT PAYMENT MODE ============
   if (payment?.paymentMode === "split") {
     const splitDetails = payment?.splitDetails || [];
-    // Find all outstandings for this customer from sales with this checkInId
+    // Find all outstandings for this customer from sales with this 
+    const customerids=splitDetails.map((item)=>new mongoose.Types.ObjectId(item.customer))
+    console.log("custmereidsssss",customerids)
+    console.log("salesids",saleIds)
     const outstandings = await TallyData.find({
       billId: { $in: saleIds },
-      party_id: splitCustomerId,
-      bill_pending_amt: { $gt: 0 },
       cmp_id,
       source: "sales",
     })
@@ -495,7 +496,7 @@ export const createReceiptForSales = async (
       .session(session);
 
     if (outstandings.length === 0) {
-      console.log(`No outstanding found for customer ${splitCustomerId}`);
+      console.log(`No outstanding found for customer ${customerids}`);
 
     }
     let balancetoset=amount
@@ -522,21 +523,28 @@ export const createReceiptForSales = async (
 
         const paymentDetails =
           splitSourceType === "cash"
-            ? { cash_ledname: customer.partyName, cash_name: customer.partyName }
-            : { bank_ledname: customer.partyName, bank_name: customer.partyName };
+            ? { cash_ledname: customerName, cash_name: customerName }
+            : { bank_ledname: customerName, bank_name: customerName };
         const matchedoutstanding = outstandings.find((item) => item.party_id === splitCustomerId)
         const matchedsale = allSales.find((item) => String(item.party?._id) === String(splitCustomerId))
-
-        billData.push({
-          _id: matchedoutstanding[0]._id,
-          bill_no: matchedsale[0]?.salesNumber,
-          billId: matchedsale[0]._id,
-          bill_date: matchedoutstanding[0].bill_date,
+        console.log("outstandings",outstandings)
+for (const item of outstandings ){
+  const sale=allSales.find(s=>s.salesNumber===item.bill_no)
+  console.log("ssssalesssssssss",sale)
+  billData.push({
+          _id: item._id,
+          bill_no: sale.salesNumber,
+          billId: sale._id,
+          bill_date:item.bill_date,
           bill_pending_amt: splitAmount,
           source: "hotel",
           settledAmount: splitAmount,
           remainingAmount: 0,
         })
+
+}
+console.log("billdata",billData)
+        
 
         const newReceipt = await buildReceipt(
           receiptVoucher,
@@ -555,27 +563,45 @@ export const createReceiptForSales = async (
 
         receipts.push(newReceipt);
 
-        // Update all affected outstandings
+       
       
-          await TallyData.updateOne(
-            { _id: matchedoutstanding[0]._id },
-            {
-
-              $push: {
-                appliedReceipts: {
-                  _id: newReceipt._id,
-                  receiptNumber: newReceipt.receiptNumber,
-                  settledAmount: splitAmount,
-                  date: new Date(),
-                },
-              },
-            },
-            { session }
-          );
+        
         
 balancetoset -=splitAmount
 
       }
+      
+        for (const item of outstandings) {
+  // 1. Find matching sale for this outstanding
+  const sale = allSales.find(s => s.salesNumber === item.bill_no);
+  if (!sale) continue;
+
+  // 2. Find ALL receipts matching this sale's salesNumber
+  const receipts = await receiptModel.find({
+    'billData.bill_no': sale.salesNumber  // Matches any billData.bill_no
+  });
+
+  // 3. Push ALL matching receipts to this outstanding
+  if (receipts.length > 0) {
+    await TallyData.updateOne(
+      { _id: item._id },
+      {
+        $push: {
+          appliedReceipts: {
+            $each: receipts.map(receipt => ({
+              _id: receipt._id,
+              receiptNumber: receipt.receiptNumber,
+              settledAmount: receipt.settledAmount,  // or calculate per receipt
+              date: new Date(),
+            }))
+          }
+        }
+      },
+      { session }
+    );
+  }
+}
+
     
 
   }
@@ -697,14 +723,14 @@ const matchedsale=allSales.find((item)=>String(item.party?._id) === String(outst
         bill_date: outstanding.bill_date,
         bill_pending_amt: pendingAmount,
         source: "hotel",
-        settledAmount: settleAmount,
-        remainingAmount: pendingAmount - settleAmount,
+        settledAmount: pendingAmount,
+        remainingAmount:0,
       });
 
       outstandingsToUpdate.push({
         outstandingId: outstanding._id,
-        settledAmount: settleAmount,
-        newPendingAmount: pendingAmount - settleAmount,
+        settledAmount: pendingAmount,
+        newPendingAmount:0,
       });
 
       amountLeft -= settleAmount;

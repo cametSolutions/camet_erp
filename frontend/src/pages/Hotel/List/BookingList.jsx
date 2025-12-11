@@ -113,6 +113,44 @@ console.log(selectedBank)
     }, 0)
   }
   console.log(selectedCheckOut)
+    useEffect(() => {
+    if (location.pathname === "/sUsers/bookingList") {
+      const fetchStatus = async () => {
+        console.log("H", cmp_id)
+        try {
+          const res = await api.get(
+            `/api/sUsers/getallnoncheckoutCheckins/${cmp_id}`,
+            {
+              withCredentials: true
+            }
+          )
+          console.log(res.data.data)
+          const a = res.data.data.map((item) => {
+            return {
+              roomId: item._id,
+              status: item.status
+            }
+          })
+          const ids = []
+          res.data.data.forEach((item) => {
+            item.selectedRooms?.forEach((room) => {
+              if (room.roomId) {
+                ids.push(room.roomId)
+              }
+            })
+          })
+          console.log(ids)
+          setroomswithCurrentStatus(ids)
+          console.log(a)
+          console.log(res.data)
+        } catch (error) {
+          console.log(error.message)
+        }
+      }
+
+      fetchStatus()
+    }
+  }, [location.pathname, cmp_id])
 
   useEffect(() => {
     // when global selectedCustomer changes, sync into selectedCheckOut
@@ -662,7 +700,7 @@ console.log(updatedRows)
     console.log(paymentDetails)
     console.log(selectedCheckOut)
     console.log(selectedCheckOut.length)
-return
+
 
     try {
       const response = await api.post(
