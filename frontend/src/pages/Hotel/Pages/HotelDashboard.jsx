@@ -318,6 +318,7 @@ if (action === "editChecking") {
       navigate("/sUsers/editChecking", {
         state: {
           ...checkInDetails.checkIn,
+          roomId: selectedRoomData._id,
           fromDashboard: true  // ✅ Flag to indicate tariff rate change
         }
       });
