@@ -21,7 +21,7 @@ console.log(inclusive)
       ? formData?.additionalPaxDetails?.reduce(
           (acc, item) =>
             item.roomId === taxCalculationRoomId
-              ? acc + (Number(item.rate) || 0)
+              ? acc + (Number(item.rate) || 0) * Number(data?.stayDays || 1 )
               : acc,
           0
         ) || 0
@@ -32,7 +32,7 @@ console.log(inclusive)
       ? formData?.foodPlan?.reduce(
           (acc, item) =>
             item.roomId === taxCalculationRoomId
-              ? acc + (Number(item.rate) || 0)
+              ? acc + (Number(item.rate) || 0)  * Number(data?.stayDays || 1 )
               : acc,
           0
         ) || 0
@@ -45,14 +45,18 @@ console.log(reducedAdditionalPaxAmount)
     if (formData?.bookingType !== "offline") {
       totalAmount += reducedFoodPlanAmount;
     }
+    console.log(totalAmount)
 
     // Tax slab logic
     let taxRate = 0;
     let applicableSlab = null;
-
+console.log(hsnDetails)
     if (Array.isArray(hsnDetails?.rows)) {
       for (const row of hsnDetails.rows) {
+
         const slab = getApplicableTaxSlab(row, totalAmount);
+        console.log(slab)
+
         if (slab) {
           applicableSlab = slab;
           taxRate = Number(slab.igstRate || 0);
@@ -61,8 +65,9 @@ console.log(reducedAdditionalPaxAmount)
       }
     }
 
-    if (!applicableSlab && hsnDetails?.igstRate !== undefined) {
-      taxRate = Number(hsnDetails.igstRate);
+
+    if (!applicableSlab && hsnDetails?.rows[hsnDetails?.rows?.length - 1]?.igstRate !== undefined) {
+      taxRate = Number(hsnDetails?.rows[hsnDetails?.rows?.length - 1]?.igstRate || 0);
     }
 console.log(taxRate)
 console.log(totalAmount)
@@ -130,6 +135,7 @@ console.log(inclusive)
 };
 
 const getApplicableTaxSlab = (row, totalAmount) => {
+ 
   try {
     const greaterThan = parseFloat(row.greaterThan);
     const uptoValue = row.upto;
@@ -147,6 +153,7 @@ const getApplicableTaxSlab = (row, totalAmount) => {
     }
 
     return isApplicable ? row : null;
+    
   } catch (error) {
     console.error("Error in getApplicableTaxSlab:", error);
     return null;

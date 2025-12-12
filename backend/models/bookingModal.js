@@ -73,6 +73,11 @@ const selectedRoomSchema = new mongoose.Schema({
     cmp_id: mongoose.Schema.Types.ObjectId,
     Primary_user_id: mongoose.Schema.Types.ObjectId,
   },
+  dateTariffs: {
+    type: Map, 
+    of: Number,
+    default: {},
+  },
   pax: Number,
   priceLevelRate: String,
   stayDays: Number,
@@ -95,7 +100,7 @@ const selectedRoomSchema = new mongoose.Schema({
   totalSgstAmt: Number,
   totalIgstAmt: Number,
   unit: String,
-  lastRateUpdatedAt: { type: Date, default: Date.now }
+  lastRateUpdatedAt: { type: Date, default: Date.now },
 });
 
 const bookingSchema = new mongoose.Schema(
@@ -114,7 +119,7 @@ const bookingSchema = new mongoose.Schema(
       ref: "Organization",
       required: true,
     },
-    checkoutType: String,//only for checkout and its for knowing that if this checkout is single checkout for multiple checkins,we have for single checkings have separate checkout with distinguis with this and former
+    checkoutType: String, //only for checkout and its for knowing that if this checkout is single checkout for multiple checkins,we have for single checkings have separate checkout with distinguis with this and former
     bookingDate: String,
     voucherNumber: String,
     voucherId: mongoose.Schema.Types.ObjectId,
@@ -174,21 +179,25 @@ const bookingSchema = new mongoose.Schema(
     status: String,
     originalCheckInId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'CheckIn',
+      ref: "CheckIn",
     },
     roomSwapHistory: [roomSwapHistorySchema],
     isPartiallyCheckedOut: {
       type: Boolean,
       default: false,
     },
-    partialCheckoutHistory: [{
-      date: Date,
-      roomsCheckedOut: [{
-        roomId: mongoose.Schema.Types.ObjectId,
-        roomName: String,
-      }],
-      saleVoucherNumber: String,
-    }],
+    partialCheckoutHistory: [
+      {
+        date: Date,
+        roomsCheckedOut: [
+          {
+            roomId: mongoose.Schema.Types.ObjectId,
+            roomName: String,
+          },
+        ],
+        saleVoucherNumber: String,
+      },
+    ],
     // Foreign National Fields (only for non-Indian guests)
     company: String,
     nextDestination: String,
