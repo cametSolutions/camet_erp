@@ -24,7 +24,7 @@ function AvailableRooms({
   isTariffRateChange = false, // ✅ Add this
   roomIdToUpdate = null,
 }) {
-  console.log(roomIdToUpdate);
+  console.log(formData.selectedRooms);
   console.log("h");
   const [rooms, setRooms] = useState([]);
   const [search, setSearch] = useState("");
@@ -46,11 +46,7 @@ function AvailableRooms({
   const PAGE_SIZE = 50;
   console.log(rooms);
   useEffect(() => {
-    console.log(
-      "isTariffRateChange:",
-      formData.selectedRooms,
-      formData.stayDays
-    );
+
     const fetchBookings = async () => {
       if (formData?.selectedRooms?.length > 0) {
         const updatedBookings = await Promise.all(
@@ -86,6 +82,7 @@ function AvailableRooms({
               totalCgstAmt: booking.totalCgstAmt,
               totalSgstAmt: booking.totalSgstAmt,
               totalIgstAmt: booking.totalIgstAmt,
+              dateTariffs: booking.dateTariffs || {},
             };
 
             const taxCalculation = await calculateTax(normalizedBooking);
@@ -130,7 +127,7 @@ function AvailableRooms({
     };
 
     recalculateTax();
-  }, [formData?.additionalPaxDetails, formData?.foodPlan, selectedRoomId]);
+  }, [formData?.additionalPaxDetails, formData?.foodPlan, selectedRoomId ]);
 
   useEffect(() => {
     console.log(!formData?.bookingType);
@@ -237,7 +234,7 @@ function AvailableRooms({
     const checkInDate = formData?.arrivalDate || formData?.checkInDate;
     const checkOutDate = formData?.checkOutDate;
 
-    if (!checkInDate || !checkOutDate || !booking.dateTariffs) {
+    if (!checkInDate || !checkOutDate ) {
       // Fallback to simple calculation if dates are not available
       const baseAmount =
         Number(booking.priceLevelRate || 0) * Number(booking.stayDays || 0);
@@ -254,7 +251,7 @@ function AvailableRooms({
     const endDate = new Date(checkOutDate);
     console.log(currentDate, booking.dateTariffs);
 
-    while (currentDate <= endDate) {
+    while (currentDate < endDate) {
       // Format date as YYYY-MM-DD to match dateTariffs keys
       const formattedDate = currentDate.toISOString().split("T")[0];
       stayDates.push(formattedDate);
@@ -371,6 +368,7 @@ function AvailableRooms({
       isMounted = false;
     };
   }, [pendingRoomQueue, bookings]);
+
   console.log("h");
   useEffect(() => {
     if (bookings.length > 0) {
@@ -650,13 +648,30 @@ function AvailableRooms({
     }
   }, [bookings.length]); // Triggers when rooms are added/removed from bookings
   console.log(bookings[0]?.totalAmount);
+  const handleTariffDelete = (editedTariff) => {
+    console.log(editedTariff)
+  setBookings((prev) =>
+    prev.map((b) => {
+      if (b.roomId === roomIdToUpdate) {
+        return { ...b, dateTariffs: editedTariff };
+      }
+      return b;
+    })
+  );
+
+   setPendingRoomQueue((prev) =>
+    prev.includes(roomIdToUpdate) ? prev : [...prev, roomIdToUpdate]
+  );
+};
+
 
   return showHistory ? (
     <TariffHistory
       isOpen={showHistory}
       onClose={() => setShowHistory(false)}
       booking={bookings?.find((b) => b.roomId === selectedRoomForHistory)}
-      formData
+      formData={formData}
+      sendUpdatedTariffToParent = {handleTariffDelete}
     />
   ) : (
     <>

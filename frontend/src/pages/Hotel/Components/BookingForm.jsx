@@ -177,7 +177,7 @@ function BookingForm({
         dateOfIssue: editData?.dateOfIssue || "",
         dateOfExpiry: editData?.dateOfExpiry || "",
         grcno: editData?.grcno || "",
-        currentDate: editData?.checkOutDate|| currentDateDefault,
+        currentDate: editData?.arrivalDate|| currentDateDefault,
         updatedDate: editData?.updatedDate || currentDateDefault,
       }));
     }
@@ -186,7 +186,7 @@ function BookingForm({
   useEffect(() => {
     if (roomId) setSelectedRoomId(roomId);
   }, [roomId]);
-  console.log(formData);
+  console.log(formData.selectedRooms);
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -262,7 +262,7 @@ function BookingForm({
   const checkout = new Date(formData.checkOutDate);
 
   // Check if currentDate is within the range
-  if (current >= arrival && current <= checkout) {
+  if (current >= arrival && current < checkout) {
     setFormData((prev) => ({ ...prev, [name]: value }));
   } else {
     // Optional: alert or toast if not valid
@@ -742,7 +742,7 @@ function BookingForm({
     };
 
     console.log("=== FINAL PAYLOAD ===");
-    console.log("Total rooms in payload:", payload.selectedRooms?.length);
+    console.log("Total rooms in payload:", payload.selectedRooms);
     console.log(
       "Room names:",
       payload.selectedRooms?.map((r) => r.roomName)
