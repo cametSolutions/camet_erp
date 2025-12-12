@@ -773,13 +773,47 @@ function BookingForm({
 
     const payload = {
       ...formData,
-      selectedRooms: finalSelectedRooms,
-    };
-    console.log("hhhhh");
-    handleSubmit(payload, paymentData);
-  };
-  console.log(formData);
-  const handleClose = () => setShowPaymentModal(false);
+      selectedRooms: finalSelectedRooms
+    }
+    console.log(payload)
+    console.log(paymentData)
+    let cash=0
+    let upi=0
+    let card=0
+    const  credit=0
+    let bank=0
+    paymentData.payments.forEach((item)=>{
+      if(item.paymentType==="upi"){
+        upi +=item.amount
+
+    }else if(item.paymentType=="card"){
+card +=item.amount
+    }else if(item.paymentType==="bank"){
+bank +=item.bank
+    }else if(item.paymentType==="cash"){
+      cash +=item?.amount
+    }
+  })
+  console.log(cash)
+  console.log(bank)
+  console.log(card)
+  console.log(upi)
+  console.log(credit)
+  const paymenttypeDetails={
+    cash:cash,
+    bank:bank,
+    upi:upi,
+    card:card,
+    credit:credit
+
+  }
+  console.log(paymenttypeDetails)
+    
+    console.log("hhhhh")
+    handleSubmit(payload, paymentData,paymenttypeDetails)
+  }
+  console.log(formData)
+  const handleClose = () => setShowPaymentModal(false)
   const handleSearchCustomer = (name) =>
     setFormData((prev) => ({ ...prev, customerName: name }));
 
