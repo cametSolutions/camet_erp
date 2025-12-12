@@ -1,13 +1,14 @@
-import { useEffect, useState, useCallback, useRef } from "react"
-import { ChevronDown, X } from "lucide-react"
-import { useSelector } from "react-redux"
-import { useLocation } from "react-router-dom"
-import api from "@/api/api"
-import { toast } from "sonner"
+import { useEffect, useState, useCallback, useRef } from "react";
+import { ChevronDown, X } from "lucide-react";
+import { useSelector } from "react-redux";
+import { useLocation } from "react-router-dom";
+import api from "@/api/api";
+import { toast } from "sonner";
 
-import { Users, Utensils, Trash2 } from "lucide-react"
-import { taxCalculator } from "../Helper/taxCalculator"
-import { GrFormAdd } from "react-icons/gr"
+import { Users, Utensils, Trash2 } from "lucide-react";
+import { taxCalculator } from "../Helper/taxCalculator";
+import { FaHistory } from "react-icons/fa";
+import TariffHistory from "./TariffHistory";
 
 // Reorganized & corrected AvailableRooms component with improved tax logic
 function AvailableRooms({
@@ -21,194 +22,204 @@ function AvailableRooms({
   formData,
   selectedRoomId,
   isTariffRateChange = false, // ✅ Add this
-  roomIdToUpdate = null
+  roomIdToUpdate = null,
 }) {
-  console.log(roomIdToUpdate)
-  console.log("h")
-  const [rooms, setRooms] = useState([])
-  const [search, setSearch] = useState("")
-  const [isOpen, setIsOpen] = useState(false)
-  const [selectedValue, setSelectedValue] = useState(selectedParty)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const [page, setPage] = useState(1)
-  const [hasMore, setHasMore] = useState(true)
-  const [bookings, setBookings] = useState([])
-  const [totalAmount, setTotalAmount] = useState(0)
-  const [pendingRoomId, setPendingRoomId] = useState(null)
-  const [pendingRoomQueue, setPendingRoomQueue] = useState([])
+  console.log(roomIdToUpdate);
+  console.log("h");
+  const [rooms, setRooms] = useState([]);
+  const [search, setSearch] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedValue, setSelectedValue] = useState(selectedParty);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [bookings, setBookings] = useState([]);
+  const [totalAmount, setTotalAmount] = useState(0);
+  const [pendingRoomId, setPendingRoomId] = useState(null);
+  const [pendingRoomQueue, setPendingRoomQueue] = useState([]);
+  const [showHistory, setShowHistory] = useState(false);
+  const [selectedRoomForHistory, setSelectedRoomForHistory] = useState(null);
 
-
-  const debounceTimerRef = useRef(null)
-  const dropdownRef = useRef(null)
-  const PAGE_SIZE = 50
-  console.log(rooms)
+  const debounceTimerRef = useRef(null);
+  const dropdownRef = useRef(null);
+  const PAGE_SIZE = 50;
+  console.log(rooms);
   useEffect(() => {
+    console.log(
+      "isTariffRateChange:",
+      formData.selectedRooms,
+      formData.stayDays
+    );
     const fetchBookings = async () => {
       if (formData?.selectedRooms?.length > 0) {
-          const updatedBookings = await Promise.all(
-            formData.selectedRooms.map(async (booking) => {
-              // Normalize each booking's data structure
-              const normalizedBooking = {
-                roomId: booking.roomId || booking._id,
-                roomName: booking.roomName,
-                priceLevel: booking.priceLevel || [],
-                selectedPriceLevel:
-                  booking.selectedPriceLevel || booking.priceLevelId,
-                roomType: booking.roomType,
-                pax: booking.pax || 2,
-                priceLevelRate: booking.priceLevelRate || 0,
-                stayDays: booking.stayDays || formData.stayDays || 1,
-                hsnDetails: booking.hsnDetails || booking.hsn,
-                totalAmount: booking.totalAmount || 0,
-                // Preserve existing tax data
-                amountAfterTax: booking.amountAfterTax,
-                amountWithOutTax: booking.amountWithOutTax,
-                taxPercentage: booking.taxPercentage,
-                foodPlanTaxRate: booking.foodPlanTaxRate,
-                additionalPaxAmount: booking.additionalPaxAmount,
-                foodPlanAmount: booking.foodPlanAmount,
-                taxAmount: booking.taxAmount,
-                additionalPaxAmountWithTax: booking.additionalPaxAmountWithTax,
-                additionalPaxAmountWithOutTax:
-                  booking.additionalPaxAmountWithOutTax,
-                foodPlanAmountWithTax: booking.foodPlanAmountWithTax,
-                foodPlanAmountWithOutTax: booking.foodPlanAmountWithOutTax,
-                baseAmount: booking.baseAmount,
-                baseAmountWithTax: booking.baseAmountWithTax,
-                totalCgstAmt: booking.totalCgstAmt,
-                totalSgstAmt: booking.totalSgstAmt,
-                totalIgstAmt: booking.totalIgstAmt
-              }
+        const updatedBookings = await Promise.all(
+          formData.selectedRooms.map(async (booking) => {
+            // Normalize each booking's data structure
+            const normalizedBooking = {
+              roomId: booking.roomId || booking._id,
+              roomName: booking.roomName,
+              priceLevel: booking.priceLevel || [],
+              selectedPriceLevel:
+                booking.selectedPriceLevel || booking.priceLevelId,
+              roomType: booking.roomType,
+              pax: booking.pax || 2,
+              priceLevelRate: booking.priceLevelRate || 0,
+              stayDays: booking.stayDays || formData.stayDays || 1,
+              hsnDetails: booking.hsnDetails || booking.hsn,
+              totalAmount: booking.totalAmount || 0,
+              // Preserve existing tax data
+              amountAfterTax: booking.amountAfterTax,
+              amountWithOutTax: booking.amountWithOutTax,
+              taxPercentage: booking.taxPercentage,
+              foodPlanTaxRate: booking.foodPlanTaxRate,
+              additionalPaxAmount: booking.additionalPaxAmount,
+              foodPlanAmount: booking.foodPlanAmount,
+              taxAmount: booking.taxAmount,
+              additionalPaxAmountWithTax: booking.additionalPaxAmountWithTax,
+              additionalPaxAmountWithOutTax:
+                booking.additionalPaxAmountWithOutTax,
+              foodPlanAmountWithTax: booking.foodPlanAmountWithTax,
+              foodPlanAmountWithOutTax: booking.foodPlanAmountWithOutTax,
+              baseAmount: booking.baseAmount,
+              baseAmountWithTax: booking.baseAmountWithTax,
+              totalCgstAmt: booking.totalCgstAmt,
+              totalSgstAmt: booking.totalSgstAmt,
+              totalIgstAmt: booking.totalIgstAmt,
+            };
 
-              const taxCalculation = await calculateTax(normalizedBooking)
-              return taxCalculation
-            })
-          )
-          console.log("Normal Mode - All Bookings:", updatedBookings)
-          setBookings(updatedBookings)
+            const taxCalculation = await calculateTax(normalizedBooking);
+            return taxCalculation;
+          })
+        );
+        console.log("Normal Mode - All Bookings:", updatedBookings);
+        setBookings(updatedBookings);
       } else if (rooms?.length > 0 && selectedRoomId) {
-        let specificRoom = rooms.find((room) => room._id === selectedRoomId)
+        let specificRoom = rooms.find((room) => room._id === selectedRoomId);
         if (specificRoom) {
-          handleSelect(specificRoom)
+          handleSelect(specificRoom);
         }
       }
-    }
+    };
 
-    fetchBookings()
+    fetchBookings();
   }, [
     formData?.selectedRooms?.length,
     formData?.stayDays,
     rooms?.length,
     isTariffRateChange,
-    roomIdToUpdate
-  ])
+    roomIdToUpdate,
+  ]);
 
   useEffect(() => {
-    if (!formData?.additionalPaxDetails && !formData?.foodPlan) return
-    if (!selectedRoomId) return
-    console.log("h")
-    const bookingData = bookings?.find((item) => item.roomId === selectedRoomId)
+    if (!formData?.additionalPaxDetails && !formData?.foodPlan) return;
+    if (!selectedRoomId) return;
+    console.log("h");
+    const bookingData = bookings?.find(
+      (item) => item.roomId === selectedRoomId
+    );
 
     const recalculateTax = async () => {
       if (bookingData) {
-        console.log("h")
-        const taxCalculation = await calculateTax(bookingData)
+        console.log("h");
+        const taxCalculation = await calculateTax(bookingData);
         setBookings((prev) =>
           prev.map((b) => (b.roomId === selectedRoomId ? taxCalculation : b))
-        )
+        );
       }
-    }
+    };
 
-    recalculateTax()
-  }, [formData?.additionalPaxDetails, formData?.foodPlan, selectedRoomId])
+    recalculateTax();
+  }, [formData?.additionalPaxDetails, formData?.foodPlan, selectedRoomId]);
 
   useEffect(() => {
-    console.log(!formData?.bookingType)
-    if (!formData?.bookingType) return
-    console.log("H")
+    console.log(!formData?.bookingType);
+    if (!formData?.bookingType) return;
+    console.log("H");
     const handleBookingTypeChange = async () => {
       if (bookings?.length > 0) {
         const updatedBookings = await Promise.all(
           bookings.map(async (booking) => {
-            const taxCalculation = await calculateTax(booking)
-            return taxCalculation
+            const taxCalculation = await calculateTax(booking);
+            return taxCalculation;
           })
-        )
-        console.log(updatedBookings)
-        setBookings(updatedBookings)
+        );
+        console.log(updatedBookings);
+        setBookings(updatedBookings);
       }
-    }
+    };
 
-    handleBookingTypeChange()
-  }, [formData?.bookingType])
-  console.log(bookings)
-  console.log(formData?.bookingType)
-  console.log("Hhh")
+    handleBookingTypeChange();
+  }, [formData?.bookingType]);
+  console.log(bookings);
+  console.log(formData?.bookingType);
+  console.log("Hhh");
 
   const { _id: cmp_id, configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
-  )
+  );
 
-  const location = useLocation()
+  const location = useLocation();
 
   const fetchRooms = useCallback(
     async (pageNum = 1, searchTerm = "") => {
-      setLoading(true)
-      setError(null)
+      setLoading(true);
+      setError(null);
       try {
-        console.log("Hhh")
+        console.log("Hhh");
         const params = {
           page: pageNum,
           limit: PAGE_SIZE,
           search: searchTerm,
-          type: formData?.roomType || "All"
-        }
+          type: formData?.roomType || "All",
+        };
 
         // Add date range for availability checking
         if (formData?.arrivalDate) {
-          params.arrivalDate = formData.arrivalDate
+          params.arrivalDate = formData.arrivalDate;
         }
         if (formData?.checkOutDate) {
-          params.checkOutDate = formData.checkOutDate
+          params.checkOutDate = formData.checkOutDate;
         }
-        console.log(params)
-        console.log("Sending params to backend:", params)
+        console.log(params);
+        console.log("Sending params to backend:", params);
 
         const res = await api.get(`/api/sUsers/getRooms/${cmp_id}`, {
           params,
-          withCredentials: true
-        })
+          withCredentials: true,
+        });
 
-        const newRooms = res.data?.roomData || []
-        console.log(newRooms)
-        console.log(newRooms.length)
+        const newRooms = res.data?.roomData || [];
+        console.log(newRooms);
+        console.log(newRooms.length);
 
         // Filter out rooms that are already selected in current booking
         const availableRooms = newRooms.filter((room) => {
           const isAlreadyBooked = bookings.some(
             (booking) => booking.roomId === room._id
-          )
+          );
           if (isAlreadyBooked) {
-            console.log(`Filtering out already selected room: ${room.roomName}`)
+            console.log(
+              `Filtering out already selected room: ${room.roomName}`
+            );
           }
-          return !isAlreadyBooked
-        })
+          return !isAlreadyBooked;
+        });
 
         console.log(
           "Available rooms after filtering out selected:",
           availableRooms.length
-        )
+        );
 
         setRooms((prev) =>
           pageNum === 1 ? availableRooms : [...prev, ...availableRooms]
-        )
-        setHasMore(availableRooms.length === PAGE_SIZE)
+        );
+        setHasMore(availableRooms.length === PAGE_SIZE);
       } catch (err) {
-        console.error("Error fetching rooms:", err)
-        setError("Failed to load available rooms.")
+        console.error("Error fetching rooms:", err);
+        setError("Failed to load available rooms.");
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
     },
     [
@@ -217,23 +228,78 @@ function AvailableRooms({
       formData?.roomType,
       formData?.arrivalDate,
       formData?.checkOutDate,
-      bookings
+      bookings,
     ]
-  )
+  );
+
   const recalculateBookingTotals = useCallback((booking) => {
-    const baseAmount =
-      Number(booking.priceLevelRate || 0) * Number(booking.stayDays || 0)
+    // Parse check-in and check-out dates from formData
+    const checkInDate = formData?.arrivalDate || formData?.checkInDate;
+    const checkOutDate = formData?.checkOutDate;
+
+    if (!checkInDate || !checkOutDate || !booking.dateTariffs) {
+      // Fallback to simple calculation if dates are not available
+      const baseAmount =
+        Number(booking.priceLevelRate || 0) * Number(booking.stayDays || 0);
+      console.log(baseAmount);
+      return {
+        ...booking,
+        totalAmount: baseAmount,
+      };
+    }
+
+    // Generate array of all stay dates
+    const stayDates = [];
+    const currentDate = new Date(checkInDate);
+    const endDate = new Date(checkOutDate);
+    console.log(currentDate, booking.dateTariffs);
+
+    while (currentDate <= endDate) {
+      // Format date as YYYY-MM-DD to match dateTariffs keys
+      const formattedDate = currentDate.toISOString().split("T")[0];
+      stayDates.push(formattedDate);
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    // Calculate total amount based on date-specific tariffs
+    let totalAmount = 0;
+    const dateTariffs = booking.dateTariffs || {};
+    const defaultRate = Number(booking.priceLevelRate || 0);
+
+    // Sort dateTariff dates to find the highest date with a tariff
+    const tariffDates = Object.keys(dateTariffs).sort();
+    console.log(stayDates);
+
+    stayDates.forEach((date) => {
+      // Check if there's a specific tariff for this date
+      if (dateTariffs[date]) {
+        totalAmount += Number(dateTariffs[date]);
+      } else {
+        // Find the highest date that is less than or equal to current date
+        let applicableRate = defaultRate;
+
+        for (let i = tariffDates.length - 1; i >= 0; i--) {
+          if (tariffDates[i] <= date) {
+            applicableRate = Number(dateTariffs[tariffDates[i]]);
+            break;
+          }
+        }
+
+        totalAmount += applicableRate;
+      }
+    });
+
     return {
       ...booking,
-      totalAmount: baseAmount
-    }
-  }, [])
+      totalAmount: totalAmount,
+    };
+  }, []);
 
   const calculateTax = useCallback(
     async (booking) => {
-      if (!booking) return booking
-      console.log(booking)
-      const updatedRoom = recalculateBookingTotals(booking)
+      if (!booking) return booking;
+      console.log(booking);
+      const updatedRoom = recalculateBookingTotals(booking);
 
       try {
         const taxResponse = await taxCalculator(
@@ -241,8 +307,8 @@ function AvailableRooms({
           configurations[0]?.addRateWithTax?.hotelSale,
           formData,
           booking.roomId
-        )
-        console.log(taxResponse)
+        );
+        console.log(taxResponse);
 
         return {
           ...updatedRoom,
@@ -263,109 +329,106 @@ function AvailableRooms({
           baseAmountWithTax: taxResponse?.baseAmountWithTax || 0,
           totalCgstAmt: taxResponse?.totalCgstAmt || 0,
           totalSgstAmt: taxResponse?.totalSgstAmt || 0,
-          totalIgstAmt: taxResponse?.totalIgstAmt || 0
-        }
+          totalIgstAmt: taxResponse?.totalIgstAmt || 0,
+        };
       } catch (err) {
-        console.error("Tax calculation failed:", err)
+        console.error("Tax calculation failed:", err);
         return {
           ...updatedRoom,
           amountAfterTax: updatedRoom.totalAmount,
           taxPercentage: 0,
           additionalPaxAmount: 0,
-          foodPlanAmount: 0
-        }
+          foodPlanAmount: 0,
+        };
       }
     },
     [formData, configurations, recalculateBookingTotals]
-  )
+  );
 
   useEffect(() => {
-    if (pendingRoomQueue.length === 0) return
-    console.log("jjj")
-    const roomIdToUpdate = pendingRoomQueue[0]
-    const roomToUpdate = bookings.find((b) => b.roomId === roomIdToUpdate)
+    if (pendingRoomQueue.length === 0) return;
+    console.log("jjj");
+    const roomIdToUpdate = pendingRoomQueue[0];
+    const roomToUpdate = bookings.find((b) => b.roomId === roomIdToUpdate);
 
     if (!roomToUpdate) {
-      setPendingRoomQueue((prev) => prev.slice(1))
-      return
+      setPendingRoomQueue((prev) => prev.slice(1));
+      return;
     }
 
-    let isMounted = true
+    let isMounted = true;
 
-    ;(async () => {
-      const updated = await calculateTax(roomToUpdate)
-      if (!isMounted) return
+    (async () => {
+      const updated = await calculateTax(roomToUpdate);
+      if (!isMounted) return;
       setBookings((prev) =>
         prev.map((b) => (b.roomId === roomIdToUpdate ? updated : b))
-      )
-      setPendingRoomQueue((prev) => prev.slice(1))
-    })()
+      );
+      setPendingRoomQueue((prev) => prev.slice(1));
+    })();
 
     return () => {
-      isMounted = false
-    }
-  }, [pendingRoomQueue, bookings])
-  console.log("h")
+      isMounted = false;
+    };
+  }, [pendingRoomQueue, bookings]);
+  console.log("h");
   useEffect(() => {
     if (bookings.length > 0) {
-      console.log("h")
+      console.log("h");
       // Calculate totals for currently displayed bookings
       const total = bookings.reduce(
         (acc, b) => acc + Number(b.amountAfterTax || b.totalAmount || 0),
         0
-      )
+      );
 
       const paxTotal = bookings.reduce((acc, b) => {
-        const paxPerDay = Number(b.additionalPaxAmountWithTax || 0)
-        const days = Number(b.stayDays || 1)
-        return acc + paxPerDay * days
-      }, 0)
+        const paxPerDay = Number(b.additionalPaxAmountWithTax || 0);
+        const days = Number(b.stayDays || 1);
+        return acc + paxPerDay * days;
+      }, 0);
 
-      const foodTotal = Number(formData?.foodPlanTotal || 0)
-      const finalTotal = total
-      console.log(foodTotal)
-      console.log(total)
-      console.log(paxTotal)
+      const foodTotal = Number(formData?.foodPlanTotal || 0);
+      const finalTotal = total;
+      console.log(foodTotal);
+      console.log(total);
+      console.log(paxTotal);
       // If in single-room edit mode, merge with other rooms before sending to parent
-      if (
-        roomIdToUpdate &&
-        formData?.selectedRooms?.length > 1
-      ) {
+      if (roomIdToUpdate && formData?.selectedRooms?.length > 1) {
         // Get all other rooms except the one being edited
         const otherRooms = formData.selectedRooms.filter(
           (room) =>
             room.roomId !== roomIdToUpdate && room._id !== roomIdToUpdate
-        )
+        );
 
         // Merge the edited room with other rooms
-        const allRooms = [...otherRooms, ...bookings]
+        const allRooms = [...otherRooms, ...bookings];
 
         // Recalculate total for all rooms
         const allRoomsTotal = allRooms.reduce(
           (acc, b) => acc + Number(b.amountAfterTax || b.totalAmount || 0),
           0
-        )
-        console.log(allRoomsTotal)
+        );
+        console.log(allRoomsTotal);
 
         const allRoomsPaxTotal = allRooms.reduce((acc, b) => {
-          const paxPerDay = Number(b.additionalPaxAmountWithTax || 0)
-          const days = Number(b.stayDays || 1)
-          return acc + paxPerDay * days
-        }, 0)
+          const paxPerDay = Number(b.additionalPaxAmountWithTax || 0);
+          const days = Number(b.stayDays || 1);
+          return acc + paxPerDay * days;
+        }, 0);
 
-        const allRoomsFinalTotal = allRoomsTotal + allRoomsPaxTotal + foodTotal
-        setTotalAmount(allRoomsFinalTotal)
-        sendToParent(allRooms, allRoomsFinalTotal)
+        const allRoomsFinalTotal = allRoomsTotal + allRoomsPaxTotal + foodTotal;
+        setTotalAmount(allRoomsFinalTotal);
+        sendToParent(allRooms, allRoomsFinalTotal);
       } else {
-        console.log("{h")
+        console.log("{h");
         // Normal mode - send as is
-        setTotalAmount(finalTotal)
-        console.log(finalTotal)
-        sendToParent(bookings, finalTotal)
+        setTotalAmount(finalTotal);
+        console.log(finalTotal);
+        sendToParent(bookings, finalTotal);
       }
     } else {
-      console.log("h")
-      setTotalAmount(0)
+      console.log("h");
+      setTotalAmount(0);
       sendToParent([], 0);
     }
   }, [
@@ -373,113 +436,142 @@ function AvailableRooms({
     formData?.foodPlanTotal,
     roomIdToUpdate,
     // formData?.selectedRooms
-  ])
+  ]);
+  console.log(formData);
 
   const handlePriceLevelChange = (e, roomId) => {
-    const selectedLevelId = e.target.value
+    const selectedLevelId = e.target.value;
 
     setBookings((prev) =>
       prev.map((booking) => {
-        if (booking.roomId !== roomId) return booking
+        if (booking.roomId !== roomId) return booking;
 
         // Find the selected price level
         const level = booking.priceLevel.find((p) => {
           // Handle both normalized and non-normalized price level structures
           return (
             p._id === selectedLevelId || p.priceLevel?._id === selectedLevelId
-          )
-        })
+          );
+        });
 
         // Determine the new rate
-        let newRate = 0
+        let newRate = 0;
         if (level) {
           // Price level found
-          newRate = level?.priceRate || level?.priceLevel?.priceRate || 0
+          newRate = level?.priceRate || level?.priceLevel?.priceRate || 0;
         } else if (selectedLevelId === booking?.roomType?._id) {
           // "Normal" rate selected (room type base rate)
-          newRate = booking.roomType?.roomRent || 0
+          newRate = booking.roomType?.roomRent || 0;
         }
 
         console.log("Price Level Change:", {
           selectedLevelId,
           level,
           newRate,
-          booking
-        })
+          booking,
+        });
 
         return {
           ...booking,
           selectedPriceLevel: selectedLevelId,
           priceLevelRate: newRate,
-          totalAmount: Number(booking.stayDays || 0) * Number(newRate)
-        }
+          totalAmount: Number(booking.stayDays || 0) * Number(newRate),
+        };
       })
-    )
+    );
 
     // Queue for tax recalculation
     setPendingRoomQueue((prev) =>
       prev.includes(roomId) ? prev : [...prev, roomId]
-    )
-  }
+    );
+  };
   const handleDaysChange = (e, roomId) => {
-    const newDays = Number(e.target.value || 0)
+    const newDays = Number(e.target.value || 0);
+    console.log(newDays);
+
     setBookings((prev) =>
       prev.map((b) =>
         b.roomId === roomId
           ? { ...b, stayDays: newDays, totalAmount: newDays * b.priceLevelRate }
           : b
       )
-    )
+    );
     setPendingRoomQueue((prev) =>
       prev.includes(roomId) ? prev : [...prev, roomId]
-    )
-  }
+    );
+  };
+
+  console.log(bookings);
 
   const handlePriceLevelRateChange = (e, roomId) => {
-    const newRate = Number(e.target.value)
-    console.log("Rate Change - New Rate:", newRate, "for Room:", roomId)
-
-    setBookings((prev) =>
-      prev.map((b) =>
-        b.roomId === roomId
-          ? {
-              ...b,
-              priceLevelRate: newRate,
-              totalAmount: newRate * (b.stayDays || 1)
-            }
-          : b
-      )
-    )
+    const newRate = Number(e.target.value);
+    console.log("Rate Change - New Rate:", newRate, "for Room:", roomId);
+    if (isTariffRateChange) {
+      setBookings((prev) =>
+        prev.map((b) =>
+          b.roomId === roomId
+            ? {
+                ...b,
+                dateTariffs: {
+                  ...b.dateTariffs,
+                  [formData?.currentDate]: newRate,
+                },
+              }
+            : b
+        )
+      );
+    } else {
+      console.log(
+        "Rate Change - New Rate:",
+        newRate,
+        "for Room:",
+        roomId,
+        bookings
+      );
+      console.log("sdf", newRate * (bookings[0].stayDays || 1));
+      setBookings((prev) =>
+        prev.map((b) =>
+          b.roomId === roomId
+            ? {
+                ...b,
+                priceLevelRate: newRate,
+                totalAmount: newRate * (b.stayDays || 1),
+              }
+            : b
+        )
+      );
+    }
 
     // Queue for tax recalculation
     setPendingRoomQueue((prev) =>
       prev.includes(roomId) ? prev : [...prev, roomId]
-    )
-  }
+    );
+  };
 
   const handlePaxChange = (e, roomId) => {
-    const newPax = Number(e.target.value) || 0
+    const newPax = Number(e.target.value) || 0;
     setBookings((prev) =>
       prev.map((b) => (b.roomId === roomId ? { ...b, pax: newPax } : b))
-    )
-    setPendingRoomId(roomId)
-  }
+    );
+    setPendingRoomId(roomId);
+  };
 
   const handleDelete = (roomId) => {
-
     if (isTariffRateChange) {
       // Show message or prevent deletion when editing single room
-      toast.error("Cannot delete room while in tariff rate change mode")
-      return
+      toast.error("Cannot delete room while in tariff rate change mode");
+      return;
     }
-    let filteredRoom = bookings.filter((b) => b.roomId !== roomId)
-    setBookings(filteredRoom)
-  }
+    let filteredRoom = bookings.filter((b) => b.roomId !== roomId);
+    setBookings(filteredRoom);
+  };
 
   const handleSelect = async (room) => {
     const defaultRate =
-      room?.priceLevel[0]?.priceRate || room?.roomType?.roomRent || 0
-    const stayDays = formData?.stayDays || 1
+      room?.priceLevel[0]?.priceRate || room?.roomType?.roomRent || 0;
+    console.log(defaultRate);
+    const stayDays = formData?.stayDays || 1;
+    console.log(stayDays);
 
     let booking = {
       roomId: room._id,
@@ -491,160 +583,165 @@ function AvailableRooms({
       priceLevelRate: defaultRate,
       stayDays,
       hsnDetails: room.hsn,
-      totalAmount: defaultRate * stayDays
-    }
-    booking = await calculateTax(booking)
+      totalAmount: defaultRate * stayDays,
+    };
+    booking = await calculateTax(booking);
     setBookings((prev) =>
       prev.some((b) => b.roomId === booking.roomId) ? prev : [...prev, booking]
-    )
-    setSelectedValue(room)
-    setIsOpen(false)
-    setSearch("")
-    onSelect(room)
-  }
-  console.log(bookings)
+    );
+    setSelectedValue(room);
+    setIsOpen(false);
+    setSearch("");
+    onSelect(room);
+  };
+  console.log(bookings[0]?.totalAmount);
   const handleClear = (e) => {
-    e.stopPropagation()
-    setSelectedValue(null)
-    setSearch("")
-    onSelect(null)
-  }
+    e.stopPropagation();
+    setSelectedValue(null);
+    setSearch("");
+    onSelect(null);
+  };
 
   const handleSearch = useCallback(
     (term) => {
-      console.log("termmmm", term)
-      setSearch(term)
-      setPage(1)
-      clearTimeout(debounceTimerRef.current)
-      debounceTimerRef.current = setTimeout(() => fetchRooms(1, term), 300)
+      console.log("termmmm", term);
+      setSearch(term);
+      setPage(1);
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = setTimeout(() => fetchRooms(1, term), 300);
     },
     [fetchRooms]
-  )
+  );
 
   const loadMore = useCallback(() => {
     if (!loading && hasMore) {
-      const nextPage = page + 1
-      setPage(nextPage)
-      fetchRooms(nextPage, search)
+      const nextPage = page + 1;
+      setPage(nextPage);
+      fetchRooms(nextPage, search);
     }
-  }, [loading, hasMore, page, fetchRooms, search])
+  }, [loading, hasMore, page, fetchRooms, search]);
 
   const handleScroll = (e) => {
-    const { scrollTop, scrollHeight, clientHeight } = e.target
-    if (scrollHeight - scrollTop <= clientHeight + 50) loadMore()
-  }
+    const { scrollTop, scrollHeight, clientHeight } = e.target;
+    if (scrollHeight - scrollTop <= clientHeight + 50) loadMore();
+  };
 
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        setIsOpen(false)
+        setIsOpen(false);
       }
-    }
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
-  }, [])
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
-  useEffect(() => setSelectedValue(selectedParty), [selectedParty])
+  useEffect(() => setSelectedValue(selectedParty), [selectedParty]);
   useEffect(() => {
-    if (cmp_id) fetchRooms(1)
-  }, [cmp_id, fetchRooms])
-  useEffect(() => () => clearTimeout(debounceTimerRef.current), [])
+    if (cmp_id) fetchRooms(1);
+  }, [cmp_id, fetchRooms]);
+  useEffect(() => () => clearTimeout(debounceTimerRef.current), []);
 
   // Add this useEffect after your existing useEffects, before the console.log(bookings)
   useEffect(() => {
     // Refresh rooms when bookings change to update the dropdown
     if (isOpen && cmp_id) {
-      fetchRooms(1, search)
+      fetchRooms(1, search);
     }
-  }, [bookings.length]) // Triggers when rooms are added/removed from bookings
-  console.log(isTariffRateChange)
-  console.log(formData)
-  return (
-    <>
-    {!isTariffRateChange && (
-      <div className={`relative w-full ${className}`} ref={dropdownRef}>
-        <div className="relative">
-          <input
-            type="text"
-            value={selectedValue ? selectedValue.roomName : search}
-            onChange={(e) => handleSearch(e.target.value)}
-            onClick={() => {
-              if (!disabled) {
-                setIsOpen(true)
-                console.log("H")
-              }
-            }}
-            placeholder={ placeholder}
-            disabled={disabled }
-            className={`w-full px-4 py-3 pr-20 border rounded-lg bg-white ${
-              disabled 
-                ? "opacity-50 cursor-not-allowed"
-                : "cursor-pointer"
-            } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-          />
-          <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
-            {selectedValue && !disabled && (
-              <button
-                onClick={handleClear}
-                className="p-1 hover:bg-gray-100 rounded-full"
-              >
-                <X size={16} className="text-gray-500" />
-              </button>
-            )}
-            <ChevronDown
-              size={16}
-              className={`text-gray-500 transition-transform ${
-                isOpen ? "rotate-180" : ""
-              }`}
-            />
-          </div>
-        </div>
+  }, [bookings.length]); // Triggers when rooms are added/removed from bookings
+  console.log(bookings[0]?.totalAmount);
 
-        {isOpen && !disabled && (
-          <div
-            className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-64 overflow-y-auto"
-            onScroll={handleScroll}
-          >
-            {loading && rooms.length === 0 ? (
-              <div className="p-4 text-center text-gray-500 animate-pulse">
-                Loading rooms...
-              </div>
-            ) : error ? (
-              <div className="p-4 text-center text-red-500">{error}</div>
-            ) : rooms.length === 0 ? (
-              <div className="p-4 text-center text-gray-500">
-                No rooms found
-              </div>
-            ) : (
-              rooms.map((room) => (
-                <div
-                  key={room._id}
-                  onClick={() => handleSelect(room)}
-                  className="p-3 hover:bg-gray-50 cursor-pointer border-b"
+  return showHistory ? (
+    <TariffHistory
+      isOpen={showHistory}
+      onClose={() => setShowHistory(false)}
+      booking={bookings?.find((b) => b.roomId === selectedRoomForHistory)}
+      formData
+    />
+  ) : (
+    <>
+      {!isTariffRateChange && (
+        <div className={`relative w-full ${className}`} ref={dropdownRef}>
+          <div className="relative">
+            <input
+              type="text"
+              value={selectedValue ? selectedValue.roomName : search}
+              onChange={(e) => handleSearch(e.target.value)}
+              onClick={() => {
+                if (!disabled) {
+                  setIsOpen(true);
+                  console.log("H");
+                }
+              }}
+              placeholder={placeholder}
+              disabled={disabled}
+              className={`w-full px-4 py-3 pr-20 border rounded-lg bg-white ${
+                disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+              } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+            />
+            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
+              {selectedValue && !disabled && (
+                <button
+                  onClick={handleClear}
+                  className="p-1 hover:bg-gray-100 rounded-full"
                 >
-                  <div className="flex justify-between">
-                    <div>
-                      <p className="font-medium text-gray-900">
-                        {room.roomName}
-                      </p>
+                  <X size={16} className="text-gray-500" />
+                </button>
+              )}
+              <ChevronDown
+                size={16}
+                className={`text-gray-500 transition-transform ${
+                  isOpen ? "rotate-180" : ""
+                }`}
+              />
+            </div>
+          </div>
+
+          {isOpen && !disabled && (
+            <div
+              className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-64 overflow-y-auto"
+              onScroll={handleScroll}
+            >
+              {loading && rooms.length === 0 ? (
+                <div className="p-4 text-center text-gray-500 animate-pulse">
+                  Loading rooms...
+                </div>
+              ) : error ? (
+                <div className="p-4 text-center text-red-500">{error}</div>
+              ) : rooms.length === 0 ? (
+                <div className="p-4 text-center text-gray-500">
+                  No rooms found
+                </div>
+              ) : (
+                rooms.map((room) => (
+                  <div
+                    key={room._id}
+                    onClick={() => handleSelect(room)}
+                    className="p-3 hover:bg-gray-50 cursor-pointer border-b"
+                  >
+                    <div className="flex justify-between">
+                      <div>
+                        <p className="font-medium text-gray-900">
+                          {room.roomName}
+                        </p>
+                      </div>
                     </div>
                   </div>
+                ))
+              )}
+              {loading && rooms.length > 0 && (
+                <div className="p-3 text-center text-gray-500 animate-pulse">
+                  Loading more...
                 </div>
-              ))
-            )}
-            {loading && rooms.length > 0 && (
-              <div className="p-3 text-center text-gray-500 animate-pulse">
-                Loading more...
-              </div>
-            )}
-            {!hasMore && rooms.length > 0 && (
-              <div className="p-3 text-center text-gray-400 text-sm">
-                No more parties
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+              )}
+              {!hasMore && rooms.length > 0 && (
+                <div className="p-3 text-center text-gray-400 text-sm">
+                  No more parties
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       )}
       {bookings.length > 0 && (
         <div className="w-full max-w-full mx-auto p-2">
@@ -696,224 +793,297 @@ function AvailableRooms({
                     .filter((booking) => {
                       // If roomId exists (tariff rate change mode), show only that room
                       if (roomIdToUpdate) {
-                         
-                        return booking.roomId?.toString()  === roomIdToUpdate.toString() || booking.roomId?._id?.toString() === roomIdToUpdate.toString();
+                        return (
+                          booking.roomId?.toString() ===
+                            roomIdToUpdate.toString() ||
+                          booking.roomId?._id?.toString() ===
+                            roomIdToUpdate.toString()
+                        );
                       }
                       // Otherwise show all bookings
                       return true;
-                    }).map((booking, index) => (
-                    <tr
-                      key={booking?.roomId}
-                      className="hover:bg-blue-50/50 transition-all duration-200"
-                    >
-                      <td className="px-1 py-1 text-center font-medium text-blue-600 text-xs">
-                        {index + 1}
-                      </td>
+                    })
+                    .map((booking, index) => (
+                      <tr
+                        key={booking?.roomId}
+                        className="hover:bg-blue-50/50 transition-all duration-200"
+                      >
+                        <td className="px-1 py-1 text-center font-medium text-blue-600 text-xs">
+                          {index + 1}
+                        </td>
 
-                      <td className="px-2 py-1">
-                        <div className="min-w-0">
-                          <p className="font-medium text-emerald-600 text-xs truncate">
-                            {booking.roomName}
-                          </p>
-                          <p className="text-red-500 text-xs truncate">
-                            {booking.roomType?.brand}
-                          </p>
-                        </div>
-                      </td>
+                        <td className="px-2 py-1">
+                          <div className="min-w-0">
+                            <p className="font-medium text-emerald-600 text-xs truncate">
+                              {booking.roomName}
+                            </p>
+                            <p className="text-red-500 text-xs truncate">
+                              {booking.roomType?.brand}
+                            </p>
+                          </div>
+                        </td>
 
-                      <td className="px-1 py-1">
-                        {booking.priceLevel && booking.priceLevel.length > 0 ? (
-                          <select
-                            value={booking.selectedPriceLevel || ""}
-                            onChange={(e) =>
-                              handlePriceLevelChange(e, booking.roomId)
-                            }
-                            className="w-full px-1 py-1 border border-red-300 rounded text-red-600 bg-red-50 text-xs focus:outline-none focus:ring-1 focus:ring-red-500"
-                          >
-                            {booking.priceLevel.map((priceLevel) => {
-                              // Handle both data structures
-                              const levelId =
-                                priceLevel._id || priceLevel.priceLevel?._id
-                              const levelName =
-                                priceLevel.pricelevel ||
-                                priceLevel.priceLevel?.pricelevel ||
-                                "Unknown"
+                        <td className="px-1 py-1">
+                          {booking.priceLevel &&
+                          booking.priceLevel.length > 0 ? (
+                            <select
+                              value={booking.selectedPriceLevel || ""}
+                              onChange={(e) =>
+                                handlePriceLevelChange(e, booking.roomId)
+                              }
+                              disabled={isTariffRateChange ? true : false}
+                              className="w-full px-1 py-1 border border-red-300 rounded text-red-600 bg-red-50 text-xs focus:outline-none focus:ring-1 focus:ring-red-500"
+                            >
+                              {booking.priceLevel.map((priceLevel) => {
+                                // Handle both data structures
+                                const levelId =
+                                  priceLevel._id || priceLevel.priceLevel?._id;
+                                const levelName =
+                                  priceLevel.pricelevel ||
+                                  priceLevel.priceLevel?.pricelevel ||
+                                  "Unknown";
 
-                              return (
-                                <option key={levelId} value={levelId}>
-                                  {levelName}
+                                return (
+                                  <option key={levelId} value={levelId}>
+                                    {levelName}
+                                  </option>
+                                );
+                              })}
+                              {booking?.roomType && (
+                                <option value={booking?.roomType?._id}>
+                                  Normal (₹{booking?.roomType?.roomRent || 0})
                                 </option>
-                              )
-                            })}
-                            {booking?.roomType && (
-                              <option value={booking?.roomType?._id}>
-                                Normal (₹{booking?.roomType?.roomRent || 0})
-                              </option>
-                            )}
-                          </select>
-                        ) : (
-                          <span className="text-red-500 text-xs">No Level</span>
-                        )}
-                      </td>
-
-                      <td className="px-1 py-1">
-                        <input
-                          type="number"
-                          value={booking.priceLevelRate}
-                          onChange={(e) =>
-                            handlePriceLevelRateChange(e, booking.roomId)
-                          }
-                          min="-1"
-                          step="0.01"
-                          className="w-full px-1 py-1 border border-red-300 rounded text-red-600 bg-red-50 text-xs text-center focus:outline-none focus:ring-1 focus:ring-red-500"
-                        />
-                      </td>
-
-                      <td className="px-1 py-1">
-                        <input
-                          type="number"
-                          value={booking.stayDays || 0}
-                          onChange={(e) => handleDaysChange(e, booking.roomId)}
-                          min="0"
-                          className="w-full px-1 py-1 border border-purple-300 rounded text-purple-600 bg-purple-50 text-xs text-center focus:outline-none focus:ring-1 focus:ring-purple-500"
-                        />
-                      </td>
-
-                      <td className="px-1 py-1">
-                        <input
-                          type="number"
-                          value={booking.pax || 2}
-                          onChange={(e) => handlePaxChange(e, booking.roomId)}
-                          min="1"
-                          className="w-full px-1 py-1 border border-emerald-300 rounded font-medium text-emerald-600 bg-emerald-50 text-xs text-center focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                        />
-                      </td>
-
-                      <td className="px-1 py-1">
-                        <div className="text-center">
-                          <span className="block font-bold text-emerald-600 text-xs leading-tight">
-                            ₹{Number(booking.totalAmount || 0).toFixed(0)}
-                          </span>
-                          {configurations[0]?.addRateWithTax?.hotelSale && (
-                            <span className="block text-gray-600 text-xs leading-tight">
-                              ₹
-                              {(
-                                Number(booking.totalAmount || 0) /
-                                (1 + (booking.taxPercentage || 0) / 100)
-                              ).toFixed(0)}
+                              )}
+                            </select>
+                          ) : (
+                            <span className="text-red-500 text-xs">
+                              No Level
                             </span>
                           )}
-                        </div>
-                      </td>
-
-                      <td className="px-1 py-1 text-center text-emerald-600 font-bold text-xs">
-                        {Number(booking.taxPercentage || 0).toFixed(1)}%
-                      </td>
-
-                      <td className="px-1 py-1 text-center text-emerald-600 font-bold text-xs">
-                        ₹
-                        {Number(
-                          booking.amountAfterTax || booking.totalAmount || 0
+                        </td>
+                        {!isTariffRateChange ? (
+                          <td className="px-1 py-1">
+                            <input
+                              type="number"
+                              value={booking.priceLevelRate}
+                              onChange={(e) =>
+                                handlePriceLevelRateChange(e, booking.roomId)
+                              }
+                              min="-1"
+                              step="0.01"
+                              className="w-full px-1 py-1 border border-red-300 rounded text-red-600 bg-red-50 text-xs text-center focus:outline-none focus:ring-1 focus:ring-red-500"
+                            />
+                          </td>
+                        ) : (
+                          <td className="px-1 py-1">
+                            <input
+                              type="number"
+                              value={
+                                booking?.dateTariffs?.[formData?.currentDate] ??
+                                booking?.priceLevelRate
+                              }
+                              onChange={(e) =>
+                                handlePriceLevelRateChange(e, booking.roomId)
+                              }
+                              min="-1"
+                              step="0.01"
+                              className="w-full px-1 py-1 border border-red-300 rounded text-red-600 bg-red-50 text-xs text-center focus:outline-none focus:ring-1 focus:ring-red-500"
+                            />
+                          </td>
                         )}
-                      </td>
+                        <td className="px-1 py-1">
+                          <input
+                            type="number"
+                            value={booking.stayDays || 0}
+                            disabled={isTariffRateChange ? true : false}
+                            onChange={(e) =>
+                              handleDaysChange(e, booking.roomId)
+                            }
+                            min="0"
+                            className="w-full px-1 py-1 border border-purple-300 rounded text-purple-600 bg-purple-50 text-xs text-center focus:outline-none focus:ring-1 focus:ring-purple-500"
+                          />
+                        </td>
 
-                      <td className="px-1 py-1 text-center text-emerald-600 font-bold text-xs">
-                        {formData?.additionalPaxDetails?.reduce((acc, item) => {
-                          if (item.roomId == booking.roomId) {
-                            return acc + 1
-                          }
-                          return acc
-                        }, 0) || 0}
-                      </td>
+                        <td className="px-1 py-1">
+                          <input
+                            type="number"
+                            value={booking.pax || 2}
+                            onChange={(e) => handlePaxChange(e, booking.roomId)}
+                            disabled={isTariffRateChange ? true : false}
+                            min="1"
+                            className="w-full px-1 py-1 border border-emerald-300 rounded font-medium text-emerald-600 bg-emerald-50 text-xs text-center focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                          />
+                        </td>
 
-                      <td className="px-1 py-1 text-center text-emerald-600 text-xs">
-                        <div className="max-w-16 truncate">
-                          {formData?.foodPlan
-                            ?.filter((item) => item.roomId === booking.roomId)
-                            .map((item, index) => (
-                              <span key={index} className="block truncate">
-                                {item.foodPlan}
+                        <td className="px-1 py-1">
+                          <div className="text-center">
+                            <span className="block font-bold text-emerald-600 text-xs leading-tight">
+                              ₹{Number(booking.totalAmount || 0).toFixed(0)}
+                            </span>
+                            {configurations[0]?.addRateWithTax?.hotelSale && (
+                              <span className="block text-gray-600 text-xs leading-tight">
+                                ₹
+                                {(
+                                  Number(booking.totalAmount || 0) /
+                                  (1 + (booking.taxPercentage || 0) / 100)
+                                ).toFixed(0)}
                               </span>
-                            )) || "None"}
-                        </div>
-                      </td>
+                            )}
+                          </div>
+                        </td>
 
-                      <td className="px-1 py-1">
-                        <div className="flex flex-col gap-1">
-                          <div className="flex justify-center gap-1">
-                            <div className="text-center">
-                              <button
-                                onClick={() => {
-                                  selectedRoomData(booking?.roomId, "addPax")
-                                  setPendingRoomId(booking.roomId)
-                                }}
-                                className="bg-gradient-to-r from-orange-500 to-amber-500 text-white px-2 py-1 rounded text-xs font-medium hover:from-orange-600 hover:to-amber-600 transition-all duration-200 flex items-center gap-1"
-                              >
-                                <Users className="w-3 h-3" />
-                                Pax
-                              </button>
-                              <div className="text-xs font-bold text-blue-700 mt-1">
-                                {booking?.stayDays > 1 ? (
-                                  <div className="flex flex-col items-center">
-                                    <span className="text-[10px] text-gray-500">
-                                      {booking?.stayDays} × ₹
+                        <td className="px-1 py-1 text-center text-emerald-600 font-bold text-xs">
+                          {Number(booking.taxPercentage || 0).toFixed(1)}%
+                        </td>
+
+                        <td className="px-1 py-1 text-center text-emerald-600 font-bold text-xs">
+                          ₹
+                          {Number(
+                            booking.amountAfterTax || booking.totalAmount || 0
+                          )}
+                        </td>
+
+                        <td className="px-1 py-1 text-center text-emerald-600 font-bold text-xs">
+                          {formData?.additionalPaxDetails?.reduce(
+                            (acc, item) => {
+                              if (item.roomId == booking.roomId) {
+                                return acc + 1;
+                              }
+                              return acc;
+                            },
+                            0
+                          ) || 0}
+                        </td>
+
+                        <td className="px-1 py-1 text-center text-emerald-600 text-xs">
+                          <div className="max-w-16 truncate">
+                            {formData?.foodPlan
+                              ?.filter((item) => item.roomId === booking.roomId)
+                              .map((item, index) => (
+                                <span key={index} className="block truncate">
+                                  {item.foodPlan}
+                                </span>
+                              )) || "None"}
+                          </div>
+                        </td>
+
+                        <td className="px-1 py-1">
+                          <div className="flex flex-col gap-1">
+                            <div className="flex justify-center gap-1">
+                              <div className="text-center">
+                                <button
+                                  onClick={() => {
+                                    selectedRoomData(booking?.roomId, "addPax");
+                                    setPendingRoomId(booking.roomId);
+                                  }}
+                                  disabled={isTariffRateChange ? true : false}
+                                  className="bg-gradient-to-r from-orange-500 to-amber-500 text-white px-2 py-1 rounded text-xs font-medium hover:from-orange-600 hover:to-amber-600 transition-all duration-200 flex items-center gap-1"
+                                >
+                                  <Users className="w-3 h-3" />
+                                  Pax
+                                </button>
+                                <div className="text-xs font-bold text-blue-700 mt-1">
+                                  {booking?.stayDays > 1 ? (
+                                    <div className="flex flex-col items-center">
+                                      <span className="text-[10px] text-gray-500">
+                                        {booking?.stayDays} × ₹
+                                        {(
+                                          booking?.additionalPaxAmountWithOutTax /
+                                            booking?.stayDays || 0
+                                        ).toFixed(0)}
+                                      </span>
+                                      <span className="text-xs font-bold">
+                                        ₹
+                                        {Number(
+                                          booking?.additionalPaxAmountWithOutTax ||
+                                            0
+                                        ).toFixed(0)}
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <span>
+                                      ₹
                                       {Number(
                                         booking?.additionalPaxAmountWithOutTax ||
                                           0
                                       ).toFixed(0)}
                                     </span>
-                                    <span className="text-xs font-bold">
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="text-center">
+                                <button
+                                  onClick={() => {
+                                    selectedRoomData(
+                                      booking?.roomId,
+                                      "addFoodPlan"
+                                    );
+                                    setPendingRoomId(booking.roomId);
+                                  }}
+                                  disabled={isTariffRateChange ? true : false}
+                                  className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-2 py-1 rounded text-xs font-medium hover:from-emerald-600 hover:to-teal-600 transition-all duration-200 flex items-center gap-1"
+                                >
+                                  <Utensils className="w-3 h-3" />
+                                  Food
+                                </button>
+                                <p className="text-xs font-bold text-blue-700 mt-1">
+                                  {booking?.stayDays > 1 ? (
+                                    <div className="flex flex-col items-center">
+                                      <span className="text-[10px] text-gray-500">
+                                        {booking?.stayDays} × ₹
+                                        {Number(
+                                          (
+                                            booking?.foodPlanAmountWithOutTax /
+                                              booking?.stayDays || 0
+                                          ).toFixed(0)
+                                        )}
+                                      </span>
+
+                                      <span className="text-xs font-bold">
+                                        ₹
+                                        {Number(
+                                          booking?.foodPlanAmountWithOutTax || 0
+                                        ).toFixed(0)}
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <span>
                                       ₹
                                       {Number(
-                                        (booking?.additionalPaxAmountWithOutTax ||
-                                          0) * (booking?.stayDays || 1)
+                                        booking?.foodPlanAmountWithOutTax || 0
                                       ).toFixed(0)}
                                     </span>
-                                  </div>
-                                ) : (
-                                  <span>
-                                    ₹
-                                    {Number(
-                                      booking?.additionalPaxAmountWithOutTax ||
-                                        0
-                                    ).toFixed(0)}
-                                  </span>
-                                )}
+                                  )}
+                                </p>
                               </div>
-                            </div>
+                              <>
+                                {/* Show Delete button ONLY when tariff rate change is OFF */}
+                                {!isTariffRateChange && (
+                                  <button
+                                    onClick={() => handleDelete(booking.roomId)}
+                                    className="text-white px-2 py-1 rounded hover:from-red-600 hover:to-rose-600 transition-all duration-200 flex items-center"
+                                  >
+                                    <Trash2 className="w-3 h-3 text-red-500" />
+                                  </button>
+                                )}
 
-                            <div className="text-center">
-                              <button
-                                onClick={() => {
-                                  selectedRoomData(
-                                    booking?.roomId,
-                                    "addFoodPlan"
-                                  )
-                                  setPendingRoomId(booking.roomId)
-                                }}
-                                className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-2 py-1 rounded text-xs font-medium hover:from-emerald-600 hover:to-teal-600 transition-all duration-200 flex items-center gap-1"
-                              >
-                                <Utensils className="w-3 h-3" />
-                                Food
-                              </button>
-                              <p className="text-xs font-bold text-blue-700 mt-1">
-                                {Number(
-                                  booking?.foodPlanAmountWithOutTax || 0
-                                ).toFixed(0)}
-                              </p>
+                                {/* History button (always visible) */}
+                                <button
+                                  onClick={() => {
+                                    setSelectedRoomForHistory(booking.roomId);
+                                    setShowHistory(true);
+                                  }}
+                                  className="text-white px-2 py-1 rounded hover:from-red-600 hover:to-rose-600 transition-all duration-200 flex items-center"
+                                >
+                                  <FaHistory className="w-3 h-3 text-yellow-600" />
+                                </button>
+                              </>
                             </div>
-
-                            <button
-                              onClick={() => handleDelete(booking.roomId)}
-                              className=" text-white px-2 py-1 rounded hover:from-red-600 hover:to-rose-600 transition-all duration-200 flex items-center"
-                            >
-                              <Trash2 className="w-3 h-3 text-red-500" />
-                            </button>
                           </div>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                      </tr>
+                    ))}
 
                   {/* Total Row */}
                   <tr className="bg-gray-100 font-bold sticky bottom-0">
@@ -924,7 +1094,12 @@ function AvailableRooms({
                       Total Amount:
                     </td>
                     <td className="px-1 py-2 text-center font-bold text-blue-700 text-sm">
-                     {roomIdToUpdate ? "₹"+ bookings.find((item) => item.roomId === roomIdToUpdate)?.amountAfterTax : "₹" + Number(totalAmount).toFixed(2)}
+                      {roomIdToUpdate
+                        ? "₹" +
+                          bookings.find(
+                            (item) => item.roomId === roomIdToUpdate
+                          )?.amountAfterTax
+                        : "₹" + Number(totalAmount).toFixed(2)}
                     </td>
                     <td colSpan={2}></td>
                     <td className="px-1 py-2 font-bold text-blue-700 text-center text-xs">
@@ -939,7 +1114,10 @@ function AvailableRooms({
                         )}
                         {formData?.foodPlanTotal && (
                           <span>
-                            Food ₹{Number(formData.foodPlanTotal).toFixed(0)}
+                            Food ₹
+                            {Number(
+                              formData.foodPlanTotal * formData.stayDays
+                            ).toFixed(0)}
                           </span>
                         )}
                       </div>
@@ -953,7 +1131,7 @@ function AvailableRooms({
         </div>
       )}
     </>
-  )
+  );
 }
 
-export default AvailableRooms
+export default AvailableRooms;

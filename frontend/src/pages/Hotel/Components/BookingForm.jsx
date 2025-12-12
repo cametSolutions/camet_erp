@@ -177,7 +177,7 @@ function BookingForm({
         dateOfIssue: editData?.dateOfIssue || "",
         dateOfExpiry: editData?.dateOfExpiry || "",
         grcno: editData?.grcno || "",
-        currentDate: prev.currentDate || currentDateDefault,
+        currentDate: editData?.checkOutDate|| currentDateDefault,
         updatedDate: editData?.updatedDate || currentDateDefault,
       }));
     }
@@ -256,10 +256,21 @@ function BookingForm({
       return;
     }
 
-    if (name === "currentDate") {
-      setFormData((prev) => ({ ...prev, [name]: value }));
-      return;
-    }
+  if (name === "currentDate") {
+  const current = new Date(value);
+  const arrival = new Date(formData.arrivalDate);
+  const checkout = new Date(formData.checkOutDate);
+
+  // Check if currentDate is within the range
+  if (current >= arrival && current <= checkout) {
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  } else {
+    // Optional: alert or toast if not valid
+    toast.error("Tariff applicable date must be between Arrival Date and Check-Out Date");
+  }
+  return;
+}
+
 
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
@@ -1431,7 +1442,7 @@ function BookingForm({
                   />
                   <FieldDate
                     name="currentDate"
-                    label="Current Date"
+                    label="Tariff Applicable Date"
                     value={formData.currentDate}
                     onChange={handleChange}
                   />
@@ -1454,6 +1465,30 @@ function BookingForm({
                     <TimeSelector
                       initialTime={editData?.arrivalTime}
                       onTimeChange={handleArrivalTimeChange}
+                    />
+                  </div>
+                   <div>
+                    <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                      CheckIn Date
+                    </label>
+                    <input
+                      type="date"
+                      name="arrivalDate"
+                      value={formData.arrivalDate}
+                      readOnly
+                      className="w-full border border-gray-300 px-3 py-2 rounded text-sm bg-gray-100"
+                    />
+                  </div>
+                   <div>
+                    <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                      CheckOut Date
+                    </label>
+                    <input
+                      type="date"
+                      name="checkOutDate"
+                      value={formData.checkOutDate}
+                      readOnly
+                      className="w-full border border-gray-300 px-3 py-2 rounded text-sm bg-gray-100"
                     />
                   </div>
                 </div>
