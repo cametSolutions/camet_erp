@@ -182,6 +182,9 @@ const handlePrint = useReactToPrint({
           org={org}
           bank={bank}
           tab="sale"
+          // isPreview={true}
+          // handlePrintData={handlePrint}
+          
         />
       </div>
     </div>

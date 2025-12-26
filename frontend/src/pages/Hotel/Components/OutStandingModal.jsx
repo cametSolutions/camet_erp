@@ -58,8 +58,8 @@ export default function OutStandingModal({ showModal, onClose, outStanding }) {
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Party Name</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Mobile</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Bill Date</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Amount</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Paid Amount</th>
+                  {/* <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Amount</th> */}
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Advance Amount</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Source</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Status</th>
                 </tr>
@@ -84,13 +84,13 @@ export default function OutStandingModal({ showModal, onClose, outStanding }) {
                         {formatCurrency(item.bill_amount)}
                       </div>
                     </td>
-                    <td className="px-4 py-4">
+                    {/* <td className="px-4 py-4">
                       <div className={`text-sm font-medium ${
                         item.bill_pending_amt > 0 ? 'text-red-600' : 'text-green-600'
                       }`}>
                         {formatCurrency(item.bill_pending_amt)}
                       </div>
-                    </td>
+                    </td> */}
                     <td className="px-4 py-4">
                       <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getSourceBadgeColor(item.source)}`}>
                         {item.source}

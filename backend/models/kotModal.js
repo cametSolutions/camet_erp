@@ -55,6 +55,12 @@ const kotSchema = new mongoose.Schema({
     trim: true,
   },
 
+   serviceType: {
+    type: String,
+    enum: ['Restaurant', 'Room Service', 'Dine-in'],
+    default: 'Restaurant'
+  },
+
   total: {
     type: Number,
     required: true,
@@ -70,6 +76,14 @@ const kotSchema = new mongoose.Schema({
     default: "pending",
   },
 
+   cancelReason: {
+    type: String,
+    trim: true,
+  },
+
+  cancelledAt: {
+    type: Date,
+  },
   paymentMethod: {
     type: String,
   },

@@ -4,7 +4,10 @@ import { useEffect, useState } from "react";
 import { MdModeEditOutline } from "react-icons/md";
 import { useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
-import { resetPaymentSplit, updateItem } from "../../../../slices/voucherSlices/commonVoucherSlice";
+import {
+  resetPaymentSplit,
+  updateItem,
+} from "../../../../slices/voucherSlices/commonVoucherSlice";
 import { useDispatch } from "react-redux";
 import TitleDiv from "@/components/common/TitleDiv";
 import DatePicker from "react-datepicker";
@@ -133,9 +136,7 @@ function EditItemForm({ ItemsFromRedux, from, taxInclusive = false, loading }) {
       if (item?.isTaxInclusive) {
         // Use total tax rate (IGST or CGST+SGST)
         const totalTaxRate = igstValue || 0;
-        taxBasePrice = Number(
-          (basePrice / (1 + totalTaxRate / 100)).toFixed(2)
-        );
+        taxBasePrice = Number(basePrice / (1 + totalTaxRate / 100));
       }
 
       // Calculate discount based on discountType
@@ -153,9 +154,7 @@ function EditItemForm({ ItemsFromRedux, from, taxInclusive = false, loading }) {
         // Percentage discount
         discountType = "percentage";
         discountPercentage = Number(godownOrBatch.discountPercentage) || 0;
-        discountAmount = Number(
-          ((taxBasePrice * discountPercentage) / 100).toFixed(2)
-        );
+        discountAmount = Number((taxBasePrice * discountPercentage) / 100);
         discountedPrice = taxBasePrice - discountAmount;
       } else if (
         godownOrBatch.discountAmount !== 0 &&
@@ -167,9 +166,7 @@ function EditItemForm({ ItemsFromRedux, from, taxInclusive = false, loading }) {
         discountAmount = Number(godownOrBatch.discountAmount) || 0;
         // Calculate the equivalent percentage
         discountPercentage =
-          taxBasePrice > 0
-            ? Number(((discountAmount / taxBasePrice) * 100).toFixed(2))
-            : 0;
+          taxBasePrice > 0 ? Number((discountAmount / taxBasePrice) * 100) : 0;
         discountedPrice = taxBasePrice - discountAmount;
       }
 
@@ -184,31 +181,29 @@ function EditItemForm({ ItemsFromRedux, from, taxInclusive = false, loading }) {
 
       // Standard cess calculation
       if (cessValue > 0) {
-        cessAmount = Number((taxableAmount * (cessValue / 100)).toFixed(2));
+        cessAmount = Number(taxableAmount * (cessValue / 100));
       }
 
       // Additional cess calculation - calculated as quantity * addl_cess
       if (addlCessValue > 0) {
-        additionalCessAmount = Number((quantity * addlCessValue).toFixed(2));
+        additionalCessAmount = Number(quantity * addlCessValue);
       }
 
       // Combine cess amounts
-      const totalCessAmount = Number(
-        (cessAmount + additionalCessAmount).toFixed(2)
-      );
+      const totalCessAmount = Number(cessAmount + additionalCessAmount);
 
       // Calculate tax amounts
       let cgstAmt = 0;
       let sgstAmt = 0;
       let igstAmt = 0;
 
-      igstAmt = Number((taxableAmount * (igstValue / 100)).toFixed(2));
-      cgstAmt = Number((taxableAmount * (cgstValue / 100)).toFixed(2));
-      sgstAmt = Number((taxableAmount * (sgstValue / 100)).toFixed(2));
+      igstAmt = Number(taxableAmount * (igstValue / 100));
+      cgstAmt = Number(taxableAmount * (cgstValue / 100));
+      sgstAmt = Number(taxableAmount * (sgstValue / 100));
 
       // Calculate total including tax and cess
       const individualTotal = Math.max(
-        Number((taxableAmount + igstAmt + totalCessAmount).toFixed(2)),
+        Number(taxableAmount + igstAmt + totalCessAmount),
         0
       );
 
@@ -222,24 +217,24 @@ function EditItemForm({ ItemsFromRedux, from, taxInclusive = false, loading }) {
 
       individualTotals.push({
         index,
-        basePrice: taxBasePrice, // Original price × quantity before discount
-        discountAmount, // Discount amount
-        discountPercentage, // Discount percentage
+        basePrice: Number(taxBasePrice?.toFixed(2)),
+        discountAmount: Number(discountAmount?.toFixed(2)),
+        discountPercentage: Number(discountPercentage?.toFixed(2)),
         discountType,
-        taxableAmount, // Amount after discount, before tax (basis for tax calculation)
-        cgstValue, // CGST percentage
-        sgstValue, // SGST percentage
-        igstValue, // IGST percentage
-        cessValue, // Standard cess percentage
-        addlCessValue, // Additional cess per quantity
-        cgstAmt, // CGST amount
-        sgstAmt, // SGST amount
-        igstAmt, // IGST amount
-        cessAmt: cessAmount, // Standard cess amount (percentage based)
-        addlCessAmt: additionalCessAmount, // Additional cess amount (quantity based)
-        individualTotal, // Final amount including taxes and cess
-        quantity, // Quantity
-        taxInclusive, // Tax inclusive flag
+        taxableAmount: Number(taxableAmount?.toFixed(2)),
+        cgstValue: Number(cgstValue?.toFixed(2)),
+        sgstValue: Number(sgstValue?.toFixed(2)),
+        igstValue: Number(igstValue?.toFixed(2)),
+        cessValue: Number(cessValue?.toFixed(2)),
+        addlCessValue: Number(addlCessValue?.toFixed(2)),
+        cgstAmt: Number(cgstAmt?.toFixed(2)),
+        sgstAmt: Number(sgstAmt?.toFixed(2)),
+        igstAmt: Number(igstAmt?.toFixed(2)),
+        cessAmt: Number(cessAmount?.toFixed(2)),
+        addlCessAmt: Number(additionalCessAmount?.toFixed(2)),
+        individualTotal: Number(individualTotal?.toFixed(2)),
+        quantity: Number(quantity?.toFixed(2)),
+        taxInclusive: Boolean(taxInclusive),
       });
     });
 
@@ -267,8 +262,6 @@ function EditItemForm({ ItemsFromRedux, from, taxInclusive = false, loading }) {
 
   useEffect(() => {
     setItem(selectedItem[0]);
-
-    
 
     if (selectedItem) {
       setNewPrice(selectedGodown?.selectedPriceRate || 0);
@@ -334,7 +327,7 @@ function EditItemForm({ ItemsFromRedux, from, taxInclusive = false, loading }) {
 
     if (taxInclusive) {
       setIsTaxInclusive(
-        selectedGodown?.isTaxInclusive || selectedItem[0]?.isTaxInclusive
+        selectedGodown?.isTaxInclusive || selectedItem[0]?.taxInclusive
       );
     }
   }, [selectedItem[0], enableActualAndBilledQuantity]);

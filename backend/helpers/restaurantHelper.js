@@ -30,7 +30,15 @@ export const fetchRoomsFromDatabase = async (filter, params) => {
   // Count total products matching the filter for pagination
   const totalItems = await product.countDocuments(filter);
   // Build query with pagination
-  let query = product.find(filter).populate("hsn_code");
+ let query = product.find(filter)
+  .populate({
+    path: "Priceleveles.pricelevel",
+    model: "PriceLevel",
+    select: "pricelevel dineIn takeaway roomService delivery"
+  })
+  .populate("hsn_code");
+
+  
 
   // Apply pagination if limit is specified
   if (params?.limit > 0) {

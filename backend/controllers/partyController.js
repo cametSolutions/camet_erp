@@ -7,7 +7,194 @@ import secondaryUserModel from "../models/secondaryUserModel.js";
 import SubGroup from "../models/subGroup.js";
 import TallyData from "../models/TallyData.js";
 import AccountGroup from "../models/accountGroup.js";
+export const checkoutPartyList = async (req, res) => {
+  try {
+    const { cmp_id } = req.params
+    console.log("companiid", cmp_id)
+    const { owner: Primary_user_id, sUserId: secUserId } = req
+ const {
+    voucher,
+    page = 1,
+    limit = 20,
+    search = "",
+    isAgent = false,
+  } = req.query;
+ 
+    const secUser = await secondaryUserModel.findById(secUserId);
+    // console.log(secUser)
+    if (!secUser) {
+      return res.status(404).json({ message: "Secondary user not found" });
+    }
+    const configuration = secUser.configurations.find(
+      (config) => config.organization == cmp_id
+    );
 
+    const vanSaleConfig = configuration?.vanSale || false;
+ // Build optimized base query
+    let baseQuery = {
+      cmp_id: new mongoose.Types.ObjectId(cmp_id),
+      Primary_user_id,
+    };
+
+    // Add subgroup filter early to reduce document set
+    // if (voucher === "sale" && configuration?.selectedSubGroups?.length > 0) {
+    //   const subGroupObjectIds = configuration.selectedSubGroups.map((id) =>
+    //     typeof id === "string" ? new mongoose.Types.ObjectId(id) : id
+    //   );
+    //   baseQuery.subGroup = { $in: subGroupObjectIds };
+    // }
+
+    // if (isAgent === "true" || isAgent === true) {
+    //   console.log("Filtering by Hotel Agent");
+    //   baseQuery.isHotelAgent = true;
+    // }
+
+    // // Build search query
+    // if (search) {
+    //   const regex = new RegExp(search, "i");
+    //   baseQuery.$or = [{ partyName: regex }, { mobileNumber: regex }];
+    // }
+
+    // OPTIMIZATION 1: Use facet for count and data in single aggregation
+    const facetPipeline = [
+      { $match: baseQuery },
+      {
+        $facet: {
+          // Get total count
+          // totalCount: [{ $count: "count" }],
+
+          // Get paginated data with lookups
+          paginatedResults: [
+            // { $skip: skip },
+            // { $limit: pageSize },
+
+            // OPTIMIZATION 2: Lookup only after pagination
+            {
+              $lookup: {
+                from: "accountgroups",
+                localField: "accountGroup",
+                foreignField: "_id",
+                as: "accountGroupData",
+                pipeline: [
+                  { $project: { accountGroup: 1, _id: 1 } }, // Only select needed fields
+                ],
+              },
+            },
+            {
+              $lookup: {
+                from: "subgroups",
+                localField: "subGroup",
+                foreignField: "_id",
+                as: "subGroupData",
+                pipeline: [
+                  { $project: { subGroup: 1, _id: 1, subGroup_id: 1 } },
+                ],
+              },
+            },
+
+            // OPTIMIZATION 3: Simplified projection
+            {
+              $project: {
+                _id: 1,
+                partyName: 1,
+                partyType: 1,
+                party_master_id: 1,
+                billingAddress: 1,
+                shippingAddress: 1,
+                mobileNumber: 1,
+                gstNo: 1,
+                emailID: 1,
+                pin: 1,
+                country: 1,
+                state: 1,
+                accountGroup: 1,
+                subGroup: 1,
+                accountGroupName: {
+                  $arrayElemAt: ["$accountGroupData.accountGroup", 0],
+                },
+                accountGroup_id: { $arrayElemAt: ["$accountGroupData._id", 0] },
+                subGroupName: { $arrayElemAt: ["$subGroupData.subGroup", 0] },
+                subGroup_id: { $arrayElemAt: ["$subGroupData._id", 0] },
+                subGroup_tally_id: {
+                  $arrayElemAt: ["$subGroupData.subGroup_id", 0],
+                },
+              },
+            },
+          ],
+        },
+      },
+    ];
+
+    const [facetResult] = await partyModel.aggregate(facetPipeline);
+    // const totalCount = facetResult.totalCount[0]?.count || 0;
+    const partyList = facetResult.paginatedResults;
+
+    // OPTIMIZATION 4: Batch outstanding data query with better indexing
+    let partyListWithOutstanding = partyList;
+
+    if (partyList.length > 0) {
+      // Determine source match criteria
+      let sourceMatch = {};
+      if (voucher === "receipt") {
+        sourceMatch = { classification: "Dr" };
+      } else if (voucher === "payment") {
+        sourceMatch = { classification: "Cr" };
+      } else if (voucher === "opening") {
+        sourceMatch = { source: "opening" };
+      }
+
+      const partyIds = partyList.map((party) => party._id);
+
+      // OPTIMIZATION 5: Optimized outstanding data aggregation
+      const partyOutstandingData = await TallyData.aggregate([
+        {
+          $match: {
+            cmp_id: new mongoose.Types.ObjectId(cmp_id),
+            Primary_user_id: Primary_user_id,
+            isCancelled: false,
+            party_id: { $in: partyIds },
+            ...sourceMatch,
+          },
+        },
+        {
+          $group: {
+            _id: "$party_id",
+            totalOutstanding: { $sum: "$bill_pending_amt" },
+            // latestBillDate: { $max: "$bill_date" },
+          },
+        },
+      ]);
+
+      // OPTIMIZATION 6: Use Map for O(1) lookup instead of find()
+      const outstandingMap = new Map();
+      partyOutstandingData.forEach((item) => {
+        outstandingMap.set(String(item._id), {
+          totalOutstanding: item.totalOutstanding,
+          // latestBillDate: item.latestBillDate,
+        });
+      });
+
+      partyListWithOutstanding = partyList.map((party) => {
+        const outstandingData = outstandingMap.get(String(party._id));
+        return {
+          ...party,
+          totalOutstanding: outstandingData?.totalOutstanding || 0,
+          // latestBillDate: outstandingData?.latestBillDate || null,
+        };
+      });
+    }
+
+    res.status(200).json({
+      message: "Parties fetched",
+      partyList: partyListWithOutstanding,
+      vanSale: vanSaleConfig,
+     
+    });
+
+  } catch (error) {
+    console.log("error", error.message)
+  }
+}
 export const PartyList = async (req, res) => {
   const { cmp_id } = req.params;
   const { owner: Primary_user_id, sUserId: secUserId } = req;
@@ -102,7 +289,7 @@ export const PartyList = async (req, res) => {
               $project: {
                 _id: 1,
                 partyName: 1,
-                partyType: 1 , 
+                partyType: 1,
                 party_master_id: 1,
                 billingAddress: 1,
                 shippingAddress: 1,
@@ -230,8 +417,8 @@ export const addParty = async (req, res) => {
       party_master_id, // Check if provided
     } = req.body;
 
-    if(!accountGroup || accountGroup === "") {
-      let findAccountGroup = await AccountGroup.findOne({accountGroup: "Sundry Debtors",cmp_id: cmp_id}); 
+    if (!accountGroup || accountGroup === "") {
+      let findAccountGroup = await AccountGroup.findOne({ accountGroup: "Sundry Debtors", cmp_id: cmp_id });
       console.log(findAccountGroup);
       accountGroup = findAccountGroup.accountGroup_id
     };

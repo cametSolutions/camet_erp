@@ -377,7 +377,7 @@ const SummaryDashboard = () => {
               <Target size={10} className="text-white/70" />
               <span className="text-white/90 text-xs">Expenses</span>
             </div>
-            <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.expense)}</span>
+            <span className="text-white/95 font-semibold text-xs">0</span>
           </div>
           
           <div className="border-t border-white/25 pt-1 mt-2">

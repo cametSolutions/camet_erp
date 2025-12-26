@@ -7,10 +7,10 @@ import Tooltip from "./ToolTip";
 import RoomTooltipContent from "./RoomTooltipContent ";
 import { useNavigate } from "react-router-dom";
 import api from "@/api/api";
+import {toast} from "sonner";
 import CalenderComponent from "../Components/CalenderComponent";
 import ReactDOM from "react-dom";
 import RoomSwapModal from "./RoomSwapModal ";
-import { FaArrowLeft } from "react-icons/fa6";
 const HotelDashboard = () => {
   const [rooms, setRooms] = useState([]);
   const [tooltipData, setTooltipData] = useState({});
@@ -62,7 +62,6 @@ const HotelDashboard = () => {
     const checkMobile = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
-      setShowBookingDetails(!mobile)
     };
 
     checkMobile();
@@ -140,6 +139,7 @@ const HotelDashboard = () => {
   // Fetch all rooms
   const fetchRooms = useCallback(
     async (date) => {
+console.log(date)
       setIsLoading(true);
       setLoader(true);
 
@@ -151,8 +151,8 @@ const HotelDashboard = () => {
             withCredentials: true,
           }
         );
+
         const roomsData = res.data.rooms || [];
-        console.log(roomsData);
         setRooms(roomsData);
         setFilteredRooms(roomsData);
 
@@ -199,7 +199,7 @@ const HotelDashboard = () => {
         );
 
         const roomsData = res.data || [];
-        console.log(roomsData);
+console.log(roomsData)
         setTooltipData(roomsData);
       } catch (error) {
         console.log("Error fetching date based data:", error);
@@ -278,6 +278,9 @@ const HotelDashboard = () => {
   };
 
   const handleRoomAction = async (action) => {
+console.log("HH")
+console.log(action)
+
     if (!selectedRoomData) return;
 
     if (action === "booking") {
@@ -292,7 +295,42 @@ const HotelDashboard = () => {
       });
       return;
     }
+  if (action === "checkOut") {
+  // ✅ Pass the specific room data to filter check-ins
+  navigate("/sUsers/checkInList", {
+    state: { 
+      roomId: selectedRoomData?._id,
+      roomName: selectedRoomData?.roomName,
+      filterByRoom: true // Flag to indicate filtering is needed
+    },
+  });
+  return;
+}
 
+if (action === "editChecking") {
+  setShowRoomModal(false);
+  
+  try {
+    const checkInDetails = await fetchRoomCheckInDetails(selectedRoomData._id);
+    
+    if (checkInDetails?.success && checkInDetails?.checkIn) {
+      // Navigate to edit checking page with tariff rate change flag
+      navigate("/sUsers/editChecking", {
+        state: {
+          ...checkInDetails.checkIn,
+          roomId: selectedRoomData._id,
+          fromDashboard: true  // ✅ Flag to indicate tariff rate change
+        }
+      });
+    } else {
+      toast.error("No active check-in found for this room");
+    }
+  } catch (error) {
+    console.error("Error navigating to edit checking:", error);
+    toast.error("Failed to load check-in details");
+  }
+  return;
+}
     if (action === "swapRoom") {
       // Check if room is available for swap (should be vacant)
       // if (selectedRoomData.status !== "vacant") {
@@ -368,6 +406,22 @@ const HotelDashboard = () => {
       }
     }
   };
+  const fetchRoomCheckInDetails = async (roomId) => {
+  try {
+    setIsLoading(true);
+    const res = await api.get(
+      `/api/sUsers/getRoomCheckInDetails/${cmp_id}/${roomId}`,
+      { withCredentials: true }
+    );
+    return res.data;
+  } catch (error) {
+    console.error("Error fetching check-in details:", error);
+    toast.error(error?.response?.data?.message || "Failed to fetch room details");
+    return null;
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const handleRoomSwapConfirm = async () => {
     try {
@@ -389,9 +443,9 @@ const HotelDashboard = () => {
       dirty: 0,
       blocked: 0,
     };
-
     filteredRooms.forEach((room) => {
       if (counts.hasOwnProperty(room.status)) {
+
         counts[room.status]++;
       }
     });
@@ -401,9 +455,9 @@ const HotelDashboard = () => {
 
   const setSelectedRoom = (room) => {
     // Prevent popup for occupied rooms
-    if (room.status === "occupied") {
-      return;
-    }
+    // if (room.status === "occupied") {
+    //   return;
+    // }
     setSelectedRoomData(room);
     setShowRoomModal(true);
   };
@@ -423,6 +477,7 @@ const HotelDashboard = () => {
 
   const statusCounts = getStatusCounts();
   const grouped = groupRoomsByType(filteredRooms);
+console.log(grouped)
 
   const handleCalenderDate = (date, show) => {
     console.log(date.toISOString().split("T")[0], show);
@@ -434,7 +489,6 @@ const HotelDashboard = () => {
     scrollbarWidth: "thin",
     scrollbarColor: "rgba(0, 0, 0, 0.7) rgba(0, 0, 0, 0.2)", // black thumb, lighter black track
   };
-
   return (
     <>
       <style>
@@ -462,42 +516,15 @@ const HotelDashboard = () => {
         <div className="relative z-10">
           <div className="p-3">
             {/* Header */}
-            <div className="bg-[#0B1D34] flex flex-col md:flex-row p-2 gap-3 mb-4">
+            <div className="bg-[#0B1D34] flex flex-col md:flex-row p-2 gap-2 md:gap-0 mb-4">
               <div>
-                {isMobile && (
-                  <button
-                    onClick={() => navigate("/sUsers/dashboard")}
-                    className="  text-white hover:text-black font-bold px-3 py-1 rounded text-sm flex items-center gap-1"
-                  >
-                    <FaArrowLeft className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-              {/* Title */}
-              <div className="flex items-center justify-between">
                 <h3 className="font-bold text-blue-400 flex items-center gap-2 text-base md:text-lg">
                   <BedDouble className="w-5 h-5 text-cyan-400" />
                   Room Status Overview
                 </h3>
-
-                {isMobile && (
-                  <button
-                    onClick={() => setShowBookingDetails(!showBookingDetails)}
-                    className="  text-white hover:text-black font-bold px-3 py-1 rounded text-sm flex items-center gap-1"
-                  >
-                    <Calendar className="w-4 h-4" />
-                  </button>
-                )}
               </div>
 
-              {/* Buttons */}
-              <div
-                className="
-      grid grid-cols-2 sm:grid-cols-3 
-      md:flex md:flex-row
-      gap-2 mt-2 md:mt-0 md:ml-auto
-    "
-              >
+              <div className="md:ml-auto flex flex-col sm:flex-row gap-2 mt-2 md:mt-0">
                 <button
                   className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold px-3 py-1 rounded text-sm"
                   onClick={() => navigate("/sUsers/bookingList")}
@@ -522,12 +549,10 @@ const HotelDashboard = () => {
                 >
                   New Guest
                 </button>
-
-                {/* Hotel Daily Sales → only on desktop */}
                 <button
                   className="
-        hidden md:flex
-        items-center gap-2 px-4 py-1.5 rounded-xl
+                hidden md:flex
+        flex items-center gap-2 px-4 py-1.5 rounded-xl
         font-semibold text-xs transition-all duration-300
         whitespace-nowrap flex-shrink-0
         bg-gradient-to-r from-green-600 to-emerald-600 text-white 
@@ -540,7 +565,6 @@ const HotelDashboard = () => {
                   <span className="text-sm">📊</span>
                   Hotel Daily Sales
                 </button>
-
                 <button
                   className="bg-gray-500 hover:bg-gray-600 text-white font-bold px-3 py-1 rounded text-sm flex items-center gap-1"
                   onClick={() => setShowFilters(!showFilters)}
@@ -549,7 +573,16 @@ const HotelDashboard = () => {
                   Filters
                 </button>
 
-                {/* Mobile Booking Toggle */}
+                {/* Mobile Booking Toggle Button */}
+                {isMobile && (
+                  <button
+                    onClick={() => setShowBookingDetails(!showBookingDetails)}
+                    className="bg-cyan-500 hover:bg-cyan-600 text-white font-bold px-3 py-1 rounded text-sm flex items-center gap-1"
+                  >
+                    <Calendar className="w-4 h-4" />
+                    Bookings
+                  </button>
+                )}
               </div>
             </div>
 
@@ -982,10 +1015,16 @@ const HotelDashboard = () => {
         {showRoomModal && selectedRoomData && (
           <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60 z-50">
             <div className="bg-slate-800 p-6 rounded-lg shadow-lg w-90 max-w-[150vw] ">
-              <h2 className="text-lg font-bold text-white mb-4">
-                Room: {selectedRoomData.roomName}
-              </h2>
-
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold text-white mb-4">
+                  Room: {selectedRoomData.roomName}
+                </h2>
+                {selectedRoomData.status === "occupied" && (
+                  <span className="px-3 py-1 bg-gradient-to-r from-sky-400 to-violet-600 text-white text-xs font-semibold rounded-full">
+                    Occupied
+                  </span>
+                )}
+              </div>
               <label className="text-gray-300 mb-2 block">Select Action:</label>
               <select
                 className="w-full bg-slate-700 text-white border border-gray-600 rounded px-2 py-1 mb-4"
@@ -995,18 +1034,26 @@ const HotelDashboard = () => {
                 <option value="" disabled>
                   Choose...
                 </option>
-                {selectedRoomData.status != "booked" && (
+                {selectedRoomData.status === "occupied" ? (
                   <>
-                    <option value="booking">Booking</option>
-                    <option value="CheckIn">CheckIn</option>
+                    <option value="editChecking">Edit Tarrif Rate</option>
+                    <option value="checkOut">CheckOut</option>
+                    <option value="swapRoom">Swap Room</option>
+                  </>
+                ) : (
+                  <>
+                    {selectedRoomData.status !== "booked" && (
+                      <>
+                        <option value="booking">Booking</option>
+                        <option value="CheckIn">CheckIn</option>
+                      </>
+                    )}
+                    <option value="dirty">Mark as Dirty</option>
+                    <option value="blocked">Mark as Blocked</option>
+                    <option value="vacant">Mark as available</option>
+                    <option value="swapRoom">Swap Room</option>
                   </>
                 )}
-                <option value="dirty">Mark as Dirty</option>
-                <option value="blocked">Mark as Blocked</option>
-                <option value="vacant">Mark as available</option>
-                {/* {selectedRoomData.status === "vacant" && ( */}
-                <option value="swapRoom">Swap Room</option>
-                {/* )} */}
               </select>
 
               <button

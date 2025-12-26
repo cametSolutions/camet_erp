@@ -284,6 +284,8 @@ const salesSchema = new Schema(
     },
 
     isCancelled: { type: Boolean, default: false },
+    checkInId: { type: mongoose.Schema.Types.ObjectId, ref: "CheckIn"},
+    checkOutId: { type: mongoose.Schema.Types.ObjectId, ref: "CheckOut"},
   },
   {
     timestamps: true,
