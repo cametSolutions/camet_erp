@@ -38,7 +38,6 @@ function EditItem() {
 
       const { brands, categories, subcategories, priceLevels } =
         subDetailsRes.data.data;
-        console.log(categories)
 
       setOptionsData((prev) => ({
         ...prev,

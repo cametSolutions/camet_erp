@@ -220,33 +220,43 @@ const handleEdit = async (id, value, data, categoriesData) => {
   } else if (tab === "pricelevel") {
     setValue(data?.pricelevel);
     
-    // Debug: Log all fields in the data object
     console.log("All data fields:", Object.keys(data));
     console.log("Full data object:", data);
     
-    // Determine service type based on which field exists in the data
-    let selectedService = "";
+    // Get the actual values from the database
+    const dineInValue = data.dineIn || "";
+    const takeawayValue = data.takeaway || "";
+    const deliveryValue = data.delivery || "";
+    const roomServiceValue = data.roomService || "";
     
-    if (data.hasOwnProperty('DineIn') || data.hasOwnProperty('dineIn')) {
+    console.log("Service values:", {
+      dineIn: dineInValue,
+      takeaway: takeawayValue,
+      delivery: deliveryValue,
+      roomService: roomServiceValue
+    });
+    
+    // Check which service has "enabled" value (not just exists)
+    let selectedService = "none";
+    
+    if (dineInValue === "enabled") {
       selectedService = "dinein";
-    } else if (data.hasOwnProperty('takeaway') || data.hasOwnProperty('takeaway')) {
+    } else if (takeawayValue === "enabled") {
       selectedService = "takeaway";
-    } else if (data.hasOwnProperty('delivery') || data.hasOwnProperty('delivery')) {
+    } else if (deliveryValue === "enabled") {
       selectedService = "delivery";
-    } else if (data.hasOwnProperty('roomservice') || data.hasOwnProperty('roomService')) {
+    } else if (roomServiceValue === "enabled") {
       selectedService = "roomservice";
-    } else {
-      selectedService = "none";
     }
     
     console.log("Determined service type:", selectedService);
     
-    // Set the form data
+    // Set form data with the actual database values
     setFormsData({
-      dineIn: selectedService === "dinein" ? "enabled" : "",
-      takeaway: selectedService === "takeaway" ? "enabled" : "",
-      roomService: selectedService === "roomservice" ? "enabled" : "",
-      delivery: selectedService === "delivery" ? "enabled" : "",
+      dineIn: dineInValue,
+      takeaway: takeawayValue,
+      roomService: roomServiceValue,
+      delivery: deliveryValue,
       serviceType: selectedService
     });
   } else {
@@ -256,7 +266,7 @@ const handleEdit = async (id, value, data, categoriesData) => {
   if (tab === "godown") {
     const isDefaultGodown = data?.defaultGodown;
     if (isDefaultGodown) {
-      const result = await Swal.fire({
+      await Swal.fire({
         title: "Cannot Edit",
         text: "Cannot edit default godown",
         icon: "warning",

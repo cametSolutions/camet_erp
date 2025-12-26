@@ -38,9 +38,9 @@ const restuarentSettings = () => {
   const settingsOptions = [
     {
       title:
-        industry === 6 || industry === 7 ? "food Category" : "Group Management",
+        industry === 6 || industry === 7 || industry === 8 ? "food Category" : "Group Management",
       description:
-        industry === 6 || industry === 7
+        industry === 6 || industry === 7 || industry === 8
           ? "Manage your food category effectively"
           : " Manage your food item effectively",
       icon: <MdFoodBank />,
@@ -48,9 +48,9 @@ const restuarentSettings = () => {
       active: true,
     },
     {
-      title: industry === 6 || industry === 7 ? "Item Add" : "Group Management",
+      title: industry === 6 || industry === 7 || industry === 8 ? "Item Add" : "Group Management",
       description:
-        industry === 6 || industry === 7
+        industry === 6 || industry === 7 || industry === 8
           ? "Manage your food name effectively"
           : "Manage your food item effectively",
       icon: <MdFoodBank />,
@@ -59,9 +59,9 @@ const restuarentSettings = () => {
     },
     {
       title:
-        industry === 6 || industry === 7 ? "Table Master" : "Group Management",
+        industry === 6 || industry === 7 || industry === 8 ? "Table Master" : "Group Management",
       description:
-        industry === 6 || industry === 7
+        industry === 6 || industry === 7 || industry === 8
           ? "Manage your Table Entrys here"
           : "Manage your Table Addition here",
       icon: <MdFoodBank />,
@@ -70,7 +70,7 @@ const restuarentSettings = () => {
     },
   ];
 
-  if (industry === 7 || industry === 6) {
+  if (industry === 7 || industry === 6 || industry === 8) {
     settingsOptions.unshift({
       title: " food Types",
       description: "Create different region wise category",
@@ -102,7 +102,7 @@ const restuarentSettings = () => {
     <div className="bg-white">
       <TitleDiv
         title={
-          industry === 6 || industry === 7
+          industry === 6 || industry === 7 || industry === 8
             ? "Room Management"
             : "Stock Item Settings"
         }

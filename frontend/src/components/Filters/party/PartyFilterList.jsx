@@ -11,6 +11,7 @@ import { setSelectedParty } from "../../../../slices/filterSlices/partyFIlter";
 // import { MdCancel } from "react-icons/md";
 
 function PartyFilterList() {
+console.log("h")
   const [parties, setParties] = useState([]);
   const [search, setSearch] = useState("");
   const [filteredParties, setFilteredParties] = useState([]);

@@ -32,6 +32,7 @@ function FoodPlanComponent({
   useEffect(() => {
     if (foodPlan.length > 0) {
       let filteredData = foodPlan.filter((item) => item.foodPlanId !== "");
+console.log(filteredData)
       sendDataToParent(filteredData,selectedRoomId);
     }
   }, [foodPlan]);
@@ -54,7 +55,9 @@ function FoodPlanComponent({
 
   console.log(selectedRoomId);
   const handlePaxChange = (index, value) => {
+console.log(value)
     let specificData = foodPlanData?.find((item) => item._id === value);
+console.log(specificData)
     const updatedRows = [...foodPlan];
     updatedRows[index].foodPlan = specificData.foodPlan;
     updatedRows[index].foodPlanId = specificData._id;

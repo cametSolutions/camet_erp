@@ -4,7 +4,7 @@ import {
   // useSelector
 } from "react-redux";
 import { useEffect, useState, useCallback, memo } from "react";
-import { icons } from "../../../components/common/icons/DashboardIcons.jsx";
+import { icons } from "../../../components/icons/DashboardIcons";
 import { addTab } from "../../../../slices/tallyDataSlice.js";
 import { useSelector } from "react-redux";
 // import { useQuery } from "@tanstack/react-query";
@@ -27,9 +27,10 @@ const DashboardSummary = () => {
   // );
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { industry } = useSelector(
-    (state) => state?.secSelectedOrganization?.secSelectedOrg
-  ) || {};
+const industry = useSelector(
+  (state) => state.secSelectedOrganization?.secSelectedOrg?.industry
+);
+
   // const {
   //   data,
   //   // error,

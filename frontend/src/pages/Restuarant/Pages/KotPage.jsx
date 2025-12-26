@@ -1,6 +1,9 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+
+
+import  { useState, useEffect, useCallback, useRef } from "react";
 import dayjs from "dayjs";
 import useFetch from "@/customHook/useFetch";
+import { useQueryClient } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
 import {
@@ -14,9 +17,14 @@ import {
   MdPrint,
   MdCheckCircle,
   MdPayment,
+    MdCancel,
+  MdClose,
 } from "react-icons/md";
 import api from "@/api/api";
-import { motion } from "framer-motion";
+
+
+import { motion, AnimatePresence } from "framer-motion";
+
 import { Check, CreditCard, X, Banknote } from "lucide-react";
 import { generateAndPrintKOT } from "@/pages/Restuarant/Helper/kotPrintHelper";
 import { useNavigate } from "react-router-dom";
@@ -26,6 +34,8 @@ import { FaRegEdit } from "react-icons/fa";
 import VoucherThreeInchPdf from "@/pages/voucher/voucherPdf/threeInchPdf/VoucherThreeInchPdf";
 import { useReactToPrint } from "react-to-print";
 import CustomerSearchInputBox from "@/pages/Hotel/Components/CustomerSearchInPutBox";
+
+
 
 const OrdersDashboard = () => {
   const contentToPrint = useRef(null);
@@ -63,6 +73,15 @@ const OrdersDashboard = () => {
   // state used for showing pdf print
 
   const [salePrintData, setSalePrintData] = useState(null);
+
+
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [selectedOrderForCancel, setSelectedOrderForCancel] = useState(null);
+  const [cancelledKots, setCancelledKots] = useState([]);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelError, setCancelError] = useState("");
+
+   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
   const { _id: cmp_id, name: companyName } = useSelector(
@@ -200,6 +219,9 @@ const OrdersDashboard = () => {
   const getFilteredOrders = () => {
     let filtered = orders;
 
+      filtered = filtered.filter(order => 
+      !cancelledKots.some(cancelled => cancelled.id === order._id)
+    );
     // Filter by status based on user role and active filter
     // if (userRole === "kitchen") {
     //   if (activeFilter === "All") {
@@ -300,9 +322,39 @@ const OrdersDashboard = () => {
       customerName: data?.customer?.name,
       type: data?.type,
     };
+    console.log(orderData);
 
     generateAndPrintKOT(orderData, true, false, companyName);
   };
+
+
+const handleKotCancel = async () => {
+  try {
+    if (!selectedOrderForCancel) return;
+
+    const response = await api.put(
+      `/api/kot/cancel/${selectedOrderForCancel._id}`,
+      { reason: cancelReason }
+    );
+
+    if (response.data.success) {
+      // ✅ Remove the cancelled order from UI immediately
+      setOrders((prevOrders) =>
+        prevOrders.filter((kot) => kot._id !== selectedOrderForCancel._id)
+      );
+
+      setShowCancelModal(false);
+      setCancelReason(""); // clear reason field
+      setSelectedOrderForCancel(null);
+    } else {
+      console.error("Cancel failed:", response.data.message);
+    }
+  } catch (error) {
+    console.error("Error cancelling KOT:", error);
+  }
+};
+
+
 
   const MenuIcon = () => (
     <svg
@@ -352,10 +404,41 @@ const OrdersDashboard = () => {
 
   const filteredOrders = getFilteredOrders();
 
+  console.log("filteredOrders", filteredOrders);
+
   const handleSavePayment = async (id) => {
     setSaveLoader(true);
+
+     if (paymentMode === "credit") {
+    if (!selectedCreditor || selectedCreditor === "" || !selectedCreditor._id) {
+      setPaymentError("Please select a creditor");
+      setSaveLoader(false);
+      return;
+    }
+  }
     let paymentDetails;
     let selectedKotData;
+     if (selectedDataForPayment?.isDirectSale) {
+    // Direct sale payment processing
+    if (paymentMethod === "cash") {
+      paymentDetails = {
+        cashAmount: selectedDataForPayment?.total,
+        onlineAmount: 0,
+        selectedCash,
+        selectedBank,
+        paymentMode: "single",
+      };
+    } else {
+      paymentDetails = {
+        cashAmount: 0,
+        onlineAmount: selectedDataForPayment?.total,
+        selectedCash,
+        selectedBank,
+        paymentMode: "single",
+      };
+    }
+    selectedKotData = selectedDataForPayment;
+  } else {
     if (
       selectedDataForPayment.roomService &&
       Object.keys(selectedDataForPayment.roomService).length > 0
@@ -448,7 +531,7 @@ const OrdersDashboard = () => {
       } else {
         if (
           Number(cashAmount) + Number(onlineAmount) !==
-          selectedDataForPayment?.total
+        Number(selectedDataForPayment?.total)
         ) {
           setPaymentError(
             "Cash and online amounts together equal the total amount."
@@ -471,13 +554,19 @@ const OrdersDashboard = () => {
     console.log(selectedKotData);
 
     try {
+      console.log(paymentDetails)
+      const payment={...paymentDetails,cashAmount:Number(paymentDetails.cashAmount)}
+      console.log(payment)
+  
+    
       const response = await api.put(
         `/api/sUsers/updateKotPayment/${cmp_id}`,
         {
           paymentMethod: paymentMethod,
-          paymentDetails: paymentDetails,
+          paymentDetails: payment,
           selectedKotData: selectedKotData,
           isPostToRoom: isPostToRoom,
+              isDirectSale: selectedDataForPayment?.isDirectSale || false,
         },
         { withCredentials: true }
       );
@@ -487,10 +576,51 @@ const OrdersDashboard = () => {
         setOrders((prevOrders) =>
           prevOrders.map((order) =>
             order._id === id
-              ? { ...order, paymentMethod: data.paymentMethod }
+              ? { ...order,paymentCompleted: true , paymentMethod: data.paymentMethod }
               : order
           )
         );
+          const completedKots = selectedDataForPayment?.voucherNumber || [];
+      const tableNumbers = new Set();
+      
+      completedKots.forEach(kot => {
+          const kotOrder = orders.find(order => order._id === kot.id);
+        if (kotOrder?.tableNumber && kotOrder?.type === 'dine-in') {
+          tableNumbers.add(kotOrder.tableNumber);
+        }
+      });
+
+      // For each table, check if all its KOTs are now completed
+      for (const tableNumber of tableNumbers) {
+
+        if (!tableNumber) {
+          console.log('Skipping undefined/null tableNumber');
+          continue; // Skip if tableNumber is undefined/null
+        }
+        const tableKots = orders.filter(order => 
+          order.tableNumber === tableNumber && 
+          order.type === 'dine-in'
+        );
+        
+        const allCompleted = tableKots.every(kot => 
+          completedKots.some(completed => completed.id === kot._id) ||
+          kot.paymentCompleted
+        );
+
+        if (allCompleted) {
+          try {
+              const tableUpdateResponse = await api.put(
+              `/api/sUsers/updateTableStatus/${cmp_id}/${tableNumber}`,
+              { status: "available" },
+              { withCredentials: true }
+            );
+ console.log(`Table ${tableNumber} status updated successfully:`, tableUpdateResponse.data);
+          } catch (tableError) {
+            console.error(`Error updating table ${tableNumber} status:`, tableError);
+          }
+        }
+      }
+
         setLoader(false);
         setSelectedKot([]);
         setShowVoucherPdf(false);
@@ -512,7 +642,8 @@ const OrdersDashboard = () => {
       setPaymentMode("single")
       setSelectedCreditor("")
     }
-  };
+  }
+};
 
   const handlePrintData = async (kotId) => {
     try {
@@ -582,12 +713,10 @@ const OrdersDashboard = () => {
     });
 
     let totalAmount = itemList.reduce(
-      (acc, item) => acc + Number(item.total) * Number(item.quantity),
+      (acc, item) => acc + Number(item.total) ,
       0
     ).toFixed(2);
-    console.log(itemList[0]);
 
-    console.log(selectedKot);
 
     let newObject = {
       Date: new Date(),
@@ -640,6 +769,7 @@ const OrdersDashboard = () => {
     // }
     navigate("/sUsers/RestaurantDashboard", { state: { kotData } });
   };
+
 
   const handlePrint = useReactToPrint({
     content: () => contentToPrint.current,
@@ -861,9 +991,22 @@ const OrdersDashboard = () => {
                           }`}
                         >
                           <MdDescription className="w-4 h-4 text-blue-600" />
-                          <span className="text-sm font-bold text-blue-900">
-                            #{order.voucherNumber}
-                          </span>
+                          <span
+                              className={`px-2 py-1 rounded-md text-xs font-medium ${
+                                isOrderSelected(order)
+                                  ? "bg-blue-200 text-blue-800"
+                                  : "bg-gray-100 text-gray-700"
+                              }`}
+                            >
+                              {order.type} - {order?.tableNumber}
+                              <span>
+                                {order.roomId?.roomName && order?.tableNumber
+                                  ? ","
+                                  : " "}
+                                {order.roomId?.roomName}
+                              </span>
+                            </span>
+                         
                         </div>
                         <div className="flex items-center gap-2">
                           <FaRegEdit
@@ -880,21 +1023,9 @@ const OrdersDashboard = () => {
                         {/* Order type and timestamp */}
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <span
-                              className={`px-2 py-1 rounded-md text-xs font-medium ${
-                                isOrderSelected(order)
-                                  ? "bg-blue-200 text-blue-800"
-                                  : "bg-gray-100 text-gray-700"
-                              }`}
-                            >
-                              {order.type} - {order?.tableNumber}
-                              <span>
-                                {order.roomId?.roomName && order?.tableNumber
-                                  ? ","
-                                  : " "}
-                                {order.roomId?.roomName}
-                              </span>
-                            </span>
+                           <span className="text-sm font-bold text-blue-900">
+                            #{order.voucherNumber}
+                          </span>
                           </div>
 
                           <div className="text-xs text-gray-500 flex items-center gap-1">
@@ -956,11 +1087,11 @@ const OrdersDashboard = () => {
                             >
                               <div className="flex-1 min-w-0 pr-3">
                                 <div className="text-xs text-gray-800 font-medium leading-tight">
-                                  {item.product_name}
+                                  {item?.product_name}
                                 </div>
-                                {item.description && (
+                                {item?.description && (
                                   <div className="text-xs text-gray-500 truncate mt-0.5">
-                                    {item.description}
+                                    {item?.description}
                                   </div>
                                 )}
                               </div>
@@ -974,7 +1105,7 @@ const OrdersDashboard = () => {
                                         : "bg-blue-100 text-blue-800"
                                     }`}
                                   >
-                                    {item.quantity}
+                                    {item?.quantity}
                                   </span>
                                   <div className="text-xs text-gray-400 mt-0.5">
                                     qty
@@ -984,10 +1115,10 @@ const OrdersDashboard = () => {
                                 {userRole === "reception" && (
                                   <div className="text-right min-w-[50px]">
                                     <div className="font-bold text-xs text-gray-900">
-                                      ₹{item.price.toFixed(2)}
+                                      ₹{item?.price?.toFixed(2)}
                                     </div>
                                     <div className="text-xs text-gray-500">
-                                      ₹{(item.price * item.quantity).toFixed(2)}
+                                      ₹{(item?.total)?.toFixed(2)}
                                     </div>
                                   </div>
                                 )}
@@ -1119,6 +1250,22 @@ const OrdersDashboard = () => {
                           <MdPrint className="w-3 h-3 group-hover:rotate-12 transition-transform duration-200" />
                           Kot Print
                         </button>
+ {!order?.paymentCompleted && (
+                           <button
+                            className="flex-1 group px-3 py-1.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg text-xs font-semibold hover:from-red-600 hover:to-red-700 transition-all duration-200 hover:scale-105 flex items-center justify-center gap-1"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              console.log('Cancel button clicked for order:', order);
+                              setSelectedOrderForCancel(order);
+                              setShowCancelModal(true);
+                              console.log('Modal should open now');
+                            }}
+                          >
+                            <MdCancel className="w-3 h-3 group-hover:rotate-12 transition-transform duration-200" />
+                            Cancel
+                          </button>
+ )}
                       </div>
                     )}
 
@@ -1554,7 +1701,7 @@ const OrdersDashboard = () => {
                       <div className="flex items-center gap-2">
                         <div className="flex items-center gap-1 w-16">
                           <CreditCard className="w-4 h-4 text-gray-600" />
-                          <span className="text-xs font-medium">Online:</span>
+                          <span className="text-xs font-medium">Gpay:</span>
                         </div>
                         <div className="flex-1">
                           <div className="relative">
@@ -1776,6 +1923,83 @@ const OrdersDashboard = () => {
               </div>
             </div>
           )}
+          <AnimatePresence>
+            {showCancelModal && selectedOrderForCancel && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
+                <motion.div
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.9, opacity: 0 }}
+                  className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-lg font-bold text-gray-800">
+                      Cancel KOT #{selectedOrderForCancel.voucherNumber}
+                    </h2>
+                    <button
+                      onClick={() => {
+                        setShowCancelModal(false);
+                        setSelectedOrderForCancel(null);
+                        setCancelReason('');
+                        setCancelError('');
+                      }}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      <MdClose className="w-6 h-6" />
+                    </button>
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Reason for Cancellation <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      value={cancelReason}
+                      onChange={(e) => {
+                        setCancelReason(e.target.value);
+                        setCancelError('');
+                      }}
+                      placeholder="Please provide a reason for cancelling this KOT..."
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
+                      rows="4"
+                    />
+                    {cancelError && (
+                      <p className="text-red-500 text-xs mt-1">{cancelError}</p>
+                    )}
+                  </div>
+
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                    <p className="text-xs text-yellow-800">
+                      <strong>Note:</strong> This will cancel the KOT from the report only. 
+                      The data will remain in the database.
+                    </p>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => {
+                        setShowCancelModal(false);
+                        setSelectedOrderForCancel(null);
+                        setCancelReason('');
+                        setCancelError('');
+                      }}
+                      className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-all duration-200"
+                    >
+                      Close
+                    </button>
+                    <button
+                      onClick={handleKotCancel}
+                      className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition-all duration-200 flex items-center justify-center gap-2"
+                    >
+                      <MdCancel className="w-4 h-4" />
+                      Confirm Cancel
+                    </button>
+                  </div>
+                </motion.div>
+              </div>
+            )}
+          </AnimatePresence>
         </div>
       )}
     </>

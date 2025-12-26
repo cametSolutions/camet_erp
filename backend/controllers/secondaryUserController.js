@@ -1646,6 +1646,7 @@ export const cancelStockTransfer = async (req, res) => {
 export const getBankAndCashSources = async (req, res) => {
   const cmp_id = req.params.cmp_id;
   const source = req.params.source || null;
+  console.log("sorceeeee",source)
   
   try {
     let banks = [];
