@@ -322,6 +322,7 @@ const OrdersDashboard = () => {
       customerName: data?.customer?.name,
       type: data?.type,
     };
+    console.log(orderData);
 
     generateAndPrintKOT(orderData, true, false, companyName);
   };
