@@ -655,7 +655,7 @@ export const cancelKot = async (req, res) => {
 // function used to update kot
 export const updateKotStatus = async (req, res) => {
   try {
-    const kot = await kotModal.updateOne({ _id: req.params.cmp_id }, req.body);
+    const kot = await kotModal.updateOne({ _id: req.params.kotId }, req.body);
     res.status(200).json({
       success: true,
       data: kot,
