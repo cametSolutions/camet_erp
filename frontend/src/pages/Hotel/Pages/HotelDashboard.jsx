@@ -7,7 +7,7 @@ import Tooltip from "./ToolTip";
 import RoomTooltipContent from "./RoomTooltipContent ";
 import { useNavigate } from "react-router-dom";
 import api from "@/api/api";
-import {toast} from "sonner";
+import { toast } from "sonner";
 import CalenderComponent from "../Components/CalenderComponent";
 import ReactDOM from "react-dom";
 import RoomSwapModal from "./RoomSwapModal ";
@@ -139,7 +139,7 @@ const HotelDashboard = () => {
   // Fetch all rooms
   const fetchRooms = useCallback(
     async (date) => {
-console.log(date)
+      console.log(date);
       setIsLoading(true);
       setLoader(true);
 
@@ -199,7 +199,7 @@ console.log(date)
         );
 
         const roomsData = res.data || [];
-console.log(roomsData)
+        console.log(roomsData);
         setTooltipData(roomsData);
       } catch (error) {
         console.log("Error fetching date based data:", error);
@@ -278,8 +278,8 @@ console.log(roomsData)
   };
 
   const handleRoomAction = async (action) => {
-console.log("HH")
-console.log(action)
+    console.log("HH");
+    console.log(action);
 
     if (!selectedRoomData) return;
 
@@ -295,42 +295,44 @@ console.log(action)
       });
       return;
     }
-  if (action === "checkOut") {
-  // ✅ Pass the specific room data to filter check-ins
-  navigate("/sUsers/checkInList", {
-    state: { 
-      roomId: selectedRoomData?._id,
-      roomName: selectedRoomData?.roomName,
-      filterByRoom: true // Flag to indicate filtering is needed
-    },
-  });
-  return;
-}
-
-if (action === "editChecking") {
-  setShowRoomModal(false);
-  
-  try {
-    const checkInDetails = await fetchRoomCheckInDetails(selectedRoomData._id);
-    
-    if (checkInDetails?.success && checkInDetails?.checkIn) {
-      // Navigate to edit checking page with tariff rate change flag
-      navigate("/sUsers/editChecking", {
+    if (action === "checkOut") {
+      // ✅ Pass the specific room data to filter check-ins
+      navigate("/sUsers/checkInList", {
         state: {
-          ...checkInDetails.checkIn,
-          roomId: selectedRoomData._id,
-          fromDashboard: true  // ✅ Flag to indicate tariff rate change
-        }
+          roomId: selectedRoomData?._id,
+          roomName: selectedRoomData?.roomName,
+          filterByRoom: true, // Flag to indicate filtering is needed
+        },
       });
-    } else {
-      toast.error("No active check-in found for this room");
+      return;
     }
-  } catch (error) {
-    console.error("Error navigating to edit checking:", error);
-    toast.error("Failed to load check-in details");
-  }
-  return;
-}
+
+    if (action === "editChecking") {
+      setShowRoomModal(false);
+
+      try {
+        const checkInDetails = await fetchRoomCheckInDetails(
+          selectedRoomData._id
+        );
+
+        if (checkInDetails?.success && checkInDetails?.checkIn) {
+          // Navigate to edit checking page with tariff rate change flag
+          navigate("/sUsers/editChecking", {
+            state: {
+              ...checkInDetails.checkIn,
+              roomId: selectedRoomData._id,
+              fromDashboard: true, // ✅ Flag to indicate tariff rate change
+            },
+          });
+        } else {
+          toast.error("No active check-in found for this room");
+        }
+      } catch (error) {
+        console.error("Error navigating to edit checking:", error);
+        toast.error("Failed to load check-in details");
+      }
+      return;
+    }
     if (action === "swapRoom") {
       // Check if room is available for swap (should be vacant)
       // if (selectedRoomData.status !== "vacant") {
@@ -407,21 +409,23 @@ if (action === "editChecking") {
     }
   };
   const fetchRoomCheckInDetails = async (roomId) => {
-  try {
-    setIsLoading(true);
-    const res = await api.get(
-      `/api/sUsers/getRoomCheckInDetails/${cmp_id}/${roomId}`,
-      { withCredentials: true }
-    );
-    return res.data;
-  } catch (error) {
-    console.error("Error fetching check-in details:", error);
-    toast.error(error?.response?.data?.message || "Failed to fetch room details");
-    return null;
-  } finally {
-    setIsLoading(false);
-  }
-};
+    try {
+      setIsLoading(true);
+      const res = await api.get(
+        `/api/sUsers/getRoomCheckInDetails/${cmp_id}/${roomId}`,
+        { withCredentials: true }
+      );
+      return res.data;
+    } catch (error) {
+      console.error("Error fetching check-in details:", error);
+      toast.error(
+        error?.response?.data?.message || "Failed to fetch room details"
+      );
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleRoomSwapConfirm = async () => {
     try {
@@ -445,7 +449,6 @@ if (action === "editChecking") {
     };
     filteredRooms.forEach((room) => {
       if (counts.hasOwnProperty(room.status)) {
-
         counts[room.status]++;
       }
     });
@@ -477,7 +480,7 @@ if (action === "editChecking") {
 
   const statusCounts = getStatusCounts();
   const grouped = groupRoomsByType(filteredRooms);
-console.log(grouped)
+  console.log(grouped);
 
   const handleCalenderDate = (date, show) => {
     console.log(date.toISOString().split("T")[0], show);
@@ -551,7 +554,7 @@ console.log(grouped)
                 </button>
                 <button
                   className="
-                hidden md:flex
+             
         flex items-center gap-2 px-4 py-1.5 rounded-xl
         font-semibold text-xs transition-all duration-300
         whitespace-nowrap flex-shrink-0
@@ -564,6 +567,22 @@ console.log(grouped)
                 >
                   <span className="text-sm">📊</span>
                   Hotel Daily Sales
+                </button>
+                <button
+                  className="
+                 flex
+         items-center gap-2 px-4 py-1.5 rounded-xl
+        font-semibold text-xs transition-all duration-300
+        whitespace-nowrap flex-shrink-0
+        bg-gradient-to-r from-green-600 to-emerald-600 text-white 
+        border-transparent shadow-lg shadow-emerald-500/25
+        hover:scale-105 active:scale-95 transform
+        hover:from-green-700 hover:to-emerald-700
+      "
+                  onClick={() => navigate("/sUsers/Checkoutpdf")}
+                >
+                  <span className="text-sm">📊</span>
+                  Hotel Daily Checkouts
                 </button>
                 <button
                   className="bg-gray-500 hover:bg-gray-600 text-white font-bold px-3 py-1 rounded text-sm flex items-center gap-1"
