@@ -4,8 +4,10 @@ export const taxCalculator = (
   formData = null,
   taxCalculationRoomId = null
 ) => {
+console.log(data)
+console.log(inclusive)
   console.log(formData);
-  console.log(inclusive);
+  console.log(taxCalculationRoomId);
   try {
     if (!data || typeof data !== "object") {
       console.error("Invalid data provided to taxCalculator");
@@ -35,7 +37,8 @@ export const taxCalculator = (
           0
         ) || 0
       : 0;
-
+console.log(reducedFoodPlanAmount)
+console.log(reducedAdditionalPaxAmount)
     const baseAmount = Number(data?.totalAmount || 0);
     let totalAmount = baseAmount + reducedAdditionalPaxAmount;
 
@@ -61,18 +64,21 @@ export const taxCalculator = (
     if (!applicableSlab && hsnDetails?.igstRate !== undefined) {
       taxRate = Number(hsnDetails.igstRate);
     }
-
+console.log(inclusive)
     const taxAmount = (totalAmount * taxRate) / 100;
+console.log(totalAmount)
+console.log(taxAmount)
     let amountWithTax = inclusive ? totalAmount : totalAmount + taxAmount;
     console.log(amountWithTax);
     // Handle per-component tax for display or tracking
-    let foodPlanTaxRate = formData?.bookingType == "offline" ? 5 : taxRate;
+    let foodPlanTaxRate = formData?.bookingType == "offline" ? 5 : taxRate.toFixed(2)
+console.log(foodPlanTaxRate)
 
     let additionalPaxAmountWithTax = inclusive
       ? reducedAdditionalPaxAmount
       : reducedAdditionalPaxAmount +
         (reducedAdditionalPaxAmount * taxRate) / 100;
-
+console.log(inclusive)
     let foodPlanAmountWithTax = inclusive
       ? reducedFoodPlanAmount
       : reducedFoodPlanAmount + (reducedFoodPlanAmount * foodPlanTaxRate) / 100;
@@ -94,7 +100,7 @@ export const taxCalculator = (
         Number(reducedFoodPlanAmount),
       taxRate: Number(taxRate.toFixed(2)),
       foodPlanTaxRate:
-        formData?.bookingType !== "offline" ? 5 : Number(taxRate.toFixed(2)),
+        formData?.bookingType == "offline" ? 5 : Number(taxRate.toFixed(2)),
       taxAmount: Number(taxAmount.toFixed(2)),
       totalCgstAmt: Number(taxAmount.toFixed(2) / 2 || 0),
       totalSgstAmt: Number(taxAmount.toFixed(2) / 2 || 0),
@@ -157,42 +163,81 @@ export const taxCalculatorForRestaurant = (
       const igst = Number(item.igst) || 0;
       const cgst = Number(item.cgst) || 0;
       const sgst = Number(item.sgst) || 0;
+      const count = Number(godown.count) || 1;
+      const cess = Number(item?.cess) || 0;
+      const addlCess = Number(item?.addl_cess) || 0;
 
-      let basePrice;
+      console.log(godown.count);
+
+      // Determine total tax rate
+      const totalTaxRate = igst || cgst + sgst;
+      let taxableAmount;
+      let igstAmount, cgstAmount, sgstAmount, cessAmount, additionalCessAmount;
+      let individualTotal;
+      let basePrice = price;
 
       if (inclusive) {
-        // Price includes tax → remove tax from it
-        basePrice = price / (1 + igst / 100);
-      } else {
-        // Price excludes tax → keep price as base
-        basePrice = price;
-      }
+        // Tax Inclusive: Manager's Formula
+        // Total amount paid by customer
+        const totalAmount = price * count;
+        basePrice = Number((basePrice / (1 + totalTaxRate / 100)).toFixed(2));
+        // Calculate taxable amount: Total * 100 / (100 + Tax%)
+        taxableAmount = (totalAmount * 100) / (100 + totalTaxRate);
+        // Tax = Total - Taxable Amount
+        const totalTaxAmount = totalAmount - taxableAmount;
 
-      const igstAmount = (basePrice * igst) / 100;
-      const cgstAmount = (basePrice * cgst) / 100;
-      const sgstAmount = (basePrice * sgst) / 100;
+        // Split tax based on IGST or CGST+SGST
+        igstAmount = totalTaxAmount;
+        cgstAmount = totalTaxAmount / 2;
+        sgstAmount = totalTaxAmount / 2;
+
+        // Cess calculation on taxable amount
+        cessAmount = (taxableAmount * cess) / 100;
+        additionalCessAmount = (taxableAmount * addlCess) / 100;
+
+        // Individual total remains the same (already inclusive)
+        individualTotal = totalAmount + cessAmount + additionalCessAmount;
+      } else {
+        // Tax Exclusive: Manager's Formula
+        // Taxable amount
+        taxableAmount = price * count;
+
+        // Calculate tax: Taxable * Tax% / 100
+        const totalTaxAmount = (taxableAmount * totalTaxRate) / 100;
+
+        // Split tax based on IGST or CGST+SGST
+        igstAmount = totalTaxAmount;
+        cgstAmount = totalTaxAmount / 2;
+        sgstAmount = totalTaxAmount / 2;
+
+        // Cess calculation
+        cessAmount = (taxableAmount * cess) / 100;
+        additionalCessAmount = (taxableAmount * addlCess) / 100;
+
+        // Individual total = Taxable + All Taxes
+        individualTotal =
+          taxableAmount + totalTaxAmount + cessAmount + additionalCessAmount;
+      }
 
       return {
         ...godown,
-        basePrice,
+        basePrice: Number(basePrice),
         discountAmount: 0,
         discountPercentage: 0,
         discountType: "none",
-        taxableAmount: basePrice,
-        cgstValue: cgst,
-        sgstValue: sgst,
-        igstValue: igst,
-        cessValue: item?.cess || 0,
-        addlCessValue: item?.addl_cess || 0,
-        igstAmount,
-        cgstAmount,
-        sgstAmount,
-        individualTotal: inclusive
-          ? price
-          : basePrice + igstAmount + cgstAmount + sgstAmount,
+        taxableAmount: Number(taxableAmount.toFixed(2)),
+        cgstValue: Number(cgst.toFixed(2)),
+        sgstValue: Number(sgst.toFixed(2)),
+        igstValue: Number(igst.toFixed(2)),
+        cessValue: Number(cess.toFixed(2)),
+        addlCessValue: Number(addlCess.toFixed(2)),
+        igstAmount: Number(igstAmount.toFixed(2)),
+        cgstAmount: Number(cgstAmount.toFixed(2)),
+        sgstAmount: Number(sgstAmount.toFixed(2)),
+        cessAmount: Number(cessAmount.toFixed(2)),
+        additionalCessAmount: Number(additionalCessAmount.toFixed(2)),
+        individualTotal: Number(individualTotal.toFixed(2)),
         isTaxIncluded: inclusive,
-        cessAmount: 0,
-        additionalCessAmount: 0,
       };
     });
 

@@ -33,7 +33,7 @@ export const addItem = async (req, res) => {
 
   try {
     const { formData, tableData } = req.body;
-
+console.log("req.body",req.body)
     session.startTransaction(); // Step 2: Start transaction
 
     // Step 3: Fetch HSN data inside the session
@@ -134,20 +134,34 @@ export const getItems = async (req, res) => {
 
 export const getAllItems = async (req, res) => {
   try {
-    // Extract filters from req.query or req.params as needed
-    const params = extractRequestParams(req); // custom function or just use req.query directly
-    const filter = buildDatabaseFilterForRoom(params); // build your filter based on request
+    const params = extractRequestParams(req);
+    const filter = buildDatabaseFilterForRoom(params);
+    
+    // Pagination
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 100;
+  
+    const skip = (page - 1) * limit;
 
-    // Fetch all products matching the filter (NO pagination)
-    const products = await productModel.find(filter);
+    const products = await productModel
+      .find(filter)
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 });
 
-    // Optionally: return count too
-    // const totalItems = await ProductModel.countDocuments(filter);
+    const totalItems = await productModel.countDocuments(filter);
+    const hasMore = skip + products.length < totalItems;
 
     return res.status(200).json({
       success: true,
       items: products,
-      // totalItems, // include if you want to return count
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(totalItems / limit),
+        totalItems,
+        hasMore,
+        itemsPerPage: limit,
+      },
     });
   } catch (error) {
     console.error("Error in getAllProducts:", error);
@@ -157,6 +171,64 @@ export const getAllItems = async (req, res) => {
     });
   }
 };
+
+export const searchItems = async (req, res) => {
+  try {
+    const cmp_id = req.params.cmp_id || req.query.cmp_id; // ✅ FIX
+    const search = (req.query.search || "").trim();
+
+    if (!cmp_id) {
+      return res.status(400).json({
+        success: false,
+        message: "cmp_id required",
+      });
+    }
+
+    if (!search) {
+      return res.status(200).json({
+        success: true,
+        items: [],
+        message: "Please provide a search term",
+      });
+    }
+
+    const searchRegex = new RegExp(search, "i");
+
+    const searchFilter = {
+      cmp_id,
+      $or: [
+        { product_name: searchRegex },
+        { hsn_code: searchRegex },
+        { unit: searchRegex },
+      ],
+    };
+
+    console.log("Search filter:", JSON.stringify(searchFilter, null, 2));
+
+    const products = await productModel
+      .find(searchFilter)
+      .populate({
+        path: "Priceleveles.pricelevel",
+        select: "pricelevel dineIn takeaway roomService delivery",
+      })
+      .sort({ product_name: 1 })
+      .limit(100)
+      .lean();
+
+    return res.status(200).json({
+      success: true,
+      items: products,
+      totalResults: products.length,
+    });
+  } catch (error) {
+    console.error("Error in searchItems:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error, please try again!",
+    });
+  }
+};
+
 
 // Get Single Item Controller (for editing)
 export const getItemById = async (req, res) => {
@@ -529,6 +601,7 @@ export const getKot = async (req, res) => {
       .find({
         cmp_id,
         createdAt: { $gte: start, $lte: end },
+          status: { $ne: "cancelled" },
       })
       .populate("roomId");
 
@@ -541,6 +614,40 @@ export const getKot = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Internal server error while fetching KOT",
+    });
+  }
+};
+
+
+export const cancelKot = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    const kot = await kotModal.findByIdAndUpdate(
+      id,
+      {
+        status: "cancelled",
+        cancelReason: reason,
+        cancelledAt: new Date(),
+      },
+      { new: true }
+    );
+
+    if (!kot) {
+      return res.status(404).json({ success: false, message: "KOT not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "KOT cancelled successfully",
+      data: kot,
+    });
+  } catch (error) {
+    console.error("Error cancelling KOT:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error while cancelling KOT",
     });
   }
 };
@@ -797,6 +904,118 @@ export const getRoomDataForRestaurant = async (req, res) => {
 //   }
 // };
 
+// controllers/sUsersController.js
+
+
+export const directSale = async (req, res) => {
+  const session = await mongoose.startSession();
+
+  try {
+    await session.withTransaction(async () => {
+      const { cmp_id } = req.params;
+      const { paymentMethod, paymentDetails, selectedKotData, isDirectSale } = req.body;
+
+      if (!paymentDetails || !selectedKotData)
+        throw new Error("Missing payment details or selected data");
+
+      const cashAmt = Number(paymentDetails?.cashAmount || 0);
+      const onlineAmt = Number(paymentDetails?.onlineAmount || 0);
+
+      // Treat both payment modes as 'mixed'
+      let resolvedPaymentMethod = paymentMethod;
+      if (cashAmt > 0 && onlineAmt > 0) resolvedPaymentMethod = "mixed";
+
+      // Get voucher series for direct sales
+      const specificVoucherSeries = await getRestaurantVoucherSeries(cmp_id, session);
+
+      const saleNumber = await generateVoucherNumber(
+        cmp_id,
+        "sales",
+        specificVoucherSeries._id.toString(),
+        session
+      );
+
+      // Cash/Bank or Customer account
+      const selectedParty = await getSelectedParty(
+        cmp_id,
+        paymentDetails,
+        cashAmt,
+        onlineAmt,
+        selectedKotData,
+        false,
+        session
+      );
+
+      // Prepare structured party & payment arrays
+      const paymentSplittingArray = createPaymentSplittingArray(
+        paymentDetails,
+        cashAmt,
+        onlineAmt
+      );
+
+      const party = mapPartyData(selectedParty);
+
+      // Create a sales voucher entry (no KOT reference)
+      const savedVoucherData = await createSalesVoucher(
+        cmp_id,
+        specificVoucherSeries,
+        saleNumber,
+        req,
+        selectedKotData, // hold items + total
+        party,
+        selectedParty,
+        paymentSplittingArray,
+        session
+      );
+
+      // Settlement entries (cash/online)
+      if (party?.paymentType !== "party") {
+        console.log("hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh")
+        await saveSettlement(
+          paymentDetails,
+          selectedParty,
+          cmp_id,
+          savedVoucherData[0],
+          cashAmt + onlineAmt,
+          cashAmt,
+          onlineAmt,
+          req,
+          session
+        );
+      }
+
+      // ✅ Convert Mongoose document to plain object and ensure _id is included
+      const salesRecordData = savedVoucherData[0].toObject 
+        ? savedVoucherData[0].toObject() 
+        : savedVoucherData[0];
+
+      // Return clean JSON response with properly formatted data
+      res.status(200).json({
+        success: true,
+        message: "Direct sale recorded successfully",
+          data: {
+          salesRecord: salesRecordData, // Return the full object as-is
+          _id: salesRecordData._id, // Also include _id at root for easy access
+          saleNumber: saleNumber
+        }
+      });
+    });
+  } catch (error) {
+    console.error("Error in direct sale:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "Internal server error during direct sale",
+    });
+  } finally {
+    await session.endSession();
+  }
+};
+
+
+// Update your updateKotPayment function in the backend
+
+// Update your updateKotPayment function - ADD DETAILED LOGGING
+
 export const updateKotPayment = async (req, res) => {
   const session = await mongoose.startSession();
 
@@ -809,13 +1028,21 @@ export const updateKotPayment = async (req, res) => {
         selectedKotData: kotData,
         isPostToRoom,
       } = req.body;
+    
 
-      console.log("table", kotData);
+      // console.log("table", kotData);
 
+
+      
       if (!paymentDetails || !kotData) {
         throw new Error("Missing payment details or KOT data");
       }
 
+       if (paymentDetails?.paymentMode === "credit") {
+        if (!paymentDetails.selectedCreditor || !paymentDetails.selectedCreditor._id) {
+          throw new Error("Please select a creditor for credit payment");
+        }
+      }
       let paymentCompleted = false;
 
       // Determine payment method
@@ -854,7 +1081,7 @@ export const updateKotPayment = async (req, res) => {
           .session(session);
       }
 
-      console.log("creditParty", paymentMethod);
+      // console.log("creditParty", paymentMethod);
       // Selected party
       const selectedParty =
         paymentMethod == "credit"
@@ -908,6 +1135,8 @@ export const updateKotPayment = async (req, res) => {
         );
       }
       if (party?.paymentType != "party" && paymentMethod != "credit") {
+        console.log("undddd")
+       
         await saveSettlement(
           paymentDetails,
           selectedParty,
@@ -942,42 +1171,52 @@ export const updateKotPayment = async (req, res) => {
         kotData?.voucherNumber.map(async (item) => {
           // Find the KOT first
           const kot = await kotModal.findById(item.id).lean();
-
-          if (!selectedTableNumber.includes(kot?.tableNumber)) {
+  if (kot?.tableNumber && !selectedTableNumber.includes(kot.tableNumber)) {
             selectedTableNumber.push(kot.tableNumber);
           }
 
           // Then update it
           return kotModal.updateOne(
             { _id: item.id },
-            { paymentMethod, paymentCompleted },
+            { paymentMethod, paymentCompleted,  status: 'completed'  },
             { session }
           );
         })
       );
 
-      console.log("Selected Table Numbers:", selectedTableNumber);
+      // console.log("Selected Table Numbers:", selectedTableNumber);
 
       // Check pending
+      let updatedTables = [];
       for (const tableNumber of selectedTableNumber) {
+        if (!tableNumber) continue; // Skip if tableNumber is null/undefined
+        
         const pendingCount = await kotModal
           .countDocuments({
-            "customer.tableNumber": tableNumber,
+            cmp_id,
+            tableNumber: tableNumber,  // ✅ Direct field, not nested
             paymentCompleted: false,
           })
           .session(session);
 
-        console.log("pendingCount", pendingCount);
-        console.log("kotData.tableNumber", kotData);
+        // console.log(`Pending KOTs for table ${tableNumber}:`, pendingCount);
 
-        if (pendingCount < 1) {
+        // ✅ If no pending KOTs, mark table as available
+        if (pendingCount === 0) {
           const updateTableStatus = await Table.findOneAndUpdate(
             { cmp_id, tableNumber },
-            { status: "available" },
+            { 
+              status: "available",
+              currentOrders: 0,  // ✅ Reset order count
+              updatedAt: new Date()
+            },
             { new: true, session }
           );
 
-          console.log("updated table", updateTableStatus);
+          if (updateTableStatus) {
+            updatedTables.push(tableNumber);
+            console.log(`Table ${tableNumber} status updated to available`);
+          }
         }
       }
 
@@ -989,7 +1228,7 @@ export const updateKotPayment = async (req, res) => {
       });
     });
   } catch (error) {
-    console.error("Error updating KOT:", error);
+    // console.error("Error updating KOT:", error);
     res.status(500).json({
       success: false,
       message: error.message || "Internal server error while updating KOT",
@@ -998,6 +1237,114 @@ export const updateKotPayment = async (req, res) => {
     await session.endSession();
   }
 };
+// NEW: Helper function to create split payment array
+async function createSplitPaymentArray(payments, cmp_id, session) {
+  const paymentArray = [];
+
+  for (const payment of payments) {
+    console.log('Processing payment:', JSON.stringify(payment, null, 2));
+    
+    // Find the account (cash or bank) from the database
+    const account = await Party.findOne({
+      cmp_id,
+      _id: payment.accountId,
+    })
+      .populate('accountGroup')
+      .session(session)
+      .lean();
+
+    console.log('Found account:', JSON.stringify(account, null, 2));
+
+    if (!account) {
+      throw new Error(`Payment account ${payment.accountName} (ID: ${payment.accountId}) not found in database`);
+    }
+
+    const accountName = account.partyName || account.name || account.ledgerName || payment.accountName;
+    
+    if (!accountName) {
+      console.error('Account object:', account);
+      throw new Error(`Account has no name field. Available fields: ${Object.keys(account).join(', ')}`);
+    }
+
+    // ✅ FIX: Map payment method to the correct type field
+    let paymentType;
+    const method = payment.method.toLowerCase();
+    
+    if (method === 'cash') {
+      paymentType = 'cash';
+    } else if (['upi', 'online', 'card', 'bank'].includes(method)) {
+      paymentType = 'upi';
+    } else {
+      paymentType = 'upi'; // Default to upi for online payments
+    }
+
+    // ✅ FIX: Create object matching the schema
+    paymentArray.push({
+      type: paymentType,              // ✅ Required field
+      amount: Number(payment.amount),
+      ref_id: account._id,           // ✅ Required field
+      // Optional: Store additional info in a separate field if needed
+      _metadata: {
+        partyName: accountName,
+        accountGroup: account.accountGroup,
+        method: payment.method
+      }
+    });
+
+    console.log('Added to payment array:', paymentArray[paymentArray.length - 1]);
+  }
+
+  return paymentArray;
+}
+
+// NEW: Helper function to process split payment settlements
+// async function processSplitPaymentSettlements(
+//   payments,
+//   cmp_id,
+//   savedVoucher,
+//   req,
+//   session
+// ) {
+//   console.log('Processing settlements for', payments.length, 'payments');
+  
+//   for (const payment of payments) {
+//     // Find the account
+//     const account = await Party.findOne({
+//       cmp_id,
+//       _id: payment.accountId,
+//     })
+//       .populate("accountGroup")
+//       .session(session);
+
+//     if (!account) {
+//       console.warn(`Account ${payment.accountId} not found for settlement, skipping...`);
+//       continue;
+//     }
+
+//     const amount = Number(payment.amount);
+    
+//     // ✅ Map method to settlement type
+//     const settlementType = payment.method === 'cash' ? 'cash' : 'bank';
+
+//     // Create settlement entry using the helper function
+//     await saveSettlementData(
+//       account,
+//       cmp_id,
+//       settlementType,
+//       "sales",
+//       "Sales",
+//       savedVoucher.salesNumber,
+//       savedVoucher._id,
+//       amount,
+//       new Date(),
+//       req,
+//       session
+//     );
+
+//     console.log(`Settlement created for ${account.partyName || account.name}: ₹${amount}`);
+//   }
+// }
+
 
 async function getRestaurantVoucherSeries(cmp_id, session) {
   const SaleVoucher = await VoucherSeriesModel.findOne({
@@ -1077,6 +1424,87 @@ function createPaymentSplittingArray(paymentDetails, cashAmt, onlineAmt) {
   }
   return arr;
 }
+
+// async function createSplitPaymentArray(payments, cmp_id, session) {
+//   const paymentArray = [];
+
+//   for (const payment of payments) {
+//     // Find the account (cash or bank) from the database
+//     const account = await Party.findOne({
+//       cmp_id,
+//       _id: payment.accountId,
+//     })
+//       .populate('accountGroup')
+//       .session(session);
+
+//     if (account) {
+//       paymentArray.push({
+//         party: {
+//           _id: account._id,
+//           partyName: account.partyName || account.name || payment.accountName,
+//           accountGroup: account.accountGroup,
+//         },
+//         amount: Number(payment.amount),
+//         paymentType: payment.method === "cash" ? "cash" : "bank",
+//       });
+//     } else {
+//       console.error(`Account not found for payment:`, payment);
+//       throw new Error(`Payment account ${payment.accountName} not found`);
+//     }
+//   }
+
+//   return paymentArray;
+// }
+
+
+// // NEW: Helper function to process split payment settlements
+// async function processSplitPaymentSettlements(
+//   payments,
+//   cmp_id,
+//   savedVoucher,
+//   req,
+//   session
+// ) {
+//   for (const payment of payments) {
+//     // Find the account
+//     const account = await Party.findOne({
+//       cmp_id,
+//       _id: payment.accountId,
+//     })
+//       .populate("accountGroup")
+//       .session(session);
+
+//     if (!account) continue;
+
+//     const amount = Number(payment.amount);
+
+//     // Create settlement entry for each payment
+//     const settlementData = {
+//       cmp_id,
+//       party: account._id,
+//       amount: amount,
+//       voucherId: savedVoucher._id,
+//       voucherType: "sales",
+//       paymentMethod: payment.method,
+//       transactionDate: new Date(),
+//       createdBy: req.user?._id,
+//       description: `Split payment - ${payment.accountName}`,
+//     };
+
+//     // Save settlement
+//     await Settlement.create([settlementData], { session });
+
+//     // Update party balance if needed
+//     if (account.accountGroup?.name === "Cash-in-Hand" || 
+//         account.accountGroup?.name === "Bank Accounts") {
+//       await Party.updateOne(
+//         { _id: account._id },
+//         { $inc: { currentBalance: amount } },
+//         { session }
+//       );
+//     }
+//   }
+// }
 
 function mapPartyData(selectedParty) {
   return {
@@ -1189,18 +1617,21 @@ async function saveSettlement(
   req,
   session
 ) {
-  console.log;
+
   if (paymentDetails?.paymentMode === "single") {
+    console.log("hhh")
+    console.log("bbbbbbbbbbbbbbbbbbbbbb",req)
     await saveSettlementData(
       selectedParty,
       cmp_id,
       "cash",
-      "sale",
+      "sales",
+      "Sales",
       savedVoucher?.salesNumber,
       savedVoucher?._id,
       paidAmount,
       new Date(),
-      selectedParty?.partyName,
+      // selectedParty?.partyName,
       req,
       session
     );
@@ -1210,12 +1641,13 @@ async function saveSettlement(
         selectedParty,
         cmp_id,
         "cash",
-        "sale",
+        "sales",
+         "Sales",
         savedVoucher?.salesNumber,
         savedVoucher?._id,
         cashAmt,
         new Date(),
-        selectedParty?.partyName,
+        // selectedParty?.partyName,
         req,
         session
       );
@@ -1225,12 +1657,13 @@ async function saveSettlement(
         selectedParty,
         cmp_id,
         "bank",
-        "sale",
+        "sales",
+         "Sales",
         savedVoucher?.salesNumber,
         savedVoucher?._id,
         onlineAmt,
         new Date(),
-        selectedParty?.partyName,
+        // selectedParty?.partyName,
         req,
         session
       );
@@ -1265,17 +1698,18 @@ export const getPaymentType = async (req, res) => {
 // function used to fetch sale data for print
 export const getSalePrintData = async (req, res) => {
   try {
-    const salesData = await salesModel.findOne({
-      cmp_id: req.params.cmp_id,
-      convertedFrom: {
-        $elemMatch: { id: req.params.kotId },
-      },
+      const { cmp_id, kotId } = req.params;
+   
+  let salesData = await salesModel.findOne({
+      _id: kotId, // kotId parameter is actually the saleId for direct sales
+      cmp_id: cmp_id,
     });
 
+    // If not found, try to find by convertedFrom (for KOT-based sales)
     if (!salesData) {
-      return res.status(404).json({
-        success: false,
-        message: "No sales record found",
+      salesData = await salesModel.findOne({
+        cmp_id: cmp_id,
+        "convertedFrom.id": kotId, // Here kotId is the actual KOT ID
       });
     }
 
@@ -1478,26 +1912,15 @@ export const updateTableStatus = async (req, res) => {
     const { cmp_id } = req.params;
     const { tableNumber, status } = req.body;
 
-    if (!tableNumber || !status) {
-      return res
-        .status(400)
-        .json({ message: "Table number and status are required" });
-    }
-
-    const table = await Table.findOneAndUpdate(
+     const updatedTable = await Table.findOneAndUpdate(
       { cmp_id, tableNumber },
-      { $set: { status } },
+      { status },
       { new: true }
     );
-
-    if (!table) {
-      return res.status(404).json({ message: "Table not found" });
-    }
-
-    res.json({ message: "Table status updated", table });
+    
+    res.status(200).json({ success: true, data: updatedTable });
   } catch (error) {
-    console.error("Error updating table status:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -1514,7 +1937,6 @@ export const getKotDataByTable = async (req, res) => {
       filter.status = status;
     }
 
-    console.log("filter", filter);
 
     const kots = await kotModal.find(filter).sort({ createdAt: -1 });
     res.json({ success: true, data: kots });

@@ -135,6 +135,21 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
       !name.trim() ||
       // (gstNum && !gstNum.trim()) ||
       !email.trim() ||
+     
+      !industry ||
+      // (website && !website.trim()) ||
+      !financialYear.trim() 
+    
+    ) {
+      toast.error("All fields must be filled");
+      return;
+    }
+
+     if (country === "India") {
+    if (
+      !name.trim() ||
+      // (gstNum && !gstNum.trim()) ||
+      !email.trim() ||
       !state ||
       !country ||
       !flat.trim() ||
@@ -146,10 +161,10 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
       !pin ||
       !mobile
     ) {
-      toast.error("All fields must be filled");
+      toast.error("All fields must be filled for India");
       return;
     }
-
+  }
     if (showInputs) {
       if (!senderId.trim() || !username.trim() || !password.trim()) {
         toast.error("SenderId, Username, and Password must be filled");
@@ -157,10 +172,10 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
       }
     }
 
-    if (currency?.trim() === "" || currencyName?.trim() === "") {
-      toast.error("Currency and Currency Name must be filled");
-      return;
-    }
+     if (country === "India" && (currency?.trim() === "" || currencyName?.trim() === "")) {
+    toast.error("Currency and Currency Name must be filled");
+    return;
+  }
 
     if (name.length > 60) {
       toast.error("Name must be at most 30 characters");
@@ -191,23 +206,27 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
     }
 
     // / Additional PIN code validation
+   if (country === "India") {
     const isPinValid = /^\d{6}$/.test(pin);
-    if (!isPinValid && country === "India") {
+    if (!isPinValid) {
       toast.error("Please enter a valid 6-digit PIN code");
       return;
     }
+  }
 
+   if (country === "India" && gstNum) {
     const gstRegex = /^[0-9A-Za-z]{15}$/;
-
-    if (gstNum && !gstRegex.test(gstNum) && country === "India") {
+    if (!gstRegex.test(gstNum)) {
       toast.error("Invalid GST number");
       return;
     }
+  }
 
-    if (pan && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(pan) && country === "India") {
-      toast.error("Invalid PAN number");
-      return;
-    }
+     if (country === "India" && pan && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(pan)) {
+    toast.error("Invalid PAN number");
+    return;
+  }
+
     if (
       website &&
       !/^((https?|ftp):\/\/)?(www\.)?[\w-]+\.[a-zA-Z]{2,}(\/\S*)?$/.test(

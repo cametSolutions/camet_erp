@@ -1194,7 +1194,7 @@ export const saveSettlementData = async (
       voucher_date: createdAt ? new Date(createdAt) : new Date(),
     };
 
-    console.log("Saving settlement object:", object);
+    // console.log("Saving settlement object:", object);
 
     const updatedData = await settlementModel.create([object], { session });
     return updatedData;
