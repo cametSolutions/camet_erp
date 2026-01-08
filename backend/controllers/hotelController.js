@@ -2352,7 +2352,7 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
     // 1️⃣ Collect all check-in IDs in a global Set
     const uniqueIds = new Set();
     for (const checkout of checkoutData) {
-      checkout.allCheckInIds.forEach((id) => uniqueIds.add(id.toString()));
+      checkout.allCheckInIds?.forEach((id) => uniqueIds.add(id.toString()));
     }
 
     // Fetch advance details

@@ -12,134 +12,154 @@ export default function CheckoutDateModal({
   console.log(checkoutData.length);
 
   // Store original data separately (deep clone)
-  const [originalCheckouts] = useState(() => 
+  const [originalCheckouts] = useState(() =>
     checkoutData.length > 0 ? JSON.parse(JSON.stringify(checkoutData)) : []
   );
 
- const [checkouts, setCheckouts] = useState(
-  checkoutData.length > 0
-    ? checkoutData.map(checkout => {
-        const arrival = new Date(checkout.arrivalDate);
-        const checkoutDate = new Date(checkout.checkOutDate);
-        const diffTime = checkoutDate - arrival;
-        const calculatedDays = diffTime === 0 ? 1 : Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        
-        return {
-          ...checkout,
-          stayDays: calculatedDays
-        };
-      })
-    : [
-        {
-          _id: "1",
-          checkOutDate: "2024-01-15",
-          arrivalDate: "2024-01-10",
-          voucherNumber: "V001",
-          stayDays: 2.5,
-          selectedRooms: [
-            { _id: "r1", roomName: "101", priceLevelRate: 2000 },
-          ],
-        },
-      ]
-);
+  const [checkouts, setCheckouts] = useState(
+    checkoutData.length > 0
+      ? checkoutData.map((checkout) => {
+          const arrival = new Date(checkout.arrivalDate);
+          const checkoutDate = new Date(checkout.checkOutDate);
+          const diffTime = checkoutDate - arrival;
+          const calculatedDays =
+            diffTime === 0 ? 1 : Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          const time = new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: true, // 12-hour format
+          });
 
- const handleNewDateChange = (id, newDate) => {
-  setCheckouts(
-    checkouts.map((checkout) => {
-      if (checkout._id === id) {
-        const arrival = new Date(checkout.arrivalDate);
-        const checkoutDate = new Date(newDate);
-        const diffTime = checkoutDate - arrival;
-        const calculatedDays = diffTime === 0 ? 1 : Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          console.log(time); // "11:26 AM"
 
-        const originalCheckout = originalCheckouts.find((oc) => oc._id === id);
-        if (!originalCheckout) return checkout;
+          console.log(time); // "11:26"
 
-        const updatedRooms =
-          checkout.selectedRooms?.map((room) => {
-            const originalRoom = originalCheckout.selectedRooms?.find(
-              (or) => or._id === room._id || or.roomName === room.roomName
-            );
-
-            if (!originalRoom) return room;
-
-            const originalStayDays =
-              originalRoom.stayDays || originalCheckout.stayDays || 1;
-            const originalBaseAmount = originalRoom.baseAmount || 0;
-            const originalTaxAmount = originalRoom.taxAmount || 0;
-            const originalFoodPlanWithTax =
-              originalRoom.foodPlanAmountWithTax || 0;
-            const originalFoodPlanWithoutTax =
-              originalRoom.foodPlanAmountWithOutTax || 0;
-            const originalPaxWithTax =
-              originalRoom.additionalPaxAmountWithTax || 0;
-            const originalPaxWithoutTax =
-              originalRoom.additionalPaxAmountWithOutTax || 0;
-
-            // Calculate daily rates from ORIGINAL totals
-            const baseAmountPerDay = originalBaseAmount / originalStayDays;
-            const taxAmountPerDay = originalTaxAmount / originalStayDays;
-            const foodPlanWithTaxPerDay =
-              originalFoodPlanWithTax / originalStayDays;
-            const foodPlanWithoutTaxPerDay =
-              originalFoodPlanWithoutTax / originalStayDays;
-
-            // ✅ FIX: Calculate pax per day based on ORIGINAL FULL DAYS only
-            const originalFullDays = Math.floor(originalStayDays);
-            const paxWithTaxPerDay = originalFullDays > 0 ? originalPaxWithTax / originalFullDays : 0;
-            const paxWithoutTaxPerDay = originalFullDays > 0 ? originalPaxWithoutTax / originalFullDays : 0;
-
-            // Calculate new totals based on calculatedDays
-            const fullDays = Math.floor(calculatedDays);
-            const fractionalDay = calculatedDays - fullDays;
-
-            let newBaseAmount = fullDays * baseAmountPerDay;
-            let newTaxAmount = fullDays * taxAmountPerDay;
-            let newFoodPlanWithTax = fullDays * foodPlanWithTaxPerDay;
-            let newFoodPlanWithoutTax = fullDays * foodPlanWithoutTaxPerDay;
-            
-            // ✅ FIX: Only multiply by FULL days for pax
-            let newPaxWithTax = fullDays * paxWithTaxPerDay;
-            let newPaxWithoutTax = fullDays * paxWithoutTaxPerDay;
-
-            // Add fractional day amounts (50%) - but NOT for pax
-            if (fractionalDay > 0) {
-              newBaseAmount += baseAmountPerDay * 0.5;
-              newTaxAmount += taxAmountPerDay * 0.5;
-              newFoodPlanWithTax += foodPlanWithTaxPerDay * 0.5;
-              newFoodPlanWithoutTax += foodPlanWithoutTaxPerDay * 0.5;
-              // ✅ NO pax charges for fractional day
-            }
-
-            return {
-              ...room,
-              stayDays: calculatedDays,
-              baseAmount: Math.round(newBaseAmount * 100) / 100,
-              taxAmount: Math.round(newTaxAmount * 100) / 100,
-              baseAmountWithTax:
-                Math.round((newBaseAmount + newTaxAmount) * 100) / 100,
-              foodPlanAmountWithTax:
-                Math.round(newFoodPlanWithTax * 100) / 100,
-              foodPlanAmountWithOutTax:
-                Math.round(newFoodPlanWithoutTax * 100) / 100,
-              additionalPaxAmountWithTax:
-                Math.round(newPaxWithTax * 100) / 100,
-              additionalPaxAmountWithOutTax:
-                Math.round(newPaxWithoutTax * 100) / 100,
-            };
-          }) || [];
-
-        return {
-          ...checkout,
-          checkOutDate: newDate,
-          stayDays: calculatedDays,
-          selectedRooms: updatedRooms,
-        };
-      }
-      return checkout;
-    })
+          return {
+            ...checkout,
+            stayDays: calculatedDays,
+            checkOutTime: time,
+          };
+        })
+      : [
+          {
+            _id: "1",
+            checkOutDate: "2024-01-15",
+            arrivalDate: "2024-01-10",
+            voucherNumber: "V001",
+            stayDays: 2.5,
+            selectedRooms: [
+              { _id: "r1", roomName: "101", priceLevelRate: 2000 },
+            ],
+          },
+        ]
   );
-};
+
+  const handleNewDateChange = (id, newDate) => {
+    setCheckouts(
+      checkouts.map((checkout) => {
+        if (checkout._id === id) {
+          const arrival = new Date(checkout.arrivalDate);
+          const checkoutDate = new Date(newDate);
+          const diffTime = checkoutDate - arrival;
+          const calculatedDays =
+            diffTime === 0 ? 1 : Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+          const originalCheckout = originalCheckouts.find(
+            (oc) => oc._id === id
+          );
+          if (!originalCheckout) return checkout;
+
+          const updatedRooms =
+            checkout.selectedRooms?.map((room) => {
+              const originalRoom = originalCheckout.selectedRooms?.find(
+                (or) => or._id === room._id || or.roomName === room.roomName
+              );
+
+              if (!originalRoom) return room;
+
+              const originalStayDays =
+                originalRoom.stayDays || originalCheckout.stayDays || 1;
+              const originalBaseAmount = originalRoom.baseAmount || 0;
+              const originalTaxAmount = originalRoom.taxAmount || 0;
+              const originalFoodPlanWithTax =
+                originalRoom.foodPlanAmountWithTax || 0;
+              const originalFoodPlanWithoutTax =
+                originalRoom.foodPlanAmountWithOutTax || 0;
+              const originalPaxWithTax =
+                originalRoom.additionalPaxAmountWithTax || 0;
+              const originalPaxWithoutTax =
+                originalRoom.additionalPaxAmountWithOutTax || 0;
+
+              // Calculate daily rates from ORIGINAL totals
+              const baseAmountPerDay = originalBaseAmount / originalStayDays;
+              const taxAmountPerDay = originalTaxAmount / originalStayDays;
+              const foodPlanWithTaxPerDay =
+                originalFoodPlanWithTax / originalStayDays;
+              const foodPlanWithoutTaxPerDay =
+                originalFoodPlanWithoutTax / originalStayDays;
+
+              // ✅ FIX: Calculate pax per day based on ORIGINAL FULL DAYS only
+              const originalFullDays = Math.floor(originalStayDays);
+              const paxWithTaxPerDay =
+                originalFullDays > 0
+                  ? originalPaxWithTax / originalFullDays
+                  : 0;
+              const paxWithoutTaxPerDay =
+                originalFullDays > 0
+                  ? originalPaxWithoutTax / originalFullDays
+                  : 0;
+
+              // Calculate new totals based on calculatedDays
+              const fullDays = Math.floor(calculatedDays);
+              const fractionalDay = calculatedDays - fullDays;
+
+              let newBaseAmount = fullDays * baseAmountPerDay;
+              let newTaxAmount = fullDays * taxAmountPerDay;
+              let newFoodPlanWithTax = fullDays * foodPlanWithTaxPerDay;
+              let newFoodPlanWithoutTax = fullDays * foodPlanWithoutTaxPerDay;
+
+              // ✅ FIX: Only multiply by FULL days for pax
+              let newPaxWithTax = fullDays * paxWithTaxPerDay;
+              let newPaxWithoutTax = fullDays * paxWithoutTaxPerDay;
+
+              // Add fractional day amounts (50%) - but NOT for pax
+              if (fractionalDay > 0) {
+                newBaseAmount += baseAmountPerDay * 0.5;
+                newTaxAmount += taxAmountPerDay * 0.5;
+                newFoodPlanWithTax += foodPlanWithTaxPerDay * 0.5;
+                newFoodPlanWithoutTax += foodPlanWithoutTaxPerDay * 0.5;
+                // ✅ NO pax charges for fractional day
+              }
+
+              return {
+                ...room,
+                stayDays: calculatedDays,
+                baseAmount: Math.round(newBaseAmount * 100) / 100,
+                taxAmount: Math.round(newTaxAmount * 100) / 100,
+                baseAmountWithTax:
+                  Math.round((newBaseAmount + newTaxAmount) * 100) / 100,
+                foodPlanAmountWithTax:
+                  Math.round(newFoodPlanWithTax * 100) / 100,
+                foodPlanAmountWithOutTax:
+                  Math.round(newFoodPlanWithoutTax * 100) / 100,
+                additionalPaxAmountWithTax:
+                  Math.round(newPaxWithTax * 100) / 100,
+                additionalPaxAmountWithOutTax:
+                  Math.round(newPaxWithoutTax * 100) / 100,
+              };
+            }) || [];
+
+          return {
+            ...checkout,
+            checkOutDate: newDate,
+            stayDays: calculatedDays,
+            selectedRooms: updatedRooms,
+          };
+        }
+        return checkout;
+      })
+    );
+  };
 
   const handleStayDaysChange = (id, newDays) => {
     setCheckouts(
@@ -213,18 +233,24 @@ export default function CheckoutDateModal({
                 originalFoodPlanWithTax / originalStayDays;
               const foodPlanWithoutTaxPerDay =
                 originalFoodPlanWithoutTax / originalStayDays;
-              
+
               // ✅ FIX: Calculate pax per day based on ORIGINAL FULL DAYS only
               const originalFullDays = Math.floor(originalStayDays);
-              const paxWithTaxPerDay = originalFullDays > 0 ? originalPaxWithTax / originalFullDays : 0;
-              const paxWithoutTaxPerDay = originalFullDays > 0 ? originalPaxWithoutTax / originalFullDays : 0;
+              const paxWithTaxPerDay =
+                originalFullDays > 0
+                  ? originalPaxWithTax / originalFullDays
+                  : 0;
+              const paxWithoutTaxPerDay =
+                originalFullDays > 0
+                  ? originalPaxWithoutTax / originalFullDays
+                  : 0;
 
               // Calculate new totals: full days + fractional day
               let newBaseAmount = fullDays * baseAmountPerDay;
               let newTaxAmount = fullDays * taxAmountPerDay;
               let newFoodPlanWithTax = fullDays * foodPlanWithTaxPerDay;
               let newFoodPlanWithoutTax = fullDays * foodPlanWithoutTaxPerDay;
-              
+
               // ✅ FIX: Only multiply by FULL days for pax
               let newPaxWithTax = fullDays * paxWithTaxPerDay;
               let newPaxWithoutTax = fullDays * paxWithoutTaxPerDay;
