@@ -1,7 +1,7 @@
 /* eslint-disable react/no-unknown-property */
-import { useMemo, useState } from "react";
-import { useSelector } from "react-redux";
-
+import { useMemo, useState,useEffect  } from "react";
+import { useSelector,useDispatch  } from "react-redux";
+import { useLocation } from "react-router-dom";
 import "react-datepicker/dist/react-datepicker.css";
 
 import SelectDate from "../../../components/Filters/SelectDate";
@@ -12,12 +12,17 @@ import TitleDiv from "../../../components/common/TitleDiv";
 import { BarLoader } from "react-spinners";
 import SecondaryUserFilter from "@/components/Filters/SecondaryUserFilter";
 
+
 function Transaction() {
   const [netCashInHands, setNetCashInHands] = useState(0);
+
+  const [effectiveDates, setEffectiveDates] = useState({ start: null, end: null });
+  const location = useLocation(); // Hook to access passed state
+  const dispatch = useDispatch();
   const org = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
-  const { start, end } = useSelector((state) => state.date);
+    const { start: reduxStart, end: reduxEnd } = useSelector((state) => state.date);
   const selectedVoucher = useSelector(
     (state) => state?.voucherType?.selectedVoucher
   );
@@ -28,21 +33,43 @@ function Transaction() {
   console.log(selectedSecondaryUser);
   
 
+ useEffect(() => {
+    if (location.state?.fromSummary && location.state?.startDate && location.state?.endDate) {
+      // Coming from Summary Report - use month-specific dates
+      setEffectiveDates({
+        start: location.state.startDate,
+        end: location.state.endDate
+      });
+    } else {
+      // Normal view - use Redux dates
+      setEffectiveDates({
+        start: reduxStart,
+        end: reduxEnd
+      });
+    }
+  }, [location.state, reduxStart, reduxEnd]);
+
+
   const isAdmin =
     JSON.parse(localStorage.getItem("sUserData")).role === "admin"
       ? true
       : false;
 
-  const transactionsUrl = useMemo(
+
+
+      
+   const transactionsUrl = useMemo(
     () =>
-      `/api/sUsers/transactions/${
-        org?._id
-      }?startOfDayParam=${start}&endOfDayParam=${end}&selectedVoucher=${
-        selectedVoucher?.value
-      }&isAdmin=${isAdmin}&selectedSecondaryUser=${
-        selectedSecondaryUser?._id || ""
-      }`,
-    [org?._id, start, end, selectedVoucher, selectedSecondaryUser]
+      effectiveDates.start && effectiveDates.end
+        ? `/api/sUsers/transactions/${
+            org?._id
+          }?startOfDayParam=${effectiveDates.start}&endOfDayParam=${effectiveDates.end}&selectedVoucher=${
+            selectedVoucher?.value
+          }&isAdmin=${isAdmin}&selectedSecondaryUser=${
+            selectedSecondaryUser?._id || ""
+          }`
+        : null,
+    [org?._id, effectiveDates.start, effectiveDates.end, selectedVoucher, selectedSecondaryUser, isAdmin]
   );
   // Fetch data using custom hook
   const { data: transactionData, loading: transactionLoading } =
@@ -52,6 +79,8 @@ function Transaction() {
     setNetCashInHands(difference);
   };
 
+
+  
   return (
     <div className="flex-1">
       <div className=" flex-1   ">

@@ -52,6 +52,8 @@ function SummaryDropdown({
         <option value="voucher">Voucher</option>
         <option value="Stock Group">Stock Group</option>
         <option value="Stock Category">Stock Category</option>
+        <option value="MonthWise">MonthWise</option>
+
       </select>
     </div>
   )
