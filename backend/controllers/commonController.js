@@ -221,6 +221,10 @@ export const transactions = async (req, res) => {
         : voucherTypeMap[selectedVoucher]
       : voucherTypeMap.all;
 
+
+      if (!Array.isArray(modelsToQuery)) {
+  modelsToQuery = voucherTypeMap.all; // Fallback to all transactions
+}
     // Filter out ignored collections
     modelsToQuery = modelsToQuery.filter(
       ({ type }) =>
