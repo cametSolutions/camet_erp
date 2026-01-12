@@ -95,11 +95,18 @@ function SalesSummaryTable() {
 
   // Memoized URL
   const salesummaryUrl = useMemo(() => {
-    if (start && end && voucherType.value !== "all") {
-      return `/api/sUsers/salesSummary/${cmp_id}?startOfDayParam=${start}&endOfDayParam=${end}&selectedVoucher=${voucherType.value}&summaryType=${summaryType}&selectedOption=${selectedOption}`
-    }
-    return null
-  }, [start, end, cmp_id, voucherType.value, selectedOption, summaryType])
+     let startDate = start;
+  let endDate = end;
+
+   if (location.state?.monthStart && location.state?.monthEnd) {
+    startDate = location.state.monthStart;
+    endDate = location.state.monthEnd;
+  }
+    if (startDate && endDate && voucherType.value !== "all") {
+    return `/api/sUsers/salesSummary/${cmp_id}?startOfDayParam=${startDate}&endOfDayParam=${endDate}&selectedVoucher=${voucherType.value}&summaryType=${summaryType}&selectedOption=${selectedOption}`;
+  }
+  return null;
+}, [start, end, location.state?.monthStart, location.state?.monthEnd, cmp_id, voucherType.value, selectedOption, summaryType]);
 
   // Serial number query
   const { data: serialNumberList } = useQuery({
@@ -283,6 +290,25 @@ function SalesSummaryTable() {
 
   return (
     <div className="h-full flex flex-col">
+
+      {location.state?.monthTitle && (
+      <section className="bg-[#012847] text-white p-4 shadow-2xl mb-4 sticky top-0 z-20">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
+            <h2 className="text-xl md:text-2xl font-black">{location.state.monthTitle}</h2>
+          </div>
+          <span className="text-lg font-semibold px-4 py-1 bg-white/20 rounded-full backdrop-blur-sm">
+            {summaryType} | {selectedOption}
+          </span>
+          <div className="text-sm opacity-90 ml-auto">
+            📅 {new Date(location.state.monthStart).toLocaleDateString('en-GB')} - 
+            {new Date(location.state.monthEnd).toLocaleDateString('en-GB')}
+          </div>
+        </div>
+      </section>
+    )}
+
       <div className="sticky top-0">
         <TitleDiv
           title={`${summaryType} Details`}

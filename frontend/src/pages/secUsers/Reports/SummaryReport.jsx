@@ -313,26 +313,51 @@ export default function SummaryReport() {
       state: { summaryType, serialNumber: serialNumber.value, serialNumberList }
     })
   }
-    const handleMonthClick = (item) => {
-    // Only navigate if it's the MonthWise view
-    if (selectedOption === "MonthWise") {
-      const monthIndex = new Date(`${item.name} 1, ${selectedYear}`).getMonth(); // Get month 0-11
-      
-      // Create Start and End dates for that specific month
-      // selectedYear is the state variable you added earlier
-      const startDate = startOfMonth(new Date(selectedYear, monthIndex));
-      const endDate = endOfMonth(new Date(selectedYear, monthIndex));
+  
+    // Replace your handleMonthClick function with this:
+const handleMonthClick = (item, actionType) => {
+  if (selectedOption === "MonthWise") {
+    const monthIndexMap = {
+      "January": 0, "February": 1, "March": 2, "April": 3, "May": 4, "June": 5,
+      "July": 6, "August": 7, "September": 8, "October": 9, "November": 10, "December": 11
+    };
+    
+    const monthIndex = monthIndexMap[item.name];
+    const startDate = new Date(selectedYear, monthIndex, 1);
+    const endDate = new Date(selectedYear, monthIndex + 1, 0);
+    
+    startDate.setHours(0, 0, 0, 0);
+    endDate.setHours(23, 59, 59, 999);
 
+    if (actionType === "daybook") {
+      // 🚀 DAYBOOK BUTTON - Go to /sUsers/transaction (sales only)
       navigate("/sUsers/transaction", { 
         state: { 
-          fromSummary: true, // Flag to tell Transaction page to use these dates
+          fromSummary: true,
+          summaryType,  // "Sales Summary"
+          voucherType: voucherType.value,  // "sale" or "allType"
           startDate: startDate.toISOString(),
           endDate: endDate.toISOString(),
-          title: `${item.name} ${selectedYear}` // Optional: For title display
+          title: `${item.name} ${selectedYear}`
         } 
+      });
+    } else if (actionType === "details") {
+      // 📊 DETAILS BUTTON - Go to /sUsers/salesSummaryDetails (month-specific)
+      navigate("/sUsers/salesSummaryDetails", {
+        state: { 
+          summaryType,
+          selectedOption,  // "Ledger", "Stock Item", etc.
+          monthStart: startDate.toISOString(),
+          monthEnd: endDate.toISOString(),
+          monthTitle: `${item.name} ${selectedYear}`,
+          voucherType: voucherType.value,
+          serialNumber: serialNumber.value
+        }
       });
     }
   }
+};
+
   
 
 
@@ -454,42 +479,65 @@ export default function SummaryReport() {
             </p>
           )}
         {/* ... (Keep existing map code) ... */}
-        {processedSummary &&
-          selectedOption !== "voucher" &&
-          processedSummary?.length > 0 && (
-            <div className="space-y-2">
-              {processedSummary.map((item, index) => (
-                <div
-                  key={index}
-                    onClick={() => handleMonthClick(item)} 
-                  className="flex justify-between items-center p-4 py-6 bg-white shadow-md rounded-base cursor-pointer hover:-translate-y-0.5 transition-transform duration-300"
-                >
-                  <span className="text-gray-800 font-medium">{item.name}</span>
-                  <span className="text-gray-600 font-semibold">
-                    ₹{item.net.toLocaleString()}
-                    {selectedOption !== "voucher" && (
-                      <span
-                        className={`ml-2 ${
-                          item.net < 0
-                            ? "text-red-500 font-semibold"
-                            : "text-green-500 font-semibold"
-                        }`}
-                      >
-                        {item.net < 0 ? "CR" : "DR"}
-                      </span>
-                    )}
-                  </span>
-                </div>
-              ))}
+  {processedSummary &&
+  selectedOption !== "voucher" &&
+  processedSummary?.length > 0 && (
+    <div className="space-y-2">
+      {processedSummary.map((item, index) => (
+        <div key={index} className="bg-white shadow-sm rounded-lg p-3 hover:shadow-md transition-all duration-200 border-l-2 border-blue-400">
+          <div className="flex items-center justify-between gap-3">
+            {/* Month Name (Left) */}
+            <h4 className="text-lg font-bold text-gray-800 min-w-0 flex-shrink-0 w-24">
+              {item.name}
+            </h4>
+            
+            {/* Amount (Center-Right) */}
+            <div className="text-right ml-auto min-w-[120px] flex-shrink-0">
+              <p className="text-xl font-bold text-green-600 mb-0.5 leading-tight">
+                ₹{Math.abs(item.net).toLocaleString()}
+              </p>
+              <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${
+                item.net < 0 
+                  ? 'bg-red-100 text-red-700 border border-red-200' 
+                  : 'bg-green-100 text-green-700 border border-green-200'
+              }`}>
+                {item.net < 0 ? 'CR' : 'DR'}
+              </span>
             </div>
-          )}
-           {selectedOption === "voucher" &&
-             voucherwisesummary?.data?.combined &&
-             voucherwisesummary?.data?.combined?.length > 0 && (
-             <DashboardTransaction
-               filteredData={voucherwisesummary.data.combined}
-             />
-           )}
+
+            {/* ULTRA-SMALL ACTION BUTTONS (Far Right) */}
+            <div className="flex gap-1 flex-shrink-0 ml-3">
+              {/* DAYBOOK BUTTON */}
+              <button
+                onClick={() => handleMonthClick(item, "daybook")}
+                className="w-9 h-9 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-md shadow-sm hover:shadow-md transform hover:scale-110 transition-all duration-150 flex items-center justify-center"
+                title="Daybook View"
+              >
+                📊
+              </button>
+              
+              {/* DETAILS BUTTON */}
+              <button
+                onClick={() => handleMonthClick(item, "details")}
+                className="w-9 h-9 bg-green-600 hover:bg-green-700 text-white text-xs rounded-md shadow-sm hover:shadow-md transform hover:scale-110 transition-all duration-150 flex items-center justify-center"
+                title="Details View"
+              >
+                📈
+              </button>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+
+
+
+
+
+
        </div>
     </div>
   )
