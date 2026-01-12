@@ -14,7 +14,7 @@ function EditChecking() {
   const editData = location?.state;
   const isTariffRateChange = location?.state?.fromDashboard === true;
 const roomIdToEdit = location?.state?.roomId; 
-console.log("h")
+console.log("h",editData)
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const [outStanding, setOutStanding] = useState([]);
@@ -63,10 +63,10 @@ console.log(payload)
             ? `Room tariff updated successfully. ${response.data.roomsCount} room(s) in check-in.`
             : response?.data?.message
         );
-        navigate("/sUsers/checkInList");
+      isTariffRateChange ? navigate("/sUsers/hotelDashBoard") :  navigate("/sUsers/checkInList");
       }
     } catch (error) {
-      toast.error(error?.response?.data?.message || "Update failed");
+      toast.error(error?.response?.data?.message || "Update faile`d");
     }
        finally {
     // Reset the submitting flag
@@ -102,7 +102,7 @@ console.log(payload)
             // isFor={"deliveryNote"}
             outStanding={outStanding}
             isTariffRateChange={isTariffRateChange}
-             roomId={roomIdToEdit}
+           roomId={roomIdToEdit}
           />
         </div>
       )}

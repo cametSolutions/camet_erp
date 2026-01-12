@@ -458,6 +458,7 @@ export const generateAndPrintBill = (
   restaurantInfo,
   useHTML = true
 ) => {
+  console.log(orderData);
   try {
     validateOrderData(orderData);
 

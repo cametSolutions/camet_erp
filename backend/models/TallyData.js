@@ -36,6 +36,13 @@ const tallySchema = new mongoose.Schema(
     source: { type: String },
     from:{type:String},
     classification: { type: String },
+    paymenttypeDetails: {
+  cash: { type: String, default: '0' },
+  bank: { type: String, default: '0' },
+  upi: { type: String, default: '0' },
+  credit: { type: String, default: '0' },
+  card: { type: String, default: '0' }
+},
     appliedReceipts: [
       {
         _id: { type: mongoose.Schema.Types.ObjectId, ref: "Receipt" },

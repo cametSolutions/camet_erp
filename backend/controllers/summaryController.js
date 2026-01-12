@@ -383,6 +383,60 @@ export const getSummaryReport = async (req, res) => {
         message: "Invalid voucher type selected",
       });
     }
+
+     if (selectedOption === "MonthWise") {
+      const monthNames = [
+        "", "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+      ];
+
+          const summaryPromises = modelsToQuery.map(async ({ model, type }) => {
+        const isCredit = (type === "creditNote" || type === "debitNote");
+        
+        const result = await model.aggregate([
+          { $match: matchCriteria },
+          {
+            $group: {
+              _id: { $month: "$date" }, // Group by Month (1-12)
+              total: { 
+                $sum: { 
+                  $toDouble: { 
+                    $ifNull: ["$totalWithAdditionalCharges", "$enteredAmount", 0] 
+                  } 
+                } 
+              } 
+            }
+          },
+          {
+            $project: {
+              _id: 0,
+              monthIndex: "$_id",
+              total: 1
+            }
+          }
+        ]);
+
+        // Transform to match frontend expectation
+        return result.map(item => ({
+          name: monthNames[item.monthIndex], // Convert 1 -> January
+          monthIndex: item.monthIndex,
+          total: item.total || 0,
+          isCredit: isCredit, // To determine if we subtract or add
+          sourceType: type,
+          transactions: [] // We don't need details for this high-level view
+        }));
+      });
+
+      const results = await Promise.all(summaryPromises);
+      const flattenedResults = results.flat();
+      
+    if (flattenedResults.length > 0) {
+          return res.status(200).json({ message: "Summary data found", flattenedResults });
+      } else {
+          return res.status(404).json({ message: "No summary data found", flattenedResults: [] });
+      }
+    }
+
     // Create transaction promises based on selected voucher type
     const summaryPromises = modelsToQuery.map(({ model, numberField, type }) =>
       aggregateSummary(model, matchCriteria, numberField, type, selectedOption, serialNumber)

@@ -12,6 +12,7 @@ import {
   Users,
   Filter,
   X,
+  Menu,
   MenuIcon,
   Receipt,
   Home,
@@ -19,8 +20,10 @@ import {
   Car,
   Bed,
   ArrowLeft,
+  ChevronLeft,
+  ChevronDown,
 } from "lucide-react";
-import { CiCircleList } from "react-icons/ci";
+
 import TableSelection from "../Pages/TableSelection";
 
 import { toast } from "react-toastify";
@@ -82,10 +85,18 @@ const RestaurantPOS = () => {
   const [selectedBank, setSelectedBank] = useState("");
   const [cashOrBank, setCashOrBank] = useState({});
 
-
   const [currentPage, setCurrentPage] = useState(1);
-const observerTarget = useRef(null);
-
+  const observerTarget = useRef(null);
+  const scrollContainerRef = useRef(null);
+  const scroll = (direction) => {
+    if (scrollContainerRef.current) {
+      const scrollAmount = 150;
+      scrollContainerRef.current.scrollBy({
+        left: direction === "left" ? -scrollAmount : scrollAmount,
+        behavior: "smooth",
+      });
+    }
+  };
   const [customerDetails, setCustomerDetails] = useState({
     name: "",
     phone: "",
@@ -325,65 +336,70 @@ const observerTarget = useRef(null);
     fetchAllData();
   }, [fetchAllData]);
 
-const fetchAllItems = useCallback(async (page = 1, append = false) => {
-  if (!append) {
-    setLoader(true);
-  }
-  setIsLoading(true);
-  
-  try {
-    const params = new URLSearchParams();
-    params.append("under", "restaurant");
-    params.append("page", page);
-    params.append("limit", "100");
- 
-
-    const res = await api.get(`/api/sUsers/getAllItems/${cmp_id}?${params}`, {
-      withCredentials: true,
-    });
-
-    const fetchedItems = res?.data?.items || [];
-    const hasMoreData = res?.data?.pagination?.hasMore ?? false;
-
-    if (append) {
-        // ✅ Prevent duplicates by filtering out existing items
-        setAllItems((prev) => {
-          const existingIds = new Set(prev.map(item => item._id));
-          const newItems = fetchedItems.filter(item => !existingIds.has(item._id));
-          return [...prev, ...newItems];
-        });
-        setItems((prev) => {
-          const existingIds = new Set(prev.map(item => item._id));
-          const newItems = fetchedItems.filter(item => !existingIds.has(item._id));
-          return [...prev, ...newItems];
-        });
-      } else {
-        setAllItems(fetchedItems);
-        setItems(fetchedItems);
+  const fetchAllItems = useCallback(
+    async (page = 1, append = false) => {
+      if (!append) {
+        setLoader(true);
       }
-    
-    setHasMore(hasMoreData);
-  } catch (error) {
-    console.log("Error fetching items:", error);
-    setHasMore(false);
-    if (!append) {
-      setAllItems([]);
-      setItems([]);
-    }
-  } finally {
-    setIsLoading(false);
-    setLoader(false);
-  }
-}, [cmp_id]);
+      setIsLoading(true);
 
+      try {
+        const params = new URLSearchParams();
+        params.append("under", "restaurant");
+        params.append("page", page);
+        params.append("limit", "100");
 
+        const res = await api.get(
+          `/api/sUsers/getAllItems/${cmp_id}?${params}`,
+          {
+            withCredentials: true,
+          }
+        );
 
+        const fetchedItems = res?.data?.items || [];
+        const hasMoreData = res?.data?.pagination?.hasMore ?? false;
 
+        if (append) {
+          // ✅ Prevent duplicates by filtering out existing items
+          setAllItems((prev) => {
+            const existingIds = new Set(prev.map((item) => item._id));
+            const newItems = fetchedItems.filter(
+              (item) => !existingIds.has(item._id)
+            );
+            return [...prev, ...newItems];
+          });
+          setItems((prev) => {
+            const existingIds = new Set(prev.map((item) => item._id));
+            const newItems = fetchedItems.filter(
+              (item) => !existingIds.has(item._id)
+            );
+            return [...prev, ...newItems];
+          });
+        } else {
+          setAllItems(fetchedItems);
+          setItems(fetchedItems);
+        }
+
+        setHasMore(hasMoreData);
+      } catch (error) {
+        console.log("Error fetching items:", error);
+        setHasMore(false);
+        if (!append) {
+          setAllItems([]);
+          setItems([]);
+        }
+      } finally {
+        setIsLoading(false);
+        setLoader(false);
+      }
+    },
+    [cmp_id]
+  );
 
   useEffect(() => {
     if (!observerTarget.current || !hasMore || isLoading) return;
     const observer = new IntersectionObserver(
-      entries => {
+      (entries) => {
         if (entries[0].isIntersecting && hasMore && !isLoading) {
           const nextPage = currentPage + 1;
           setCurrentPage(nextPage);
@@ -396,7 +412,7 @@ const fetchAllItems = useCallback(async (page = 1, append = false) => {
     return () => {
       observer.disconnect();
     };
-  }, [hasMore, isLoading, currentPage,searchTerm, fetchAllItems]);
+  }, [hasMore, isLoading, currentPage, searchTerm, fetchAllItems]);
 
   // Initial load only
   useEffect(() => {
@@ -548,39 +564,42 @@ const fetchAllItems = useCallback(async (page = 1, append = false) => {
     }
   };
 
+  const searchItems = useCallback(
+    async (searchQuery) => {
+      setLoader(true);
+      setIsLoading(true);
 
-    const searchItems = useCallback(async (searchQuery) => {
-  setLoader(true);
-  setIsLoading(true);
-  
-  try {
-    const params = new URLSearchParams();
-    params.append("cmp_id", cmp_id);          // ✅ FIX: Add cmp_id here
-    params.append("under", "restaurant");
-    params.append("search", searchQuery.trim());
+      try {
+        const params = new URLSearchParams();
+        params.append("cmp_id", cmp_id); // ✅ FIX: Add cmp_id here
+        params.append("under", "restaurant");
+        params.append("search", searchQuery.trim());
 
-    const res = await api.get(`/api/sUsers/searchItems?${params.toString()}`, {
-      withCredentials: true,
-    });
+        const res = await api.get(
+          `/api/sUsers/searchItems?${params.toString()}`,
+          {
+            withCredentials: true,
+          }
+        );
 
-    const searchResults = res?.data?.items || [];
-    setAllItems(searchResults);
-    setItems(searchResults);
-    setHasMore(false);
-  } catch (error) {
-    console.log("Error searching items:", error);
-    setAllItems([]);
-    setItems([]);
-    setHasMore(false);
-  } finally {
-    setIsLoading(false);
-    setLoader(false);
-  }
-}, [cmp_id]);
+        const searchResults = res?.data?.items || [];
+        setAllItems(searchResults);
+        setItems(searchResults);
+        setHasMore(false);
+      } catch (error) {
+        console.log("Error searching items:", error);
+        setAllItems([]);
+        setItems([]);
+        setHasMore(false);
+      } finally {
+        setIsLoading(false);
+        setLoader(false);
+      }
+    },
+    [cmp_id]
+  );
 
-  
-
-const handleSearchChange = (value) => {
+  const handleSearchChange = (value) => {
     setSearchTerm(value);
 
     if (searchTimeoutRef.current) {
@@ -690,14 +709,18 @@ const handleSearchChange = (value) => {
     if (isMobile) setShowSidebar(true);
   };
 
-  const handleSubcategorySelect = (subcategoryName) => {
-    setSelectedSubcategory(subcategoryName);
+  const handleSubcategorySelect = (subcategoryId, subcategoryName) => {
+    let newObject = {
+      subcategoryId: subcategoryId,
+      subcategoryName: subcategoryName,
+    }
+    setSelectedSubcategory(newObject);
     setSearchTerm("");
     if (isMobile) setShowSidebar(false);
   };
 
   const handleBackToCategories = () => {
-    setSelectedSubcategory("");
+    setSelectedSubcategory({});
     setSearchTerm("");
   };
 
@@ -802,7 +825,6 @@ const handleSearchChange = (value) => {
     );
 
     // console.log(finalProductData);
-    
 
     if (orderType === "dine-in") {
       if (roomDetails && Object.keys(roomDetails).length > 0) {
@@ -893,32 +915,21 @@ const handleSearchChange = (value) => {
     );
   };
 
+  // ✅ Handle search with debounce
 
-
-// ✅ Handle search with debounce
-  
-
-
-   const clearSearch = () => {
+  const clearSearch = () => {
     setSearchTerm("");
     setCurrentPage(1);
     setHasMore(true);
     fetchAllItems(1, false);
   };
 
-
-
-
-
-
-
-
   useEffect(() => {
     let filteredItems = [...allItems];
 
     if (selectedSubcategory) {
       filteredItems = filteredItems.filter(
-        (item) => item.sub_category === selectedSubcategory
+        (item) => item.sub_category === selectedSubcategory?.subcategoryId
       );
     }
 
@@ -926,8 +937,6 @@ const handleSearchChange = (value) => {
   }, [allItems, selectedSubcategory]);
 
   // Cleanup
-  
-  
 
   const getOrderTypeDisplay = (type) => {
     const typeMap = {
@@ -996,155 +1005,262 @@ const handleSearchChange = (value) => {
 
       <div className="h-screen overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex flex-col">
         {/* Compact Header */}
-        <div className="bg-gradient-to-r from-slate-900 via-gray-900 to-slate-800 text-white p-2 md:p-3 shadow-2xl border-b border-gray-700/30">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <button
-                className="md:hidden p-1.5 hover:bg-white/10 rounded-lg transition-colors duration-200"
-                onClick={() => navigate("/sUsers/dashboard")}
-              >
-                <FaArrowLeft className="w-5 h-5" />
-              </button>
-              <button
-                className="md:hidden p-1.5 hover:bg-white/10 rounded-lg transition-colors duration-200"
-                onClick={() => setShowSidebar(!showSidebar)}
-              >
-                <MenuIcon className="w-5 h-5" />
-              </button>
-              <h1 className="text-lg md:text-xl font-bold flex items-center gap-2 bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent">
-                🍽️{" "}
-                <span className="hidden sm:inline">
-                  Restaurant Management System
-                </span>
-                <span className="sm:hidden">RMS</span>
-              </h1>
-            </div>
-            <div className="hidden md:block  backdrop-blur-sm border-b border-gray-200/50 shadow-lg">
-  <div className="px-3 py-2.5">
-    <div className="flex items-center gap-2">
-     
-      <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-        {priceLevelData.map((level) => (
-          <button
-            key={level._id}
-            onClick={() => {
-              setSelectedPriceLevel(level._id);
-              // Clear cart when changing price level
-              setOrderItems([]);
-            }}
-            className={`
-              flex items-center gap-2 px-2 py-2 rounded-xl
-              font-semibold text-xs transition-all duration-300
-              whitespace-nowrap flex-shrink-0 min-w-max
-              border hover:scale-105 active:scale-95 transform
-              ${
-                selectedPriceLevel === level._id
-                  ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white border-transparent shadow-lg shadow-purple-500/25"
-                  : "bg-white/15 text-white border-gray-200 hover:border-purple-300 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:shadow-md"
-              }
-            `}
-          >
-            <span className="text-base">{level.icon || "💰"}</span>
-            <span>{level.pricelevel}</span>
-          </button>
-        ))}
-      </div>
-    </div>
-  </div>
-</div>
-            <div className="flex items-center space-x-2">
-              <div className="hidden sm:flex md:hidden items-center space-x-1.5 bg-white/15 backdrop-blur-sm rounded-lg px-2 py-1.5 border border-white/10">
-                <CiCircleList className="w-3.5 h-3.5" />
-                <button
-                  className="text-xs font-medium hover:text-gray-200 transition-colors"
-                  onClick={() => setShowPriceLevelSelect(true)}
-                >
-                  Price Level
-                </button>
+        <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 text-white border-b border-slate-700/60 sticky top-0 z-50 shadow-lg">
+          {/* Main Header Row */}
+          <div className="px-3 md:px-6 py-2.5 md:py-3">
+            <div className="flex items-center justify-between gap-4 md:gap-5">
+              {/* Left Section - Logo & Title */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                 <button
+                                className="md:hidden p-1.5 hover:bg-white/10 rounded-lg transition-colors duration-200"
+                                onClick={() => setShowSidebar(!showSidebar)}
+                              >
+                                <MenuIcon className="w-5 h-5" />
+                              </button>
+                <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center font-bold text-lg shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-shadow">
+                  🍽️
+                </div>
+                <div>
+                  <h1 className="text-base md:text-lg font-bold text-white hidden md:block tracking-tight">
+                    RMS
+                  </h1>
+                  <p className="text-xs text-gray-400 hidden md:block">Restaurant</p>
+                </div>
               </div>
-              <div className="hidden sm:flex items-center space-x-1.5 bg-white/15 backdrop-blur-sm rounded-lg px-2 py-1.5 border border-white/10">
-                <Clock className="w-3.5 h-3.5" />
-                <span className="text-xs font-medium">
-                  {currentTime.toLocaleTimeString()}
-                </span>
+
+              {/* Center Section - Price Levels */}
+              <div className="flex-1 hidden sm:block">
+                {priceLevelData && priceLevelData.length > 0 && (
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-xs font-semibold text-gray-400 whitespace-nowrap flex-shrink-0 uppercase tracking-wider">
+                      💳 Price:
+                    </span>
+
+                    {/* Scroll Container */}
+                    <div className="relative flex-1 min-w-0 group">
+                      {/* Left Scroll Button */}
+                      <button
+                        onClick={() => scroll("left")}
+                        className="absolute -left-3 top-1/2 -translate-y-1/2 z-30 p-1 text-gray-500 hover:text-gray-300 transition-all opacity-0 group-hover:opacity-100 hover:bg-slate-800/50 rounded"
+                      >
+                        <ChevronDown className="w-4 h-4 rotate-90" />
+                      </button>
+
+                      {/* Price Level Buttons */}
+                      <div
+                        ref={scrollContainerRef}
+                        className="flex gap-1.5 overflow-x-auto scrollbar-hide px-3 py-0.5"
+                        style={{ scrollBehavior: "smooth" }}
+                      >
+                        {priceLevelData.map((level, idx) => (
+                          <button
+                            key={level._id}
+                            onClick={() => {
+                              setSelectedPriceLevel(level._id);
+                              setOrderItems([]);
+                            }}
+                            className={`
+                          px-3 py-1.5 rounded-md font-semibold text-xs
+                          whitespace-nowrap flex-shrink-0 border transition-all duration-300
+                          hover:scale-105 active:scale-95 relative group/btn
+                          ${
+                            selectedPriceLevel === level._id
+                              ? "bg-blue-600/90 text-white border-blue-400/50 shadow-lg shadow-blue-500/30"
+                              : "bg-slate-800/60 text-gray-300 border-slate-700/50 hover:bg-slate-700/80 hover:text-gray-100 hover:border-slate-600"
+                          }
+                        `}
+                          >
+                            {level.pricelevel}
+                            {selectedPriceLevel === level._id && (
+                              <span className="absolute inset-0 rounded-md bg-blue-400/20 animate-pulse"></span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Right Scroll Button */}
+                      <button
+                        onClick={() => scroll("right")}
+                        className="absolute -right-3 top-1/2 -translate-y-1/2 z-30 p-1 text-gray-500 hover:text-gray-300 transition-all opacity-0 group-hover:opacity-100 hover:bg-slate-800/50 rounded"
+                      >
+                        <ChevronDown className="w-4 h-4 -rotate-90" />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
-              <div className="flex items-center space-x-1.5 bg-white/15 backdrop-blur-sm rounded-lg px-2 py-1.5 border border-white/10">
-                <Users className="w-3.5 h-3.5" />
-                <span
-                  className="text-xs font-medium cursor-pointer text-gray-200 underline hover:text-white transition-colors"
-                  onClick={() => navigate("/sUsers/TableSelection")}
-                >
-                  {orderType === "dine-in"
+
+              {/* Right Section - Time & Table Info */}
+              <div className="flex items-center gap-2 md:gap-2.5 flex-shrink-0">
+                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800/50 border border-slate-700/60 rounded-md hover:bg-slate-700/60 transition-colors group">
+                  <Clock className="w-3.5 h-3.5 text-cyan-400 group-hover:text-cyan-300" />
+                  <span className="text-xs font-medium text-gray-300 group-hover:text-gray-100">
+                    {currentTime.toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      second: "2-digit",
+                    })}
+                  </span>
+                </div>
+
+                <div className="hover:cursor-pointer flex items-center gap-1.5 px-3 py-1.5 bg-slate-800/50 border border-slate-700/60 rounded-md hover:bg-slate-700/60 transition-colors group"
+                  onClick={() => navigate("/sUsers/TableSelection")}>
+                  <Users className="w-3.5 h-3.5 text-emerald-400 group-hover:text-emerald-300" />
+                  <span className="text-xs font-medium text-gray-300 group-hover:text-gray-100">
+                    {orderType === "dine-in"
                     ? `Table ${customerDetails.tableNumber}`
                     : orderType === "roomService"
                     ? `Room ${roomDetails.roomno || "---"}`
                     : getOrderTypeDisplay(orderType)}
+                  </span>
+                </div>
+
+                <div className="hover:cursor-pointer hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-slate-800/50 border border-slate-700/60 rounded-md hover:bg-slate-700/60 transition-colors group"
+                 onClick={() => navigate("/sUsers/KotPage")}>
+                  <Receipt className="w-3.5 h-3.5 text-amber-400 group-hover:text-amber-300" />
+                  <span className="text-xs font-medium text-gray-300 group-hover:text-gray-100">
+                    {orders?.length || 0}
+                  </span>
+                </div>
+
+                <button className="hover:cursor-pointer sm:hidden bg-blue-600/80 hover:bg-blue-600 text-white rounded-md px-2.5 py-1.5 flex items-center gap-1 transition-colors border border-blue-500/50 shadow-lg shadow-blue-500/20 active:scale-95"
+                 onClick={() => setShowOrderSummary(true)}>
+                  <ShoppingCart className="w-3.5 h-3.5" />
+                  <span className="text-xs font-bold">
+                    {getTotalItems?.() || 0}
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile Price Level Section */}
+          <div className="sm:hidden bg-slate-800/40 border-t border-slate-700/40 px-3 py-2">
+            {priceLevelData && priceLevelData.length > 0 && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-gray-400 flex-shrink-0">
+                  Price:
+                </span>
+                <div className="flex gap-1 overflow-x-auto scrollbar-hide flex-1">
+                  {priceLevelData.map((level) => (
+                    <button
+                      key={level._id}
+                      onClick={() => {
+                        setSelectedPriceLevel(level._id);
+                        setOrderItems([]);
+                      }}
+                      className={`
+                    px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap flex-shrink-0 border transition-all
+                    ${
+                      selectedPriceLevel === level._id
+                        ? "bg-blue-600 text-white border-blue-400/50"
+                        : "bg-slate-800 text-gray-400 border-slate-700"
+                    }
+                  `}
+                    >
+                      {level.pricelevel}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Mobile Bottom Info Bar */}
+          <div className="sm:hidden bg-slate-800/40 border-t border-slate-700/40 px-3 py-1.5">
+            <div className="flex items-center justify-between gap-2 text-xs">
+              <div className="flex items-center gap-1 text-gray-400">
+                <Clock className="w-3 h-3 text-cyan-400" />
+                <span className="font-medium">
+                  {currentTime.toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                 </span>
               </div>
-              <div
-                className="flex items-center space-x-1.5 hover:cursor-pointer bg-white/15 backdrop-blur-sm rounded-lg px-2 py-1.5 border border-white/10 hover:bg-white/20 transition-all duration-200"
-                onClick={() => navigate("/sUsers/KotPage")}
-              >
-                <Receipt className="w-4 h-4" />
-                <span className="text-xs font-medium">
-                  <span className="hidden sm:inline">Orders: </span>
-                  {orders.length}
+              <div className="flex items-center gap-1 text-gray-400">
+                <Users className="w-3 h-3 text-emerald-400" />
+                <span className="font-medium">
+                  {orderType === "dine-in"
+                    ? `T${customerDetails?.tableNumber || "--"}`
+                    : `R${roomDetails?.roomno || "--"}`}
                 </span>
               </div>
-              <button
-                className="md:hidden bg-white/15 backdrop-blur-sm rounded-lg px-2 py-1.5 flex items-center space-x-1.5 border border-white/10 hover:bg-white/20 transition-all duration-200"
-                onClick={() => setShowOrderSummary(true)}
-              >
-                <ShoppingCart className="w-4 h-4" />
-                <span className="text-xs font-semibold">{getTotalItems()}</span>
-              </button>
             </div>
           </div>
         </div>
 
         {/* Compact Cuisine Categories */}
-        <div className="bg-white/90 backdrop-blur-sm border-b border-gray-200/50 shadow-lg">
-          <div className="flex justify-between items-center px-3 py-2.5">
-            <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-              {cuisines.map((cuisine) => (
-                <button
-                  key={cuisine._id}
-                  onClick={() =>
+        <div className="bg-white/90 backdrop-blur-sm border-b border-gray-200/50 shadow-lg sticky top-[60px] z-40">
+          <div className="flex justify-between items-center px-3 py-2.5 gap-3">
+            {/* Cuisines Scroll Container */}
+            <div className="flex-1 min-w-0 relative group">
+              {/* Left Scroll Button */}
+              <button
+                onClick={() => scroll("left")}
+                className="absolute -left-2 top-1/2 -translate-y-1/2 z-20 p-1 text-gray-400 hover:text-gray-600 transition-all opacity-0 group-hover:opacity-100 hover:bg-white/80 rounded"
+              >
+                <ChevronDown className="w-4 h-4 rotate-90" />
+              </button>
+
+              {/* Cuisines List */}
+              <div
+                ref={scrollContainerRef}
+                className="flex gap-2 overflow-x-auto scrollbar-hide px-4"
+                style={{ scrollBehavior: "smooth" }}
+              >
+                {cuisines.map((cuisine) => (
+                  <button
+                    key={cuisine._id}
+                   onClick={() =>
                     handleCategorySelect(cuisine._id, cuisine.name)
                   }
-                  className={`
-            flex items-center gap-2 px-3 py-1.5 rounded-xl
-            font-semibold text-xs transition-all duration-300
-            whitespace-nowrap flex-shrink-0 min-w-max
-            border hover:scale-105 active:scale-95 transform
-            ${
-              selectedCuisine?.categoryName === cuisine.name
-                ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-transparent shadow-lg shadow-indigo-500/25"
-                : "bg-white/80 text-gray-700 border-gray-200 hover:border-indigo-300 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-blue-50 hover:shadow-md"
-            }
-          `}
-                >
-                  <span className="text-sm">{cuisine.icon}</span>
-                  <span>{cuisine.name}</span>
-                </button>
-              ))}
+                    className={`
+                  flex items-center gap-2 px-3 py-1.5 rounded-lg
+                  font-semibold text-xs transition-all duration-300
+                  whitespace-nowrap flex-shrink-0 border
+                  hover:scale-105 active:scale-95 transform
+                  ${
+                    selectedCuisine?.categoryName === cuisine.name
+                      ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-transparent shadow-md shadow-indigo-400/30"
+                      : "bg-white text-gray-700 border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700"
+                  }
+                `}
+                  >
+                    <span className="text-sm">{cuisine.icon || "🍽️"}</span>
+                    <span>{cuisine.name}</span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Right Scroll Button */}
+              <button
+                onClick={() => scroll("right")}
+                className="absolute -right-2 top-1/2 -translate-y-1/2 z-20 p-1 text-gray-400 hover:text-gray-600 transition-all opacity-0 group-hover:opacity-100 hover:bg-white/80 rounded"
+              >
+                <ChevronDown className="w-4 h-4 -rotate-90" />
+              </button>
             </div>
 
-            <button
-              onClick={() => navigate("/sUsers/BillSummary?type=restaurant")}
-              className="hidden md:flex
-        flex items-center gap-2 px-4 py-1.5 rounded-xl
-        font-semibold text-xs transition-all duration-300
-        whitespace-nowrap flex-shrink-0
-        bg-gradient-to-r from-green-600 to-emerald-600 text-white 
-        border-transparent shadow-lg shadow-emerald-500/25
-        hover:scale-105 active:scale-95 transform
-        hover:from-green-700 hover:to-emerald-700
-      "
-            >
-              <span className="text-sm">📊</span>
-              <span>Daily Restaurant Sales</span>
-            </button>
+            {/* Fixed Action Buttons */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {/* Daily Restaurant Sales Button */}
+              <button
+                onClick={() => navigate("/sUsers/BillSummary?type=restaurant")}
+                className="hidden md:flex
+              items-center gap-2 px-3 py-1.5 rounded-lg
+              font-semibold text-xs transition-all duration-300
+              whitespace-nowrap
+              bg-gradient-to-r from-green-500 to-emerald-500 text-white 
+              border border-green-400/30 shadow-md shadow-green-500/20
+              hover:from-green-600 hover:to-emerald-600 hover:shadow-lg
+              hover:scale-105 active:scale-95 transform
+            "
+              >
+                <span className="text-sm">📊</span>
+                <span className="hidden lg:inline">Daily Restaurant Sales</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -1245,10 +1361,10 @@ const handleSearchChange = (value) => {
                   return (
                     <button
                       key={subcategory._id}
-                      onClick={() => handleSubcategorySelect(subcategory.name)}
+                      onClick={() => handleSubcategorySelect(subcategory._id,subcategory.name)}
                       className={`w-full text-left px-3 py-2.5 mb-2 rounded-xl font-semibold transition-all duration-300 flex items-center gap-2 border hover:scale-[1.02] hover:translate-x-1 transform group text-xs
                     ${
-                      selectedSubcategory === subcategory.name
+                      selectedSubcategory?.subcategoryId === subcategory._id
                         ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-transparent shadow-lg shadow-indigo-500/25"
                         : "bg-white/80 text-gray-700 border-gray-200 hover:border-indigo-300 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-blue-50 hover:shadow-md"
                     }
@@ -1258,7 +1374,7 @@ const handleSearchChange = (value) => {
                         {icon}
                       </span>
                       <span className="capitalize tracking-wide">
-                        {subcategory.name}
+                        {subcategory.name} 
                       </span>
                     </button>
                   );
@@ -1271,31 +1387,33 @@ const handleSearchChange = (value) => {
           <div className="flex-1 flex flex-col">
             {/* Compact Search Bar */}
             <div className="p-3 bg-white/90 backdrop-blur-sm border-b border-gray-200/50">
-           <div className="mb-6 relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-indigo-500 w-5 h-5" />
-          <input
-            type="text"
-            placeholder="Search items..."
-            value={searchTerm}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            className="w-full pl-12 pr-10 py-2.5 border border-indigo-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm shadow-sm transition-all duration-200"
-          />
-           {searchTerm && (
-    <button
-      onClick={clearSearch}
-       className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-indigo-600 transition-colors"
-    >
-     <X className="w-4 h-4" />
-    </button>
-  )}
-          {searchTerm && (
-          <div className="mb-4 text-sm text-indigo-600 bg-indigo-50 px-4 py-2 rounded-lg inline-block">
-            {items.length > 0
-              ? `Found ${items.length} item${items.length !== 1 ? "s" : ""} for "${searchTerm}"`
-              : `No items found for "${searchTerm}"`}
-          </div>
-        )}
-        </div>
+              <div className="mb-6 relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-indigo-500 w-5 h-5" />
+                <input
+                  type="text"
+                  placeholder="Search items..."
+                  value={searchTerm}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  className="w-full pl-12 pr-10 py-2.5 border border-indigo-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm shadow-sm transition-all duration-200"
+                />
+                {searchTerm && (
+                  <button
+                    onClick={clearSearch}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-indigo-600 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+                {searchTerm && (
+                  <div className="mb-4 text-sm text-indigo-600 bg-indigo-50 px-4 py-2 rounded-lg inline-block">
+                    {items.length > 0
+                      ? `Found ${items.length} item${
+                          items.length !== 1 ? "s" : ""
+                        } for "${searchTerm}"`
+                      : `No items found for "${searchTerm}"`}
+                  </div>
+                )}
+              </div>
 
               {/* {searchTerm && (
                 <div className="mt-2 text-xs text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full inline-block">
@@ -1311,19 +1429,21 @@ const handleSearchChange = (value) => {
             {/* Menu Items Grid */}
             <div className="flex-1 p-3 overflow-y-auto">
               {loader ? (
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-200 border-t-indigo-600 mx-auto mb-4"></div>
-              <p className="text-indigo-600 font-medium">Loading items...</p>
-            </div>
-          </div>
-        ) : (
+                <div className="flex items-center justify-center h-64">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-200 border-t-indigo-600 mx-auto mb-4"></div>
+                    <p className="text-indigo-600 font-medium">
+                      Loading items...
+                    </p>
+                  </div>
+                </div>
+              ) : (
                 <>
                   <div className="mb-3">
                     <h3 className="text-sm font-bold text-gray-700 flex items-center gap-1.5">
                       <span className="w-2 h-2 bg-gradient-to-r from-indigo-500 to-blue-500 rounded-full"></span>
                       {selectedSubcategory
-                        ? `${selectedCuisine?.categoryName} - ${selectedSubcategory} (${menuItems.length})`
+                        ? `${selectedCuisine?.categoryName} - ${selectedSubcategory?.subcategoryName} (${menuItems.length})`
                         : searchTerm
                         ? `Search Results (${menuItems.length})`
                         : `All Items (${menuItems.length})`}
@@ -1343,7 +1463,7 @@ const handleSearchChange = (value) => {
                           {searchTerm
                             ? `No items found matching "${searchTerm}"`
                             : selectedSubcategory
-                            ? `No items available in ${selectedSubcategory}`
+                            ? `No items available in ${selectedSubcategory?.subcategoryName}`
                             : "No items available"}
                         </p>
                       </div>
@@ -1417,7 +1537,6 @@ const handleSearchChange = (value) => {
                         );
                       })}
                     </div>
-                    
                   )}
                 </>
               )}
@@ -1552,7 +1671,7 @@ const handleSearchChange = (value) => {
 
             {/* Compact Total and Order Buttons */}
             <div className="p-3 border-t border-gray-200/50 bg-gradient-to-br from-gray-50 to-gray-100">
-              <div className="flex justify-between items-center mb-3 p-2.5 bg-white rounded-xl shadow-lg border border-gray-100">
+              <div className="flex justify-between items-center mb-2 p-2 bg-white rounded-xl shadow-lg border border-gray-100">
                 <span className="text-sm font-bold text-gray-700">
                   Total Amount
                 </span>
@@ -1563,10 +1682,10 @@ const handleSearchChange = (value) => {
 
               {/* Compact Order Type Selection */}
               <div className="mb-3">
-                <div className="grid grid-cols-2 gap-1.5">
+                <div className="grid grid-cols-2 gap-1.5 ">
                   <button
                     onClick={() => setOrderType("dine-in")}
-                    className={`flex flex-col items-center justify-center h-12 rounded-xl border transition-all duration-300 transform hover:scale-105 ${
+                    className={`flex flex-col items-center justify-center h-10 rounded-xl border transition-all duration-300 transform hover:scale-105 ${
                       orderType === "dine-in"
                         ? "border-transparent bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-indigo-500/25"
                         : "border-gray-200 bg-white/80 text-gray-700 hover:border-indigo-300 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-blue-50"
@@ -1577,7 +1696,7 @@ const handleSearchChange = (value) => {
                   </button>
                   <button
                     onClick={() => setOrderType("takeaway")}
-                    className={`flex flex-col items-center justify-center h-12 rounded-xl border transition-all duration-300 transform hover:scale-105 ${
+                    className={`flex flex-col items-center justify-center  h-10 rounded-xl border transition-all duration-300 transform hover:scale-105 ${
                       orderType === "takeaway"
                         ? "border-transparent bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-indigo-500/25"
                         : "border-gray-200 bg-white/80 text-gray-700 hover:border-indigo-300 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-blue-50"
@@ -1588,7 +1707,7 @@ const handleSearchChange = (value) => {
                   </button>
                   <button
                     onClick={() => setOrderType("delivery")}
-                    className={`flex flex-col items-center justify-center h-12 rounded-xl border transition-all duration-300 transform hover:scale-105 ${
+                    className={`flex flex-col items-center justify-center  h-10 rounded-xl border transition-all duration-300 transform hover:scale-105 ${
                       orderType === "delivery"
                         ? "border-transparent bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-indigo-500/25"
                         : "border-gray-200 bg-white/80 text-gray-700 hover:border-indigo-300 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-blue-50"
@@ -1599,7 +1718,7 @@ const handleSearchChange = (value) => {
                   </button>
                   <button
                     onClick={() => setOrderType("roomService")}
-                    className={`flex flex-col items-center justify-center h-12 rounded-xl border transition-all duration-300 transform hover:scale-105 ${
+                    className={`flex flex-col items-center justify-center  h-10 rounded-xl border transition-all duration-300 transform hover:scale-105 ${
                       orderType === "roomService"
                         ? "border-transparent bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-indigo-500/25"
                         : "border-gray-200 bg-white/80 text-gray-700 hover:border-indigo-300 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-blue-50"
@@ -1613,7 +1732,7 @@ const handleSearchChange = (value) => {
                       console.log("Direct Sale button clicked"); // Debug log
                       setOrderType("direct-sale");
                     }}
-                    className={`flex flex-col items-center justify-center h-12 rounded-xl border transition-all duration-300 transform hover:scale-105 col-span-2 ${
+                    className={`flex flex-col items-center justify-center  h-10 rounded-xl border transition-all duration-300 transform hover:scale-105 col-span-2 ${
                       orderType === "direct-sale"
                         ? "border-transparent bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg shadow-emerald-500/25"
                         : "border-gray-200 bg-white/80 text-gray-700 hover:border-green-300 hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50"
@@ -1628,7 +1747,9 @@ const handleSearchChange = (value) => {
               {/* Action Button */}
               <div className="flex space-x-2">
                 <button
-                  className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-2.5 rounded-xl font-bold hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm hover:scale-105 active:scale-95 transform shadow-lg shadow-indigo-500/25"
+                  className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-2 rounded-xl font-bold
+                   hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 disabled:opacity-50 
+                   disabled:cursor-not-allowed text-sm hover:scale-105 active:scale-95 transform shadow-lg shadow-indigo-500/25"
                   disabled={orderItems.length === 0}
                   onClick={handlePlaceOrder}
                 >
@@ -2135,12 +2256,10 @@ const handleSearchChange = (value) => {
             0 4px 15px rgba(99, 102, 241, 0.1);
         }
       `}</style>
-       <div ref={observerTarget} style={{ height: 1 }} />
+      <div ref={observerTarget} style={{ height: 1 }} />
       {isLoading && <div>Loading...</div>}
-      {!hasMore && <div>No more items</div>}
-    
+      {/* {!hasMore && <div>No more items</div>} */}
     </>
-     
   );
 };
 

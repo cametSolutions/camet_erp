@@ -65,7 +65,7 @@ import {
     fetchOutStandingAndFoodData, convertCheckOutToSale, updateConfigurationForHotelAndRestaurant, swapRoom, getRoomSwapHistory, checkedInGuest,
     getallroomsCurrentStatus,
     getallnoncheckoutCheckins,
-    getHotelSalesDetails, getRoomCheckInDetails, cancelBooking
+    getHotelSalesDetails, getRoomCheckInDetails, cancelBooking,getCheckoutStatementByDate
 } from '../controllers/hotelController.js'
 import {
     addItem, getAllItems, getItems, getCategories, deleteItem, updateItem, generateKot, getKot, updateKotStatus, editKot,
@@ -357,7 +357,7 @@ router.get('/getItems/:cmp_id', authSecondary, getItems)
 router.get('/searchItems', authSecondary, searchItems)
 router.delete('/deleteItem/:id', authSecondary, deleteItem)
 router.get('/getKotData/:cmp_id', authSecondary, secondaryIsBlocked, getKot)
-router.put('/updateKotStatus/:cmp_id/:kotId', authSecondary, secondaryIsBlocked, updateKotStatus)
+router.put('/updateKotStatus/:kotId', authSecondary, secondaryIsBlocked, updateKotStatus)
 router.get('/getRoomBasedOnBooking/:cmp_id', authSecondary, secondaryIsBlocked, getRoomDataForRestaurant)
 router.put("/updateKotPayment/:cmp_id", authSecondary, secondaryIsBlocked, updateKotPayment)
 router.post("/directSale/:cmp_id", authSecondary, secondaryIsBlocked, directSale)
@@ -372,7 +372,7 @@ router.put('/updateTable/:id', authSecondary, updateTable);
 router.get('/getTable/:cmp_id', authSecondary, getTables);
 
 router.delete('/deleteTable/:id', authSecondary,deleteTable);
-router.get("/getSalePrintData/:cmp_id/:saleId",authSecondary,secondaryIsBlocked,getSalePrintData)
+// router.get("/getSalePrintData/:cmp_id/:saleId",authSecondary,secondaryIsBlocked,getSalePrintData)
 router.get("/getSalePrintData/:cmp_id/:kotId",authSecondary,secondaryIsBlocked,getSalePrintData)
 router.put('/updateTableStatus/:cmp_id/:tableNumber',authSecondary,updateTableStatus )
 router.get('/getKotDataByTable/:cmp_id',authSecondary,getKotDataByTable )
@@ -389,7 +389,8 @@ router.get('/summary', getSummaryDashboard);
 router.get('/hotel-sales/:cmp_id', getHotelSalesDetails);
 router.put("/cancel/:id", cancelKot);
 router.get('/getRoomCheckInDetails/:cmp_id/:roomId', getRoomCheckInDetails);
-router.put('/cancelBooking/:id', cancelBooking)
+router.put('/cancelBooking/:id', cancelBooking);
+router.get('/statement', getCheckoutStatementByDate);
 // Route to get detailed booking information for a specific room and date
 
 export default router
