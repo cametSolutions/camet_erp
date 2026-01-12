@@ -3,6 +3,9 @@ import { useState, useEffect, useMemo, useCallback } from "react"
 import { useLocation } from "react-router-dom"
 import { useQuery } from "@tanstack/react-query"
 import api from "@/api/api"
+import { BsCalendarDateFill } from "react-icons/bs";
+import { Link } from "react-router-dom";
+
 import TitleDiv from "../../../../components/common/TitleDiv"
 import SummmaryDropdown from "../../../../components/Filters/SummaryDropdown"
 import SelectDate from "../../../../components/Filters/SelectDate"
@@ -291,23 +294,7 @@ function SalesSummaryTable() {
   return (
     <div className="h-full flex flex-col">
 
-      {location.state?.monthTitle && (
-      <section className="bg-[#012847] text-white p-4 shadow-2xl mb-4 sticky top-0 z-20">
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
-            <h2 className="text-xl md:text-2xl font-black">{location.state.monthTitle}</h2>
-          </div>
-          <span className="text-lg font-semibold px-4 py-1 bg-white/20 rounded-full backdrop-blur-sm">
-            {summaryType} | {selectedOption}
-          </span>
-          <div className="text-sm opacity-90 ml-auto">
-            📅 {new Date(location.state.monthStart).toLocaleDateString('en-GB')} - 
-            {new Date(location.state.monthEnd).toLocaleDateString('en-GB')}
-          </div>
-        </div>
-      </section>
-    )}
+   
 
       <div className="sticky top-0">
         <TitleDiv
@@ -317,7 +304,41 @@ function SalesSummaryTable() {
           rightSideContent={<RiFileExcel2Fill size={20} />}
           rightSideContentOnClick={exportToExcel}
         />
-        <SelectDate />
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-100 p-3 shadow-sm">
+    <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center gap-2 text-sm">
+        <BsCalendarDateFill className="text-blue-600" size={18} />
+        {/* PRIORITY: MonthWise dates from location.state */}
+        {location.state?.monthStart && location.state?.monthEnd ? (
+          <>
+            <span className="font-semibold text-gray-800">
+              {new Date(location.state.monthStart).toLocaleDateString('en-GB')} - 
+              {new Date(location.state.monthEnd).toLocaleDateString('en-GB')}
+            </span>
+            <span className="text-xs bg-blue-200 text-blue-800 px-2 py-0.5 rounded-full font-medium">
+              {location.state.monthTitle || 'Month Filter'}
+            </span>
+          </>
+        ) : (
+          // FALLBACK: Redux global dates
+          <>
+            <span className="font-semibold text-gray-800">
+              {new Date(start).toLocaleDateString('en-GB')} - 
+              {new Date(end).toLocaleDateString('en-GB')}
+            </span>
+            <span className="text-xs text-gray-500">Custom Range</span>
+          </>
+        )}
+      </div>
+      
+      <Link 
+        to="/sUsers/dateRange"
+        className="text-blue-600 hover:text-blue-700 text-xs font-bold px-3 py-1.5 border border-blue-300 rounded-lg hover:bg-blue-50 transition-all duration-200 whitespace-nowrap"
+      >
+        Change
+      </Link>
+    </div>
+  </div>
         <section className="shadow-lg bg-white">
           <VoucherTypeFilter filterKeys={filterKeys} />
         </section>
