@@ -3,6 +3,9 @@ import { useState, useEffect, useMemo, useCallback } from "react"
 import { useLocation } from "react-router-dom"
 import { useQuery } from "@tanstack/react-query"
 import api from "@/api/api"
+import { BsCalendarDateFill } from "react-icons/bs";
+import { Link } from "react-router-dom";
+
 import TitleDiv from "../../../../components/common/TitleDiv"
 import SummmaryDropdown from "../../../../components/Filters/SummaryDropdown"
 import SelectDate from "../../../../components/Filters/SelectDate"
@@ -95,11 +98,18 @@ function SalesSummaryTable() {
 
   // Memoized URL
   const salesummaryUrl = useMemo(() => {
-    if (start && end && voucherType.value !== "all") {
-      return `/api/sUsers/salesSummary/${cmp_id}?startOfDayParam=${start}&endOfDayParam=${end}&selectedVoucher=${voucherType.value}&summaryType=${summaryType}&selectedOption=${selectedOption}`
-    }
-    return null
-  }, [start, end, cmp_id, voucherType.value, selectedOption, summaryType])
+     let startDate = start;
+  let endDate = end;
+
+   if (location.state?.monthStart && location.state?.monthEnd) {
+    startDate = location.state.monthStart;
+    endDate = location.state.monthEnd;
+  }
+    if (startDate && endDate && voucherType.value !== "all") {
+    return `/api/sUsers/salesSummary/${cmp_id}?startOfDayParam=${startDate}&endOfDayParam=${endDate}&selectedVoucher=${voucherType.value}&summaryType=${summaryType}&selectedOption=${selectedOption}`;
+  }
+  return null;
+}, [start, end, location.state?.monthStart, location.state?.monthEnd, cmp_id, voucherType.value, selectedOption, summaryType]);
 
   // Serial number query
   const { data: serialNumberList } = useQuery({
@@ -283,6 +293,9 @@ function SalesSummaryTable() {
 
   return (
     <div className="h-full flex flex-col">
+
+   
+
       <div className="sticky top-0">
         <TitleDiv
           title={`${summaryType} Details`}
@@ -291,12 +304,46 @@ function SalesSummaryTable() {
           rightSideContent={<RiFileExcel2Fill size={20} />}
           rightSideContentOnClick={exportToExcel}
         />
-        <SelectDate />
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-100 p-3 shadow-sm">
+    <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center gap-2 text-sm">
+        <BsCalendarDateFill className="text-blue-600" size={18} />
+        {/* PRIORITY: MonthWise dates from location.state */}
+        {location.state?.monthStart && location.state?.monthEnd ? (
+          <>
+            <span className="font-semibold text-gray-800">
+              {new Date(location.state.monthStart).toLocaleDateString('en-GB')} - 
+              {new Date(location.state.monthEnd).toLocaleDateString('en-GB')}
+            </span>
+            <span className="text-xs bg-blue-200 text-blue-800 px-2 py-0.5 rounded-full font-medium">
+              {location.state.monthTitle || 'Month Filter'}
+            </span>
+          </>
+        ) : (
+          // FALLBACK: Redux global dates
+          <>
+            <span className="font-semibold text-gray-800">
+              {new Date(start).toLocaleDateString('en-GB')} - 
+              {new Date(end).toLocaleDateString('en-GB')}
+            </span>
+            <span className="text-xs text-gray-500">Custom Range</span>
+          </>
+        )}
+      </div>
+      
+      <Link 
+        to="/sUsers/dateRange"
+        className="text-blue-600 hover:text-blue-700 text-xs font-bold px-3 py-1.5 border border-blue-300 rounded-lg hover:bg-blue-50 transition-all duration-200 whitespace-nowrap"
+      >
+        Change
+      </Link>
+    </div>
+  </div>
         <section className="shadow-lg bg-white">
           <VoucherTypeFilter filterKeys={filterKeys} />
         </section>
         <div className="flex justify-between lg:justify-between gap-5 px-2 lg:gap-0 bg-white border-t shadow-lg">
-          <SummmaryDropdown />
+          <SummmaryDropdown filterKeys={["MonthWise"]} />
           {voucherType.value !== "allType" && serialNumberList && (
             <select
               onChange={handleSerialNumberChange}
