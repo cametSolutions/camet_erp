@@ -65,61 +65,98 @@ const DashboardCards = ({
     },
   ];
 
-  let secondary = [];
+ let secondary = [];
 
-  if (organization?.industry === 6 || organization?.industry === 7 || organization?.industry === 8) {
-    secondary = [
-      {
-        icon: hotelImg,
-        subtitle: "Hotel Management",
-        link: "/sUsers/hotelDashBoard",
-      },
-      {
-        icon: restaurantImg,
-        subtitle: "Restaurant Management",
-        link: "/sUsers/RestaurantDashboard",
-      },
-      {
-        icon: vouchers,
-        subtitle: "Vouchers",
-        link: "/sUsers/selectVouchers",
-      },
-      {
-        icon: reportImg,
-        title: `₹${receiptTotal.toFixed(2)}`,
-        subtitle: "Reports",
-        link: "/sUsers/reports",
-      },
-    ];
-  } else {
-    secondary = [
-      {
-        icon: product,
-        subtitle: "Products",
-        link: "/sUsers/productList",
-        notificationCount: notificationCounts.products,
-        notificationColor: "bg-blue-500",
-      },
-      {
-        icon: customers,
-        subtitle: "Customers",
-        link: "/sUsers/partyList",
-        notificationCount: notificationCounts.customers,
-        notificationColor: "bg-green-500",
-      },
-      {
-        icon: vouchers,
-        subtitle: "Vouchers",
-        link: "/sUsers/selectVouchers",
-      },
-      {
-        icon: reportImg,
-        title: `₹${receiptTotal.toFixed(2)}`,
-        subtitle: "Reports",
-        link: "/sUsers/reports",
-      },
-    ];
-  }
+if (organization?.industry === 6) {
+  secondary = [
+    {
+      icon: hotelImg,
+      subtitle: "Hotel Management",
+      link: "/sUsers/hotelDashBoard",
+    }, {
+      icon: vouchers,
+      subtitle: "Vouchers",
+      link: "/sUsers/selectVouchers",
+    },
+    {
+      icon: reportImg,
+      title: `₹${receiptTotal.toFixed(2)}`,
+      subtitle: "Reports",
+      link: "/sUsers/reports",
+    },
+  ];
+} else if (organization?.industry === 3 || organization?.industry === 8) {
+  secondary = [
+    {
+      icon: restaurantImg,
+      subtitle: "Restaurant Management",
+      link: "/sUsers/RestaurantDashboard",
+    },
+    {
+      icon: vouchers,
+      subtitle: "Vouchers",
+      link: "/sUsers/selectVouchers",
+    },
+    {
+      icon: reportImg,
+      title: `₹${receiptTotal.toFixed(2)}`,
+      subtitle: "Reports",
+      link: "/sUsers/reports",
+    },
+  ];
+} else if (organization?.industry === 7) {
+  secondary = [
+    {
+      icon: hotelImg,
+      subtitle: "Hotel Management",
+      link: "/sUsers/hotelDashBoard",
+    },
+    {
+      icon: restaurantImg,
+      subtitle: "Restaurant Management",
+      link: "/sUsers/RestaurantDashboard",
+    },
+    {
+      icon: vouchers,
+      subtitle: "Vouchers",
+      link: "/sUsers/selectVouchers",
+    },
+    {
+      icon: reportImg,
+      title: `₹${receiptTotal.toFixed(2)}`,
+      subtitle: "Reports",
+      link: "/sUsers/reports",
+    },
+  ];
+} else {
+  secondary = [
+    {
+      icon: product,
+      subtitle: "Products",
+      link: "/sUsers/productList",
+      notificationCount: notificationCounts.products,
+      notificationColor: "bg-blue-500",
+    },
+    {
+      icon: customers,
+      subtitle: "Customers",
+      link: "/sUsers/partyList",
+      notificationCount: notificationCounts.customers,
+      notificationColor: "bg-green-500",
+    },
+    {
+      icon: vouchers,
+      subtitle: "Vouchers",
+      link: "/sUsers/selectVouchers",
+    },
+    {
+      icon: reportImg,
+      title: `₹${receiptTotal.toFixed(2)}`,
+      subtitle: "Reports",
+      link: "/sUsers/reports",
+    },
+  ];
+}
 
   const cardData = {
     primary,
