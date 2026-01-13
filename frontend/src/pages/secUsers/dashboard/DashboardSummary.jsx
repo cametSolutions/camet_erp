@@ -114,7 +114,7 @@ const DashboardSummary = () => {
 
     // If industry is 6 or 7 → add Dashboard
     const extraData =
-      industry == 6 || industry == 7
+      industry == 6 || industry == 7 || industry == 3 || industry == 8
         ? [
             {
               title: "Dashboard Summary",

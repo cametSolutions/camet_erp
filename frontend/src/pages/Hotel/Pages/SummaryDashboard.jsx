@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import api from "@/api/api";// Adjust the import path according to your project structure
+import api from "@/api/api";
 import GraphHotelSummary from '../../Hotel/Pages/GraphHotelSummary'
 import { 
   Calendar, Hotel, UtensilsCrossed, TrendingUp, DollarSign, CreditCard, 
@@ -17,26 +17,66 @@ const SummaryDashboard = () => {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [companyIndustry, setCompanyIndustry] = useState(null);
 
-  // Replace with actual values from your auth context or props
   const cmp_id = useSelector(
-  (state) => state.secSelectedOrganization.secSelectedOrg._id
+    (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
  
-    const owner = useSelector(
+  const owner = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg.owner
   );
- 
-  // Helper function to get the first day of the month for selected date
+
+  // NEW: Get industry from selected organization
+  const selectedOrg = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg
+  );
+
+  // Helper functions for determining what to show based on industry
+  const shouldShowHotel = () => {
+    if (!companyIndustry) return true; // Show all if industry not yet loaded
+    return companyIndustry === 6 || companyIndustry === 7; // Hotel only (6) or Both (7)
+  };
+
+  const shouldShowRestaurant = () => {
+    if (!companyIndustry) return true; // Show all if industry not yet loaded
+    return companyIndustry === 3 || companyIndustry === 7 || companyIndustry === 8; // Restaurant only (3, 8) or Both (7)
+  };
+
+  const shouldShowCombined = () => {
+    return companyIndustry === 7; // Only show combined when industry is 7 (both)
+  };
+
   const getMonthStartDate = (dateString) => {
     const date = new Date(dateString);
     return new Date(date.getFullYear(), date.getMonth(), 1).toISOString().split('T')[0];
   };
 
-  // Helper function to get the last day of the month for selected date
   const getMonthEndDate = (dateString) => {
     const date = new Date(dateString);
     return new Date(date.getFullYear(), date.getMonth() + 1, 0).toISOString().split('T')[0];
+  };
+
+  // NEW: Fetch company details to get industry
+  const fetchCompanyIndustry = async () => {
+    try {
+      if (selectedOrg?.industry !== undefined) {
+        setCompanyIndustry(selectedOrg.industry);
+        console.log('Industry from Redux:', selectedOrg.industry);
+        return;
+      }
+
+      // Fallback: fetch from API if not in Redux
+      const response = await api.get(`/api/organization/${cmp_id}`);
+      if (response.data && response.data.industry !== undefined) {
+        setCompanyIndustry(response.data.industry);
+        console.log('Industry from API:', response.data.industry);
+      }
+    } catch (err) {
+      console.error('Error fetching company industry:', err);
+      // Default to showing all if we can't determine industry
+      setCompanyIndustry(7);
+    }
   };
 
   const fetchDashboardData = async () => {
@@ -44,16 +84,14 @@ const SummaryDashboard = () => {
       setLoading(true);
       setError(null);
       
-      // Fetch daily data (for selected date)
       const dailyParams = {
         cmp_id,
         owner,
         date: selectedDate,
         dateRange: 'day',
-        ...(cmp_id,owner && { cmp_id,owner })
+        ...(cmp_id && owner && { cmp_id, owner })
       };
 
-      // Fetch monthly data (for selected date's month)
       const monthStartDate = getMonthStartDate(selectedDate);
       const monthEndDate = getMonthEndDate(selectedDate);
       
@@ -63,22 +101,19 @@ const SummaryDashboard = () => {
         startDate: monthStartDate,
         endDate: monthEndDate,
         dateRange: 'month',
-        ...(cmp_id,owner && { cmp_id,owner })
+        ...(cmp_id && owner && { cmp_id, owner })
       };
 
-      // Make both API calls
       const [dailyResponse, monthlyResponse] = await Promise.all([
         api.get('/api/sUsers/summary', { params: dailyParams }),
         api.get('/api/sUsers/summary', { params: monthlyParams })
       ]);
 
       if (dailyResponse.data.success && monthlyResponse.data.success) {
-           console.log(dailyResponse.data)
+        console.log(dailyResponse.data)
         setDashboardData({
-            
           daily: dailyResponse.data.data?.daily,
           monthly: monthlyResponse.data.data.monthly,
-       
           analytics: {
             paymentMethodBreakdown: dailyResponse.data.data.analytics?.paymentMethodBreakdown || {
               cashPercentage: 0,
@@ -89,9 +124,7 @@ const SummaryDashboard = () => {
               hotelPercentage: 0,
               restaurantPercentage: 0
             }
-            
           }
-        
         });
       } else {
         throw new Error('Failed to fetch dashboard data');
@@ -100,40 +133,39 @@ const SummaryDashboard = () => {
       console.error('Dashboard fetch error:', err);
       setError(err.message);
       
-      // Fallback to dummy data in case of error
       setDashboardData({
         daily: {
           hotel: { 
             totalSales: 0, cashReceipt: 0, bankReceipt: 0, upiAmount: 0, 
             chequeAmount: 0, creditAmount: 0, totalTax: 0, totalDiscount: 0,
-            expense: 0, balance: 0, transactionCount: 0
+            expense: 0, balance: 0, transactionCount: 0, netSales: 0
           },
           restaurant: { 
             totalSales: 0, cashReceipt: 0, bankReceipt: 0, upiAmount: 0,
             chequeAmount: 0, creditAmount: 0, totalTax: 0, totalDiscount: 0,
-            expense: 0, balance: 0, transactionCount: 0
+            expense: 0, balance: 0, transactionCount: 0, netSales: 0
           },
           combined: { 
             totalSales: 0, cashReceipt: 0, bankReceipt: 0, upiAmount: 0,
             chequeAmount: 0, creditAmount: 0, totalTax: 0, totalDiscount: 0,
-            expense: 0, balance: 0, transactionCount: 0, averageTicketSize: 0
+            expense: 0, balance: 0, transactionCount: 0, averageTicketSize: 0, netSales: 0
           }
         },
         monthly: {
           hotel: { 
             totalSales: 0, cashReceipt: 0, bankReceipt: 0, upiAmount: 0,
             chequeAmount: 0, creditAmount: 0, totalTax: 0, totalDiscount: 0,
-            expense: 0, balance: 0, transactionCount: 0
+            expense: 0, balance: 0, transactionCount: 0, netSales: 0
           },
           restaurant: { 
             totalSales: 0, cashReceipt: 0, bankReceipt: 0, upiAmount: 0,
             chequeAmount: 0, creditAmount: 0, totalTax: 0, totalDiscount: 0,
-            expense: 0, balance: 0, transactionCount: 0
+            expense: 0, balance: 0, transactionCount: 0, netSales: 0
           },
           combined: { 
             totalSales: 0, cashReceipt: 0, bankReceipt: 0, upiAmount: 0,
             chequeAmount: 0, creditAmount: 0, totalTax: 0, totalDiscount: 0,
-            expense: 0, balance: 0, transactionCount: 0, averageTicketSize: 0
+            expense: 0, balance: 0, transactionCount: 0, averageTicketSize: 0, netSales: 0
           }
         },
         analytics: {
@@ -154,8 +186,14 @@ const SummaryDashboard = () => {
   };
 
   useEffect(() => {
-    fetchDashboardData();
-  }, [selectedDate, cmp_id,owner]);
+    fetchCompanyIndustry();
+  }, [cmp_id, selectedOrg]);
+
+  useEffect(() => {
+    if (companyIndustry !== null) {
+      fetchDashboardData();
+    }
+  }, [selectedDate, cmp_id, owner, companyIndustry]);
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-IN', {
@@ -182,8 +220,6 @@ const SummaryDashboard = () => {
       month: 'long'
     });
   };
-
-  console.log(dashboardData)
 
   const StatCard = ({ title, icon: Icon, data, gradient, mainIcon: MainIcon }) => (
     <div className={`relative overflow-hidden rounded-xl bg-gradient-to-br ${gradient} p-4 shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-[1.02] group`}>
@@ -226,42 +262,30 @@ const SummaryDashboard = () => {
             </div>
             <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.bankReceipt)}</span>
           </div>
-            <div className="flex justify-between items-center">
+          
+          <div className="flex justify-between items-center">
             <div className="flex items-center gap-1">
               <CreditCard size={12} className="text-white/70" />
               <span className="text-white/80 text-xs">Total Discount</span>
             </div>
             <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.totalDiscount)}</span>
           </div>
-            <div className="flex justify-between items-center">
+          
+          <div className="flex justify-between items-center">
             <div className="flex items-center gap-1">
               <CreditCard size={12} className="text-white/70" />
               <span className="text-white/80 text-xs">Total Tax</span>
             </div>
             <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.totalTax)}</span>
           </div>
-            {/* <div className="flex justify-between items-center">
-            <div className="flex items-center gap-1">
-              <CreditCard size={12} className="text-white/70" />
-              <span className="text-white/80 text-xs">Sale Count</span>
-            </div>
-            <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.transactionCount)}</span>
-          </div> */}
-            <div className="flex justify-between items-center">
+          
+          <div className="flex justify-between items-center">
             <div className="flex items-center gap-1">
               <CreditCard size={12} className="text-white/70" />
               <span className="text-white/80 text-xs">Net Sales</span>
             </div>
             <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.netSales)}</span>
           </div>
-
-          {/* <div className="flex justify-between items-center">
-            <div className="flex items-center gap-1">
-              <Smartphone size={12} className="text-white/70" />
-              <span className="text-white/80 text-xs">UPI</span>
-            </div>
-            <span className="text-white/95 font-semibold text-xs">{formatCurrency(data.upiAmount)}</span>
-          </div> */}
           
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-1">
@@ -337,41 +361,27 @@ const SummaryDashboard = () => {
             </div>
             <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.bankReceipt)}</span>
           </div>
-           <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center">
             <div className="flex items-center gap-1">
               <CreditCard size={12} className="text-white/70" />
               <span className="text-white/80 text-xs">Total Discount</span>
             </div>
             <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.totalDiscount)}</span>
           </div>
-            <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center">
             <div className="flex items-center gap-1">
               <CreditCard size={12} className="text-white/70" />
               <span className="text-white/80 text-xs">Total Tax</span>
             </div>
             <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.totalTax)}</span>
           </div>
-            {/* <div className="flex justify-between items-center">
-            <div className="flex items-center gap-1">
-              <CreditCard size={12} className="text-white/70" />
-              <span className="text-white/80 text-xs">Sale Count</span>
-            </div>
-            <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.transactionCount)}</span>
-          </div> */}
-           <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center">
             <div className="flex items-center gap-1">
               <CreditCard size={12} className="text-white/70" />
               <span className="text-white/80 text-xs">Net Sales</span>
             </div>
             <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.netSales)}</span>
           </div>
-          {/* <div className="flex justify-between items-center">
-            <div className="flex items-center gap-1">
-              <Smartphone size={10} className="text-white/70" />
-              <span className="text-white/90 text-xs">UPI</span>
-            </div>
-            <span className="text-white/95 font-semibold text-xs">{formatCurrency(data.upiAmount)}</span>
-          </div> */}
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-1">
               <Target size={10} className="text-white/70" />
@@ -422,7 +432,11 @@ const SummaryDashboard = () => {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Financial Dashboard</h1>
-              <p className="text-gray-600 text-sm">Hotel & Restaurant Financial Overview</p>
+              <p className="text-gray-600 text-sm">
+                {companyIndustry === 6 && "Hotel Financial Overview"}
+                {(companyIndustry === 3 || companyIndustry === 8) && "Restaurant Financial Overview"}
+                {companyIndustry === 7 && "Hotel & Restaurant Financial Overview"}
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -465,29 +479,51 @@ const SummaryDashboard = () => {
               </h2>
               <Clock size={16} className="text-gray-500" />
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              <StatCard
-                title="Hotel Daily"
-                icon={Bed}
-                mainIcon={Hotel}
-                data={dashboardData.daily.hotel}
-                gradient="from-blue-600 via-blue-500 to-indigo-600"
-              />
-              <StatCard
-                title="Restaurant Daily"
-                icon={ChefHat}
-                mainIcon={UtensilsCrossed}
-                data={dashboardData.daily.restaurant}
-                gradient="from-green-600 via-emerald-500 to-teal-600"
-              />
-              <CombinedCard
-                title="Combined Daily"
-                icon={BarChart3}
-                mainIcon={TrendingUp}
-                data={dashboardData.daily.combined}
-                gradient="from-purple-600 via-violet-500 to-indigo-600"
-                period="DAILY"
-              />
+            <div className="grid grid-cols-1 gap-4">
+              {shouldShowHotel() && !shouldShowRestaurant() && (
+                <StatCard
+                  title="Hotel Daily"
+                  icon={Bed}
+                  mainIcon={Hotel}
+                  data={dashboardData.daily.hotel}
+                  gradient="from-blue-600 via-blue-500 to-indigo-600"
+                />
+              )}
+              {shouldShowRestaurant() && !shouldShowHotel() && (
+                <StatCard
+                  title="Restaurant Daily"
+                  icon={ChefHat}
+                  mainIcon={UtensilsCrossed}
+                  data={dashboardData.daily.restaurant}
+                  gradient="from-green-600 via-emerald-500 to-teal-600"
+                />
+              )}
+              {shouldShowCombined() && (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                  <StatCard
+                    title="Hotel Daily"
+                    icon={Bed}
+                    mainIcon={Hotel}
+                    data={dashboardData.daily.hotel}
+                    gradient="from-blue-600 via-blue-500 to-indigo-600"
+                  />
+                  <StatCard
+                    title="Restaurant Daily"
+                    icon={ChefHat}
+                    mainIcon={UtensilsCrossed}
+                    data={dashboardData.daily.restaurant}
+                    gradient="from-green-600 via-emerald-500 to-teal-600"
+                  />
+                  <CombinedCard
+                    title="Combined Daily"
+                    icon={BarChart3}
+                    mainIcon={TrendingUp}
+                    data={dashboardData.daily.combined}
+                    gradient="from-purple-600 via-violet-500 to-indigo-600"
+                    period="DAILY"
+                  />
+                </div>
+              )}
             </div>
           </div>
 
@@ -500,121 +536,61 @@ const SummaryDashboard = () => {
               </h2>
               <Calendar size={16} className="text-gray-500" />
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              <StatCard
-                title="Hotel Monthly"
-                icon={Building2}
-                mainIcon={Hotel}
-                data={dashboardData.monthly.hotel}
-                gradient="from-orange-600 via-amber-500 to-yellow-600"
-              />
-              <StatCard
-                title="Restaurant Monthly"
-                icon={UtensilsCrossed}
-                mainIcon={ChefHat}
-                data={dashboardData.monthly.restaurant}
-                gradient="from-red-600 via-rose-500 to-pink-600"
-              />
-              <CombinedCard
-                title="Combined Monthly"
-                icon={TrendingUp}
-                mainIcon={BarChart3}
-                data={dashboardData.monthly.combined}
-                gradient="from-slate-700 via-gray-600 to-zinc-700"
-                period="MONTHLY"
-              />
+            <div className="grid grid-cols-1 gap-4">
+              {shouldShowHotel() && !shouldShowRestaurant() && (
+                <StatCard
+                  title="Hotel Monthly"
+                  icon={Building2}
+                  mainIcon={Hotel}
+                  data={dashboardData.monthly.hotel}
+                  gradient="from-orange-600 via-amber-500 to-yellow-600"
+                />
+              )}
+              {shouldShowRestaurant() && !shouldShowHotel() && (
+                <StatCard
+                  title="Restaurant Monthly"
+                  icon={UtensilsCrossed}
+                  mainIcon={ChefHat}
+                  data={dashboardData.monthly.restaurant}
+                  gradient="from-red-600 via-rose-500 to-pink-600"
+                />
+              )}
+              {shouldShowCombined() && (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                  <StatCard
+                    title="Hotel Monthly"
+                    icon={Building2}
+                    mainIcon={Hotel}
+                    data={dashboardData.monthly.hotel}
+                    gradient="from-orange-600 via-amber-500 to-yellow-600"
+                  />
+                  <StatCard
+                    title="Restaurant Monthly"
+                    icon={UtensilsCrossed}
+                    mainIcon={ChefHat}
+                    data={dashboardData.monthly.restaurant}
+                    gradient="from-red-600 via-rose-500 to-pink-600"
+                  />
+                  <CombinedCard
+                    title="Combined Monthly"
+                    icon={TrendingUp}
+                    mainIcon={BarChart3}
+                    data={dashboardData.monthly.combined}
+                    gradient="from-slate-700 via-gray-600 to-zinc-700"
+                    period="MONTHLY"
+                  />
+                </div>
+              )}
             </div>
           </div>
 
- <div className="mb-6">
-      <TableSummary dashboardData={dashboardData} selectedDate={selectedDate} />
-    </div>
-            <div className="mb-6">
+          <div className="mb-6">
+            <TableSummary dashboardData={dashboardData} selectedDate={selectedDate} />
+          </div>
+          
+          <div className="mb-6">
             <GraphHotelSummary dashboardData={dashboardData} selectedDate={selectedDate} />
           </div>
-
-          {/* Analytics and Quick Stats Row */}
-          {/* <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-6">
-            <div className="bg-white rounded-lg p-3 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300 group">
-              <div className="flex items-center gap-2">
-                <div className="p-2 bg-green-100 rounded-lg group-hover:bg-green-200 transition-colors">
-                  <ArrowUpRight className="text-green-600" size={16} />
-                </div>
-                <div>
-                  <p className="text-xs text-gray-600">Daily Revenue</p>
-                  <p className="text-sm font-bold text-gray-900">{formatCurrency(dashboardData?.daily?.combined?.totalSales)}</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white rounded-lg p-3 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300 group">
-              <div className="flex items-center gap-2">
-                <div className="p-2 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors">
-                  <Calendar className="text-blue-600" size={16} />
-                </div>
-                <div>
-                  <p className="text-xs text-gray-600">Monthly Revenue</p>
-                  <p className="text-sm font-bold text-gray-900">{formatCurrency(dashboardData.monthly?.combined?.totalSales)}</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white rounded-lg p-3 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300 group">
-              <div className="flex items-center gap-2">
-                <div className="p-2 bg-purple-100 rounded-lg group-hover:bg-purple-200 transition-colors">
-                  <Hotel className="text-purple-600" size={16} />
-                </div>
-                <div>
-                  <p className="text-xs text-gray-600">Hotel Share</p>
-                  <p className="text-sm font-bold text-gray-900">
-                    {dashboardData.analytics?.businessMix?.hotelPercentage?.toFixed(0) || 0}%
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white rounded-lg p-3 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300 group">
-              <div className="flex items-center gap-2">
-                <div className="p-2 bg-orange-100 rounded-lg group-hover:bg-orange-200 transition-colors">
-                  <UtensilsCrossed className="text-orange-600" size={16} />
-                </div>
-                <div>
-                  <p className="text-xs text-gray-600">Restaurant Share</p>
-                  <p className="text-sm font-bold text-gray-900">
-                    {dashboardData.analytics?.businessMix?.restaurantPercentage?.toFixed(0) || 0}%
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg p-3 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300 group">
-              <div className="flex items-center gap-2">
-                <div className="p-2 bg-indigo-100 rounded-lg group-hover:bg-indigo-200 transition-colors">
-                  <Banknote className="text-indigo-600" size={16} />
-                </div>
-                <div>
-                  <p className="text-xs text-gray-600">Cash %</p>
-                  <p className="text-sm font-bold text-gray-900">
-                    {dashboardData.analytics?.paymentMethodBreakdown?.cashPercentage?.toFixed(0) || 0}%
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg p-3 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300 group">
-              <div className="flex items-center gap-2">
-                <div className="p-2 bg-teal-100 rounded-lg group-hover:bg-teal-200 transition-colors">
-                  <CreditCard className="text-teal-600" size={16} />
-                </div>
-                <div>
-                  <p className="text-xs text-gray-600">Digital %</p>
-                  <p className="text-sm font-bold text-gray-900">
-                    {dashboardData.analytics?.paymentMethodBreakdown?.bankPercentage?.toFixed(0) || 0}%
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div> */}
         </>
       )}
     </div>
