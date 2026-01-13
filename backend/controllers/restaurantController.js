@@ -1673,6 +1673,7 @@ async function saveSettlement(
 
 // function used to fetch bank and cash online details
 export const getPaymentType = async (req, res) => {
+  console.log("cmp_id", req.params.cmp_id);
   try {
     const bankDetails = await Party.find({
       cmp_id: req.params.cmp_id,
