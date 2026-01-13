@@ -1,8 +1,8 @@
+/* eslint-disable react/prop-types */
 /* eslint-disable no-case-declarations */
 import { useState } from "react"
 import {
   format,
-  // startOfToday,
   subDays,
   startOfWeek,
   endOfWeek,
@@ -13,32 +13,37 @@ import {
   subMonths,
   startOfYear,
   endOfYear,
-  parseISO
 } from "date-fns"
-import { BsFillCalendar2DateFill } from "react-icons/bs"
+import DatePicker from "react-datepicker"
+import "react-datepicker/dist/react-datepicker.css"
+import { BsFillCalendar2DateFill, BsCalendar3 } from "react-icons/bs"
 import { useDispatch, useSelector } from "react-redux"
 import { addDate } from "../../../slices/filterSlices/date"
 import { useNavigate } from "react-router-dom"
 import TitleDiv from "../common/TitleDiv"
+import { ChevronRight } from "lucide-react"
 
 const DateRange = () => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const { title } = useSelector((state) => state.date)
+  
   const [showCustomPicker, setShowCustomPicker] = useState(false)
-  const [customStartDate, setCustomStartDate] = useState("")
-  const [customEndDate, setCustomEndDate] = useState("")
+  const [customStartDate, setCustomStartDate] = useState(null)
+  const [customEndDate, setCustomEndDate] = useState(null)
+
   const submitHandler = (rangeName, start, end) => {
+    if (!start || !end) return
+
     const newstart = new Date(start)
     const newend = new Date(end)
+
     const startdate = new Date(
       Date.UTC(
         newstart.getFullYear(),
         newstart.getMonth(),
         newstart.getDate(),
-        0,
-        0,
-        0
+        0, 0, 0
       )
     )
     const enddate = new Date(
@@ -46,11 +51,10 @@ const DateRange = () => {
         newend.getFullYear(),
         newend.getMonth(),
         newend.getDate(),
-        0,
-        0,
-        0
+        0, 0, 0
       )
     )
+
     dispatch(
       addDate({
         rangeName,
@@ -64,53 +68,25 @@ const DateRange = () => {
 
   const handleCustomDateSubmit = () => {
     if (customStartDate && customEndDate) {
-      const startDate = parseISO(customStartDate)
-      const endDate = parseISO(customEndDate)
-
-      if (endDate < startDate) {
+      if (customEndDate < customStartDate) {
         alert("End date cannot be before start date.")
         return
       }
-
-      submitHandler("Custom Date", startDate, endDate)
+      submitHandler("Custom Date", customStartDate, customEndDate)
     } else {
       alert("Both start and end dates must be selected.")
     }
   }
 
-  const formatDisplayDate = (dateString) =>
-    dateString ? format(parseISO(dateString), "dd-MMM-yyyy") : ""
-
   const getRangeDates = (rangeType) => {
     let startDate, endDate
+    const today = new Date()
+    const getUtcToday = () => new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate(), 0, 0, 0, 0))
+
     switch (rangeType) {
       case "Today":
-        // Use a function that gets the current date at midnight in UTC
-        const today = new Date()
-        startDate = new Date(
-          Date.UTC(
-            today.getUTCFullYear(),
-            today.getUTCMonth(),
-            today.getUTCDate(),
-            0,
-            0,
-            0,
-            0
-          )
-        )
-        endDate = new Date(
-          Date.UTC(
-            today.getUTCFullYear(),
-            today.getUTCMonth(),
-            today.getUTCDate(),
-            0,
-            0,
-            0,
-            0
-          )
-        )
+        startDate = endDate = getUtcToday()
         break
-
       case "Yesterday":
         startDate = endDate = subDays(new Date(), 1)
         break
@@ -161,99 +137,102 @@ const DateRange = () => {
       default:
         startDate = endDate = new Date()
     }
-
     return { start: startDate, end: endDate }
   }
 
   const ranges = [
-    "Today",
-    "Yesterday",
-    "This Week",
-    "Last Week",
-    "Last 7 Days",
-    "This Month",
-    "Last Month",
-    "Last 30 Days",
-    "This Quarter",
-    "Last Quarter",
-    "Current Financial Year",
-    "Previous Financial Year",
-    "Last Year"
+    "Today", "Yesterday", "This Week", "Last Week", "Last 7 Days",
+    "This Month", "Last Month", "Last 30 Days", "This Quarter",
+    "Last Quarter", "Current Financial Year", "Previous Financial Year", "Last Year"
   ]
 
+  const CustomDateInput = ({ value, onClick, placeholder }) => (
+    <div 
+      className="flex items-center bg-white border border-gray-300 rounded px-2 py-1.5 cursor-pointer hover:border-blue-400 transition-colors w-full"
+      onClick={onClick}
+    >
+      <BsCalendar3 className="text-gray-400 text-xs mr-2" />
+      <span className={`text-xs ${value ? 'text-gray-700 font-medium' : 'text-gray-400'}`}>
+        {value || placeholder}
+      </span>
+    </div>
+  )
+
   return (
-    <div className="flex-col">
+    <div className="flex-col pb-4">
       <TitleDiv title="Date Range" />
       <div className="flex flex-col px-3 py-2 gap-2">
+        
         <div
           className={`${
-            title?.includes(" to ") ? "bg-slate-300 " : ""
-          } flex flex-col cursor-pointer shadow-md p-6 hover:shadow-xl rounded-md hover:bg-slate-300 text-gray-500`}
-          onClick={() => setShowCustomPicker(!showCustomPicker)}
+            title?.includes(" to ") || showCustomPicker ? "bg-slate-100 ring-1 ring-slate-300" : "bg-white"
+          } flex flex-col shadow-sm border border-gray-100 rounded-lg overflow-hidden transition-all duration-200`}
         >
-          <div className="flex justify-between items-center">
-            <span className="font-bold text-[10px] md:text-xs flex items-center gap-3">
-              <BsFillCalendar2DateFill className="text-xs" /> Custom Range
+          <div 
+            className="flex justify-between items-center p-3 cursor-pointer hover:bg-slate-50"
+            onClick={() => setShowCustomPicker(!showCustomPicker)}
+          >
+            <span className="font-bold text-xs text-gray-600 flex items-center gap-2">
+              <BsFillCalendar2DateFill className="text-blue-500" /> 
+              Custom Range
             </span>
-            {!showCustomPicker && title?.includes(" to ") && (
-              <span className="font-bold text-[9px] md:text-xs">{title}</span>
-            )}
+            <ChevronRight className={`w-3 h-3 text-gray-400 transition-transform ${showCustomPicker ? 'rotate-90' : ''}`} />
           </div>
 
           {showCustomPicker && (
-            <div
-              className="mt-4 flex flex-col gap-3"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex gap-2 items-center">
-                <div className="flex-1 relative">
-                  <div className="relative flex items-center">
-                    <input
-                      type="date"
-                      value={customStartDate}
-                      onChange={(e) => setCustomStartDate(e.target.value)}
-                      className="absolute inset-0 opacity-0 cursor-pointer w-full"
-                    />
-                    <div className="w-full p-2 rounded border text-sm flex items-center gap-2 bg-white">
-                      <BsFillCalendar2DateFill className="text-gray-500 min-w-[16px]" />
-                      <span className="text-gray-700">
-                        {customStartDate
-                          ? formatDisplayDate(customStartDate)
-                          : "Select date"}
-                      </span>
-                    </div>
-                  </div>
+            <div className="px-3 pb-3 pt-1 flex flex-col gap-2 bg-slate-50 border-t border-slate-200" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 min-w-0">
+                  <label className="text-[10px] font-semibold text-gray-500 mb-0.5 block">From</label>
+                  <DatePicker
+                    selected={customStartDate}
+                    onChange={(date) => setCustomStartDate(date)}
+                    selectsStart
+                    startDate={customStartDate}
+                    endDate={customEndDate}
+                    placeholderText="Start Date"
+                    dateFormat="dd-MMM-yyyy"
+                    customInput={<CustomDateInput placeholder="Select" />}
+                    maxDate={new Date()}
+                    fixedHeight
+                    // FIX: Render outside this container to avoid sidebar clipping
+                    portalId="root"
+                    popperClassName="!z-[9999]" 
+                    popperPlacement="bottom-start"
+                  />
                 </div>
-
-                <div className="flex-1 relative">
-                  <div className="relative flex items-center">
-                    <input
-                      type="date"
-                      value={customEndDate}
-                      onChange={(e) => setCustomEndDate(e.target.value)}
-                      className="absolute inset-0 opacity-0 cursor-pointer w-full"
-                    />
-                    <div className="w-full p-2 rounded border text-sm flex items-center gap-2 bg-white">
-                      <BsFillCalendar2DateFill className="text-gray-500 min-w-[16px]" />
-                      <span className="text-gray-700">
-                        {customEndDate
-                          ? formatDisplayDate(customEndDate)
-                          : "Select date"}
-                      </span>
-                    </div>
-                  </div>
+                <div className="flex-1 min-w-0">
+                  <label className="text-[10px] font-semibold text-gray-500 mb-0.5 block">To</label>
+                  <DatePicker
+                    selected={customEndDate}
+                    onChange={(date) => setCustomEndDate(date)}
+                    selectsEnd
+                    startDate={customStartDate}
+                    endDate={customEndDate}
+                    minDate={customStartDate}
+                    placeholderText="End Date"
+                    dateFormat="dd-MMM-yyyy"
+                    customInput={<CustomDateInput placeholder="Select" />}
+                    maxDate={new Date()}
+                    fixedHeight
+                    // FIX: Render outside this container to avoid sidebar clipping
+                    portalId="root"
+                    popperClassName="!z-[9999]"
+                    popperPlacement="bottom-end"
+                  />
                 </div>
               </div>
+
               <button
                 onClick={handleCustomDateSubmit}
                 disabled={!customStartDate || !customEndDate}
-                className={`px-4 py-2 rounded text-sm text-white ${
+                className={`w-full py-1.5 rounded text-xs font-semibold transition-all ${
                   !customStartDate || !customEndDate
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-blue-500 hover:bg-blue-600"
+                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    : "bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
                 }`}
               >
-                Apply Custom Range
+                Apply Range
               </button>
             </div>
           )}
@@ -261,21 +240,23 @@ const DateRange = () => {
 
         {ranges.map((rangeName) => {
           const { start, end } = getRangeDates(rangeName)
+          const isActive = title === rangeName
 
           return (
             <div
               key={rangeName}
               className={`${
-                title === rangeName ? "bg-slate-300 " : ""
-              } flex justify-between cursor-pointer shadow-md p-6 hover:shadow-xl rounded-md hover:bg-slate-300 text-gray-500`}
+                isActive ? "bg-blue-50 border-blue-200" : "bg-white hover:bg-gray-50 border-transparent"
+              } flex justify-between items-center cursor-pointer shadow-sm border p-3 rounded-lg transition-all duration-150 group`}
               onClick={() => submitHandler(rangeName, start, end)}
             >
-              <span className="font-bold text-[10px] md:text-xs flex items-center gap-3">
-                <BsFillCalendar2DateFill className="text-xs" /> {rangeName}
+              <span className={`font-bold text-xs flex items-center gap-2 ${isActive ? 'text-blue-700' : 'text-gray-600'}`}>
+                <BsFillCalendar2DateFill className={`text-[10px] ${isActive ? 'text-blue-500' : 'text-gray-400 group-hover:text-gray-500'}`} /> 
+                {rangeName}
               </span>
-              <span className="font-bold text-[9px] md:text-xs">
-                {format(start, "dd-MMM-yyyy")}
-                {rangeName !== "Today" && ` - ${format(end, "dd-MMM-yyyy")}`}
+              <span className={`text-[10px] font-mono ${isActive ? 'text-blue-600' : 'text-gray-400'}`}>
+                {format(start, "dd MMM")}
+                {rangeName !== "Today" && ` - ${format(end, "dd MMM")}`}
               </span>
             </div>
           )
@@ -286,3 +267,4 @@ const DateRange = () => {
 }
 
 export default DateRange
+  
