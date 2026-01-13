@@ -1,38 +1,47 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Trash2 } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { Plus, Trash2 } from "lucide-react";
 
 /**
  * SplitPayment Component
- * 
+ *
  * @param {Array} customers - List of customer objects with _id and partyName
  * @param {Object} cashOrBank - Object containing cashDetails and bankDetails arrays
  * @param {Number} totalAmount - Total amount to be split
  * @param {Function} onChange - Callback when split data changes
  * @param {Array} initialRows - Initial split payment rows (optional)
  */
-const SplitPayment = ({ 
-  customers = [], 
+const SplitPayment = ({
+  customers = [],
   cashOrBank = { cashDetails: [], bankDetails: [] },
-  totalAmount = 0, 
+  totalAmount = 0,
   onChange,
-  initialRows = null 
+  initialRows = null,
 }) => {
   const [splitPaymentRows, setSplitPaymentRows] = useState(
-    initialRows || [{ customer: customers[0]?._id, paymentMethod: '', sourceId: '', amount: '' }]
+    initialRows || [
+      {
+        customer: customers[0]?._id,
+        paymentMethod: "",
+        sourceId: "",
+        amount: "",
+      },
+    ]
   );
+
+  const [error, setError] = useState("");
 
   // Combine cash and bank sources
   const combinedSources = [
     ...(cashOrBank.cashDetails || []).map((cash) => ({
       id: cash._id,
       name: cash.partyName,
-      type: 'cash'
+      type: "cash",
     })),
     ...(cashOrBank.bankDetails || []).map((bank) => ({
       id: bank._id,
       name: bank.partyName,
-      type: 'bank'
-    }))
+      type: "bank",
+    })),
   ];
 
   // Update parent component whenever rows change
@@ -43,7 +52,11 @@ const SplitPayment = ({
     );
 
     const hasInvalidRows = splitPaymentRows.some(
-      (row) => !row.customer || !row.sourceId || !row.amount || parseFloat(row.amount) <= 0
+      (row) =>
+        !row.customer ||
+        !row.sourceId ||
+        !row.amount ||
+        parseFloat(row.amount) <= 0
     );
 
     // Calculate cash and online totals
@@ -52,24 +65,24 @@ const SplitPayment = ({
 
     splitPaymentRows.forEach((row) => {
       const amount = parseFloat(row.amount) || 0;
-      if (row.paymentMethod === 'cash') {
+      if (row.paymentMethod === "cash") {
         totalCash += amount;
-      } else if (row.paymentMethod === 'card') {
+      } else if (row.paymentMethod === "card") {
         totalOnline += amount;
       }
     });
 
     // Prepare payment data in the format expected by the parent
     const payments = splitPaymentRows
-      .filter(row => row.sourceId && parseFloat(row.amount) > 0)
-      .map(row => {
-        const source = combinedSources.find(s => s.id === row.sourceId);
+      .filter((row) => row.sourceId && parseFloat(row.amount) > 0)
+      .map((row) => {
+        const source = combinedSources.find((s) => s.id === row.sourceId);
         return {
           customerId: row.customer,
           method: row.paymentMethod,
           amount: parseFloat(row.amount),
           accountId: row.sourceId,
-          accountName: source ? source.name : ''
+          accountName: source ? source.name : "",
         };
       });
 
@@ -82,16 +95,32 @@ const SplitPayment = ({
         totalOnline,
         totalSplitAmount,
         isValid: !hasInvalidRows && totalSplitAmount === totalAmount,
-        error: totalSplitAmount !== totalAmount ? 'Split payment amounts must equal the total amount.' : ''
+        error:
+          totalSplitAmount !== totalAmount
+            ? "Split payment amounts must equal the total amount."
+            : "",
       });
     }
   }, [splitPaymentRows, totalAmount, onChange, combinedSources]);
 
   const addSplitPaymentRow = () => {
+    const hasEmptyString = splitPaymentRows.some((obj) =>
+      Object.values(obj).some((value) => value === "")
+    );
+    const total = splitPaymentRows.reduce((acc,obj) =>acc + (parseFloat(obj.amount) || 0),0);
+    if(total >= totalAmount) {
+      setError("Split total is equal to total amount");
+      return
+    }
+    if(hasEmptyString){
+      setError("Please fill all the fields");
+      return
+    } 
     setSplitPaymentRows([
       ...splitPaymentRows,
-      { customer: '', paymentMethod: '', sourceId: '', amount: '' }
+      { customer: "", paymentMethod: "", sourceId: "", amount: "" },
     ]);
+    setError("");
   };
 
   const removeSplitPaymentRow = (index) => {
@@ -105,16 +134,21 @@ const SplitPayment = ({
     const updatedRows = [...splitPaymentRows];
     console.log(field);
 
-    if (field === 'sourceId') {
+    if (field === "sourceId") {
       const selectedSource = combinedSources.find((s) => s.id === value);
       updatedRows[index].sourceId = value;
-      updatedRows[index].paymentMethod = selectedSource ? selectedSource.type : '';
-    }else if (field === 'amount') {
-        let alreadyEntered = splitPaymentRows.reduce((sum, row ,ind) => ind !== index ? sum + (parseFloat(row.amount) || 0) : sum + 0 , 0);
-        if (alreadyEntered + parseFloat(value || 0) <= totalAmount) {
-          updatedRows[index].amount = value; 
+      updatedRows[index].paymentMethod = selectedSource
+        ? selectedSource.type
+        : "";
+    } else if (field === "amount") {
+      let alreadyEntered = splitPaymentRows.reduce(
+        (sum, row, ind) =>
+          ind !== index ? sum + (parseFloat(row.amount) || 0) : sum + 0,
+        0
+      );
+      if (alreadyEntered + parseFloat(value || 0) <= totalAmount) {
+        updatedRows[index].amount = value;
       }
-
     } else {
       updatedRows[index][field] = value;
     }
@@ -131,6 +165,7 @@ const SplitPayment = ({
 
   return (
     <div className="space-y-3">
+      {error && <div className="text-red-500 text-sm">{error}</div>}
       {/* Header Row */}
       <div className="grid grid-cols-12 gap-2 text-xs font-semibold text-gray-600">
         <div className="col-span-5">Customer</div>
@@ -147,8 +182,9 @@ const SplitPayment = ({
             <div className="col-span-5">
               <select
                 value={row.customer}
+                disabled={index !== splitPaymentRows.length - 1}
                 onChange={(e) =>
-                  updateSplitPaymentRow(index, 'customer', e.target.value)
+                  updateSplitPaymentRow(index, "customer", e.target.value)
                 }
                 className="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
               >
@@ -165,15 +201,16 @@ const SplitPayment = ({
             <div className="col-span-3">
               <select
                 value={row.sourceId}
+                disabled={index !== splitPaymentRows.length - 1}
                 onChange={(e) =>
-                  updateSplitPaymentRow(index, 'sourceId', e.target.value)
+                  updateSplitPaymentRow(index, "sourceId", e.target.value)
                 }
                 className="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
               >
                 <option value="">Select Source</option>
                 {combinedSources.map((source) => (
                   <option key={source.id} value={source.id}>
-                    {source.name} ({source.type === 'cash' ? 'Cash' : 'Bank'})
+                    {source.name} ({source.type === "cash" ? "Cash" : "Bank"})
                   </option>
                 ))}
               </select>
@@ -187,9 +224,10 @@ const SplitPayment = ({
                 </span>
                 <input
                   type="number"
+                   disabled={index !== splitPaymentRows.length - 1}
                   value={row.amount}
                   onChange={(e) =>
-                    updateSplitPaymentRow(index, 'amount', e.target.value)
+                    updateSplitPaymentRow(index, "amount", e.target.value)
                   }
                   className="w-full pl-5 pr-2 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
                   placeholder="0.00"
@@ -235,10 +273,12 @@ const SplitPayment = ({
           <span>₹{totalAmount.toFixed(2)}</span>
         </div>
         {difference !== 0 && (
-          <div className={`flex justify-between text-xs mt-1 ${
-            difference > 0 ? 'text-amber-600' : 'text-red-600'
-          }`}>
-            <span>{difference > 0 ? 'Remaining:' : 'Excess:'}</span>
+          <div
+            className={`flex justify-between text-xs mt-1 ${
+              difference > 0 ? "text-amber-600" : "text-red-600"
+            }`}
+          >
+            <span>{difference > 0 ? "Remaining:" : "Excess:"}</span>
             <span>₹{Math.abs(difference).toFixed(2)}</span>
           </div>
         )}
