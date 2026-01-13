@@ -343,7 +343,7 @@ function SalesSummaryTable() {
           <VoucherTypeFilter filterKeys={filterKeys} />
         </section>
         <div className="flex justify-between lg:justify-between gap-5 px-2 lg:gap-0 bg-white border-t shadow-lg">
-          <SummmaryDropdown />
+          <SummmaryDropdown filterKeys={["MonthWise"]} />
           {voucherType.value !== "allType" && serialNumberList && (
             <select
               onChange={handleSerialNumberChange}
