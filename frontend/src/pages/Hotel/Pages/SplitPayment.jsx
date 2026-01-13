@@ -18,7 +18,7 @@ const SplitPayment = ({
   initialRows = null 
 }) => {
   const [splitPaymentRows, setSplitPaymentRows] = useState(
-    initialRows || [{ customer: '', paymentMethod: '', sourceId: '', amount: '' }]
+    initialRows || [{ customer: customers[0]?._id, paymentMethod: '', sourceId: '', amount: '' }]
   );
 
   // Combine cash and bank sources
@@ -103,11 +103,18 @@ const SplitPayment = ({
 
   const updateSplitPaymentRow = (index, field, value) => {
     const updatedRows = [...splitPaymentRows];
+    console.log(field);
 
     if (field === 'sourceId') {
       const selectedSource = combinedSources.find((s) => s.id === value);
       updatedRows[index].sourceId = value;
       updatedRows[index].paymentMethod = selectedSource ? selectedSource.type : '';
+    }else if (field === 'amount') {
+        let alreadyEntered = splitPaymentRows.reduce((sum, row ,ind) => ind !== index ? sum + (parseFloat(row.amount) || 0) : sum + 0 , 0);
+        if (alreadyEntered + parseFloat(value || 0) <= totalAmount) {
+          updatedRows[index].amount = value; 
+      }
+
     } else {
       updatedRows[index][field] = value;
     }
