@@ -519,91 +519,102 @@ const HotelDashboard = () => {
         <div className="relative z-10">
           <div className="p-3">
             {/* Header */}
-            <div className="bg-[#0B1D34] flex flex-col md:flex-row p-2 gap-2 md:gap-0 mb-4">
-              <div>
-                <h3 className="font-bold text-blue-400 flex items-center gap-2 text-base md:text-lg">
-                  <BedDouble className="w-5 h-5 text-cyan-400" />
-                  Room Status Overview
-                </h3>
-              </div>
+           <div className="bg-[#0B1D34] p-3 mb-4">
+  <div className="flex flex-col md:flex-row md:items-center gap-3">
+    
+    {/* Title */}
+   <div className="flex items-center gap-2 justify-center md:justify-start">
+  <BedDouble className="w-5 h-5 text-cyan-400" />
+  <h3 className="font-bold text-blue-400 text-base md:text-lg">
+    Room Status Overview
+  </h3>
+</div>
 
-              <div className="md:ml-auto flex flex-col sm:flex-row gap-2 mt-2 md:mt-0">
-                <button
-                  className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold px-3 py-1 rounded text-sm"
-                  onClick={() => navigate("/sUsers/bookingList")}
-                >
-                  Room Booking
-                </button>
-                <button
-                  className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold px-3 py-1 rounded text-sm"
-                  onClick={() => navigate("/sUsers/checkInList")}
-                >
-                  Check In
-                </button>
-                <button
-                  className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold px-3 py-1 rounded text-sm"
-                  onClick={() => navigate("/sUsers/checkOutList")}
-                >
-                  Check Out
-                </button>
-                <button
-                  className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold px-3 py-1 rounded text-sm"
-                  onClick={() => navigate("/sUsers/partyList")}
-                >
-                  New Guest
-                </button>
-                <button
-                  className="
-             
-        flex items-center gap-2 px-4 py-1.5 rounded-xl
-        font-semibold text-xs transition-all duration-300
-        whitespace-nowrap flex-shrink-0
-        bg-gradient-to-r from-green-600 to-emerald-600 text-white 
-        border-transparent shadow-lg shadow-emerald-500/25
-        hover:scale-105 active:scale-95 transform
-        hover:from-green-700 hover:to-emerald-700
-      "
-                  onClick={() => navigate("/sUsers/BillSummary?type=hotel")}
-                >
-                  <span className="text-sm">📊</span>
-                  Hotel Daily Sales
-                </button>
-                <button
-                  className="
-                 flex
-         items-center gap-2 px-4 py-1.5 rounded-xl
-        font-semibold text-xs transition-all duration-300
-        whitespace-nowrap flex-shrink-0
-        bg-gradient-to-r from-green-600 to-emerald-600 text-white 
-        border-transparent shadow-lg shadow-emerald-500/25
-        hover:scale-105 active:scale-95 transform
-        hover:from-green-700 hover:to-emerald-700
-      "
-                  onClick={() => navigate("/sUsers/Checkoutpdf")}
-                >
-                  <span className="text-sm">📊</span>
-                  Hotel Daily Checkouts
-                </button>
-                <button
-                  className="bg-gray-500 hover:bg-gray-600 text-white font-bold px-3 py-1 rounded text-sm flex items-center gap-1"
-                  onClick={() => setShowFilters(!showFilters)}
-                >
-                  <Filter className="w-4 h-4" />
-                  Filters
-                </button>
 
-                {/* Mobile Booking Toggle Button */}
-                {isMobile && (
-                  <button
-                    onClick={() => setShowBookingDetails(!showBookingDetails)}
-                    className="bg-cyan-500 hover:bg-cyan-600 text-white font-bold px-3 py-1 rounded text-sm flex items-center gap-1"
-                  >
-                    <Calendar className="w-4 h-4" />
-                    Bookings
-                  </button>
-                )}
-              </div>
-            </div>
+    {/* Buttons */}
+    <div className="md:ml-auto flex flex-wrap gap-2">
+      
+      <button
+        className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold px-3 py-1 rounded text-sm"
+        onClick={() => navigate("/sUsers/bookingList")}
+      >
+        Room Booking
+      </button>
+
+      <button
+        className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold px-3 py-1 rounded text-sm"
+        onClick={() => navigate("/sUsers/checkInList")}
+      >
+        Check In
+      </button>
+
+      <button
+        className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold px-3 py-1 rounded text-sm"
+        onClick={() => navigate("/sUsers/checkOutList")}
+      >
+        Check Out
+      </button>
+
+      <button
+        className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold px-3 py-1 rounded text-sm"
+        onClick={() => navigate("/sUsers/partyList")}
+      >
+        New Guest
+      </button>
+
+      <button
+        className="
+          flex items-center gap-2 px-4 py-1.5 rounded-xl
+          font-semibold text-xs transition-all duration-300
+          whitespace-nowrap
+          bg-gradient-to-r from-green-600 to-emerald-600 text-white 
+          border-transparent shadow-lg shadow-emerald-500/25
+          hover:scale-105 active:scale-95 transform
+          hover:from-green-700 hover:to-emerald-700
+        "
+        onClick={() => navigate("/sUsers/BillSummary?type=hotel")}
+      >
+        <span className="text-sm">📊</span>
+        Hotel Daily Sales
+      </button>
+
+      <button
+        className="
+          flex items-center gap-2 px-4 py-1.5 rounded-xl
+          font-semibold text-xs transition-all duration-300
+          whitespace-nowrap
+          bg-gradient-to-r from-green-600 to-emerald-600 text-white 
+          border-transparent shadow-lg shadow-emerald-500/25
+          hover:scale-105 active:scale-95 transform
+          hover:from-green-700 hover:to-emerald-700
+        "
+        onClick={() => navigate("/sUsers/Checkoutpdf")}
+      >
+        <span className="text-sm">📊</span>
+        Hotel Daily Checkouts
+      </button>
+
+      <button
+        className="bg-gray-500 hover:bg-gray-600 text-white font-bold px-3 py-1 rounded text-sm flex items-center gap-1"
+        onClick={() => setShowFilters(!showFilters)}
+      >
+        <Filter className="w-4 h-4" />
+        Filters
+      </button>
+
+      {isMobile && (
+        <button
+          onClick={() => setShowBookingDetails(!showBookingDetails)}
+          className="bg-cyan-500 hover:bg-cyan-600 text-white font-bold px-3 py-1 rounded text-sm flex items-center gap-1"
+        >
+          <Calendar className="w-4 h-4" />
+          Bookings
+        </button>
+      )}
+    </div>
+  </div>
+</div>
+
 
             {/* Date Selector */}
             <div className="mb-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center">
