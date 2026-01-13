@@ -383,6 +383,68 @@ export const getSummaryReport = async (req, res) => {
         message: "Invalid voucher type selected",
       });
     }
+if (selectedOption === "MonthWise") {
+  const monthNames = [
+    "", "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+
+  const summaryPromises = modelsToQuery.map(async ({ model, type }) => {
+    const isCredit = (type === "creditNote" || type === "debitNote");
+    
+    const result = await model.aggregate([
+      { $match: matchCriteria },
+      {
+        $group: {
+          _id: { $month: "$date" },
+          total: { 
+            $sum: { 
+              $toDouble: { 
+                $ifNull: ["$totalWithAdditionalCharges", "$enteredAmount", 0] 
+              } 
+            } 
+          },
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $addFields: {
+          name: { 
+            $arrayElemAt: [monthNames, { $toInt: "$_id" }] 
+          },
+          isCredit: isCredit,
+          sourceType: type,
+          transactions: []
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          name: 1,
+          total: 1,
+          count: 1,
+          isCredit: 1,
+          sourceType: 1,
+          transactions: 1
+        }
+      }
+    ]);
+
+    return result;
+  });
+
+  const results = await Promise.all(summaryPromises);
+  const flattenedResults = results.flat();
+  
+  if (flattenedResults.length > 0) {
+    return res.status(200).json({ message: "Summary data found", flattenedResults });
+  } else {
+    return res.status(404).json({ message: "No summary data found", flattenedResults: [] });
+  }
+}
+
+
+
     // Create transaction promises based on selected voucher type
     const summaryPromises = modelsToQuery.map(({ model, numberField, type }) =>
       aggregateSummary(model, matchCriteria, numberField, type, selectedOption, serialNumber)
