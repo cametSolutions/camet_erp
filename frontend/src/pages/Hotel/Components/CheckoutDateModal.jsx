@@ -1,26 +1,26 @@
 /* eslint-disable react/prop-types */
 import { useState } from "react";
 import { X, Calendar } from "lucide-react";
+import { set } from "mongoose";
 
 export default function CheckoutDateModal({
   isOpen = true,
   onClose,
   checkoutData = [],
 }) {
-  console.log("h");
-  console.log(checkoutData);
-  console.log(checkoutData.length);
-
   // Store original data separately (deep clone)
   const [originalCheckouts] = useState(() =>
     checkoutData.length > 0 ? JSON.parse(JSON.stringify(checkoutData)) : []
+  );
+  const [checkOutDateTracker, setCheckOutDateTracker] = useState(
+    new Date().toISOString().split("T")[0]
   );
 
   const [checkouts, setCheckouts] = useState(
     checkoutData.length > 0
       ? checkoutData.map((checkout) => {
           const arrival = new Date(checkout.arrivalDate);
-          const checkoutDate = new Date(checkout.checkOutDate);
+          const checkoutDate = new Date(checkOutDateTracker);
           const diffTime = checkoutDate - arrival;
           const calculatedDays =
             diffTime === 0 ? 1 : Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -55,6 +55,7 @@ export default function CheckoutDateModal({
   );
 
   const handleNewDateChange = (id, newDate) => {
+    setCheckOutDateTracker(newDate);
     setCheckouts(
       checkouts.map((checkout) => {
         if (checkout._id === id) {
@@ -162,6 +163,8 @@ export default function CheckoutDateModal({
   };
 
   const handleStayDaysChange = (id, newDays) => {
+   
+     let newCheckoutDate = new Date(new Date().toISOString().split("T")[0]);
     setCheckouts(
       checkouts.map((checkout) => {
         if (checkout._id === id) {
@@ -294,7 +297,7 @@ export default function CheckoutDateModal({
 
           // Calculate new checkout date
           const arrival = new Date(checkout.arrivalDate);
-          const newCheckoutDate = new Date(arrival);
+           newCheckoutDate = new Date(arrival);
           const daysToAdd = Math.floor(stayDays);
           newCheckoutDate.setDate(arrival.getDate() + daysToAdd);
 
@@ -308,6 +311,7 @@ export default function CheckoutDateModal({
         return checkout;
       })
     );
+     setCheckOutDateTracker(newCheckoutDate.toISOString().split("T")[0]);
   };
 
   const handleConfirm = () => {
@@ -345,8 +349,11 @@ export default function CheckoutDateModal({
                   <th className="text-left py-2 px-3 font-medium text-gray-700 text-xs uppercase tracking-wider">
                     Voucher
                   </th>
+                    <th className="text-left py-2 px-3 font-medium text-gray-700 text-xs uppercase tracking-wider">
+                    Actual CheckIn Date
+                  </th>
                   <th className="text-left py-2 px-3 font-medium text-gray-700 text-xs uppercase tracking-wider">
-                    Current Date
+                    Actual CheckOut Date
                   </th>
                   <th className="text-left py-2 px-3 font-medium text-gray-700 text-xs uppercase tracking-wider">
                     New Date
@@ -369,7 +376,21 @@ export default function CheckoutDateModal({
                         {checkout.voucherNumber}
                       </div>
                     </td>
-
+                    <td className="py-2 px-3">
+                      <div className="flex items-center gap-1">
+                        <Calendar size={14} className="text-gray-400" />
+                        <span className="text-gray-700 text-sm">
+                          {new Date(checkout.arrivalDate).toLocaleDateString(
+                            "en-GB",
+                            {
+                              day: "2-digit",
+                              month: "short",
+                              year: "2-digit",
+                            }
+                          )}
+                        </span>
+                      </div>
+                    </td>
                     <td className="py-2 px-3">
                       <div className="flex items-center gap-1">
                         <Calendar size={14} className="text-gray-400" />
@@ -389,7 +410,7 @@ export default function CheckoutDateModal({
                     <td className="py-2 px-3">
                       <input
                         type="date"
-                        value={checkout.checkOutDate}
+                        value={checkOutDateTracker}
                         onChange={(e) =>
                           handleNewDateChange(checkout._id, e.target.value)
                         }
