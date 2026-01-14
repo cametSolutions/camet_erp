@@ -2362,11 +2362,11 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
 
         const bookingSideAdvanceDetails = await TallyData.find({
           billId: checkInData.bookingId,
-        });
+        }).lean();
 
         const checkInSideAdvanceDetails = await TallyData.find({
           billId: checkInId,
-        });
+        }).lean();
 
         allAdvanceDetails.push(
           ...bookingSideAdvanceDetails,
@@ -2377,17 +2377,21 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
       for (const checkout of checkoutData) {
         const bookingSideAdvanceDetails = await TallyData.find({
           billId: checkout.bookingId._id,
-        });
+        }).lean();
 
         const checkInSideAdvanceDetails = await TallyData.find({
           billId: checkout.checkInId._id,
-        });
+        }).lean();
         const salesData = await salesModel.findOne({
           salesNumber: checkout.voucherNumber,
-        });
+        }).lean();
         let advanceData = await TallyData.find({
           billId: salesData._id,
-        });
+        }).lean();
+        advanceData[0].isCheckOut = true;
+        let sum =(checkInSideAdvanceDetails[0]?.bill_amount || 0) + (bookingSideAdvanceDetails[0]?.bill_amount || 0)
+        advanceData[0].bill_amount = Math.abs(advanceData[0].bill_amount - sum)
+        console.log("advanceData[0].isCheckOut = true;",advanceData)
         allAdvanceDetails.push(
           ...bookingSideAdvanceDetails,
           ...checkInSideAdvanceDetails,

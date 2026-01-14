@@ -213,7 +213,9 @@ function BookingForm({
       const arrivalDate = new Date(formData.arrivalDate);
       const checkOutDate = new Date(value);
       const diffTime = checkOutDate - arrivalDate;
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      // check stay the diffDays always greater than 1
+      if(diffDays < 1) diffDays = 1
       const updatedSelectedItems =
         formData.selectedRooms?.map((room) => ({
           ...room,
