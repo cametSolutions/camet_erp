@@ -500,22 +500,13 @@ console.log(voucherwisesummary)
               <h4 className="text-lg font-bold text-gray-800 flex-shrink-0 w-24">
                 {item.name}
               </h4>
-              
-              {selectedOption === "MonthWise" && (
-                <div className="flex gap-1 flex-shrink-0">
-                  <button onClick={() => handleMonthClick(item, "daybook")}
-                    className="w-8 h-8 p-0.5 border hover:border-blue-200 hover:bg-blue-100 text-blue-600 hover:text-blue-700 rounded shadow-sm hover:shadow-md transform hover:scale-105 transition-all flex items-center justify-center"
-                    title="Daybook">
-                    <CiBookmark />
-                  </button>
-                  <button onClick={() => handleMonthClick(item, "details")}
-                    className="w-8 h-8 p-0.5 border hover:border-green-200 hover:bg-green-100 text-green-600 hover:text-green-700 rounded shadow-sm hover:shadow-md transform hover:scale-105 transition-all flex items-center justify-center"
-                    title="Details">
-                    <CiGrid31 />
-                  </button>
+               <div className="flex items-center justify-end gap-1 text-xs">
+                  <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full font-semibold">
+                    {transactionCount}
+                  </span>
+               
                 </div>
-              )}
-              
+             
               <div className="ml-auto text-right min-w-[140px] flex-shrink-0 space-y-0.5">
                 <p className="text-sm font-bold text-green-600 leading-tight">
                   ₹{Math.abs(item.net).toLocaleString()}
@@ -530,12 +521,21 @@ console.log(voucherwisesummary)
                   {item.net < 0 ? 'CR' : 'DR'}
                 </span>
               </div>
-                <div className="flex items-center justify-end gap-1 text-xs">
-                  <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full font-semibold">
-                    {transactionCount}
-                  </span>
-               
+                {selectedOption === "MonthWise" && (
+                <div className="flex gap-1 flex-shrink-0">
+                  <button onClick={() => handleMonthClick(item, "daybook")}
+                    className="w-8 h-8 p-0.5 border hover:border-blue-200 hover:bg-blue-100 text-blue-600 hover:text-blue-700 rounded shadow-sm hover:shadow-md transform hover:scale-105 transition-all flex items-center justify-center"
+                    title="Daybook">
+                    <CiBookmark />
+                  </button>
+                  <button onClick={() => handleMonthClick(item, "details")}
+                    className="w-8 h-8 p-0.5 border hover:border-green-200 hover:bg-green-100 text-green-600 hover:text-green-700 rounded shadow-sm hover:shadow-md transform hover:scale-105 transition-all flex items-center justify-center"
+                    title="Details">
+                    <CiGrid31 />
+                  </button>
                 </div>
+              )}
+              
             </div>
           </div>
         );
