@@ -178,8 +178,7 @@ function AvailableRooms({
         if (formData?.checkOutDate) {
           params.checkOutDate = formData.checkOutDate;
         }
-        console.log(params);
-        console.log("Sending params to backend:", params);
+    
 
         const res = await api.get(`/api/sUsers/getRooms/${cmp_id}`, {
           params,
@@ -187,8 +186,7 @@ function AvailableRooms({
         });
 
         const newRooms = res.data?.roomData || [];
-        console.log(newRooms);
-        console.log(newRooms.length);
+
 
         // Filter out rooms that are already selected in current booking
         const availableRooms = newRooms.filter((room) => {
@@ -225,7 +223,7 @@ function AvailableRooms({
       formData?.roomType,
       formData?.arrivalDate,
       formData?.checkOutDate,
-      bookings,
+      // bookings,
     ]
   );
 
