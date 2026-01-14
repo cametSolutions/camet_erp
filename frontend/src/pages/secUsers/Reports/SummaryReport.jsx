@@ -487,10 +487,11 @@ const handleMonthClick = (item, actionType) => {
   processedSummary?.length > 0 && (
     <div className="space-y-2">
       {processedSummary.map((item, index) => {
-        const transactionCount = data?.flattenedResults
-  ?.filter(backendItem => backendItem.name === item.name)
-  ?.reduce((sum, backendItem) => sum + (backendItem.count || 0), 0) || 0;
-        
+       const transactionCount =
+  data?.flattenedResults
+    ?.filter(backendItem => backendItem.name === item.name)
+    ?.reduce((sum, backendItem) => sum + (backendItem.count || 0), 0) || 0;
+
      
 console.log(voucherwisesummary)
         return (
