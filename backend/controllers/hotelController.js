@@ -1917,10 +1917,15 @@ export const fetchAdvanceDetails = async (req, res) => {
       let checkInData = await CheckIn.findOne({
         _id: bookingId,
       });
+      console.log("checkInData", checkInData);
       if (checkInData) {
-        let bookingSideAdvanceDetails = await TallyData.find({
-          billId: checkInData.bookingId,
-        });
+        let bookingSideAdvanceDetails = [];
+        if (checkInData.bookingId) {
+          bookingSideAdvanceDetails = await TallyData.find({
+            billId: checkInData.bookingId,
+          });
+        }
+
         let checkInSideAdvanceDetails = await TallyData.find({
           billId: checkInData._id,
         });
@@ -2347,64 +2352,96 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
 
     allKotData.push(...docs);
 
-    // Collect all check-in IDs
-
-    // 1️⃣ Collect all check-in IDs in a global Set
     const uniqueIds = new Set();
-    for (const checkout of checkoutData) {
-      checkout.allCheckInIds?.forEach((id) => uniqueIds.add(id.toString()));
+    const advanceMap = new Map(); // prevents duplicates by _id
+
+    if (Array.isArray(checkoutData)) {
+      checkoutData.forEach((checkout) => {
+        if (Array.isArray(checkout?.allCheckInIds)) {
+          checkout.allCheckInIds.forEach((id) => {
+            uniqueIds.add(String(id));
+          });
+        }
+      });
     }
 
-    if (uniqueIds.size != 0) {
+    console.log("UNIQUE CHECK-IN IDS:", [...uniqueIds]);
+    console.log("=== UNIQUE CHECK-INS ===", uniqueIds.size);
+
+    /* -------------------------------------------------- */
+    /* WHEN UNIQUE CHECK-IN IDS EXIST */
+    /* -------------------------------------------------- */
+    if (uniqueIds.size !== 0) {
       for (const checkInId of uniqueIds) {
-        const checkInData = await CheckIn.findOne({ _id: checkInId });
+        const checkInData = await CheckIn.findById(checkInId).lean();
         if (!checkInData) continue;
+        console.log("CHECK-IN DATA:", checkInData.bookingId);
+        let bookingSide = [];
+        if (checkInData.bookingId) {
+          bookingSide = await TallyData.find({
+            billId: checkInData.bookingId,
+          }).lean();
+        }
 
-        const bookingSideAdvanceDetails = await TallyData.find({
-          billId: checkInData.bookingId,
-        }).lean();
-
-        const checkInSideAdvanceDetails = await TallyData.find({
+        const checkInSide = await TallyData.find({
           billId: checkInId,
         }).lean();
 
-        allAdvanceDetails.push(
-          ...bookingSideAdvanceDetails,
-          ...checkInSideAdvanceDetails
-        );
+        [...bookingSide, ...checkInSide].forEach((item) => {
+          advanceMap.set(String(item._id), item);
+        });
       }
     } else {
+      /* -------------------------------------------------- */
+      /* WHEN NO UNIQUE CHECK-IN IDS (CHECKOUT CASE) */
+      /* -------------------------------------------------- */
       for (const checkout of checkoutData) {
-        const bookingSideAdvanceDetails = await TallyData.find({
-          billId: checkout.bookingId._id,
-        }).lean();
+        let bookingSide = [];
+        if (checkout.bookingId?._id) {
+          bookingSide = await TallyData.find({
+            billId: checkout.bookingId?._id,
+          }).lean();
+        }
 
-        const checkInSideAdvanceDetails = await TallyData.find({
+        const checkInSide = await TallyData.find({
           billId: checkout.checkInId._id,
         }).lean();
-        const salesData = await salesModel.findOne({
-          salesNumber: checkout.voucherNumber,
-        }).lean();
-        let advanceData = await TallyData.find({
+
+        const salesData = await salesModel
+          .findOne({
+            salesNumber: checkout.voucherNumber,
+          })
+          .lean();
+
+        if (!salesData) continue;
+
+        const advanceData = await TallyData.find({
           billId: salesData._id,
         }).lean();
-        advanceData[0].isCheckOut = true;
-        let sum =(checkInSideAdvanceDetails[0]?.bill_amount || 0) + (bookingSideAdvanceDetails[0]?.bill_amount || 0)
-        advanceData[0].bill_amount = Math.abs(advanceData[0].bill_amount - sum)
-        console.log("advanceData[0].isCheckOut = true;",advanceData)
-        allAdvanceDetails.push(
-          ...bookingSideAdvanceDetails,
-          ...checkInSideAdvanceDetails,
-          ...advanceData
-        );
+
+        if (advanceData.length) {
+          advanceData[0].isCheckOut = true;
+
+          const sum =
+            (bookingSide[0]?.bill_amount || 0) +
+            (checkInSide[0]?.bill_amount || 0);
+
+          advanceData[0].bill_amount = Math.abs(
+            advanceData[0].bill_amount - sum
+          );
+        }
+
+        [...bookingSide, ...checkInSide, ...advanceData].forEach((item) => {
+          advanceMap.set(String(item._id), item);
+        });
       }
     }
-    // Fetch advance details
 
-    // console.log("Total Advance Details:", allAdvanceDetails.length);
-    // console.log("Total KOT Data:", allKotData.length);
-
-    console.log("lenthhh", allAdvanceDetails.length);
+    /* -------------------------------------------------- */
+    /* FINAL RESULT */
+    /* -------------------------------------------------- */
+    allAdvanceDetails = [...advanceMap.values()];
+    console.log("FINAL ADVANCE COUNT:", allAdvanceDetails.length);
 
     if (allAdvanceDetails.length > 0 || allKotData.length > 0) {
       return res.status(200).json({
@@ -2446,7 +2483,7 @@ async function hotelVoucherSeries(cmp_id, session) {
 }
 
 export const convertCheckOutToSale = async (req, res) => {
-  console.log("enteeeeeeeeeeeeeered");
+
 
   // console.log("convertchecktouttosale")
   const session = await mongoose.startSession();
@@ -2465,6 +2502,9 @@ export const convertCheckOutToSale = async (req, res) => {
         checkoutMode,
         checkinIds,
       } = req.body;
+
+      let tracker = paymentDetails?.paymenttypeDetails
+      
 
       if (!paymentDetails) throw new Error("Missing payment details");
 
@@ -2639,11 +2679,11 @@ export const convertCheckOutToSale = async (req, res) => {
               isPartialCheckout: isThisPartial,
               originalCheckInId: checkInId,
               paymenttypeDetails: {
-                cash: paymentDetails?.paymenttypeDetails?.cash,
-                bank: paymentDetails?.paymenttypeDetails?.bank,
-                upi: paymentDetails?.paymenttypeDetails?.upi,
-                card: paymentDetails?.paymenttypeDetails?.card,
-                credit: paymentDetails?.paymenttypeDetails?.credit,
+                cash: tracker.cash,
+                bank: tracker.bank,
+                upi: tracker.upi,
+                card: tracker.card,
+                credit: tracker.credit,
               },
 
               checkoutType:
