@@ -287,13 +287,13 @@ const SummaryDashboard = () => {
             <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.netSales)}</span>
           </div>
           
-          <div className="flex justify-between items-center">
+          {/* <div className="flex justify-between items-center">
             <div className="flex items-center gap-1">
               <ArrowDownRight size={12} className="text-white/70" />
               <span className="text-white/80 text-xs">Expenses</span>
             </div>
             <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.expense)}</span>
-          </div>
+          </div> */}
           
           <div className="border-t border-white/25 pt-2 mt-2">
             <div className="flex justify-between items-center">

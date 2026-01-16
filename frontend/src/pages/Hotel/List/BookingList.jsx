@@ -881,7 +881,7 @@ function BookingList() {
         });
       });
       checkinids = allCheckouts.map((item) => item._id);
-
+console.log()
       setcheckinids(checkinids);
       // 2️⃣ GROUP BY selectedCustomer (customerId._id)
       const grouped = {};
@@ -995,7 +995,12 @@ function BookingList() {
         <div className="w-36 text-center">ARRIVAL DATE</div>
         <div className="w-28 text-center">ROOM TARIFF</div>
         <div className="w-20 text-center">PAX</div>
+        <div className="w-20 text-center">FOOD PLAN</div>
         <div className="w-28 text-center">FOODPLAN AMOUNT</div>
+       <div className="w-28 text-center">TRAVEL AGENT</div>
+       
+        <div className="w-28 text-center">PAYMENT STATUS</div>
+       
         <div className="w-24 text-center">ADVANCE</div>
         <div className="w-28 text-center">TOTAL</div>
         <div className="w-32 text-center">ACTIONS</div>
@@ -1048,7 +1053,7 @@ function BookingList() {
       if (!dateString) return "-";
       return new Date(dateString).toLocaleDateString("en-GB");
     };
-
+console.log(el)
     return (
       <div
         key={index}
@@ -1217,11 +1222,18 @@ function BookingList() {
             {/*Total pax count indlcuding additionalpax */}
             {calculateTotalPax(el?.additionalPaxDetails, el?.selectedRooms)}
           </div>
-
+ <div className="w-28 text-center text-gray-600 text-xs">
+            {el?.foodPlan?.[0]?.foodPlan || "0.00"}
+          </div>
           <div className="w-28 text-center text-gray-600 text-xs">
             ₹{el?.selectedRooms?.[0]?.foodPlanAmountWithOutTax || "0.00"}
           </div>
-
+<div className="w-28 text-center text-gray-600 text-xs">
+            { "travel"}
+          </div>
+          <div className="w-28 text-center text-gray-600 text-xs">
+            ₹{el?.paymenttypeDetails?.cash || "0.00"}
+          </div>
           <div className="w-24 text-center text-gray-600 text-xs">
             ₹
             {el?.advanceAmount

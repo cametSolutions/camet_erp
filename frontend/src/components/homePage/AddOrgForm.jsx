@@ -152,12 +152,12 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
       !email.trim() ||
       !state ||
       !country ||
-      !flat.trim() ||
-      !road.trim() ||
+      // !flat.trim() ||
+      // !road.trim() ||
       !industry ||
       // (website && !website.trim()) ||
       !financialYear.trim() ||
-      !landmark.trim() ||
+      // !landmark.trim() ||
       !pin ||
       !mobile
     ) {
@@ -192,18 +192,7 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
       return;
     }
 
-    if (flat.length > 120) {
-      toast.error("Place must be at most 120 characters");
-      return;
-    }
-    if (road.length > 120) {
-      toast.error("Place must be at most 120 characters");
-      return;
-    }
-    if (landmark.length > 120) {
-      toast.error("Place must be at most 120 characters");
-      return;
-    }
+   
 
     // / Additional PIN code validation
    if (country === "India") {
