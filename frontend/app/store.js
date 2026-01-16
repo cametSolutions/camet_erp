@@ -28,7 +28,7 @@ import paymentSplitting from "../slices/filterSlices/paymentSplitting/paymentSpl
 import barcode from "../slices/barcodeSlice";
 import commonVoucherSlice from "../slices/voucherSlices/commonVoucherSlice";
 import commonAccountingVoucherSlice from "../slices/voucherSlices/commonAccountingVoucherSlice";
-
+import paymentSlice from  "../slices/hotelSlices/paymentSlice"
 export const store = configureStore({
   reducer: {
     tallyData: tallyDataReducer,
@@ -59,6 +59,7 @@ export const store = configureStore({
     summaryFilter,
     serialNumber,
     commonVoucherSlice,
-    commonAccountingVoucherSlice
+    commonAccountingVoucherSlice,
+    paymentSlice
   },
 });
