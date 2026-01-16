@@ -1380,7 +1380,7 @@ function BookingList() {
                   CheckedOut
                 </button>
               )}
-            {el?.balanceToPay <= 0 &&
+            {
               location.pathname === "/sUsers/checkOutList" && (
                 <button
                   onClick={(e) => {

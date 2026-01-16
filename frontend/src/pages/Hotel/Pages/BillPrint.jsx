@@ -782,7 +782,7 @@ const HotelBillPrint = () => {
     console.log(allpartyid);
     console.log("outStanding", outStanding);
     // Advances only on the decided bill
-    const advanceEntries = useAdvances
+    let advanceEntries = useAdvances
       ? (outStanding || [])
           // .filter((t) => allpartyid?.includes(t.party_id))
           .map((t) => ({
@@ -795,7 +795,7 @@ const HotelBillPrint = () => {
           }))
       : [];
 
-    const advanceTotal = useAdvances
+    let advanceTotal = useAdvances
       ? (outStanding || [])
           // .filter((t) => allpartyid?.includes(t.party_id))
           .reduce(
@@ -803,7 +803,18 @@ const HotelBillPrint = () => {
             0
           )
       : 0;
-    console.log(advanceEntries);
+
+    if (paymentModeDetails?.credit !== undefined) {
+      let reduceCheckoutTotal = advanceEntries.reduce(
+        (sum, t) => sum + Number(t.advance || 0),
+        0
+      );
+      advanceEntries = advanceEntries.filter(
+        (t) => t.description !== "CheckOut"
+      );
+      advanceTotal = advanceTotal - reduceCheckoutTotal;
+    }
+    console.log(advanceTotal);
     // Combine charges and compute balances
     const allCharges = [...groupedRoomCharges, ...advanceEntries];
     console.log(allCharges);
@@ -862,7 +873,7 @@ const HotelBillPrint = () => {
       sgstAmount +
       cgstAmount +
       restaurantTotal;
-
+    console.log(grandTotal);
     const netPay = Math.abs(grandTotal - advanceTotal);
 
     // Compose hotel/guest info per doc
@@ -885,10 +896,35 @@ const HotelBillPrint = () => {
 
     const totalPax = basePax + additionalPaxCount;
 
-    console.log(doc?.bookingId);
+    console.log(doc?.customerId);
 
     const convertNumberToWords = (amount) =>
       `${Math.round(amount || 0)} Rupees Only`;
+    let partyName = doc?.customerId?.partyName;
+    let partyAddress = doc?.customerId?.billingAddress || "";
+    let partyPhone = doc?.customerId?.mobileNumber || "";
+    let partyGstNo = doc?.customerId?.gstNo || "";
+    let partyCompanyName = doc?.customerId?.partyName;
+    
+
+    if (
+      paymentDetails?.paymentMode == "credit" &&
+      paymentDetails?.paymentDetails?.selectedCreditor
+    ) {
+      partyName = paymentDetails?.paymentDetails?.selectedCreditor?.partyName;
+      partyAddress =
+        paymentDetails?.paymentDetails?.selectedCreditor?.billingAddress;
+      partyPhone =
+        paymentDetails?.paymentDetails?.selectedCreditor?.mobileNumber;
+      partyGstNo = paymentDetails?.paymentDetails?.selectedCreditor?.gstNo;
+
+      if (partyGstNo) {
+        partyCompanyName =
+          paymentDetails?.paymentDetails?.selectedCreditor?.partyName;
+      }
+    }
+
+    console.log(partyCompanyName);
 
     return {
       hotel: {
@@ -906,13 +942,14 @@ const HotelBillPrint = () => {
         logo: organization?.logo,
       },
       guest: {
-        name: doc?.customerId?.partyName,
+        name: partyName,
         roomNo: guestRooms,
         billNo: doc?.voucherNumber,
         travelAgent: doc?.agentId?.name,
-        address: doc?.customerId?.billingAddress || "",
-        phone: doc?.customerId?.mobileNumber || "",
-        gstNo: doc?.customerId?.gstNo || "",
+        address: partyAddress || "",
+        phone: partyPhone || "",
+        gstNo: partyGstNo || "",
+        companyName: partyCompanyName || "",
       },
       stay: {
         billDate: formatDate(new Date()),
@@ -1270,33 +1307,43 @@ const HotelBillPrint = () => {
                     </td>
                     <td style={{ padding: "2px 0" }}>{billData?.stay?.days}</td>
                   </tr>
+
                   <tr>
-                    <td style={{ padding: "2px 0", fontWeight: "bold" }}>
-                      Travel Agent
-                    </td>
-                    <td style={{ padding: "2px 0" }}>
-                      {billData?.guest?.travelAgent}
-                    </td>
-                    <td colSpan="4"></td>
+                    {billData?.guest?.gstNo && (
+                      <>
+                        <td style={{ padding: "2px 0", fontWeight: "bold" }}>
+                          GST No
+                        </td>
+                        <td style={{ padding: "2px 0" }}>
+                          {billData?.guest?.gstNo}
+                        </td>
+                      </>
+                    )}
+                    {billData?.guest?.travelAgent && (
+                      <>
+                        <td style={{ padding: "2px 0", fontWeight: "bold" }}>
+                          Travel Agent
+                        </td>
+                        <td style={{ padding: "2px 0" }}>
+                          {billData?.guest?.travelAgent}
+                        </td>
+                      </>
+                    )}
                   </tr>
-                  <tr>
-                    <td style={{ padding: "2px 0", fontWeight: "bold" }}>
-                      GST No
-                    </td>
-                    <td style={{ padding: "2px 0" }}>
-                      {billData?.guest?.gstNo}
-                    </td>
-                    <td colSpan="4"></td>
-                  </tr>
-                  {/* <tr>
-                    <td style={{ padding: "2px 0", fontWeight: "bold" }}>
-                      Company
-                    </td>
-                    <td style={{ padding: "2px 0" }}>
-                      {billData?.guest?.gstNo}
-                    </td>
-                    <td colSpan="4"></td>
-                  </tr> */}
+                  {billData?.guest?.gstNo && (
+                    <>
+                      <tr>
+                        <td style={{ padding: "2px 0", fontWeight: "bold" }}>
+                          Company
+                        </td>
+                        <td style={{ padding: "2px 0" }}>
+                          {billData?.guest?.companyName}
+                        </td>
+                        <td colSpan="4"></td>
+                      </tr>
+                    </>
+                  )}
+
                   <tr>
                     <td style={{ padding: "2px 0", fontWeight: "bold" }}>
                       Room No
@@ -1524,80 +1571,89 @@ const HotelBillPrint = () => {
                         </td>
                       </tr>
                     )}
-
-                    <tr>
-                      <td style={{ border: "1px solid #000", padding: "4px" }}>
-                        SGST on Rent
-                      </td>
-                      <td
-                        style={{
-                          border: "1px solid #000",
-                          padding: "4px",
-                          textAlign: "right",
-                        }}
-                      >
-                        {billData?.summary?.sgst?.toLocaleString("en-IN", {
-                          minimumFractionDigits: 2,
-                        })}
-                      </td>
-                    </tr>
-
-                    <tr>
-                      <td style={{ border: "1px solid #000", padding: "4px" }}>
-                        CGST on Rent
-                      </td>
-                      <td
-                        style={{
-                          border: "1px solid #000",
-                          padding: "4px",
-                          textAlign: "right",
-                        }}
-                      >
-                        {billData?.summary?.cgst?.toLocaleString("en-IN", {
-                          minimumFractionDigits: 2,
-                        })}
-                      </td>
-                    </tr>
-
-                    <tr>
-                      <td style={{ border: "1px solid #000", padding: "4px" }}>
-                        Ac Restaurant
-                      </td>
-                      <td
-                        style={{
-                          border: "1px solid #000",
-                          padding: "4px",
-                          textAlign: "right",
-                        }}
-                      >
-                        {billData?.summary?.restaurant?.toLocaleString(
-                          "en-IN",
-                          {
+                    {billData?.summary?.sgst && (
+                      <tr>
+                        <td
+                          style={{ border: "1px solid #000", padding: "4px" }}
+                        >
+                          SGST on Rent
+                        </td>
+                        <td
+                          style={{
+                            border: "1px solid #000",
+                            padding: "4px",
+                            textAlign: "right",
+                          }}
+                        >
+                          {billData?.summary?.sgst?.toLocaleString("en-IN", {
                             minimumFractionDigits: 2,
-                          }
-                        )}
-                      </td>
-                    </tr>
-
-                    <tr>
-                      <td style={{ border: "1px solid #000", padding: "4px" }}>
-                        Room Service
-                      </td>
-                      <td
-                        style={{
-                          border: "1px solid #000",
-                          padding: "4px",
-                          textAlign: "right",
-                        }}
-                      >
-                        {billData?.summary?.roomService?.toLocaleString(
-                          "en-IN",
-                          {
+                          })}
+                        </td>
+                      </tr>
+                    )}
+                    {billData?.summary?.cgst && (
+                      <tr>
+                        <td
+                          style={{ border: "1px solid #000", padding: "4px" }}
+                        >
+                          CGST on Rent
+                        </td>
+                        <td
+                          style={{
+                            border: "1px solid #000",
+                            padding: "4px",
+                            textAlign: "right",
+                          }}
+                        >
+                          {billData?.summary?.cgst?.toLocaleString("en-IN", {
                             minimumFractionDigits: 2,
-                          }
-                        )}
-                      </td>
-                    </tr>
+                          })}
+                        </td>
+                      </tr>
+                    )}
+                    {billData?.summary?.restaurant > 0 && (
+                      <tr>
+                        <td
+                          style={{ border: "1px solid #000", padding: "4px" }}
+                        >
+                          CGST on Rent
+                        </td>
+                        <td
+                          style={{
+                            border: "1px solid #000",
+                            padding: "4px",
+                            textAlign: "right",
+                          }}
+                        >
+                          {billData?.summary?.cgst?.toLocaleString("en-IN", {
+                            minimumFractionDigits: 2,
+                          })}
+                        </td>
+                      </tr>
+                    )}
+                    {billData?.summary?.roomService > 0 && (
+                      <tr>
+                        <td
+                          style={{ border: "1px solid #000", padding: "4px" }}
+                        >
+                          Room Service
+                        </td>
+                        <td
+                          style={{
+                            border: "1px solid #000",
+                            padding: "4px",
+                            textAlign: "right",
+                          }}
+                        >
+                          {billData?.summary?.roomService?.toLocaleString(
+                            "en-IN",
+                            {
+                              minimumFractionDigits: 2,
+                            }
+                          )}
+                        </td>
+                      </tr>
+                    )}
 
                     <tr style={{ backgroundColor: "#f5f5f5" }}>
                       <td
@@ -1724,28 +1780,76 @@ const HotelBillPrint = () => {
                       </td>
                     </tr>
                     <tr>
-                      <td style={{ border: "1px solid #000", padding: "4px" }}>
-                        <div>Total :</div>
-                        <div>Less Advance:</div>
-                        <div style={{ fontWeight: "bold" }}>Net Pay :</div>
-                      </td>
-                      <td
-                        style={{
-                          border: "1px solid #000",
-                          padding: "4px",
-                          textAlign: "right",
-                        }}
-                      >
-                        <div>
-                          {Number(billData?.payment?.total || 0).toFixed(2)}
-                        </div>
-                        <div>
-                          {Number(billData?.payment?.advance || 0).toFixed(2)}
-                        </div>
-                        <div style={{ fontWeight: "bold" }}>
-                          {Number(billData?.payment?.netPay || 0).toFixed(2)}
-                        </div>
-                      </td>
+                      {!isForPreview ? (
+                        <>
+                          <td
+                            style={{ border: "1px solid #000", padding: "4px" }}
+                          >
+                            <div
+                              style={{
+                                fontWeight: "bold",
+                                marginBottom: "4px",
+                              }}
+                            >
+                              Total :
+                            </div>
+                            <div style={{ fontWeight: "bold" }}>Net Pay :</div>
+                          </td>
+
+                          <td
+                            style={{
+                              border: "1px solid #000",
+                              padding: "4px",
+                              textAlign: "right",
+                            }}
+                          >
+                            <div
+                              style={{
+                                fontWeight: "bold",
+                                marginBottom: "4px",
+                              }}
+                            >
+                              {Number(billData?.payment?.total || 0).toFixed(2)}
+                            </div>
+                            <div style={{ fontWeight: "bold" }}>
+                              {Number(billData?.payment?.netPay || 0).toFixed(
+                                2
+                              )}
+                            </div>
+                          </td>
+                        </>
+                      ) : (
+                        <>
+                          <td
+                            style={{ border: "1px solid #000", padding: "4px" }}
+                          >
+                            <div>Total :</div>
+                            <div>Less Advance:</div>
+                            <div style={{ fontWeight: "bold" }}>Net Pay :</div>
+                          </td>
+                          <td
+                            style={{
+                              border: "1px solid #000",
+                              padding: "4px",
+                              textAlign: "right",
+                            }}
+                          >
+                            <div>
+                              {Number(billData?.payment?.total || 0).toFixed(2)}
+                            </div>
+                            <div>
+                              {Number(billData?.payment?.advance || 0).toFixed(
+                                2
+                              )}
+                            </div>
+                            <div style={{ fontWeight: "bold" }}>
+                              {Number(billData?.payment?.netPay || 0).toFixed(
+                                2
+                              )}
+                            </div>
+                          </td>
+                        </>
+                      )}
                     </tr>
                   </tbody>
                 </table>
@@ -1908,7 +2012,7 @@ const HotelBillPrint = () => {
                     kotData,
                     checkoutmode,
                     cheinids,
-                    isForPreview
+                    isForPreview,
                   },
                 });
               }}
