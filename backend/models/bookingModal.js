@@ -148,11 +148,11 @@ const bookingSchema = new mongoose.Schema(
     totalAmount: String,
     balanceToPay: String,
     paymenttypeDetails: {
-  cash: { type: String, default: '0' },
-  bank: { type: String, default: '0' },
-  upi: { type: String, default: '0' },
-  credit: { type: String, default: '0' },
-  card: { type: String, default: '0' }
+  cash: { type: Number, default: 0 },
+  bank: { type: Number, default: 0 },
+  upi: { type: Number, default: 0 },
+  credit: { type: Number, default: 0 },
+  card: { type: Number, default: 0 }
 }
 ,
     grandTotal: String,

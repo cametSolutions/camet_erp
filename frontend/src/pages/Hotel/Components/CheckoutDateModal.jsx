@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 import { useState } from "react";
 import { X, Calendar } from "lucide-react";
-import { set } from "mongoose";
+
 
 export default function CheckoutDateModal({
   isOpen = true,
@@ -14,6 +14,9 @@ export default function CheckoutDateModal({
   );
   const [checkOutDateTracker, setCheckOutDateTracker] = useState(
     new Date().toISOString().split("T")[0]
+  );
+  const [checkOutDateOld, setCheckOutDateOld] = useState(
+    new Date(checkoutData[0].checkOutDate).toISOString().split("T")[0]
   );
 
   const [checkouts, setCheckouts] = useState(
@@ -30,14 +33,15 @@ export default function CheckoutDateModal({
             hour12: true, // 12-hour format
           });
 
-          console.log(time); // "11:26 AM"
-
-          console.log(time); // "11:26"
+          checkout.selectedRooms.forEach((room) => {
+            room.stayDays = calculatedDays;
+          });
 
           return {
             ...checkout,
             stayDays: calculatedDays,
             checkOutTime: time,
+            checkOutDate: checkOutDateTracker
           };
         })
       : [
@@ -315,6 +319,7 @@ export default function CheckoutDateModal({
   };
 
   const handleConfirm = () => {
+    console.log(checkouts);
     onClose(checkouts);
   };
 
@@ -324,6 +329,7 @@ export default function CheckoutDateModal({
   };
 
   if (!isOpen) return null;
+  // console.log(checkouts[0]?.);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -395,7 +401,7 @@ export default function CheckoutDateModal({
                       <div className="flex items-center gap-1">
                         <Calendar size={14} className="text-gray-400" />
                         <span className="text-gray-700 text-sm">
-                          {new Date(checkout.checkOutDate).toLocaleDateString(
+                          {new Date(checkOutDateOld).toLocaleDateString(
                             "en-GB",
                             {
                               day: "2-digit",

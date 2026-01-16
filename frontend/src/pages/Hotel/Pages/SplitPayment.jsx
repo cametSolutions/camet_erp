@@ -101,7 +101,7 @@ const SplitPayment = ({
             : "",
       });
     }
-  }, [splitPaymentRows, totalAmount, onChange, combinedSources]);
+  }, [splitPaymentRows, totalAmount]);
 
   const addSplitPaymentRow = () => {
     const hasEmptyString = splitPaymentRows.some((obj) =>

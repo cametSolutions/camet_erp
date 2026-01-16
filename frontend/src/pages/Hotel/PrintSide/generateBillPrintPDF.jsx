@@ -3,9 +3,9 @@ import autoTable from "jspdf-autotable";
 import Logo from "../../../assets/images/hill.png";
 
 // Margins and spacing
-const MARGIN = 12;
+const MARGIN = 5;
 const TOP_OFFSET = 5;
-const BOTTOM_MARGIN = 15; // Margin at bottom
+const BOTTOM_MARGIN = 5; // Margin at bottom
 
 // Base64 image fetch
 const getBase64FromUrl = async (url) => {
@@ -115,85 +115,121 @@ const drawSingleBill = async (doc, billData, pageNo, totalPages) => {
   doc.setFont("helvetica", "normal");
   const colWidth = (pageWidth - 2 * MARGIN) / 3;
   const infoStartY = currentY;
+const guestInfoRows = [
+  [
+    { label: "GRC No", value: billData?.guest?.billNo },
+    { label: "Bill No", value: billData?.guest?.billNo },
+    { label: "Date", value: billData?.stay?.billDate },
+  ],
+  [
+    { label: "GUEST", value: billData?.guest?.name },
+    { label: "Arrival", value: billData?.stay?.arrival },
+    { label: "Departure", value: billData?.stay?.departure },
+  ],
+  [
+    { label: "Phone", value: billData?.guest?.phone },
+    { label: "Tariff", value: billData?.stay?.tariff },
+    {
+      label: "Plan",
+      value: `${billData?.stay?.plan || ""} Pax ${billData?.stay?.pax || ""}`,
+    },
+  ],
+  [
+    { label: "Address", value: billData?.guest?.address },
+    null,
+    { label: "No. of Days", value: billData?.stay?.days },
+  ],
+  billData?.guest?.travelAgent && [
+    { label: "Travel Agent", value: billData.guest.travelAgent },
+    null,
+    null,
+  ],
+  billData?.guest?.gstNo && [
+    { label: "GST No", value: billData.guest.gstNo },
+    null,
+    null,
+  ],
+  billData?.guest?.gstNo && billData?.guest?.companyName && [
+    { label: "Company", value: billData.guest.companyName },
+    null,
+    null,
+  ],
+  billData?.guest?.roomNo && [
+    { label: "Room No", value: billData.guest.roomNo },
+    null,
+    null,
+  ],
+].filter(Boolean);
 
-  const guestInfoRows = [
-    [
-      `GRC No: ${billData?.guest?.billNo || ""}`,
-      `Bill No: ${billData?.guest?.billNo || ""}`,
-      `Date: ${billData?.stay?.billDate || ""}`,
-    ],
-    [
-      `GUEST: ${billData?.guest?.name || ""}`,
-      `Arrival: ${billData?.stay?.arrival || ""}`,
-      `Departure: ${billData?.stay?.departure || ""}`,
-    ],
-    [
-      `Phone: ${billData?.guest?.phone || ""}`,
 
-      `Tariff: ${billData?.stay?.tariff || ""}`,
-      `Plan: ${billData?.stay?.plan || ""} Pax ${billData?.stay?.pax || ""}`,
-    ],
-    [
-      `Address: ${billData?.guest?.address || ""}`,
-      "",
-      // `Tariff: ${billData?.stay?.tariff || ""}`,
-      `No. of Days: ${billData?.stay?.days || ""}`,
-    ],
-    [`Travel Agent: ${billData?.guest?.travelAgent || ""}`, "", ""],
-    [`GST No: ${billData?.guest?.gstNo || ""}`, "", ""],
-    [`Company: ${billData?.hotel?.name || ""}`, "", ""],
-    [`Room No: ${billData?.guest?.roomNo || ""}`, "", ""],
-  ];
+const INNER_CELL_MARGIN = 1;
+const baseRowHeight = 4;
+const lineHeight = 3.5;
+const LABEL_WIDTH = 22;   // fixed label width (controls alignment)
+const VALUE_GAP = 2;
 
-  const INNER_CELL_MARGIN = 1.5;
-  const baseRowHeight = 4;
-  const lineHeight = 3.5;
 
-  // track max visual height per row
-  const rowHeights = new Array(guestInfoRows.length).fill(baseRowHeight);
+// track max visual height per row
+const rowHeights = new Array(guestInfoRows.length).fill(baseRowHeight);
 
-  guestInfoRows.forEach((row, r) => {
-    let maxLinesThisRow = 1;
+guestInfoRows.forEach((row, r) => {
+  let maxLinesThisRow = 1;
 
-    row.forEach((cell, c) => {
-      if (!cell) return;
+  row.forEach((cell, c) => {
+    if (!cell || !cell.value) return;
 
-      const x = MARGIN + 3 + c * colWidth;
-      const y =
-        currentY +
-        INNER_CELL_MARGIN +
-        rowHeights.slice(0, r).reduce((a, b) => a + b, 0);
+    const x = MARGIN + 3 + c * colWidth;
+    const y =
+      currentY +
+      INNER_CELL_MARGIN +
+      rowHeights.slice(0, r).reduce((a, b) => a + b, 0);
 
-      const maxWidth = colWidth - 6;
-      const wrappedLines = doc.splitTextToSize(cell, maxWidth);
-      maxLinesThisRow = Math.max(maxLinesThisRow, wrappedLines.length);
+    /* -------- LABEL -------- */
+    doc.setFont("helvetica", "bold");
+    doc.text(cell.label, x, y);
 
-      wrappedLines.forEach((txt, i) => {
-        doc.text(txt, x, y + i * lineHeight);
-      });
+    /* -------- COLON -------- */
+    doc.text(":", x + LABEL_WIDTH, y);
+
+    /* -------- VALUE -------- */
+    doc.setFont("helvetica", "normal");
+    const valueX = x + LABEL_WIDTH + VALUE_GAP;
+    const maxValueWidth = colWidth - LABEL_WIDTH - 8;
+
+    const wrappedLines = doc.splitTextToSize(
+      String(cell.value),
+      maxValueWidth
+    );
+
+    maxLinesThisRow = Math.max(maxLinesThisRow, wrappedLines.length);
+
+    wrappedLines.forEach((txt, i) => {
+      doc.text(txt, valueX, y + i * lineHeight);
     });
-
-    // visual height for this row = top margin + (lines-1)*lineHeight
-    rowHeights[r] = INNER_CELL_MARGIN + maxLinesThisRow * lineHeight;
   });
+
+  // calculate final row height
+  rowHeights[r] = INNER_CELL_MARGIN + maxLinesThisRow * lineHeight;
+});
+
 
   // total height = sum of all row heights + small bottom padding
   const guestInfoHeight = rowHeights.reduce((a, b) => a + b, 0) + 3;
 
   doc.setLineWidth(0.2);
-  doc.rect(MARGIN, infoStartY - 3, pageWidth - 2 * MARGIN, guestInfoHeight);
-  doc.line(
-    MARGIN + colWidth,
-    infoStartY - 3,
-    MARGIN + colWidth,
-    infoStartY - 3 + guestInfoHeight
-  );
-  doc.line(
-    MARGIN + 2 * colWidth,
-    infoStartY - 3,
-    MARGIN + 2 * colWidth,
-    infoStartY - 3 + guestInfoHeight
-  );
+  doc.line(MARGIN, infoStartY - 3, pageWidth - 2 * MARGIN, infoStartY - 3);
+  // doc.line(
+  //   MARGIN + colWidth,
+  //   infoStartY - 3,
+  //   MARGIN + colWidth,
+  //   infoStartY - 3 + guestInfoHeight
+  // );
+  // doc.line(
+  //   MARGIN + 2 * colWidth,
+  //   infoStartY - 3,
+  //   MARGIN + 2 * colWidth,
+  //   infoStartY - 3 + guestInfoHeight
+  // );
 
   currentY = infoStartY + guestInfoHeight;
 
@@ -222,7 +258,7 @@ const drawSingleBill = async (doc, billData, pageNo, totalPages) => {
     ]),
     startY: currentY,
     margin: { left: MARGIN, right: MARGIN },
-    tableWidth: pageWidth - 2 * MARGIN,
+    tableWidth: pageWidth - 2 * MARGIN ,
     styles: {
       fontSize: 9,
       cellPadding: 2,
@@ -240,7 +276,7 @@ const drawSingleBill = async (doc, billData, pageNo, totalPages) => {
     columnStyles: {
       0: { cellWidth: 22, halign: "left" },
       1: { cellWidth: 24, halign: "center" },
-      2: { cellWidth: 58, halign: "left" },
+      2: { cellWidth: 72, halign: "left" },
       3: { cellWidth: 22, halign: "right" },
       4: { cellWidth: 20, halign: "right" },
       5: { cellWidth: 20, halign: "right" },
@@ -299,29 +335,33 @@ const drawSingleBill = async (doc, billData, pageNo, totalPages) => {
   autoTable(doc, {
     head: [["Payment Details", ""]],
     body: [
-      ["PAYMODE", "AMOUNT"],
-      [
-        billData?.payment?.mode || "Credit",
-        (billData?.payment?.total || 0).toFixed(2),
-      ],
-      [
-        {
-          content: billData?.guest?.name || "",
-          colSpan: 2,
-          styles: { halign: "center", fontStyle: "bold" },
-        },
-      ],
-      [
-        {
-          content: billData?.summary?.totalWords || "",
-          colSpan: 2,
-          styles: { fontSize: 8 },
-        },
-      ],
-      ["Total :", (billData?.payment?.total || 0).toFixed(2)],
-      ["Less Advance:", (billData?.payment?.advance || 0).toFixed(2)],
-      ["Net Pay :", (billData?.payment?.netPay || 0).toFixed(2)],
+    ["PAYMODE", "AMOUNT"],
+    [
+      billData?.payment?.mode || "Credit",
+      (billData?.payment?.total || 0).toFixed(2),
     ],
+    [
+      {
+        content: billData?.guest?.name || "",
+        colSpan: 2,
+        styles: { halign: "center", fontStyle: "bold" },
+      },
+    ],
+    [
+      {
+        content: billData?.summary?.totalWords || "",
+        colSpan: 2,
+        styles: { fontSize: 8 },
+      },
+    ],
+    ["Total :", (billData?.payment?.total || 0).toFixed(2)],
+    billData?.payment?.advance > 0 && [
+      "Less Advance:",
+      (billData?.payment?.advance || 0).toFixed(2),
+    ],
+    ["Net Pay :", (billData?.payment?.netPay || 0).toFixed(2)],
+  ].filter(Boolean),
+    
     startY: tableStartY,
     margin: { left: MARGIN + halfWidth + 8, right: MARGIN },
     tableWidth: halfWidth,
@@ -346,6 +386,7 @@ const drawSingleBill = async (doc, billData, pageNo, totalPages) => {
       }
     },
   });
+  
   currentY = Math.max(doc.lastAutoTable.finalY, tableStartY + 60) + 10;
 
   // --- Footer: Key/Signature/Final message ---
@@ -431,6 +472,7 @@ export const generateBillPrintPDF = async (
   billDataOrArray,
   isPrint = false
 ) => {
+  console.log(billDataOrArray);
   const bills = Array.isArray(billDataOrArray)
     ? billDataOrArray
     : [billDataOrArray];
