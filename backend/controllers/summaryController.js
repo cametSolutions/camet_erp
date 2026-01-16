@@ -400,7 +400,7 @@ if (selectedOption === "MonthWise") {
           total: { 
             $sum: { 
               $toDouble: { 
-                $ifNull: ["$totalWithAdditionalCharges", "$enteredAmount", 0] 
+                $ifNull: ["$finalAmount", "$enteredAmount", 0] 
               } 
             } 
           },
