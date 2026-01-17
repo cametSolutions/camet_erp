@@ -1030,6 +1030,32 @@ console.log()
     return count;
   };
 
+  const isCheckoutList = location.pathname === "/sUsers/checkOutList";
+
+ const getTravelAgentName = (booking) => {
+    // Check if there's a separate agentId field (preferred)
+    if (booking.agentId?.partyName) {
+      return booking.agentId.partyName;
+    }
+    // Fallback: check if customer is hotel agent
+    if (booking.isHotelAgent === true || booking.customerId?.isHotelAgent === true) {
+      return booking.customerId?.partyName || '-';
+    }
+    return '-';
+  };
+ const getPaymentStatusDisplay = (paymentDetails) => {
+    if (!paymentDetails) return 'Unpaid';
+    
+    const types = [];
+    if (parseFloat(paymentDetails.cash || 0) > 0) types.push('Cash');
+    if (parseFloat(paymentDetails.bank || 0) > 0) types.push('Bank');
+    if (parseFloat(paymentDetails.upi || 0) > 0) types.push('UPI');
+    if (parseFloat(paymentDetails.card || 0) > 0) types.push('Card');
+    if (parseFloat(paymentDetails.credit || 0) > 0) types.push('Credit');
+    
+    return types.length > 0 ? types.join(', ') : 'Unpaid';
+  };
+
   const handletoogle = () => {
     if (!selectedCustomer) return;
     if (checkoutMode === "multiple") {
@@ -1089,7 +1115,9 @@ console.log()
         <div className="w-28 text-center">FOODPLAN AMOUNT</div>
        <div className="w-28 text-center">TRAVEL AGENT</div>
        
-        <div className="w-28 text-center">PAYMENT STATUS</div>
+       {isCheckoutList && (
+          <div className="w-28 text-center">PAYMENT STATUS</div>
+        )}
        
         <div className="w-24 text-center">ADVANCE</div>
         <div className="w-28 text-center">TOTAL</div>
@@ -1318,12 +1346,14 @@ console.log(el)
           <div className="w-28 text-center text-gray-600 text-xs">
             ₹{el?.selectedRooms?.[0]?.foodPlanAmountWithOutTax || "0.00"}
           </div>
-<div className="w-28 text-center text-gray-600 text-xs">
-            { "travel"}
+  <div className="w-28 text-center text-gray-600 text-xs font-medium">
+          {getTravelAgentName(el) || el?.agentId?.partyName}
+        </div>
+            {isCheckoutList && (
+          <div className="w-28 text-center text-gray-600 text-xs font-medium">
+            {getPaymentStatusDisplay(el?.paymenttypeDetails)}
           </div>
-          <div className="w-28 text-center text-gray-600 text-xs">
-            ₹{el?.paymenttypeDetails?.cash || "0.00"}
-          </div>
+        )}
           <div className="w-24 text-center text-gray-600 text-xs">
             ₹
             {el?.advanceAmount
