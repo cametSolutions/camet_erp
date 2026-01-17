@@ -46,7 +46,6 @@ function AvailableRooms({
   const PAGE_SIZE = 50;
   console.log(rooms);
   useEffect(() => {
-
     const fetchBookings = async () => {
       if (formData?.selectedRooms?.length > 0) {
         const updatedBookings = await Promise.all(
@@ -127,7 +126,7 @@ function AvailableRooms({
     };
 
     recalculateTax();
-  }, [formData?.additionalPaxDetails, formData?.foodPlan, selectedRoomId ]);
+  }, [formData?.additionalPaxDetails, formData?.foodPlan, selectedRoomId]);
 
   useEffect(() => {
     console.log(!formData?.bookingType);
@@ -178,7 +177,6 @@ function AvailableRooms({
         if (formData?.checkOutDate) {
           params.checkOutDate = formData.checkOutDate;
         }
-    
 
         const res = await api.get(`/api/sUsers/getRooms/${cmp_id}`, {
           params,
@@ -186,7 +184,6 @@ function AvailableRooms({
         });
 
         const newRooms = res.data?.roomData || [];
-
 
         // Filter out rooms that are already selected in current booking
         const availableRooms = newRooms.filter((room) => {
@@ -232,7 +229,7 @@ function AvailableRooms({
     const checkInDate = formData?.arrivalDate || formData?.checkInDate;
     const checkOutDate = formData?.checkOutDate;
 
-    if (!checkInDate || !checkOutDate ) {
+    if (!checkInDate || !checkOutDate) {
       // Fallback to simple calculation if dates are not available
       const baseAmount =
         Number(booking.priceLevelRate || 0) * Number(booking.stayDays || 0);
@@ -645,23 +642,17 @@ function AvailableRooms({
       fetchRooms(1, search);
     }
   }, [bookings.length]); // Triggers when rooms are added/removed from bookings
-  console.log(bookings[0]?.totalAmount);
+ 
   const handleTariffDelete = (editedTariff) => {
-    console.log(editedTariff)
-  setBookings((prev) =>
-    prev.map((b) => {
-      if (b.roomId === roomIdToUpdate) {
-        return { ...b, dateTariffs: editedTariff };
-      }
-      return b;
-    })
-  );
-
-   setPendingRoomQueue((prev) =>
-    prev.includes(roomIdToUpdate) ? prev : [...prev, roomIdToUpdate]
-  );
-};
-
+    setBookings((prev) =>
+      prev.map((booking, index) =>
+        index === 0 ? { ...booking, dateTariffs: editedTariff } : booking
+      )
+    );
+    setPendingRoomQueue((prev) =>
+      prev.includes(roomIdToUpdate) ? prev : [...prev, roomIdToUpdate]
+    );
+  };
 
   return showHistory ? (
     <TariffHistory
@@ -669,7 +660,7 @@ function AvailableRooms({
       onClose={() => setShowHistory(false)}
       booking={bookings?.find((b) => b.roomId === selectedRoomForHistory)}
       formData={formData}
-      sendUpdatedTariffToParent = {handleTariffDelete}
+      sendUpdatedTariffToParent={handleTariffDelete}
     />
   ) : (
     <>

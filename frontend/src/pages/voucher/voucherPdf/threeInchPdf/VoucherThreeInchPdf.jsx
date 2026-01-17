@@ -74,6 +74,8 @@ function VoucherThreeInchPdf({
 
   useEffect(() => {
     if (data && data.items) {
+      ///please check it is temperary
+      data.discount = data.additionalCharges[0]?.value;
       const calculatedSubTotal  = data.items
         .reduce(
           (acc, curr) => acc + Number(curr?.total) * Number(curr?.totalCount),
