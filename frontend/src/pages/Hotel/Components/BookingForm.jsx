@@ -126,12 +126,21 @@ function BookingForm({
   console.log(voucherNumber);
   console.log(formData);
   useEffect(() => {
+  
     if (editData) {
-      console.log(editData);
+    
       setSelectedParty(editData?.customerId);
       setHotelAgent(editData?.agentId);
       setCountry(editData?.country || "");
       setVoucherNumber(editData?.voucherNumber);
+   let highestDate = editData?.checkOutDate 
+    if (isTariffRateChange) {
+       highestDate =
+        currentDateDefault > highestDate
+          ? currentDateDefault
+          : highestDate;
+          console.log(highestDate);
+    }
       setFormData((prev) => ({
         ...prev,
         country: editData?.country,
@@ -143,7 +152,7 @@ function BookingForm({
         mobileNumber: editData?.mobileNumber,
         arrivalDate: editData?.arrivalDate || prev.arrivalDate,
         arrivalTime: editData?.arrivalTime || prev.arrivalTime,
-        checkOutDate: editData?.checkOutDate || prev.checkOutDate,
+        checkOutDate: highestDate  || prev.checkOutDate,
         checkOutTime: editData?.checkOutTime || prev.checkOutTime,
         stayDays: editData?.stayDays ?? prev.stayDays,
         bookingType: editData?.bookingType || prev.bookingType,
@@ -186,7 +195,7 @@ function BookingForm({
   useEffect(() => {
     if (roomId) setSelectedRoomId(roomId);
   }, [roomId]);
-  console.log(formData.selectedRooms);
+  console.log(formData.checkOutDate);
   const handleChange = (e) => {
     const { name, value } = e.target;
 
