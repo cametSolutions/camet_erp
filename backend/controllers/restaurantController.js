@@ -16,6 +16,7 @@ import Organization from "../models/OragnizationModel.js";
 import Table from "../models/TableModel.js";
 import { Godown } from "../models/subDetails.js";
 import { buildReceipt } from "../helpers/restaurantHelper.js";
+import AdditionalCharges from "../models/additionalChargesModel.js";
 // Helper functions (you may need to create these or adjust based on your existing ones)
 import {
   buildDatabaseFilterForRoom,
@@ -1027,9 +1028,20 @@ export const updateKotPayment = async (req, res) => {
         paymentDetails,
         selectedKotData: kotData,
         isPostToRoom,
+          additionalCharges = [],
+        discountCharge,    // ✅ NEW: From frontend dropdown
+        discountAmount,
+         discountType,        // ✅ Extract discount type
+      discountValue,    // ✅ NEW: Discount amount
+        note,
       } = req.body;
     
-
+console.log("=== STEP 3: BACKEND RECEIVED ===");
+      console.log("req.body.discountCharge:", discountCharge);
+      console.log("req.body.discountAmount:", discountAmount);
+      console.log("req.body.note:", note);
+      console.log("Type of discountAmount:", typeof discountAmount);
+      
       // console.log("table", kotData);
 
 
@@ -1056,6 +1068,20 @@ export const updateKotPayment = async (req, res) => {
       if (paymentDetails?.paymentMode == "credit") {
         paymentMethod = "credit";
       }
+
+ 
+
+  
+
+      // ✅ Inject remarks
+      if (note) {
+        req.body.narration = note;
+        req.body.remarks = note;
+        req.body.note = note;
+      }
+
+
+
 
       // Voucher series
       const specificVoucherSeries = await getRestaurantVoucherSeries(
@@ -1117,10 +1143,13 @@ export const updateKotPayment = async (req, res) => {
         paymentSplittingArray,
         session
       );
-
+ // ✅ Calculate with DISCOUNT
+      const originalTotal = Number(kotData?.total || 0);
+      const discountTotal = Number(discountAmount || 0);
+      const netPayable = originalTotal - discountTotal;
       // Outstanding balance
       const paidAmount = isPostToRoom ? 0 : cashAmt + onlineAmt;
-      const pendingAmount = Number(kotData?.total || 0) - paidAmount;
+      const pendingAmount = netPayable - paidAmount;
       let tallyData;
       if (isPostToRoom || paymentMethod == "credit") {
         tallyData = await createTallyEntry(
@@ -1178,7 +1207,9 @@ export const updateKotPayment = async (req, res) => {
           // Then update it
           return kotModal.updateOne(
             { _id: item.id },
-            { paymentMethod, paymentCompleted,  status: 'completed'  },
+            { paymentMethod, paymentCompleted,  status: 'completed', discount: discountAmount,    // ✅ Save to KOT
+              discountChargeId: discountCharge?._id, // ✅ Reference
+              note: note     },
             { session }
           );
         })
@@ -1224,7 +1255,7 @@ export const updateKotPayment = async (req, res) => {
       res.status(200).json({
         success: true,
         message: "KOT payment updated successfully",
-        data: { saleNumber, salesRecord: savedVoucherData[0] },
+        data: { saleNumber, salesRecord: savedVoucherData[0] ,discountApplied: discountAmount || 0},
       });
     });
   } catch (error) {
@@ -1541,6 +1572,32 @@ async function createSalesVoucher(
   paymentSplittingArray,
   session
 ) {
+  console.log("kotData", kotData);
+  
+  // ✅ FIXED: Use SUBTOTAL (BEFORE discount)
+  const originalTotal = Number(kotData?.subtotal || kotData?.total || 0); // 1000 ✅
+  const additionalCharges = req.body.additionalCharges || [];
+
+  console.log("🔍 BEFORE SAVE - additionalCharges:", JSON.stringify(additionalCharges, null, 2));
+
+  // ✅ Calculate totals
+  const totalAdditionalCharges = additionalCharges.reduce((sum, charge) => {
+    return sum + Number(charge.amount || 0);
+  }, 0);
+
+  const discountTotal = additionalCharges
+    .filter(charge => charge.type === 'subtract')
+    .reduce((sum, charge) => sum + Number(charge.amount || 0), 0);
+
+  const finalAmount = originalTotal - discountTotal;
+
+  console.log("🔥 FINAL CALCULATIONS:", { 
+    originalTotal,      // 1000
+    discountTotal,      // 200
+    finalAmount,        // 800
+    additionalCharges
+  });
+
   return await salesModel.create(
     [
       {
@@ -1558,16 +1615,28 @@ async function createSalesVoucher(
         party,
         partyAccount: selectedParty.accountGroup?.accountGroup,
         items: kotData?.items,
+        despatchDetails: {}, // ✅ Added missing
         address: kotData?.customer,
-        subTotal: kotData?.total,
-        finalAmount: kotData?.total,
+        
+        subTotal: originalTotal,
+        additionalCharges: additionalCharges,
+        totalAdditionalCharges: totalAdditionalCharges,
+        totalWithAdditionalCharges: finalAmount,
+        finalAmount: finalAmount,
+        
+        narration: req.body.narration || "",
+        remarks: req.body.remarks || "",
+        note: req.body.note || req.body.remarks || "",
+
         paymentSplittingData: paymentSplittingArray,
         convertedFrom: kotData?.voucherNumber,
-      },
+      }
     ],
     { session }
   );
 }
+
+
 
 async function createTallyEntry(
   cmp_id,
