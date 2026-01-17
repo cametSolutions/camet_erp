@@ -1470,8 +1470,24 @@ const RestaurantPOS = () => {
                     </div>
                   ) : (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-3">
-                      {menuItems.map((item, index) => {
+                   {menuItems.map((item, index) => {
                         const count = findOneCount(item._id);
+                        
+                        // Calculate display price based on selected price level
+                        let displayPrice = 0;
+                        
+                        if (item.Priceleveles && item.Priceleveles.length > 0) {
+                          if (selectedPriceLevel) {
+                            // Try to find matching price level
+                            const matchedPrice = item.Priceleveles.find(
+                              (pl) => pl.pricelevel === selectedPriceLevel || pl.pricelevel?._id === selectedPriceLevel
+                            );
+                            displayPrice = matchedPrice ? Number(matchedPrice.pricerate) : Number(item.Priceleveles[0].pricerate);
+                          } else {
+                            // Use first price level as default
+                            displayPrice = Number(item.Priceleveles[0].pricerate);
+                          }
+                        }
 
                         return (
                           <motion.div
@@ -1519,13 +1535,7 @@ const RestaurantPOS = () => {
 
                               {/* Price */}
                               <span className="text-gray-700 font-bold text-sm bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent relative z-10">
-                                ₹
-                                {selectedPriceLevel
-                                  ? item.Priceleveles?.find(
-                                      (pl) =>
-                                        pl.pricelevel == selectedPriceLevel
-                                    )?.pricerate || 0
-                                  : item.Priceleveles?.[0]?.pricerate}
+                                ₹{displayPrice.toFixed(2)}
                               </span>
 
                               {/* Add to cart icon */}

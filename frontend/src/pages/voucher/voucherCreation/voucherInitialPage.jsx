@@ -145,7 +145,7 @@ function VoucherInitialPage() {
   }, [subTotal]);
 
   // API calls wrapped in promises
-  const fetchData = useCallback(async () => {
+ const fetchData = useCallback(async () => {
     if (isLoading) return; // Prevent multiple simultaneous calls
     setIsLoading(true);
 
@@ -236,7 +236,7 @@ function VoucherInitialPage() {
 
   // Initialize component
   useEffect(() => {
-    getVoucherType();
+     getVoucherType();
 
     if (!date) dispatch(changeDate(JSON.stringify(selectedDate)));
     localStorage.removeItem("scrollPositionAddItemSales");

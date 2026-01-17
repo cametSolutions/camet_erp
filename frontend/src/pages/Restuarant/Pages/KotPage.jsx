@@ -43,7 +43,17 @@ const OrdersDashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [userRole, setUserRole] = useState("reception");
   const [orders, setOrders] = useState([]);
-  const [loader, setLoader] = useState(false);
+  const [loader, setLoader] = useState(false); 
+ const [isLoading, setIsLoading] = useState(false);
+
+
+ const [allAdditionalChargesFromRedux, setAllAdditionalChargesFromRedux] = useState([]);
+const [additionalCharges, setAdditionalCharges] = useState([]);
+  const [selectedDiscountCharge, setSelectedDiscountCharge] = useState(null);
+
+
+  const [note, setNote] = useState("");
+
   const [saveLoader, setSaveLoader] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("cash");
@@ -81,6 +91,12 @@ const OrdersDashboard = () => {
   const [cancelReason, setCancelReason] = useState("");
   const [cancelError, setCancelError] = useState("");
 
+  const [discountAmount, setDiscountAmount] = useState(0);
+const [discountCharge, setDiscountCharge] = useState(null);
+
+const [discountType, setDiscountType] = useState("amount"); // "amount" or "percentage"
+const [discountValue, setDiscountValue] = useState(0);
+
    const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -95,6 +111,70 @@ const OrdersDashboard = () => {
   const { data, refreshHook } = useFetch(
     `/api/sUsers/getKotData/${cmp_id}?date=${selectedDate}`
   );
+
+
+
+ const fetchData = useCallback(async () => {
+    if (isLoading) return;
+    setIsLoading(true);
+
+     try {
+    // ✅ FIXED - Safe array handling
+    let additionalChargesResponse = Array.isArray(allAdditionalChargesFromRedux) 
+      ? allAdditionalChargesFromRedux 
+      : [];
+    
+    if (additionalChargesResponse.length === 0) {
+      const response = await api.get(`/api/sUsers/additionalcharges/${cmp_id}`, {
+        withCredentials: true,
+      });
+       additionalChargesResponse = Array.isArray(response.data.additionalCharges) 
+        ? response.data.additionalCharges 
+        : Array.isArray(response.data) 
+        ? response.data 
+        : [];
+        
+      setAllAdditionalChargesFromRedux(additionalChargesResponse);
+    }
+
+    // ✅ Now SAFE to filter
+    const discountCharges = additionalChargesResponse.filter(
+      (charge) =>
+        charge.name.toLowerCase().includes("discount") 
+    );
+    setAdditionalCharges(discountCharges);
+
+      // 3. Existing Series fetch logic
+      const seriesResponse = await api.get(
+        `/api/sUsers/getSeriesByVoucher/${cmp_id}?voucherType=sales`,
+        { withCredentials: true }
+      );
+      if (seriesResponse.data) {
+        const specificSeries = seriesResponse.data.series?.find(
+          (item) => item.under === "restaurant"
+        );
+        if (specificSeries) {
+          const { prefix = "", currentNumber = 0, suffix = "", width = 3 } = specificSeries;
+          const paddedNumber = String(currentNumber).padStart(width, "0");
+          const specificNumber = `${prefix}${paddedNumber}${suffix}`;
+          setSaleVoucherData({
+            series: specificSeries,
+            number: specificNumber,
+          });
+        }
+      }
+    } catch (error) {
+    console.error("Error fetching data:", error);
+    toast.error(error.response?.data?.message || "Error fetching data");
+    setAdditionalCharges([]); // ✅ Fallback to empty array
+  } finally {
+    setIsLoading(false);
+  }
+}, [cmp_id, allAdditionalChargesFromRedux, isLoading]);
+useEffect(() => {
+  fetchData();
+}, []);
+
 
   useEffect(() => {
     if (data) {
@@ -121,44 +201,44 @@ const OrdersDashboard = () => {
     }
   }, [paymentTypeData]);
 
-  const fetchData = useCallback(async () => {
-    try {
-      const response = await api.get(
-        `/api/sUsers/getSeriesByVoucher/${cmp_id}?voucherType=sales`,
-        { withCredentials: true }
-      );
-      if (response.data) {
-        const specificSeries = response.data.series?.find(
-          (item) => item.under === "restaurant"
-        );
-        if (specificSeries) {
-          const {
-            prefix = "",
-            currentNumber = 0,
-            suffix = "",
-            width = 3,
-          } = specificSeries;
+  // const fetchData = useCallback(async () => {
+  //   try {
+  //     const response = await api.get(
+  //       `/api/sUsers/getSeriesByVoucher/${cmp_id}?voucherType=sales`,
+  //       { withCredentials: true }
+  //     );
+  //     if (response.data) {
+  //       const specificSeries = response.data.series?.find(
+  //         (item) => item.under === "restaurant"
+  //       );
+  //       if (specificSeries) {
+  //         const {
+  //           prefix = "",
+  //           currentNumber = 0,
+  //           suffix = "",
+  //           width = 3,
+  //         } = specificSeries;
 
-          const paddedNumber = String(currentNumber).padStart(width, "0");
-          const specificNumber = `${prefix}${paddedNumber}${suffix}`;
-          let newSaleOjbect = {
-            series: specificSeries,
-            number: specificNumber,
-          };
+  //         const paddedNumber = String(currentNumber).padStart(width, "0");
+  //         const specificNumber = `${prefix}${paddedNumber}${suffix}`;
+  //         let newSaleOjbect = {
+  //           series: specificSeries,
+  //           number: specificNumber,
+  //         };
 
-          setSaleVoucherData(newSaleOjbect);
-        }
-      }
-    } catch (error) {
-      console.log(error);
-      toast.error(error.response?.data?.message || "Error fetching data");
-    } finally {
-      setLoader(false);
-    }
-  }, [cmp_id]);
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  //         setSaleVoucherData(newSaleOjbect);
+  //       }
+  //     }
+  //   } catch (error) {
+  //     console.log(error);
+  //     toast.error(error.response?.data?.message || "Error fetching data");
+  //   } finally {
+  //     setLoader(false);
+  //   }
+  // }, [cmp_id]);
+  // useEffect(() => {
+  //   fetchData();
+  // }, [fetchData]);
   // Status configuration
   const statusConfig = {
     pending: {
@@ -406,244 +486,227 @@ const handleKotCancel = async () => {
 
   console.log("filteredOrders", filteredOrders);
 
-  const handleSavePayment = async (id) => {
-    setSaveLoader(true);
 
-     if (paymentMode === "credit") {
-    if (!selectedCreditor || selectedCreditor === "" || !selectedCreditor._id) {
-      setPaymentError("Please select a creditor");
-      setSaveLoader(false);
-      return;
+  const handleSavePayment = async (id) => {
+  setSaveLoader(true);
+
+  try {
+    // Credit validation
+    if (paymentMode === "credit") {
+      if (!selectedCreditor || !selectedCreditor._id) {
+        setPaymentError("Please select a creditor");
+        return;
+      }
     }
-  }
+
     let paymentDetails;
     let selectedKotData;
-     if (selectedDataForPayment?.isDirectSale) {
-    // Direct sale payment processing
-    if (paymentMethod === "cash") {
-      paymentDetails = {
-        cashAmount: selectedDataForPayment?.total,
-        onlineAmount: 0,
-        selectedCash,
-        selectedBank,
-        paymentMode: "single",
-      };
-    } else {
-      paymentDetails = {
-        cashAmount: 0,
-        onlineAmount: selectedDataForPayment?.total,
-        selectedCash,
-        selectedBank,
-        paymentMode: "single",
-      };
-    }
-    selectedKotData = selectedDataForPayment;
-  } else {
-    if (
-      selectedDataForPayment.roomService &&
-      Object.keys(selectedDataForPayment.roomService).length > 0
-    ) {
-      // CASE 1: When roomService exists
-      if (paymentMode === "single") {
-        if (paymentMethod === "cash") {
-          paymentDetails = {
-            cashAmount: selectedDataForPayment?.total,
-            onlineAmount,
-            selectedCash,
-            selectedBank,
-            paymentMode,
-          };
-        } else {
-          paymentDetails = {
-            cashAmount,
-            onlineAmount: selectedDataForPayment?.total,
-            selectedCash,
-            selectedBank,
-            paymentMode,
-          };
-        }
-        selectedKotData = selectedDataForPayment;
-      } else if (paymentMode === "credit") {
 
-        if (!selectedCreditor || selectedCreditor == "") {
-          setPaymentError("Please select a creditor");
-          return;
-        }
+    // ================= DIRECT SALE =================
+    if (selectedDataForPayment?.isDirectSale) {
+      if (paymentMethod === "cash") {
         paymentDetails = {
           cashAmount: selectedDataForPayment?.total,
-          selectedCreditor,
-          paymentMode,
-        };
-           selectedKotData = selectedDataForPayment;
-      } else {
-        // Split payment mode
-        if (
-          Number(cashAmount) + Number(onlineAmount) !==
-          selectedDataForPayment?.total
-        ) {
-          setPaymentError(
-            "Cash and online amounts together equal the total amount."
-          );
-          return;
-        }
-        paymentDetails = {
-          cashAmount,
-          onlineAmount,
+          onlineAmount: 0,
           selectedCash,
           selectedBank,
-          paymentMode,
+          paymentMode: "single",
         };
-        selectedKotData = selectedDataForPayment;
-      }
-    } else {
-      // CASE 2: When NO roomService
-      if (paymentMode === "single") {
-        if (paymentMethod === "cash") {
-          paymentDetails = {
-            cashAmount: selectedDataForPayment?.total,
-            onlineAmount,
-            selectedCash,
-            selectedBank,
-            paymentMode,
-          };
-        } else {
-          paymentDetails = {
-            cashAmount,
-            onlineAmount: selectedDataForPayment?.total,
-            selectedCash,
-            selectedBank,
-            paymentMode,
-          };
-        }
-        selectedKotData = previewForSales;
-      } else if (paymentMode === "credit") {
-        if (!selectedCreditor || selectedCreditor == "") {
-          setPaymentError("Please select a creditor");
-          setSaveLoader(false);
-          return;
-        }
-        paymentDetails = {
-          cashAmount: selectedDataForPayment?.total,
-          selectedCreditor,
-          paymentMode,
-        };
-          selectedKotData = previewForSales;
       } else {
-        if (
-          Number(cashAmount) + Number(onlineAmount) !==
-        Number(selectedDataForPayment?.total)
-        ) {
-          setPaymentError(
-            "Cash and online amounts together equal the total amount."
-          );
-          return;
-        }
         paymentDetails = {
-          cashAmount,
-          onlineAmount,
+          cashAmount: 0,
+          onlineAmount: selectedDataForPayment?.total,
           selectedCash,
           selectedBank,
-          paymentMode,
+          paymentMode: "single",
         };
-        selectedKotData = previewForSales;
       }
+
+      selectedKotData = selectedDataForPayment;
     }
 
-    console.log(paymentMethod);
-    console.log(paymentDetails);
-    console.log(selectedKotData);
+    // ================= NORMAL SALE =================
+    else {
+      const hasRoomService =
+        selectedDataForPayment?.roomService &&
+        Object.keys(selectedDataForPayment.roomService).length > 0;
 
-    try {
-      console.log(paymentDetails)
-      const payment={...paymentDetails,cashAmount:Number(paymentDetails.cashAmount)}
-      console.log(payment)
-  
-    
-      const response = await api.put(
-        `/api/sUsers/updateKotPayment/${cmp_id}`,
-        {
-          paymentMethod: paymentMethod,
-          paymentDetails: payment,
-          selectedKotData: selectedKotData,
-          isPostToRoom: isPostToRoom,
-              isDirectSale: selectedDataForPayment?.isDirectSale || false,
-        },
-        { withCredentials: true }
-      );
-      // Check if the response was successful
-      if (response.status === 200 || response.status === 201) {
-        // Update the local state with the new status
-        setOrders((prevOrders) =>
-          prevOrders.map((order) =>
-            order._id === id
-              ? { ...order,paymentCompleted: true , paymentMethod: data.paymentMethod }
-              : order
-          )
-        );
-          const completedKots = selectedDataForPayment?.voucherNumber || [];
-      const tableNumbers = new Set();
-      
-      completedKots.forEach(kot => {
-          const kotOrder = orders.find(order => order._id === kot.id);
-        if (kotOrder?.tableNumber && kotOrder?.type === 'dine-in') {
-          tableNumbers.add(kotOrder.tableNumber);
-        }
-      });
-
-      // For each table, check if all its KOTs are now completed
-      for (const tableNumber of tableNumbers) {
-
-        if (!tableNumber) {
-          console.log('Skipping undefined/null tableNumber');
-          continue; // Skip if tableNumber is undefined/null
-        }
-        const tableKots = orders.filter(order => 
-          order.tableNumber === tableNumber && 
-          order.type === 'dine-in'
-        );
-        
-        const allCompleted = tableKots.every(kot => 
-          completedKots.some(completed => completed.id === kot._id) ||
-          kot.paymentCompleted
-        );
-
-        if (allCompleted) {
-          try {
-              const tableUpdateResponse = await api.put(
-              `/api/sUsers/updateTableStatus/${cmp_id}/${tableNumber}`,
-              { status: "available" },
-              { withCredentials: true }
-            );
- console.log(`Table ${tableNumber} status updated successfully:`, tableUpdateResponse.data);
-          } catch (tableError) {
-            console.error(`Error updating table ${tableNumber} status:`, tableError);
+      // ---------- WITH ROOM SERVICE ----------
+      if (hasRoomService) {
+        if (paymentMode === "single") {
+          if (paymentMethod === "cash") {
+            paymentDetails = {
+              cashAmount: selectedDataForPayment?.total,
+              onlineAmount: 0,
+              selectedCash,
+              selectedBank,
+              paymentMode,
+            };
+          } else {
+            paymentDetails = {
+              cashAmount: 0,
+              onlineAmount: selectedDataForPayment?.total,
+              selectedCash,
+              selectedBank,
+              paymentMode,
+            };
           }
         }
+
+        else if (paymentMode === "credit") {
+          paymentDetails = {
+            cashAmount: selectedDataForPayment?.total,
+            selectedCreditor,
+            paymentMode,
+          };
+        }
+
+        else {
+          if (
+            Number(cashAmount) + Number(onlineAmount) !==
+            Number(selectedDataForPayment?.total)
+          ) {
+            setPaymentError(
+              "Cash and online amounts together must equal total amount"
+            );
+            return;
+          }
+
+          paymentDetails = {
+            cashAmount,
+            onlineAmount,
+            selectedCash,
+            selectedBank,
+            paymentMode,
+          };
+        }
+
+        selectedKotData = selectedDataForPayment;
       }
 
-        setLoader(false);
-        setSelectedKot([]);
-        setShowVoucherPdf(false);
-        toast.success(response?.data?.message);
-      } else {
-        console.error("Failed to update backend:", response.data || response);
+      // ---------- WITHOUT ROOM SERVICE ----------
+      else {
+        if (paymentMode === "single") {
+          if (paymentMethod === "cash") {
+            paymentDetails = {
+              cashAmount: selectedDataForPayment?.total,
+              onlineAmount: 0,
+              selectedCash,
+              selectedBank,
+              paymentMode,
+            };
+          } else {
+            paymentDetails = {
+              cashAmount: 0,
+              onlineAmount: selectedDataForPayment?.total,
+              selectedCash,
+              selectedBank,
+              paymentMode,
+            };
+          }
+        }
+
+        else if (paymentMode === "credit") {
+          paymentDetails = {
+            cashAmount: selectedDataForPayment?.total,
+            selectedCreditor,
+            paymentMode,
+          };
+        }
+
+        else {
+          if (
+            Number(cashAmount) + Number(onlineAmount) !==
+            Number(selectedDataForPayment?.total)
+          ) {
+            setPaymentError(
+              "Cash and online amounts together must equal total amount"
+            );
+            return;
+          }
+
+          paymentDetails = {
+            cashAmount,
+            onlineAmount,
+            selectedCash,
+            selectedBank,
+            paymentMode,
+          };
+        }
+
+        selectedKotData = previewForSales || selectedDataForPayment;
       }
-    } catch (error) {
-      console.error(
-        "Error updating order status:",
-        error.response?.data || error.message
-      );
-    } finally {
-      setSaveLoader(false);
-      setCashAmount(0);
-      setOnlineAmount(0);
-      refreshHook();
-      setShowPaymentModal(false);
-      setPaymentMode("single")
-      setSelectedCreditor("")
     }
+  // const previewDiscount = previewForSales?.discount || discountAmount;
+  // const previewDiscountCharge = previewForSales?.discountCharge || discountCharge;
+  let additionalCharges = [];
+
+
+
+    if (previewForSales && previewForSales.additionalCharges) {
+      // ✅ Use EXACTLY what's in preview - don't rebuild
+      additionalCharges = previewForSales.additionalCharges;
+    }
+    // ================= FINAL PAYMENT OBJECT =================
+    const payment = {
+      paymentMethod,
+      paymentDetails: {
+        ...paymentDetails,
+        cashAmount: Number(paymentDetails.cashAmount),
+      },
+      selectedKotData,
+      isPostToRoom,
+      isDirectSale: selectedDataForPayment?.isDirectSale || false,
+      additionalCharges: additionalCharges,
+      //  discountCharge: previewDiscountCharge,
+    // discountAmount: previewDiscount,
+    note,
+     
+    };
+
+ console.log("=== PAYMENT OBJECT BEING SENT ===");
+  console.log(JSON.stringify(payment, null, 2));
+
+    const response = await api.put(
+      `/api/sUsers/updateKotPayment/${cmp_id}`,
+      payment,
+      { withCredentials: true }
+    );
+
+    if (response.status === 200 || response.status === 201) {
+      setOrders((prev) =>
+        prev.map((order) =>
+          order._id === id
+            ? { ...order, paymentCompleted: true }
+            : order
+        )
+      );
+
+      toast.success(response?.data?.message);
+      setShowPaymentModal(false);
+      setSelectedDiscountCharge(null);
+      setDiscountAmount(0);
+     setDiscountType("amount");
+      setDiscountValue(0);
+      setNote("");
+      setPreviewForSales(null);
+    }
+  } catch (error) {
+    console.error("Payment error:", error);
+    toast.error(error.response?.data?.message || "Payment failed");
+  } finally {
+    setSaveLoader(false);
+    setCashAmount(0);
+    setOnlineAmount(0);
+    refreshHook();
+    setPaymentMode("single");
+    setSelectedCreditor("");
   }
 };
+
+
+
+  
 
   const handlePrintData = async (kotId) => {
     try {
@@ -712,10 +775,29 @@ const handleKotCancel = async () => {
       return findOne?.items || []; // return empty array if not found
     });
 
-    let totalAmount = itemList.reduce(
+    let subtotal  = itemList.reduce(
       (acc, item) => acc + Number(item.total) ,
       0
     ).toFixed(2);
+  let finalAmount = (subtotal  - (discountAmount || 0)).toFixed(2);
+
+ let additionalChargesArray = [];
+  
+  if (discountAmount > 0 && selectedDiscountCharge) {
+    const discountName = selectedDiscountCharge.name || 
+      `Discount (${discountType === 'percentage' ? discountValue + '%' : '₹' + discountValue})`;
+    
+    additionalChargesArray.push({
+      _id: selectedDiscountCharge._id || null,
+      name: discountName, // ✅ Add name
+      amount: Number(discountAmount), // ✅ Calculated discount amount
+      type: "subtract",
+      value: Number(discountValue), // ✅ Original input value
+      discountType: discountType,
+      note: note || "",
+      isDiscount: true
+    });
+  }
 
 
     let newObject = {
@@ -728,8 +810,13 @@ const handleKotCancel = async () => {
       usedSeriesNumber: saleVoucherData?.series?.currentNumber,
       partyAccount: "Cash-in-Hand",
       items: itemList,
-      finalAmount: totalAmount,
-      total: totalAmount,
+       subtotal: subtotal, // Original total before discount
+    discount: discountAmount || 0, // Discount amount
+    discountCharge: selectedDiscountCharge, 
+     additionalCharges: additionalChargesArray, // Discount type details
+    finalAmount: finalAmount,
+     note: note || "", // After discount
+    total: finalAmount,
       voucherNumber: kotVoucherNumberArray,
       party:{
         partyName:selectedKot[0]?.customer?.name,
@@ -737,6 +824,7 @@ const handleKotCancel = async () => {
         mobile:selectedKot[0]?.customer?.phone,
       }
     };
+    console.log("Preview Object Created:", newObject);
     setPreviewForSales(newObject);
   };
 
@@ -753,6 +841,10 @@ const handleKotCancel = async () => {
       return;
     }
     setShowVoucherPdf(false);
+
+// setDiscountAmount(0);
+// setDiscountCharge(null)
+
     setShowPaymentModal(true);
     setSelectedDataForPayment(previewForSales);
   };
@@ -775,7 +867,7 @@ const handleKotCancel = async () => {
     content: () => contentToPrint.current,
   });
 
-  console.log(selectedBank);
+  console.log(additionalCharges);
 
   return (
     <>
@@ -1329,26 +1421,214 @@ const handleKotCancel = async () => {
                     </div>
 
                     {/* Total Amount Display */}
-                    {userRole === "reception" && (
-                      <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-3 rounded-lg mb-4 border border-green-200">
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm font-semibold text-green-800">
-                            Total Amount
-                          </span>
-                          <span className="text-lg font-bold text-green-900">
-                            ₹
-                            {selectedKot
-                              .reduce((total, kot) => {
-                                const order = filteredOrders.find(
-                                  (o) => o._id === kot.id
-                                );
-                                return total + (order?.total || 0);
-                              }, 0)
-                              .toFixed(2)}
-                          </span>
-                        </div>
-                      </div>
-                    )}
+            {userRole === "reception" && (
+  <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-3 rounded-lg mb-4 border border-green-200 space-y-3">
+    
+    {/* Subtotal */}
+    <div className="flex justify-between items-center text-sm">
+      <span className="font-medium text-green-800">Subtotal</span>
+      <span className="font-semibold text-green-900">
+        ₹{selectedKot
+          .reduce((total, kot) => {
+            const order = filteredOrders.find((o) => o._id === kot.id);
+            return total + (order?.total || 0);
+          }, 0)
+          .toFixed(2)}
+      </span>
+    </div>
+
+    {/* Discount Selection */}
+  {/* Discount Selection */}
+<div className="border border-red-200 rounded-lg p-3 mb-3 bg-red-50">
+  <label className="block text-xs font-semibold text-red-700 mb-2">
+    Discount
+  </label>
+  
+  <div className="flex flex-col gap-2">
+    {/* Dropdown */}
+    {/* <select
+      value={selectedDiscountCharge?._id || ""}
+      onChange={(e) => {
+        const id = e.target.value;
+        if (!id || id === "") {
+      setSelectedDiscountCharge(null);
+      setDiscountValue(0);
+      setDiscountAmount(0);
+      setDiscountType("amount");
+      return;
+    }
+        const charge = additionalCharges.find(c => c._id === id);
+        
+        if (charge) {
+          setSelectedDiscountCharge(charge);
+          setDiscountType(charge.type || "amount");
+          setDiscountValue(charge.amount);
+          
+          const subtotal = selectedKot.reduce((total, kot) => {
+            const order = filteredOrders.find((o) => o._id === kot.id);
+            return total + (order?.total || 0);
+          }, 0);
+          
+          const calculatedAmount = charge.type === "percentage"
+            ? (subtotal * charge.amount) / 100
+            : charge.amount;
+          
+          setDiscountAmount(calculatedAmount);
+        } else {
+          setSelectedDiscountCharge(null);
+          setDiscountValue(0);
+          setDiscountAmount(0);
+        }
+      }}
+      className="px-3 py-2 border border-red-300 rounded-lg focus:ring-2 focus:ring-red-400 text-sm bg-white"
+    > */}
+    <select>
+      <option value="">Select Discount</option>
+      {additionalCharges.map(charge => (
+        <option key={charge._id} value={charge._id}>
+          {charge.name} 
+        </option>
+      ))}
+    </select>
+
+    {/* Toggle and Input */}
+    <div className="flex gap-2">
+      {/* Toggle Buttons */}
+      <div className="flex bg-gray-200 rounded-lg p-1">
+        <button
+          onClick={() => {
+            setDiscountType("amount");
+            if (discountValue > 0) {
+              setDiscountAmount(discountValue);
+            }
+          }}
+          className={`px-2 py-1.5 rounded-md text-xs font-medium transition-all ${
+            discountType === "amount"
+              ? "bg-white text-red-600 shadow-sm"
+              : "text-gray-600"
+          }`}
+        >
+          ₹
+        </button>
+        <button
+          onClick={() => {
+            setDiscountType("percentage");
+            if (discountValue > 0) {
+              const subtotal = selectedKot.reduce((total, kot) => {
+                const order = filteredOrders.find((o) => o._id === kot.id);
+                return total + (order?.total || 0);
+              }, 0);
+              setDiscountAmount((subtotal * discountValue) / 100);
+            }
+          }}
+          className={`px-2 py-1.5 rounded-md text-xs font-medium transition-all ${
+            discountType === "percentage"
+              ? "bg-white text-red-600 shadow-sm"
+              : "text-gray-600"
+          }`}
+        >
+          %
+        </button>
+      </div>
+
+      {/* Input Field */}
+      <div className="flex-1 relative">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs">
+          {discountType === "percentage" ? "%" : "₹"}
+        </span>
+        <input
+          type="number"
+          value={discountValue || ""}
+          onChange={(e) => {
+            const value = parseFloat(e.target.value) || 0;
+            setDiscountValue(value);
+            
+            const subtotal = selectedKot.reduce((total, kot) => {
+              const order = filteredOrders.find((o) => o._id === kot.id);
+              return total + (order?.total || 0);
+            }, 0);
+            
+            const calculatedAmount = discountType === "percentage"
+              ? (subtotal * value) / 100
+              : value;
+            
+            setDiscountAmount(calculatedAmount);
+            
+            if (value > 0) {
+              setSelectedDiscountCharge({
+                name: `Manual Discount (${discountType === "percentage" ? `${value}%` : `₹${value}`})`,
+                amount: value,
+                type: discountType
+              });
+            }
+          }}
+          placeholder={discountType === "percentage" ? "0" : "0.00"}
+          className="w-full pl-7 pr-3 py-2 border border-red-300 rounded-lg focus:ring-2 focus:ring-red-400 text-sm"
+          min="0"
+          max={discountType === "percentage" ? "100" : undefined}
+          step={discountType === "percentage" ? "1" : "0.01"}
+        />
+      </div>
+    </div>
+
+    {/* Calculated Discount Display */}
+    {discountValue > 0 && (
+      <div className="p-2 bg-red-100 rounded-lg">
+        <div className="flex justify-between items-center text-xs">
+          <span className="text-red-700">
+            {discountType === "percentage" 
+              ? `${discountValue}% discount` 
+              : "Discount"}
+          </span>
+          <span className="font-semibold text-red-800">
+            - ₹{discountAmount.toFixed(2)}
+          </span>
+        </div>
+      </div>
+    )}
+  </div>
+</div>
+    {/* Remarks/Note */}
+    <div>
+      <label className="block text-xs font-semibold text-green-800 mb-1">
+        Remarks
+      </label>
+      <input
+        type="text"
+        placeholder="Enter note (optional)"
+        className="w-full px-3 py-2 text-sm border border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+      />
+    </div>
+
+    {/* Final Total */}
+    <div className="border-t border-green-300 pt-2">
+      <div className="flex justify-between items-center">
+        <span className="text-sm font-bold text-green-800">
+          Total Amount
+        </span>
+        <span className="text-lg font-bold text-green-900">
+          ₹{(selectedKot
+            .reduce((total, kot) => {
+              const order = filteredOrders.find((o) => o._id === kot.id);
+              return total + (order?.total || 0);
+            }, 0) - (discountAmount || 0))
+            .toFixed(2)}
+        </span>
+      </div>
+      {discountAmount > 0 && (
+        <div className="text-xs text-green-700 text-right mt-1">
+          (After ₹{discountAmount.toFixed(2)} discount)
+        </div>
+      )}
+    </div>
+  </div>
+)}
+
+                    
+                    
+                    
                     {conformationModal && (
                       <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
                         <div className="bg-white rounded-2xl shadow-lg w-96 p-6 space-y-4">
