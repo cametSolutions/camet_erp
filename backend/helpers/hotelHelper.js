@@ -128,6 +128,7 @@ export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
         .find(filter)
         .populate("customerId")
         .populate("agentId")
+        .populate("isHotelAgent")
         .populate("selectedRooms.selectedPriceLevel")
         .populate("bookingId")
         .populate("checkInId")

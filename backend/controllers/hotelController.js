@@ -631,6 +631,9 @@ export const getRooms = async (req, res) => {
     const params = extractRequestParams(req);
     const filter = buildDatabaseFilterForRoom(params);
 
+
+
+    
     // Get current date and time
     const now = new Date();
 
@@ -918,6 +921,11 @@ export const roomBooking = async (req, res) => {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
+     let customerData = null;
+    if (bookingData.customerId) {
+      customerData = await partyModel.findById(bookingData.customerId).session(session);
+    }
+
     let selectedModal;
     let voucherType;
     let under = "hotel";
@@ -978,12 +986,16 @@ export const roomBooking = async (req, res) => {
 
       bookingData.voucherNumber = bookingNumber?.voucherNumber;
       bookingData.voucherId = series_id;
+
+
+       const isHotelAgent = customerData?.isHotelAgent || false;
       // 🔹 Save Booking
       const newBooking = new selectedModal({
         cmp_id: orgId,
         Primary_user_id: req.pUserId || req.owner,
         Secondary_user_id: req.sUserId,
         paymenttypeDetails,
+        isHotelAgent,
         ...bookingData,
       });
       savedBooking = await newBooking.save({ session });
@@ -1234,20 +1246,66 @@ export const getBookings = async (req, res) => {
       params
     );
 
-    const sendRoomResponseData = sendBookingsResponse(
+    // ✅ Process bookings to add payment status and travel agent info
+    const processedBookings = bookings.map(booking => {
+      const processed = booking.toObject ? booking.toObject() : { ...booking };
+      
+      // ✅ Add payment status (shows payment type names, not amounts)
+      processed.paymentStatus = getPaymentStatus(processed.paymenttypeDetails);
+      
+      // ✅ Add travel agent name - check both agentId and isHotelAgent
+      if (processed.agentId?.partyName) {
+        // If there's a separate agentId, use that
+        processed.travelAgentName = processed.agentId.partyName;
+      } else if (processed.isHotelAgent === true || processed.customerId?.isHotelAgent === true) {
+        // Otherwise check if customer is hotel agent
+        processed.travelAgentName = processed.customerId?.partyName || '-';
+      } else {
+        processed.travelAgentName = '-';
+      }
+      
+      return processed;
+    });
+
+    return sendBookingsResponse(
       res,
-      bookings,
+      processedBookings,
       totalBookings,
       params
     );
   } catch (error) {
-    console.error("Error in getProducts:", error);
+    console.error("Error in getBookings:", error);
     return res.status(500).json({
       success: false,
       message: "Internal server error, try again!",
     });
   }
 };
+const getPaymentStatus = (paymenttypeDetails) => {
+  if (!paymenttypeDetails) return 'Unpaid';
+  
+  const paymentTypes = [];
+  
+  if (parseFloat(paymenttypeDetails.cash || 0) > 0) {
+    paymentTypes.push('Cash');
+  }
+  if (parseFloat(paymenttypeDetails.bank || 0) > 0) {
+    paymentTypes.push('Bank');
+  }
+  if (parseFloat(paymenttypeDetails.upi || 0) > 0) {
+    paymentTypes.push('UPI');
+  }
+  if (parseFloat(paymenttypeDetails.card || 0) > 0) {
+    paymentTypes.push('Card');
+  }
+  if (parseFloat(paymenttypeDetails.credit || 0) > 0) {
+    paymentTypes.push('Credit');
+  }
+  
+  return paymentTypes.length > 0 ? paymentTypes.join(', ') : 'Unpaid';
+};
+
+
 
 // function used to delete booking details
 export const deleteBooking = async (req, res) => {

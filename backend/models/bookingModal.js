@@ -170,6 +170,8 @@ const bookingSchema = new mongoose.Schema(
     roomTotal: Number,
     foodPlanTotal: Number,
     paxTotal: Number,
+     isHotelAgent: { type: Boolean,default: false},
+  
     agentId: { type: mongoose.Schema.Types.ObjectId, ref: "Party" },
     bookingId: { type: mongoose.Schema.Types.ObjectId, ref: "Booking" },
     checkInId: { type: mongoose.Schema.Types.ObjectId, ref: "CheckIn" },
