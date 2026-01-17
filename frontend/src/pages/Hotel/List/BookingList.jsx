@@ -9,6 +9,7 @@ import {
   MdCheckCircle,
   MdPayment,
   MdVisibility,
+  MdCancel 
 } from "react-icons/md";
 import { motion } from "framer-motion";
 
@@ -1107,7 +1108,7 @@ console.log()
             : "BOOKING NO"}
         </div>
         <div className="w-40 text-center">GUEST NAME</div>
-        <div className="w-24 text-center">ROOM NO</div>
+        <div className="w-20 text-center">ROOM NO</div>
         <div className="w-36 text-center">ARRIVAL DATE</div>
         <div className="w-28 text-center">ROOM TARIFF</div>
         <div className="w-20 text-center">PAX</div>
@@ -1139,10 +1140,10 @@ console.log()
           </div>
           <div className="animate-pulse md:flex w-full items-center">
             <div className="w-10 h-4 bg-gray-200 rounded mr-4"></div>
-            <div className="w-28 h-4 bg-gray-200 rounded mr-4"></div>
+            <div className="w-24 h-4 bg-gray-200 rounded mr-4"></div>
             <div className="w-32 h-4 bg-gray-200 rounded mr-4"></div>
             <div className="w-40 h-4 bg-gray-200 rounded mr-4"></div>
-            <div className="w-24 h-4 bg-gray-200 rounded mr-4"></div>
+            <div className="w-20 h-4 bg-gray-200 rounded mr-4"></div>
             <div className="w-36 h-4 bg-gray-200 rounded mr-4"></div>
             <div className="w-28 h-4 bg-gray-200 rounded mr-4"></div>
             <div className="w-20 h-4 bg-gray-200 rounded mr-4"></div>
@@ -1490,7 +1491,7 @@ console.log(el)
                   className="bg-amber-500 hover:bg-amber-600 text-white font-semibold py-1 px-2 rounded text-xs transition duration-300"
                   title="Cancel booking"
                 >
-                  Cancel
+                  <MdCancel />
                 </button>
               )}{" "}
             {el?.status === "cancelled" && (
