@@ -109,7 +109,7 @@ const DashboardTransaction = ({ filteredData, from }) => {
             </div>
             <div className="flex-1  flex justify-end">
               <p className="font-bold text-sm text-gray-500">
-                ₹{enteredAmount || 0}
+                ₹{Number(enteredAmount).toFixed(2) || 0}
               </p>
             </div>
           </div>

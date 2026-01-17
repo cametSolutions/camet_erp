@@ -660,13 +660,19 @@ const RestaurantPOS = () => {
         )
       );
     } else {
-      const price = selectedPriceLevel
-        ? Number(
-            item.Priceleveles?.find((pl) => pl.pricelevel == selectedPriceLevel)
-              ?.pricerate || 0
-          )
-        : Number(item.Priceleveles?.[0]?.pricerate);
-      console.log("price", price);
+      const price =
+        selectedPriceLevel &&
+        Number(
+          item.Priceleveles?.find((pl) => pl.pricelevel == selectedPriceLevel)
+            ?.pricerate 
+        )
+          ? Number(
+              item.Priceleveles?.find(
+                (pl) => pl.pricelevel == selectedPriceLevel
+              )?.pricerate || 0
+            )
+          : Number(item.Priceleveles?.[0]?.pricerate);
+   
       setOrderItems([...orderItems, { ...item, quantity: 1, price: price }]);
     }
   };
@@ -713,7 +719,7 @@ const RestaurantPOS = () => {
     let newObject = {
       subcategoryId: subcategoryId,
       subcategoryName: subcategoryName,
-    }
+    };
     setSelectedSubcategory(newObject);
     setSearchTerm("");
     if (isMobile) setShowSidebar(false);
@@ -1011,12 +1017,12 @@ const RestaurantPOS = () => {
             <div className="flex items-center justify-between gap-4 md:gap-5">
               {/* Left Section - Logo & Title */}
               <div className="flex items-center gap-2 flex-shrink-0">
-                 <button
-                                className="md:hidden p-1.5 hover:bg-white/10 rounded-lg transition-colors duration-200"
-                                onClick={() => setShowSidebar(!showSidebar)}
-                              >
-                                <MenuIcon className="w-5 h-5" />
-                              </button>
+                <button
+                  className="md:hidden p-1.5 hover:bg-white/10 rounded-lg transition-colors duration-200"
+                  onClick={() => setShowSidebar(!showSidebar)}
+                >
+                  <MenuIcon className="w-5 h-5" />
+                </button>
                 <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center font-bold text-lg shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-shadow">
                   🍽️
                 </div>
@@ -1024,7 +1030,9 @@ const RestaurantPOS = () => {
                   <h1 className="text-base md:text-lg font-bold text-white hidden md:block tracking-tight">
                     RMS
                   </h1>
-                  <p className="text-xs text-gray-400 hidden md:block">Restaurant</p>
+                  <p className="text-xs text-gray-400 hidden md:block">
+                    Restaurant
+                  </p>
                 </div>
               </div>
 
@@ -1103,28 +1111,34 @@ const RestaurantPOS = () => {
                   </span>
                 </div>
 
-                <div className="hover:cursor-pointer flex items-center gap-1.5 px-3 py-1.5 bg-slate-800/50 border border-slate-700/60 rounded-md hover:bg-slate-700/60 transition-colors group"
-                  onClick={() => navigate("/sUsers/TableSelection")}>
+                <div
+                  className="hover:cursor-pointer flex items-center gap-1.5 px-3 py-1.5 bg-slate-800/50 border border-slate-700/60 rounded-md hover:bg-slate-700/60 transition-colors group"
+                  onClick={() => navigate("/sUsers/TableSelection")}
+                >
                   <Users className="w-3.5 h-3.5 text-emerald-400 group-hover:text-emerald-300" />
                   <span className="text-xs font-medium text-gray-300 group-hover:text-gray-100">
                     {orderType === "dine-in"
-                    ? `Table ${customerDetails.tableNumber}`
-                    : orderType === "roomService"
-                    ? `Room ${roomDetails.roomno || "---"}`
-                    : getOrderTypeDisplay(orderType)}
+                      ? `Table ${customerDetails.tableNumber}`
+                      : orderType === "roomService"
+                      ? `Room ${roomDetails.roomno || "---"}`
+                      : getOrderTypeDisplay(orderType)}
                   </span>
                 </div>
 
-                <div className="hover:cursor-pointer hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-slate-800/50 border border-slate-700/60 rounded-md hover:bg-slate-700/60 transition-colors group"
-                 onClick={() => navigate("/sUsers/KotPage")}>
+                <div
+                  className="hover:cursor-pointer hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-slate-800/50 border border-slate-700/60 rounded-md hover:bg-slate-700/60 transition-colors group"
+                  onClick={() => navigate("/sUsers/KotPage")}
+                >
                   <Receipt className="w-3.5 h-3.5 text-amber-400 group-hover:text-amber-300" />
                   <span className="text-xs font-medium text-gray-300 group-hover:text-gray-100">
                     {orders?.length || 0}
                   </span>
                 </div>
 
-                <button className="hover:cursor-pointer sm:hidden bg-blue-600/80 hover:bg-blue-600 text-white rounded-md px-2.5 py-1.5 flex items-center gap-1 transition-colors border border-blue-500/50 shadow-lg shadow-blue-500/20 active:scale-95"
-                 onClick={() => setShowOrderSummary(true)}>
+                <button
+                  className="hover:cursor-pointer sm:hidden bg-blue-600/80 hover:bg-blue-600 text-white rounded-md px-2.5 py-1.5 flex items-center gap-1 transition-colors border border-blue-500/50 shadow-lg shadow-blue-500/20 active:scale-95"
+                  onClick={() => setShowOrderSummary(true)}
+                >
                   <ShoppingCart className="w-3.5 h-3.5" />
                   <span className="text-xs font-bold">
                     {getTotalItems?.() || 0}
@@ -1212,9 +1226,9 @@ const RestaurantPOS = () => {
                 {cuisines.map((cuisine) => (
                   <button
                     key={cuisine._id}
-                   onClick={() =>
-                    handleCategorySelect(cuisine._id, cuisine.name)
-                  }
+                    onClick={() =>
+                      handleCategorySelect(cuisine._id, cuisine.name)
+                    }
                     className={`
                   flex items-center gap-2 px-3 py-1.5 rounded-lg
                   font-semibold text-xs transition-all duration-300
@@ -1361,7 +1375,12 @@ const RestaurantPOS = () => {
                   return (
                     <button
                       key={subcategory._id}
-                      onClick={() => handleSubcategorySelect(subcategory._id,subcategory.name)}
+                      onClick={() =>
+                        handleSubcategorySelect(
+                          subcategory._id,
+                          subcategory.name
+                        )
+                      }
                       className={`w-full text-left px-3 py-2.5 mb-2 rounded-xl font-semibold transition-all duration-300 flex items-center gap-2 border hover:scale-[1.02] hover:translate-x-1 transform group text-xs
                     ${
                       selectedSubcategory?.subcategoryId === subcategory._id
@@ -1374,7 +1393,7 @@ const RestaurantPOS = () => {
                         {icon}
                       </span>
                       <span className="capitalize tracking-wide">
-                        {subcategory.name} 
+                        {subcategory.name}
                       </span>
                     </button>
                   );
@@ -1470,22 +1489,28 @@ const RestaurantPOS = () => {
                     </div>
                   ) : (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-3">
-                   {menuItems.map((item, index) => {
+                      {menuItems.map((item, index) => {
                         const count = findOneCount(item._id);
-                        
+
                         // Calculate display price based on selected price level
                         let displayPrice = 0;
-                        
+
                         if (item.Priceleveles && item.Priceleveles.length > 0) {
                           if (selectedPriceLevel) {
                             // Try to find matching price level
                             const matchedPrice = item.Priceleveles.find(
-                              (pl) => pl.pricelevel === selectedPriceLevel || pl.pricelevel?._id === selectedPriceLevel
+                              (pl) =>
+                                pl.pricelevel === selectedPriceLevel ||
+                                pl.pricelevel?._id === selectedPriceLevel
                             );
-                            displayPrice = matchedPrice ? Number(matchedPrice.pricerate) : Number(item.Priceleveles[0].pricerate);
+                            displayPrice = matchedPrice
+                              ? Number(matchedPrice.pricerate)
+                              : Number(item.Priceleveles[0].pricerate);
                           } else {
                             // Use first price level as default
-                            displayPrice = Number(item.Priceleveles[0].pricerate);
+                            displayPrice = Number(
+                              item.Priceleveles[0].pricerate
+                            );
                           }
                         }
 
