@@ -3,6 +3,7 @@ import api from "../../../api/api";
 import { toast } from "sonner";
 import { FaEdit } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import {
   MdDelete,
   MdCheckCircle,
@@ -15,9 +16,16 @@ import Swal from "sweetalert2";
 import CheckoutDateModal from "../Components/CheckoutDateModal";
 import EnhancedCheckoutModal from "../Components/EnhancedCheckoutModal";
 import CustomerSearchInputBox from "../Components/CustomerSearchInPutBox";
+import {
+  setPaymentDetails,
+  setSelectedParty,
+  setSelectedPaymentMode,
+  setSelectedSplitPayment,
+  setOnlinepartyName,
+  setOnlineType,
+} from "../../../../slices/hotelSlices/paymentSlice.js";
 import { FixedSizeList as List } from "react-window";
 import InfiniteLoader from "react-window-infinite-loader";
-import { useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
 import SearchBar from "@/components/common/SearchBar";
 import TitleDiv from "@/components/common/TitleDiv";
@@ -27,6 +35,7 @@ import useFetch from "@/customHook/useFetch";
 function BookingList() {
   const location = useLocation();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [bookings, setBookings] = useState([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -36,6 +45,8 @@ function BookingList() {
   const [searchTerm, setSearchTerm] = useState("pending");
   const [listHeight, setListHeight] = useState(0);
   const [activeTab, setActiveTab] = useState("pending");
+  const [partial, setIsPartial] = useState(false);
+  const [checkOutUpdated, setCheckOutUpdated] = useState(false);
   const [selectedCheckOut, setSelectedCheckOut] = useState(
     location?.state?.selectedCheckOut || []
   );
@@ -79,7 +90,7 @@ function BookingList() {
   const [combinedSources, setCombinedSources] = useState([]);
 
   const { roomId, roomName, filterByRoom } = location.state || {};
-
+  const paymentDetails = useSelector((state) => state.paymentSlice);
   const { _id: cmp_id, configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
@@ -183,6 +194,32 @@ function BookingList() {
       setCheckoutMode(location?.state?.checkoutmode);
       console.log(location.state.balanceToPay);
       setcheckinids(location?.state?.cheinids);
+      setPaymentMode(paymentDetails?.paymentMode);
+
+      if (paymentDetails?.paymentMode === "split") {
+        setSplitPaymentRows(paymentDetails?.splitPayment);
+      } else if (paymentDetails?.paymentMode === "credit") {
+        setSelectedCreditor(paymentDetails?.paymentDetails?.selectedCreditor);
+      } else {
+        if (paymentDetails?.paymentDetails?.onlineAmount > 0) {
+          setPaymentMethod("card");
+        } else if (paymentDetails?.paymentMode === "single") {
+          setPaymentMethod("cash");
+        }
+        setSelectedBank(paymentDetails?.paymentDetails?.selectedBank);
+        setSelectedCash(paymentDetails?.paymentDetails?.selectedCash);
+        setselectedOnlinepartyName(paymentDetails?.onlinePartyName);
+        setselectedOnlinetype(paymentDetails?.onlineType);
+      }
+
+      console.log(
+        "IIIIIIIIIII",
+        paymentDetails?.paymentMode,
+        paymentDetails,
+        selectedBank,
+        selectedCash
+      );
+
       // CHANGED: Calculate total from all checkouts' selectedRooms
       const totalAmount = calculateTotalAmount(
         location?.state?.selectedCheckOut
@@ -192,9 +229,13 @@ function BookingList() {
         ...prevData,
         total: location?.state?.balanceToPay,
       }));
-      setShowPaymentModal(true);
+      if (location?.state?.isForPreview) {
+        setShowPaymentModal(true);
+      }
     }
   }, [location?.state?.selectedCheckOut]);
+
+  console.log("IIIIIIIIIII", selectedBank, selectedCash);
   // ADD THIS: Update total whenever selectedCheckOut changes
   //   useEffect(() => {
   //     if (selectedCheckOut && selectedCheckOut.length > 0) {
@@ -279,13 +320,22 @@ function BookingList() {
       const { bankDetails, cashDetails } = paymentTypeData.data;
 
       setCashOrBank(paymentTypeData?.data);
-      if (bankDetails && bankDetails.length > 0) {
-        console.log(bankDetails[0]);
+      if (
+        bankDetails &&
+        bankDetails.length > 0 &&
+        (selectedBank == "" || selectedBank == null)
+      ) {
+        console.log("kkkkkkk", bankDetails[0]);
         setSelectedBank(bankDetails[0]._id);
         setselectedOnlinepartyName(bankDetails[0].partyName);
         setselectedOnlinetype(bankDetails[0].partyType);
       }
-      if (cashDetails && cashDetails.length > 0) {
+
+      if (
+        cashDetails &&
+        cashDetails.length > 0 &&
+        (selectedCash == null || selectedCash == "")
+      ) {
         setSelectedCash(cashDetails[0]._id);
       }
     }
@@ -562,7 +612,11 @@ function BookingList() {
       (sum, row) => sum + (parseFloat(row.amount) || 0),
       0
     );
-    if (total > selectedDataForPayment?.total) {
+    if (
+      total >
+      (selectedDataForPayment?.total ||
+        Number(selectedCheckOut[0]?.balanceToPay)?.toFixed(2))
+    ) {
       setPaymentError("Total split amount exceeds order total");
     } else {
       setPaymentError("");
@@ -581,13 +635,17 @@ function BookingList() {
     if (paymentMode == "single") {
       if (paymentMethod == "cash") {
         paymentDetails = {
-          cashAmount: selectedDataForPayment?.total,
+          cashAmount:
+            selectedDataForPayment?.total ||
+            Number(selectedCheckOut[0]?.balanceToPay),
           onlineAmount: onlineAmount,
           selectedCash: selectedCash,
           selectedBank: "",
           paymentMode: paymentMode,
           paymenttypeDetails: {
-            cash: selectedDataForPayment?.total,
+            cash:
+              selectedDataForPayment?.total ||
+              Number(selectedCheckOut[0]?.balanceToPay),
             bank: 0,
             card: 0,
             upi: 0,
@@ -595,9 +653,16 @@ function BookingList() {
           },
         };
       } else {
+        console.log(
+          "selectedonlinePartyname",
+          selectedonlinePartyname,
+          selectedOnlinetype
+        );
         paymentDetails = {
           cashAmount: cashAmount,
-          onlineAmount: selectedDataForPayment?.total,
+          onlineAmount:
+            selectedDataForPayment?.total ||
+            Number(selectedCheckOut[0]?.balanceToPay),
           selectedCash: "",
           selectedBank: selectedBank,
           paymentMode: paymentMode,
@@ -607,17 +672,20 @@ function BookingList() {
               selectedonlinePartyname !== "paytm" &&
               selectedonlinePartyname !== "gpay" &&
               selectedonlinePartyname !== "card" &&
-              selectedOnlinetype === "bank"
-                ? selectedDataForPayment?.total
+              selectedOnlinetype == "bank"
+                ? selectedDataForPayment?.total ||
+                  Number(selectedCheckOut[0]?.balanceToPay)
                 : 0,
             upi:
               selectedonlinePartyname === "paytm" ||
               selectedonlinePartyname === "gpay"
-                ? selectedDataForPayment?.total
+                ? selectedDataForPayment?.total ||
+                  Number(selectedCheckOut[0]?.balanceToPay)
                 : 0,
             card:
               selectedonlinePartyname === "card"
-                ? selectedDataForPayment?.total
+                ? selectedDataForPayment?.total ||
+                  Number(selectedCheckOut[0]?.balanceToPay)
                 : 0,
             credit: 0,
           },
@@ -630,14 +698,18 @@ function BookingList() {
         return;
       }
       paymentDetails = {
-        cashAmount: selectedDataForPayment?.total,
+        cashAmount:
+          selectedDataForPayment?.total ||
+          Number(selectedCheckOut[0]?.balanceToPay),
         selectedCreditor: selectedCreditor,
         paymentMode: paymentMode,
         paymenttypeDetails: {
           cash: 0,
           bank: 0,
           upi: 0,
-          credit: selectedDataForPayment?.total,
+          credit:
+            selectedDataForPayment?.total ||
+            Number(selectedCheckOut[0]?.balanceToPay),
           card: 0,
         },
       };
@@ -648,7 +720,14 @@ function BookingList() {
         0
       );
 
-      if (totalSplitAmount !== selectedDataForPayment?.total) {
+      let payment = (
+        selectedDataForPayment?.total ||
+        Number(selectedCheckOut[0]?.balanceToPay) ||
+        0
+      ).toFixed(2);
+      console.log("Paujsdf", totalSplitAmount, payment);
+
+      if (totalSplitAmount != payment) {
         setPaymentError("Split payment amounts must equal the total amount.");
         setSaveLoader(false);
         return;
@@ -718,45 +797,56 @@ function BookingList() {
     console.log(selectedCheckOut);
     console.log(selectedCheckOut.length);
 
-    try {
-      const response = await api.post(
-        `/api/sUsers/convertCheckOutToSale/${cmp_id}`,
-        {
-          paymentMethod: paymentMethod,
-          paymentDetails: paymentDetails,
-          selectedCheckOut: selectedCheckOut,
-          paidBalance: selectedDataForPayment?.total,
-          selectedParty: selectedCustomer,
-          restaurantBaseSaleData: restaurantBaseSaleData,
-          checkoutMode, //to check if the checkout is single or multiple
-          checkinIds: checkinidsarray, //have array of checkinids ,if only its sinle checkout unless its null
-        },
-        { withCredentials: true }
-      );
+    if (partial) {
+      proceedToCheckout(checkOutUpdated);
+      dispatch(setPaymentDetails(paymentDetails));
+      dispatch(setSelectedParty(selectedCustomer));
+      dispatch(setSelectedPaymentMode(paymentMode));
+      dispatch(setSelectedSplitPayment(splitPaymentRows));
+      dispatch(setOnlinepartyName(selectedonlinePartyname));
+      dispatch(setOnlineType(selectedOnlinetype));
+      setIsPartial(false);
+    } else {
+      try {
+        const response = await api.post(
+          `/api/sUsers/convertCheckOutToSale/${cmp_id}`,
+          {
+            paymentMethod: paymentMethod,
+            paymentDetails: paymentDetails,
+            selectedCheckOut: selectedCheckOut,
+            paidBalance: selectedDataForPayment?.total,
+            selectedParty: selectedCustomer,
+            restaurantBaseSaleData: restaurantBaseSaleData,
+            checkoutMode, //to check if the checkout is single or multiple
+            checkinIds: checkinidsarray, //have array of checkinids ,if only its sinle checkout unless its null
+          },
+          { withCredentials: true }
+        );
 
-      if (response.status === 200 || response.status === 201) {
-        toast.success(response?.data?.message);
+        if (response.status === 200 || response.status === 201) {
+          toast.success(response?.data?.message);
+        }
+      } catch (error) {
+        console.error(
+          "Error updating order status:",
+          error.response?.data || error.message
+        );
+      } finally {
+        setSelectedCheckOut([]);
+        setCheckoutMode("multiple");
+        setcheckinids(null);
+        setSelectedCustomer(null);
+        setSaveLoader(false);
+        setCashAmount(0);
+        setOnlineAmount(0);
+        setSelectedCreditor("");
+        setPaymentMode("single");
+        setSplitPaymentRows([
+          { customer: "", source: "", sourceType: "", amount: "" },
+        ]); // Reset split rows
+        setShowPaymentModal(false);
+        fetchBookings(1, searchTerm);
       }
-    } catch (error) {
-      console.error(
-        "Error updating order status:",
-        error.response?.data || error.message
-      );
-    } finally {
-      setSelectedCheckOut([]);
-      setCheckoutMode("multiple");
-      setcheckinids(null);
-      setSelectedCustomer(null);
-      setSaveLoader(false);
-      setCashAmount(0);
-      setOnlineAmount(0);
-      setSelectedCreditor("");
-      setPaymentMode("single");
-      setSplitPaymentRows([
-        { customer: "", source: "", sourceType: "", amount: "" },
-      ]); // Reset split rows
-      setShowPaymentModal(false);
-      fetchBookings(1, searchTerm);
     }
   };
   console.log("h");
@@ -811,7 +901,6 @@ function BookingList() {
   const proceedToCheckout = (roomAssignments) => {
     setSaveLoader(true);
     const hasPrint1 = configurations[0]?.defaultPrint?.print1;
-    console.log(roomAssignments);
     let checkoutData;
     let checkinids = null;
     if (checkoutMode === "multiple") {
@@ -831,8 +920,8 @@ function BookingList() {
             ...originalCheckIn,
             partyArray: checkIn.originalCheckIn.customerId.party_master_id,
             Totaladvance:
-              Number(checkIn?.originalCheckIn?.advanceAmount) +
-              Number(checkIn?.originalCheckIn?.bookingId?.advanceAmount),
+              Number(checkIn?.originalCheckIn?.advanceAmount || 0) +
+              Number(checkIn?.originalCheckIn?.bookingId?.advanceAmount || 0),
             customerId: group.customer,
             allCheckInIds: [id],
             selectedRooms: roomsToCheckout,
@@ -868,8 +957,8 @@ function BookingList() {
             partyId: checkIn.originalCheckIn.customerId.party_master_id,
             customerId: group.customer,
             Totaladvance:
-              Number(checkIn?.originalCheckIn?.advanceAmount) +
-              Number(checkIn?.originalCheckIn?.bookingId?.advanceAmount),
+              Number(checkIn?.originalCheckIn?.advanceAmount || 0) +
+              Number(checkIn?.originalCheckIn?.bookingId?.advanceAmount || 0),
             selectedRooms: roomsToCheckout,
             isPartialCheckout,
             originalCheckInId: checkIn.checkInId,
@@ -991,6 +1080,7 @@ console.log()
 
     setCheckoutMode(checkoutMode === "single" ? "multiple" : "single");
   };
+
   const TableHeader = () => (
     <div className="bg-gray-100 border-b border-gray-300 sticky top-0 z-10">
       <div className="flex items-center px-4 py-3 text-xs font-bold text-gray-800 uppercase tracking-wider md:hidden">
@@ -1326,7 +1416,7 @@ console.log(el)
                   CheckedOut
                 </button>
               )}
-            {el?.balanceToPay <= 0 &&
+            {
               location.pathname === "/sUsers/checkOutList" && (
                 <button
                   onClick={(e) => {
@@ -1420,7 +1510,7 @@ console.log(el)
       setShowSelectionModal(true);
       return;
     }
-    setSaveLoader(true);
+    // setSaveLoader(true);
 
     if (processedCheckoutData) {
       // Transform the processed checkout data with updated stay days
@@ -1458,7 +1548,9 @@ console.log(el)
         }),
       }));
 
-      proceedToCheckout(updatedCheckoutData);
+      setCheckOutUpdated(updatedCheckoutData);
+      setShowPaymentModal(true);
+      setIsPartial(true);
       setProcessedCheckoutData(null);
     } else {
       const hasPrint1 = configurations[0]?.defaultPrint?.print1;
@@ -1530,7 +1622,7 @@ console.log(el)
         )}
         {showCheckOutDateModal && (
           <CheckoutDateModal
-            isOpen={CheckoutDateModal}
+            isOpen={showCheckOutDateModal}
             onClose={handleCloseBasedOnDate}
             checkoutData={selectedCheckOut}
           />
@@ -1833,6 +1925,7 @@ console.log(el)
                       </label>
                       <select
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                        // value={selectedCash}
                         onChange={(e) => setSelectedCash(e.target.value)}
                       >
                         {cashOrBank?.cashDetails?.map((cashier) => (
@@ -1851,6 +1944,7 @@ console.log(el)
                       </label>
                       <select
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                        value={selectedBank}
                         onChange={(e) => {
                           const selectedOption = e.target.selectedOptions[0];
                           const selectedName =
@@ -1858,6 +1952,7 @@ console.log(el)
                             "";
                           const selectedPartytype =
                             selectedOption?.getAttribute("data-partyType");
+
                           setselectedOnlinetype(selectedPartytype);
                           setselectedOnlinepartyName(selectedName);
 
@@ -2019,7 +2114,11 @@ console.log(el)
                     </div>
                     <div className="flex justify-between text-xs font-medium">
                       <span>Order Total:</span>
-                      <span>₹{selectedDataForPayment?.total?.toFixed(2)}</span>
+                      <span>
+                        ₹{" "}
+                        {selectedDataForPayment?.total?.toFixed(2) ||
+                          Number(selectedCheckOut[0]?.balanceToPay)?.toFixed(2)}
+                      </span>
                     </div>
                     {splitPaymentRows.reduce(
                       (sum, row) => sum + (parseFloat(row.amount) || 0),
@@ -2030,7 +2129,10 @@ console.log(el)
                         <span>
                           ₹
                           {(
-                            selectedDataForPayment?.total -
+                            (selectedDataForPayment?.total ||
+                              Number(
+                                selectedCheckOut[0]?.balanceToPay
+                              )?.toFixed(2)) -
                             splitPaymentRows.reduce(
                               (sum, row) => sum + (parseFloat(row.amount) || 0),
                               0
@@ -2076,7 +2178,9 @@ console.log(el)
                 <div className="border-t border-gray-200 pt-2 mt-2 flex justify-between font-semibold text-gray-800">
                   <span className="text-sm">Total Amount</span>
                   <span className="text-base text-blue-600">
-                    ₹{selectedDataForPayment?.total?.toFixed(2)}
+                    ₹
+                    {selectedDataForPayment?.total?.toFixed(2) ||
+                      Number(selectedCheckOut[0]?.balanceToPay)?.toFixed(2)}
                   </span>
                 </div>
                 <div className="flex gap-2 mt-2">
