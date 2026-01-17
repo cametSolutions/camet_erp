@@ -99,6 +99,9 @@ const kotSchema = new mongoose.Schema({
     type: String,
     trim: true,
   },
+  discount: { type: Number, default: 0 },
+discountChargeId: { type: mongoose.Schema.Types.ObjectId, ref: 'AdditionalCharges' },
+note: { type: String }
 });
 
 export default mongoose.model("Kot", kotSchema);

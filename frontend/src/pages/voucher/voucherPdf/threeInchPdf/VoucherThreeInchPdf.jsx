@@ -74,13 +74,15 @@ function VoucherThreeInchPdf({
 
   useEffect(() => {
     if (data && data.items) {
-      const subTotal = data.items
+      ///please check it is temperary
+      data.discount = data.additionalCharges[0]?.value;
+      const calculatedSubTotal  = data.items
         .reduce(
           (acc, curr) => acc + Number(curr?.total) * Number(curr?.totalCount),
           0
         )
         .toFixed(2);
-      setSubTotal(Number(subTotal));
+       setSubTotal(Number(data?.subtotal || calculatedSubTotal));
 
       const addiTionalCharge = data?.additionalCharges
         ?.reduce((acc, curr) => {
@@ -581,6 +583,8 @@ function VoucherThreeInchPdf({
           </div>
 
           {configurations?.showStockWiseAmount && (
+                        <>
+
             <div
               style={{
                 display: "flex",
@@ -591,9 +595,54 @@ function VoucherThreeInchPdf({
               }}
             >
               <div>SUBTOTAL:</div>
-              <div>{data?.finalAmount}</div>
+               <div>{subTotal}</div>
             </div>
+          
+ {data?.discount > 0 && (
+                <>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      fontSize: "12px",
+                      fontWeight: "bold",
+                      marginBottom: "4px",
+                      color: "#d32f2f", // Red color for discount
+                    }}
+                  >
+                    <div>DISCOUNT:</div>
+                    <div>- {parseFloat(data.discount).toFixed(2)}</div>
+                  </div>
+
+                  {/* ✅ NOTE/REMARKS - Show if exists */}
+                  {/* {data?.note && (
+                    <div
+                      style={{
+                        fontSize: "10px",
+                        fontStyle: "italic",
+                        marginBottom: "4px",
+                        padding: "3px",
+                        backgroundColor: "#fff3cd",
+                        borderLeft: "2px solid #ffc107",
+                      }}
+                    >
+                      Note: {data.note}
+                    </div>
+                  )} */}
+
+                  {/* Divider after discount */}
+                  <div
+                    className="divider"
+                    style={{
+                      borderBottom: "1px dashed #000",
+                      margin: "6px 0",
+                    }}
+                  ></div>
+                </>
+              )}
+            </>
           )}
+
 
           {/* Tax Details */}
           {configurations?.showTaxAmount && (
