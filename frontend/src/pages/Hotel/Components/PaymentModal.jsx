@@ -114,9 +114,13 @@ function PaymentModal({
       });
     } else if (paymentMode === "split") {
       // Use the split payment data (no need for splitDetails as payments already has everything)
-      paymentData.payments = splitPaymentData.payments;
+      // paymentData.splitDetails
+      console.log(splitPaymentData.payments)
+      paymentData.payments = splitPaymentData.payments.map((payment) => ({
+        ...payment,
+       paymentType:(payment.accountName==="paytm"||payment.accountName==="gpay")?"upi": payment.accountName==="card"? "card" :payment.method==="bank"?"bank":"cash",
+      }))
     }
-console.log("newpayment")
     onPaymentSave?.(paymentData);
   };
 
@@ -369,47 +373,3 @@ console.log("newpayment")
 
 export default PaymentModal;
 
-// ============================================
-// USAGE EXAMPLE IN PARENT COMPONENT
-// ============================================
-
-// ============================================
-// FOR BOOKING FORM (Single Customer)
-// ============================================
-// In BookingForm, you only have one customer (selectedParty)
-// So pass it as an array with a single customer:
-
-/*
-<PaymentModal
-  selected={voucherNumber}
-  totalAmount={Number(formData?.advanceAmount)}
-  saveLoader={saveLoader}
-  onClose={handleClose}
-  onPaymentSave={handlePayment}
-  cmp_id={cmp_id}
-  customers={selectedParty ? [{
-    _id: selectedParty._id || formData.customerId,
-    partyName: selectedParty.partyName || formData.customerName
-  }] : []}
-/>
-*/
-
-// ============================================
-// FOR BOOKING LIST (Multiple Customers)
-// ============================================
-// In BookingList, you have selectedCheckOut array:
-
-/*
-<PaymentModal
-  selected={selectedCheckOut.length}
-  totalAmount={totalAmount}
-  saveLoader={saveLoader}
-  onClose={handleCloseModal}
-  onPaymentSave={handlePaymentSave}
-  cmp_id={cmp_id}
-  customers={selectedCheckOut.map(item => ({
-    _id: item?.customerId?._id,
-    partyName: item?.customerId?.partyName
-  }))}
-/>
-*/
