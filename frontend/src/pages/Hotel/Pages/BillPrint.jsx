@@ -1127,7 +1127,7 @@ const HotelBillPrint = () => {
               <div style={{ flex: "0 0 120px" }}>
                 {Logo && (
                   <img
-                    src={Logo}
+                    src={billData?.hotel?.logo}
                     alt="Logo"
                     style={{ width: "120px", height: "auto" }}
                   />
