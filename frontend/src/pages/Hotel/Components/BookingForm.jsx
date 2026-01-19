@@ -44,18 +44,18 @@ function BookingForm({
   const [saveLoader, setSaveLoader] = useState(false);
   const navigate = useNavigate();
   const cmp_id = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg._id
+    (state) => state.secSelectedOrganization.secSelectedOrg._id,
   );
 
   const { data, loading } = useFetch(
-    `/api/sUsers/getProductSubDetails/${cmp_id}?type=roomType`
+    `/api/sUsers/getProductSubDetails/${cmp_id}?type=roomType`,
   );
   useEffect(() => {
     if (data) setRoomType(data?.data);
   }, [data]);
 
   const { data: visitOfPurposeData, loading: visitOfPurposeLoading } = useFetch(
-    `/api/sUsers/getVisitOfPurpose/${cmp_id}`
+    `/api/sUsers/getVisitOfPurpose/${cmp_id}`,
   );
   useEffect(() => {
     if (visitOfPurposeData) setVisitOfPurpose(visitOfPurposeData?.data);
@@ -126,21 +126,17 @@ function BookingForm({
   console.log(voucherNumber);
   console.log(formData);
   useEffect(() => {
-  
     if (editData) {
-    
       setSelectedParty(editData?.customerId);
       setHotelAgent(editData?.agentId);
       setCountry(editData?.country || "");
       setVoucherNumber(editData?.voucherNumber);
-   let highestDate = editData?.checkOutDate 
-    if (isTariffRateChange) {
-       highestDate =
-        currentDateDefault > highestDate
-          ? currentDateDefault
-          : highestDate;
-          console.log(highestDate);
-    }
+      let highestDate = editData?.checkOutDate;
+      if (isTariffRateChange) {
+        highestDate =
+          currentDateDefault > highestDate ? currentDateDefault : highestDate;
+        console.log(highestDate);
+      }
       setFormData((prev) => ({
         ...prev,
         country: editData?.country,
@@ -152,7 +148,7 @@ function BookingForm({
         mobileNumber: editData?.mobileNumber,
         arrivalDate: editData?.arrivalDate || prev.arrivalDate,
         arrivalTime: editData?.arrivalTime || prev.arrivalTime,
-        checkOutDate: highestDate  || prev.checkOutDate,
+        checkOutDate: highestDate || prev.checkOutDate,
         checkOutTime: editData?.checkOutTime || prev.checkOutTime,
         stayDays: editData?.stayDays ?? prev.stayDays,
         bookingType: editData?.bookingType || prev.bookingType,
@@ -186,7 +182,7 @@ function BookingForm({
         dateOfIssue: editData?.dateOfIssue || "",
         dateOfExpiry: editData?.dateOfExpiry || "",
         grcno: editData?.grcno || "",
-        currentDate: editData?.arrivalDate|| currentDateDefault,
+        currentDate: editData?.arrivalDate || currentDateDefault,
         updatedDate: editData?.updatedDate || currentDateDefault,
       }));
     }
@@ -224,7 +220,7 @@ function BookingForm({
       const diffTime = checkOutDate - arrivalDate;
       let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       // check stay the diffDays always greater than 1
-      if(diffDays < 1) diffDays = 1
+      if (diffDays < 1) diffDays = 1;
       const updatedSelectedItems =
         formData.selectedRooms?.map((room) => ({
           ...room,
@@ -267,21 +263,22 @@ function BookingForm({
       return;
     }
 
-  if (name === "currentDate") {
-  const current = new Date(value);
-  const arrival = new Date(formData.arrivalDate);
-  const checkout = new Date(formData.checkOutDate);
+    if (name === "currentDate") {
+      const current = new Date(value);
+      const arrival = new Date(formData.arrivalDate);
+      const checkout = new Date(formData.checkOutDate);
 
-  // Check if currentDate is within the range
-  if (current >= arrival && current < checkout) {
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  } else {
-    // Optional: alert or toast if not valid
-    toast.error("Tariff applicable date must be between Arrival Date and Check-Out Date");
-  }
-  return;
-}
-
+      // Check if currentDate is within the range
+      if (current >= arrival && current < checkout) {
+        setFormData((prev) => ({ ...prev, [name]: value }));
+      } else {
+        // Optional: alert or toast if not valid
+        toast.error(
+          "Tariff applicable date must be between Arrival Date and Check-Out Date",
+        );
+      }
+      return;
+    }
 
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
@@ -307,11 +304,11 @@ function BookingForm({
     try {
       const response = await api.get(
         `/api/sUsers/getSeriesByVoucher/${cmp_id}?voucherType=${isFor}`,
-        { withCredentials: true }
+        { withCredentials: true },
       );
       if (response.data) {
         const specificSeries = response.data.series?.find(
-          (item) => item.under === "hotel"
+          (item) => item.under === "hotel",
         );
         console.log(specificSeries);
         if (specificSeries) {
@@ -516,7 +513,7 @@ function BookingForm({
     const filterData = existingDetails.filter((i) => i.roomId !== room);
     const totalAmount = [...filterData, ...details].reduce(
       (acc, item) => acc + Number(item.rate),
-      0
+      0,
     );
     console.log(filterData);
     console.log(totalAmount);
@@ -538,7 +535,7 @@ function BookingForm({
     const filterData = existingDetails.filter((i) => i.roomId !== room);
     const totalAmount = [...filterData, ...details].reduce(
       (acc, item) => acc + Number(item.rate),
-      0
+      0,
     );
     console.log(totalAmount);
     console.log(formData);
@@ -594,7 +591,6 @@ function BookingForm({
               originalRoom.roomId?.toString() ||
               originalRoom._id?.toString();
 
-
             // If this is the room being edited, replace it
             if (originalRoomId === roomId?.toString()) {
               console.log("Found room to update:", originalRoom.roomName);
@@ -613,13 +609,13 @@ function BookingForm({
           const newTotal = mergedRooms.reduce(
             (sum, room) =>
               sum + Number(room.amountAfterTax || room.totalAmount || 0),
-            0
+            0,
           );
 
           console.log("Final merged rooms count:", mergedRooms);
           console.log(
             "Final rooms:",
-            mergedRooms.map((r) => r.roomName)
+            mergedRooms.map((r) => r.roomName),
           );
           console.log("New total:", newTotal);
 
@@ -653,7 +649,7 @@ function BookingForm({
 
     console.log("=== handleAvailableRooms end ===");
   };
- 
+
   const submitHandler = async () => {
     if (!formData.customerName || formData.customerName.trim() === "") {
       toast.error("please select a valid customer");
@@ -720,7 +716,7 @@ function BookingForm({
     console.log("formData.selectedRooms:", formData.selectedRooms);
     console.log(
       "formData.selectedRooms.length:",
-      formData.selectedRooms?.length
+      formData.selectedRooms?.length,
     );
 
     // Verify room count hasn't decreased
@@ -732,7 +728,7 @@ function BookingForm({
         console.error("❌ ROOM LOSS DETECTED!");
         console.error(`Original: ${originalCount}, Current: ${currentCount}`);
         toast.error(
-          "Error: Some rooms were lost during update. Please try again."
+          "Error: Some rooms were lost during update. Please try again.",
         );
         return;
       }
@@ -756,7 +752,7 @@ function BookingForm({
     console.log("Total rooms in payload:", payload.selectedRooms);
     console.log(
       "Room names:",
-      payload.selectedRooms?.map((r) => r.roomName)
+      payload.selectedRooms?.map((r) => r.roomName),
     );
     console.log("====================");
 
@@ -784,55 +780,51 @@ function BookingForm({
 
     const payload = {
       ...formData,
-      selectedRooms: finalSelectedRooms
-    }
-    console.log(payload)
-    console.log(paymentData)
-    let cash=0
-    let upi=0
-    let card=0
-    const  credit=0
-    let bank=0
-    paymentData.payments.forEach((item)=>{
-      if(item.paymentType==="upi"){
-        upi +=item.amount
+      selectedRooms: finalSelectedRooms,
+    };
+    console.log(payload);
+    console.log(paymentData);
+    let cash = 0;
+    let upi = 0;
+    let card = 0;
+    const credit = 0;
+    let bank = 0;
+    console.log(paymentData);
+    paymentData.payments.forEach((item) => {
+      if (item.paymentType === "upi") {
+        upi += item.amount;
+      } else if (item.paymentType == "card") {
+        card += item.amount;
+      } else if (item.paymentType === "bank") {
+        bank += item.amount;
+      } else if (item.paymentType === "cash") {
+        cash += item?.amount;
+      }
+    });
+    console.log(cash);
+    console.log(bank);
+    console.log(card);
+    console.log(upi);
+    console.log(credit);
+    const paymenttypeDetails = {
+      cash: cash,
+      bank: bank,
+      upi: upi,
+      card: card,
+      credit: credit,
+    };
+    console.log(paymenttypeDetails);
 
-    }else if(item.paymentType=="card"){
-card +=item.amount
-    }else if(item.paymentType==="bank"){
-bank +=item.bank
-    }else if(item.paymentType==="cash"){
-      cash +=item?.amount
-    }
-  })
-  console.log(cash)
-  console.log(bank)
-  console.log(card)
-  console.log(upi)
-  console.log(credit)
-  const paymenttypeDetails={
-    cash:cash,
-    bank:bank,
-    upi:upi,
-    card:card,
-    credit:credit
-
-  }
-  console.log(paymenttypeDetails)
-    
-    console.log("hhhhh")
-    handleSubmit(payload, paymentData,paymenttypeDetails)
-  }
-  console.log(formData)
-  const handleClose = () => setShowPaymentModal(false)
+    console.log("hhhhh");
+    handleSubmit(payload, paymentData, paymenttypeDetails);
+  };
+  console.log(formData);
+  const handleClose = () => setShowPaymentModal(false);
   const handleSearchCustomer = (name) =>
     setFormData((prev) => ({ ...prev, customerName: name }));
 
   const tariffMode = isTariffRateChange === true;
   console.log(formData?.additionalPaxDetails);
-
- 
-
 
   return (
     <>
@@ -1512,7 +1504,7 @@ bank +=item.bank
                       onTimeChange={handleArrivalTimeChange}
                     />
                   </div>
-                   <div>
+                  <div>
                     <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
                       CheckIn Date
                     </label>
@@ -1524,7 +1516,7 @@ bank +=item.bank
                       className="w-full border border-gray-300 px-3 py-2 rounded text-sm bg-gray-100"
                     />
                   </div>
-                   <div>
+                  <div>
                     <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
                       CheckOut Date
                     </label>
@@ -1551,7 +1543,7 @@ bank +=item.bank
                   sendToParent={handleAvailableRooms}
                   formData={formData}
                   selectedRoomId={selectedRoomId}
-                   isTariffRateChange={isTariffRateChange}
+                  isTariffRateChange={isTariffRateChange}
                   roomIdToUpdate={roomId}
                 />
               </div>
@@ -1625,13 +1617,11 @@ bank +=item.bank
   );
 }
 
-
-const tariffRelatedCalculation = (type,formData,roomId ) => {
-  console.log(formData?.selectedRooms)
+const tariffRelatedCalculation = (type, formData, roomId) => {
+  console.log(formData?.selectedRooms);
   // 1. Room Total
   const roomTotal =
-    formData?.selectedRooms
-      ?.find((item) => item.roomId === roomId)
+    formData?.selectedRooms?.find((item) => item.roomId === roomId)
       ?.totalAmount || 0;
 
   // 2. Additional Pax Total
@@ -1648,9 +1638,8 @@ const tariffRelatedCalculation = (type,formData,roomId ) => {
 
   // 4. Total Without Tax (from selectedRooms)
   const totalWithTax =
-    formData?.selectedRooms
-      ?.find((item) => item.roomId === roomId)
-      ?.amountAfterTax || 0 
+    formData?.selectedRooms?.find((item) => item.roomId === roomId)
+      ?.amountAfterTax || 0;
 
   // 5. Total With Tax (sum of all)
   const totalWithoutTax = roomTotal + additionalPaxTotal + foodPlanTotal;
@@ -1694,16 +1683,28 @@ function TotalsSection({
         <div className="space-y-3">
           <FieldRO
             label="Room Total"
-           value={tariffRelatedCalculation("roomTotal",formData,roomIdToUpdate )}
+            value={tariffRelatedCalculation(
+              "roomTotal",
+              formData,
+              roomIdToUpdate,
+            )}
           />
           <FieldRO
             label="Additional Pax"
-           value={tariffRelatedCalculation("additionalPaxTotal",formData,roomIdToUpdate )}
+            value={tariffRelatedCalculation(
+              "additionalPaxTotal",
+              formData,
+              roomIdToUpdate,
+            )}
           />
 
           <FieldRO
             label="Food Plan"
-            value={tariffRelatedCalculation("foodPlanTotal",formData,roomIdToUpdate )}
+            value={tariffRelatedCalculation(
+              "foodPlanTotal",
+              formData,
+              roomIdToUpdate,
+            )}
           />
           {/* <FieldRO
             label="Total Amount (Before Discount)"
@@ -1762,7 +1763,11 @@ function TotalsSection({
             <input
               type="number"
               name="grandTotal"
-              value={tariffRelatedCalculation("totalWithoutTax",formData,roomIdToUpdate )}
+              value={tariffRelatedCalculation(
+                "totalWithoutTax",
+                formData,
+                roomIdToUpdate,
+              )}
               readOnly
               className="w-full border-0 px-3 py-2 rounded text-sm bg-white text-green-600 font-bold"
             />
@@ -1774,7 +1779,11 @@ function TotalsSection({
             <input
               type="number"
               name="grandTotal"
-             value={tariffRelatedCalculation("totalWithTax",formData,roomIdToUpdate )}
+              value={tariffRelatedCalculation(
+                "totalWithTax",
+                formData,
+                roomIdToUpdate,
+              )}
               readOnly
               className="w-full border-0 px-3 py-2 rounded text-sm bg-white text-green-600 font-bold"
             />
