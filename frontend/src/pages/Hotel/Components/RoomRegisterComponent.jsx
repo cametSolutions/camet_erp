@@ -14,20 +14,31 @@ function RoomRegisterComponent({ pageName, optionsData, sendToParent , editData 
     unit: "DAY",
     hsn: "",
   });
-  useEffect(() => {
-    if (editData) {
-     setRoomData({
+ useEffect(() => {
+  if (editData) {
+    setRoomData({
       roomName: editData.roomName,
-      roomType: editData.roomType?._id,
-      bedType: editData.bedType,
-      roomFloor: editData.roomFloor,
-      unit: editData.unit,
-      hsn: optionsData?.hsn?.find((hsn) => hsn.hsn == editData.hsnCode)?._id,
-     })
-    console.log(editData);
-     setPriceLevelRows(editData.priceLevel)
+      roomType: editData.roomType?._id || "",
+      bedType: editData.bedType || "",
+      roomFloor: editData.roomFloor || "",
+      unit: editData.unit || "DAY",
+      // FIX: editData.hsn is already the full HSN object, just use its _id
+      hsn: editData.hsn?._id || "",
+    });
+    
+    // FIX: priceLevel data structure needs mapping
+    if (editData.priceLevel && Array.isArray(editData.priceLevel)) {
+      setPriceLevelRows(
+        editData.priceLevel.map(item => ({
+          priceLevel: item.priceLevel?._id || "",
+          priceRate: item.priceRate || ""
+        }))
+      );
     }
-  }, [editData]);
+    
+    console.log("Edit data loaded:", editData);
+  }
+}, [editData, optionsData]);
 
   const handleAddRow = () => {
     const lastRow = priceLevelRows[priceLevelRows.length - 1];
@@ -41,7 +52,7 @@ function RoomRegisterComponent({ pageName, optionsData, sendToParent , editData 
     // Check for duplicate pricelevel
     const isDuplicate = priceLevelRows
       .slice(0, -1) // exclude the last row being added
-      .some((row) => row.priceLevel === lastRow.c);
+      .some((row) => row.priceLevel === lastRow.priceLevel);
 
     if (isDuplicate) {
       toast.error("This price level already exists");
@@ -65,11 +76,16 @@ function RoomRegisterComponent({ pageName, optionsData, sendToParent , editData 
     setPriceLevelRows(updatedRows);
   };
 
-  const handleDeleteRow = (pricelevelId) => {
-    setPriceLevelRows((prev) =>
-      prev.filter((row) => row.priceLevel !== pricelevelId)
-    );
-  };
+ const handleDeleteRow = (index) => {
+  // Use index instead of priceLevelId for consistency
+  setPriceLevelRows(prev => {
+    const newRows = [...prev];
+    newRows.splice(index, 1);
+    return newRows.length === 0 
+      ? [{ priceLevel: "", priceRate: "" }] 
+      : newRows;
+  });
+};
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -348,12 +364,12 @@ const validDateFormData = () => {
 
                         {/* Delete Button */}
                         <td className="px-4 sm:px-10 py-2">
-                          <button
-                            onClick={() => handleDeleteRow(row?.priceLevel)}
-                            className="text-red-600 hover:text-red-800"
-                          >
-                            <MdDelete />
-                          </button>
+                         <button
+  onClick={() => handleDeleteRow(index)} // Pass index instead of row.priceLevel
+  className="text-red-600 hover:text-red-800"
+>
+  <MdDelete />
+</button>
                         </td>
                       </tr>
                     ))}

@@ -22,7 +22,7 @@ import api from "@/api/api";
 
 import { motion, AnimatePresence } from "framer-motion";
 
-import { Check, CreditCard, X, Banknote } from "lucide-react";
+import { Check, CreditCard, X, Banknote,Plus } from "lucide-react";
 import { generateAndPrintKOT } from "@/pages/Restuarant/Helper/kotPrintHelper";
 import { useNavigate } from "react-router-dom";
 // import VoucherPdf from "@/pages/voucher/voucherPdf/indian/VoucherPdf";
@@ -241,6 +241,41 @@ const OrdersDashboard = () => {
   //   fetchData();
   // }, [fetchData]);
   // Status configuration
+
+  useEffect(() => {
+  const shouldOpenPaymentModal = sessionStorage.getItem('returnToPaymentModal');
+  const savedModalData = sessionStorage.getItem('paymentModalData');
+  
+  if (shouldOpenPaymentModal === 'true' && savedModalData) {
+    try {
+      const modalData = JSON.parse(savedModalData);
+      
+      // Restore modal state
+      setSelectedDataForPayment(modalData.selectedDataForPayment);
+      setPaymentMode(modalData.paymentMode);
+      setShowPaymentModal(true); // ✅ This is correct
+      
+      // Restore other relevant states
+      if (modalData.selectedKot) {
+        setSelectedKot(modalData.selectedKot);
+      }
+      if (modalData.discountAmount) {
+        setDiscountAmount(modalData.discountAmount);
+      }
+      if (modalData.note) {
+        setNote(modalData.note);
+      }
+      
+      // Clear session storage
+      sessionStorage.removeItem('returnToPaymentModal');
+      sessionStorage.removeItem('paymentModalData');
+    } catch (error) {
+      console.error('Error restoring payment modal:', error);
+      sessionStorage.removeItem('returnToPaymentModal');
+      sessionStorage.removeItem('paymentModalData');
+    }
+  }
+}, []);
   const statusConfig = {
     pending: {
       label: "Pending",
@@ -2055,29 +2090,53 @@ const OrdersDashboard = () => {
                     </div>
                   </div>
                 )}
-                {paymentMode === "credit" && (
-                  <div className="mb-3">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Creditor
-                    </label>
+{paymentMode === "credit" && (
+  <div className="mb-3">
+    <div className="flex items-center justify-between mb-3">
+      <label className="block text-sm font-medium text-gray-700">
+        Creditor
+      </label>
+    <button
+  onClick={() => {
+    sessionStorage.setItem('returnToPaymentModal', 'true');
+    sessionStorage.setItem('paymentModalData', JSON.stringify({
+      selectedDataForPayment,
+      paymentMode,
+      selectedKot,
+      discountAmount,
+      note
+    }));
+    
+    const returnUrl = encodeURIComponent(window.location.pathname);
+    window.open(`/sUsers/addParty?returnUrl=${returnUrl}`, '_blank');
+  }}
+  className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-lg text-xs font-semibold hover:from-blue-600 hover:to-indigo-600 transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105 active:scale-95"
+>
+  <Plus className="w-3.5 h-3.5" />
+  <span>New Creditor</span>
+</button>
+    </div>
 
-                    {/* Cash Payment Dropdown */}
-                    <div className="mt-3">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Select Creditor
-                      </label>
-                      <CustomerSearchInputBox
-                        onSelect={(party) => {
-                          setSelectedCreditor(party);
-                        }}
-                        selectedParty={{}}
-                        isAgent={false}
-                        placeholder="Search customers..."
-                        sendSearchToParent={() => {}}
-                      />
-                    </div>
-                  </div>
-                )}
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        Select Creditor
+      </label>
+      <CustomerSearchInputBox
+        onSelect={(party) => {
+          setSelectedCreditor(party);
+        }}
+        selectedParty={{}}
+        isAgent={false}
+        placeholder="Search customers..."
+        sendSearchToParent={() => {}}
+      />
+      <p className="mt-1.5 text-xs text-gray-500 flex items-center gap-1">
+        <span className="w-1 h-1 bg-blue-500 rounded-full"></span>
+        Can't find customer? Click "New Creditor" to add one
+      </p>
+    </div>
+  </div>
+)}
 
                 {/* Error Message */}
                 {paymentError && (
