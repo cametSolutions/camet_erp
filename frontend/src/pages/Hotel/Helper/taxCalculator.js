@@ -2,10 +2,10 @@ export const taxCalculator = (
   data,
   inclusive = false,
   formData = null,
-  taxCalculationRoomId = null
+  taxCalculationRoomId = null,
 ) => {
-console.log(data)
-console.log(inclusive)
+  console.log(data);
+  console.log(inclusive);
   console.log(formData);
   console.log(taxCalculationRoomId);
   try {
@@ -21,9 +21,9 @@ console.log(inclusive)
       ? formData?.additionalPaxDetails?.reduce(
           (acc, item) =>
             item.roomId === taxCalculationRoomId
-              ? acc + (Number(item.rate) || 0) * Number(data?.stayDays || 1 )
+              ? acc + (Number(item.rate) || 0) * Number(data?.stayDays || 1)
               : acc,
-          0
+          0,
         ) || 0
       : 0;
 
@@ -32,30 +32,29 @@ console.log(inclusive)
       ? formData?.foodPlan?.reduce(
           (acc, item) =>
             item.roomId === taxCalculationRoomId
-              ? acc + (Number(item.rate) || 0)  * Number(data?.stayDays || 1 )
+              ? acc + (Number(item.rate) || 0) * Number(data?.stayDays || 1)
               : acc,
-          0
+          0,
         ) || 0
       : 0;
-console.log(reducedFoodPlanAmount)
-console.log(reducedAdditionalPaxAmount)
+    console.log(reducedFoodPlanAmount);
+    console.log(reducedAdditionalPaxAmount);
     const baseAmount = Number(data?.totalAmount || 0);
     let totalAmount = baseAmount + reducedAdditionalPaxAmount;
 
     if (formData?.bookingType !== "offline") {
       totalAmount += reducedFoodPlanAmount;
     }
-    console.log(totalAmount)
+    console.log(totalAmount);
 
     // Tax slab logic
     let taxRate = 0;
     let applicableSlab = null;
-console.log(hsnDetails)
+    console.log(hsnDetails);
     if (Array.isArray(hsnDetails?.rows)) {
       for (const row of hsnDetails.rows) {
-
         const slab = getApplicableTaxSlab(row, totalAmount);
-        console.log(slab)
+        console.log(slab);
 
         if (slab) {
           applicableSlab = slab;
@@ -65,30 +64,40 @@ console.log(hsnDetails)
       }
     }
 
-
-    if (!applicableSlab && hsnDetails?.rows[hsnDetails?.rows?.length - 1]?.igstRate !== undefined) {
-      taxRate = Number(hsnDetails?.rows[hsnDetails?.rows?.length - 1]?.igstRate || 0);
+    if (
+      !applicableSlab &&
+      hsnDetails?.rows[hsnDetails?.rows?.length - 1]?.igstRate !== undefined
+    ) {
+      taxRate = Number(
+        hsnDetails?.rows[hsnDetails?.rows?.length - 1]?.igstRate || 0,
+      );
     }
-console.log(taxRate)
-console.log(totalAmount)
-console.log(inclusive)
+    console.log(taxRate);
+    console.log(totalAmount);
+    console.log(inclusive);
     const taxAmount = (totalAmount * taxRate) / 100;
-console.log(totalAmount)
-console.log(taxAmount)
+    console.log(totalAmount);
+    console.log(taxAmount);
     let amountWithTax = inclusive ? totalAmount : totalAmount + taxAmount;
     console.log(amountWithTax);
     // Handle per-component tax for display or tracking
-    let foodPlanTaxRate = formData?.bookingType == "offline" ? 5 : taxRate.toFixed(2)
-console.log(foodPlanTaxRate)
+    let foodPlanTaxRate =
+      formData?.bookingType == "offline" ? 5 : taxRate.toFixed(2);
+    console.log(foodPlanTaxRate);
 
     let additionalPaxAmountWithTax = inclusive
       ? reducedAdditionalPaxAmount
       : reducedAdditionalPaxAmount +
         (reducedAdditionalPaxAmount * taxRate) / 100;
-console.log(inclusive)
+    console.log(inclusive);
     let foodPlanAmountWithTax = inclusive
-      ? reducedFoodPlanAmount
-      : reducedFoodPlanAmount + (reducedFoodPlanAmount * foodPlanTaxRate) / 100;
+      ? Number(reducedFoodPlanAmount)
+      : Number(reducedFoodPlanAmount) +
+        (Number(reducedFoodPlanAmount) * Number(foodPlanTaxRate || 0)) / 100;
+
+    let foodPlanAmountWithOutTax = inclusive
+      ? Number(reducedFoodPlanAmount) / (1 + Number(foodPlanTaxRate || 0) / 100)
+      : Number(reducedFoodPlanAmount);
 
     console.log(amountWithTax);
     console.log(foodPlanAmountWithTax);
@@ -115,7 +124,7 @@ console.log(inclusive)
       additionalPaxAmountWithTax: Number(additionalPaxAmountWithTax.toFixed(2)),
       additionalPaxAmountWithOutTax: Number(reducedAdditionalPaxAmount),
       foodPlanAmountWithTax: Number(foodPlanAmountWithTax.toFixed(2)),
-      foodPlanAmountWithOutTax: Number(reducedFoodPlanAmount), // ✅ Fixed typo from "foodPlaAmountWithOutTax"
+      foodPlanAmountWithOutTax: Number(foodPlanAmountWithOutTax).toFixed(2), // ✅ Fixed typo from "foodPlaAmountWithOutTax"
       baseAmount: Number(baseAmount.toFixed(2)),
       baseAmountWithTax:
         Number(baseAmount.toFixed(2)) + Number(taxAmount.toFixed(2)),
@@ -135,7 +144,6 @@ console.log(inclusive)
 };
 
 const getApplicableTaxSlab = (row, totalAmount) => {
- 
   try {
     const greaterThan = parseFloat(row.greaterThan);
     const uptoValue = row.upto;
@@ -153,7 +161,6 @@ const getApplicableTaxSlab = (row, totalAmount) => {
     }
 
     return isApplicable ? row : null;
-    
   } catch (error) {
     console.error("Error in getApplicableTaxSlab:", error);
     return null;
@@ -162,7 +169,7 @@ const getApplicableTaxSlab = (row, totalAmount) => {
 
 export const taxCalculatorForRestaurant = (
   tableData = [],
-  inclusive = false
+  inclusive = false,
 ) => {
   console.log(inclusive);
   return tableData.map((item) => {
@@ -253,27 +260,27 @@ export const taxCalculatorForRestaurant = (
     // Sum up totals from GodownList
     const total = updatedGodownList.reduce(
       (sum, g) => sum + g.individualTotal,
-      0
+      0,
     );
     const totalCgstAmt = updatedGodownList.reduce(
       (sum, g) => sum + g.cgstAmount,
-      0
+      0,
     );
     const totalSgstAmt = updatedGodownList.reduce(
       (sum, g) => sum + g.sgstAmount,
-      0
+      0,
     );
     const totalIgstAmt = updatedGodownList.reduce(
       (sum, g) => sum + g.igstAmount,
-      0
+      0,
     );
     const totalCessAmt = updatedGodownList.reduce(
       (sum, g) => sum + g.cessAmount,
-      0
+      0,
     );
     const totalAddlCessAmt = updatedGodownList.reduce(
       (sum, g) => sum + g.additionalCessAmount,
-      0
+      0,
     );
 
     // Return product with updated GodownList & totals
