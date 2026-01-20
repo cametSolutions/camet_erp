@@ -62,15 +62,18 @@ function CustomerSearchInputBox({
     }
   }, [cmp_id, location.pathname ]);
 
-  const handleSearch = useCallback((term) => {
-    setSearch(term);
-    setPage(1);
-    clearTimeout(debounceTimerRef.current);
-    debounceTimerRef.current = setTimeout(() => {
-      fetchParties(1, term);
-    }, 300);
+  const handleInputChange = useCallback((term) => {
+  setSearch(term);
+  setPage(1);
+  clearTimeout(debounceTimerRef.current);
+  debounceTimerRef.current = setTimeout(() => {
+    fetchParties(1, term);
+  }, 300);
+  // Always send search term to parent, even when empty
+  if (sendSearchToParent) {
     sendSearchToParent(term);
-  }, [fetchParties]);
+  }
+}, [fetchParties, sendSearchToParent]);
 
   const loadMore = useCallback(() => {
     if (!loading && hasMore) {
@@ -86,11 +89,12 @@ function CustomerSearchInputBox({
   };
 
   const handleSelect = (party) => {
-    setSelectedValue(party);
-    setIsOpen(false);
-    setSearch("");
-    onSelect(party,search);
-  };
+  setSelectedValue(party);
+  setIsOpen(false);
+  const searchTerm = search; // Capture before clearing
+  setSearch("");
+  onSelect(party, searchTerm); // Pass the search term
+};
 
   const handleClear = (e) => {
     e.stopPropagation();
@@ -125,7 +129,7 @@ function CustomerSearchInputBox({
         <input
           type="text"
           value={selectedValue ? selectedValue.partyName : search}
-          onChange={(e) => handleSearch(e.target.value)}
+          onChange={(e) => handleInputChange(e.target.value)}
           onClick={() => { if (!disabled) setIsOpen(true); }}
           placeholder={placeholder}
           disabled={disabled}
