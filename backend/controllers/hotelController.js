@@ -3810,10 +3810,10 @@ export const getHotelSalesDetails = async (req, res) => {
           businessType === "all"
             ? {}
             : businessType === "hotel"
-            ? { businessClassification: "Hotel" }
-            : businessType === "restaurant"
-            ? { businessClassification: "Restaurant" }
-            : { businessClassification: { $in: ["Hotel", "Restaurant"] } },
+              ? { businessClassification: "Hotel" }
+              : businessType === "restaurant"
+                ? { businessClassification: "Restaurant" }
+                : { businessClassification: { $in: ["Hotel", "Restaurant"] } },
       },
 
       // Final projection
@@ -4127,7 +4127,7 @@ export const getHotelSalesDetails = async (req, res) => {
           beverageItems: 0,
         },
         otherSales: { amount: 0, count: 0 },
-      }
+      },
     );
 
     // Calculate analytics
@@ -4194,7 +4194,7 @@ export const getHotelSalesDetails = async (req, res) => {
           };
           return acc;
         },
-        {}
+        {},
       ),
       overallMetrics: {
         averageTicketSize:
@@ -4204,7 +4204,7 @@ export const getHotelSalesDetails = async (req, res) => {
           totalTransactions > 0
             ? transformedData.reduce(
                 (sum, order) => sum + (order.itemCount || 0),
-                0
+                0,
               ) / totalTransactions
             : 0,
       },
@@ -4214,25 +4214,29 @@ export const getHotelSalesDetails = async (req, res) => {
           ...new Set(
             transformedData
               .filter((s) => s.tableNumber)
-              .map((s) => s.tableNumber)
+              .map((s) => s.tableNumber),
           ),
         ].length,
         waitersActive: [
           ...new Set(
-            transformedData.filter((s) => s.waiterName).map((s) => s.waiterName)
+            transformedData
+              .filter((s) => s.waiterName)
+              .map((s) => s.waiterName),
           ),
         ].length,
         // Hotel metrics
         roomsOccupied: [
           ...new Set(
-            transformedData.filter((s) => s.roomNumber).map((s) => s.roomNumber)
+            transformedData
+              .filter((s) => s.roomNumber)
+              .map((s) => s.roomNumber),
           ),
         ].length,
         guestsServed: [
           ...new Set(
             transformedData
               .filter((s) => s.guestName && s.guestName !== "Cash")
-              .map((s) => s.guestName)
+              .map((s) => s.guestName),
           ),
         ].length,
       },
