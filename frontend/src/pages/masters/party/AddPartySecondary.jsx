@@ -18,7 +18,13 @@ function AddPartySecondary() {
   const queryClient = useQueryClient();
 
   const from = location.state?.from;
-console.log(from);
+  
+  // Get returnUrl from query parameters
+  const searchParams = new URLSearchParams(location.search);
+  const returnUrl = searchParams.get('returnUrl');
+  
+  console.log(from);
+
   const companyId = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
@@ -40,14 +46,20 @@ console.log(from);
         queryKey: ["dashboardCounts", companyId],
       });
 
+      // Check for returnUrl first (from KOT page)
+      if (returnUrl) {
+        navigate(decodeURIComponent(returnUrl), { replace: true });
+        return;
+      }
+
       if (from) {
         if(from == "/sUsers/bookingPage"){
           navigate("/sUsers/bookingPage", { replace: true });
-          return
+          return;
         }
-         if(from == "/sUsers/checkInPage"){
+        if(from == "/sUsers/checkInPage"){
           navigate("/sUsers/bookingPage", { replace: true });
-          return
+          return;
         }
 
         if (from === "accountingVoucher") {

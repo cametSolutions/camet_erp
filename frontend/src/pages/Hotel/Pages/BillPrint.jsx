@@ -822,12 +822,15 @@ const HotelBillPrint = () => {
         (sum, t) => sum + Number(t.advance || 0),
         0,
       );
+
+      console.log(reduceCheckoutTotal);
       advanceEntries = advanceEntries.filter(
         (t) => t.description !== "CheckOut",
       );
       advanceTotal = advanceTotal - reduceCheckoutTotal;
     }
     console.log(advanceTotal);
+
     // Combine charges and compute balances
     const allCharges = [...groupedRoomCharges, ...advanceEntries];
     console.log(allCharges);
@@ -936,7 +939,7 @@ const HotelBillPrint = () => {
       }
     }
 
-    console.log(additionalPaxAmount);
+    console.log( doc);
 
     return {
       hotel: {
@@ -956,7 +959,7 @@ const HotelBillPrint = () => {
       guest: {
         name: partyName,
         roomNo: guestRooms,
-        billNo: doc?.voucherNumber,
+        billNo: doc?.grcno || doc?.voucherNumber,
         travelAgent: doc?.agentId?.name,
         address: partyAddress || "",
         phone: partyPhone || "",

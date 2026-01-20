@@ -660,18 +660,21 @@ const RestaurantPOS = () => {
         )
       );
     } else {
-      const price =
-        selectedPriceLevel &&
-        Number(
-          item.Priceleveles?.find((pl) => pl.pricelevel == selectedPriceLevel)
-            ?.pricerate 
-        )
-          ? Number(
-              item.Priceleveles?.find(
-                (pl) => pl.pricelevel == selectedPriceLevel
-              )?.pricerate || 0
-            )
-          : Number(item.Priceleveles?.[0]?.pricerate);
+      // Calculate price based on selected price level
+      let price = 0;
+      
+      if (item.Priceleveles && item.Priceleveles.length > 0) {
+        if (selectedPriceLevel) {
+          // Find matching price level (check both _id and pricelevel field)
+          const matchedPrice = item.Priceleveles.find(
+            (pl) => pl.pricelevel === selectedPriceLevel || pl.pricelevel?._id === selectedPriceLevel
+          );
+          price = matchedPrice ? Number(matchedPrice.pricerate) : Number(item.Priceleveles[0].pricerate);
+        } else {
+          // Use first price level as default
+          price = Number(item.Priceleveles[0].pricerate);
+        }
+      }
    
       setOrderItems([...orderItems, { ...item, quantity: 1, price: price }]);
     }
