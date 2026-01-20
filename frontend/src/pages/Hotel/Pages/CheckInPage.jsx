@@ -98,6 +98,7 @@ console.log("HHH")
             editData={bookingData}
             outStanding={outStanding}
             roomId={roomId}
+             isShowGrc={true}
           />
         </div>
       )}

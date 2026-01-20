@@ -103,6 +103,7 @@ console.log(payload)
             outStanding={outStanding}
             isTariffRateChange={isTariffRateChange}
            roomId={roomIdToEdit}
+           isShowGrc={true}
           />
         </div>
       )}
