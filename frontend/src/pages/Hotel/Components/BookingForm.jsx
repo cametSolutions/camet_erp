@@ -27,7 +27,7 @@ function BookingForm({
   isTariffRateChange,
   submitLoader,
 }) {
-  console.log(isTariffRateChange);
+  console.log(isFor);
   console.log("J");
   const [voucherNumber, setVoucherNumber] = useState("");
   const [selectedParty, setSelectedParty] = useState("");
@@ -292,7 +292,6 @@ function BookingForm({
     }));
 
   const handleCheckOutTimeChange = (time) =>
-
     setFormData((prev) => ({
       ...prev,
       checkOutTime: time,
@@ -331,7 +330,9 @@ function BookingForm({
             voucherNumber: specificNumber,
             voucherId: specificSeries._id,
             voucherType: "",
-            grcno:currentNumber
+            ...(isFor === "deliveryNote" && {
+              grcno: currentNumber.toString(),
+            }),
           }));
           setVoucherNumber(specificNumber);
         }
@@ -1156,7 +1157,6 @@ function BookingForm({
                         </div>
                       </>
                     )}
-                    
                   </div>
 
                   {/* Guest Info Box */}
@@ -1294,24 +1294,27 @@ function BookingForm({
                       </div>
                       <div>
                         <div className="flex items-center gap-4">
-                          <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                            GRC NO
-                          </label>
+                          {isFor === "deliveryNote" && (
+                            <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                              GRC NO
+                            </label>
+                          )}
                           <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
                             Add Tax With Rate
                           </label>
                         </div>
                         <div className="flex items-center gap-4">
                           {/* GRC Input */}
-                          <input
-                            type="number"
-                            name="grcno"
-                            value={formData.grcno || ""}
-                            onChange={handleChange}
-                            placeholder="GRC %"
-                            className="w-24 border px-2 py-1 rounded text-sm focus:outline-none focus:ring bg-white border-gray-200"
- 
-                          />
+                          {isFor === "deliveryNote" && (
+                            <input
+                              type="text"
+                              name="grcno"
+                              value={formData.grcno || ""}
+                              onChange={handleChange}
+                              placeholder="GRC %"
+                              className="w-24 border px-2 py-1 rounded text-sm focus:outline-none focus:ring bg-white border-gray-200"
+                            />
+                          )}
                           {/* Toggle */}
                           <button
                             type="button"
