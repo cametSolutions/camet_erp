@@ -74,7 +74,7 @@ const selectedRoomSchema = new mongoose.Schema({
     Primary_user_id: mongoose.Schema.Types.ObjectId,
   },
   dateTariffs: {
-    type: Map, 
+    type: Map,
     of: Number,
     default: {},
   },
@@ -148,13 +148,12 @@ const bookingSchema = new mongoose.Schema(
     totalAmount: String,
     balanceToPay: String,
     paymenttypeDetails: {
-  cash: { type: Number, default: 0 },
-  bank: { type: Number, default: 0 },
-  upi: { type: Number, default: 0 },
-  credit: { type: Number, default: 0 },
-  card: { type: Number, default: 0 }
-}
-,
+      cash: { type: Number, default: 0 },
+      bank: { type: Number, default: 0 },
+      upi: { type: Number, default: 0 },
+      credit: { type: Number, default: 0 },
+      card: { type: Number, default: 0 },
+    },
     grandTotal: String,
     customerId: { type: mongoose.Schema.Types.ObjectId, ref: "Party" },
     customerName: String,
@@ -170,8 +169,8 @@ const bookingSchema = new mongoose.Schema(
     roomTotal: Number,
     foodPlanTotal: Number,
     paxTotal: Number,
-     isHotelAgent: { type: Boolean,default: false},
-  
+    isHotelAgent: { type: Boolean, default: false },
+
     agentId: { type: mongoose.Schema.Types.ObjectId, ref: "Party" },
     bookingId: { type: mongoose.Schema.Types.ObjectId, ref: "Booking" },
     checkInId: { type: mongoose.Schema.Types.ObjectId, ref: "CheckIn" },
@@ -200,6 +199,7 @@ const bookingSchema = new mongoose.Schema(
         saleVoucherNumber: String,
       },
     ],
+    addTaxWithRate:Boolean,
     // Foreign National Fields (only for non-Indian guests)
     company: String,
     nextDestination: String,
@@ -216,7 +216,7 @@ const bookingSchema = new mongoose.Schema(
     dateOfExpiry: String,
     grcno: String,
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export const Booking = mongoose.model("Booking", bookingSchema, "bookings");

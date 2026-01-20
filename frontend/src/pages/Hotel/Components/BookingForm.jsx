@@ -43,8 +43,8 @@ function BookingForm({
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [saveLoader, setSaveLoader] = useState(false);
   const navigate = useNavigate();
-  const cmp_id = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg._id,
+  const { _id: cmp_id, configurations } = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg,
   );
 
   const { data, loading } = useFetch(
@@ -122,6 +122,7 @@ function BookingForm({
     dateOfIssue: "",
     dateOfExpiry: "",
     grcno: "",
+    addTaxWithRate: configurations[0]?.addRateWithTax?.hotelSale,
   });
   console.log(voucherNumber);
   console.log(formData);
@@ -291,6 +292,7 @@ function BookingForm({
     }));
 
   const handleCheckOutTimeChange = (time) =>
+
     setFormData((prev) => ({
       ...prev,
       checkOutTime: time,
@@ -329,6 +331,7 @@ function BookingForm({
             voucherNumber: specificNumber,
             voucherId: specificSeries._id,
             voucherType: "",
+            grcno:currentNumber
           }));
           setVoucherNumber(specificNumber);
         }
@@ -1153,6 +1156,7 @@ function BookingForm({
                         </div>
                       </>
                     )}
+                    
                   </div>
 
                   {/* Guest Info Box */}
@@ -1288,6 +1292,48 @@ function BookingForm({
                           ))}
                         </select>
                       </div>
+                      <div>
+                        <div className="flex items-center gap-4">
+                          <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                            GRC NO
+                          </label>
+                          <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                            Add Tax With Rate
+                          </label>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          {/* GRC Input */}
+                          <input
+                            type="number"
+                            name="grcno"
+                            value={formData.grcno || ""}
+                            onChange={handleChange}
+                            placeholder="GRC %"
+                            className="w-24 border px-2 py-1 rounded text-sm focus:outline-none focus:ring bg-white border-gray-200"
+ 
+                          />
+                          {/* Toggle */}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleChange({
+                                target: {
+                                  name: "addTaxWithRate",
+                                  value: !formData.addTaxWithRate,
+                                },
+                              })
+                            }
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition
+        ${formData.addTaxWithRate ? "bg-green-600" : "bg-gray-300"}`}
+                          >
+                            <span
+                              className={`inline-block h-5 w-5 transform rounded-full bg-white transition
+          ${formData.addTaxWithRate ? "translate-x-5" : "translate-x-1"}`}
+                            />
+                          </button>
+                        </div>
+                      </div>
+
                       {/* Available Rooms (spans both columns if needed) */}
                       <div className="col-span-2">
                         <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
@@ -1304,6 +1350,7 @@ function BookingForm({
                           selectedRoomId={selectedRoomId}
                           isTariffRateChange={isTariffRateChange}
                           roomIdToUpdate={roomId}
+                          addTaxWithRate={formData.addTaxWithRate}
                         />
                       </div>
                     </div>
@@ -1545,6 +1592,7 @@ function BookingForm({
                   selectedRoomId={selectedRoomId}
                   isTariffRateChange={isTariffRateChange}
                   roomIdToUpdate={roomId}
+                  addTaxWithRate={formData.addTaxWithRate}
                 />
               </div>
 
