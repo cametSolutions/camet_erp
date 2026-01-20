@@ -21,7 +21,7 @@ function BookingPage() {
   const queryClient = useQueryClient()
 console.log("J")
   const handleSubmit = async (data, paymentData,paymenttypeDetails) => {
-    console.log(data)
+    console.log(data?.selectedRooms)
     
 
     try {
