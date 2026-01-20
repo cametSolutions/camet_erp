@@ -324,6 +324,7 @@ export const addHsn = async (req, res) => {
       rows,
     });
     let findOne = await hsnModel.findOne({
+       cpm_id: cpm_id,
       hsn: { $regex: `^${hsn}$`, $options: "i" },
     });
 

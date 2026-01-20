@@ -210,6 +210,7 @@ function RoomList() {
       marginTop: "16px",
       height: "128px",
     };
+    console.log(el)
 
     return (
       <div
@@ -226,11 +227,18 @@ function RoomList() {
             <div className="flex gap-2 text-sm">
               <div className="flex gap-2 text-nowrap">
                 <p className="text-gray-500 uppercase">Hsn :</p>
-                <p className="text-gray-500">{el?.hsnCode}</p>
+               <p className="text-gray-500">{el?.hsn?.hsn || 'N/A'}</p>
               </div>
               <div className="flex gap-2">
                 <p className="text-gray-500">Tax :</p>
-                <p className="text-gray-500">{`${el?.igst ? el?.igst : 0} %`}</p>
+                <p className="text-gray-500">
+        {el?.hsn?.igstRate 
+          ? `${el.hsn.igstRate}%` 
+          : el?.hsn?.rows?.[0]?.igstRate 
+            ? `${el.hsn.rows[0].igstRate}%` 
+            : '0%'
+        }
+      </p>
               </div>
             </div>
           </div>
