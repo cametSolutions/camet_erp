@@ -653,14 +653,14 @@ function BookingForm({
     console.log("=== handleAvailableRooms end ===");
   };
 
-  const submitHandler = async () => {
-    if (!formData.customerName || formData.customerName.trim() === "") {
-      toast.error("please select a valid customer");
-      return;
-    }
+ const submitHandler = async () => {
+  if (!formData.customerName || formData.customerName.trim() === "") {
+    toast.error("Please enter a customer name");
+    return;
+  }
 
-    let customerId = formData.customerId?.trim?.() || formData.customerId || "";
-    let customerName = formData.customerName;
+  let customerId = formData.customerId?.trim?.() || formData.customerId || "";
+  let customerName = formData.customerName.trim(); // Use trimmed name
     let country = formData.country;
     let accountGroup = formData.accountGroup;
     let state = formData.state;
@@ -823,8 +823,15 @@ function BookingForm({
   };
   console.log(formData);
   const handleClose = () => setShowPaymentModal(false);
-  const handleSearchCustomer = (name) =>
-    setFormData((prev) => ({ ...prev, customerName: name }));
+const handleSearchCustomer = (name) => {
+  console.log("Searched name:", name);
+  setFormData((prev) => ({ 
+    ...prev, 
+    customerName: name,
+    // Clear customerId if user is typing a new name
+    customerId: name && !selectedParty ? "" : prev.customerId
+  }));
+};
 
   const tariffMode = isTariffRateChange === true;
   console.log(formData?.additionalPaxDetails);
