@@ -575,7 +575,7 @@ const HotelDashboard = () => {
         onClick={() => navigate("/sUsers/BillSummary?type=hotel")}
       >
         <span className="text-sm">📊</span>
-        Hotel Daily Sales
+        HOTEL DAILY SALES
       </button>
 
       <button
@@ -591,7 +591,7 @@ const HotelDashboard = () => {
         onClick={() => navigate("/sUsers/Checkoutpdf")}
       >
         <span className="text-sm">📊</span>
-        Hotel Daily Checkouts
+      FO DAILY STATEMENT
       </button>
 
       <button
