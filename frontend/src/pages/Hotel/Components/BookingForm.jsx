@@ -26,6 +26,7 @@ function BookingForm({
   roomId,
   isTariffRateChange,
   submitLoader,
+  isShowGrc = false,
 }) {
   console.log(isFor);
   console.log("J");
@@ -330,7 +331,7 @@ function BookingForm({
             voucherNumber: specificNumber,
             voucherId: specificSeries._id,
             voucherType: "",
-            ...(isFor === "deliveryNote" && {
+            ...(isShowGrc && {
               grcno: currentNumber.toString(),
             }),
           }));
@@ -1294,7 +1295,7 @@ function BookingForm({
                       </div>
                       <div>
                         <div className="flex items-center gap-4">
-                          {isFor === "deliveryNote" && (
+                          {isShowGrc && (
                             <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
                               GRC NO
                             </label>
@@ -1305,7 +1306,7 @@ function BookingForm({
                         </div>
                         <div className="flex items-center gap-4">
                           {/* GRC Input */}
-                          {isFor === "deliveryNote" && (
+                          {isShowGrc && (
                             <input
                               type="text"
                               name="grcno"
