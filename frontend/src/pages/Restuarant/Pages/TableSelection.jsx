@@ -154,20 +154,25 @@ const TableTiles = ({
       room.customerName?.toLowerCase().includes(search.toLowerCase()) ||
       room.voucherNumber?.toLowerCase().includes(search.toLowerCase())
   );
-
-  const handleSelectRoom = (room) => {
-    setRoomDetails({
-      ...roomDetails,
-      _id: room?.roomId || "",
-      roomno: room?.roomName || "",
-      guestName: room?.customerName || "",
-      CheckInNumber: room?.voucherNumber || "",
-    });
-    setSearch(
-      `${room.roomName} - ${room.customerName} - ${room.voucherNumber}`
-    );
-    setShowResults(false);
-  };
+console.log(roomData)
+ const handleSelectRoom = (room) => {
+  console.log("=== SELECTING ROOM ===");
+  console.log("Room object:", room);
+  console.log("Food plan:", room?.foodPlan);
+  
+  setRoomDetails({
+    _id: room?.roomId || "",
+    roomno: room?.roomName || "",
+    guestName: room?.customerName || "",
+    CheckInNumber: room?.voucherNumber || "",
+    foodPlan: room?.foodPlan || null, // ✅ Pass the complete object
+  });
+  
+  setSearch(
+    `${room.roomName} - ${room.customerName} - ${room.voucherNumber}`
+  );
+  setShowResults(false);
+};
 
   // Fetch Tables from API
   const fetchTables = async () => {

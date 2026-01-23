@@ -5,6 +5,10 @@ const foodPlanSchema = new mongoose.Schema({
   foodPlan: String,
   rate: Number,
   roomId: { type: mongoose.Schema.Types.ObjectId, ref: "Room" },
+   isComplimentary: { 
+    type: Boolean, 
+    default: false 
+  }, 
 });
 
 const paxDetailSchema = new mongoose.Schema({
@@ -128,6 +132,12 @@ const bookingSchema = new mongoose.Schema(
     arrivalTime: String,
     checkOutDate: String,
     checkOutTime: String,
+    currentDate: String,
+    advanceTracking: {
+      type: Map,
+      of: Number,
+      default: {},
+    },
     stayDays: Number,
     bookingType: String,
     selectedRoomId: mongoose.Schema.Types.ObjectId,
@@ -199,7 +209,7 @@ const bookingSchema = new mongoose.Schema(
         saleVoucherNumber: String,
       },
     ],
-    addTaxWithRate:Boolean,
+    addTaxWithRate: Boolean,
     // Foreign National Fields (only for non-Indian guests)
     company: String,
     nextDestination: String,

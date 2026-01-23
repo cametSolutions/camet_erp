@@ -961,7 +961,8 @@ console.log(organization?.landmark)
       guest: {
         name: partyName,
         roomNo: guestRooms,
-        billNo: doc?.grcno || doc?.voucherNumber,
+        grcNo: doc?.grcno ,
+        billNo: doc?.voucherNumber,
         travelAgent: doc?.agentId?.name,
         address: partyAddress || "",
         phone: partyPhone || "",
@@ -1233,7 +1234,7 @@ console.log(selectedCheckOut)
                       GRC No
                     </td>
                     <td style={{ width: "15%", padding: "2px 0" }}>
-                      {billData?.guest?.billNo}
+                      {billData?.guest?.grcNo}
                     </td>
                     <td
                       style={{
