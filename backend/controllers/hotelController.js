@@ -444,19 +444,23 @@ export const deleteIdProof = async (req, res) => {
 // function used to save food plan
 export const saveFoodPlan = async (req, res) => {
   try {
-    const { foodPlan, amount } = req.body;
+    const { foodPlan, amount, isComplimentary = false } = req.body; // ✅ EXTRACT
     const { cmp_id } = req.params;
+    
     const generatedId = new mongoose.Types.ObjectId();
+    
     const newFoodPlan = new FoodPlan({
       _id: generatedId,
       foodPlan,
       amount,
+      isComplimentary: isComplimentary, // ✅ SAVE THIS
       foodPlanId: generatedId,
       cmp_id,
       Primary_user_id: req.pUserId || req.owner,
     });
 
     const result = await newFoodPlan.save();
+    
     return res.status(201).json({
       message: "Food plan saved successfully",
       data: result,
@@ -504,7 +508,7 @@ export const getFoodPlan = async (req, res) => {
 //function used to update food plan
 export const updateFoodPlan = async (req, res) => {
   try {
-    const { foodPlan, amount, foodPlanId } = req.body;
+    const { foodPlan, amount, foodPlanId ,isComplimentary = false} = req.body;
 
     const { cmp_id } = req.params;
 
@@ -514,6 +518,7 @@ export const updateFoodPlan = async (req, res) => {
         $set: {
           foodPlan,
           amount,
+          isComplimentary: isComplimentary, // ✅ UPDATE THIS
         },
       },
       { new: true },
@@ -1264,6 +1269,11 @@ export const getBookings = async (req, res) => {
       } else {
         processed.travelAgentName = "-";
       }
+
+ processed.roomNumbers = processed.selectedRooms
+        ?.map(room => room.roomName || room.roomNumber)
+        .filter(Boolean)
+        .join(", ") || "-";
 
       return processed;
     });

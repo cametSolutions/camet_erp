@@ -37,6 +37,7 @@ function CheckInPage() {
       bookingData.advanceAmount = 0
     }
   }, [bookingData])
+  
 console.log("HHH")
   const handleSubmit = async (data, paymentData,paymenttypeDetails) => {
     let updatedData

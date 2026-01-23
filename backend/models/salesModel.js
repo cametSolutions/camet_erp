@@ -254,7 +254,7 @@ const salesSchema = new Schema(
         finalValue: { type: Number },
       },
     ],
-
+   isComplimentary: { type: Boolean, default: false }, // ✅ ADD THIS
     note: { type: String },
 
     subTotal: { type: Number, default: null },

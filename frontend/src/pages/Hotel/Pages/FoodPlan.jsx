@@ -32,45 +32,45 @@ function FoodPlan() {
   const handleLoader = (data) => {
     setLoading(data);
   };
-  const handleSubmit = async (isEdit, value, price , id) => {
-    try {
-      setLoading(true);
-      handleLoader(true);
+ const handleSubmit = async (isEdit, value, price, id, isComplimentary = false) => {
+  try {
+    setLoading(true);
+    handleLoader(true);
 
-      console.log(isEdit, value, price , id);
+    console.log(isEdit, value, price, id, isComplimentary);
 
-      let res;
-      if (isEdit) {
-        res = await api.put(
-          `/api/sUsers/updateFoodPlan/${organization._id}`,
-          {
-            foodPlan: value,
-            amount: price,
-            foodPlanId: id,
-
-          },
-          { withCredentials: true }
-        );
-      } else {
-        res = await api.post(
-          `/api/sUsers/saveFoodPlan/${organization._id}`,
-          {
-            foodPlan: value,
-            amount: price,
-
-          },
-          { withCredentials: true }
-        );
-      }
-      toast.success(res.data.message);
-      refreshHook();
-    } catch (error) {
-      console.log(error);
-      toast.error(error.response?.data?.message || "An error occurred");
-    } finally {
-      setLoading(false);
+    let res;
+    if (isEdit) {
+      res = await api.put(
+        `/api/sUsers/updateFoodPlan/${organization._id}`,
+        {
+          foodPlan: value,
+          amount: price,
+          foodPlanId: id,
+          isComplimentary: isComplimentary, // ✅ ADD THIS
+        },
+        { withCredentials: true }
+      );
+    } else {
+      res = await api.post(
+        `/api/sUsers/saveFoodPlan/${organization._id}`,
+        {
+          foodPlan: value,
+          amount: price,
+          isComplimentary: isComplimentary, // ✅ ADD THIS
+        },
+        { withCredentials: true }
+      );
     }
-  };
+    toast.success(res.data.message);
+    refreshHook();
+  } catch (error) {
+    console.log(error);
+    toast.error(error.response?.data?.message || "An error occurred");
+  } finally {
+    setLoading(false);
+  }
+};
   
   const handleDelete=async (id) => {
        try {
