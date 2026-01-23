@@ -101,7 +101,25 @@ const kotSchema = new mongoose.Schema({
   },
   discount: { type: Number, default: 0 },
 discountChargeId: { type: mongoose.Schema.Types.ObjectId, ref: 'AdditionalCharges' },
-note: { type: String }
+note: { type: String },
+ foodPlanId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "FoodPlan",
+    default: null
+  },
+  
+  
+  foodPlanDetails: {
+    planName: { type: String, default: null },
+    amount: { type: Number, default: 0 },
+    isComplimentary: { type: Boolean, default: false }
+  },
+  
+  
+  isManuallyComplimentary: {
+    type: Boolean,
+    default: false
+  }
 });
 
 export default mongoose.model("Kot", kotSchema);
