@@ -445,7 +445,333 @@ export const getReceiptDetails = async (req, res) => {
    amounts rather than stale data from the receipt creation time.
    ----------------------------------------------------------- */
 
-    const receiptDoc = await ReceiptModel.findById(receiptId);
+    // const receiptDoc = await ReceiptModel.findById(receiptId);
+    // const receiptDoc = await ReceiptModel.aggregate([
+    //   {
+    //     $match: { _id: new mongoose.Types.ObjectId(receiptId) }
+    //   },
+
+    //   // Unwind billData array
+    //   { $unwind: "$billData" },
+
+    //   // Lookup in BOOKING collection
+    //   {
+    //     $lookup: {
+    //       from: "bookings",
+    //       localField: "billData.billId",
+    //       foreignField: "_id",
+    //       as: "bookingDoc"
+    //     }
+    //   },
+
+    //   // Lookup in CHECKIN collection
+    //   {
+    //     $lookup: {
+    //       from: "checkins",
+    //       localField: "billData.billId",
+    //       foreignField: "_id",
+    //       as: "checkinDoc"
+    //     }
+    //   },
+
+    //   // Pick whichever exists
+    //   {
+    //     $addFields: {
+    //       billSource: {
+    //         $cond: [
+    //           { $gt: [{ $size: "$bookingDoc" }, 0] },
+    //           { $arrayElemAt: ["$bookingDoc", 0] },
+    //           { $arrayElemAt: ["$checkinDoc", 0] }
+    //         ]
+    //       }
+    //     }
+    //   },
+
+    //   // Extract ONLY room names
+    //   {
+    //     $addFields: {
+    //       roomNames: {
+    //         $map: {
+    //           input: "$billSource.selectedRooms",
+    //           as: "room",
+    //           in: "$$room.roomName"
+    //         }
+    //       }
+    //     }
+    //   },
+
+    //   // Attach roomNames back into billData
+    //   {
+    //     $addFields: {
+    //       "billData.roomNames": "$roomNames"
+    //     }
+    //   },
+
+    //   // Cleanup
+    //   {
+    //     $project: {
+    //       bookingDoc: 0,
+    //       checkinDoc: 0,
+    //       billSource: 0,
+    //       roomNames: 0
+    //     }
+    //   },
+
+    //   // Re-group billData array
+    //   {
+    //     $group: {
+    //       _id: "$_id",
+    //       doc: { $first: "$$ROOT" },
+    //       billData: { $push: "$billData" }
+    //     }
+    //   },
+    //   {
+    //     $replaceRoot: {
+    //       newRoot: {
+    //         $mergeObjects: ["$doc", { billData: "$billData" }]
+    //       }
+    //     }
+    //   }
+    // ])
+    console.log("reciptid", receiptId)
+    // const receiptDocs = await ReceiptModel.aggregate([
+    //   {
+    //     $match: { _id: new mongoose.Types.ObjectId(receiptId) }
+    //   },
+
+    //   { $unwind: "$billData" },
+
+    //   // ✅ convert billId string → ObjectId
+    //   {
+    //     $addFields: {
+    //       billObjectId: { $toObjectId: "$billData.billId" }
+    //     }
+    //   },
+
+    //   // Lookup BOOKING
+    //   {
+    //     $lookup: {
+    //       from: "bookings",
+    //       localField: "billObjectId",
+    //       foreignField: "_id",
+    //       as: "bookingDoc"
+    //     }
+    //   },
+
+    //   // Lookup CHECKIN
+    //   {
+    //     $lookup: {
+    //       from: "checkins",
+    //       localField: "billObjectId",
+    //       foreignField: "_id",
+    //       as: "checkinDoc"
+    //     }
+    //   },
+
+    //   // Pick whichever exists
+    //   {
+    //     $addFields: {
+    //       billSource: {
+    //         $cond: [
+    //           { $gt: [{ $size: "$bookingDoc" }, 0] },
+    //           { $arrayElemAt: ["$bookingDoc", 0] },
+    //           { $arrayElemAt: ["$checkinDoc", 0] }
+    //         ]
+    //       }
+    //     }
+    //   },
+
+    //   // Extract room names
+    //   {
+    //     $addFields: {
+    //       "billData.roomNames": {
+    //         $map: {
+    //           input: "$billSource.selectedRooms",
+    //           as: "room",
+    //           in: "$$room.roomName"
+    //         }
+    //       }
+    //     }
+    //   },
+
+    //   // Cleanup
+    //   {
+    //     $project: {
+    //       bookingDoc: 0,
+    //       checkinDoc: 0,
+    //       billSource: 0,
+    //       billObjectId: 0
+    //     }
+    //   },
+
+    //   // Rebuild billData array
+    //   {
+    //     $group: {
+    //       _id: "$_id",
+    //       doc: { $first: "$$ROOT" },
+    //       billData: { $push: "$billData" }
+    //     }
+    //   },
+    //   {
+    //     $replaceRoot: {
+    //       newRoot: {
+    //         $mergeObjects: ["$doc", { billData: "$billData" }]
+    //       }
+    //     }
+    //   }
+    // ])
+
+    // ✅ Convert array → single object
+    const receiptDocs = await ReceiptModel.aggregate([
+      {
+        $match: { _id: new mongoose.Types.ObjectId(receiptId) }
+      },
+
+      { $unwind: "$billData" },
+
+      // convert billId → ObjectId
+      {
+        $addFields: {
+          billObjectId: { $toObjectId: "$billData.billId" }
+        }
+      },
+
+      // BOOKING
+      {
+        $lookup: {
+          from: "bookings",
+          localField: "billObjectId",
+          foreignField: "_id",
+          as: "bookingDoc"
+        }
+      },
+
+      // CHECKIN
+      {
+        $lookup: {
+          from: "checkins",
+          localField: "billObjectId",
+          foreignField: "_id",
+          as: "checkinDoc"
+        }
+      },
+
+      // SALES
+      {
+        $lookup: {
+          from: "sales",
+          localField: "billObjectId",
+          foreignField: "_id",
+          as: "saleDoc"
+        }
+      },
+
+      // Decide bill source type
+      {
+        $addFields: {
+          billType: {
+            $cond: [
+              { $gt: [{ $size: "$bookingDoc" }, 0] },
+              "booking",
+              {
+                $cond: [
+                  { $gt: [{ $size: "$checkinDoc" }, 0] },
+                  "checkin",
+                  {
+                    $cond: [
+                      { $gt: [{ $size: "$saleDoc" }, 0] },
+                      "sale",
+                      null
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          billSource: {
+            $cond: [
+              { $gt: [{ $size: "$bookingDoc" }, 0] },
+              { $arrayElemAt: ["$bookingDoc", 0] },
+              {
+                $cond: [
+                  { $gt: [{ $size: "$checkinDoc" }, 0] },
+                  { $arrayElemAt: ["$checkinDoc", 0] },
+                  { $arrayElemAt: ["$saleDoc", 0] }
+                ]
+              }
+            ]
+          }
+        }
+      },
+
+      // Extract roomNames / productNames
+      {
+        $addFields: {
+          "billData.roomNames": {
+            $cond: [
+              { $in: ["$billType", ["booking", "checkin"]] },
+              {
+                $map: {
+                  input: "$billSource.selectedRooms",
+                  as: "room",
+                  in: "$$room.roomName"
+                }
+              },
+              []
+            ]
+          },
+
+          "billData.productNames": {
+            $cond: [
+              { $eq: ["$billType", "sale"] },
+              {
+                $map: {
+                  input: "$billSource.items",
+                  as: "item",
+                  in: "$$item.product_name"
+                }
+              },
+              []
+            ]
+          }
+        }
+      },
+
+      // cleanup
+      {
+        $project: {
+          bookingDoc: 0,
+          checkinDoc: 0,
+          saleDoc: 0,
+          billSource: 0,
+          billObjectId: 0,
+          billType: 0
+        }
+      },
+
+      // rebuild billData array
+      {
+        $group: {
+          _id: "$_id",
+          doc: { $first: "$$ROOT" },
+          billData: { $push: "$billData" }
+        }
+      },
+      {
+        $replaceRoot: {
+          newRoot: {
+            $mergeObjects: ["$doc", { billData: "$billData" }]
+          }
+        }
+      }
+    ])
+
+
+
+
+    const receiptDoc = receiptDocs[0] || null
+
+
     // .populate({
     //   path: "billData._id", // ↳ nested reference
     //   select: "appliedReceipts bill_pending_amt", // ↳ pull only what we actually need

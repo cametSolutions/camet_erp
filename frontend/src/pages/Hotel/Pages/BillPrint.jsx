@@ -940,7 +940,9 @@ const HotelBillPrint = () => {
     }
 
     console.log( doc);
-
+console.log(organization?.flat)
+console.log(organization?.road)
+console.log(organization?.landmark)
     return {
       hotel: {
         name: organization?.name,
@@ -998,7 +1000,7 @@ const HotelBillPrint = () => {
       },
     };
   };
-
+console.log(selectedCheckOut)
   // Build all billData per doc; decide where advances appear
   const bills = useMemo(() => {
     const docs = selectedCheckOut || [];
