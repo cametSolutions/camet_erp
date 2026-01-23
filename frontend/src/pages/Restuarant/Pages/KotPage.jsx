@@ -722,6 +722,7 @@ const OrdersDashboard = () => {
       setPaymentMode("single");
       setSelectedCreditor("");
       setSelectedKot([]);
+      setShowVoucherPdf(false);
     }
   };
 
@@ -860,7 +861,7 @@ const OrdersDashboard = () => {
       setPreviewForSales(null);
       return;
     }
-    setShowVoucherPdf(false);
+    
 
     // setDiscountAmount(0);
     // setDiscountCharge(null)

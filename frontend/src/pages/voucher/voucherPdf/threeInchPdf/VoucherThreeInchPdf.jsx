@@ -16,7 +16,7 @@ function VoucherThreeInchPdf({
   const [additinalCharge, setAdditinalCharge] = useState("");
   const [inWords, setInWords] = useState("");
 
-  console.log(data);
+  console.log(isPreview);
 
   const IsIndian =
     useSelector(
