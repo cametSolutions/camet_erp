@@ -4,6 +4,7 @@ import useFetch from "@/customHook/useFetch";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
+
 import {
   MdDescription,
   MdAccessTime,
@@ -40,7 +41,7 @@ const OrdersDashboard = () => {
   const [orders, setOrders] = useState([]);
   const [loader, setLoader] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-
+const [isComplimentary, setIsComplimentary] = useState(false);
   const [allAdditionalChargesFromRedux, setAllAdditionalChargesFromRedux] =
     useState([]);
   const [additionalCharges, setAdditionalCharges] = useState([]);
@@ -276,6 +277,9 @@ const OrdersDashboard = () => {
     }
   }
 }, []);
+
+
+
   const statusConfig = {
     pending: {
       label: "Pending",
@@ -670,6 +674,27 @@ const OrdersDashboard = () => {
         // ✅ Use EXACTLY what's in preview - don't rebuild
         additionalCharges = previewForSales.additionalCharges;
       }
+
+       const hasAutoComplimentary = selectedKot.some((kot) => {
+      const order = filteredOrders.find((o) => o._id === kot.id);
+      return order?.foodPlanDetails?.isComplimentary === true;
+    });
+
+    const isManuallyComplimentary = isComplimentary && !hasAutoComplimentary;
+
+    console.log("=== PAYMENT SUBMISSION ===");
+    console.log("Is Complimentary:", isComplimentary);
+    console.log("Has Auto Complimentary (from Food Plan):", hasAutoComplimentary);
+    console.log("Is Manually Complimentary:", isManuallyComplimentary);
+
+    // Show appropriate toast message
+    if (isComplimentary) {
+      if (hasAutoComplimentary) {
+        toast.info("Processing complimentary order (Food Plan)");
+      } else {
+        toast.info("Processing manually marked complimentary order");
+      }
+    }
       // ================= FINAL PAYMENT OBJECT =================
       const payment = {
         paymentMethod,
@@ -681,6 +706,8 @@ const OrdersDashboard = () => {
         isPostToRoom,
         isDirectSale: selectedDataForPayment?.isDirectSale || false,
         additionalCharges: additionalCharges,
+          isComplimentary: isComplimentary, // ✅ ADD THIS
+             isManuallyComplimentary: isManuallyComplimentary, 
         //  discountCharge: previewDiscountCharge,
         // discountAmount: previewDiscount,
         note,
@@ -702,13 +729,18 @@ const OrdersDashboard = () => {
           )
         );
 
-        toast.success(response?.data?.message);
+         toast.success(
+        isComplimentary 
+          ? "Complimentary order processed successfully!" 
+          : response?.data?.message
+      );
         setShowPaymentModal(false);
         setSelectedDiscountCharge(null);
         setDiscountAmount(0);
         setDiscountType("amount");
         setDiscountValue(0);
         setNote("");
+               setIsComplimentary(false); // 
         setPreviewForSales(null);
       }
     } catch (error) {
@@ -835,7 +867,8 @@ const OrdersDashboard = () => {
       discountCharge: selectedDiscountCharge,
       additionalCharges: additionalChargesArray, // Discount type details
       finalAmount: finalAmount,
-      note: note || "", // After discount
+      note: note || "",
+        isComplimentary: isComplimentary, // ✅ ADD THIS - Independent flag // After discount
       total: finalAmount,
       voucherNumber: kotVoucherNumberArray,
       party: {
@@ -887,6 +920,27 @@ const OrdersDashboard = () => {
   });
 
   console.log(additionalCharges);
+useEffect(() => {
+  if (showPaymentModal && selectedKot.length > 0) {
+    console.log("=== PAYMENT MODAL OPENED ===");
+    
+    // Check if any KOT has complimentary food plan
+    const hasComplimentaryFoodPlan = selectedKot.some((kot) => {
+      const order = filteredOrders.find((o) => o._id === kot.id);
+      
+      console.log("Checking KOT:", kot.voucherNumber);
+      console.log("Food Plan Details:", order?.foodPlanDetails);
+      console.log("Is Complimentary:", order?.foodPlanDetails?.isComplimentary);
+      
+      return order?.foodPlanDetails?.isComplimentary === true;
+    });
+
+    console.log("Has Complimentary Food Plan:", hasComplimentaryFoodPlan);
+
+    // ✅ Auto-tick checkbox if complimentary
+    setIsComplimentary(hasComplimentaryFoodPlan);
+  }
+}, [showPaymentModal, selectedKot, filteredOrders]);
 
   return (
     <>
@@ -1619,6 +1673,88 @@ const OrdersDashboard = () => {
                             onChange={(e) => setNote(e.target.value)}
                           />
                         </div>
+                        <div className="mt-3 p-2 bg-green-50 border border-green-200 rounded-lg">
+  <label className="flex items-center gap-2 cursor-pointer">
+     <input
+      type="checkbox"
+      checked={isComplimentary}
+      onChange={(e) => {
+        const isChecked = e.target.checked;
+        setIsComplimentary(isChecked);
+        
+        // Check if auto-complimentary
+        const hasAutoComplimentary = selectedKot.some((kot) => {
+          const order = filteredOrders.find((o) => o._id === kot.id);
+          return order?.foodPlanDetails?.isComplimentary === true;
+        });
+
+        if (!hasAutoComplimentary && isChecked) {
+          toast.info("Marking order as complimentary");
+        } else if (hasAutoComplimentary && !isChecked) {
+          toast.warning("This order has a complimentary food plan");
+        }
+      }}
+      className="mt-1 w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 flex-shrink-0"
+    />
+    
+    <div className="flex-1">
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-sm font-semibold text-green-700">
+          Mark as Complimentary
+        </span>
+        
+        {/* Show badge if auto-selected */}
+        {selectedKot.some((kot) => {
+          const order = filteredOrders.find((o) => o._id === kot.id);
+          return order?.foodPlanDetails?.isComplimentary === true;
+        }) && (
+          <span className="inline-flex items-center gap-1 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+            ✓ Auto-selected (Food Plan)
+          </span>
+        )}
+      </div>
+      
+      {/* Show details when checked */}
+      {isComplimentary && (
+        <div className="mt-2 p-2 bg-white rounded border border-green-200">
+          {selectedKot.some((kot) => {
+            const order = filteredOrders.find((o) => o._id === kot.id);
+            return order?.foodPlanDetails?.isComplimentary === true;
+          }) ? (
+            <div className="space-y-1.5">
+              <p className="text-xs text-green-700 font-medium">
+                ✓ Complimentary Food Plans:
+              </p>
+              
+              {/* List each KOT */}
+              {selectedKot.map((kot) => {
+                const order = filteredOrders.find((o) => o._id === kot.id);
+                if (order?.foodPlanDetails?.planName) {
+                  return (
+                    <div key={kot.id} className="flex items-center justify-between text-xs bg-green-50 px-2 py-1 rounded">
+                      <span className="text-gray-700">
+                        KOT #{kot.voucherNumber}
+                      </span>
+                      <span className="font-medium text-green-700">
+                        {order.foodPlanDetails.planName}
+                        {order.foodPlanDetails.isComplimentary && " (Free)"}
+                      </span>
+                    </div>
+                  );
+                }
+                return null;
+              })}
+            </div>
+          ) : (
+            <p className="text-xs text-amber-700">
+              ⚠ Manually marked as complimentary (free service)
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  </label>
+</div>
 
                         {/* Final Total */}
                         <div className="border-t border-green-300 pt-2">

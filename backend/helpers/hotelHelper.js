@@ -86,28 +86,28 @@ export const buildDatabaseFilterForBooking = (params) => {
   }
 
   // Add search functionality if search term is provided
-  if (params.searchTerm && params.searchTerm != "completed") {
-    if (params.searchTerm != "pending") {
+ if (params.searchTerm && params.searchTerm !== "completed") {
+    if (params.searchTerm !== "pending") {
       filter.$or = [
         { voucherNumber: { $regex: params.searchTerm, $options: "i" } },
         { customerName: { $regex: params.searchTerm, $options: "i" } },
+        { "selectedRooms.roomName": { $regex: params.searchTerm, $options: "i" } },
+        { "selectedRooms.roomNumber": { $regex: params.searchTerm, $options: "i" } },
       ];
     } else {
       filter = { ...filter, status: { $exists: false } };
     }
-  } else if (params.searchTerm == "completed") {
-    if (params.modal == "booking") {
+  } else if (params.searchTerm === "completed") {
+    if (params.modal === "booking") {
       filter = { ...filter, status: "checkIn" };
     }
-    if (params.modal == "checkIn") {
+    if (params.modal === "checkIn") {
       filter = { ...filter, status: "checkOut" };
     }
   }
 
-
   return filter;
 };
-
 
 // function used to fetch booking
 export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
@@ -129,6 +129,10 @@ export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
         .populate("customerId")
         .populate("agentId")
         .populate("isHotelAgent")
+        .populate({
+      path: "selectedRooms.roomId",
+      select: "roomName roomNumber status",
+    })
         .populate("selectedRooms.selectedPriceLevel")
         .populate("bookingId")
         .populate("checkInId")

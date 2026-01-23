@@ -5,6 +5,10 @@ const foodPlanSchema = new mongoose.Schema({
   foodPlan: String,
   rate: Number,
   roomId: { type: mongoose.Schema.Types.ObjectId, ref: "Room" },
+   isComplimentary: { 
+    type: Boolean, 
+    default: false 
+  }, 
 });
 
 const paxDetailSchema = new mongoose.Schema({

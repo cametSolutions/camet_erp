@@ -49,7 +49,11 @@ const IdProofSchema = new mongoose.Schema({
 const FoodPlanSchema = new mongoose.Schema({
   foodPlan: { type: String, required: true },
   amount: { type: Number },
-  foodPlanId: { type: String, required: true, index: true }, // Add index: true here
+  foodPlanId: { type: String, required: true, index: true },
+   isComplimentary: {  // ✅ ADD THIS FIELD
+    type: Boolean, 
+    default: false 
+  }, // Add index: true here
   cmp_id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Organization",
