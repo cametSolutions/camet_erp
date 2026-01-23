@@ -107,6 +107,7 @@ const RestaurantPOS = () => {
     roomno: "",
     guestName: "",
     CheckInNumber: "",
+    foodPlan:'',
   });
   const [orders, setOrders] = useState([]);
   const [orderNumber, setOrderNumber] = useState(1001);
@@ -246,20 +247,33 @@ const RestaurantPOS = () => {
       toast.error("Failed to load sale print data!");
     }
   };
-  const handleSelectRoom = (room) => {
-    setRoomDetails({
-      ...roomDetails,
-      _id: room?.roomId || "",
-      roomno: room?.roomName || "",
-      guestName: room?.customerName || "",
-      CheckInNumber: room?.voucherNumber || "",
-    });
-    setSearch(
-      `${room.roomName} - ${room.customerName} - ${room.voucherNumber}`
-    );
-    setShowResults(false);
-  };
-
+const handleSelectRoom = (room) => {
+  console.log("=== SELECTING ROOM ===");
+  console.log("Selected room object:", room);
+  console.log("Food plan from room:", room?.foodPlan);
+  
+    const foodPlanData = room?.foodPlan ? {
+    _id: room.foodPlan._id,           // FoodPlan document ID
+    planType: room.foodPlan.planType,  // e.g., "CP", "MAP", "Complimentary"
+    amount: room.foodPlan.amount,
+    isComplimentary: room.foodPlan.isComplimentary || false
+  } : null;
+  
+  console.log("Processed food plan data:", foodPlanData);
+  // ✅ Create fresh object without spread operator
+ setRoomDetails({
+    _id: room?.roomId || "",
+    roomno: room?.roomName || "",
+    guestName: room?.customerName || "",
+    CheckInNumber: room?.voucherNumber || "",
+    foodPlan: foodPlanData, // ✅ Store processed food plan
+  });
+  
+  setSearch(
+    `${room.roomName} - ${room.customerName} - ${room.voucherNumber}`
+  );
+  setShowResults(false);
+};
   const fetchPriceList = async () => {
     try {
       setLoading(true);
@@ -425,21 +439,64 @@ const RestaurantPOS = () => {
     error,
   } = useFetch(`/api/sUsers/getRoomBasedOnBooking/${cmp_id}`);
 
-  useEffect(() => {
-    if (roomBookingData) {
-      const getRooms = roomBookingData?.data?.flatMap((room) => {
-        return (
-          room?.selectedRooms?.map((selectedRoom) => ({
+ useEffect(() => {
+  if (roomBookingData) {
+    console.log("=== RAW ROOM BOOKING DATA ===");
+    console.log("First booking:", roomBookingData?.data[0]);
+    
+    const getRooms = roomBookingData?.data?.flatMap((room) => {
+      console.log("Processing booking, foodPlan array:", room?.foodPlan);
+      
+      return (
+        room?.selectedRooms?.map((selectedRoom) => {
+          // Find matching food plan for this room
+          const roomFoodPlan = room?.foodPlan?.find(
+            (fp) => fp.roomId === selectedRoom.roomId
+          );
+          
+          console.log("=== ROOM FOOD PLAN ===");
+          console.log("Room:", selectedRoom.roomName);
+          console.log("Found food plan:", roomFoodPlan);
+          
+          // ✅ Build complete food plan object
+          let completeFoodPlan = null;
+          if (roomFoodPlan) {
+            completeFoodPlan = {
+              _id: roomFoodPlan._id || roomFoodPlan.foodPlanId,
+              planType: roomFoodPlan.planType || roomFoodPlan.foodPlan,
+              amount: roomFoodPlan.amount || 0,
+              isComplimentary: roomFoodPlan.isComplimentary || false
+            };
+            
+            console.log("Complete food plan object:", completeFoodPlan);
+          }
+          
+          return {
             ...selectedRoom,
             customerName: room?.customerName,
             mobileNumber: room?.mobileNumber,
             voucherNumber: room?.voucherNumber,
-          })) || []
-        );
-      });
-      setRoomData(getRooms);
-    }
-  }, [roomBookingData]);
+            foodPlan: completeFoodPlan, // ✅ This is the key part
+            bookingDate: room?.bookingDate,
+            arrivalDate: room?.arrivalDate,
+            checkOutDate: room?.checkOutDate,
+            stayDays: room?.stayDays,
+          };
+        }) || []
+      );
+    });
+    
+    console.log("=== ALL PROCESSED ROOMS ===");
+    console.log(getRooms.filter(r => r.foodPlan).map(r => ({
+      room: r.roomName,
+      foodPlan: r.foodPlan
+    })));
+    
+    setRoomData(getRooms);
+  }
+}, [roomBookingData]);
+
+  console.log(roomBookingData)
 
   useEffect(() => {
     if (error) {
@@ -843,6 +900,7 @@ const RestaurantPOS = () => {
           name: roomDetails?.guestName,
           tableNumber: selectedTableNumber,
           tableStatus,
+           foodPlan: roomDetails?.foodPlan || null,
         };
       } else {
         orderCustomerDetails = {
@@ -856,6 +914,7 @@ const RestaurantPOS = () => {
         roomId: roomDetails?._id,
         checkInNumber: roomDetails?.CheckInNumber,
         name: roomDetails?.guestName,
+          foodPlan: roomDetails?.foodPlan || null,
       };
     } else {
       orderCustomerDetails = { ...customerDetails, tableStatus };

@@ -16,6 +16,7 @@ import Organization from "../models/OragnizationModel.js";
 import Table from "../models/TableModel.js";
 import { Godown } from "../models/subDetails.js";
 import { buildReceipt } from "../helpers/restaurantHelper.js";
+import { FoodPlan } from '../models/hotelSubMasterModal.js';
 import AdditionalCharges from "../models/additionalChargesModel.js";
 // Helper functions (you may need to create these or adjust based on your existing ones)
 import {
@@ -402,13 +403,11 @@ export const generateKot = async (req, res) => {
 
     const cmp_id = req.params.cmp_id;
     const organizationData = await Organization.findOne(
-      { _id: cmp_id }, // filter
-      null, // projection (null = all fields)
-      { session } // options (session here)
+      { _id: cmp_id },
+      null,
+      { session }
     );
 
-    console.log(organizationData);
-    // Find voucher series inside the session
     const voucherData = await VoucherSeriesModel.findOne(
       { voucherType: "memoRandom", cmp_id: cmp_id },
       null,
@@ -419,13 +418,59 @@ export const generateKot = async (req, res) => {
       throw new Error("Voucher series not found for memoRandom");
     }
 
-    // Generate voucher number using the session
     const kotNumber = await generateVoucherNumber(
       cmp_id,
       "memoRandom",
       voucherData.series[0]._id.toString(),
       session
     );
+
+    console.log("=== BACKEND RECEIVED KOT REQUEST ===");
+    console.log("Customer data:", req.body.customer);
+    console.log("Food Plan from request:", req.body.customer?.foodPlan);
+
+    // ✅ SIMPLE FIX - Process food plan
+    let foodPlanId = null;
+    let foodPlanDetails = {
+      planName: null,
+      amount: 0,
+      isComplimentary: false
+    };
+
+    const foodPlanData = req.body.customer?.foodPlan;
+    
+    if (foodPlanData) {
+      console.log("=== PROCESSING FOOD PLAN ===");
+      console.log("Food Plan Data:", foodPlanData);
+      console.log("isComplimentary from request:", foodPlanData.isComplimentary);
+      
+      // ✅ DIRECT APPROACH - Use what frontend sends
+      foodPlanDetails = {
+        planName: foodPlanData.planType || 'Complimentary',
+        amount: foodPlanData.amount || 0,
+        isComplimentary: Boolean(foodPlanData.isComplimentary) // ✅ Convert to boolean
+      };
+      
+      // Try to save the food plan ID if provided
+      if (foodPlanData._id) {
+        try {
+          // Convert string to ObjectId
+          foodPlanId = new mongoose.Types.ObjectId(foodPlanData._id);
+          console.log("Food Plan ID converted:", foodPlanId);
+        } catch (e) {
+          console.warn("Could not convert food plan ID:", e.message);
+          foodPlanId = null;
+        }
+      }
+      
+      console.log("=== PROCESSED FOOD PLAN ===");
+      console.log("foodPlanDetails:", foodPlanDetails);
+      console.log("isComplimentary value:", foodPlanDetails.isComplimentary);
+    }
+
+    console.log("=== FINAL FOOD PLAN TO SAVE ===");
+    console.log("foodPlanId:", foodPlanId);
+    console.log("foodPlanDetails:", foodPlanDetails);
 
     // Prepare the KOT data
     const kotData = {
@@ -447,9 +492,20 @@ export const generateKot = async (req, res) => {
       paymentMethod: req.body.paymentMethod,
       roomId: req.body.customer?.roomId,
       checkInNumber: req.body.customer?.checkInNumber,
+      
+      // ✅ Save food plan
+      foodPlanId: foodPlanId,
+      foodPlanDetails: foodPlanDetails,
+      isManuallyComplimentary: false
     };
 
-    // // Create the KOT document inside the transaction
+    console.log("=== SAVING KOT ===");
+    console.log("KOT Data:", {
+      voucherNumber: kotData.voucherNumber,
+      foodPlanId: kotData.foodPlanId,
+      foodPlanDetails: kotData.foodPlanDetails
+    });
+
     const kot = await kotModal.create([kotData], { session });
 
     if (kotData.tableNumber && kotData.type === "dine-in") {
@@ -465,13 +521,17 @@ export const generateKot = async (req, res) => {
         );
       }
     }
-    // Commit the transaction
+
     await session.commitTransaction();
     session.endSession();
 
+    console.log("=== KOT CREATED SUCCESSFULLY ===");
+    console.log("KOT ID:", kot[0]._id);
+    console.log("Food Plan Saved:", kot[0].foodPlanDetails);
+
     res.status(200).json({
       success: true,
-      data: kot[0], // create with array returns an array
+      data: kot[0],
     });
   } catch (error) {
     await session.abortTransaction();
@@ -1032,7 +1092,9 @@ export const updateKotPayment = async (req, res) => {
         discountCharge,    // ✅ NEW: From frontend dropdown
         discountAmount,
          discountType,        // ✅ Extract discount type
-      discountValue,    // ✅ NEW: Discount amount
+      discountValue, 
+       isComplimentary = false, 
+         isManuallyComplimentary = false,  // ✅ NEW: Discount amount
         note,
       } = req.body;
     
@@ -1141,7 +1203,9 @@ console.log("=== STEP 3: BACKEND RECEIVED ===");
         party,
         selectedParty,
         paymentSplittingArray,
-        session
+        session,
+        isComplimentary,
+        isManuallyComplimentary
       );
  // ✅ Calculate with DISCOUNT
       const originalTotal = Number(kotData?.total || 0);
@@ -1193,23 +1257,42 @@ console.log("=== STEP 3: BACKEND RECEIVED ===");
       }
 
       // Update KOTs
-      paymentCompleted = true;
+       paymentCompleted = true;
       let selectedTableNumber = [];
 
       await Promise.all(
         kotData?.voucherNumber.map(async (item) => {
-          // Find the KOT first
           const kot = await kotModal.findById(item.id).lean();
-  if (kot?.tableNumber && !selectedTableNumber.includes(kot.tableNumber)) {
+          
+          if (kot?.tableNumber && !selectedTableNumber.includes(kot.tableNumber)) {
             selectedTableNumber.push(kot.tableNumber);
           }
 
-          // Then update it
+          console.log(`=== UPDATING KOT ${item.id} ===`);
+          console.log("Current food plan:", kot.foodPlanDetails);
+          
+          // Build update object
+          const updateData = {
+            paymentMethod,
+            paymentCompleted: true,
+            status: 'completed',
+            discount: discountAmount,
+            discountChargeId: discountCharge?._id,
+            note: note,
+          };
+
+          // ✅ Handle complimentary flag
+          if (isComplimentary) {
+            // Mark as complimentary
+            updateData['foodPlanDetails.isComplimentary'] = true;
+            updateData.isManuallyComplimentary = isManuallyComplimentary;
+          }
+
+          console.log("Update data:", updateData);
+
           return kotModal.updateOne(
             { _id: item.id },
-            { paymentMethod, paymentCompleted,  status: 'completed', discount: discountAmount,    // ✅ Save to KOT
-              discountChargeId: discountCharge?._id, // ✅ Reference
-              note: note     },
+            { $set: updateData },
             { session }
           );
         })
@@ -1255,7 +1338,15 @@ console.log("=== STEP 3: BACKEND RECEIVED ===");
       res.status(200).json({
         success: true,
         message: "KOT payment updated successfully",
-        data: { saleNumber, salesRecord: savedVoucherData[0] ,discountApplied: discountAmount || 0},
+       data: { 
+          saleNumber, 
+          salesRecord: savedVoucherData[0],
+          discountApplied: discountAmount || 0,
+      
+           isComplimentary: isComplimentary,
+          isManuallyComplimentary: isManuallyComplimentary,
+        // ✅ RETURN for confirmation
+        },
       });
     });
   } catch (error) {
@@ -1577,7 +1668,7 @@ async function createSalesVoucher(
   // ✅ FIXED: Use SUBTOTAL (BEFORE discount)
   const originalTotal = Number(kotData?.subtotal || kotData?.total || 0); // 1000 ✅
   const additionalCharges = req.body.additionalCharges || [];
-
+  const isComplimentary = req.body.isComplimentary || false;
   console.log("🔍 BEFORE SAVE - additionalCharges:", JSON.stringify(additionalCharges, null, 2));
 
   // ✅ Calculate totals
@@ -1623,6 +1714,7 @@ async function createSalesVoucher(
         totalAdditionalCharges: totalAdditionalCharges,
         totalWithAdditionalCharges: finalAmount,
         finalAmount: finalAmount,
+        isComplimentary: isComplimentary, // ✅ SAVE FLAG
         
         narration: req.body.narration || "",
         remarks: req.body.remarks || "",
