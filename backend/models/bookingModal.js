@@ -132,6 +132,12 @@ const bookingSchema = new mongoose.Schema(
     arrivalTime: String,
     checkOutDate: String,
     checkOutTime: String,
+    currentDate: String,
+    advanceTracking: {
+      type: Map,
+      of: Number,
+      default: {},
+    },
     stayDays: Number,
     bookingType: String,
     selectedRoomId: mongoose.Schema.Types.ObjectId,
@@ -203,7 +209,7 @@ const bookingSchema = new mongoose.Schema(
         saleVoucherNumber: String,
       },
     ],
-    addTaxWithRate:Boolean,
+    addTaxWithRate: Boolean,
     // Foreign National Fields (only for non-Indian guests)
     company: String,
     nextDestination: String,

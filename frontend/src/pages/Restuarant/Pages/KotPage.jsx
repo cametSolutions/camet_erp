@@ -754,6 +754,7 @@ const [isComplimentary, setIsComplimentary] = useState(false);
       setPaymentMode("single");
       setSelectedCreditor("");
       setSelectedKot([]);
+      setShowVoucherPdf(false);
     }
   };
 
@@ -893,7 +894,7 @@ const [isComplimentary, setIsComplimentary] = useState(false);
       setPreviewForSales(null);
       return;
     }
-    setShowVoucherPdf(false);
+    
 
     // setDiscountAmount(0);
     // setDiscountCharge(null)
