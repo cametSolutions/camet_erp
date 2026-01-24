@@ -6,6 +6,7 @@ import { useSelector } from "react-redux";
 import NotFound from "../../../assets/images/space.png";
 
 function TodaysTransaction() {
+console.log("hh")
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization?.secSelectedOrg?._id
   );

@@ -4,7 +4,8 @@ import { useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
 
 // For PDF export
-const generatePDF = async (
+// BillSummary.jsx (or same file)
+export const generatePDF = async (
   salesData,
   summary,
   owner,
@@ -14,261 +15,365 @@ const generatePDF = async (
   kotTypeFilter,
   mealPeriodFilter
 ) => {
-  // Create a new window for PDF generation
-  const printWindow = window.open("", "_blank");
-  
-const computeKotBreakdown = (salesData) => {
-  return salesData.reduce((acc, item) => {
-    const kotType = item.kotType || "Unknown";
-    if (!acc[kotType]) acc[kotType] = { amount: 0, count: 0 };
-    acc[kotType].amount += item.totalWithTax || 0;
-    acc[kotType].count += 1;
-    return acc;
-  }, {});
-};
-const kotBreakdown = computeKotBreakdown(salesData);
- const businessTypeTitle = () => {
-    switch (businessType) {
-      case "hotel":
-        return "Hotel Sales Register - Accommodation & Room Service";
-      case "restaurant":
-        return "Restaurant Sales Register - Food & Beverage Service";
-      default:
-        return "Combined Sales Register - Hotel & Restaurant";
-    }
-  };
+  if (!salesData || salesData.length === 0) return;
 
-   const filterInfo = () => {
+  const filterInfo = () => {
     const filters = [];
     if (kotTypeFilter !== "all") filters.push(`KOT Type: ${kotTypeFilter}`);
     if (mealPeriodFilter !== "all") filters.push(`Meal Period: ${mealPeriodFilter}`);
-    return filters.length > 0 ? `<div style="margin-top: 5px; font-size: 10px;">Filters Applied: ${filters.join(', ')}</div>` : '';
+    if (filters.length === 0) return "";
+    return `<div style="margin-top:4px;font-size:10px;">Filters: ${filters.join(" | ")}</div>`;
   };
-  console.log(businessType);
+
+  const printWindow = window.open("", "_blank", "width=1000,height=800,scrollbars=yes");
+
   const html = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>Sales Report - ${reportPeriod}</title>
-      <style>
-        body { font-family: Arial, sans-serif; margin: 20px; font-size: 12px; }
-        .header { text-center; border-bottom: 2px solid black; padding-bottom: 10px; margin-bottom: 20px; }
-        .company-name { font-size: 18px; font-weight: bold; margin-bottom: 5px; }
-        .company-address { font-size: 10px; color: #666; }
-        .report-title { font-size: 14px; margin-top: 10px; }
-        .business-type { margin-top: 10px; }
-        .badge { padding: 5px 10px; border-radius: 15px; font-size: 10px; font-weight: bold; }
-        .hotel-badge { background-color: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
-        .restaurant-badge { background-color: #dcfce7; color: #166534; border: 1px solid #86efac; }
-        .report-info { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 10px; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 10px; }
-        th, td { border: 1px solid black; padding: 4px; text-align: center; }
-        th { background-color: #f3f4f6; font-weight: bold; }
-        .text-left { text-align: left !important; }
-        .text-right { text-align: right !important; }
-        .totals-row { background-color: #f3f4f6; font-weight: bold; }
-        .summary-section { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
-        .summary-table { width: 100%; }
-        .summary-table td { border: none; padding: 2px 5px; }
-        .summary-title { font-weight: bold; margin-bottom: 10px; font-size: 12px; }
-        .notes { font-size: 10px; font-style: italic; color: #666; margin-top: 20px; border-top: 1px solid #ccc; padding-top: 10px; }
-        @media print { body { margin: 0; } }
-      </style>
-    </head>
-    <body>
-      <div class="header">
-        <div class="company-name">${
-          owner?.companyName || owner?.name || "Sales Report"
-        }</div>
-        <div class="company-address">${
-          owner?.address || owner?.road || "Sales Register"
-        }</div>
-        <div class="report-title">${businessTypeTitle()}</div>
-           ${filterInfo()}
-      ${businessType !== "all" ? `
-          <div class="business-type">
-            <span class="badge ${businessType === "hotel" ? "hotel-badge" : "restaurant-badge"}">
-              ${businessType === "hotel" ? "🏨 Hotel Sales Only" : "🍽️ Restaurant Sales Only"}
-            </span>
-          </div>
-        ` : ""}
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <title>Sales Report - ${reportPeriod}</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        font-size: 12px;
+        color: #000;
+        background: #ffffff !important;
+      }
+      @media print {
+        body { margin: 0; }
+        .no-print { display: none !important; }
+      }
+      .header {
+        text-align: center;
+        border-bottom: 2px solid #000;
+        padding-bottom: 10px;
+        margin-bottom: 15px;
+      }
+      .company-name {
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 4px;
+      }
+      .company-address {
+        font-size: 10px;
+        color: #555;
+        margin-bottom: 5px;
+      }
+      .report-title {
+        font-size: 13px;
+        font-weight: bold;
+        margin-top: 4px;
+      }
+      .report-info {
+        display: flex;
+        justify-content: space-between;
+        margin: 8px 0;
+        font-size: 10px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 10px;
+        margin-bottom: 10px;
+      }
+      th, td {
+        border: 1px solid #000;
+        padding: 4px 3px;
+        text-align: center;
+      }
+      th {
+        background-color: #f3f4f6;
+        font-weight: bold;
+      }
+      .text-left { text-align: left !important; }
+      .text-right { text-align: right !important; }
+      .totals-row {
+        background-color: #e5e7eb;
+        font-weight: bold;
+      }
+      .mode-badge {
+        display: inline-block;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 9px;
+        font-weight: 600;
+      }
+      .credit  { background:#fee2e2; color:#b91c1c; }
+      .upi     { background:#dbeafe; color:#1d4ed8; }
+      .cash    { background:#dcfce7; color:#15803d; }
+
+      .summary-section {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin-top: 10px;
+      }
+      .summary-title {
+        font-weight: bold;
+        margin-bottom: 6px;
+        font-size: 12px;
+      }
+      .summary-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 10px;
+      }
+      .summary-table td {
+        padding: 2px 3px;
+        border: none;
+      }
+      .summary-table tr.total-row td {
+        border-top: 1px solid #000;
+        font-weight: bold;
+      }
+      .notes {
+        font-size: 10px;
+        font-style: italic;
+        color: #555;
+        margin-top: 10px;
+        border-top: 1px solid #ccc;
+        padding-top: 6px;
+      }
+      .print-buttons {
+        text-align: center;
+        margin: 10px 0;
+      }
+      .print-btn {
+        background: #dc2626;
+        color: #fff;
+        border: none;
+        padding: 6px 14px;
+        margin: 0 4px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 11px;
+        font-weight: 600;
+      }
+      .print-btn:hover { background: #b91c1c; }
+      .close-btn { background:#4b5563; }
+      .close-btn:hover { background:#374151; }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <div class="company-name">${owner?.companyName || owner?.name || ""}</div>
+      <div class="company-address">
+        ${(owner?.address || "")} ${(owner?.road || "")}
       </div>
-<div>
-  <div class="summary-title">KOT Type Breakdown</div>
-  <table class="summary-table">
-    ${Object.entries(kotBreakdown)
-      .map(
-        ([type, data]) => `
-        <tr>
-          <td><strong>${type}</strong></td>
-          <td class="text-right">${data.amount.toFixed(2)}</td>
-          <td class="text-right">${data.count}</td>
-        </tr>`
-      )
-      .join("")}
-    <tr style="border-top: 2px solid black;">
-      <td><strong>Total</strong></td>
-      <td class="text-right"><strong>${Object.values(kotBreakdown)
-        .reduce((sum, k) => sum + k.amount, 0)
-        .toFixed(2)}</strong></td>
-      <td class="text-right"><strong>${Object.values(kotBreakdown)
-        .reduce((sum, k) => sum + k.count, 0)}</strong></td>
-    </tr>
-  </table>
-</div>
+      <div class="report-title">
+        SALES REGISTER OF THE OUTLET - ${businessType === "all" ? "ALL" : (businessType || "").toUpperCase()}
+      </div>
       <div class="report-info">
-        <div>For the Period <strong>${reportPeriod}</strong></div>
-        <div>Print Date & Time: <strong>${new Date().toLocaleString()}</strong></div>
+        <div>For the Period: <strong>${reportPeriod}</strong>${filterInfo()}</div>
+        <div>Print Date &amp; Time: <strong>${new Date().toLocaleString()}</strong></div>
       </div>
+    </div>
 
-      <table>
-        <thead>
-          <tr>
-            <th>Bill No</th>
-            <th>Date</th>
-            <th>Agent Name</th>
-            <th>Gross Amount</th>
-            <th>CGST</th>
-            <th>SGST</th>
-            <th>Total Tax</th>
-            <th>Disc</th>
-            <th>Round off</th>
-            <th>Net Total</th>
-            <th>Cash</th>
-            <th>UPI</th>
-            <th>Mode</th>
-            <th>Meal Period</th>
-            <th>KOT Type</th>
-            <th>Credit</th>
-            <th>Credit Desc</th>
-          </tr>
-        </thead>
-         <tbody>
-          ${salesData.map((row) => {
-            const isCreditSale = row.partyAccount === "Sundry Debtors" || row.mode === "Credit" || row.credit > 0;
-            const isCashSale = (row.partyAccount === "Cash-in-Hand" || row.partyAccount === "CASH") && !isCreditSale;
-            const isBankSale = (row.partyAccount === "Bank Accounts" || row.partyAccount === "Gpay") && !isCreditSale;
-            const grossAmount = (row.amount || 0) - (row.igst || 0);
-            
-            return `
-            <tr>
-              <td class="text-left">${row.billNo || "-"}</td>
-              <td>${row.date ? new Date(row.date).toLocaleDateString() : "-"}</td>
-              <td class="text-left">${row.partyName || "-"}</td>
-              <td class="text-right">${grossAmount.toFixed(2)}</td>
-              <td>${(row.cgst || 0).toFixed(2)}</td>
-              <td>${(row.sgst || 0).toFixed(2)}</td>
-              <td>${(row.igst || 0).toFixed(2)}</td>
-              <td>${(row.disc || 0).toFixed(2)}</td>
-              <td>${(row.roundOff || 0).toFixed(2)}</td>
-              <td>${(row.totalWithTax || 0).toFixed(2)}</td>
-              <td>${isCashSale ? (row.totalWithTax || 0).toFixed(2) : "-"}</td>
-              <td>${isBankSale ? (row.totalWithTax || 0).toFixed(2) : "-"}</td>
-              <td><span class="mode-badge mode-${isCreditSale ? 'credit' : isBankSale ? 'upi' : 'cash'}">${isCreditSale ? "Credit" : isBankSale ? "UPI" : "Cash"}</span></td>
-              <td>${row.mealPeriod || "-"}</td>
-              <td>${row.kotType || "-"}</td>
-              <td>${isCreditSale ? (row.totalWithTax || 0).toFixed(2) : "-"}</td>
-              <td class="text-left">${isCreditSale ? (row.creditDescription || row.partyName || "-") : "-"}</td>
-            </tr>
-          `;}).join("")}
-          <tr class="totals-row">
-            <td class="text-left" colspan="3">Total</td>
-            <td class="text-right">${totals.amount.toFixed(2)}</td>
-            <td>${totals.cgst.toFixed(2)}</td>
-            <td>${totals.sgst.toFixed(2)}</td>
-            <td>${totals.igst.toFixed(2)}</td>
-            <td>${totals.disc.toFixed(2)}</td>
-            <td>${totals.roundOff.toFixed(2)}</td>
-            <td>${totals.totalWithTax.toFixed(2)}</td>
-            <td>${totals.cash.toFixed(2)}</td>
-            <td>${totals.upi.toFixed(2)}</td>
-            <td>-</td>
-            <td>-</td>
-            <td>-</td>
-            <td>${totals.credit.toFixed(2)}</td>
-            <td>-</td>
-          </tr>
-        </tbody>
-      </table>
-
-         <div class="summary-section">
-        <div>
-          <div class="summary-title">Financial Summary</div>
-          <table class="summary-table">
-            <tr><td><strong>Gross Amount</strong></td><td class="text-right">${totals.amount.toFixed(2)}</td></tr>
-            <tr><td><strong>Discount</strong></td><td class="text-right">${totals.disc.toFixed(2)}</td></tr>
-            <tr><td><strong>CGST</strong></td><td class="text-right">${totals.cgst.toFixed(2)}</td></tr>
-            <tr><td><strong>SGST</strong></td><td class="text-right">${totals.sgst.toFixed(2)}</td></tr>
-            <tr><td><strong>Total Tax</strong></td><td class="text-right">${totals.igst.toFixed(2)}</td></tr>
-            <tr><td><strong>Net Cash</strong></td><td class="text-right">${totals.cash.toFixed(2)}</td></tr>
-            <tr><td><strong>UPI</strong></td><td class="text-right">${totals.upi.toFixed(2)}</td></tr>
-            <tr><td><strong>Credit Amount</strong></td><td class="text-right">${totals.credit.toFixed(2)}</td></tr>
-            <tr style="border-top: 2px solid black;"><td><strong>Net Sale</strong></td><td class="text-right"><strong>${totals.totalWithTax.toFixed(2)}</strong></td></tr>
-          </table>
-        </div>
-        <div>
-          <div class="summary-title">Business Type Breakdown</div>
-          <table class="summary-table">
-            ${businessType === "hotel" && summary.hotelSales ? `
-              <tr style="background-color: #dbeafe;"><td><strong>Hotel Sales</strong></td><td class="text-right">${summary.hotelSales.amount?.toFixed(2) || "0.00"}</td></tr>
-              <tr><td>- Transactions</td><td class="text-right">${summary.hotelSales.count || 0}</td></tr>
-            ` : ""}
-            ${businessType === "restaurant" && summary.restaurantSales ? `
-              <tr style="background-color: #dcfce7;"><td><strong>Restaurant Sales</strong></td><td class="text-right">${summary.restaurantSales.amount?.toFixed(2) || "0.00"}</td></tr>
-              <tr><td>- Transactions</td><td class="text-right">${summary.restaurantSales.count || 0}</td></tr>
-            ` : ""}
-            ${businessType === "all" ? `
-              ${summary.hotelSales ? `<tr style="background-color: #dbeafe;"><td><strong>Hotel Sales</strong></td><td class="text-right">${summary.hotelSales.amount?.toFixed(2) || "0.00"}</td></tr>
-              <tr><td>- Transactions</td><td class="text-right">${summary.hotelSales.count || 0}</td></tr>` : ""}
-              ${summary.restaurantSales ? `<tr style="background-color: #dcfce7;"><td><strong>Restaurant Sales</strong></td><td class="text-right">${summary.restaurantSales.amount?.toFixed(2) || "0.00"}</td></tr>
-              <tr><td>- Transactions</td><td class="text-right">${summary.restaurantSales.count || 0}</td></tr>` : ""}
-            ` : ""}
-            <tr style="border-top: 2px solid black;"><td><strong>Total Transactions</strong></td><td class="text-right"><strong>${salesData.length}</strong></td></tr>
-          </table>
-        </div>
-<div>
-  <div class="summary-title">KOT Type Breakdown</div>
-  <table class="summary-table">
-    ${Object.entries(kotBreakdown)
-      .map(
-        ([type, data]) => `
+    <table>
+      <thead>
         <tr>
-          <td><strong>${type}</strong></td>
-          <td class="text-right">${data.amount.toFixed(2)}</td>
-          <td class="text-right">${data.count}</td>
-        </tr>`
-      )
-      .join("")}
-    <tr style="border-top: 2px solid black;">
-      <td><strong>Total</strong></td>
-      <td class="text-right"><strong>${Object.values(kotBreakdown)
-        .reduce((sum, k) => sum + k.amount, 0)
-        .toFixed(2)}</strong></td>
-      <td class="text-right"><strong>${Object.values(kotBreakdown)
-        .reduce((sum, k) => sum + k.count, 0)}</strong></td>
-    </tr>
-  </table>
-</div>
+          <th>Bill No</th>
+          <th>Date</th>
+          <th>Agent Name</th>
+          <th>Gross Amount</th>
+          <th>CGST</th>
+          <th>SGST</th>
+          <th>Total Tax</th>
+          <th>Disc</th>
+          <th>Round off</th>
+          <th>Net Total</th>
+          <th>Total</th>
+          <th>Cash</th>
+          <th>UPI</th>
+          <th>Mode</th>
+          ${businessType !== "hotel" ? "<th>Meal Period</th><th>Kot Type</th>" : ""}
+          <th>Credit</th>
+          <th>Credit Desc</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${salesData
+          .map((row) => {
+            const isCreditSale =
+              row.partyAccount === "Sundry Debtors" || row.mode === "Credit" || (row.credit || 0) > 0;
+            const isCashSale =
+              (row.partyAccount === "Cash-in-Hand" || row.partyAccount === "CASH") && !isCreditSale;
+            const isBankSale =
+              (row.partyAccount === "Bank Accounts" || row.partyAccount === "Gpay") && !isCreditSale;
 
+            const grossAmount = (row.amount || 0) - (row.igst || 0);
 
+            return `
+              <tr>
+                <td class="text-left">${row.billNo || "-"}</td>
+                <td>${row.date ? new Date(row.date).toLocaleDateString() : "-"}</td>
+                <td class="text-left">${row.partyName || "-"}</td>
+                <td class="text-right">${grossAmount.toFixed(2)}</td>
+                <td>${(row.cgst || 0).toFixed(2)}</td>
+                <td>${(row.sgst || 0).toFixed(2)}</td>
+                <td>${(row.igst || 0).toFixed(2)}</td>
+                <td>${(row.disc || 0).toFixed(2)}</td>
+                <td>${(row.roundOff || 0).toFixed(2)}</td>
+                <td>${(row.totalWithTax || 0).toFixed(2)}</td>
+                <td class="text-right">${(row.total || 0).toFixed(2)}</td>
+                <td class="text-right">${
+                  isCashSale ? (row.totalWithTax || 0).toFixed(2) : "-"
+                }</td>
+                <td class="text-right">${
+                  isBankSale ? (row.totalWithTax || 0).toFixed(2) : "-"
+                }</td>
+                <td>
+                  <span class="mode-badge ${
+                    isCreditSale ? "credit" : isBankSale ? "upi" : "cash"
+                  }">
+                    ${isCreditSale ? "Credit" : isBankSale ? "UPI" : "Cash"}
+                  </span>
+                </td>
+                ${
+                  businessType !== "hotel"
+                    ? `<td>${row.mealPeriod || "-"}</td><td>${row.kotType || "-"}</td>`
+                    : ""
+                }
+                <td class="text-right">${
+                  isCreditSale ? (row.totalWithTax || 0).toFixed(2) : "-"
+                }</td>
+                <td class="text-left">${
+                  isCreditSale ? (row.creditDescription || row.partyName || "-") : "-"
+                }</td>
+              </tr>
+            `;
+          })
+          .join("")}
+        <tr class="totals-row">
+          <td class="text-left" colspan="3">Total</td>
+          <td class="text-right">${totals.amount.toFixed(2)}</td>
+          <td>${totals.cgst.toFixed(2)}</td>
+          <td>${totals.sgst.toFixed(2)}</td>
+          <td>${totals.igst.toFixed(2)}</td>
+          <td>${totals.disc.toFixed(2)}</td>
+          <td>${totals.roundOff.toFixed(2)}</td>
+          <td>${totals.totalWithTax.toFixed(2)}</td>
+          <td class="text-right">${(totals.total || totals.totalWithTax).toFixed(2)}</td>
+          <td class="text-right">${totals.cash.toFixed(2)}</td>
+          <td class="text-right">${totals.upi.toFixed(2)}</td>
+          <td>-</td>
+          ${businessType !== "hotel" ? "<td>-</td><td>-</td>" : ""}
+          <td class="text-right">${totals.credit.toFixed(2)}</td>
+          <td>-</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="summary-section">
+      <div>
+        <div class="summary-title">Financial Summary</div>
+        <table class="summary-table">
+          <tr><td><strong>Gross Amount</strong></td><td class="text-right">${totals.amount.toFixed(2)}</td></tr>
+          <tr><td><strong>Discount</strong></td><td class="text-right">${totals.disc.toFixed(2)}</td></tr>
+          <tr><td><strong>CGST</strong></td><td class="text-right">${totals.cgst.toFixed(2)}</td></tr>
+          <tr><td><strong>SGST</strong></td><td class="text-right">${totals.sgst.toFixed(2)}</td></tr>
+          <tr><td><strong>Total Tax</strong></td><td class="text-right">${totals.igst.toFixed(2)}</td></tr>
+          <tr><td><strong>Net Cash</strong></td><td class="text-right">${totals.cash.toFixed(2)}</td></tr>
+          <tr><td><strong>UPI</strong></td><td class="text-right">${totals.upi.toFixed(2)}</td></tr>
+          <tr><td><strong>Credit Amount</strong></td><td class="text-right">${totals.credit.toFixed(2)}</td></tr>
+          <tr class="total-row">
+            <td><strong>Net Sales</strong></td>
+            <td class="text-right"><strong>${totals.totalWithTax.toFixed(2)}</strong></td>
+          </tr>
+        </table>
       </div>
 
-
-
-      <div class="notes">
-        <div>* This report shows ${businessType === "all" ? "all sales transactions" : `only ${businessType} sales transactions`}</div>
-        ${kotTypeFilter !== "all" || mealPeriodFilter !== "all" ? `<div>* Filtered by: ${[kotTypeFilter !== "all" ? `KOT Type: ${kotTypeFilter}` : "", mealPeriodFilter !== "all" ? `Meal Period: ${mealPeriodFilter}` : ""].filter(Boolean).join(", ")}</div>` : ""}
-        
-        <div>* Complimentary and cancelled sales are not included in totals</div>
+      <div>
+        <div class="summary-title">Business Type Breakdown</div>
+        <table class="summary-table">
+          ${
+            businessType === "hotel" && summary?.hotelSales
+              ? `
+            <tr style="background:#dbeafe;">
+              <td><strong>Hotel Sales</strong></td>
+              <td class="text-right">${(summary.hotelSales.amount || 0).toFixed(2)}</td>
+            </tr>
+            <tr>
+              <td>- Transactions</td>
+              <td class="text-right">${summary.hotelSales.count || 0}</td>
+            </tr>
+          `
+              : ""
+          }
+          ${
+            businessType === "restaurant" && summary?.restaurantSales
+              ? `
+            <tr style="background:#dcfce7;">
+              <td><strong>Restaurant Sales</strong></td>
+              <td class="text-right">${(summary.restaurantSales.amount || 0).toFixed(2)}</td>
+            </tr>
+            <tr>
+              <td>- Transactions</td>
+              <td class="text-right">${summary.restaurantSales.count || 0}</td>
+            </tr>
+          `
+              : ""
+          }
+          ${
+            businessType === "all"
+              ? `
+            ${
+              summary?.hotelSales
+                ? `
+              <tr style="background:#dbeafe;">
+                <td><strong>Hotel Sales</strong></td>
+                <td class="text-right">${(summary.hotelSales.amount || 0).toFixed(2)}</td>
+              </tr>
+              <tr>
+                <td>- Transactions</td>
+                <td class="text-right">${summary.hotelSales.count || 0}</td>
+              </tr>
+            `
+                : ""
+            }
+            ${
+              summary?.restaurantSales
+                ? `
+              <tr style="background:#dcfce7;">
+                <td><strong>Restaurant Sales</strong></td>
+                <td class="text-right">${(summary.restaurantSales.amount || 0).toFixed(2)}</td>
+              </tr>
+              <tr>
+                <td>- Transactions</td>
+                <td class="text-right">${summary.restaurantSales.count || 0}</td>
+              </tr>
+            `
+                : ""
+            }
+            <tr class="total-row">
+              <td>Total Transactions</td>
+              <td class="text-right"><strong>${salesData.length}</strong></td>
+            </tr>
+          `
+              : ""
+          }
+        </table>
       </div>
-    </body>
-    </html>
+    </div>
+
+    <div class="notes">
+      <div>This report shows ${businessType === "all" ? "all sales transactions" : businessType + " sales transactions"} only.</div>
+      <div>Complimentary and cancelled sales are not included in totals.</div>
+    </div>
+
+    <div class="print-buttons no-print">
+      <button class="print-btn" onclick="window.print()">Print / Save as PDF</button>
+      <button class="print-btn close-btn" onclick="window.close()">Close</button>
+    </div>
+  </body>
+  </html>
   `;
 
   printWindow.document.write(html);
   printWindow.document.close();
-  printWindow.print();
 };
+
 
 // For Excel export
 const exportToExcel = (
@@ -758,22 +863,23 @@ const [mealPeriodFilter, setMealPeriodFilter] = useState("all");
     }
   }, [startDate, endDate, cmp_id, businessType]);
 
- const handlePDFExport = () => {
-  if (filteredSalesData.length === 0) {  // ✅ Changed
+const handlePDFExport = () => {
+  if (filteredSalesData.length === 0) {
     alert("No data to export");
     return;
   }
   generatePDF(
-    filteredSalesData,  // ✅ Changed
-    summary, 
-    owner, 
-    reportPeriod, 
-    businessType, 
+    filteredSalesData,
+    summary,
+    owner,
+    reportPeriod,
+    businessType,
     totals,
-    kotTypeFilter,      // ✅ Pass filters
-    mealPeriodFilter    // ✅ Pass filters
+    kotTypeFilter,
+    mealPeriodFilter
   );
 };
+
  const handleExcelExport = () => {
   if (filteredSalesData.length === 0) {  // ✅ Changed
     alert("No data to export");

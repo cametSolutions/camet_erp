@@ -28,9 +28,10 @@ function AccVoucherDetails() {
     loading,
     refreshHook,
   } = useFetch(`/api/sUsers/get${voucherType}Details/${id}`);
-
+console.log("hhh")
   useEffect(() => {
     if (transactionDetails) {
+console.log(transactionDetails[voucherType])
       setData(transactionDetails[voucherType]);
     }
   }, [transactionDetails]);
