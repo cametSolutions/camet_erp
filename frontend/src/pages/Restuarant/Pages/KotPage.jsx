@@ -740,7 +740,7 @@ const [isComplimentary, setIsComplimentary] = useState(false);
         setDiscountType("amount");
         setDiscountValue(0);
         setNote("");
-               setIsComplimentary(false); // 
+        setIsComplimentary(false); // 
         setPreviewForSales(null);
       }
     } catch (error) {
@@ -869,7 +869,7 @@ const [isComplimentary, setIsComplimentary] = useState(false);
       additionalCharges: additionalChargesArray, // Discount type details
       finalAmount: finalAmount,
       note: note || "",
-        isComplimentary: isComplimentary, // ✅ ADD THIS - Independent flag // After discount
+      isComplimentary: isComplimentary, // ✅ ADD THIS - Independent flag // After discount
       total: finalAmount,
       voucherNumber: kotVoucherNumberArray,
       party: {
@@ -922,7 +922,8 @@ const [isComplimentary, setIsComplimentary] = useState(false);
 
   console.log(additionalCharges);
 useEffect(() => {
-  if (showPaymentModal && selectedKot.length > 0) {
+
+  if (selectedKot.length > 0 && filteredOrders.length > 0) {
     console.log("=== PAYMENT MODAL OPENED ===");
     
     // Check if any KOT has complimentary food plan
@@ -933,7 +934,7 @@ useEffect(() => {
       console.log("Food Plan Details:", order?.foodPlanDetails);
       console.log("Is Complimentary:", order?.foodPlanDetails?.isComplimentary);
       
-      return order?.foodPlanDetails?.isComplimentary === true;
+      return order?.foodPlanDetails?.isComplimentary == true;
     });
 
     console.log("Has Complimentary Food Plan:", hasComplimentaryFoodPlan);
@@ -941,7 +942,7 @@ useEffect(() => {
     // ✅ Auto-tick checkbox if complimentary
     setIsComplimentary(hasComplimentaryFoodPlan);
   }
-}, [showPaymentModal, selectedKot, filteredOrders]);
+}, [selectedKot]);
 
   return (
     <>
@@ -1681,7 +1682,8 @@ useEffect(() => {
       checked={isComplimentary}
       onChange={(e) => {
         const isChecked = e.target.checked;
-        setIsComplimentary(isChecked);
+        console.log(isChecked)
+        setIsComplimentary(isChecked)
         
         // Check if auto-complimentary
         const hasAutoComplimentary = selectedKot.some((kot) => {

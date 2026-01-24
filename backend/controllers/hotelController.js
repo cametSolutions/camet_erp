@@ -2370,12 +2370,23 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
     let allAdvanceDetails = [];
     let allKotData = [];
 
+    const paymentGreaterThanZeroQuery = {
+  $or: [
+    { "paymentTypeDetails.cash": { $gt: "0" } },
+    { "paymentTypeDetails.bank": { $gt: "0" } },
+    { "paymentTypeDetails.upi": { $gt: "0" } },
+    { "paymentTypeDetails.credit": { $gt: "0" } },
+    { "paymentTypeDetails.card": { $gt: "0" } },
+  ],
+};
+
     // ✅ CORRECTED: Get roomId and serviceType from ROOT level, not kotDetails
     const docs = await salesModel.aggregate([
       {
         $match: {
           "convertedFrom.id": { $exists: true, $ne: null },
           "convertedFrom.checkInNumber": checkoutData[0].voucherNumber,
+          isComplimentary:false, 
         },
       },
 
@@ -2469,11 +2480,13 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
         if (checkInData.bookingId) {
           bookingSide = await TallyData.find({
             billId: checkInData.bookingId,
+              ...paymentGreaterThanZeroQuery,
           }).lean();
         }
 
         const checkInSide = await TallyData.find({
           billId: checkInId,
+            ...paymentGreaterThanZeroQuery,
         }).lean();
 
         [...bookingSide, ...checkInSide].forEach((item) => {
@@ -2489,11 +2502,13 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
         if (checkout.bookingId?._id) {
           bookingSide = await TallyData.find({
             billId: checkout.bookingId?._id,
+              ...paymentGreaterThanZeroQuery,
           }).lean();
         }
 
         const checkInSide = await TallyData.find({
           billId: checkout.checkInId._id,
+          ...paymentGreaterThanZeroQuery,
         }).lean();
 
         const salesData = await salesModel
@@ -2506,6 +2521,7 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
 
         const advanceData = await TallyData.find({
           billId: salesData._id,
+          ...paymentGreaterThanZeroQuery,
         }).lean();
 
         if (advanceData.length) {

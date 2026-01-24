@@ -25,7 +25,7 @@ function AvailableRooms({
   roomIdToUpdate = null,
   addTaxWithRate = false,
 }) {
-  console.log(formData.selectedRooms);
+  console.log(formData.foodPlan);
   console.log("h");
   const [rooms, setRooms] = useState([]);
   const [search, setSearch] = useState("");
@@ -443,7 +443,7 @@ function AvailableRooms({
     roomIdToUpdate,
     // formData?.selectedRooms
   ]);
-  console.log(formData);
+  
 
   const handlePriceLevelChange = (e, roomId) => {
     const selectedLevelId = e.target.value;
@@ -507,7 +507,7 @@ function AvailableRooms({
     );
   };
 
-  console.log(bookings);
+ 
 
   const handlePriceLevelRateChange = (e, roomId) => {
     const newRate = Number(e.target.value);
@@ -666,6 +666,9 @@ function AvailableRooms({
       prev.includes(roomIdToUpdate) ? prev : [...prev, roomIdToUpdate],
     );
   };
+console.log(formData?.foodPlan)
+console.log(formData)
+
 
   return showHistory ? (
     <TariffHistory
