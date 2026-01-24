@@ -17,7 +17,7 @@ const RoomSubDetailsManagement = ({
   handleDelete,
 }) => {
   const [value, setValue] = useState("");
-  const [price, setPrice] = useState("");
+  const [price, setPrice] = useState(0);
   const [isComplimentary, setIsComplimentary] = useState(false); // ✅ NEW STATE
   const [edit, setEdit] = useState({ id: "", enabled: false });
 
@@ -42,13 +42,13 @@ const RoomSubDetailsManagement = ({
 
   const handleEdit = (data) => {
     setValue(
-      data.additionalPaxName ? 
-        data.additionalPaxName : 
-        data.visitOfPurpose ? 
-          data.visitOfPurpose : 
-          data.idProof ? 
-            data.idProof : 
-            data.foodPlan
+      data.additionalPaxName
+        ? data.additionalPaxName
+        : data.visitOfPurpose
+          ? data.visitOfPurpose
+          : data.idProof
+            ? data.idProof
+            : data.foodPlan,
     );
     setPrice(data.amount);
     setIsComplimentary(data.isComplimentary || false); // ✅ SET COMPLIMENTARY
@@ -66,11 +66,16 @@ const RoomSubDetailsManagement = ({
   return (
     <div className={`${loading ? "opacity-50 animate-pulse" : ""}`}>
       <div className="flex flex-col justify-center sticky top-0 z-10">
-        <div className="flex flex-col items-center bg-[#457b9d] py-14">
-          <h2 className="font-bold uppercase text-white">
+        <div className="flex flex-col items-center bg-[#457b9d] py-10">
+          <h2 className="font-bold uppercase text-white text-center ">
             ADD YOUR DESIRED {tab}
+            {isComplimentary && tab === "Food Plan" && (
+              <span className="block text-xs font-normal mt-1 text-amber-400 normal-case">
+                This food plan will be marked as complimentary
+              </span>
+            )}
           </h2>
-          
+
           <input
             type="text"
             placeholder={`Enter your ${tab}`}
@@ -78,57 +83,56 @@ const RoomSubDetailsManagement = ({
             value={value}
             onChange={(e) => setValue(e.target.value)}
           />
-          
+
           {(tab === "Additional pax" || tab === "Food Plan") && (
-            <input
-              type="number"
-              placeholder={`Enter your ${tab} price`}
-              className="w-4/6 sm:w-2/6 p-1 text-black border border-gray-300 rounded-full mt-3 text-center"
-              value={price}
-              onKeyDown={(e) => {
-                if (
-                  !/[0-9]/.test(e.key) &&
-                  ![
-                    "Backspace",
-                    "Delete",
-                    "ArrowLeft",
-                    "ArrowRight",
-                    "Tab",
-                  ].includes(e.key)
-                ) {
-                  e.preventDefault();
-                }
-              }}
-              onChange={(e) => setPrice(e.target.value)}
-            />
-          )}
-
-          {/* ✅ NEW: Complimentary Toggle for Food Plan */}
-          {tab === "Food Plan" && (
-            <div className="w-4/6 sm:w-2/6 mt-3 bg-white rounded-full px-4 py-2 flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-700">
-                Complimentary
-              </span>
-              <button
-                type="button"
-                onClick={() => setIsComplimentary(!isComplimentary)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                  isComplimentary ? "bg-green-600" : "bg-gray-300"
-                }`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    isComplimentary ? "translate-x-6" : "translate-x-1"
-                  }`}
-                />
-              </button>
+            <div className="w-4/6 sm:w-2/6 mt-3 flex items-center gap-3">
+              {/* Price Input */}
+              <input
+                type="number"
+                placeholder="Price"
+                className="flex-1 p-1 text-black border border-gray-300 rounded-full text-center"
+                value={price}
+                onKeyDown={(e) => {
+                  if (
+                    !/[0-9]/.test(e.key) &&
+                    ![
+                      "Backspace",
+                      "Delete",
+                      "ArrowLeft",
+                      "ArrowRight",
+                      "Tab",
+                    ].includes(e.key)
+                  ) {
+                    e.preventDefault();
+                  }
+                }}
+                onChange={(e) => setPrice(e.target.value)}
+                disabled={isComplimentary}
+              />
+              {tab === "Food Plan" && (
+                <div className="flex items-center gap-2 bg-white rounded-full px-3 py-1">
+                  <span className="text-xs font-medium text-gray-700">
+                    Free
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsComplimentary(!isComplimentary);
+                      setPrice(0);
+                    }}
+                    className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors ${
+                      isComplimentary ? "bg-green-600" : "bg-gray-300"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                        isComplimentary ? "translate-x-5" : "translate-x-1"
+                      }`}
+                    />
+                  </button>
+                </div>
+              )}
             </div>
-          )}
-
-          {isComplimentary && tab === "Food Plan" && (
-            <p className="text-xs text-white mt-2 bg-green-600 px-3 py-1 rounded-full">
-              This food plan will be marked as complimentary
-            </p>
           )}
 
           <button
@@ -142,7 +146,7 @@ const RoomSubDetailsManagement = ({
       </div>
 
       <section className="overflow-y-scroll h-[calc(100vh-273px)] px-4 scrollbar-thin">
-        <div className="mt-2">
+        <div className="mt-2 mb-8">
           {displayData && displayData?.length > 0 && !loading ? (
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-100 sticky top-0 z-10">

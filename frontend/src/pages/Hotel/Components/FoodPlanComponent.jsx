@@ -10,6 +10,8 @@ function FoodPlanComponent({
   selectedRoomId,
   formData,
 }) {
+  console.log("formData", formData);
+  
   const [foodPlan, setFoodPlan] = useState([
     { foodPlanId: "", foodPlan: "", rate: 0, isComplimentary: false }, // ✅ Added isComplimentary
   ]);
@@ -54,6 +56,8 @@ function FoodPlanComponent({
       }
     }
   }, [selectedRoomId, formData]);
+  
+
 
   // Handle Dropdown Selection
   const handlePaxChange = (index, value) => {
@@ -109,6 +113,8 @@ function FoodPlanComponent({
     }
     setFoodPlan([...foodPlan, { foodPlanId: "", foodPlan: "", rate: 0, isComplimentary: false }]);
   };
+
+  console.log("foodPlan", foodPlan);
 
   return (
     <div className="">

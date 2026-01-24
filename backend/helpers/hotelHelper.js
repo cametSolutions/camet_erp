@@ -129,10 +129,10 @@ export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
         .populate("customerId")
         .populate("agentId")
         .populate("isHotelAgent")
-        .populate({
-      path: "selectedRooms.roomId",
-      select: "roomName roomNumber status",
-    })
+    //     .populate({
+    //   path: "selectedRooms.roomId",
+    //   select: "roomName roomNumber status",
+    // })
         .populate("selectedRooms.selectedPriceLevel")
         .populate("bookingId")
         .populate("checkInId")
