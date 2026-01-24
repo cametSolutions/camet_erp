@@ -18,8 +18,9 @@ function AccVoucherDetailsComponent({
   actionLoading,
   refreshHook,
 }) {
+console.log(data)
   // const navigate = useNavigate();
-
+console.log(actionLoading)
   return (
     <div className="bg-[rgb(244,246,254)] flex-1 h-screen  relative ">
       <TitleDiv title={title || "Voucher Details"} loading={loading} />

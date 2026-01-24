@@ -440,10 +440,7 @@ export const generateKot = async (req, res) => {
     const foodPlanData = req.body.customer?.foodPlan;
     
     if (foodPlanData) {
-      console.log("=== PROCESSING FOOD PLAN ===");
-      console.log("Food Plan Data:", foodPlanData);
-      console.log("isComplimentary from request:", foodPlanData.isComplimentary);
-      
+    
       // ✅ DIRECT APPROACH - Use what frontend sends
       foodPlanDetails = {
         planName: foodPlanData.planType || 'Complimentary',
@@ -463,14 +460,10 @@ export const generateKot = async (req, res) => {
         }
       }
       
-      console.log("=== PROCESSED FOOD PLAN ===");
-      console.log("foodPlanDetails:", foodPlanDetails);
-      console.log("isComplimentary value:", foodPlanDetails.isComplimentary);
+   
     }
 
-    console.log("=== FINAL FOOD PLAN TO SAVE ===");
-    console.log("foodPlanId:", foodPlanId);
-    console.log("foodPlanDetails:", foodPlanDetails);
+  
 
     // Prepare the KOT data
     const kotData = {

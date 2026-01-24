@@ -8,8 +8,9 @@ import { useNavigate } from "react-router-dom";
 import { GiCancel } from "react-icons/gi";
 
 const DashboardTransaction = ({ filteredData, from }) => {
+console.log(filteredData)
   const navigate = useNavigate();
-
+console.log("hhh")
   const typeColors = useMemo(
     () => ({
       Receipt: "bg-red-500",
@@ -27,6 +28,7 @@ const DashboardTransaction = ({ filteredData, from }) => {
 
   const getNavigationPath = useMemo(
     () => (type, id) => {
+console.log(type)
       const routes = {
         Receipt: `/sUsers/receipt/details/${id}`,
         Payment: `/sUsers/payment/details/${id}`,
@@ -45,6 +47,8 @@ const DashboardTransaction = ({ filteredData, from }) => {
 
   const handleTransactionClick = (type, id) => {
     const path = getNavigationPath(type, id);
+console.log(path)
+console.log(from)
     navigate(path, { state: { from } });
   };
 

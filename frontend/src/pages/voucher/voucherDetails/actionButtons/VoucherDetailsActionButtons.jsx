@@ -1,20 +1,28 @@
 /* eslint-disable react/prop-types */
-import { useState } from "react";
-import { PiShareFatFill } from "react-icons/pi";
-import { MdEdit, MdSms } from "react-icons/md";
-import CancelButton from "@/components/common/CancelButton";
-import { useNavigate } from "react-router-dom";
-import RemoveReduxData from "@/components/secUsers/RemoveReduxData";
-import { ShareFormatSelector } from "./ShareFormatSelector";
-
+import { useEffect, useState } from "react"
+import { PiShareFatFill } from "react-icons/pi"
+import { MdEdit, MdSms, MdPrint } from "react-icons/md"
+import CancelButton from "@/components/common/CancelButton"
+import { useNavigate } from "react-router-dom"
+import RemoveReduxData from "@/components/secUsers/RemoveReduxData"
+import { ShareFormatSelector } from "./ShareFormatSelector"
+import { useSelector } from "react-redux"
+import { industries } from "../../../../../constants/industries"
 export default function VoucherDetailsActionButtons({
   data,
   reFetch,
   setActionLoading,
-  actionLoading,
+  actionLoading
 }) {
-  const navigate = useNavigate();
-  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+console.log(industries)
+  console.log(data)
+  const navigate = useNavigate()
+  const [shareDialogOpen, setShareDialogOpen] = useState(false)
+const[isneedReceipt,setisneedReceipt]=useState(false)
+  const organization = useSelector(
+    (state) => state?.secSelectedOrganization?.secSelectedOrg
+  )
+console.log(organization)
 
   const {
     _id,
@@ -23,11 +31,16 @@ export default function VoucherDetailsActionButtons({
     isEditable,
     isConverted = false,
     voucherType,
-    cancellationAllowed = true,
-  } = data || {};
-
+    cancellationAllowed = true
+  } = data || {}
+useEffect(()=>{
+if(organization.industry===7||organization.industry===6){
+console.log("h")
+setisneedReceipt(true)
+}
+},[])
   const handleEditClick = () => {
-    if (!voucherType) return;
+    if (!voucherType) return
 
     // if (isEditable !== undefined && isEditable === false) {
     //   window.alert(
@@ -40,44 +53,56 @@ export default function VoucherDetailsActionButtons({
       state: {
         mode: "edit",
         voucherType: voucherType,
-        data: data,
-      },
-    });
-  };
+        data: data
+      }
+    })
+  }
 
   const handleShareClick = () => {
-    setShareDialogOpen(true);
-  };
+    setShareDialogOpen(true)
+  }
+  const handlereceipt = () => {
+    console.log(data._id)
+    navigate(`/sUsers/recietpprint/${data._id}`)
+  }
 
   const handleSmsClick = () => {
     // Implement SMS functionality
-    console.log("SMS clicked");
-  };
+    console.log("SMS clicked")
+  }
 
   // Array of action buttons with their icons, titles, and handlers
   const actions = [
+    {
+      icon: MdPrint,
+      title: "Print",
+      color: "text-orange-600",
+      active: isneedReceipt,
+      onClick: handlereceipt
+    },
+
     {
       icon: MdEdit,
       title: "Edit",
       color: "text-blue-500",
       active: true,
-      onClick: handleEditClick,
+      onClick: handleEditClick
     },
     {
       icon: PiShareFatFill,
       title: "Share",
       color: "text-green-500",
       active: voucherType !== "receipt" && voucherType !== "payment",
-      onClick: handleShareClick,
+      onClick: handleShareClick
     },
     {
       icon: MdSms,
       title: "Sms",
       color: "text-yellow-500",
       active: true,
-      onClick: handleSmsClick,
-    },
-  ];
+      onClick: handleSmsClick
+    }
+  ]
 
   return (
     <div
@@ -111,8 +136,8 @@ export default function VoucherDetailsActionButtons({
         />
 
         {actions.map((action, index) => {
-          if (!action.active) return null;
-          const Icon = action.icon;
+          if (!action.active) return null
+          const Icon = action.icon
           return (
             <div
               key={index}
@@ -126,9 +151,9 @@ export default function VoucherDetailsActionButtons({
               </div>
               <span className="text-[10px] font-bold">{action.title}</span>
             </div>
-          );
+          )
         })}
       </div>
     </div>
-  );
+  )
 }
