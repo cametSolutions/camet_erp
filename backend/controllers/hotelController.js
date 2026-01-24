@@ -2372,11 +2372,11 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
 
     const paymentGreaterThanZeroQuery = {
   $or: [
-    { "paymentTypeDetails.cash": { $gt: "0" } },
-    { "paymentTypeDetails.bank": { $gt: "0" } },
-    { "paymentTypeDetails.upi": { $gt: "0" } },
-    { "paymentTypeDetails.credit": { $gt: "0" } },
-    { "paymentTypeDetails.card": { $gt: "0" } },
+    { "paymenttypeDetails.cash": { $gt: "0" } },
+    { "paymenttypeDetails.bank": { $gt: "0" } },
+    { "paymenttypeDetails.upi": { $gt: "0" } },
+    { "paymenttypeDetails.credit": { $gt: "0" } },
+    { "paymenttypeDetails.card": { $gt: "0" } },
   ],
 };
 
@@ -3584,7 +3584,7 @@ export const getRoomSwapHistory = async (req, res) => {
 
 export const getHotelSalesDetails = async (req, res) => {
   try {
-    const { cmp_id } = req.params;
+    const { cmp_id,type } = req.params;
     const { startDate, endDate, owner, businessType = "all" } = req.query;
 
     // Validate required parameters
@@ -3637,8 +3637,6 @@ export const getHotelSalesDetails = async (req, res) => {
     // MongoDB aggregation pipeline to get all sales data with classification
     const salesData = await salesModel.aggregate([
       { $match: query },
-
-      // Join with Party
       {
         $lookup: {
           from: "parties",

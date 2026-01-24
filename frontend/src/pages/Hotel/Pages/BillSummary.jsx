@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import api from "@/api/api";
 import { useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
+import TitleDiv from "@/components/common/TitleDiv";
 
 // For PDF export
 // BillSummary.jsx (or same file)
@@ -610,6 +611,8 @@ const [mealPeriodFilter, setMealPeriodFilter] = useState("all");
     totalRoundOff: 0,
   });
 
+  
+
   // Get URL parameters and Redux data
   const location = useLocation();
   const navigate = useNavigate();
@@ -695,7 +698,7 @@ const [mealPeriodFilter, setMealPeriodFilter] = useState("all");
 
       console.log("Sending params:", salesParams);
 
-      const response = await api.get(`/api/sUsers/hotel-sales/${cmp_id}`, {
+      const response = await api.get(`/api/sUsers/hotel-sales/${cmp_id}/${businessType}`, {
         params: salesParams,
       });
 
@@ -766,9 +769,6 @@ const [mealPeriodFilter, setMealPeriodFilter] = useState("all");
   return kotMatch && mealMatch;
 });
 
-  const generateReport = async () => {
-    await fetchSalesData();
-  };
 
   const clearError = () => {
     setError(null);
@@ -896,8 +896,10 @@ const handlePDFExport = () => {
     mealPeriodFilter    // ✅ Pass filters
   );
 };
-  console.log(salesData);
+
   return (
+    <>
+    <TitleDiv title={businessType === "hotel" ? "Hotel Daily Summary" : "Restaurant Daily Summary"} />
     <div className="min-h-screen bg-gray-100 p-5">
       <div className="max-w-6xl mx-auto bg-white p-5 rounded-lg shadow-lg">
         {/* Header */}
@@ -1517,6 +1519,7 @@ const handlePDFExport = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 
