@@ -2386,6 +2386,7 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
         $match: {
           "convertedFrom.id": { $exists: true, $ne: null },
           "convertedFrom.checkInNumber": checkoutData[0].voucherNumber,
+          isComplimentary:false, 
         },
       },
 
