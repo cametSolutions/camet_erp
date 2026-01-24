@@ -259,6 +259,21 @@ export const editVoucherSeriesById = async (req, res) => {
   const { cmp_id } = req.params;
   const { seriesId, updatedSeries } = req.body;
 
+ if (!cmp_id || !seriesId || !updatedSeries) {
+    return res.status(400).json({
+      success: false,
+      message: "Missing required fields: cmp_id, seriesId, or updatedSeries",
+    });
+  }
+
+  // 2. Validation: Prevent crash if seriesName is missing inside updatedSeries
+  if (!updatedSeries.seriesName) {
+    return res.status(400).json({
+      success: false,
+      message: "Series name is required",
+    });
+  }
+
   try {
     // First, find the document to check for duplicates
     const doc = await VoucherSeries.findOne({
