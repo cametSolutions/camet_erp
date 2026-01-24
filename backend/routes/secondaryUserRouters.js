@@ -386,7 +386,7 @@ router.put("/swapRoom/:checkInId", swapRoom);
 router.get("/getRoomSwapHistory/:checkInId", getRoomSwapHistory);
 router.get("/getCheckedInGuests/:cmp_id", checkedInGuest);
 router.get('/summary', getSummaryDashboard);
-router.get('/hotel-sales/:cmp_id', getHotelSalesDetails);
+router.get('/hotel-sales/:cmp_id/:type', getHotelSalesDetails);
 router.put("/cancel/:id", cancelKot);
 router.get('/getRoomCheckInDetails/:cmp_id/:roomId', getRoomCheckInDetails);
 router.put('/cancelBooking/:id', cancelBooking);
