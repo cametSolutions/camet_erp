@@ -24,6 +24,7 @@ function ItemRegisterComponent({
   ]);
   const [roomData, setRoomData] = useState({
     itemName: "",
+     itemCode: "",
     foodCategory: "",
     foodType: "",
     unit: "NOS",
@@ -38,6 +39,7 @@ function ItemRegisterComponent({
     if (editData) {
       // console.log(editData);
       setRoomData({
+         itemCode: editData.itemCode || "",
         itemName: editData.product_name,
         foodCategory: editData.category,
         foodType: editData.sub_category,
@@ -170,7 +172,9 @@ function ItemRegisterComponent({
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    if (name === "roomName") {
+     if (name === "itemCode") {
+    setRoomData({ ...roomData, itemCode: value });
+      } else  if (name === "roomName") {
       setRoomData({ ...roomData, roomName: value });
     } else if (name === "hsn") {
       let selectedHsn = optionsData?.hsn?.find((hsn) => hsn.hsn == value);
@@ -190,6 +194,11 @@ function ItemRegisterComponent({
     typeof value === "string" && value.trim() !== "";
 
   const validDateFormData = () => {
+
+    if (!isNonEmptyString(roomData?.itemCode)) { // NEW VALIDATION
+    toast.error("Item code is required");
+    return false;
+  }
     if (!isNonEmptyString(roomData?.itemName)) {
       toast.error("Item name is required");
       return false;
@@ -263,6 +272,26 @@ function ItemRegisterComponent({
               />
             </div>
           </div>
+          <div className="w-full lg:w-6/12 px-4">
+  <div className="relative w-full mb-3">
+    <label
+      className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+      htmlFor="item-code"
+    >
+      Item Code <span className="text-red-500">*</span>
+    </label>
+    <input
+      type="text"
+      id="item-code"
+      placeholder="Enter unique item code (e.g., F001)"
+      value={roomData.itemCode}
+      name="itemCode"
+      onChange={handleChange}
+      maxLength={20}
+      className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+    />
+  </div>
+</div>
 
           {/* Image Upload Section */}
           <div className="w-full lg:w-6/12 px-4">

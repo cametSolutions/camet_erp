@@ -31,14 +31,20 @@ import { response } from "express";
 import receiptModel from "../models/receiptModel.js";
 // Add Item Controller
 export const addItem = async (req, res) => {
-  const session = await mongoose.startSession(); // Step 1: Start session
+  const session = await mongoose.startSession();
 
   try {
     const { formData, tableData } = req.body;
-console.log("req.body",req.body)
-    session.startTransaction(); // Step 2: Start transaction
+    
+    // Validate item code
+    if (!formData.itemCode || formData.itemCode.trim() === "") {
+      await session.abortTransaction();
+      return res.status(400).json({ message: "Item code is required" });
+    }
 
-    // Step 3: Fetch HSN data inside the session
+    session.startTransaction();
+
+    // Fetch HSN data
     const correspondingHsn = await hsnModel
       .findOne({ hsn: formData.hsn })
       .session(session);
@@ -47,10 +53,7 @@ console.log("req.body",req.body)
       return res.status(400).json({ message: "HSN data missing" });
     }
 
-    let godown = await Godown.findOne({ cmp_id: req.params.cmp_id }).session(
-      session
-    );
-
+    let godown = await Godown.findOne({ cmp_id: req.params.cmp_id }).session(session);
     if (!godown) {
       await session.abortTransaction();
       return res.status(400).json({ message: "godown data missing" });
@@ -62,13 +65,14 @@ console.log("req.body",req.body)
       batch: "Primary Batch",
     };
 
-    // Step 4: Create Item document
+    // Create Item document with NEW itemCode field
     const newItem = new productModel({
       Primary_user_id: req.pUserId || req.owner,
       Secondary_user_id: req.sUserId,
       cmp_id: req.params.cmp_id,
+      itemCode: formData.itemCode, // NEW FIELD
       product_name: formData.itemName,
-      product_image: formData.imageUrl?.secure_url || "", // Add image URL
+      product_image: formData.imageUrl?.secure_url || "",
       category: formData.foodCategory,
       sub_category: formData.foodType,
       unit: formData.unit,
@@ -76,15 +80,11 @@ console.log("req.body",req.body)
       cgst: formData.cgst,
       sgst: formData.sgst,
       igst: formData.igst,
-      // hsnCode: correspondingHsn.hsn, // Store HSN code for easier access
       Priceleveles: tableData,
       GodownList: godownObject,
     });
 
-    // Step 5: Save using session
     await newItem.save({ session });
-
-    // Step 6: Commit the transaction
     await session.commitTransaction();
 
     res.status(201).json({
@@ -94,20 +94,17 @@ console.log("req.body",req.body)
     });
   } catch (error) {
     console.log("Error saving item details:", error);
-
-    // Rollback on error
     await session.abortTransaction();
-
     res.status(500).json({
       success: false,
       message: "Internal Server Error",
       error: error.message,
     });
   } finally {
-    // Step 7: Always end session
     session.endSession();
   }
 };
+
 
 // Get Items Controller
 export const getItems = async (req, res) => {
@@ -202,6 +199,7 @@ export const searchItems = async (req, res) => {
         { product_name: searchRegex },
         { hsn_code: searchRegex },
         { unit: searchRegex },
+        {itemCode:searchRegex},
       ],
     };
 
