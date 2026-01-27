@@ -624,7 +624,7 @@ function BookingList() {
     }
   };
   console.log(selectedOnlinetype);
-  console.log("h");
+  console.log("hddd");
   const handleSavePayment = async () => {
     console.log("h");
     console.log(selectedCheckOut);
@@ -971,7 +971,7 @@ function BookingList() {
         });
       });
       checkinids = allCheckouts.map((item) => item._id);
-console.log()
+
       setcheckinids(checkinids);
       // 2️⃣ GROUP BY selectedCustomer (customerId._id)
       const grouped = {};
@@ -1009,9 +1009,6 @@ console.log()
     }
     console.log(checkoutData);
 
-    ////
-
-    /////
     navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
       state: {
         selectedCheckOut: checkoutData,
