@@ -310,7 +310,7 @@ const HotelCheckoutStatement = () => {
             <span>Net Sale :</span>
             <span>{(summary?.advanceTotal || 0).toFixed(2)}</span>
             <span className="ml-4">Net Cash</span>
-            <span>{(summary?.cashTotal || 0).toFixed(2)}</span>
+            <span>{(summary?.transactionTotal || 0).toFixed(2)}</span>
           </div>
         </div>
       </div>

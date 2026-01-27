@@ -33,6 +33,7 @@ import VoucherThreeInchPdf from "@/pages/voucher/voucherPdf/threeInchPdf/Voucher
 import { useReactToPrint } from "react-to-print";
 import CustomerSearchInputBox from "@/pages/Hotel/Components/CustomerSearchInPutBox";
 
+
 const OrdersDashboard = () => {
   const contentToPrint = useRef(null);
   const [activeFilter, setActiveFilter] = useState("ON PROCESS");
@@ -884,7 +885,9 @@ const [isComplimentary, setIsComplimentary] = useState(false);
 
   const handleSaveSales = (status) => {
     setConformationModal(false);
+    console.log("isPostToRoom", isPostToRoom);
     if (isPostToRoom && status) {
+      console.log("isPostToRoom", isPostToRoom);
       handleSavePayment();
       return;
     }
@@ -894,14 +897,18 @@ const [isComplimentary, setIsComplimentary] = useState(false);
       setPreviewForSales(null);
       return;
     }
-    
+        
+console.log("=== PAYMENT MODAL OPENED ===");
 
     // setDiscountAmount(0);
     // setDiscountCharge(null)
 
     setShowPaymentModal(true);
     setSelectedDataForPayment(previewForSales);
+    console.log(previewForSales);
   };
+
+  console.log("selectedKot", showPaymentModal);
 
   const handleEditKot = (kotData) => {
     console.log(kotData);
