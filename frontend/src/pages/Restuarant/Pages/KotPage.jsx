@@ -885,9 +885,7 @@ const [isComplimentary, setIsComplimentary] = useState(false);
 
   const handleSaveSales = (status) => {
     setConformationModal(false);
-    console.log("isPostToRoom", isPostToRoom);
     if (isPostToRoom && status) {
-      console.log("isPostToRoom", isPostToRoom);
       handleSavePayment();
       return;
     }
@@ -897,15 +895,9 @@ const [isComplimentary, setIsComplimentary] = useState(false);
       setPreviewForSales(null);
       return;
     }
-        
-console.log("=== PAYMENT MODAL OPENED ===");
-
-    // setDiscountAmount(0);
-    // setDiscountCharge(null)
-
+    setShowVoucherPdf(false);
     setShowPaymentModal(true);
     setSelectedDataForPayment(previewForSales);
-    console.log(previewForSales);
   };
 
   console.log("selectedKot", showPaymentModal);

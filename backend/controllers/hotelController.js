@@ -3983,7 +3983,25 @@ export const getHotelSalesDetails = async (req, res) => {
 
     //   { $sort: { date: -1, serialNumber: -1 } },
     // ]);
-    const salesData = await salesModel.aggregate([{ $match: query }]);
+  const salesData = await salesModel.aggregate([
+  { $match: query },
+
+  {
+    $lookup: {
+      from: "checkouts",
+      localField: "checkOutId",
+      foreignField: "_id",
+      as: "checkOut",
+    },
+  },
+  {
+    $unwind: {
+      path: "$checkOut",
+      preserveNullAndEmptyArrays: true,
+    },
+  },
+]);
+
 
     // Transform data for frontend consumption
     const transformedData = salesData.map((sale) => {
@@ -4090,7 +4108,7 @@ export const getHotelSalesDetails = async (req, res) => {
         sgst += Number(item.totalSgstAmt) || 0;
         igst += Number(item.totalIgstAmt) || 0;
       });
-      console.log(cgst, sgst, igst);
+      console.log("sale",sale.checkOut?.agentId);
 
       return {
         billNo: sale.salesNumber || sale.serialNumber?.toString() || "",
@@ -4137,6 +4155,7 @@ export const getHotelSalesDetails = async (req, res) => {
         itemCount: sale.items?.length || 0,
         isHotelSale: sale.isHotelSale || false,
         isRestaurantSale: sale.isRestaurantSale || false,
+        isAgent:sale.checkOut?.agentId ? true : false
       };
     });
     // console.log(transformedData);
@@ -4144,7 +4163,7 @@ export const getHotelSalesDetails = async (req, res) => {
     // Calculate summary totals with business type breakdown and meal period breakdown
     const summary = transformedData.reduce(
       (acc, item) => {
-        console.log("................", item);
+        // console.log("................", item);
         // General totals
         acc.totalAmount += item.amount || 0;
         acc.grossTotal += Math.abs(
@@ -4165,8 +4184,9 @@ export const getHotelSalesDetails = async (req, res) => {
         acc.totalWithTax += item.disc || 0;
         acc.totalRounded += item.disc || 0;
         acc.totalCount += 1;
-        acc.countWithOutAgent += 1;
-        acc.agentCount += 1;
+        acc.countWithOutAgent = item?.isAgent  ? acc.countWithOutAgent + 0  : acc.countWithOutAgent + 1;
+        acc.agentCount += item?.isAgent  ? acc.agentCount + 1  : acc.agentCount + 0;
+        acc.agentTotal += item?.isAgent ? acc.agentTotal + item.amount  : acc.agentTotal + 0;
 
         // Meal period breakdown
         const mealPeriod = item.mealPeriod || "Unknown";
@@ -4212,6 +4232,7 @@ export const getHotelSalesDetails = async (req, res) => {
         totalCount: 0,
         countWithOutAgent: 0,
         agentCount: 0,
+        agentTotal: 0,
 
         // Meal period breakdown
         mealPeriodBreakdown: {},
@@ -4232,6 +4253,9 @@ export const getHotelSalesDetails = async (req, res) => {
       summary.hotelSales = {
         count: summary?.totalCount,
         amount: summary?.totalFinalAmount,
+        agentCount: summary?.agentCount,
+        agentWithOut:summary?.countWithOutAgent,
+        agentTotalAmount: summary?.agentTotal,
       };
     }
 

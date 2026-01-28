@@ -1441,7 +1441,7 @@ useEffect(() => {
                             - Transactions With Agent
                           </td>
                           <td className="text-right py-1 px-2">
-                            {summary.hotelSales.count || 0}
+                            {summary.hotelSales.agentCount || 0}
                           </td>
                         </tr>
                          <tr>
@@ -1449,7 +1449,7 @@ useEffect(() => {
                             - Transactions With Out Agent
                           </td>
                           <td className="text-right py-1 px-2">
-                            {summary.hotelSales.count || 0}
+                            {summary.hotelSales.agentWithOut || 0}
                           </td>
                         </tr>
                         <tr>
