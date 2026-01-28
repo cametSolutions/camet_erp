@@ -1075,7 +1075,7 @@ function BookingList() {
 
     setCheckoutMode(checkoutMode === "single" ? "multiple" : "single")
   }
-console.log(checkoutMode)
+  console.log(checkoutMode)
 
   const TableHeader = () => (
     <div className="bg-gray-100 border-b border-gray-300 sticky top-0 z-10">
@@ -1619,15 +1619,14 @@ console.log(checkoutMode)
           <EnhancedCheckoutModal
             isOpen={showEnhancedCheckoutModal}
             onClose={() => {
-              setShowEnhancedCheckoutModal(false)
-              setShowSelectionModal(true)
+              handleCloseBasedOnDate
             }}
             selectedCheckIns={selectedCheckOut}
             onConfirm={handleEnhancedCheckoutConfirm}
             checkoutMode={checkoutMode}
             search={searchTerm}
             toogle={handletoogle}
-selectedCustomer={selectedCustomer}
+            selectedCustomer={selectedCustomer}
           />
         )}
         {selectedCheckOut.length > 0 && (

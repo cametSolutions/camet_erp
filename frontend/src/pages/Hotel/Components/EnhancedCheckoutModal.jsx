@@ -875,7 +875,7 @@ export default function EnhancedCheckoutModal({
             Cancel
           </button>
           <button
-            onClick={handleProceed}
+            onClick={onclose(checkouts)}
             disabled={roomAssignments.length === 0}
             className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
           >
