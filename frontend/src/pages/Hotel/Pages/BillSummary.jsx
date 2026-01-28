@@ -5,7 +5,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import TitleDiv from "@/components/common/TitleDiv";
 
 // For PDF export
-// BillSummary.jsx (or same file)
 export const generatePDF = async (
   salesData,
   summary,
@@ -189,9 +188,10 @@ export const generatePDF = async (
           <th>Disc</th>
           <th>Round off</th>
           <th>Net Total</th>
-          <th>Total</th>
           <th>Cash</th>
           <th>UPI</th>
+          <th>Bank</th>
+          <th>Card</th>
           <th>Mode</th>
           ${businessType !== "hotel" ? "<th>Meal Period</th><th>Kot Type</th>" : ""}
           <th>Credit</th>
@@ -228,18 +228,25 @@ export const generatePDF = async (
                 <td>${(row.disc || 0).toFixed(2)}</td>
                 <td>${(row.roundOff || 0).toFixed(2)}</td>
                 <td>${(row.totalWithTax || 0).toFixed(2)}</td>
-                <td class="text-right">${(row.total || 0).toFixed(2)}</td>
                 <td class="text-right">${
                   isCashSale ? (row.totalWithTax || 0).toFixed(2) : "-"
                 }</td>
                 <td class="text-right">${
+                  row.upi || row.partyAccount === "Bank"
+                    ? (row.totalWithTax || 0).toFixed(2)
+                    : "-"
+                }</td>
+                <td class="text-right">${
                   isBankSale ? (row.totalWithTax || 0).toFixed(2) : "-"
+                }</td>
+                <td class="text-right">${
+                  row.card ? (row.totalWithTax || 0).toFixed(2) : "-"
                 }</td>
                 <td>
                   <span class="mode-badge ${
-                    isCreditSale ? "credit" : isBankSale ? "upi" : "cash"
+                    isCreditSale ? "credit" : isCashSale ? "cash" : "upi"
                   }">
-                    ${isCreditSale ? "Credit" : isBankSale ? "UPI" : "Cash"}
+                    ${isCreditSale ? "Credit" : isCashSale ? "Cash" : "Online"}
                   </span>
                 </td>
                 ${
@@ -268,9 +275,10 @@ export const generatePDF = async (
           <td>${totals.disc.toFixed(2)}</td>
           <td>${totals.roundOff.toFixed(2)}</td>
           <td>${totals.totalWithTax.toFixed(2)}</td>
-          <td class="text-right">${(totals.total || totals.totalWithTax).toFixed(2)}</td>
           <td class="text-right">${totals.cash.toFixed(2)}</td>
           <td class="text-right">${totals.upi.toFixed(2)}</td>
+          <td class="text-right">${totals.bank.toFixed(2)}</td>
+          <td class="text-right">${totals.card || 0}</td>
           <td>-</td>
           ${businessType !== "hotel" ? "<td>-</td><td>-</td>" : ""}
           <td class="text-right">${totals.credit.toFixed(2)}</td>
@@ -290,6 +298,8 @@ export const generatePDF = async (
           <tr><td><strong>Total Tax</strong></td><td class="text-right">${totals.igst.toFixed(2)}</td></tr>
           <tr><td><strong>Net Cash</strong></td><td class="text-right">${totals.cash.toFixed(2)}</td></tr>
           <tr><td><strong>UPI</strong></td><td class="text-right">${totals.upi.toFixed(2)}</td></tr>
+          <tr><td><strong>Bank</strong></td><td class="text-right">${totals.bank.toFixed(2)}</td></tr>
+          <tr><td><strong>Card</strong></td><td class="text-right">${totals.card || 0}</td></tr>
           <tr><td><strong>Credit Amount</strong></td><td class="text-right">${totals.credit.toFixed(2)}</td></tr>
           <tr class="total-row">
             <td><strong>Net Sales</strong></td>
@@ -323,8 +333,24 @@ export const generatePDF = async (
               <td class="text-right">${(summary.restaurantSales.amount || 0).toFixed(2)}</td>
             </tr>
             <tr>
-              <td>- Transactions</td>
-              <td class="text-right">${summary.restaurantSales.count || 0}</td>
+              <td>- Room Service</td>
+              <td class="text-right">${summary.restaurantSales.roomServiceCount || 0}</td>
+            </tr>
+            <tr>
+              <td>- Take Away</td>
+              <td class="text-right">${summary.restaurantSales.takeawayCount || 0}</td>
+            </tr>
+            <tr>
+              <td>- Delivery</td>
+              <td class="text-right">${summary.restaurantSales.deliveryCount || 0}</td>
+            </tr>
+            <tr>
+              <td>- Dine In</td>
+              <td class="text-right">${summary.restaurantSales.dineInCount || 0}</td>
+            </tr>
+            <tr>
+              <td>- Others</td>
+              <td class="text-right">${summary.restaurantSales.otherCount || 0}</td>
             </tr>
           `
               : ""
@@ -388,7 +414,7 @@ export const generatePDF = async (
   printWindow.document.close();
 };
 
-// For Excel export
+// For Excel export - CORRECTED
 const exportToExcel = (
   salesData,
   summary,
@@ -442,9 +468,10 @@ const exportToExcel = (
       "Net Total",
       "Cash",
       "UPI",
+      "Bank",
+      "Card",
       "Payment Mode",
-      "Meal Period",
-      "KOT Type",
+      ...(businessType !== "hotel" ? ["Meal Period", "KOT Type"] : []),
       "Credit",
       "Credit Description",
     ],
@@ -454,7 +481,7 @@ const exportToExcel = (
       const isCreditSale =
         row.partyAccount === "Sundry Debtors" ||
         row.mode === "Credit" ||
-        row.credit > 0;
+        (row.credit || 0) > 0;
       const isCashSale =
         (row.partyAccount === "Cash-in-Hand" || row.partyAccount === "CASH") &&
         !isCreditSale;
@@ -463,7 +490,7 @@ const exportToExcel = (
         !isCreditSale;
       const grossAmount = (row.amount || 0) - (row.igst || 0);
 
-      return [
+      const baseRow = [
         row.billNo || "",
         row.date ? new Date(row.date).toLocaleDateString() : "",
         row.partyName || "",
@@ -475,13 +502,29 @@ const exportToExcel = (
         (row.roundOff || 0).toFixed(2),
         (row.totalWithTax || 0).toFixed(2),
         isCashSale ? (row.totalWithTax || 0).toFixed(2) : "",
+        row.upi ? (row.totalWithTax || 0).toFixed(2) : "",
         isBankSale ? (row.totalWithTax || 0).toFixed(2) : "",
-        isCreditSale ? "Credit" : isBankSale ? "UPI" : "Cash",
-        row.mealPeriod || "",
-        row.kotType || "",
-        isCreditSale ? (row.totalWithTax || 0).toFixed(2) : "",
-        isCreditSale ? row.creditDescription || row.partyName || "" : "",
+        row.card ? row.card : "",
+        isCreditSale
+          ? "Credit"
+          : isCashSale
+            ? "Cash"
+            : isBankSale
+              ? "Bank"
+              : "Online",
       ];
+
+      if (businessType !== "hotel") {
+        baseRow.push(row.mealPeriod || "");
+        baseRow.push(row.kotType || "");
+      }
+
+      baseRow.push(isCreditSale ? (row.totalWithTax || 0).toFixed(2) : "");
+      baseRow.push(
+        isCreditSale ? row.creditDescription || row.partyName || "" : "",
+      );
+
+      return baseRow;
     }),
 
     // Totals row
@@ -498,9 +541,10 @@ const exportToExcel = (
       totals.totalWithTax.toFixed(2),
       totals.cash.toFixed(2),
       totals.upi.toFixed(2),
+      (totals.bank || 0).toFixed(2),
+      totals.card || "0.00",
       "",
-      "",
-      "",
+      ...(businessType !== "hotel" ? ["", ""] : []),
       totals.credit.toFixed(2),
       "",
     ],
@@ -515,6 +559,8 @@ const exportToExcel = (
     ["Total Tax", totals.igst.toFixed(2)],
     ["Net Cash", totals.cash.toFixed(2)],
     ["UPI", totals.upi.toFixed(2)],
+    ["Bank", (totals.bank || 0).toFixed(2)],
+    ["Card", totals.card || "0.00"],
     ["Credit Amount", totals.credit.toFixed(2)],
     ["Net Sale", totals.totalWithTax.toFixed(2)],
 
@@ -534,7 +580,11 @@ const exportToExcel = (
             "Restaurant Sales",
             summary.restaurantSales.amount?.toFixed(2) || "0.00",
           ],
-          ["Restaurant Transactions", summary.restaurantSales.count || 0],
+          ["Room Service", summary.restaurantSales.roomServiceCount || 0],
+          ["Take Away", summary.restaurantSales.takeawayCount || 0],
+          ["Delivery", summary.restaurantSales.deliveryCount || 0],
+          ["Dine In", summary.restaurantSales.dineInCount || 0],
+          ["Others", summary.restaurantSales.otherCount || 0],
         ]
       : []),
     ...(businessType === "all"
@@ -560,20 +610,22 @@ const exportToExcel = (
         ]
       : []),
     ["Total Transactions", salesData.length],
-  ];
 
-  csvContent.push([]);
-  csvContent.push(["KOT TYPE BREAKDOWN"]);
-  Object.entries(kotBreakdown).forEach(([type, data]) => {
-    csvContent.push([type, data.amount.toFixed(2), data.count]);
-  });
-  csvContent.push([
-    "TOTAL",
-    Object.values(kotBreakdown)
-      .reduce((sum, k) => sum + k.amount, 0)
-      .toFixed(2),
-    Object.values(kotBreakdown).reduce((sum, k) => sum + k.count, 0),
-  ]);
+    [], // Empty row
+    ["KOT TYPE BREAKDOWN"],
+    ...Object.entries(kotBreakdown).map(([type, data]) => [
+      type,
+      data.amount.toFixed(2),
+      data.count,
+    ]),
+    [
+      "TOTAL",
+      Object.values(kotBreakdown)
+        .reduce((sum, k) => sum + k.amount, 0)
+        .toFixed(2),
+      Object.values(kotBreakdown).reduce((sum, k) => sum + k.count, 0),
+    ],
+  ];
 
   // Convert to CSV format
   const csv = csvContent
@@ -587,18 +639,6 @@ const exportToExcel = (
         .join(","),
     )
     .join("\n");
-  csvContent.push([]);
-  csvContent.push(["KOT TYPE BREAKDOWN"]);
-  Object.entries(kotBreakdown).forEach(([type, data]) => {
-    csvContent.push([type, data.amount.toFixed(2), data.count]);
-  });
-  csvContent.push([
-    "TOTAL",
-    Object.values(kotBreakdown)
-      .reduce((sum, k) => sum + k.amount, 0)
-      .toFixed(2),
-    Object.values(kotBreakdown).reduce((sum, k) => sum + k.count, 0),
-  ]);
 
   // Create and download file
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -614,6 +654,7 @@ const exportToExcel = (
   link.click();
   document.body.removeChild(link);
 };
+
 const BillSummary = () => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -645,7 +686,6 @@ const BillSummary = () => {
   // Get URL parameters and Redux data
   const location = useLocation();
   const navigate = useNavigate();
-  console.log(location);
 
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id,
@@ -694,8 +734,6 @@ const BillSummary = () => {
     return `${day}-${month}-${year}`;
   };
 
-  // Helper functions for business type styling
-
   const fetchSalesData = async (start = startDate, end = endDate) => {
     if (!start || !end) {
       setError("Please select both start and end dates");
@@ -728,8 +766,6 @@ const BillSummary = () => {
         businessType: businessType,
       };
 
-      console.log("Sending params:", salesParams);
-
       const response = await api.get(
         `/api/sUsers/hotel-sales/${cmp_id}/${businessType}`,
         {
@@ -747,12 +783,6 @@ const BillSummary = () => {
         const formattedEnd = formatDateForDisplay(end);
         setReportPeriod(`${formattedStart} To ${formattedEnd}`);
         updateDateTime();
-
-        console.log(
-          `Loaded ${
-            result.data.sales?.length || 0
-          } ${businessType} sales records`,
-        );
       } else {
         setError(result.message || "Failed to fetch sales data");
         setSalesData([]);
@@ -822,7 +852,7 @@ const BillSummary = () => {
       const isCreditSale =
         item.partyAccount === "Sundry Debtors" ||
         item.mode === "Credit" ||
-        item.credit > 0;
+        (item.credit || 0) > 0;
 
       const grossAmount = (item.amount || 0) - (item.igst || 0);
 
@@ -835,15 +865,11 @@ const BillSummary = () => {
         sgst: acc.sgst + (item.sgst || 0),
         igst: acc.igst + (item.igst || 0),
         totalWithTax: acc.totalWithTax + (item.totalWithTax || 0),
-
-        // ✅ Modified logic:
         cash: acc.cash + (isCashSale ? item.totalWithTax || 0 : 0),
-
-        // Keep other payment modes the same
         credit: acc.credit + (isCreditSale ? item.totalWithTax || 0 : 0),
-        upi: acc.upi + (isBankSale ? item.totalWithTax || 0 : 0),
-        cheque: acc.cheque + (isBankSale ? item.totalWithTax || 0 : 0),
+        upi: acc.upi + (item.upi ? item.totalWithTax || 0 : 0),
         bank: acc.bank + (isBankSale ? item.totalWithTax || 0 : 0),
+        card: acc.card + (item.card ? item.totalWithTax || 0 : 0),
       };
     },
     {
@@ -858,30 +884,26 @@ const BillSummary = () => {
       cash: 0,
       credit: 0,
       upi: 0,
-      cheque: 0,
       bank: 0,
+      card: 0,
     },
   );
 
   const { kotTypes, mealPeriods } = getFilterOptions();
-  // console.log(totals);
-  // console.log(salesData);
 
-useEffect(() => {
-  if (!startDate && !endDate) {
-    const today = new Date().toISOString().split("T")[0];
-    setStartDate(today);
-    setEndDate(today);
-  }
-}, []);
+  useEffect(() => {
+    if (!startDate && !endDate) {
+      const today = new Date().toISOString().split("T")[0];
+      setStartDate(today);
+      setEndDate(today);
+    }
+  }, []);
 
-useEffect(() => {
-  if (cmp_id && owner && businessType && startDate && endDate) {
-    fetchSalesData(startDate, endDate);
-  }
-}, [cmp_id, owner, businessType, startDate, endDate]);
-
-
+  useEffect(() => {
+    if (cmp_id && owner && businessType && startDate && endDate) {
+      fetchSalesData(startDate, endDate);
+    }
+  }, [cmp_id, owner, businessType, startDate, endDate]);
 
   const handlePDFExport = () => {
     if (filteredSalesData.length === 0) {
@@ -902,19 +924,18 @@ useEffect(() => {
 
   const handleExcelExport = () => {
     if (filteredSalesData.length === 0) {
-      // ✅ Changed
       alert("No data to export");
       return;
     }
     exportToExcel(
-      filteredSalesData, // ✅ Changed
+      filteredSalesData,
       summary,
       owner,
       reportPeriod,
       businessType,
       totals,
-      kotTypeFilter, // ✅ Pass filters
-      mealPeriodFilter, // ✅ Pass filters
+      kotTypeFilter,
+      mealPeriodFilter,
     );
   };
 
@@ -935,11 +956,11 @@ useEffect(() => {
               {owner?.companyName || owner?.name || "Sales Report"}
             </div>
             <div className="text-xs text-gray-600">
-              {owner?.address || owner?.road || "Sales Register"}
+              {owner?.flat || owner?.road || "Sales Register"}
             </div>
             <div className="text-sm font-bold mt-2">
-              SALES REGISTER OF THE OUTLET - {businessType}{" "}
-              {salesData?.[0]?.kotType || ""}
+              SALES REGISTER OF THE OUTLET -{" "}
+              {businessType === "hotel" ? "Hotel" : "Restaurant"}
             </div>
           </div>
 
@@ -969,6 +990,25 @@ useEffect(() => {
                     onChange={(e) => {
                       setEndDate(e.target.value);
                       clearError();
+                    }}
+                    className="px-2 py-2 border border-gray-300 rounded text-sm"
+                    disabled={loading}
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="font-bold text-sm">All</label>
+                  <input
+                    type="checkbox"
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setBusinessType("all");
+                      } else {
+                        const urlParams = new URLSearchParams(location.search);
+                        const typeFromUrl = urlParams.get("type");
+                        if (typeFromUrl) {
+                          setBusinessType(typeFromUrl);
+                        }
+                      }
                     }}
                     className="px-2 py-2 border border-gray-300 rounded text-sm"
                     disabled={loading}
@@ -1135,16 +1175,13 @@ useEffect(() => {
                   <th className="border-t border-black p-2 text-center font-bold">
                     Net Total
                   </th>
-                  {/* <th className="border-t border-black p-2 text-center font-bold">
-                  Total
-                </th> */}
                   <th className="border-t border-black p-2 text-center font-bold">
                     Cash
                   </th>
                   <th className="border-t border-black p-2 text-center font-bold">
                     UPI
                   </th>
-                     <th className="border-t border-black p-2 text-center font-bold">
+                  <th className="border-t border-black p-2 text-center font-bold">
                     Bank
                   </th>
                   <th className="border-t border-black p-2 text-center font-bold">
@@ -1175,7 +1212,7 @@ useEffect(() => {
                 {!loading && filteredSalesData.length === 0 ? (
                   <tr>
                     <td
-                      colSpan="15"
+                      colSpan="19"
                       className="border border-black p-4 text-center text-gray-500"
                     >
                       {error
@@ -1190,7 +1227,7 @@ useEffect(() => {
                     const isCreditSale =
                       row.partyAccount === "Sundry Debtors" ||
                       row.mode === "Credit" ||
-                      row.credit > 0;
+                      (row.credit || 0) > 0;
 
                     const isCashSale =
                       (row.partyAccount === "Cash-in-Hand" ||
@@ -1201,6 +1238,7 @@ useEffect(() => {
                       (row.partyAccount === "Bank Accounts" ||
                         row.partyAccount === "Gpay") &&
                       !isCreditSale;
+
                     return (
                       <tr key={index} className="hover:bg-gray-50">
                         <td className="border border-black p-2 text-left pl-3">
@@ -1211,7 +1249,7 @@ useEffect(() => {
                             ? new Date(row.date).toLocaleDateString()
                             : "-"}
                         </td>
-                        <td className="border border-black p-2 text-right pr-3">
+                        <td className="border border-black p-2 text-left">
                           {row.partyName}
                         </td>
                         <td className="border border-black p-2 text-right pr-3">
@@ -1238,44 +1276,56 @@ useEffect(() => {
                           {(row.totalWithTax || 0).toFixed(2)}
                         </td>
                         <td className="border border-black p-2 text-center">
-                        {row?.cash || 0}
-                        </td>
-                        <td className="border border-black p-2 text-center">
-                          {row?.upi || 0}
-                        </td>
-                         <td className="border border-black p-2 text-center">
-                          {row?.bank || 0}
-                        </td>
-                        <td className="border border-black p-2 text-center">
-                        {row?.card || 0}
-                        </td>
-                        <td className="border border-black p-2 text-center">
-                        {row?.mode || 0}
-                        </td>
-                       <td className="border border-black p-2 text-center">
-                            {row.credit || "-"}
-                      </td>
-                        <td className="border border-black p-2 text-center">
-                           {Number(row?.credit) > 0 ? row.creditDescription : "-"}
-                        </td>
-                        {/* <td className="border border-black p-2 text-center">
-                          {isCreditSale
-                            ? row.creditDescription || row.partyName
+                          {isCashSale
+                            ? (row.totalWithTax || 0).toFixed(2)
                             : "-"}
-                        </td> */}
-                        {/* <td className="border border-black p-2 text-center">
-                      {(row.total || 0).toFixed(2)}
-                    </td>
-
-                    <td className="border border-black p-2 text-center">
-                      0.00
-                    </td> */}
+                        </td>
+                        <td className="border border-black p-2 text-center">
+                          {row?.upi ? (row.totalWithTax || 0).toFixed(2) : "-"}
+                        </td>
+                        <td className="border border-black p-2 text-center">
+                          {isBankSale
+                            ? (row.totalWithTax || 0).toFixed(2)
+                            : "-"}
+                        </td>
+                        <td className="border border-black p-2 text-center">
+                          {row?.card ? (row.totalWithTax || 0).toFixed(2) : "-"}
+                        </td>
+                        <td className="border border-black p-2 text-center">
+                          {isCreditSale
+                            ? "Credit"
+                            : isCashSale
+                              ? "Cash"
+                              : isBankSale
+                                ? "Bank"
+                                : "Online"}
+                        </td>
+                        {businessType !== "hotel" && (
+                          <>
+                            <td className="border border-black p-2 text-center">
+                              {row?.mealPeriod || "-"}
+                            </td>
+                            <td className="border border-black p-2 text-center">
+                              {row?.kotType || "-"}
+                            </td>
+                          </>
+                        )}
+                        <td className="border border-black p-2 text-center">
+                          {(row.credit || 0) > 0
+                            ? (row.totalWithTax || 0).toFixed(2)
+                            : "-"}
+                        </td>
+                        <td className="border border-black p-2 text-left">
+                          {(row.credit || 0) > 0
+                            ? row.creditDescription || row.partyName || "-"
+                            : "-"}
+                        </td>
                       </tr>
                     );
                   })
                 )}
                 {/* Totals Row */}
-                {summary && (
+                {filteredSalesData.length > 0 && (
                   <tr className="border-t-2 border-black font-bold bg-gray-100">
                     <td className="border border-black p-2 text-left pl-3">
                       Total
@@ -1283,46 +1333,53 @@ useEffect(() => {
                     <td className="border border-black p-2 text-center">-</td>
                     <td className="border border-black p-2 text-center">-</td>
                     <td className="border border-black p-2 text-right pr-3">
-                      {summary?.grossTotal}
+                      {totals.amount.toFixed(2)}
                     </td>
                     <td className="border border-black p-2 text-center">
-                        {summary.totalCgst.toFixed(2)}
+                      {totals.cgst.toFixed(2)}
                     </td>
                     <td className="border border-black p-2 text-center">
-                      {summary.totalSgst.toFixed(2)}
+                      {totals.sgst.toFixed(2)}
                     </td>
                     <td className="border border-black p-2 text-center">
-                       {summary.totalIgst.toFixed(2)}
+                      {totals.igst.toFixed(2)}
                     </td>
                     <td className="border border-black p-2 text-center">
-                       {summary.totalDiscount.toFixed(2)}
+                      {totals.disc.toFixed(2)}
                     </td>
                     <td className="border border-black p-2 text-center">
-                      {summary?.totalRoundOff}
+                      {totals.roundOff.toFixed(2)}
                     </td>
                     <td className="border border-black p-2 text-center">
-                        {summary?.totalAmount}
+                      {totals.totalWithTax.toFixed(2)}
                     </td>
 
                     <td className="border border-black p-2 text-center">
-                       {summary?.totalCash  }
-                    </td>
-                      <td className="border border-black p-2 text-center">
-                     {summary?.totalUpi  }
+                      {totals.cash.toFixed(2)}
                     </td>
                     <td className="border border-black p-2 text-center">
-                    {summary?.totalBank  }
+                      {totals.upi.toFixed(2)}
                     </td>
-                         <td className="border border-black p-2 text-center">
-                     {summary?.totalCard  }
+                    <td className="border border-black p-2 text-center">
+                      {(totals.bank || 0).toFixed(2)}
                     </td>
-                  
+                    <td className="border border-black p-2 text-center">
+                      {(totals.card || 0).toFixed(2)}
+                    </td>
 
                     <td className="border border-black p-2 text-center">-</td>
-                    {/* <td className="border border-black p-2 text-center">-</td>
-                  <td className="border border-black p-2 text-center">-</td> */}
+                    {businessType !== "hotel" && (
+                      <>
+                        <td className="border border-black p-2 text-center">
+                          -
+                        </td>
+                        <td className="border border-black p-2 text-center">
+                          -
+                        </td>
+                      </>
+                    )}
                     <td className="border border-black p-2 text-center">
-                      {totals.totalCredit}
+                      {totals.credit.toFixed(2)}
                     </td>
                     <td className="border border-black p-2 text-center">-</td>
                   </tr>
@@ -1342,73 +1399,67 @@ useEffect(() => {
                     <tr>
                       <td className="font-bold py-1">Gross Amount</td>
                       <td className="text-right py-1">
-                        {summary.grossTotal}
+                        {totals.amount.toFixed(2)}
                       </td>
                     </tr>
                     <tr>
                       <td className="font-bold py-1">Discount</td>
                       <td className="text-right py-1">
-                        {summary.totalDiscount}
+                        {totals.disc.toFixed(2)}
                       </td>
                     </tr>
                     <tr>
                       <td className="font-bold py-1">CGST</td>
                       <td className="text-right py-1">
-                        {summary.totalCgst}
+                        {totals.cgst.toFixed(2)}
                       </td>
                     </tr>
                     <tr>
                       <td className="font-bold py-1">SGST</td>
                       <td className="text-right py-1">
-                        {summary.totalSgst}
+                        {totals.sgst.toFixed(2)}
                       </td>
                     </tr>
                     <tr>
                       <td className="font-bold py-1">Total Tax</td>
                       <td className="text-right py-1">
-                        {summary.totalIgst}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="font-bold py-1">Total</td>
-                      <td className="text-right py-1">
-                        {totals.totalWithTax.toFixed(2)}
+                        {totals.igst.toFixed(2)}
                       </td>
                     </tr>
                     <tr>
                       <td className="font-bold py-1">Cash</td>
                       <td className="text-right py-1">
-                        {summary.totalCash}
+                        {totals.cash.toFixed(2)}
                       </td>
                     </tr>
                     <tr>
                       <td className="font-bold py-1">UPI</td>
                       <td className="text-right py-1">
-                        {summary.totalUpi}
+                        {totals.upi.toFixed(2)}
                       </td>
                     </tr>
-                     <tr>
+                    <tr>
                       <td className="font-bold py-1">Bank</td>
                       <td className="text-right py-1">
-                        {summary.totalBank}
+                        {(totals.bank || 0).toFixed(2)}
                       </td>
                     </tr>
-                     <tr>
+                    <tr>
                       <td className="font-bold py-1">Card</td>
                       <td className="text-right py-1">
-                        {summary.totalCard}
+                        {(totals.card || 0).toFixed(2)}
                       </td>
                     </tr>
                     <tr>
                       <td className="font-bold py-1">Round off</td>
                       <td className="text-right py-1">
-                        {summary.totalRoundOff}
+                        {totals.roundOff.toFixed(2)}
                       </td>
                     </tr>
                     <tr>
                       <td className="font-bold py-1">Credit Amount</td>
                       <td className="text-right py-1">
-                        {summary.totalCredit}
+                        {totals.credit.toFixed(2)}
                       </td>
                     </tr>
                     <tr className="border-t-2 border-black">
@@ -1428,8 +1479,9 @@ useEffect(() => {
                 </h3>
                 <table className="w-full">
                   <tbody>
-                    {businessType === "hotel" && summary.hotelSales && (
-                      <>
+                    {businessType != "restaurant" && summary.hotelSales && (
+                      
+                     <>
                         <tr className="bg-blue-50">
                           <td className="font-bold py-2 px-2">Hotel Sales</td>
                           <td className="text-right py-2 px-2">
@@ -1452,20 +1504,12 @@ useEffect(() => {
                             {summary.hotelSales.agentWithOut || 0}
                           </td>
                         </tr>
-                        <tr>
-                              <td className="py-1 px-2 text-gray-600">
-                            -Total  Transactions 
-                          </td>
-                          <td className="text-right py-1 px-2">
-                            {summary.hotelSales.count || 0}
-                          </td>
-                        </tr>
+                    
                         
                       </>
-                      
                     )}
 
-                    {businessType === "restaurant" &&
+                    {businessType != "hotel" &&
                       summary.restaurantSales && (
                         <>
                           <tr className="bg-green-50">
@@ -1479,68 +1523,53 @@ useEffect(() => {
                           </tr>
                           <tr>
                             <td className="py-1 px-2 text-gray-600">
-                              - Transactions
+                              - Room Service
                             </td>
                             <td className="text-right py-1 px-2">
-                              {summary.restaurantSales.count || 0}
+                              {summary.restaurantSales.roomServiceCount || 0}
                             </td>
                           </tr>
-
-                          {/* KOT Type Breakdown */}
-                          {(() => {
-                            const kotBreakdown = filteredSalesData.reduce(
-                              (acc, item) => {
-                                const kotType = item.kotType || "Unknown";
-                                if (!acc[kotType]) {
-                                  acc[kotType] = { amount: 0, count: 0 };
-                                }
-                                acc[kotType].amount += item.totalWithTax || 0;
-                                acc[kotType].count += 1;
-                                return acc;
-                              },
-                              {},
-                            );
-
-                            return Object.entries(kotBreakdown).map(
-                              ([type, data]) => (
-                                <tr key={type}>
-                                  <td className="py-1 px-4 text-gray-900 text-xs font-bold">
-                                    {type}
-                                  </td>
-                                  <td className="text-right py-1 px-2 text-xs font-bold">
-                                    {data.amount.toFixed(2)}
-                                  </td>
-                                </tr>
-                              ),
-                            );
-                          })()}
+                          <tr>
+                            <td className="py-1 px-2 text-gray-600">
+                              - Take Away
+                            </td>
+                            <td className="text-right py-1 px-2">
+                              {summary.restaurantSales.takeawayCount || 0}
+                            </td>
+                          </tr>
+                          <tr>
+                            <td className="py-1 px-2 text-gray-600">
+                              - Delivery
+                            </td>
+                            <td className="text-right py-1 px-2">
+                              {summary.restaurantSales.deliveryCount || 0}
+                            </td>
+                          </tr>
+                          <tr>
+                            <td className="py-1 px-2 text-gray-600">
+                              - Dine In
+                            </td>
+                            <td className="text-right py-1 px-2">
+                              {summary.restaurantSales.dineInCount || 0}
+                            </td>
+                          </tr>
+                          <tr>
+                            <td className="py-1 px-2 text-gray-600">
+                              - Others
+                            </td>
+                            <td className="text-right py-1 px-2">
+                              {summary.restaurantSales.otherCount || 0}
+                            </td>
+                          </tr>
                         </>
                       )}
-                    {/* {summary.otherSales && summary.otherSales.count > 0 && (
-                      <>
-                        <tr className="bg-gray-50">
-                          <td className="font-bold py-2 px-2">Other Sales</td>
-                          <td className="text-right py-2 px-2">
-                            {summary.otherSales.amount?.toFixed(2) || "0.00"}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="py-1 px-2 text-gray-600">
-                            - Transactions
-                          </td>
-                          <td className="text-right py-1 px-2">
-                            {summary.otherSales.count || 0}
-                          </td>
-                        </tr>
-                      </>
-                    )} */}
 
                     <tr className="border-t-2 border-black">
                       <td className="font-bold py-2 px-2 text-sm">
                         Total Transactions
                       </td>
                       <td className="text-right py-2 px-2 font-bold text-sm">
-                        {salesData.length}
+                        {filteredSalesData.length}
                       </td>
                     </tr>
                   </tbody>
@@ -1569,12 +1598,6 @@ useEffect(() => {
           {/* Export and Action Buttons */}
           <div className="text-center mt-5 no-print">
             <div className="flex flex-wrap justify-center gap-3">
-              {/* <button
-              onClick={() => window.print()}
-              className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm font-medium flex items-center gap-2"
-            >
-              🖨️ Print Report
-            </button> */}
               <button
                 onClick={handlePDFExport}
                 disabled={filteredSalesData.length === 0}
