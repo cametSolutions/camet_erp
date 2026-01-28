@@ -290,6 +290,7 @@ export const updateItem = async (req, res) => {
       req.params.id,
       {
         $set: {
+             itemCode: formData.itemCode, 
           product_image: formData.imageUrl?.secure_url,
           product_name: formData.itemName,
           category: formData.foodCategory,

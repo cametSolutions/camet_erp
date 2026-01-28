@@ -12,7 +12,7 @@ const productSchema = new mongoose.Schema({
   required: [true, 'Item code is required'],
   unique: true, // Optional: if you want unique item codes per company
   trim: true,
-  maxlength: [20, 'Item code cannot exceed 20 characters']
+ 
 },
 
   product_image: {
