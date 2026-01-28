@@ -195,10 +195,6 @@ function ItemRegisterComponent({
 
   const validDateFormData = () => {
 
-    if (!isNonEmptyString(roomData?.itemCode)) { // NEW VALIDATION
-    toast.error("Item code is required");
-    return false;
-  }
     if (!isNonEmptyString(roomData?.itemName)) {
       toast.error("Item name is required");
       return false;
