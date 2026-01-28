@@ -1514,6 +1514,7 @@ function BookingList() {
   console.log(selectedCheckOut)
   console.log(selectedOnlinetype)
   const handleCloseBasedOnDate = (checkouts) => {
+    console.log("hh")
     if (!checkouts) {
       setShowCheckOutDateModal(false)
       setShowSelectionModal(true)
@@ -1618,9 +1619,8 @@ function BookingList() {
         {showEnhancedCheckoutModal && (
           <EnhancedCheckoutModal
             isOpen={showEnhancedCheckoutModal}
-            onClose={() => {
-              handleCloseBasedOnDate
-            }}
+            closemodal={setShowEnhancedCheckoutModal}
+            onClose={handleCloseBasedOnDate}
             selectedCheckIns={selectedCheckOut}
             onConfirm={handleEnhancedCheckoutConfirm}
             checkoutMode={checkoutMode}

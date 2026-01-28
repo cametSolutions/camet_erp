@@ -16,6 +16,7 @@ import PartyList from "@/components/secUsers/main/PartyList"
 
 export default function EnhancedCheckoutModal({
   isOpen = true,
+closemodal,
   onClose,
   selectedCheckIns = [],
   onConfirm,
@@ -24,6 +25,8 @@ export default function EnhancedCheckoutModal({
   toogle,
   selectedCustomer
 }) {
+console.log(  onClose
+)
   console.log(checkoutMode)
   console.log(isOpen)
   console.log("hfafffff")
@@ -549,7 +552,10 @@ export default function EnhancedCheckoutModal({
   }
   console.log(selectedCheckIns)
   console.log(checkoutMode)
-
+  const handleConfirm = () => {
+    console.log(checkouts);
+    onClose(checkouts);
+  };
   return (
     // <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
     //   <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
@@ -741,7 +747,7 @@ export default function EnhancedCheckoutModal({
             <Users size={18} /> Checkout Assignment
           </h2>
           <button
-            onClick={() => onClose(null)}
+            onClick={() => closemodal(false)}
             className="text-gray-500 hover:text-gray-700"
           >
             <X size={18} />
@@ -875,7 +881,7 @@ export default function EnhancedCheckoutModal({
             Cancel
           </button>
           <button
-            onClick={onclose(checkouts)}
+            onClick={handleConfirm}
             disabled={roomAssignments.length === 0}
             className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
           >
