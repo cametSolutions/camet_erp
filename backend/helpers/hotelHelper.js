@@ -127,6 +127,7 @@ export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
       selectedModal
         .find(filter)
         .populate("customerId")
+        .populate("guestId")
         .populate("agentId")
         .populate("isHotelAgent")
     //     .populate({

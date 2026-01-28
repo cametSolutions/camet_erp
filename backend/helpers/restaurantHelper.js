@@ -20,6 +20,7 @@ export const buildDatabaseFilterForRoom = (params) => {
   if (params.searchTerm) {
     filter.$or = [
       { product_name: { $regex: params.searchTerm, $options: "i" } },
+       { itemCode: { $regex:params.searchTerm, $options: "i" } },
     ];
   }
 

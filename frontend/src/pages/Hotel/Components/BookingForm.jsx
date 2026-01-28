@@ -14,10 +14,11 @@ import FoodPlanComponent from "./FoodPlanComponent";
 import useFetch from "@/customHook/useFetch";
 import OutStandingModal from "./OutStandingModal";
 import PaymentModal from "./PaymentModal";
+import { set } from "lodash";
 
 function BookingForm({
-  isLoading=false,
-  setIsLoading=false,
+  isLoading = false,
+  setIsLoading = false,
   handleSubmit,
   editData,
   isSubmittingRef,
@@ -28,9 +29,9 @@ function BookingForm({
   submitLoader,
   isShowGrc = false,
 }) {
-
   const [voucherNumber, setVoucherNumber] = useState("");
   const [selectedParty, setSelectedParty] = useState("");
+  const [selectedGuest, setSelectedGuest] = useState("");
   const [displayFoodPlan, setDisplayFoodPlan] = useState(false);
   const [selectedRoomId, setSelectedRoomId] = useState("");
   const [displayAdditionalPax, setDisplayAdditionalPax] = useState(false);
@@ -128,6 +129,7 @@ function BookingForm({
   useEffect(() => {
     if (editData) {
       setSelectedParty(editData?.customerId);
+      setSelectedGuest(editData?.guestId);
       setHotelAgent(editData?.agentId);
       setCountry(editData?.country || "");
       setVoucherNumber(editData?.voucherNumber);
@@ -135,7 +137,6 @@ function BookingForm({
       if (isTariffRateChange) {
         highestDate =
           currentDateDefault > highestDate ? currentDateDefault : highestDate;
-        
       }
       setFormData((prev) => ({
         ...prev,
@@ -165,6 +166,13 @@ function BookingForm({
         voucherId: editData?.voucherId,
         customerName: editData?.customerId?.partyName,
         accountGroup: editData?.customerId?.accountGroup,
+        guestName: editData?.guestId?.partyName,
+        guestId: editData?.guestId?._id,
+        guestCountry: editData?.country,
+        guestState: editData?.state,
+        guestPinCode: editData?.pinCode,
+        guestDetailedAddress: editData?.guestDetailedAddress,
+        guestMobileNumber: editData?.guestMobileNumber,
         balanceToPay: editData?.balanceToPay || 0,
         advanceAmount: editData?.advanceAmount || 0,
         previousAdvance: editData?.previousAdvance || 0,
@@ -184,6 +192,7 @@ function BookingForm({
         grcno: editData?.grcno || "",
         currentDate: editData?.arrivalDate || currentDateDefault,
         updatedDate: editData?.updatedDate || currentDateDefault,
+        gstNo: editData?.gstNo || "",
       }));
     }
   }, [editData]);
@@ -191,7 +200,7 @@ function BookingForm({
   useEffect(() => {
     if (roomId) setSelectedRoomId(roomId);
   }, [roomId]);
- 
+
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -279,6 +288,23 @@ function BookingForm({
       }
       return;
     }
+    console.log(name);
+    if (name === "detailedAddress") {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+        guestDetailedAddress: value,
+      }));
+      return;
+    }
+    if (name === "country") {
+      setFormData((prev) => ({ ...prev, [name]: value, guestCountry: value }));
+      return;
+    }
+    if (name === "state") {
+      setFormData((prev) => ({ ...prev, [name]: value, guestState: value }));
+      return;
+    }
 
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
@@ -310,7 +336,7 @@ function BookingForm({
         const specificSeries = response.data.series?.find(
           (item) => item.under === "hotel",
         );
-      
+
         if (specificSeries) {
           const {
             prefix = "",
@@ -320,7 +346,7 @@ function BookingForm({
           } = specificSeries;
           const paddedNumber = String(currentNumber).padStart(width, "0");
           const specificNumber = `${prefix}${paddedNumber}${suffix}`;
-          
+
           setFormData((prev) => ({
             ...prev,
             voucherNumber: specificNumber,
@@ -342,7 +368,6 @@ function BookingForm({
 
   useEffect(() => {
     if (!editData || isFor === "deliveryNote" || isFor === "sales") {
-
       fetchData();
     }
   }, [fetchData, editData, isFor]);
@@ -352,7 +377,7 @@ function BookingForm({
       const roomTotal = Number(formData?.roomTotal || 0);
       const paxTotal = Number(formData?.paxTotal || 0);
       const foodPlanTotal = Number(formData?.foodPlanTotal || 0);
-   
+
       // Total before discount
       const totalAmount = roomTotal;
 
@@ -367,7 +392,7 @@ function BookingForm({
       // Calculate discount percentage
       const discountPercentage =
         totalAmount > 0 ? ((discountAmount / totalAmount) * 100).toFixed(2) : 0;
- 
+
       setFormData((prev) => ({
         ...prev,
         totalAmount: totalAmount.toFixed(2),
@@ -376,7 +401,7 @@ function BookingForm({
         balanceToPay,
       }));
     }, 300);
-  
+
     return () => clearTimeout(handler);
   }, [
     formData.roomTotal,
@@ -385,7 +410,7 @@ function BookingForm({
     formData.discountAmount,
     formData.totalAdvance,
   ]);
- 
+
   const handleDiscountPercentageChange = (e) => {
     const { value } = e.target;
     const percentage = Number(value) || 0;
@@ -459,31 +484,75 @@ function BookingForm({
     }
   };
 
-  const handleSelection = (party, search) => {
-    setSelectedParty(party);
+  const handleSelection = (party, search, isGuest) => {
+    if (isGuest) {
+      setSelectedGuest(party);
+    } else {
+      setSelectedParty(party);
+      setSelectedGuest(party);
+    }
+
     if (!party) {
-      setFormData((prev) => ({
-        ...prev,
-        customerName: search,
-        customerId: "",
-        country: "",
-        state: "",
-        pinCode: "",
-        detailedAddress: "",
-      }));
+      if (!isGuest) {
+        setFormData((prev) => ({
+          ...prev,
+          customerName: search,
+          customerId: "",
+          country: "",
+          state: "",
+          pinCode: "",
+          detailedAddress: "",
+        }));
+      } else {
+        setFormData((prev) => ({
+          ...prev,
+          guestName: search,
+          guestId: "",
+          guestCountry: "",
+          guestState: "",
+          guestPinCode: "",
+          guestDetailedAddress: "",
+        }));
+      }
+
       return;
     }
-    setFormData((prev) => ({
-      ...prev,
-      customerName: party.partyName,
-      customerId: party._id,
-      country: party.country,
-      accountGroup: party?.accountGroup,
-      state: party.state,
-      pinCode: party.pin,
-      detailedAddress: party.billingAddress,
-      mobileNumber: party.mobileNumber,
-    }));
+    console.log(isGuest);
+    console.log(party);
+    if (!isGuest) {
+      setFormData((prev) => ({
+        ...prev,
+        customerName: party.partyName,
+        customerId: party._id,
+        country: party.country,
+        accountGroup: party?.accountGroup,
+        state: party.state,
+        pinCode: party.pin,
+        gstNo: party.gstNo,
+        detailedAddress: party.billingAddress,
+        mobileNumber: party.mobileNumber,
+        guestName: party.partyName,
+        guestId: party._id,
+        guestCountry: party.country,
+        guestAccountGroup: party?.accountGroup,
+        guestState: party.state,
+        guestPinCode: party.pin,
+        guestDetailedAddress: party.billingAddress,
+        guestMobileNumber: party.mobileNumber,
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        guestName: party.partyName,
+        guestId: party._id,
+        guestCountry: party.country,
+        guestAccountGroup: party?.accountGroup,
+        guestState: party.state,
+        guestPinCode: party.pin,
+        guestDetailedAddress: party.billingAddress,
+        guestMobileNumber: party.mobileNumber,
+      }));
+    }
   };
 
   const handleAvailableRoomSelection = (selectedRoom) => {
@@ -495,10 +564,8 @@ function BookingForm({
       updatedDate: currentDateDefault,
     }));
   };
- 
 
   const handleAdditionalPaxDetails = (details, room) => {
-  
     const existingDetails = Array.isArray(formData?.additionalPaxDetails)
       ? formData.additionalPaxDetails
       : [];
@@ -507,7 +574,7 @@ function BookingForm({
       (acc, item) => acc + Number(item.rate),
       0,
     );
-   
+
     setFormData((prev) => ({
       ...prev,
       additionalPaxDetails: [...filterData, ...details],
@@ -525,7 +592,7 @@ function BookingForm({
       (acc, item) => acc + Number(item.rate),
       0,
     );
-   
+
     setFormData((prev) => ({
       ...prev,
       foodPlan: [...filterData, ...details],
@@ -533,7 +600,7 @@ function BookingForm({
       updatedDate: currentDateDefault,
     }));
   };
-  
+
   const selectedRoomData = (id, to) => {
     if (to === "addPax") {
       setDisplayAdditionalPax(true);
@@ -551,8 +618,6 @@ function BookingForm({
   };
 
   const handleAvailableRooms = (rooms, total) => {
-
-
     if (rooms.length > 0) {
       // ✅ CRITICAL: If in tariff rate change mode, merge with existing rooms
       if (isTariffRateChange && roomId && editData?.selectedRooms) {
@@ -569,7 +634,6 @@ function BookingForm({
 
             // If this is the room being edited, replace it
             if (originalRoomId === roomId?.toString()) {
-             
               return {
                 ...updatedRoom,
                 _id: originalRoom._id, // Preserve original _id
@@ -587,8 +651,6 @@ function BookingForm({
               sum + Number(room.amountAfterTax || room.totalAmount || 0),
             0,
           );
-
-    
 
           setFormData((prev) => ({
             ...prev,
@@ -616,20 +678,35 @@ function BookingForm({
     }
   };
 
- const submitHandler = async () => {
-  if (!formData.customerName || formData.customerName.trim() === "") {
-    toast.error("Please enter a customer name");
-    return;
-  }
+  const submitHandler = async () => {
+    if (!formData.customerName || formData.customerName.trim() === "") {
+      toast.error("Please enter a customer name");
+      return;
+    }
 
-  let customerId = formData.customerId?.trim?.() || formData.customerId || "";
-  let customerName = formData.customerName.trim(); // Use trimmed name
+    let customerId = formData.customerId?.trim?.() || formData.customerId || "";
+    let customerName = formData.customerName.trim(); // Use trimmed name
     let country = formData.country;
     let accountGroup = formData.accountGroup;
     let state = formData.state;
     let pinCode = formData.pinCode;
     let detailedAddress = formData.detailedAddress;
     let mobileNumber = formData.mobileNumber;
+    let guestName = formData?.guestName;
+    let guestId = formData?.guestId || "";
+    let guestCountry = formData?.guestCountry;
+    let guestState = formData?.guestState;
+    let guestPinCode = formData?.guestPinCode;
+    let guestDetailedAddress = formData?.guestDetailedAddress;
+    let guestMobileNumber = formData?.guestMobileNumber;
+
+    console.log(guestName);
+    console.log(guestId);
+    console.log(guestCountry);
+    console.log(guestState);
+    console.log(guestPinCode);
+    console.log(guestDetailedAddress);
+    console.log(guestMobileNumber);
 
     if (!customerId) {
       try {
@@ -652,6 +729,7 @@ function BookingForm({
           subGroup: "",
           isHotelAgent: false,
           cpm_id: cmp_id,
+          guestName,
         };
 
         const res = await api.post("/api/sUsers/addParty", dataObject, {
@@ -669,12 +747,63 @@ function BookingForm({
         pinCode = res.data?.result?.pin;
         detailedAddress = res.data?.result?.billingAddress;
         mobileNumber = res.data?.result?.mobileNumber;
+        if (guestName == customerName) {
+          guestName = res.data?.result?.partyName;
+          guestId = res.data?.result?._id;
+          guestCountry = res.data?.result?.country;
+          guestState = res.data?.result?.state;
+          guestPinCode = res.data?.result?.pin;
+          guestDetailedAddress = res.data?.result?.billingAddress;
+          guestMobileNumber = res.data?.result?.mobileNumber;
+        }
       } catch {
         toast.error("Failed to create customer");
         return;
       }
     }
+    if (customerId && !guestId && guestName != customerName) {
+      try {
+        const dataObject = {
+          accountGroup: "",
+          partyName: guestName,
+          mobileNumber: guestMobileNumber,
+          emailID: "",
+          gstNo: "",
+          panNo: "",
+          billingAddress: guestDetailedAddress,
+          shippingAddress: guestDetailedAddress,
+          creditPeriod: "",
+          creditLimit: "",
+          openingBalanceType: "",
+          openingBalanceAmount: 0,
+          country: guestCountry,
+          state: guestState,
+          pin: guestPinCode,
+          subGroup: "",
+          isHotelAgent: false,
+          cpm_id: cmp_id,
+          guestName,
+        };
 
+        const res = await api.post("/api/sUsers/addParty", dataObject, {
+          headers: { "Content-Type": "application/json" },
+          withCredentials: true,
+        });
+
+        toast.success(res.data.message);
+        console.log(res.data.result);
+        guestId = res.data?.result?._id;
+        guestName = res.data?.result?.partyName;
+        guestCountry = res.data?.result?.country;
+        guestState = res.data?.result?.state;
+        guestPinCode = res.data?.result?.pin;
+        guestDetailedAddress = res.data?.result?.billingAddress;
+        guestMobileNumber = res.data?.result?.mobileNumber;
+      } catch {
+        toast.error("Failed to create customer");
+        return;
+      }
+    }
 
     // Verify room count hasn't decreased
     if (isTariffRateChange && editData?.selectedRooms) {
@@ -693,6 +822,13 @@ function BookingForm({
 
     const payload = {
       ...formData,
+      guestId,
+      guestName,
+      guestCountry,
+      guestState,
+      guestPinCode,
+      guestDetailedAddress,
+      guestMobileNumber,
       customerId,
       customerName,
       country,
@@ -705,15 +841,13 @@ function BookingForm({
       selectedRooms: formData.selectedRooms, // Should contain ALL rooms
     };
 
-
     if (
       Number(formData.advanceAmount) <= 0 ||
       formData.advanceAmount == editData?.advanceAmount
     ) {
       if (isSubmittingRef.current) return;
       isSubmittingRef.current = true;
-      
-
+      console.log(payload);
       handleSubmit(payload);
     } else {
       setFormData((prev) => ({ ...prev, ...payload }));
@@ -761,20 +895,28 @@ function BookingForm({
 
     handleSubmit(payload, paymentData, paymenttypeDetails);
   };
-  
+
   const handleClose = () => setShowPaymentModal(false);
-const handleSearchCustomer = (name) => {
- 
-  setFormData((prev) => ({ 
-    ...prev, 
-    customerName: name,
-    // Clear customerId if user is typing a new name
-    customerId: name && !selectedParty ? "" : prev.customerId
-  }));
-};
+  const handleSearchCustomer = (name, isGuest) => {
+    if (isGuest)  {
+      setFormData((prev) => ({
+        ...prev,
+        guestName: name,
+        // Clear customerId if user is typing a new name
+        guestId: name && !selectedGuest ? "" : prev.guestId,
+      }));
+      return;
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        customerName: name,
+        // Clear customerId if user is typing a new name
+        customerId: name && !selectedParty ? "" : prev.customerId,
+      }));
+    }
+  };
 
   const tariffMode = isTariffRateChange === true;
-  
 
   return (
     <>
@@ -826,87 +968,145 @@ const handleSearchCustomer = (name) => {
                     </h2>
 
                     {/* Main Guest Fields */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-6">
-                      {/* Guest Name */}
-                      <div>
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Guest Name
-                        </label>
-                        <CustomerSearchInputBox
-                          onSelect={handleSelection}
-                          selectedParty={selectedParty}
-                          isAgent={false}
-                          placeholder="Search customers..."
-                          sendSearchToParent={handleSearchCustomer}
-                        />
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                      {/* LEFT COLUMN */}
+                      <div className="space-y-6">
+                        {/* Billing Name */}
+                        <div>
+                          <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                            Billing Name
+                          </label>
+                          <CustomerSearchInputBox
+                            onSelect={handleSelection}
+                            selectedParty={selectedParty}
+                            isAgent={false}
+                            placeholder="Search customers..."
+                            sendSearchToParent={handleSearchCustomer}
+                            isGuest={false}
+                          />
+                        </div>
+
+                        {/* Detailed Address */}
+                        <div>
+                          <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                            Detailed Address
+                          </label>
+                          <input
+                            name="detailedAddress"
+                            value={formData.detailedAddress}
+                            onChange={handleChange}
+                            className="w-full border border-gray-300 px-3 py-2 rounded text-sm shadow focus:ring-blue-200"
+                          />
+                        </div>
+
+                        {/* GST / Country / State */}
+                        <div className="grid grid-cols-3 gap-4">
+                          <div>
+                            <label className="block uppercase text-xs font-bold mb-2">
+                              GST No
+                            </label>
+                            <input
+                              className="w-full border px-3 py-2 rounded text-sm"
+                              value={formData.gstNo}
+                              name="gstNo"
+                              onChange={handleChange}
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block uppercase text-xs font-bold mb-2">
+                              Country
+                            </label>
+                            <input
+                              name="country"
+                              value={formData.country}
+                              onChange={handleChange}
+                              className="w-full border px-3 py-2 rounded text-sm"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block uppercase text-xs font-bold mb-2">
+                              State
+                            </label>
+                            <input
+                              name="state"
+                              value={formData.state}
+                              onChange={handleChange}
+                              className="w-full border px-3 py-2 rounded text-sm"
+                            />
+                          </div>
+                        </div>
                       </div>
 
-                      {/* Country */}
-                      <div>
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Country
-                        </label>
-                        <input
-                          name="country"
-                          value={formData.country}
-                          onChange={handleChange}
-                          className="w-full border border-gray-300 px-3 py-2 rounded text-sm shadow focus:outline-none focus:ring focus:ring-blue-200 bg-white"
-                        />
-                      </div>
+                      {/* RIGHT COLUMN */}
+                      <div className="space-y-6">
+                        {/* Guest Name */}
+                        <div>
+                          <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                            Guest Name
+                          </label>
+                          <CustomerSearchInputBox
+                            onSelect={handleSelection}
+                            selectedParty={selectedGuest}
+                            isAgent={false}
+                            placeholder="Search customers..."
+                            sendSearchToParent={handleSearchCustomer}
+                            isGuest={true}
+                          />
+                        </div>
 
-                      {/* State */}
-                      <div>
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          State
-                        </label>
-                        <input
-                          type="text"
-                          name="state"
-                          value={formData.state}
-                          onChange={handleChange}
-                          className="w-full border border-gray-300 px-3 py-2 rounded text-sm shadow focus:outline-none focus:ring focus:ring-blue-200 bg-white"
-                        />
-                      </div>
+                        {/* Detailed Address */}
+                        <div>
+                          <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                            Detailed Address
+                          </label>
+                          <input
+                            className="w-full border px-3 py-2 rounded text-sm"
+                            name="guestDetailedAddress"
+                            value={formData.guestDetailedAddress}
+                            onChange={handleChange}
+                          />
+                        </div>
 
-                      {/* PinCode */}
-                      <div>
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          PinCode
-                        </label>
-                        <input
-                          name="pinCode"
-                          value={formData.pinCode}
-                          onChange={handleChange}
-                          className="w-full border border-gray-300 px-3 py-2 rounded text-sm shadow focus:outline-none focus:ring focus:ring-blue-200 bg-white"
-                        />
-                      </div>
+                        {/* Country / State / Mobile */}
+                        <div className="grid grid-cols-3 gap-4">
+                          <div>
+                            <label className="block uppercase text-xs font-bold mb-2">
+                              Country
+                            </label>
+                            <input
+                              className="w-full border px-3 py-2 rounded text-sm"
+                              name="guestCountry"
+                              value={formData.guestCountry}
+                              onChange={handleChange}
+                            />
+                          </div>
 
-                      {/* Detailed Address */}
-                      <div>
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Detailed Address
-                        </label>
-                        <input
-                          type="text"
-                          name="detailedAddress"
-                          value={formData.detailedAddress}
-                          onChange={handleChange}
-                          className="w-full border border-gray-300 px-3 py-2 rounded text-sm shadow focus:outline-none focus:ring focus:ring-blue-200 bg-white"
-                        />
-                      </div>
+                          <div>
+                            <label className="block uppercase text-xs font-bold mb-2">
+                              State
+                            </label>
+                            <input
+                              className="w-full border px-3 py-2 rounded text-sm"
+                              name="guestState"
+                              value={formData.guestState}
+                              onChange={handleChange}
+                            />
+                          </div>
 
-                      {/* Mobile Number */}
-                      <div>
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Mobile Number
-                        </label>
-                        <input
-                          type="number"
-                          name="mobileNumber"
-                          value={formData.mobileNumber}
-                          onChange={handleChange}
-                          className="w-full border border-gray-300 px-3 py-2 rounded text-sm shadow focus:outline-none focus:ring focus:ring-blue-200 bg-white"
-                        />
+                          <div>
+                            <label className="block uppercase text-xs font-bold mb-2">
+                              Mobile No
+                            </label>
+                            <input
+                              name="guestMobileNumber"
+                              value={formData.guestMobileNumber}
+                              onChange={handleChange}
+                              className="w-full border px-3 py-2 rounded text-sm"
+                            />
+                          </div>
+                        </div>
                       </div>
                     </div>
 

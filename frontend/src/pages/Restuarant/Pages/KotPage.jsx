@@ -33,6 +33,7 @@ import VoucherThreeInchPdf from "@/pages/voucher/voucherPdf/threeInchPdf/Voucher
 import { useReactToPrint } from "react-to-print";
 import CustomerSearchInputBox from "@/pages/Hotel/Components/CustomerSearchInPutBox";
 
+
 const OrdersDashboard = () => {
   const contentToPrint = useRef(null);
   const [activeFilter, setActiveFilter] = useState("ON PROCESS");
@@ -894,14 +895,12 @@ const [isComplimentary, setIsComplimentary] = useState(false);
       setPreviewForSales(null);
       return;
     }
-    
-
-    // setDiscountAmount(0);
-    // setDiscountCharge(null)
-
+    setShowVoucherPdf(false);
     setShowPaymentModal(true);
     setSelectedDataForPayment(previewForSales);
   };
+
+  console.log("selectedKot", showPaymentModal);
 
   const handleEditKot = (kotData) => {
     console.log(kotData);
