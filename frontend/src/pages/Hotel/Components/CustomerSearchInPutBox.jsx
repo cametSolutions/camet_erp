@@ -13,6 +13,7 @@ function CustomerSearchInputBox({
   className = "",
   disabled = false ,
   sendSearchToParent,
+  isGuest=false
 }) {
   const [parties, setParties] = useState([]);
   const [search, setSearch] = useState("");
@@ -71,7 +72,7 @@ function CustomerSearchInputBox({
   }, 300);
   // Always send search term to parent, even when empty
   if (sendSearchToParent) {
-    sendSearchToParent(term);
+    sendSearchToParent(term, isGuest);
   }
 }, [fetchParties, sendSearchToParent]);
 
@@ -93,14 +94,14 @@ function CustomerSearchInputBox({
   setIsOpen(false);
   const searchTerm = search; // Capture before clearing
   setSearch("");
-  onSelect(party, searchTerm); // Pass the search term
+  onSelect(party, searchTerm, isGuest); // Pass the search term
 };
 
   const handleClear = (e) => {
     e.stopPropagation();
     setSelectedValue(null);
     setSearch("");
-    onSelect(null);
+    onSelect(null, "", isGuest);
   };
 
   useEffect(() => {

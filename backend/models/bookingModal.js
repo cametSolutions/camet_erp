@@ -5,10 +5,10 @@ const foodPlanSchema = new mongoose.Schema({
   foodPlan: String,
   rate: Number,
   roomId: { type: mongoose.Schema.Types.ObjectId, ref: "Room" },
-   isComplimentary: { 
-    type: Boolean, 
-    default: false 
-  }, 
+  isComplimentary: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const paxDetailSchema = new mongoose.Schema({
@@ -157,6 +157,14 @@ const bookingSchema = new mongoose.Schema(
     advanceAmount: String,
     totalAmount: String,
     balanceToPay: String,
+    guestName: String,
+    guestId: { type: mongoose.Schema.Types.ObjectId, ref: "Party" },
+    guestCountry: String,
+    guestState: String,
+    guestPinCode: String,
+    guestDetailedAddress: String,
+    guestMobileNumber: String,
+    gstNo: String,
     paymenttypeDetails: {
       cash: { type: Number, default: 0 },
       bank: { type: Number, default: 0 },
