@@ -822,6 +822,7 @@ function BookingList() {
 
         if (response.status === 200 || response.status === 201) {
           toast.success(response?.data?.message)
+          handleCloseBasedOnDate()
         }
       } catch (error) {
         console.error(
@@ -851,15 +852,18 @@ function BookingList() {
     setShowSelectionModal(false)
     setShowEnhancedCheckoutModal(true)
   }
-  console.log()
+  console.log(selectedCheckOut)
   const handleEnhancedCheckoutConfirm = async (roomAssignments) => {
     console.log(roomAssignments)
     setShowEnhancedCheckoutModal(false)
 
     // ✅ ALWAYS show checkout date modal - no condition
     setProcessedCheckoutData(roomAssignments)
-    setShowCheckOutDateModal(true)
+    console.log("hhhh")
+    setShowPaymentModal(true)
+    // setShowCheckOutDateModal(true)
   }
+  console.log(processedCheckoutData)
   const handleCheckin = (e, el) => {
     console.log(el)
     const roomIds = el.selectedRooms.map((item) => item.roomId)
@@ -1513,21 +1517,22 @@ function BookingList() {
   }
   console.log(selectedCheckOut)
   console.log(selectedOnlinetype)
-  const handleCloseBasedOnDate = (checkouts) => {
+  console.log(processedCheckoutData)
+  const handleCloseBasedOnDate = () => {
     console.log("hh")
-    if (!checkouts) {
-      setShowCheckOutDateModal(false)
-      setShowSelectionModal(true)
-      return
-    }
+    // if (!checkouts) {
+    //   setShowCheckOutDateModal(false)
+    //   setShowSelectionModal(true)
+    //   return
+    // }
     // setSaveLoader(true);
-
+    console.log(processedCheckoutData)
     if (processedCheckoutData) {
       // Transform the processed checkout data with updated stay days
       const updatedCheckoutData = processedCheckoutData.map((group) => ({
         ...group,
         checkIns: group.checkIns.map((checkIn) => {
-          const updatedData = checkouts.find((c) => c._id === checkIn.checkInId)
+          const updatedData = selectedCheckOut.find((c) => c._id === checkIn.checkInId)
 
           return {
             ...checkIn,
@@ -1555,12 +1560,13 @@ function BookingList() {
           }
         })
       }))
-
+      console.log("aaaaaa")
       setCheckOutUpdated(updatedCheckoutData)
       setShowPaymentModal(true)
       setIsPartial(true)
       setProcessedCheckoutData(null)
     } else {
+      console.log("hhhhhhddd")
       const hasPrint1 = configurations[0]?.defaultPrint?.print1
       navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
         state: {
