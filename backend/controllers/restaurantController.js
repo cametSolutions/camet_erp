@@ -37,10 +37,7 @@ export const addItem = async (req, res) => {
     const { formData, tableData } = req.body;
     
     // Validate item code
-    if (!formData.itemCode || formData.itemCode.trim() === "") {
-      await session.abortTransaction();
-      return res.status(400).json({ message: "Item code is required" });
-    }
+  
 
     session.startTransaction();
 

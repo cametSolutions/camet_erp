@@ -9,7 +9,7 @@ const productSchema = new mongoose.Schema({
   },
   itemCode: {
   type: String,
-  required: [true, 'Item code is required'],
+ 
   unique: true, // Optional: if you want unique item codes per company
   trim: true,
  
