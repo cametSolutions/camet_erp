@@ -3,30 +3,54 @@ import { useState, useEffect } from "react"
 import { X, Users, DoorOpen, Trash2 } from "lucide-react"
 import CustomerSearchInputBox from "../Components/CustomerSearchInPutBox"
 import CheckoutDateModal from "./CheckoutDateModal"
+import useFetch from "@/customHook/useFetch"
+import { useSelector } from "react-redux"
+import {
+  MdDelete,
+  MdCheckCircle,
+  MdPayment,
+  MdVisibility,
+  MdCancel
+} from "react-icons/md"
+import PartyList from "@/components/secUsers/main/PartyList"
 
 export default function EnhancedCheckoutModal({
   isOpen = true,
   onClose,
   selectedCheckIns = [],
   onConfirm,
-  checkoutMode
+  checkoutMode,
+  search,
+  toogle,
+  selectedCustomer
 }) {
+  console.log(checkoutMode)
+  console.log(isOpen)
   console.log("hfafffff")
   // State to manage room-customer assignments
   const [roomAssignments, setRoomAssignments] = useState([])
   const [errors, setErrors] = useState({})
+  const [parties, setPartylist] = useState([])
+  // const [checkoutMode, setCheckoutMode] = useState("multiple")
   const [checkOutDateTracker, setCheckOutDateTracker] = useState(
     new Date().toISOString().split("T")[0]
   )
+  const [selectedCheckOut, setSelectedCheckOut] = useState(
+    location?.state?.selectedCheckOut || []
+  )
+  console.log(selectedCheckOut)
 
   const [checkouts, setCheckouts] = useState(
     selectedCheckIns.length > 0
       ? selectedCheckIns.map((checkout) => {
           const arrival = new Date(checkout.arrivalDate)
-          const checkoutDate = new Date(checkOutDateTracker)
+          console.log(checkout)
+          const checkoutDate = new Date(checkout.checkOutDate)
+          console.log(checkoutDate)
           const diffTime = checkoutDate - arrival
           const calculatedDays =
             diffTime === 0 ? 1 : Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+          console.log(diffTime)
           const time = new Date().toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit",
@@ -36,7 +60,7 @@ export default function EnhancedCheckoutModal({
           checkout.selectedRooms.forEach((room) => {
             room.stayDays = calculatedDays
           })
-
+          console.log(calculatedDays)
           return {
             ...checkout,
             stayDays: calculatedDays,
@@ -58,9 +82,29 @@ export default function EnhancedCheckoutModal({
         ]
   )
   const [originalCheckouts] = useState(() =>
-    selectedCheckIns.length > 0 ? JSON.parse(JSON.stringify(selectedCheckIns)) : []
+    selectedCheckIns.length > 0
+      ? JSON.parse(JSON.stringify(selectedCheckIns))
+      : []
   )
-
+  const getVoucherType = () => {
+    const path = location.pathname
+    if (path.includes("Receipt")) return "receipt"
+    if (path.includes("Payment")) return "payment"
+    return "sale"
+  }
+  const { _id: cmp_id, configurations } = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg
+  )
+  const { data: partylist } = useFetch(
+    `/api/sUsers/singlecheckoutpartylist/${cmp_id}`,
+    { params: { voucher: getVoucherType() } }
+  )
+  console.log(partylist)
+  useEffect(() => {
+    if (partylist && partylist.partyList.length) {
+      setPartylist(partylist.partyList)
+    }
+  }, [partylist])
   // Initialize room assignments when selectedCheckIns change
   useEffect(() => {
     if (selectedCheckIns.length > 0) {
@@ -252,7 +296,7 @@ export default function EnhancedCheckoutModal({
   )
   const handleCloseBasedOnDate = () => {}
   const handleNewDateChange = (id, newDate) => {
-console.log(id,newDate)
+    console.log(id, newDate)
     setCheckOutDateTracker(newDate)
     setCheckouts(
       checkouts.map((checkout) => {
@@ -262,7 +306,9 @@ console.log(id,newDate)
           const diffTime = checkoutDate - arrival
           const calculatedDays =
             diffTime === 0 ? 1 : Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-
+          console.log(arrival)
+          console.log(checkoutDate)
+          console.log(calculatedDays)
           const originalCheckout = originalCheckouts.find((oc) => oc._id === id)
           if (!originalCheckout) return checkout
 
@@ -502,25 +548,270 @@ console.log(id,newDate)
     setCheckOutDateTracker(newCheckoutDate.toISOString().split("T")[0])
   }
   console.log(selectedCheckIns)
+  console.log(checkoutMode)
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl max-h-[85vh] flex flex-col">
-        {/* Header */}
-        <div className="flex justify-between items-center border-b px-4 py-2">
-          <h2 className="font-semibold text-gray-700 text-lg flex items-center gap-2">
-            <Users size={20} /> Checkout Assignment
+    // <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+    //   <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+    //     {/* Header */}
+    //     <div className="flex justify-between items-center border-b px-4 py-2">
+    //       <h2 className="font-semibold text-gray-700 text-lg flex items-center gap-2">
+    //         <Users size={20} /> Checkout Assignment
+    //       </h2>
+    //       <button
+    //         onClick={() => onClose(null)}
+    //         className="text-gray-500 hover:text-gray-700"
+    //       >
+    //         <X size={20} />
+    //       </button>
+    //     </div>
+    //     {selectedCheckIns.length > 0 &&
+    //       (location.pathname === "/sUsers/checkInList" ||
+    //         location.pathname === "/sUsers/checkOutList") &&
+    //       search !== "completed" && (
+    //         <div className="">
+    //           <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-4 min-w-[280px]">
+
+    //             <div className="max-h-32 overflow-y-auto mb-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+    //               <div className="space-y-2">
+    //                 {selectedCheckIns.map((item) => (
+    //                   <div
+    //                     key={item.id}
+    //                     className="flex items-center justify-between text-xs bg-gray-50 p-2 rounded-lg"
+    //                   >
+    //                     <span className="font-medium text-gray-700">
+    //                       #{item.voucherNumber}
+    //                     </span>
+    //                   </div>
+    //                 ))}
+    //               </div>
+    //             </div>
+    //             {selectedCheckIns && selectedCheckIns.length > 1 && (
+    //               <>
+    //                 <div className="mb-4 flex items-center justify-between bg-gray-50 p-2 rounded-lg">
+
+    //                   <span className="text-xs font-semibold text-gray-700">
+    //                     {checkoutMode === "single"
+    //                       ? "Single Checkout"
+    //                       : "Multiple Checkout"}
+    //                   </span>
+
+    //                   {/* Toggle Switch */}
+    //                   <div
+    //                     onClick={() => toogle()}
+    //                     className={`w-8 h-4 flex items-center rounded-full p-[2px] cursor-pointer transition-all
+    //                ${
+    //                  checkoutMode === "single" ? "bg-blue-500" : "bg-green-500"
+    //                }`}
+    //                   >
+    //                     <div
+    //                       className={`bg-white w-3 h-3 rounded-full shadow-sm transform transition-all
+    //                ${
+    //                  checkoutMode === "single"
+    //                    ? "translate-x-0"
+    //                    : "translate-x-4"
+    //                }`}
+    //                     ></div>
+    //                   </div>
+    //                 </div>
+    //                 {checkoutMode === "single" && (
+    //                   <div className="mb-6">
+    //                     <label className="block text-xs font-semibold text-gray-700 mb-2">
+    //                       Select Customer
+    //                     </label>
+    //                     <select
+    //                       value={selectedCustomer}
+    //                       onChange={(e) =>
+    //                         handleSingleCheckoutformultiplechekin(
+    //                           e.target.value
+    //                         )
+    //                       }
+    //                       className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+    //                     >
+    //                       <option value="">Choose a customer...</option>
+
+    //                       {parties?.map((selected) => (
+    //                         <option key={selected?._id} value={selected?._id}>
+    //                           {selected?.partyName}
+    //                         </option>
+    //                       ))}
+    //                     </select>
+    //                   </div>
+    //                 )}
+    //               </>
+    //             )}
+
+    //             <div className="flex gap-2">
+    //               <button
+    //                 onClick={() => setSelectedCheckOut([])}
+    //                 className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-all duration-200"
+    //               >
+    //                 Clear All
+    //               </button>
+    //               <button
+    //                 className="flex-2 px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg text-sm font-bold hover:from-green-600 hover:to-emerald-700 transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2 shadow-lg"
+    //                 onClick={() => {
+    //                   handleCheckOutData()
+    //                 }}
+    //               >
+    //                 <MdPayment className="w-4 h-4" />
+    //                 Checkout
+    //               </button>
+    //             </div>
+    //           </div>
+    //         </div>
+    //       )}
+
+    //     {/* Body */}
+    //     <div className="flex-1 overflow-y-auto p-4 space-y-3">
+    //       {roomAssignments.length === 0 ? (
+    //         <p className="text-center text-gray-500 py-6 text-sm">
+    //           No rooms selected
+    //         </p>
+    //       ) : (
+    //         roomAssignments.map((a, i) => (
+    //           <div
+    //             key={i}
+    //             className={`border rounded-md p-3 ${
+    //               errors[i] ? "border-red-300 bg-red-50" : "border-gray-200"
+    //             }`}
+    //           >
+    //             <div className="flex justify-between items-center mb-2">
+    //               <div className="flex items-center gap-2">
+    //                 <DoorOpen size={18} className="text-blue-500" />
+    //                 <p className="font-medium text-sm">
+    //                   {a.roomName} ({a.roomType})
+    //                 </p>
+    //               </div>
+    //               <button
+    //                 onClick={() => handleRemoveRoom(i)}
+    //                 className="text-red-500 hover:text-red-700"
+    //               >
+    //                 <Trash2 size={16} />
+    //               </button>
+    //             </div>
+
+    //             <p className="text-xs text-gray-500 mb-1">
+    //               Original: {a.originalCustomer?.partyName || "N/A"}
+    //             </p>
+
+    //             <CustomerSearchInputBox
+    //               disabled={checkoutMode === "single"}
+    //               onSelect={(c) => handleCustomerSelect(i, c)}
+    //               selectedParty={a.selectedCustomer}
+    //               isAgent={false}
+    //               placeholder="Select customer..."
+    //             />
+    //             {errors[i] && (
+    //               <p className="text-xs text-red-500 mt-1">{errors[i]}</p>
+    //             )}
+    //           </div>
+    //         ))
+    //       )}
+    //     </div>
+    //     <CheckoutDateModal
+    //       onDaysChange={handleStayDaysChange}
+    //       checkouts={checkouts}
+    //       onDateChange={handleNewDateChange}
+    //     />
+
+    //     {/* Footer */}
+    //     <div className="border-t p-3 flex justify-end gap-2">
+    //       <button
+    //         onClick={() => onClose(null)}
+    //         className="px-4 py-2 text-sm border rounded-md hover:bg-gray-100"
+    //       >
+    //         Cancel
+    //       </button>
+    //       <button
+    //         onClick={handleProceed}
+    //         disabled={roomAssignments.length === 0}
+    //         className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+    //       >
+    //         Proceed
+    //       </button>
+    //     </div>
+    //   </div>
+    // </div>
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
+      <div className="bg-white w-[95vw] max-w-5xl h-[90vh] rounded-xl shadow-xl flex flex-col">
+        {/* ================= HEADER ================= */}
+        <div className="flex items-center justify-between border-b px-4 py-2 flex-shrink-0">
+          <h2 className="text-base font-semibold flex items-center gap-2 text-gray-700">
+            <Users size={18} /> Checkout Assignment
           </h2>
           <button
             onClick={() => onClose(null)}
             className="text-gray-500 hover:text-gray-700"
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
 
-        {/* Body */}
-        <div className="flex-1 overflow-auto p-4 space-y-3">
+        {/* ========== SELECTED CHECKINS SUMMARY ========= */}
+        {selectedCheckIns.length > 0 &&
+          (location.pathname === "/sUsers/checkInList" ||
+            location.pathname === "/sUsers/checkOutList") &&
+          search !== "completed" && (
+            <div className="flex-shrink-0 px-4 py-3 border-b bg-gray-50">
+              {/* Voucher grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2 mb-3">
+                {selectedCheckIns.map((item) => (
+                  <div
+                    key={item._id}
+                    className="text-xs bg-white border rounded-md px-2 py-1 text-center truncate shadow-sm"
+                  >
+                    #{item.voucherNumber}
+                  </div>
+                ))}
+              </div>
+
+              {/* Toggle + customer selector */}
+              {selectedCheckIns.length > 1 && (
+                <div className="flex flex-wrap items-center gap-4">
+                  <span className="text-xs font-semibold text-gray-700">
+                    {checkoutMode === "single"
+                      ? "Single Checkout"
+                      : "Multiple Checkout"}
+                  </span>
+
+                  {/* Toggle */}
+                  <div
+                    onClick={toogle}
+                    className={`w-9 h-4 rounded-full flex items-center px-1 cursor-pointer transition
+                  ${checkoutMode === "single" ? "bg-blue-500" : "bg-green-500"}`}
+                  >
+                    <div
+                      className={`w-3 h-3 bg-white rounded-full shadow transform transition
+                    ${checkoutMode === "single" ? "translate-x-0" : "translate-x-5"}`}
+                    />
+                  </div>
+
+                  {/* Customer selector */}
+                  {checkoutMode === "single" && (
+                    <select
+                      value={selectedCustomer}
+                      onChange={(e) =>
+                        handleSingleCheckoutformultiplechekin(e.target.value)
+                      }
+                      className="ml-auto min-w-[220px] text-xs p-1.5 border rounded-md focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Choose customer</option>
+                      {parties?.map((p) => (
+                        <option key={p._id} value={p._id}>
+                          {p.partyName}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+        {/* ================= BODY (SCROLL AREA) ================= */}
+        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
+          {/* Room assignments */}
           {roomAssignments.length === 0 ? (
             <p className="text-center text-gray-500 py-6 text-sm">
               No rooms selected
@@ -535,7 +826,7 @@ console.log(id,newDate)
               >
                 <div className="flex justify-between items-center mb-2">
                   <div className="flex items-center gap-2">
-                    <DoorOpen size={18} className="text-blue-500" />
+                    <DoorOpen size={16} className="text-blue-500" />
                     <p className="font-medium text-sm">
                       {a.roomName} ({a.roomType})
                     </p>
@@ -559,21 +850,24 @@ console.log(id,newDate)
                   isAgent={false}
                   placeholder="Select customer..."
                 />
+
                 {errors[i] && (
                   <p className="text-xs text-red-500 mt-1">{errors[i]}</p>
                 )}
               </div>
             ))
           )}
-        </div>
-        <CheckoutDateModal
-          onDaysChange={handleStayDaysChange}
-          checkouts={checkouts}
-          onDateChange={handleNewDateChange}
-        />
 
-        {/* Footer */}
-        <div className="border-t p-3 flex justify-end gap-2">
+          {/* Checkout Date Modal (NOW VISIBLE & SCROLLABLE) */}
+          <CheckoutDateModal
+            onDaysChange={handleStayDaysChange}
+            checkouts={checkouts}
+            onDateChange={handleNewDateChange}
+          />
+        </div>
+
+        {/* ================= FOOTER ================= */}
+        <div className="flex-shrink-0 border-t px-4 py-3 flex justify-end gap-2 bg-white">
           <button
             onClick={() => onClose(null)}
             className="px-4 py-2 text-sm border rounded-md hover:bg-gray-100"
