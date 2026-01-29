@@ -435,6 +435,7 @@ function BookingList() {
   // }, [selectedCheckOut]);
   console.log(selectedCustomer)
   const handleSingleCheckoutformultiplechekin = (selectcustomer) => {
+console.log(selectedCustomer)
     const match = parties.find((item) => item._id === selectcustomer)
     if (!match) return
     console.log(match)
@@ -797,8 +798,8 @@ function BookingList() {
 
     if (partial) {
       console.log("Hhhh")
-console.log(dateandstaysdata)
-      proceedToCheckout(dateandstaysdata,processedCheckoutData)
+      console.log(dateandstaysdata)
+      proceedToCheckout(dateandstaysdata, processedCheckoutData)
       dispatch(setPaymentDetails(paymentDetails))
       dispatch(setSelectedParty(selectedCustomer))
       dispatch(setSelectedPaymentMode(paymentMode))
@@ -902,9 +903,9 @@ console.log(dateandstaysdata)
     console.log("HH")
   }
   console.log(bookings)
-  const proceedToCheckout = (roomAssignments,data) => {
-console.log(roomAssignments)
-console.log(data)
+  const proceedToCheckout = (roomAssignments, data) => {
+    console.log(roomAssignments)
+    console.log(data)
 
     console.log("hhhhhh")
     setSaveLoader(true)
@@ -978,7 +979,7 @@ console.log(data)
         })
       })
       checkinids = allCheckouts.map((item) => item._id)
-console.log(allCheckouts)
+      console.log(allCheckouts)
       setcheckinids(checkinids)
       // 2️⃣ GROUP BY selectedCustomer (customerId._id)
       const grouped = {}
@@ -1015,12 +1016,42 @@ console.log(allCheckouts)
       checkoutData[0].allCheckInIds = checkinids
     }
     console.log(checkoutData)
-// checkoutData.forEach((item)=>item.checkoutDate=)
+    const roomAssignmentMap = new Map(
+      roomAssignments.map((item) => [
+        item._id,
+        {
+          checkOutDate: item.checkOutDate,
+          stayDays: item.stayDays
+        }
+      ])
+    )
+
+    const updatedCheckoutData = checkoutData.map((item) => {
+      const roomData = roomAssignmentMap.get(item._id)
+
+      return {
+        ...item,
+
+        // 🔹 Root level update
+        checkOutDate: roomData?.checkOutDate ?? item.checkOutDate,
+        stayDays: roomData?.stayDays ?? item.stayDays,
+
+        // 🔹 selectedRooms stayDays update
+        selectedRooms: item.selectedRooms.map((room) => ({
+          ...room,
+          stayDays: roomData?.stayDays ?? room.stayDays
+        }))
+      }
+    })
+
+    console.log(updatedCheckoutData)
+
+    // checkoutData.forEach((item)=>item.checkoutDate=)
 
     console.log("Hhhhhhhh")
     navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
       state: {
-        selectedCheckOut: checkoutData,
+        selectedCheckOut: updatedCheckoutData,
         customerId: checkoutData[0]?.customerId?._id,
         isForPreview: true,
         checkoutMode,
@@ -1677,6 +1708,7 @@ console.log(allCheckouts)
           <EnhancedCheckoutModal
             isOpen={showEnhancedCheckoutModal}
             closemodal={setShowEnhancedCheckoutModal}
+            customerchange={handleSingleCheckoutformultiplechekin}
             onClose={handleCloseBasedOnDate}
             selectedCheckIns={selectedCheckOut}
             onConfirm={handleEnhancedCheckoutConfirm}

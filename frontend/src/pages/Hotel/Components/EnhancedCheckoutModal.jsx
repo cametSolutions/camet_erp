@@ -23,7 +23,8 @@ export default function EnhancedCheckoutModal({
   checkoutMode,
   search,
   toogle,
-  selectedCustomer
+  selectedCustomer,
+  customerchange
 }) {
   console.log(checkoutMode)
   console.log(isOpen)
@@ -178,7 +179,7 @@ export default function EnhancedCheckoutModal({
       console.log("hhhh")
       return
     }
-console.log("hhh")
+    console.log("hhh")
     // Step 1: Check if all selectedCustomer are same
     const firstCustomer = roomAssignments[0]?.selectedCustomer
     const isSameCustomer = roomAssignments.every(
@@ -272,7 +273,7 @@ console.log("hhh")
 
     console.log(result)
 
-    onConfirm(result,checkouts)
+    onConfirm(result, checkouts)
   }
 
   if (!isOpen) return null
@@ -295,6 +296,7 @@ console.log("hhh")
         originalCustomer: checkIn.customerId
       }))
   )
+
   const handleCloseBasedOnDate = () => {}
   const handleNewDateChange = (id, newDate) => {
     console.log(id, newDate)
@@ -554,189 +556,8 @@ console.log("hhh")
     console.log(checkouts)
     handleProceed()
   }
+  console.log(checkoutMode)
   return (
-    // <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-    //   <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
-    //     {/* Header */}
-    //     <div className="flex justify-between items-center border-b px-4 py-2">
-    //       <h2 className="font-semibold text-gray-700 text-lg flex items-center gap-2">
-    //         <Users size={20} /> Checkout Assignment
-    //       </h2>
-    //       <button
-    //         onClick={() => onClose(null)}
-    //         className="text-gray-500 hover:text-gray-700"
-    //       >
-    //         <X size={20} />
-    //       </button>
-    //     </div>
-    //     {selectedCheckIns.length > 0 &&
-    //       (location.pathname === "/sUsers/checkInList" ||
-    //         location.pathname === "/sUsers/checkOutList") &&
-    //       search !== "completed" && (
-    //         <div className="">
-    //           <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-4 min-w-[280px]">
-
-    //             <div className="max-h-32 overflow-y-auto mb-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-    //               <div className="space-y-2">
-    //                 {selectedCheckIns.map((item) => (
-    //                   <div
-    //                     key={item.id}
-    //                     className="flex items-center justify-between text-xs bg-gray-50 p-2 rounded-lg"
-    //                   >
-    //                     <span className="font-medium text-gray-700">
-    //                       #{item.voucherNumber}
-    //                     </span>
-    //                   </div>
-    //                 ))}
-    //               </div>
-    //             </div>
-    //             {selectedCheckIns && selectedCheckIns.length > 1 && (
-    //               <>
-    //                 <div className="mb-4 flex items-center justify-between bg-gray-50 p-2 rounded-lg">
-
-    //                   <span className="text-xs font-semibold text-gray-700">
-    //                     {checkoutMode === "single"
-    //                       ? "Single Checkout"
-    //                       : "Multiple Checkout"}
-    //                   </span>
-
-    //                   {/* Toggle Switch */}
-    //                   <div
-    //                     onClick={() => toogle()}
-    //                     className={`w-8 h-4 flex items-center rounded-full p-[2px] cursor-pointer transition-all
-    //                ${
-    //                  checkoutMode === "single" ? "bg-blue-500" : "bg-green-500"
-    //                }`}
-    //                   >
-    //                     <div
-    //                       className={`bg-white w-3 h-3 rounded-full shadow-sm transform transition-all
-    //                ${
-    //                  checkoutMode === "single"
-    //                    ? "translate-x-0"
-    //                    : "translate-x-4"
-    //                }`}
-    //                     ></div>
-    //                   </div>
-    //                 </div>
-    //                 {checkoutMode === "single" && (
-    //                   <div className="mb-6">
-    //                     <label className="block text-xs font-semibold text-gray-700 mb-2">
-    //                       Select Customer
-    //                     </label>
-    //                     <select
-    //                       value={selectedCustomer}
-    //                       onChange={(e) =>
-    //                         handleSingleCheckoutformultiplechekin(
-    //                           e.target.value
-    //                         )
-    //                       }
-    //                       className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-    //                     >
-    //                       <option value="">Choose a customer...</option>
-
-    //                       {parties?.map((selected) => (
-    //                         <option key={selected?._id} value={selected?._id}>
-    //                           {selected?.partyName}
-    //                         </option>
-    //                       ))}
-    //                     </select>
-    //                   </div>
-    //                 )}
-    //               </>
-    //             )}
-
-    //             <div className="flex gap-2">
-    //               <button
-    //                 onClick={() => setSelectedCheckOut([])}
-    //                 className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-all duration-200"
-    //               >
-    //                 Clear All
-    //               </button>
-    //               <button
-    //                 className="flex-2 px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg text-sm font-bold hover:from-green-600 hover:to-emerald-700 transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2 shadow-lg"
-    //                 onClick={() => {
-    //                   handleCheckOutData()
-    //                 }}
-    //               >
-    //                 <MdPayment className="w-4 h-4" />
-    //                 Checkout
-    //               </button>
-    //             </div>
-    //           </div>
-    //         </div>
-    //       )}
-
-    //     {/* Body */}
-    //     <div className="flex-1 overflow-y-auto p-4 space-y-3">
-    //       {roomAssignments.length === 0 ? (
-    //         <p className="text-center text-gray-500 py-6 text-sm">
-    //           No rooms selected
-    //         </p>
-    //       ) : (
-    //         roomAssignments.map((a, i) => (
-    //           <div
-    //             key={i}
-    //             className={`border rounded-md p-3 ${
-    //               errors[i] ? "border-red-300 bg-red-50" : "border-gray-200"
-    //             }`}
-    //           >
-    //             <div className="flex justify-between items-center mb-2">
-    //               <div className="flex items-center gap-2">
-    //                 <DoorOpen size={18} className="text-blue-500" />
-    //                 <p className="font-medium text-sm">
-    //                   {a.roomName} ({a.roomType})
-    //                 </p>
-    //               </div>
-    //               <button
-    //                 onClick={() => handleRemoveRoom(i)}
-    //                 className="text-red-500 hover:text-red-700"
-    //               >
-    //                 <Trash2 size={16} />
-    //               </button>
-    //             </div>
-
-    //             <p className="text-xs text-gray-500 mb-1">
-    //               Original: {a.originalCustomer?.partyName || "N/A"}
-    //             </p>
-
-    //             <CustomerSearchInputBox
-    //               disabled={checkoutMode === "single"}
-    //               onSelect={(c) => handleCustomerSelect(i, c)}
-    //               selectedParty={a.selectedCustomer}
-    //               isAgent={false}
-    //               placeholder="Select customer..."
-    //             />
-    //             {errors[i] && (
-    //               <p className="text-xs text-red-500 mt-1">{errors[i]}</p>
-    //             )}
-    //           </div>
-    //         ))
-    //       )}
-    //     </div>
-    //     <CheckoutDateModal
-    //       onDaysChange={handleStayDaysChange}
-    //       checkouts={checkouts}
-    //       onDateChange={handleNewDateChange}
-    //     />
-
-    //     {/* Footer */}
-    //     <div className="border-t p-3 flex justify-end gap-2">
-    //       <button
-    //         onClick={() => onClose(null)}
-    //         className="px-4 py-2 text-sm border rounded-md hover:bg-gray-100"
-    //       >
-    //         Cancel
-    //       </button>
-    //       <button
-    //         onClick={handleProceed}
-    //         disabled={roomAssignments.length === 0}
-    //         className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-    //       >
-    //         Proceed
-    //       </button>
-    //     </div>
-    //   </div>
-    // </div>
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
       <div className="bg-white w-[95vw] max-w-5xl h-[90vh] rounded-xl shadow-xl flex flex-col">
         {/* ================= HEADER ================= */}
@@ -795,9 +616,7 @@ console.log("hhh")
                   {checkoutMode === "single" && (
                     <select
                       value={selectedCustomer}
-                      onChange={(e) =>
-                        handleSingleCheckoutformultiplechekin(e.target.value)
-                      }
+                      onChange={(e) => customerchange(e.target.value)}
                       className="ml-auto min-w-[220px] text-xs p-1.5 border rounded-md focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="">Choose customer</option>
