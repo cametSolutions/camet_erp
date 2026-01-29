@@ -85,7 +85,7 @@ if (organization?.industry === 6) {
       link: "/sUsers/reports",
     },
   ];
-} else if (organization?.industry === 3 || organization?.industry === 8) {
+} else if (organization?.industry === 3 ) {
   secondary = [
     {
       icon: restaurantImg,
@@ -128,7 +128,29 @@ if (organization?.industry === 6) {
       link: "/sUsers/reports",
     },
   ];
-} else {
+}
+ else if (organization?.industry === 8) {
+  secondary = [
+    
+    {
+      icon: restaurantImg,
+      subtitle: "Bakery & Cafe",
+      link: "/sUsers/RestaurantDashboard",
+    },
+    {
+      icon: vouchers,
+      subtitle: "Vouchers",
+      link: "/sUsers/selectVouchers",
+    },
+    {
+      icon: reportImg,
+      title: `₹${receiptTotal.toFixed(2)}`,
+      subtitle: "Reports",
+      link: "/sUsers/reports",
+    },
+  ];
+}
+else {
   secondary = [
     {
       icon: product,
