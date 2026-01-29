@@ -262,7 +262,7 @@ export const createPurchaseRecord = async (
     if (lastPurchase && !isNaN(lastPurchase.serialNumber)) {
       newSerialNumber = lastPurchase.serialNumber + 1;
     }
-
+console.log("line  265 purchase")
     const purchase = new model({
       _id: new mongoose.Types.ObjectId(purchase_id),
       selectedGodownId: selectedGodownId ?? "",

@@ -210,7 +210,7 @@ export const createDebitNoteRecord = async (
     if (lastPurchase && !isNaN(lastPurchase.serialNumber)) {
       newSerialNumber = lastPurchase.serialNumber + 1;
     }
-
+console.log("line 213 debitnote")
     const debit = new model({
       selectedGodownId: selectedGodownId ?? "",
       selectedGodownName: selectedGodownName ? selectedGodownName[0] : "",

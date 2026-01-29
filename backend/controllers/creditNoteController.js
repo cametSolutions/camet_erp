@@ -291,7 +291,7 @@ export const editCreditNote = async (req, res) => {
     // Revert existing stock updates
     await revertCreditNoteStockUpdates(existingCreditNote.items, session);
     await handleCreditNoteStockUpdates(items, session);
-
+console.log("creditnotecontroller line 294")
     // Update existing sale record
     const updateData = {
       selectedGodownId: "",

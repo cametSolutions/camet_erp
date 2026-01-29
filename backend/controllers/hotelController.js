@@ -1057,7 +1057,7 @@ export const roomBooking = async (req, res) => {
             remainingAmount: 0,
           },
         ];
-
+        console.log("buiidddreceipttttttt")
         // 🔹 Build Receipt Function
         const buildReceipt = async (
           receiptVoucher,
@@ -1080,7 +1080,7 @@ export const roomBooking = async (req, res) => {
             }
             delete selectedParty.accountGroup;
           }
-
+          console.log("line 1083 hotelcontroller")
           const receipt = new ReceiptModel({
             createdAt: new Date(),
             date: await formatToLocalDate(new Date(), orgId, session),
@@ -1133,13 +1133,13 @@ export const roomBooking = async (req, res) => {
           const paymentDetails =
             method === "cash"
               ? {
-                  cash_ledname: singlePaymentDetails?.accountName,
-                  cash_name: singlePaymentDetails?.accountName,
-                }
+                cash_ledname: singlePaymentDetails?.accountName,
+                cash_name: singlePaymentDetails?.accountName,
+              }
               : {
-                  bank_ledname: singlePaymentDetails?.accountName,
-                  bank_name: singlePaymentDetails?.accountName,
-                };
+                bank_ledname: singlePaymentDetails?.accountName,
+                bank_name: singlePaymentDetails?.accountName,
+              };
 
           await buildReceipt(
             receiptVoucher,
@@ -1202,13 +1202,13 @@ export const roomBooking = async (req, res) => {
             const paymentDetails =
               payment.method === "cash"
                 ? {
-                    cash_ledname: payment?.accountName,
-                    cash_name: payment?.accountName,
-                  }
+                  cash_ledname: payment?.accountName,
+                  cash_name: payment?.accountName,
+                }
                 : {
-                    bank_ledname: payment?.accountName,
-                    bank_name: payment?.accountName,
-                  };
+                  bank_ledname: payment?.accountName,
+                  bank_name: payment?.accountName,
+                };
 
             await buildReceipt(
               receiptVoucher,
@@ -1275,11 +1275,10 @@ export const getBookings = async (req, res) => {
         processed.travelAgentName = "-";
       }
 
-      processed.roomNumbers =
-        processed.selectedRooms
-          ?.map((room) => room.roomName || room.roomNumber)
-          .filter(Boolean)
-          .join(", ") || "-";
+ processed.roomNumbers = processed.selectedRooms
+        ?.map(room => room.roomName || room.roomNumber)
+        .filter(Boolean)
+        .join(", ") || "-";
 
       return processed;
     });
@@ -1694,6 +1693,7 @@ export const updateBooking = async (req, res) => {
       req,
       session,
     ) => {
+      console.log("line1696 hotelcontroller")
       const receipt = new ReceiptModel({
         createdAt: new Date(),
         date: await formatToLocalDate(new Date(), orgId, session),
@@ -1797,14 +1797,14 @@ export const updateBooking = async (req, res) => {
           const paymentDetails =
             method === "cash"
               ? {
-                  cash_ledname: singlePaymentDetails?.accountName,
-                  cash_name: singlePaymentDetails?.accountName,
-                }
+                cash_ledname: singlePaymentDetails?.accountName,
+                cash_name: singlePaymentDetails?.accountName,
+              }
               : {
-                  bank_ledname: singlePaymentDetails?.accountName,
-                  bank_name: singlePaymentDetails?.accountName,
-                };
-
+                bank_ledname: singlePaymentDetails?.accountName,
+                bank_name: singlePaymentDetails?.accountName,
+              };
+          console.log("line 1807")
           // Receipt
           await buildReceipt(
             receiptVoucher,
@@ -1874,14 +1874,14 @@ export const updateBooking = async (req, res) => {
             const paymentDetails =
               payment.method === "cash"
                 ? {
-                    cash_ledname: payment?.accountName,
-                    cash_name: payment?.accountName,
-                  }
+                  cash_ledname: payment?.accountName,
+                  cash_name: payment?.accountName,
+                }
                 : {
-                    bank_ledname: payment?.accountName,
-                    bank_name: payment?.accountName,
-                  };
-
+                  bank_ledname: payment?.accountName,
+                  bank_name: payment?.accountName,
+                };
+            console.log("line 1884")
             await buildReceipt(
               receiptVoucher,
               serialNumber,
@@ -2007,7 +2007,6 @@ export const fetchAdvanceDetails = async (req, res) => {
       let checkInData = await CheckIn.findOne({
         _id: bookingId,
       });
-      console.log("checkInData", checkInData);
       if (checkInData) {
         let bookingSideAdvanceDetails = [];
         if (checkInData.bookingId) {
@@ -2597,6 +2596,7 @@ export const convertCheckOutToSale = async (req, res) => {
 
     await session.withTransaction(async () => {
       const { cmp_id } = req.params;
+      console.log("cmpidddd", cmp_id)
 
       const {
         paymentDetails,
@@ -2620,6 +2620,7 @@ export const convertCheckOutToSale = async (req, res) => {
       // Process each checkout separately
       let results;
       for (const item of selectedCheckOut) {
+console.log("itemdddddd",item)
         const bookingVoucherNumber =
           item?.bookingId?.voucherNumber || item?.bookingId;
         const checkingVoucherNumber = item?.voucherNumber;
@@ -2631,7 +2632,6 @@ export const convertCheckOutToSale = async (req, res) => {
         });
         //helper:merge advance in booking and checking to checkoutbalance
         const mergePayment = (target, src) => {
-          console.log("src", src);
           if (!src) return;
           const keys = ["cash", "upi", "bank", "card", "credit"];
           keys.forEach((key) => {
@@ -2643,9 +2643,7 @@ export const convertCheckOutToSale = async (req, res) => {
 
         // 1) start from existing paymentDetails.paymenttypeDetails
         const merged = { ...paymentDetails.paymenttypeDetails };
-        console.log("mathcedbooking", matchedBooking[0]);
-        console.log("matchedcheckin", matchedCheckin[0]);
-        console.log("merged,", merged);
+
         // 2) if booking has paymenttypeDetails, merge it
         if (matchedBooking[0]?.paymenttypeDetails) {
           mergePayment(merged, matchedBooking[0].paymenttypeDetails);
@@ -2658,7 +2656,6 @@ export const convertCheckOutToSale = async (req, res) => {
 
         // 4) assign back to paymentDetails
         paymentDetails.paymenttypeDetails = merged;
-        console.log("paymentnewwwwwwwwwwwwww", paymentDetails);
         results = [];
         const selectedPartyId = item?.customerId?._id || item?.customerId;
         if (!selectedPartyId)
@@ -2748,7 +2745,7 @@ export const convertCheckOutToSale = async (req, res) => {
         const isThisPartial =
           item.isPartialCheckout ||
           roomsBeingCheckedOut.length <
-            (originalCheckIn.selectedRooms?.length || 0);
+          (originalCheckIn.selectedRooms?.length || 0);
 
         if (isThisPartial) isAnyPartial = true;
 
@@ -2821,6 +2818,9 @@ export const convertCheckOutToSale = async (req, res) => {
           checkOutDoc[0]._id,
           amount,
         );
+        if (savedVoucherData) {
+          console.log(savedVoucherData.length)
+        }
         // console.log("savedsale", savedVoucherData)
 
         // Create Tally Entry
@@ -2940,14 +2940,12 @@ export const convertCheckOutToSale = async (req, res) => {
           let sourceType;
 
           if (cashAmt > 0 && onlineAmt > 0) {
-            console.log("cashamount>0&&onlineamt>0");
             // Both cash and bank - use cash as primary, mark as "mixed"
             primarySource = await Party.findOne({
               _id: paymentDetails?.selectedCash,
             }).session(session);
             sourceType = "mixed";
           } else if (cashAmt > 0) {
-            console.log("cashamount>0");
             // Cash only
             primarySource = await Party.findOne({
               _id: paymentDetails?.selectedCash,
@@ -2961,13 +2959,12 @@ export const convertCheckOutToSale = async (req, res) => {
             }).session(session);
             sourceType = "bank";
           }
-          console.log("sourcetype", sourceType);
-          console.log("primarysourece", primarySource);
+
           // Create ONE settlement for all sales
           await saveSettlement(
             paymentDetails,
             selectedCheckOut[0]?.customerId?._id ||
-              selectedCheckOut[0]?.customerId,
+            selectedCheckOut[0]?.customerId,
             primarySource,
             cmp_id,
             results[0]?.salesRecord, // Use first sale as reference
@@ -2996,7 +2993,7 @@ export const convertCheckOutToSale = async (req, res) => {
             selectedCheckOut[0]?.customerId?.partyName || "Customer",
             totalPaidAmount,
             selectedCheckOut[0]?.customerId?._id ||
-              selectedCheckOut[0]?.customerId,
+            selectedCheckOut[0]?.customerId,
             results[0]?.salesRecord,
             results[0]?.tallyId,
             req,
@@ -3027,6 +3024,7 @@ export const convertCheckOutToSale = async (req, res) => {
           // console.log(JSON.stringify(results, null, 2));
 
           // console.log("dddddddddddddddddddddddddddd", results[0]?.salesRecord?.party?.accountGroup_id)
+          console.log("ssssssssssssssssssssssssssssssssssssssssssssss")
           await createReceiptForSales(
             cmp_id,
             paymentDetails,
@@ -3034,13 +3032,14 @@ export const convertCheckOutToSale = async (req, res) => {
             selectedCheckOut[0]?.customerId?.partyName || "Customer",
             totalPaidAmount,
             selectedCheckOut[0]?.customerId?._id ||
-              selectedCheckOut[0]?.customerId,
+            selectedCheckOut[0]?.customerId,
             results[0]?.salesRecord,
             agId,
             req,
             restaurantBaseSaleData,
             session,
           );
+          console.log("endupppppppppp")
         }
       }
 
@@ -3275,7 +3274,6 @@ async function createTallyEntry(
   //       classification: "Dr",
   //       source: "sales",
   //     },);
-  console.log();
   return await TallyData.create(
     [
       {
@@ -4039,32 +4037,117 @@ export const getHotelSalesDetails = async (req, res) => {
       },
     );
 
-    if (type === "hotel" || type === "all") {
-      summary.hotelSales = {
-        count: summary?.totalCount,
-        amount: summary?.hotelTotalAmount,
-        agentCount: summary?.agentCount,
-        agentWithOut: summary?.countWithOutAgent,
-        agentTotalAmount: summary?.agentTotal,
-      };
-    }
+    // Calculate analytics
+    const totalSales = summary.totalFinalAmount;
+    const totalTransactions = transformedData.length;
 
-    if (type === "restaurant" || type === "all") {
-      summary.restaurantSales = {
-        count: summary?.restaurantCount,
-        amount: summary?.restauratTotalAmount,
-        roomServiceCount: summary?.IsRoomService,
-        takeawayCount: summary?.IsTakeaway,
-        deliveryCount: summary?.IsDelivery,
-        dineInCount: summary?.IsDineIn,
-        otherCount:
-          summary?.restaurantCount -
-          (summary?.IsRoomService +
-            summary?.IsTakeaway +
-            summary?.IsDelivery +
-            summary?.IsDineIn),
-      };
-    }
+    const analytics = {
+      paymentBreakdown: {
+        cashPercentage:
+          totalSales > 0 ? (summary.totalCash / totalSales) * 100 : 0,
+        creditPercentage:
+          totalSales > 0 ? (summary.totalCredit / totalSales) * 100 : 0,
+        upiPercentage:
+          totalSales > 0 ? (summary.totalUpi / totalSales) * 100 : 0,
+        bankPercentage:
+          totalSales > 0 ? (summary.totalBank / totalSales) * 100 : 0,
+      },
+      businessBreakdown: {
+        hotel: {
+          percentage:
+            totalSales > 0 ? (summary.hotelSales.amount / totalSales) * 100 : 0,
+          averageTicket:
+            summary.hotelSales.count > 0
+              ? summary.hotelSales.amount / summary.hotelSales.count
+              : 0,
+          transactionCount: summary.hotelSales.count,
+        },
+        restaurant: {
+          percentage:
+            totalSales > 0
+              ? (summary.restaurantSales.amount / totalSales) * 100
+              : 0,
+          averageTicket:
+            summary.restaurantSales.count > 0
+              ? summary.restaurantSales.amount / summary.restaurantSales.count
+              : 0,
+          transactionCount: summary.restaurantSales.count,
+        },
+        other: {
+          percentage:
+            totalSales > 0 ? (summary.otherSales.amount / totalSales) * 100 : 0,
+          averageTicket:
+            summary.otherSales.count > 0
+              ? summary.otherSales.amount / summary.otherSales.count
+              : 0,
+          transactionCount: summary.otherSales.count,
+        },
+      },
+      mealPeriodBreakdown: Object.keys(summary.mealPeriodBreakdown).reduce(
+        (acc, period) => {
+          acc[period] = {
+            amount: summary.mealPeriodBreakdown[period].amount,
+            count: summary.mealPeriodBreakdown[period].count,
+            percentage:
+              totalSales > 0
+                ? (summary.mealPeriodBreakdown[period].amount / totalSales) *
+                  100
+                : 0,
+            averageTicket:
+              summary.mealPeriodBreakdown[period].count > 0
+                ? summary.mealPeriodBreakdown[period].amount /
+                  summary.mealPeriodBreakdown[period].count
+                : 0,
+          };
+          return acc;
+        },
+        {},
+      ),
+      overallMetrics: {
+        averageTicketSize:
+          totalTransactions > 0 ? totalSales / totalTransactions : 0,
+        totalTransactions: totalTransactions,
+        averageItemsPerTransaction:
+          totalTransactions > 0
+            ? transformedData.reduce(
+                (sum, order) => sum + (order.itemCount || 0),
+                0,
+              ) / totalTransactions
+            : 0,
+      },
+      serviceMetrics: {
+        // Restaurant metrics
+        tablesServed: [
+          ...new Set(
+            transformedData
+              .filter((s) => s.tableNumber)
+              .map((s) => s.tableNumber),
+          ),
+        ].length,
+        waitersActive: [
+          ...new Set(
+            transformedData
+              .filter((s) => s.waiterName)
+              .map((s) => s.waiterName),
+          ),
+        ].length,
+        // Hotel metrics
+        roomsOccupied: [
+          ...new Set(
+            transformedData
+              .filter((s) => s.roomNumber)
+              .map((s) => s.roomNumber),
+          ),
+        ].length,
+        guestsServed: [
+          ...new Set(
+            transformedData
+              .filter((s) => s.guestName && s.guestName !== "Cash")
+              .map((s) => s.guestName),
+          ),
+        ].length,
+      },
+    };
 
     res.json({
       success: true,
@@ -4079,6 +4162,17 @@ export const getHotelSalesDetails = async (req, res) => {
         },
         totalRecords: transformedData.length,
         businessType: businessType,
+        businessBreakdown: {
+          hotel: summary.hotelSales.count,
+          restaurant: summary.restaurantSales.count,
+          other: summary.otherSales.count,
+          total: totalTransactions,
+        },
+        serviceBreakdown: summary.serviceBreakdown,
+        mealPeriodSummary: summary.mealPeriodBreakdown,
+        message: `Found ${transformedData.length} ${
+          businessType === "all" ? "combined" : businessType
+        } sales records`,
       },
     });
   } catch (error) {
@@ -4498,7 +4592,6 @@ export const getCheckoutStatementByDate = async (req, res) => {
         const totalRoomamount = checkout.selectedRooms.reduce(
           (sum, room) => sum + parseFloat(room.roomTotal || 0, 0),
         );
-        console.log(checkout.advanceAmount);
 
         summaryData.advanceTotal +=
           Number(checkout?.paymenttypeDetails?.cash || 0) +
@@ -4507,19 +4600,11 @@ export const getCheckoutStatementByDate = async (req, res) => {
           Number(checkout?.paymenttypeDetails?.bank || 0) +
           Number(checkout?.paymenttypeDetails?.credit || 0);
 
-        summaryData.creditTotal += Number(
-          checkout?.paymenttypeDetails?.credit || 0,
-        );
-        summaryData.cashTotal += Number(
-          checkout?.paymenttypeDetails?.cash || 0,
-        );
-        summaryData.upiTotal += Number(checkout?.paymenttypeDetails?.upi || 0);
-        summaryData.bankTotal += Number(
-          checkout?.paymenttypeDetails?.bank || 0,
-        );
-        summaryData.cardTotal += Number(
-          checkout?.paymenttypeDetails?.card || 0,
-        );
+          summaryData.creditTotal += Number(checkout?.paymenttypeDetails?.credit || 0);
+          summaryData.cashTotal += Number(checkout?.paymenttypeDetails?.cash || 0);
+          summaryData.upiTotal += Number(checkout?.paymenttypeDetails?.upi || 0);
+          summaryData.bankTotal += Number(checkout?.paymenttypeDetails?.bank || 0);
+          summaryData.cardTotal += Number(checkout?.paymenttypeDetails?.card || 0);
         checkoutData.push({
           billNo: checkout.voucherNumber,
           date: checkout.bookingDate,
@@ -4548,12 +4633,11 @@ export const getCheckoutStatementByDate = async (req, res) => {
     // Sum from original checkouts to avoid double counting
     checkouts.forEach((checkout) => {
       const grandTotal = parseFloat(checkout.grandTotal || 0);
-      summaryData.checkOutTimePaidAmount +=
-        Number(checkout?.paymenttypeDetails?.cash || 0) +
-        Number(checkout?.paymenttypeDetails?.card || 0) +
-        Number(checkout?.paymenttypeDetails?.upi || 0) +
-        Number(checkout?.paymenttypeDetails?.bank || 0) +
-        Number(checkout?.paymenttypeDetails?.credit || 0);
+      summaryData.checkOutTimePaidAmount +=  Number(checkout?.paymenttypeDetails?.cash || 0) +
+          Number(checkout?.paymenttypeDetails?.card || 0) +
+          Number(checkout?.paymenttypeDetails?.upi || 0) +
+          Number(checkout?.paymenttypeDetails?.bank || 0) +
+          Number(checkout?.paymenttypeDetails?.credit || 0);
 
       // Group by payment mode
       const mode = checkout.paymentMode?.toUpperCase();
