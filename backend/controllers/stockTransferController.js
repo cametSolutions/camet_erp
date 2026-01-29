@@ -189,7 +189,7 @@ export const editStockTransfer = async (req, res) => {
 
     // Process the updated stock transfer
     await processStockTransfer(transferData);
-
+console.log("line 192 stocktranfer")
     // Update the existing stock transfer document with new data
     const updateData = {
       date: await formatToLocalDate(selectedDate, orgId),

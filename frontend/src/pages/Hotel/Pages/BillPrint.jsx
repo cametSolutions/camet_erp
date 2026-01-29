@@ -29,8 +29,8 @@ const HotelBillPrint = () => {
   const [paymentModeDetails, setPaymentModeDetails] = useState([]);
   // Props from location state
   const selectedCheckOut = location.state?.selectedCheckOut || [];
+console.log(selectedCheckOut)
 
-  const a = selectedCheckOut.some((it) => it.originalCheckInId);
   const checkoutmode = location?.state?.checkoutMode || null;
   const cheinids = location?.state?.checkinIds;
 

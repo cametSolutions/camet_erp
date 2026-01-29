@@ -118,6 +118,7 @@ export const handleStockTransfer = async ({
   const { series_id, usedSeriesNumber } = req.body;
 
   try {
+console.log("line 121 stocktranser")
     const newStockTransfer = new stockTransferModel({
       serialNumber,
       date: await formatToLocalDate(selectedDate, orgId),

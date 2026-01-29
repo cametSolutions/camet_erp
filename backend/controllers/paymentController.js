@@ -87,7 +87,8 @@ export const createPayment = async (req, res) => {
       secondaryUser,
       session
     );
-
+console.log(
+"line91 paymentcontroller")
     // Create the new payment
     const newPayment = new paymentModel({
       createdAt: new Date(),
