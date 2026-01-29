@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from "react"
+import { useEffect, useState, useCallback, useRef, useMemo } from "react"
 import api from "../../../api/api"
 import { toast } from "sonner"
 import { FaEdit } from "react-icons/fa"
@@ -79,7 +79,7 @@ function BookingList() {
     useState(false)
   const [processedCheckoutData, setProcessedCheckoutData] = useState(null)
   const [selectedCreditor, setSelectedCreditor] = useState("")
-
+  const [dateandstaysdata, setdateandstaysdata] = useState([])
   // NEW: State for split payment rows and sources
   const [splitPaymentRows, setSplitPaymentRows] = useState([
     { customer: "", source: "", sourceType: "", amount: "", subsource: "" }
@@ -95,6 +95,7 @@ function BookingList() {
   const { _id: cmp_id, configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   )
+  console.log(cmp_id)
   console.log(selectedBank)
   const getVoucherType = () => {
     const path = location.pathname
@@ -434,6 +435,7 @@ function BookingList() {
   // }, [selectedCheckOut]);
   console.log(selectedCustomer)
   const handleSingleCheckoutformultiplechekin = (selectcustomer) => {
+console.log(selectedCustomer)
     const match = parties.find((item) => item._id === selectcustomer)
     if (!match) return
     console.log(match)
@@ -620,9 +622,9 @@ function BookingList() {
     }
   }
   console.log(selectedOnlinetype)
-  console.log("h")
+  console.log("hddd")
   const handleSavePayment = async () => {
-    console.log("h")
+    console.log("hddd")
     console.log(selectedCheckOut)
     console.log(selectedCheckOut.length)
 
@@ -795,7 +797,9 @@ function BookingList() {
     console.log(selectedCheckOut.length)
 
     if (partial) {
-      proceedToCheckout(checkOutUpdated)
+      console.log("Hhhh")
+      console.log(dateandstaysdata)
+      proceedToCheckout(dateandstaysdata, processedCheckoutData)
       dispatch(setPaymentDetails(paymentDetails))
       dispatch(setSelectedParty(selectedCustomer))
       dispatch(setSelectedPaymentMode(paymentMode))
@@ -804,6 +808,7 @@ function BookingList() {
       dispatch(setOnlineType(selectedOnlinetype))
       setIsPartial(false)
     } else {
+      console.log("hhhh")
       try {
         const response = await api.post(
           `/api/sUsers/convertCheckOutToSale/${cmp_id}`,
@@ -819,9 +824,10 @@ function BookingList() {
           },
           { withCredentials: true }
         )
-
+        console.log("hhhh")
         if (response.status === 200 || response.status === 201) {
           toast.success(response?.data?.message)
+          handleCloseBasedOnDate()
         }
       } catch (error) {
         console.error(
@@ -851,15 +857,19 @@ function BookingList() {
     setShowSelectionModal(false)
     setShowEnhancedCheckoutModal(true)
   }
-  console.log()
-  const handleEnhancedCheckoutConfirm = async (roomAssignments) => {
+  console.log(selectedCheckOut)
+  const handleEnhancedCheckoutConfirm = async (roomAssignments, data) => {
     console.log(roomAssignments)
     setShowEnhancedCheckoutModal(false)
-
+    setdateandstaysdata(data)
     // ✅ ALWAYS show checkout date modal - no condition
     setProcessedCheckoutData(roomAssignments)
-    setShowCheckOutDateModal(true)
+    console.log("hhhh")
+    setShowPaymentModal(true)
+    setIsPartial(true)
+    // setShowCheckOutDateModal(true)
   }
+  console.log(processedCheckoutData)
   const handleCheckin = (e, el) => {
     console.log(el)
     const roomIds = el.selectedRooms.map((item) => item.roomId)
@@ -893,15 +903,19 @@ function BookingList() {
     console.log("HH")
   }
   console.log(bookings)
-  const proceedToCheckout = (roomAssignments) => {
+  const proceedToCheckout = (roomAssignments, data) => {
+    console.log(roomAssignments)
+    console.log(data)
+
+    console.log("hhhhhh")
     setSaveLoader(true)
     const hasPrint1 = configurations[0]?.defaultPrint?.print1
     let checkoutData
     let checkinids = null
     if (checkoutMode === "multiple") {
-      console.log(roomAssignments)
+      console.log(data)
       console.log("hhh")
-      checkoutData = roomAssignments.flatMap((group) => {
+      checkoutData = data.flatMap((group) => {
         return group.checkIns.map((checkIn) => {
           const originalCheckIn = checkIn.originalCheckIn
           const id = checkIn?.checkInId
@@ -933,7 +947,7 @@ function BookingList() {
     } else if (checkoutMode === "single") {
       console.log(roomAssignments)
       console.log(roomAssignments.length)
-      let allCheckouts = roomAssignments.flatMap((group) => {
+      let allCheckouts = data.flatMap((group) => {
         return group.checkIns.map((checkIn) => {
           const originalCheckIn = checkIn.originalCheckIn
 
@@ -965,7 +979,7 @@ function BookingList() {
         })
       })
       checkinids = allCheckouts.map((item) => item._id)
-      console.log()
+      console.log(allCheckouts)
       setcheckinids(checkinids)
       // 2️⃣ GROUP BY selectedCustomer (customerId._id)
       const grouped = {}
@@ -1002,13 +1016,42 @@ function BookingList() {
       checkoutData[0].allCheckInIds = checkinids
     }
     console.log(checkoutData)
+    const roomAssignmentMap = new Map(
+      roomAssignments.map((item) => [
+        item._id,
+        {
+          checkOutDate: item.checkOutDate,
+          stayDays: item.stayDays
+        }
+      ])
+    )
 
-    ////
+    const updatedCheckoutData = checkoutData.map((item) => {
+      const roomData = roomAssignmentMap.get(item._id)
 
-    /////
+      return {
+        ...item,
+
+        // 🔹 Root level update
+        checkOutDate: roomData?.checkOutDate ?? item.checkOutDate,
+        stayDays: roomData?.stayDays ?? item.stayDays,
+
+        // 🔹 selectedRooms stayDays update
+        selectedRooms: item.selectedRooms.map((room) => ({
+          ...room,
+          stayDays: roomData?.stayDays ?? room.stayDays
+        }))
+      }
+    })
+
+    console.log(updatedCheckoutData)
+
+    // checkoutData.forEach((item)=>item.checkoutDate=)
+
+    console.log("Hhhhhhhh")
     navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
       state: {
-        selectedCheckOut: checkoutData,
+        selectedCheckOut: updatedCheckoutData,
         customerId: checkoutData[0]?.customerId?._id,
         isForPreview: true,
         checkoutMode,
@@ -1078,6 +1121,7 @@ function BookingList() {
 
     setCheckoutMode(checkoutMode === "single" ? "multiple" : "single")
   }
+  console.log(checkoutMode)
 
   const TableHeader = () => (
     <div className="bg-gray-100 border-b border-gray-300 sticky top-0 z-10">
@@ -1123,6 +1167,17 @@ function BookingList() {
       </div>
     </div>
   )
+  const selectedIds = useMemo(() => {
+    return new Set(selectedCheckOut.map((item) => item._id))
+  }, [selectedCheckOut])
+
+  const isSelected = (id) => selectedIds.has(id)
+
+  //   const isSelected = (el) => {
+  // console.log(selectedCheckOut)
+  // console.log(el)
+  //     return selectedCheckOut.some((item) => item._id === el._id)
+  //   }
   const Row = ({ index, style }) => {
     if (!isItemLoaded(index)) {
       return (
@@ -1178,12 +1233,12 @@ function BookingList() {
   flex items-center px-4 py-3 text-sm
   border-b border-gray-200 
   cursor-pointer transition-all duration-200 ease-in-out 
-  bg-white hover:bg-gray-50 
+ hover:bg-gray-50 
   ${
     isCheckOutSelected(el) && location.pathname === "/sUsers/checkInList"
-      ? "bg-blue-400 border-blue-400 ring-2 ring-blue-200"
+      ? "bg-blue-100 border-blue-400 ring-2 ring-blue-200"
       : ""
-  }
+  }${isSelected(el) ? "bg-blue-50 border-blue-100" : "bg-white hover:bg-gray-50"}
 `}
         onClick={() => {
           if (el?.checkInId?.status === "checkOut") return
@@ -1195,9 +1250,11 @@ function BookingList() {
             setSelectedCheckOut((prev) =>
               prev.filter((item) => item._id !== el._id)
             )
+
             return
           }
           setSelectedCheckOut((prev) => [...prev, el])
+          // setShowEnhancedCheckoutModal(!showEnhancedCheckoutModal)
         }}
       >
         <div className="flex justify-between items-center w-full md:hidden text-xs">
@@ -1500,21 +1557,61 @@ function BookingList() {
       </div>
     )
   }
+  console.log(selectedCheckOut)
   console.log(selectedOnlinetype)
-  const handleCloseBasedOnDate = (checkouts) => {
-    if (!checkouts) {
-      setShowCheckOutDateModal(false)
-      setShowSelectionModal(true)
-      return
-    }
+  console.log(processedCheckoutData)
+  const handleCloseBasedOnDate = () => {
+    console.log("hh")
+    // if (!checkouts) {
+    //   setShowCheckOutDateModal(false)
+    //   setShowSelectionModal(true)
+    //   return
+    // }
     // setSaveLoader(true);
-
+    console.log(processedCheckoutData)
     if (processedCheckoutData) {
+      console.log("hhhhhhhhh")
+      console.log(processedCheckoutData)
+
       // Transform the processed checkout data with updated stay days
+      // const updatedCheckoutData = processedCheckoutData.map((checkout) => {
+      //   const updatedData = selectedCheckOut.find((c) => c._id === checkout._id)
+
+      //   // if no update found, return original
+      //   if (!updatedData) return checkout
+
+      //   return {
+      //     ...checkout,
+
+      //     // 🔹 update checkout level fields
+      //     checkOutDate: updatedData.checkOutDate ?? checkout.checkOutDate,
+      //     checkOutTime: updatedData.checkOutTime ?? checkout.checkOutTime,
+      //     stayDays: updatedData.stayDays ?? checkout.stayDays,
+
+      //     // 🔹 update rooms if modified
+      //     selectedRooms: checkout.selectedRooms.map((room) => {
+      //       const updatedRoom = updatedData.selectedRooms?.find(
+      //         (r) => r._id === room._id
+      //       )
+
+      //       return updatedRoom
+      //         ? {
+      //             ...room,
+      //             ...updatedRoom
+      //           }
+      //         : room
+      //     })
+      //   }
+      // })
+      //////
+      console.log(dateandstaysdata)
+
       const updatedCheckoutData = processedCheckoutData.map((group) => ({
         ...group,
         checkIns: group.checkIns.map((checkIn) => {
-          const updatedData = checkouts.find((c) => c._id === checkIn.checkInId)
+          const updatedData = dateandstaysdata.find(
+            (c) => c._id === checkIn.checkInId
+          )
 
           return {
             ...checkIn,
@@ -1542,12 +1639,16 @@ function BookingList() {
           }
         })
       }))
-
-      setCheckOutUpdated(updatedCheckoutData)
-      setShowPaymentModal(true)
+      console.log(updatedCheckoutData)
+      console.log("aaaaaa")
+      setProcessedCheckoutData(updatedCheckoutData)
+      // setShowPaymentModal(true)
       setIsPartial(true)
-      setProcessedCheckoutData(null)
+
+      proceedToCheckout(updatedCheckoutData)
+      // setProcessedCheckoutData(null)
     } else {
+      console.log("hhhhhhddd")
       const hasPrint1 = configurations[0]?.defaultPrint?.print1
       navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
         state: {
@@ -1606,142 +1707,30 @@ function BookingList() {
         {showEnhancedCheckoutModal && (
           <EnhancedCheckoutModal
             isOpen={showEnhancedCheckoutModal}
-            onClose={() => {
-              setShowEnhancedCheckoutModal(false)
-              setShowSelectionModal(true)
-            }}
+            closemodal={setShowEnhancedCheckoutModal}
+            customerchange={handleSingleCheckoutformultiplechekin}
+            onClose={handleCloseBasedOnDate}
             selectedCheckIns={selectedCheckOut}
             onConfirm={handleEnhancedCheckoutConfirm}
             checkoutMode={checkoutMode}
+            search={searchTerm}
+            toogle={handletoogle}
+            selectedCustomer={selectedCustomer}
           />
         )}
-        {showCheckOutDateModal && (
-          <CheckoutDateModal
-            isOpen={showCheckOutDateModal}
-            onClose={handleCloseBasedOnDate}
-            checkoutData={selectedCheckOut}
-          />
-        )}
-
-        {/* Confirmation Modal */}
         {selectedCheckOut.length > 0 &&
-          showSelectionModal &&
-          (location.pathname === "/sUsers/checkInList" ||
-            location.pathname === "/sUsers/checkOutList") &&
-          searchTerm !== "completed" && (
-            <div className="fixed bottom-6 right-6 z-50 animate-slideUp">
-              <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-4 min-w-[280px]">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                      <MdCheckCircle className="w-5 h-5 text-white" />
-                    </div>
-                    <div></div>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setCheckoutMode("multiple")
-                      setSelectedCheckOut([])
-                    }}
-                    className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded-full transition-all"
-                  >
-                    ✕
-                  </button>
-                </div>
-
-                <div className="max-h-32 overflow-y-auto mb-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-                  <div className="space-y-2">
-                    {selectedCheckOut.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex items-center justify-between text-xs bg-gray-50 p-2 rounded-lg"
-                      >
-                        <span className="font-medium text-gray-700">
-                          #{item.voucherNumber}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                {selectedCheckOut && selectedCheckOut.length > 1 && (
-                  <>
-                    <div className="mb-4 flex items-center justify-between bg-gray-50 p-2 rounded-lg">
-                      <span className="text-xs font-semibold text-gray-700">
-                        {checkoutMode === "single"
-                          ? "Single Checkout"
-                          : "Multiple Checkout"}
-                      </span>
-
-                      {/* Toggle Switch */}
-                      <div
-                        onClick={() => handletoogle()}
-                        className={`w-8 h-4 flex items-center rounded-full p-[2px] cursor-pointer transition-all
-                   ${
-                     checkoutMode === "single" ? "bg-blue-500" : "bg-green-500"
-                   }`}
-                      >
-                        <div
-                          className={`bg-white w-3 h-3 rounded-full shadow-sm transform transition-all
-                   ${
-                     checkoutMode === "single"
-                       ? "translate-x-0"
-                       : "translate-x-4"
-                   }`}
-                        ></div>
-                      </div>
-                    </div>
-                    {checkoutMode === "single" && (
-                      <div className="mb-6">
-                        <label className="block text-xs font-semibold text-gray-700 mb-2">
-                          Select Customer
-                        </label>
-                        <select
-                          value={selectedCustomer}
-                          onChange={(e) =>
-                            handleSingleCheckoutformultiplechekin(
-                              e.target.value
-                            )
-                          }
-                          className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                        >
-                          <option value="">Choose a customer...</option>
-                          {/* {selectedCheckOut?.map((selected) => (
-                        <option
-                          key={selected?.customerId?._id}
-                          value={selected?.customerId?._id}
-                        >
-                          {selected?.customerId?.partyName}
-                        </option>
-                      ))} */}
-                          {parties?.map((selected) => (
-                            <option key={selected?._id} value={selected?._id}>
-                              {selected?.partyName}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
-                  </>
-                )}
-
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setSelectedCheckOut([])}
-                    className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-all duration-200"
-                  >
-                    Clear All
-                  </button>
-                  <button
-                    className="flex-2 px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg text-sm font-bold hover:from-green-600 hover:to-emerald-700 transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2 shadow-lg"
-                    onClick={() => {
-                      handleCheckOutData()
-                    }}
-                  >
-                    <MdPayment className="w-4 h-4" />
-                    Checkout
-                  </button>
-                </div>
+          location.pathname === "/sUsers/checkInList" && (
+            <div className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t shadow-lg px-4 py-3 flex justify-between items-center">
+              <div className="text-sm font-medium">
+                {selectedCheckOut.length} selected
               </div>
+
+              <button
+                onClick={() => setShowEnhancedCheckoutModal(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded"
+              >
+                Proceed to Checkout
+              </button>
             </div>
           )}
 

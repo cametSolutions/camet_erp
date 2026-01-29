@@ -123,7 +123,7 @@ export const buildReceipt = async ({
     "serialNumber",
     session
   );
-
+console.log("line 125 restarurant")
   const receipt = new ReceiptModel({
     createdAt: new Date(),
     date: await formatToLocalDate(new Date(), cmp_id, session),

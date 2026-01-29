@@ -42,6 +42,7 @@ export const createReceipt = async (req, res) => {
     series_id,
     voucherType,
   } = req.body;
+console.log("create receipttttttttttttttttt")
 
   const Primary_user_id = req.owner.toString();
   const Secondary_user_id = req.sUserId;
@@ -83,7 +84,7 @@ export const createReceipt = async (req, res) => {
       secondaryUser,
       session
     );
-
+console.log("line receiptcontroller")
     // Create the new receipt
     const newReceipt = new ReceiptModel({
       createdAt: new Date(),

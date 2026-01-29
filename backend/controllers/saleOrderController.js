@@ -45,7 +45,7 @@ export const createInvoice = async (req, res) => {
           series_id,
           note
         } = req.body;
-
+console.log("line 48 saleorder")
         formatToLocalDate(selectedDate, orgId);
 
         /// generate voucher number(invoice number)
@@ -69,7 +69,7 @@ export const createInvoice = async (req, res) => {
         //   additionalChargesFromRedux.length > 0
         //     ? calculateAdditionalCharges(additionalChargesFromRedux)
         //     : [];
-
+console.log("line saleorder")
         const invoice = new invoiceModel({
           serialNumber: newSerialNumber,
           cmp_id: orgId,
@@ -201,7 +201,7 @@ export const editInvoice = async (req, res) => {
           : [];
 
       // Update the invoice with new data
-
+console.log("204 saleorder")
       const formattedDate = await formatToLocalDate(
         selectedDate,
         orgId,

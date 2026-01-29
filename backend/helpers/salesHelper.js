@@ -425,7 +425,7 @@ export const createSaleRecord = async (
     if (lastUserSale && !isNaN(lastUserSale.userLevelSerialNumber)) {
       newUserLevelSerial = lastUserSale.userLevelSerialNumber + 1;
     }
-
+console.log("line 428 saleshelper")
     const sales = new model({
       selectedGodownDetails,
       serialNumber: newSerialNumber,
