@@ -97,16 +97,15 @@ console.log(from)
                       {dayjs(date).format("DD/MM/YYYY")}
                     </p>
 
-                    <div
-                      // className={`${
-                      //   typeColors[type] || typeColors.default
-                      // } flex items-center text-white px-2 rounded-sm`}
-                      className="flex items-center  rounded-sm"
-                    >
-                      <p className="p-1 rounded-lg  font-bold text-[10px] text-gray-600">
-                        <span className="mr-1">/</span> {type}
-                      </p>
-                    </div>
+                   <div
+  className={`${
+    typeColors[type] || typeColors.default
+  } flex items-center text-white px-2 rounded-sm`}
+>
+  <p className="p-1 rounded-lg font-bold text-[10px]">
+    {type}
+  </p>
+</div>
                   </section>
                 </div>
               </div>
