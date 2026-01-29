@@ -25,7 +25,6 @@ export default function EnhancedCheckoutModal({
   toogle,
   selectedCustomer
 }) {
-  console.log(onClose)
   console.log(checkoutMode)
   console.log(isOpen)
   console.log("hfafffff")
@@ -37,10 +36,6 @@ export default function EnhancedCheckoutModal({
   const [checkOutDateTracker, setCheckOutDateTracker] = useState(
     new Date().toISOString().split("T")[0]
   )
-  const [selectedCheckOut, setSelectedCheckOut] = useState(
-    location?.state?.selectedCheckOut || []
-  )
-  console.log(selectedCheckOut)
 
   const [checkouts, setCheckouts] = useState(
     selectedCheckIns.length > 0
@@ -83,6 +78,7 @@ export default function EnhancedCheckoutModal({
           }
         ]
   )
+  console.log(checkouts)
   const [originalCheckouts] = useState(() =>
     selectedCheckIns.length > 0
       ? JSON.parse(JSON.stringify(selectedCheckIns))
@@ -128,12 +124,13 @@ export default function EnhancedCheckoutModal({
       setRoomAssignments(allRooms)
     }
   }, [selectedCheckIns])
+  console.log(checkouts)
 
   // Handle customer selection for a specific room
   const handleCustomerSelect = (index, customer) => {
-    const updated = [...roomAssignments]
+    const updated = [...checkouts]
     updated[index].selectedCustomer = customer
-    setRoomAssignments(updated)
+    setCheckouts(updated)
 
     // Clear error for this room if exists
     const newErrors = { ...errors }
@@ -143,8 +140,8 @@ export default function EnhancedCheckoutModal({
 
   // Remove a room from checkout (partial checkout)
   const handleRemoveRoom = (index) => {
-    const updated = roomAssignments.filter((_, i) => i !== index)
-    setRoomAssignments(updated)
+    const updated = checkouts.filter((_, i) => i !== index)
+    setCheckouts(updated)
   }
 
   // Add room back if needed
@@ -178,8 +175,10 @@ export default function EnhancedCheckoutModal({
   // Handle proceed to checkout
   const handleProceed = () => {
     if (!validateAssignments()) {
+      console.log("hhhh")
       return
     }
+console.log("hhh")
     // Step 1: Check if all selectedCustomer are same
     const firstCustomer = roomAssignments[0]?.selectedCustomer
     const isSameCustomer = roomAssignments.every(
@@ -273,7 +272,7 @@ export default function EnhancedCheckoutModal({
 
     console.log(result)
 
-    onConfirm(result)
+    onConfirm(result,checkouts)
   }
 
   if (!isOpen) return null
@@ -283,7 +282,7 @@ export default function EnhancedCheckoutModal({
     checkIn.selectedRooms
       .filter(
         (room) =>
-          !roomAssignments.some(
+          !checkouts.some(
             (assignment) =>
               assignment.checkInId === checkIn._id &&
               assignment.roomId === room._id
@@ -554,8 +553,6 @@ export default function EnhancedCheckoutModal({
   const handleConfirm = () => {
     console.log(checkouts)
     handleProceed()
-
-    
   }
   return (
     // <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
@@ -884,7 +881,7 @@ export default function EnhancedCheckoutModal({
           <button
             type="button"
             onClick={handleConfirm}
-            disabled={roomAssignments.length === 0}
+            disabled={checkouts.length === 0}
             className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
           >
             Proceed
