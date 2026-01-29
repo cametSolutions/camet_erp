@@ -95,6 +95,7 @@ function BookingList() {
   const { _id: cmp_id, configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   )
+  console.log(cmp_id)
   console.log(selectedBank)
   const getVoucherType = () => {
     const path = location.pathname
@@ -622,7 +623,7 @@ function BookingList() {
   console.log(selectedOnlinetype)
   console.log("hddd")
   const handleSavePayment = async () => {
-    console.log("h")
+    console.log("hddd")
     console.log(selectedCheckOut)
     console.log(selectedCheckOut.length)
 
@@ -795,6 +796,7 @@ function BookingList() {
     console.log(selectedCheckOut.length)
 
     if (partial) {
+      console.log("Hhhh")
       proceedToCheckout(checkOutUpdated)
       dispatch(setPaymentDetails(paymentDetails))
       dispatch(setSelectedParty(selectedCustomer))
@@ -804,6 +806,7 @@ function BookingList() {
       dispatch(setOnlineType(selectedOnlinetype))
       setIsPartial(false)
     } else {
+      console.log("hhhh")
       try {
         const response = await api.post(
           `/api/sUsers/convertCheckOutToSale/${cmp_id}`,
@@ -819,7 +822,7 @@ function BookingList() {
           },
           { withCredentials: true }
         )
-
+        console.log("hhhh")
         if (response.status === 200 || response.status === 201) {
           toast.success(response?.data?.message)
           handleCloseBasedOnDate()
@@ -898,6 +901,7 @@ function BookingList() {
   }
   console.log(bookings)
   const proceedToCheckout = (roomAssignments) => {
+    console.log("hhhhhh")
     setSaveLoader(true)
     const hasPrint1 = configurations[0]?.defaultPrint?.print1
     let checkoutData
@@ -1006,7 +1010,7 @@ function BookingList() {
       checkoutData[0].allCheckInIds = checkinids
     }
     console.log(checkoutData)
-
+    console.log("Hhhhhhhh")
     navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
       state: {
         selectedCheckOut: checkoutData,
@@ -1532,7 +1536,9 @@ function BookingList() {
       const updatedCheckoutData = processedCheckoutData.map((group) => ({
         ...group,
         checkIns: group.checkIns.map((checkIn) => {
-          const updatedData = selectedCheckOut.find((c) => c._id === checkIn.checkInId)
+          const updatedData = selectedCheckOut.find(
+            (c) => c._id === checkIn.checkInId
+          )
 
           return {
             ...checkIn,
@@ -1562,9 +1568,11 @@ function BookingList() {
       }))
       console.log("aaaaaa")
       setCheckOutUpdated(updatedCheckoutData)
-      setShowPaymentModal(true)
+      // setShowPaymentModal(true)
       setIsPartial(true)
-      setProcessedCheckoutData(null)
+
+      proceedToCheckout(updatedCheckoutData)
+      // setProcessedCheckoutData(null)
     } else {
       console.log("hhhhhhddd")
       const hasPrint1 = configurations[0]?.defaultPrint?.print1
