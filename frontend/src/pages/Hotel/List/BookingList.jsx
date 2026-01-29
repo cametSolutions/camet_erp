@@ -797,7 +797,8 @@ function BookingList() {
 
     if (partial) {
       console.log("Hhhh")
-      proceedToCheckout(checkOutUpdated)
+console.log(dateandstaysdata)
+      proceedToCheckout(dateandstaysdata,processedCheckoutData)
       dispatch(setPaymentDetails(paymentDetails))
       dispatch(setSelectedParty(selectedCustomer))
       dispatch(setSelectedPaymentMode(paymentMode))
@@ -864,6 +865,7 @@ function BookingList() {
     setProcessedCheckoutData(roomAssignments)
     console.log("hhhh")
     setShowPaymentModal(true)
+    setIsPartial(true)
     // setShowCheckOutDateModal(true)
   }
   console.log(processedCheckoutData)
@@ -900,16 +902,19 @@ function BookingList() {
     console.log("HH")
   }
   console.log(bookings)
-  const proceedToCheckout = (roomAssignments) => {
+  const proceedToCheckout = (roomAssignments,data) => {
+console.log(roomAssignments)
+console.log(data)
+
     console.log("hhhhhh")
     setSaveLoader(true)
     const hasPrint1 = configurations[0]?.defaultPrint?.print1
     let checkoutData
     let checkinids = null
     if (checkoutMode === "multiple") {
-      console.log(roomAssignments)
+      console.log(data)
       console.log("hhh")
-      checkoutData = roomAssignments.flatMap((group) => {
+      checkoutData = data.flatMap((group) => {
         return group.checkIns.map((checkIn) => {
           const originalCheckIn = checkIn.originalCheckIn
           const id = checkIn?.checkInId
@@ -941,7 +946,7 @@ function BookingList() {
     } else if (checkoutMode === "single") {
       console.log(roomAssignments)
       console.log(roomAssignments.length)
-      let allCheckouts = roomAssignments.flatMap((group) => {
+      let allCheckouts = data.flatMap((group) => {
         return group.checkIns.map((checkIn) => {
           const originalCheckIn = checkIn.originalCheckIn
 
@@ -973,7 +978,7 @@ function BookingList() {
         })
       })
       checkinids = allCheckouts.map((item) => item._id)
-
+console.log(allCheckouts)
       setcheckinids(checkinids)
       // 2️⃣ GROUP BY selectedCustomer (customerId._id)
       const grouped = {}
@@ -1010,6 +1015,8 @@ function BookingList() {
       checkoutData[0].allCheckInIds = checkinids
     }
     console.log(checkoutData)
+// checkoutData.forEach((item)=>item.checkoutDate=)
+
     console.log("Hhhhhhhh")
     navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
       state: {
@@ -1198,9 +1205,9 @@ function BookingList() {
  hover:bg-gray-50 
   ${
     isCheckOutSelected(el) && location.pathname === "/sUsers/checkInList"
-      ? "bg-blue-400 border-blue-400 ring-2 ring-blue-200"
-      : "bg-white"
-  }
+      ? "bg-blue-100 border-blue-400 ring-2 ring-blue-200"
+      : ""
+  }${isSelected(el) ? "bg-blue-50 border-blue-100" : "bg-white hover:bg-gray-50"}
 `}
         onClick={() => {
           if (el?.checkInId?.status === "checkOut") return
@@ -1534,7 +1541,7 @@ function BookingList() {
     if (processedCheckoutData) {
       console.log("hhhhhhhhh")
       console.log(processedCheckoutData)
-      
+
       // Transform the processed checkout data with updated stay days
       // const updatedCheckoutData = processedCheckoutData.map((checkout) => {
       //   const updatedData = selectedCheckOut.find((c) => c._id === checkout._id)
@@ -1566,7 +1573,7 @@ function BookingList() {
       //   }
       // })
       //////
-console.log(dateandstaysdata)
+      console.log(dateandstaysdata)
 
       const updatedCheckoutData = processedCheckoutData.map((group) => ({
         ...group,
@@ -1603,7 +1610,7 @@ console.log(dateandstaysdata)
       }))
       console.log(updatedCheckoutData)
       console.log("aaaaaa")
-      setCheckOutUpdated(updatedCheckoutData)
+      setProcessedCheckoutData(updatedCheckoutData)
       // setShowPaymentModal(true)
       setIsPartial(true)
 
