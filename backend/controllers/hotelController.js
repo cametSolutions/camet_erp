@@ -4603,3 +4603,49 @@ export const getCheckoutStatementByDate = async (req, res) => {
     });
   }
 };
+
+
+export const convertToAvailable = async (req, res) => {
+  try {
+    const { cmp_id } = req.params;
+    const { selectedRooms } = req.body;
+
+    if (!selectedRooms || selectedRooms.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No rooms selected",
+      });
+    }
+
+    // Extract only room IDs
+    const roomIds = selectedRooms.map(room => room.roomId);
+
+    // Update rooms
+    const result = await roomModal.updateMany(
+      {
+        _id: { $in: roomIds },
+        cmp_id,                 
+      },
+      {
+        $set: {
+          status: "available",
+        },
+      }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Rooms converted to available",
+      modifiedCount: result.modifiedCount,
+    });
+
+  } catch (error) {
+    console.error("Convert Room Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Error converting rooms",
+      error: error.message,
+    });
+  }
+};
