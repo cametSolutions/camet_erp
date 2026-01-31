@@ -1709,7 +1709,7 @@ console.log(selectedCustomer)
             isOpen={showEnhancedCheckoutModal}
             closemodal={setShowEnhancedCheckoutModal}
             customerchange={handleSingleCheckoutformultiplechekin}
-            onClose={handleCloseBasedOnDate}
+            
             selectedCheckIns={selectedCheckOut}
             onConfirm={handleEnhancedCheckoutConfirm}
             checkoutMode={checkoutMode}
