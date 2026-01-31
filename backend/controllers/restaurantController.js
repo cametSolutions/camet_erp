@@ -1882,6 +1882,11 @@ export const saveTableNumber = async (req, res) => {
   try {
     const { cmp_id } = req.params;
     const { tableNumber, status, description } = req.body;
+    let alreadyExists = await Table.findOne({ tableNumber, cmp_id });
+
+    if (alreadyExists) {
+      return res.status(400).json({ message: "Table number already exists" });
+    }
 
     if (!tableNumber) {
       return res.status(400).json({ message: "Table number is required" });

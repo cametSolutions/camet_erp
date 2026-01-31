@@ -50,6 +50,18 @@ export const saveAdditionalPax = async (req, res) => {
     const { additionalPaxName, amount } = req.body;
     const { cmp_id } = req.params;
 
+    let nameAlreadyExists = await AdditionalPax.findOne({
+      additionalPaxName,
+      cmp_id,
+      Primary_user_id: req.pUserId || req.owner,
+    });
+
+    if (nameAlreadyExists) {
+      return res.status(400).json({
+        message: "Additional Pax name already exists",
+      });
+    }
+
     const generatedId = new mongoose.Types.ObjectId();
     const newPax = new AdditionalPax({
       _id: generatedId,
@@ -108,6 +120,17 @@ export const getAdditionalPax = async (req, res) => {
 export const updateAdditionalPax = async (req, res) => {
   try {
     const { additionalPaxName, amount, id } = req.body;
+    let nameAlreadyExists = await AdditionalPax.findOne({
+      additionalPaxName,
+      Primary_user_id: req.pUserId || req.owner,
+      _id: { $ne: id },
+    });
+
+    if (nameAlreadyExists) {
+      return res.status(400).json({
+        message: "Additional Pax name already exists",
+      });
+    }
     const updatedPax = await AdditionalPax.findOneAndUpdate(
       { _id: id },
       {
@@ -177,6 +200,18 @@ export const saveVisitOfPurpose = async (req, res) => {
     const { visitOfPurpose } = req.body;
     const { cmp_id } = req.params;
     const generatedId = new mongoose.Types.ObjectId();
+
+    let nameAlreadyExists = await VisitOfPurpose.findOne({
+      visitOfPurpose,
+      cmp_id,
+      Primary_user_id: req.pUserId || req.owner,
+    });
+
+    if (nameAlreadyExists) {
+      return res.status(400).json({
+        message: "Visit of purpose name already exists",
+      });
+    }
     const newVisitOfPurpose = new VisitOfPurpose({
       _id: generatedId,
       visitOfPurpose,
@@ -237,6 +272,18 @@ export const updateVisitOfPurpose = async (req, res) => {
 
     if (!ObjectId.isValid(visitOfPurposeId) || !ObjectId.isValid(cmp_id)) {
       return res.status(400).json({ error: "Invalid ID format" });
+    }
+    let nameAlreadyExists = await VisitOfPurpose.findOne({
+      visitOfPurpose,
+      cmp_id,
+      Primary_user_id: req.pUserId || req.owner,
+      _id: { $ne: new ObjectId(visitOfPurposeId) },
+    });
+
+    if (nameAlreadyExists) {
+      return res.status(400).json({
+        message: "Visit of purpose name already exists",
+      });
     }
 
     const updatedVisitOfPurpose = await VisitOfPurpose.findOneAndUpdate(
@@ -310,6 +357,18 @@ export const saveIdProof = async (req, res) => {
   try {
     const { idProof } = req.body;
     const { cmp_id } = req.params;
+     let nameAlreadyExists = await IdProof.findOne({
+      idProof,
+      cmp_id,
+      Primary_user_id: req.pUserId || req.owner,
+     
+    });
+
+    if (nameAlreadyExists) {
+      return res.status(400).json({
+        message: "Id proof name already exists",
+      });
+    }
     const generatedId = new mongoose.Types.ObjectId();
     const newIdProof = new IdProof({
       _id: generatedId,
@@ -370,6 +429,20 @@ export const updateIdProof = async (req, res) => {
     const { idProof, idProofId } = req.body;
 
     const { cmp_id } = req.params;
+
+   let nameAlreadyExists = await IdProof.findOne({
+      idProof,
+      cmp_id,
+      Primary_user_id: req.pUserId || req.owner,
+      _id: { $ne: new ObjectId(idProofId) },
+     
+    });
+
+    if (nameAlreadyExists) {
+      return res.status(400).json({
+        message: "Id proof name already exists",
+      });
+    }
 
     if (!ObjectId.isValid(idProofId) || !ObjectId.isValid(cmp_id)) {
       return res.status(400).json({ error: "Invalid ID format" });
@@ -447,6 +520,20 @@ export const saveFoodPlan = async (req, res) => {
     const { foodPlan, amount, isComplimentary = false } = req.body; // ✅ EXTRACT
     const { cmp_id } = req.params;
 
+    let nameAlreadyExists = await FoodPlan.findOne({
+      foodPlan,
+      cmp_id,
+      Primary_user_id: req.pUserId || req.owner,
+
+    });
+
+    if (nameAlreadyExists) {
+      return res.status(400).json({
+        message: "Food plan name already exists",
+      });
+    }
+
+
     const generatedId = new mongoose.Types.ObjectId();
 
     const newFoodPlan = new FoodPlan({
@@ -511,6 +598,20 @@ export const updateFoodPlan = async (req, res) => {
     const { foodPlan, amount, foodPlanId, isComplimentary = false } = req.body;
 
     const { cmp_id } = req.params;
+
+       let nameAlreadyExists = await FoodPlan.findOne({
+      foodPlan,
+      cmp_id,
+      Primary_user_id: req.pUserId || req.owner,
+      _id: { $ne: new ObjectId(foodPlanId) },
+
+    });
+
+    if (nameAlreadyExists) {
+      return res.status(400).json({
+        message: "Food plan name already exists",
+      });
+    }
 
     const updatedFoodPlan = await FoodPlan.findOneAndUpdate(
       { _id: foodPlanId, cmp_id },
@@ -584,6 +685,18 @@ export const addRoom = async (req, res) => {
     const { formData, tableData } = req.body;
 
     session.startTransaction(); // Step 2: Start transaction
+    let findRoomNameAlreadyExist = await roomModal
+      .findOne({
+        primary_user_id: req.pUserId || req.owner,
+        cmp_id: req.params.cmp_id,
+        roomName: formData.roomName,
+      })
+      .session(session);
+
+    if (findRoomNameAlreadyExist) {
+      await session.abortTransaction();
+      return res.status(400).json({ message: "Room name already exist" });
+    }
 
     // Step 3: Fetch HSN data inside the session
     const correspondingHsn = await hsnModel
@@ -824,6 +937,20 @@ export const editRoom = async (req, res) => {
     // Step 2: Start the transaction
     session.startTransaction();
 
+    let findRoomNameAlreadyExist = await roomModal
+      .findOne({
+        _id: { $ne: req.params.id },
+        primary_user_id: req.pUserId || req.owner,
+        cmp_id: req.params.cmp_id,
+        roomName: formData.roomName,
+      })
+      .session(session);
+
+    if (findRoomNameAlreadyExist) {
+      await session.abortTransaction();
+      return res.status(400).json({ message: "Room name already exist" });
+    }
+
     // Step 3: Validate HSN existence within session
     const correspondingHsn = await hsnModel
       .findOne({ _id: formData.hsn })
@@ -1057,7 +1184,7 @@ export const roomBooking = async (req, res) => {
             remainingAmount: 0,
           },
         ];
-        console.log("buiidddreceipttttttt")
+        console.log("buiidddreceipttttttt");
         // 🔹 Build Receipt Function
         const buildReceipt = async (
           receiptVoucher,
@@ -1080,7 +1207,7 @@ export const roomBooking = async (req, res) => {
             }
             delete selectedParty.accountGroup;
           }
-          console.log("line 1083 hotelcontroller")
+          console.log("line 1083 hotelcontroller");
           const receipt = new ReceiptModel({
             createdAt: new Date(),
             date: await formatToLocalDate(new Date(), orgId, session),
@@ -1133,13 +1260,13 @@ export const roomBooking = async (req, res) => {
           const paymentDetails =
             method === "cash"
               ? {
-                cash_ledname: singlePaymentDetails?.accountName,
-                cash_name: singlePaymentDetails?.accountName,
-              }
+                  cash_ledname: singlePaymentDetails?.accountName,
+                  cash_name: singlePaymentDetails?.accountName,
+                }
               : {
-                bank_ledname: singlePaymentDetails?.accountName,
-                bank_name: singlePaymentDetails?.accountName,
-              };
+                  bank_ledname: singlePaymentDetails?.accountName,
+                  bank_name: singlePaymentDetails?.accountName,
+                };
 
           await buildReceipt(
             receiptVoucher,
@@ -1202,13 +1329,13 @@ export const roomBooking = async (req, res) => {
             const paymentDetails =
               payment.method === "cash"
                 ? {
-                  cash_ledname: payment?.accountName,
-                  cash_name: payment?.accountName,
-                }
+                    cash_ledname: payment?.accountName,
+                    cash_name: payment?.accountName,
+                  }
                 : {
-                  bank_ledname: payment?.accountName,
-                  bank_name: payment?.accountName,
-                };
+                    bank_ledname: payment?.accountName,
+                    bank_name: payment?.accountName,
+                  };
 
             await buildReceipt(
               receiptVoucher,
@@ -1275,10 +1402,11 @@ export const getBookings = async (req, res) => {
         processed.travelAgentName = "-";
       }
 
- processed.roomNumbers = processed.selectedRooms
-        ?.map(room => room.roomName || room.roomNumber)
-        .filter(Boolean)
-        .join(", ") || "-";
+      processed.roomNumbers =
+        processed.selectedRooms
+          ?.map((room) => room.roomName || room.roomNumber)
+          .filter(Boolean)
+          .join(", ") || "-";
 
       return processed;
     });
@@ -1693,7 +1821,7 @@ export const updateBooking = async (req, res) => {
       req,
       session,
     ) => {
-      console.log("line1696 hotelcontroller")
+      console.log("line1696 hotelcontroller");
       const receipt = new ReceiptModel({
         createdAt: new Date(),
         date: await formatToLocalDate(new Date(), orgId, session),
@@ -1797,14 +1925,14 @@ export const updateBooking = async (req, res) => {
           const paymentDetails =
             method === "cash"
               ? {
-                cash_ledname: singlePaymentDetails?.accountName,
-                cash_name: singlePaymentDetails?.accountName,
-              }
+                  cash_ledname: singlePaymentDetails?.accountName,
+                  cash_name: singlePaymentDetails?.accountName,
+                }
               : {
-                bank_ledname: singlePaymentDetails?.accountName,
-                bank_name: singlePaymentDetails?.accountName,
-              };
-          console.log("line 1807")
+                  bank_ledname: singlePaymentDetails?.accountName,
+                  bank_name: singlePaymentDetails?.accountName,
+                };
+          console.log("line 1807");
           // Receipt
           await buildReceipt(
             receiptVoucher,
@@ -1874,14 +2002,14 @@ export const updateBooking = async (req, res) => {
             const paymentDetails =
               payment.method === "cash"
                 ? {
-                  cash_ledname: payment?.accountName,
-                  cash_name: payment?.accountName,
-                }
+                    cash_ledname: payment?.accountName,
+                    cash_name: payment?.accountName,
+                  }
                 : {
-                  bank_ledname: payment?.accountName,
-                  bank_name: payment?.accountName,
-                };
-            console.log("line 1884")
+                    bank_ledname: payment?.accountName,
+                    bank_name: payment?.accountName,
+                  };
+            console.log("line 1884");
             await buildReceipt(
               receiptVoucher,
               serialNumber,
@@ -2596,7 +2724,7 @@ export const convertCheckOutToSale = async (req, res) => {
 
     await session.withTransaction(async () => {
       const { cmp_id } = req.params;
-      console.log("cmpidddd", cmp_id)
+      console.log("cmpidddd", cmp_id);
 
       const {
         paymentDetails,
@@ -2620,7 +2748,7 @@ export const convertCheckOutToSale = async (req, res) => {
       // Process each checkout separately
       let results;
       for (const item of selectedCheckOut) {
-console.log("itemdddddd",item)
+        console.log("itemdddddd", item);
         const bookingVoucherNumber =
           item?.bookingId?.voucherNumber || item?.bookingId;
         const checkingVoucherNumber = item?.voucherNumber;
@@ -2745,7 +2873,7 @@ console.log("itemdddddd",item)
         const isThisPartial =
           item.isPartialCheckout ||
           roomsBeingCheckedOut.length <
-          (originalCheckIn.selectedRooms?.length || 0);
+            (originalCheckIn.selectedRooms?.length || 0);
 
         if (isThisPartial) isAnyPartial = true;
 
@@ -2819,7 +2947,7 @@ console.log("itemdddddd",item)
           amount,
         );
         if (savedVoucherData) {
-          console.log(savedVoucherData.length)
+          console.log(savedVoucherData.length);
         }
         // console.log("savedsale", savedVoucherData)
 
@@ -2964,7 +3092,7 @@ console.log("itemdddddd",item)
           await saveSettlement(
             paymentDetails,
             selectedCheckOut[0]?.customerId?._id ||
-            selectedCheckOut[0]?.customerId,
+              selectedCheckOut[0]?.customerId,
             primarySource,
             cmp_id,
             results[0]?.salesRecord, // Use first sale as reference
@@ -2993,7 +3121,7 @@ console.log("itemdddddd",item)
             selectedCheckOut[0]?.customerId?.partyName || "Customer",
             totalPaidAmount,
             selectedCheckOut[0]?.customerId?._id ||
-            selectedCheckOut[0]?.customerId,
+              selectedCheckOut[0]?.customerId,
             results[0]?.salesRecord,
             results[0]?.tallyId,
             req,
@@ -3024,7 +3152,7 @@ console.log("itemdddddd",item)
           // console.log(JSON.stringify(results, null, 2));
 
           // console.log("dddddddddddddddddddddddddddd", results[0]?.salesRecord?.party?.accountGroup_id)
-          console.log("ssssssssssssssssssssssssssssssssssssssssssssss")
+          console.log("ssssssssssssssssssssssssssssssssssssssssssssss");
           await createReceiptForSales(
             cmp_id,
             paymentDetails,
@@ -3032,14 +3160,14 @@ console.log("itemdddddd",item)
             selectedCheckOut[0]?.customerId?.partyName || "Customer",
             totalPaidAmount,
             selectedCheckOut[0]?.customerId?._id ||
-            selectedCheckOut[0]?.customerId,
+              selectedCheckOut[0]?.customerId,
             results[0]?.salesRecord,
             agId,
             req,
             restaurantBaseSaleData,
             session,
           );
-          console.log("endupppppppppp")
+          console.log("endupppppppppp");
         }
       }
 
@@ -4600,11 +4728,19 @@ export const getCheckoutStatementByDate = async (req, res) => {
           Number(checkout?.paymenttypeDetails?.bank || 0) +
           Number(checkout?.paymenttypeDetails?.credit || 0);
 
-          summaryData.creditTotal += Number(checkout?.paymenttypeDetails?.credit || 0);
-          summaryData.cashTotal += Number(checkout?.paymenttypeDetails?.cash || 0);
-          summaryData.upiTotal += Number(checkout?.paymenttypeDetails?.upi || 0);
-          summaryData.bankTotal += Number(checkout?.paymenttypeDetails?.bank || 0);
-          summaryData.cardTotal += Number(checkout?.paymenttypeDetails?.card || 0);
+        summaryData.creditTotal += Number(
+          checkout?.paymenttypeDetails?.credit || 0,
+        );
+        summaryData.cashTotal += Number(
+          checkout?.paymenttypeDetails?.cash || 0,
+        );
+        summaryData.upiTotal += Number(checkout?.paymenttypeDetails?.upi || 0);
+        summaryData.bankTotal += Number(
+          checkout?.paymenttypeDetails?.bank || 0,
+        );
+        summaryData.cardTotal += Number(
+          checkout?.paymenttypeDetails?.card || 0,
+        );
         checkoutData.push({
           billNo: checkout.voucherNumber,
           date: checkout.bookingDate,
@@ -4633,11 +4769,12 @@ export const getCheckoutStatementByDate = async (req, res) => {
     // Sum from original checkouts to avoid double counting
     checkouts.forEach((checkout) => {
       const grandTotal = parseFloat(checkout.grandTotal || 0);
-      summaryData.checkOutTimePaidAmount +=  Number(checkout?.paymenttypeDetails?.cash || 0) +
-          Number(checkout?.paymenttypeDetails?.card || 0) +
-          Number(checkout?.paymenttypeDetails?.upi || 0) +
-          Number(checkout?.paymenttypeDetails?.bank || 0) +
-          Number(checkout?.paymenttypeDetails?.credit || 0);
+      summaryData.checkOutTimePaidAmount +=
+        Number(checkout?.paymenttypeDetails?.cash || 0) +
+        Number(checkout?.paymenttypeDetails?.card || 0) +
+        Number(checkout?.paymenttypeDetails?.upi || 0) +
+        Number(checkout?.paymenttypeDetails?.bank || 0) +
+        Number(checkout?.paymenttypeDetails?.credit || 0);
 
       // Group by payment mode
       const mode = checkout.paymentMode?.toUpperCase();
@@ -4688,7 +4825,6 @@ export const getCheckoutStatementByDate = async (req, res) => {
   }
 };
 
-
 export const convertToAvailable = async (req, res) => {
   try {
     const { cmp_id } = req.params;
@@ -4702,19 +4838,19 @@ export const convertToAvailable = async (req, res) => {
     }
 
     // Extract only room IDs
-    const roomIds = selectedRooms.map(room => room.roomId);
+    const roomIds = selectedRooms.map((room) => room.roomId);
 
     // Update rooms
     const result = await roomModal.updateMany(
       {
         _id: { $in: roomIds },
-        cmp_id,                 
+        cmp_id,
       },
       {
         $set: {
           status: "available",
         },
-      }
+      },
     );
 
     return res.status(200).json({
@@ -4722,7 +4858,6 @@ export const convertToAvailable = async (req, res) => {
       message: "Rooms converted to available",
       modifiedCount: result.modifiedCount,
     });
-
   } catch (error) {
     console.error("Convert Room Error:", error);
 
