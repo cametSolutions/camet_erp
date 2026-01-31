@@ -1046,6 +1046,7 @@ const RestaurantPOS = () => {
     return orderItems.find((item) => item._id === id)?.quantity || 0
   }
 console.log(searchTerm)
+console.log(searchTerm)
 
   return (
     <>
