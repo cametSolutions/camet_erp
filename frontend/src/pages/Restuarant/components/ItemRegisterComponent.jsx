@@ -1,248 +1,261 @@
-import { useEffect, useState } from "react";
-import { units } from "../../../../constants/units";
-import { useLocation } from "react-router-dom";
+import { useEffect, useState, useRef } from "react"
+import { units } from "../../../../constants/units"
+import { useLocation } from "react-router-dom"
 
-import { toast } from "sonner";
-import {
-  MdPlaylistAdd,
-  MdDelete,
-  MdCloudUpload,
-  MdImage,
-} from "react-icons/md";
-import uploadImageToCloudinary from "../../../../utils/uploadCloudinary";
+import { toast } from "sonner"
+import { MdPlaylistAdd, MdDelete, MdCloudUpload, MdImage } from "react-icons/md"
+import uploadImageToCloudinary from "../../../../utils/uploadCloudinary"
 
 function ItemRegisterComponent({
   pageName,
   optionsData,
   sendToParent,
-  editData,
+  editData
 }) {
-  console.log("editData", editData);
+  console.log("editData", editData)
 
   const [priceLevelRows, setPriceLevelRows] = useState([
-    { pricelevel: "", pricerate: "" },
-  ]);
+    { pricelevel: "", pricerate: "" }
+  ])
+  const fileRef = useRef(null)
+
   const [roomData, setRoomData] = useState({
     itemName: "",
-     itemCode: "",
+    itemCode: "",
     foodCategory: "",
     foodType: "",
     unit: "NOS",
     hsn: "",
-    imageUrl: "", // Add image URL field
-  });
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState("");
-  const [isUploading, setIsUploading] = useState(false);
+    imageUrl: "" // Add image URL field
+  })
+  const [imageFile, setImageFile] = useState(null)
+  const [imagePreview, setImagePreview] = useState("")
+  const [isUploading, setIsUploading] = useState(false)
 
   useEffect(() => {
     if (editData) {
+      console.log("hh")
       // console.log(editData);
       setRoomData({
-         itemCode: editData.itemCode || "",
+        itemCode: editData.itemCode || "",
         itemName: editData.product_name,
         foodCategory: editData.category,
         foodType: editData.sub_category,
         unit: editData.unit,
         hsn: editData.hsn_code,
-        imageUrl: editData.product_image || "", // Set existing image URL
-      });
+        imageUrl: editData.product_image || "" // Set existing image URL
+      })
       let updatedPriceLevel = editData.Priceleveles.map((item) => ({
         pricelevel: item.pricelevel?._id,
-        pricerate: item.pricerate,
-      }));
+        pricerate: item.pricerate
+      }))
       // console.log("updatedPriceLevel", updatedPriceLevel);
-      setPriceLevelRows(updatedPriceLevel);
+      setPriceLevelRows(updatedPriceLevel)
 
       // Set image preview for existing data
       if (editData.product_image) {
-        setImagePreview(editData.product_image);
+        setImagePreview(editData.product_image)
       } else {
         setRoomData((prev) => ({
           ...prev,
-          unit: "NOS",
-        }));
+          unit: "NOS"
+        }))
       }
     }
-  }, [editData]);
+  }, [editData])
 
-  console.log("roomData", roomData);
+  console.log("roomData", roomData)
 
   const handleImageChange = (e) => {
-    const file = e.target.files[0];
+    console.log(e)
+    const file = e.target.files[0]
+    console.log(file)
     if (file) {
       // Validate file type
       const allowedTypes = [
         "image/jpeg",
         "image/jpg",
         "image/png",
-        "image/webp",
-      ];
+        "image/webp"
+      ]
       if (!allowedTypes.includes(file.type)) {
-        toast.error("Please select a valid image file (JPEG, PNG, WebP)");
-        return;
+        toast.error("Please select a valid image file (JPEG, PNG, WebP)")
+        return
       }
 
       // Validate file size (5MB limit)
-      const maxSize = 5 * 1024 * 1024; // 5MB
+      const maxSize = 5 * 1024 * 1024 // 5MB
       if (file.size > maxSize) {
-        toast.error("Image size should be less than 5MB");
-        return;
+        toast.error("Image size should be less than 5MB")
+        return
       }
 
-      setImageFile(file);
+      setImageFile(file)
 
       // Create preview
-      const reader = new FileReader();
+      const reader = new FileReader()
       reader.onloadend = () => {
-        setImagePreview(reader.result);
-      };
-      reader.readAsDataURL(file);
+        setImagePreview(reader.result)
+      }
+      reader.readAsDataURL(file)
     }
-  };
+  }
+  console.log(roomData)
 
   const handleImageUpload = async () => {
     if (!imageFile) {
-      toast.error("Please select an image first");
-      return;
+      toast.error("Please select an image first")
+      return
     }
 
-    setIsUploading(true);
+    setIsUploading(true)
 
     try {
-      const imageUrl = await uploadImageToCloudinary(imageFile);
-      setRoomData({ ...roomData, imageUrl });
-      toast.success("Image uploaded successfully");
-      setImageFile(null); // Clear the file after successful upload
+      const imageUrl = await uploadImageToCloudinary(imageFile)
+      console.log(imageFile)
+      console.log(imageUrl)
+      console.log(imageUrl)
+      setRoomData({ ...roomData, imageUrl })
+      toast.success("Image uploaded successfully")
+      setImageFile(null) // Clear the file after successful upload
     } catch (error) {
-      console.error("Image upload error:", error);
-      toast.error("Failed to upload image. Please try again.");
+      console.error("Image upload error:", error)
+      toast.error("Failed to upload image. Please try again.")
     } finally {
-      setIsUploading(false);
+      setIsUploading(false)
     }
-  };
+  }
 
   const handleRemoveImage = () => {
-    setImageFile(null);
-    setImagePreview("");
-    setRoomData({ ...roomData, imageUrl: "" });
-  };
+    setImageFile(null)
+    setImagePreview("")
+    setRoomData({ ...roomData, imageUrl: "" })
+    //this is for reset fileref browser only allow once the same image so to clear while removing
+    if (fileRef.current) {
+      fileRef.current.value = ""
+    }
+  }
 
   const handleAddRow = () => {
-    const lastRow = priceLevelRows[priceLevelRows.length - 1];
+    const lastRow = priceLevelRows[priceLevelRows.length - 1]
 
     // Check if fields are filled
     if (!lastRow?.pricelevel || !lastRow?.pricerate) {
-      toast.error("Add Level name and Rate");
-      return;
+      toast.error("Add Level name and Rate")
+      return
     }
 
     // Check for duplicate pricelevel
     const isDuplicate = priceLevelRows
       .slice(0, -1) // exclude the last row being added
-      .some((row) => row.pricelevel === lastRow.pricelevel);
+      .some((row) => row.pricelevel === lastRow.pricelevel)
 
     if (isDuplicate) {
-      toast.error("This price level already exists");
-      return;
+      toast.error("This price level already exists")
+      return
     }
 
     // Add new row if everything is valid
-    setPriceLevelRows([...priceLevelRows, { pricelevel: "", pricerate: "" }]);
-  };
+    setPriceLevelRows([...priceLevelRows, { pricelevel: "", pricerate: "" }])
+  }
 
   const handleLevelChange = (index, value) => {
-    console.log(value);
-    const updatedRows = [...priceLevelRows];
-    updatedRows[index].pricelevel = value;
-    setPriceLevelRows(updatedRows);
-  };
+    console.log(value)
+    const updatedRows = [...priceLevelRows]
+    updatedRows[index].pricelevel = value
+    setPriceLevelRows(updatedRows)
+  }
 
   const handleRateChange = (index, value) => {
-    const updatedRows = [...priceLevelRows];
-    updatedRows[index].pricerate = value;
-    setPriceLevelRows(updatedRows);
-  };
+    const updatedRows = [...priceLevelRows]
+    updatedRows[index].pricerate = value
+    setPriceLevelRows(updatedRows)
+  }
 
   const handleDeleteRow = (pricelevelId) => {
     setPriceLevelRows((prev) =>
       prev.filter((row) => row.pricelevel !== pricelevelId)
-    );
-  };
+    )
+  }
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-     if (name === "itemCode") {
-    setRoomData({ ...roomData, itemCode: value });
-      } else  if (name === "roomName") {
-      setRoomData({ ...roomData, roomName: value });
+    const { name, value } = e.target
+    if (name === "itemCode") {
+      setRoomData({ ...roomData, itemCode: value })
+    } else if (name === "roomName") {
+      setRoomData({ ...roomData, roomName: value })
     } else if (name === "hsn") {
-      let selectedHsn = optionsData?.hsn?.find((hsn) => hsn.hsn == value);
+      let selectedHsn = optionsData?.hsn?.find((hsn) => hsn.hsn == value)
       setRoomData({
         ...roomData,
         cgst: selectedHsn?.cgstRate,
         sgst: selectedHsn?.sgstUtgstRate,
         igst: selectedHsn?.igstRate,
-        hsn: selectedHsn?.hsn,
-      });
+        hsn: selectedHsn?.hsn
+      })
     } else {
-      setRoomData({ ...roomData, [name]: value });
+      setRoomData({ ...roomData, [name]: value })
     }
-  };
+  }
 
   const isNonEmptyString = (value) =>
-    typeof value === "string" && value.trim() !== "";
+    typeof value === "string" && value.trim() !== ""
 
   const validDateFormData = () => {
-
     if (!isNonEmptyString(roomData?.itemName)) {
-      toast.error("Item name is required");
-      return false;
+      toast.error("Item name is required")
+      return false
     }
 
     if (!isNonEmptyString(roomData?.foodCategory)) {
-      toast.error("Food category is required");
-      return false;
+      toast.error("Food category is required")
+      return false
     }
 
     if (!isNonEmptyString(roomData?.foodType)) {
-      toast.error("Food type is required");
-      return false;
+      toast.error("Food type is required")
+      return false
     }
 
     if (!isNonEmptyString(roomData?.unit)) {
-      toast.error("Unit is required");
-      return false;
+      toast.error("Unit is required")
+      return false
     }
 
     if (!isNonEmptyString(roomData?.hsn)) {
-      toast.error("HSN is required");
-      return false;
+      toast.error("HSN is required")
+      return false
     }
 
     // Check if image is being uploaded
     if (imageFile && !roomData.imageUrl) {
-      toast.error("Please upload the selected image before submitting");
-      return false;
+      toast.error("Please upload the selected image before submitting")
+      return false
     }
 
-    return true; // All fields valid
-  };
+    return true // All fields valid
+  }
 
   const submitHandler = () => {
     if (!validDateFormData(roomData)) {
-      return;
+      return
     }
     let newPriceLevelRows = priceLevelRows.filter(
       (item) => item.pricelevel !== ""
-    );
-    console.log("newPriceLevelRows", newPriceLevelRows);
-    sendToParent(roomData, newPriceLevelRows);
-  };
+    )
+    console.log("newPriceLevelRows", newPriceLevelRows)
+    sendToParent(roomData, newPriceLevelRows)
+  }
+  const handleLabelClick = () => {
+    // any logic you want before opening picker
+    console.log("Label clicked")
+    console.log(fileRef.current)
+    fileRef.current.click() // 🔥 open file picker
+  }
 
-  console.log("priceLevelRows", roomData);
-  console.log("ca", optionsData);
-
+  console.log("priceLevelRows", roomData)
+  console.log("ca", optionsData)
+  console.log(imagePreview)
   return (
     <div className="flex-auto px-4 lg:px-10 py-10 pt-0">
       <div>
@@ -269,25 +282,25 @@ function ItemRegisterComponent({
             </div>
           </div>
           <div className="w-full lg:w-6/12 px-4">
-  <div className="relative w-full mb-3">
-    <label
-      className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
-      htmlFor="item-code"
-    >
-      Item Code <span className="text-red-500">*</span>
-    </label>
-    <input
-      type="text"
-      id="item-code"
-      placeholder="Enter unique item code (e.g., F001)"
-      value={roomData.itemCode}
-      name="itemCode"
-      onChange={handleChange}
-      maxLength={20}
-      className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-    />
-  </div>
-</div>
+            <div className="relative w-full mb-3">
+              <label
+                className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+                htmlFor="item-code"
+              >
+                Item Code <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                id="item-code"
+                placeholder="Enter unique item code (e.g., F001)"
+                value={roomData.itemCode}
+                name="itemCode"
+                onChange={handleChange}
+                maxLength={20}
+                className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+              />
+            </div>
+          </div>
 
           {/* Image Upload Section */}
           <div className="w-full lg:w-6/12 px-4">
@@ -317,19 +330,21 @@ function ItemRegisterComponent({
               {/* File Input */}
               <div className="flex items-center space-x-2">
                 <input
+                  ref={fileRef}
                   type="file"
                   accept="image/*"
                   onChange={handleImageChange}
                   className="hidden"
                   id="image-upload"
                 />
-                <label
+                <div
+                  onClick={handleLabelClick}//this is for contact in the handle change unless wont call handlechange
                   htmlFor="image-upload"
                   className="flex items-center px-3 py-2 bg-gray-100 text-gray-700 rounded cursor-pointer hover:bg-gray-200 text-sm"
                 >
                   <MdImage className="mr-2" />
                   Choose Image
-                </label>
+                </div>
 
                 {imageFile && !roomData.imageUrl && (
                   <button
@@ -448,7 +463,7 @@ function ItemRegisterComponent({
                   const igstRate =
                     el.tab === "onItemRate"
                       ? el?.rows?.[0]?.igstRate || ""
-                      : el?.igstRate || "";
+                      : el?.igstRate || ""
 
                   return (
                     <option key={index} value={el.hsn}>
@@ -456,7 +471,7 @@ function ItemRegisterComponent({
                         el.description || ""
                       } — IGST: ${igstRate}%`}
                     </option>
-                  );
+                  )
                 })}
               </select>
             </div>
@@ -502,7 +517,7 @@ function ItemRegisterComponent({
                             className="block w-full px-4 rounded-md text-sm focus:outline-none border-none"
                             style={{
                               boxShadow: "none",
-                              borderColor: "#b6b6b6",
+                              borderColor: "#b6b6b6"
                             }}
                           >
                             <option value="">Select Level</option>
@@ -525,7 +540,7 @@ function ItemRegisterComponent({
                             className="w-full text-center py-1 px-4 border border-gray-400 border-x-0 border-t-0 text-sm focus:outline-none"
                             style={{
                               boxShadow: "none",
-                              borderColor: "#b6b6b6",
+                              borderColor: "#b6b6b6"
                             }}
                           />
                         </td>
@@ -567,7 +582,7 @@ function ItemRegisterComponent({
         </div>
       </div>
     </div>
-  );
+  )
 }
 
-export default ItemRegisterComponent;
+export default ItemRegisterComponent
