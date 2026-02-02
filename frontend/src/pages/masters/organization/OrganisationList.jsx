@@ -9,7 +9,7 @@ import TitleDiv from "@/components/common/TitleDiv";
 function OrganisationList() {
   const [organizations, setOrganizations] = useState([]);
   const [loading, setLoading] = useState(false);
-
+console.log("H")
   useEffect(() => {
     const fetchOrganiszations = async () => {
       setLoading(true);

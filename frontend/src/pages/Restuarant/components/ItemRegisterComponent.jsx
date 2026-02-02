@@ -12,7 +12,6 @@ function ItemRegisterComponent({
   sendToParent,
   editData
 }) {
-  console.log("editData", editData)
 
   const [priceLevelRows, setPriceLevelRows] = useState([
     { pricelevel: "", pricerate: "" }
@@ -34,7 +33,6 @@ function ItemRegisterComponent({
 
   useEffect(() => {
     if (editData) {
-      console.log("hh")
       // console.log(editData);
       setRoomData({
         itemCode: editData.itemCode || "",
@@ -64,12 +62,9 @@ function ItemRegisterComponent({
     }
   }, [editData])
 
-  console.log("roomData", roomData)
 
   const handleImageChange = (e) => {
-    console.log(e)
     const file = e.target.files[0]
-    console.log(file)
     if (file) {
       // Validate file type
       const allowedTypes = [
@@ -100,7 +95,6 @@ function ItemRegisterComponent({
       reader.readAsDataURL(file)
     }
   }
-  console.log(roomData)
 
   const handleImageUpload = async () => {
     if (!imageFile) {
@@ -112,9 +106,7 @@ function ItemRegisterComponent({
 
     try {
       const imageUrl = await uploadImageToCloudinary(imageFile)
-      console.log(imageFile)
-      console.log(imageUrl)
-      console.log(imageUrl)
+  
       setRoomData({ ...roomData, imageUrl })
       toast.success("Image uploaded successfully")
       setImageFile(null) // Clear the file after successful upload
@@ -160,7 +152,6 @@ function ItemRegisterComponent({
   }
 
   const handleLevelChange = (index, value) => {
-    console.log(value)
     const updatedRows = [...priceLevelRows]
     updatedRows[index].pricelevel = value
     setPriceLevelRows(updatedRows)
@@ -237,25 +228,22 @@ function ItemRegisterComponent({
   }
 
   const submitHandler = () => {
+
     if (!validDateFormData(roomData)) {
       return
     }
     let newPriceLevelRows = priceLevelRows.filter(
       (item) => item.pricelevel !== ""
     )
-    console.log("newPriceLevelRows", newPriceLevelRows)
     sendToParent(roomData, newPriceLevelRows)
   }
   const handleLabelClick = () => {
-    // any logic you want before opening picker
-    console.log("Label clicked")
-    console.log(fileRef.current)
+  
+   
     fileRef.current.click() // 🔥 open file picker
   }
 
-  console.log("priceLevelRows", roomData)
-  console.log("ca", optionsData)
-  console.log(imagePreview)
+ 
   return (
     <div className="flex-auto px-4 lg:px-10 py-10 pt-0">
       <div>

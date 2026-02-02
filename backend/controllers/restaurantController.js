@@ -35,11 +35,24 @@ export const addItem = async (req, res) => {
 
   try {
     const { formData, tableData } = req.body;
-    
+
     // Validate item code
-  
+
 
     session.startTransaction();
+    // 🔹 Check if product already exists (by name + company)
+    const existingItem = await productModel.findOne({
+      cmp_id: req.params.cmp_id,
+      product_name: { $regex: `^${formData.itemName.trim()}$`, $options: "i" }
+    }).session(session);
+
+    if (existingItem) {
+      await session.abortTransaction();
+      return res.status(409).json({
+        success: false,
+        message: "Item already exists with this name"
+      });
+    }
 
     // Fetch HSN data
     const correspondingHsn = await hsnModel
@@ -132,11 +145,11 @@ export const getAllItems = async (req, res) => {
   try {
     const params = extractRequestParams(req);
     const filter = buildDatabaseFilterForRoom(params);
-    
+
     // Pagination
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 100;
-  
+
     const skip = (page - 1) * limit;
 
     const products = await productModel
@@ -196,7 +209,7 @@ export const searchItems = async (req, res) => {
         { product_name: searchRegex },
         { hsn_code: searchRegex },
         { unit: searchRegex },
-        {itemCode:searchRegex},
+        { itemCode: searchRegex },
       ],
     };
 
@@ -287,7 +300,7 @@ export const updateItem = async (req, res) => {
       req.params.id,
       {
         $set: {
-             itemCode: formData.itemCode, 
+          itemCode: formData.itemCode,
           product_image: formData.imageUrl?.secure_url,
           product_name: formData.itemName,
           category: formData.foodCategory,
@@ -434,16 +447,16 @@ export const generateKot = async (req, res) => {
     };
 
     const foodPlanData = req.body.customer?.foodPlan;
-    
+
     if (foodPlanData) {
-    
+
       // ✅ DIRECT APPROACH - Use what frontend sends
       foodPlanDetails = {
         planName: foodPlanData.planType || 'Complimentary',
         amount: foodPlanData.amount || 0,
         isComplimentary: Boolean(foodPlanData.isComplimentary) // ✅ Convert to boolean
       };
-      
+
       // Try to save the food plan ID if provided
       if (foodPlanData._id) {
         try {
@@ -455,11 +468,11 @@ export const generateKot = async (req, res) => {
           foodPlanId = null;
         }
       }
-      
-   
+
+
     }
 
-  
+
 
     // Prepare the KOT data
     const kotData = {
@@ -481,7 +494,7 @@ export const generateKot = async (req, res) => {
       paymentMethod: req.body.paymentMethod,
       roomId: req.body.customer?.roomId,
       checkInNumber: req.body.customer?.checkInNumber,
-      
+
       // ✅ Save food plan
       foodPlanId: foodPlanId,
       foodPlanDetails: foodPlanDetails,
@@ -651,7 +664,7 @@ export const getKot = async (req, res) => {
       .find({
         cmp_id,
         createdAt: { $gte: start, $lte: end },
-          status: { $ne: "cancelled" },
+        status: { $ne: "cancelled" },
       })
       .populate("roomId");
 
@@ -1035,15 +1048,15 @@ export const directSale = async (req, res) => {
       }
 
       // ✅ Convert Mongoose document to plain object and ensure _id is included
-      const salesRecordData = savedVoucherData[0].toObject 
-        ? savedVoucherData[0].toObject() 
+      const salesRecordData = savedVoucherData[0].toObject
+        ? savedVoucherData[0].toObject()
         : savedVoucherData[0];
 
       // Return clean JSON response with properly formatted data
       res.status(200).json({
         success: true,
         message: "Direct sale recorded successfully",
-          data: {
+        data: {
           salesRecord: salesRecordData, // Return the full object as-is
           _id: salesRecordData._id, // Also include _id at root for easy access
           saleNumber: saleNumber
@@ -1077,31 +1090,31 @@ export const updateKotPayment = async (req, res) => {
         paymentDetails,
         selectedKotData: kotData,
         isPostToRoom,
-          additionalCharges = [],
+        additionalCharges = [],
         discountCharge,    // ✅ NEW: From frontend dropdown
         discountAmount,
-         discountType,        // ✅ Extract discount type
-      discountValue, 
-       isComplimentary = false, 
-         isManuallyComplimentary = false,  // ✅ NEW: Discount amount
+        discountType,        // ✅ Extract discount type
+        discountValue,
+        isComplimentary = false,
+        isManuallyComplimentary = false,  // ✅ NEW: Discount amount
         note,
       } = req.body;
-    
-console.log("=== STEP 3: BACKEND RECEIVED ===");
+
+      console.log("=== STEP 3: BACKEND RECEIVED ===");
       console.log("req.body.discountCharge:", discountCharge);
       console.log("req.body.discountAmount:", discountAmount);
       console.log("req.body.note:", note);
       console.log("Type of discountAmount:", typeof discountAmount);
-      
+
       // console.log("table", kotData);
 
 
-      
+
       if (!paymentDetails || !kotData) {
         throw new Error("Missing payment details or KOT data");
       }
 
-       if (paymentDetails?.paymentMode === "credit") {
+      if (paymentDetails?.paymentMode === "credit") {
         if (!paymentDetails.selectedCreditor || !paymentDetails.selectedCreditor._id) {
           throw new Error("Please select a creditor for credit payment");
         }
@@ -1120,9 +1133,9 @@ console.log("=== STEP 3: BACKEND RECEIVED ===");
         paymentMethod = "credit";
       }
 
- 
 
-  
+
+
 
       // ✅ Inject remarks
       if (note) {
@@ -1164,14 +1177,14 @@ console.log("=== STEP 3: BACKEND RECEIVED ===");
         paymentMethod == "credit"
           ? creditParty
           : await getSelectedParty(
-              cmp_id,
-              paymentDetails,
-              cashAmt,
-              onlineAmt,
-              kotData,
-              isPostToRoom,
-              session
-            );
+            cmp_id,
+            paymentDetails,
+            cashAmt,
+            onlineAmt,
+            kotData,
+            isPostToRoom,
+            session
+          );
 
       // Payment splitting
       const paymentSplittingArray = createPaymentSplittingArray(
@@ -1196,7 +1209,7 @@ console.log("=== STEP 3: BACKEND RECEIVED ===");
         isComplimentary,
         isManuallyComplimentary
       );
- // ✅ Calculate with DISCOUNT
+      // ✅ Calculate with DISCOUNT
       const originalTotal = Number(kotData?.total || 0);
       const discountTotal = Number(discountAmount || 0);
       const netPayable = originalTotal - discountTotal;
@@ -1218,7 +1231,7 @@ console.log("=== STEP 3: BACKEND RECEIVED ===");
       }
       if (party?.paymentType != "party" && paymentMethod != "credit") {
         console.log("undddd")
-       
+
         await saveSettlement(
           paymentDetails,
           selectedParty,
@@ -1246,20 +1259,20 @@ console.log("=== STEP 3: BACKEND RECEIVED ===");
       }
 
       // Update KOTs
-       paymentCompleted = true;
+      paymentCompleted = true;
       let selectedTableNumber = [];
 
       await Promise.all(
         kotData?.voucherNumber.map(async (item) => {
           const kot = await kotModal.findById(item.id).lean();
-          
+
           if (kot?.tableNumber && !selectedTableNumber.includes(kot.tableNumber)) {
             selectedTableNumber.push(kot.tableNumber);
           }
 
           console.log(`=== UPDATING KOT ${item.id} ===`);
           console.log("Current food plan:", kot.foodPlanDetails);
-          
+
           // Build update object
           const updateData = {
             paymentMethod,
@@ -1293,7 +1306,7 @@ console.log("=== STEP 3: BACKEND RECEIVED ===");
       let updatedTables = [];
       for (const tableNumber of selectedTableNumber) {
         if (!tableNumber) continue; // Skip if tableNumber is null/undefined
-        
+
         const pendingCount = await kotModal
           .countDocuments({
             cmp_id,
@@ -1308,7 +1321,7 @@ console.log("=== STEP 3: BACKEND RECEIVED ===");
         if (pendingCount === 0) {
           const updateTableStatus = await Table.findOneAndUpdate(
             { cmp_id, tableNumber },
-            { 
+            {
               status: "available",
               currentOrders: 0,  // ✅ Reset order count
               updatedAt: new Date()
@@ -1327,14 +1340,14 @@ console.log("=== STEP 3: BACKEND RECEIVED ===");
       res.status(200).json({
         success: true,
         message: "KOT payment updated successfully",
-       data: { 
-          saleNumber, 
+        data: {
+          saleNumber,
           salesRecord: savedVoucherData[0],
           discountApplied: discountAmount || 0,
-      
-           isComplimentary: isComplimentary,
+
+          isComplimentary: isComplimentary,
           isManuallyComplimentary: isManuallyComplimentary,
-        // ✅ RETURN for confirmation
+          // ✅ RETURN for confirmation
         },
       });
     });
@@ -1354,7 +1367,7 @@ async function createSplitPaymentArray(payments, cmp_id, session) {
 
   for (const payment of payments) {
     console.log('Processing payment:', JSON.stringify(payment, null, 2));
-    
+
     // Find the account (cash or bank) from the database
     const account = await Party.findOne({
       cmp_id,
@@ -1371,7 +1384,7 @@ async function createSplitPaymentArray(payments, cmp_id, session) {
     }
 
     const accountName = account.partyName || account.name || account.ledgerName || payment.accountName;
-    
+
     if (!accountName) {
       console.error('Account object:', account);
       throw new Error(`Account has no name field. Available fields: ${Object.keys(account).join(', ')}`);
@@ -1380,7 +1393,7 @@ async function createSplitPaymentArray(payments, cmp_id, session) {
     // ✅ FIX: Map payment method to the correct type field
     let paymentType;
     const method = payment.method.toLowerCase();
-    
+
     if (method === 'cash') {
       paymentType = 'cash';
     } else if (['upi', 'online', 'card', 'bank'].includes(method)) {
@@ -1417,7 +1430,7 @@ async function createSplitPaymentArray(payments, cmp_id, session) {
 //   session
 // ) {
 //   console.log('Processing settlements for', payments.length, 'payments');
-  
+
 //   for (const payment of payments) {
 //     // Find the account
 //     const account = await Party.findOne({
@@ -1433,7 +1446,7 @@ async function createSplitPaymentArray(payments, cmp_id, session) {
 //     }
 
 //     const amount = Number(payment.amount);
-    
+
 //     // ✅ Map method to settlement type
 //     const settlementType = payment.method === 'cash' ? 'cash' : 'bank';
 
@@ -1653,7 +1666,7 @@ async function createSalesVoucher(
   session
 ) {
   console.log("kotData", kotData);
-  
+
   // ✅ FIXED: Use SUBTOTAL (BEFORE discount)
   const originalTotal = Number(kotData?.subtotal || kotData?.total || 0); // 1000 ✅
   const additionalCharges = req.body.additionalCharges || [];
@@ -1671,7 +1684,7 @@ async function createSalesVoucher(
 
   const finalAmount = originalTotal - discountTotal;
 
-  console.log("🔥 FINAL CALCULATIONS:", { 
+  console.log("🔥 FINAL CALCULATIONS:", {
     originalTotal,      // 1000
     discountTotal,      // 200
     finalAmount,        // 800
@@ -1697,14 +1710,14 @@ async function createSalesVoucher(
         items: kotData?.items,
         despatchDetails: {}, // ✅ Added missing
         address: kotData?.customer,
-        
+
         subTotal: originalTotal,
         additionalCharges: additionalCharges,
         totalAdditionalCharges: totalAdditionalCharges,
         totalWithAdditionalCharges: finalAmount,
         finalAmount: finalAmount,
         isComplimentary: isComplimentary, // ✅ SAVE FLAG
-        
+
         narration: req.body.narration || "",
         remarks: req.body.remarks || "",
         note: req.body.note || req.body.remarks || "",
@@ -1770,7 +1783,7 @@ async function saveSettlement(
 
   if (paymentDetails?.paymentMode === "single") {
     console.log("hhh")
-    console.log("bbbbbbbbbbbbbbbbbbbbbb",req)
+    console.log("bbbbbbbbbbbbbbbbbbbbbb", req)
     await saveSettlementData(
       selectedParty,
       cmp_id,
@@ -1792,7 +1805,7 @@ async function saveSettlement(
         cmp_id,
         "cash",
         "sales",
-         "Sales",
+        "Sales",
         savedVoucher?.salesNumber,
         savedVoucher?._id,
         cashAmt,
@@ -1808,7 +1821,7 @@ async function saveSettlement(
         cmp_id,
         "bank",
         "sales",
-         "Sales",
+        "Sales",
         savedVoucher?.salesNumber,
         savedVoucher?._id,
         onlineAmt,
@@ -1849,9 +1862,9 @@ export const getPaymentType = async (req, res) => {
 // function used to fetch sale data for print
 export const getSalePrintData = async (req, res) => {
   try {
-      const { cmp_id, kotId } = req.params;
-   
-  let salesData = await salesModel.findOne({
+    const { cmp_id, kotId } = req.params;
+
+    let salesData = await salesModel.findOne({
       _id: kotId, // kotId parameter is actually the saleId for direct sales
       cmp_id: cmp_id,
     });
@@ -2063,12 +2076,12 @@ export const updateTableStatus = async (req, res) => {
     const { cmp_id } = req.params;
     const { tableNumber, status } = req.body;
 
-     const updatedTable = await Table.findOneAndUpdate(
+    const updatedTable = await Table.findOneAndUpdate(
       { cmp_id, tableNumber },
       { status },
       { new: true }
     );
-    
+
     res.status(200).json({ success: true, data: updatedTable });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
