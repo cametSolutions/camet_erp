@@ -17,6 +17,7 @@ const ProductSubDetailsForm = ({
   isRestaurants = false,
   categoriesData = [],
 }) => {
+  console.log(isHotel)
   const [value, setValue] = useState("");
   const [price, setPrice] = useState("");
   const [data, setData] = useState([]);
@@ -362,7 +363,7 @@ const handleEdit = async (id, value, data, categoriesData) => {
   }
 };
 
-  console.log(data);
+  console.log(tab);
   return (
    // Replace your main container div with this fixed version
 
@@ -391,7 +392,7 @@ const handleEdit = async (id, value, data, categoriesData) => {
         onChange={(e) => setValue(e.target.value)}
       />
 
-      {isHotel && (
+      {isHotel && (tab !== "bedType" && tab !== "roomFloor") && (
         <input
           type="number"
           placeholder={`Enter your ${tab} price`}
@@ -484,7 +485,9 @@ const handleEdit = async (id, value, data, categoriesData) => {
       <div className="mt-2 w-full">
         {data?.length > 0 && !loading ? (
           data.map((el, index) => {
-            console.log("Rendering item", index, el);
+            if(isHotel && el.under == "restaurant"){
+              return null
+            }
             return (
               <div
                 key={el._id}
@@ -500,8 +503,8 @@ const handleEdit = async (id, value, data, categoriesData) => {
                     : el.subcategory}
                 </div>
                 
-                {el?.roomRent && (
-                  <div className="px-6 text-left text-wrap text-blueGray-700 text-sm font-bold text-gray-500 w-1/3">
+              {el?.roomRent !== undefined && el?.roomRent !== null && (
+                  <div className="px-6 text-left  text-wrap text-blueGray-700 text-sm font-bold text-gray-500 w-1/3">
                     {el?.roomRent}
                   </div>
                 )}

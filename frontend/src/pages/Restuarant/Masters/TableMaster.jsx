@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
-import { toast } from "react-toastify";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import api from "@/api/api";
 import TitleDiv from "@/components/common/TitleDiv";
 import CustomBarLoader from "@/components/common/CustomBarLoader";
+import {toast} from "sonner"
 
 const TableMaster = () => {
   const [tableNumber, setTableNumber] = useState("");
@@ -58,10 +58,12 @@ const TableMaster = () => {
       setTableNumber("");
       setDescription('');
       fetchTables(); // Refresh the list
+      
     } catch (error) {
-      console.error("Failed to add table:", error);
+      console.error("Failed to add table:", error.response?.data?.message);
       toast.error(error.response?.data?.message || "Failed to add table");
     } finally {
+      
       setLoading(false);
     }
   };

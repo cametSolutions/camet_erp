@@ -683,6 +683,10 @@ function BookingForm({
       toast.error("Please enter a customer name");
       return;
     }
+    if(Number(formData.grandTotal) < 0){
+      toast.error("Please select at least one room or enter price for selected room");
+      return;
+    }
 
     let customerId = formData.customerId?.trim?.() || formData.customerId || "";
     let customerName = formData.customerName.trim(); // Use trimmed name
