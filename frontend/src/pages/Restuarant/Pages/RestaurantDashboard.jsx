@@ -441,7 +441,7 @@ const RestaurantPOS = () => {
   useEffect(() => {
     if (roomBookingData) {
       console.log("=== RAW ROOM BOOKING DATA ===")
-      console.log("First booking:", roomBookingData?.data[0])
+      console.log("First booking:", roomBookingData?.data)
 
       const getRooms = roomBookingData?.data?.flatMap((room) => {
         console.log("Processing booking, foodPlan array:", room?.foodPlan)
@@ -486,14 +486,7 @@ const RestaurantPOS = () => {
       })
 
       console.log("=== ALL PROCESSED ROOMS ===")
-      console.log(
-        getRooms
-          .filter((r) => r.foodPlan)
-          .map((r) => ({
-            room: r.roomName,
-            foodPlan: r.foodPlan
-          }))
-      )
+      
 
       setRoomData(getRooms)
     }

@@ -1376,7 +1376,9 @@ console.log(selectedCustomer)
           </div>
 
           <div className="w-24 text-center text-gray-600 font-medium">
-            {el?.selectedRooms?.map((r) => r.roomName).join(", ") || "-"}
+            {/* {el?.selectedRooms?.map((r) => r.roomName).join(", ") || "-"} */}
+            {el?.selectedRooms[0]?.roomName || "-"} 
+            {el.selectedRooms.length > 1 && "....."}
           </div>
 
           <div className="w-36 text-center text-gray-600 text-xs">
@@ -1386,8 +1388,10 @@ console.log(selectedCustomer)
 
           <div className="w-28 text-center text-gray-600 text-xs">
             ₹
-            {el?.selectedRooms?.map((r) => r.priceLevelRate).join(",") ||
-              "0.00"}
+            {el?.selectedRooms[0]?.priceLevelRate ||  "0.00"} 
+            {el.selectedRooms.length > 1 && "....."}
+            {/* {el?.selectedRooms?.map((r) => r.priceLevelRate).join(",") ||
+              "0.00"} */}
           </div>
 
           <div className="w-20 text-center text-gray-600 font-medium">

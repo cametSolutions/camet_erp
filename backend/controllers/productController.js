@@ -220,7 +220,7 @@ export const editProduct = async (req, res) => {
     const updateProduct = await productModel.findOneAndUpdate(
       { _id: productId },
       dataToSave,
-      { new: true }
+      { new: true },
     );
     res.status(200).json({
       success: true,
@@ -294,6 +294,36 @@ export const addProductSubDetails = async (req, res) => {
     /// add godownEnabled tag to company
     const company = await OragnizationModel.findOne({ _id: orgId });
     const generatedId = new mongoose.Types.ObjectId();
+
+    let findAlreadyNameExist = null;
+
+    if (key === "roomType") {
+       findAlreadyNameExist = await Brand.findOne({
+        brand: subDetails[key],
+        cmp_id: orgId,
+      });
+    } else if (key === "bedType" || key === "Regional Food Category") {
+      console.log(subDetails[key],"dsssssssss");
+      findAlreadyNameExist = await Category.findOne({
+      category: subDetails[key],
+      cmp_id: orgId,
+      });
+    } else if (key === "roomFloor" || key === "foodItems") {
+      findAlreadyNameExist = await Subcategory.findOne({
+        subcategory: subDetails[key],
+        cmp_id: orgId,
+      });
+    }
+
+    // Common validation
+    if (findAlreadyNameExist) {
+      return res.status(400).json({
+        success: false,
+        message: `${key} already exists`,
+      });
+    }
+
+
     switch (key) {
       case "brand":
       case "roomType":
@@ -376,10 +406,10 @@ export const addProductSubDetails = async (req, res) => {
           // pricelevel_id: generatedId,
           cmp_id: orgId,
           Primary_user_id: req.pUserId || req.owner,
-           dineIn: subDetails.dineIn || "",      // store dropdown value
-    takeaway: subDetails.takeaway || "",  // store dropdown value
-    roomService: subDetails.roomService || "", // store dropdown value
-    delivery: subDetails.delivery || "",  // store dropdown value
+          dineIn: subDetails.dineIn || "", // store dropdown value
+          takeaway: subDetails.takeaway || "", // store dropdown value
+          roomService: subDetails.roomService || "", // store dropdown value
+          delivery: subDetails.delivery || "", // store dropdown value
         };
         break;
       default:
@@ -416,7 +446,7 @@ export const getProductSubDetails = async (req, res) => {
     const Primary_user_id = req.pUserId || req.owner;
     const secondaryUser = await SecondaryUser.findById(req.sUserId);
     const configuration = secondaryUser.configurations.find(
-      (config) => config?.organization?.toString() === orgId
+      (config) => config?.organization?.toString() === orgId,
     );
 
     let data;
@@ -467,7 +497,7 @@ export const getProductSubDetails = async (req, res) => {
         if (configuration?.selectedGodowns.length > 0 && restrict) {
           console.log(data);
           data = data.filter((godown) =>
-            configuration.selectedGodowns.includes(godown._id)
+            configuration.selectedGodowns.includes(godown._id),
           );
         }
 
@@ -557,9 +587,36 @@ export const editProductSubDetails = async (req, res) => {
   try {
     const { orgId, id } = req.params;
     const { type } = req.query;
-    console.log("Edit request - Type:", type);
-    console.log("Edit request - Body:", req.body);
-    console.log("Edit request - ID:", id);
+
+    let findAlreadyNameExist = null;
+
+    if (type === "roomType") {
+      findAlreadyNameExist = await Brand.findOne({
+        brand: req.body.roomType,
+        cmp_id: orgId,
+        _id: { $ne: id },
+      });
+    } else if (type === "bedType" || type === "Regional Food Category") {
+      findAlreadyNameExist = await Category.findOne({
+        category: req.body.bedType || req.body["Regional Food Category"],
+        cmp_id: orgId,
+        _id: { $ne: id },
+      });
+    } else if (type === "roomFloor" || type === "foodItems") {
+      findAlreadyNameExist = await Subcategory.findOne({
+        subcategory: req.body.roomFloor || req.body.foodItems,
+        cmp_id: orgId,
+        _id: { $ne: id },
+      });
+    }
+
+    // Common validation
+    if (findAlreadyNameExist) {
+      return res.status(400).json({
+        success: false,
+        message: `${type} already exists with in the restaurant or hotel`,
+      });
+    }
 
     let Model;
     switch (type) {
@@ -589,15 +646,15 @@ export const editProductSubDetails = async (req, res) => {
 
     const queryConditions = { _id: id, cmp_id: orgId };
     let result;
-    
+
     // Check if item exists first
     const existingItem = await Model.findOne(queryConditions);
     if (!existingItem) {
       return res.status(404).json({ message: "Item not found" });
     }
-    
+
     console.log("Existing item:", existingItem);
-    
+
     if (type === "roomType") {
       result = await Model.updateOne(queryConditions, {
         brand: req.body.roomType,
@@ -623,7 +680,7 @@ export const editProductSubDetails = async (req, res) => {
     } else if (type === "pricelevel") {
       // Build update object dynamically, only including changed fields
       const updateFields = {};
-      
+
       if (req.body.pricelevel !== undefined) {
         updateFields.pricelevel = req.body.pricelevel;
       }
@@ -639,9 +696,9 @@ export const editProductSubDetails = async (req, res) => {
       if (req.body.delivery !== undefined) {
         updateFields.delivery = req.body.delivery;
       }
-      
+
       console.log("PriceLevel update fields:", updateFields);
-      
+
       result = await Model.updateOne(queryConditions, updateFields);
     } else {
       const updateOperation = { [type]: req.body[type] };
@@ -658,7 +715,7 @@ export const editProductSubDetails = async (req, res) => {
     // So we'll consider it successful if matchedCount > 0
     if (type === "pricelevel" || result.modifiedCount > 0) {
       const updatedItem = await Model.findOne(queryConditions);
-      
+
       return res.status(200).json({
         message: `${type} updated successfully`,
         data: updatedItem,
@@ -669,12 +726,11 @@ export const editProductSubDetails = async (req, res) => {
         data: existingItem,
       });
     }
-
   } catch (error) {
     console.error("Error in editProductSubDetails:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       message: "An error occurred while updating the sub-detail",
-      error: error.message 
+      error: error.message,
     });
   }
 };
@@ -696,7 +752,7 @@ export const getProducts = async (req, res) => {
 
     // Get user configuration for the specified organization
     const configuration = secUser.configurations.find(
-      (item) => item.organization == params.cmp_id
+      (item) => item.organization == params.cmp_id,
     );
 
     /// to find if tax inclusive is enabled
@@ -737,7 +793,7 @@ export const getProducts = async (req, res) => {
     // Execute database operations
     const { products, totalProducts } = await fetchProductsFromDatabase(
       filter,
-      params
+      params,
     );
 
     // Transform products according to business rules
@@ -759,24 +815,21 @@ export const getProducts = async (req, res) => {
   }
 };
 
-
-
 export const getAllProductsForExcel = async (req, res) => {
-
-   try {
+  try {
     const { cmp_id } = req.params;
     const { search } = req.query;
 
     // Build match stage for aggregation
-    let matchStage = { 
-      cmp_id: new mongoose.Types.ObjectId(cmp_id)
+    let matchStage = {
+      cmp_id: new mongoose.Types.ObjectId(cmp_id),
     };
-    
+
     if (search) {
       matchStage.$or = [
-        { product_name: { $regex: search, $options: 'i' } },
-        { product_code: { $regex: search, $options: 'i' } },
-        { hsn_code: { $regex: search, $options: 'i' } }
+        { product_name: { $regex: search, $options: "i" } },
+        { product_code: { $regex: search, $options: "i" } },
+        { hsn_code: { $regex: search, $options: "i" } },
       ];
     }
 
@@ -784,7 +837,7 @@ export const getAllProductsForExcel = async (req, res) => {
     const aggregationPipeline = [
       // Stage 1: Match - Filter early to reduce data processing
       {
-        $match: matchStage
+        $match: matchStage,
       },
       // Stage 2: Project only required fields early to reduce memory usage
       {
@@ -809,35 +862,35 @@ export const getAllProductsForExcel = async (req, res) => {
           unit_conversion: 1,
           brand: 1,
           category: 1,
-          sub_category: 1
-        }
+          sub_category: 1,
+        },
       },
       // Stage 3: Lookup Brand data
       {
         $lookup: {
-          from: 'brands',
-          localField: 'brand',
-          foreignField: '_id',
-          as: 'brandData'
-        }
+          from: "brands",
+          localField: "brand",
+          foreignField: "_id",
+          as: "brandData",
+        },
       },
       // Stage 4: Lookup Category data
       {
         $lookup: {
-          from: 'categories',
-          localField: 'category',
-          foreignField: '_id',
-          as: 'categoryData'
-        }
+          from: "categories",
+          localField: "category",
+          foreignField: "_id",
+          as: "categoryData",
+        },
       },
       // Stage 5: Lookup Subcategory data
       {
         $lookup: {
-          from: 'subcategories',
-          localField: 'sub_category',
-          foreignField: '_id',
-          as: 'subCategoryData'
-        }
+          from: "subcategories",
+          localField: "sub_category",
+          foreignField: "_id",
+          as: "subCategoryData",
+        },
       },
       // Stage 6: Final projection with flattened data
       {
@@ -860,69 +913,65 @@ export const getAllProductsForExcel = async (req, res) => {
           alt_unit: 1,
           alt_unit_conversion: 1,
           unit_conversion: 1,
-          brandName: { 
-            $ifNull: [
-              { $arrayElemAt: ['$brandData.brand', 0] }, 
-              ''
-            ]
+          brandName: {
+            $ifNull: [{ $arrayElemAt: ["$brandData.brand", 0] }, ""],
           },
-          categoryName: { 
-            $ifNull: [
-              { $arrayElemAt: ['$categoryData.category', 0] }, 
-              ''
-            ]
+          categoryName: {
+            $ifNull: [{ $arrayElemAt: ["$categoryData.category", 0] }, ""],
           },
-          subCategoryName: { 
+          subCategoryName: {
             $ifNull: [
-              { $arrayElemAt: ['$subCategoryData.subcategory', 0] }, 
-              ''
-            ]
-          }
-        }
-      }
+              { $arrayElemAt: ["$subCategoryData.subcategory", 0] },
+              "",
+            ],
+          },
+        },
+      },
     ];
 
     // Execute aggregation with proper options
-    const products = await productModel.aggregate(aggregationPipeline).allowDiskUse(true).exec();
+    const products = await productModel
+      .aggregate(aggregationPipeline)
+      .allowDiskUse(true)
+      .exec();
 
     // Transform data for Excel export
-    const excelData = products.map(product => ({
-      'Product Name': product.product_name || '',
-      'Product Code': product.product_code || '',
-      'HSN Code': product.hsn_code || '',
-      'Brand': product.brandName || '',
-      'Category': product.categoryName || '',
-      'Sub Category': product.subCategoryName || '',
-      'Unit': product.unit || '',
-      'Balance Stock': product.balance_stock || 0,
-      'Purchase Price': product.purchase_price || 0,
-      'Purchase Cost': product.purchase_cost || 0,
-      'MRP': product.item_mrp || 0,
-      'CGST %': product.cgst || 0,
-      'SGST %': product.sgst || 0,
-      'IGST %': product.igst || 0,
-      'CESS %': product.cess || 0,
-      'Additional CESS %': product.addl_cess || 0,
-      'Batch Enabled': product.batchEnabled ? 'Yes' : 'No',
-      'Godown Enabled': product.gdnEnabled ? 'Yes' : 'No',
-      'Alt Unit': product.alt_unit || '',
-      'Alt Unit Conversion': product.alt_unit_conversion || '',
-      'Unit Conversion': product.unit_conversion || ''
+    const excelData = products.map((product) => ({
+      "Product Name": product.product_name || "",
+      "Product Code": product.product_code || "",
+      "HSN Code": product.hsn_code || "",
+      Brand: product.brandName || "",
+      Category: product.categoryName || "",
+      "Sub Category": product.subCategoryName || "",
+      Unit: product.unit || "",
+      "Balance Stock": product.balance_stock || 0,
+      "Purchase Price": product.purchase_price || 0,
+      "Purchase Cost": product.purchase_cost || 0,
+      MRP: product.item_mrp || 0,
+      "CGST %": product.cgst || 0,
+      "SGST %": product.sgst || 0,
+      "IGST %": product.igst || 0,
+      "CESS %": product.cess || 0,
+      "Additional CESS %": product.addl_cess || 0,
+      "Batch Enabled": product.batchEnabled ? "Yes" : "No",
+      "Godown Enabled": product.gdnEnabled ? "Yes" : "No",
+      "Alt Unit": product.alt_unit || "",
+      "Alt Unit Conversion": product.alt_unit_conversion || "",
+      "Unit Conversion": product.unit_conversion || "",
     }));
 
     res.json({
       success: true,
       data: excelData,
       totalCount: products.length,
-      message: 'Products fetched successfully for Excel export'
+      message: "Products fetched successfully for Excel export",
     });
-
   } catch (error) {
-    console.error('Error fetching products for Excel:', error);
+    console.error("Error fetching products for Excel:", error);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch products for Excel export',
-      error: error.message
+      message: "Failed to fetch products for Excel export",
+      error: error.message,
     });
   }
 };
