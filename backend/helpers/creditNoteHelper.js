@@ -200,7 +200,7 @@ export const createCreditNoteRecord = async (
     if (lastCreditNote && !isNaN(lastCreditNote.serialNumber)) {
       newSerialNumber = lastCreditNote.serialNumber + 1;
     }
-
+console.log("line 203 creditnote")
     const creditNote = new model({
       selectedGodownId: selectedGodownId ?? "",
       selectedGodownName: selectedGodownName ? selectedGodownName[0] : "",

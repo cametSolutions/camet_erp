@@ -50,6 +50,18 @@ export const saveAdditionalPax = async (req, res) => {
     const { additionalPaxName, amount } = req.body;
     const { cmp_id } = req.params;
 
+    let nameAlreadyExists = await AdditionalPax.findOne({
+      additionalPaxName,
+      cmp_id,
+      Primary_user_id: req.pUserId || req.owner,
+    });
+
+    if (nameAlreadyExists) {
+      return res.status(400).json({
+        message: "Additional Pax name already exists",
+      });
+    }
+
     const generatedId = new mongoose.Types.ObjectId();
     const newPax = new AdditionalPax({
       _id: generatedId,
@@ -108,6 +120,17 @@ export const getAdditionalPax = async (req, res) => {
 export const updateAdditionalPax = async (req, res) => {
   try {
     const { additionalPaxName, amount, id } = req.body;
+    let nameAlreadyExists = await AdditionalPax.findOne({
+      additionalPaxName,
+      Primary_user_id: req.pUserId || req.owner,
+      _id: { $ne: id },
+    });
+
+    if (nameAlreadyExists) {
+      return res.status(400).json({
+        message: "Additional Pax name already exists",
+      });
+    }
     const updatedPax = await AdditionalPax.findOneAndUpdate(
       { _id: id },
       {
@@ -177,6 +200,18 @@ export const saveVisitOfPurpose = async (req, res) => {
     const { visitOfPurpose } = req.body;
     const { cmp_id } = req.params;
     const generatedId = new mongoose.Types.ObjectId();
+
+    let nameAlreadyExists = await VisitOfPurpose.findOne({
+      visitOfPurpose,
+      cmp_id,
+      Primary_user_id: req.pUserId || req.owner,
+    });
+
+    if (nameAlreadyExists) {
+      return res.status(400).json({
+        message: "Visit of purpose name already exists",
+      });
+    }
     const newVisitOfPurpose = new VisitOfPurpose({
       _id: generatedId,
       visitOfPurpose,
@@ -237,6 +272,18 @@ export const updateVisitOfPurpose = async (req, res) => {
 
     if (!ObjectId.isValid(visitOfPurposeId) || !ObjectId.isValid(cmp_id)) {
       return res.status(400).json({ error: "Invalid ID format" });
+    }
+    let nameAlreadyExists = await VisitOfPurpose.findOne({
+      visitOfPurpose,
+      cmp_id,
+      Primary_user_id: req.pUserId || req.owner,
+      _id: { $ne: new ObjectId(visitOfPurposeId) },
+    });
+
+    if (nameAlreadyExists) {
+      return res.status(400).json({
+        message: "Visit of purpose name already exists",
+      });
     }
 
     const updatedVisitOfPurpose = await VisitOfPurpose.findOneAndUpdate(
@@ -310,6 +357,18 @@ export const saveIdProof = async (req, res) => {
   try {
     const { idProof } = req.body;
     const { cmp_id } = req.params;
+     let nameAlreadyExists = await IdProof.findOne({
+      idProof,
+      cmp_id,
+      Primary_user_id: req.pUserId || req.owner,
+     
+    });
+
+    if (nameAlreadyExists) {
+      return res.status(400).json({
+        message: "Id proof name already exists",
+      });
+    }
     const generatedId = new mongoose.Types.ObjectId();
     const newIdProof = new IdProof({
       _id: generatedId,
@@ -370,6 +429,20 @@ export const updateIdProof = async (req, res) => {
     const { idProof, idProofId } = req.body;
 
     const { cmp_id } = req.params;
+
+   let nameAlreadyExists = await IdProof.findOne({
+      idProof,
+      cmp_id,
+      Primary_user_id: req.pUserId || req.owner,
+      _id: { $ne: new ObjectId(idProofId) },
+     
+    });
+
+    if (nameAlreadyExists) {
+      return res.status(400).json({
+        message: "Id proof name already exists",
+      });
+    }
 
     if (!ObjectId.isValid(idProofId) || !ObjectId.isValid(cmp_id)) {
       return res.status(400).json({ error: "Invalid ID format" });
@@ -447,6 +520,20 @@ export const saveFoodPlan = async (req, res) => {
     const { foodPlan, amount, isComplimentary = false } = req.body; // ✅ EXTRACT
     const { cmp_id } = req.params;
 
+    let nameAlreadyExists = await FoodPlan.findOne({
+      foodPlan,
+      cmp_id,
+      Primary_user_id: req.pUserId || req.owner,
+
+    });
+
+    if (nameAlreadyExists) {
+      return res.status(400).json({
+        message: "Food plan name already exists",
+      });
+    }
+
+
     const generatedId = new mongoose.Types.ObjectId();
 
     const newFoodPlan = new FoodPlan({
@@ -511,6 +598,20 @@ export const updateFoodPlan = async (req, res) => {
     const { foodPlan, amount, foodPlanId, isComplimentary = false } = req.body;
 
     const { cmp_id } = req.params;
+
+       let nameAlreadyExists = await FoodPlan.findOne({
+      foodPlan,
+      cmp_id,
+      Primary_user_id: req.pUserId || req.owner,
+      _id: { $ne: new ObjectId(foodPlanId) },
+
+    });
+
+    if (nameAlreadyExists) {
+      return res.status(400).json({
+        message: "Food plan name already exists",
+      });
+    }
 
     const updatedFoodPlan = await FoodPlan.findOneAndUpdate(
       { _id: foodPlanId, cmp_id },
@@ -584,6 +685,18 @@ export const addRoom = async (req, res) => {
     const { formData, tableData } = req.body;
 
     session.startTransaction(); // Step 2: Start transaction
+    let findRoomNameAlreadyExist = await roomModal
+      .findOne({
+        primary_user_id: req.pUserId || req.owner,
+        cmp_id: req.params.cmp_id,
+        roomName: formData.roomName,
+      })
+      .session(session);
+
+    if (findRoomNameAlreadyExist) {
+      await session.abortTransaction();
+      return res.status(400).json({ message: "Room name already exist" });
+    }
 
     // Step 3: Fetch HSN data inside the session
     const correspondingHsn = await hsnModel
@@ -824,6 +937,20 @@ export const editRoom = async (req, res) => {
     // Step 2: Start the transaction
     session.startTransaction();
 
+    let findRoomNameAlreadyExist = await roomModal
+      .findOne({
+        _id: { $ne: req.params.id },
+        primary_user_id: req.pUserId || req.owner,
+        cmp_id: req.params.cmp_id,
+        roomName: formData.roomName,
+      })
+      .session(session);
+
+    if (findRoomNameAlreadyExist) {
+      await session.abortTransaction();
+      return res.status(400).json({ message: "Room name already exist" });
+    }
+
     // Step 3: Validate HSN existence within session
     const correspondingHsn = await hsnModel
       .findOne({ _id: formData.hsn })
@@ -1057,7 +1184,7 @@ export const roomBooking = async (req, res) => {
             remainingAmount: 0,
           },
         ];
-
+        console.log("buiidddreceipttttttt");
         // 🔹 Build Receipt Function
         const buildReceipt = async (
           receiptVoucher,
@@ -1080,7 +1207,7 @@ export const roomBooking = async (req, res) => {
             }
             delete selectedParty.accountGroup;
           }
-
+          console.log("line 1083 hotelcontroller");
           const receipt = new ReceiptModel({
             createdAt: new Date(),
             date: await formatToLocalDate(new Date(), orgId, session),
@@ -1694,6 +1821,7 @@ export const updateBooking = async (req, res) => {
       req,
       session,
     ) => {
+      console.log("line1696 hotelcontroller");
       const receipt = new ReceiptModel({
         createdAt: new Date(),
         date: await formatToLocalDate(new Date(), orgId, session),
@@ -1804,7 +1932,7 @@ export const updateBooking = async (req, res) => {
                   bank_ledname: singlePaymentDetails?.accountName,
                   bank_name: singlePaymentDetails?.accountName,
                 };
-
+          console.log("line 1807");
           // Receipt
           await buildReceipt(
             receiptVoucher,
@@ -1881,7 +2009,7 @@ export const updateBooking = async (req, res) => {
                     bank_ledname: payment?.accountName,
                     bank_name: payment?.accountName,
                   };
-
+            console.log("line 1884");
             await buildReceipt(
               receiptVoucher,
               serialNumber,
@@ -2007,7 +2135,6 @@ export const fetchAdvanceDetails = async (req, res) => {
       let checkInData = await CheckIn.findOne({
         _id: bookingId,
       });
-      console.log("checkInData", checkInData);
       if (checkInData) {
         let bookingSideAdvanceDetails = [];
         if (checkInData.bookingId) {
@@ -2597,6 +2724,7 @@ export const convertCheckOutToSale = async (req, res) => {
 
     await session.withTransaction(async () => {
       const { cmp_id } = req.params;
+      console.log("cmpidddd", cmp_id);
 
       const {
         paymentDetails,
@@ -2620,6 +2748,7 @@ export const convertCheckOutToSale = async (req, res) => {
       // Process each checkout separately
       let results;
       for (const item of selectedCheckOut) {
+        console.log("itemdddddd", item);
         const bookingVoucherNumber =
           item?.bookingId?.voucherNumber || item?.bookingId;
         const checkingVoucherNumber = item?.voucherNumber;
@@ -2631,7 +2760,6 @@ export const convertCheckOutToSale = async (req, res) => {
         });
         //helper:merge advance in booking and checking to checkoutbalance
         const mergePayment = (target, src) => {
-          console.log("src", src);
           if (!src) return;
           const keys = ["cash", "upi", "bank", "card", "credit"];
           keys.forEach((key) => {
@@ -2643,9 +2771,7 @@ export const convertCheckOutToSale = async (req, res) => {
 
         // 1) start from existing paymentDetails.paymenttypeDetails
         const merged = { ...paymentDetails.paymenttypeDetails };
-        console.log("mathcedbooking", matchedBooking[0]);
-        console.log("matchedcheckin", matchedCheckin[0]);
-        console.log("merged,", merged);
+
         // 2) if booking has paymenttypeDetails, merge it
         if (matchedBooking[0]?.paymenttypeDetails) {
           mergePayment(merged, matchedBooking[0].paymenttypeDetails);
@@ -2658,7 +2784,6 @@ export const convertCheckOutToSale = async (req, res) => {
 
         // 4) assign back to paymentDetails
         paymentDetails.paymenttypeDetails = merged;
-        console.log("paymentnewwwwwwwwwwwwww", paymentDetails);
         results = [];
         const selectedPartyId = item?.customerId?._id || item?.customerId;
         if (!selectedPartyId)
@@ -2821,6 +2946,9 @@ export const convertCheckOutToSale = async (req, res) => {
           checkOutDoc[0]._id,
           amount,
         );
+        if (savedVoucherData) {
+          console.log(savedVoucherData.length);
+        }
         // console.log("savedsale", savedVoucherData)
 
         // Create Tally Entry
@@ -2940,14 +3068,12 @@ export const convertCheckOutToSale = async (req, res) => {
           let sourceType;
 
           if (cashAmt > 0 && onlineAmt > 0) {
-            console.log("cashamount>0&&onlineamt>0");
             // Both cash and bank - use cash as primary, mark as "mixed"
             primarySource = await Party.findOne({
               _id: paymentDetails?.selectedCash,
             }).session(session);
             sourceType = "mixed";
           } else if (cashAmt > 0) {
-            console.log("cashamount>0");
             // Cash only
             primarySource = await Party.findOne({
               _id: paymentDetails?.selectedCash,
@@ -2961,8 +3087,7 @@ export const convertCheckOutToSale = async (req, res) => {
             }).session(session);
             sourceType = "bank";
           }
-          console.log("sourcetype", sourceType);
-          console.log("primarysourece", primarySource);
+
           // Create ONE settlement for all sales
           await saveSettlement(
             paymentDetails,
@@ -3027,6 +3152,7 @@ export const convertCheckOutToSale = async (req, res) => {
           // console.log(JSON.stringify(results, null, 2));
 
           // console.log("dddddddddddddddddddddddddddd", results[0]?.salesRecord?.party?.accountGroup_id)
+          console.log("ssssssssssssssssssssssssssssssssssssssssssssss");
           await createReceiptForSales(
             cmp_id,
             paymentDetails,
@@ -3041,6 +3167,7 @@ export const convertCheckOutToSale = async (req, res) => {
             restaurantBaseSaleData,
             session,
           );
+          console.log("endupppppppppp");
         }
       }
 
@@ -3275,7 +3402,6 @@ async function createTallyEntry(
   //       classification: "Dr",
   //       source: "sales",
   //     },);
-  console.log();
   return await TallyData.create(
     [
       {
@@ -4039,32 +4165,117 @@ export const getHotelSalesDetails = async (req, res) => {
       },
     );
 
-    if (type === "hotel" || type === "all") {
-      summary.hotelSales = {
-        count: summary?.totalCount,
-        amount: summary?.hotelTotalAmount,
-        agentCount: summary?.agentCount,
-        agentWithOut: summary?.countWithOutAgent,
-        agentTotalAmount: summary?.agentTotal,
-      };
-    }
+    // Calculate analytics
+    const totalSales = summary.totalFinalAmount;
+    const totalTransactions = transformedData.length;
 
-    if (type === "restaurant" || type === "all") {
-      summary.restaurantSales = {
-        count: summary?.restaurantCount,
-        amount: summary?.restauratTotalAmount,
-        roomServiceCount: summary?.IsRoomService,
-        takeawayCount: summary?.IsTakeaway,
-        deliveryCount: summary?.IsDelivery,
-        dineInCount: summary?.IsDineIn,
-        otherCount:
-          summary?.restaurantCount -
-          (summary?.IsRoomService +
-            summary?.IsTakeaway +
-            summary?.IsDelivery +
-            summary?.IsDineIn),
-      };
-    }
+    const analytics = {
+      paymentBreakdown: {
+        cashPercentage:
+          totalSales > 0 ? (summary.totalCash / totalSales) * 100 : 0,
+        creditPercentage:
+          totalSales > 0 ? (summary.totalCredit / totalSales) * 100 : 0,
+        upiPercentage:
+          totalSales > 0 ? (summary.totalUpi / totalSales) * 100 : 0,
+        bankPercentage:
+          totalSales > 0 ? (summary.totalBank / totalSales) * 100 : 0,
+      },
+      businessBreakdown: {
+        hotel: {
+          percentage:
+            totalSales > 0 ? (summary.hotelSales.amount / totalSales) * 100 : 0,
+          averageTicket:
+            summary.hotelSales.count > 0
+              ? summary.hotelSales.amount / summary.hotelSales.count
+              : 0,
+          transactionCount: summary.hotelSales.count,
+        },
+        restaurant: {
+          percentage:
+            totalSales > 0
+              ? (summary.restaurantSales.amount / totalSales) * 100
+              : 0,
+          averageTicket:
+            summary.restaurantSales.count > 0
+              ? summary.restaurantSales.amount / summary.restaurantSales.count
+              : 0,
+          transactionCount: summary.restaurantSales.count,
+        },
+        other: {
+          percentage:
+            totalSales > 0 ? (summary.otherSales.amount / totalSales) * 100 : 0,
+          averageTicket:
+            summary.otherSales.count > 0
+              ? summary.otherSales.amount / summary.otherSales.count
+              : 0,
+          transactionCount: summary.otherSales.count,
+        },
+      },
+      mealPeriodBreakdown: Object.keys(summary.mealPeriodBreakdown).reduce(
+        (acc, period) => {
+          acc[period] = {
+            amount: summary.mealPeriodBreakdown[period].amount,
+            count: summary.mealPeriodBreakdown[period].count,
+            percentage:
+              totalSales > 0
+                ? (summary.mealPeriodBreakdown[period].amount / totalSales) *
+                  100
+                : 0,
+            averageTicket:
+              summary.mealPeriodBreakdown[period].count > 0
+                ? summary.mealPeriodBreakdown[period].amount /
+                  summary.mealPeriodBreakdown[period].count
+                : 0,
+          };
+          return acc;
+        },
+        {},
+      ),
+      overallMetrics: {
+        averageTicketSize:
+          totalTransactions > 0 ? totalSales / totalTransactions : 0,
+        totalTransactions: totalTransactions,
+        averageItemsPerTransaction:
+          totalTransactions > 0
+            ? transformedData.reduce(
+                (sum, order) => sum + (order.itemCount || 0),
+                0,
+              ) / totalTransactions
+            : 0,
+      },
+      serviceMetrics: {
+        // Restaurant metrics
+        tablesServed: [
+          ...new Set(
+            transformedData
+              .filter((s) => s.tableNumber)
+              .map((s) => s.tableNumber),
+          ),
+        ].length,
+        waitersActive: [
+          ...new Set(
+            transformedData
+              .filter((s) => s.waiterName)
+              .map((s) => s.waiterName),
+          ),
+        ].length,
+        // Hotel metrics
+        roomsOccupied: [
+          ...new Set(
+            transformedData
+              .filter((s) => s.roomNumber)
+              .map((s) => s.roomNumber),
+          ),
+        ].length,
+        guestsServed: [
+          ...new Set(
+            transformedData
+              .filter((s) => s.guestName && s.guestName !== "Cash")
+              .map((s) => s.guestName),
+          ),
+        ].length,
+      },
+    };
 
     res.json({
       success: true,
@@ -4079,6 +4290,17 @@ export const getHotelSalesDetails = async (req, res) => {
         },
         totalRecords: transformedData.length,
         businessType: businessType,
+        businessBreakdown: {
+          hotel: summary.hotelSales.count,
+          restaurant: summary.restaurantSales.count,
+          other: summary.otherSales.count,
+          total: totalTransactions,
+        },
+        serviceBreakdown: summary.serviceBreakdown,
+        mealPeriodSummary: summary.mealPeriodBreakdown,
+        message: `Found ${transformedData.length} ${
+          businessType === "all" ? "combined" : businessType
+        } sales records`,
       },
     });
   } catch (error) {
@@ -4498,7 +4720,6 @@ export const getCheckoutStatementByDate = async (req, res) => {
         const totalRoomamount = checkout.selectedRooms.reduce(
           (sum, room) => sum + parseFloat(room.roomTotal || 0, 0),
         );
-        console.log(checkout.advanceAmount);
 
         summaryData.advanceTotal +=
           Number(checkout?.paymenttypeDetails?.cash || 0) +
@@ -4599,6 +4820,50 @@ export const getCheckoutStatementByDate = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error fetching checkout data",
+      error: error.message,
+    });
+  }
+};
+
+export const convertToAvailable = async (req, res) => {
+  try {
+    const { cmp_id } = req.params;
+    const { selectedRooms } = req.body;
+
+    if (!selectedRooms || selectedRooms.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No rooms selected",
+      });
+    }
+
+    // Extract only room IDs
+    const roomIds = selectedRooms.map((room) => room.roomId);
+
+    // Update rooms
+    const result = await roomModal.updateMany(
+      {
+        _id: { $in: roomIds },
+        cmp_id,
+      },
+      {
+        $set: {
+          status: "available",
+        },
+      },
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Rooms converted to available",
+      modifiedCount: result.modifiedCount,
+    });
+  } catch (error) {
+    console.error("Convert Room Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Error converting rooms",
       error: error.message,
     });
   }

@@ -510,7 +510,9 @@ function AvailableRooms({
  
 
   const handlePriceLevelRateChange = (e, roomId) => {
-    const newRate = Number(e.target.value);
+     const value = e.target.value;
+     console.log(value);
+  const newRate = value === "" ? "" : Number(value); // allow empty input
     console.log("Rate Change - New Rate:", newRate, "for Room:", roomId);
     if (isTariffRateChange) {
       setBookings((prev) =>

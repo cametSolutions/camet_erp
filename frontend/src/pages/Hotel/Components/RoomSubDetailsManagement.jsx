@@ -21,12 +21,7 @@ const RoomSubDetailsManagement = ({
   const [isComplimentary, setIsComplimentary] = useState(false); // ✅ NEW STATE
   const [edit, setEdit] = useState({ id: "", enabled: false });
 
-  useEffect(() => {
-    if (value === "") {
-      setEdit({ id: "", enabled: false });
-      setIsComplimentary(false); // ✅ RESET
-    }
-  }, [value]);
+ 
 
   const handleSubmit = async () => {
     if (!value.trim()) return toast.error("Please enter a value");

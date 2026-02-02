@@ -2,19 +2,108 @@
 import { useState, useEffect } from "react"
 import { X, Users, DoorOpen, Trash2 } from "lucide-react"
 import CustomerSearchInputBox from "../Components/CustomerSearchInPutBox"
+import CheckoutDateModal from "./CheckoutDateModal"
+import useFetch from "@/customHook/useFetch"
+import { useSelector } from "react-redux"
+import {
+  MdDelete,
+  MdCheckCircle,
+  MdPayment,
+  MdVisibility,
+  MdCancel
+} from "react-icons/md"
+import PartyList from "@/components/secUsers/main/PartyList"
 
 export default function EnhancedCheckoutModal({
   isOpen = true,
+  closemodal,
   onClose,
   selectedCheckIns = [],
   onConfirm,
-  checkoutMode
+  checkoutMode,
+  search,
+  toogle,
+  selectedCustomer,
+  customerchange
 }) {
-  console.log("hfaf")
+  console.log(checkoutMode)
+  console.log(isOpen)
+  console.log("hfafffff")
   // State to manage room-customer assignments
   const [roomAssignments, setRoomAssignments] = useState([])
   const [errors, setErrors] = useState({})
+  const [parties, setPartylist] = useState([])
+  // const [checkoutMode, setCheckoutMode] = useState("multiple")
+  const [checkOutDateTracker, setCheckOutDateTracker] = useState(
+    new Date().toISOString().split("T")[0]
+  )
 
+  const [checkouts, setCheckouts] = useState(
+    selectedCheckIns.length > 0
+      ? selectedCheckIns.map((checkout) => {
+          const arrival = new Date(checkout.arrivalDate)
+          console.log(checkout)
+          const checkoutDate = new Date(checkout.checkOutDate)
+          console.log(checkoutDate)
+          const diffTime = checkoutDate - arrival
+          const calculatedDays =
+            diffTime === 0 ? 1 : Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+          console.log(diffTime)
+          const time = new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: true // 12-hour format
+          })
+
+          checkout.selectedRooms.forEach((room) => {
+            room.stayDays = calculatedDays
+          })
+          console.log(calculatedDays)
+          return {
+            ...checkout,
+            stayDays: calculatedDays,
+            checkOutTime: time,
+            checkOutDate: checkOutDateTracker
+          }
+        })
+      : [
+          {
+            _id: "1",
+            checkOutDate: "2024-01-15",
+            arrivalDate: "2024-01-10",
+            voucherNumber: "V001",
+            stayDays: 2.5,
+            selectedRooms: [
+              { _id: "r1", roomName: "101", priceLevelRate: 2000 }
+            ]
+          }
+        ]
+  )
+  console.log(checkouts)
+  const [originalCheckouts] = useState(() =>
+    selectedCheckIns.length > 0
+      ? JSON.parse(JSON.stringify(selectedCheckIns))
+      : []
+  )
+  const getVoucherType = () => {
+    const path = location.pathname
+    if (path.includes("Receipt")) return "receipt"
+    if (path.includes("Payment")) return "payment"
+    return "sale"
+  }
+  const { _id: cmp_id, configurations } = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg
+  )
+  const { data: partylist } = useFetch(
+    `/api/sUsers/singlecheckoutpartylist/${cmp_id}`,
+    { params: { voucher: getVoucherType() } }
+  )
+  console.log(partylist)
+  useEffect(() => {
+    if (partylist && partylist.partyList.length) {
+      setPartylist(partylist.partyList)
+    }
+  }, [partylist])
   // Initialize room assignments when selectedCheckIns change
   useEffect(() => {
     if (selectedCheckIns.length > 0) {
@@ -36,13 +125,13 @@ export default function EnhancedCheckoutModal({
       setRoomAssignments(allRooms)
     }
   }, [selectedCheckIns])
-
+  console.log(checkouts)
 
   // Handle customer selection for a specific room
   const handleCustomerSelect = (index, customer) => {
-    const updated = [...roomAssignments]
+    const updated = [...checkouts]
     updated[index].selectedCustomer = customer
-    setRoomAssignments(updated)
+    setCheckouts(updated)
 
     // Clear error for this room if exists
     const newErrors = { ...errors }
@@ -52,8 +141,8 @@ export default function EnhancedCheckoutModal({
 
   // Remove a room from checkout (partial checkout)
   const handleRemoveRoom = (index) => {
-    const updated = roomAssignments.filter((_, i) => i !== index)
-    setRoomAssignments(updated)
+    const updated = checkouts.filter((_, i) => i !== index)
+    setCheckouts(updated)
   }
 
   // Add room back if needed
@@ -87,8 +176,10 @@ export default function EnhancedCheckoutModal({
   // Handle proceed to checkout
   const handleProceed = () => {
     if (!validateAssignments()) {
+      console.log("hhhh")
       return
     }
+    console.log("hhh")
     // Step 1: Check if all selectedCustomer are same
     const firstCustomer = roomAssignments[0]?.selectedCustomer
     const isSameCustomer = roomAssignments.every(
@@ -96,9 +187,9 @@ export default function EnhancedCheckoutModal({
     )
 
     let result
-console.log("HHHh")
+    console.log("HHHh")
     if (isSameCustomer) {
-console.log("HHHhh")
+      console.log("HHHhh")
       // 🔥 Merge ALL into ONE customer
       const checkInMap = {}
 
@@ -134,8 +225,8 @@ console.log("HHHhh")
     } else {
       // 🔵 fallback → group by customers (old logic)
       const grouped = {}
-console.log(roomAssignments)
-console.log(roomAssignments.length)
+      console.log(roomAssignments)
+      console.log(roomAssignments.length)
       roomAssignments.forEach((assignment) => {
         const customerId = assignment.selectedCustomer._id
 
@@ -180,60 +271,9 @@ console.log(roomAssignments.length)
       }))
     }
 
-    // return result
+    console.log(result)
 
-    // Group rooms by customer
-    // const groupedByCustomer = {};
-    // roomAssignments.forEach((assignment) => {
-    //   const customerId = assignment.selectedCustomer._id;
-    //   if (!groupedByCustomer[customerId]) {
-    //     groupedByCustomer[customerId] = {
-    //       customer: assignment.selectedCustomer,
-    //       checkIns: [],
-    //     };
-    //   }
-
-    //   // Find if this checkIn already exists in the group
-    //   let checkInGroup = groupedByCustomer[customerId].checkIns.find(
-    //     (ci) => ci.checkInId === assignment.checkInId
-    //   );
-
-    //   if (!checkInGroup) {
-    //     // Find the original checkIn data
-    //     const originalCheckIn = selectedCheckIns.find(
-    //       (ci) => ci._id === assignment.checkInId
-    //     );
-    //     checkInGroup = {
-    //       checkInId: assignment.checkInId,
-    //       checkInNumber: assignment.checkInNumber,
-    //       originalCheckIn: originalCheckIn,
-    //       rooms: [],
-    //     };
-    //     groupedByCustomer[customerId].checkIns.push(checkInGroup);
-    //   }
-
-    //   checkInGroup.rooms.push({
-    //     roomId: assignment.roomId,
-    //     roomName: assignment.roomName,
-    //     roomType: assignment.roomType,
-    //   });
-    // });
-
-    // // Convert to array format
-    // const result = Object.values(groupedByCustomer).map((group) => {
-    //   // console.log("customer", group.customer);
-    //   return {
-
-    //     customerId: group.customer._id,
-    //     customerName: group.customer.partyName,
-    //     // customerId: group.customer._id,
-    //     customer: group.customer,
-    //     checkIns: group.checkIns,
-    //   }
-    // });
-console.log(result)
-
-    onConfirm(result)
+    onConfirm(result, checkouts)
   }
 
   if (!isOpen) return null
@@ -243,7 +283,7 @@ console.log(result)
     checkIn.selectedRooms
       .filter(
         (room) =>
-          !roomAssignments.some(
+          !checkouts.some(
             (assignment) =>
               assignment.checkInId === checkIn._id &&
               assignment.roomId === room._id
@@ -257,24 +297,344 @@ console.log(result)
       }))
   )
 
+  const handleCloseBasedOnDate = () => {}
+  const handleNewDateChange = (id, newDate) => {
+    console.log(id, newDate)
+    setCheckOutDateTracker(newDate)
+    setCheckouts(
+      checkouts.map((checkout) => {
+        if (checkout._id === id) {
+          const arrival = new Date(checkout.arrivalDate)
+          const checkoutDate = new Date(newDate)
+          const diffTime = checkoutDate - arrival
+          const calculatedDays =
+            diffTime === 0 ? 1 : Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+          console.log(arrival)
+          console.log(checkoutDate)
+          console.log(calculatedDays)
+          const originalCheckout = originalCheckouts.find((oc) => oc._id === id)
+          if (!originalCheckout) return checkout
+
+          const updatedRooms =
+            checkout.selectedRooms?.map((room) => {
+              const originalRoom = originalCheckout.selectedRooms?.find(
+                (or) => or._id === room._id || or.roomName === room.roomName
+              )
+
+              if (!originalRoom) return room
+
+              const originalStayDays =
+                originalRoom.stayDays || originalCheckout.stayDays || 1
+              const originalBaseAmount = originalRoom.baseAmount || 0
+              const originalTaxAmount = originalRoom.taxAmount || 0
+              const originalFoodPlanWithTax =
+                originalRoom.foodPlanAmountWithTax || 0
+              const originalFoodPlanWithoutTax =
+                originalRoom.foodPlanAmountWithOutTax || 0
+              const originalPaxWithTax =
+                originalRoom.additionalPaxAmountWithTax || 0
+              const originalPaxWithoutTax =
+                originalRoom.additionalPaxAmountWithOutTax || 0
+
+              // Calculate daily rates from ORIGINAL totals
+              const baseAmountPerDay = originalBaseAmount / originalStayDays
+              const taxAmountPerDay = originalTaxAmount / originalStayDays
+              const foodPlanWithTaxPerDay =
+                originalFoodPlanWithTax / originalStayDays
+              const foodPlanWithoutTaxPerDay =
+                originalFoodPlanWithoutTax / originalStayDays
+
+              // ✅ FIX: Calculate pax per day based on ORIGINAL FULL DAYS only
+              const originalFullDays = Math.floor(originalStayDays)
+              const paxWithTaxPerDay =
+                originalFullDays > 0 ? originalPaxWithTax / originalFullDays : 0
+              const paxWithoutTaxPerDay =
+                originalFullDays > 0
+                  ? originalPaxWithoutTax / originalFullDays
+                  : 0
+
+              // Calculate new totals based on calculatedDays
+              const fullDays = Math.floor(calculatedDays)
+              const fractionalDay = calculatedDays - fullDays
+
+              let newBaseAmount = fullDays * baseAmountPerDay
+              let newTaxAmount = fullDays * taxAmountPerDay
+              let newFoodPlanWithTax = fullDays * foodPlanWithTaxPerDay
+              let newFoodPlanWithoutTax = fullDays * foodPlanWithoutTaxPerDay
+
+              // ✅ FIX: Only multiply by FULL days for pax
+              let newPaxWithTax = fullDays * paxWithTaxPerDay
+              let newPaxWithoutTax = fullDays * paxWithoutTaxPerDay
+
+              // Add fractional day amounts (50%) - but NOT for pax
+              if (fractionalDay > 0) {
+                newBaseAmount += baseAmountPerDay * 0.5
+                newTaxAmount += taxAmountPerDay * 0.5
+                newFoodPlanWithTax += foodPlanWithTaxPerDay * 0.5
+                newFoodPlanWithoutTax += foodPlanWithoutTaxPerDay * 0.5
+                // ✅ NO pax charges for fractional day
+              }
+
+              return {
+                ...room,
+                stayDays: calculatedDays,
+                baseAmount: Math.round(newBaseAmount * 100) / 100,
+                taxAmount: Math.round(newTaxAmount * 100) / 100,
+                baseAmountWithTax:
+                  Math.round((newBaseAmount + newTaxAmount) * 100) / 100,
+                foodPlanAmountWithTax:
+                  Math.round(newFoodPlanWithTax * 100) / 100,
+                foodPlanAmountWithOutTax:
+                  Math.round(newFoodPlanWithoutTax * 100) / 100,
+                additionalPaxAmountWithTax:
+                  Math.round(newPaxWithTax * 100) / 100,
+                additionalPaxAmountWithOutTax:
+                  Math.round(newPaxWithoutTax * 100) / 100
+              }
+            }) || []
+
+          return {
+            ...checkout,
+            checkOutDate: newDate,
+            stayDays: calculatedDays,
+            selectedRooms: updatedRooms
+          }
+        }
+        return checkout
+      })
+    )
+  }
+  const handleStayDaysChange = (id, newDays) => {
+    let newCheckoutDate = new Date(new Date().toISOString().split("T")[0])
+    setCheckouts(
+      checkouts.map((checkout) => {
+        if (checkout._id === id) {
+          // Allow empty string or incomplete decimal input
+          if (newDays === "" || newDays === "." || newDays.endsWith(".")) {
+            return {
+              ...checkout,
+              stayDays: newDays
+            }
+          }
+
+          const stayDays = parseFloat(newDays)
+
+          // Validate input
+          if (isNaN(stayDays) || stayDays <= 0) {
+            return {
+              ...checkout,
+              stayDays: newDays
+            }
+          }
+
+          const fullDays = Math.floor(stayDays)
+          const fractionalDay = stayDays - fullDays
+
+          const originalCheckout = originalCheckouts.find((oc) => oc._id === id)
+
+          if (!originalCheckout) {
+            console.error("Original checkout data not found for id:", id)
+            return checkout
+          }
+
+          const updatedRooms =
+            checkout.selectedRooms?.map((room) => {
+              const originalRoom = originalCheckout.selectedRooms?.find(
+                (or) => or._id === room._id || or.roomName === room.roomName
+              )
+
+              if (!originalRoom) {
+                console.error("Original room data not found for room:", room)
+                return room
+              }
+
+              const originalStayDays =
+                originalRoom.stayDays || originalCheckout.stayDays || 1
+              const originalBaseAmount = originalRoom.baseAmount || 0
+              const originalTaxAmount = originalRoom.taxAmount || 0
+              const originalFoodPlanWithTax =
+                originalRoom.foodPlanAmountWithTax || 0
+              const originalFoodPlanWithoutTax =
+                originalRoom.foodPlanAmountWithOutTax || 0
+              const originalPaxWithTax =
+                originalRoom.additionalPaxAmountWithTax || 0
+              const originalPaxWithoutTax =
+                originalRoom.additionalPaxAmountWithOutTax || 0
+
+              console.log("Original Data:", {
+                originalStayDays,
+                originalBaseAmount,
+                originalTaxAmount,
+                stayDays
+              })
+
+              // Calculate daily rates from ORIGINAL totals
+              const baseAmountPerDay = originalBaseAmount / originalStayDays
+              const taxAmountPerDay = originalTaxAmount / originalStayDays
+              const foodPlanWithTaxPerDay =
+                originalFoodPlanWithTax / originalStayDays
+              const foodPlanWithoutTaxPerDay =
+                originalFoodPlanWithoutTax / originalStayDays
+
+              // ✅ FIX: Calculate pax per day based on ORIGINAL FULL DAYS only
+              const originalFullDays = Math.floor(originalStayDays)
+              const paxWithTaxPerDay =
+                originalFullDays > 0 ? originalPaxWithTax / originalFullDays : 0
+              const paxWithoutTaxPerDay =
+                originalFullDays > 0
+                  ? originalPaxWithoutTax / originalFullDays
+                  : 0
+
+              // Calculate new totals: full days + fractional day
+              let newBaseAmount = fullDays * baseAmountPerDay
+              let newTaxAmount = fullDays * taxAmountPerDay
+              let newFoodPlanWithTax = fullDays * foodPlanWithTaxPerDay
+              let newFoodPlanWithoutTax = fullDays * foodPlanWithoutTaxPerDay
+
+              // ✅ FIX: Only multiply by FULL days for pax
+              let newPaxWithTax = fullDays * paxWithTaxPerDay
+              let newPaxWithoutTax = fullDays * paxWithoutTaxPerDay
+
+              // Add fractional day amounts (50%) - but NOT for pax
+              if (fractionalDay > 0) {
+                newBaseAmount += baseAmountPerDay * 0.5
+                newTaxAmount += taxAmountPerDay * 0.5
+                newFoodPlanWithTax += foodPlanWithTaxPerDay * 0.5
+                newFoodPlanWithoutTax += foodPlanWithoutTaxPerDay * 0.5
+                // ✅ NO pax charges for fractional day
+              }
+
+              console.log("Calculated New Amounts:", {
+                newBaseAmount,
+                newTaxAmount,
+                newPaxWithTax,
+                newPaxWithoutTax,
+                baseAmountPerDay,
+                fullDays,
+                fractionalDay
+              })
+
+              return {
+                ...room,
+                stayDays: stayDays,
+                baseAmount: Math.round(newBaseAmount * 100) / 100,
+                taxAmount: Math.round(newTaxAmount * 100) / 100,
+                baseAmountWithTax:
+                  Math.round((newBaseAmount + newTaxAmount) * 100) / 100,
+                foodPlanAmountWithTax:
+                  Math.round(newFoodPlanWithTax * 100) / 100,
+                foodPlanAmountWithOutTax:
+                  Math.round(newFoodPlanWithoutTax * 100) / 100,
+                additionalPaxAmountWithTax:
+                  Math.round(newPaxWithTax * 100) / 100,
+                additionalPaxAmountWithOutTax:
+                  Math.round(newPaxWithoutTax * 100) / 100
+              }
+            }) || []
+
+          // Calculate new checkout date
+          const arrival = new Date(checkout.arrivalDate)
+          newCheckoutDate = new Date(arrival)
+          const daysToAdd = Math.floor(stayDays)
+          newCheckoutDate.setDate(arrival.getDate() + daysToAdd)
+
+          return {
+            ...checkout,
+            selectedRooms: updatedRooms,
+            stayDays: stayDays,
+            checkOutDate: newCheckoutDate.toISOString().split("T")[0]
+          }
+        }
+        return checkout
+      })
+    )
+    setCheckOutDateTracker(newCheckoutDate.toISOString().split("T")[0])
+  }
+  console.log(selectedCheckIns)
+  console.log(checkoutMode)
+  const handleConfirm = () => {
+    console.log(checkouts)
+    handleProceed()
+  }
+  console.log(checkoutMode)
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl max-h-[85vh] flex flex-col">
-        {/* Header */}
-        <div className="flex justify-between items-center border-b px-4 py-2">
-          <h2 className="font-semibold text-gray-700 text-lg flex items-center gap-2">
-            <Users size={20} /> Checkout Assignment
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
+      <div className="bg-white w-[95vw] max-w-5xl h-[90vh] rounded-xl shadow-xl flex flex-col">
+        {/* ================= HEADER ================= */}
+        <div className="flex items-center justify-between border-b px-4 py-2 flex-shrink-0">
+          <h2 className="text-base font-semibold flex items-center gap-2 text-gray-700">
+            <Users size={18} /> Checkout Assignment
           </h2>
           <button
-            onClick={() => onClose(null)}
+            onClick={() => closemodal(false)}
             className="text-gray-500 hover:text-gray-700"
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
 
-        {/* Body */}
-        <div className="flex-1 overflow-auto p-4 space-y-3">
+        {/* ========== SELECTED CHECKINS SUMMARY ========= */}
+        {selectedCheckIns.length > 0 &&
+          (location.pathname === "/sUsers/checkInList" ||
+            location.pathname === "/sUsers/checkOutList") &&
+          search !== "completed" && (
+            <div className="flex-shrink-0 px-4 py-3 border-b bg-gray-50">
+              {/* Voucher grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2 mb-3">
+                {selectedCheckIns.map((item) => (
+                  <div
+                    key={item._id}
+                    className="text-xs bg-white border rounded-md px-2 py-1 text-center truncate shadow-sm"
+                  >
+                    #{item.voucherNumber}
+                  </div>
+                ))}
+              </div>
+
+              {/* Toggle + customer selector */}
+              {selectedCheckIns.length > 1 && (
+                <div className="flex flex-wrap items-center gap-4">
+                  <span className="text-xs font-semibold text-gray-700">
+                    {checkoutMode === "single"
+                      ? "Single Checkout"
+                      : "Multiple Checkout"}
+                  </span>
+
+                  {/* Toggle */}
+                  <div
+                    onClick={toogle}
+                    className={`w-9 h-4 rounded-full flex items-center px-1 cursor-pointer transition
+                  ${checkoutMode === "single" ? "bg-blue-500" : "bg-green-500"}`}
+                  >
+                    <div
+                      className={`w-3 h-3 bg-white rounded-full shadow transform transition
+                    ${checkoutMode === "single" ? "translate-x-0" : "translate-x-5"}`}
+                    />
+                  </div>
+
+                  {/* Customer selector */}
+                  {checkoutMode === "single" && (
+                    <select
+                      value={selectedCustomer}
+                      onChange={(e) => customerchange(e.target.value)}
+                      className="ml-auto min-w-[220px] text-xs p-1.5 border rounded-md focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Choose customer</option>
+                      {parties?.map((p) => (
+                        <option key={p._id} value={p._id}>
+                          {p.partyName}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+        {/* ================= BODY (SCROLL AREA) ================= */}
+        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
+          {/* Room assignments */}
           {roomAssignments.length === 0 ? (
             <p className="text-center text-gray-500 py-6 text-sm">
               No rooms selected
@@ -289,7 +649,7 @@ console.log(result)
               >
                 <div className="flex justify-between items-center mb-2">
                   <div className="flex items-center gap-2">
-                    <DoorOpen size={18} className="text-blue-500" />
+                    <DoorOpen size={16} className="text-blue-500" />
                     <p className="font-medium text-sm">
                       {a.roomName} ({a.roomType})
                     </p>
@@ -313,25 +673,34 @@ console.log(result)
                   isAgent={false}
                   placeholder="Select customer..."
                 />
+
                 {errors[i] && (
                   <p className="text-xs text-red-500 mt-1">{errors[i]}</p>
                 )}
               </div>
             ))
           )}
+
+          {/* Checkout Date Modal (NOW VISIBLE & SCROLLABLE) */}
+          <CheckoutDateModal
+            onDaysChange={handleStayDaysChange}
+            checkouts={checkouts}
+            onDateChange={handleNewDateChange}
+          />
         </div>
 
-        {/* Footer */}
-        <div className="border-t p-3 flex justify-end gap-2">
+        {/* ================= FOOTER ================= */}
+        <div className="flex-shrink-0 border-t px-4 py-3 flex justify-end gap-2 bg-white">
           <button
-            onClick={() => onClose(null)}
+            onClick={() => closemodal(false)}
             className="px-4 py-2 text-sm border rounded-md hover:bg-gray-100"
           >
             Cancel
           </button>
           <button
-            onClick={handleProceed}
-            disabled={roomAssignments.length === 0}
+            type="button"
+            onClick={handleConfirm}
+            disabled={checkouts.length === 0}
             className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
           >
             Proceed

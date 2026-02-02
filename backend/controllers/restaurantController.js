@@ -733,20 +733,20 @@ export const getRoomDataForRestaurant = async (req, res) => {
     });
 
     // Filter only those where today's date falls between arrivalDate & checkOutDate
-    const filtered = allData.filter((doc) => {
+    // const filtered = allData.filter((doc) => {
       // arrivalDate/checkOutDate are stored as "YYYY-MM-DD" strings
-      const arrivalDate = new Date(doc.arrivalDate);
-      arrivalDate.setHours(0, 0, 0, 0);
+    //   const arrivalDate = new Date(doc.arrivalDate);
+    //   arrivalDate.setHours(0, 0, 0, 0);
 
-      const checkOutDate = new Date(doc.checkOutDate);
-      checkOutDate.setHours(0, 0, 0, 0);
+    //   const checkOutDate = new Date(doc.checkOutDate);
+    //   checkOutDate.setHours(0, 0, 0, 0);
 
-      return arrivalDate <= today && today <= checkOutDate;
-    });
+    //   return arrivalDate <= today && today <= checkOutDate;
+    // });
 
     res.status(200).json({
       success: true,
-      data: filtered,
+      data: allData,
     });
   } catch (error) {
     console.error("Error fetching room data:", error);
@@ -1882,6 +1882,11 @@ export const saveTableNumber = async (req, res) => {
   try {
     const { cmp_id } = req.params;
     const { tableNumber, status, description } = req.body;
+    let alreadyExists = await Table.findOne({ tableNumber, cmp_id });
+
+    if (alreadyExists) {
+      return res.status(400).json({ message: "Table number already exists" });
+    }
 
     if (!tableNumber) {
       return res.status(400).json({ message: "Table number is required" });

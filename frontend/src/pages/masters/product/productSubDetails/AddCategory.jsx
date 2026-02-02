@@ -26,6 +26,7 @@ function AddCategory() {
             [6, 7].includes(organization?.industry) ? "bedType" : "category"
           }
           handleLoader={handleLoader}
+          isHotel={[6, 7].includes(organization?.industry) ? true : false}
         />
       </div>
     </div>
