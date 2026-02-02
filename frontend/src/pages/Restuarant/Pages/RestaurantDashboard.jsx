@@ -147,6 +147,7 @@ const RestaurantPOS = () => {
   const { data: paymentTypeData } = useFetch(
     `/api/sUsers/getPaymentType/${cmp_id}`
   );
+  console.log(paymentTypeData, "paymentTypeData");
 
   useEffect(() => {
     if (paymentTypeData) {
