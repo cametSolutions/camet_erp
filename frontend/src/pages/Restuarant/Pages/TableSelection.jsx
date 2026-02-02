@@ -32,6 +32,7 @@ const TableTiles = ({
   setRoomDetails,
   roomDetails,
 }) => {
+console.log("hhh")
   const sectionRef = useRef(null);
   const [tables, setTables] = useState([]);
   const [loading, setLoading] = useState(false);
