@@ -692,7 +692,7 @@ export default function EnhancedCheckoutModal({
         {/* ================= FOOTER ================= */}
         <div className="flex-shrink-0 border-t px-4 py-3 flex justify-end gap-2 bg-white">
           <button
-            onClick={() => onClose(null)}
+            onClick={() => closemodal(false)}
             className="px-4 py-2 text-sm border rounded-md hover:bg-gray-100"
           >
             Cancel

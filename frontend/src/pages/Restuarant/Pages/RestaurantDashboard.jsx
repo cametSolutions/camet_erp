@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef, useCallback } from "react";
-import { useReactToPrint } from "react-to-print";
+import { useState, useEffect, useRef, useCallback } from "react"
+import { useReactToPrint } from "react-to-print"
 
-import VoucherThreeInchPdf from "@/pages/voucher/voucherPdf/threeInchPdf/VoucherThreeInchPdf";
+import VoucherThreeInchPdf from "@/pages/voucher/voucherPdf/threeInchPdf/VoucherThreeInchPdf"
 
 import {
   Plus,
@@ -21,156 +21,155 @@ import {
   Bed,
   ArrowLeft,
   ChevronLeft,
-  ChevronDown,
-} from "lucide-react";
+  ChevronDown
+} from "lucide-react"
 
-import TableSelection from "../Pages/TableSelection";
+import TableSelection from "../Pages/TableSelection"
 
-import { toast } from "react-toastify";
-import { useSelector } from "react-redux";
-import api from "@/api/api";
-import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
-import useFetch from "@/customHook/useFetch";
-import { generateAndPrintKOT } from "../Helper/kotPrintHelper";
-import { taxCalculatorForRestaurant } from "@/pages/Hotel/Helper/taxCalculator";
-import { useLocation } from "react-router-dom";
-import { FaArrowLeft } from "react-icons/fa6";
-import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "react-toastify"
+import { useSelector } from "react-redux"
+import api from "@/api/api"
+import { motion } from "framer-motion"
+import { useNavigate } from "react-router-dom"
+import useFetch from "@/customHook/useFetch"
+import { generateAndPrintKOT } from "../Helper/kotPrintHelper"
+import { taxCalculatorForRestaurant } from "@/pages/Hotel/Helper/taxCalculator"
+import { useLocation } from "react-router-dom"
+import { FaArrowLeft } from "react-icons/fa6"
+import { useQueryClient } from "@tanstack/react-query"
 const RestaurantPOS = () => {
-  const [selectedCuisine, setSelectedCuisine] = useState("");
-  const [selectedSubcategory, setSelectedSubcategory] = useState("");
-  const [orderItems, setOrderItems] = useState([]);
-  const [salePrintData, setSalePrintData] = useState(null);
-  const [showVoucherPdf, setShowVoucherPdf] = useState(false);
-  const contentToPrint = useRef(null);
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [showFullTableSelection, setShowFullTableSelection] = useState(false);
-  const [selectedDataForPayment, setSelectedDataForPayment] = useState({});
+  const [selectedCuisine, setSelectedCuisine] = useState("")
+  const [selectedSubcategory, setSelectedSubcategory] = useState("")
+  const [orderItems, setOrderItems] = useState([])
+  const [salePrintData, setSalePrintData] = useState(null)
+  const [showVoucherPdf, setShowVoucherPdf] = useState(false)
+  const contentToPrint = useRef(null)
+  const navigate = useNavigate()
+  const location = useLocation()
+  const [showFullTableSelection, setShowFullTableSelection] = useState(false)
+  const [selectedDataForPayment, setSelectedDataForPayment] = useState({})
   // Mobile responsive states
-  const [isMobile, setIsMobile] = useState(false);
-  const [showSidebar, setShowSidebar] = useState(false);
-  const [showOrderSummary, setShowOrderSummary] = useState(false);
+  const [isMobile, setIsMobile] = useState(false)
+  const [showSidebar, setShowSidebar] = useState(false)
+  const [showOrderSummary, setShowOrderSummary] = useState(false)
 
-  const [showOptions, setShowOptions] = useState(false);
-  const [searchTerms, setSearchTerms] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [items, setItems] = useState([]);
-  const [allItems, setAllItems] = useState([]);
-  const [hasMore, setHasMore] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
-  const [loader, setLoader] = useState(false);
-  const [isEdit, setIsEdit] = useState(false);
-  const [currentTime, setCurrentTime] = useState(new Date());
-  const [showKOTModal, setShowKOTModal] = useState(false);
-  const [orderType, setOrderType] = useState("dine-in");
-  const [loading, setLoading] = useState(false);
-  const [optionData, setOptionsData] = useState({});
-  const [roomData, setRoomData] = useState({});
-  const [showPriceLevelSelect, setShowPriceLevelSelect] = useState(false);
-  const [priceLevelData, setPriceLevelData] = useState([]);
-  const [selectedPriceLevel, setSelectedPriceLevel] = useState(null);
-  const kotDataForEdit = location.state?.kotData;
+  const [showOptions, setShowOptions] = useState(false)
+  const [searchTerms, setSearchTerms] = useState("")
+  const [searchTerm, setSearchTerm] = useState("")
+  const [items, setItems] = useState([])
+  const [allItems, setAllItems] = useState([])
+  const [hasMore, setHasMore] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
+  const [loader, setLoader] = useState(false)
+  const [isEdit, setIsEdit] = useState(false)
+  const [currentTime, setCurrentTime] = useState(new Date())
+  const [showKOTModal, setShowKOTModal] = useState(false)
+  const [orderType, setOrderType] = useState("dine-in")
+  const [loading, setLoading] = useState(false)
+  const [optionData, setOptionsData] = useState({})
+  const [roomData, setRoomData] = useState({})
+  const [showPriceLevelSelect, setShowPriceLevelSelect] = useState(false)
+  const [priceLevelData, setPriceLevelData] = useState([])
+  const [selectedPriceLevel, setSelectedPriceLevel] = useState(null)
+  const kotDataForEdit = location.state?.kotData
 
   // Add these states near the other state declarations
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState("cash");
-  const [paymentMode, setPaymentMode] = useState("single");
-  const [cashAmount, setCashAmount] = useState(0);
-  const [onlineAmount, setOnlineAmount] = useState(0);
-  const [paymentError, setPaymentError] = useState("");
-  const [saveLoader, setSaveLoader] = useState(false);
-  const [selectedCash, setSelectedCash] = useState("");
-  const [selectedBank, setSelectedBank] = useState("");
-  const [cashOrBank, setCashOrBank] = useState({});
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [paymentMethod, setPaymentMethod] = useState("cash")
+  const [paymentMode, setPaymentMode] = useState("single")
+  const [cashAmount, setCashAmount] = useState(0)
+  const [onlineAmount, setOnlineAmount] = useState(0)
+  const [paymentError, setPaymentError] = useState("")
+  const [saveLoader, setSaveLoader] = useState(false)
+  const [selectedCash, setSelectedCash] = useState("")
+  const [selectedBank, setSelectedBank] = useState("")
+  const [cashOrBank, setCashOrBank] = useState({})
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const observerTarget = useRef(null);
-  const scrollContainerRef = useRef(null);
+  const [currentPage, setCurrentPage] = useState(1)
+  const observerTarget = useRef(null)
+  const scrollContainerRef = useRef(null)
   const scroll = (direction) => {
     if (scrollContainerRef.current) {
-      const scrollAmount = 150;
+      const scrollAmount = 150
       scrollContainerRef.current.scrollBy({
         left: direction === "left" ? -scrollAmount : scrollAmount,
-        behavior: "smooth",
-      });
+        behavior: "smooth"
+      })
     }
-  };
+  }
   const [customerDetails, setCustomerDetails] = useState({
     name: "",
     phone: "",
     address: "",
-    tableNumber: "10",
-  });
+    tableNumber: "10"
+  })
   const [roomDetails, setRoomDetails] = useState({
     roomno: "",
     guestName: "",
     CheckInNumber: "",
-    foodPlan:'',
-  });
-  const [orders, setOrders] = useState([]);
-  const [orderNumber, setOrderNumber] = useState(1001);
+    foodPlan: ""
+  })
+  const [orders, setOrders] = useState([])
+  const [orderNumber, setOrderNumber] = useState(1001)
 
   const org = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
-  );
+  )
 
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
-  );
+  )
 
-  const queryClient = useQueryClient();
+  const queryClient = useQueryClient()
   const isAdmin =
     JSON.parse(localStorage.getItem("sUserData")).role === "admin"
       ? true
-      : false;
+      : false
   useEffect(() => {
     if (kotDataForEdit) {
-      setIsEdit(true);
-      setOrderItems(kotDataForEdit.items);
-      setOrderType(kotDataForEdit.type);
+      setIsEdit(true)
+      setOrderItems(kotDataForEdit.items)
+      setOrderType(kotDataForEdit.type)
       setCustomerDetails({
         name: kotDataForEdit?.customer?.name,
         phone: kotDataForEdit?.customer?.phone,
         address: kotDataForEdit?.customer?.address,
-        tableNumber: kotDataForEdit?.tableNumber,
-      });
+        tableNumber: kotDataForEdit?.tableNumber
+      })
       setRoomDetails({
         _id: kotDataForEdit?.roomId?._id || "",
         guestName: kotDataForEdit?.customer?.name || "",
-        CheckInNumber: kotDataForEdit?.checkInNumber || "",
-      });
+        CheckInNumber: kotDataForEdit?.checkInNumber || ""
+      })
     }
-  }, [kotDataForEdit]);
+  }, [kotDataForEdit])
   // Add this useFetch hook with other data fetching
   const { data: paymentTypeData } = useFetch(
     `/api/sUsers/getPaymentType/${cmp_id}`
-  );
-  console.log(paymentTypeData, "paymentTypeData");
+  )
 
   useEffect(() => {
     if (paymentTypeData) {
-      const { bankDetails, cashDetails } = paymentTypeData?.data;
-      setCashOrBank(paymentTypeData?.data);
+      const { bankDetails, cashDetails } = paymentTypeData?.data
+      setCashOrBank(paymentTypeData?.data)
 
       if (bankDetails && bankDetails.length > 0) {
-        setSelectedBank(bankDetails[0]._id);
+        setSelectedBank(bankDetails[0]._id)
       }
       if (cashDetails && cashDetails.length > 0) {
-        setSelectedCash(cashDetails[0]._id);
+        setSelectedCash(cashDetails[0]._id)
       }
     }
-  }, [paymentTypeData]);
+  }, [paymentTypeData])
 
-  console.log(roomDetails, "roomDetails");
+  console.log(roomDetails, "roomDetails")
 
   const companyName = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg?.name
-  );
+  )
   const { configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
-  );
+  )
 
   const subcategoryIcons = {
     Pizza: "🍕",
@@ -181,33 +180,33 @@ const RestaurantPOS = () => {
     Drinks: "🥤",
     Snacks: "🍟",
     Biriyani: "🍲",
-    Default: "🍽️",
-  };
+    Default: "🍽️"
+  }
 
   useEffect(() => {
     if (salePrintData) {
-      navigate(`/sUsers/sharesalesThreeInch/${salePrintData._id}`);
+      navigate(`/sUsers/sharesalesThreeInch/${salePrintData._id}`)
     }
-  }, [salePrintData, navigate]);
+  }, [salePrintData, navigate])
   // Mobile detection
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
+      setIsMobile(window.innerWidth < 768)
+    }
 
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
+    checkMobile()
+    window.addEventListener("resize", checkMobile)
+    return () => window.removeEventListener("resize", checkMobile)
+  }, [])
 
   useEffect(() => {
-    fetchPriceList();
-  }, []);
+    fetchPriceList()
+  }, [])
 
   //
 
-  const [search, setSearch] = useState("");
-  const [showResults, setShowResults] = useState(false);
+  const [search, setSearch] = useState("")
+  const [showResults, setShowResults] = useState(false)
 
   // Filter rooms based on search
   const filteredRooms = Array.isArray(roomData)
@@ -219,304 +218,307 @@ const RestaurantPOS = () => {
             .includes(searchTerms?.toLowerCase()) ||
           room.voucherNumber?.toLowerCase().includes(searchTerms?.toLowerCase())
       )
-    : [];
+    : []
 
   const handlePrint = useReactToPrint({
     content: () => contentToPrint.current,
     onAfterPrint: () => {
-      setShowVoucherPdf(false);
-      setSalePrintData(null);
-    },
-  });
+      setShowVoucherPdf(false)
+      setSalePrintData(null)
+    }
+  })
 
   const handlePrintData = async (saleId) => {
     try {
       let res = await api.get(
         `/api/sUsers/getSalePrintData/${cmp_id}/${saleId}`,
         {
-          withCredentials: true,
+          withCredentials: true
         }
-      );
-      setSalePrintData(res?.data?.data); // triggers navigation useEffect
-      setShowVoucherPdf(true);
-      console.log(res?.data?.data);
+      )
+      setSalePrintData(res?.data?.data) // triggers navigation useEffect
+      setShowVoucherPdf(true)
+      console.log(res?.data?.data)
       setTimeout(() => {
-        handlePrint();
-      }, 500);
+        handlePrint()
+      }, 500)
     } catch (error) {
-      console.log(error);
-      toast.error("Failed to load sale print data!");
+      console.log(error)
+      toast.error("Failed to load sale print data!")
     }
-  };
-const handleSelectRoom = (room) => {
-  console.log("=== SELECTING ROOM ===");
-  console.log("Selected room object:", room);
-  console.log("Food plan from room:", room?.foodPlan);
-  
-    const foodPlanData = room?.foodPlan ? {
-    _id: room.foodPlan._id,           // FoodPlan document ID
-    planType: room.foodPlan.planType,  // e.g., "CP", "MAP", "Complimentary"
-    amount: room.foodPlan.amount,
-    isComplimentary: room.foodPlan.isComplimentary || false
-  } : null;
-  
-  console.log("Processed food plan data:", foodPlanData);
-  // ✅ Create fresh object without spread operator
- setRoomDetails({
-    _id: room?.roomId || "",
-    roomno: room?.roomName || "",
-    guestName: room?.customerName || "",
-    CheckInNumber: room?.voucherNumber || "",
-    foodPlan: foodPlanData, // ✅ Store processed food plan
-  });
-  
-  setSearch(
-    `${room.roomName} - ${room.customerName} - ${room.voucherNumber}`
-  );
-  setShowResults(false);
-};
+  }
+  const handleSelectRoom = (room) => {
+    console.log("=== SELECTING ROOM ===")
+    console.log("Selected room object:", room)
+    console.log("Food plan from room:", room?.foodPlan)
+
+    const foodPlanData = room?.foodPlan
+      ? {
+          _id: room.foodPlan._id, // FoodPlan document ID
+          planType: room.foodPlan.planType, // e.g., "CP", "MAP", "Complimentary"
+          amount: room.foodPlan.amount,
+          isComplimentary: room.foodPlan.isComplimentary || false
+        }
+      : null
+
+    console.log("Processed food plan data:", foodPlanData)
+    // ✅ Create fresh object without spread operator
+    setRoomDetails({
+      _id: room?.roomId || "",
+      roomno: room?.roomName || "",
+      guestName: room?.customerName || "",
+      CheckInNumber: room?.voucherNumber || "",
+      foodPlan: foodPlanData // ✅ Store processed food plan
+    })
+
+    setSearch(`${room.roomName} - ${room.customerName} - ${room.voucherNumber}`)
+    setShowResults(false)
+  }
   const fetchPriceList = async () => {
     try {
-      setLoading(true);
+      setLoading(true)
       const res = await api.get(
         `/api/sUsers/getProductSubDetails/${cmp_id}?type=${"pricelevel"}`,
         {
-          withCredentials: true,
+          withCredentials: true
         }
-      );
-      setPriceLevelData(res?.data?.data);
+      )
+      setPriceLevelData(res?.data?.data)
     } catch (error) {
-      console.log(error);
-      toast.error(error.response.data.message);
+      console.log(error)
+      toast.error(error.response.data.message)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   // Update current time every second
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
+      setCurrentTime(new Date())
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [])
 
   const fetchAllData = useCallback(async () => {
     try {
-      setLoading(true);
+      setLoading(true)
 
       const subDetailsPromise = api.get(
         `/api/sUsers/getAllSubDetailsBasedUnder/${cmp_id}`,
         {
           withCredentials: true,
           params: {
-            under: "restaurant",
-          },
+            under: "restaurant"
+          }
         }
-      );
+      )
       const hsnResPromise = api.get(`/api/sUsers/fetchHsn/${cmp_id}`, {
-        withCredentials: true,
-      });
+        withCredentials: true
+      })
 
       const [subDetailsRes, hsnRes] = await Promise.all([
         subDetailsPromise,
-        hsnResPromise,
-      ]);
+        hsnResPromise
+      ])
 
-      const { categories, subcategories, priceLevels } =
-        subDetailsRes.data.data;
+      const { categories, subcategories, priceLevels } = subDetailsRes.data.data
       setOptionsData((prev) => ({
         ...prev,
         category: categories,
         subcategory: subcategories,
         priceLevel: priceLevels,
-        hsn: hsnRes.data.data,
-      }));
+        hsn: hsnRes.data.data
+      }))
 
       if (categories && categories.length > 0) {
         setSelectedCuisine({
           categoryId: categories[0]._id,
-          categoryName: categories[0].name,
-        });
+          categoryName: categories[0].name
+        })
       }
     } catch (error) {
-      console.error("Failed to fetch data:", error);
-      toast.error(error.response?.data?.message || "Failed to load data");
+      console.error("Failed to fetch data:", error)
+      toast.error(error.response?.data?.message || "Failed to load data")
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  }, [cmp_id]);
+  }, [cmp_id])
 
   useEffect(() => {
-    fetchAllData();
-  }, [fetchAllData]);
+    fetchAllData()
+  }, [fetchAllData])
 
   const fetchAllItems = useCallback(
     async (page = 1, append = false) => {
       if (!append) {
-        setLoader(true);
+        setLoader(true)
       }
-      setIsLoading(true);
+      setIsLoading(true)
 
       try {
-        const params = new URLSearchParams();
-        params.append("under", "restaurant");
-        params.append("page", page);
-        params.append("limit", "100");
+        const params = new URLSearchParams()
+        params.append("under", "restaurant")
+        params.append("page", page)
+        params.append("limit", "100")
 
         const res = await api.get(
           `/api/sUsers/getAllItems/${cmp_id}?${params}`,
           {
-            withCredentials: true,
+            withCredentials: true
           }
-        );
+        )
 
-        const fetchedItems = res?.data?.items || [];
-        const hasMoreData = res?.data?.pagination?.hasMore ?? false;
+        const fetchedItems = res?.data?.items || []
+        const hasMoreData = res?.data?.pagination?.hasMore ?? false
 
         if (append) {
           // ✅ Prevent duplicates by filtering out existing items
           setAllItems((prev) => {
-            const existingIds = new Set(prev.map((item) => item._id));
+            const existingIds = new Set(prev.map((item) => item._id))
             const newItems = fetchedItems.filter(
               (item) => !existingIds.has(item._id)
-            );
-            return [...prev, ...newItems];
-          });
+            )
+            return [...prev, ...newItems]
+          })
           setItems((prev) => {
-            const existingIds = new Set(prev.map((item) => item._id));
+            const existingIds = new Set(prev.map((item) => item._id))
             const newItems = fetchedItems.filter(
               (item) => !existingIds.has(item._id)
-            );
-            return [...prev, ...newItems];
-          });
+            )
+            return [...prev, ...newItems]
+          })
         } else {
-          setAllItems(fetchedItems);
-          setItems(fetchedItems);
+          setAllItems(fetchedItems)
+          setItems(fetchedItems)
         }
 
-        setHasMore(hasMoreData);
+        setHasMore(hasMoreData)
       } catch (error) {
-        console.log("Error fetching items:", error);
-        setHasMore(false);
+        console.log("Error fetching items:", error)
+        setHasMore(false)
         if (!append) {
-          setAllItems([]);
-          setItems([]);
+          setAllItems([])
+          setItems([])
         }
       } finally {
-        setIsLoading(false);
-        setLoader(false);
+        setIsLoading(false)
+        setLoader(false)
       }
     },
     [cmp_id]
-  );
+  )
 
   useEffect(() => {
-    if (!observerTarget.current || !hasMore || isLoading) return;
+    if (!observerTarget.current || !hasMore || isLoading) return
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && hasMore && !isLoading) {
-          const nextPage = currentPage + 1;
-          setCurrentPage(nextPage);
-          fetchAllItems(nextPage, true);
+          const nextPage = currentPage + 1
+          setCurrentPage(nextPage)
+          fetchAllItems(nextPage, true)
         }
       },
       { threshold: 0.1 }
-    );
-    observer.observe(observerTarget.current);
+    )
+    observer.observe(observerTarget.current)
     return () => {
-      observer.disconnect();
-    };
-  }, [hasMore, isLoading, currentPage, searchTerm, fetchAllItems]);
+      observer.disconnect()
+    }
+  }, [hasMore, isLoading, currentPage, searchTerm, fetchAllItems])
 
   // Initial load only
   useEffect(() => {
-    fetchAllItems(1, false);
-  }, [fetchAllItems]);
+    fetchAllItems(1, false)
+  }, [fetchAllItems])
 
   const {
     data: roomBookingData,
     // loading: roomLoading,
-    error,
-  } = useFetch(`/api/sUsers/getRoomBasedOnBooking/${cmp_id}`);
+    error
+  } = useFetch(`/api/sUsers/getRoomBasedOnBooking/${cmp_id}`)
 
- useEffect(() => {
-  if (roomBookingData) {
-    console.log("=== RAW ROOM BOOKING DATA ===");
-    console.log("First booking:", roomBookingData?.data[0]);
-    
-    const getRooms = roomBookingData?.data?.flatMap((room) => {
-      console.log("Processing booking, foodPlan array:", room?.foodPlan);
-      
-      return (
-        room?.selectedRooms?.map((selectedRoom) => {
-          // Find matching food plan for this room
-          const roomFoodPlan = room?.foodPlan?.find(
-            (fp) => fp.roomId === selectedRoom.roomId
-          );
-          
-          console.log("=== ROOM FOOD PLAN ===");
-          console.log("Room:", selectedRoom.roomName);
-          console.log("Found food plan:", roomFoodPlan);
-          
-          // ✅ Build complete food plan object
-          let completeFoodPlan = null;
-          if (roomFoodPlan) {
-            completeFoodPlan = {
-              _id: roomFoodPlan._id || roomFoodPlan.foodPlanId,
-              planType: roomFoodPlan.planType || roomFoodPlan.foodPlan,
-              amount: roomFoodPlan.amount || 0,
-              isComplimentary: roomFoodPlan.isComplimentary || false
-            };
-            
-            console.log("Complete food plan object:", completeFoodPlan);
-          }
-          
-          return {
-            ...selectedRoom,
-            customerName: room?.customerName,
-            mobileNumber: room?.mobileNumber,
-            voucherNumber: room?.voucherNumber,
-            foodPlan: completeFoodPlan, // ✅ This is the key part
-            bookingDate: room?.bookingDate,
-            arrivalDate: room?.arrivalDate,
-            checkOutDate: room?.checkOutDate,
-            stayDays: room?.stayDays,
-          };
-        }) || []
-      );
-    });
-    
-    console.log("=== ALL PROCESSED ROOMS ===");
-    console.log(getRooms.filter(r => r.foodPlan).map(r => ({
-      room: r.roomName,
-      foodPlan: r.foodPlan
-    })));
-    
-    setRoomData(getRooms);
-  }
-}, [roomBookingData]);
+  useEffect(() => {
+    if (roomBookingData) {
+      console.log("=== RAW ROOM BOOKING DATA ===")
+      console.log("First booking:", roomBookingData?.data[0])
+
+      const getRooms = roomBookingData?.data?.flatMap((room) => {
+        console.log("Processing booking, foodPlan array:", room?.foodPlan)
+
+        return (
+          room?.selectedRooms?.map((selectedRoom) => {
+            // Find matching food plan for this room
+            const roomFoodPlan = room?.foodPlan?.find(
+              (fp) => fp.roomId === selectedRoom.roomId
+            )
+
+            console.log("=== ROOM FOOD PLAN ===")
+            console.log("Room:", selectedRoom.roomName)
+            console.log("Found food plan:", roomFoodPlan)
+
+            // ✅ Build complete food plan object
+            let completeFoodPlan = null
+            if (roomFoodPlan) {
+              completeFoodPlan = {
+                _id: roomFoodPlan._id || roomFoodPlan.foodPlanId,
+                planType: roomFoodPlan.planType || roomFoodPlan.foodPlan,
+                amount: roomFoodPlan.amount || 0,
+                isComplimentary: roomFoodPlan.isComplimentary || false
+              }
+
+              console.log("Complete food plan object:", completeFoodPlan)
+            }
+
+            return {
+              ...selectedRoom,
+              customerName: room?.customerName,
+              mobileNumber: room?.mobileNumber,
+              voucherNumber: room?.voucherNumber,
+              foodPlan: completeFoodPlan, // ✅ This is the key part
+              bookingDate: room?.bookingDate,
+              arrivalDate: room?.arrivalDate,
+              checkOutDate: room?.checkOutDate,
+              stayDays: room?.stayDays
+            }
+          }) || []
+        )
+      })
+
+      console.log("=== ALL PROCESSED ROOMS ===")
+      console.log(
+        getRooms
+          .filter((r) => r.foodPlan)
+          .map((r) => ({
+            room: r.roomName,
+            foodPlan: r.foodPlan
+          }))
+      )
+
+      setRoomData(getRooms)
+    }
+  }, [roomBookingData])
 
   console.log(roomBookingData)
 
   useEffect(() => {
     if (error) {
-      toast.error(error.response?.data?.message || "Failed to load data");
+      toast.error(error.response?.data?.message || "Failed to load data")
     }
-  }, [error]);
+  }, [error])
 
   useEffect(() => {
-    let filteredItems = [...allItems];
+    let filteredItems = [...allItems]
 
     if (selectedSubcategory) {
-      const selectedSubcatId = getSelectedSubcategoryId();
+      const selectedSubcatId = getSelectedSubcategoryId()
       filteredItems = filteredItems.filter(
         (item) => item.sub_category === selectedSubcatId
-      );
+      )
     }
 
     if (searchTerm.trim()) {
-      const searchLower = searchTerm?.toLowerCase().trim();
+      const searchLower = searchTerm?.toLowerCase().trim()
       filteredItems = filteredItems.filter(
         (item) =>
           item.product_name?.toLowerCase().includes(searchLower) ||
@@ -524,36 +526,36 @@ const handleSelectRoom = (room) => {
             item.description?.toLowerCase().includes(searchLower)) ||
           (item.tags &&
             item.tags.some((tag) => tag?.toLowerCase().includes(searchLower)))
-      );
+      )
     }
 
-    setItems(filteredItems);
-  }, [allItems, selectedSubcategory, searchTerm]);
+    setItems(filteredItems)
+  }, [allItems, selectedSubcategory, searchTerm])
 
-  const searchTimeoutRef = useRef(null);
+  const searchTimeoutRef = useRef(null)
 
   const handleProcessDirectSalePayment = async () => {
-    setSaveLoader(true);
+    setSaveLoader(true)
 
     try {
       // Step 1: Prepare paymentDetails
-      let paymentDetails;
+      let paymentDetails
       if (paymentMethod === "cash") {
         paymentDetails = {
           cashAmount: selectedDataForPayment?.total,
           onlineAmount: 0,
           selectedCash,
           selectedBank,
-          paymentMode: "single",
-        };
+          paymentMode: "single"
+        }
       } else {
         paymentDetails = {
           cashAmount: 0,
           onlineAmount: selectedDataForPayment?.total,
           selectedCash,
           selectedBank,
-          paymentMode: "single",
-        };
+          paymentMode: "single"
+        }
       }
 
       // Step 2: Make API call
@@ -563,152 +565,152 @@ const handleSelectRoom = (room) => {
           paymentMethod: paymentMethod,
           paymentDetails: paymentDetails,
           selectedKotData: selectedDataForPayment,
-          isDirectSale: true,
+          isDirectSale: true
         },
         { withCredentials: true }
-      );
+      )
 
       // Step 3: Handle success and PRINT
       if (response.status === 200 || response.status === 201) {
-        console.log("=== FULL RESPONSE ===");
-        console.log("response.data:", response.data);
-        console.log("response.data.data:", response.data.data);
+        console.log("=== FULL RESPONSE ===")
+        console.log("response.data:", response.data)
+        console.log("response.data.data:", response.data.data)
         console.log(
           "response.data.data.salesRecord:",
           response.data.data.salesRecord
-        );
+        )
 
         toast.success(
           response?.data?.message || "Direct sale completed successfully!"
-        );
+        )
 
         // ✅ Get sale ID from response
-        const salesRecord = response?.data?.data?.salesRecord;
+        const salesRecord = response?.data?.data?.salesRecord
 
         if (salesRecord && salesRecord._id) {
-          console.log("📄 Sale ID:", salesRecord._id);
-          console.log("📄 Full Sale Data:", salesRecord);
+          console.log("📄 Sale ID:", salesRecord._id)
+          console.log("📄 Full Sale Data:", salesRecord)
 
-          setSalePrintData(salesRecord);
-          setShowVoucherPdf(true);
+          setSalePrintData(salesRecord)
+          setShowVoucherPdf(true)
 
           setTimeout(() => {
-            handlePrint();
-          }, 500);
+            handlePrint()
+          }, 500)
         } else {
-          console.error("❌ NO SALE ID FOUND IN RESPONSE");
-          toast.error("Sale saved but couldn't generate print");
+          console.error("❌ NO SALE ID FOUND IN RESPONSE")
+          toast.error("Sale saved but couldn't generate print")
         }
 
         // Clear state
-        setOrderItems([]);
-        setSelectedDataForPayment(null);
-        setPaymentMethod("cash");
-        setPaymentMode("single");
-        setShowPaymentModal(false);
+        setOrderItems([])
+        setSelectedDataForPayment(null)
+        setPaymentMethod("cash")
+        setPaymentMode("single")
+        setShowPaymentModal(false)
 
         // setTimeout(() => {
         //   navigate("/sUsers/RestaurantDashboard");
         // }, 1000);
       } else {
-        toast.error(response?.data?.message || "Failed to process payment");
+        toast.error(response?.data?.message || "Failed to process payment")
       }
     } catch (error) {
-      console.error("=== ERROR ===", error);
-      console.error("Error response:", error.response?.data);
-      toast.error(error.response?.data?.message || "Failed to process payment");
+      console.error("=== ERROR ===", error)
+      console.error("Error response:", error.response?.data)
+      toast.error(error.response?.data?.message || "Failed to process payment")
     } finally {
-      setSaveLoader(false);
+      setSaveLoader(false)
     }
-  };
+  }
 
   const searchItems = useCallback(
     async (searchQuery) => {
-      setLoader(true);
-      setIsLoading(true);
+      setLoader(true)
+      setIsLoading(true)
 
       try {
-        const params = new URLSearchParams();
-        params.append("cmp_id", cmp_id); // ✅ FIX: Add cmp_id here
-        params.append("under", "restaurant");
-        params.append("search", searchQuery.trim());
+        const params = new URLSearchParams()
+        params.append("cmp_id", cmp_id) // ✅ FIX: Add cmp_id here
+        params.append("under", "restaurant")
+        params.append("search", searchQuery.trim())
 
         const res = await api.get(
           `/api/sUsers/searchItems?${params.toString()}`,
           {
-            withCredentials: true,
+            withCredentials: true
           }
-        );
+        )
 
-        const searchResults = res?.data?.items || [];
-        setAllItems(searchResults);
-        setItems(searchResults);
-        setHasMore(false);
+        const searchResults = res?.data?.items || []
+        setAllItems(searchResults)
+        setItems(searchResults)
+        setHasMore(false)
       } catch (error) {
-        console.log("Error searching items:", error);
-        setAllItems([]);
-        setItems([]);
-        setHasMore(false);
+        console.log("Error searching items:", error)
+        setAllItems([])
+        setItems([])
+        setHasMore(false)
       } finally {
-        setIsLoading(false);
-        setLoader(false);
+        setIsLoading(false)
+        setLoader(false)
       }
     },
     [cmp_id]
-  );
+  )
 
   const handleSearchChange = (value) => {
-    setSearchTerm(value);
+    setSearchTerm(value)
 
     if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
+      clearTimeout(searchTimeoutRef.current)
     }
 
     if (!value.trim()) {
       // If search is cleared, reload normal items
-      setCurrentPage(1);
-      setHasMore(true);
-      fetchAllItems(1, false);
-      return;
+      setCurrentPage(1)
+      setHasMore(true)
+      fetchAllItems(1, false)
+      return
     }
 
     searchTimeoutRef.current = setTimeout(() => {
       // Call separate search endpoint
-      searchItems(value);
-    }, 500);
-  };
+      searchItems(value)
+    }, 500)
+  }
   useEffect(() => {
     return () => {
       if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
+        clearTimeout(searchTimeoutRef.current)
       }
-    };
-  }, []);
+    }
+  }, [])
 
-  const cuisines = optionData?.category || [];
-  const subcategories = optionData?.subcategory || [];
+  const cuisines = optionData?.category || []
+  const subcategories = optionData?.subcategory || []
 
   const getSelectedSubcategoryId = () => {
     const selectedSubcat = subcategories.find(
       (subcat) => subcat.name === selectedSubcategory
-    );
-    return selectedSubcat?._id || "";
-  };
+    )
+    return selectedSubcat?._id || ""
+  }
 
   const getFilteredSubcategories = () => {
-    if (!selectedCuisine) return [];
+    if (!selectedCuisine) return []
     return subcategories.filter(
       (item) => item.category === selectedCuisine?.categoryId
-    );
-  };
+    )
+  }
 
-  const filteredSubcategories = getFilteredSubcategories();
-  const menuItems = items || [];
+  const filteredSubcategories = getFilteredSubcategories()
+  const menuItems = items || []
 
   const addToOrder = (item) => {
     const existingItem = orderItems.find(
       (orderItem) => orderItem._id === item._id
-    );
+    )
     if (existingItem) {
       setOrderItems(
         orderItems.map((orderItem) =>
@@ -716,94 +718,98 @@ const handleSelectRoom = (room) => {
             ? { ...orderItem, quantity: orderItem.quantity + 1 }
             : orderItem
         )
-      );
+      )
     } else {
       // Calculate price based on selected price level
-      let price = 0;
-      
+      let price = 0
+
       if (item.Priceleveles && item.Priceleveles.length > 0) {
         if (selectedPriceLevel) {
           // Find matching price level (check both _id and pricelevel field)
           const matchedPrice = item.Priceleveles.find(
-            (pl) => pl.pricelevel === selectedPriceLevel || pl.pricelevel?._id === selectedPriceLevel
-          );
-          price = matchedPrice ? Number(matchedPrice.pricerate) : Number(item.Priceleveles[0].pricerate);
+            (pl) =>
+              pl.pricelevel === selectedPriceLevel ||
+              pl.pricelevel?._id === selectedPriceLevel
+          )
+          price = matchedPrice
+            ? Number(matchedPrice.pricerate)
+            : Number(item.Priceleveles[0].pricerate)
         } else {
           // Use first price level as default
-          price = Number(item.Priceleveles[0].pricerate);
+          price = Number(item.Priceleveles[0].pricerate)
         }
       }
-   
-      setOrderItems([...orderItems, { ...item, quantity: 1, price: price }]);
+
+      setOrderItems([...orderItems, { ...item, quantity: 1, price: price }])
     }
-  };
+  }
 
   const removeFromOrder = (itemId) => {
-    setOrderItems(orderItems.filter((item) => item._id !== itemId));
-  };
+    setOrderItems(orderItems.filter((item) => item._id !== itemId))
+  }
 
   const updateQuantity = (itemId, newQuantity) => {
     if (newQuantity === 0) {
-      removeFromOrder(itemId);
+      removeFromOrder(itemId)
     } else {
       setOrderItems(
         orderItems.map((item) =>
           item._id === itemId ? { ...item, quantity: newQuantity } : item
         )
-      );
+      )
     }
-  };
+  }
 
   const getTotalAmount = () => {
     return orderItems.reduce(
       (total, item) => total + item.price * item.quantity,
       0
-    );
-  };
+    )
+  }
 
   const getTotalItems = () => {
-    return orderItems.reduce((total, item) => total + item.quantity, 0);
-  };
+    return orderItems.reduce((total, item) => total + item.quantity, 0)
+  }
 
   const handleCategorySelect = (category, name) => {
     let newObject = {
       categoryId: category,
-      categoryName: name,
-    };
-    setSelectedCuisine(newObject);
-    setSelectedSubcategory("");
-    setSearchTerm("");
-    if (isMobile) setShowSidebar(true);
-  };
+      categoryName: name
+    }
+    setSelectedCuisine(newObject)
+    setSelectedSubcategory("")
+    setSearchTerm("")
+    if (isMobile) setShowSidebar(true)
+  }
 
   const handleSubcategorySelect = (subcategoryId, subcategoryName) => {
     let newObject = {
       subcategoryId: subcategoryId,
-      subcategoryName: subcategoryName,
-    };
-    setSelectedSubcategory(newObject);
-    setSearchTerm("");
-    if (isMobile) setShowSidebar(false);
-  };
+      subcategoryName: subcategoryName
+    }
+    setSelectedSubcategory(newObject)
+    setSearchTerm("")
+    if (isMobile) setShowSidebar(false)
+  }
 
   const handleBackToCategories = () => {
-    setSelectedSubcategory({});
-    setSearchTerm("");
-  };
+    setSelectedSubcategory({})
+    setSearchTerm("")
+  }
 
   const handlePlaceOrder = () => {
-    if (orderItems.length === 0) return;
+    if (orderItems.length === 0) return
     if (orderType === "direct-sale") {
       // Skip KOT generation and go directly to payment
-      handleDirectSale();
-      return;
+      handleDirectSale()
+      return
     } else if (orderType === "dine-in") {
-      setShowFullTableSelection(true); // show full-page table selection
+      setShowFullTableSelection(true) // show full-page table selection
     } else {
-      setShowKOTModal(true); // keep normal KOT flow for others
+      setShowKOTModal(true) // keep normal KOT flow for others
     }
-    setShowOrderSummary(false);
-  };
+    setShowOrderSummary(false)
+  }
 
   const handleDirectSale = async () => {
     let updatedItems = orderItems.map((item) => {
@@ -821,20 +827,20 @@ const handleSelectRoom = (room) => {
                 warrantyCard: g?.warrantyCard,
                 added: true,
                 count: item?.quantity,
-                actualCount: item?.quantity,
+                actualCount: item?.quantity
               }
             : g
         ),
         hasGodownOrBatch: false,
         totalCount: item?.quantity,
-        totalActualCount: item?.quantity,
-      };
-    });
+        totalActualCount: item?.quantity
+      }
+    })
 
     let finalProductData = await taxCalculatorForRestaurant(
       updatedItems,
       configurations[0]?.addRateWithTax?.restaurantSale
-    );
+    )
 
     let newSaleObject = {
       Date: new Date(),
@@ -846,22 +852,22 @@ const handleSelectRoom = (room) => {
       items: finalProductData,
       finalAmount: getTotalAmount(),
       total: getTotalAmount(),
-      isDirectSale: true,
-    };
+      isDirectSale: true
+    }
 
-    setSelectedDataForPayment(newSaleObject);
-    setPaymentMode("single");
-    setPaymentMethod("cash");
-    setShowPaymentModal(true);
-  };
+    setSelectedDataForPayment(newSaleObject)
+    setPaymentMode("single")
+    setPaymentMethod("cash")
+    setShowPaymentModal(true)
+  }
   const generateKOT = async (selectedTableNumber, tableStatus) => {
-    console.log("hi");
-    let updatedItems = [];
+    console.log("hi")
+    let updatedItems = []
     let orderCustomerDetails = {
       ...customerDetails,
       tableNumber: selectedTableNumber,
-      tableStatus,
-    };
+      tableStatus
+    }
     updatedItems = orderItems.map((item) => {
       return {
         ...item,
@@ -877,19 +883,19 @@ const handleSelectRoom = (room) => {
                 warrantyCard: g?.warrantyCard,
                 added: true,
                 count: item?.quantity,
-                actualCount: item?.quantity,
+                actualCount: item?.quantity
               }
             : g
         ),
         hasGodownOrBatch: false,
         totalCount: item?.quantity,
-        totalActualCount: item?.quantity,
-      };
-    });
+        totalActualCount: item?.quantity
+      }
+    })
     let finalProductData = await taxCalculatorForRestaurant(
       updatedItems,
       configurations[0]?.addRateWithTax?.restaurantSale
-    );
+    )
 
     // console.log(finalProductData);
 
@@ -901,24 +907,24 @@ const handleSelectRoom = (room) => {
           name: roomDetails?.guestName,
           tableNumber: selectedTableNumber,
           tableStatus,
-           foodPlan: roomDetails?.foodPlan || null,
-        };
+          foodPlan: roomDetails?.foodPlan || null
+        }
       } else {
         orderCustomerDetails = {
           tableNumber: selectedTableNumber,
-          tableStatus,
-        };
+          tableStatus
+        }
       }
     } else if (orderType === "roomService") {
-      console.log(roomDetails);
+      console.log(roomDetails)
       orderCustomerDetails = {
         roomId: roomDetails?._id,
         checkInNumber: roomDetails?.CheckInNumber,
         name: roomDetails?.guestName,
-          foodPlan: roomDetails?.foodPlan || null,
-      };
+        foodPlan: roomDetails?.foodPlan || null
+      }
     } else {
-      orderCustomerDetails = { ...customerDetails, tableStatus };
+      orderCustomerDetails = { ...customerDetails, tableStatus }
     }
 
     // console.log("orderCustomerDetails", orderItems);
@@ -933,77 +939,77 @@ const handleSelectRoom = (room) => {
       total: getTotalAmount(),
       timestamp: new Date(),
       status: kotDataForEdit?.status || "pending",
-      paymentMethod: orderType === "dine-in" ? null : "cash",
-    };
+      paymentMethod: orderType === "dine-in" ? null : "cash"
+    }
 
     let url = isEdit
       ? `/api/sUsers/editKOT/${cmp_id}/${kotDataForEdit._id}`
-      : `/api/sUsers/generateKOT/${cmp_id}`;
+      : `/api/sUsers/generateKOT/${cmp_id}`
 
     try {
       let response = await api.post(url, newOrder, {
-        withCredentials: true,
-      });
+        withCredentials: true
+      })
       if (response.data?.success) {
-        handleKotPrint(response.data?.data);
+        handleKotPrint(response.data?.data)
         if (orderType === "dine-in") {
           await api.put(
             `/api/sUsers/updateTableStatus/${cmp_id}`,
             {
               tableNumber: selectedTableNumber,
-              status: "occupied",
+              status: "occupied"
             },
             { withCredentials: true }
-          );
+          )
         }
 
         queryClient.invalidateQueries({
-          queryKey: ["todaysTransaction", cmp_id, isAdmin],
-        });
+          queryKey: ["todaysTransaction", cmp_id, isAdmin]
+        })
       }
     } catch (error) {
-      console.log(error);
-      toast.error(error.response.data.message);
+      console.log(error)
+      toast.error(error.response.data.message)
     }
 
-    setOrders([...orders, newOrder]);
-    setOrderItems([]);
-    setOrderNumber(orderNumber + 1);
-    setShowKOTModal(false);
-    setIsEdit(false);
+    setOrders([...orders, newOrder])
+    setOrderItems([])
+    setOrderNumber(orderNumber + 1)
+    setShowKOTModal(false)
+    setIsEdit(false)
     setCustomerDetails({
       name: "",
       phone: "",
       address: "",
-      tableNumber: "10",
-    });
+      tableNumber: "10"
+    })
     toast.success(
       kotDataForEdit
         ? "KOT updated successfully!"
         : "KOT generated successfully!"
-    );
-  };
+    )
+  }
 
   // ✅ Handle search with debounce
 
   const clearSearch = () => {
-    setSearchTerm("");
-    setCurrentPage(1);
-    setHasMore(true);
-    fetchAllItems(1, false);
-  };
+    setSearchTerm("")
+    setCurrentPage(1)
+    setHasMore(true)
+    fetchAllItems(1, false)
+  }
 
   useEffect(() => {
-    let filteredItems = [...allItems];
+    let filteredItems = [...allItems]
 
     if (selectedSubcategory) {
       filteredItems = filteredItems.filter(
         (item) => item.sub_category === selectedSubcategory?.subcategoryId
-      );
+      )
     }
 
-    setItems(filteredItems);
-  }, [allItems, selectedSubcategory]);
+    setItems(filteredItems)
+  }, [allItems, selectedSubcategory])
 
   // Cleanup
 
@@ -1012,33 +1018,35 @@ const handleSelectRoom = (room) => {
       "dine-in": "Dine In",
       takeaway: "Takeaway",
       delivery: "Delivery",
-      roomService: "Room Service",
-    };
-    return typeMap[type] || type;
-  };
+      roomService: "Room Service"
+    }
+    return typeMap[type] || type
+  }
 
   const handleKotPrint = (data) => {
-    console.log(data);
-    console.log(data.type);
+    console.log(data)
+    console.log(data.type)
     const orderData = {
       kotNo: data?.voucherNumber,
       tableNo: data?.tableNumber,
       type: data.type,
       items: data?.items,
-      createdAt: new Date(),
-    };
+      createdAt: new Date()
+    }
 
-    generateAndPrintKOT(orderData, true, false, companyName);
-  };
+    generateAndPrintKOT(orderData, true, false, companyName)
+  }
 
   const handleSelectedPriceLevel = (value) => {
-    setShowPriceLevelSelect(false);
-    setSelectedPriceLevel(value);
-  };
+    setShowPriceLevelSelect(false)
+    setSelectedPriceLevel(value)
+  }
 
   const findOneCount = (id) => {
-    return orderItems.find((item) => item._id === id)?.quantity || 0;
-  };
+    return orderItems.find((item) => item._id === id)?.quantity || 0
+  }
+console.log(searchTerm)
+console.log(searchTerm)
 
   return (
     <>
@@ -1127,8 +1135,8 @@ const handleSelectRoom = (room) => {
                           <button
                             key={level._id}
                             onClick={() => {
-                              setSelectedPriceLevel(level._id);
-                              setOrderItems([]);
+                              setSelectedPriceLevel(level._id)
+                              setOrderItems([])
                             }}
                             className={`
                           px-3 py-1.5 rounded-md font-semibold text-xs
@@ -1169,7 +1177,7 @@ const handleSelectRoom = (room) => {
                     {currentTime.toLocaleTimeString([], {
                       hour: "2-digit",
                       minute: "2-digit",
-                      second: "2-digit",
+                      second: "2-digit"
                     })}
                   </span>
                 </div>
@@ -1183,8 +1191,8 @@ const handleSelectRoom = (room) => {
                     {orderType === "dine-in"
                       ? `Table ${customerDetails.tableNumber}`
                       : orderType === "roomService"
-                      ? `Room ${roomDetails.roomno || "---"}`
-                      : getOrderTypeDisplay(orderType)}
+                        ? `Room ${roomDetails.roomno || "---"}`
+                        : getOrderTypeDisplay(orderType)}
                   </span>
                 </div>
 
@@ -1223,8 +1231,8 @@ const handleSelectRoom = (room) => {
                     <button
                       key={level._id}
                       onClick={() => {
-                        setSelectedPriceLevel(level._id);
-                        setOrderItems([]);
+                        setSelectedPriceLevel(level._id)
+                        setOrderItems([])
                       }}
                       className={`
                     px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap flex-shrink-0 border transition-all
@@ -1251,7 +1259,7 @@ const handleSelectRoom = (room) => {
                 <span className="font-medium">
                   {currentTime.toLocaleTimeString([], {
                     hour: "2-digit",
-                    minute: "2-digit",
+                    minute: "2-digit"
                   })}
                 </span>
               </div>
@@ -1363,8 +1371,8 @@ const handleSelectRoom = (room) => {
               isMobile && showSidebar
                 ? "translate-x-0"
                 : isMobile
-                ? "-translate-x-full"
-                : "translate-x-0"
+                  ? "-translate-x-full"
+                  : "translate-x-0"
             }
             w-56 md:w-48 bg-white/95 backdrop-blur-xl shadow-2xl h-full flex flex-col min-h-0 border-r border-gray-200/50
           `}
@@ -1433,7 +1441,7 @@ const handleSelectRoom = (room) => {
                 filteredSubcategories.map((subcategory, index) => {
                   const icon =
                     subcategoryIcons[subcategory.name] ||
-                    subcategoryIcons.Default;
+                    subcategoryIcons.Default
 
                   return (
                     <button
@@ -1459,7 +1467,7 @@ const handleSelectRoom = (room) => {
                         {subcategory.name}
                       </span>
                     </button>
-                  );
+                  )
                 })
               )}
             </div>
@@ -1469,7 +1477,7 @@ const handleSelectRoom = (room) => {
           <div className="flex-1 flex flex-col">
             {/* Compact Search Bar */}
             <div className="p-3 bg-white/90 backdrop-blur-sm border-b border-gray-200/50">
-              <div className="mb-6 relative">
+              <div className="mb-2 relative">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-indigo-500 w-5 h-5" />
                 <input
                   type="text"
@@ -1486,16 +1494,16 @@ const handleSelectRoom = (room) => {
                     <X className="w-4 h-4" />
                   </button>
                 )}
-                {searchTerm && (
-                  <div className="mb-4 text-sm text-indigo-600 bg-indigo-50 px-4 py-2 rounded-lg inline-block">
-                    {items.length > 0
-                      ? `Found ${items.length} item${
-                          items.length !== 1 ? "s" : ""
-                        } for "${searchTerm}"`
-                      : `No items found for "${searchTerm}"`}
-                  </div>
-                )}
               </div>
+              {searchTerm && (
+                <div className="mb-4 text-sm text-indigo-600 bg-indigo-50 px-4 py-2 rounded-lg inline-block">
+                  {items.length > 0
+                    ? `Found ${items.length} item${
+                        items.length !== 1 ? "s" : ""
+                      } for "${searchTerm}"`
+                    : `No items found for "${searchTerm}"`}
+                </div>
+              )}
 
               {/* {searchTerm && (
                 <div className="mt-2 text-xs text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full inline-block">
@@ -1527,8 +1535,8 @@ const handleSelectRoom = (room) => {
                       {selectedSubcategory
                         ? `${selectedCuisine?.categoryName} - ${selectedSubcategory?.subcategoryName} (${menuItems.length})`
                         : searchTerm
-                        ? `Search Results (${menuItems.length})`
-                        : `All Items (${menuItems.length})`}
+                          ? `Search Results (${menuItems.length})`
+                          : `All Items (${menuItems.length})`}
                     </h3>
                   </div>
 
@@ -1545,18 +1553,18 @@ const handleSelectRoom = (room) => {
                           {searchTerm
                             ? `No items found matching "${searchTerm}"`
                             : selectedSubcategory
-                            ? `No items available in ${selectedSubcategory?.subcategoryName}`
-                            : "No items available"}
+                              ? `No items available in ${selectedSubcategory?.subcategoryName}`
+                              : "No items available"}
                         </p>
                       </div>
                     </div>
                   ) : (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-3">
                       {menuItems.map((item, index) => {
-                        const count = findOneCount(item._id);
+                        const count = findOneCount(item._id)
 
                         // Calculate display price based on selected price level
-                        let displayPrice = 0;
+                        let displayPrice = 0
 
                         if (item.Priceleveles && item.Priceleveles.length > 0) {
                           if (selectedPriceLevel) {
@@ -1565,15 +1573,15 @@ const handleSelectRoom = (room) => {
                               (pl) =>
                                 pl.pricelevel === selectedPriceLevel ||
                                 pl.pricelevel?._id === selectedPriceLevel
-                            );
+                            )
                             displayPrice = matchedPrice
                               ? Number(matchedPrice.pricerate)
-                              : Number(item.Priceleveles[0].pricerate);
+                              : Number(item.Priceleveles[0].pricerate)
                           } else {
                             // Use first price level as default
                             displayPrice = Number(
                               item.Priceleveles[0].pricerate
-                            );
+                            )
                           }
                         }
 
@@ -1611,7 +1619,7 @@ const handleSelectRoom = (room) => {
                                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-125"
                                   onError={(e) => {
                                     e.target.src =
-                                      "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=150&h=150&fit=crop";
+                                      "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=150&h=150&fit=crop"
                                   }}
                                 />
                               </div>
@@ -1632,7 +1640,7 @@ const handleSelectRoom = (room) => {
                               </div>
                             </div>
                           </motion.div>
-                        );
+                        )
                       })}
                     </div>
                   )}
@@ -1660,8 +1668,8 @@ const handleSelectRoom = (room) => {
               isMobile && showOrderSummary
                 ? "translate-x-0"
                 : isMobile
-                ? "translate-x-full"
-                : "translate-x-0"
+                  ? "translate-x-full"
+                  : "translate-x-0"
             }
             w-full sm:w-80 md:w-72 bg-white/95 backdrop-blur-xl border-l border-gray-200/50 flex flex-col min-h-0 h-full shadow-2xl
           `}
@@ -1718,14 +1726,14 @@ const handleSelectRoom = (room) => {
                               type="number"
                               value={item.price}
                               onChange={(e) => {
-                                const newPrice = parseFloat(e.target.value);
+                                const newPrice = parseFloat(e.target.value)
                                 setOrderItems(
                                   orderItems.map((orderItem) =>
                                     orderItem._id === item._id
                                       ? { ...orderItem, price: newPrice }
                                       : orderItem
                                   )
-                                );
+                                )
                               }}
                               className="w-16 text-xs text-gray-600 bg-transparent border-none focus:outline-none focus:bg-white focus:border focus:border-indigo-300 focus:rounded px-1 py-0.5"
                               step="0.01"
@@ -1827,8 +1835,8 @@ const handleSelectRoom = (room) => {
                   </button>
                   <button
                     onClick={() => {
-                      console.log("Direct Sale button clicked"); // Debug log
-                      setOrderType("direct-sale");
+                      console.log("Direct Sale button clicked") // Debug log
+                      setOrderType("direct-sale")
                     }}
                     className={`flex flex-col items-center justify-center  h-10 rounded-xl border transition-all duration-300 transform hover:scale-105 col-span-2 ${
                       orderType === "direct-sale"
@@ -1854,8 +1862,8 @@ const handleSelectRoom = (room) => {
                   {isEdit
                     ? "Update Kot"
                     : orderType === "direct-sale"
-                    ? "Generate Bill"
-                    : " Kot"}
+                      ? "Generate Bill"
+                      : " Kot"}
                 </button>
               </div>
             </div>
@@ -1868,24 +1876,24 @@ const handleSelectRoom = (room) => {
           <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-auto relative border border-white/20 animate-in zoom-in-95 duration-200">
             <button
               onClick={() => {
-                setShowFullTableSelection(false);
+                setShowFullTableSelection(false)
                 if (
                   !kotDataForEdit &&
                   Object.keys(kotDataForEdit).length <= 0
                 ) {
-                  setRoomDetails({});
+                  setRoomDetails({})
                 }
               }}
               className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl font-bold w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center transition-all duration-200"
             >
               <button
                 onClick={() => {
-                  setShowFullTableSelection(false);
+                  setShowFullTableSelection(false)
                   if (
                     !kotDataForEdit &&
                     Object.keys(kotDataForEdit).length <= 0
                   ) {
-                    setRoomDetails({});
+                    setRoomDetails({})
                   }
                 }}
                 className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-3xl font-bold w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center transition-all duration-200"
@@ -1898,8 +1906,8 @@ const handleSelectRoom = (room) => {
               <TableSelection
                 showKOTs={false}
                 onTableSelect={(table) => {
-                  generateKOT(table.tableNumber, table.status);
-                  setShowFullTableSelection(false);
+                  generateKOT(table.tableNumber, table.status)
+                  setShowFullTableSelection(false)
                 }}
                 roomData={roomData}
                 setRoomDetails={setRoomDetails}
@@ -1965,8 +1973,8 @@ const handleSelectRoom = (room) => {
                         className="px-3 py-2 border rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-violet-500"
                         value={search}
                         onChange={(e) => {
-                          setSearch(e.target.value);
-                          setShowResults(true);
+                          setSearch(e.target.value)
+                          setShowResults(true)
                         }}
                       />
 
@@ -2028,7 +2036,7 @@ const handleSelectRoom = (room) => {
                       onChange={(e) =>
                         setRoomDetails({
                           ...roomDetails,
-                          guestName: e.target.value,
+                          guestName: e.target.value
                         })
                       }
                       className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 text-sm bg-white transition-all duration-200"
@@ -2060,7 +2068,7 @@ const handleSelectRoom = (room) => {
                       onChange={(e) =>
                         setCustomerDetails({
                           ...customerDetails,
-                          name: e.target.value,
+                          name: e.target.value
                         })
                       }
                       className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 text-sm bg-white transition-all duration-200"
@@ -2076,7 +2084,7 @@ const handleSelectRoom = (room) => {
                       onChange={(e) =>
                         setCustomerDetails({
                           ...customerDetails,
-                          phone: e.target.value,
+                          phone: e.target.value
                         })
                       }
                       className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 text-sm bg-white transition-all duration-200"
@@ -2093,7 +2101,7 @@ const handleSelectRoom = (room) => {
                         onChange={(e) =>
                           setCustomerDetails({
                             ...customerDetails,
-                            address: e.target.value,
+                            address: e.target.value
                           })
                         }
                         className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 text-sm resize-none bg-white transition-all duration-200"
@@ -2108,8 +2116,8 @@ const handleSelectRoom = (room) => {
             <div className="flex space-x-2">
               <button
                 onClick={() => {
-                  setShowKOTModal(false);
-                  setRoomDetails({});
+                  setShowKOTModal(false)
+                  setRoomDetails({})
                 }}
                 className="flex-1 bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 hover:scale-105 active:scale-95"
               >
@@ -2139,11 +2147,11 @@ const handleSelectRoom = (room) => {
               </h2>
               <button
                 onClick={() => {
-                  setShowPaymentModal(false);
-                  setPaymentMode("single");
-                  setCashAmount(0);
-                  setOnlineAmount(0);
-                  setPaymentError("");
+                  setShowPaymentModal(false)
+                  setPaymentMode("single")
+                  setCashAmount(0)
+                  setOnlineAmount(0)
+                  setPaymentError("")
                 }}
                 className="text-gray-400 hover:text-gray-600"
               >
@@ -2350,7 +2358,8 @@ const handleSelectRoom = (room) => {
         input:focus,
         select:focus,
         textarea:focus {
-          box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1),
+          box-shadow:
+            0 0 0 2px rgba(99, 102, 241, 0.1),
             0 4px 15px rgba(99, 102, 241, 0.1);
         }
       `}</style>
@@ -2358,7 +2367,7 @@ const handleSelectRoom = (room) => {
       {isLoading && <div>Loading...</div>}
       {/* {!hasMore && <div>No more items</div>} */}
     </>
-  );
-};
+  )
+}
 
-export default RestaurantPOS;
+export default RestaurantPOS
