@@ -1756,12 +1756,12 @@ function BookingList() {
                     Proceed to Checkout
                   </button>
 
-                  <button
+                  {/* <button
                     className="bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded"
                     onClick={() => setShowEnhancedHoldModal(true)}
                   >
                     On Hold
-                  </button>
+                  </button> */}
                 </div>
               </div>
             </>

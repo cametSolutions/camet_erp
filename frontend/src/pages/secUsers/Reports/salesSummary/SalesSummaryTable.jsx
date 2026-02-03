@@ -434,7 +434,7 @@ function SalesSummaryTable() {
                         )}
                         {selectedOption !== "voucher" && (
                           <td className="px-1 py-2 text-gray-800 text-xs cursor-pointer text-nowrap">
-                            {saleItem?.billnumber}
+                            {saleItem?.billnumber} 
                           </td>
                         )}
                         <td className="px-1 py-2 text-gray-800 text-xs cursor-pointer text-nowrap">
