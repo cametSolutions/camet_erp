@@ -233,6 +233,9 @@ const bookingSchema = new mongoose.Schema(
     dateOfIssue: String,
     dateOfExpiry: String,
     grcno: String,
+    isHold: { type: Boolean, default: false },
+    taggedCheckIns: { type: mongoose.Schema.Types.ObjectId, ref: "CheckIn" },
+    holdArray:[]
   },
   { timestamps: true },
 );
