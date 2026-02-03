@@ -12,6 +12,7 @@ function VoucherThreeInchPdf({
   sendToParent,
   handlePrintData,
 }) {
+console.log("hhh")
   const [subTotal, setSubTotal] = useState("");
   const [additinalCharge, setAdditinalCharge] = useState("");
   const [inWords, setInWords] = useState("");

@@ -357,11 +357,10 @@ export const saveIdProof = async (req, res) => {
   try {
     const { idProof } = req.body;
     const { cmp_id } = req.params;
-     let nameAlreadyExists = await IdProof.findOne({
+    let nameAlreadyExists = await IdProof.findOne({
       idProof,
       cmp_id,
       Primary_user_id: req.pUserId || req.owner,
-     
     });
 
     if (nameAlreadyExists) {
@@ -430,12 +429,11 @@ export const updateIdProof = async (req, res) => {
 
     const { cmp_id } = req.params;
 
-   let nameAlreadyExists = await IdProof.findOne({
+    let nameAlreadyExists = await IdProof.findOne({
       idProof,
       cmp_id,
       Primary_user_id: req.pUserId || req.owner,
       _id: { $ne: new ObjectId(idProofId) },
-     
     });
 
     if (nameAlreadyExists) {
@@ -524,7 +522,6 @@ export const saveFoodPlan = async (req, res) => {
       foodPlan,
       cmp_id,
       Primary_user_id: req.pUserId || req.owner,
-
     });
 
     if (nameAlreadyExists) {
@@ -532,7 +529,6 @@ export const saveFoodPlan = async (req, res) => {
         message: "Food plan name already exists",
       });
     }
-
 
     const generatedId = new mongoose.Types.ObjectId();
 
@@ -599,12 +595,11 @@ export const updateFoodPlan = async (req, res) => {
 
     const { cmp_id } = req.params;
 
-       let nameAlreadyExists = await FoodPlan.findOne({
+    let nameAlreadyExists = await FoodPlan.findOne({
       foodPlan,
       cmp_id,
       Primary_user_id: req.pUserId || req.owner,
       _id: { $ne: new ObjectId(foodPlanId) },
-
     });
 
     if (nameAlreadyExists) {
@@ -4866,5 +4861,54 @@ export const convertToAvailable = async (req, res) => {
       message: "Error converting rooms",
       error: error.message,
     });
+  }
+};
+
+export const controlTaggedCheckIn = async (req, res) => {
+  const session = await mongoose.startSession();
+
+  try {
+    const cmp_id = req.params.cmp_id;
+    const { checkInId, holds } = req.body;
+
+    if (!checkInId || !holds || !holds.length) {
+      return res.status(400).json({ message: "Invalid request data" });
+    }
+
+    const holdIds = holds.map((h) => h._id); // array of hold IDs
+
+    await session.withTransaction(async () => {
+      // 1️⃣ Update the main check-in with hold array
+      await CheckIn.updateOne(
+        { _id: new mongoose.Types.ObjectId(checkInId) },
+        { $set: { holdArray: holdIds } },
+        { session },
+      );
+      const bulkOps = holds.map((h) => ({
+        updateOne: {
+          filter: { _id: new mongoose.Types.ObjectId(h._id) },
+          update: {
+            $set: {
+              arrivalDate: h.arrivalDate,
+              checkOutDate: h.checkOutDate,
+              stayDays: h.stayDays,
+              isHold: true,
+              taggedCheckIns: checkInId,
+            },
+          },
+          session,
+        },
+      }));
+
+      await CheckIn.bulkWrite(bulkOps, { session });
+    });
+
+    session.endSession();
+
+    res.status(200).json({ message: "Tagged successfully" });
+  } catch (error) {
+    session.endSession();
+    console.error(error);
+    res.status(500).json({ message: error.message || "Something went wrong" });
   }
 };

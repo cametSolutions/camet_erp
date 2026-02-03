@@ -62,6 +62,7 @@ function ItemRegistration() {
   }, [fetchAllData]);
 
   const handleSubmit = async (formData, tableData) => {
+
     try {
       await api.post(
         `/api/sUsers/addItem/${orgId}`,

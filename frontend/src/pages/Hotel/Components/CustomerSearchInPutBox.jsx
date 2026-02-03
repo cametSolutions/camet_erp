@@ -134,7 +134,7 @@ function CustomerSearchInputBox({
           onClick={() => { if (!disabled) setIsOpen(true); }}
           placeholder={placeholder}
           disabled={disabled}
-          className={`w-full px-4 py-3 pr-20 border rounded-lg bg-white ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} focus:outline-none focus:ring-2 focus:ring-blue-500`}
+          className={`w-full px-4 py-1.5 pr-20 border rounded-lg bg-white ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} focus:outline-none focus:ring-2 focus:ring-blue-500`}
         />
         <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
           {selectedValue && !disabled && (
