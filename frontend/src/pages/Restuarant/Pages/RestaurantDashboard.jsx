@@ -25,6 +25,7 @@ import {
 } from "lucide-react"
 
 import TableSelection from "../Pages/TableSelection"
+import { Timer } from "../../../components/common/time/Timer"
 
 import { toast } from "react-toastify"
 import { useSelector } from "react-redux"
@@ -62,7 +63,7 @@ const RestaurantPOS = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [loader, setLoader] = useState(false)
   const [isEdit, setIsEdit] = useState(false)
-  const [currentTime, setCurrentTime] = useState(new Date())
+  // const [currentTime, setCurrentTime] = useState(new Date())
   const [showKOTModal, setShowKOTModal] = useState(false)
   const [orderType, setOrderType] = useState("dine-in")
   const [loading, setLoading] = useState(false)
@@ -72,7 +73,7 @@ const RestaurantPOS = () => {
   const [priceLevelData, setPriceLevelData] = useState([])
   const [selectedPriceLevel, setSelectedPriceLevel] = useState(null)
   const kotDataForEdit = location.state?.kotData
-
+  
   // Add these states near the other state declarations
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [paymentMethod, setPaymentMethod] = useState("cash")
@@ -119,6 +120,7 @@ const RestaurantPOS = () => {
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   )
+  const shouldFetch = Boolean(cmp_id)
 
   const queryClient = useQueryClient()
   const isAdmin =
@@ -127,6 +129,7 @@ const RestaurantPOS = () => {
       : false
   useEffect(() => {
     if (kotDataForEdit) {
+      
       setIsEdit(true)
       setOrderItems(kotDataForEdit.items)
       setOrderType(kotDataForEdit.type)
@@ -144,9 +147,11 @@ const RestaurantPOS = () => {
     }
   }, [kotDataForEdit])
   // Add this useFetch hook with other data fetching
-  const { data: paymentTypeData } = useFetch(
-    `/api/sUsers/getPaymentType/${cmp_id}`
-  )
+  const {
+    data: paymentTypeData,
+    
+  } = useFetch(shouldFetch ? `/api/sUsers/getPaymentType/${cmp_id}` : null)
+
 
   useEffect(() => {
     if (paymentTypeData) {
@@ -162,7 +167,6 @@ const RestaurantPOS = () => {
     }
   }, [paymentTypeData])
 
-  console.log(roomDetails, "roomDetails")
 
   const companyName = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg?.name
@@ -203,7 +207,7 @@ const RestaurantPOS = () => {
     fetchPriceList()
   }, [])
 
-  //
+
 
   const [search, setSearch] = useState("")
   const [showResults, setShowResults] = useState(false)
@@ -238,7 +242,6 @@ const RestaurantPOS = () => {
       )
       setSalePrintData(res?.data?.data) // triggers navigation useEffect
       setShowVoucherPdf(true)
-      console.log(res?.data?.data)
       setTimeout(() => {
         handlePrint()
       }, 500)
@@ -292,13 +295,6 @@ const RestaurantPOS = () => {
     }
   }
 
-  // Update current time every second
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date())
-    }, 1000)
-    return () => clearInterval(timer)
-  }, [])
 
   const fetchAllData = useCallback(async () => {
     try {
@@ -435,8 +431,11 @@ const RestaurantPOS = () => {
   const {
     data: roomBookingData,
     // loading: roomLoading,
-    error
-  } = useFetch(`/api/sUsers/getRoomBasedOnBooking/${cmp_id}`)
+    error,
+    
+  } = useFetch(
+    shouldFetch ? `/api/sUsers/getRoomBasedOnBooking/${cmp_id}` : null
+  )
 
   useEffect(() => {
     if (roomBookingData) {
@@ -492,7 +491,6 @@ const RestaurantPOS = () => {
     }
   }, [roomBookingData])
 
-  console.log(roomBookingData)
 
   useEffect(() => {
     if (error) {
@@ -502,7 +500,6 @@ const RestaurantPOS = () => {
 
   useEffect(() => {
     let filteredItems = [...allItems]
-
     if (selectedSubcategory) {
       const selectedSubcatId = getSelectedSubcategoryId()
       filteredItems = filteredItems.filter(
@@ -621,7 +618,6 @@ const RestaurantPOS = () => {
     async (searchQuery) => {
       setLoader(true)
       setIsLoading(true)
-
       try {
         const params = new URLSearchParams()
         params.append("cmp_id", cmp_id) // ✅ FIX: Add cmp_id here
@@ -854,7 +850,6 @@ const RestaurantPOS = () => {
     setShowPaymentModal(true)
   }
   const generateKOT = async (selectedTableNumber, tableStatus) => {
-    console.log("hi")
     let updatedItems = []
     let orderCustomerDetails = {
       ...customerDetails,
@@ -890,7 +885,6 @@ const RestaurantPOS = () => {
       configurations[0]?.addRateWithTax?.restaurantSale
     )
 
-    // console.log(finalProductData);
 
     if (orderType === "dine-in") {
       if (roomDetails && Object.keys(roomDetails).length > 0) {
@@ -909,7 +903,6 @@ const RestaurantPOS = () => {
         }
       }
     } else if (orderType === "roomService") {
-      console.log(roomDetails)
       orderCustomerDetails = {
         roomId: roomDetails?._id,
         checkInNumber: roomDetails?.CheckInNumber,
@@ -920,9 +913,7 @@ const RestaurantPOS = () => {
       orderCustomerDetails = { ...customerDetails, tableStatus }
     }
 
-    // console.log("orderCustomerDetails", orderItems);
-    // console.log(orderType);
-    // console.log("orderCustomerDetails", finalProductData);
+   
 
     const newOrder = {
       id: orderNumber,
@@ -994,7 +985,7 @@ const RestaurantPOS = () => {
 
   useEffect(() => {
     let filteredItems = [...allItems]
-
+    
     if (selectedSubcategory) {
       filteredItems = filteredItems.filter(
         (item) => item.sub_category === selectedSubcategory?.subcategoryId
@@ -1017,8 +1008,7 @@ const RestaurantPOS = () => {
   }
 
   const handleKotPrint = (data) => {
-    console.log(data)
-    console.log(data.type)
+    
     const orderData = {
       kotNo: data?.voucherNumber,
       tableNo: data?.tableNumber,
@@ -1038,8 +1028,7 @@ const RestaurantPOS = () => {
   const findOneCount = (id) => {
     return orderItems.find((item) => item._id === id)?.quantity || 0
   }
-console.log(searchTerm)
-console.log(searchTerm)
+  
 
   return (
     <>
@@ -1166,13 +1155,14 @@ console.log(searchTerm)
               <div className="flex items-center gap-2 md:gap-2.5 flex-shrink-0">
                 <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800/50 border border-slate-700/60 rounded-md hover:bg-slate-700/60 transition-colors group">
                   <Clock className="w-3.5 h-3.5 text-cyan-400 group-hover:text-cyan-300" />
-                  <span className="text-xs font-medium text-gray-300 group-hover:text-gray-100">
+                  <Timer />
+                  {/* <span className="text-xs font-medium text-gray-300 group-hover:text-gray-100">
                     {currentTime.toLocaleTimeString([], {
                       hour: "2-digit",
                       minute: "2-digit",
                       second: "2-digit"
                     })}
-                  </span>
+                  </span> */}
                 </div>
 
                 <div
@@ -1249,12 +1239,13 @@ console.log(searchTerm)
             <div className="flex items-center justify-between gap-2 text-xs">
               <div className="flex items-center gap-1 text-gray-400">
                 <Clock className="w-3 h-3 text-cyan-400" />
-                <span className="font-medium">
+                <Timer />
+                {/* <span className="font-medium">
                   {currentTime.toLocaleTimeString([], {
                     hour: "2-digit",
                     minute: "2-digit"
                   })}
-                </span>
+                </span> */}
               </div>
               <div className="flex items-center gap-1 text-gray-400">
                 <Users className="w-3 h-3 text-emerald-400" />
