@@ -887,11 +887,11 @@ export default function EnhancedCheckoutModal({
                   location.pathname === "/sUsers/checkOutList") &&
                 search !== "completed" && (
                   <div className="px-4 py-2 border-b bg-gray-50 flex-shrink-0">
-                    <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2 mb-2">
+                    <div className="grid grid-cols-[repeat(auto-fit,minmax(120px,max-content))] gap-2 mb-2">
                       {selectedCheckIns.map((item) => (
                         <div
                           key={item._id}
-                          className="text-[11px] bg-white border rounded-md px-2 py-1 text-center shadow-sm"
+                          className="inline-flex justify-center text-[11px] bg-white border rounded-md px-2 py-1 text-center shadow-sm whitespace-nowrap"
                         >
                           #{item.voucherNumber}
                         </div>

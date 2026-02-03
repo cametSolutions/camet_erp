@@ -89,7 +89,7 @@ function BookingList() {
     cashs: []
   })
   const [combinedSources, setCombinedSources] = useState([])
-
+  console.log(combinedSources)
   const { roomId, roomName, filterByRoom } = location.state || {}
   const paymentDetails = useSelector((state) => state.paymentSlice)
   const { _id: cmp_id, configurations } = useSelector(
@@ -302,7 +302,8 @@ function BookingList() {
               id: bank._id,
               name: bank.bank_ledname,
               type: "bank"
-            }))
+            })),
+            { id: "credit", name: "credit", type: "credit" }
           ]
           setCombinedSources(combined)
         }
@@ -435,7 +436,7 @@ function BookingList() {
   // }, [selectedCheckOut]);
   console.log(selectedCustomer)
   const handleSingleCheckoutformultiplechekin = (selectcustomer) => {
-console.log(selectedCustomer)
+    console.log(selectedCustomer)
     const match = parties.find((item) => item._id === selectcustomer)
     if (!match) return
     console.log(match)
@@ -587,11 +588,13 @@ console.log(selectedCustomer)
     const updatedRows = [...splitPaymentRows]
     console.log(index)
     console.log(field)
+    console.log(value)
     if (field === "source") {
       console.log(updatedRows)
       console.log(combinedSources)
       // When source changes, find the source details and update sourceType
       const selectedSource = combinedSources.find((s) => s.id === value)
+      console.log(selectedSource)
       updatedRows[index].source = value
       updatedRows[index].sourceType = selectedSource ? selectedSource.type : ""
       updatedRows[index].subsource =
@@ -753,6 +756,8 @@ console.log(selectedCustomer)
       let totalbank = 0
       let totalcard = 0
       let totalupi = 0
+      let totalcredit = 0
+      console.log(splitPaymentRows)
 
       splitPaymentRows.forEach((row) => {
         if (row.sourceType === "cash") {
@@ -766,6 +771,8 @@ console.log(selectedCustomer)
           } else if (row.subsource === "card") {
             totalcard += parseFloat(row.amount) || 0
           }
+        } else {
+          totalcredit += parseFloat(row.amount) || 0
         }
       })
 
@@ -779,7 +786,7 @@ console.log(selectedCustomer)
           bank: totalbank,
           card: totalcard,
           upi: totalupi,
-          credit: 0
+          credit: totalcredit
         }
       }
     }
@@ -800,6 +807,7 @@ console.log(selectedCustomer)
       console.log("Hhhh")
       console.log(dateandstaysdata)
       proceedToCheckout(dateandstaysdata, processedCheckoutData)
+      console.log(paymentDetails)
       dispatch(setPaymentDetails(paymentDetails))
       dispatch(setSelectedParty(selectedCustomer))
       dispatch(setSelectedPaymentMode(paymentMode))
@@ -1377,7 +1385,7 @@ console.log(selectedCustomer)
 
           <div className="w-24 text-center text-gray-600 font-medium">
             {/* {el?.selectedRooms?.map((r) => r.roomName).join(", ") || "-"} */}
-            {el?.selectedRooms[0]?.roomName || "-"} 
+            {el?.selectedRooms[0]?.roomName || "-"}
             {el.selectedRooms.length > 1 && "....."}
           </div>
 
@@ -1387,8 +1395,7 @@ console.log(selectedCustomer)
           </div>
 
           <div className="w-28 text-center text-gray-600 text-xs">
-            ₹
-            {el?.selectedRooms[0]?.priceLevelRate ||  "0.00"} 
+            ₹{el?.selectedRooms[0]?.priceLevelRate || "0.00"}
             {el.selectedRooms.length > 1 && "....."}
             {/* {el?.selectedRooms?.map((r) => r.priceLevelRate).join(",") ||
               "0.00"} */}
@@ -1713,7 +1720,6 @@ console.log(selectedCustomer)
             isOpen={showEnhancedCheckoutModal}
             closemodal={setShowEnhancedCheckoutModal}
             customerchange={handleSingleCheckoutformultiplechekin}
-            
             selectedCheckIns={selectedCheckOut}
             onConfirm={handleEnhancedCheckoutConfirm}
             checkoutMode={checkoutMode}
@@ -2027,10 +2033,16 @@ console.log(selectedCustomer)
                             className="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
                           >
                             <option value="">Select Source</option>
+                            {/* <option value="credit">Credit</option> */}
                             {combinedSources.map((source) => (
                               <option key={source.id} value={source.id}>
                                 {source.name} (
-                                {source.type === "cash" ? "Cash" : "Bank"})
+                                {source.type === "cash"
+                                  ? "Cash"
+                                  : source.type === "credit"
+                                    ? "credit"
+                                    : "Bank"}
+                                )
                               </option>
                             ))}
                           </select>

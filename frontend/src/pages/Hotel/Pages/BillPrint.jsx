@@ -55,13 +55,14 @@ console.log(selectedCheckOut)
       setPaymentModeDetails({});
       return;
     }
-
+console.log(paymentTypeDetails)
     const positivePaymentTypes = Object.entries(paymentTypeDetails)
       .filter(([_, amount]) => Number(amount) > 0)
       .reduce((acc, [type, amount]) => {
         acc[type] = Number(amount);
         return acc;
       }, {});
+console.log(positivePaymentTypes)
 
     setPaymentModeDetails(positivePaymentTypes);
   }, [paymentDetails]);
