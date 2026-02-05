@@ -29,8 +29,8 @@ const HotelBillPrint = () => {
   const [paymentModeDetails, setPaymentModeDetails] = useState([]);
   // Props from location state
   const selectedCheckOut = location.state?.selectedCheckOut || [];
+console.log(selectedCheckOut)
 
-  const a = selectedCheckOut.some((it) => it.originalCheckInId);
   const checkoutmode = location?.state?.checkoutMode || null;
   const cheinids = location?.state?.checkinIds;
 
@@ -788,12 +788,10 @@ const HotelBillPrint = () => {
       return charges;
     })();
 
-    console.log(doc?.checkInId);
-    console.log(doc?.partyArray);
+    
     const allcheckinids = doc?.allCheckInIds;
     const allpartyid = doc?.partyArray;
-    console.log(allpartyid);
-    console.log("outStanding", outStanding);
+  
     // Advances only on the decided bill
     let advanceEntries = useAdvances
       ? (outStanding || [])
@@ -833,7 +831,6 @@ const HotelBillPrint = () => {
 
     // Combine charges and compute balances
     const allCharges = [...groupedRoomCharges, ...advanceEntries];
-    console.log(allCharges);
     let cumulativeBalance = 0;
     const chargesWithBalance = allCharges.map((charge) => {
       let currentAmount = Number(charge.amount || 0);
@@ -889,7 +886,6 @@ const HotelBillPrint = () => {
       Number(sgstAmount) +
       Number(cgstAmount) +
       Number(restaurantTotal);
-    console.log(grandTotal);
     const netPay = Math.abs(grandTotal - advanceTotal);
 
     // Compose hotel/guest info per doc
@@ -912,7 +908,6 @@ const HotelBillPrint = () => {
 
     const totalPax = basePax + additionalPaxCount;
 
-    console.log(doc?.customerId);
 
     const convertNumberToWords = (amount) =>
       `${Math.round(amount || 0)} Rupees Only`;
@@ -939,10 +934,6 @@ const HotelBillPrint = () => {
       }
     }
 
-    console.log( doc);
-console.log(organization?.flat)
-console.log(organization?.road)
-console.log(organization?.landmark)
     return {
       hotel: {
         name: organization?.name,

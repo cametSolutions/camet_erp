@@ -257,7 +257,7 @@ export const editSale = async (req, res) => {
       await revertSaleStockUpdates(existingSale.items, session);
       /// create stock updates with new data
       await handleSaleStockUpdates(items, session);
-
+console.log("line 260 salescontroller")
       /// update sale details
       const updateData = {
         _id: existingSale._id,

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import api from "../../../api/api";
 import { toast } from "sonner";
 import { FaEdit } from "react-icons/fa";
@@ -9,13 +9,14 @@ import {
   MdCheckCircle,
   MdPayment,
   MdVisibility,
-  MdCancel 
+  MdCancel,
 } from "react-icons/md";
 import { motion } from "framer-motion";
 
 import Swal from "sweetalert2";
 import CheckoutDateModal from "../Components/CheckoutDateModal";
 import EnhancedCheckoutModal from "../Components/EnhancedCheckoutModal";
+import HoldModal from "../Components/HoldModal";
 import CustomerSearchInputBox from "../Components/CustomerSearchInPutBox";
 import {
   setPaymentDetails,
@@ -49,7 +50,7 @@ function BookingList() {
   const [partial, setIsPartial] = useState(false);
   const [checkOutUpdated, setCheckOutUpdated] = useState(false);
   const [selectedCheckOut, setSelectedCheckOut] = useState(
-    location?.state?.selectedCheckOut || []
+    location?.state?.selectedCheckOut || [],
   );
   const [roomswithCurrentstatus, setroomswithCurrentStatus] = useState([]);
   const [selectedonlinePartyname, setselectedOnlinepartyName] = useState(null);
@@ -77,9 +78,10 @@ function BookingList() {
   const [showSelectionModal, setShowSelectionModal] = useState(true);
   const [showEnhancedCheckoutModal, setShowEnhancedCheckoutModal] =
     useState(false);
+  const [showEnhancedHoldModal, setShowEnhancedHoldModal] = useState(false);
   const [processedCheckoutData, setProcessedCheckoutData] = useState(null);
   const [selectedCreditor, setSelectedCreditor] = useState("");
-
+  const [dateandstaysdata, setdateandstaysdata] = useState([]);
   // NEW: State for split payment rows and sources
   const [splitPaymentRows, setSplitPaymentRows] = useState([
     { customer: "", source: "", sourceType: "", amount: "", subsource: "" },
@@ -93,8 +95,9 @@ function BookingList() {
   const { roomId, roomName, filterByRoom } = location.state || {};
   const paymentDetails = useSelector((state) => state.paymentSlice);
   const { _id: cmp_id, configurations } = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg
+    (state) => state.secSelectedOrganization.secSelectedOrg,
   );
+  console.log(cmp_id);
   console.log(selectedBank);
   const getVoucherType = () => {
     const path = location.pathname;
@@ -105,7 +108,7 @@ function BookingList() {
   console.log(paymentMethod);
   const { data: partylist } = useFetch(
     `/api/sUsers/singlecheckoutpartylist/${cmp_id}`,
-    { params: { voucher: getVoucherType() } }
+    { params: { voucher: getVoucherType() } },
   );
   console.log(selectedCheckOut);
   // ADD THIS FUNCTION: Calculate total from all checkouts
@@ -134,7 +137,7 @@ function BookingList() {
             `/api/sUsers/getallnoncheckoutCheckins/${cmp_id}`,
             {
               withCredentials: true,
-            }
+            },
           );
           console.log(res.data.data);
           const a = res.data.data.map((item) => {
@@ -218,12 +221,12 @@ function BookingList() {
         paymentDetails?.paymentMode,
         paymentDetails,
         selectedBank,
-        selectedCash
+        selectedCash,
       );
 
       // CHANGED: Calculate total from all checkouts' selectedRooms
       const totalAmount = calculateTotalAmount(
-        location?.state?.selectedCheckOut
+        location?.state?.selectedCheckOut,
       );
 
       setSelectedDataForPayment((prevData) => ({
@@ -271,7 +274,7 @@ function BookingList() {
   }, []);
 
   const { data: paymentTypeData } = useFetch(
-    `/api/sUsers/getPaymentType/${cmp_id}`
+    `/api/sUsers/getPaymentType/${cmp_id}`,
   );
   console.log(paymentTypeData);
 
@@ -281,7 +284,7 @@ function BookingList() {
       try {
         const response = await api.get(
           `/api/sUsers/getBankAndCashSources/${cmp_id}`,
-          { withCredentials: true }
+          { withCredentials: true },
         );
 
         if (response.data && response.data.data) {
@@ -377,7 +380,7 @@ function BookingList() {
           `/api/sUsers/getBookings/${cmp_id}?${params}`,
           {
             withCredentials: true,
-          }
+          },
         );
 
         let bookingData = res?.data?.bookingData || [];
@@ -414,7 +417,7 @@ function BookingList() {
       }
     },
 
-    [cmp_id, activeTab, filterByRoom, roomId, location.pathname]
+    [cmp_id, activeTab, filterByRoom, roomId, location.pathname],
   );
 
   useEffect(() => {
@@ -434,6 +437,7 @@ function BookingList() {
   // }, [selectedCheckOut]);
   console.log(selectedCustomer);
   const handleSingleCheckoutformultiplechekin = (selectcustomer) => {
+    console.log(selectedCustomer);
     const match = parties.find((item) => item._id === selectcustomer);
     if (!match) return;
     console.log(match);
@@ -442,7 +446,7 @@ function BookingList() {
       prev.map((item) => ({
         ...item,
         selectedCustomer: match, // <-- set the new party here
-      }))
+      })),
     );
 
     setSelectedCustomer(selectcustomer);
@@ -474,7 +478,7 @@ function BookingList() {
               "Content-Type": "application/json",
             },
             withCredentials: true,
-          }
+          },
         );
 
         await Swal.fire({
@@ -489,7 +493,7 @@ function BookingList() {
         fetchBookings(1, searchTerm);
       } catch (error) {
         toast.error(
-          error.response?.data?.message || "Failed to cancel booking"
+          error.response?.data?.message || "Failed to cancel booking",
         );
         console.log(error);
       } finally {
@@ -530,11 +534,11 @@ function BookingList() {
         });
 
         setBookings((prevBookings) =>
-          prevBookings.filter((booking) => booking._id !== id)
+          prevBookings.filter((booking) => booking._id !== id),
         );
       } catch (error) {
         toast.error(
-          error.response?.data?.message || "Failed to delete booking"
+          error.response?.data?.message || "Failed to delete booking",
         );
         console.log(error);
       } finally {
@@ -600,8 +604,8 @@ function BookingList() {
         selectedSource.name === "paytm" || selectedSource.name === "gpay"
           ? "upi"
           : selectedSource.name === "card"
-          ? "card"
-          : selectedSource.type;
+            ? "card"
+            : selectedSource.type;
     } else {
       updatedRows[index][field] = value;
     }
@@ -611,7 +615,7 @@ function BookingList() {
     // Calculate total and validate
     const total = updatedRows.reduce(
       (sum, row) => sum + (parseFloat(row.amount) || 0),
-      0
+      0,
     );
     if (
       total >
@@ -624,9 +628,9 @@ function BookingList() {
     }
   };
   console.log(selectedOnlinetype);
-  console.log("h");
+  console.log("hddd");
   const handleSavePayment = async () => {
-    console.log("h");
+    console.log("hddd");
     console.log(selectedCheckOut);
     console.log(selectedCheckOut.length);
 
@@ -657,7 +661,7 @@ function BookingList() {
         console.log(
           "selectedonlinePartyname",
           selectedonlinePartyname,
-          selectedOnlinetype
+          selectedOnlinetype,
         );
         paymentDetails = {
           cashAmount: cashAmount,
@@ -718,7 +722,7 @@ function BookingList() {
       // NEW: Handle split payment with rows
       const totalSplitAmount = splitPaymentRows.reduce(
         (sum, row) => sum + (parseFloat(row.amount) || 0),
-        0
+        0,
       );
 
       let payment = (
@@ -740,7 +744,7 @@ function BookingList() {
           !row.customer ||
           !row.source ||
           !row.amount ||
-          parseFloat(row.amount) <= 0
+          parseFloat(row.amount) <= 0,
       );
 
       if (hasInvalidRows) {
@@ -799,7 +803,9 @@ function BookingList() {
     console.log(selectedCheckOut.length);
 
     if (partial) {
-      proceedToCheckout(checkOutUpdated);
+      console.log("Hhhh");
+      console.log(dateandstaysdata);
+      proceedToCheckout(dateandstaysdata, processedCheckoutData);
       dispatch(setPaymentDetails(paymentDetails));
       dispatch(setSelectedParty(selectedCustomer));
       dispatch(setSelectedPaymentMode(paymentMode));
@@ -808,6 +814,7 @@ function BookingList() {
       dispatch(setOnlineType(selectedOnlinetype));
       setIsPartial(false);
     } else {
+      console.log("hhhh");
       try {
         const response = await api.post(
           `/api/sUsers/convertCheckOutToSale/${cmp_id}`,
@@ -821,16 +828,17 @@ function BookingList() {
             checkoutMode, //to check if the checkout is single or multiple
             checkinIds: checkinidsarray, //have array of checkinids ,if only its sinle checkout unless its null
           },
-          { withCredentials: true }
+          { withCredentials: true },
         );
-
+        console.log("hhhh");
         if (response.status === 200 || response.status === 201) {
           toast.success(response?.data?.message);
+          handleCloseBasedOnDate();
         }
       } catch (error) {
         console.error(
           "Error updating order status:",
-          error.response?.data || error.message
+          error.response?.data || error.message,
         );
       } finally {
         setSelectedCheckOut([]);
@@ -855,15 +863,19 @@ function BookingList() {
     setShowSelectionModal(false);
     setShowEnhancedCheckoutModal(true);
   };
-  console.log();
-  const handleEnhancedCheckoutConfirm = async (roomAssignments) => {
+  console.log(selectedCheckOut);
+  const handleEnhancedCheckoutConfirm = async (roomAssignments, data) => {
     console.log(roomAssignments);
     setShowEnhancedCheckoutModal(false);
-
+    setdateandstaysdata(data);
     // ✅ ALWAYS show checkout date modal - no condition
     setProcessedCheckoutData(roomAssignments);
-    setShowCheckOutDateModal(true);
+    console.log("hhhh");
+    setShowPaymentModal(true);
+    setIsPartial(true);
+    // setShowCheckOutDateModal(true)
   };
+
   const handleCheckin = (e, el) => {
     console.log(el);
     const roomIds = el.selectedRooms.map((item) => item.roomId);
@@ -873,7 +885,7 @@ function BookingList() {
     //   const room = roomswithCurrentstatus.find((r) => r.roomId === id)
     // })
     const anyPresent = roomIds.some((id) =>
-      roomswithCurrentstatus.includes(id)
+      roomswithCurrentstatus.includes(id),
     );
 
     if (anyPresent) {
@@ -899,20 +911,24 @@ function BookingList() {
     console.log("HH");
   };
   console.log(bookings);
-  const proceedToCheckout = (roomAssignments) => {
+  const proceedToCheckout = (roomAssignments, data) => {
+    console.log(roomAssignments);
+    console.log(data);
+
+    console.log("hhhhhh");
     setSaveLoader(true);
     const hasPrint1 = configurations[0]?.defaultPrint?.print1;
     let checkoutData;
     let checkinids = null;
     if (checkoutMode === "multiple") {
-      console.log(roomAssignments);
+      console.log(data);
       console.log("hhh");
-      checkoutData = roomAssignments.flatMap((group) => {
+      checkoutData = data.flatMap((group) => {
         return group.checkIns.map((checkIn) => {
           const originalCheckIn = checkIn.originalCheckIn;
           const id = checkIn?.checkInId;
           const roomsToCheckout = originalCheckIn.selectedRooms.filter((room) =>
-            checkIn.rooms.some((r) => r.roomId === room._id)
+            checkIn.rooms.some((r) => r.roomId === room._id),
           );
           const originalCustomerId = originalCheckIn.customerId?._id;
           const isPartialCheckout =
@@ -930,7 +946,7 @@ function BookingList() {
             originalCheckInId: checkIn.checkInId,
             originalCustomerId: originalCustomerId,
             remainingRooms: originalCheckIn.selectedRooms.filter(
-              (room) => !checkIn.rooms.some((r) => r.roomId === room._id)
+              (room) => !checkIn.rooms.some((r) => r.roomId === room._id),
             ),
           };
         });
@@ -939,12 +955,12 @@ function BookingList() {
     } else if (checkoutMode === "single") {
       console.log(roomAssignments);
       console.log(roomAssignments.length);
-      let allCheckouts = roomAssignments.flatMap((group) => {
+      let allCheckouts = data.flatMap((group) => {
         return group.checkIns.map((checkIn) => {
           const originalCheckIn = checkIn.originalCheckIn;
 
           const roomsToCheckout = originalCheckIn.selectedRooms.filter((room) =>
-            checkIn.rooms.some((r) => r.roomId === room._id)
+            checkIn.rooms.some((r) => r.roomId === room._id),
           );
 
           const originalCustomerId = originalCheckIn.customerId?._id;
@@ -965,13 +981,13 @@ function BookingList() {
             originalCheckInId: checkIn.checkInId,
             originalCustomerId,
             remainingRooms: originalCheckIn.selectedRooms.filter(
-              (room) => !checkIn.rooms.some((r) => r.roomId === room._id)
+              (room) => !checkIn.rooms.some((r) => r.roomId === room._id),
             ),
           };
         });
       });
       checkinids = allCheckouts.map((item) => item._id);
-console.log()
+      console.log(allCheckouts);
       setcheckinids(checkinids);
       // 2️⃣ GROUP BY selectedCustomer (customerId._id)
       const grouped = {};
@@ -1008,13 +1024,42 @@ console.log()
       checkoutData[0].allCheckInIds = checkinids;
     }
     console.log(checkoutData);
+    const roomAssignmentMap = new Map(
+      roomAssignments.map((item) => [
+        item._id,
+        {
+          checkOutDate: item.checkOutDate,
+          stayDays: item.stayDays,
+        },
+      ]),
+    );
 
-    ////
+    const updatedCheckoutData = checkoutData.map((item) => {
+      const roomData = roomAssignmentMap.get(item._id);
 
-    /////
+      return {
+        ...item,
+
+        // 🔹 Root level update
+        checkOutDate: roomData?.checkOutDate ?? item.checkOutDate,
+        stayDays: roomData?.stayDays ?? item.stayDays,
+
+        // 🔹 selectedRooms stayDays update
+        selectedRooms: item.selectedRooms.map((room) => ({
+          ...room,
+          stayDays: roomData?.stayDays ?? room.stayDays,
+        })),
+      };
+    });
+
+    console.log(updatedCheckoutData);
+
+    // checkoutData.forEach((item)=>item.checkoutDate=)
+
+    console.log("Hhhhhhhh");
     navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
       state: {
-        selectedCheckOut: checkoutData,
+        selectedCheckOut: updatedCheckoutData,
         customerId: checkoutData[0]?.customerId?._id,
         isForPreview: true,
         checkoutMode,
@@ -1033,28 +1078,31 @@ console.log()
 
   const isCheckoutList = location.pathname === "/sUsers/checkOutList";
 
- const getTravelAgentName = (booking) => {
+  const getTravelAgentName = (booking) => {
     // Check if there's a separate agentId field (preferred)
     if (booking.agentId?.partyName) {
       return booking.agentId.partyName;
     }
     // Fallback: check if customer is hotel agent
-    if (booking.isHotelAgent === true || booking.customerId?.isHotelAgent === true) {
-      return booking.customerId?.partyName || '-';
+    if (
+      booking.isHotelAgent === true ||
+      booking.customerId?.isHotelAgent === true
+    ) {
+      return booking.customerId?.partyName || "-";
     }
-    return '-';
+    return "-";
   };
- const getPaymentStatusDisplay = (paymentDetails) => {
-    if (!paymentDetails) return 'Unpaid';
-    
+  const getPaymentStatusDisplay = (paymentDetails) => {
+    if (!paymentDetails) return "Unpaid";
+
     const types = [];
-    if (parseFloat(paymentDetails.cash || 0) > 0) types.push('Cash');
-    if (parseFloat(paymentDetails.bank || 0) > 0) types.push('Bank');
-    if (parseFloat(paymentDetails.upi || 0) > 0) types.push('UPI');
-    if (parseFloat(paymentDetails.card || 0) > 0) types.push('Card');
-    if (parseFloat(paymentDetails.credit || 0) > 0) types.push('Credit');
-    
-    return types.length > 0 ? types.join(', ') : 'Unpaid';
+    if (parseFloat(paymentDetails.cash || 0) > 0) types.push("Cash");
+    if (parseFloat(paymentDetails.bank || 0) > 0) types.push("Bank");
+    if (parseFloat(paymentDetails.upi || 0) > 0) types.push("UPI");
+    if (parseFloat(paymentDetails.card || 0) > 0) types.push("Card");
+    if (parseFloat(paymentDetails.credit || 0) > 0) types.push("Credit");
+
+    return types.length > 0 ? types.join(", ") : "Unpaid";
   };
 
   const handletoogle = () => {
@@ -1068,19 +1116,20 @@ console.log()
         prev.map((item) => ({
           ...item,
           selectedCustomer: match,
-        }))
+        })),
       );
     } else {
       setSelectedCheckOut((prev) =>
         prev.map((item) => {
           const { selectedCustomer, ...rest } = item;
           return rest;
-        })
+        }),
       );
     }
 
     setCheckoutMode(checkoutMode === "single" ? "multiple" : "single");
   };
+  console.log(checkoutMode);
 
   const TableHeader = () => (
     <div className="bg-gray-100 border-b border-gray-300 sticky top-0 z-10">
@@ -1091,8 +1140,8 @@ console.log()
           {location.pathname == "/sUsers/checkOutList"
             ? "CHECKOUT NO"
             : location.pathname == "/sUsers/checkInList"
-            ? "CHECK-IN NO"
-            : "BOOKING NO"}
+              ? "CHECK-IN NO"
+              : "BOOKING NO"}
         </div>
         <div className="w-32 text-center"> ACTIONS</div>
       </div>
@@ -1104,8 +1153,8 @@ console.log()
           {location.pathname === "/sUsers/checkOutList"
             ? "CHECKOUT NO"
             : location.pathname === "/sUsers/checkInList"
-            ? "CHECK-IN NO"
-            : "BOOKING NO"}
+              ? "CHECK-IN NO"
+              : "BOOKING NO"}
         </div>
         <div className="w-40 text-center">GUEST NAME</div>
         <div className="w-20 text-center">ROOM NO</div>
@@ -1114,18 +1163,29 @@ console.log()
         <div className="w-20 text-center">PAX</div>
         <div className="w-20 text-center">FOOD PLAN</div>
         <div className="w-28 text-center">FOODPLAN AMOUNT</div>
-       <div className="w-28 text-center">TRAVEL AGENT</div>
-       
-       {isCheckoutList && (
+        <div className="w-28 text-center">TRAVEL AGENT</div>
+
+        {isCheckoutList && (
           <div className="w-28 text-center">PAYMENT STATUS</div>
         )}
-       
+
         <div className="w-24 text-center">ADVANCE</div>
         <div className="w-28 text-center">TOTAL</div>
         <div className="w-32 text-center">ACTIONS</div>
       </div>
     </div>
   );
+  const selectedIds = useMemo(() => {
+    return new Set(selectedCheckOut.map((item) => item._id));
+  }, [selectedCheckOut]);
+
+  const isSelected = (id) => selectedIds.has(id);
+
+  //   const isSelected = (el) => {
+  // console.log(selectedCheckOut)
+  // console.log(el)
+  //     return selectedCheckOut.some((item) => item._id === el._id)
+  //   }
   const Row = ({ index, style }) => {
     if (!isItemLoaded(index)) {
       return (
@@ -1172,7 +1232,7 @@ console.log()
       if (!dateString) return "-";
       return new Date(dateString).toLocaleDateString("en-GB");
     };
-console.log(el)
+    console.log(el);
     return (
       <div
         key={index}
@@ -1181,12 +1241,12 @@ console.log(el)
   flex items-center px-4 py-3 text-sm
   border-b border-gray-200 
   cursor-pointer transition-all duration-200 ease-in-out 
-  bg-white hover:bg-gray-50 
+ hover:bg-gray-50 
   ${
     isCheckOutSelected(el) && location.pathname === "/sUsers/checkInList"
-      ? "bg-blue-400 border-blue-400 ring-2 ring-blue-200"
+      ? "bg-blue-100 border-blue-400 ring-2 ring-blue-200"
       : ""
-  }
+  }${isSelected(el) ? "bg-blue-50 border-blue-100" : "bg-white hover:bg-gray-50"}
 `}
         onClick={() => {
           if (el?.checkInId?.status === "checkOut") return;
@@ -1196,11 +1256,13 @@ console.log(el)
           }
           if (findOne) {
             setSelectedCheckOut((prev) =>
-              prev.filter((item) => item._id !== el._id)
+              prev.filter((item) => item._id !== el._id),
             );
+
             return;
           }
           setSelectedCheckOut((prev) => [...prev, el]);
+          // setShowEnhancedCheckoutModal(!showEnhancedCheckoutModal)
         }}
       >
         <div className="flex justify-between items-center w-full md:hidden text-xs">
@@ -1226,8 +1288,8 @@ console.log(el)
                 {location.pathname === "/sUsers/checkInList"
                   ? "Checkout"
                   : location.pathname === "/sUsers/checkOutList"
-                  ? "Close"
-                  : "CheckIn"}
+                    ? "Close"
+                    : "CheckIn"}
               </button>
             )}
 
@@ -1246,7 +1308,7 @@ console.log(el)
                     navigate("sUsers/BillPrint", {
                       state: {
                         selectedCheckOut: bookings?.filter(
-                          (item) => item.voucherNumber === el.voucherNumber
+                          (item) => item.voucherNumber === el.voucherNumber,
                         ),
                         customerId: el.customerId?._id,
                         isForPreview: false,
@@ -1322,7 +1384,9 @@ console.log(el)
           </div>
 
           <div className="w-24 text-center text-gray-600 font-medium">
-            {el?.selectedRooms?.map((r) => r.roomName).join(", ") || "-"}
+            {/* {el?.selectedRooms?.map((r) => r.roomName).join(", ") || "-"} */}
+            {el?.selectedRooms[0]?.roomName || "-"}
+            {el.selectedRooms.length > 1 && "....."}
           </div>
 
           <div className="w-36 text-center text-gray-600 text-xs">
@@ -1331,9 +1395,10 @@ console.log(el)
           </div>
 
           <div className="w-28 text-center text-gray-600 text-xs">
-            ₹
-            {el?.selectedRooms?.map((r) => r.priceLevelRate).join(",") ||
-              "0.00"}
+            ₹{el?.selectedRooms[0]?.priceLevelRate || "0.00"}
+            {el.selectedRooms.length > 1 && "....."}
+            {/* {el?.selectedRooms?.map((r) => r.priceLevelRate).join(",") ||
+              "0.00"} */}
           </div>
 
           <div className="w-20 text-center text-gray-600 font-medium">
@@ -1341,20 +1406,20 @@ console.log(el)
             {/*Total pax count indlcuding additionalpax */}
             {calculateTotalPax(el?.additionalPaxDetails, el?.selectedRooms)}
           </div>
- <div className="w-28 text-center text-gray-600 text-xs">
+          <div className="w-28 text-center text-gray-600 text-xs">
             {el?.foodPlan?.[0]?.foodPlan || "0.00"}
           </div>
           <div className="w-28 text-center text-gray-600 text-xs">
             ₹{el?.selectedRooms?.[0]?.foodPlanAmountWithOutTax || "0.00"}
           </div>
-  <div className="w-28 text-center text-gray-600 text-xs font-medium">
-          {getTravelAgentName(el) || el?.agentId?.partyName}
-        </div>
-            {isCheckoutList && (
           <div className="w-28 text-center text-gray-600 text-xs font-medium">
-            {getPaymentStatusDisplay(el?.paymenttypeDetails)}
+            {getTravelAgentName(el) || el?.agentId?.partyName}
           </div>
-        )}
+          {isCheckoutList && (
+            <div className="w-28 text-center text-gray-600 text-xs font-medium">
+              {getPaymentStatusDisplay(el?.paymenttypeDetails)}
+            </div>
+          )}
           <div className="w-24 text-center text-gray-600 text-xs">
             ₹
             {el?.advanceAmount
@@ -1417,33 +1482,32 @@ console.log(el)
                   CheckedOut
                 </button>
               )}
-            {
-              location.pathname === "/sUsers/checkOutList" && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedCustomer(el.customerId?._id);
-                    setSelectedCheckOut([el]);
-                    const hasPrint1 = configurations[0]?.defaultPrint?.print1;
+            {location.pathname === "/sUsers/checkOutList" && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedCustomer(el.customerId?._id);
+                  setSelectedCheckOut([el]);
+                  const hasPrint1 = configurations[0]?.defaultPrint?.print1;
 
-                    navigate(
-                      hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint",
-                      {
-                        state: {
-                          selectedCheckOut: bookings?.filter(
-                            (item) => item.voucherNumber === el.voucherNumber
-                          ),
-                          customerId: el.customerId?._id,
-                          isForPreview: false,
-                        },
-                      }
-                    );
-                  }}
-                  className="bg-green-600 hover:bg-green-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
-                >
-                  Print
-                </button>
-              )}
+                  navigate(
+                    hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint",
+                    {
+                      state: {
+                        selectedCheckOut: bookings?.filter(
+                          (item) => item.voucherNumber === el.voucherNumber,
+                        ),
+                        customerId: el.customerId?._id,
+                        isForPreview: false,
+                      },
+                    },
+                  );
+                }}
+                className="bg-green-600 hover:bg-green-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
+              >
+                Print
+              </button>
+            )}
             {(el?.status != "checkIn" &&
               location.pathname == "/sUsers/bookingList") ||
             (el?.status != "checkOut" &&
@@ -1504,22 +1568,60 @@ console.log(el)
       </div>
     );
   };
+  console.log(selectedCheckOut);
   console.log(selectedOnlinetype);
-  const handleCloseBasedOnDate = (checkouts) => {
-    if (!checkouts) {
-      setShowCheckOutDateModal(false);
-      setShowSelectionModal(true);
-      return;
-    }
+  console.log(processedCheckoutData);
+  const handleCloseBasedOnDate = () => {
+    console.log("hh");
+    // if (!checkouts) {
+    //   setShowCheckOutDateModal(false)
+    //   setShowSelectionModal(true)
+    //   return
+    // }
     // setSaveLoader(true);
-
+    console.log(processedCheckoutData);
     if (processedCheckoutData) {
+      console.log("hhhhhhhhh");
+      console.log(processedCheckoutData);
+
       // Transform the processed checkout data with updated stay days
+      // const updatedCheckoutData = processedCheckoutData.map((checkout) => {
+      //   const updatedData = selectedCheckOut.find((c) => c._id === checkout._id)
+
+      //   // if no update found, return original
+      //   if (!updatedData) return checkout
+
+      //   return {
+      //     ...checkout,
+
+      //     // 🔹 update checkout level fields
+      //     checkOutDate: updatedData.checkOutDate ?? checkout.checkOutDate,
+      //     checkOutTime: updatedData.checkOutTime ?? checkout.checkOutTime,
+      //     stayDays: updatedData.stayDays ?? checkout.stayDays,
+
+      //     // 🔹 update rooms if modified
+      //     selectedRooms: checkout.selectedRooms.map((room) => {
+      //       const updatedRoom = updatedData.selectedRooms?.find(
+      //         (r) => r._id === room._id
+      //       )
+
+      //       return updatedRoom
+      //         ? {
+      //             ...room,
+      //             ...updatedRoom
+      //           }
+      //         : room
+      //     })
+      //   }
+      // })
+      //////
+      console.log(dateandstaysdata);
+
       const updatedCheckoutData = processedCheckoutData.map((group) => ({
         ...group,
         checkIns: group.checkIns.map((checkIn) => {
-          const updatedData = checkouts.find(
-            (c) => c._id === checkIn.checkInId
+          const updatedData = dateandstaysdata.find(
+            (c) => c._id === checkIn.checkInId,
           );
 
           return {
@@ -1539,21 +1641,25 @@ console.log(el)
               selectedRooms: checkIn.originalCheckIn.selectedRooms.map(
                 (room) => {
                   const updatedRoom = updatedData?.selectedRooms?.find(
-                    (r) => r._id === room._id
+                    (r) => r._id === room._id,
                   );
                   return updatedRoom ? { ...room, ...updatedRoom } : room;
-                }
+                },
               ),
             },
           };
         }),
       }));
-
-      setCheckOutUpdated(updatedCheckoutData);
-      setShowPaymentModal(true);
+      console.log(updatedCheckoutData);
+      console.log("aaaaaa");
+      setProcessedCheckoutData(updatedCheckoutData);
+      // setShowPaymentModal(true)
       setIsPartial(true);
-      setProcessedCheckoutData(null);
+
+      proceedToCheckout(updatedCheckoutData);
+      // setProcessedCheckoutData(null)
     } else {
+      console.log("hhhhhhddd");
       const hasPrint1 = configurations[0]?.defaultPrint?.print1;
       navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
         state: {
@@ -1580,8 +1686,8 @@ console.log(el)
                   ? `Check In List - Room ${roomName}`
                   : "Hotel Check In List"
                 : location.pathname === "/sUsers/bookingList"
-                ? "Hotel Booking List"
-                : "Hotel Check Out List"
+                  ? "Hotel Booking List"
+                  : "Hotel Check Out List"
             }
             dropdownContents={[
               {
@@ -1590,8 +1696,8 @@ console.log(el)
                   location.pathname === "/sUsers/checkInList"
                     ? "/sUsers/checkInPage"
                     : location.pathname === "/sUsers/bookingList"
-                    ? "/sUsers/bookingPage"
-                    : "/sUsers/checkInPage",
+                      ? "/sUsers/bookingPage"
+                      : "/sUsers/checkInPage",
               },
             ]}
           />
@@ -1612,143 +1718,53 @@ console.log(el)
         {showEnhancedCheckoutModal && (
           <EnhancedCheckoutModal
             isOpen={showEnhancedCheckoutModal}
-            onClose={() => {
-              setShowEnhancedCheckoutModal(false);
-              setShowSelectionModal(true);
-            }}
+            closemodal={setShowEnhancedCheckoutModal}
+            customerchange={handleSingleCheckoutformultiplechekin}
             selectedCheckIns={selectedCheckOut}
             onConfirm={handleEnhancedCheckoutConfirm}
             checkoutMode={checkoutMode}
-          />
-        )}
-        {showCheckOutDateModal && (
-          <CheckoutDateModal
-            isOpen={showCheckOutDateModal}
-            onClose={handleCloseBasedOnDate}
-            checkoutData={selectedCheckOut}
+            search={searchTerm}
+            toogle={handletoogle}
+            selectedCustomer={selectedCustomer}
           />
         )}
 
-        {/* Confirmation Modal */}
+        {showEnhancedHoldModal && (
+          <HoldModal
+            isOpen={showEnhancedHoldModal}
+            closeModal={setShowEnhancedHoldModal}
+            selectedHolds={selectedCheckOut}
+            checkInData={bookings.filter(
+              (item) => !selectedCheckOut.some((sel) => sel._id === item._id),
+            )}
+            cmp_id={cmp_id}
+          />
+        )}
         {selectedCheckOut.length > 0 &&
-          showSelectionModal &&
-          (location.pathname === "/sUsers/checkInList" ||
-            location.pathname === "/sUsers/checkOutList") &&
-          searchTerm !== "completed" && (
-            <div className="fixed bottom-6 right-6 z-50 animate-slideUp">
-              <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-4 min-w-[280px]">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                      <MdCheckCircle className="w-5 h-5 text-white" />
-                    </div>
-                    <div></div>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setCheckoutMode("multiple");
-                      setSelectedCheckOut([]);
-                    }}
-                    className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded-full transition-all"
-                  >
-                    ✕
-                  </button>
+          location.pathname === "/sUsers/checkInList" && (
+            <>
+              <div className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t shadow-lg px-4 py-3 flex justify-between items-center">
+                <div className="text-sm font-medium">
+                  {selectedCheckOut.length} selected
                 </div>
-
-                <div className="max-h-32 overflow-y-auto mb-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-                  <div className="space-y-2">
-                    {selectedCheckOut.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex items-center justify-between text-xs bg-gray-50 p-2 rounded-lg"
-                      >
-                        <span className="font-medium text-gray-700">
-                          #{item.voucherNumber}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                {selectedCheckOut && selectedCheckOut.length > 1 && (
-                  <>
-                    <div className="mb-4 flex items-center justify-between bg-gray-50 p-2 rounded-lg">
-                      <span className="text-xs font-semibold text-gray-700">
-                        {checkoutMode === "single"
-                          ? "Single Checkout"
-                          : "Multiple Checkout"}
-                      </span>
-
-                      {/* Toggle Switch */}
-                      <div
-                        onClick={() => handletoogle()}
-                        className={`w-8 h-4 flex items-center rounded-full p-[2px] cursor-pointer transition-all
-                   ${
-                     checkoutMode === "single" ? "bg-blue-500" : "bg-green-500"
-                   }`}
-                      >
-                        <div
-                          className={`bg-white w-3 h-3 rounded-full shadow-sm transform transition-all
-                   ${
-                     checkoutMode === "single"
-                       ? "translate-x-0"
-                       : "translate-x-4"
-                   }`}
-                        ></div>
-                      </div>
-                    </div>
-                    {checkoutMode === "single" && (
-                      <div className="mb-6">
-                        <label className="block text-xs font-semibold text-gray-700 mb-2">
-                          Select Customer
-                        </label>
-                        <select
-                          value={selectedCustomer}
-                          onChange={(e) =>
-                            handleSingleCheckoutformultiplechekin(
-                              e.target.value
-                            )
-                          }
-                          className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                        >
-                          <option value="">Choose a customer...</option>
-                          {/* {selectedCheckOut?.map((selected) => (
-                        <option
-                          key={selected?.customerId?._id}
-                          value={selected?.customerId?._id}
-                        >
-                          {selected?.customerId?.partyName}
-                        </option>
-                      ))} */}
-                          {parties?.map((selected) => (
-                            <option key={selected?._id} value={selected?._id}>
-                              {selected?.partyName}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
-                  </>
-                )}
 
                 <div className="flex gap-2">
                   <button
-                    onClick={() => setSelectedCheckOut([])}
-                    className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-all duration-200"
+                    onClick={() => setShowEnhancedCheckoutModal(true)}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded"
                   >
-                    Clear All
+                    Proceed to Checkout
                   </button>
-                  <button
-                    className="flex-2 px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg text-sm font-bold hover:from-green-600 hover:to-emerald-700 transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2 shadow-lg"
-                    onClick={() => {
-                      handleCheckOutData();
-                    }}
+
+                  {/* <button
+                    className="bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded"
+                    onClick={() => setShowEnhancedHoldModal(true)}
                   >
-                    <MdPayment className="w-4 h-4" />
-                    Checkout
-                  </button>
+                    On Hold
+                  </button> */}
                 </div>
               </div>
-            </div>
+            </>
           )}
 
         {showPaymentModal && (
@@ -2009,7 +2025,7 @@ console.log(el)
                               updateSplitPaymentRow(
                                 index,
                                 "customer",
-                                e.target.value
+                                e.target.value,
                               )
                             }
                             className="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
@@ -2035,7 +2051,7 @@ console.log(el)
                               updateSplitPaymentRow(
                                 index,
                                 "source",
-                                e.target.value
+                                e.target.value,
                               );
                             }}
                             className="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
@@ -2063,7 +2079,7 @@ console.log(el)
                                 updateSplitPaymentRow(
                                   index,
                                   "amount",
-                                  e.target.value
+                                  e.target.value,
                                 )
                               }
                               className="w-full pl-5 pr-2 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
@@ -2108,7 +2124,7 @@ console.log(el)
                         {splitPaymentRows
                           .reduce(
                             (sum, row) => sum + (parseFloat(row.amount) || 0),
-                            0
+                            0,
                           )
                           .toFixed(2)}
                       </span>
@@ -2123,7 +2139,7 @@ console.log(el)
                     </div>
                     {splitPaymentRows.reduce(
                       (sum, row) => sum + (parseFloat(row.amount) || 0),
-                      0
+                      0,
                     ) !== selectedDataForPayment?.total && (
                       <div className="flex justify-between text-xs text-amber-600 mt-1">
                         <span>Difference:</span>
@@ -2132,11 +2148,11 @@ console.log(el)
                           {(
                             (selectedDataForPayment?.total ||
                               Number(
-                                selectedCheckOut[0]?.balanceToPay
+                                selectedCheckOut[0]?.balanceToPay,
                               )?.toFixed(2)) -
                             splitPaymentRows.reduce(
                               (sum, row) => sum + (parseFloat(row.amount) || 0),
-                              0
+                              0,
                             )
                           ).toFixed(2)}
                         </span>

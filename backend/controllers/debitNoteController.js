@@ -270,7 +270,7 @@ export const editDebitNote = async (req, res) => {
     await revertDebitNoteStockUpdates(existingDebitNote.items, session);
 
     await handleDebitNoteStockUpdates(items, session);
-
+console.log("line 273 debitnote")
     const updateData = {
       selectedGodownId: selectedGodownId ?? "",
       selectedGodownName: selectedGodownName ? selectedGodownName[0] : "",
