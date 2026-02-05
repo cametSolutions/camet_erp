@@ -382,16 +382,16 @@ router.post('/fetchOutStandingAndFoodData',authSecondary,fetchOutStandingAndFood
 router.post('/convertCheckOutToSale/:cmp_id',authSecondary,convertCheckOutToSale)
 router.put('/updateConfigurationForHotelAndRestaurant/:cmp_id',authSecondary,updateConfigurationForHotelAndRestaurant)
 router.put('/updateConfigurationForKotApproval/:cmp_id',authSecondary,updateConfigurationForKotApproval)
-router.put("/swapRoom/:checkInId",authSecondary, swapRoom);
-router.get("/getRoomSwapHistory/:checkInId", authSecondary,getRoomSwapHistory);
-router.get("/getCheckedInGuests/:cmp_id",authSecondary, checkedInGuest);
-router.get('/summary',authSecondary, getSummaryDashboard);
-router.get('/hotel-sales/:cmp_id/:type',authSecondary, getHotelSalesDetails);
-router.put("/cancel/:id",authSecondary, cancelKot);
-router.get('/getRoomCheckInDetails/:cmp_id/:roomId', authSecondary,getRoomCheckInDetails);
-router.put('/cancelBooking/:id',authSecondary, cancelBooking);
-router.get('/statement',authSecondary, getCheckoutStatementByDate);
-router.post("/convertToAvailable/:cmp_id", authSecondary,convertToAvailable);
+router.put("/swapRoom/:checkInId", swapRoom);
+router.get("/getRoomSwapHistory/:checkInId",getRoomSwapHistory);
+router.get("/getCheckedInGuests/:cmp_id", checkedInGuest);
+router.get('/summary', getSummaryDashboard);
+router.get('/hotel-sales/:cmp_id/:type', getHotelSalesDetails);
+router.put("/cancel/:id", cancelKot);
+router.get('/getRoomCheckInDetails/:cmp_id/:roomId',getRoomCheckInDetails);
+router.put('/cancelBooking/:id', cancelBooking);
+router.get('/statement', getCheckoutStatementByDate);
+router.post("/convertToAvailable/:cmp_id",convertToAvailable);
 router.post("/controlTaggedCheckIn/:cmp_id", authSecondary,controlTaggedCheckIn);
 // Route to get detailed booking information for a specific room and date
 
