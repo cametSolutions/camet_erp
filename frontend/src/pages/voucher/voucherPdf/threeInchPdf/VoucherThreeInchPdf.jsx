@@ -12,11 +12,12 @@ function VoucherThreeInchPdf({
   sendToParent,
   handlePrintData,
 }) {
+console.log("hhh")
   const [subTotal, setSubTotal] = useState("");
   const [additinalCharge, setAdditinalCharge] = useState("");
   const [inWords, setInWords] = useState("");
 
-  console.log(data);
+  console.log(isPreview);
 
   const IsIndian =
     useSelector(
@@ -74,6 +75,8 @@ function VoucherThreeInchPdf({
 
   useEffect(() => {
     if (data && data.items) {
+      ///please check it is temperary
+      data.discount = data.additionalCharges[0]?.value;
       const calculatedSubTotal  = data.items
         .reduce(
           (acc, curr) => acc + Number(curr?.total) * Number(curr?.totalCount),

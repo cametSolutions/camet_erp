@@ -5,6 +5,10 @@ const foodPlanSchema = new mongoose.Schema({
   foodPlan: String,
   rate: Number,
   roomId: { type: mongoose.Schema.Types.ObjectId, ref: "Room" },
+  isComplimentary: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const paxDetailSchema = new mongoose.Schema({
@@ -74,7 +78,7 @@ const selectedRoomSchema = new mongoose.Schema({
     Primary_user_id: mongoose.Schema.Types.ObjectId,
   },
   dateTariffs: {
-    type: Map, 
+    type: Map,
     of: Number,
     default: {},
   },
@@ -128,6 +132,12 @@ const bookingSchema = new mongoose.Schema(
     arrivalTime: String,
     checkOutDate: String,
     checkOutTime: String,
+    currentDate: String,
+    advanceTracking: {
+      type: Map,
+      of: Number,
+      default: {},
+    },
     stayDays: Number,
     bookingType: String,
     selectedRoomId: mongoose.Schema.Types.ObjectId,
@@ -147,14 +157,21 @@ const bookingSchema = new mongoose.Schema(
     advanceAmount: String,
     totalAmount: String,
     balanceToPay: String,
+    guestName: String,
+    guestId: { type: mongoose.Schema.Types.ObjectId, ref: "Party" },
+    guestCountry: String,
+    guestState: String,
+    guestPinCode: String,
+    guestDetailedAddress: String,
+    guestMobileNumber: String,
+    gstNo: String,
     paymenttypeDetails: {
-  cash: { type: String, default: '0' },
-  bank: { type: String, default: '0' },
-  upi: { type: String, default: '0' },
-  credit: { type: String, default: '0' },
-  card: { type: String, default: '0' }
-}
-,
+      cash: { type: Number, default: 0 },
+      bank: { type: Number, default: 0 },
+      upi: { type: Number, default: 0 },
+      credit: { type: Number, default: 0 },
+      card: { type: Number, default: 0 },
+    },
     grandTotal: String,
     customerId: { type: mongoose.Schema.Types.ObjectId, ref: "Party" },
     customerName: String,
@@ -170,8 +187,8 @@ const bookingSchema = new mongoose.Schema(
     roomTotal: Number,
     foodPlanTotal: Number,
     paxTotal: Number,
-     isHotelAgent: { type: Boolean,default: false},
-  
+    isHotelAgent: { type: Boolean, default: false },
+
     agentId: { type: mongoose.Schema.Types.ObjectId, ref: "Party" },
     bookingId: { type: mongoose.Schema.Types.ObjectId, ref: "Booking" },
     checkInId: { type: mongoose.Schema.Types.ObjectId, ref: "CheckIn" },
@@ -200,6 +217,7 @@ const bookingSchema = new mongoose.Schema(
         saleVoucherNumber: String,
       },
     ],
+    addTaxWithRate: Boolean,
     // Foreign National Fields (only for non-Indian guests)
     company: String,
     nextDestination: String,
@@ -215,8 +233,11 @@ const bookingSchema = new mongoose.Schema(
     dateOfIssue: String,
     dateOfExpiry: String,
     grcno: String,
+    isHold: { type: Boolean, default: false },
+    taggedCheckIns: { type: mongoose.Schema.Types.ObjectId, ref: "CheckIn" },
+    holdArray:[]
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export const Booking = mongoose.model("Booking", bookingSchema, "bookings");

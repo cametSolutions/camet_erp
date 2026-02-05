@@ -8,8 +8,9 @@ import { useNavigate } from "react-router-dom";
 import { GiCancel } from "react-icons/gi";
 
 const DashboardTransaction = ({ filteredData, from }) => {
+console.log(filteredData)
   const navigate = useNavigate();
-
+console.log("hhh")
   const typeColors = useMemo(
     () => ({
       Receipt: "bg-red-500",
@@ -27,6 +28,7 @@ const DashboardTransaction = ({ filteredData, from }) => {
 
   const getNavigationPath = useMemo(
     () => (type, id) => {
+console.log(type)
       const routes = {
         Receipt: `/sUsers/receipt/details/${id}`,
         Payment: `/sUsers/payment/details/${id}`,
@@ -45,6 +47,8 @@ const DashboardTransaction = ({ filteredData, from }) => {
 
   const handleTransactionClick = (type, id) => {
     const path = getNavigationPath(type, id);
+console.log(path)
+console.log(from)
     navigate(path, { state: { from } });
   };
 
@@ -93,23 +97,22 @@ const DashboardTransaction = ({ filteredData, from }) => {
                       {dayjs(date).format("DD/MM/YYYY")}
                     </p>
 
-                    <div
-                      // className={`${
-                      //   typeColors[type] || typeColors.default
-                      // } flex items-center text-white px-2 rounded-sm`}
-                      className="flex items-center  rounded-sm"
-                    >
-                      <p className="p-1 rounded-lg  font-bold text-[10px] text-gray-600">
-                        <span className="mr-1">/</span> {type}
-                      </p>
-                    </div>
+                   <div
+  className={`${
+    typeColors[type] || typeColors.default
+  } flex items-center text-white px-2 rounded-sm`}
+>
+  <p className="p-1 rounded-lg font-bold text-[10px]">
+    {type}
+  </p>
+</div>
                   </section>
                 </div>
               </div>
             </div>
             <div className="flex-1  flex justify-end">
               <p className="font-bold text-sm text-gray-500">
-                ₹{enteredAmount || 0}
+                ₹{Number(enteredAmount).toFixed(2) || 0}
               </p>
             </div>
           </div>

@@ -200,7 +200,7 @@ export const editPurchase = async (req, res) => {
       existingPurchase?.purchaseNumber,
       existingPurchase?._id
     );
-
+console.log("line 203 purchasecontroler")
     // Update existing sale record
     const updateData = {
       selectedGodownId: "",

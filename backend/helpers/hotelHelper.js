@@ -86,28 +86,28 @@ export const buildDatabaseFilterForBooking = (params) => {
   }
 
   // Add search functionality if search term is provided
-  if (params.searchTerm && params.searchTerm != "completed") {
-    if (params.searchTerm != "pending") {
+  if (params.searchTerm && params.searchTerm !== "completed") {
+    if (params.searchTerm !== "pending") {
       filter.$or = [
         { voucherNumber: { $regex: params.searchTerm, $options: "i" } },
         { customerName: { $regex: params.searchTerm, $options: "i" } },
+        { "selectedRooms.roomName": { $regex: params.searchTerm, $options: "i" } },
+        { "selectedRooms.roomNumber": { $regex: params.searchTerm, $options: "i" } },
       ];
     } else {
       filter = { ...filter, status: { $exists: false } };
     }
-  } else if (params.searchTerm == "completed") {
-    if (params.modal == "booking") {
+  } else if (params.searchTerm === "completed") {
+    if (params.modal === "booking") {
       filter = { ...filter, status: "checkIn" };
     }
-    if (params.modal == "checkIn") {
+    if (params.modal === "checkIn") {
       filter = { ...filter, status: "checkOut" };
     }
   }
 
-
   return filter;
 };
-
 
 // function used to fetch booking
 export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
@@ -127,8 +127,13 @@ export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
       selectedModal
         .find(filter)
         .populate("customerId")
+        .populate("guestId")
         .populate("agentId")
         .populate("isHotelAgent")
+        //     .populate({
+        //   path: "selectedRooms.roomId",
+        //   select: "roomName roomNumber status",
+        // })
         .populate("selectedRooms.selectedPriceLevel")
         .populate("bookingId")
         .populate("checkInId")
@@ -434,7 +439,7 @@ export const updateReceiptForRooms = async (
 //   return receipts;
 // };
 
-export const  createReceiptForSales = async (
+export const createReceiptForSales = async (
   cmp_id,
   payment,
   paymentMethod,
@@ -447,7 +452,7 @@ export const  createReceiptForSales = async (
   restaurantBaseSaleData = [],
   session
 ) => {
-  console.log("cmpidin the createreceiptforsale",cmp_id)
+  console.log("cmpidin the createreceiptforsale", cmp_id)
   console.log("call for create receipt");
   const receipts = [];
 
@@ -485,9 +490,9 @@ export const  createReceiptForSales = async (
   if (payment?.paymentMode === "split") {
     const splitDetails = payment?.splitDetails || [];
     // Find all outstandings for this customer from sales with this 
-    const customerids=splitDetails.map((item)=>new mongoose.Types.ObjectId(item.customer))
-    console.log("custmereidsssss",customerids)
-    console.log("salesids",saleIds)
+    const customerids = splitDetails.map((item) => new mongoose.Types.ObjectId(item.customer))
+    console.log("custmereidsssss", customerids)
+    console.log("salesids", saleIds)
     const outstandings = await TallyData.find({
       billId: { $in: saleIds },
       cmp_id,
@@ -500,110 +505,110 @@ export const  createReceiptForSales = async (
       console.log(`No outstanding found for customer ${customerids}`);
 
     }
-    let balancetoset=amount
-      // Process each split detail
-      for (const split of splitDetails) {
-        const billData = [];
-        const splitCustomerId = split.customer;
-        const splitAmount = Number(split.amount || 0);
-        const splitSourceType = split.sourceType; // "cash" or "bank"
+    let balancetoset = amount
+    // Process each split detail
+    for (const split of splitDetails) {
+      const billData = [];
+      const splitCustomerId = split.customer;
+      const splitAmount = Number(split.amount || 0);
+      const splitSourceType = split.sourceType; // "cash" or "bank"
 
-        if (splitAmount <= 0) continue;
-        // Create receipt for this split
-        const receiptVoucher = await generateVoucherNumber(
-          cmp_id,
-          "receipt",
-          series_id,
-          session
-        );
-        const serialNumber = await getNewSerialNumber(
-          receiptModel,
-          "serialNumber",
-          session
-        );
+      if (splitAmount <= 0) continue;
+      // Create receipt for this split
+      const receiptVoucher = await generateVoucherNumber(
+        cmp_id,
+        "receipt",
+        series_id,
+        session
+      );
+      const serialNumber = await getNewSerialNumber(
+        receiptModel,
+        "serialNumber",
+        session
+      );
 
-        const paymentDetails =
-          splitSourceType === "cash"
-            ? { cash_ledname: customerName, cash_name: customerName }
-            : { bank_ledname: customerName, bank_name: customerName };
-        const matchedoutstanding = outstandings.find((item) => item.party_id === splitCustomerId)
-        const matchedsale = allSales.find((item) => String(item.party?._id) === String(splitCustomerId))
-        console.log("outstandings",outstandings)
-for (const item of outstandings ){
-  const sale=allSales.find(s=>s.salesNumber===item.bill_no)
-  console.log("ssssalesssssssss",sale)
-  billData.push({
+      const paymentDetails =
+        splitSourceType === "cash"
+          ? { cash_ledname: customerName, cash_name: customerName }
+          : { bank_ledname: customerName, bank_name: customerName };
+      const matchedoutstanding = outstandings.find((item) => item.party_id === splitCustomerId)
+      const matchedsale = allSales.find((item) => String(item.party?._id) === String(splitCustomerId))
+      console.log("outstandings", outstandings)
+      for (const item of outstandings) {
+        const sale = allSales.find(s => s.salesNumber === item.bill_no)
+        console.log("ssssalesssssssss", sale)
+        billData.push({
           _id: item._id,
           bill_no: sale.salesNumber,
           billId: sale._id,
-          bill_date:item.bill_date,
+          bill_date: item.bill_date,
           bill_pending_amt: splitAmount,
           source: "hotel",
           settledAmount: splitAmount,
           remainingAmount: 0,
         })
 
-}
-console.log("billdata",billData)
-        
-
-        const newReceipt = await buildReceipt(
-          receiptVoucher,
-          serialNumber,
-          paymentDetails,
-          balancetoset,
-          splitAmount,
-          splitSourceType === "cash" ? "Cash" : "Online",
-          splitCustomerId,
-          cmp_id,
-          series_id,
-          billData,
-          req,
-          session
-        );
-
-        receipts.push(newReceipt);
-
-       
-      
-        
-        
-balancetoset -=splitAmount
-
       }
-      
-        for (const item of outstandings) {
-  // 1. Find matching sale for this outstanding
-  const sale = allSales.find(s => s.salesNumber === item.bill_no);
-  if (!sale) continue;
+      console.log("billdata", billData)
 
-  // 2. Find ALL receipts matching this sale's salesNumber
-  const receipts = await receiptModel.find({
-    'billData.bill_no': sale.salesNumber  // Matches any billData.bill_no
-  });
 
-  // 3. Push ALL matching receipts to this outstanding
-  if (receipts.length > 0) {
-    await TallyData.updateOne(
-      { _id: item._id },
-      {
-        $push: {
-          appliedReceipts: {
-            $each: receipts.map(receipt => ({
-              _id: receipt._id,
-              receiptNumber: receipt.receiptNumber,
-              settledAmount: receipt.settledAmount,  // or calculate per receipt
-              date: new Date(),
-            }))
-          }
-        }
-      },
-      { session }
-    );
-  }
-}
+      const newReceipt = await buildReceipt(
+        receiptVoucher,
+        serialNumber,
+        paymentDetails,
+        balancetoset,
+        splitAmount,
+        splitSourceType === "cash" ? "Cash" : "Online",
+        splitCustomerId,
+        cmp_id,
+        series_id,
+        billData,
+        req,
+        session
+      );
 
-    
+      receipts.push(newReceipt);
+
+
+
+
+
+      balancetoset -= splitAmount
+
+    }
+
+    for (const item of outstandings) {
+      // 1. Find matching sale for this outstanding
+      const sale = allSales.find(s => s.salesNumber === item.bill_no);
+      if (!sale) continue;
+
+      // 2. Find ALL receipts matching this sale's salesNumber
+      const receipts = await receiptModel.find({
+        'billData.bill_no': sale.salesNumber  // Matches any billData.bill_no
+      });
+
+      // 3. Push ALL matching receipts to this outstanding
+      if (receipts.length > 0) {
+        await TallyData.updateOne(
+          { _id: item._id },
+          {
+            $push: {
+              appliedReceipts: {
+                $each: receipts.map(receipt => ({
+                  _id: receipt._id,
+                  receiptNumber: receipt.receiptNumber,
+                  settledAmount: receipt.settledAmount,  // or calculate per receipt
+                  date: new Date(),
+                }))
+              }
+            }
+          },
+          { session }
+        );
+      }
+    }
+
+
 
   }
 
@@ -673,11 +678,15 @@ balancetoset -=splitAmount
         paymentMethod === "cash"
           ? { cash_ledname: customerName, cash_name: customerName }
           : { bank_ledname: customerName, bank_name: customerName };
-
+      console.log("checkkkkkkkkkkkkk", cmp_id)
+      console.log("seriesiddd", series_id)
+      console.log("partyidd", partyId)
+      const balancetoset = null
       const newReceipt = await buildReceipt(
         receiptVoucher,
         serialNumber,
         paymentDetails,
+        balancetoset,
         amount,
         paymentMethod === "cash" ? "Cash" : "Online",
         partyId,
@@ -714,8 +723,8 @@ balancetoset -=splitAmount
 
       const pendingAmount = outstanding.bill_pending_amt || 0;
       const settleAmount = Math.min(amountLeft, pendingAmount);
-     
-const matchedsale=allSales.find((item)=>String(item.party?._id) === String(outstanding.party_id))
+
+      const matchedsale = allSales.find((item) => String(item.party?._id) === String(outstanding.party_id))
 
       billData.push({
         _id: outstanding._id,
@@ -725,13 +734,13 @@ const matchedsale=allSales.find((item)=>String(item.party?._id) === String(outst
         bill_pending_amt: pendingAmount,
         source: "hotel",
         settledAmount: pendingAmount,
-        remainingAmount:0,
+        remainingAmount: 0,
       });
 
       outstandingsToUpdate.push({
         outstandingId: outstanding._id,
         settledAmount: pendingAmount,
-        newPendingAmount:0,
+        newPendingAmount: 0,
       });
 
       amountLeft -= settleAmount;
@@ -794,8 +803,8 @@ const matchedsale=allSales.find((item)=>String(item.party?._id) === String(outst
       paymentMethod === "cash"
         ? { cash_ledname: customerName, cash_name: customerName }
         : { bank_ledname: customerName, bank_name: customerName };
-console.log("cmpid before buildreceipt",cmp_id)
-const balancetoset=null
+    console.log("cmpid before buildreceipt", cmp_id)
+    const balancetoset = null
     const newReceipt = await buildReceipt(
       receiptVoucher,
       serialNumber,
@@ -855,7 +864,7 @@ const buildReceipt = async (
   receiptVoucher,
   serialNumber,
   paymentDetails,
-  balancetoset=null,
+  balancetoset = null,
   amount,
   paymentMethod,
   partyId,
@@ -865,7 +874,7 @@ const buildReceipt = async (
   req,
   session
 ) => {
-  console.log("cmpid in the buld receipt",cmp_id)
+  console.log("cmpid in the buld receipt", cmp_id)
   let selectedParty = await Party.findOne({ _id: partyId })
     .populate("accountGroup")
     .session(session);
@@ -879,18 +888,18 @@ const buildReceipt = async (
 
     delete selectedParty.accountGroup;
   }
-
+  console.log("line 886 hotelhelper")
   const receipt = new receiptModel({
     createdAt: new Date(),
     date: await formatToLocalDate(new Date(), cmp_id, session),
     receiptNumber: receiptVoucher?.usedSeriesNumber,
     series_id,
     usedSeriesNumber: receiptVoucher?.usedSeriesNumber || null,
-    serialNumber, 
+    serialNumber,
     cmp_id,
     party: selectedParty,
     billData,
-    totalBillAmount:balancetoset?? amount,
+    totalBillAmount: balancetoset ?? amount,
     enteredAmount: amount,
     advanceAmount: 0,
     remainingAmount: 0,

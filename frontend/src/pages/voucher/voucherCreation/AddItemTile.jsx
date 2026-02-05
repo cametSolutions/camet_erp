@@ -109,7 +109,7 @@ function AddItemTile({
                                 return acc;
                               }
                             } else {
-                              // console.log("curr", curr);
+                            
 
                               return (
                                 (acc += Number(

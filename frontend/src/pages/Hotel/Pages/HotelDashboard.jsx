@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import CalenderComponent from "../Components/CalenderComponent";
 import ReactDOM from "react-dom";
 import RoomSwapModal from "./RoomSwapModal ";
+
 const HotelDashboard = () => {
   const [rooms, setRooms] = useState([]);
   const [tooltipData, setTooltipData] = useState({});
@@ -43,10 +44,12 @@ const HotelDashboard = () => {
   });
 
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedRooms, setSelectedRooms] = useState([]);
+  const [showCovertToAvailable, setShowCovertToAvailable] = useState(false);
 
   const navigate = useNavigate();
   const cmp_id = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg._id
+    (state) => state.secSelectedOrganization.secSelectedOrg._id,
   );
   const [selectedDate, setSelectedDate] = useState(() => {
     const today = new Date();
@@ -90,7 +93,7 @@ const HotelDashboard = () => {
           `/api/sUsers/getBookings/${cmp_id}?${params}`,
           {
             withCredentials: true,
-          }
+          },
         );
 
         if (pageNumber === 1) {
@@ -112,7 +115,7 @@ const HotelDashboard = () => {
         setBookingsLoading(false);
       }
     },
-    [cmp_id]
+    [cmp_id],
   );
 
   // Format date for display
@@ -149,7 +152,7 @@ const HotelDashboard = () => {
           {
             params: { selectedDate: date },
             withCredentials: true,
-          }
+          },
         );
 
         const roomsData = res.data.rooms || [];
@@ -159,17 +162,19 @@ const HotelDashboard = () => {
         // Extract filter options
         const uniqueRoomTypes = [
           ...new Set(
-            roomsData.map((room) => room.roomType?.brand).filter(Boolean)
+            roomsData.map((room) => room.roomType?.brand).filter(Boolean),
           ),
         ];
         const uniqueFloorTypes = [
           ...new Set(
-            roomsData.map((room) => room.roomFloor?.subcategory).filter(Boolean)
+            roomsData
+              .map((room) => room.roomFloor?.subcategory)
+              .filter(Boolean),
           ),
         ];
         const uniqueBedTypes = [
           ...new Set(
-            roomsData.map((room) => room.bedType?.category).filter(Boolean)
+            roomsData.map((room) => room.bedType?.category).filter(Boolean),
           ),
         ];
         setRoomTypes(uniqueRoomTypes);
@@ -182,7 +187,7 @@ const HotelDashboard = () => {
         setLoader(false);
       }
     },
-    [cmp_id]
+    [cmp_id],
   );
   const fetchDateBasedData = useCallback(
     async (date) => {
@@ -195,7 +200,7 @@ const HotelDashboard = () => {
           {
             params: { selectedDate: date },
             withCredentials: true,
-          }
+          },
         );
 
         const roomsData = res.data || [];
@@ -208,7 +213,7 @@ const HotelDashboard = () => {
         setLoader(false);
       }
     },
-    [cmp_id]
+    [cmp_id],
   );
 
   // Filter rooms based on selected filters
@@ -217,19 +222,19 @@ const HotelDashboard = () => {
 
     if (filters.roomType) {
       filtered = filtered.filter(
-        (room) => room.roomType?.brand === filters.roomType
+        (room) => room.roomType?.brand === filters.roomType,
       );
     }
 
     if (filters.floorType) {
       filtered = filtered.filter(
-        (room) => room.roomFloor?.subcategory === filters.floorType
+        (room) => room.roomFloor?.subcategory === filters.floorType,
       );
     }
 
     if (filters.bedType) {
       filtered = filtered.filter(
-        (room) => room.bedType?.category === filters.bedType
+        (room) => room.bedType?.category === filters.bedType,
       );
     }
 
@@ -312,7 +317,7 @@ const HotelDashboard = () => {
 
       try {
         const checkInDetails = await fetchRoomCheckInDetails(
-          selectedRoomData._id
+          selectedRoomData._id,
         );
 
         if (checkInDetails?.success && checkInDetails?.checkIn) {
@@ -359,7 +364,7 @@ const HotelDashboard = () => {
             headers: {
               "Content-Type": "application/json",
             },
-          }
+          },
         );
 
         console.log("Status update response:", res.data); // Debug log
@@ -389,7 +394,7 @@ const HotelDashboard = () => {
 
         // Optional: Show success message
         console.log(
-          `Room ${selectedRoomData.roomName} status updated to ${action}`
+          `Room ${selectedRoomData.roomName} status updated to ${action}`,
         );
       } catch (error) {
         console.error("Error updating room status:", error);
@@ -403,7 +408,7 @@ const HotelDashboard = () => {
         alert(
           `Failed to update room status: ${
             error.response?.data?.message || error.message
-          }`
+          }`,
         );
       }
     }
@@ -413,13 +418,13 @@ const HotelDashboard = () => {
       setIsLoading(true);
       const res = await api.get(
         `/api/sUsers/getRoomCheckInDetails/${cmp_id}/${roomId}`,
-        { withCredentials: true }
+        { withCredentials: true },
       );
       return res.data;
     } catch (error) {
       console.error("Error fetching check-in details:", error);
       toast.error(
-        error?.response?.data?.message || "Failed to fetch room details"
+        error?.response?.data?.message || "Failed to fetch room details",
       );
       return null;
     } finally {
@@ -478,6 +483,14 @@ const HotelDashboard = () => {
     fetchBookings();
   }, [fetchBookings]);
 
+  useEffect(() => {
+    if (selectedRooms.length > 0) {
+      setShowCovertToAvailable(true);
+    } else {
+      setShowCovertToAvailable(false);
+    }
+  }, [selectedRooms]);
+
   const statusCounts = getStatusCounts();
   const grouped = groupRoomsByType(filteredRooms);
   console.log(grouped);
@@ -492,6 +505,48 @@ const HotelDashboard = () => {
     scrollbarWidth: "thin",
     scrollbarColor: "rgba(0, 0, 0, 0.7) rgba(0, 0, 0, 0.2)", // black thumb, lighter black track
   };
+  const handleConvertToAvailable = (room) => {
+    console.log(room);
+    // Only allow these statuses
+    const allowedStatuses = ["dirty", "blocked", "booked"];
+
+    if (!allowedStatuses.includes(room.status)) return;
+
+    // Check if room already selected
+    const isAlreadySelected = selectedRooms.some((r) => r.roomId === room._id);
+    if (isAlreadySelected) return;
+
+    // Add room to selectedRooms
+    const newObject = {
+      roomId: room._id,
+      roomName: room.roomName,
+      status: room.status,
+    };
+
+    setSelectedRooms((prev) => [...prev, newObject]);
+  };
+
+  const sendConvertToAvailable = async() => {
+    console.log(selectedRooms);
+    try {
+      let response = api.post(`/api/sUsers/convertToAvailable/${cmp_id}`, {
+        selectedRooms: selectedRooms,
+      });
+      if (response?.data?.success) {
+        toast.success("Rooms converted to available successfully");
+      }
+    } catch (error) {
+      toast.error(error?.response?.data?.message);
+      console.error("Error converting to available:", error);
+    } finally {
+      setShowCovertToAvailable(false);
+      setSelectedRooms([]);
+       await fetchRooms(selectedDate);
+    }
+  };
+
+  console.log(selectedRooms);
+
   return (
     <>
       <style>
@@ -519,51 +574,48 @@ const HotelDashboard = () => {
         <div className="relative z-10">
           <div className="p-3">
             {/* Header */}
-           <div className="bg-[#0B1D34] p-3 mb-4">
-  <div className="flex flex-col md:flex-row md:items-center gap-3">
-    
-    {/* Title */}
-   <div className="flex items-center gap-2 justify-center md:justify-start">
-  <BedDouble className="w-5 h-5 text-cyan-400" />
-  <h3 className="font-bold text-blue-400 text-base md:text-lg">
-    Room Status Overview
-  </h3>
-</div>
+            <div className="bg-[#0B1D34] p-3 mb-4">
+              <div className="flex flex-col md:flex-row md:items-center gap-3">
+                {/* Title */}
+                <div className="flex items-center gap-2 justify-center md:justify-start">
+                  <BedDouble className="w-5 h-5 text-cyan-400" />
+                  <h3 className="font-bold text-blue-400 text-base md:text-lg">
+                    Room Status Overview
+                  </h3>
+                </div>
 
+                {/* Buttons */}
+                <div className="md:ml-auto flex flex-wrap gap-2">
+                  <button
+                    className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold px-3 py-1 rounded text-sm"
+                    onClick={() => navigate("/sUsers/bookingList")}
+                  >
+                    Room Booking
+                  </button>
 
-    {/* Buttons */}
-    <div className="md:ml-auto flex flex-wrap gap-2">
-      
-      <button
-        className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold px-3 py-1 rounded text-sm"
-        onClick={() => navigate("/sUsers/bookingList")}
-      >
-        Room Booking
-      </button>
+                  <button
+                    className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold px-3 py-1 rounded text-sm"
+                    onClick={() => navigate("/sUsers/checkInList")}
+                  >
+                    Check In
+                  </button>
 
-      <button
-        className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold px-3 py-1 rounded text-sm"
-        onClick={() => navigate("/sUsers/checkInList")}
-      >
-        Check In
-      </button>
+                  <button
+                    className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold px-3 py-1 rounded text-sm"
+                    onClick={() => navigate("/sUsers/checkOutList")}
+                  >
+                    Check Out
+                  </button>
 
-      <button
-        className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold px-3 py-1 rounded text-sm"
-        onClick={() => navigate("/sUsers/checkOutList")}
-      >
-        Check Out
-      </button>
+                  <button
+                    className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold px-3 py-1 rounded text-sm"
+                    onClick={() => navigate("/sUsers/partyList")}
+                  >
+                    New Guest
+                  </button>
 
-      <button
-        className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold px-3 py-1 rounded text-sm"
-        onClick={() => navigate("/sUsers/partyList")}
-      >
-        New Guest
-      </button>
-
-      <button
-        className="
+                  <button
+                    className="
           flex items-center gap-2 px-4 py-1.5 rounded-xl
           font-semibold text-xs transition-all duration-300
           whitespace-nowrap
@@ -572,14 +624,14 @@ const HotelDashboard = () => {
           hover:scale-105 active:scale-95 transform
           hover:from-green-700 hover:to-emerald-700
         "
-        onClick={() => navigate("/sUsers/BillSummary?type=hotel")}
-      >
-        <span className="text-sm">📊</span>
-        Hotel Daily Sales
-      </button>
+                    onClick={() => navigate("/sUsers/BillSummary?type=hotel")}
+                  >
+                    <span className="text-sm">📊</span>
+                    HOTEL DAILY SALES
+                  </button>
 
-      <button
-        className="
+                  <button
+                    className="
           flex items-center gap-2 px-4 py-1.5 rounded-xl
           font-semibold text-xs transition-all duration-300
           whitespace-nowrap
@@ -588,33 +640,32 @@ const HotelDashboard = () => {
           hover:scale-105 active:scale-95 transform
           hover:from-green-700 hover:to-emerald-700
         "
-        onClick={() => navigate("/sUsers/Checkoutpdf")}
-      >
-        <span className="text-sm">📊</span>
-        Hotel Daily Checkouts
-      </button>
+                    onClick={() => navigate("/sUsers/Checkoutpdf")}
+                  >
+                    <span className="text-sm">📊</span>
+                    FO DAILY STATEMENT
+                  </button>
 
-      <button
-        className="bg-gray-500 hover:bg-gray-600 text-white font-bold px-3 py-1 rounded text-sm flex items-center gap-1"
-        onClick={() => setShowFilters(!showFilters)}
-      >
-        <Filter className="w-4 h-4" />
-        Filters
-      </button>
+                  <button
+                    className="bg-gray-500 hover:bg-gray-600 text-white font-bold px-3 py-1 rounded text-sm flex items-center gap-1"
+                    onClick={() => setShowFilters(!showFilters)}
+                  >
+                    <Filter className="w-4 h-4" />
+                    Filters
+                  </button>
 
-      {isMobile && (
-        <button
-          onClick={() => setShowBookingDetails(!showBookingDetails)}
-          className="bg-cyan-500 hover:bg-cyan-600 text-white font-bold px-3 py-1 rounded text-sm flex items-center gap-1"
-        >
-          <Calendar className="w-4 h-4" />
-          Bookings
-        </button>
-      )}
-    </div>
-  </div>
-</div>
-
+                  {isMobile && (
+                    <button
+                      onClick={() => setShowBookingDetails(!showBookingDetails)}
+                      className="bg-cyan-500 hover:bg-cyan-600 text-white font-bold px-3 py-1 rounded text-sm flex items-center gap-1"
+                    >
+                      <Calendar className="w-4 h-4" />
+                      Bookings
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
 
             {/* Date Selector */}
             <div className="mb-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center">
@@ -815,15 +866,19 @@ const HotelDashboard = () => {
                             isMobile
                               ? "grid-cols-2 sm:grid-cols-4"
                               : showBookingDetails
-                              ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5"
-                              : "grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8"
+                                ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5"
+                                : "grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8"
                           }`}
                         >
                           {rooms.map((room, index) => (
                             <div
                               key={room._id}
                               style={{ animationDelay: `${index * 0.05}s` }}
-                              className="animate-slide-in rounded-lg p-1"
+                              className={`animate-slide-in rounded-lg p-1 ${
+                                selectedRooms.some((r) => r.roomId === room._id)
+                                  ? "animate-bounce bg-white "
+                                  : ""
+                              }`}
                               onClick={() => setSelectedRoom(room)}
                               onMouseEnter={(e) => {
                                 setHoveredRoomId(room._id);
@@ -835,6 +890,10 @@ const HotelDashboard = () => {
                                 setTooltipY(e.clientY);
                               }}
                               onMouseLeave={() => setHoveredRoomId(null)}
+                              onContextMenu={(e) => {
+                                e.preventDefault();
+                                handleConvertToAvailable(room);
+                              }}
                             >
                               <RoomStatus
                                 {...room}
@@ -860,7 +919,7 @@ const HotelDashboard = () => {
                                       tooltipData={tooltipData}
                                     />
                                   </Tooltip>,
-                                  document.body // 👈 mounted outside RoomStatus
+                                  document.body, // 👈 mounted outside RoomStatus
                                 )}
                             </div>
                           ))}
@@ -877,7 +936,7 @@ const HotelDashboard = () => {
               </div>
 
               {/* Right Side - Booking Details */}
-              {showBookingDetails && (
+              {showBookingDetails && !showCovertToAvailable && (
                 <>
                   {/* Mobile Overlay */}
                   {isMobile && (
@@ -1032,6 +1091,161 @@ const HotelDashboard = () => {
                             No bookings found for today
                           </p>
                         </div>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+              {showCovertToAvailable && (
+                <>
+                  {/* Mobile Overlay */}
+                  {isMobile && (
+                    <div
+                      className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+                      onClick={() => {
+                        setSelectedRooms([]);
+                        setShowCovertToAvailable(false);
+                      }}
+                    />
+                  )}
+
+                  {/* Booking Details Panel */}
+                  <div
+                    className={`${
+                      isMobile
+                        ? "fixed right-0 top-0 z-50 w-72 max-w-[85vw] h-full bg-[#0B1D34] border-l border-white/20 transform transition-transform duration-300 ease-in-out flex flex-col"
+                        : "w-72 flex-shrink-0 bg-[#0B1D34] border border-white/20 rounded-lg flex flex-col h-full"
+                    }`}
+                  >
+                    {/* Booking Section Header - Fixed */}
+                    <div className="flex-shrink-0 flex items-center justify-between p-2.5 border-b border-white/20">
+                      <div>
+                        <h3 className="font-bold text-blue-400 text-sm">
+                          Convert to Available
+                        </h3>
+                        <p className="text-gray-400 text-xs mt-0.5">
+                          {selectedRooms.length} room
+                          {selectedRooms.length !== 1 ? "s" : ""} selected
+                        </p>
+                      </div>
+
+                      {/* Close button for mobile */}
+                      {isMobile && (
+                        <button
+                          onClick={() => {
+                            setShowCovertToAvailable(false);
+                            setSelectedRooms([]);
+                          }}
+                          className="p-1 hover:bg-slate-700 rounded-full transition-colors flex-shrink-0"
+                        >
+                          <X className="w-3.5 h-3.5 text-gray-400" />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Booking Details Content - Scrollable Only */}
+                    <div
+                      className="flex-1 overflow-y-auto custom-scroll px-2.5 py-2"
+                      style={scrollbarStyles}
+                    >
+                      {selectedRooms.length > 0 ? (
+                        <div className="space-y-1.5">
+                          {selectedRooms.map((room, index) => (
+                            <div
+                              key={room?._id || index}
+                              className="bg-slate-800 rounded p-2 border border-slate-700 hover:border-blue-500/50 transition-colors"
+                            >
+                              {/* Room Name */}
+                              <div className="flex items-center gap-1.5 mb-1">
+                                <User className="w-3 h-3 text-cyan-400 flex-shrink-0" />
+                                <span className="text-white font-semibold text-xs truncate">
+                                  {room?.roomName}
+                                </span>
+                                <button
+                                  onClick={() => {
+                                    setSelectedRooms(
+                                      selectedRooms.filter(
+                                        (r, i) => i !== index,
+                                      ),
+                                    );
+                                  }}
+                                  className="ml-auto text-gray-400 hover:text-red-400 transition-colors flex-shrink-0"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </div>
+
+                              {/* Room Status */}
+                              <div className="text-gray-300 text-xs">
+                                <span className="text-blue-400">Status:</span>{" "}
+                                <span className="text-gray-200">
+                                  {room.status}
+                                </span>
+                              </div>
+
+                              {/* Additional Details */}
+                              {room.guestName && (
+                                <div className="text-gray-300 text-xs mt-0.5">
+                                  <span className="text-blue-400">Guest:</span>{" "}
+                                  <span className="text-gray-200 text-xs truncate">
+                                    {room.guestName}
+                                  </span>
+                                </div>
+                              )}
+
+                              {room.bookingNumber && (
+                                <div className="text-gray-300 text-xs mt-0.5">
+                                  <span className="text-blue-400">
+                                    Booking #:
+                                  </span>{" "}
+                                  <span className="text-gray-200">
+                                    {room.bookingNumber}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-3 flex flex-col items-center justify-center">
+                          <Calendar className="w-6 h-6 text-gray-500 mx-auto mb-1" />
+                          <p className="text-gray-400 text-xs">
+                            Nothing Selected
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Action Buttons - Fixed at Bottom */}
+                    <div className="flex-shrink-0 border-t border-slate-700 p-2 space-y-1.5">
+                      {selectedRooms.length > 0 ? (
+                        <>
+                          <button
+                            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-1.5 px-3 text-xs rounded transition-colors"
+                            onClick={sendConvertToAvailable}
+                          >
+                            Convert
+                          </button>
+                          <button
+                            onClick={() => {
+                              setShowCovertToAvailable(false);
+                              setSelectedRooms([]);
+                            }}
+                            className="w-full bg-slate-700 hover:bg-slate-600 text-white font-medium py-1.5 px-3 text-xs rounded transition-colors"
+                          >
+                            Cancel
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            setShowCovertToAvailable(false);
+                            setSelectedRooms([]);
+                          }}
+                          className="w-full bg-slate-700 hover:bg-slate-600 text-white font-medium py-1.5 px-3 text-xs rounded transition-colors"
+                        >
+                          Close
+                        </button>
                       )}
                     </div>
                   </div>

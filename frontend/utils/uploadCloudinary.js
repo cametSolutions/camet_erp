@@ -5,7 +5,6 @@ const cloud_preset = import.meta.env.VITE_CLOUDINARY_PRESET;
 
 const uploadImageToCloudinary = async (file) => {
   const uploadData = new FormData();
-
   uploadData.append("file", file);
   uploadData.append("upload_preset", cloud_preset);
   uploadData.append("cloud_name", cloud_name);

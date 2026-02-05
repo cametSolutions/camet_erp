@@ -7,6 +7,14 @@ const productSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  itemCode: {
+  type: String,
+ 
+  unique: true, // Optional: if you want unique item codes per company
+  trim: true,
+ 
+},
+
   product_image: {
     type: String, // Store Cloudinary URL
     default: "",

@@ -360,15 +360,15 @@ const drawSingleBill = async (doc, billData, billNo, totalBills, base64Logo) => 
   autoTable(doc, {
     head: [["Summary", "Amount"]],
     body: [
-      ["Room Rent", (billData?.summary?.roomRent || 0).toFixed(2)],
+      ["Room Rent", (billData?.summary?.roomRent || 0)],
       ...(billData?.summary?.foodPlan > 0
-        ? [["Food Plan", (billData.summary.foodPlan || 0).toFixed(2)]]
+        ? [["Food Plan", (billData.summary.foodPlan || 0)]]
         : []),
-      ["SGST on Rent", (billData?.summary?.sgst || 0).toFixed(2)],
-      ["CGST on Rent", (billData?.summary?.cgst || 0).toFixed(2)],
-      ["Ac Restaurant", (billData?.summary?.restaurant || 0).toFixed(2)],
-      ["Room Service", (billData?.summary?.roomService || 0).toFixed(2)],
-      ["Total", (billData?.summary?.total || 0).toFixed(2)],
+      ["SGST on Rent", (billData?.summary?.sgst || 0)],
+      ["CGST on Rent", (billData?.summary?.cgst || 0)],
+      ["Ac Restaurant", (billData?.summary?.restaurant || 0)],
+      ["Room Service", (billData?.summary?.roomService || 0)],
+      ["Total", (billData?.summary?.total || 0)],
     ],
     startY: tableStartY,
     margin: { left: MARGIN, right: MARGIN + halfWidth + 8 },

@@ -96,6 +96,7 @@ function AvailableRooms({
   selectedRoomId,
   isTariffRateChange = false,
   roomIdToUpdate = null,
+  addTaxWithRate = false,
 }) {
   const [rooms, setRooms] = useState([]);
   const [search, setSearch] = useState("");
@@ -115,7 +116,6 @@ function AvailableRooms({
   const debounceTimerRef = useRef(null);
   const dropdownRef = useRef(null);
   const PAGE_SIZE = 50;
-
   useEffect(() => {
     const fetchBookings = async () => {
       if (formData?.selectedRooms?.length > 0) {
@@ -155,7 +155,7 @@ function AvailableRooms({
 
             const taxCalculation = await calculateTax(normalizedBooking);
             return taxCalculation;
-          })
+          }),
         );
         setBookings(updatedBookings);
       } else if (rooms?.length > 0 && selectedRoomId) {
@@ -180,14 +180,14 @@ function AvailableRooms({
     if (!selectedRoomId) return;
     
     const bookingData = bookings?.find(
-      (item) => item.roomId === selectedRoomId
+      (item) => item.roomId === selectedRoomId,
     );
 
     const recalculateTax = async () => {
       if (bookingData) {
         const taxCalculation = await calculateTax(bookingData);
         setBookings((prev) =>
-          prev.map((b) => (b.roomId === selectedRoomId ? taxCalculation : b))
+          prev.map((b) => (b.roomId === selectedRoomId ? taxCalculation : b)),
         );
       }
     };
@@ -204,7 +204,7 @@ function AvailableRooms({
           bookings.map(async (booking) => {
             const taxCalculation = await calculateTax(booking);
             return taxCalculation;
-          })
+          }),
         );
         setBookings(updatedBookings);
       }
@@ -213,8 +213,8 @@ function AvailableRooms({
     handleBookingTypeChange();
   }, [formData?.bookingType]);
 
-  const { _id: cmp_id, configurations } = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg
+  const { _id: cmp_id } = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg,
   );
 
   const location = useLocation();
@@ -247,13 +247,23 @@ function AvailableRooms({
 
         const availableRooms = newRooms.filter((room) => {
           const isAlreadyBooked = bookings.some(
-            (booking) => booking.roomId === room._id
+            (booking) => booking.roomId === room._id,
           );
+          if (isAlreadyBooked) {
+            console.log(
+              `Filtering out already selected room: ${room.roomName}`,
+            );
+          }
           return !isAlreadyBooked;
         });
 
+        console.log(
+          "Available rooms after filtering out selected:",
+          availableRooms.length,
+        );
+
         setRooms((prev) =>
-          pageNum === 1 ? availableRooms : [...prev, ...availableRooms]
+          pageNum === 1 ? availableRooms : [...prev, ...availableRooms],
         );
         setHasMore(availableRooms.length === PAGE_SIZE);
       } catch (err) {
@@ -269,14 +279,27 @@ function AvailableRooms({
       formData?.roomType,
       formData?.arrivalDate,
       formData?.checkOutDate,
-    ]
+      // bookings,
+    ],
   );
+
+  useEffect(() => {
+    if (!bookings?.length) return;
+
+    const recalc = async () => {
+      const updated = await Promise.all(bookings.map(calculateTax));
+      setBookings(updated);
+    };
+
+    recalc();
+  }, [addTaxWithRate]);
 
   const recalculateBookingTotals = useCallback((booking) => {
     const checkInDate = formData?.arrivalDate || formData?.checkInDate;
     const checkOutDate = formData?.checkOutDate;
 
     if (!checkInDate || !checkOutDate) {
+      // Fallback to simple calculation if dates are not available
       const baseAmount =
         Number(booking.priceLevelRate || 0) * Number(booking.stayDays || 0);
       return {
@@ -323,6 +346,7 @@ function AvailableRooms({
     };
   }, [formData]);
 
+  console.log(bookings);
   const calculateTax = useCallback(
     async (booking) => {
       if (!booking) return booking;
@@ -332,9 +356,9 @@ function AvailableRooms({
       try {
         const taxResponse = await taxCalculator(
           updatedRoom,
-          configurations[0]?.addRateWithTax?.hotelSale,
+          addTaxWithRate,
           formData,
-          booking.roomId
+          booking.roomId,
         );
 
         return {
@@ -369,7 +393,7 @@ function AvailableRooms({
         };
       }
     },
-    [formData, configurations, recalculateBookingTotals]
+    [formData, addTaxWithRate, recalculateBookingTotals],
   );
 
   useEffect(() => {
@@ -389,7 +413,7 @@ function AvailableRooms({
       const updated = await calculateTax(roomToUpdate);
       if (!isMounted) return;
       setBookings((prev) =>
-        prev.map((b) => (b.roomId === roomIdToUpdate ? updated : b))
+        prev.map((b) => (b.roomId === roomIdToUpdate ? updated : b)),
       );
       setPendingRoomQueue((prev) => prev.slice(1));
     })();
@@ -403,7 +427,7 @@ function AvailableRooms({
     if (bookings.length > 0) {
       const total = bookings.reduce(
         (acc, b) => acc + Number(b.amountAfterTax || b.totalAmount || 0),
-        0
+        0,
       );
 
       const paxTotal = bookings.reduce((acc, b) => {
@@ -418,14 +442,14 @@ function AvailableRooms({
       if (roomIdToUpdate && formData?.selectedRooms?.length > 1) {
         const otherRooms = formData.selectedRooms.filter(
           (room) =>
-            room.roomId !== roomIdToUpdate && room._id !== roomIdToUpdate
+            room.roomId !== roomIdToUpdate && room._id !== roomIdToUpdate,
         );
 
         const allRooms = [...otherRooms, ...bookings];
 
         const allRoomsTotal = allRooms.reduce(
           (acc, b) => acc + Number(b.amountAfterTax || b.totalAmount || 0),
-          0
+          0,
         );
 
         const allRoomsPaxTotal = allRooms.reduce((acc, b) => {
@@ -451,6 +475,7 @@ function AvailableRooms({
     roomIdToUpdate,
     sendToParent,
   ]);
+  
 
   const handlePriceLevelChange = (e, roomId) => {
     const selectedLevelId = e.target.value;
@@ -478,11 +503,11 @@ function AvailableRooms({
           priceLevelRate: newRate,
           totalAmount: Number(booking.stayDays || 0) * Number(newRate),
         };
-      })
+      }),
     );
 
     setPendingRoomQueue((prev) =>
-      prev.includes(roomId) ? prev : [...prev, roomId]
+      prev.includes(roomId) ? prev : [...prev, roomId],
     );
   };
 
@@ -493,17 +518,21 @@ function AvailableRooms({
       prev.map((b) =>
         b.roomId === roomId
           ? { ...b, stayDays: newDays, totalAmount: newDays * b.priceLevelRate }
-          : b
-      )
+          : b,
+      ),
     );
     setPendingRoomQueue((prev) =>
-      prev.includes(roomId) ? prev : [...prev, roomId]
+      prev.includes(roomId) ? prev : [...prev, roomId],
     );
   };
 
+ 
+
   const handlePriceLevelRateChange = (e, roomId) => {
-    const newRate = Number(e.target.value);
-    
+     const value = e.target.value;
+     console.log(value);
+  const newRate = value === "" ? "" : Number(value); // allow empty input
+    console.log("Rate Change - New Rate:", newRate, "for Room:", roomId);
     if (isTariffRateChange) {
       setBookings((prev) =>
         prev.map((b) =>
@@ -515,10 +544,18 @@ function AvailableRooms({
                   [formData?.currentDate]: newRate,
                 },
               }
-            : b
-        )
+            : b,
+        ),
       );
     } else {
+      console.log(
+        "Rate Change - New Rate:",
+        newRate,
+        "for Room:",
+        roomId,
+        bookings,
+      );
+      console.log("sdf", newRate * (bookings[0].stayDays || 1));
       setBookings((prev) =>
         prev.map((b) =>
           b.roomId === roomId
@@ -527,20 +564,20 @@ function AvailableRooms({
                 priceLevelRate: newRate,
                 totalAmount: newRate * (b.stayDays || 1),
               }
-            : b
-        )
+            : b,
+        ),
       );
     }
 
     setPendingRoomQueue((prev) =>
-      prev.includes(roomId) ? prev : [...prev, roomId]
+      prev.includes(roomId) ? prev : [...prev, roomId],
     );
   };
 
   const handlePaxChange = (e, roomId) => {
     const newPax = Number(e.target.value) || 0;
     setBookings((prev) =>
-      prev.map((b) => (b.roomId === roomId ? { ...b, pax: newPax } : b))
+      prev.map((b) => (b.roomId === roomId ? { ...b, pax: newPax } : b)),
     );
     setPendingRoomId(roomId);
   };
@@ -574,37 +611,78 @@ function AvailableRooms({
     
     booking = await calculateTax(booking);
     setBookings((prev) =>
-      prev.some((b) => b.roomId === booking.roomId) ? prev : [...prev, booking]
+      prev.some((b) => b.roomId === booking.roomId) ? prev : [...prev, booking],
     );
     setSelectedValue(room);
     setSearch("");
     onSelect(room);
   };
 
-  const handleTariffDelete = (editedTariff) => {
-    setBookings((prev) =>
-      prev.map((b) => {
-        if (b.roomId === roomIdToUpdate) {
-          return { ...b, dateTariffs: editedTariff };
-        }
-        return b;
-      })
-    );
+ 
 
-    setPendingRoomQueue((prev) =>
-      prev.includes(roomIdToUpdate) ? prev : [...prev, roomIdToUpdate]
-    );
+  const handleSearch = useCallback(
+    (term) => {
+      console.log("termmmm", term);
+      setSearch(term);
+      setPage(1);
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = setTimeout(() => fetchRooms(1, term), 300);
+    },
+    [fetchRooms],
+  );
+
+  const loadMore = useCallback(() => {
+    if (!loading && hasMore) {
+      const nextPage = page + 1;
+      setPage(nextPage);
+      fetchRooms(nextPage, search);
+    }
+  }, [loading, hasMore, page, fetchRooms, search]);
+
+  const handleScroll = (e) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.target;
+    if (scrollHeight - scrollTop <= clientHeight + 50) loadMore();
   };
 
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => setSelectedValue(selectedParty), [selectedParty]);
   useEffect(() => {
     if (cmp_id) fetchRooms(1);
   }, [cmp_id, fetchRooms]);
 
   useEffect(() => () => clearTimeout(debounceTimerRef.current), []);
 
-  // Get booked room IDs for visual display
-  const bookedRoomIds = bookings.map((b) => b.roomId);
+  // Add this useEffect after your existing useEffects, before the console.log(bookings)
+  useEffect(() => {
+    // Refresh rooms when bookings change to update the dropdown
+    if (isOpen && cmp_id) {
+      fetchRooms(1, search);
+    }
+  }, [bookings.length]); // Triggers when rooms are added/removed from bookings
 
+  const handleTariffDelete = (editedTariff) => {
+    setBookings((prev) =>
+      prev.map((booking, index) =>
+        index === 0 ? { ...booking, dateTariffs: editedTariff } : booking,
+      ),
+    );
+    setPendingRoomQueue((prev) =>
+      prev.includes(roomIdToUpdate) ? prev : [...prev, roomIdToUpdate],
+    );
+  };
+console.log(formData?.foodPlan)
+console.log(formData)
+
+const bookedRoomIds = bookings.map((b) => b.roomId);
   return showHistory ? (
     <TariffHistory
       isOpen={showHistory}
@@ -804,7 +882,7 @@ function AvailableRooms({
                             <span className="block font-bold text-emerald-600 text-xs leading-tight">
                               ₹{Number(booking.totalAmount || 0).toFixed(0)}
                             </span>
-                            {configurations[0]?.addRateWithTax?.hotelSale && (
+                            {addTaxWithRate && (
                               <span className="block text-gray-600 text-xs leading-tight">
                                 ₹
                                 {(
@@ -823,7 +901,7 @@ function AvailableRooms({
                         <td className="px-1 py-1 text-center text-emerald-600 font-bold text-xs">
                           ₹
                           {Number(
-                            booking.amountAfterTax || booking.totalAmount || 0
+                            booking.amountAfterTax || booking.totalAmount || 0,
                           )}
                         </td>
 
@@ -835,7 +913,7 @@ function AvailableRooms({
                               }
                               return acc;
                             },
-                            0
+                            0,
                           ) || 0}
                         </td>
 
@@ -880,7 +958,7 @@ function AvailableRooms({
                                         ₹
                                         {Number(
                                           booking?.additionalPaxAmountWithOutTax ||
-                                            0
+                                            0,
                                         ).toFixed(0)}
                                       </span>
                                     </div>
@@ -889,7 +967,7 @@ function AvailableRooms({
                                       ₹
                                       {Number(
                                         booking?.additionalPaxAmountWithOutTax ||
-                                          0
+                                          0,
                                       ).toFixed(0)}
                                     </span>
                                   )}
@@ -901,7 +979,7 @@ function AvailableRooms({
                                   onClick={() => {
                                     selectedRoomData(
                                       booking?.roomId,
-                                      "addFoodPlan"
+                                      "addFoodPlan",
                                     );
                                     setPendingRoomId(booking.roomId);
                                   }}
@@ -920,14 +998,15 @@ function AvailableRooms({
                                           (
                                             booking?.foodPlanAmountWithOutTax /
                                               booking?.stayDays || 0
-                                          ).toFixed(0)
+                                          ).toFixed(0),
                                         )}
                                       </span>
 
                                       <span className="text-xs font-bold">
                                         ₹
                                         {Number(
-                                          booking?.foodPlanAmountWithOutTax || 0
+                                          booking?.foodPlanAmountWithOutTax ||
+                                            0,
                                         ).toFixed(0)}
                                       </span>
                                     </div>
@@ -935,7 +1014,7 @@ function AvailableRooms({
                                     <span>
                                       ₹
                                       {Number(
-                                        booking?.foodPlanAmountWithOutTax || 0
+                                        booking?.foodPlanAmountWithOutTax || 0,
                                       ).toFixed(0)}
                                     </span>
                                   )}
@@ -978,7 +1057,7 @@ function AvailableRooms({
                       {roomIdToUpdate
                         ? "₹" +
                           bookings.find(
-                            (item) => item.roomId === roomIdToUpdate
+                            (item) => item.roomId === roomIdToUpdate,
                           )?.amountAfterTax
                         : "₹" + Number(totalAmount).toFixed(2)}
                     </td>
@@ -989,7 +1068,7 @@ function AvailableRooms({
                           <span>
                             Pax ₹
                             {Number(
-                              formData.paxTotal * formData.stayDays
+                              formData.paxTotal * formData.stayDays,
                             ).toFixed(0)}
                           </span>
                         )}
@@ -997,7 +1076,7 @@ function AvailableRooms({
                           <span>
                             Food ₹
                             {Number(
-                              formData.foodPlanTotal * formData.stayDays
+                              formData.foodPlanTotal * formData.stayDays,
                             ).toFixed(0)}
                           </span>
                         )}

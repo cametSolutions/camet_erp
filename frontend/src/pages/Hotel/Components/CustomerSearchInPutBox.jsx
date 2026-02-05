@@ -13,6 +13,7 @@ function CustomerSearchInputBox({
   className = "",
   disabled = false ,
   sendSearchToParent,
+  isGuest=false
 }) {
   const [parties, setParties] = useState([]);
   const [search, setSearch] = useState("");
@@ -40,6 +41,8 @@ function CustomerSearchInputBox({
     return "sale";
   };
 
+  console.log("selectedParty", selectedParty);
+
   const fetchParties = useCallback(async (pageNum = 1, searchTerm = "") => {
     setLoading(true);
     setError(null);
@@ -60,15 +63,18 @@ function CustomerSearchInputBox({
     }
   }, [cmp_id, location.pathname ]);
 
-  const handleSearch = useCallback((term) => {
-    setSearch(term);
-    setPage(1);
-    clearTimeout(debounceTimerRef.current);
-    debounceTimerRef.current = setTimeout(() => {
-      fetchParties(1, term);
-    }, 300);
-    sendSearchToParent(term);
-  }, [fetchParties]);
+  const handleInputChange = useCallback((term) => {
+  setSearch(term);
+  setPage(1);
+  clearTimeout(debounceTimerRef.current);
+  debounceTimerRef.current = setTimeout(() => {
+    fetchParties(1, term);
+  }, 300);
+  // Always send search term to parent, even when empty
+  if (sendSearchToParent) {
+    sendSearchToParent(term, isGuest);
+  }
+}, [fetchParties, sendSearchToParent]);
 
   const loadMore = useCallback(() => {
     if (!loading && hasMore) {
@@ -84,17 +90,18 @@ function CustomerSearchInputBox({
   };
 
   const handleSelect = (party) => {
-    setSelectedValue(party);
-    setIsOpen(false);
-    setSearch("");
-    onSelect(party,search);
-  };
+  setSelectedValue(party);
+  setIsOpen(false);
+  const searchTerm = search; // Capture before clearing
+  setSearch("");
+  onSelect(party, searchTerm, isGuest); // Pass the search term
+};
 
   const handleClear = (e) => {
     e.stopPropagation();
     setSelectedValue(null);
     setSearch("");
-    onSelect(null);
+    onSelect(null, "", isGuest);
   };
 
   useEffect(() => {
@@ -123,11 +130,11 @@ function CustomerSearchInputBox({
         <input
           type="text"
           value={selectedValue ? selectedValue.partyName : search}
-          onChange={(e) => handleSearch(e.target.value)}
+          onChange={(e) => handleInputChange(e.target.value)}
           onClick={() => { if (!disabled) setIsOpen(true); }}
           placeholder={placeholder}
           disabled={disabled}
-          className={`w-full px-4 py-3 pr-20 border rounded-lg bg-white ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} focus:outline-none focus:ring-2 focus:ring-blue-500`}
+          className={`w-full px-4 py-1.5 pr-20 border rounded-lg bg-white ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} focus:outline-none focus:ring-2 focus:ring-blue-500`}
         />
         <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
           {selectedValue && !disabled && (

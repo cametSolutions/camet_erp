@@ -20,6 +20,7 @@ export const buildDatabaseFilterForRoom = (params) => {
   if (params.searchTerm) {
     filter.$or = [
       { product_name: { $regex: params.searchTerm, $options: "i" } },
+       { itemCode: { $regex:params.searchTerm, $options: "i" } },
     ];
   }
 
@@ -122,7 +123,7 @@ export const buildReceipt = async ({
     "serialNumber",
     session
   );
-
+console.log("line 125 restarurant")
   const receipt = new ReceiptModel({
     createdAt: new Date(),
     date: await formatToLocalDate(new Date(), cmp_id, session),

@@ -17,7 +17,7 @@ function DashBoardLayout({
   type,
 }) {
   const [tab, setTab] = useState("transactions");
-
+console.log("hdd")
   return (
     <div className="overflow-hidden h-screen">
       <div className="sticky top-0   h-[100px] ">
