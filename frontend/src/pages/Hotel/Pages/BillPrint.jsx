@@ -1,208 +1,253 @@
-import { useEffect, useState, useRef, useMemo } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
-import { toast } from "react-toastify";
-import { useReactToPrint } from "react-to-print";
-import api from "@/api/api";
-import Logo from "../../../assets/images/hill.png";
-import TitleDiv from "@/components/common/TitleDiv";
-import { jsPDF } from "jspdf";
-import "jspdf-autotable";
+import { useEffect, useState, useRef, useMemo } from "react"
+import { useLocation, useNavigate } from "react-router-dom"
+import { useSelector } from "react-redux"
+import { toast } from "react-toastify"
+import { useReactToPrint } from "react-to-print"
+import api from "@/api/api"
+import Logo from "../../../assets/images/hill.png"
+import TitleDiv from "@/components/common/TitleDiv"
+import { jsPDF } from "jspdf"
+import "jspdf-autotable"
 // import {
 //   handlePrintInvoice,
 //   handleDownloadPDF,
 // } from "../PrintSide/generateHotelInvoicePDF ";
 import {
   handleBillPrintInvoice,
-  handleBillDownloadPDF,
-} from "../PrintSide/generateBillPrintPDF";
+  handleBillDownloadPDF
+} from "../PrintSide/generateBillPrintPDF"
 
 const HotelBillPrint = () => {
   // Router and Redux state
-  const location = useLocation();
+  const location = useLocation()
   const organization = useSelector(
-    (state) => state?.secSelectedOrganization?.secSelectedOrg,
-  );
+    (state) => state?.secSelectedOrganization?.secSelectedOrg
+  )
 
-  const paymentDetails = useSelector((state) => state.paymentSlice);
-  const navigate = useNavigate();
-  const [paymentModeDetails, setPaymentModeDetails] = useState([]);
+  const paymentDetails = useSelector((state) => state.paymentSlice)
+  const navigate = useNavigate()
+  const [paymentModeDetails, setPaymentModeDetails] = useState([])
   // Props from location state
-  const selectedCheckOut = location.state?.selectedCheckOut || [];
-console.log(selectedCheckOut)
+  const selectedCheckOut = location.state?.selectedCheckOut || []
+  console.log(selectedCheckOut)
 
-  const checkoutmode = location?.state?.checkoutMode || null;
-  const cheinids = location?.state?.checkinIds;
+  const checkoutmode = location?.state?.checkoutMode || null
+  const cheinids = location?.state?.checkinIds
 
   // const selectedCustomerId = location.state?.customerId;
-  const isForPreview = location.state?.isForPreview;
-  console.log("isForPreview", isForPreview);
+  const isForPreview = location.state?.isForPreview
+  console.log("isForPreview", isForPreview)
 
   // Component state (global for fetch results used across docs)
-  const [outStanding, setOutStanding] = useState([]);
-  const [kotData, setKotData] = useState([]);
-  const [showSplitPopUp, setShowSplitPopUp] = useState(false);
-  const [selected, setSelected] = useState("default");
-  const printReference = useRef(null);
+  const [outStanding, setOutStanding] = useState([])
+  const [kotData, setKotData] = useState([])
+  const [showSplitPopUp, setShowSplitPopUp] = useState(false)
+  const [selected, setSelected] = useState("default")
+  const printReference = useRef(null)
+  console.log("hhh")
+  //   useEffect(() => {
+  // console.log(paymentDetails)
+  //     const paymentTypeDetails =
+  //       paymentDetails?.paymentDetails?.paymenttypeDetails;
 
+  //     console.log("paymentDetails", paymentDetails);
+
+  //     if (!paymentTypeDetails) {
+  //       setPaymentModeDetails({});
+  //       return;
+  //     }
+  // console.log(paymentTypeDetails)
+  //     const positivePaymentTypes = Object.entries(paymentTypeDetails)
+  //       .filter(([_, amount]) => Number(amount) > 0)
+  //       .reduce((acc, [type, amount]) => {
+  //         acc[type] = Number(amount);
+  //         return acc;
+  //       }, {});
+  // console.log(positivePaymentTypes)
+
+  //     setPaymentModeDetails(positivePaymentTypes);
+  //   }, [paymentDetails]);
   useEffect(() => {
-    const paymentTypeDetails =
-      paymentDetails?.paymentDetails?.paymenttypeDetails;
+    const splitDetails = paymentDetails?.paymentDetails?.splitDetails
+    console.log(splitDetails)
 
-    console.log("paymentDetails", paymentDetails);
-
-    if (!paymentTypeDetails) {
-      setPaymentModeDetails({});
-      return;
+    if (!splitDetails || !splitDetails.length) {
+      setPaymentModeDetails([])
+      return
     }
-console.log(paymentTypeDetails)
-    const positivePaymentTypes = Object.entries(paymentTypeDetails)
-      .filter(([_, amount]) => Number(amount) > 0)
-      .reduce((acc, [type, amount]) => {
-        acc[type] = Number(amount);
-        return acc;
-      }, {});
-console.log(positivePaymentTypes)
 
-    setPaymentModeDetails(positivePaymentTypes);
-  }, [paymentDetails]);
+    const mergedMap = {}
 
-  console.log("positivePaymentTypes", paymentModeDetails);
+    splitDetails.forEach((item) => {
+      const key = `${item.customerName}-${item.subsource}`
+
+      if (!mergedMap[key]) {
+        mergedMap[key] = {
+          customerName: item.customerName,
+          mode: item.subsource || item.source,
+          amount: Number(item.amount)
+        }
+      } else {
+        mergedMap[key].amount += Number(item.amount)
+      }
+    })
+    console.log(splitDetails)
+    setPaymentModeDetails(Object.values(mergedMap))
+  }, [paymentDetails])
+  console.log(paymentModeDetails)
+
+  console.log("positivePaymentTypes", paymentModeDetails)
 
   // Fetch debit and KOT once for all docs shown
   const fetchDebitData = async (data) => {
-    console.log(data);
+    console.log(data)
     try {
       const res = await api.post(
         `/api/sUsers/fetchOutStandingAndFoodData`,
         { data },
-        { withCredentials: true },
-      );
+        { withCredentials: true }
+      )
       if (res.data.success) {
-        console.log("res.data.data", res.data.data);
-        setOutStanding(res.data.data || []);
-        setKotData(res.data.kotData || []);
+        console.log("res.data.data", res.data.data)
+        setOutStanding(res.data.data || [])
+        setKotData(res.data.kotData || [])
       }
     } catch (error) {
-      toast.error(error.message);
-      console.error("Error fetching debit data:", error);
+      toast.error(error.message)
+      console.error("Error fetching debit data:", error)
     }
-  };
+  }
 
   useEffect(() => {
     if (selectedCheckOut?.length > 0) {
       if (!isForPreview) {
-        const positivePaymentTypes = Object.entries(
-          selectedCheckOut[0].paymenttypeDetails,
-        )
-          .filter(([_, amount]) => Number(amount) > 0)
-          .reduce((acc, [type, amount]) => {
-            acc[type] = Number(amount);
-            return acc;
-          }, {});
-        setPaymentModeDetails(positivePaymentTypes);
-      }
+        console.log("hddddd")
+        console.log(selectedCheckOut[0].checkoutpaymenttypedetails)
+        // const positivePaymentTypes = Object.entries(
+        //   selectedCheckOut[0].paymenttypeDetails
+        // )
+        //   .filter(([_, amount]) => Number(amount) > 0)
+        //   .reduce((acc, [type, amount]) => {
+        //     acc[type] = Number(amount)
+        //     return acc
+        //   }, {})
+        const mergedMap = {}
+        selectedCheckOut[0].checkoutpaymenttypedetails.forEach((item) => {
+          const key = `${item.customerName}-${item.mode}`
 
-      fetchDebitData(selectedCheckOut);
+          if (!mergedMap[key]) {
+            mergedMap[key] = {
+              customerName: item.customerName,
+              mode: item.mode,
+              amount: Number(item.amount)
+            }
+          } else {
+            mergedMap[key].amount += Number(item.amount)
+          }
+        })
+
+        setPaymentModeDetails(Object.values(mergedMap))
+      }
+console.log("hh")
+      fetchDebitData(selectedCheckOut)
     }
-  }, [JSON.stringify(selectedCheckOut)]); // ✅ CHANGED: Added JSON.stringify
+  }, [JSON.stringify(selectedCheckOut)]) // ✅ CHANGED: Added JSON.stringify
 
   // Split handlers
-  const handleSplitPayment = () => setShowSplitPopUp(true);
-  const handleChange = (value) => setSelected(value);
+  const handleSplitPayment = () => setShowSplitPopUp(true)
+  const handleChange = (value) => setSelected(value)
   const handleSplit = () => {
-    setShowSplitPopUp(false);
+    setShowSplitPopUp(false)
     if (selected === "room") {
-      setKotData([]);
+      setKotData([])
     } else if (selected === "restaurant") {
-      setOutStanding([]);
+      setOutStanding([])
     }
-  };
+  }
 
   // Utils
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
-  };
+    const date = new Date(dateString)
+    const day = String(date.getDate()).padStart(2, "0")
+    const month = String(date.getMonth() + 1).padStart(2, "0")
+    const year = date.getFullYear()
+    return `${day}/${month}/${year}`
+  }
 
   // Per-doc transforms
   // Per-doc transforms
   // Replace your transformDocToDateWiseLines function with this complete version:
 
   const transformDocToDateWiseLines = (doc) => {
-    const result = [];
+    const result = []
 
-    (doc.selectedRooms || []).forEach((room) => {
-      const roomStartDate = new Date(room.arrivalDate || doc.arrivalDate);
+    ;(doc.selectedRooms || []).forEach((room) => {
+      const roomStartDate = new Date(room.arrivalDate || doc.arrivalDate)
 
-      const stayDays = room.stayDays || 1;
-      const fullDays = Math.floor(stayDays);
-      const fractionalDay = stayDays - fullDays;
+      const stayDays = room.stayDays || 1
+console.log(stayDays)
+      const fullDays = Math.floor(stayDays)
+      const fractionalDay = stayDays - fullDays
 
       const perDayAmount =
         Number(room.priceLevelRate || 0) ||
-        Number(room.baseAmountWithTax || 0) / stayDays;
+        Number(room.baseAmountWithTax || 0) / stayDays
 
-      const dayWisePrices = {};
-      const dayWiseTax = {};
+      const dayWisePrices = {}
+      const dayWiseTax = {}
 
-      const dateTariffs = room.dateTariffs || {};
+      const dateTariffs = room.dateTariffs || {}
 
-      let activePrice = room?.priceLevelRate;
+      let activePrice = room?.priceLevelRate
 
       for (let i = 0; i < stayDays; i++) {
-        const d = new Date(roomStartDate);
-        d.setDate(roomStartDate.getDate() + i);
-        const key = d.toISOString().split("T")[0];
+        const d = new Date(roomStartDate)
+        d.setDate(roomStartDate.getDate() + i)
+        const key = d.toISOString().split("T")[0]
 
         if (dateTariffs[key] !== undefined) {
-          activePrice = Number(dateTariffs[key]);
+          activePrice = Number(dateTariffs[key])
         }
 
         // Base (without tax)
         dayWisePrices[key] = doc.addTaxWithRate
           ? Number(activePrice || 0) /
             (1 + Number(room?.taxPercentage || 0) / 100)
-          : Number(activePrice || 0);
+          : Number(activePrice || 0)
 
         // Tax amount
         dayWiseTax[key] = doc.addTaxWithRate
           ? Number(activePrice || 0) - dayWisePrices[key]
-          : (Number(activePrice || 0) * Number(room?.taxPercentage || 0)) / 100;
+          : (Number(activePrice || 0) * Number(room?.taxPercentage || 0)) / 100
       }
 
-      
-
       const foodPlanAmountWithTaxPerDay =
-        Number(room.foodPlanAmountWithTax || 0) / stayDays;
-        
+        Number(room.foodPlanAmountWithTax || 0) / stayDays
+
       const foodPlanAmountWithOutTaxPerDay =
-        Number(room.foodPlanAmountWithOutTax || 0) / stayDays;
+        Number(room.foodPlanAmountWithOutTax || 0) / stayDays
 
       // ✅ FIX: Calculate additional pax per day based on FULL DAYS ONLY
       const totalAdditionalPaxWithTax = Number(
-        room.additionalPaxAmountWithTax || 0,
-      );
+        room.additionalPaxAmountWithTax || 0
+      )
       const totalAdditionalPaxWithOutTax = Number(
-        room.additionalPaxAmountWithOutTax || 0,
-      );
+        room.additionalPaxAmountWithOutTax || 0
+      )
 
       const additionalPaxDataWithTaxPerDay =
-        fullDays > 0 ? totalAdditionalPaxWithTax / fullDays : 0;
+        fullDays > 0 ? totalAdditionalPaxWithTax / fullDays : 0
       const additionalPaxDataWithOutTaxPerDay =
-        fullDays > 0 ? totalAdditionalPaxWithOutTax / fullDays : 0;
-      console.log(fullDays);
+        fullDays > 0 ? totalAdditionalPaxWithOutTax / fullDays : 0
+      console.log(fullDays)
 
       // Add full days
       for (let i = 0; i < fullDays; i++) {
-        const currentDate = new Date(roomStartDate);
-        currentDate.setDate(roomStartDate.getDate() + i);
+        const currentDate = new Date(roomStartDate)
+        currentDate.setDate(roomStartDate.getDate() + i)
         const formattedDate = currentDate
           .toLocaleDateString("en-GB")
-          .replace(/\//g, "-");
+          .replace(/\//g, "-")
 
         result.push({
           date: formattedDate,
@@ -210,15 +255,15 @@ console.log(positivePaymentTypes)
           docNo: doc.voucherNumber,
           amount: Number(
             dayWisePrices[currentDate.toISOString().split("T")[0]].toFixed(2) ||
-              0,
+              0
           ),
           baseAmountWithTax: perDayAmount,
           baseAmount: Number(
             dayWisePrices[currentDate.toISOString().split("T")[0]].toFixed(2) ||
-              0,
+              0
           ),
           taxAmount: Number(
-            dayWiseTax[currentDate.toISOString().split("T")[0]].toFixed(2) || 0,
+            dayWiseTax[currentDate.toISOString().split("T")[0]].toFixed(2) || 0
           ),
           dayWisePrices: dayWisePrices,
           voucherNumber: doc.voucherNumber,
@@ -232,18 +277,18 @@ console.log(positivePaymentTypes)
           roomId: room?.roomId || room?._id,
           roomArrivalDate: formattedDate,
           isFullDay: true,
-          addTaxWithRate: doc.addTaxWithRate,
-        });
+          addTaxWithRate: doc.addTaxWithRate
+        })
       }
 
       // Add fractional day (half day) - NO additional pax charges
       if (fractionalDay > 0) {
-        const fractionalDate = new Date(roomStartDate);
-        fractionalDate.setDate(roomStartDate.getDate() + fullDays);
+        const fractionalDate = new Date(roomStartDate)
+        fractionalDate.setDate(roomStartDate.getDate() + fullDays)
         const formattedFractionalDate = fractionalDate
           .toLocaleDateString("en-GB")
-          .replace(/\//g, "-");
-        console.log(formattedFractionalDate);
+          .replace(/\//g, "-")
+        console.log(formattedFractionalDate)
 
         result.push({
           date: formattedFractionalDate,
@@ -251,16 +296,16 @@ console.log(positivePaymentTypes)
           docNo: doc.voucherNumber,
           amount:
             Number(
-              dayWisePrices[fractionalDate.toISOString().split("T")[0]] || 0,
+              dayWisePrices[fractionalDate.toISOString().split("T")[0]] || 0
             ) * 0.5,
           baseAmountWithTax: perDayAmount * 0.5,
           baseAmount:
             Number(
-              dayWisePrices[fractionalDate.toISOString().split("T")[0]] || 0,
+              dayWisePrices[fractionalDate.toISOString().split("T")[0]] || 0
             ) * 0.5,
           taxAmount:
             Number(
-              dayWiseTax[fractionalDate.toISOString().split("T")[0]] || 0,
+              dayWiseTax[fractionalDate.toISOString().split("T")[0]] || 0
             ) * 0.5,
           voucherNumber: doc.voucherNumber,
           roomName: room.roomName,
@@ -272,62 +317,62 @@ console.log(positivePaymentTypes)
           additionalPaxDataWithOutTax: 0,
           roomId: room?.roomId || room?._id,
           isFullDay: false, // ✅ Mark as half day
-          checkoutDate: formattedFractionalDate,
-        });
+          checkoutDate: formattedFractionalDate
+        })
       }
-    });
+    })
 
-    return result;
-  };
+    return result
+  }
 
   const getKotTotalsByRoom = (kots = []) => {
-    const map = new Map();
+    const map = new Map()
     kots.forEach((kot) => {
-      const roomId = kot?.kotDetails?.roomId;
-      if (!roomId) return;
+      const roomId = kot?.kotDetails?.roomId
+      if (!roomId) return
       const amount = Number(
-        kot?.finalAmount ?? kot?.subTotal ?? kot?.total ?? 0,
-      );
-      const key = String(roomId);
-      map.set(key, (map.get(key) ?? 0) + amount);
-    });
-    return map;
-  };
+        kot?.finalAmount ?? kot?.subTotal ?? kot?.total ?? 0
+      )
+      const key = String(roomId)
+      map.set(key, (map.get(key) ?? 0) + amount)
+    })
+    return map
+  }
 
   // Build per-room restaurant line for a doc’s rooms only
   // Build per-room restaurant line for a doc's rooms only
   // Build per-room restaurant line for a doc's rooms only
   const buildPerRoomRestaurantLinesForDoc = (doc) => {
-    console.log("=== Building restaurant lines ===");
-    console.log("Doc:", doc);
-    console.log("All KOT Data:", kotData);
+    console.log("=== Building restaurant lines ===")
+    console.log("Doc:", doc)
+    console.log("All KOT Data:", kotData)
 
-    const lines = [];
+    const lines = []
 
     // Get all room IDs from this document
     const roomIdSet = new Set(
       (doc.selectedRooms || [])
         .map((r) => String(r?.roomId || r?._id || r?.id))
-        .filter(Boolean),
-    );
+        .filter(Boolean)
+    )
 
-    console.log("Room IDs in this checkout:", Array.from(roomIdSet));
+    console.log("Room IDs in this checkout:", Array.from(roomIdSet))
 
     // Split KOTs based on available fields
-    const roomServiceKots = [];
-    const dineInKots = [];
+    const roomServiceKots = []
+    const dineInKots = []
 
     kotData.forEach((kot) => {
-      const kotRoomId = String(kot?.kotDetails?.roomId || kot?.roomId || "");
+      const kotRoomId = String(kot?.kotDetails?.roomId || kot?.roomId || "")
       const tableNumber =
         kot?.kotDetails?.tableNumber ||
         kot?.tableNumber ||
-        kot?.customer?.tableNumber;
-      const type = kot?.type || "";
+        kot?.customer?.tableNumber
+      const type = kot?.type || ""
 
       console.log(
-        `KOT ${kot?.salesNumber}: roomId=${kotRoomId}, tableNumber=${tableNumber}, type=${type}`,
-      );
+        `KOT ${kot?.salesNumber}: roomId=${kotRoomId}, tableNumber=${tableNumber}, type=${type}`
+      )
 
       // CLASSIFICATION LOGIC:
       // 1. If KOT has tableNumber -> it's DINE IN (even if it has roomId)
@@ -336,58 +381,58 @@ console.log(positivePaymentTypes)
 
       if (tableNumber) {
         // Has table number = Dine In
-        dineInKots.push(kot);
-        console.log(`  -> RESTAURANT DINE IN (has tableNumber)`);
+        dineInKots.push(kot)
+        console.log(`  -> RESTAURANT DINE IN (has tableNumber)`)
       } else if (type === "takeaway" || type === "delivery") {
         // Takeaway/Delivery = Dine In
-        dineInKots.push(kot);
-        console.log(`  -> RESTAURANT DINE IN (takeaway/delivery)`);
+        dineInKots.push(kot)
+        console.log(`  -> RESTAURANT DINE IN (takeaway/delivery)`)
       } else if (kotRoomId && roomIdSet.has(kotRoomId)) {
         // Has roomId but no table = Room Service
-        roomServiceKots.push(kot);
-        console.log(`  -> ROOM SERVICE (has roomId, no table)`);
+        roomServiceKots.push(kot)
+        console.log(`  -> ROOM SERVICE (has roomId, no table)`)
       } else {
         // Default to Dine In if unclear
-        dineInKots.push(kot);
-        console.log(`  -> RESTAURANT DINE IN (default)`);
+        dineInKots.push(kot)
+        console.log(`  -> RESTAURANT DINE IN (default)`)
       }
-    });
+    })
 
-    console.log("Room Service KOTs:", roomServiceKots.length);
-    console.log("Dine In KOTs:", dineInKots.length);
+    console.log("Room Service KOTs:", roomServiceKots.length)
+    console.log("Dine In KOTs:", dineInKots.length)
 
     // 1. Add Room Service charges (grouped by room)
-    const roomServiceTotals = {};
+    const roomServiceTotals = {}
     roomServiceKots.forEach((kot) => {
-      const roomId = String(kot?.kotDetails?.roomId || kot?.roomId || "");
+      const roomId = String(kot?.kotDetails?.roomId || kot?.roomId || "")
       const amount = Number(
-        kot?.finalAmount ?? kot?.subTotal ?? kot?.total ?? 0,
-      );
+        kot?.finalAmount ?? kot?.subTotal ?? kot?.total ?? 0
+      )
 
       if (!roomServiceTotals[roomId]) {
         roomServiceTotals[roomId] = {
           amount: 0,
-          docNos: [],
-        };
+          docNos: []
+        }
       }
 
-      roomServiceTotals[roomId].amount += amount;
+      roomServiceTotals[roomId].amount += amount
       if (kot?.salesNumber) {
-        roomServiceTotals[roomId].docNos.push(kot.salesNumber);
+        roomServiceTotals[roomId].docNos.push(kot.salesNumber)
       }
-    });
+    })
 
     Object.keys(roomServiceTotals).forEach((roomId) => {
       const roomName =
         (doc.selectedRooms || []).find(
-          (r) => String(r?.roomId || r?._id || r?.id) === roomId,
-        )?.roomName || "Unknown Room";
+          (r) => String(r?.roomId || r?._id || r?.id) === roomId
+        )?.roomName || "Unknown Room"
 
-      const docNo = roomServiceTotals[roomId].docNos.join(", ") || "-";
+      const docNo = roomServiceTotals[roomId].docNos.join(", ") || "-"
 
       console.log(
-        `Adding Room Service line: ${roomName} = ${roomServiceTotals[roomId].amount}`,
-      );
+        `Adding Room Service line: ${roomName} = ${roomServiceTotals[roomId].amount}`
+      )
 
       lines.push({
         date: formatDate(new Date()),
@@ -398,41 +443,41 @@ console.log(positivePaymentTypes)
         advance: "",
         roomName: roomName,
         roomId: roomId,
-        type: "roomService",
-      });
-    });
+        type: "roomService"
+      })
+    })
 
     // 2. Add Restaurant Dine In charges (grouped by table or as one line)
-    const dineInTotals = {};
+    const dineInTotals = {}
     dineInKots.forEach((kot) => {
       const tableNo =
         kot?.kotDetails?.tableNumber ||
         kot?.tableNumber ||
         kot?.customer?.tableNumber ||
-        "Restaurant";
+        "Restaurant"
       const amount = Number(
-        kot?.finalAmount ?? kot?.subTotal ?? kot?.total ?? 0,
-      );
+        kot?.finalAmount ?? kot?.subTotal ?? kot?.total ?? 0
+      )
 
       if (!dineInTotals[tableNo]) {
         dineInTotals[tableNo] = {
           amount: 0,
-          docNos: [],
-        };
+          docNos: []
+        }
       }
 
-      dineInTotals[tableNo].amount += amount;
+      dineInTotals[tableNo].amount += amount
       if (kot?.salesNumber) {
-        dineInTotals[tableNo].docNos.push(kot.salesNumber);
+        dineInTotals[tableNo].docNos.push(kot.salesNumber)
       }
-    });
+    })
 
     Object.keys(dineInTotals).forEach((tableNo) => {
-      const docNo = dineInTotals[tableNo].docNos.join(", ") || "-";
+      const docNo = dineInTotals[tableNo].docNos.join(", ") || "-"
 
       console.log(
-        `Adding Dine In line: Table ${tableNo} = ${dineInTotals[tableNo].amount}`,
-      );
+        `Adding Dine In line: Table ${tableNo} = ${dineInTotals[tableNo].amount}`
+      )
 
       lines.push({
         date: formatDate(new Date()),
@@ -443,148 +488,147 @@ console.log(positivePaymentTypes)
         advance: "",
         roomName: "",
         roomId: "",
-        type: "dineIn",
-      });
-    });
+        type: "dineIn"
+      })
+    })
 
-    console.log("=== Final restaurant lines ===", lines);
-    return lines;
-  };
+    console.log("=== Final restaurant lines ===", lines)
+    return lines
+  }
 
   // Helpers to decide where to show advances
   const docOwnsAdvances = (doc) => {
-    const originalId = doc?.originalCustomerId;
-    const custId = doc?.customerId?._id || doc?.customerId;
-    if (!custId) return false;
+    const originalId = doc?.originalCustomerId
+    const custId = doc?.customerId?._id || doc?.customerId
+    if (!custId) return false
     // If originalId exists, match it; if not provided, treat as original/primary and allow
-    return originalId ? String(originalId) === String(custId) : true;
-  };
+    return originalId ? String(originalId) === String(custId) : true
+  }
 
   const findFirstPrimaryIdx = (docs) => {
-    const idx = (docs || []).findIndex((d) => docOwnsAdvances(d));
-    return idx >= 0 ? idx : 0;
-  };
+    const idx = (docs || []).findIndex((d) => docOwnsAdvances(d))
+    return idx >= 0 ? idx : 0
+  }
 
   // Build bill payload per doc; gate advances via useAdvances
   const prepareBillDataForDoc = (doc, useAdvances) => {
+console.log(doc)
     // Lines from room stay
-    const dateWiseLines = transformDocToDateWiseLines(doc);
-    console.log(dateWiseLines);
+    const dateWiseLines = transformDocToDateWiseLines(doc)
+    console.log(dateWiseLines)
     // Totals for room parts
     let roomTariffTotal = dateWiseLines.reduce(
       (t, i) => t + Number(i.baseAmount || 0),
-      0,
-    );
+      0
+    )
 
     const planAmount = dateWiseLines.reduce(
       (t, i) => t + Number(i.foodPlanAmountWithOutTax || 0),
-      0,
-    );
-    console.log(planAmount);
+      0
+    )
+    console.log(planAmount)
     const foodPlanAmountWithTax = dateWiseLines
       .reduce(
         (t, i) =>
           t +
           (Number(i.foodPlanAmountWithTax || 0) -
             Number(i.foodPlanAmountWithOutTax || 0)),
-        0,
+        0
       )
-      .toFixed(2);
-      console.log(foodPlanAmountWithTax);
+      .toFixed(2)
+    console.log(foodPlanAmountWithTax)
 
     const additionalPaxAmount = (doc.selectedRooms || []).reduce(
       (total, room) => {
-        const stayDays = room.stayDays || 1;
-        const fullDays = Math.floor(stayDays); // Only count full days
+        const stayDays = room.stayDays || 1
+        const fullDays = Math.floor(stayDays) // Only count full days
         const totalPaxWithoutTax = Number(
-          room.additionalPaxAmountWithOutTax || 0,
-        );
+          room.additionalPaxAmountWithOutTax || 0
+        )
 
         // If there are full days, use the full amount; otherwise 0
-        return total + (fullDays > 0 ? totalPaxWithoutTax : 0);
+        return total + (fullDays > 0 ? totalPaxWithoutTax : 0)
       },
-      0,
-    );
-    console.log(dateWiseLines);
+      0
+    )
+    console.log(dateWiseLines)
     const roomTaxTotal = dateWiseLines.reduce(
       (t, i) => t + Number(i.taxAmount || 0),
-      0,
-    );
-    roomTariffTotal = roomTariffTotal.toFixed(2);
+      0
+    )
+    roomTariffTotal = roomTariffTotal.toFixed(2)
 
     const additionalPaxTax = dateWiseLines.reduce(
       (t, i) =>
         t +
         Number(i.additionalPaxDataWithTax || 0) -
         Number(i.additionalPaxDataWithOutTax || 0),
-      0,
-    );
+      0
+    )
     console.log(roomTariffTotal)
 
-    const sgstAmount = ((roomTaxTotal + additionalPaxTax) / 2).toFixed(2);
-    const cgstAmount = ((roomTaxTotal + additionalPaxTax) / 2).toFixed(2);
+    const sgstAmount = ((roomTaxTotal + additionalPaxTax) / 2).toFixed(2)
+    const cgstAmount = ((roomTaxTotal + additionalPaxTax) / 2).toFixed(2)
 
     // Per-room restaurant lines (for this doc’s rooms)
-    const perRoomRestaurantLines = buildPerRoomRestaurantLinesForDoc(doc);
+    const perRoomRestaurantLines = buildPerRoomRestaurantLinesForDoc(doc)
     const roomServiceTotal = perRoomRestaurantLines
       .filter((l) => l.type === "roomService")
-      .reduce((t, l) => t + Number(l.amount || 0), 0);
+      .reduce((t, l) => t + Number(l.amount || 0), 0)
 
     const dineInTotal = perRoomRestaurantLines
       .filter((l) => l.type === "dineIn")
-      .reduce((t, l) => t + Number(l.amount || 0), 0);
+      .reduce((t, l) => t + Number(l.amount || 0), 0)
 
-    const restaurantTotal = roomServiceTotal + dineInTotal;
+    const restaurantTotal = roomServiceTotal + dineInTotal
 
-    console.log("Room Service Total:", roomServiceTotal);
-    console.log("Dine In Total:", dineInTotal);
-    console.log("Restaurant Total:", restaurantTotal);
-    console.log(perRoomRestaurantLines);
-    console.log(perRoomRestaurantLines);
+    console.log("Room Service Total:", roomServiceTotal)
+    console.log("Dine In Total:", dineInTotal)
+    console.log("Restaurant Total:", restaurantTotal)
+    console.log(perRoomRestaurantLines)
+    console.log(perRoomRestaurantLines)
 
     const groupedRoomCharges = (() => {
-      const charges = [];
-      const groups = {};
+      const charges = []
+      const groups = {}
 
       // Group charges by room
       dateWiseLines.forEach((i) => {
-        const k = i.roomName;
-        if (!groups[k]) groups[k] = [];
-        groups[k].push(i);
-      });
+        const k = i.roomName
+        if (!groups[k]) groups[k] = []
+        groups[k].push(i)
+      })
 
       // Get array of room names to track first room
-      const roomNames = Object.keys(groups);
+      const roomNames = Object.keys(groups)
 
       // Process each room's charges in order
       roomNames.forEach((roomName, roomIndex) => {
-        const roomDays = groups[roomName];
+        const roomDays = groups[roomName]
 
         // Get the original room data for this room
         const originalRoom = doc.selectedRooms?.find(
-          (r) => r.roomName === roomName,
-        );
+          (r) => r.roomName === roomName
+        )
 
         // Get tax percentages
-        const roomTaxPercentage = originalRoom?.taxPercentage || 0;
-        const halfRoomTaxPercentage = roomTaxPercentage / 2;
+        const roomTaxPercentage = originalRoom?.taxPercentage || 0
+        const halfRoomTaxPercentage = roomTaxPercentage / 2
 
         // Get THIS specific room's arrival date
-        const roomArrivalDate =
-          roomDays[0]?.date || formatDate(doc.arrivalDate);
+        const roomArrivalDate = roomDays[0]?.date || formatDate(doc.arrivalDate)
 
         // Separate full days and half days
         const fullDayCharges = roomDays.filter(
           (item) =>
             !item.description?.includes("Half Day") &&
-            !item.description?.includes("Half Tariff"),
-        );
+            !item.description?.includes("Half Tariff")
+        )
         const halfDayCharges = roomDays.filter(
           (item) =>
             item.description?.includes("Half Day") ||
-            item.description?.includes("Half Tariff"),
-        );
-        
+            item.description?.includes("Half Tariff")
+        )
 
         // 1. Add FULL DAY room rent charges
         fullDayCharges.forEach((item) => {
@@ -595,20 +639,20 @@ console.log(positivePaymentTypes)
             amount: (item.baseAmount + item.foodPlanAmountWithTax).toFixed(2),
             taxes: (item.taxAmount || 0).toFixed(2),
             advance: "",
-            roomName: item.roomName,
-          });
-        });
+            roomName: item.roomName
+          })
+        })
 
         // 2. Add CGST and SGST for FULL DAYS (if any)
         if (fullDayCharges.length > 0) {
           const fullDayTotalTax = fullDayCharges.reduce(
             (sum, i) => sum + (i.taxAmount || 0),
-            0,
-          );
+            0
+          )
 
           if (fullDayTotalTax > 0) {
-            const fullDayCGST = fullDayTotalTax / 2;
-            const fullDaySGST = fullDayTotalTax / 2;
+            const fullDayCGST = fullDayTotalTax / 2
+            const fullDaySGST = fullDayTotalTax / 2
 
             charges.push({
               // date: roomArrivalDate, // Use arrival date for full day taxes
@@ -617,8 +661,8 @@ console.log(positivePaymentTypes)
               amount: 0,
               taxes: fullDayCGST.toFixed(2),
               advance: "",
-              roomName,
-            });
+              roomName
+            })
 
             charges.push({
               // date: roomArrivalDate, // Use arrival date for full day taxes
@@ -627,8 +671,8 @@ console.log(positivePaymentTypes)
               amount: 0,
               taxes: fullDaySGST.toFixed(2),
               advance: "",
-              roomName,
-            });
+              roomName
+            })
           }
         }
 
@@ -641,20 +685,20 @@ console.log(positivePaymentTypes)
             amount: (item.baseAmount + item.foodPlanAmountWithTax).toFixed(2),
             taxes: (item.taxAmount || 0).toFixed(2),
             advance: "",
-            roomName: item.roomName,
-          });
-        });
+            roomName: item.roomName
+          })
+        })
 
         // 4. Add CGST and SGST for HALF DAYS with CHECKOUT DATE (if any)
         if (halfDayCharges.length > 0) {
           const halfDayTotalTax = halfDayCharges.reduce(
             (sum, i) => sum + (i.taxAmount || 0),
-            0,
-          );
+            0
+          )
 
           if (halfDayTotalTax > 0) {
-            const halfDayCGST = halfDayTotalTax / 2;
-            const halfDaySGST = halfDayTotalTax / 2;
+            const halfDayCGST = halfDayTotalTax / 2
+            const halfDaySGST = halfDayTotalTax / 2
 
             charges.push({
               // date: halfDayDate, // ✅ Use checkout date for half tariff taxes
@@ -663,8 +707,8 @@ console.log(positivePaymentTypes)
               amount: 0,
               taxes: halfDayCGST.toFixed(2),
               advance: "",
-              roomName,
-            });
+              roomName
+            })
 
             charges.push({
               // date: halfDayDate, // ✅ Use checkout date for half tariff taxes
@@ -673,16 +717,16 @@ console.log(positivePaymentTypes)
               amount: 0,
               taxes: halfDaySGST.toFixed(2),
               advance: "",
-              roomName,
-            });
+              roomName
+            })
           }
         }
 
         // 5. Add Additional Pax amount if applicable
         const totalAdditionalPaxWithoutTax = roomDays.reduce(
           (sum, i) => sum + (i.additionalPaxDataWithOutTax || 0),
-          0,
-        );
+          0
+        )
 
         if (totalAdditionalPaxWithoutTax > 0) {
           charges.push({
@@ -692,62 +736,62 @@ console.log(positivePaymentTypes)
             amount: totalAdditionalPaxWithoutTax,
             taxes: 0,
             advance: "",
-            roomName,
-          });
+            roomName
+          })
         }
 
         // 6. Add CGST and SGST for Additional Pax (if any)
         const roomAdditionalPaxTax = roomDays.reduce((sum, i) => {
-          const paxWithTax = i.additionalPaxDataWithTax || 0;
-          const paxWithoutTax = i.additionalPaxDataWithOutTax || 0;
-          return sum + (paxWithTax - paxWithoutTax);
-        }, 0);
+          const paxWithTax = i.additionalPaxDataWithTax || 0
+          const paxWithoutTax = i.additionalPaxDataWithOutTax || 0
+          return sum + (paxWithTax - paxWithoutTax)
+        }, 0)
 
         if (roomAdditionalPaxTax > 0) {
           const totalPaxWithTax = roomDays.reduce(
             (sum, i) => sum + (i.additionalPaxDataWithTax || 0),
-            0,
-          );
+            0
+          )
           const additionalPaxTaxPercentage =
             totalAdditionalPaxWithoutTax > 0
               ? ((totalPaxWithTax - totalAdditionalPaxWithoutTax) /
                   totalAdditionalPaxWithoutTax) *
                 100
-              : 0;
-          const halfAdditionalPaxTaxPercentage = additionalPaxTaxPercentage / 2;
+              : 0
+          const halfAdditionalPaxTaxPercentage = additionalPaxTaxPercentage / 2
 
-          const paxCGST = roomAdditionalPaxTax / 2;
-          const paxSGST = roomAdditionalPaxTax / 2;
+          const paxCGST = roomAdditionalPaxTax / 2
+          const paxSGST = roomAdditionalPaxTax / 2
 
           charges.push({
             // date: roomArrivalDate,
             description: `CGST on Extra Person@${halfAdditionalPaxTaxPercentage.toFixed(
-              1,
+              1
             )}%`,
             docNo: "-",
             amount: 0,
             taxes: paxCGST.toFixed(2),
             advance: "",
-            roomName,
-          });
+            roomName
+          })
 
           charges.push({
             // date: roomArrivalDate,
             description: `SGST on Extra Person@${halfAdditionalPaxTaxPercentage.toFixed(
-              1,
+              1
             )}%`,
             docNo: "-",
             amount: 0,
             taxes: paxSGST.toFixed(2),
             advance: "",
-            roomName,
-          });
+            roomName
+          })
         }
 
         // 7. Add Room Service charges for this specific room
         const roomServiceLines = perRoomRestaurantLines.filter(
-          (l) => l.roomName === roomName && l.type === "roomService",
-        );
+          (l) => l.roomName === roomName && l.type === "roomService"
+        )
 
         roomServiceLines.forEach((serviceLine) => {
           if (Number(serviceLine.amount) > 0) {
@@ -758,17 +802,17 @@ console.log(positivePaymentTypes)
               amount: serviceLine.amount,
               taxes: 0,
               advance: "",
-              roomName: roomName,
-            });
+              roomName: roomName
+            })
           }
-        });
+        })
 
         // ✅ 8. After FIRST room only, add ALL Dine In charges
         if (roomIndex === 0) {
           const dineInLines = perRoomRestaurantLines.filter(
-            (l) => l.type === "dineIn",
-          );
-          console.log("Adding dine-in lines after first room:", dineInLines);
+            (l) => l.type === "dineIn"
+          )
+          console.log("Adding dine-in lines after first room:", dineInLines)
 
           dineInLines.forEach((dineInLine) => {
             if (Number(dineInLine.amount) > 0) {
@@ -779,20 +823,19 @@ console.log(positivePaymentTypes)
                 amount: dineInLine.amount,
                 taxes: 0,
                 advance: "",
-                roomName: "", // Dine-in not tied to room
-              });
+                roomName: "" // Dine-in not tied to room
+              })
             }
-          });
+          })
         }
-      }); // End of roomNames.forEach
+      }) // End of roomNames.forEach
 
-      return charges;
-    })();
+      return charges
+    })()
 
-    
-    const allcheckinids = doc?.allCheckInIds;
-    const allpartyid = doc?.partyArray;
-  
+    const allcheckinids = doc?.allCheckInIds
+    const allpartyid = doc?.partyArray
+
     // Advances only on the decided bill
     let advanceEntries = useAdvances
       ? (outStanding || [])
@@ -803,44 +846,45 @@ console.log(positivePaymentTypes)
             docNo: t.bill_no || t.billno || "-",
             amount: -Math.abs(t.bill_amount || t.billamount || 0),
             taxes: "",
-            advance: Math.abs(t.bill_amount || t.billamount || 0).toFixed(2),
+            advance: Math.abs(t.bill_amount || t.billamount || 0).toFixed(2)
           }))
-      : [];
+      : []
 
     let advanceTotal = useAdvances
       ? (outStanding || [])
           // .filter((t) => allpartyid?.includes(t.party_id))
           .reduce(
             (sum, t) => sum + Number(t.bill_amount || t.billamount || 0),
-            0,
+            0
           )
-      : 0;
+      : 0
 
     if (paymentModeDetails?.credit !== undefined) {
       let reduceCheckoutTotal = advanceEntries.reduce(
         (sum, t) => sum + Number(t.advance || 0),
-        0,
-      );
+        0
+      )
 
-      console.log(reduceCheckoutTotal);
+      console.log(reduceCheckoutTotal)
       advanceEntries = advanceEntries.filter(
-        (t) => t.description !== "CheckOut",
-      );
-      advanceTotal = advanceTotal - reduceCheckoutTotal;
+        (t) => t.description !== "CheckOut"
+      )
+      advanceTotal = advanceTotal - reduceCheckoutTotal
     }
-    console.log(advanceTotal);
+    console.log(advanceTotal)
 
     // Combine charges and compute balances
-    const allCharges = [...groupedRoomCharges, ...advanceEntries];
-    let cumulativeBalance = 0;
+    const allCharges = [...groupedRoomCharges, ...advanceEntries]
+console.log(allCharges)
+    let cumulativeBalance = 0
     const chargesWithBalance = allCharges.map((charge) => {
-      let currentAmount = Number(charge.amount || 0);
-      const lineTaxes = Number(charge.taxes || 0);
+      let currentAmount = Number(charge.amount || 0)
+      const lineTaxes = Number(charge.taxes || 0)
 
       if (String(charge.description).includes("Room Rent")) {
-        cumulativeBalance += currentAmount + lineTaxes;
+        cumulativeBalance += currentAmount + lineTaxes
       } else if (charge.description === "Advance") {
-        cumulativeBalance += currentAmount;
+        cumulativeBalance += currentAmount
       } else if (
         String(charge.description).includes("CGST on Rent") ||
         String(charge.description).includes("SGST on Rent")
@@ -848,10 +892,10 @@ console.log(positivePaymentTypes)
         // Room rent taxes already added with room rent, don't add again
       } else if (String(charge.description).includes("Food Plan")) {
         // Add food plan amount and its taxes
-        cumulativeBalance += currentAmount + lineTaxes;
+        cumulativeBalance += currentAmount + lineTaxes
       } else if (String(charge.description).includes("Extra Person")) {
         // Add extra person amount and its taxes
-        cumulativeBalance += currentAmount + lineTaxes;
+        cumulativeBalance += currentAmount + lineTaxes
       } else if (
         String(charge.description).includes("CGST") ||
         String(charge.description).includes("SGST")
@@ -859,25 +903,25 @@ console.log(positivePaymentTypes)
         // Other CGST/SGST already handled above, don't add
       } else {
         // Restaurant and other charges
-        cumulativeBalance += currentAmount;
+        cumulativeBalance += currentAmount
       }
 
       return {
         ...charge,
         balance: Number.isFinite(cumulativeBalance)
           ? cumulativeBalance.toFixed(2)
-          : "0.00",
-      };
-    });
-    console.log(doc?.checkOutTime);
+          : "0.00"
+      }
+    })
+    console.log(doc?.checkOutTime)
     console.log(
       roomTariffTotal,
       planAmount,
       foodPlanAmountWithTax,
       sgstAmount,
       cgstAmount,
-      restaurantTotal,
-    );
+      restaurantTotal
+    )
 
     const grandTotal =
       Number(roomTariffTotal) +
@@ -886,55 +930,54 @@ console.log(positivePaymentTypes)
       Number(foodPlanAmountWithTax) +
       Number(sgstAmount) +
       Number(cgstAmount) +
-      Number(restaurantTotal);
-    const netPay = Math.abs(grandTotal - advanceTotal);
+      Number(restaurantTotal)
+    const netPay = Math.abs(grandTotal - advanceTotal)
 
     // Compose hotel/guest info per doc
     const guestRooms = (doc.selectedRooms || [])
       .map((r) => r.roomName)
-      .join(", ");
+      .join(", ")
     const pax =
       (doc.selectedRooms || []).reduce(
         (acc, curr) => acc + Number(curr.pax || 0),
-        0,
-      ) || 1;
+        0
+      ) || 1
 
     const basePax =
       (doc.selectedRooms || []).reduce(
         (acc, curr) => acc + Number(curr.pax || 0),
-        0,
-      ) || 1;
+        0
+      ) || 1
 
-    const additionalPaxCount = (doc.additionalPaxDetails || []).length;
+    const additionalPaxCount = (doc.additionalPaxDetails || []).length
 
-    const totalPax = basePax + additionalPaxCount;
-
+    const totalPax = basePax + additionalPaxCount
 
     const convertNumberToWords = (amount) =>
-      `${Math.round(amount || 0)} Rupees Only`;
-    let partyName = doc?.customerId?.partyName;
-    let partyAddress = doc?.customerId?.billingAddress || "";
-    let partyPhone = doc?.customerId?.mobileNumber || "";
-    let partyGstNo = doc?.customerId?.gstNo || "";
-    let partyCompanyName = doc?.customerId?.partyName;
+      `${Math.round(amount || 0)} Rupees Only`
+    let partyName = doc?.customerId?.partyName
+    let partyAddress = doc?.customerId?.billingAddress || ""
+    let partyPhone = doc?.customerId?.mobileNumber || ""
+    let partyGstNo = doc?.customerId?.gstNo || ""
+    let partyCompanyName = doc?.customerId?.partyName
 
     if (
       paymentDetails?.paymentMode == "credit" &&
       paymentDetails?.paymentDetails?.selectedCreditor
     ) {
-      partyName = paymentDetails?.paymentDetails?.selectedCreditor?.partyName;
+      partyName = paymentDetails?.paymentDetails?.selectedCreditor?.partyName
       partyAddress =
-        paymentDetails?.paymentDetails?.selectedCreditor?.billingAddress;
+        paymentDetails?.paymentDetails?.selectedCreditor?.billingAddress
       partyPhone =
-        paymentDetails?.paymentDetails?.selectedCreditor?.mobileNumber;
-      partyGstNo = paymentDetails?.paymentDetails?.selectedCreditor?.gstNo;
+        paymentDetails?.paymentDetails?.selectedCreditor?.mobileNumber
+      partyGstNo = paymentDetails?.paymentDetails?.selectedCreditor?.gstNo
 
       if (partyGstNo) {
         partyCompanyName =
-          paymentDetails?.paymentDetails?.selectedCreditor?.partyName;
+          paymentDetails?.paymentDetails?.selectedCreditor?.partyName
       }
     }
-
+console.log("hh")
     return {
       hotel: {
         name: organization?.name,
@@ -948,18 +991,18 @@ console.log(positivePaymentTypes)
         pan: organization?.pan,
         gstin: organization?.gstNum,
         sacCode: "996311",
-        logo: organization?.logo,
+        logo: organization?.logo
       },
       guest: {
         name: partyName,
         roomNo: guestRooms,
-        grcNo: doc?.grcno ,
+        grcNo: doc?.grcno,
         billNo: doc?.voucherNumber,
         travelAgent: doc?.agentId?.name,
         address: partyAddress || "",
         phone: partyPhone || "",
         gstNo: partyGstNo || "",
-        companyName: partyCompanyName || "",
+        companyName: partyCompanyName || ""
       },
       stay: {
         billDate: formatDate(new Date()),
@@ -970,11 +1013,13 @@ console.log(positivePaymentTypes)
         days: doc?.selectedRooms?.[0]?.stayDays,
         plan: doc?.foodPlan?.[0]?.foodPlan,
         pax: totalPax,
-        tariff: doc?.selectedRooms?.[0]?.totalAmount || 0,
+        tariff: doc?.selectedRooms?.[0]?.totalAmount || 0
       },
       charges: chargesWithBalance,
       summary: {
-        roomRent:(Number(roomTariffTotal || 0) + Number(additionalPaxAmount || 0)).toFixed(2),
+        roomRent: (
+          Number(roomTariffTotal || 0) + Number(additionalPaxAmount || 0)
+        ).toFixed(2),
         sgst: sgstAmount,
         cgst: cgstAmount,
         restaurant: dineInTotal, // ✅ Only dine-in restaurant amount
@@ -982,44 +1027,47 @@ console.log(positivePaymentTypes)
         foodPlan: planAmount + Number(foodPlanAmountWithTax),
         additionalPax: additionalPaxAmount,
         total: grandTotal,
-        totalWords: convertNumberToWords(grandTotal),
+        totalWords: convertNumberToWords(grandTotal)
       },
 
       payment: {
         mode: "Credit",
         total: grandTotal,
         advance: advanceTotal,
-        netPay,
-      },
-    };
-  };
-console.log(selectedCheckOut)
+        netPay
+      }
+    }
+  }
+  console.log(selectedCheckOut)
   // Build all billData per doc; decide where advances appear
   const bills = useMemo(() => {
-    const docs = selectedCheckOut || [];
+    const docs = selectedCheckOut || []
 
-    if (!docs.length) return [];
-    const firstPrimaryIdx = findFirstPrimaryIdx(docs);
+
+    if (!docs.length) return []
+    const firstPrimaryIdx = findFirstPrimaryIdx(docs)
 
     return docs.map((doc, idx) => {
       // Rule: if this doc owns advances, show here; else show on firstPrimaryIdx
-      const owns = docOwnsAdvances(doc);
-      const useAdvances = owns ? true : idx === firstPrimaryIdx;
-      return prepareBillDataForDoc(doc, useAdvances);
-    });
-  }, [selectedCheckOut, outStanding, kotData, organization]);
+      const owns = docOwnsAdvances(doc)
+      const useAdvances = owns ? true : idx === firstPrimaryIdx
+      return prepareBillDataForDoc(doc, useAdvances)
+    })
+  }, [selectedCheckOut, outStanding, kotData, organization])
+console.log(bills)
 
   const handlePrintPDF = (isPrint) => {
-    const multi = bills && bills.length ? bills : [];
-    if (!multi.length) return;
+    const multi = bills && bills.length ? bills : []
+    if (!multi.length) return
 
     if (!isPrint) {
-      handleBillDownloadPDF(multi); // pass array
+      handleBillDownloadPDF(multi) // pass array
     } else {
-      handleBillPrintInvoice(multi); // pass array
+      handleBillPrintInvoice(multi) // pass array
     }
-  };
-  console.log("bills", bills);
+  }
+  console.log(paymentModeDetails)
+  console.log("bills", bills)
   return (
     <>
       <TitleDiv title="Bill Print" />
@@ -1121,7 +1169,7 @@ console.log(selectedCheckOut)
               fontSize: "11px",
               lineHeight: "1.1",
               color: "#000",
-              pageBreakAfter: pageIdx < bills.length - 1 ? "always" : "auto",
+              pageBreakAfter: pageIdx < bills.length - 1 ? "always" : "auto"
             }}
           >
             {/* Header */}
@@ -1131,7 +1179,7 @@ console.log(selectedCheckOut)
                 textAlign: "center",
                 borderBottom: "1px solid #000",
                 paddingBottom: "8px",
-                marginBottom: "10px",
+                marginBottom: "10px"
               }}
             >
               <div style={{ flex: "0 0 120px" }}>
@@ -1149,7 +1197,7 @@ console.log(selectedCheckOut)
                     fontSize: "18px",
                     fontWeight: "bold",
                     marginBottom: "4px",
-                    textTransform: "uppercase",
+                    textTransform: "uppercase"
                   }}
                 >
                   {billData?.hotel?.name}
@@ -1158,7 +1206,7 @@ console.log(selectedCheckOut)
                   style={{
                     fontSize: "10px",
                     marginBottom: "2px",
-                    lineHeight: "1.2",
+                    lineHeight: "1.2"
                   }}
                 >
                   {billData?.hotel?.address?.split(",").map((line, index) => (
@@ -1170,7 +1218,7 @@ console.log(selectedCheckOut)
                   style={{
                     fontSize: "10px",
                     marginBottom: "2px",
-                    lineHeight: "1.2",
+                    lineHeight: "1.2"
                   }}
                 >
                   Phone: {billData?.hotel?.phone}
@@ -1179,7 +1227,7 @@ console.log(selectedCheckOut)
                   style={{
                     fontSize: "10px",
                     marginBottom: "3px",
-                    lineHeight: "1.2",
+                    lineHeight: "1.2"
                   }}
                 >
                   E-mail: {billData?.hotel?.email} | Website{" "}
@@ -1188,7 +1236,7 @@ console.log(selectedCheckOut)
                 <div
                   style={{
                     fontSize: "9px",
-                    lineHeight: "1.1",
+                    lineHeight: "1.1"
                   }}
                 >
                   PAN NO: {billData?.hotel?.pan} | GSTIN:{" "}
@@ -1197,7 +1245,7 @@ console.log(selectedCheckOut)
                 <div
                   style={{
                     fontSize: "9px",
-                    lineHeight: "1.1",
+                    lineHeight: "1.1"
                   }}
                 >
                   SAC CODE-{billData?.hotel?.sacCode}
@@ -1211,7 +1259,7 @@ console.log(selectedCheckOut)
                 style={{
                   width: "100%",
                   borderCollapse: "collapse",
-                  fontSize: "10px",
+                  fontSize: "10px"
                 }}
               >
                 <tbody>
@@ -1220,7 +1268,7 @@ console.log(selectedCheckOut)
                       style={{
                         width: "15%",
                         padding: "2px 0",
-                        fontWeight: "bold",
+                        fontWeight: "bold"
                       }}
                     >
                       GRC No
@@ -1232,7 +1280,7 @@ console.log(selectedCheckOut)
                       style={{
                         width: "15%",
                         padding: "2px 0",
-                        fontWeight: "bold",
+                        fontWeight: "bold"
                       }}
                     >
                       Bill No
@@ -1244,7 +1292,7 @@ console.log(selectedCheckOut)
                       style={{
                         width: "10%",
                         padding: "2px 0",
-                        fontWeight: "bold",
+                        fontWeight: "bold"
                       }}
                     >
                       Date
@@ -1282,7 +1330,7 @@ console.log(selectedCheckOut)
                       style={{
                         padding: "2px 0",
                         fontSize: "10px",
-                        lineHeight: "1.2",
+                        lineHeight: "1.2"
                       }}
                     >
                       {billData?.guest?.address
@@ -1374,7 +1422,7 @@ console.log(selectedCheckOut)
                   width: "100%",
                   borderCollapse: "collapse",
                   border: "1px solid #000",
-                  fontSize: "10px",
+                  fontSize: "10px"
                 }}
               >
                 <thead>
@@ -1383,7 +1431,7 @@ console.log(selectedCheckOut)
                       style={{
                         border: "1px solid #000",
                         padding: "4px",
-                        textAlign: "left",
+                        textAlign: "left"
                       }}
                     >
                       Date
@@ -1392,7 +1440,7 @@ console.log(selectedCheckOut)
                       style={{
                         border: "1px solid #000",
                         padding: "4px",
-                        textAlign: "left",
+                        textAlign: "left"
                       }}
                     >
                       Doc No
@@ -1401,7 +1449,7 @@ console.log(selectedCheckOut)
                       style={{
                         border: "1px solid #000",
                         padding: "4px",
-                        textAlign: "left",
+                        textAlign: "left"
                       }}
                     >
                       Description
@@ -1410,7 +1458,7 @@ console.log(selectedCheckOut)
                       style={{
                         border: "1px solid #000",
                         padding: "4px",
-                        textAlign: "right",
+                        textAlign: "right"
                       }}
                     >
                       Amount
@@ -1419,7 +1467,7 @@ console.log(selectedCheckOut)
                       style={{
                         border: "1px solid #000",
                         padding: "4px",
-                        textAlign: "right",
+                        textAlign: "right"
                       }}
                     >
                       Taxes
@@ -1428,7 +1476,7 @@ console.log(selectedCheckOut)
                       style={{
                         border: "1px solid #000",
                         padding: "4px",
-                        textAlign: "right",
+                        textAlign: "right"
                       }}
                     >
                       Advance
@@ -1437,7 +1485,7 @@ console.log(selectedCheckOut)
                       style={{
                         border: "1px solid #000",
                         padding: "4px",
-                        textAlign: "right",
+                        textAlign: "right"
                       }}
                     >
                       Balance
@@ -1454,7 +1502,7 @@ console.log(selectedCheckOut)
                         style={{
                           border: "1px solid #000",
                           padding: "3px",
-                          textAlign: "center",
+                          textAlign: "center"
                         }}
                       >
                         {charge.docNo}
@@ -1466,7 +1514,7 @@ console.log(selectedCheckOut)
                         style={{
                           border: "1px solid #000",
                           padding: "3px",
-                          textAlign: "right",
+                          textAlign: "right"
                         }}
                       >
                         {Number(charge.amount || 0).toFixed(2)}
@@ -1475,7 +1523,7 @@ console.log(selectedCheckOut)
                         style={{
                           border: "1px solid #000",
                           padding: "3px",
-                          textAlign: "right",
+                          textAlign: "right"
                         }}
                       >
                         {charge.taxes}
@@ -1484,7 +1532,7 @@ console.log(selectedCheckOut)
                         style={{
                           border: "1px solid #000",
                           padding: "3px",
-                          textAlign: "right",
+                          textAlign: "right"
                         }}
                       >
                         {charge.advance}
@@ -1493,7 +1541,7 @@ console.log(selectedCheckOut)
                         style={{
                           border: "1px solid #000",
                           padding: "3px",
-                          textAlign: "right",
+                          textAlign: "right"
                         }}
                       >
                         {charge.balance}
@@ -1513,7 +1561,7 @@ console.log(selectedCheckOut)
                     width: "100%",
                     borderCollapse: "collapse",
                     border: "1px solid #000",
-                    fontSize: "11px",
+                    fontSize: "11px"
                   }}
                 >
                   <thead>
@@ -1523,7 +1571,7 @@ console.log(selectedCheckOut)
                           border: "1px solid #000",
                           padding: "6px",
                           textAlign: "left",
-                          fontWeight: "bold",
+                          fontWeight: "bold"
                         }}
                       >
                         Summary
@@ -1533,7 +1581,7 @@ console.log(selectedCheckOut)
                           border: "1px solid #000",
                           padding: "6px",
                           textAlign: "right",
-                          fontWeight: "bold",
+                          fontWeight: "bold"
                         }}
                       >
                         Amount
@@ -1549,11 +1597,11 @@ console.log(selectedCheckOut)
                         style={{
                           border: "1px solid #000",
                           padding: "4px",
-                          textAlign: "right",
+                          textAlign: "right"
                         }}
                       >
                         {billData?.summary?.roomRent?.toLocaleString("en-IN", {
-                          minimumFractionDigits: 2,
+                          minimumFractionDigits: 2
                         })}
                       </td>
                     </tr>
@@ -1569,14 +1617,14 @@ console.log(selectedCheckOut)
                           style={{
                             border: "1px solid #000",
                             padding: "4px",
-                            textAlign: "right",
+                            textAlign: "right"
                           }}
                         >
                           {billData?.summary?.foodPlan?.toLocaleString(
                             "en-IN",
                             {
-                              minimumFractionDigits: 2,
-                            },
+                              minimumFractionDigits: 2
+                            }
                           )}
                         </td>
                       </tr>
@@ -1592,11 +1640,11 @@ console.log(selectedCheckOut)
                           style={{
                             border: "1px solid #000",
                             padding: "4px",
-                            textAlign: "right",
+                            textAlign: "right"
                           }}
                         >
                           {billData?.summary?.sgst?.toLocaleString("en-IN", {
-                            minimumFractionDigits: 2,
+                            minimumFractionDigits: 2
                           })}
                         </td>
                       </tr>
@@ -1612,11 +1660,11 @@ console.log(selectedCheckOut)
                           style={{
                             border: "1px solid #000",
                             padding: "4px",
-                            textAlign: "right",
+                            textAlign: "right"
                           }}
                         >
                           {billData?.summary?.cgst?.toLocaleString("en-IN", {
-                            minimumFractionDigits: 2,
+                            minimumFractionDigits: 2
                           })}
                         </td>
                       </tr>
@@ -1632,11 +1680,11 @@ console.log(selectedCheckOut)
                           style={{
                             border: "1px solid #000",
                             padding: "4px",
-                            textAlign: "right",
+                            textAlign: "right"
                           }}
                         >
                           {billData?.summary?.cgst?.toLocaleString("en-IN", {
-                            minimumFractionDigits: 2,
+                            minimumFractionDigits: 2
                           })}
                         </td>
                       </tr>
@@ -1652,14 +1700,14 @@ console.log(selectedCheckOut)
                           style={{
                             border: "1px solid #000",
                             padding: "4px",
-                            textAlign: "right",
+                            textAlign: "right"
                           }}
                         >
                           {billData?.summary?.roomService?.toLocaleString(
                             "en-IN",
                             {
-                              minimumFractionDigits: 2,
-                            },
+                              minimumFractionDigits: 2
+                            }
                           )}
                         </td>
                       </tr>
@@ -1670,7 +1718,7 @@ console.log(selectedCheckOut)
                         style={{
                           border: "1px solid #000",
                           padding: "4px",
-                          fontWeight: "bold",
+                          fontWeight: "bold"
                         }}
                       >
                         Total
@@ -1680,11 +1728,11 @@ console.log(selectedCheckOut)
                           border: "1px solid #000",
                           padding: "4px",
                           textAlign: "right",
-                          fontWeight: "bold",
+                          fontWeight: "bold"
                         }}
                       >
                         {billData?.summary?.total?.toLocaleString("en-IN", {
-                          minimumFractionDigits: 2,
+                          minimumFractionDigits: 2
                         })}
                       </td>
                     </tr>
@@ -1699,7 +1747,7 @@ console.log(selectedCheckOut)
                     width: "100%",
                     borderCollapse: "collapse",
                     border: "1px solid #000",
-                    fontSize: "11px",
+                    fontSize: "11px"
                   }}
                 >
                   <thead>
@@ -1710,7 +1758,7 @@ console.log(selectedCheckOut)
                           border: "1px solid #000",
                           padding: "6px",
                           textAlign: "left",
-                          fontWeight: "bold",
+                          fontWeight: "bold"
                         }}
                       >
                         Payment Details
@@ -1723,7 +1771,7 @@ console.log(selectedCheckOut)
                         style={{
                           border: "1px solid #000",
                           padding: "4px",
-                          fontWeight: "bold",
+                          fontWeight: "bold"
                         }}
                       >
                         PAYMODE
@@ -1733,20 +1781,20 @@ console.log(selectedCheckOut)
                           border: "1px solid #000",
                           padding: "4px",
                           fontWeight: "bold",
-                          textAlign: "center",
+                          textAlign: "center"
                         }}
                       >
                         AMOUNT
                       </td>
                     </tr>
-                    {paymentModeDetails &&
+                    {/* {paymentModeDetails &&
                       Object.entries(paymentModeDetails).map(
                         ([key, amount], index) => (
                           <tr key={index}>
                             <td
                               style={{
                                 border: "1px solid #000",
-                                padding: "4px",
+                                padding: "4px"
                               }}
                             >
                               {key.toUpperCase()}
@@ -1755,30 +1803,53 @@ console.log(selectedCheckOut)
                               style={{
                                 border: "1px solid #000",
                                 padding: "4px",
-                                textAlign: "right",
+                                textAlign: "right"
                               }}
                             >
                               {Number(amount).toLocaleString("en-IN", {
-                                minimumFractionDigits: 2,
+                                minimumFractionDigits: 2
                               })}
                             </td>
                           </tr>
-                        ),
-                      )}
+                        )
+                      )} */}
+                    {paymentModeDetails.map((item, index) => (
+                      <tr key={index}>
+                        <td
+                          style={{
+                            border: "1px solid #000",
+                            padding: "4px"
+                          }}
+                        >
+                          {item.customerName} ({item.mode.toUpperCase()})
+                        </td>
+                        <td
+                          style={{
+                            border: "1px solid #000",
+                            padding: "4px",
+                            textAlign: "right"
+                          }}
+                        >
+                          {item.amount.toLocaleString("en-IN", {
+                            minimumFractionDigits: 2
+                          })}
+                        </td>
+                      </tr>
+                    ))}
 
-                    <tr>
+                    {/* <tr>
                       <td
                         style={{
                           border: "1px solid #000",
                           padding: "4px",
                           fontWeight: "bold",
-                          textAlign: "center",
+                          textAlign: "center"
                         }}
                         colSpan="2"
                       >
                         {billData?.guest?.name}
                       </td>
-                    </tr>
+                    </tr> */}
                     <tr>
                       <td
                         style={{ border: "1px solid #000", padding: "4px" }}
@@ -1798,7 +1869,7 @@ console.log(selectedCheckOut)
                             <div
                               style={{
                                 fontWeight: "bold",
-                                marginBottom: "4px",
+                                marginBottom: "4px"
                               }}
                             >
                               Total :
@@ -1810,20 +1881,20 @@ console.log(selectedCheckOut)
                             style={{
                               border: "1px solid #000",
                               padding: "4px",
-                              textAlign: "right",
+                              textAlign: "right"
                             }}
                           >
                             <div
                               style={{
                                 fontWeight: "bold",
-                                marginBottom: "4px",
+                                marginBottom: "4px"
                               }}
                             >
                               {Number(billData?.payment?.total || 0).toFixed(2)}
                             </div>
                             <div style={{ fontWeight: "bold" }}>
                               {Number(billData?.payment?.netPay || 0).toFixed(
-                                2,
+                                2
                               )}
                             </div>
                           </td>
@@ -1841,7 +1912,7 @@ console.log(selectedCheckOut)
                             style={{
                               border: "1px solid #000",
                               padding: "4px",
-                              textAlign: "right",
+                              textAlign: "right"
                             }}
                           >
                             <div>
@@ -1849,12 +1920,12 @@ console.log(selectedCheckOut)
                             </div>
                             <div>
                               {Number(billData?.payment?.advance || 0).toFixed(
-                                2,
+                                2
                               )}
                             </div>
                             <div style={{ fontWeight: "bold" }}>
                               {Number(billData?.payment?.netPay || 0).toFixed(
-                                2,
+                                2
                               )}
                             </div>
                           </td>
@@ -1875,7 +1946,7 @@ console.log(selectedCheckOut)
                     padding: "8px",
                     borderRight: "1px solid #000",
                     fontSize: "10px",
-                    fontWeight: "bold",
+                    fontWeight: "bold"
                   }}
                 >
                   Please Deposit Your Room and Locker Keys
@@ -1894,7 +1965,7 @@ console.log(selectedCheckOut)
                     padding: "12px",
                     borderRight: "1px solid #000",
                     textAlign: "left",
-                    fontSize: "10px",
+                    fontSize: "10px"
                   }}
                 >
                   <div style={{ fontWeight: "bold", marginBottom: "15px" }}>
@@ -1908,7 +1979,7 @@ console.log(selectedCheckOut)
                     padding: "12px",
                     borderRight: "1px solid #000",
                     textAlign: "left",
-                    fontSize: "10px",
+                    fontSize: "10px"
                   }}
                 >
                   <div style={{ fontWeight: "bold", marginBottom: "15px" }}>
@@ -1918,7 +1989,7 @@ console.log(selectedCheckOut)
                     style={{
                       height: "15px",
                       borderBottom: "1px solid #000",
-                      margin: "10px 0",
+                      margin: "10px 0"
                     }}
                   ></div>
                 </div>
@@ -1927,7 +1998,7 @@ console.log(selectedCheckOut)
                     flex: "1",
                     padding: "12px",
                     textAlign: "left",
-                    fontSize: "10px",
+                    fontSize: "10px"
                   }}
                 >
                   <div style={{ fontWeight: "bold", marginBottom: "15px" }}>
@@ -1937,7 +2008,7 @@ console.log(selectedCheckOut)
                     style={{
                       height: "15px",
                       borderBottom: "1px solid #000",
-                      margin: "10px 0",
+                      margin: "10px 0"
                     }}
                   ></div>
                 </div>
@@ -1950,7 +2021,7 @@ console.log(selectedCheckOut)
                     padding: "8px",
                     borderRight: "1px solid #000",
                     fontStyle: "italic",
-                    fontSize: "10px",
+                    fontSize: "10px"
                   }}
                 >
                   We hope you enjoyed your stay and would like to welcome you
@@ -1961,7 +2032,7 @@ console.log(selectedCheckOut)
                     padding: "8px",
                     fontSize: "10px",
                     textAlign: "center",
-                    minWidth: "120px",
+                    minWidth: "120px"
                   }}
                 >
                   Original Bill
@@ -2010,10 +2081,10 @@ console.log(selectedCheckOut)
               onClick={() => {
                 // For preview confirm, use first bill’s netPay as balanceToPay
 
-                let balanceToPay = 0;
-                bills.forEach((item) => (balanceToPay += item.payment.netPay));
-                console.log(balanceToPay);
-                const firstDoc = selectedCheckOut[0];
+                let balanceToPay = 0
+                bills.forEach((item) => (balanceToPay += item.payment.netPay))
+                console.log(balanceToPay)
+                const firstDoc = selectedCheckOut[0]
                 navigate("/sUsers/checkInList", {
                   state: {
                     selectedCheckOut,
@@ -2022,9 +2093,9 @@ console.log(selectedCheckOut)
                     kotData,
                     checkoutmode,
                     cheinids,
-                    isForPreview,
-                  },
-                });
+                    isForPreview
+                  }
+                })
               }}
               className="bg-black text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-500 transition-colors"
             >
@@ -2041,7 +2112,7 @@ console.log(selectedCheckOut)
         </div>
       </div>
     </>
-  );
-};
+  )
+}
 
-export default HotelBillPrint;
+export default HotelBillPrint

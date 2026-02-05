@@ -357,11 +357,11 @@ export const saveIdProof = async (req, res) => {
   try {
     const { idProof } = req.body;
     const { cmp_id } = req.params;
-     let nameAlreadyExists = await IdProof.findOne({
+    let nameAlreadyExists = await IdProof.findOne({
       idProof,
       cmp_id,
       Primary_user_id: req.pUserId || req.owner,
-     
+
     });
 
     if (nameAlreadyExists) {
@@ -430,12 +430,12 @@ export const updateIdProof = async (req, res) => {
 
     const { cmp_id } = req.params;
 
-   let nameAlreadyExists = await IdProof.findOne({
+    let nameAlreadyExists = await IdProof.findOne({
       idProof,
       cmp_id,
       Primary_user_id: req.pUserId || req.owner,
       _id: { $ne: new ObjectId(idProofId) },
-     
+
     });
 
     if (nameAlreadyExists) {
@@ -599,7 +599,7 @@ export const updateFoodPlan = async (req, res) => {
 
     const { cmp_id } = req.params;
 
-       let nameAlreadyExists = await FoodPlan.findOne({
+    let nameAlreadyExists = await FoodPlan.findOne({
       foodPlan,
       cmp_id,
       Primary_user_id: req.pUserId || req.owner,
@@ -1260,13 +1260,13 @@ export const roomBooking = async (req, res) => {
           const paymentDetails =
             method === "cash"
               ? {
-                  cash_ledname: singlePaymentDetails?.accountName,
-                  cash_name: singlePaymentDetails?.accountName,
-                }
+                cash_ledname: singlePaymentDetails?.accountName,
+                cash_name: singlePaymentDetails?.accountName,
+              }
               : {
-                  bank_ledname: singlePaymentDetails?.accountName,
-                  bank_name: singlePaymentDetails?.accountName,
-                };
+                bank_ledname: singlePaymentDetails?.accountName,
+                bank_name: singlePaymentDetails?.accountName,
+              };
 
           await buildReceipt(
             receiptVoucher,
@@ -1329,13 +1329,13 @@ export const roomBooking = async (req, res) => {
             const paymentDetails =
               payment.method === "cash"
                 ? {
-                    cash_ledname: payment?.accountName,
-                    cash_name: payment?.accountName,
-                  }
+                  cash_ledname: payment?.accountName,
+                  cash_name: payment?.accountName,
+                }
                 : {
-                    bank_ledname: payment?.accountName,
-                    bank_name: payment?.accountName,
-                  };
+                  bank_ledname: payment?.accountName,
+                  bank_name: payment?.accountName,
+                };
 
             await buildReceipt(
               receiptVoucher,
@@ -1374,6 +1374,7 @@ export const roomBooking = async (req, res) => {
 export const getBookings = async (req, res) => {
   try {
     const params = extractRequestParamsForBookings(req);
+    console.log("paramss", params)
     const filter = buildDatabaseFilterForBooking(params);
 
     const { bookings, totalBookings } = await fetchBookingsFromDatabase(
@@ -1925,13 +1926,13 @@ export const updateBooking = async (req, res) => {
           const paymentDetails =
             method === "cash"
               ? {
-                  cash_ledname: singlePaymentDetails?.accountName,
-                  cash_name: singlePaymentDetails?.accountName,
-                }
+                cash_ledname: singlePaymentDetails?.accountName,
+                cash_name: singlePaymentDetails?.accountName,
+              }
               : {
-                  bank_ledname: singlePaymentDetails?.accountName,
-                  bank_name: singlePaymentDetails?.accountName,
-                };
+                bank_ledname: singlePaymentDetails?.accountName,
+                bank_name: singlePaymentDetails?.accountName,
+              };
           console.log("line 1807");
           // Receipt
           await buildReceipt(
@@ -2002,13 +2003,13 @@ export const updateBooking = async (req, res) => {
             const paymentDetails =
               payment.method === "cash"
                 ? {
-                    cash_ledname: payment?.accountName,
-                    cash_name: payment?.accountName,
-                  }
+                  cash_ledname: payment?.accountName,
+                  cash_name: payment?.accountName,
+                }
                 : {
-                    bank_ledname: payment?.accountName,
-                    bank_name: payment?.accountName,
-                  };
+                  bank_ledname: payment?.accountName,
+                  bank_name: payment?.accountName,
+                };
             console.log("line 1884");
             await buildReceipt(
               receiptVoucher,
@@ -2741,14 +2742,16 @@ export const convertCheckOutToSale = async (req, res) => {
       if (!paymentDetails) throw new Error("Missing payment details");
 
       const paymentMode = paymentDetails?.paymentMode;
-      const splitDetails = paymentDetails?.splitDetails || [];
-
+      const split = paymentDetails?.splitDetails || [];
+      const splitDetails = split.filter((item) => item.source !== "credit")
+      console.log("splitedetsasilss", splitDetails)
       const specificVoucherSeries = await hotelVoucherSeries(cmp_id, session);
 
       // Process each checkout separately
       let results;
+      let salesarray
       for (const item of selectedCheckOut) {
-        console.log("itemdddddd", item);
+        // console.log("itemdddddd", item);
         const bookingVoucherNumber =
           item?.bookingId?.voucherNumber || item?.bookingId;
         const checkingVoucherNumber = item?.voucherNumber;
@@ -2873,7 +2876,7 @@ export const convertCheckOutToSale = async (req, res) => {
         const isThisPartial =
           item.isPartialCheckout ||
           roomsBeingCheckedOut.length <
-            (originalCheckIn.selectedRooms?.length || 0);
+          (originalCheckIn.selectedRooms?.length || 0);
 
         if (isThisPartial) isAnyPartial = true;
 
@@ -2886,6 +2889,14 @@ export const convertCheckOutToSale = async (req, res) => {
 
         const roomTotal = itemTotal;
 
+        const checkoutamounttypes = split.map((item) => {
+          return {
+            customerName: item.customerName,
+            mode: item.subsource,
+            amount: Number(item.amount)
+          }
+        }
+        )
         // Create CheckOut FIRST
         const checkOutDoc = await CheckOut.create(
           [
@@ -2913,7 +2924,7 @@ export const convertCheckOutToSale = async (req, res) => {
                 card: tracker.card,
                 credit: tracker.credit,
               },
-
+              checkoutpaymenttypedetails: checkoutamounttypes,
               checkoutType:
                 checkoutMode === "single"
                   ? "singleCheckout"
@@ -2946,6 +2957,7 @@ export const convertCheckOutToSale = async (req, res) => {
           checkOutDoc[0]._id,
           amount,
         );
+        salesarray = savedVoucherData
         if (savedVoucherData) {
           console.log(savedVoucherData.length);
         }
@@ -3092,7 +3104,7 @@ export const convertCheckOutToSale = async (req, res) => {
           await saveSettlement(
             paymentDetails,
             selectedCheckOut[0]?.customerId?._id ||
-              selectedCheckOut[0]?.customerId,
+            selectedCheckOut[0]?.customerId,
             primarySource,
             cmp_id,
             results[0]?.salesRecord, // Use first sale as reference
@@ -3112,6 +3124,44 @@ export const convertCheckOutToSale = async (req, res) => {
           (sum, split) => sum + Number(split.amount || 0),
           0,
         );
+        const credit = paymentDetails?.splitDetails.filter((item) => item.source === "credit")
+        console.log("creditttt", credit)
+        if (credit) {
+          for (const item of credit) {
+            const partyid = item?.customer
+            const partyData = await getSelectedParty(
+              partyid,
+              cmp_id,
+              session,
+            );
+            const party = mapPartyData(partyData);
+            console.log("accccccccccccntrgrppj", party)
+            await TallyData.create(
+              [
+                {
+                  Primary_user_id: req.pUserId || req.owner,
+                  cmp_id,
+                  party_id: party?._id,
+                  party_name: party?.partyName,
+                  mobile_no: party?.mobileNumber,
+                  bill_date: new Date(),
+                  bill_no: salesarray[0]?.salesNumber,
+                  billId: salesarray[0]?._id,
+                  bill_amount: item?.amount, // CHANGED: Total sale amount
+                  bill_pending_amt: item?.amount, // CHANGED: Actual outstanding amount
+                  accountGroup: party?.accountGroup_id.toString(),
+                  user_id: req.sUserId,
+                  advanceAmount: 0,
+                  advanceDate: new Date(),
+                  classification: "Dr",
+                  source: "sales",
+                },
+              ],
+              { session },
+            );
+          }
+
+        }
         console.log("cmpidbefore createreceptforsale", cmp_id);
         if (totalPaidAmount > 0) {
           await createReceiptForSales(
@@ -3121,7 +3171,7 @@ export const convertCheckOutToSale = async (req, res) => {
             selectedCheckOut[0]?.customerId?.partyName || "Customer",
             totalPaidAmount,
             selectedCheckOut[0]?.customerId?._id ||
-              selectedCheckOut[0]?.customerId,
+            selectedCheckOut[0]?.customerId,
             results[0]?.salesRecord,
             results[0]?.tallyId,
             req,
@@ -3160,7 +3210,7 @@ export const convertCheckOutToSale = async (req, res) => {
             selectedCheckOut[0]?.customerId?.partyName || "Customer",
             totalPaidAmount,
             selectedCheckOut[0]?.customerId?._id ||
-              selectedCheckOut[0]?.customerId,
+            selectedCheckOut[0]?.customerId,
             results[0]?.salesRecord,
             agId,
             req,
@@ -3382,26 +3432,7 @@ async function createTallyEntry(
   const selectedOne = await Party.findOne({ _id: selectedParty }).session(
     session,
   );
-  // console.log("selectedone", selectedOne)
 
-  // console.log("selectedOne",    {
-  //       Primary_user_id: req.pUserId || req.owner,
-  //       cmp_id,
-  //       party_id: selectedOne?._id,
-  //       party_name: selectedOne?.partyName,
-  //       mobile_no: selectedOne?.mobileNumber,
-  //       bill_date: new Date(),
-  //       bill_no: savedVoucher?.salesNumber,
-  //       billId: savedVoucher?._id,
-  //       bill_amount: amount, // CHANGED: Total sale amount
-  //       bill_pending_amt: amount, // CHANGED: Actual outstanding amount
-  //       accountGroup: selectedOne?.accountGroup.toString(),
-  //       user_id: req.sUserId,
-  //       advanceAmount: 0,
-  //       advanceDate: new Date(),
-  //       classification: "Dr",
-  //       source: "sales",
-  //     },);
   return await TallyData.create(
     [
       {
@@ -4219,12 +4250,12 @@ export const getHotelSalesDetails = async (req, res) => {
             percentage:
               totalSales > 0
                 ? (summary.mealPeriodBreakdown[period].amount / totalSales) *
-                  100
+                100
                 : 0,
             averageTicket:
               summary.mealPeriodBreakdown[period].count > 0
                 ? summary.mealPeriodBreakdown[period].amount /
-                  summary.mealPeriodBreakdown[period].count
+                summary.mealPeriodBreakdown[period].count
                 : 0,
           };
           return acc;
@@ -4238,9 +4269,9 @@ export const getHotelSalesDetails = async (req, res) => {
         averageItemsPerTransaction:
           totalTransactions > 0
             ? transformedData.reduce(
-                (sum, order) => sum + (order.itemCount || 0),
-                0,
-              ) / totalTransactions
+              (sum, order) => sum + (order.itemCount || 0),
+              0,
+            ) / totalTransactions
             : 0,
       },
       serviceMetrics: {
@@ -4298,9 +4329,8 @@ export const getHotelSalesDetails = async (req, res) => {
         },
         serviceBreakdown: summary.serviceBreakdown,
         mealPeriodSummary: summary.mealPeriodBreakdown,
-        message: `Found ${transformedData.length} ${
-          businessType === "all" ? "combined" : businessType
-        } sales records`,
+        message: `Found ${transformedData.length} ${businessType === "all" ? "combined" : businessType
+          } sales records`,
       },
     });
   } catch (error) {

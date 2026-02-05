@@ -65,6 +65,7 @@ export const updateTallyData = async (
     ])
   );
 
+console.log("billamountmap",billAmountMap)
   // Fetch the outstanding bills from TallyData for this company
   const outstandingData = await TallyData.find({
     cmp_id,
@@ -74,7 +75,7 @@ export const updateTallyData = async (
   if (outstandingData.length === 0) {
     return;
   }
-
+console.log("outstandingdata",outstandingData)
   // Prepare bulk update operations for TallyData
   const bulkUpdateOperations = outstandingData.map((doc) => {
     const { settledAmount } = billAmountMap.get(doc.billId); // Get the remaining and settled amount
@@ -106,6 +107,7 @@ export const updateTallyData = async (
       totalAppliedReceipts,
       existingAppliedPaymentsTotal
     );
+console.log("balance",balance)
 
     // const balance = (receiptPaymentMultiplier * doc?.bill_amount || 0) - (Number(totalAppliedReceipts)+Number(existingAppliedPaymentsTotal));
 

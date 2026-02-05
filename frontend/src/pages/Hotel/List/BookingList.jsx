@@ -82,7 +82,14 @@ function BookingList() {
   const [dateandstaysdata, setdateandstaysdata] = useState([])
   // NEW: State for split payment rows and sources
   const [splitPaymentRows, setSplitPaymentRows] = useState([
-    { customer: "", source: "", sourceType: "", amount: "", subsource: "" }
+    {
+      customer: "",
+      source: "",
+      sourceType: "",
+      amount: "",
+      subsource: "",
+      customerName: ""
+    }
   ])
   const [bankAndCashSources, setBankAndCashSources] = useState({
     banks: [],
@@ -239,16 +246,16 @@ function BookingList() {
 
   console.log("IIIIIIIIIII", selectedBank, selectedCash)
   // ADD THIS: Update total whenever selectedCheckOut changes
-  //   useEffect(() => {
-  //     if (selectedCheckOut && selectedCheckOut.length > 0) {
-  // console.log("H")
-  //       const totalAmount = calculateTotalAmount(selectedCheckOut)
-  //       setSelectedDataForPayment((prevData) => ({
-  //         ...prevData,
-  //         total: totalAmount
-  //       }))
-  //     }
-  //   }, [selectedCheckOut])
+  useEffect(() => {
+    if (selectedCheckOut && selectedCheckOut.length > 0) {
+      console.log("H")
+      const totalAmount = calculateTotalAmount(selectedCheckOut)
+      setSelectedDataForPayment((prevData) => ({
+        ...prevData,
+        total: totalAmount
+      }))
+    }
+  }, [selectedCheckOut])
 
   const searchData = (data) => {
     if (searchTimeoutRef.current) {
@@ -375,6 +382,7 @@ function BookingList() {
           console.log("h")
           params.append("modal", "checkOut")
         }
+console.log(params)
         const res = await api.get(
           `/api/sUsers/getBookings/${cmp_id}?${params}`,
           {
@@ -383,6 +391,7 @@ function BookingList() {
         )
 
         let bookingData = res?.data?.bookingData || []
+
 
         if (location.pathname === "/sUsers/checkInList") {
           bookingData = bookingData.flatMap((booking) => {
@@ -398,7 +407,7 @@ function BookingList() {
         }
 
         if (pageNumber === 1) {
-          console.log("a")
+          console.log("d")
           setBookings(bookingData)
         } else {
           setBookings((prev) => [...prev, ...bookingData])
@@ -571,12 +580,13 @@ function BookingList() {
 
   // NEW: Functions for split payment row management
   const addSplitPaymentRow = () => {
+    console.log(splitPaymentRows)
     setSplitPaymentRows([
       ...splitPaymentRows,
       { customer: "", source: "", sourceType: "", amount: "" }
     ])
   }
-
+  console.log(splitPaymentRows)
   const removeSplitPaymentRow = (index) => {
     if (splitPaymentRows.length > 1) {
       const updatedRows = splitPaymentRows.filter((_, i) => i !== index)
@@ -584,11 +594,13 @@ function BookingList() {
     }
   }
 
-  const updateSplitPaymentRow = (index, field, value) => {
+  const updateSplitPaymentRow = (index, field, value, name) => {
     const updatedRows = [...splitPaymentRows]
     console.log(index)
     console.log(field)
     console.log(value)
+    console.log(field)
+    console.log(updatedRows)
     if (field === "source") {
       console.log(updatedRows)
       console.log(combinedSources)
@@ -603,6 +615,12 @@ function BookingList() {
           : selectedSource.name === "card"
             ? "card"
             : selectedSource.type
+    } else if (field === "customer") {
+      console.log(name)
+      console.log(field)
+
+      updatedRows[index].customerName = name
+      updatedRows[index][field] = value
     } else {
       updatedRows[index][field] = value
     }
@@ -775,7 +793,7 @@ function BookingList() {
           totalcredit += parseFloat(row.amount) || 0
         }
       })
-
+      console.log(splitPaymentRows)
       paymentDetails = {
         cashAmount: totalCash,
         onlineAmount: totalOnline,
@@ -817,6 +835,10 @@ function BookingList() {
       setIsPartial(false)
     } else {
       console.log("hhhh")
+      console.log(paymentDetails)
+      console.log(selectedCheckOut)
+
+
       try {
         const response = await api.post(
           `/api/sUsers/convertCheckOutToSale/${cmp_id}`,
@@ -1489,6 +1511,7 @@ function BookingList() {
                   setSelectedCustomer(el.customerId?._id)
                   setSelectedCheckOut([el])
                   const hasPrint1 = configurations[0]?.defaultPrint?.print1
+console.log(hasPrint1)
 
                   navigate(
                     hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint",
@@ -1997,13 +2020,23 @@ function BookingList() {
                         <div className="col-span-5">
                           <select
                             value={row.customer}
-                            onChange={(e) =>
+                            onChange={(e) => {
+                              const selectedCustomerObj =
+                                selectedCheckOut?.find(
+                                  (item) =>
+                                    item.customerId?._id === e.target.value
+                                )
+
+                              const selectedCustomerName =
+                                selectedCustomerObj?.customerId?.partyName
+                              console.log(selectedCustomerName)
                               updateSplitPaymentRow(
                                 index,
                                 "customer",
-                                e.target.value
+                                e.target.value,
+                                selectedCustomerName
                               )
-                            }
+                            }}
                             className="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
                           >
                             <option value="">Select Customer</option>

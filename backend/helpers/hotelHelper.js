@@ -508,12 +508,16 @@ export const createReceiptForSales = async (
     let balancetoset = amount
     // Process each split detail
     for (const split of splitDetails) {
+      if (split.sourceType === "credit") {
+        continue
+      }
       const billData = [];
       const splitCustomerId = split.customer;
       const splitAmount = Number(split.amount || 0);
       const splitSourceType = split.sourceType; // "cash" or "bank"
 
       if (splitAmount <= 0) continue;
+      // console.log("splitamount",splitAmount,splitAmount <= 0)
       // Create receipt for this split
       const receiptVoucher = await generateVoucherNumber(
         cmp_id,
