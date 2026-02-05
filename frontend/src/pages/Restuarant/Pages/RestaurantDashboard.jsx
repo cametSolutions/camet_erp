@@ -936,13 +936,16 @@ const RestaurantPOS = () => {
       })
       if (response.data?.success) {
         handleKotPrint(response.data?.data)
-        if (orderType === "dine-in") {
-  await api.put(
-    `/api/sUsers/updateTableStatus/${cmp_id}/${selectedTableNumber}`,  // ✅ Add tableNumber to URL
-    { status: "occupied" },  // Only status in body
-    { withCredentials: true }
-  );
-}
+         if (orderType === "dine-in") {
+          await api.put(
+            '/api/sUsers/updateTableStatus/${cmp_id}',
+            {
+              tableNumber: selectedTableNumber,
+              status: "occupied"
+            },
+            { withCredentials: true }
+          )
+        }
 
         queryClient.invalidateQueries({
           queryKey: ["todaysTransaction", cmp_id, isAdmin]
