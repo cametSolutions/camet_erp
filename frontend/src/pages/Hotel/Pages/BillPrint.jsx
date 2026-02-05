@@ -894,6 +894,10 @@ const HotelBillPrint = () => {
     };
   };
 
+
+
+
+  
   // Build all billData per doc; decide where advances appear
   const bills = useMemo(() => {
     const docs = selectedCheckOut || [];
@@ -920,6 +924,9 @@ const HotelBillPrint = () => {
     }
   };
   console.log(bills);
+
+
+  
   return (
     <>
       <TitleDiv title="Bill Print" />
