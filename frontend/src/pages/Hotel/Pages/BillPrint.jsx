@@ -29,7 +29,7 @@ const HotelBillPrint = () => {
   const [paymentModeDetails, setPaymentModeDetails] = useState([]);
   // Props from location state
   const selectedCheckOut = location.state?.selectedCheckOut || [];
-console.log(selectedCheckOut)
+  console.log(selectedCheckOut);
 
   const checkoutmode = location?.state?.checkoutMode || null;
   const cheinids = location?.state?.checkinIds;
@@ -173,11 +173,9 @@ console.log(selectedCheckOut)
           : (Number(activePrice || 0) * Number(room?.taxPercentage || 0)) / 100;
       }
 
-      
-
       const foodPlanAmountWithTaxPerDay =
         Number(room.foodPlanAmountWithTax || 0) / stayDays;
-        
+
       const foodPlanAmountWithOutTaxPerDay =
         Number(room.foodPlanAmountWithOutTax || 0) / stayDays;
 
@@ -369,7 +367,7 @@ console.log(selectedCheckOut)
           docNos: [],
         };
       }
-
+      roomServiceTotals[roomId].date = kot.date
       roomServiceTotals[roomId].amount += amount;
       if (kot?.salesNumber) {
         roomServiceTotals[roomId].docNos.push(kot.salesNumber);
@@ -387,9 +385,12 @@ console.log(selectedCheckOut)
       console.log(
         `Adding Room Service line: ${roomName} = ${roomServiceTotals[roomId].amount}`,
       );
+      console.log("xxx ", roomServiceTotals[roomId].date);
+      const d = new Date(roomServiceTotals[roomId].date);
+      let date =`${d.getDate().toString().padStart(2, "0")}-${(d.getMonth() + 1).toString().padStart(2, "0")}-${d.getFullYear()}`;
 
       lines.push({
-        date: formatDate(new Date()),
+        date: date,
         description: `Room Service - ${roomName}`,
         docNo: docNo,
         amount: Number(roomServiceTotals[roomId].amount || 0),
@@ -419,8 +420,12 @@ console.log(selectedCheckOut)
           docNos: [],
         };
       }
-
+ 
       dineInTotals[tableNo].amount += amount;
+      const d = new Date(kot.date);
+      dineInTotals[tableNo].date =
+        `${d.getDate().toString().padStart(2, "0")}-${(d.getMonth() + 1).toString().padStart(2, "0")}-${d.getFullYear()}`;
+
       if (kot?.salesNumber) {
         dineInTotals[tableNo].docNos.push(kot.salesNumber);
       }
@@ -432,9 +437,9 @@ console.log(selectedCheckOut)
       console.log(
         `Adding Dine In line: Table ${tableNo} = ${dineInTotals[tableNo].amount}`,
       );
-
+      console.log("yyy ", tableNo);
       lines.push({
-        date: formatDate(new Date()),
+        date: dineInTotals[tableNo].date,
         description: `Restaurant Dine In - ${tableNo}`,
         docNo: docNo,
         amount: Number(dineInTotals[tableNo].amount || 0),
@@ -489,7 +494,7 @@ console.log(selectedCheckOut)
         0,
       )
       .toFixed(2);
-      console.log(foodPlanAmountWithTax);
+    console.log(foodPlanAmountWithTax);
 
     const additionalPaxAmount = (doc.selectedRooms || []).reduce(
       (total, room) => {
@@ -518,7 +523,7 @@ console.log(selectedCheckOut)
         Number(i.additionalPaxDataWithOutTax || 0),
       0,
     );
-    console.log(roomTariffTotal)
+    console.log(roomTariffTotal);
 
     const sgstAmount = ((roomTaxTotal + additionalPaxTax) / 2).toFixed(2);
     const cgstAmount = ((roomTaxTotal + additionalPaxTax) / 2).toFixed(2);
@@ -583,7 +588,6 @@ console.log(selectedCheckOut)
             item.description?.includes("Half Day") ||
             item.description?.includes("Half Tariff"),
         );
-        
 
         // 1. Add FULL DAY room rent charges
         fullDayCharges.forEach((item) => {
@@ -788,10 +792,9 @@ console.log(selectedCheckOut)
       return charges;
     })();
 
-    
     const allcheckinids = doc?.allCheckInIds;
     const allpartyid = doc?.partyArray;
-  
+
     // Advances only on the decided bill
     let advanceEntries = useAdvances
       ? (outStanding || [])
@@ -908,7 +911,6 @@ console.log(selectedCheckOut)
 
     const totalPax = basePax + additionalPaxCount;
 
-
     const convertNumberToWords = (amount) =>
       `${Math.round(amount || 0)} Rupees Only`;
     let partyName = doc?.customerId?.partyName;
@@ -952,7 +954,7 @@ console.log(selectedCheckOut)
       guest: {
         name: partyName,
         roomNo: guestRooms,
-        grcNo: doc?.grcno ,
+        grcNo: doc?.grcno,
         billNo: doc?.voucherNumber,
         travelAgent: doc?.agentId?.name,
         address: partyAddress || "",
@@ -973,7 +975,9 @@ console.log(selectedCheckOut)
       },
       charges: chargesWithBalance,
       summary: {
-        roomRent:(Number(roomTariffTotal || 0) + Number(additionalPaxAmount || 0)).toFixed(2),
+        roomRent: (
+          Number(roomTariffTotal || 0) + Number(additionalPaxAmount || 0)
+        ).toFixed(2),
         sgst: sgstAmount,
         cgst: cgstAmount,
         restaurant: dineInTotal, // ✅ Only dine-in restaurant amount
@@ -992,7 +996,7 @@ console.log(selectedCheckOut)
       },
     };
   };
-console.log(selectedCheckOut)
+  console.log(selectedCheckOut);
   // Build all billData per doc; decide where advances appear
   const bills = useMemo(() => {
     const docs = selectedCheckOut || [];
