@@ -74,7 +74,8 @@ function SettingsCard({
         checked: !currentValue
       });
     }
-  };
+  }
+}
 
   return (
     <div>
@@ -131,7 +132,8 @@ function SettingsCard({
         ) : null}
       </div>
     </div>
-  );
+  )
 }
+
 
 export default SettingsCard;

@@ -72,6 +72,8 @@ const organizationSchema = new mongoose.Schema(
           default: {
             print1: true,
             print2: false,
+            restaurantPrint1: true,
+            restaurantPrint2: false,
           },
         },
         showDescription: {
