@@ -3467,6 +3467,25 @@ export const updateConfigurationForHotelAndRestaurant = async (req, res) => {
 
     let updateData = {};
 
+
+ if (data.title === "defaultPrint.print1") {
+      updateData = {
+        $set: {
+          "configurations.0.defaultPrint.print1": data.value,
+          "configurations.0.defaultPrint.print2": !data.value, // Ensure mutual exclusivity
+        },
+      };
+    } 
+    else if (data.title === "defaultPrint.print2") {
+      updateData = {
+        $set: {
+          "configurations.0.defaultPrint.print2": data.value,
+          "configurations.0.defaultPrint.print1": !data.value, // Ensure mutual exclusivity
+        },
+      };
+    }
+
+
     // Handle different types of updates
     if (data.fieldType === "defaultPrint") {
       // Handle defaultPrint checkbox group updates
