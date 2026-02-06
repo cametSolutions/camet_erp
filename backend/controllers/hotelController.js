@@ -3485,6 +3485,23 @@ export const updateConfigurationForHotelAndRestaurant = async (req, res) => {
           },
         };
       }
+    if( data.field === "restaurantPrint1"){
+      console.log("xxxxxxxxxxxx3")
+        updateData = {
+          $set: {
+            [`configurations.0.defaultPrint.${data.field}`]: data.checked,
+            [`configurations.0.defaultPrint.restaurantPrint2`]: false,
+          },
+        };
+    } else if( data.field === "restaurantPrint2"){
+      console.log("xxxxxxxxxxxx4")
+        updateData = {
+          $set: {
+            [`configurations.0.defaultPrint.${data.field}`]: data.checked,
+            [`configurations.0.defaultPrint.restaurantPrint1`]: false,
+          },
+        };
+    } 
     } else if (data.fieldType === "addRateWithTax") {
       // Handle existing addRateWithTax toggle updates
       updateData = {
