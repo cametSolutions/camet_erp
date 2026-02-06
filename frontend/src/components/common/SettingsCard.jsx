@@ -74,7 +74,8 @@ function SettingsCard({
         checked: !currentValue
       });
     }
-  };
+  }
+}
 
   return (
     <div>

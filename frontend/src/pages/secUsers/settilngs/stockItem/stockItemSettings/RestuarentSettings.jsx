@@ -124,6 +124,7 @@ const restuarentSettings = () => {
                     dbField: "defaultPrint.print2",
                   },
                 ],
+                dbField:"restaurant"
               });
   }
 
