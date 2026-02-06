@@ -132,7 +132,8 @@ function SettingsCard({
         ) : null}
       </div>
     </div>
-  );
+  )
 }
+
 
 export default SettingsCard;

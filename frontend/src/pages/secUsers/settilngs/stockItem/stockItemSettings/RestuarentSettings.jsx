@@ -106,7 +106,7 @@ const restuarentSettings = () => {
       dbField: "restaurantSale",
     });
        settingsOptions.push({
-                title: "Print Format",
+                title: "Default Print",
                 description: "Select your default print options",
                 icon: <GrClipboard />,
                 to: "sec",
@@ -115,13 +115,13 @@ const restuarentSettings = () => {
                 checkboxes: [
                   {
                     label: "Format 1",
-                    checked: configurations?.[0]?.defaultPrint?.print1 ?? false, // Fixed access
-                    dbField: "defaultPrint.print1",
+                    checked: configurations?.[0]?.defaultPrint?.restaurantPrint1 ?? false, // Fixed access
+                    dbField: "defaultPrint.restaurantPrint1",
                   },
                   {
                     label: "Format 2",
-                    checked: configurations?.[0]?.defaultPrint?.print2 ?? false, // Fixed access
-                    dbField: "defaultPrint.print2",
+                    checked: configurations?.[0]?.defaultPrint?.restaurantPrint2 ?? false, // Fixed access
+                    dbField: "defaultPrint.restaurantPrint2",
                   },
                 ],
                 dbField:"restaurant"
