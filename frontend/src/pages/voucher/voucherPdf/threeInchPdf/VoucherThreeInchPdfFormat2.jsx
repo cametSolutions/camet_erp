@@ -191,17 +191,9 @@ function VoucherThreeInchPdfFormat2({
               fontStyle: "italic",
             }}
           >
-            BILL
+            INVOICE
           </div>
-          <div
-            style={{
-              fontSize: "9px",
-              fontStyle: "italic",
-              marginTop: "2px",
-            }}
-          >
-            **Duplicate Copy
-          </div>
+         
         </div>
 
         {/* Bill Info */}
@@ -419,6 +411,7 @@ function VoucherThreeInchPdfFormat2({
             style={{
               display: "flex",
               justifyContent: "space-between",
+              fontWeight:"bold",
               marginBottom: "2px",
             }}
           >
@@ -475,6 +468,7 @@ function VoucherThreeInchPdfFormat2({
                 justifyContent: "flex-end",
                 marginBottom: "2px",
                 paddingRight: "3px",
+                 fontWeight:"bold",
               }}
             >
               <div>
