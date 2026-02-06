@@ -209,8 +209,8 @@ const [billFormat, setBillFormat] = useState("format1");
 
 useEffect(() => {
   // Get format from organization configuration
-  const print1 = org?.configurations?.[0]?.defaultPrint?.print1;
-  const print2 = org?.configurations?.[0]?.defaultPrint?.print2;
+  const print1 = org?.configurations?.[0]?.defaultPrint?.restaurantPrint1;
+  const print2 = org?.configurations?.[0]?.defaultPrint?.restaurantPrint2;
   
   if (print2) {
     setBillFormat("format2");

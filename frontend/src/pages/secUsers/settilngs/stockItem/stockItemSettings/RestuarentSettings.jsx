@@ -106,7 +106,7 @@ const restuarentSettings = () => {
       dbField: "restaurantSale",
     });
        settingsOptions.push({
-                title: "Print Format",
+                title: "Default Print",
                 description: "Select your default print options",
                 icon: <GrClipboard />,
                 to: "sec",

@@ -3176,7 +3176,7 @@ export const convertCheckOutToSale = async (req, res) => {
         ? "Partial checkout(s) completed. Remaining rooms stay checked-in."
         : "Checkout(s) converted to Sales successfully",
       data: {
-        results: req.savedVoucherData,
+        results: req._multiCheckoutResults,
       },
     });
   } catch (error) {
@@ -3467,25 +3467,6 @@ export const updateConfigurationForHotelAndRestaurant = async (req, res) => {
 
     let updateData = {};
 
-
- if (data.title === "defaultPrint.print1") {
-      updateData = {
-        $set: {
-          "configurations.0.defaultPrint.print1": data.value,
-          "configurations.0.defaultPrint.print2": !data.value, // Ensure mutual exclusivity
-        },
-      };
-    } 
-    else if (data.title === "defaultPrint.print2") {
-      updateData = {
-        $set: {
-          "configurations.0.defaultPrint.print2": data.value,
-          "configurations.0.defaultPrint.print1": !data.value, // Ensure mutual exclusivity
-        },
-      };
-    }
-
-
     // Handle different types of updates
     if (data.fieldType === "defaultPrint") {
       // Handle defaultPrint checkbox group updates
@@ -3504,6 +3485,23 @@ export const updateConfigurationForHotelAndRestaurant = async (req, res) => {
           },
         };
       }
+    if( data.field === "restaurantPrint1"){
+      console.log("xxxxxxxxxxxx3")
+        updateData = {
+          $set: {
+            [`configurations.0.defaultPrint.${data.field}`]: data.checked,
+            [`configurations.0.defaultPrint.restaurantPrint2`]: false,
+          },
+        };
+    } else if( data.field === "restaurantPrint2"){
+      console.log("xxxxxxxxxxxx4")
+        updateData = {
+          $set: {
+            [`configurations.0.defaultPrint.${data.field}`]: data.checked,
+            [`configurations.0.defaultPrint.restaurantPrint1`]: false,
+          },
+        };
+    } 
     } else if (data.fieldType === "addRateWithTax") {
       // Handle existing addRateWithTax toggle updates
       updateData = {
