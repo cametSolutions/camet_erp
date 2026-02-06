@@ -11,6 +11,7 @@ function BookingPage() {
   const location = useLocation();
   const isSubmittingRef = useRef(false);
   const roomId = location?.state?.roomId;
+  const rooms = location?.state?.rooms
   const organization = useSelector(
     (state) => state?.secSelectedOrganization?.secSelectedOrg,
   );
@@ -74,6 +75,7 @@ function BookingPage() {
             isSubmittingRef={isSubmittingRef}
             isFor="saleOrder"
             roomId={roomId}
+            rooms={rooms}
             submitLoader={submitLoader}
           />
         </div>

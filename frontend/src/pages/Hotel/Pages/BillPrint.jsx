@@ -2,20 +2,17 @@ import { useEffect, useState, useRef, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
-import { useReactToPrint } from "react-to-print";
+
 import api from "@/api/api";
-import Logo from "../../../assets/images/hill.png";
+
 import TitleDiv from "@/components/common/TitleDiv";
-import { jsPDF } from "jspdf";
+
 import "jspdf-autotable";
-// import {
-//   handlePrintInvoice,
-//   handleDownloadPDF,
-// } from "../PrintSide/generateHotelInvoicePDF ";
 import {
   handleBillPrintInvoice,
   handleBillDownloadPDF,
 } from "../PrintSide/generateBillPrintPDF";
+
 
 const HotelBillPrint = () => {
   // Router and Redux state
@@ -1017,9 +1014,9 @@ const HotelBillPrint = () => {
     if (!multi.length) return;
 
     if (!isPrint) {
-      handleBillDownloadPDF(multi); // pass array
+      handleBillDownloadPDF(multi,organization); // pass array
     } else {
-      handleBillPrintInvoice(multi); // pass array
+      handleBillPrintInvoice(multi,organization); // pass array
     }
   };
   console.log("bills", bills);
@@ -1138,9 +1135,9 @@ const HotelBillPrint = () => {
               }}
             >
               <div style={{ flex: "0 0 120px" }}>
-                {Logo && (
+                {organization?.logo && (
                   <img
-                    src={billData?.hotel?.logo}
+                    src={organization?.logo}
                     alt="Logo"
                     style={{ width: "120px", height: "auto" }}
                   />
