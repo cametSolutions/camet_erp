@@ -9,7 +9,8 @@ const initialState = {
   paymentMode: "single",
   splitPayment: [],
   onlinePartyName:"",
-  onlineType:""
+  onlineType:"",
+  printData: {},
 };
 
 export const paymentSlice = createSlice({
@@ -34,6 +35,9 @@ export const paymentSlice = createSlice({
     setOnlineType: (state, action) => {
       state.onlineType = action.payload;
     },
+     setPrintDetails: (state, action) => {
+      state.printData = action.payload;
+    },
     removeAll: () => initialState,
   },
 });
@@ -46,6 +50,7 @@ export const {
   setOnlinepartyName,
   setOnlineType,
   removeAll,
+  setPrintDetails
 } = paymentSlice.actions;
 
 export default paymentSlice.reducer;

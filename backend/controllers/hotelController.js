@@ -3176,7 +3176,7 @@ export const convertCheckOutToSale = async (req, res) => {
         ? "Partial checkout(s) completed. Remaining rooms stay checked-in."
         : "Checkout(s) converted to Sales successfully",
       data: {
-        results: req._multiCheckoutResults,
+        results: req.savedVoucherData,
       },
     });
   } catch (error) {

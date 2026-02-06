@@ -25,6 +25,8 @@ import {
   setSelectedSplitPayment,
   setOnlinepartyName,
   setOnlineType,
+  setPrintDetails,
+  removeAll
 } from "../../../../slices/hotelSlices/paymentSlice.js";
 import { FixedSizeList as List } from "react-window";
 import InfiniteLoader from "react-window-infinite-loader";
@@ -33,6 +35,9 @@ import SearchBar from "@/components/common/SearchBar";
 import TitleDiv from "@/components/common/TitleDiv";
 import { Check, CreditCard, X, Banknote, Plus, Trash2 } from "lucide-react";
 import useFetch from "@/customHook/useFetch";
+import PrintModal from "../Components/PrintModal";
+import { set } from "mongoose";
+import { custom } from "zod";
 
 function BookingList() {
   const location = useLocation();
@@ -49,9 +54,7 @@ function BookingList() {
   const [activeTab, setActiveTab] = useState("pending");
   const [partial, setIsPartial] = useState(false);
   const [checkOutUpdated, setCheckOutUpdated] = useState(false);
-  const [selectedCheckOut, setSelectedCheckOut] = useState(
-    location?.state?.selectedCheckOut || [],
-  );
+  const [selectedCheckOut, setSelectedCheckOut] = useState([] );
   const [roomswithCurrentstatus, setroomswithCurrentStatus] = useState([]);
   const [selectedonlinePartyname, setselectedOnlinepartyName] = useState(null);
   const [selectedOnlinetype, setselectedOnlinetype] = useState(null);
@@ -79,6 +82,7 @@ function BookingList() {
   const [showEnhancedCheckoutModal, setShowEnhancedCheckoutModal] =
     useState(false);
   const [showEnhancedHoldModal, setShowEnhancedHoldModal] = useState(false);
+  const [showPrintConfirmModal, setShowPrintConfirmModal] = useState(false);
   const [processedCheckoutData, setProcessedCheckoutData] = useState(null);
   const [selectedCreditor, setSelectedCreditor] = useState("");
   const [dateandstaysdata, setdateandstaysdata] = useState([]);
@@ -97,8 +101,7 @@ function BookingList() {
   const { _id: cmp_id, configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg,
   );
-  console.log(cmp_id);
-  console.log(selectedBank);
+  const [results, setResults] = useState([]);
   const getVoucherType = () => {
     const path = location.pathname;
     if (path.includes("Receipt")) return "receipt";
@@ -167,7 +170,7 @@ function BookingList() {
     }
   }, [location.pathname, cmp_id]);
 
-  useEffect(() => {
+  // useEffect(() => {
     // when global selectedCustomer changes, sync into selectedCheckOut
     //     if (!selectedCustomer) return
     // console.log("hhhh")
@@ -181,7 +184,7 @@ function BookingList() {
     //         selectedCustomer: match
     //       }))
     //     )
-  }, [selectedCustomer]);
+  // }, [selectedCustomer]);
 
   useEffect(() => {
     if (partylist && partylist.partyList.length) {
@@ -189,8 +192,10 @@ function BookingList() {
     }
   }, [partylist]);
 
+console.log( paymentDetails?.printData?.selectedCheckOut?.length > 0)
+
   useEffect(() => {
-    if (location?.state?.selectedCheckOut) {
+   if (location?.state?.selectedCheckOut && paymentDetails?.printData?.selectedCheckOut?.length > 0) {
       console.log(location?.state?.selectedCheckOut);
       setSelectedCheckOut(location?.state?.selectedCheckOut);
       setSelectedCustomer(location?.state?.selectedCustomer?._id);
@@ -233,13 +238,14 @@ function BookingList() {
         ...prevData,
         total: location?.state?.balanceToPay,
       }));
-      if (location?.state?.isForPreview) {
+      if (location?.state?.isForPreview  ) {
         setShowPaymentModal(true);
       }
     }
   }, [location?.state?.selectedCheckOut]);
+  console.log("IIIIIIIIIII",location?.state?.selectedCheckOut);
 
-  console.log("IIIIIIIIIII", selectedBank, selectedCash);
+  console.log("IIIIIIIIIII",paymentDetails.printData);
   // ADD THIS: Update total whenever selectedCheckOut changes
   //   useEffect(() => {
   //     if (selectedCheckOut && selectedCheckOut.length > 0) {
@@ -830,9 +836,11 @@ function BookingList() {
           },
           { withCredentials: true },
         );
-        console.log("hhhh");
+        console.log(response);
         if (response.status === 200 || response.status === 201) {
+          console.log(response);
           toast.success(response?.data?.message);
+
           handleCloseBasedOnDate();
         }
       } catch (error) {
@@ -855,10 +863,11 @@ function BookingList() {
         ]); // Reset split rows
         setShowPaymentModal(false);
         fetchBookings(1, searchTerm);
+        setShowPrintConfirmModal(true);
       }
     }
   };
-  console.log("h");
+  console.log("h", results);
   const handleCheckOutData = async () => {
     setShowSelectionModal(false);
     setShowEnhancedCheckoutModal(true);
@@ -1054,7 +1063,17 @@ function BookingList() {
 
     console.log(updatedCheckoutData);
 
-    // checkoutData.forEach((item)=>item.checkoutDate=)
+    dispatch(
+      setPrintDetails({
+        selectedCheckOut: updatedCheckoutData,
+        customerId: checkoutData[0]?.customerId?._id,
+        isForPreview: false,
+        checkoutMode,
+        checkinIds: checkinids,
+        roomAssignments: roomAssignments,
+        isPartialCheckout: checkoutData.some((co) => co.isPartialCheckout),
+      }),
+    );
 
     console.log("Hhhhhhhh");
     navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
@@ -1674,6 +1693,20 @@ function BookingList() {
     setShowCheckOutDateModal(false); // ✅ ADDED: Close modal
   };
 
+  console.log(paymentDetails.printData);
+
+const handlePrintShow = () => {
+  const hasPrint1 = configurations[0]?.defaultPrint?.print1;
+  const printData = structuredClone(paymentDetails.printData);
+
+  dispatch(removeAll());
+
+  navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
+    state: printData,
+  });
+};
+
+
   return (
     <>
       <div className="flex-1 bg-slate-50 h-screen overflow-hidden">
@@ -1691,7 +1724,10 @@ function BookingList() {
             }
             dropdownContents={[
               {
-                title: "Add Booking",
+                title:
+                  location.pathname == "/sUsers/checkInList"
+                    ? "Add Checking"
+                    : "Add Booking",
                 to:
                   location.pathname === "/sUsers/checkInList"
                     ? "/sUsers/checkInPage"
@@ -1700,6 +1736,7 @@ function BookingList() {
                       : "/sUsers/checkInPage",
               },
             ]}
+            
           />
           <SearchBar
             onType={searchData}
@@ -1729,7 +1766,7 @@ function BookingList() {
           />
         )}
 
-        {showEnhancedHoldModal && (
+        {showPrintConfirmModal && (
           <HoldModal
             isOpen={showEnhancedHoldModal}
             closeModal={setShowEnhancedHoldModal}
@@ -1740,6 +1777,7 @@ function BookingList() {
             cmp_id={cmp_id}
           />
         )}
+        {showPrintConfirmModal && <PrintModal onSubmit={handlePrintShow} />}
         {selectedCheckOut.length > 0 &&
           location.pathname === "/sUsers/checkInList" && (
             <>
