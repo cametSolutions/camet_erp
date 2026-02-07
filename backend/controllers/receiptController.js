@@ -42,7 +42,7 @@ export const createReceipt = async (req, res) => {
     series_id,
     voucherType,
   } = req.body;
-console.log("create receipttttttttttttttttt")
+  console.log("create receipttttttttttttttttt")
 
   const Primary_user_id = req.owner.toString();
   const Secondary_user_id = req.sUserId;
@@ -84,7 +84,7 @@ console.log("create receipttttttttttttttttt")
       secondaryUser,
       session
     );
-console.log("line receiptcontroller")
+    console.log("line receiptcontroller")
     // Create the new receipt
     const newReceipt = new ReceiptModel({
       createdAt: new Date(),
@@ -133,7 +133,8 @@ console.log("line receiptcontroller")
       cmp_id,
       session,
       receiptNumber,
-      savedReceipt._id.toString()
+      savedReceipt._id.toString(),
+      "receipt"
     );
 
     if (advanceAmount > 0 && savedReceipt) {

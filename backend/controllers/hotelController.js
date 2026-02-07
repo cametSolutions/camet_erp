@@ -2964,6 +2964,7 @@ export const convertCheckOutToSale = async (req, res) => {
         // console.log("savedsale", savedVoucherData)
 
         // Create Tally Entry
+
         const tallyRows = await createTallyEntry(
           cmp_id,
           req,
@@ -2973,6 +2974,7 @@ export const convertCheckOutToSale = async (req, res) => {
           amount,
           session,
           paymentMode,
+          "checkout"
         );
 
         // ============ HANDLE SETTLEMENTS (NOT RECEIPTS YET) ============
@@ -3428,7 +3430,9 @@ async function createTallyEntry(
   amount,
   session,
   paymentMode,
+  from = "other"
 ) {
+console.log("frommmmmm",from)
   const selectedOne = await Party.findOne({ _id: selectedParty }).session(
     session,
   );
@@ -3452,6 +3456,7 @@ async function createTallyEntry(
         advanceDate: new Date(),
         classification: "Dr",
         source: "sales",
+        ...(from === "checkout" ? { cantChange: true } : {})
       },
     ],
     { session },
