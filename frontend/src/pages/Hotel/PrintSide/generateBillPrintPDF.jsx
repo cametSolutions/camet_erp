@@ -1,6 +1,5 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
-import Logo from "../../../assets/images/hill.png";
 
 // Margins and spacing
 const MARGIN = 12;
@@ -11,13 +10,20 @@ const FOOTER_HEIGHT = 60; // Reserve space for footer
 
 // Base64 image fetch
 const getBase64FromUrl = async (url) => {
-  const res = await fetch(url);
-  const blob = await res.blob();
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result);
-    reader.readAsDataURL(blob);
-  });
+  if (!url) return null;
+  try {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('Failed to read image'));
+      reader.readAsDataURL(blob);
+    });
+  } catch (err) {
+    console.error('Failed to fetch image from URL:', url, err);
+    return null;
+  }
 };
 
 // Draw header (will be called for each page)
@@ -501,12 +507,14 @@ export const generateBillPrintPDF = async (
 
   const doc = new jsPDF("p", "mm", "a4");
   
-  // Load logo once
+  // Load logo from the first bill's hotel logo URL
   let base64Logo = null;
+
   try {
     base64Logo = await getBase64FromUrl(organization?.logo);
   } catch (err) {
     console.error("Failed to load logo", err);
+
   }
 
   const totalBills = bills.length;

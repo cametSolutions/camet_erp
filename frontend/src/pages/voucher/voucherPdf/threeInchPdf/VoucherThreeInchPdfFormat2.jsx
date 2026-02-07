@@ -69,13 +69,9 @@ function VoucherThreeInchPdfFormat2({
 
   useEffect(() => {
     if (data && data.items) {
-      data.discount = data.additionalCharges[0]?.value;
+      data.discount = data.additionalCharges?.[0]?.value || 0;
       const calculatedSubTotal = data.items
-        .reduce(
-          (acc, curr) =>
-            acc + Number(curr?.total) * Number(curr?.totalCount),
-          0
-        )
+        .reduce((acc, curr) => acc + Number(curr?.total) * Number(curr?.totalCount), 0)
         .toFixed(2);
       setSubTotal(Number(data?.subtotal || calculatedSubTotal));
 
@@ -110,10 +106,7 @@ function VoucherThreeInchPdfFormat2({
   }, [data, selectedOrganization]);
 
   const calculateTotalTax = () => {
-    const totalTax = data?.items?.reduce(
-      (acc, curr) => (acc += curr?.totalIgstAmt || 0),
-      0
-    );
+    const totalTax = data?.items?.reduce((acc, curr) => (acc += curr?.totalIgstAmt || 0), 0);
     return totalTax;
   };
 
@@ -122,362 +115,425 @@ function VoucherThreeInchPdfFormat2({
   };
 
   return (
-    <div
-      ref={contentToPrint}
-      style={{
-        width: "80mm",
-        margin: "0 auto",
-        padding: "5mm",
-        fontFamily: "Arial, sans-serif",
-        fontSize: "11px",
-        lineHeight: "1.3",
-      }}
-    >
-      {/* Header */}
-      <div style={{ textAlign: "center", marginBottom: "8px" }}>
+    <div className="grid">
+      <div
+        ref={contentToPrint}
+        className="receipt-container"
+        style={{
+          width: "100%",
+          maxWidth: "80mm",
+          margin: "0 auto",
+          fontFamily: "Arial, sans-serif",
+          fontSize: "11px",
+          lineHeight: "1.3",
+          padding: "4mm",
+          border: "1px dotted #000",
+        }}
+      >
+        {/* Header with Logo and Company Name */}
         <div
           style={{
-            fontSize: "16px",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            marginBottom: "8px",
+            paddingBottom: "6px",
+            borderBottom: "1px dotted #000",
+          }}
+        >
+          {/* Logo on left */}
+          {org?.logo && (
+            <img
+              src={org?.logo}
+              alt="Logo"
+              style={{
+                width: "25mm",
+                height: "auto",
+                objectFit: "contain",
+              }}
+            />
+          )}
+          
+          {/* Company Name on right */}
+          <div style={{ flex: 1, textAlign: "center" }}>
+            <div
+              style={{
+                fontSize: "16px",
+                fontWeight: "bold",
+                marginBottom: "2px",
+              }}
+            >
+              {org?.name || "HILL TOWN HOTEL"}
+            </div>
+               <div>{org?.road || "Erattayar road"}, {org?.place || "Kattapana"}</div>
+          <div>PH: {org?.mobile || "04868 272777"}</div>
+          <div>SAC CODE: {org?.sacCode || "996331"}</div>
+          {org?.gstNum && <div>GSTNO: {org?.gstNum}</div>}
+          </div>
+        </div>
+
+        {/* Company Details */}
+        
+
+        {/* Bill Title */}
+        <div
+          style={{
+            textAlign: "center",
+            marginBottom: "6px",
+            paddingBottom: "6px",
+            borderBottom: "1px dotted #000",
+          }}
+        >
+          <div
+            style={{
+              fontSize: "14px",
+              fontWeight: "bold",
+              fontStyle: "italic",
+            }}
+          >
+            INVOICE
+          </div>
+         
+        </div>
+
+        {/* Bill Info */}
+        <div
+          style={{
+            marginBottom: "6px",
+            fontSize: "11px",
+              fontWeight: "bold",
+            paddingBottom: "6px",
+            borderBottom: "1px dotted #000",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              marginBottom: "2px",
+            }}
+          >
+            <div>
+              Bill{" "}
+              {data?.[getVoucherNumber()] ||
+                data?.voucherNumber?.[0]?.voucherNumber ||
+                "11007"}
+            </div>
+            <div>
+              Date: {new Date(data?.Date || data?.createdAt).toLocaleDateString("en-GB")}
+            </div>
+          </div>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+            }}
+          >
+            <div>
+              Table:{" "}
+              {data?.voucherNumber?.map((item) => item?.tableNumber).join(", ") ||
+                data?.convertedFrom?.map((item) => item?.tableNumber).join(", ") ||
+                "1"}
+            </div>
+            <div>
+              Time:{" "}
+              {new Date(data?.Date || data?.createdAt).toLocaleTimeString("en-GB", {
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+                hour12: false,
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Items Table Header */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "35px 1fr 45px 55px 65px",
+            fontSize: "11px",
             fontWeight: "bold",
+            paddingBottom: "3px",
+            borderBottom: "1px dotted #000",
             marginBottom: "4px",
           }}
         >
-          {org?.name || "HILL TOWN HOTEL"}
+          <div style={{ textAlign: "left" }}>No</div>
+          <div style={{ textAlign: "left", paddingLeft: "3px" }}>Item</div>
+          <div style={{ textAlign: "center" }}>Qty</div>
+          <div style={{ textAlign: "right", paddingRight: "3px" }}>Rate</div>
+          <div style={{ textAlign: "right", paddingRight: "3px" }}>Amount</div>
         </div>
-        <div style={{ fontSize: "10px", marginBottom: "2px" }}>
-          {org?.road || "Erattayar road"}, {org?.place || "Kattapana"}
-        </div>
-        <div style={{ fontSize: "10px", marginBottom: "2px" }}>
-          PH: {org?.mobile || "04868 272777"}
-        </div>
-        <div style={{ fontSize: "10px", marginBottom: "2px" }}>
-          SAC CODE: {org?.sacCode || "996331"}
-        </div>
-        {org?.gstNum && (
-          <div style={{ fontSize: "10px", marginBottom: "4px" }}>
-            GSTNO: {org?.gstNum}
-          </div>
-        )}
-      </div>
 
-      {/* Horizontal line */}
-      <div
-        style={{
-          borderTop: "1px solid #000",
-          margin: "5px 0",
-        }}
-      ></div>
+        {/* Items */}
+        {data?.items?.length > 0 &&
+          data?.items.map((el, index) => {
+            const total = el?.total || 0;
+            const count = el?.totalCount || 1;
+            const rate = count > 0 ? (total / count).toFixed(2) : "0.00";
 
-      {/* Bill Title */}
-      <div style={{ textAlign: "center", marginBottom: "8px" }}>
-        <div style={{ fontSize: "14px", fontWeight: "bold", fontStyle: "italic" }}>
-          BILL
-        </div>
-        <div style={{ fontSize: "9px", fontStyle: "italic" }}>
-          **Duplicate Copy
-        </div>
-      </div>
+            return (
+              <div
+                key={index}
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "35px 1fr 45px 55px 65px",
+                  fontSize: "10px",
+                  fontWeight: "bold",
 
-      {/* Bill Info */}
-      <div style={{ marginBottom: "8px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "3px" }}>
-          <div style={{ fontSize: "11px" }}>
-            Bill {data?.[getVoucherNumber()] || data?.voucherNumber?.[0]?.voucherNumber || "11007"}
-          </div>
-          <div style={{ fontSize: "11px" }}>
-            Date: {new Date(data?.Date || data?.createdAt).toLocaleDateString("en-GB")}
-          </div>
-        </div>
-        <div style={{ display: "flex", justifyContent: "space-between" }}>
-          <div style={{ fontSize: "11px" }}>
-            Table: {data?.voucherNumber?.map((item) => item?.tableNumber).join(", ") || data?.convertedFrom?.map((item) => item?.tableNumber).join(", ") || "1"}
-          </div>
-          <div style={{ fontSize: "11px" }}>
-            Time: {new Date(data?.Date || data?.createdAt).toLocaleTimeString("en-GB", {
-              hour: "2-digit",
-              minute: "2-digit",
-              second: "2-digit",
-              hour12: false,
-            })}
-          </div>
-        </div>
-      </div>
+                  marginBottom: "2px",
+                  padding: "1px 0",
+                }}
+              >
+                <div style={{ textAlign: "left" }}>{index + 1}</div>
+                <div
+                  style={{
+                    textAlign: "left",
+                    paddingLeft: "3px",
+                    wordBreak: "break-word",
+                  }}
+                >
+                  {el.product_name}
+                </div>
+                <div style={{ textAlign: "center" }}>{el?.totalCount || 1}</div>
+                <div style={{ textAlign: "right", paddingRight: "3px" }}>{rate}</div>
+                <div style={{ textAlign: "right", paddingRight: "3px" }}>
+                  {total.toFixed(2)}
+                </div>
+              </div>
+            );
+          })}
 
-      {/* Horizontal line */}
-      <div
-        style={{
-          borderTop: "1px solid #000",
-          margin: "5px 0",
-        }}
-      ></div>
-
-      {/* Items Table Header */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "40px 1fr 50px 60px 70px",
-          fontWeight: "bold",
-          fontSize: "10px",
-          marginBottom: "4px",
-          backgroundColor: "#f0f0f0",
-          padding: "3px 0",
-        }}
-      >
-        <div style={{ textAlign: "center" }}>No</div>
-        <div style={{ paddingLeft: "5px" }}>Item</div>
-        <div style={{ textAlign: "center" }}>Qty</div>
-        <div style={{ textAlign: "right", paddingRight: "5px" }}>Rate</div>
-        <div style={{ textAlign: "right", paddingRight: "5px" }}>Amount</div>
-      </div>
-
-      {/* Items */}
-      {data?.items?.length > 0 &&
-        data?.items.map((el, index) => {
-          const total = el?.total || 0;
-          const count = el?.totalCount || 1;
-          const rate = count > 0 ? (total / count).toFixed(2) : "0.00";
-          
-          return (
-            <div
-              key={index}
-              style={{
-                display: "grid",
-                gridTemplateColumns: "40px 1fr 50px 60px 70px",
-                fontSize: "10px",
-                marginBottom: "3px",
-                padding: "2px 0",
-              }}
-            >
-              <div style={{ textAlign: "center" }}>{index + 1}</div>
-              <div style={{ paddingLeft: "5px" }}>{el.product_name}</div>
-              <div style={{ textAlign: "center" }}>{el?.totalCount || 1}</div>
-              <div style={{ textAlign: "right", paddingRight: "5px" }}>{rate}</div>
-              <div style={{ textAlign: "right", paddingRight: "5px" }}>{total.toFixed(2)}</div>
-            </div>
-          );
-        })}
-
-      {/* Horizontal line */}
-      <div
-        style={{
-          borderTop: "1px solid #000",
-          margin: "8px 0 5px 0",
-        }}
-      ></div>
-
-      {/* Totals Section */}
-      <div style={{ fontSize: "10px", marginBottom: "5px" }}>
+        {/* Divider after items */}
         <div
           style={{
-            display: "flex",
-            justifyContent: "space-between",
-            marginBottom: "2px",
-            paddingRight: "5px",
+            borderBottom: "1px dotted #000",
+            margin: "6px 0",
           }}
-        >
-          <div style={{ paddingLeft: "180px" }}>Amount</div>
-          <div style={{ textAlign: "right" }}>{subTotal}</div>
-        </div>
+        ></div>
 
-        {/* Tax Details */}
-        {IsIndian && isSameState && calculateTotalTax() > 0 && (
-          <>
+        {/* Subtotal and Taxes */}
+        <div style={{ fontSize: "10px", marginBottom: "4px" }}>
+          <div
+            style={{
+              display: "flex",
+                          fontWeight: "bold",
+
+              justifyContent: "space-between",
+              marginBottom: "2px",
+            }}
+          >
+            <div style={{ marginLeft: "auto", marginRight: "70px" }}>Amount</div>
+            <div style={{ textAlign: "right", paddingRight: "3px" }}>{subTotal}</div>
+          </div>
+
+          {/* Tax Details */}
+          {IsIndian && isSameState && calculateTotalTax() > 0 && (
+            <>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginBottom: "2px",
+                              fontWeight: "bold",
+
+                }}
+              >
+                <div style={{ marginLeft: "auto", marginRight: "70px" }}>
+                  CGST @ 2.50%
+                </div>
+                <div style={{ textAlign: "right", paddingRight: "3px" }}>
+                  {(calculateTotalTax() / 2).toFixed(2)}
+                </div>
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                              fontWeight: "bold",
+
+                  marginBottom: "2px",
+                }}
+              >
+                <div style={{ marginLeft: "auto", marginRight: "70px" }}>
+                  SGST @ 2.50%
+                </div>
+                <div style={{ textAlign: "right", paddingRight: "3px" }}>
+                  {(calculateTotalTax() / 2).toFixed(2)}
+                </div>
+              </div>
+            </>
+          )}
+
+          {IsIndian && !isSameState && calculateTotalTax() > 0 && (
             <div
               style={{
                 display: "flex",
                 justifyContent: "space-between",
                 marginBottom: "2px",
-                paddingRight: "5px",
               }}
             >
-              <div style={{ paddingLeft: "180px" }}>CGST @ 2.50%</div>
-              <div style={{ textAlign: "right" }}>{(calculateTotalTax() / 2).toFixed(2)}</div>
+              <div style={{ marginLeft: "auto", marginRight: "70px" }}>IGST @ 5.00%</div>
+              <div style={{ textAlign: "right", paddingRight: "3px" }}>
+                {calculateTotalTax().toFixed(2)}
+              </div>
             </div>
+          )}
+
+          {!IsIndian && calculateTotalTax() > 0 && (
             <div
               style={{
                 display: "flex",
                 justifyContent: "space-between",
                 marginBottom: "2px",
-                paddingRight: "5px",
               }}
             >
-              <div style={{ paddingLeft: "180px" }}>SGST @ 2.50%</div>
-              <div style={{ textAlign: "right" }}>{(calculateTotalTax() / 2).toFixed(2)}</div>
+              <div style={{ marginLeft: "auto", marginRight: "70px" }}>VAT</div>
+              <div style={{ textAlign: "right", paddingRight: "3px" }}>
+                {calculateTotalTax().toFixed(2)}
+              </div>
             </div>
-          </>
-        )}
-
-        {IsIndian && !isSameState && calculateTotalTax() > 0 && (
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              marginBottom: "2px",
-              paddingRight: "5px",
-            }}
-          >
-            <div style={{ paddingLeft: "180px" }}>IGST @ 5.00%</div>
-            <div style={{ textAlign: "right" }}>{calculateTotalTax().toFixed(2)}</div>
-          </div>
-        )}
-
-        {!IsIndian && calculateTotalTax() > 0 && (
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              marginBottom: "2px",
-              paddingRight: "5px",
-            }}
-          >
-            <div style={{ paddingLeft: "180px" }}>VAT</div>
-            <div style={{ textAlign: "right" }}>{calculateTotalTax().toFixed(2)}</div>
-          </div>
-        )}
-      </div>
-
-      {/* Horizontal line */}
-      <div
-        style={{
-          borderTop: "1px solid #000",
-          margin: "5px 0",
-        }}
-      ></div>
-
-      {/* Room & Final Details */}
-      <div style={{ fontSize: "11px", marginBottom: "8px" }}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            marginBottom: "3px",
-          }}
-        >
-          <div style={{ fontWeight: "bold" }}>
-            {data?.voucherNumber?.[0]?.roomId ? `Room ${data.voucherNumber[0].checkInNumber}` : "Room"}
-          </div>
-          <div style={{ display: "flex", gap: "50px", paddingRight: "5px" }}>
-            <div>
-              Total: <span style={{ fontWeight: "bold" }}>{subTotal}</span>
-            </div>
-          </div>
+          )}
         </div>
 
-        {data?.voucherNumber?.[0]?.checkInNumber && (
+        {/* Divider */}
+        <div
+          style={{
+            borderBottom: "1px dotted #000",
+            margin: "6px 0",
+          }}
+        ></div>
+
+        {/* Room & Final Details */}
+        <div style={{ fontSize: "10px", marginBottom: "6px" }}>
           <div
             style={{
               display: "flex",
               justifyContent: "space-between",
-              marginBottom: "3px",
+              fontWeight:"bold",
+              marginBottom: "2px",
             }}
           >
-            <div style={{ fontWeight: "bold" }}>{data.voucherNumber[0].checkInNumber}</div>
-            <div style={{ display: "flex", gap: "50px", paddingRight: "5px" }}>
+            <div style={{ fontWeight: "bold" }}>
+              {data?.voucherNumber?.[0]?.checkInNumber
+                ? `Room`
+                : "Room"}
+            </div>
+            <div
+              style={{
+                display: "flex",
+                gap: "40px",
+                paddingRight: "3px",
+              }}
+            >
               <div>
-                GST: <span style={{ fontWeight: "bold" }}>{calculateTotalTax().toFixed(2)}</span>
+                Total: <span style={{ fontWeight: "bold" }}>{subTotal}</span>
               </div>
             </div>
           </div>
-        )}
 
-        {data?.discount > 0 && (
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "flex-end",
-              marginBottom: "3px",
-              paddingRight: "5px",
-            }}
-          >
-            <div>
-              Discount: <span style={{ fontWeight: "bold" }}>{parseFloat(data.discount).toFixed(2)}</span>
+          {data?.voucherNumber?.[0]?.checkInNumber && (
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                marginBottom: "2px",
+              }}
+            >
+              <div style={{ fontWeight: "bold" }}>
+                {data.voucherNumber[0].checkInNumber}
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  gap: "50px",
+                  paddingRight: "3px",
+                }}
+              >
+                <div>
+                  GST:{" "}
+                  <span style={{ fontWeight: "bold" }}>
+                    {calculateTotalTax().toFixed(2)}
+                  </span>
+                </div>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
 
-      {/* Horizontal line */}
-      <div
-        style={{
-          borderTop: "1px solid #000",
-          margin: "5px 0",
-        }}
-      ></div>
+          {data?.discount > 0 && (
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                marginBottom: "2px",
+                paddingRight: "3px",
+                 fontWeight:"bold",
+              }}
+            >
+              <div>
+                Discount:{" "}
+                <span style={{ fontWeight: "bold" }}>
+                  {parseFloat(data.discount).toFixed(2)}
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
 
-      {/* Net Amount */}
-      <div
-        style={{
-          textAlign: "center",
-          fontSize: "14px",
-          fontWeight: "bold",
-          marginBottom: "10px",
-        }}
-      >
-        Net Amount: {data?.finalAmount}
-      </div>
+        {/* Divider */}
+        <div
+          style={{
+            borderBottom: "1px dotted #000",
+            margin: "6px 0",
+          }}
+        ></div>
 
-      {/* Horizontal line */}
-      <div
-        style={{
-          borderTop: "1px solid #000",
-          margin: "5px 0",
-        }}
-      ></div>
+        {/* Net Amount */}
+        <div
+          style={{
+            textAlign: "center",
+            fontSize: "14px",
+            fontWeight: "bold",
+            marginBottom: "8px",
+            paddingBottom: "6px",
+            borderBottom: "1px dotted #000",
+          }}
+        >
+          Net Amount: {data?.finalAmount}
+        </div>
 
-      {/* Footer */}
-      <div style={{ textAlign: "center", fontSize: "11px", marginTop: "10px" }}>
-        Thank You Visit Again
+        {/* Footer */}
+        <div
+          style={{
+            textAlign: "center",
+            fontSize: "11px",
+            fontWeight: "bold",
+            marginTop: "8px",
+          }}
+        >
+          Thank You Visit Again
+        </div>
       </div>
 
       {/* Preview Buttons */}
       {isPreview && (
-        <div
-          style={{
-            display: "flex",
-            gap: "10px",
-            marginTop: "20px",
-            justifyContent: "center",
-          }}
-        >
+        <div className="flex gap-3 justify-center p-2">
           <button
+            className="px-3 py-1 rounded-lg bg-gray-500 text-white font-medium hover:bg-gray-600 active:scale-95 transition"
             onClick={handlePrint}
-            style={{
-              padding: "8px 16px",
-              backgroundColor: "#4CAF50",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-              fontSize: "12px",
-            }}
           >
             Print
           </button>
           <button
+            className="px-3 py-1 rounded-lg bg-blue-500 text-white font-medium hover:bg-blue-600 active:scale-95 transition"
             onClick={() => sendToParent(true)}
-            style={{
-              padding: "8px 16px",
-              backgroundColor: "#2196F3",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-              fontSize: "12px",
-            }}
           >
             Confirm
           </button>
           <button
+            className="px-3 py-1 rounded-lg bg-red-400 text-gray-800 font-medium hover:bg-gray-300 active:scale-95 transition"
             onClick={() => sendToParent(false)}
-            style={{
-              padding: "8px 16px",
-              backgroundColor: "#f44336",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-              fontSize: "12px",
-            }}
           >
             Cancel
           </button>
