@@ -52,7 +52,8 @@ export const updateTallyData = async (
   cmp_id,
   session,
   receiptNumber,
-  _id
+  _id,
+  from = "other",
 ) => {
   // Create a lookup map for billNo to remainingAmount and settledAmount from billData
   const billAmountMap = new Map(
@@ -65,16 +66,18 @@ export const updateTallyData = async (
     ])
   );
 
+  console.log("billamountmap", billAmountMap)
   // Fetch the outstanding bills from TallyData for this company
   const outstandingData = await TallyData.find({
     cmp_id,
     billId: { $in: Array.from(billAmountMap.keys()) },
+    ...(from === "receipt" ? { bill_pending_amt: { $gt: 0 } } : {})
   }).session(session);
 
   if (outstandingData.length === 0) {
     return;
   }
-
+  console.log("outstandingdata", outstandingData)
   // Prepare bulk update operations for TallyData
   const bulkUpdateOperations = outstandingData.map((doc) => {
     const { settledAmount } = billAmountMap.get(doc.billId); // Get the remaining and settled amount
@@ -106,6 +109,7 @@ export const updateTallyData = async (
       totalAppliedReceipts,
       existingAppliedPaymentsTotal
     );
+    console.log("balance", balance)
 
     // const balance = (receiptPaymentMultiplier * doc?.bill_amount || 0) - (Number(totalAppliedReceipts)+Number(existingAppliedPaymentsTotal));
 
@@ -263,6 +267,10 @@ export const revertTallyUpdates = async (
     // Fetch documents and perform bulk operations
     const docs = await TallyData.find({
       billId: { $in: billIds },
+      $or: [
+        { cantchange: false },
+        { cantchange: { $exists: false } }
+      ]
     }).session(session);
 
     if (!docs.length) {
@@ -527,7 +535,7 @@ export const createAdvanceReceiptsFromAppliedReceipts = async (
   let totalProcessedAmount = 0;
 
   // Process all receipts as advance receipts within the existing transaction
-  for (let i = 0; i < appliedReceipts.length; i++) {
+  for (let i = 0;i < appliedReceipts.length;i++) {
     const receipt = appliedReceipts[i];
 
     const { receiptNumber, settledAmount, date, _id } = receipt;
@@ -581,7 +589,7 @@ export const createAdvancePaymentsFromAppliedPayments = async (
   let totalProcessedAmount = 0;
 
   // Process all payments as advance payments within the existing transaction
-  for (let i = 0; i < appliedPayments.length; i++) {
+  for (let i = 0;i < appliedPayments.length;i++) {
     const payment = appliedPayments[i];
 
     const { paymentNumber, settledAmount, date, _id } = payment;

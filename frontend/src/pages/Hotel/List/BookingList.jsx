@@ -88,16 +88,23 @@ function BookingList() {
   const [dateandstaysdata, setdateandstaysdata] = useState([]);
   // NEW: State for split payment rows and sources
   const [splitPaymentRows, setSplitPaymentRows] = useState([
-    { customer: "", source: "", sourceType: "", amount: "", subsource: "" },
-  ]);
+    {
+      customer: "",
+      source: "",
+      sourceType: "",
+      amount: "",
+      subsource: "",
+      customerName: ""
+    }
+  ])
   const [bankAndCashSources, setBankAndCashSources] = useState({
     banks: [],
-    cashs: [],
-  });
-  const [combinedSources, setCombinedSources] = useState([]);
-
-  const { roomId, roomName, filterByRoom } = location.state || {};
-  const paymentDetails = useSelector((state) => state.paymentSlice);
+    cashs: []
+  })
+  const [combinedSources, setCombinedSources] = useState([])
+  console.log(combinedSources)
+  const { roomId, roomName, filterByRoom } = location.state || {}
+  const paymentDetails = useSelector((state) => state.paymentSlice)
   const { _id: cmp_id, configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg,
   );
@@ -247,16 +254,16 @@ console.log( paymentDetails?.printData?.selectedCheckOut?.length > 0)
 
   console.log("IIIIIIIIIII",paymentDetails.printData);
   // ADD THIS: Update total whenever selectedCheckOut changes
-  //   useEffect(() => {
-  //     if (selectedCheckOut && selectedCheckOut.length > 0) {
-  // console.log("H")
-  //       const totalAmount = calculateTotalAmount(selectedCheckOut)
-  //       setSelectedDataForPayment((prevData) => ({
-  //         ...prevData,
-  //         total: totalAmount
-  //       }))
-  //     }
-  //   }, [selectedCheckOut])
+  useEffect(() => {
+    if (selectedCheckOut && selectedCheckOut.length > 0) {
+      console.log("H")
+      const totalAmount = calculateTotalAmount(selectedCheckOut)
+      setSelectedDataForPayment((prevData) => ({
+        ...prevData,
+        total: totalAmount
+      }))
+    }
+  }, [selectedCheckOut])
 
   const searchData = (data) => {
     if (searchTimeoutRef.current) {
@@ -309,10 +316,11 @@ console.log( paymentDetails?.printData?.selectedCheckOut?.length > 0)
             ...banks.map((bank) => ({
               id: bank._id,
               name: bank.bank_ledname,
-              type: "bank",
+              type: "bank"
             })),
-          ];
-          setCombinedSources(combined);
+            { id: "credit", name: "credit", type: "credit" }
+          ]
+          setCombinedSources(combined)
         }
       } catch (error) {
         console.error("Error fetching bank and cash sources:", error);
@@ -382,6 +390,7 @@ console.log( paymentDetails?.printData?.selectedCheckOut?.length > 0)
           console.log("h");
           params.append("modal", "checkOut");
         }
+console.log(params)
         const res = await api.get(
           `/api/sUsers/getBookings/${cmp_id}?${params}`,
           {
@@ -390,6 +399,7 @@ console.log( paymentDetails?.printData?.selectedCheckOut?.length > 0)
         );
 
         let bookingData = res?.data?.bookingData || [];
+
 
         if (location.pathname === "/sUsers/checkInList") {
           bookingData = bookingData.flatMap((booking) => {
@@ -405,8 +415,8 @@ console.log( paymentDetails?.printData?.selectedCheckOut?.length > 0)
         }
 
         if (pageNumber === 1) {
-          console.log("a");
-          setBookings(bookingData);
+          console.log("d")
+          setBookings(bookingData)
         } else {
           setBookings((prev) => [...prev, ...bookingData]);
         }
@@ -443,10 +453,10 @@ console.log( paymentDetails?.printData?.selectedCheckOut?.length > 0)
   // }, [selectedCheckOut]);
   console.log(selectedCustomer);
   const handleSingleCheckoutformultiplechekin = (selectcustomer) => {
-    console.log(selectedCustomer);
-    const match = parties.find((item) => item._id === selectcustomer);
-    if (!match) return;
-    console.log(match);
+    console.log(selectedCustomer)
+    const match = parties.find((item) => item._id === selectcustomer)
+    if (!match) return
+    console.log(match)
 
     setSelectedCheckOut((prev) =>
       prev.map((item) => ({
@@ -582,12 +592,13 @@ console.log( paymentDetails?.printData?.selectedCheckOut?.length > 0)
 
   // NEW: Functions for split payment row management
   const addSplitPaymentRow = () => {
+    console.log(splitPaymentRows)
     setSplitPaymentRows([
       ...splitPaymentRows,
-      { customer: "", source: "", sourceType: "", amount: "" },
-    ]);
-  };
-
+      { customer: "", source: "", sourceType: "", amount: "" }
+    ])
+  }
+  console.log(splitPaymentRows)
   const removeSplitPaymentRow = (index) => {
     if (splitPaymentRows.length > 1) {
       const updatedRows = splitPaymentRows.filter((_, i) => i !== index);
@@ -595,23 +606,33 @@ console.log( paymentDetails?.printData?.selectedCheckOut?.length > 0)
     }
   };
 
-  const updateSplitPaymentRow = (index, field, value) => {
-    const updatedRows = [...splitPaymentRows];
-    console.log(index);
-    console.log(field);
+  const updateSplitPaymentRow = (index, field, value, name) => {
+    const updatedRows = [...splitPaymentRows]
+    console.log(index)
+    console.log(field)
+    console.log(value)
+    console.log(field)
+    console.log(updatedRows)
     if (field === "source") {
       console.log(updatedRows);
       console.log(combinedSources);
       // When source changes, find the source details and update sourceType
-      const selectedSource = combinedSources.find((s) => s.id === value);
-      updatedRows[index].source = value;
-      updatedRows[index].sourceType = selectedSource ? selectedSource.type : "";
+      const selectedSource = combinedSources.find((s) => s.id === value)
+      console.log(selectedSource)
+      updatedRows[index].source = value
+      updatedRows[index].sourceType = selectedSource ? selectedSource.type : ""
       updatedRows[index].subsource =
         selectedSource.name === "paytm" || selectedSource.name === "gpay"
           ? "upi"
           : selectedSource.name === "card"
             ? "card"
-            : selectedSource.type;
+            : selectedSource.type
+    } else if (field === "customer") {
+      console.log(name)
+      console.log(field)
+
+      updatedRows[index].customerName = name
+      updatedRows[index][field] = value
     } else {
       updatedRows[index][field] = value;
     }
@@ -760,11 +781,13 @@ console.log( paymentDetails?.printData?.selectedCheckOut?.length > 0)
       }
 
       // Aggregate cash and online amounts from split rows
-      let totalCash = 0;
-      let totalOnline = 0;
-      let totalbank = 0;
-      let totalcard = 0;
-      let totalupi = 0;
+      let totalCash = 0
+      let totalOnline = 0
+      let totalbank = 0
+      let totalcard = 0
+      let totalupi = 0
+      let totalcredit = 0
+      console.log(splitPaymentRows)
 
       splitPaymentRows.forEach((row) => {
         if (row.sourceType === "cash") {
@@ -778,9 +801,11 @@ console.log( paymentDetails?.printData?.selectedCheckOut?.length > 0)
           } else if (row.subsource === "card") {
             totalcard += parseFloat(row.amount) || 0;
           }
+        } else {
+          totalcredit += parseFloat(row.amount) || 0
         }
-      });
-
+      })
+      console.log(splitPaymentRows)
       paymentDetails = {
         cashAmount: totalCash,
         onlineAmount: totalOnline,
@@ -791,9 +816,9 @@ console.log( paymentDetails?.printData?.selectedCheckOut?.length > 0)
           bank: totalbank,
           card: totalcard,
           upi: totalupi,
-          credit: 0,
-        },
-      };
+          credit: totalcredit
+        }
+      }
     }
 
     console.log({
@@ -809,18 +834,23 @@ console.log( paymentDetails?.printData?.selectedCheckOut?.length > 0)
     console.log(selectedCheckOut.length);
 
     if (partial) {
-      console.log("Hhhh");
-      console.log(dateandstaysdata);
-      proceedToCheckout(dateandstaysdata, processedCheckoutData);
-      dispatch(setPaymentDetails(paymentDetails));
-      dispatch(setSelectedParty(selectedCustomer));
-      dispatch(setSelectedPaymentMode(paymentMode));
-      dispatch(setSelectedSplitPayment(splitPaymentRows));
-      dispatch(setOnlinepartyName(selectedonlinePartyname));
-      dispatch(setOnlineType(selectedOnlinetype));
-      setIsPartial(false);
+      console.log("Hhhh")
+      console.log(dateandstaysdata)
+      proceedToCheckout(dateandstaysdata, processedCheckoutData)
+      console.log(paymentDetails)
+      dispatch(setPaymentDetails(paymentDetails))
+      dispatch(setSelectedParty(selectedCustomer))
+      dispatch(setSelectedPaymentMode(paymentMode))
+      dispatch(setSelectedSplitPayment(splitPaymentRows))
+      dispatch(setOnlinepartyName(selectedonlinePartyname))
+      dispatch(setOnlineType(selectedOnlinetype))
+      setIsPartial(false)
     } else {
-      console.log("hhhh");
+      console.log("hhhh")
+      console.log(paymentDetails)
+      console.log(selectedCheckOut)
+
+
       try {
         const response = await api.post(
           `/api/sUsers/convertCheckOutToSale/${cmp_id}`,
@@ -1504,10 +1534,11 @@ console.log( paymentDetails?.printData?.selectedCheckOut?.length > 0)
             {location.pathname === "/sUsers/checkOutList" && (
               <button
                 onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedCustomer(el.customerId?._id);
-                  setSelectedCheckOut([el]);
-                  const hasPrint1 = configurations[0]?.defaultPrint?.print1;
+                  e.stopPropagation()
+                  setSelectedCustomer(el.customerId?._id)
+                  setSelectedCheckOut([el])
+                  const hasPrint1 = configurations[0]?.defaultPrint?.print1
+console.log(hasPrint1)
 
                   navigate(
                     hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint",
@@ -2059,13 +2090,23 @@ const handlePrintShow = () => {
                         <div className="col-span-5">
                           <select
                             value={row.customer}
-                            onChange={(e) =>
+                            onChange={(e) => {
+                              const selectedCustomerObj =
+                                selectedCheckOut?.find(
+                                  (item) =>
+                                    item.customerId?._id === e.target.value
+                                )
+
+                              const selectedCustomerName =
+                                selectedCustomerObj?.customerId?.partyName
+                              console.log(selectedCustomerName)
                               updateSplitPaymentRow(
                                 index,
                                 "customer",
                                 e.target.value,
+                                selectedCustomerName
                               )
-                            }
+                            }}
                             className="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
                           >
                             <option value="">Select Customer</option>
@@ -2095,10 +2136,16 @@ const handlePrintShow = () => {
                             className="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
                           >
                             <option value="">Select Source</option>
+                            {/* <option value="credit">Credit</option> */}
                             {combinedSources.map((source) => (
                               <option key={source.id} value={source.id}>
                                 {source.name} (
-                                {source.type === "cash" ? "Cash" : "Bank"})
+                                {source.type === "cash"
+                                  ? "Cash"
+                                  : source.type === "credit"
+                                    ? "credit"
+                                    : "Bank"}
+                                )
                               </option>
                             ))}
                           </select>
