@@ -14,7 +14,7 @@ import FoodPlanComponent from "./FoodPlanComponent";
 import useFetch from "@/customHook/useFetch";
 import OutStandingModal from "./OutStandingModal";
 import PaymentModal from "./PaymentModal";
-import { set } from "lodash";
+
 
 function BookingForm({
   isLoading = false,
@@ -25,6 +25,7 @@ function BookingForm({
   isFor,
   outStanding = [],
   roomId,
+  rooms=[],
   isTariffRateChange,
   submitLoader,
   isShowGrc = false,
@@ -62,6 +63,8 @@ function BookingForm({
     if (visitOfPurposeData) setVisitOfPurpose(visitOfPurposeData?.data);
   }, [visitOfPurposeData]);
 
+ 
+
   const today = new Date();
   const isoDate = (d) => d.toISOString().split("T")[0];
   const arrivalDateDefault = isoDate(today);
@@ -76,7 +79,7 @@ function BookingForm({
       setSaveLoader(true);
     }
   }, [submitLoader]);
-
+ 
   const [formData, setFormData] = useState({
     bookingDate: arrivalDateDefault,
     voucherNumber: voucherNumber,
@@ -125,6 +128,17 @@ function BookingForm({
     grcno: "",
     addTaxWithRate: configurations[0]?.addRateWithTax?.hotelSale,
   });
+  
+   
+
+  useEffect(() => {
+    if (rooms) {
+      // setFormData((prevFormData) => ({
+      //   ...prevFormData,
+      // }));
+    }
+  }, [rooms]);
+
 
   useEffect(() => {
     if (editData) {
@@ -196,6 +210,8 @@ function BookingForm({
       }));
     }
   }, [editData]);
+
+
 
   useEffect(() => {
     if (roomId) setSelectedRoomId(roomId);
@@ -371,6 +387,8 @@ function BookingForm({
       fetchData();
     }
   }, [fetchData, editData, isFor]);
+
+
   // Fixed calculation: Room total + Pax + Food Plan = Total Amount, then apply discount
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -410,6 +428,8 @@ function BookingForm({
     formData.discountAmount,
     formData.totalAdvance,
   ]);
+
+ 
 
   const handleDiscountPercentageChange = (e) => {
     const { value } = e.target;
@@ -1503,6 +1523,7 @@ function BookingForm({
                           selectedRoomId={selectedRoomId}
                           isTariffRateChange={isTariffRateChange}
                           roomIdToUpdate={roomId}
+                          roomFromDashboard={rooms}
                           addTaxWithRate={formData.addTaxWithRate}
                         />
                       </div>

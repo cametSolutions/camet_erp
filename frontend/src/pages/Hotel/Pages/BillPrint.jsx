@@ -1,21 +1,18 @@
-import { useEffect, useState, useRef, useMemo } from "react"
-import { useLocation, useNavigate } from "react-router-dom"
-import { useSelector } from "react-redux"
-import { toast } from "react-toastify"
-import { useReactToPrint } from "react-to-print"
-import api from "@/api/api"
-import Logo from "../../../assets/images/hill.png"
-import TitleDiv from "@/components/common/TitleDiv"
-import { jsPDF } from "jspdf"
-import "jspdf-autotable"
-// import {
-//   handlePrintInvoice,
-//   handleDownloadPDF,
-// } from "../PrintSide/generateHotelInvoicePDF ";
+import { useEffect, useState, useRef, useMemo } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { toast } from "react-toastify";
+
+import api from "@/api/api";
+
+import TitleDiv from "@/components/common/TitleDiv";
+
+import "jspdf-autotable";
 import {
   handleBillPrintInvoice,
   handleBillDownloadPDF
 } from "../PrintSide/generateBillPrintPDF"
+
 
 const HotelBillPrint = () => {
   // Router and Redux state
@@ -415,8 +412,8 @@ console.log(stayDays)
           docNos: []
         }
       }
-
-      roomServiceTotals[roomId].amount += amount
+      roomServiceTotals[roomId].date = kot.date
+      roomServiceTotals[roomId].amount += amount;
       if (kot?.salesNumber) {
         roomServiceTotals[roomId].docNos.push(kot.salesNumber)
       }
@@ -431,11 +428,14 @@ console.log(stayDays)
       const docNo = roomServiceTotals[roomId].docNos.join(", ") || "-"
 
       console.log(
-        `Adding Room Service line: ${roomName} = ${roomServiceTotals[roomId].amount}`
-      )
+        `Adding Room Service line: ${roomName} = ${roomServiceTotals[roomId].amount}`,
+      );
+      console.log("xxx ", roomServiceTotals[roomId].date);
+      const d = new Date(roomServiceTotals[roomId].date);
+      let date =`${d.getDate().toString().padStart(2, "0")}-${(d.getMonth() + 1).toString().padStart(2, "0")}-${d.getFullYear()}`;
 
       lines.push({
-        date: formatDate(new Date()),
+        date: date,
         description: `Room Service - ${roomName}`,
         docNo: docNo,
         amount: Number(roomServiceTotals[roomId].amount || 0),
@@ -465,8 +465,12 @@ console.log(stayDays)
           docNos: []
         }
       }
+ 
+      dineInTotals[tableNo].amount += amount;
+      const d = new Date(kot.date);
+      dineInTotals[tableNo].date =
+        `${d.getDate().toString().padStart(2, "0")}-${(d.getMonth() + 1).toString().padStart(2, "0")}-${d.getFullYear()}`;
 
-      dineInTotals[tableNo].amount += amount
       if (kot?.salesNumber) {
         dineInTotals[tableNo].docNos.push(kot.salesNumber)
       }
@@ -476,11 +480,11 @@ console.log(stayDays)
       const docNo = dineInTotals[tableNo].docNos.join(", ") || "-"
 
       console.log(
-        `Adding Dine In line: Table ${tableNo} = ${dineInTotals[tableNo].amount}`
-      )
-
+        `Adding Dine In line: Table ${tableNo} = ${dineInTotals[tableNo].amount}`,
+      );
+      console.log("yyy ", tableNo);
       lines.push({
-        date: formatDate(new Date()),
+        date: dineInTotals[tableNo].date,
         description: `Restaurant Dine In - ${tableNo}`,
         docNo: docNo,
         amount: Number(dineInTotals[tableNo].amount || 0),
@@ -535,8 +539,8 @@ console.log(doc)
             Number(i.foodPlanAmountWithOutTax || 0)),
         0
       )
-      .toFixed(2)
-    console.log(foodPlanAmountWithTax)
+      .toFixed(2);
+    console.log(foodPlanAmountWithTax);
 
     const additionalPaxAmount = (doc.selectedRooms || []).reduce(
       (total, room) => {
@@ -563,9 +567,9 @@ console.log(doc)
         t +
         Number(i.additionalPaxDataWithTax || 0) -
         Number(i.additionalPaxDataWithOutTax || 0),
-      0
-    )
-    console.log(roomTariffTotal)
+      0,
+    );
+    console.log(roomTariffTotal);
 
     const sgstAmount = ((roomTaxTotal + additionalPaxTax) / 2).toFixed(2)
     const cgstAmount = ((roomTaxTotal + additionalPaxTax) / 2).toFixed(2)
@@ -627,8 +631,8 @@ console.log(doc)
         const halfDayCharges = roomDays.filter(
           (item) =>
             item.description?.includes("Half Day") ||
-            item.description?.includes("Half Tariff")
-        )
+            item.description?.includes("Half Tariff"),
+        );
 
         // 1. Add FULL DAY room rent charges
         fullDayCharges.forEach((item) => {
@@ -1034,11 +1038,11 @@ console.log("hh")
         mode: "Credit",
         total: grandTotal,
         advance: advanceTotal,
-        netPay
-      }
-    }
-  }
-  console.log(selectedCheckOut)
+        netPay,
+      },
+    };
+  };
+  console.log(selectedCheckOut);
   // Build all billData per doc; decide where advances appear
   const bills = useMemo(() => {
     const docs = selectedCheckOut || []
@@ -1061,9 +1065,9 @@ console.log(bills)
     if (!multi.length) return
 
     if (!isPrint) {
-      handleBillDownloadPDF(multi) // pass array
+      handleBillDownloadPDF(multi,organization); // pass array
     } else {
-      handleBillPrintInvoice(multi) // pass array
+      handleBillPrintInvoice(multi,organization); // pass array
     }
   }
   console.log(paymentModeDetails)
@@ -1183,9 +1187,9 @@ console.log(bills)
               }}
             >
               <div style={{ flex: "0 0 120px" }}>
-                {Logo && (
+                {organization?.logo && (
                   <img
-                    src={billData?.hotel?.logo}
+                    src={organization?.logo}
                     alt="Logo"
                     style={{ width: "120px", height: "auto" }}
                   />

@@ -26,6 +26,8 @@ const HotelDashboard = () => {
   const [bookingsLoading, setBookingsLoading] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
   const [showRoomSwapModal, setShowRoomSwapModal] = useState(false);
+  const [showBookingOrCheckingSelection, setShowBookingOrCheckingSelection] =
+    useState(false);
 
   const [tooltipX, setTooltipX] = useState(0);
   const [tooltipY, setTooltipY] = useState(0);
@@ -506,9 +508,15 @@ const HotelDashboard = () => {
     scrollbarColor: "rgba(0, 0, 0, 0.7) rgba(0, 0, 0, 0.2)", // black thumb, lighter black track
   };
   const handleConvertToAvailable = (room) => {
-    console.log(room);
+    const baseStatus =
+      selectedRooms.length > 0 ? selectedRooms[0].status : room.status;
+
+    const allowedStatuses =
+      baseStatus === "available"
+        ? ["available"]
+        : ["dirty", "blocked", "booked"];
+
     // Only allow these statuses
-    const allowedStatuses = ["dirty", "blocked", "booked"];
 
     if (!allowedStatuses.includes(room.status)) return;
 
@@ -526,22 +534,26 @@ const HotelDashboard = () => {
     setSelectedRooms((prev) => [...prev, newObject]);
   };
 
-  const sendConvertToAvailable = async() => {
+  const sendConvertToAvailable = async () => {
     console.log(selectedRooms);
-    try {
-      let response = api.post(`/api/sUsers/convertToAvailable/${cmp_id}`, {
-        selectedRooms: selectedRooms,
-      });
-      if (response?.data?.success) {
-        toast.success("Rooms converted to available successfully");
+    if (selectedRooms[0].status === "available") {
+      setShowBookingOrCheckingSelection(true);
+    } else {
+      try {
+        let response = api.post(`/api/sUsers/convertToAvailable/${cmp_id}`, {
+          selectedRooms: selectedRooms,
+        });
+        if (response?.data?.success) {
+          toast.success("Rooms converted to available successfully");
+        }
+      } catch (error) {
+        toast.error(error?.response?.data?.message);
+        console.error("Error converting to available:", error);
+      } finally {
+        setShowCovertToAvailable(false);
+        setSelectedRooms([]);
+        await fetchRooms(selectedDate);
       }
-    } catch (error) {
-      toast.error(error?.response?.data?.message);
-      console.error("Error converting to available:", error);
-    } finally {
-      setShowCovertToAvailable(false);
-      setSelectedRooms([]);
-       await fetchRooms(selectedDate);
     }
   };
 
@@ -1121,7 +1133,10 @@ const HotelDashboard = () => {
                     <div className="flex-shrink-0 flex items-center justify-between p-2.5 border-b border-white/20">
                       <div>
                         <h3 className="font-bold text-blue-400 text-sm">
-                          Convert to Available
+                          Convert to{" "}
+                          {selectedRooms?.[0]?.status === "available"
+                            ? "Booking / Checking"
+                            : "Available"}
                         </h3>
                         <p className="text-gray-400 text-xs mt-0.5">
                           {selectedRooms.length} room
@@ -1306,6 +1321,43 @@ const HotelDashboard = () => {
               >
                 Close
               </button>
+            </div>
+          </div>
+        )}
+        {showBookingOrCheckingSelection && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+            <div className="bg-white rounded-xl p-8 shadow-2xl max-w-md w-full">
+              <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">
+                Confirm Your Booking
+              </h2>
+
+              <p className="text-gray-600 text-center mb-8">
+                Are you ready to proceed with your booking?
+              </p>
+
+              <div className="flex gap-4">
+                <button
+                  onClick={() => {
+                    navigate("/sUsers/bookingPage", {
+                      state: { rooms:selectedRooms },
+                    });
+                  }}
+                  className="flex-1 bg-blue-600 text-white font-semibold py-3 rounded-lg hover:bg-blue-700 transition-all"
+                >
+                  Continue
+                </button>
+
+                <button
+                   onClick={() => {
+                    navigate("/sUsers/checkInPage", {
+                      state: { rooms:selectedRooms },
+                    });
+                  }}  
+                  className="flex-1 bg-gray-100 text-gray-800 font-semibold py-3 rounded-lg border border-blue-600 hover:bg-gray-200 transition-all"
+                >
+                  Checking
+                </button>
+              </div>
             </div>
           </div>
         )}

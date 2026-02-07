@@ -30,6 +30,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { FaRegEdit } from "react-icons/fa";
 import VoucherThreeInchPdf from "@/pages/voucher/voucherPdf/threeInchPdf/VoucherThreeInchPdf";
+import VoucherThreeInchPdfFormat2 from "@/pages/voucher/voucherPdf/threeInchPdf/VoucherThreeInchPdfFormat2";
 import { useReactToPrint } from "react-to-print";
 import CustomerSearchInputBox from "@/pages/Hotel/Components/CustomerSearchInPutBox";
 
@@ -47,7 +48,7 @@ const [isComplimentary, setIsComplimentary] = useState(false);
     useState([]);
   const [additionalCharges, setAdditionalCharges] = useState([]);
   const [selectedDiscountCharge, setSelectedDiscountCharge] = useState(null);
-
+const [billFormat, setBillFormat] = useState("format1");
   const [note, setNote] = useState("");
 
   const [saveLoader, setSaveLoader] = useState(false);
@@ -203,6 +204,21 @@ const [isComplimentary, setIsComplimentary] = useState(false);
       }
     }
   }, [paymentTypeData]);
+
+
+
+useEffect(() => {
+  // Get format from organization configuration
+  const print1 = org?.configurations?.[0]?.defaultPrint?.restaurantPrint1;
+  const print2 = org?.configurations?.[0]?.defaultPrint?.restaurantPrint2;
+  
+  if (print2) {
+    setBillFormat("format2");
+  } else if (print1) {
+    setBillFormat("format1");
+  }
+}, [org]);
+
 
   // const fetchData = useCallback(async () => {
   //   try {
@@ -945,28 +961,31 @@ useEffect(() => {
 
   return (
     <>
-      {showVoucherPdf && (
-        <div>
-          {/* <VoucherPdf
-            data={previewForSales}
-            org={org}
-            userType="secondaryUser"
-            tab="sales"
-            isPreview={true}
-
-            sendToParent={handleSaveSales}
-          /> */}
-          <VoucherThreeInchPdf
-            contentToPrint={contentToPrint}
-            data={previewForSales}
-            org={org}
-            tab="sale"
-            isPreview={true}
-            sendToParent={handleSaveSales}
-            handlePrintData={handlePrint}
-          />
-        </div>
-      )}
+     {showVoucherPdf && (
+  <div>
+    {billFormat === "format1" ? (
+      <VoucherThreeInchPdf
+        contentToPrint={contentToPrint}
+        data={previewForSales}
+        org={org}
+        tab="sale"
+        isPreview={true}
+        sendToParent={handleSaveSales}
+        handlePrintData={handlePrint}
+      />
+    ) : (
+      <VoucherThreeInchPdfFormat2
+        contentToPrint={contentToPrint}
+        data={previewForSales}
+        org={org}
+        tab="sale"
+        isPreview={true}
+        sendToParent={handleSaveSales}
+        handlePrintData={handlePrint}
+      />
+    )}
+  </div>
+)}
       {!showVoucherPdf && (
         <div className="min-h-screen bg-gray-50">
           {/* Header */}

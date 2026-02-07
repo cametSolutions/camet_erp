@@ -42,7 +42,7 @@ export default function EnhancedCheckoutModal({
           const diffTime = checkoutDate - arrival
           const calculatedDays =
             diffTime === 0 ? 1 : Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-          console.log(diffTime)
+          console.log(calculatedDays)
           const time = new Date().toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit",

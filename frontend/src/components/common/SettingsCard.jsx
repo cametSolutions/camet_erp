@@ -38,6 +38,24 @@ function SettingsCard({
   const handleCheckboxChange = (dbField, currentValue) => {
     console.log("Checkbox change:", dbField, "current:", currentValue, "new:", !currentValue);
     
+
+ if (option.title === "Print Format") {
+      // If unchecking, don't allow (at least one must be selected)
+      if (currentValue === true) {
+        return; // Prevent unchecking
+      }
+
+      // If checking this one, send updates for all checkboxes
+      option.checkboxes.forEach((checkbox) => {
+        const shouldBeChecked = checkbox.dbField === dbField;
+        
+        handleToggleChangeFromParent({
+          title: checkbox.dbField,
+          value: shouldBeChecked,
+        });
+      });
+    } else {
+
     // Handle nested fields (like "defaultPrint.print1")
     if (dbField.includes('.')) {
       const [parentField, childField] = dbField.split('.');
@@ -56,7 +74,8 @@ function SettingsCard({
         checked: !currentValue
       });
     }
-  };
+  }
+}
 
   return (
     <div>
@@ -113,7 +132,8 @@ function SettingsCard({
         ) : null}
       </div>
     </div>
-  );
+  )
 }
+
 
 export default SettingsCard;
