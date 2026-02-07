@@ -512,8 +512,8 @@ const HotelDashboard = () => {
       selectedRooms.length > 0 ? selectedRooms[0].status : room.status;
 
     const allowedStatuses =
-      baseStatus === "available"
-        ? ["available"]
+      baseStatus === "available" || baseStatus === "vacant"
+        ? ["available", "vacant"]
         : ["dirty", "blocked", "booked"];
 
     // Only allow these statuses
