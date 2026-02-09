@@ -13,6 +13,7 @@ function CheckInPage() {
   const location = useLocation()
   const bookingData = location?.state?.bookingData
   const roomId = location?.state?.roomId
+  const rooms = location?.state?.rooms
   const isSubmittingRef = useRef(false)
   const [outStanding, setOutStanding] = useState([])
   const [loading, setLoading] = useState(false)
@@ -30,6 +31,7 @@ function CheckInPage() {
       setOutStanding(data?.data)
     }
   }, [data])
+ 
   useEffect(() => {
     if (bookingData) {
       bookingData.previousAdvance = Number(bookingData?.advanceAmount || 0)
@@ -69,6 +71,7 @@ console.log("HHH")
       isSubmittingRef.current = false
     }
   }
+  console.log(roomId)
 
   return (
     <>
@@ -91,6 +94,7 @@ console.log("HHH")
               }
             ]}
           />
+          
           <BookingForm
             handleSubmit={handleSubmit}
             setIsLoading={setLoading}
@@ -99,6 +103,7 @@ console.log("HHH")
             editData={bookingData}
             outStanding={outStanding}
             roomId={roomId}
+            rooms={rooms}
              isShowGrc={true}
           />
         </div>

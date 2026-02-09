@@ -94,6 +94,7 @@ function AvailableRooms({
   sendToParent,
   formData,
   selectedRoomId,
+  roomFromDashboard =[],
   isTariffRateChange = false,
   roomIdToUpdate = null,
   addTaxWithRate = false,
@@ -163,6 +164,13 @@ function AvailableRooms({
         if (specificRoom) {
           handleSelect(specificRoom);
         }
+      }else if (roomFromDashboard?.length > 0) {
+        console.log(roomFromDashboard);
+        roomFromDashboard.map((room) => {
+          let specificRoom = rooms.find((roomId) => roomId._id === room.roomId);
+          console.log(specificRoom);
+          handleSelect(specificRoom);
+        })
       }
     };
 

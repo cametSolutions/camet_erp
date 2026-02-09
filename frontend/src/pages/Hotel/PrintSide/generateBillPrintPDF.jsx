@@ -497,7 +497,8 @@ const drawSingleBill = async (doc, billData, billNo, totalBills, base64Logo) => 
 // Main print/download logic
 export const generateBillPrintPDF = async (
   billDataOrArray,
-  isPrint = false
+  isPrint = false,
+  organization
 ) => {
   const bills = Array.isArray(billDataOrArray)
     ? billDataOrArray
@@ -508,14 +509,12 @@ export const generateBillPrintPDF = async (
   
   // Load logo from the first bill's hotel logo URL
   let base64Logo = null;
-  const logoUrl = bills[0]?.hotel?.logo;
-  
-  if (logoUrl) {
-    try {
-      base64Logo = await getBase64FromUrl(logoUrl);
-    } catch (err) {
-      console.error("Failed to load logo from URL:", logoUrl, err);
-    }
+
+  try {
+    base64Logo = await getBase64FromUrl(organization?.logo);
+  } catch (err) {
+    console.error("Failed to load logo", err);
+
   }
 
   const totalBills = bills.length;
@@ -548,10 +547,10 @@ export const generateBillPrintPDF = async (
   }
 };
 
-export const handleBillPrintInvoice = async (billDataOrArray) => {
-  await generateBillPrintPDF(billDataOrArray, true);
+export const handleBillPrintInvoice = async (billDataOrArray,organization) => {
+  await generateBillPrintPDF(billDataOrArray, true,organization);
 };
 
-export const handleBillDownloadPDF = async (billDataOrArray) => {
-  await generateBillPrintPDF(billDataOrArray, false);
+export const handleBillDownloadPDF = async (billDataOrArray,organization) => {
+  await generateBillPrintPDF(billDataOrArray, false,organization);
 };
