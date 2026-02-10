@@ -53,6 +53,7 @@ function BookingForm({
     `/api/sUsers/getProductSubDetails/${cmp_id}?type=roomType`,
   );
   useEffect(() => {
+    
     if (data) setRoomType(data?.data);
   }, [data]);
 
@@ -60,6 +61,7 @@ function BookingForm({
     `/api/sUsers/getVisitOfPurpose/${cmp_id}`,
   );
   useEffect(() => {
+    
     if (visitOfPurposeData) setVisitOfPurpose(visitOfPurposeData?.data);
   }, [visitOfPurposeData]);
 
@@ -74,6 +76,7 @@ function BookingForm({
   const currentDateDefault = isoDate(today);
 
   useEffect(() => {
+    
     if (submitLoader) {
       setShowPaymentModal(true);
       setSaveLoader(true);
@@ -129,18 +132,11 @@ function BookingForm({
     addTaxWithRate: configurations[0]?.addRateWithTax?.hotelSale,
   });
   
-   
-
-  useEffect(() => {
-    if (rooms) {
-      // setFormData((prevFormData) => ({
-      //   ...prevFormData,
-      // }));
-    }
-  }, [rooms]);
+  
 
 
   useEffect(() => {
+    
     if (editData) {
       setSelectedParty(editData?.customerId);
       setSelectedGuest(editData?.guestId);
@@ -214,6 +210,7 @@ function BookingForm({
 
 
   useEffect(() => {
+    
     if (roomId) setSelectedRoomId(roomId);
   }, [roomId]);
 
@@ -383,6 +380,7 @@ function BookingForm({
   }, [cmp_id, isFor, setIsLoading]);
 
   useEffect(() => {
+    
     if (!editData || isFor === "deliveryNote" || isFor === "sales") {
       fetchData();
     }
@@ -391,6 +389,7 @@ function BookingForm({
 
   // Fixed calculation: Room total + Pax + Food Plan = Total Amount, then apply discount
   useEffect(() => {
+    
     const handler = setTimeout(() => {
       const roomTotal = Number(formData?.roomTotal || 0);
       const paxTotal = Number(formData?.paxTotal || 0);

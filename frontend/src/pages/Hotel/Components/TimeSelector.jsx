@@ -33,6 +33,7 @@ const TimeSelector = ({
 
   // Parse initial time
   useEffect(() => {
+    
     const parseTime = (timeStr) => {
       const [time, period] = timeStr.split(' ');
       const [hour, minute] = time.split(':');
@@ -47,6 +48,7 @@ const TimeSelector = ({
 
   // Close editing when clicking outside
   useEffect(() => {
+    
     const handleClickOutside = (event) => {
       if (containerRef.current && !containerRef.current.contains(event.target)) {
         handleCancel();
@@ -61,6 +63,7 @@ const TimeSelector = ({
 
   // Handle keyboard events
   useEffect(() => {
+    
     const handleKeyDown = (event) => {
       if (!isEditing) return;
       
@@ -78,6 +81,7 @@ const TimeSelector = ({
 
   // useEffect used to sent the selected time to the parent
   useEffect(() => {
+    
     if(selectedTime){
       onTimeChange(selectedTime)
     }

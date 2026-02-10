@@ -69,7 +69,7 @@ function AccVoucherInitialPageEdit() {
     note,
     mode,
   } = useSelector((state) => state.commonAccountingVoucherSlice);
-
+console.log(voucherTypeFromRedux)
   const [voucherNumber, setVoucherNumber] = useState("");
   const [selectedDate, setSelectedDate] = useState(() => {
     const parsedDate = new Date(dateRedux || new Date());
@@ -90,7 +90,8 @@ function AccVoucherInitialPageEdit() {
   const getVoucherNumberTitle = () => {
     return location.state?.voucherType + "Number";
   };
-
+console.log(
+"hhh")
   const getVoucherType = () => {
     if (voucherTypeFromRedux) return;
     /// if the voucherType is not present in redux then we will take it from the location state

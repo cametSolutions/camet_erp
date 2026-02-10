@@ -27,7 +27,7 @@ function AccVoucherInitialPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
-
+console.log("h")
     //// check if the user is admin
   const isAdmin =
     JSON.parse(localStorage.getItem("sUserData")).role === "admin"
@@ -131,7 +131,7 @@ function AccVoucherInitialPage() {
       setVoucherNumber(voucherNumberRedux);
     }
   }, []);
-
+console.log("h")
   /// to get voucher number name
 
   const getVoucherNumberTitle = () => {
@@ -256,6 +256,7 @@ function AccVoucherInitialPage() {
         return toast.error("Cash details are required.");
       }
     }
+console.log(voucherType)
 
     // If validation passes, proceed with the form submission
     try {
