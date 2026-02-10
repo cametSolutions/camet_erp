@@ -292,6 +292,7 @@ function AvailableRooms({
   );
 
   useEffect(() => {
+    
     if (!bookings?.length) return;
 
     const recalc = async () => {
@@ -405,6 +406,7 @@ function AvailableRooms({
   );
 
   useEffect(() => {
+    console.log("hai")
     if (pendingRoomQueue.length === 0) return;
     
     const roomIdToUpdate = pendingRoomQueue[0];
@@ -432,6 +434,8 @@ function AvailableRooms({
   }, [pendingRoomQueue, bookings, calculateTax]);
 
   useEffect(() => {
+
+    console.log("jsdkf")
     if (bookings.length > 0) {
       const total = bookings.reduce(
         (acc, b) => acc + Number(b.amountAfterTax || b.totalAmount || 0),
@@ -473,7 +477,8 @@ function AvailableRooms({
         setTotalAmount(finalTotal);
         sendToParent(bookings, finalTotal);
       }
-    } else {
+    }
+     else {
       setTotalAmount(0);
       sendToParent([], 0);
     }
@@ -481,7 +486,7 @@ function AvailableRooms({
     bookings,
     formData?.foodPlanTotal,
     roomIdToUpdate,
-    sendToParent,
+    // sendToParent,
   ]);
   
 

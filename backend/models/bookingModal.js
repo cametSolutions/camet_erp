@@ -172,6 +172,11 @@ const bookingSchema = new mongoose.Schema(
       credit: { type: Number, default: 0 },
       card: { type: Number, default: 0 },
     },
+    checkoutpaymenttypedetails: [{
+      customerName: { type: String },
+      mode: { type: String },
+      amount: { type: Number }
+    }],
     grandTotal: String,
     customerId: { type: mongoose.Schema.Types.ObjectId, ref: "Party" },
     customerName: String,
