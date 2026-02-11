@@ -637,7 +637,7 @@ export const generateBillPrintPDF = async (
     if (w) {
       w.onload = () => {
         w.print();
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        setTimeout(() => URL.revokeObjectURL(url), 1010);
       };
     } else {
       alert("Please allow popups to print the invoice");
