@@ -36,8 +36,7 @@ import TitleDiv from "@/components/common/TitleDiv";
 import { Check, CreditCard, X, Banknote, Plus, Trash2 } from "lucide-react";
 import useFetch from "@/customHook/useFetch";
 import PrintModal from "../Components/PrintModal";
-import { set } from "mongoose";
-import { custom } from "zod";
+
 
 function BookingList() {
   const location = useLocation();
@@ -1281,7 +1280,9 @@ console.log(params)
       if (!dateString) return "-";
       return new Date(dateString).toLocaleDateString("en-GB");
     };
+
     console.log(el);
+
     return (
       <div
         key={index}
@@ -1292,10 +1293,10 @@ console.log(params)
   cursor-pointer transition-all duration-200 ease-in-out 
  hover:bg-gray-50 
   ${
-    isCheckOutSelected(el) && location.pathname === "/sUsers/checkInList"
+   el.isHold ?  "bg-red-100 border-blue-100" : isCheckOutSelected(el) && location.pathname === "/sUsers/checkInList"
       ? "bg-blue-100 border-blue-400 ring-2 ring-blue-200"
       : ""
-  }${isSelected(el) ? "bg-blue-50 border-blue-100" : "bg-white hover:bg-gray-50"}
+  }${isSelected(el) ? "bg-blue-50 border-blue-100" :  "bg-white hover:bg-gray-50"}
 `}
         onClick={() => {
           if (el?.checkInId?.status === "checkOut") return;
@@ -1797,7 +1798,7 @@ const handlePrintShow = () => {
           />
         )}
 
-        {showPrintConfirmModal && (
+        {showEnhancedHoldModal && (
           <HoldModal
             isOpen={showEnhancedHoldModal}
             closeModal={setShowEnhancedHoldModal}
@@ -1824,8 +1825,8 @@ const handlePrintShow = () => {
                   >
                     Proceed to Checkout
                   </button>
-
-                  {/* <button
+{/* 
+                  <button
                     className="bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded"
                     onClick={() => setShowEnhancedHoldModal(true)}
                   >
