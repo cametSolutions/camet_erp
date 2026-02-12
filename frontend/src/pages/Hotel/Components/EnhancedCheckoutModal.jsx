@@ -7,6 +7,7 @@ import CustomerSearchInputBox from "../Components/CustomerSearchInPutBox";
 import CheckoutDateModal from "./CheckoutDateModal";
 import useFetch from "@/customHook/useFetch";
 import { useSelector } from "react-redux";
+import {useNavigate } from "react-router-dom";
 
 export default function EnhancedCheckoutModal({
   isOpen = true,
@@ -23,6 +24,7 @@ export default function EnhancedCheckoutModal({
   console.log(checkoutMode);
   console.log(isOpen);
   console.log("hfafffff");
+  const navigate = useNavigate();
   // State to manage room-customer assignments
   const [roomAssignments, setRoomAssignments] = useState([]);
   const [errors, setErrors] = useState({});
@@ -709,7 +711,10 @@ console.log(checkouts)
         {/* ================= FOOTER ================= */}
         <div className="flex-shrink-0 border-t px-4 py-2 flex justify-end gap-2 bg-white">
           <button
-            onClick={() => closemodal(false)}
+            onClick={() => {
+              closemodal(false)
+              navigate ("/sUsers/checkInList", { replace: true, state: null });
+            }}
             className="px-3 py-1.5 text-xs border rounded-md hover:bg-gray-100"
           >
             Cancel
