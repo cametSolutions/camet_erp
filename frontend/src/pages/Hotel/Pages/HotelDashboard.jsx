@@ -26,6 +26,7 @@ const HotelDashboard = () => {
   const [bookingsLoading, setBookingsLoading] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
   const [showRoomSwapModal, setShowRoomSwapModal] = useState(false);
+  const [convertDataToCheckout, setConvertDataToCheckout] = useState([]);
   const [showBookingOrCheckingSelection, setShowBookingOrCheckingSelection] =
     useState(false);
 
@@ -508,13 +509,20 @@ const HotelDashboard = () => {
     scrollbarColor: "rgba(0, 0, 0, 0.7) rgba(0, 0, 0, 0.2)", // black thumb, lighter black track
   };
   const handleConvertToAvailable = (room) => {
+    let findOne = selectedRooms.find((r) => r.roomId === room._id);
+    if (findOne) {
+      setSelectedRooms(selectedRooms.filter((r) => r.roomId !== room._id));
+      return;
+    }
     const baseStatus =
       selectedRooms.length > 0 ? selectedRooms[0].status : room.status;
 
     const allowedStatuses =
       baseStatus === "available" || baseStatus === "vacant"
         ? ["available", "vacant"]
-        : ["dirty", "blocked", "booked"];
+        : baseStatus == "occupied"
+          ? ["occupied"]
+          : ["dirty", "blocked", "booked"];
 
     // Only allow these statuses
 
@@ -523,12 +531,27 @@ const HotelDashboard = () => {
     // Check if room already selected
     const isAlreadySelected = selectedRooms.some((r) => r.roomId === room._id);
     if (isAlreadySelected) return;
+    let checkIn = {};
+    if (baseStatus == "occupied") {
+      checkIn = tooltipData?.checkins?.find((c) =>
+        c.selectedRooms?.some((sr) => sr.roomId === room._id),
+      );
+      console.log(checkIn);
+      let findConvert = convertDataToCheckout.some(
+        (c) => c._id === checkIn._id,
+      );
+      console.log(findConvert);
+      if (!findConvert) {
+        setConvertDataToCheckout((prev) => [...prev, checkIn]);
+      }
+    }
 
     // Add room to selectedRooms
     const newObject = {
       roomId: room._id,
       roomName: room.roomName,
       status: room.status,
+      bookingNumber: checkIn.voucherNumber,
     };
 
     setSelectedRooms((prev) => [...prev, newObject]);
@@ -536,8 +559,26 @@ const HotelDashboard = () => {
 
   const sendConvertToAvailable = async () => {
     console.log(selectedRooms);
-    if (selectedRooms[0].status === "available") {
+
+    if (
+      selectedRooms[0].status === "available" ||
+      selectedRooms[0].status === "vacant"
+    ) {
       setShowBookingOrCheckingSelection(true);
+    } else if (selectedRooms[0].status === "occupied") {
+      console.log(convertDataToCheckout);
+      const selectedRoomIds = selectedRooms.map((r) => r.roomId);
+
+      const actualCheckIn = convertDataToCheckout.filter((checkIn) =>
+        checkIn.selectedRooms.some((room) =>
+          selectedRoomIds.includes(room.roomId),
+        ),
+      );
+      navigate("/sUsers/checkInList", {
+        state: {
+          directConvertFromDashboard: actualCheckIn,
+        },
+      }); 
     } else {
       try {
         let response = api.post(`/api/sUsers/convertToAvailable/${cmp_id}`, {
@@ -1134,9 +1175,12 @@ const HotelDashboard = () => {
                       <div>
                         <h3 className="font-bold text-blue-400 text-sm">
                           Convert to{" "}
-                          {selectedRooms?.[0]?.status === "available"
+                          {selectedRooms?.[0]?.status === "available" ||
+                          selectedRooms?.[0]?.status === "vacant"
                             ? "Booking / Checking"
-                            : "Available"}
+                            : selectedRooms?.[0]?.status === "occupied"
+                              ? "CheckOut"
+                              : "Available"}
                         </h3>
                         <p className="text-gray-400 text-xs mt-0.5">
                           {selectedRooms.length} room
@@ -1339,7 +1383,7 @@ const HotelDashboard = () => {
                 <button
                   onClick={() => {
                     navigate("/sUsers/bookingPage", {
-                      state: { rooms:selectedRooms },
+                      state: { rooms: selectedRooms },
                     });
                   }}
                   className="flex-1 bg-blue-600 text-white font-semibold py-3 rounded-lg hover:bg-blue-700 transition-all"
@@ -1348,11 +1392,11 @@ const HotelDashboard = () => {
                 </button>
 
                 <button
-                   onClick={() => {
+                  onClick={() => {
                     navigate("/sUsers/checkInPage", {
-                      state: { rooms:selectedRooms },
+                      state: { rooms: selectedRooms },
                     });
-                  }}  
+                  }}
                   className="flex-1 bg-gray-100 text-gray-800 font-semibold py-3 rounded-lg border border-blue-600 hover:bg-gray-200 transition-all"
                 >
                   Checking

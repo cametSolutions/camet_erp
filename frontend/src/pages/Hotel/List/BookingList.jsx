@@ -26,7 +26,7 @@ import {
   setOnlinepartyName,
   setOnlineType,
   setPrintDetails,
-  removeAll
+  removeAll,
 } from "../../../../slices/hotelSlices/paymentSlice.js";
 import { FixedSizeList as List } from "react-window";
 import InfiniteLoader from "react-window-infinite-loader";
@@ -36,7 +36,6 @@ import TitleDiv from "@/components/common/TitleDiv";
 import { Check, CreditCard, X, Banknote, Plus, Trash2 } from "lucide-react";
 import useFetch from "@/customHook/useFetch";
 import PrintModal from "../Components/PrintModal";
-
 
 function BookingList() {
   const location = useLocation();
@@ -53,7 +52,7 @@ function BookingList() {
   const [activeTab, setActiveTab] = useState("pending");
   const [partial, setIsPartial] = useState(false);
   const [checkOutUpdated, setCheckOutUpdated] = useState(false);
-  const [selectedCheckOut, setSelectedCheckOut] = useState([] );
+  const [selectedCheckOut, setSelectedCheckOut] = useState([]);
   const [roomswithCurrentstatus, setroomswithCurrentStatus] = useState([]);
   const [selectedonlinePartyname, setselectedOnlinepartyName] = useState(null);
   const [selectedOnlinetype, setselectedOnlinetype] = useState(null);
@@ -93,17 +92,17 @@ function BookingList() {
       sourceType: "",
       amount: "",
       subsource: "",
-      customerName: ""
-    }
-  ])
+      customerName: "",
+    },
+  ]);
   const [bankAndCashSources, setBankAndCashSources] = useState({
     banks: [],
-    cashs: []
-  })
-  const [combinedSources, setCombinedSources] = useState([])
-  console.log(combinedSources)
-  const { roomId, roomName, filterByRoom } = location.state || {}
-  const paymentDetails = useSelector((state) => state.paymentSlice)
+    cashs: [],
+  });
+  const [combinedSources, setCombinedSources] = useState([]);
+  console.log(combinedSources);
+  const { roomId, roomName, filterByRoom } = location.state || {};
+  const paymentDetails = useSelector((state) => state.paymentSlice);
   const { _id: cmp_id, configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg,
   );
@@ -177,19 +176,19 @@ function BookingList() {
   }, [location.pathname, cmp_id]);
 
   // useEffect(() => {
-    // when global selectedCustomer changes, sync into selectedCheckOut
-    //     if (!selectedCustomer) return
-    // console.log("hhhh")
-    //     const match = parties.find((p) => p._id === selectedCustomer)
-    //     if (!match) return
-    // console.log(match)
-    // console.log("hhh")
-    //     setSelectedCheckOut((prev) =>
-    //       prev.map((item) => ({
-    //         ...item,
-    //         selectedCustomer: match
-    //       }))
-    //     )
+  // when global selectedCustomer changes, sync into selectedCheckOut
+  //     if (!selectedCustomer) return
+  // console.log("hhhh")
+  //     const match = parties.find((p) => p._id === selectedCustomer)
+  //     if (!match) return
+  // console.log(match)
+  // console.log("hhh")
+  //     setSelectedCheckOut((prev) =>
+  //       prev.map((item) => ({
+  //         ...item,
+  //         selectedCustomer: match
+  //       }))
+  //     )
   // }, [selectedCustomer]);
 
   useEffect(() => {
@@ -198,10 +197,18 @@ function BookingList() {
     }
   }, [partylist]);
 
-console.log( paymentDetails?.printData?.selectedCheckOut?.length > 0)
+  useEffect(() => {
+    if (location?.state?.directConvertFromDashboard.length > 0) {
+      setSelectedCheckOut(location?.state?.directConvertFromDashboard);
+      setShowEnhancedCheckoutModal(true);
+    }
+  }, [location?.state?.directConvertFromDashboard]);
 
   useEffect(() => {
-   if (location?.state?.selectedCheckOut && paymentDetails?.printData?.selectedCheckOut?.length > 0) {
+    if (
+      location?.state?.selectedCheckOut &&
+      paymentDetails?.printData?.selectedCheckOut?.length > 0
+    ) {
       console.log(location?.state?.selectedCheckOut);
       setSelectedCheckOut(location?.state?.selectedCheckOut);
       setSelectedCustomer(location?.state?.selectedCustomer?._id);
@@ -244,25 +251,25 @@ console.log( paymentDetails?.printData?.selectedCheckOut?.length > 0)
         ...prevData,
         total: location?.state?.balanceToPay,
       }));
-      if (location?.state?.isForPreview  ) {
+      if (location?.state?.isForPreview) {
         setShowPaymentModal(true);
       }
     }
   }, [location?.state?.selectedCheckOut]);
-  console.log("IIIIIIIIIII",location?.state?.selectedCheckOut);
+  console.log("IIIIIIIIIII", location?.state?.selectedCheckOut);
 
-  console.log("IIIIIIIIIII",paymentDetails.printData);
+  console.log("IIIIIIIIIII", paymentDetails.printData);
   // ADD THIS: Update total whenever selectedCheckOut changes
   useEffect(() => {
     if (selectedCheckOut && selectedCheckOut.length > 0) {
-      console.log("H")
-      const totalAmount = calculateTotalAmount(selectedCheckOut)
+      console.log("H");
+      const totalAmount = calculateTotalAmount(selectedCheckOut);
       setSelectedDataForPayment((prevData) => ({
         ...prevData,
-        total: totalAmount
-      }))
+        total: totalAmount,
+      }));
     }
-  }, [selectedCheckOut])
+  }, [selectedCheckOut]);
 
   const searchData = (data) => {
     if (searchTimeoutRef.current) {
@@ -315,11 +322,11 @@ console.log( paymentDetails?.printData?.selectedCheckOut?.length > 0)
             ...banks.map((bank) => ({
               id: bank._id,
               name: bank.bank_ledname,
-              type: "bank"
+              type: "bank",
             })),
-            { id: "credit", name: "credit", type: "credit" }
-          ]
-          setCombinedSources(combined)
+            { id: "credit", name: "credit", type: "credit" },
+          ];
+          setCombinedSources(combined);
         }
       } catch (error) {
         console.error("Error fetching bank and cash sources:", error);
@@ -389,7 +396,7 @@ console.log( paymentDetails?.printData?.selectedCheckOut?.length > 0)
           console.log("h");
           params.append("modal", "checkOut");
         }
-console.log(params)
+        console.log(params);
         const res = await api.get(
           `/api/sUsers/getBookings/${cmp_id}?${params}`,
           {
@@ -398,7 +405,6 @@ console.log(params)
         );
 
         let bookingData = res?.data?.bookingData || [];
-
 
         if (location.pathname === "/sUsers/checkInList") {
           bookingData = bookingData.flatMap((booking) => {
@@ -414,8 +420,8 @@ console.log(params)
         }
 
         if (pageNumber === 1) {
-          console.log("d")
-          setBookings(bookingData)
+          console.log("d");
+          setBookings(bookingData);
         } else {
           setBookings((prev) => [...prev, ...bookingData]);
         }
@@ -429,6 +435,7 @@ console.log(params)
       } finally {
         setIsLoading(false);
         setLoader(false);
+        setSelectedCheckOut([]);
       }
     },
 
@@ -452,10 +459,10 @@ console.log(params)
   // }, [selectedCheckOut]);
   console.log(selectedCustomer);
   const handleSingleCheckoutformultiplechekin = (selectcustomer) => {
-    console.log(selectedCustomer)
-    const match = parties.find((item) => item._id === selectcustomer)
-    if (!match) return
-    console.log(match)
+    console.log(selectedCustomer);
+    const match = parties.find((item) => item._id === selectcustomer);
+    if (!match) return;
+    console.log(match);
 
     setSelectedCheckOut((prev) =>
       prev.map((item) => ({
@@ -591,13 +598,13 @@ console.log(params)
 
   // NEW: Functions for split payment row management
   const addSplitPaymentRow = () => {
-    console.log(splitPaymentRows)
+    console.log(splitPaymentRows);
     setSplitPaymentRows([
       ...splitPaymentRows,
-      { customer: "", source: "", sourceType: "", amount: "" }
-    ])
-  }
-  console.log(splitPaymentRows)
+      { customer: "", source: "", sourceType: "", amount: "" },
+    ]);
+  };
+  console.log(splitPaymentRows);
   const removeSplitPaymentRow = (index) => {
     if (splitPaymentRows.length > 1) {
       const updatedRows = splitPaymentRows.filter((_, i) => i !== index);
@@ -606,32 +613,32 @@ console.log(params)
   };
 
   const updateSplitPaymentRow = (index, field, value, name) => {
-    const updatedRows = [...splitPaymentRows]
-    console.log(index)
-    console.log(field)
-    console.log(value)
-    console.log(field)
-    console.log(updatedRows)
+    const updatedRows = [...splitPaymentRows];
+    console.log(index);
+    console.log(field);
+    console.log(value);
+    console.log(field);
+    console.log(updatedRows);
     if (field === "source") {
       console.log(updatedRows);
       console.log(combinedSources);
       // When source changes, find the source details and update sourceType
-      const selectedSource = combinedSources.find((s) => s.id === value)
-      console.log(selectedSource)
-      updatedRows[index].source = value
-      updatedRows[index].sourceType = selectedSource ? selectedSource.type : ""
+      const selectedSource = combinedSources.find((s) => s.id === value);
+      console.log(selectedSource);
+      updatedRows[index].source = value;
+      updatedRows[index].sourceType = selectedSource ? selectedSource.type : "";
       updatedRows[index].subsource =
         selectedSource.name === "paytm" || selectedSource.name === "gpay"
           ? "upi"
           : selectedSource.name === "card"
             ? "card"
-            : selectedSource.type
+            : selectedSource.type;
     } else if (field === "customer") {
-      console.log(name)
-      console.log(field)
+      console.log(name);
+      console.log(field);
 
-      updatedRows[index].customerName = name
-      updatedRows[index][field] = value
+      updatedRows[index].customerName = name;
+      updatedRows[index][field] = value;
     } else {
       updatedRows[index][field] = value;
     }
@@ -780,13 +787,13 @@ console.log(params)
       }
 
       // Aggregate cash and online amounts from split rows
-      let totalCash = 0
-      let totalOnline = 0
-      let totalbank = 0
-      let totalcard = 0
-      let totalupi = 0
-      let totalcredit = 0
-      console.log(splitPaymentRows)
+      let totalCash = 0;
+      let totalOnline = 0;
+      let totalbank = 0;
+      let totalcard = 0;
+      let totalupi = 0;
+      let totalcredit = 0;
+      console.log(splitPaymentRows);
 
       splitPaymentRows.forEach((row) => {
         if (row.sourceType === "cash") {
@@ -801,10 +808,10 @@ console.log(params)
             totalcard += parseFloat(row.amount) || 0;
           }
         } else {
-          totalcredit += parseFloat(row.amount) || 0
+          totalcredit += parseFloat(row.amount) || 0;
         }
-      })
-      console.log(splitPaymentRows)
+      });
+      console.log(splitPaymentRows);
       paymentDetails = {
         cashAmount: totalCash,
         onlineAmount: totalOnline,
@@ -815,9 +822,9 @@ console.log(params)
           bank: totalbank,
           card: totalcard,
           upi: totalupi,
-          credit: totalcredit
-        }
-      }
+          credit: totalcredit,
+        },
+      };
     }
 
     console.log({
@@ -833,22 +840,21 @@ console.log(params)
     console.log(selectedCheckOut.length);
 
     if (partial) {
-      console.log("Hhhh")
-      console.log(dateandstaysdata)
-      proceedToCheckout(dateandstaysdata, processedCheckoutData)
-      console.log(paymentDetails)
-      dispatch(setPaymentDetails(paymentDetails))
-      dispatch(setSelectedParty(selectedCustomer))
-      dispatch(setSelectedPaymentMode(paymentMode))
-      dispatch(setSelectedSplitPayment(splitPaymentRows))
-      dispatch(setOnlinepartyName(selectedonlinePartyname))
-      dispatch(setOnlineType(selectedOnlinetype))
-      setIsPartial(false)
+      console.log("Hhhh");
+      console.log(dateandstaysdata);
+      proceedToCheckout(dateandstaysdata, processedCheckoutData);
+      console.log(paymentDetails);
+      dispatch(setPaymentDetails(paymentDetails));
+      dispatch(setSelectedParty(selectedCustomer));
+      dispatch(setSelectedPaymentMode(paymentMode));
+      dispatch(setSelectedSplitPayment(splitPaymentRows));
+      dispatch(setOnlinepartyName(selectedonlinePartyname));
+      dispatch(setOnlineType(selectedOnlinetype));
+      setIsPartial(false);
     } else {
-      console.log("hhhh")
-      console.log(paymentDetails)
-      console.log(selectedCheckOut)
-
+      console.log("hhhh");
+      console.log(paymentDetails);
+      console.log(selectedCheckOut);
 
       try {
         const response = await api.post(
@@ -1290,20 +1296,22 @@ console.log(params)
         className={`
   flex items-center px-4 py-3 text-sm
   border-b border-gray-200 
-  cursor-pointer transition-all duration-200 ease-in-out 
- hover:bg-gray-50 
+  cursor-pointer transition-all duration-200 ease-in-out  
   ${
-   el.isHold ?  "bg-red-100 border-blue-100" : isCheckOutSelected(el) && location.pathname === "/sUsers/checkInList"
-      ? "bg-blue-100 border-blue-400 ring-2 ring-blue-200"
-      : ""
-  }${isSelected(el) ? "bg-blue-50 border-blue-100" :  "bg-white hover:bg-gray-50"}
+    isCheckOutSelected(el) &&
+    location.pathname === "/sUsers/checkInList" &&
+    el.isHold
+      ? "bg-red-400 border-red-400 ring-2 ring-red-400"
+      : el.isHold && location.pathname === "/sUsers/checkInList"
+        ? "bg-red-100 border-blue-100"
+        : isCheckOutSelected(el) && location.pathname === "/sUsers/checkInList"
+          ? "bg-blue-100 border-blue-400 ring-2 ring-blue-200"
+          : ""
+  }${isSelected(el) ? "bg-blue-50 border-blue-100" : "bg-white hover:animate-pulse"}
 `}
         onClick={() => {
           if (el?.checkInId?.status === "checkOut") return;
           let findOne = selectedCheckOut.find((item) => item._id === el._id);
-          if (selectedCheckOut.length == 0) {
-            setSelectedCustomer(el.customerId?._id);
-          }
           if (findOne) {
             setSelectedCheckOut((prev) =>
               prev.filter((item) => item._id !== el._id),
@@ -1311,6 +1319,13 @@ console.log(params)
 
             return;
           }
+          let findIsHold = selectedCheckOut.find((item) => item.isHold);
+          if (selectedCheckOut.length >= 1 && findIsHold && !el.isHold) return;
+          if (selectedCheckOut.length >= 1 && !findIsHold && el.isHold) return;
+          if (selectedCheckOut.length == 0) {
+            setSelectedCustomer(el.customerId?._id);
+          }
+
           setSelectedCheckOut((prev) => [...prev, el]);
           // setShowEnhancedCheckoutModal(!showEnhancedCheckoutModal)
         }}
@@ -1535,11 +1550,11 @@ console.log(params)
             {location.pathname === "/sUsers/checkOutList" && (
               <button
                 onClick={(e) => {
-                  e.stopPropagation()
-                  setSelectedCustomer(el.customerId?._id)
-                  setSelectedCheckOut([el])
-                  const hasPrint1 = configurations[0]?.defaultPrint?.print1
-console.log(hasPrint1)
+                  e.stopPropagation();
+                  setSelectedCustomer(el.customerId?._id);
+                  setSelectedCheckOut([el]);
+                  const hasPrint1 = configurations[0]?.defaultPrint?.print1;
+                  console.log(hasPrint1);
 
                   navigate(
                     hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint",
@@ -1619,55 +1634,11 @@ console.log(hasPrint1)
       </div>
     );
   };
-  console.log(selectedCheckOut);
-  console.log(selectedOnlinetype);
-  console.log(processedCheckoutData);
+
   const handleCloseBasedOnDate = () => {
     console.log("hh");
-    // if (!checkouts) {
-    //   setShowCheckOutDateModal(false)
-    //   setShowSelectionModal(true)
-    //   return
-    // }
-    // setSaveLoader(true);
-    console.log(processedCheckoutData);
+
     if (processedCheckoutData) {
-      console.log("hhhhhhhhh");
-      console.log(processedCheckoutData);
-
-      // Transform the processed checkout data with updated stay days
-      // const updatedCheckoutData = processedCheckoutData.map((checkout) => {
-      //   const updatedData = selectedCheckOut.find((c) => c._id === checkout._id)
-
-      //   // if no update found, return original
-      //   if (!updatedData) return checkout
-
-      //   return {
-      //     ...checkout,
-
-      //     // 🔹 update checkout level fields
-      //     checkOutDate: updatedData.checkOutDate ?? checkout.checkOutDate,
-      //     checkOutTime: updatedData.checkOutTime ?? checkout.checkOutTime,
-      //     stayDays: updatedData.stayDays ?? checkout.stayDays,
-
-      //     // 🔹 update rooms if modified
-      //     selectedRooms: checkout.selectedRooms.map((room) => {
-      //       const updatedRoom = updatedData.selectedRooms?.find(
-      //         (r) => r._id === room._id
-      //       )
-
-      //       return updatedRoom
-      //         ? {
-      //             ...room,
-      //             ...updatedRoom
-      //           }
-      //         : room
-      //     })
-      //   }
-      // })
-      //////
-      console.log(dateandstaysdata);
-
       const updatedCheckoutData = processedCheckoutData.map((group) => ({
         ...group,
         checkIns: group.checkIns.map((checkIn) => {
@@ -1727,17 +1698,73 @@ console.log(hasPrint1)
 
   console.log(paymentDetails.printData);
 
-const handlePrintShow = () => {
-  const hasPrint1 = configurations[0]?.defaultPrint?.print1;
-  const printData = structuredClone(paymentDetails.printData);
+  const handlePrintShow = () => {
+    const hasPrint1 = configurations[0]?.defaultPrint?.print1;
+    const printData = structuredClone(paymentDetails.printData);
 
-  dispatch(removeAll());
+    dispatch(removeAll());
 
-  navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
-    state: printData,
-  });
-};
+    navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
+      state: printData,
+    });
+  };
 
+  const handleProceedToCheckout = async () => {
+    let holdCheckInIds = [];
+    selectedCheckOut.map((checkout) => {
+      holdCheckInIds = [...holdCheckInIds, ...checkout.holdArray];
+    });
+    if (holdCheckInIds.length > 0) {
+      try {
+        const res = await api.post(
+          `/api/sUsers/getHoldCheckOutData/${cmp_id}`,
+          {
+            withCredentials: true,
+            data: {
+              holdCheckInIds,
+            },
+          },
+        );
+
+        if (res.data.holdData) {
+          setSelectedCheckOut((prev) => {
+            const map = new Map();
+
+            [...prev, ...res.data.holdData].forEach((item) => {
+              map.set(item._id, item);
+            });
+
+            return Array.from(map.values());
+          });
+        }
+      } catch (error) {
+        console.log(error.message);
+      }
+    }
+    setShowEnhancedCheckoutModal(true);
+  };
+
+  const handleUnHold = async () => {
+    if (selectedCheckOut.length > 0) {
+      try {
+        const res = await api.post(`/api/sUsers/unHoldCheckOut/${cmp_id}`, {
+          withCredentials: true,
+          data: {
+            selectedCheckOut,
+          },
+        });
+
+        if (res.data.message) {
+          toast.success(res.data.message);
+        }
+      } catch (error) {
+        console.log(error.message);
+        toast.error(error?.response?.data?.message || "Something went wrong");
+      } finally {
+        fetchBookings();
+      }
+    }
+  };
 
   return (
     <>
@@ -1768,7 +1795,6 @@ const handlePrintShow = () => {
                       : "/sUsers/checkInPage",
               },
             ]}
-            
           />
           <SearchBar
             onType={searchData}
@@ -1807,6 +1833,7 @@ const handlePrintShow = () => {
               (item) => !selectedCheckOut.some((sel) => sel._id === item._id),
             )}
             cmp_id={cmp_id}
+            fetchBookings={fetchBookings}
           />
         )}
         {showPrintConfirmModal && <PrintModal onSubmit={handlePrintShow} />}
@@ -1819,19 +1846,30 @@ const handlePrintShow = () => {
                 </div>
 
                 <div className="flex gap-2">
-                  <button
-                    onClick={() => setShowEnhancedCheckoutModal(true)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded"
-                  >
-                    Proceed to Checkout
-                  </button>
-{/* 
-                  <button
-                    className="bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded"
-                    onClick={() => setShowEnhancedHoldModal(true)}
-                  >
-                    On Hold
-                  </button> */}
+                  {selectedCheckOut.some((item) => item.isHold) ? (
+                    <button
+                      className="bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded"
+                      onClick={handleUnHold}
+                    >
+                      Unhold
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        onClick={handleProceedToCheckout}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded"
+                      >
+                        Proceed to Checkout
+                      </button>
+
+                      <button
+                        className="bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded"
+                        onClick={() => setShowEnhancedHoldModal(true)}
+                      >
+                        On Hold
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             </>
@@ -2095,18 +2133,18 @@ const handlePrintShow = () => {
                               const selectedCustomerObj =
                                 selectedCheckOut?.find(
                                   (item) =>
-                                    item.customerId?._id === e.target.value
-                                )
+                                    item.customerId?._id === e.target.value,
+                                );
 
                               const selectedCustomerName =
-                                selectedCustomerObj?.customerId?.partyName
-                              console.log(selectedCustomerName)
+                                selectedCustomerObj?.customerId?.partyName;
+                              console.log(selectedCustomerName);
                               updateSplitPaymentRow(
                                 index,
                                 "customer",
                                 e.target.value,
-                                selectedCustomerName
-                              )
+                                selectedCustomerName,
+                              );
                             }}
                             className="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
                           >

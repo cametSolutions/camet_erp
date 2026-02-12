@@ -1,12 +1,13 @@
 /* eslint-disable react/prop-types */
-import { useState, useEffect } from "react"
+import { useState, useEffect } from "react";
 
-import { Users, X, DoorOpen, Trash2, } from "lucide-react"
+import { Users, X, DoorOpen, Trash2 } from "lucide-react";
 
-import CustomerSearchInputBox from "../Components/CustomerSearchInPutBox"
-import CheckoutDateModal from "./CheckoutDateModal"
-import useFetch from "@/customHook/useFetch"
-import { useSelector } from "react-redux"
+import CustomerSearchInputBox from "../Components/CustomerSearchInPutBox";
+import CheckoutDateModal from "./CheckoutDateModal";
+import useFetch from "@/customHook/useFetch";
+import { useSelector } from "react-redux";
+import {useNavigate } from "react-router-dom";
 
 export default function EnhancedCheckoutModal({
   isOpen = true,
@@ -18,47 +19,48 @@ export default function EnhancedCheckoutModal({
   search,
   toogle,
   selectedCustomer,
-  customerchange
+  customerchange,
 }) {
-  console.log(checkoutMode)
-  console.log(isOpen)
-  console.log("hfafffff")
+  console.log(checkoutMode);
+  console.log(isOpen);
+  console.log("hfafffff");
+  const navigate = useNavigate();
   // State to manage room-customer assignments
-  const [roomAssignments, setRoomAssignments] = useState([])
-  const [errors, setErrors] = useState({})
-  const [parties, setPartylist] = useState([])
+  const [roomAssignments, setRoomAssignments] = useState([]);
+  const [errors, setErrors] = useState({});
+  const [parties, setPartylist] = useState([]);
   // const [checkoutMode, setCheckoutMode] = useState("multiple")
   const [checkOutDateTracker, setCheckOutDateTracker] = useState(
-    new Date().toISOString().split("T")[0]
-  )
+    new Date().toISOString().split("T")[0],
+  );
 
   const [checkouts, setCheckouts] = useState(
     selectedCheckIns.length > 0
       ? selectedCheckIns.map((checkout) => {
-          const arrival = new Date(checkout.arrivalDate)
-          console.log(checkout)
-          const checkoutDate = new Date(checkout.checkOutDate)
-          console.log(checkoutDate)
-          const diffTime = checkoutDate - arrival
+          const arrival = new Date(checkout.arrivalDate);
+          console.log(checkout);
+          const checkoutDate = new Date(checkout.checkOutDate);
+          console.log(checkoutDate);
+          const diffTime = checkoutDate - arrival;
           const calculatedDays =
-            diffTime === 0 ? 1 : Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-          console.log(calculatedDays)
+            diffTime === 0 ? 1 : Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          console.log(calculatedDays);
           const time = new Date().toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit",
-            hour12: true // 12-hour format
-          })
+            hour12: true, // 12-hour format
+          });
 
           checkout.selectedRooms.forEach((room) => {
-            room.stayDays = calculatedDays
-          })
-          console.log(calculatedDays)
+            room.stayDays = calculatedDays;
+          });
+          console.log(calculatedDays);
           return {
             ...checkout,
             stayDays: calculatedDays,
             checkOutTime: time,
-            checkOutDate: checkOutDateTracker
-          }
+            checkOutDate: checkOutDateTracker,
+          };
         })
       : [
           {
@@ -68,36 +70,36 @@ export default function EnhancedCheckoutModal({
             voucherNumber: "V001",
             stayDays: 2.5,
             selectedRooms: [
-              { _id: "r1", roomName: "101", priceLevelRate: 2000 }
-            ]
-          }
-        ]
-  )
-  console.log(checkouts)
+              { _id: "r1", roomName: "101", priceLevelRate: 2000 },
+            ],
+          },
+        ],
+  );
+  console.log(checkouts);
   const [originalCheckouts] = useState(() =>
     selectedCheckIns.length > 0
       ? JSON.parse(JSON.stringify(selectedCheckIns))
-      : []
-  )
+      : [],
+  );
   const getVoucherType = () => {
-    const path = location.pathname
-    if (path.includes("Receipt")) return "receipt"
-    if (path.includes("Payment")) return "payment"
-    return "sale"
-  }
-  const { _id: cmp_id, configurations } = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg
-  )
+    const path = location.pathname;
+    if (path.includes("Receipt")) return "receipt";
+    if (path.includes("Payment")) return "payment";
+    return "sale";
+  };
+  const { _id: cmp_id } = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg,
+  );
   const { data: partylist } = useFetch(
     `/api/sUsers/singlecheckoutpartylist/${cmp_id}`,
-    { params: { voucher: getVoucherType() } }
-  )
-  console.log(partylist)
+    { params: { voucher: getVoucherType() } },
+  );
+  console.log(partylist);
   useEffect(() => {
     if (partylist && partylist.partyList.length) {
-      setPartylist(partylist.partyList)
+      setPartylist(partylist.partyList);
     }
-  }, [partylist])
+  }, [partylist]);
   // Initialize room assignments when selectedCheckIns change
   useEffect(() => {
     if (selectedCheckIns.length > 0) {
@@ -110,34 +112,35 @@ export default function EnhancedCheckoutModal({
           roomName: room.roomName,
           roomType: room.roomType?.brand || "Standard",
           originalCustomer: checkIn.customerId,
+          isHold: checkIn.isHold,
           selectedCustomer: checkIn.selectedCustomer
             ? checkIn.selectedCustomer
-            : checkIn.customerId // Default to original customer
-        }))
-      )
+            : checkIn.customerId, // Default to original customer
+        })),
+      );
 
-      setRoomAssignments(allRooms)
+      setRoomAssignments(allRooms);
     }
-  }, [selectedCheckIns])
-  console.log(checkouts)
+  }, [selectedCheckIns]);
+  console.log(checkouts);
 
   // Handle customer selection for a specific room
   const handleCustomerSelect = (index, customer) => {
-    const updated = [...checkouts]
-    updated[index].selectedCustomer = customer
-    setCheckouts(updated)
+    const updated = [...checkouts];
+    updated[index].selectedCustomer = customer;
+    setCheckouts(updated);
 
     // Clear error for this room if exists
-    const newErrors = { ...errors }
-    delete newErrors[index]
-    setErrors(newErrors)
-  }
+    const newErrors = { ...errors };
+    delete newErrors[index];
+    setErrors(newErrors);
+  };
 
   // Remove a room from checkout (partial checkout)
   const handleRemoveRoom = (index) => {
-    const updated = checkouts.filter((_, i) => i !== index)
-    setCheckouts(updated)
-  }
+    const updated = checkouts.filter((_, i) => i !== index);
+    setCheckouts(updated);
+  };
 
   // Add room back if needed
   // const handleAddRoom = (checkInId, room) => {
@@ -157,120 +160,120 @@ export default function EnhancedCheckoutModal({
 
   // Validate before proceeding
   const validateAssignments = () => {
-    const newErrors = {}
+    const newErrors = {};
     roomAssignments.forEach((assignment, index) => {
       if (!assignment.selectedCustomer || !assignment.selectedCustomer._id) {
-        newErrors[index] = "Please select a customer for this room"
+        newErrors[index] = "Please select a customer for this room";
       }
-    })
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
+    });
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   // Handle proceed to checkout
   const handleProceed = () => {
     if (!validateAssignments()) {
-      console.log("hhhh")
-      return
+      console.log("hhhh");
+      return;
     }
-    console.log("hhh")
+    console.log("hhh");
     // Step 1: Check if all selectedCustomer are same
-    const firstCustomer = roomAssignments[0]?.selectedCustomer
+    const firstCustomer = roomAssignments[0]?.selectedCustomer;
     const isSameCustomer = roomAssignments.every(
-      (item) => item.selectedCustomer._id === firstCustomer._id
-    )
+      (item) => item.selectedCustomer._id === firstCustomer._id,
+    );
 
-    let result
-    console.log("HHHh")
+    let result;
+    console.log("HHHh");
     if (isSameCustomer) {
-      console.log("HHHhh")
+      console.log("HHHhh");
       // 🔥 Merge ALL into ONE customer
-      const checkInMap = {}
+      const checkInMap = {};
 
       roomAssignments.forEach((assignment) => {
         if (!checkInMap[assignment.checkInId]) {
           const originalCheckIn = selectedCheckIns.find(
-            (ci) => ci._id === assignment.checkInId
-          )
+            (ci) => ci._id === assignment.checkInId,
+          );
 
           checkInMap[assignment.checkInId] = {
             checkInId: assignment.checkInId,
             checkInNumber: assignment.checkInNumber,
             originalCheckIn,
-            rooms: []
-          }
+            rooms: [],
+          };
         }
 
         checkInMap[assignment.checkInId].rooms.push({
           roomId: assignment.roomId,
           roomName: assignment.roomName,
-          roomType: assignment.roomType
-        })
-      })
+          roomType: assignment.roomType,
+        });
+      });
 
       result = [
         {
           customerId: firstCustomer._id,
           customerName: firstCustomer.partyName,
           customer: firstCustomer,
-          checkIns: Object.values(checkInMap)
-        }
-      ]
+          checkIns: Object.values(checkInMap),
+        },
+      ];
     } else {
       // 🔵 fallback → group by customers (old logic)
-      const grouped = {}
-      console.log(roomAssignments)
-      console.log(roomAssignments.length)
+      const grouped = {};
+      console.log(roomAssignments);
+      console.log(roomAssignments.length);
       roomAssignments.forEach((assignment) => {
-        const customerId = assignment.selectedCustomer._id
+        const customerId = assignment.selectedCustomer._id;
 
         if (!grouped[customerId]) {
           grouped[customerId] = {
             customer: assignment.selectedCustomer,
-            checkIns: []
-          }
+            checkIns: [],
+          };
         }
 
         let checkInGroup = grouped[customerId].checkIns.find(
-          (ci) => ci.checkInId === assignment.checkInId
-        )
+          (ci) => ci.checkInId === assignment.checkInId,
+        );
 
         if (!checkInGroup) {
           const originalCheckIn = selectedCheckIns.find(
-            (ci) => ci._id === assignment.checkInId
-          )
+            (ci) => ci._id === assignment.checkInId,
+          );
 
           checkInGroup = {
             checkInId: assignment.checkInId,
             checkInNumber: assignment.checkInNumber,
             originalCheckIn,
-            rooms: []
-          }
+            rooms: [],
+          };
 
-          grouped[customerId].checkIns.push(checkInGroup)
+          grouped[customerId].checkIns.push(checkInGroup);
         }
 
         checkInGroup.rooms.push({
           roomId: assignment.roomId,
           roomName: assignment.roomName,
-          roomType: assignment.roomType
-        })
-      })
+          roomType: assignment.roomType,
+        });
+      });
 
       result = Object.values(grouped).map((group) => ({
         customerId: group.customer._id,
         customerName: group.customer.partyName,
         customer: group.customer,
-        checkIns: group.checkIns
-      }))
+        checkIns: group.checkIns,
+      }));
     }
 
-    console.log(result)
+    console.log(result);
 
-    onConfirm(result, checkouts)
-  }
+    onConfirm(result, checkouts);
+  };
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   // Get all available rooms (not currently in assignments)
   selectedCheckIns.flatMap((checkIn) =>
@@ -280,92 +283,95 @@ export default function EnhancedCheckoutModal({
           !checkouts.some(
             (assignment) =>
               assignment.checkInId === checkIn._id &&
-              assignment.roomId === room._id
-          )
+              assignment.roomId === room._id,
+          ),
       )
       .map((room) => ({
         checkInId: checkIn._id,
         voucherNumber: checkIn.voucherNumber,
         ...room,
-        originalCustomer: checkIn.customerId
-      }))
-  )
+        originalCustomer: checkIn.customerId,
+      })),
+  );
 
-  const handleCloseBasedOnDate = () => {}
   const handleNewDateChange = (id, newDate) => {
-    console.log(id, newDate)
-    setCheckOutDateTracker(newDate)
+    console.log(id, newDate);
+    setCheckOutDateTracker(newDate);
     setCheckouts(
       checkouts.map((checkout) => {
         if (checkout._id === id) {
-          const arrival = new Date(checkout.arrivalDate)
-          const checkoutDate = new Date(newDate)
-          const diffTime = checkoutDate - arrival
+          const arrival = new Date(checkout.arrivalDate);
+          const checkoutDate = new Date(newDate);
+          const diffTime = checkoutDate - arrival;
           const calculatedDays =
-            diffTime === 0 ? 1 : Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-          console.log(arrival)
-          console.log(checkoutDate)
-          console.log(calculatedDays)
-          const originalCheckout = originalCheckouts.find((oc) => oc._id === id)
-          if (!originalCheckout) return checkout
+            diffTime === 0 ? 1 : Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          console.log(arrival);
+          console.log(checkoutDate);
+          console.log(calculatedDays);
+          const originalCheckout = originalCheckouts.find(
+            (oc) => oc._id === id,
+          );
+          if (!originalCheckout) return checkout;
 
           const updatedRooms =
             checkout.selectedRooms?.map((room) => {
               const originalRoom = originalCheckout.selectedRooms?.find(
-                (or) => or._id === room._id || or.roomName === room.roomName
-              )
+                (or) => or._id === room._id || or.roomName === room.roomName,
+              );
 
-              if (!originalRoom) return room
+              if (!originalRoom) return room;
 
               const originalStayDays =
-                originalRoom.stayDays || originalCheckout.stayDays || 1
-              const originalBaseAmount = originalRoom.baseAmount || 0
-              const originalTaxAmount = originalRoom.taxAmount || 0
+                originalRoom.stayDays || originalCheckout.stayDays || 1;
+              const originalBaseAmount = originalRoom.baseAmount || 0;
+              const originalTaxAmount = originalRoom.taxAmount || 0;
               const originalFoodPlanWithTax =
-                originalRoom.foodPlanAmountWithTax || 0
+                originalRoom.foodPlanAmountWithTax || 0;
               const originalFoodPlanWithoutTax =
-                originalRoom.foodPlanAmountWithOutTax || 0
+                originalRoom.foodPlanAmountWithOutTax || 0;
               const originalPaxWithTax =
-                originalRoom.additionalPaxAmountWithTax || 0
+                originalRoom.additionalPaxAmountWithTax || 0;
               const originalPaxWithoutTax =
-                originalRoom.additionalPaxAmountWithOutTax || 0
+                originalRoom.additionalPaxAmountWithOutTax || 0;
 
               // Calculate daily rates from ORIGINAL totals
-              const baseAmountPerDay = originalBaseAmount / originalStayDays
-              const taxAmountPerDay = originalTaxAmount / originalStayDays
+              const baseAmountPerDay = originalBaseAmount / originalStayDays;
+              const taxAmountPerDay = originalTaxAmount / originalStayDays;
               const foodPlanWithTaxPerDay =
-                originalFoodPlanWithTax / originalStayDays
+                originalFoodPlanWithTax / originalStayDays;
               const foodPlanWithoutTaxPerDay =
-                originalFoodPlanWithoutTax / originalStayDays
+                originalFoodPlanWithoutTax / originalStayDays;
 
               // ✅ FIX: Calculate pax per day based on ORIGINAL FULL DAYS only
-              const originalFullDays = Math.floor(originalStayDays)
+              const originalFullDays = Math.floor(originalStayDays);
               const paxWithTaxPerDay =
-                originalFullDays > 0 ? originalPaxWithTax / originalFullDays : 0
+                originalFullDays > 0
+                  ? originalPaxWithTax / originalFullDays
+                  : 0;
               const paxWithoutTaxPerDay =
                 originalFullDays > 0
                   ? originalPaxWithoutTax / originalFullDays
-                  : 0
+                  : 0;
 
               // Calculate new totals based on calculatedDays
-              const fullDays = Math.floor(calculatedDays)
-              const fractionalDay = calculatedDays - fullDays
+              const fullDays = Math.floor(calculatedDays);
+              const fractionalDay = calculatedDays - fullDays;
 
-              let newBaseAmount = fullDays * baseAmountPerDay
-              let newTaxAmount = fullDays * taxAmountPerDay
-              let newFoodPlanWithTax = fullDays * foodPlanWithTaxPerDay
-              let newFoodPlanWithoutTax = fullDays * foodPlanWithoutTaxPerDay
+              let newBaseAmount = fullDays * baseAmountPerDay;
+              let newTaxAmount = fullDays * taxAmountPerDay;
+              let newFoodPlanWithTax = fullDays * foodPlanWithTaxPerDay;
+              let newFoodPlanWithoutTax = fullDays * foodPlanWithoutTaxPerDay;
 
               // ✅ FIX: Only multiply by FULL days for pax
-              let newPaxWithTax = fullDays * paxWithTaxPerDay
-              let newPaxWithoutTax = fullDays * paxWithoutTaxPerDay
+              let newPaxWithTax = fullDays * paxWithTaxPerDay;
+              let newPaxWithoutTax = fullDays * paxWithoutTaxPerDay;
 
               // Add fractional day amounts (50%) - but NOT for pax
               if (fractionalDay > 0) {
-                newBaseAmount += baseAmountPerDay * 0.5
-                newTaxAmount += taxAmountPerDay * 0.5
-                newFoodPlanWithTax += foodPlanWithTaxPerDay * 0.5
-                newFoodPlanWithoutTax += foodPlanWithoutTaxPerDay * 0.5
+                newBaseAmount += baseAmountPerDay * 0.5;
+                newTaxAmount += taxAmountPerDay * 0.5;
+                newFoodPlanWithTax += foodPlanWithTaxPerDay * 0.5;
+                newFoodPlanWithoutTax += foodPlanWithoutTaxPerDay * 0.5;
                 // ✅ NO pax charges for fractional day
               }
 
@@ -383,23 +389,23 @@ export default function EnhancedCheckoutModal({
                 additionalPaxAmountWithTax:
                   Math.round(newPaxWithTax * 100) / 100,
                 additionalPaxAmountWithOutTax:
-                  Math.round(newPaxWithoutTax * 100) / 100
-              }
-            }) || []
+                  Math.round(newPaxWithoutTax * 100) / 100,
+              };
+            }) || [];
 
           return {
             ...checkout,
             checkOutDate: newDate,
             stayDays: calculatedDays,
-            selectedRooms: updatedRooms
-          }
+            selectedRooms: updatedRooms,
+          };
         }
-        return checkout
-      })
-    )
-  }
+        return checkout;
+      }),
+    );
+  };
   const handleStayDaysChange = (id, newDays) => {
-    let newCheckoutDate = new Date(new Date().toISOString().split("T")[0])
+    let newCheckoutDate = new Date(new Date().toISOString().split("T")[0]);
     setCheckouts(
       checkouts.map((checkout) => {
         if (checkout._id === id) {
@@ -407,94 +413,98 @@ export default function EnhancedCheckoutModal({
           if (newDays === "" || newDays === "." || newDays.endsWith(".")) {
             return {
               ...checkout,
-              stayDays: newDays
-            }
+              stayDays: newDays,
+            };
           }
 
-          const stayDays = parseFloat(newDays)
+          const stayDays = parseFloat(newDays);
 
           // Validate input
           if (isNaN(stayDays) || stayDays <= 0) {
             return {
               ...checkout,
-              stayDays: newDays
-            }
+              stayDays: newDays,
+            };
           }
 
-          const fullDays = Math.floor(stayDays)
-          const fractionalDay = stayDays - fullDays
+          const fullDays = Math.floor(stayDays);
+          const fractionalDay = stayDays - fullDays;
 
-          const originalCheckout = originalCheckouts.find((oc) => oc._id === id)
+          const originalCheckout = originalCheckouts.find(
+            (oc) => oc._id === id,
+          );
 
           if (!originalCheckout) {
-            console.error("Original checkout data not found for id:", id)
-            return checkout
+            console.error("Original checkout data not found for id:", id);
+            return checkout;
           }
 
           const updatedRooms =
             checkout.selectedRooms?.map((room) => {
               const originalRoom = originalCheckout.selectedRooms?.find(
-                (or) => or._id === room._id || or.roomName === room.roomName
-              )
+                (or) => or._id === room._id || or.roomName === room.roomName,
+              );
 
               if (!originalRoom) {
-                console.error("Original room data not found for room:", room)
-                return room
+                console.error("Original room data not found for room:", room);
+                return room;
               }
 
               const originalStayDays =
-                originalRoom.stayDays || originalCheckout.stayDays || 1
-              const originalBaseAmount = originalRoom.baseAmount || 0
-              const originalTaxAmount = originalRoom.taxAmount || 0
+                originalRoom.stayDays || originalCheckout.stayDays || 1;
+              const originalBaseAmount = originalRoom.baseAmount || 0;
+              const originalTaxAmount = originalRoom.taxAmount || 0;
               const originalFoodPlanWithTax =
-                originalRoom.foodPlanAmountWithTax || 0
+                originalRoom.foodPlanAmountWithTax || 0;
               const originalFoodPlanWithoutTax =
-                originalRoom.foodPlanAmountWithOutTax || 0
+                originalRoom.foodPlanAmountWithOutTax || 0;
               const originalPaxWithTax =
-                originalRoom.additionalPaxAmountWithTax || 0
+                originalRoom.additionalPaxAmountWithTax || 0;
               const originalPaxWithoutTax =
-                originalRoom.additionalPaxAmountWithOutTax || 0
+                originalRoom.additionalPaxAmountWithOutTax || 0;
 
               console.log("Original Data:", {
                 originalStayDays,
                 originalBaseAmount,
                 originalTaxAmount,
-                stayDays
-              })
+                stayDays,
+              });
 
               // Calculate daily rates from ORIGINAL totals
-              const baseAmountPerDay = originalBaseAmount / originalStayDays
-              const taxAmountPerDay = originalTaxAmount / originalStayDays
+              const baseAmountPerDay = originalBaseAmount / originalStayDays;
+              const taxAmountPerDay = originalTaxAmount / originalStayDays;
               const foodPlanWithTaxPerDay =
-                originalFoodPlanWithTax / originalStayDays
+                originalFoodPlanWithTax / originalStayDays;
               const foodPlanWithoutTaxPerDay =
-                originalFoodPlanWithoutTax / originalStayDays
+                originalFoodPlanWithoutTax / originalStayDays;
 
               // ✅ FIX: Calculate pax per day based on ORIGINAL FULL DAYS only
-              const originalFullDays = Math.floor(originalStayDays)
+              const originalFullDays = Math.floor(originalStayDays);
               const paxWithTaxPerDay =
-                originalFullDays > 0 ? originalPaxWithTax / originalFullDays : 0
+                originalFullDays > 0
+                  ? originalPaxWithTax / originalFullDays
+                  : 0;
               const paxWithoutTaxPerDay =
                 originalFullDays > 0
                   ? originalPaxWithoutTax / originalFullDays
-                  : 0
+                  : 0;
 
               // Calculate new totals: full days + fractional day
-              let newBaseAmount = fullDays * baseAmountPerDay
-              let newTaxAmount = fullDays * taxAmountPerDay
-              let newFoodPlanWithTax = fullDays * foodPlanWithTaxPerDay
-              let newFoodPlanWithoutTax = fullDays * foodPlanWithoutTaxPerDay
+              let newBaseAmount = fullDays * baseAmountPerDay;
+              let newTaxAmount = fullDays * taxAmountPerDay;
+              let newFoodPlanWithTax = fullDays * foodPlanWithTaxPerDay;
+              let newFoodPlanWithoutTax = fullDays * foodPlanWithoutTaxPerDay;
 
               // ✅ FIX: Only multiply by FULL days for pax
-              let newPaxWithTax = fullDays * paxWithTaxPerDay
-              let newPaxWithoutTax = fullDays * paxWithoutTaxPerDay
+              let newPaxWithTax = fullDays * paxWithTaxPerDay;
+              let newPaxWithoutTax = fullDays * paxWithoutTaxPerDay;
 
               // Add fractional day amounts (50%) - but NOT for pax
               if (fractionalDay > 0) {
-                newBaseAmount += baseAmountPerDay * 0.5
-                newTaxAmount += taxAmountPerDay * 0.5
-                newFoodPlanWithTax += foodPlanWithTaxPerDay * 0.5
-                newFoodPlanWithoutTax += foodPlanWithoutTaxPerDay * 0.5
+                newBaseAmount += baseAmountPerDay * 0.5;
+                newTaxAmount += taxAmountPerDay * 0.5;
+                newFoodPlanWithTax += foodPlanWithTaxPerDay * 0.5;
+                newFoodPlanWithoutTax += foodPlanWithoutTaxPerDay * 0.5;
                 // ✅ NO pax charges for fractional day
               }
 
@@ -505,8 +515,8 @@ export default function EnhancedCheckoutModal({
                 newPaxWithoutTax,
                 baseAmountPerDay,
                 fullDays,
-                fractionalDay
-              })
+                fractionalDay,
+              });
 
               return {
                 ...room,
@@ -522,345 +532,36 @@ export default function EnhancedCheckoutModal({
                 additionalPaxAmountWithTax:
                   Math.round(newPaxWithTax * 100) / 100,
                 additionalPaxAmountWithOutTax:
-                  Math.round(newPaxWithoutTax * 100) / 100
-              }
-            }) || []
+                  Math.round(newPaxWithoutTax * 100) / 100,
+              };
+            }) || [];
 
           // Calculate new checkout date
-          const arrival = new Date(checkout.arrivalDate)
-          newCheckoutDate = new Date(arrival)
-          const daysToAdd = Math.floor(stayDays)
-          newCheckoutDate.setDate(arrival.getDate() + daysToAdd)
+          const arrival = new Date(checkout.arrivalDate);
+          newCheckoutDate = new Date(arrival);
+          const daysToAdd = Math.floor(stayDays);
+          newCheckoutDate.setDate(arrival.getDate() + daysToAdd);
 
           return {
             ...checkout,
             selectedRooms: updatedRooms,
             stayDays: stayDays,
-            checkOutDate: newCheckoutDate.toISOString().split("T")[0]
-          }
+            checkOutDate: newCheckoutDate.toISOString().split("T")[0],
+          };
         }
-        return checkout
-      })
-    )
-    setCheckOutDateTracker(newCheckoutDate.toISOString().split("T")[0])
-  }
-  console.log(selectedCheckIns)
-  console.log(checkoutMode)
+        return checkout;
+      }),
+    );
+    setCheckOutDateTracker(newCheckoutDate.toISOString().split("T")[0]);
+  };
+  console.log(selectedCheckIns);
+  console.log(checkoutMode);
   const handleConfirm = () => {
-    console.log(checkouts)
-    handleProceed()
-  }
-  console.log(checkoutMode)
+    console.log(checkouts);
+    handleProceed();
+  };
+console.log(checkouts)
   return (
-    // <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
-    //   <div className="bg-white w-[95vw] max-w-5xl h-[90vh] rounded-xl shadow-xl flex flex-col">
-    //     {/* ================= HEADER ================= */}
-    //     <div className="flex items-center justify-between border-b px-4 py-2 flex-shrink-0">
-    //       <h2 className="text-base font-semibold flex items-center gap-2 text-gray-700">
-    //         <Users size={18} /> Checkout Assignment
-    //       </h2>
-    //       <button
-    //         onClick={() => closemodal(false)}
-    //         className="text-gray-500 hover:text-gray-700"
-    //       >
-    //         <X size={18} />
-    //       </button>
-    //     </div>
-    //     <div className="grid grid-cols-2  bg-white">
-    //       <div>
-    //         {/* ========== SELECTED CHECKINS SUMMARY ========= */}
-    //         {selectedCheckIns.length > 0 &&
-    //           (location.pathname === "/sUsers/checkInList" ||
-    //             location.pathname === "/sUsers/checkOutList") &&
-    //           search !== "completed" && (
-    //             <div className="flex-shrink-0 px-4 py-3 border-b bg-gray-50">
-    //               {/* Voucher grid */}
-    //               <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2 mb-3">
-    //                 {selectedCheckIns.map((item) => (
-    //                   <div
-    //                     key={item._id}
-    //                     className="text-xs bg-white border rounded-md px-2 py-1 text-center  shadow-sm"
-    //                   >
-    //                     #{item.voucherNumber}
-    //                   </div>
-    //                 ))}
-    //               </div>
-
-    //               {/* Toggle + customer selector */}
-    //               {selectedCheckIns.length > 1 && (
-    //                 <div className="flex flex-wrap items-center gap-4">
-    //                   <span className="text-xs font-semibold text-gray-700">
-    //                     {checkoutMode === "single"
-    //                       ? "Single Checkout"
-    //                       : "Multiple Checkout"}
-    //                   </span>
-
-    //                   {/* Toggle */}
-    //                   <div
-    //                     onClick={toogle}
-    //                     className={`w-9 h-4 rounded-full flex items-center px-1 cursor-pointer transition
-    //               ${checkoutMode === "single" ? "bg-blue-500" : "bg-green-500"}`}
-    //                   >
-    //                     <div
-    //                       className={`w-3 h-3 bg-white rounded-full shadow transform transition
-    //                 ${checkoutMode === "single" ? "translate-x-0" : "translate-x-5"}`}
-    //                     />
-    //                   </div>
-
-    //                   {/* Customer selector */}
-    //                   {checkoutMode === "single" && (
-    //                     <select
-    //                       value={selectedCustomer}
-    //                       onChange={(e) => customerchange(e.target.value)}
-    //                       className="ml-auto min-w-[220px] text-xs p-1.5 border rounded-md focus:ring-2 focus:ring-blue-500"
-    //                     >
-    //                       <option value="">Choose customer</option>
-    //                       {parties?.map((p) => (
-    //                         <option key={p._id} value={p._id}>
-    //                           {p.partyName}
-    //                         </option>
-    //                       ))}
-    //                     </select>
-    //                   )}
-    //                 </div>
-    //               )}
-    //             </div>
-    //           )}
-
-    //         {/* ================= BODY (SCROLL AREA) ================= */}
-    //         <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
-    //           {/* Room assignments */}
-    //           {roomAssignments.length === 0 ? (
-    //             <p className="text-center text-gray-500 py-6 text-sm">
-    //               No rooms selected
-    //             </p>
-    //           ) : (
-    //             roomAssignments.map((a, i) => (
-    //               <div
-    //                 key={i}
-    //                 className={`border rounded-md p-2 ${
-    //                   errors[i] ? "border-red-300 bg-red-50" : "border-gray-200"
-    //                 }`}
-    //               >
-    //                 <div className="flex justify-between items-center mb-2">
-    //                   <div className="flex items-center gap-2">
-    //                     <DoorOpen size={16} className="text-blue-500" />
-    //                     <p className="font-medium text-sm">
-    //                       {a.roomName} ({a.roomType})
-    //                     </p>
-    //                   </div>
-    //                   <button
-    //                     onClick={() => handleRemoveRoom(i)}
-    //                     className="text-red-500 hover:text-red-700"
-    //                   >
-    //                     <Trash2 size={16} />
-    //                   </button>
-    //                 </div>
-
-    //                 <p className="text-xs text-gray-500 mb-1">
-    //                   Original: {a.originalCustomer?.partyName || "N/A"}
-    //                 </p>
-
-    //                 <CustomerSearchInputBox
-    //                   disabled={checkoutMode === "single"}
-    //                   onSelect={(c) => handleCustomerSelect(i, c)}
-    //                   selectedParty={a.selectedCustomer}
-    //                   isAgent={false}
-    //                   placeholder="Select customer..."
-    //                 />
-
-    //                 {errors[i] && (
-    //                   <p className="text-xs text-red-500 mt-1">{errors[i]}</p>
-    //                 )}
-    //               </div>
-    //             ))
-    //           )}
-    //         </div>
-    //       </div>
-
-    //       <CheckoutDateModal
-    //         onDaysChange={handleStayDaysChange}
-    //         checkouts={checkouts}
-    //         onDateChange={handleNewDateChange}
-    //       />
-    //     </div>
-
-    //     {/* ================= FOOTER ================= */}
-    //     <div className="flex-shrink-0 border-t px-4 py-3 flex justify-end gap-2 bg-white">
-    //       <button
-    //         onClick={() => closemodal(false)}
-    //         className="px-4 py-2 text-sm border rounded-md hover:bg-gray-100"
-    //       >
-    //         Cancel
-    //       </button>
-    //       <button
-    //         type="button"
-    //         onClick={handleConfirm}
-    //         disabled={checkouts.length === 0}
-    //         className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-    //       >
-    //         Proceed
-    //       </button>
-    //     </div>
-    //   </div>
-    // </div>
-    // <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
-    //   <div className="bg-white w-[95vw] max-w-5xl h-[90vh] rounded-xl shadow-xl flex flex-col">
-    //     {/* ================= HEADER ================= */}
-    //     <div className="flex items-center justify-between border-b px-4 py-2 flex-shrink-0">
-    //       <h2 className="text-base font-semibold flex items-center gap-2 text-gray-700">
-    //         <Users size={18} /> Checkout Assignment
-    //       </h2>
-    //       <button
-    //         onClick={() => closemodal(false)}
-    //         className="text-gray-500 hover:text-gray-700"
-    //       >
-    //         <X size={18} />
-    //       </button>
-    //     </div>
-
-    //     {/* ================= CONTENT AREA ================= */}
-    //     <div className="flex-1 overflow-hidden">
-    //       <div className="h-full grid grid-cols-1 md:grid-cols-2">
-    //         {/* ================= LEFT COLUMN ================= */}
-    //         <div className="flex flex-col overflow-hidden border-r">
-    //           {/* Selected Checkins (Fixed section) */}
-    //           {selectedCheckIns.length > 0 &&
-    //             (location.pathname === "/sUsers/checkInList" ||
-    //               location.pathname === "/sUsers/checkOutList") &&
-    //             search !== "completed" && (
-    //               <div className="px-4 py-3 border-b bg-gray-50 flex-shrink-0">
-    //                 <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2 mb-3">
-    //                   {selectedCheckIns.map((item) => (
-    //                     <div
-    //                       key={item._id}
-    //                       className="text-xs bg-white border rounded-md px-2 py-1 text-center shadow-sm"
-    //                     >
-    //                       #{item.voucherNumber}
-    //                     </div>
-    //                   ))}
-    //                 </div>
-
-    //                 {selectedCheckIns.length > 1 && (
-    //                   <div className="flex flex-wrap items-center gap-4">
-    //                     <span className="text-xs font-semibold text-gray-700">
-    //                       {checkoutMode === "single"
-    //                         ? "Single Checkout"
-    //                         : "Multiple Checkout"}
-    //                     </span>
-
-    //                     <div
-    //                       onClick={toogle}
-    //                       className={`w-9 h-4 rounded-full flex items-center px-1 cursor-pointer transition
-    //                   ${checkoutMode === "single" ? "bg-blue-500" : "bg-green-500"}`}
-    //                     >
-    //                       <div
-    //                         className={`w-3 h-3 bg-white rounded-full shadow transform transition
-    //                     ${checkoutMode === "single" ? "translate-x-0" : "translate-x-5"}`}
-    //                       />
-    //                     </div>
-
-    //                     {checkoutMode === "single" && (
-    //                       <select
-    //                         value={selectedCustomer}
-    //                         onChange={(e) => customerchange(e.target.value)}
-    //                         className="ml-auto min-w-[220px] text-xs p-1.5 border rounded-md"
-    //                       >
-    //                         <option value="">Choose customer</option>
-    //                         {parties?.map((p) => (
-    //                           <option key={p._id} value={p._id}>
-    //                             {p.partyName}
-    //                           </option>
-    //                         ))}
-    //                       </select>
-    //                     )}
-    //                   </div>
-    //                 )}
-    //               </div>
-    //             )}
-
-    //           {/* LEFT SCROLL AREA */}
-    //           <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
-    //             {roomAssignments.length === 0 ? (
-    //               <p className="text-center text-gray-500 py-6 text-sm">
-    //                 No rooms selected
-    //               </p>
-    //             ) : (
-    //               roomAssignments.map((a, i) => (
-    //                 <div
-    //                   key={i}
-    //                   className={`border rounded-md p-2 ${
-    //                     errors[i]
-    //                       ? "border-red-300 bg-red-50"
-    //                       : "border-gray-200"
-    //                   }`}
-    //                 >
-    //                   <div className="flex justify-between items-center mb-2">
-    //                     <div className="flex items-center gap-2">
-    //                       <DoorOpen size={16} className="text-blue-500" />
-    //                       <p className="font-medium text-sm">
-    //                         {a.roomName} ({a.roomType})
-    //                       </p>
-    //                     </div>
-    //                     <button
-    //                       onClick={() => handleRemoveRoom(i)}
-    //                       className="text-red-500 hover:text-red-700"
-    //                     >
-    //                       <Trash2 size={16} />
-    //                     </button>
-    //                   </div>
-
-    //                   <p className="text-xs text-gray-500 mb-1">
-    //                     Original: {a.originalCustomer?.partyName || "N/A"}
-    //                   </p>
-
-    //                   <CustomerSearchInputBox
-    //                     disabled={checkoutMode === "single"}
-    //                     onSelect={(c) => handleCustomerSelect(i, c)}
-    //                     selectedParty={a.selectedCustomer}
-    //                     isAgent={false}
-    //                     placeholder="Select customer..."
-    //                   />
-
-    //                   {errors[i] && (
-    //                     <p className="text-xs text-red-500 mt-1">{errors[i]}</p>
-    //                   )}
-    //                 </div>
-    //               ))
-    //             )}
-    //           </div>
-    //         </div>
-
-    //         {/* ================= RIGHT COLUMN ================= */}
-    //         <div className="overflow-y-auto px-4 py-3">
-    //           <CheckoutDateModal
-    //             onDaysChange={handleStayDaysChange}
-    //             checkouts={checkouts}
-    //             onDateChange={handleNewDateChange}
-    //           />
-    //         </div>
-    //       </div>
-    //     </div>
-
-    //     {/* ================= FOOTER ================= */}
-    //     <div className="flex-shrink-0 border-t px-4 py-3 flex justify-end gap-2 bg-white">
-    //       <button
-    //         onClick={() => closemodal(false)}
-    //         className="px-4 py-2 text-sm border rounded-md hover:bg-gray-100"
-    //       >
-    //         Cancel
-    //       </button>
-    //       <button
-    //         type="button"
-    //         onClick={handleConfirm}
-    //         disabled={checkouts.length === 0}
-    //         className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-    //       >
-    //         Proceed
-    //       </button>
-    //     </div>
-    //   </div>
-    // </div>
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
       <div className="bg-white w-[95vw] max-w-5xl h-[90vh] rounded-xl shadow-xl flex flex-col text-xs md:text-sm">
         {/* ================= HEADER ================= */}
@@ -891,9 +592,12 @@ export default function EnhancedCheckoutModal({
                       {selectedCheckIns.map((item) => (
                         <div
                           key={item._id}
-                          className="inline-flex justify-center text-[11px] bg-white border rounded-md px-2 py-1 text-center shadow-sm whitespace-nowrap"
+                          className="relative inline-flex justify-center text-[11px] bg-white border rounded-md px-2 py-1 text-center shadow-sm whitespace-nowrap"
                         >
-                          #{item.voucherNumber}
+                          <span
+                            className={`${item.isHold ? "bg-red-200" : "bg-green-500"} absolute right-1 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full`}
+                          />
+                          {/* Right Dot */}#{item.voucherNumber}
                         </div>
                       ))}
                     </div>
@@ -968,7 +672,10 @@ export default function EnhancedCheckoutModal({
                       </div>
 
                       <p className="text-[11px] text-gray-500 mb-1">
-                        Original: {a.originalCustomer?.partyName || "N/A"}
+                        Original: {a.originalCustomer?.partyName || "N/A"} 
+                      </p>
+                       <p className="text-[11px] text-gray-500 mb-1">
+                        CheckIn No: {a.checkInNumber || "N/A"} <span className="text-red-300">{a.isHold ? "(Hold)" : ""}</span>
                       </p>
 
                       <CustomerSearchInputBox
@@ -1004,7 +711,10 @@ export default function EnhancedCheckoutModal({
         {/* ================= FOOTER ================= */}
         <div className="flex-shrink-0 border-t px-4 py-2 flex justify-end gap-2 bg-white">
           <button
-            onClick={() => closemodal(false)}
+            onClick={() => {
+              closemodal(false)
+              navigate ("/sUsers/checkInList", { replace: true, state: null });
+            }}
             className="px-3 py-1.5 text-xs border rounded-md hover:bg-gray-100"
           >
             Cancel
@@ -1020,5 +730,5 @@ export default function EnhancedCheckoutModal({
         </div>
       </div>
     </div>
-  )
+  );
 }
