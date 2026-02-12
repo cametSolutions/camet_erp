@@ -13,7 +13,7 @@ import { useNavigate, Link } from "react-router-dom";
 import Footer from "../footer/Footer";
 
 function LoginForm({ user }) {
-console.log("H")
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);

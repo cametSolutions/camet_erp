@@ -10,6 +10,7 @@ export default function HoldModal({
   selectedHolds = [],
   checkInData = [],
   cmp_id,
+  fetchBookings,
 }) {
  
   // State management
@@ -143,6 +144,7 @@ const handleConfirm = async () => {
     toast.success(data.message || "Tagged successfully");
 
     closeModal(false); // close only on success
+    fetchBookings()
   } catch (error) {
     console.error(error);
     toast.error(error?.response?.data?.message || "Something went wrong");
