@@ -7,7 +7,7 @@ import CustomerSearchInputBox from "../Components/CustomerSearchInPutBox";
 import CheckoutDateModal from "./CheckoutDateModal";
 import useFetch from "@/customHook/useFetch";
 import { useSelector } from "react-redux";
-import {useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 export default function EnhancedCheckoutModal({
   isOpen = true,
@@ -38,12 +38,17 @@ export default function EnhancedCheckoutModal({
     selectedCheckIns.length > 0
       ? selectedCheckIns.map((checkout) => {
           const arrival = new Date(checkout.arrivalDate);
-          console.log(checkout);
-          const checkoutDate = new Date(checkout.checkOutDate);
-          console.log(checkoutDate);
+          const checkoutDate = new Date(checkOutDateTracker);
+
+          // Normalize time to avoid timezone issues
+          arrival.setHours(0, 0, 0, 0);
+          checkoutDate.setHours(0, 0, 0, 0);
+
           const diffTime = checkoutDate - arrival;
+
           const calculatedDays =
-            diffTime === 0 ? 1 : Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            diffTime <= 0 ? 1 : diffTime / (1000 * 60 * 60 * 24);
+
           console.log(calculatedDays);
           const time = new Date().toLocaleTimeString([], {
             hour: "2-digit",
@@ -60,6 +65,7 @@ export default function EnhancedCheckoutModal({
             stayDays: calculatedDays,
             checkOutTime: time,
             checkOutDate: checkOutDateTracker,
+            // actualCheckoutDate: checkout.checkOutDate,
           };
         })
       : [
@@ -560,7 +566,7 @@ export default function EnhancedCheckoutModal({
     console.log(checkouts);
     handleProceed();
   };
-console.log(checkouts)
+  console.log(checkouts);
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
       <div className="bg-white w-[95vw] max-w-5xl h-[90vh] rounded-xl shadow-xl flex flex-col text-xs md:text-sm">
@@ -672,10 +678,13 @@ console.log(checkouts)
                       </div>
 
                       <p className="text-[11px] text-gray-500 mb-1">
-                        Original: {a.originalCustomer?.partyName || "N/A"} 
+                        Original: {a.originalCustomer?.partyName || "N/A"}
                       </p>
-                       <p className="text-[11px] text-gray-500 mb-1">
-                        CheckIn No: {a.checkInNumber || "N/A"} <span className="text-red-300">{a.isHold ? "(Hold)" : ""}</span>
+                      <p className="text-[11px] text-gray-500 mb-1">
+                        CheckIn No: {a.checkInNumber || "N/A"}{" "}
+                        <span className="text-red-300">
+                          {a.isHold ? "(Hold)" : ""}
+                        </span>
                       </p>
 
                       <CustomerSearchInputBox
@@ -712,10 +721,11 @@ console.log(checkouts)
         <div className="flex-shrink-0 border-t px-4 py-2 flex justify-end gap-2 bg-white">
           <button
             onClick={() => {
-              closemodal(false)
-              navigate ("/sUsers/checkInList", { replace: true, state: null });
+              closemodal(false);
+              navigate("/sUsers/checkInList", { replace: true, state: null });
             }}
-a            className="px-3 py-1.5 text-xs border rounded-md hover:bg-gray-100"
+            a
+            className="px-3 py-1.5 text-xs border rounded-md hover:bg-gray-100"
           >
             Cancel
           </button>
