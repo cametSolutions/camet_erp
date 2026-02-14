@@ -715,7 +715,7 @@ console.log(checkouts)
               closemodal(false)
               navigate ("/sUsers/checkInList", { replace: true, state: null });
             }}
-            className="px-3 py-1.5 text-xs border rounded-md hover:bg-gray-100"
+a            className="px-3 py-1.5 text-xs border rounded-md hover:bg-gray-100"
           >
             Cancel
           </button>
