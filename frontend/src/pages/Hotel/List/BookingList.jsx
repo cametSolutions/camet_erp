@@ -200,9 +200,11 @@ function BookingList() {
   useEffect(() => {
     if (location?.state?.directConvertFromDashboard?.length > 0) {
       setSelectedCheckOut(location?.state?.directConvertFromDashboard);
+      setSelectedCustomer(location?.state?.directConvertFromDashboard[0]?.customerId?._id);
       setShowEnhancedCheckoutModal(true);
     }
   }, [location?.state?.directConvertFromDashboard]);
+  console.log(partylist?.partyList?.length)
 
   useEffect(() => {
     if (
@@ -435,6 +437,7 @@ function BookingList() {
       } finally {
         setIsLoading(false);
         setLoader(false);
+        
         // setSelectedCheckOut([]);
       }
     },

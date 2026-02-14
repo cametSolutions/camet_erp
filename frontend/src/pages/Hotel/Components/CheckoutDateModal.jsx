@@ -326,7 +326,7 @@ export default function CheckoutDateModal({
       <table className="w-full text-sm">
         <thead className="bg-gray-100">
           <tr>
-            <th className="p-2 text-left">Voucher No &Arrival Date</th>
+            <th className="p-2 text-left">VoucherNo & Arrival Date</th>
             <th className="p-2 text-left">Checkout Date</th>
             <th className="p-2 text-left">Days</th>
           </tr>
