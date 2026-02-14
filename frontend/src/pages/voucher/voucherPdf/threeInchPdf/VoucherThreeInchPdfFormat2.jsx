@@ -113,7 +113,7 @@ function VoucherThreeInchPdfFormat2({
   const handlePrint = () => {
     handlePrintData();
   };
-
+console.log(data)
   return (
     <div className="grid">
       <div
@@ -163,11 +163,11 @@ function VoucherThreeInchPdfFormat2({
                 marginBottom: "2px",
               }}
             >
-              {org?.name || "HILL TOWN HOTEL"}
+              {org?.name }
             </div>
-               <div>{org?.road || "Erattayar road"}, {org?.place || "Kattapana"}</div>
-          <div>PH: {org?.mobile || "04868 272777"}</div>
-          <div>SAC CODE: {org?.sacCode || "996331"}</div>
+               <div>{org?.road }, {org?.place }</div>
+          <div>PH: {org?.mobile}</div>
+          <div>SAC CODE: {org?.sacCode }</div>
           {org?.gstNum && <div>GSTNO: {org?.gstNum}</div>}
           </div>
         </div>
@@ -324,7 +324,7 @@ function VoucherThreeInchPdfFormat2({
               marginBottom: "2px",
             }}
           >
-            <div style={{ marginLeft: "auto", marginRight: "70px" }}>Amount</div>
+            <div style={{ marginLeft: "auto", marginRight: "100px" }}>Amount</div>
             <div style={{ textAlign: "right", paddingRight: "3px" }}>{subTotal}</div>
           </div>
 
@@ -416,10 +416,17 @@ function VoucherThreeInchPdfFormat2({
             }}
           >
             <div style={{ fontWeight: "bold" }}>
-              {data?.voucherNumber?.[0]?.checkInNumber
-                ? `Room`
-                : "Room"}
-            </div>
+      {/* ✅ FIXED - Try multiple paths for room number */}
+      {data?.voucherNumber?.[0]?.checkInNumber
+        ? `Room: ${
+            data?.roomDetails?.roomno || 
+            data?.voucherNumber?.[0]?.roomNumber ||
+            data?.roomId?.roomno || 
+            data?.roomId?.roomName ||
+            "N/A"
+          }`
+        : "Room"}
+    </div>
             <div
               style={{
                 display: "flex",

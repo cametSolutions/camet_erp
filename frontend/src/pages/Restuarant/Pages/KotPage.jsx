@@ -829,9 +829,22 @@ useEffect(() => {
   const handleSalesPreview = (postToRoom) => {
     setIsPostToRooms(postToRoom);
     let kotVoucherNumberArray = [];
+
+     let roomDetails = null; 
     let itemList = selectedKot.flatMap((item) => {
       let findOne = filteredOrders.find((order) => order._id == item.id);
       if (findOne) {
+
+
+ if (!roomDetails && findOne.roomId) {
+        roomDetails = {
+          roomno: findOne.roomId?.roomno || findOne.roomId?.roomName,
+          roomName: findOne.roomId?.roomName,
+          guestName: findOne.customer?.name,
+          checkInNumber: findOne.checkInNumber,
+        };
+      }
+
         kotVoucherNumberArray.push({
           voucherNumber: findOne.voucherNumber,
           id: findOne._id,
@@ -889,6 +902,7 @@ useEffect(() => {
       isComplimentary: isComplimentary, // ✅ ADD THIS - Independent flag // After discount
       total: finalAmount,
       voucherNumber: kotVoucherNumberArray,
+       roomDetails: roomDetails,
       party: {
         partyName: selectedKot[0]?.customer?.name,
         address: selectedKot[0]?.customer?.address,

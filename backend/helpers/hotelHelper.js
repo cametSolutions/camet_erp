@@ -116,6 +116,7 @@ export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
     let selectedModal;
     if (params?.modal == "booking") {
       selectedModal = Booking;
+      
     } else if (params?.modal == "checkIn") {
       selectedModal = CheckIn;
     } else {
