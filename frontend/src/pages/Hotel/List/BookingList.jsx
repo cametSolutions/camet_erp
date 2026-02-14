@@ -176,7 +176,7 @@ function BookingList() {
   }, [location.pathname, cmp_id]);
 
   // useEffect(() => {
-  // when global selectedCustomer changes, sync into selectedCheckOut
+  // // when global selectedCustomer changes, sync into selectedCheckOut
   //     if (!selectedCustomer) return
   // console.log("hhhh")
   //     const match = parties.find((p) => p._id === selectedCustomer)
@@ -435,7 +435,7 @@ function BookingList() {
       } finally {
         setIsLoading(false);
         setLoader(false);
-        setSelectedCheckOut([]);
+        // setSelectedCheckOut([]);
       }
     },
 
@@ -1183,7 +1183,7 @@ function BookingList() {
 
     setCheckoutMode(checkoutMode === "single" ? "multiple" : "single");
   };
-  console.log(checkoutMode);
+  console.log(selectedCheckOut);
 
   const TableHeader = () => (
     <div className="bg-gray-100 border-b border-gray-300 sticky top-0 z-10">
