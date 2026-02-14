@@ -1,20 +1,20 @@
 /* eslint-disable react/prop-types */
-import { useState } from "react"
-import { X, Calendar } from "lucide-react"
+import { useState } from "react";
+import { X, Calendar } from "lucide-react";
 
 export default function CheckoutDateModal({
   checkouts,
   onDateChange,
-  onDaysChange
+  onDaysChange,
 }) {
-console.log(checkouts)
+  console.log(checkouts);
   // Store original data separately (deep clone)
   // const [originalCheckouts] = useState(() =>
   //   checkouts.length > 0 ? JSON.parse(JSON.stringify(checkouts)) : []
   // )
   const [checkOutDateTracker, setCheckOutDateTracker] = useState(
-    new Date().toISOString().split("T")[0]
-  )
+    new Date().toISOString().split("T")[0],
+  );
   // const [checkOutDateOld, setCheckOutDateOld] = useState(
   //   new Date(checkoutData[0].checkOutDate).toISOString().split("T")[0]
   // )
@@ -310,24 +310,23 @@ console.log(checkouts)
   // }
 
   const handleConfirm = () => {
-    console.log(checkouts)
-    onClose(checkouts)
-  }
+    console.log(checkouts);
+    onClose(checkouts);
+  };
 
   const handleCancel = () => {
-    setCheckouts(JSON.parse(JSON.stringify(checkouts)))
-    onClose(null)
-  }
+    setCheckouts(JSON.parse(JSON.stringify(checkouts)));
+    onClose(null);
+  };
 
-  
   // console.log(checkouts[0]?.);
-console.log(checkouts)
+  console.log(checkouts);
   return (
     <div className="border rounded-md bg-white overflow-hidden m-3">
       <table className="w-full text-sm">
         <thead className="bg-gray-100">
           <tr>
-            <th className="p-2 text-left">Voucher</th>
+            <th className="p-2 text-left">Voucher No &Arrival Date</th>
             <th className="p-2 text-left">Checkout Date</th>
             <th className="p-2 text-left">Days</th>
           </tr>
@@ -336,8 +335,23 @@ console.log(checkouts)
         <tbody>
           {checkouts.map((c) => (
             <tr key={c._id} className="border-t">
-              <td className="p-2">{c.voucherNumber}</td>
-
+              <td className="p-2">
+                <p>{c.voucherNumber} </p>{" "}
+                <p>
+                  {new Date(c.arrivalDate).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </p>{" "}
+                  <p>
+                  {new Date(c.actualCheckoutDate).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </p>{" "}
+              </td>
               <td className="p-2">
                 <input
                   type="date"
@@ -346,7 +360,6 @@ console.log(checkouts)
                   className="border rounded px-2 py-1 w-full"
                 />
               </td>
-
               <td className="p-2">
                 <input
                   type="number"
@@ -504,5 +517,5 @@ console.log(checkouts)
     //     </div>
     //   </div>
     // </div>
-  )
+  );
 }
