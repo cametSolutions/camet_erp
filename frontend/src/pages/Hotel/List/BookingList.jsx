@@ -198,7 +198,7 @@ function BookingList() {
   }, [partylist]);
 
   useEffect(() => {
-    if (location?.state?.directConvertFromDashboard.length > 0) {
+    if (location?.state?.directConvertFromDashboard?.length > 0) {
       setSelectedCheckOut(location?.state?.directConvertFromDashboard);
       setShowEnhancedCheckoutModal(true);
     }
