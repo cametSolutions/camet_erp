@@ -21,7 +21,7 @@ export default function EnhancedCheckoutModal({
   selectedCustomer,
   customerchange,
 }) {
-  console.log(checkoutMode);
+  console.log(selectedCheckIns);
   console.log(isOpen);
   console.log("hfafffff");
   const navigate = useNavigate();
@@ -128,7 +128,7 @@ export default function EnhancedCheckoutModal({
       setRoomAssignments(allRooms);
     }
   }, [selectedCheckIns]);
-  console.log(checkouts);
+  console.log(roomAssignments);
 
   // Handle customer selection for a specific room
   const handleCustomerSelect = (index, customer) => {
@@ -567,6 +567,7 @@ export default function EnhancedCheckoutModal({
     handleProceed();
   };
   console.log(checkouts);
+  console.log(roomAssignments);
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
       <div className="bg-white w-[95vw] max-w-5xl h-[90vh] rounded-xl shadow-xl flex flex-col text-xs md:text-sm">
@@ -576,7 +577,10 @@ export default function EnhancedCheckoutModal({
             <Users size={16} /> Checkout Assignment
           </h2>
           <button
-            onClick={() => closemodal(false)}
+            onClick={() =>{ 
+              closemodal(false)
+              navigate("/sUsers/checkInList",{state:null})
+            }}
             className="text-gray-500 hover:text-gray-700"
           >
             <X size={16} />
@@ -724,7 +728,7 @@ export default function EnhancedCheckoutModal({
               closemodal(false);
               navigate("/sUsers/checkInList", { replace: true, state: null });
             }}
-            a
+  
             className="px-3 py-1.5 text-xs border rounded-md hover:bg-gray-100"
           >
             Cancel

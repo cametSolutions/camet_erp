@@ -2338,7 +2338,13 @@ export const getDateBasedRoomsWithStatus = async (req, res) => {
       status: { $ne: "checkOut" },
       // arrivalDate: { $lte: selectedDate },
       // checkOutDate: { $gte: selectedDate },
-    });
+    }).populate("customerId")
+        .populate("guestId")
+        .populate("agentId")
+        .populate("isHotelAgent")
+        .populate("selectedRooms.selectedPriceLevel")
+        .populate("bookingId")
+        .populate("checkInId")
 
     // ✅ Send response
     return res.status(200).json({
