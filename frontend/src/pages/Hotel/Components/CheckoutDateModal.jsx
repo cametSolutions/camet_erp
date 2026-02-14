@@ -344,13 +344,13 @@ export default function CheckoutDateModal({
                     day: "numeric",
                   })}
                 </p>{" "}
-                  <p>
+                  {/* <p>
                   {new Date(c.actualCheckoutDate).toLocaleDateString("en-US", {
                     year: "numeric",
                     month: "long",
                     day: "numeric",
                   })}
-                </p>{" "}
+                </p>{" "} */}
               </td>
               <td className="p-2">
                 <input
