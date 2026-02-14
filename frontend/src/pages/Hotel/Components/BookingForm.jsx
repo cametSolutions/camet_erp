@@ -1335,176 +1335,134 @@ function BookingForm({
                     <h2 className="text-lg  font-semibold text-blueGray-800 mb-6 p-2">
                       Booking & Room Details
                     </h2>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-6 p-3">
+                   
                       {/* Arrival Date */}
-                      <div>
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Arrival Date
-                        </label>
-                        <input
-                          type="date"
-                          name="arrivalDate"
-                          value={formData.arrivalDate}
-                          onChange={handleChange}
-                          className="w-full border border-gray-300 px-3 py-2 rounded text-sm shadow focus:outline-none focus:ring focus:ring-blue-200 bg-white"
-                        />
-                      </div>
-                      {/* Arrival Time */}
-                      <div>
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Arrival Time
-                        </label>
-                        <TimeSelector
-                          initialTime={editData?.arrivalTime}
-                          onTimeChange={handleArrivalTimeChange}
-                        />
-                      </div>
-                      {/* Check Out Date */}
-                      <div>
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Check Out Date
-                        </label>
-                        <input
-                          type="date"
-                          name="checkOutDate"
-                          value={formData.checkOutDate}
-                          onChange={handleChange}
-                          className="w-full border border-gray-300 px-3 py-2 rounded text-sm shadow focus:outline-none focus:ring focus:ring-blue-200 bg-white"
-                        />
-                      </div>
-                      {/* Check Out Time */}
-                      <div>
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Check Out Time
-                        </label>
-                        <TimeSelector
-                          initialTime={editData?.checkOutTime}
-                          onTimeChange={handleCheckOutTimeChange}
-                        />
-                      </div>
-                      {/* Booking Type */}
-                      <div>
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Booking Type
-                        </label>
-                        <select
-                          name="bookingType"
-                          value={formData.bookingType}
-                          onChange={handleChange}
-                          className="w-full border border-gray-300 px-3 py-2 rounded text-sm shadow focus:outline-none focus:ring focus:ring-blue-200 bg-white"
-                        >
-                          <option value="offline">Offline Booking</option>
-                          <option value="online">Online Booking</option>
-                        </select>
-                      </div>
-                      {/* Hotel Agent */}
-                      <div>
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Hotel Agent
-                        </label>
-                        <CustomerSearchInputBox
-                          key={"hotelAgent"}
-                          onSelect={handleAgentSelect}
-                          isAgent={true}
-                          selectedParty={hotelAgent}
-                          placeholder="Search customers..."
-                        />
-                      </div>
-                      {/* Stay Days */}
-                      <div>
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Stay Days
-                        </label>
-                        <input
-                          type="text"
-                          name="stayDays"
-                          value={formData.stayDays}
-                          onChange={handleChange}
-                          className="w-full border border-gray-300 px-3 py-2 rounded text-sm shadow focus:outline-none focus:ring focus:ring-blue-200 bg-white"
-                        />
-                      </div>
-                      {/* Visit of Purpose */}
-                      <div>
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Visit of purpose
-                        </label>
-                        <select
-                          name="visitOfPurpose"
-                          value={formData.visitOfPurpose}
-                          onChange={handleChange}
-                          className="w-full border border-gray-300 px-3 py-2 rounded text-sm shadow focus:outline-none focus:ring focus:ring-blue-200 bg-white"
-                        >
-                          <option value="All">Select Room Type</option>
-                          {visitOfPurpose.map((data) => (
-                            <option key={data?._id} value={data?._id}>
-                              {data?.visitOfPurpose}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                <div className="grid grid-cols-4 gap-4 mb-4 p-4 border border-gray-200 rounded-lg bg-gray-50">
+  {/* ROW 1: Arrival Details */}
+  <div className="flex flex-col">
+    <label className="text-xs font-semibold text-gray-700 mb-1">Arrival Date</label>
+    <input type="date" value="03-02-2026" className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500" />
+  </div>
+
+  <div className="flex flex-col">
+    <label className="text-xs font-semibold text-gray-700 mb-1">Arrival Time</label>
+    <input type="time" value="10:30 PM" className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500" />
+  </div>
+
+  <div className="flex flex-col">
+    <label className="text-xs font-semibold text-gray-700 mb-1">Check-out Date</label>
+    <input type="date" value="04-02-2026" className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500" />
+  </div>
+
+  <div className="flex flex-col">
+    <label className="text-xs font-semibold text-gray-700 mb-1">Check-out Time</label>
+    <input type="time" value="16:15 PM" className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500" />
+  </div>
+</div>
+
+<div className="grid grid-cols-4 gap-4 mb-6 p-4 border border-gray-200 rounded-lg bg-blue-50">
+  {/* ROW 2: Hotel Agent Details */}
+  <div className="flex flex-col">
+    <label className="text-xs font-semibold text-gray-700 mb-1">Stay Days</label>
+    <input type="number" value="1" className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500" />
+  </div>
+
+  <div className="flex flex-col">
+    <label className="text-xs font-semibold text-gray-700 mb-1">Visit Purpose</label>
+    <select className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500">
+      <option>Business</option>
+      <option>Leisure</option>
+    </select>
+  </div>
+
+  <div className="flex flex-col">
+    <label className="text-xs font-semibold text-gray-700 mb-1">Booking Type</label>
+    <select className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500">
+      <option>Online</option>
+      <option>Offline</option>
+    </select>
+  </div>
+
+  <div className="flex flex-col">
+    <label className="text-xs font-semibold text-gray-700 mb-1">Hotel Agent</label>
+    <select className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500">
+      <option>Custom</option>
+      <option>Agent 1</option>
+    </select>
+  </div>
+</div>
+
                       {/* Room Type */}
-                      <div>
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Room Type
-                        </label>
-                        <select
-                          name="roomType"
-                          value={formData.roomType}
-                          onChange={handleChange}
-                          className="w-full border border-gray-300 px-3 py-2 rounded text-sm shadow focus:outline-none focus:ring focus:ring-blue-200 bg-white"
-                        >
-                          <option value="All">Select Room Type</option>
-                          {roomType.map((roomType) => (
-                            <option key={roomType?._id} value={roomType?._id}>
-                              {roomType?.brand}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-4">
-                          {isShowGrc && (
-                            <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                              GRC NO
-                            </label>
-                          )}
-                          <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                            Add Tax With Rate
-                          </label>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          {/* GRC Input */}
-                          {isShowGrc && (
-                            <input
-                              type="text"
-                              name="grcno"
-                              value={formData.grcno || ""}
-                              onChange={handleChange}
-                              placeholder="GRC %"
-                              className="w-24 border px-2 py-1 rounded text-sm focus:outline-none focus:ring bg-white border-gray-200"
-                            />
-                          )}
-                          {/* Toggle */}
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleChange({
-                                target: {
-                                  name: "addTaxWithRate",
-                                  value: !formData.addTaxWithRate,
-                                },
-                              })
-                            }
-                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition
-        ${formData.addTaxWithRate ? "bg-green-600" : "bg-gray-300"}`}
-                          >
-                            <span
-                              className={`inline-block h-5 w-5 transform rounded-full bg-white transition
-          ${formData.addTaxWithRate ? "translate-x-5" : "translate-x-1"}`}
-                            />
-                          </button>
-                        </div>
-                      </div>
+                <div className="grid grid-cols-2 gap-6 p-4 mb-6 border border-gray-200 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50">
+  {/* Column 1: Room Type */}
+  <div className="flex flex-col">
+    <label className="block uppercase text-blueGray-600 text-xs font-bold mb-3">
+      Room Type
+    </label>
+    <select
+      name="roomType"
+      value={formData.roomType}
+      onChange={handleChange}
+      className="w-full border border-gray-300 px-4 py-3 rounded-lg text-sm shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+    >
+      <option value="">Select Room Type</option>
+      {roomType.map((roomType) => (
+        <option key={roomType?._id} value={roomType?._id}>
+          {roomType?.brand}
+        </option>
+      ))}
+    </select>
+  </div>
+
+  {/* Column 2: Add Tax With Rate (Toggle + GRC) */}
+  <div className="flex flex-col">
+    <label className="block uppercase text-blueGray-600 text-xs font-bold mb-3">
+      Add Tax With Rate
+    </label>
+    <div className="flex items-center gap-4 p-2 bg-white rounded-lg border border-gray-200 shadow-sm">
+      {/* GRC Input (if needed) */}
+      {isShowGrc && (
+        <input
+          type="text"
+          name="grcno"
+          value={formData.grcno || ""}
+          onChange={handleChange}
+          placeholder="GRC %"
+          className="w-20 border px-2 py-2 rounded text-xs focus:outline-none focus:ring bg-white border-gray-200"
+        />
+      )}
+      
+      {/* Toggle Switch */}
+      <div className="flex items-center gap-2">
+        <span className="text-xs font-medium text-gray-700">Tax</span>
+        <button
+          type="button"
+          onClick={() =>
+            handleChange({
+              target: {
+                name: "addTaxWithRate",
+                value: !formData.addTaxWithRate,
+              },
+            })
+          }
+          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-200 shadow-sm ${
+            formData.addTaxWithRate 
+              ? "bg-green-600 shadow-green-200" 
+              : "bg-gray-300 shadow-gray-200"
+          }`}
+        >
+          <span
+            className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-200 ${
+              formData.addTaxWithRate ? "translate-x-6" : "translate-x-1"
+            }`}
+          />
+        </button>
+        <span className="text-xs font-medium text-gray-700">Rate</span>
+      </div>
+    </div>
+  </div>
+</div>
+
 
                       {/* Available Rooms (spans both columns if needed) */}
                       <div className="col-span-2">
@@ -1527,7 +1485,7 @@ function BookingForm({
                         />
                       </div>
                     </div>
-                  </div>
+                  
 
                   <div className="flex flex-wrap pt-4">
                     {/* Booking Number */}
