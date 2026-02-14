@@ -666,7 +666,14 @@ export const getKot = async (req, res) => {
         createdAt: { $gte: start, $lte: end },
         status: { $ne: "cancelled" },
       })
-      .populate("roomId");
+      .populate({
+        path: 'roomId',
+        select: 'roomName roomno' // ✅ CRITICAL - Select both fields
+      })
+       .populate({
+        path: 'customer',
+        select: 'name phone address'
+      });
 
     res.status(200).json({
       success: true,
