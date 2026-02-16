@@ -113,13 +113,14 @@ function AvailableRooms({
   const [pendingRoomQueue, setPendingRoomQueue] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
   const [selectedRoomForHistory, setSelectedRoomForHistory] = useState(null);
+  const [roomDeletedCompletely, setRoomDeletedCompletely] = useState(false);
 
   const debounceTimerRef = useRef(null);
   const dropdownRef = useRef(null);
   const PAGE_SIZE = 50;
   useEffect(() => {
     const fetchBookings = async () => {
-      if (formData?.selectedRooms?.length > 0) {
+      if (formData?.selectedRooms?.length > 0 ) {
         const updatedBookings = await Promise.all(
           formData.selectedRooms.map(async (booking) => {
             const normalizedBooking = {
@@ -164,7 +165,7 @@ function AvailableRooms({
         if (specificRoom) {
           handleSelect(specificRoom);
         }
-      }else if (roomFromDashboard?.length > 0) {
+      }else if (roomFromDashboard?.length > 0 && !roomDeletedCompletely) {
         console.log(roomFromDashboard);
         roomFromDashboard.map((room) => {
           let specificRoom = rooms.find((roomId) => roomId._id === room.roomId);
@@ -601,6 +602,7 @@ function AvailableRooms({
       return;
     }
     let filteredRoom = bookings.filter((b) => b.roomId !== roomId);
+    if(filteredRoom.length === 0) setRoomDeletedCompletely(true);
     setBookings(filteredRoom);
   };
 
@@ -677,7 +679,7 @@ function AvailableRooms({
   // Add this useEffect after your existing useEffects, before the console.log(bookings)
   useEffect(() => {
     // Refresh rooms when bookings change to update the dropdown
-    if (isOpen && cmp_id) {
+    if (isOpen && cmp_id ) {
       fetchRooms(1, search);
     }
   }, [bookings.length]); // Triggers when rooms are added/removed from bookings
