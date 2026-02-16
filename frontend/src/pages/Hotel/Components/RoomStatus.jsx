@@ -17,6 +17,7 @@ console.log(status)
       hoverShadow: "hover:shadow-emerald-500/40",
       glowColor: "group-hover:shadow-emerald-400/30",
       dotColor: "bg-emerald-500",
+      statusColor: "text-emerald-300",
       textColor: "text-white",
       border: "border-emerald-300/30",
       hoverBorder: "hover:border-emerald-200/50",
@@ -26,7 +27,8 @@ console.log(status)
       shadow: "shadow-sky-500/25",
       hoverShadow: "hover:shadow-sky-500/40",
       glowColor: "group-hover:shadow-sky-400/30",
-      dotColor: "bg-orange-500",
+      dotColor: "bg-sky-500",
+      statusColor: "text-sky-300",
       textColor: "text-white",
       border: "border-sky-300/30",
       hoverBorder: "hover:border-sky-200/50",
@@ -37,6 +39,7 @@ console.log(status)
       hoverShadow: "hover:shadow-red-500/40",
       glowColor: "group-hover:shadow-red-400/30",
       dotColor: "bg-red-500",
+      statusColor: "text-red-300",
       textColor: "text-white",
       border: "border-red-300/30",
       hoverBorder: "hover:border-red-200/50",
@@ -47,6 +50,7 @@ console.log(status)
       hoverShadow: "hover:shadow-yellow-500/40",
       glowColor: "group-hover:shadow-yellow-400/30",
       dotColor: "bg-yellow-500",
+      statusColor: "text-yellow-300",
       textColor: "text-white",
       border: "border-yellow-300/30",
       hoverBorder: "hover:border-yellow-200/50",
@@ -58,6 +62,7 @@ console.log(status)
       glowColor: "group-hover:shadow-gray-400/30",
       dotColor: "bg-gray-500",
       textColor: "text-white",
+      statusColor: "text-gray-300",
       border: "border-gray-400/30",
       hoverBorder: "hover:border-gray-300/50",
     },
@@ -90,7 +95,7 @@ console.log(status)
       {/* Status indicator with pulse animation */}
       <div className="absolute top-2 right-2">
         <div className={`w-2 h-2 ${config.dotColor} rounded-full animate-pulse`}></div>
-        <div className={`absolute inset-0 w-2 h-2 ${config.dotColor} rounded-full opacity-75 animate-ping`}></div>
+        <div className={`absolute inset-0 w-2 h-2 ${config.dotColor} rounded-full opacity-75 animate-ping border-x-2 border-gray-500`}></div>
       </div>
 
       {/* Content */}
@@ -100,7 +105,8 @@ console.log(status)
             <span
               className={`${config.textColor} font-bold text-sm sm:text-lg tracking-tight drop-shadow-sm group-hover:drop-shadow-md transition-all duration-200`}
             >
-              {room}
+             <p> {room}</p>
+             <p className={`text-sm font-medium ${config.statusColor}`}>{status}</p>
             </span>
             {type && (
               <span
