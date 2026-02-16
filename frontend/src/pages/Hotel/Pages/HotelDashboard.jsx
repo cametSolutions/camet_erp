@@ -598,7 +598,7 @@ const HotelDashboard = () => {
     }
   };
 
-  console.log(selectedRooms);
+
 
   return (
     <>
