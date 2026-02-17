@@ -15,7 +15,6 @@ import useFetch from "@/customHook/useFetch";
 import OutStandingModal from "./OutStandingModal";
 import PaymentModal from "./PaymentModal";
 
-
 function BookingForm({
   isLoading = false,
   setIsLoading = false,
@@ -25,7 +24,7 @@ function BookingForm({
   isFor,
   outStanding = [],
   roomId,
-  rooms=[],
+  rooms = [],
   isTariffRateChange,
   submitLoader,
   isShowGrc = false,
@@ -53,7 +52,6 @@ function BookingForm({
     `/api/sUsers/getProductSubDetails/${cmp_id}?type=roomType`,
   );
   useEffect(() => {
-    
     if (data) setRoomType(data?.data);
   }, [data]);
 
@@ -61,11 +59,8 @@ function BookingForm({
     `/api/sUsers/getVisitOfPurpose/${cmp_id}`,
   );
   useEffect(() => {
-    
     if (visitOfPurposeData) setVisitOfPurpose(visitOfPurposeData?.data);
   }, [visitOfPurposeData]);
-
- 
 
   const today = new Date();
   const isoDate = (d) => d.toISOString().split("T")[0];
@@ -76,13 +71,12 @@ function BookingForm({
   const currentDateDefault = isoDate(today);
 
   useEffect(() => {
-    
     if (submitLoader) {
       setShowPaymentModal(true);
       setSaveLoader(true);
     }
   }, [submitLoader]);
- 
+
   const [formData, setFormData] = useState({
     bookingDate: arrivalDateDefault,
     voucherNumber: voucherNumber,
@@ -131,12 +125,8 @@ function BookingForm({
     grcno: "",
     addTaxWithRate: configurations[0]?.addRateWithTax?.hotelSale,
   });
-  
-  
-
 
   useEffect(() => {
-    
     if (editData) {
       setSelectedParty(editData?.customerId);
       setSelectedGuest(editData?.guestId);
@@ -207,10 +197,7 @@ function BookingForm({
     }
   }, [editData]);
 
-
-
   useEffect(() => {
-    
     if (roomId) setSelectedRoomId(roomId);
   }, [roomId]);
 
@@ -380,16 +367,13 @@ function BookingForm({
   }, [cmp_id, isFor, setIsLoading]);
 
   useEffect(() => {
-    
     if (!editData || isFor === "deliveryNote" || isFor === "sales") {
       fetchData();
     }
   }, [fetchData, editData, isFor]);
 
-
   // Fixed calculation: Room total + Pax + Food Plan = Total Amount, then apply discount
   useEffect(() => {
-    
     const handler = setTimeout(() => {
       const roomTotal = Number(formData?.roomTotal || 0);
       const paxTotal = Number(formData?.paxTotal || 0);
@@ -427,8 +411,6 @@ function BookingForm({
     formData.discountAmount,
     formData.totalAdvance,
   ]);
-
- 
 
   const handleDiscountPercentageChange = (e) => {
     const { value } = e.target;
@@ -702,8 +684,10 @@ function BookingForm({
       toast.error("Please enter a customer name");
       return;
     }
-    if(Number(formData.grandTotal) < 0){
-      toast.error("Please select at least one room or enter price for selected room");
+    if (Number(formData.grandTotal) < 0) {
+      toast.error(
+        "Please select at least one room or enter price for selected room",
+      );
       return;
     }
 
@@ -921,7 +905,7 @@ function BookingForm({
 
   const handleClose = () => setShowPaymentModal(false);
   const handleSearchCustomer = (name, isGuest) => {
-    if (isGuest)  {
+    if (isGuest) {
       setFormData((prev) => ({
         ...prev,
         guestName: name,
@@ -1335,157 +1319,197 @@ function BookingForm({
                     <h2 className="text-lg  font-semibold text-blueGray-800 mb-6 p-2">
                       Booking & Room Details
                     </h2>
-                   
-                      {/* Arrival Date */}
-                <div className="grid grid-cols-4 gap-4 mb-4 p-4 border border-gray-200 rounded-lg bg-gray-50">
-  {/* ROW 1: Arrival Details */}
-  <div className="flex flex-col">
-    <label className="text-xs font-semibold text-gray-700 mb-1">Arrival Date</label>
-    <input type="date" value="03-02-2026" className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500" />
-  </div>
 
-  <div className="flex flex-col">
-    <label className="text-xs font-semibold text-gray-700 mb-1">Arrival Time</label>
-    <input type="time" value="10:30 PM" className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500" />
-  </div>
-
-  <div className="flex flex-col">
-    <label className="text-xs font-semibold text-gray-700 mb-1">Check-out Date</label>
-    <input type="date" value="04-02-2026" className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500" />
-  </div>
-
-  <div className="flex flex-col">
-    <label className="text-xs font-semibold text-gray-700 mb-1">Check-out Time</label>
-    <input type="time" value="16:15 PM" className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500" />
-  </div>
-</div>
-
-<div className="grid grid-cols-4 gap-4 mb-6 p-4 border border-gray-200 rounded-lg bg-blue-50">
-  {/* ROW 2: Hotel Agent Details */}
-  <div className="flex flex-col">
-    <label className="text-xs font-semibold text-gray-700 mb-1">Stay Days</label>
-    <input type="number" value="1" className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500" />
-  </div>
-
-  <div className="flex flex-col">
-    <label className="text-xs font-semibold text-gray-700 mb-1">Visit Purpose</label>
-    <select className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500">
-      <option>Business</option>
-      <option>Leisure</option>
-    </select>
-  </div>
-
-  <div className="flex flex-col">
-    <label className="text-xs font-semibold text-gray-700 mb-1">Booking Type</label>
-    <select className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500">
-      <option>Online</option>
-      <option>Offline</option>
-    </select>
-  </div>
-
-  <div className="flex flex-col">
-    <label className="text-xs font-semibold text-gray-700 mb-1">Hotel Agent</label>
-    <select className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500">
-      <option>Custom</option>
-      <option>Agent 1</option>
-    </select>
-  </div>
-</div>
-
-                      {/* Room Type */}
-                <div className="grid grid-cols-2 gap-6 p-4 mb-6 border border-gray-200 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50">
-  {/* Column 1: Room Type */}
-  <div className="flex flex-col">
-    <label className="block uppercase text-blueGray-600 text-xs font-bold mb-3">
-      Room Type
-    </label>
-    <select
-      name="roomType"
-      value={formData.roomType}
-      onChange={handleChange}
-      className="w-full border border-gray-300 px-4 py-3 rounded-lg text-sm shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-    >
-      <option value="">Select Room Type</option>
-      {roomType.map((roomType) => (
-        <option key={roomType?._id} value={roomType?._id}>
-          {roomType?.brand}
-        </option>
-      ))}
-    </select>
-  </div>
-
-  {/* Column 2: Add Tax With Rate (Toggle + GRC) */}
-  <div className="flex flex-col">
-    <label className="block uppercase text-blueGray-600 text-xs font-bold mb-3">
-      Add Tax With Rate
-    </label>
-    <div className="flex items-center gap-4 p-2 bg-white rounded-lg border border-gray-200 shadow-sm">
-      {/* GRC Input (if needed) */}
-      {isShowGrc && (
-        <input
-          type="text"
-          name="grcno"
-          value={formData.grcno || ""}
-          onChange={handleChange}
-          placeholder="GRC %"
-          className="w-20 border px-2 py-2 rounded text-xs focus:outline-none focus:ring bg-white border-gray-200"
-        />
-      )}
-      
-      {/* Toggle Switch */}
-      <div className="flex items-center gap-2">
-        <span className="text-xs font-medium text-gray-700">Tax</span>
-        <button
-          type="button"
-          onClick={() =>
-            handleChange({
-              target: {
-                name: "addTaxWithRate",
-                value: !formData.addTaxWithRate,
-              },
-            })
-          }
-          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-200 shadow-sm ${
-            formData.addTaxWithRate 
-              ? "bg-green-600 shadow-green-200" 
-              : "bg-gray-300 shadow-gray-200"
-          }`}
-        >
-          <span
-            className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-200 ${
-              formData.addTaxWithRate ? "translate-x-6" : "translate-x-1"
-            }`}
-          />
-        </button>
-        <span className="text-xs font-medium text-gray-700">Rate</span>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-                      {/* Available Rooms (spans both columns if needed) */}
-                      <div className="col-span-2">
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Available Rooms
+                    {/* Arrival Date */}
+                    <div className="grid grid-cols-4 gap-4 mb-4 p-4 border border-gray-200 rounded-lg bg-gray-50">
+                      {/* ROW 1: Arrival Details */}
+                      <div className="flex flex-col">
+                        <label className="text-xs font-semibold text-gray-700 mb-1">
+                          Arrival Date
                         </label>
-                        <AvailableRooms
-                          onSelect={handleAvailableRoomSelection}
-                          selectedParty={selectedParty}
-                          placeholder="Search customers..."
-                          selectedRoomData={selectedRoomData}
-                          setDisplayFoodPlan={setDisplayFoodPlan}
-                          sendToParent={handleAvailableRooms}
-                          formData={formData}
-                          selectedRoomId={selectedRoomId}
-                          isTariffRateChange={isTariffRateChange}
-                          roomIdToUpdate={roomId}
-                          roomFromDashboard={rooms}
-                          addTaxWithRate={formData.addTaxWithRate}
+                        <input
+                          type="date"
+                          value="03-02-2026"
+                          className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+
+                      <div className="flex flex-col">
+                        <label className="text-xs font-semibold text-gray-700 mb-1">
+                          Arrival Time
+                        </label>
+                        <input
+                          type="time"
+                          value="10:30 PM"
+                          className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+
+                      <div className="flex flex-col">
+                        <label className="text-xs font-semibold text-gray-700 mb-1">
+                          Check-out Date
+                        </label>
+                        <input
+                          type="date"
+                          value="04-02-2026"
+                          className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+
+                      <div className="flex flex-col">
+                        <label className="text-xs font-semibold text-gray-700 mb-1">
+                          Check-out Time
+                        </label>
+                        <input
+                          type="time"
+                          value="16:15 PM"
+                          className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
                     </div>
-                  
+
+                    <div className="grid grid-cols-4 gap-4 mb-6 p-4 border border-gray-200 rounded-lg bg-blue-50">
+                      {/* ROW 2: Hotel Agent Details */}
+                      <div className="flex flex-col">
+                        <label className="text-xs font-semibold text-gray-700 mb-1">
+                          Stay Days
+                        </label>
+                        <input
+                          type="number"
+                          value="1"
+                          className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+
+                      <div className="flex flex-col">
+                        <label className="text-xs font-semibold text-gray-700 mb-1">
+                          Visit Purpose
+                        </label>
+                        <select className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500">
+                          <option>Business</option>
+                          <option>Leisure</option>
+                        </select>
+                      </div>
+
+                      <div className="flex flex-col">
+                        <label className="text-xs font-semibold text-gray-700 mb-1">
+                          Booking Type
+                        </label>
+                        <select className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500">
+                          <option>Online</option>
+                          <option>Offline</option>
+                        </select>
+                      </div>
+
+                      <div className="flex flex-col">
+                        <label className="text-xs font-semibold text-gray-700 mb-1">
+                          Hotel Agent
+                        </label>
+                        <select className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500">
+                          <option>Custom</option>
+                          <option>Agent 1</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Room Type */}
+                    <div className="grid grid-cols-2 gap-6 p-4 mb-6 border border-gray-200 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50">
+                      {/* Column 1: Room Type */}
+                      <div className="flex flex-col">
+                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-3">
+                          Room Type
+                        </label>
+                        <select
+                          name="roomType"
+                          value={formData.roomType}
+                          onChange={handleChange}
+                          className="w-full border border-gray-300 px-4 py-3 rounded-lg text-sm shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                        >
+                          <option value="">Select Room Type</option>
+                          {roomType.map((roomType) => (
+                            <option key={roomType?._id} value={roomType?._id}>
+                              {roomType?.brand}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Column 2: Add Tax With Rate (Toggle + GRC) */}
+                      <div className="flex flex-col">
+                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-3">
+                          Add Tax With Rate
+                        </label>
+                        <div className="flex items-center gap-4 p-2 bg-white rounded-lg border border-gray-200 shadow-sm">
+                          {/* GRC Input (if needed) */}
+                          {isShowGrc && (
+                            <input
+                              type="text"
+                              name="grcno"
+                              value={formData.grcno || ""}
+                              onChange={handleChange}
+                              placeholder="GRC %"
+                              className="w-20 border px-2 py-2 rounded text-xs focus:outline-none focus:ring bg-white border-gray-200"
+                            />
+                          )}
+
+                          {/* Toggle Switch */}
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-medium text-gray-700">
+                              Tax
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleChange({
+                                  target: {
+                                    name: "addTaxWithRate",
+                                    value: !formData.addTaxWithRate,
+                                  },
+                                })
+                              }
+                              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-200 shadow-sm ${
+                                formData.addTaxWithRate
+                                  ? "bg-green-600 shadow-green-200"
+                                  : "bg-gray-300 shadow-gray-200"
+                              }`}
+                            >
+                              <span
+                                className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-200 ${
+                                  formData.addTaxWithRate
+                                    ? "translate-x-6"
+                                    : "translate-x-1"
+                                }`}
+                              />
+                            </button>
+                            <span className="text-xs font-medium text-gray-700">
+                              Rate
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Available Rooms (spans both columns if needed) */}
+                    <div className="col-span-2">
+                      <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                        Available Rooms
+                      </label>
+                      <AvailableRooms
+                        onSelect={handleAvailableRoomSelection}
+                        selectedParty={selectedParty}
+                        placeholder="Search customers..."
+                        selectedRoomData={selectedRoomData}
+                        setDisplayFoodPlan={setDisplayFoodPlan}
+                        sendToParent={handleAvailableRooms}
+                        formData={formData}
+                        selectedRoomId={selectedRoomId}
+                        isTariffRateChange={isTariffRateChange}
+                        roomIdToUpdate={roomId}
+                        roomFromDashboard={rooms}
+                        addTaxWithRate={formData.addTaxWithRate}
+                      />
+                    </div>
+                  </div>
 
                   <div className="flex flex-wrap pt-4">
                     {/* Booking Number */}
