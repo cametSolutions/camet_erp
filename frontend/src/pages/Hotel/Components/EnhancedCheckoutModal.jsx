@@ -189,24 +189,13 @@ export default function EnhancedCheckoutModal({
       (item) => item.selectedCustomer._id === firstCustomer._id,
     );
 
-<<<<<<< HEAD
     let result
 console.log(isSameCustomer)
     console.log("HHHh")
-=======
-    let result;
-    console.log("HHHh");
->>>>>>> bfc7c9314edd94e26d55803685d9ec2f555c95d0
     if (isSameCustomer) {
       console.log("HHHhh");
       // 🔥 Merge ALL into ONE customer
-<<<<<<< HEAD
-      const checkInMap = {}
-console.log(roomAssignments.length)
-console.log(roomAssignments)
-=======
       const checkInMap = {};
->>>>>>> bfc7c9314edd94e26d55803685d9ec2f555c95d0
 
       roomAssignments.forEach((assignment) => {
         if (!checkInMap[assignment.checkInId]) {
