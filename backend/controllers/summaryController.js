@@ -511,6 +511,7 @@ export const getSummary = async (req, res) => {
     const groupedByParty = new Map();
 
     for (const record of mergedResults) {
+      console.log("record", record)
       const filtername =
         selectedOption === "Ledger"
           ? record._id.partyName
@@ -518,7 +519,7 @@ export const getSummary = async (req, res) => {
             ? record._id.categoryName
             : selectedOption === "Stock Group"
               ? record._id.groupName
-              : record._id.itemName;
+              : selectedOption === "voucher" ? record._id.voucherSeries : record._id.itemName;
 
       if (!groupedByParty.has(filtername)) {
         groupedByParty.set(filtername, {

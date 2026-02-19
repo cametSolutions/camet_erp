@@ -6,6 +6,7 @@ import TitleDiv from "../../../../../components/common/TitleDiv";
 import SettingsCard from "../../../../../components/common/SettingsCard";
 import { useSelector, useDispatch } from "react-redux";
 import { toast } from "react-toastify";
+import { GrClipboard } from "react-icons/gr";
 import { LiaMoneyCheckAltSolid } from "react-icons/lia";
 import { updateConfiguration } from "../../../../../../slices/secSelectedOrgSlice.js";
 import api from "@/api/api";
@@ -26,9 +27,17 @@ const restuarentSettings = () => {
     }
     try {
       const response = await api.put(url, data, { withCredentials: true });
+      
       if (response?.data?.success) {
         dispatch(updateConfiguration(response?.data?.organization));
-        toast.success(response?.data?.message);
+        
+        // Show appropriate success message
+        if (data?.title?.includes('defaultPrint')) {
+          const formatName = data?.title === 'defaultPrint.print1' ? 'Format 1' : 'Format 2';
+          toast.success(`Print format changed to ${formatName}`);
+        } else {
+          toast.success(response?.data?.message);
+        }
       }
     } catch (error) {
       toast.error(error?.response?.data?.message);
@@ -96,6 +105,27 @@ const restuarentSettings = () => {
       toggleValue: configurations[0]?.addRateWithTax?.restaurantSale,
       dbField: "restaurantSale",
     });
+       settingsOptions.push({
+                title: "Default Print",
+                description: "Select your default print options",
+                icon: <GrClipboard />,
+                to: "sec",
+                active: true,
+                checkboxGroup: true,
+                checkboxes: [
+                  {
+                    label: "Format 1",
+                    checked: configurations?.[0]?.defaultPrint?.restaurantPrint1 ?? false, // Fixed access
+                    dbField: "defaultPrint.restaurantPrint1",
+                  },
+                  {
+                    label: "Format 2",
+                    checked: configurations?.[0]?.defaultPrint?.restaurantPrint2 ?? false, // Fixed access
+                    dbField: "defaultPrint.restaurantPrint2",
+                  },
+                ],
+                dbField:"restaurant"
+              });
   }
 
   return (

@@ -936,9 +936,9 @@ const RestaurantPOS = () => {
       })
       if (response.data?.success) {
         handleKotPrint(response.data?.data)
-        if (orderType === "dine-in") {
+         if (orderType === "dine-in") {
           await api.put(
-            `/api/sUsers/updateTableStatus/${cmp_id}`,
+            '/api/sUsers/updateTableStatus/${cmp_id}',
             {
               tableNumber: selectedTableNumber,
               status: "occupied"

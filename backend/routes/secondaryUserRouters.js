@@ -65,7 +65,8 @@ import {
     fetchOutStandingAndFoodData, convertCheckOutToSale,editcheckoutforroom, updateConfigurationForHotelAndRestaurant, swapRoom, getRoomSwapHistory, checkedInGuest,
     getallroomsCurrentStatus,
     getallnoncheckoutCheckins,
-    getHotelSalesDetails, getRoomCheckInDetails, cancelBooking,getCheckoutStatementByDate,convertToAvailable
+    getHotelSalesDetails, getRoomCheckInDetails, cancelBooking,getCheckoutStatementByDate,convertToAvailable,controlTaggedCheckIn,
+    getHoldCheckIns,releaseHold
 } from '../controllers/hotelController.js'
 import {
     addItem, getAllItems, getItems, getCategories, deleteItem, updateItem, generateKot, getKot, updateKotStatus, editKot,
@@ -384,15 +385,18 @@ router.post('/editcheckoutforroom/:cmp_id',authSecondary,editcheckoutforroom)
 router.put('/updateConfigurationForHotelAndRestaurant/:cmp_id',authSecondary,updateConfigurationForHotelAndRestaurant)
 router.put('/updateConfigurationForKotApproval/:cmp_id',authSecondary,updateConfigurationForKotApproval)
 router.put("/swapRoom/:checkInId", swapRoom);
-router.get("/getRoomSwapHistory/:checkInId", getRoomSwapHistory);
+router.get("/getRoomSwapHistory/:checkInId",getRoomSwapHistory);
 router.get("/getCheckedInGuests/:cmp_id", checkedInGuest);
 router.get('/summary', getSummaryDashboard);
 router.get('/hotel-sales/:cmp_id/:type', getHotelSalesDetails);
 router.put("/cancel/:id", cancelKot);
-router.get('/getRoomCheckInDetails/:cmp_id/:roomId', getRoomCheckInDetails);
+router.get('/getRoomCheckInDetails/:cmp_id/:roomId',getRoomCheckInDetails);
 router.put('/cancelBooking/:id', cancelBooking);
 router.get('/statement', getCheckoutStatementByDate);
-router.post("/convertToAvailable/:cmp_id", convertToAvailable);
+router.post("/convertToAvailable/:cmp_id",convertToAvailable);
+router.post("/controlTaggedCheckIn/:cmp_id", authSecondary,controlTaggedCheckIn);
+router.post("/getHoldCheckOutData/:cmp_id",getHoldCheckIns);
+router.post("/unHoldCheckOut/:cmp_id",releaseHold);
 // Route to get detailed booking information for a specific room and date
 
 export default router

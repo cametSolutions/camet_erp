@@ -361,7 +361,6 @@ export const saveIdProof = async (req, res) => {
       idProof,
       cmp_id,
       Primary_user_id: req.pUserId || req.owner,
-
     });
 
     if (nameAlreadyExists) {
@@ -435,7 +434,6 @@ export const updateIdProof = async (req, res) => {
       cmp_id,
       Primary_user_id: req.pUserId || req.owner,
       _id: { $ne: new ObjectId(idProofId) },
-
     });
 
     if (nameAlreadyExists) {
@@ -524,7 +522,6 @@ export const saveFoodPlan = async (req, res) => {
       foodPlan,
       cmp_id,
       Primary_user_id: req.pUserId || req.owner,
-
     });
 
     if (nameAlreadyExists) {
@@ -532,7 +529,6 @@ export const saveFoodPlan = async (req, res) => {
         message: "Food plan name already exists",
       });
     }
-
 
     const generatedId = new mongoose.Types.ObjectId();
 
@@ -604,7 +600,6 @@ export const updateFoodPlan = async (req, res) => {
       cmp_id,
       Primary_user_id: req.pUserId || req.owner,
       _id: { $ne: new ObjectId(foodPlanId) },
-
     });
 
     if (nameAlreadyExists) {
@@ -1260,13 +1255,13 @@ export const roomBooking = async (req, res) => {
           const paymentDetails =
             method === "cash"
               ? {
-                cash_ledname: singlePaymentDetails?.accountName,
-                cash_name: singlePaymentDetails?.accountName,
-              }
+                  cash_ledname: singlePaymentDetails?.accountName,
+                  cash_name: singlePaymentDetails?.accountName,
+                }
               : {
-                bank_ledname: singlePaymentDetails?.accountName,
-                bank_name: singlePaymentDetails?.accountName,
-              };
+                  bank_ledname: singlePaymentDetails?.accountName,
+                  bank_name: singlePaymentDetails?.accountName,
+                };
 
           await buildReceipt(
             receiptVoucher,
@@ -1329,13 +1324,13 @@ export const roomBooking = async (req, res) => {
             const paymentDetails =
               payment.method === "cash"
                 ? {
-                  cash_ledname: payment?.accountName,
-                  cash_name: payment?.accountName,
-                }
+                    cash_ledname: payment?.accountName,
+                    cash_name: payment?.accountName,
+                  }
                 : {
-                  bank_ledname: payment?.accountName,
-                  bank_name: payment?.accountName,
-                };
+                    bank_ledname: payment?.accountName,
+                    bank_name: payment?.accountName,
+                  };
 
             await buildReceipt(
               receiptVoucher,
@@ -1374,7 +1369,7 @@ export const roomBooking = async (req, res) => {
 export const getBookings = async (req, res) => {
   try {
     const params = extractRequestParamsForBookings(req);
-    console.log("paramss", params)
+    console.log("paramss", params);
     const filter = buildDatabaseFilterForBooking(params);
 
     const { bookings, totalBookings } = await fetchBookingsFromDatabase(
@@ -1926,13 +1921,13 @@ export const updateBooking = async (req, res) => {
           const paymentDetails =
             method === "cash"
               ? {
-                cash_ledname: singlePaymentDetails?.accountName,
-                cash_name: singlePaymentDetails?.accountName,
-              }
+                  cash_ledname: singlePaymentDetails?.accountName,
+                  cash_name: singlePaymentDetails?.accountName,
+                }
               : {
-                bank_ledname: singlePaymentDetails?.accountName,
-                bank_name: singlePaymentDetails?.accountName,
-              };
+                  bank_ledname: singlePaymentDetails?.accountName,
+                  bank_name: singlePaymentDetails?.accountName,
+                };
           console.log("line 1807");
           // Receipt
           await buildReceipt(
@@ -2003,13 +1998,13 @@ export const updateBooking = async (req, res) => {
             const paymentDetails =
               payment.method === "cash"
                 ? {
-                  cash_ledname: payment?.accountName,
-                  cash_name: payment?.accountName,
-                }
+                    cash_ledname: payment?.accountName,
+                    cash_name: payment?.accountName,
+                  }
                 : {
-                  bank_ledname: payment?.accountName,
-                  bank_name: payment?.accountName,
-                };
+                    bank_ledname: payment?.accountName,
+                    bank_name: payment?.accountName,
+                  };
             console.log("line 1884");
             await buildReceipt(
               receiptVoucher,
@@ -2343,7 +2338,13 @@ export const getDateBasedRoomsWithStatus = async (req, res) => {
       status: { $ne: "checkOut" },
       // arrivalDate: { $lte: selectedDate },
       // checkOutDate: { $gte: selectedDate },
-    });
+    }).populate("customerId")
+        .populate("guestId")
+        .populate("agentId")
+        .populate("isHotelAgent")
+        .populate("selectedRooms.selectedPriceLevel")
+        .populate("bookingId")
+        .populate("checkInId")
 
     // ✅ Send response
     return res.status(200).json({
@@ -2976,7 +2977,7 @@ export const convertCheckOutToSale = async (req, res) => {
 
       // Process each checkout separately
       let results;
-      let salesarray
+      let salesarray;
       for (const item of selectedCheckOut) {
         // console.log("itemdddddd", item);
         const bookingVoucherNumber =
@@ -3103,7 +3104,7 @@ export const convertCheckOutToSale = async (req, res) => {
         const isThisPartial =
           item.isPartialCheckout ||
           roomsBeingCheckedOut.length <
-          (originalCheckIn.selectedRooms?.length || 0);
+            (originalCheckIn.selectedRooms?.length || 0);
 
         if (isThisPartial) isAnyPartial = true;
 
@@ -3208,7 +3209,7 @@ export const convertCheckOutToSale = async (req, res) => {
           amount,
           session,
           paymentMode,
-          "checkout"
+          "checkout",
         );
 
         // ============ HANDLE SETTLEMENTS (NOT RECEIPTS YET) ============
@@ -3340,7 +3341,7 @@ export const convertCheckOutToSale = async (req, res) => {
           await saveSettlement(
             paymentDetails,
             selectedCheckOut[0]?.customerId?._id ||
-            selectedCheckOut[0]?.customerId,
+              selectedCheckOut[0]?.customerId,
             primarySource,
             cmp_id,
             results[0]?.salesRecord, // Use first sale as reference
@@ -3360,16 +3361,14 @@ export const convertCheckOutToSale = async (req, res) => {
           (sum, split) => sum + Number(split.amount || 0),
           0,
         );
-        const credit = paymentDetails?.splitDetails.filter((item) => item.source === "credit")
-        console.log("creditttt", credit)
+        const credit = paymentDetails?.splitDetails.filter(
+          (item) => item.source === "credit",
+        );
+        console.log("creditttt", credit);
         if (credit) {
           for (const item of credit) {
-            const partyid = item?.customer
-            const partyData = await getSelectedParty(
-              partyid,
-              cmp_id,
-              session,
-            );
+            const partyid = item?.customer;
+            const partyData = await getSelectedParty(partyid, cmp_id, session);
             const party = mapPartyData(partyData);
             await TallyData.create(
               [
@@ -3395,7 +3394,6 @@ export const convertCheckOutToSale = async (req, res) => {
               { session },
             );
           }
-
         }
         if (totalPaidAmount > 0) {
           await createReceiptForSales(
@@ -3405,7 +3403,7 @@ export const convertCheckOutToSale = async (req, res) => {
             selectedCheckOut[0]?.customerId?.partyName || "Customer",
             totalPaidAmount,
             selectedCheckOut[0]?.customerId?._id ||
-            selectedCheckOut[0]?.customerId,
+              selectedCheckOut[0]?.customerId,
             results[0]?.salesRecord,
             results[0]?.tallyId,
             req,
@@ -3443,7 +3441,7 @@ export const convertCheckOutToSale = async (req, res) => {
             selectedCheckOut[0]?.customerId?.partyName || "Customer",
             totalPaidAmount,
             selectedCheckOut[0]?.customerId?._id ||
-            selectedCheckOut[0]?.customerId,
+              selectedCheckOut[0]?.customerId,
             results[0]?.salesRecord,
             agId,
             req,
@@ -3660,7 +3658,7 @@ async function createTallyEntry(
   amount,
   session,
   paymentMode,
-  from = "other"
+  from = "other",
 ) {
   console.log("frommmmmm", from)
   const selectedOne = await Party.findOne({ _id: selectedParty }).session(
@@ -3686,7 +3684,7 @@ async function createTallyEntry(
         advanceDate: new Date(),
         classification: "Dr",
         source: "sales",
-        ...(from === "checkout" ? { cantChange: true } : {})
+        ...(from === "checkout" ? { cantChange: true } : {}),
       },
     ],
     { session },
@@ -3753,6 +3751,23 @@ export const updateConfigurationForHotelAndRestaurant = async (req, res) => {
           $set: {
             [`configurations.0.defaultPrint.${data.field}`]: data.checked,
             [`configurations.0.defaultPrint.print1`]: false,
+          },
+        };
+      }
+      if (data.field === "restaurantPrint1") {
+        console.log("xxxxxxxxxxxx3");
+        updateData = {
+          $set: {
+            [`configurations.0.defaultPrint.${data.field}`]: data.checked,
+            [`configurations.0.defaultPrint.restaurantPrint2`]: false,
+          },
+        };
+      } else if (data.field === "restaurantPrint2") {
+        console.log("xxxxxxxxxxxx4");
+        updateData = {
+          $set: {
+            [`configurations.0.defaultPrint.${data.field}`]: data.checked,
+            [`configurations.0.defaultPrint.restaurantPrint1`]: false,
           },
         };
       }
@@ -4485,12 +4500,12 @@ export const getHotelSalesDetails = async (req, res) => {
             percentage:
               totalSales > 0
                 ? (summary.mealPeriodBreakdown[period].amount / totalSales) *
-                100
+                  100
                 : 0,
             averageTicket:
               summary.mealPeriodBreakdown[period].count > 0
                 ? summary.mealPeriodBreakdown[period].amount /
-                summary.mealPeriodBreakdown[period].count
+                  summary.mealPeriodBreakdown[period].count
                 : 0,
           };
           return acc;
@@ -4504,9 +4519,9 @@ export const getHotelSalesDetails = async (req, res) => {
         averageItemsPerTransaction:
           totalTransactions > 0
             ? transformedData.reduce(
-              (sum, order) => sum + (order.itemCount || 0),
-              0,
-            ) / totalTransactions
+                (sum, order) => sum + (order.itemCount || 0),
+                0,
+              ) / totalTransactions
             : 0,
       },
       serviceMetrics: {
@@ -4564,8 +4579,9 @@ export const getHotelSalesDetails = async (req, res) => {
         },
         serviceBreakdown: summary.serviceBreakdown,
         mealPeriodSummary: summary.mealPeriodBreakdown,
-        message: `Found ${transformedData.length} ${businessType === "all" ? "combined" : businessType
-          } sales records`,
+        message: `Found ${transformedData.length} ${
+          businessType === "all" ? "combined" : businessType
+        } sales records`,
       },
     });
   } catch (error) {
@@ -5133,3 +5149,140 @@ export const convertToAvailable = async (req, res) => {
     });
   }
 };
+
+export const controlTaggedCheckIn = async (req, res) => {
+  const session = await mongoose.startSession();
+
+  try {
+    const cmp_id = req.params.cmp_id;
+    const { checkInId, holds } = req.body;
+
+    if (!checkInId || !holds || !holds.length) {
+      return res.status(400).json({ message: "Invalid request data" });
+    }
+
+    const holdIds = holds.map((h) => h._id); // array of hold IDs
+
+    await session.withTransaction(async () => {
+      // 1️⃣ Update the main check-in with hold array
+      await CheckIn.updateOne(
+        { _id: new mongoose.Types.ObjectId(checkInId) },
+        { $set: { holdArray: holdIds } },
+        { session },
+      );
+      const bulkOps = holds.map((h) => ({
+        updateOne: {
+          filter: { _id: new mongoose.Types.ObjectId(h._id) },
+          update: {
+            $set: {
+              arrivalDate: h.arrivalDate,
+              checkOutDate: h.checkOutDate,
+              stayDays: h.stayDays,
+              isHold: true,
+              taggedCheckIns: checkInId,
+            },
+          },
+          session,
+        },
+      }));
+
+      await CheckIn.bulkWrite(bulkOps, { session });
+    });
+
+    session.endSession();
+
+    res.status(200).json({ message: "Tagged successfully" });
+  } catch (error) {
+    session.endSession();
+    console.error(error);
+    res.status(500).json({ message: error.message || "Something went wrong" });
+  }
+};
+
+
+
+export const getHoldCheckIns = async (req, res) => {
+  try {
+    const { holdCheckInIds } = req.body.data;
+
+    if (!holdCheckInIds || !holdCheckInIds.length) {
+      return res.status(400).json({ message: "Hold check-in IDs missing" });
+    }
+
+    // Convert to ObjectId
+    const objectIds = holdCheckInIds.map(id => new mongoose.Types.ObjectId(id));
+
+    const holdData = await CheckIn.find({
+      _id: { $in: objectIds },
+
+    }).populate("customerId")
+      .populate("guestId")
+      .populate("agentId")
+      .populate("isHotelAgent")
+      .populate("selectedRooms.selectedPriceLevel")
+      .populate("bookingId")
+      .populate("checkInId")
+
+    return res.status(200).json({
+      message: "Hold check-ins fetched successfully",
+      holdData,
+    });
+
+  } catch (error) {
+    console.error("getHoldCheckIns error:", error);
+    return res.status(500).json({
+      message: error.message || "Something went wrong",
+    });
+  }
+};
+
+
+
+
+export const releaseHold = async (req, res) => {
+  const session = await mongoose.startSession();
+
+  try {
+    const { selectedCheckOut } = req.body.data;
+    let checkInIds = selectedCheckOut.map((item)=>item._id)
+
+    if (!checkInIds || !checkInIds.length) {
+      return res.status(400).json({ message: "Check-in IDs missing" });
+    }
+
+    // Convert to ObjectId
+    const objectIds = checkInIds.map(
+      (id) => new mongoose.Types.ObjectId(id)
+    );
+
+    await session.withTransaction(async () => {
+
+      // 1️⃣ Remove IDs from holdArray
+      await CheckIn.updateMany(
+        { holdArray: { $in: checkInIds } },
+        { $pull: { holdArray: { $in: checkInIds } } },
+        { session }
+      );
+
+      // 2️⃣ Update isHold false
+      await CheckIn.updateMany(
+        { _id: { $in: objectIds } },
+        { $set: { isHold: false } },
+        { session }
+      );
+    });
+
+    return res.status(200).json({
+      message: "Hold released successfully",
+    });
+
+  } catch (error) {
+    console.error("releaseHold error:", error);
+    return res.status(500).json({
+      message: error.message || "Something went wrong",
+    });
+  } finally {
+    session.endSession();
+  }
+};
+

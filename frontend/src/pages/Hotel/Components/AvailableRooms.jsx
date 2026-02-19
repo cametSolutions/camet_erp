@@ -10,7 +10,80 @@ import { taxCalculator } from "../Helper/taxCalculator";
 import { FaHistory } from "react-icons/fa";
 import TariffHistory from "./TariffHistory";
 
-// Reorganized & corrected AvailableRooms component with improved tax logic
+// Visual Room Card Component
+function RoomCard({ room, isSelected, isBooked, onClick, disabled }) {
+  const getCardColor = () => {
+    if (disabled || isBooked) return "bg-gray-300 cursor-not-allowed";
+    if (isSelected) return "bg-blue-500 text-white";
+    return "bg-emerald-500 hover:bg-emerald-600 text-white cursor-pointer";
+  };
+
+  return (
+    <div
+      onClick={!disabled && !isBooked ? onClick : undefined}
+      className={`${getCardColor()} rounded-lg p-2 transition-all duration-200 transform hover:scale-105 shadow-md min-h-[50px] flex flex-col items-center justify-center`}
+    >
+      <span className="text-lg font-bold">{room.roomNumber || room.roomName}</span>
+      {room.roomType?.brand && (
+        <span className="text-[10px] mt-0.5 opacity-90 truncate max-w-full">{room.roomType.brand}</span>
+      )}
+    </div>
+  );
+}
+
+// Visual Room Selector Component
+function VisualRoomSelector({
+  rooms,
+  selectedRooms,
+  bookedRoomIds,
+  onRoomSelect,
+  loading,
+  disabled,
+}) {
+  return (
+    <div className="w-full bg-gray-50 border rounded-xl p-3">
+      <h3 className="text-sm font-semibold text-gray-700 mb-3">
+        Select Rooms (Click to add)
+      </h3>
+      
+      {loading ? (
+        <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-8 lg:grid-cols-10 gap-2">
+          {[...Array(20)].map((_, i) => (
+            <div key={i} className="bg-gray-200 rounded-lg h-12 animate-pulse"></div>
+          ))}
+        </div>
+      ) : rooms.length === 0 ? (
+        <div className="text-center py-8 text-gray-500">
+          No rooms available for selected dates
+        </div>
+      ) : (
+        <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-8 lg:grid-cols-10 gap-2">
+          {rooms.map((room) => {
+            const isBooked = bookedRoomIds.includes(room._id);
+            const isSelected = selectedRooms.some(
+              (selected) => selected.roomId === room._id
+            );
+
+            return (
+              <RoomCard
+                key={room._id}
+                room={room}
+                isSelected={isSelected}
+                isBooked={isBooked}
+                onClick={() => onRoomSelect(room)}
+                disabled={disabled}
+              />
+            );
+          })}
+        </div>
+      )}
+
+     
+    </div>
+  );
+}
+
+// Main AvailableRooms component with visual selection
 function AvailableRooms({
   onSelect = () => {},
   placeholder = "Search and select a party...",
@@ -21,12 +94,11 @@ function AvailableRooms({
   sendToParent,
   formData,
   selectedRoomId,
-  isTariffRateChange = false, // ✅ Add this
+  roomFromDashboard =[],
+  isTariffRateChange = false,
   roomIdToUpdate = null,
   addTaxWithRate = false,
 }) {
-  console.log(formData.foodPlan);
-  console.log("h");
   const [rooms, setRooms] = useState([]);
   const [search, setSearch] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -41,17 +113,16 @@ function AvailableRooms({
   const [pendingRoomQueue, setPendingRoomQueue] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
   const [selectedRoomForHistory, setSelectedRoomForHistory] = useState(null);
+  const [roomDeletedCompletely, setRoomDeletedCompletely] = useState(false);
 
   const debounceTimerRef = useRef(null);
   const dropdownRef = useRef(null);
   const PAGE_SIZE = 50;
-  console.log(rooms);
   useEffect(() => {
     const fetchBookings = async () => {
-      if (formData?.selectedRooms?.length > 0) {
+      if (formData?.selectedRooms?.length > 0 ) {
         const updatedBookings = await Promise.all(
           formData.selectedRooms.map(async (booking) => {
-            // Normalize each booking's data structure
             const normalizedBooking = {
               roomId: booking.roomId || booking._id,
               roomName: booking.roomName,
@@ -64,7 +135,6 @@ function AvailableRooms({
               stayDays: booking.stayDays || formData.stayDays || 1,
               hsnDetails: booking.hsnDetails || booking.hsn,
               totalAmount: booking.totalAmount || 0,
-              // Preserve existing tax data
               amountAfterTax: booking.amountAfterTax,
               amountWithOutTax: booking.amountWithOutTax,
               taxPercentage: booking.taxPercentage,
@@ -89,13 +159,19 @@ function AvailableRooms({
             return taxCalculation;
           }),
         );
-        console.log("Normal Mode - All Bookings:", updatedBookings);
         setBookings(updatedBookings);
       } else if (rooms?.length > 0 && selectedRoomId) {
         let specificRoom = rooms.find((room) => room._id === selectedRoomId);
         if (specificRoom) {
           handleSelect(specificRoom);
         }
+      }else if (roomFromDashboard?.length > 0 && !roomDeletedCompletely) {
+        console.log(roomFromDashboard);
+        roomFromDashboard.map((room) => {
+          let specificRoom = rooms.find((roomId) => roomId._id === room.roomId);
+          console.log(specificRoom);
+          handleSelect(specificRoom);
+        })
       }
     };
 
@@ -111,14 +187,13 @@ function AvailableRooms({
   useEffect(() => {
     if (!formData?.additionalPaxDetails && !formData?.foodPlan) return;
     if (!selectedRoomId) return;
-    console.log("h");
+    
     const bookingData = bookings?.find(
       (item) => item.roomId === selectedRoomId,
     );
 
     const recalculateTax = async () => {
       if (bookingData) {
-        console.log("h");
         const taxCalculation = await calculateTax(bookingData);
         setBookings((prev) =>
           prev.map((b) => (b.roomId === selectedRoomId ? taxCalculation : b)),
@@ -130,9 +205,8 @@ function AvailableRooms({
   }, [formData?.additionalPaxDetails, formData?.foodPlan, selectedRoomId]);
 
   useEffect(() => {
-    console.log(!formData?.bookingType);
     if (!formData?.bookingType) return;
-    console.log("H");
+    
     const handleBookingTypeChange = async () => {
       if (bookings?.length > 0) {
         const updatedBookings = await Promise.all(
@@ -141,16 +215,12 @@ function AvailableRooms({
             return taxCalculation;
           }),
         );
-        console.log(updatedBookings);
         setBookings(updatedBookings);
       }
     };
 
     handleBookingTypeChange();
   }, [formData?.bookingType]);
-  console.log(bookings);
-  console.log(formData?.bookingType);
-  console.log("Hhh");
 
   const { _id: cmp_id } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg,
@@ -163,7 +233,6 @@ function AvailableRooms({
       setLoading(true);
       setError(null);
       try {
-        console.log("Hhh");
         const params = {
           page: pageNum,
           limit: PAGE_SIZE,
@@ -171,7 +240,6 @@ function AvailableRooms({
           type: formData?.roomType || "All",
         };
 
-        // Add date range for availability checking
         if (formData?.arrivalDate) {
           params.arrivalDate = formData.arrivalDate;
         }
@@ -186,7 +254,6 @@ function AvailableRooms({
 
         const newRooms = res.data?.roomData || [];
 
-        // Filter out rooms that are already selected in current booking
         const availableRooms = newRooms.filter((room) => {
           const isAlreadyBooked = bookings.some(
             (booking) => booking.roomId === room._id,
@@ -226,6 +293,7 @@ function AvailableRooms({
   );
 
   useEffect(() => {
+    
     if (!bookings?.length) return;
 
     const recalc = async () => {
@@ -237,7 +305,6 @@ function AvailableRooms({
   }, [addTaxWithRate]);
 
   const recalculateBookingTotals = useCallback((booking) => {
-    // Parse check-in and check-out dates from formData
     const checkInDate = formData?.arrivalDate || formData?.checkInDate;
     const checkOutDate = formData?.checkOutDate;
 
@@ -245,41 +312,31 @@ function AvailableRooms({
       // Fallback to simple calculation if dates are not available
       const baseAmount =
         Number(booking.priceLevelRate || 0) * Number(booking.stayDays || 0);
-      console.log(baseAmount);
       return {
         ...booking,
         totalAmount: baseAmount,
       };
     }
 
-    // Generate array of all stay dates
     const stayDates = [];
     const currentDate = new Date(checkInDate);
     const endDate = new Date(checkOutDate);
-    console.log(currentDate, booking.dateTariffs);
 
     while (currentDate < endDate) {
-      // Format date as YYYY-MM-DD to match dateTariffs keys
       const formattedDate = currentDate.toISOString().split("T")[0];
       stayDates.push(formattedDate);
       currentDate.setDate(currentDate.getDate() + 1);
     }
 
-    // Calculate total amount based on date-specific tariffs
     let totalAmount = 0;
     const dateTariffs = booking.dateTariffs || {};
     const defaultRate = Number(booking.priceLevelRate || 0);
-
-    // Sort dateTariff dates to find the highest date with a tariff
     const tariffDates = Object.keys(dateTariffs).sort();
-    console.log(stayDates);
 
     stayDates.forEach((date) => {
-      // Check if there's a specific tariff for this date
       if (dateTariffs[date]) {
         totalAmount += Number(dateTariffs[date]);
       } else {
-        // Find the highest date that is less than or equal to current date
         let applicableRate = defaultRate;
 
         for (let i = tariffDates.length - 1; i >= 0; i--) {
@@ -297,13 +354,13 @@ function AvailableRooms({
       ...booking,
       totalAmount: totalAmount,
     };
-  }, []);
+  }, [formData]);
 
   console.log(bookings);
   const calculateTax = useCallback(
     async (booking) => {
       if (!booking) return booking;
-      console.log(booking);
+      
       const updatedRoom = recalculateBookingTotals(booking);
 
       try {
@@ -313,7 +370,6 @@ function AvailableRooms({
           formData,
           booking.roomId,
         );
-        console.log(taxResponse);
 
         return {
           ...updatedRoom,
@@ -351,8 +407,9 @@ function AvailableRooms({
   );
 
   useEffect(() => {
+    console.log("hai")
     if (pendingRoomQueue.length === 0) return;
-    console.log("jjj");
+    
     const roomIdToUpdate = pendingRoomQueue[0];
     const roomToUpdate = bookings.find((b) => b.roomId === roomIdToUpdate);
 
@@ -375,13 +432,12 @@ function AvailableRooms({
     return () => {
       isMounted = false;
     };
-  }, [pendingRoomQueue, bookings]);
+  }, [pendingRoomQueue, bookings, calculateTax]);
 
-  console.log("h");
   useEffect(() => {
+
+    console.log("jsdkf")
     if (bookings.length > 0) {
-      console.log("h");
-      // Calculate totals for currently displayed bookings
       const total = bookings.reduce(
         (acc, b) => acc + Number(b.amountAfterTax || b.totalAmount || 0),
         0,
@@ -395,26 +451,19 @@ function AvailableRooms({
 
       const foodTotal = Number(formData?.foodPlanTotal || 0);
       const finalTotal = total;
-      console.log(foodTotal);
-      console.log(total);
-      console.log(paxTotal);
-      // If in single-room edit mode, merge with other rooms before sending to parent
+
       if (roomIdToUpdate && formData?.selectedRooms?.length > 1) {
-        // Get all other rooms except the one being edited
         const otherRooms = formData.selectedRooms.filter(
           (room) =>
             room.roomId !== roomIdToUpdate && room._id !== roomIdToUpdate,
         );
 
-        // Merge the edited room with other rooms
         const allRooms = [...otherRooms, ...bookings];
 
-        // Recalculate total for all rooms
         const allRoomsTotal = allRooms.reduce(
           (acc, b) => acc + Number(b.amountAfterTax || b.totalAmount || 0),
           0,
         );
-        console.log(allRoomsTotal);
 
         const allRoomsPaxTotal = allRooms.reduce((acc, b) => {
           const paxPerDay = Number(b.additionalPaxAmountWithTax || 0);
@@ -426,14 +475,11 @@ function AvailableRooms({
         setTotalAmount(allRoomsFinalTotal);
         sendToParent(allRooms, allRoomsFinalTotal);
       } else {
-        console.log("{h");
-        // Normal mode - send as is
         setTotalAmount(finalTotal);
-        console.log(finalTotal);
         sendToParent(bookings, finalTotal);
       }
-    } else {
-      console.log("h");
+    }
+     else {
       setTotalAmount(0);
       sendToParent([], 0);
     }
@@ -441,7 +487,7 @@ function AvailableRooms({
     bookings,
     formData?.foodPlanTotal,
     roomIdToUpdate,
-    // formData?.selectedRooms
+    // sendToParent,
   ]);
   
 
@@ -452,30 +498,18 @@ function AvailableRooms({
       prev.map((booking) => {
         if (booking.roomId !== roomId) return booking;
 
-        // Find the selected price level
         const level = booking.priceLevel.find((p) => {
-          // Handle both normalized and non-normalized price level structures
           return (
             p._id === selectedLevelId || p.priceLevel?._id === selectedLevelId
           );
         });
 
-        // Determine the new rate
         let newRate = 0;
         if (level) {
-          // Price level found
           newRate = level?.priceRate || level?.priceLevel?.priceRate || 0;
         } else if (selectedLevelId === booking?.roomType?._id) {
-          // "Normal" rate selected (room type base rate)
           newRate = booking.roomType?.roomRent || 0;
         }
-
-        console.log("Price Level Change:", {
-          selectedLevelId,
-          level,
-          newRate,
-          booking,
-        });
 
         return {
           ...booking,
@@ -486,14 +520,13 @@ function AvailableRooms({
       }),
     );
 
-    // Queue for tax recalculation
     setPendingRoomQueue((prev) =>
       prev.includes(roomId) ? prev : [...prev, roomId],
     );
   };
+
   const handleDaysChange = (e, roomId) => {
     const newDays = Number(e.target.value || 0);
-    console.log(newDays);
 
     setBookings((prev) =>
       prev.map((b) =>
@@ -550,7 +583,6 @@ function AvailableRooms({
       );
     }
 
-    // Queue for tax recalculation
     setPendingRoomQueue((prev) =>
       prev.includes(roomId) ? prev : [...prev, roomId],
     );
@@ -566,20 +598,18 @@ function AvailableRooms({
 
   const handleDelete = (roomId) => {
     if (isTariffRateChange) {
-      // Show message or prevent deletion when editing single room
       toast.error("Cannot delete room while in tariff rate change mode");
       return;
     }
     let filteredRoom = bookings.filter((b) => b.roomId !== roomId);
+    if(filteredRoom.length === 0) setRoomDeletedCompletely(true);
     setBookings(filteredRoom);
   };
 
   const handleSelect = async (room) => {
     const defaultRate =
       room?.priceLevel[0]?.priceRate || room?.roomType?.roomRent || 0;
-    console.log(defaultRate);
     const stayDays = formData?.stayDays || 1;
-    console.log(stayDays);
 
     let booking = {
       roomId: room._id,
@@ -593,22 +623,17 @@ function AvailableRooms({
       hsnDetails: room.hsn,
       totalAmount: defaultRate * stayDays,
     };
+    
     booking = await calculateTax(booking);
     setBookings((prev) =>
       prev.some((b) => b.roomId === booking.roomId) ? prev : [...prev, booking],
     );
     setSelectedValue(room);
-    setIsOpen(false);
     setSearch("");
     onSelect(room);
   };
-  console.log(bookings[0]?.totalAmount);
-  const handleClear = (e) => {
-    e.stopPropagation();
-    setSelectedValue(null);
-    setSearch("");
-    onSelect(null);
-  };
+
+ 
 
   const handleSearch = useCallback(
     (term) => {
@@ -648,12 +673,13 @@ function AvailableRooms({
   useEffect(() => {
     if (cmp_id) fetchRooms(1);
   }, [cmp_id, fetchRooms]);
+
   useEffect(() => () => clearTimeout(debounceTimerRef.current), []);
 
   // Add this useEffect after your existing useEffects, before the console.log(bookings)
   useEffect(() => {
     // Refresh rooms when bookings change to update the dropdown
-    if (isOpen && cmp_id) {
+    if (isOpen && cmp_id ) {
       fetchRooms(1, search);
     }
   }, [bookings.length]); // Triggers when rooms are added/removed from bookings
@@ -671,7 +697,7 @@ function AvailableRooms({
 console.log(formData?.foodPlan)
 console.log(formData)
 
-
+const bookedRoomIds = bookings.map((b) => b.roomId);
   return showHistory ? (
     <TariffHistory
       isOpen={showHistory}
@@ -682,91 +708,21 @@ console.log(formData)
     />
   ) : (
     <>
+      {/* Visual Room Selector - Only show when NOT in tariff rate change mode */}
       {!isTariffRateChange && (
-        <div className={`relative w-full ${className}`} ref={dropdownRef}>
-          <div className="relative">
-            <input
-              type="text"
-              value={selectedValue ? selectedValue.roomName : search}
-              onChange={(e) => handleSearch(e.target.value)}
-              onClick={() => {
-                if (!disabled) {
-                  setIsOpen(true);
-                  console.log("H");
-                }
-              }}
-              placeholder={placeholder}
-              disabled={disabled}
-              className={`w-full px-4 py-3 pr-20 border rounded-lg bg-white ${
-                disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
-              } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-            />
-            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
-              {selectedValue && !disabled && (
-                <button
-                  onClick={handleClear}
-                  className="p-1 hover:bg-gray-100 rounded-full"
-                >
-                  <X size={16} className="text-gray-500" />
-                </button>
-              )}
-              <ChevronDown
-                size={16}
-                className={`text-gray-500 transition-transform ${
-                  isOpen ? "rotate-180" : ""
-                }`}
-              />
-            </div>
-          </div>
-
-          {isOpen && !disabled && (
-            <div
-              className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-64 overflow-y-auto"
-              onScroll={handleScroll}
-            >
-              {loading && rooms.length === 0 ? (
-                <div className="p-4 text-center text-gray-500 animate-pulse">
-                  Loading rooms...
-                </div>
-              ) : error ? (
-                <div className="p-4 text-center text-red-500">{error}</div>
-              ) : rooms.length === 0 ? (
-                <div className="p-4 text-center text-gray-500">
-                  No rooms found
-                </div>
-              ) : (
-                rooms.map((room) => (
-                  <div
-                    key={room._id}
-                    onClick={() => handleSelect(room)}
-                    className="p-3 hover:bg-gray-50 cursor-pointer border-b"
-                  >
-                    <div className="flex justify-between">
-                      <div>
-                        <p className="font-medium text-gray-900">
-                          {room.roomName}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-              {loading && rooms.length > 0 && (
-                <div className="p-3 text-center text-gray-500 animate-pulse">
-                  Loading more...
-                </div>
-              )}
-              {!hasMore && rooms.length > 0 && (
-                <div className="p-3 text-center text-gray-400 text-sm">
-                  No more parties
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+        <VisualRoomSelector
+          rooms={rooms}
+          selectedRooms={bookings}
+          bookedRoomIds={bookedRoomIds}
+          onRoomSelect={handleSelect}
+          loading={loading}
+          disabled={disabled}
+        />
       )}
+
+      {/* Selected Rooms Table */}
       {bookings.length > 0 && (
-        <div className="w-full max-w-full mx-auto p-2">
+        <div className="w-full max-w-full mx-auto p-2 mt-4">
           <div className="bg-white/95 backdrop-blur-md shadow-2xl overflow-hidden border border-white/20 rounded-lg">
             <div className="overflow-auto max-h-[80vh]">
               <table className="w-full min-w-max table-auto border-collapse text-xs">
@@ -813,7 +769,6 @@ console.log(formData)
                 <tbody className="divide-y divide-gray-200">
                   {bookings
                     .filter((booking) => {
-                      // If roomId exists (tariff rate change mode), show only that room
                       if (roomIdToUpdate) {
                         return (
                           booking.roomId?.toString() ===
@@ -822,7 +777,6 @@ console.log(formData)
                             roomIdToUpdate.toString()
                         );
                       }
-                      // Otherwise show all bookings
                       return true;
                     })
                     .map((booking, index) => (
@@ -857,7 +811,6 @@ console.log(formData)
                               className="w-full px-1 py-1 border border-red-300 rounded text-red-600 bg-red-50 text-xs focus:outline-none focus:ring-1 focus:ring-red-500"
                             >
                               {booking.priceLevel.map((priceLevel) => {
-                                // Handle both data structures
                                 const levelId =
                                   priceLevel._id || priceLevel.priceLevel?._id;
                                 const levelName =
@@ -883,6 +836,7 @@ console.log(formData)
                             </span>
                           )}
                         </td>
+                        
                         {!isTariffRateChange ? (
                           <td className="px-1 py-1">
                             <input
@@ -913,6 +867,7 @@ console.log(formData)
                             />
                           </td>
                         )}
+                        
                         <td className="px-1 py-1">
                           <input
                             type="number"
@@ -1080,28 +1035,25 @@ console.log(formData)
                                   )}
                                 </p>
                               </div>
-                              <>
-                                {/* Show Delete button ONLY when tariff rate change is OFF */}
-                                {!isTariffRateChange && (
-                                  <button
-                                    onClick={() => handleDelete(booking.roomId)}
-                                    className="text-white px-2 py-1 rounded hover:from-red-600 hover:to-rose-600 transition-all duration-200 flex items-center"
-                                  >
-                                    <Trash2 className="w-3 h-3 text-red-500" />
-                                  </button>
-                                )}
-
-                                {/* History button (always visible) */}
+                              
+                              {!isTariffRateChange && (
                                 <button
-                                  onClick={() => {
-                                    setSelectedRoomForHistory(booking.roomId);
-                                    setShowHistory(true);
-                                  }}
+                                  onClick={() => handleDelete(booking.roomId)}
                                   className="text-white px-2 py-1 rounded hover:from-red-600 hover:to-rose-600 transition-all duration-200 flex items-center"
                                 >
-                                  <FaHistory className="w-3 h-3 text-yellow-600" />
+                                  <Trash2 className="w-3 h-3 text-red-500" />
                                 </button>
-                              </>
+                              )}
+
+                              <button
+                                onClick={() => {
+                                  setSelectedRoomForHistory(booking.roomId);
+                                  setShowHistory(true);
+                                }}
+                                className="text-white px-2 py-1 rounded hover:from-red-600 hover:to-rose-600 transition-all duration-200 flex items-center"
+                              >
+                                <FaHistory className="w-3 h-3 text-yellow-600" />
+                              </button>
                             </div>
                           </div>
                         </td>
@@ -1126,7 +1078,7 @@ console.log(formData)
                     </td>
                     <td colSpan={2}></td>
                     <td className="px-1 py-2 font-bold text-blue-700 text-center text-xs">
-                      <div className="flex  gap-2">
+                      <div className="flex gap-2">
                         {formData?.paxTotal && (
                           <span>
                             Pax ₹

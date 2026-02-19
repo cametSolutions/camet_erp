@@ -1,21 +1,18 @@
-import { useEffect, useState, useRef, useMemo } from "react"
-import { useLocation, useNavigate } from "react-router-dom"
-import { useSelector } from "react-redux"
-import { toast } from "react-toastify"
-import { useReactToPrint } from "react-to-print"
-import api from "@/api/api"
-import Logo from "../../../assets/images/hill.png"
-import TitleDiv from "@/components/common/TitleDiv"
-import { jsPDF } from "jspdf"
-import "jspdf-autotable"
-// import {
-//   handlePrintInvoice,
-//   handleDownloadPDF,
-// } from "../PrintSide/generateHotelInvoicePDF ";
+import { useEffect, useState, useRef, useMemo } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { toast } from "react-toastify";
+
+import api from "@/api/api";
+
+import TitleDiv from "@/components/common/TitleDiv";
+
+import "jspdf-autotable";
 import {
   handleBillPrintInvoice,
   handleBillDownloadPDF
 } from "../PrintSide/generateBillPrintPDF"
+
 
 const HotelBillPrint = () => {
   // Router and Redux state
@@ -74,7 +71,7 @@ const HotelBillPrint = () => {
 
     const mergedMap = {}
 
-    splitDetails.forEach((item) => {
+    splitDetails?.forEach((item) => {
       const key = `${item.customerName}-${item.subsource}`
 
       if (!mergedMap[key]) {
@@ -116,7 +113,7 @@ const HotelBillPrint = () => {
       
      
         const mergedMap = {}
-        selectedCheckOut[0].checkoutpaymenttypedetails.forEach((item) => {
+        selectedCheckOut[0].checkoutpaymenttypedetails?.forEach((item) => {
           const key = `${item.customerName}-${item.mode}`
 
           if (!mergedMap[key]) {
@@ -165,7 +162,7 @@ const HotelBillPrint = () => {
 
     const result = []
 
-    ;(doc.selectedRooms || []).forEach((room) => {
+    ;(doc.selectedRooms || [])?.forEach((room) => {
       const roomStartDate = new Date(room.arrivalDate || doc.arrivalDate)
 
       const stayDays = room.stayDays || 1
@@ -307,7 +304,7 @@ const HotelBillPrint = () => {
 
   const getKotTotalsByRoom = (kots = []) => {
     const map = new Map()
-    kots.forEach((kot) => {
+    kots?.forEach((kot) => {
       const roomId = kot?.kotDetails?.roomId
       if (!roomId) return
       const amount = Number(
@@ -342,7 +339,7 @@ const HotelBillPrint = () => {
     const roomServiceKots = []
     const dineInKots = []
 
-    kotData.forEach((kot) => {
+    kotData?.forEach((kot) => {
       const kotRoomId = String(kot?.kotDetails?.roomId || kot?.roomId || "")
       const tableNumber =
         kot?.kotDetails?.tableNumber ||
@@ -383,7 +380,7 @@ const HotelBillPrint = () => {
 
     // 1. Add Room Service charges (grouped by room)
     const roomServiceTotals = {}
-    roomServiceKots.forEach((kot) => {
+    roomServiceKots?.forEach((kot) => {
       const roomId = String(kot?.kotDetails?.roomId || kot?.roomId || "")
       const amount = Number(
         kot?.finalAmount ?? kot?.subTotal ?? kot?.total ?? 0
@@ -395,14 +392,14 @@ const HotelBillPrint = () => {
           docNos: []
         }
       }
-
-      roomServiceTotals[roomId].amount += amount
+      roomServiceTotals[roomId].date = kot.date
+      roomServiceTotals[roomId].amount += amount;
       if (kot?.salesNumber) {
         roomServiceTotals[roomId].docNos.push(kot.salesNumber)
       }
     })
 
-    Object.keys(roomServiceTotals).forEach((roomId) => {
+    Object.keys(roomServiceTotals)?.forEach((roomId) => {
       const roomName =
         (doc.selectedRooms || []).find(
           (r) => String(r?.roomId || r?._id || r?.id) === roomId
@@ -411,11 +408,14 @@ const HotelBillPrint = () => {
       const docNo = roomServiceTotals[roomId].docNos.join(", ") || "-"
 
       console.log(
-        `Adding Room Service line: ${roomName} = ${roomServiceTotals[roomId].amount}`
-      )
+        `Adding Room Service line: ${roomName} = ${roomServiceTotals[roomId].amount}`,
+      );
+      console.log("xxx ", roomServiceTotals[roomId].date);
+      const d = new Date(roomServiceTotals[roomId].date);
+      let date =`${d.getDate().toString().padStart(2, "0")}-${(d.getMonth() + 1).toString().padStart(2, "0")}-${d.getFullYear()}`;
 
       lines.push({
-        date: formatDate(new Date()),
+        date: date,
         description: `Room Service - ${roomName}`,
         docNo: docNo,
         amount: Number(roomServiceTotals[roomId].amount || 0),
@@ -429,7 +429,7 @@ const HotelBillPrint = () => {
 
     // 2. Add Restaurant Dine In charges (grouped by table or as one line)
     const dineInTotals = {}
-    dineInKots.forEach((kot) => {
+    dineInKots?.forEach((kot) => {
       const tableNo =
         kot?.kotDetails?.tableNumber ||
         kot?.tableNumber ||
@@ -445,22 +445,26 @@ const HotelBillPrint = () => {
           docNos: []
         }
       }
+ 
+      dineInTotals[tableNo].amount += amount;
+      const d = new Date(kot.date);
+      dineInTotals[tableNo].date =
+        `${d.getDate().toString().padStart(2, "0")}-${(d.getMonth() + 1).toString().padStart(2, "0")}-${d.getFullYear()}`;
 
-      dineInTotals[tableNo].amount += amount
       if (kot?.salesNumber) {
         dineInTotals[tableNo].docNos.push(kot.salesNumber)
       }
     })
 
-    Object.keys(dineInTotals).forEach((tableNo) => {
+    Object.keys(dineInTotals)?.forEach((tableNo) => {
       const docNo = dineInTotals[tableNo].docNos.join(", ") || "-"
 
       console.log(
-        `Adding Dine In line: Table ${tableNo} = ${dineInTotals[tableNo].amount}`
-      )
-
+        `Adding Dine In line: Table ${tableNo} = ${dineInTotals[tableNo].amount}`,
+      );
+      console.log("yyy ", tableNo);
       lines.push({
-        date: formatDate(new Date()),
+        date: dineInTotals[tableNo].date,
         description: `Restaurant Dine In - ${tableNo}`,
         docNo: docNo,
         amount: Number(dineInTotals[tableNo].amount || 0),
@@ -567,7 +571,7 @@ const HotelBillPrint = () => {
       const groups = {}
 
       // Group charges by room
-      dateWiseLines.forEach((i) => {
+      dateWiseLines?.forEach((i) => {
         const k = i.roomName
         if (!groups[k]) groups[k] = []
         groups[k].push(i)
@@ -577,7 +581,7 @@ const HotelBillPrint = () => {
       const roomNames = Object.keys(groups)
 
       // Process each room's charges in order
-      roomNames.forEach((roomName, roomIndex) => {
+      roomNames?.forEach((roomName, roomIndex) => {
         const roomDays = groups[roomName]
 
         // Get the original room data for this room
@@ -601,11 +605,11 @@ const HotelBillPrint = () => {
         const halfDayCharges = roomDays.filter(
           (item) =>
             item.description?.includes("Half Day") ||
-            item.description?.includes("Half Tariff")
-        )
+            item.description?.includes("Half Tariff"),
+        );
 
         // 1. Add FULL DAY room rent charges
-        fullDayCharges.forEach((item) => {
+        fullDayCharges?.forEach((item) => {
           charges.push({
             date: item.date,
             description: `Room Rent :${item.roomName}`,
@@ -651,7 +655,7 @@ const HotelBillPrint = () => {
         }
 
         // 3. Add HALF DAY room rent charges with CHECKOUT DATE
-        halfDayCharges.forEach((item) => {
+        halfDayCharges?.forEach((item) => {
           charges.push({
             date: item.date, // ✅ Use the actual half day date (checkout date)
             description: `Half Tariff :${item.roomName}`,
@@ -767,7 +771,7 @@ const HotelBillPrint = () => {
           (l) => l.roomName === roomName && l.type === "roomService"
         )
 
-        roomServiceLines.forEach((serviceLine) => {
+        roomServiceLines?.forEach((serviceLine) => {
           if (Number(serviceLine.amount) > 0) {
             charges.push({
               date: serviceLine.date,
@@ -788,7 +792,7 @@ const HotelBillPrint = () => {
           )
           console.log("Adding dine-in lines after first room:", dineInLines)
 
-          dineInLines.forEach((dineInLine) => {
+          dineInLines?.forEach((dineInLine) => {
             if (Number(dineInLine.amount) > 0) {
               charges.push({
                 date: dineInLine.date,
@@ -1024,9 +1028,9 @@ const HotelBillPrint = () => {
     if (!multi.length) return
 
     if (!isPrint) {
-      handleBillDownloadPDF(multi) // pass array
+      handleBillDownloadPDF(multi,organization); // pass array
     } else {
-      handleBillPrintInvoice(multi) // pass array
+      handleBillPrintInvoice(multi,organization); // pass array
     }
   }
  
@@ -1145,9 +1149,9 @@ const HotelBillPrint = () => {
               }}
             >
               <div style={{ flex: "0 0 120px" }}>
-                {Logo && (
+                {organization?.logo && (
                   <img
-                    src={billData?.hotel?.logo}
+                    src={organization?.logo}
                     alt="Logo"
                     style={{ width: "120px", height: "auto" }}
                   />
