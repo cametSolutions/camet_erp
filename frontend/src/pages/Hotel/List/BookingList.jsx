@@ -64,7 +64,7 @@ function BookingList() {
   const [paymentMethod, setPaymentMethod] = useState("cash")
   const [selectedDataForPayment, setSelectedDataForPayment] = useState(null)
   const [showCheckOutDateModal, setShowCheckOutDateModal] = useState(false)
-  const [checkoutMode, setCheckoutMode] = useState("multiple")
+  const [checkoutMode, setCheckoutMode] = useState("")
   const [paymentMode, setPaymentMode] = useState("single")
   const [cashAmount, setCashAmount] = useState(0)
   const [onlineAmount, setOnlineAmount] = useState(0)
@@ -96,47 +96,49 @@ function BookingList() {
     cashs: []
   })
   const [combinedSources, setCombinedSources] = useState([])
-  console.log(combinedSources)
   const { roomId, roomName, filterByRoom } = location.state || {}
   const paymentDetails = useSelector((state) => state.paymentSlice)
   const { _id: cmp_id, configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   )
-  console.log(cmp_id)
-  console.log(selectedBank)
+
   const getVoucherType = () => {
     const path = location.pathname
     if (path.includes("Receipt")) return "receipt"
     if (path.includes("Payment")) return "payment"
     return "sale"
   }
-  console.log(paymentMethod)
+ 
   const { data: partylist } = useFetch(
     `/api/sUsers/singlecheckoutpartylist/${cmp_id}`,
     { params: { voucher: getVoucherType() } }
   )
-  console.log(selectedCheckOut)
   // ADD THIS FUNCTION: Calculate total from all checkouts
   const calculateTotalAmount = (checkouts) => {
     if (!checkouts || checkouts.length === 0) return 0
-    console.log(checkouts)
+   
     return checkouts.reduce((total, checkout) => {
-      console.log(checkout.balanceToPay)
-      const checkouttotal = parseFloat(checkout.balanceToPay) || 0
+      const totalPayment = Object.values(
+        checkout.paymenttypeDetails || {}
+      ).reduce((sum, val) => sum + Number(val || 0), 0)
+
+      const checkouttotal =
+        location.pathname === "/sUsers/checkOutList"
+          ? parseFloat(totalPayment)
+          : parseFloat(checkout.balanceToPay) || 0
       // if (checkout.selectedRooms && Array.isArray(checkout.selectedRooms)) {
       //   const checkoutTotal = checkout.selectedRooms.reduce((sum, room) => {
       //     return sum + (parseFloat(room.amountAfterTax) || 0)
       //   }, 0)
       //   return total + checkoutTotal
       // }
+     
       return total + checkouttotal
     }, 0)
   }
-  console.log(selectedCheckOut)
   useEffect(() => {
     if (location.pathname === "/sUsers/bookingList") {
       const fetchStatus = async () => {
-        console.log("H", cmp_id)
         try {
           const res = await api.get(
             `/api/sUsers/getallnoncheckoutCheckins/${cmp_id}`,
@@ -144,13 +146,7 @@ function BookingList() {
               withCredentials: true
             }
           )
-          console.log(res.data.data)
-          const a = res.data.data.map((item) => {
-            return {
-              roomId: item._id,
-              status: item.status
-            }
-          })
+         
           const ids = []
           res.data.data.forEach((item) => {
             item.selectedRooms?.forEach((room) => {
@@ -159,10 +155,8 @@ function BookingList() {
               }
             })
           })
-          console.log(ids)
           setroomswithCurrentStatus(ids)
-          console.log(a)
-          console.log(res.data)
+        
         } catch (error) {
           console.log(error.message)
         }
@@ -172,28 +166,13 @@ function BookingList() {
     }
   }, [location.pathname, cmp_id])
 
-  useEffect(() => {
-    // when global selectedCustomer changes, sync into selectedCheckOut
-    //     if (!selectedCustomer) return
-    // console.log("hhhh")
-    //     const match = parties.find((p) => p._id === selectedCustomer)
-    //     if (!match) return
-    // console.log(match)
-    // console.log("hhh")
-    //     setSelectedCheckOut((prev) =>
-    //       prev.map((item) => ({
-    //         ...item,
-    //         selectedCustomer: match
-    //       }))
-    //     )
-  }, [selectedCustomer])
+ 
 
   useEffect(() => {
     if (partylist && partylist.partyList.length) {
       setPartylist(partylist.partyList)
     }
   }, [partylist])
-
   useEffect(() => {
     if (location?.state?.selectedCheckOut) {
       console.log(location?.state?.selectedCheckOut)
@@ -233,22 +212,28 @@ function BookingList() {
       const totalAmount = calculateTotalAmount(
         location?.state?.selectedCheckOut
       )
-
+      const balance= location?.state?.balanceToPay
       setSelectedDataForPayment((prevData) => ({
         ...prevData,
-        total: location?.state?.balanceToPay
+        total: balance
       }))
       if (location?.state?.isForPreview) {
         setShowPaymentModal(true)
       }
     }
   }, [location?.state?.selectedCheckOut])
+  useEffect(() => {
+    setCheckoutMode(selectedCheckOut.length > 1 ? "multiple" : "single")
+  }, [])
 
-  console.log("IIIIIIIIIII", selectedBank, selectedCash)
   // ADD THIS: Update total whenever selectedCheckOut changes
   useEffect(() => {
-    if (selectedCheckOut && selectedCheckOut.length > 0) {
-      console.log("H")
+    if (
+      selectedCheckOut &&
+      selectedCheckOut.length > 0 &&
+      !location?.state?.selectedCheckOut
+    ) {
+    
       const totalAmount = calculateTotalAmount(selectedCheckOut)
       setSelectedDataForPayment((prevData) => ({
         ...prevData,
@@ -281,7 +266,6 @@ function BookingList() {
   const { data: paymentTypeData } = useFetch(
     `/api/sUsers/getPaymentType/${cmp_id}`
   )
-  console.log(paymentTypeData)
 
   // NEW: Fetch bank and cash sources
   useEffect(() => {
@@ -294,8 +278,7 @@ function BookingList() {
 
         if (response.data && response.data.data) {
           const { banks, cashs } = response.data.data
-          console.log(banks)
-          console.log(cashs)
+       
           setBankAndCashSources({ banks, cashs })
 
           // Combine banks and cash into a single array for the dropdown
@@ -335,7 +318,7 @@ function BookingList() {
         bankDetails.length > 0 &&
         (selectedBank == "" || selectedBank == null)
       ) {
-        console.log("kkkkkkk", bankDetails[0])
+        setSelectedCash(cashDetails[0]._id)
         setSelectedBank(bankDetails[0]._id)
         setselectedOnlinepartyName(bankDetails[0].partyName)
         setselectedOnlinetype(bankDetails[0].partyType)
@@ -350,11 +333,9 @@ function BookingList() {
       }
     }
   }, [paymentTypeData])
-  console.log(selectedOnlinetype)
-  console.log(selectedBank)
+
   const fetchBookings = useCallback(
     async (pageNumber = 1, searchTerm = "") => {
-      console.log("h")
       if (isLoading) return
 
       setIsLoading(true)
@@ -379,10 +360,8 @@ function BookingList() {
         } else if (location.pathname == "/sUsers/bookingList") {
           params.append("modal", "booking")
         } else {
-          console.log("h")
           params.append("modal", "checkOut")
         }
-console.log(params)
         const res = await api.get(
           `/api/sUsers/getBookings/${cmp_id}?${params}`,
           {
@@ -391,8 +370,8 @@ console.log(params)
         )
 
         let bookingData = res?.data?.bookingData || []
-
-
+ 
+      
         if (location.pathname === "/sUsers/checkInList") {
           bookingData = bookingData.flatMap((booking) => {
             if (booking.remainingRooms && booking.remainingRooms.length > 0) {
@@ -407,7 +386,6 @@ console.log(params)
         }
 
         if (pageNumber === 1) {
-          console.log("d")
           setBookings(bookingData)
         } else {
           setBookings((prev) => [...prev, ...bookingData])
@@ -443,12 +421,9 @@ console.log(params)
   //     setSelectedDataForPayment(prevObject);
   //   }
   // }, [selectedCheckOut]);
-  console.log(selectedCustomer)
   const handleSingleCheckoutformultiplechekin = (selectcustomer) => {
-    console.log(selectedCustomer)
     const match = parties.find((item) => item._id === selectcustomer)
     if (!match) return
-    console.log(match)
 
     setSelectedCheckOut((prev) =>
       prev.map((item) => ({
@@ -459,7 +434,6 @@ console.log(params)
 
     setSelectedCustomer(selectcustomer)
   }
-  console.log(selectedCheckOut)
   const handleCancelBooking = async (id, voucherNumber) => {
     const confirmation = await Swal.fire({
       title: "Cancel Booking?",
@@ -571,7 +545,6 @@ console.log(params)
     }
     return Promise.resolve()
   }
-
   const formatCurrency = (amount) => {
     return `₹${parseFloat(amount || 0).toLocaleString("en-IN", {
       minimumFractionDigits: 2
@@ -580,33 +553,24 @@ console.log(params)
 
   // NEW: Functions for split payment row management
   const addSplitPaymentRow = () => {
-    console.log(splitPaymentRows)
     setSplitPaymentRows([
       ...splitPaymentRows,
       { customer: "", source: "", sourceType: "", amount: "" }
     ])
   }
-  console.log(splitPaymentRows)
   const removeSplitPaymentRow = (index) => {
     if (splitPaymentRows.length > 1) {
       const updatedRows = splitPaymentRows.filter((_, i) => i !== index)
       setSplitPaymentRows(updatedRows)
     }
   }
-
   const updateSplitPaymentRow = (index, field, value, name) => {
     const updatedRows = [...splitPaymentRows]
-    console.log(index)
-    console.log(field)
-    console.log(value)
-    console.log(field)
-    console.log(updatedRows)
+  
     if (field === "source") {
-      console.log(updatedRows)
-      console.log(combinedSources)
+    
       // When source changes, find the source details and update sourceType
       const selectedSource = combinedSources.find((s) => s.id === value)
-      console.log(selectedSource)
       updatedRows[index].source = value
       updatedRows[index].sourceType = selectedSource ? selectedSource.type : ""
       updatedRows[index].subsource =
@@ -616,15 +580,13 @@ console.log(params)
             ? "card"
             : selectedSource.type
     } else if (field === "customer") {
-      console.log(name)
-      console.log(field)
+  
 
       updatedRows[index].customerName = name
       updatedRows[index][field] = value
     } else {
       updatedRows[index][field] = value
     }
-    console.log(updatedRows)
     setSplitPaymentRows(updatedRows)
 
     // Calculate total and validate
@@ -642,12 +604,9 @@ console.log(params)
       setPaymentError("")
     }
   }
-  console.log(selectedOnlinetype)
-  console.log("hddd")
+
   const handleSavePayment = async () => {
-    console.log("hddd")
-    console.log(selectedCheckOut)
-    console.log(selectedCheckOut.length)
+
 
     setSaveLoader(true)
     let paymentDetails
@@ -745,7 +704,6 @@ console.log(params)
         Number(selectedCheckOut[0]?.balanceToPay) ||
         0
       ).toFixed(2)
-      console.log("Paujsdf", totalSplitAmount, payment)
 
       if (totalSplitAmount != payment) {
         setPaymentError("Split payment amounts must equal the total amount.")
@@ -775,7 +733,6 @@ console.log(params)
       let totalcard = 0
       let totalupi = 0
       let totalcredit = 0
-      console.log(splitPaymentRows)
 
       splitPaymentRows.forEach((row) => {
         if (row.sourceType === "cash") {
@@ -793,7 +750,6 @@ console.log(params)
           totalcredit += parseFloat(row.amount) || 0
         }
       })
-      console.log(splitPaymentRows)
       paymentDetails = {
         cashAmount: totalCash,
         onlineAmount: totalOnline,
@@ -808,6 +764,7 @@ console.log(params)
         }
       }
     }
+ 
 
     console.log({
       paymentMethod: paymentMode,
@@ -817,15 +774,25 @@ console.log(params)
       selectedParty: selectedCustomer,
       restaurantBaseSaleData: restaurantBaseSaleData
     })
-    console.log(paymentDetails)
-    console.log(selectedCheckOut)
-    console.log(selectedCheckOut.length)
+ 
 
     if (partial) {
-      console.log("Hhhh")
-      console.log(dateandstaysdata)
-      proceedToCheckout(dateandstaysdata, processedCheckoutData)
-      console.log(paymentDetails)
+    
+      const hasPrint1 = configurations[0]?.defaultPrint?.print1
+      if (location.pathname === "/sUsers/checkOutList") {
+        navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
+          state: {
+            selectedCheckOut,
+            edit: true,
+            path: "/sUsers/checkOutList",
+
+            isForPreview: true
+          }
+        })
+      } else {
+        proceedToCheckout(dateandstaysdata, processedCheckoutData)
+      }
+
       dispatch(setPaymentDetails(paymentDetails))
       dispatch(setSelectedParty(selectedCustomer))
       dispatch(setSelectedPaymentMode(paymentMode))
@@ -834,77 +801,138 @@ console.log(params)
       dispatch(setOnlineType(selectedOnlinetype))
       setIsPartial(false)
     } else {
-      console.log("hhhh")
-      console.log(paymentDetails)
-      console.log(selectedCheckOut)
+   
+      if (location?.state?.edit) {
+       
 
+        try {
+          const response = await api.post(
+            `/api/sUsers/editcheckoutforroom/${cmp_id}`,
+            {
+              paymentMethod: paymentMethod,
+              paymentDetails: paymentDetails,
+              selectedCheckOut: selectedCheckOut,
+              paidBalance: selectedDataForPayment?.total,
+              selectedParty: selectedCustomer,
+              restaurantBaseSaleData: restaurantBaseSaleData,
+              checkoutMode,
+              checkinIds: checkinidsarray
+            },
+            {
+              withCredentials: true
+            }
+          )
+          if (response.status === 200) {
+            fetchBookings(1, searchTerm)
+            toast.success("checkout edit completed")
+            setShowPaymentModal(false)
+            setSelectedCheckOut([])
 
-      try {
-        const response = await api.post(
-          `/api/sUsers/convertCheckOutToSale/${cmp_id}`,
-          {
-            paymentMethod: paymentMethod,
-            paymentDetails: paymentDetails,
-            selectedCheckOut: selectedCheckOut,
-            paidBalance: selectedDataForPayment?.total,
-            selectedParty: selectedCustomer,
-            restaurantBaseSaleData: restaurantBaseSaleData,
-            checkoutMode, //to check if the checkout is single or multiple
-            checkinIds: checkinidsarray //have array of checkinids ,if only its sinle checkout unless its null
-          },
-          { withCredentials: true }
-        )
-        console.log("hhhh")
-        if (response.status === 200 || response.status === 201) {
-          toast.success(response?.data?.message)
-          handleCloseBasedOnDate()
+            setSaveLoader(false)
+
+            setPaymentMethod("cash")
+            setPaymentMode("single")
+            // ✅ Clear location.state.selectedCheckOut
+            navigate(location.pathname, { replace: true, state: null })
+          }
+        } catch (error) {
+          console.log(error.message)
         }
-      } catch (error) {
-        console.error(
-          "Error updating order status:",
-          error.response?.data || error.message
-        )
-      } finally {
-        setSelectedCheckOut([])
-        setCheckoutMode("multiple")
-        setcheckinids(null)
-        setSelectedCustomer(null)
-        setSaveLoader(false)
-        setCashAmount(0)
-        setOnlineAmount(0)
-        setSelectedCreditor("")
-        setPaymentMode("single")
-        setSplitPaymentRows([
-          { customer: "", source: "", sourceType: "", amount: "" }
-        ]) // Reset split rows
-        setShowPaymentModal(false)
-        fetchBookings(1, searchTerm)
+      } else {
+    
+
+        try {
+          const response = await api.post(
+            `/api/sUsers/convertCheckOutToSale/${cmp_id}`,
+            {
+              paymentMethod: paymentMethod,
+              paymentMode: paymentMode,
+              paymentDetails: paymentDetails,
+              selectedCheckOut: selectedCheckOut,
+              paidBalance: selectedDataForPayment?.total,
+              selectedParty: selectedCustomer,
+              restaurantBaseSaleData: restaurantBaseSaleData,
+              checkoutMode, //to check if the checkout is single or multiple
+              checkinIds: checkinidsarray //have array of checkinids ,if only its sinle checkout unless its null
+            },
+            { withCredentials: true }
+          )
+          if (response.status === 200 || response.status === 201) {
+            toast.success(response?.data?.message)
+          }
+        } catch (error) {
+          console.error(
+            "Error updating order status:",
+            error.response?.data || error
+          )
+        } finally {
+          setSelectedCheckOut([])
+          setCheckoutMode("multiple")
+          setcheckinids(null)
+          setSelectedCustomer(null)
+          setSaveLoader(false)
+          setCashAmount(0)
+          setOnlineAmount(0)
+          setSelectedCreditor("")
+          setPaymentMode("single")
+          setSplitPaymentRows([
+            { customer: "", source: "", sourceType: "", amount: "" }
+          ]) // Reset split rows
+          setShowPaymentModal(false)
+          fetchBookings(1, searchTerm)
+        }
       }
     }
   }
-  console.log("h")
   const handleCheckOutData = async () => {
     setShowSelectionModal(false)
     setShowEnhancedCheckoutModal(true)
   }
-  console.log(selectedCheckOut)
   const handleEnhancedCheckoutConfirm = async (roomAssignments, data) => {
-    console.log(roomAssignments)
     setShowEnhancedCheckoutModal(false)
     setdateandstaysdata(data)
     // ✅ ALWAYS show checkout date modal - no condition
     setProcessedCheckoutData(roomAssignments)
-    console.log("hhhh")
     setShowPaymentModal(true)
     setIsPartial(true)
     // setShowCheckOutDateModal(true)
   }
-  console.log(processedCheckoutData)
+
+  const handleEditcheckout = (data) => {
+    setIsPartial(true)
+    const match = parties.find((item) => item._id === data.customerId._id)
+    if (!match) return
+
+    setSelectedCheckOut([
+      {
+        ...data,
+        selectedcustomer: match?._id || null
+      }
+    ])
+    if (data.checkoutpaymenttypedetails && data.checkoutpaymenttypedetails) {
+      setSplitPaymentRows(
+        data.checkoutpaymenttypedetails.map((item) => ({
+          customer: item.customer,
+          source: item.source,
+          sourceType: item.sourceType,
+          amount: item.amount,
+          subsource: item.mode,
+          customerName: item.customerName
+        }))
+      )
+    }
+  
+    setSelectedCash(data.selectedCashOrBank)
+    setSelectedBank(data.selectedCashOrBank)
+    setPaymentMode(data.paymentMode)
+    setPaymentMethod(data.paymentMethod)
+    setSelectedCustomer(match._id)
+    setShowPaymentModal(true)
+  }
+
   const handleCheckin = (e, el) => {
-    console.log(el)
     const roomIds = el.selectedRooms.map((item) => item.roomId)
-    console.log(roomIds)
-    console.log(roomswithCurrentstatus)
+
     // const allVacant = roomids.every((id) => {
     //   const room = roomswithCurrentstatus.find((r) => r.roomId === id)
     // })
@@ -930,21 +958,17 @@ console.log(params)
       }
     }
 
-    console.log("HH")
   }
-  console.log(bookings)
-  const proceedToCheckout = (roomAssignments, data) => {
-    console.log(roomAssignments)
-    console.log(data)
 
-    console.log("hhhhhh")
+  const proceedToCheckout = (roomAssignments, data) => {
+
+
     setSaveLoader(true)
     const hasPrint1 = configurations[0]?.defaultPrint?.print1
     let checkoutData
     let checkinids = null
     if (checkoutMode === "multiple") {
-      console.log(data)
-      console.log("hhh")
+
       checkoutData = data.flatMap((group) => {
         return group.checkIns.map((checkIn) => {
           const originalCheckIn = checkIn.originalCheckIn
@@ -958,6 +982,9 @@ console.log(params)
           return {
             ...originalCheckIn,
             partyArray: checkIn.originalCheckIn.customerId.party_master_id,
+            checkinsNumbers: checkIn?.checkInNumber
+              ? [checkIn.checkInNumber]
+              : [],
             Totaladvance:
               Number(checkIn?.originalCheckIn?.advanceAmount || 0) +
               Number(checkIn?.originalCheckIn?.bookingId?.advanceAmount || 0),
@@ -973,10 +1000,8 @@ console.log(params)
           }
         })
       })
-      console.log("Hh")
     } else if (checkoutMode === "single") {
-      console.log(roomAssignments)
-      console.log(roomAssignments.length)
+  
       let allCheckouts = data.flatMap((group) => {
         return group.checkIns.map((checkIn) => {
           const originalCheckIn = checkIn.originalCheckIn
@@ -989,11 +1014,13 @@ console.log(params)
 
           const isPartialCheckout =
             roomsToCheckout.length < originalCheckIn.selectedRooms.length
-          console.log(checkIn?.originalCheckIn?.advanceAmount)
-          console.log(checkIn?.originalCheckIn?.bookingId?.advanceAmount)
+       
           return {
             ...originalCheckIn,
             partyId: checkIn.originalCheckIn.customerId.party_master_id,
+            checkinsNumbers: checkIn?.checkInNumber
+              ? [checkIn.checkInNumber]
+              : [],
             customerId: group.customer,
             Totaladvance:
               Number(checkIn?.originalCheckIn?.advanceAmount || 0) +
@@ -1009,11 +1036,9 @@ console.log(params)
         })
       })
       checkinids = allCheckouts.map((item) => item._id)
-      console.log(allCheckouts)
       setcheckinids(checkinids)
       // 2️⃣ GROUP BY selectedCustomer (customerId._id)
       const grouped = {}
-      console.log(allCheckouts)
       allCheckouts.forEach((item) => {
         const custId = item.customerId?._id
 
@@ -1022,13 +1047,14 @@ console.log(params)
             ...item,
             selectedRooms: [...item.selectedRooms],
             partyArray: [item.partyId],
+            checkinsNumbers: item.checkinsNumbers,
             advanceTotal: item?.Totaladvance
           }
         } else {
-          console.log(grouped[custId].advanceTotal)
           // Merge rooms
           grouped[custId].selectedRooms.push(...item.selectedRooms)
           grouped[custId].partyArray.push(item.partyId)
+          grouped[custId].checkinsNumbers.push(item.checkinsNumbers)
           // ✅ ADD NEXT TOTAL ADVANCE
           grouped[custId].advanceTotal =
             (grouped[custId].advanceTotal || 0) + (item?.Totaladvance || 0)
@@ -1045,7 +1071,8 @@ console.log(params)
       checkoutData = Object.values(grouped)
       checkoutData[0].allCheckInIds = checkinids
     }
-    console.log(checkoutData)
+
+
     const roomAssignmentMap = new Map(
       roomAssignments.map((item) => [
         item._id,
@@ -1074,16 +1101,16 @@ console.log(params)
       }
     })
 
-    console.log(updatedCheckoutData)
+
 
     // checkoutData.forEach((item)=>item.checkoutDate=)
 
-    console.log("Hhhhhhhh")
     navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
       state: {
         selectedCheckOut: updatedCheckoutData,
         customerId: checkoutData[0]?.customerId?._id,
         isForPreview: true,
+        path: "/sUsers/checkInList",
         checkoutMode,
         checkinIds: checkinids,
         roomAssignments: roomAssignments,
@@ -1126,11 +1153,9 @@ console.log(params)
 
     return types.length > 0 ? types.join(", ") : "Unpaid"
   }
-
   const handletoogle = () => {
     if (!selectedCustomer) return
     if (checkoutMode === "multiple") {
-      console.log("hhhh")
       const match = parties.find((p) => p._id === selectedCustomer)
       if (!match) return
 
@@ -1151,7 +1176,6 @@ console.log(params)
 
     setCheckoutMode(checkoutMode === "single" ? "multiple" : "single")
   }
-  console.log(checkoutMode)
 
   const TableHeader = () => (
     <div className="bg-gray-100 border-b border-gray-300 sticky top-0 z-10">
@@ -1203,11 +1227,6 @@ console.log(params)
 
   const isSelected = (id) => selectedIds.has(id)
 
-  //   const isSelected = (el) => {
-  // console.log(selectedCheckOut)
-  // console.log(el)
-  //     return selectedCheckOut.some((item) => item._id === el._id)
-  //   }
   const Row = ({ index, style }) => {
     if (!isItemLoaded(index)) {
       return (
@@ -1254,7 +1273,7 @@ console.log(params)
       if (!dateString) return "-"
       return new Date(dateString).toLocaleDateString("en-GB")
     }
-    console.log(el)
+  
     return (
       <div
         key={index}
@@ -1505,31 +1524,38 @@ console.log(params)
                 </button>
               )}
             {location.pathname === "/sUsers/checkOutList" && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setSelectedCustomer(el.customerId?._id)
-                  setSelectedCheckOut([el])
-                  const hasPrint1 = configurations[0]?.defaultPrint?.print1
-console.log(hasPrint1)
+              <>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setSelectedCustomer(el.customerId?._id)
+                    setSelectedCheckOut([el])
+                    const hasPrint1 = configurations[0]?.defaultPrint?.print1
 
-                  navigate(
-                    hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint",
-                    {
-                      state: {
-                        selectedCheckOut: bookings?.filter(
-                          (item) => item.voucherNumber === el.voucherNumber
-                        ),
-                        customerId: el.customerId?._id,
-                        isForPreview: false
+                    navigate(
+                      hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint",
+                      {
+                        state: {
+                          selectedCheckOut: bookings?.filter(
+                            (item) => item.voucherNumber === el.voucherNumber
+                          ),
+                          customerId: el.customerId?._id,
+                          isForPreview: false
+                        }
                       }
-                    }
-                  )
-                }}
-                className="bg-green-600 hover:bg-green-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
-              >
-                Print
-              </button>
+                    )
+                  }}
+                  className="bg-green-600 hover:bg-green-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
+                >
+                  Print
+                </button>
+                <button
+                  onClick={() => handleEditcheckout(el)}
+                  className="bg-blue-600 hover:bg-blue-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
+                >
+                  Edit
+                </button>
+              </>
             )}
             {(el?.status != "checkIn" &&
               location.pathname == "/sUsers/bookingList") ||
@@ -1591,54 +1617,11 @@ console.log(hasPrint1)
       </div>
     )
   }
-  console.log(selectedCheckOut)
-  console.log(selectedOnlinetype)
-  console.log(processedCheckoutData)
+
   const handleCloseBasedOnDate = () => {
-    console.log("hh")
-    // if (!checkouts) {
-    //   setShowCheckOutDateModal(false)
-    //   setShowSelectionModal(true)
-    //   return
-    // }
-    // setSaveLoader(true);
-    console.log(processedCheckoutData)
+
     if (processedCheckoutData) {
-      console.log("hhhhhhhhh")
-      console.log(processedCheckoutData)
 
-      // Transform the processed checkout data with updated stay days
-      // const updatedCheckoutData = processedCheckoutData.map((checkout) => {
-      //   const updatedData = selectedCheckOut.find((c) => c._id === checkout._id)
-
-      //   // if no update found, return original
-      //   if (!updatedData) return checkout
-
-      //   return {
-      //     ...checkout,
-
-      //     // 🔹 update checkout level fields
-      //     checkOutDate: updatedData.checkOutDate ?? checkout.checkOutDate,
-      //     checkOutTime: updatedData.checkOutTime ?? checkout.checkOutTime,
-      //     stayDays: updatedData.stayDays ?? checkout.stayDays,
-
-      //     // 🔹 update rooms if modified
-      //     selectedRooms: checkout.selectedRooms.map((room) => {
-      //       const updatedRoom = updatedData.selectedRooms?.find(
-      //         (r) => r._id === room._id
-      //       )
-
-      //       return updatedRoom
-      //         ? {
-      //             ...room,
-      //             ...updatedRoom
-      //           }
-      //         : room
-      //     })
-      //   }
-      // })
-      //////
-      console.log(dateandstaysdata)
 
       const updatedCheckoutData = processedCheckoutData.map((group) => ({
         ...group,
@@ -1673,8 +1656,7 @@ console.log(hasPrint1)
           }
         })
       }))
-      console.log(updatedCheckoutData)
-      console.log("aaaaaa")
+   
       setProcessedCheckoutData(updatedCheckoutData)
       // setShowPaymentModal(true)
       setIsPartial(true)
@@ -1682,7 +1664,6 @@ console.log(hasPrint1)
       proceedToCheckout(updatedCheckoutData)
       // setProcessedCheckoutData(null)
     } else {
-      console.log("hhhhhhddd")
       const hasPrint1 = configurations[0]?.defaultPrint?.print1
       navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
         state: {
@@ -1808,7 +1789,9 @@ console.log(hasPrint1)
                         key={item?.id || index}
                         className="text-sm font-medium"
                       >
-                        {item?.voucherNumber}
+                        {location?.state?.selectedCheckOut
+                          ? item.checkinsNumbers.map((it) => it).join(",")
+                          : item?.voucherNumber}
                         {","}
                       </span>
                     ))}
@@ -1942,7 +1925,7 @@ console.log(hasPrint1)
                       </label>
                       <select
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                        // value={selectedCash}
+                        value={selectedCash}
                         onChange={(e) => setSelectedCash(e.target.value)}
                       >
                         {cashOrBank?.cashDetails?.map((cashier) => (
@@ -2029,7 +2012,6 @@ console.log(hasPrint1)
 
                               const selectedCustomerName =
                                 selectedCustomerObj?.customerId?.partyName
-                              console.log(selectedCustomerName)
                               updateSplitPaymentRow(
                                 index,
                                 "customer",
@@ -2056,7 +2038,6 @@ console.log(hasPrint1)
                           <select
                             value={row.source}
                             onChange={(e) => {
-                              console.log("HHHh")
                               updateSplitPaymentRow(
                                 index,
                                 "source",

@@ -94,7 +94,7 @@ const receiptSchema = new mongoose.Schema(
     paymentMethod: {
       type: String,
       required: true,
-      enum: ["Online", "Cash", "Cheque","credit"],
+      enum: ["Online", "Cash", "Cheque", "credit"],
     },
 
     // Payment details with references
@@ -109,6 +109,7 @@ const receiptSchema = new mongoose.Schema(
       chequeNumber: { type: String },
       chequeDate: { type: Date },
     },
+    from: { type: String },
 
     note: { type: String },
 

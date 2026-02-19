@@ -452,7 +452,6 @@ export const createReceiptForSales = async (
   restaurantBaseSaleData = [],
   session
 ) => {
-  console.log("cmpidin the createreceiptforsale", cmp_id)
   console.log("call for create receipt");
   const receipts = [];
 
@@ -491,8 +490,7 @@ export const createReceiptForSales = async (
     const splitDetails = payment?.splitDetails || [];
     // Find all outstandings for this customer from sales with this 
     const customerids = splitDetails.map((item) => new mongoose.Types.ObjectId(item.customer))
-    console.log("custmereidsssss", customerids)
-    console.log("salesids", saleIds)
+
     const outstandings = await TallyData.find({
       billId: { $in: saleIds },
       cmp_id,
@@ -537,10 +535,8 @@ export const createReceiptForSales = async (
           : { bank_ledname: customerName, bank_name: customerName };
       const matchedoutstanding = outstandings.find((item) => item.party_id === splitCustomerId)
       const matchedsale = allSales.find((item) => String(item.party?._id) === String(splitCustomerId))
-      console.log("outstandings", outstandings)
       for (const item of outstandings) {
         const sale = allSales.find(s => s.salesNumber === item.bill_no)
-        console.log("ssssalesssssssss", sale)
         billData.push({
           _id: item._id,
           bill_no: sale.salesNumber,
@@ -553,7 +549,6 @@ export const createReceiptForSales = async (
         })
 
       }
-      console.log("billdata", billData)
 
 
       const newReceipt = await buildReceipt(
@@ -572,11 +567,6 @@ export const createReceiptForSales = async (
       );
 
       receipts.push(newReceipt);
-
-
-
-
-
       balancetoset -= splitAmount
 
     }
@@ -682,9 +672,7 @@ export const createReceiptForSales = async (
         paymentMethod === "cash"
           ? { cash_ledname: customerName, cash_name: customerName }
           : { bank_ledname: customerName, bank_name: customerName };
-      console.log("checkkkkkkkkkkkkk", cmp_id)
-      console.log("seriesiddd", series_id)
-      console.log("partyidd", partyId)
+
       const balancetoset = null
       const newReceipt = await buildReceipt(
         receiptVoucher,
@@ -910,6 +898,7 @@ const buildReceipt = async (
     paymentMethod,
     paymentDetails,
     note: "",
+    from: "sale",
     Primary_user_id: req.pUserId || req.owner,
     Secondary_user_id: req.sUserId,
   });

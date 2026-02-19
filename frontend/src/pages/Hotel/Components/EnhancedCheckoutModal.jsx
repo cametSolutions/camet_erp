@@ -181,11 +181,14 @@ export default function EnhancedCheckoutModal({
     )
 
     let result
+console.log(isSameCustomer)
     console.log("HHHh")
     if (isSameCustomer) {
       console.log("HHHhh")
       // 🔥 Merge ALL into ONE customer
       const checkInMap = {}
+console.log(roomAssignments.length)
+console.log(roomAssignments)
 
       roomAssignments.forEach((assignment) => {
         if (!checkInMap[assignment.checkInId]) {

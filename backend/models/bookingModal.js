@@ -155,6 +155,7 @@ const bookingSchema = new mongoose.Schema(
     discountPercentage: String,
     discountAmount: String,
     advanceAmount: String,
+    totalAdvance: Number,//total advance of booking and checkin
     totalAmount: String,
     balanceToPay: String,
     guestName: String,
@@ -164,6 +165,9 @@ const bookingSchema = new mongoose.Schema(
     guestPinCode: String,
     guestDetailedAddress: String,
     guestMobileNumber: String,
+    paymentMode: String,
+    paymentMethod: String,
+    selectedCashOrBank: { type: mongoose.Schema.Types.ObjectId, ref: "Party" },
     gstNo: String,
     paymenttypeDetails: {
       cash: { type: Number, default: 0 },
@@ -174,6 +178,9 @@ const bookingSchema = new mongoose.Schema(
     },
     checkoutpaymenttypedetails: [{
       customerName: { type: String },
+      customer: { type: mongoose.Schema.Types.ObjectId, ref: "Party" },
+      source: { type: mongoose.Schema.Types.Mixed },
+      sourceType: { type: String },
       mode: { type: String },
       amount: { type: Number }
     }],
@@ -200,6 +207,8 @@ const bookingSchema = new mongoose.Schema(
     checkInArray: [{ type: mongoose.Schema.Types.ObjectId, ref: "CheckIn" }],
     arrayCheckIn: [{ type: mongoose.Schema.Types.ObjectId, ref: "CheckIn" }],
     arrayBookIn: [{ type: mongoose.Schema.Types.ObjectId, ref: "Booking" }],
+    checkinsNumbers: [{ type: String }],
+
     status: String,
     originalCheckInId: {
       type: mongoose.Schema.Types.ObjectId,

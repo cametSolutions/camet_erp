@@ -62,7 +62,7 @@ import {
     updateVisitOfPurpose, deleteVisitOfPurpose, saveIdProof, getIdProof, updateIdProof, deleteIdProof, saveFoodPlan, getFoodPlan
     , updateFoodPlan, deleteFoodPlan, addRoom, getRooms, editRoom, deleteRoom, getAllRooms, roomBooking, getBookings, deleteBooking, updateBooking,
     fetchAdvanceDetails, getAllRoomsWithStatusForDate, updateRoomStatus, getDateBasedRoomsWithStatus, checkoutWithArrayOfData,
-    fetchOutStandingAndFoodData, convertCheckOutToSale, updateConfigurationForHotelAndRestaurant, swapRoom, getRoomSwapHistory, checkedInGuest,
+    fetchOutStandingAndFoodData, convertCheckOutToSale,editcheckoutforroom, updateConfigurationForHotelAndRestaurant, swapRoom, getRoomSwapHistory, checkedInGuest,
     getallroomsCurrentStatus,
     getallnoncheckoutCheckins,
     getHotelSalesDetails, getRoomCheckInDetails, cancelBooking,getCheckoutStatementByDate,convertToAvailable
@@ -380,6 +380,7 @@ router.get('/getDateBasedRoomsWithStatus/:cmp_id',authSecondary,getDateBasedRoom
 router.put('/checkOutWithArray/:cmp_id',authSecondary,checkoutWithArrayOfData)
 router.post('/fetchOutStandingAndFoodData',authSecondary,fetchOutStandingAndFoodData)
 router.post('/convertCheckOutToSale/:cmp_id',authSecondary,convertCheckOutToSale)
+router.post('/editcheckoutforroom/:cmp_id',authSecondary,editcheckoutforroom)
 router.put('/updateConfigurationForHotelAndRestaurant/:cmp_id',authSecondary,updateConfigurationForHotelAndRestaurant)
 router.put('/updateConfigurationForKotApproval/:cmp_id',authSecondary,updateConfigurationForKotApproval)
 router.put("/swapRoom/:checkInId", swapRoom);
