@@ -15,7 +15,6 @@ import useFetch from "@/customHook/useFetch";
 import OutStandingModal from "./OutStandingModal";
 import PaymentModal from "./PaymentModal";
 
-
 function BookingForm({
   isLoading = false,
   setIsLoading = false,
@@ -25,7 +24,7 @@ function BookingForm({
   isFor,
   outStanding = [],
   roomId,
-  rooms=[],
+  rooms = [],
   isTariffRateChange,
   submitLoader,
   isShowGrc = false,
@@ -53,7 +52,6 @@ function BookingForm({
     `/api/sUsers/getProductSubDetails/${cmp_id}?type=roomType`,
   );
   useEffect(() => {
-    
     if (data) setRoomType(data?.data);
   }, [data]);
 
@@ -61,11 +59,8 @@ function BookingForm({
     `/api/sUsers/getVisitOfPurpose/${cmp_id}`,
   );
   useEffect(() => {
-    
     if (visitOfPurposeData) setVisitOfPurpose(visitOfPurposeData?.data);
   }, [visitOfPurposeData]);
-
- 
 
   const today = new Date();
   const isoDate = (d) => d.toISOString().split("T")[0];
@@ -76,13 +71,12 @@ function BookingForm({
   const currentDateDefault = isoDate(today);
 
   useEffect(() => {
-    
     if (submitLoader) {
       setShowPaymentModal(true);
       setSaveLoader(true);
     }
   }, [submitLoader]);
- 
+
   const [formData, setFormData] = useState({
     bookingDate: arrivalDateDefault,
     voucherNumber: voucherNumber,
@@ -131,12 +125,8 @@ function BookingForm({
     grcno: "",
     addTaxWithRate: configurations[0]?.addRateWithTax?.hotelSale,
   });
-  
-  
-
 
   useEffect(() => {
-    
     if (editData) {
       setSelectedParty(editData?.customerId);
       setSelectedGuest(editData?.guestId);
@@ -207,10 +197,7 @@ function BookingForm({
     }
   }, [editData]);
 
-
-
   useEffect(() => {
-    
     if (roomId) setSelectedRoomId(roomId);
   }, [roomId]);
 
@@ -380,16 +367,13 @@ function BookingForm({
   }, [cmp_id, isFor, setIsLoading]);
 
   useEffect(() => {
-    
     if (!editData || isFor === "deliveryNote" || isFor === "sales") {
       fetchData();
     }
   }, [fetchData, editData, isFor]);
 
-
   // Fixed calculation: Room total + Pax + Food Plan = Total Amount, then apply discount
   useEffect(() => {
-    
     const handler = setTimeout(() => {
       const roomTotal = Number(formData?.roomTotal || 0);
       const paxTotal = Number(formData?.paxTotal || 0);
@@ -427,8 +411,6 @@ function BookingForm({
     formData.discountAmount,
     formData.totalAdvance,
   ]);
-
- 
 
   const handleDiscountPercentageChange = (e) => {
     const { value } = e.target;
@@ -702,8 +684,10 @@ function BookingForm({
       toast.error("Please enter a customer name");
       return;
     }
-    if(Number(formData.grandTotal) < 0){
-      toast.error("Please select at least one room or enter price for selected room");
+    if (Number(formData.grandTotal) < 0) {
+      toast.error(
+        "Please select at least one room or enter price for selected room",
+      );
       return;
     }
 
@@ -921,7 +905,7 @@ function BookingForm({
 
   const handleClose = () => setShowPaymentModal(false);
   const handleSearchCustomer = (name, isGuest) => {
-    if (isGuest)  {
+    if (isGuest) {
       setFormData((prev) => ({
         ...prev,
         guestName: name,
@@ -1330,204 +1314,215 @@ function BookingForm({
 
                   {/* Guest Info Box */}
 
-                  {/* Booking/Room Fields Box */}
-                  <div className="w-full bg-gray-50 border rounded-xl shadow-md ">
-                    <h2 className="text-lg  font-semibold text-blueGray-800 mb-6 p-2">
-                      Booking & Room Details
-                    </h2>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-6 p-3">
-                      {/* Arrival Date */}
-                      <div>
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Arrival Date
-                        </label>
-                        <input
-                          type="date"
-                          name="arrivalDate"
-                          value={formData.arrivalDate}
-                          onChange={handleChange}
-                          className="w-full border border-gray-300 px-3 py-2 rounded text-sm shadow focus:outline-none focus:ring focus:ring-blue-200 bg-white"
-                        />
-                      </div>
-                      {/* Arrival Time */}
-                      <div>
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Arrival Time
-                        </label>
-                        <TimeSelector
-                          initialTime={editData?.arrivalTime}
-                          onTimeChange={handleArrivalTimeChange}
-                        />
-                      </div>
-                      {/* Check Out Date */}
-                      <div>
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Check Out Date
-                        </label>
-                        <input
-                          type="date"
-                          name="checkOutDate"
-                          value={formData.checkOutDate}
-                          onChange={handleChange}
-                          className="w-full border border-gray-300 px-3 py-2 rounded text-sm shadow focus:outline-none focus:ring focus:ring-blue-200 bg-white"
-                        />
-                      </div>
-                      {/* Check Out Time */}
-                      <div>
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Check Out Time
-                        </label>
-                        <TimeSelector
-                          initialTime={editData?.checkOutTime}
-                          onTimeChange={handleCheckOutTimeChange}
-                        />
-                      </div>
-                      {/* Booking Type */}
-                      <div>
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Booking Type
-                        </label>
-                        <select
-                          name="bookingType"
-                          value={formData.bookingType}
-                          onChange={handleChange}
-                          className="w-full border border-gray-300 px-3 py-2 rounded text-sm shadow focus:outline-none focus:ring focus:ring-blue-200 bg-white"
-                        >
-                          <option value="offline">Offline Booking</option>
-                          <option value="online">Online Booking</option>
-                        </select>
-                      </div>
-                      {/* Hotel Agent */}
-                      <div>
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Hotel Agent
-                        </label>
-                        <CustomerSearchInputBox
-                          key={"hotelAgent"}
-                          onSelect={handleAgentSelect}
-                          isAgent={true}
-                          selectedParty={hotelAgent}
-                          placeholder="Search customers..."
-                        />
-                      </div>
-                      {/* Stay Days */}
-                      <div>
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Stay Days
-                        </label>
-                        <input
-                          type="text"
-                          name="stayDays"
-                          value={formData.stayDays}
-                          onChange={handleChange}
-                          className="w-full border border-gray-300 px-3 py-2 rounded text-sm shadow focus:outline-none focus:ring focus:ring-blue-200 bg-white"
-                        />
-                      </div>
-                      {/* Visit of Purpose */}
-                      <div>
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Visit of purpose
-                        </label>
-                        <select
-                          name="visitOfPurpose"
-                          value={formData.visitOfPurpose}
-                          onChange={handleChange}
-                          className="w-full border border-gray-300 px-3 py-2 rounded text-sm shadow focus:outline-none focus:ring focus:ring-blue-200 bg-white"
-                        >
-                          <option value="All">Select Room Type</option>
-                          {visitOfPurpose.map((data) => (
-                            <option key={data?._id} value={data?._id}>
-                              {data?.visitOfPurpose}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      {/* Room Type */}
-                      <div>
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Room Type
-                        </label>
-                        <select
-                          name="roomType"
-                          value={formData.roomType}
-                          onChange={handleChange}
-                          className="w-full border border-gray-300 px-3 py-2 rounded text-sm shadow focus:outline-none focus:ring focus:ring-blue-200 bg-white"
-                        >
-                          <option value="All">Select Room Type</option>
-                          {roomType.map((roomType) => (
-                            <option key={roomType?._id} value={roomType?._id}>
-                              {roomType?.brand}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-4">
-                          {isShowGrc && (
-                            <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                              GRC NO
-                            </label>
-                          )}
-                          <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                            Add Tax With Rate
-                          </label>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          {/* GRC Input */}
-                          {isShowGrc && (
-                            <input
-                              type="text"
-                              name="grcno"
-                              value={formData.grcno || ""}
-                              onChange={handleChange}
-                              placeholder="GRC %"
-                              className="w-24 border px-2 py-1 rounded text-sm focus:outline-none focus:ring bg-white border-gray-200"
-                            />
-                          )}
-                          {/* Toggle */}
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleChange({
-                                target: {
-                                  name: "addTaxWithRate",
-                                  value: !formData.addTaxWithRate,
-                                },
-                              })
-                            }
-                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition
-        ${formData.addTaxWithRate ? "bg-green-600" : "bg-gray-300"}`}
-                          >
-                            <span
-                              className={`inline-block h-5 w-5 transform rounded-full bg-white transition
-          ${formData.addTaxWithRate ? "translate-x-5" : "translate-x-1"}`}
-                            />
-                          </button>
-                        </div>
-                      </div>
+  <div className="w-full bg-gray-50 border rounded-xl shadow-md "> 
+  <h2 className="text-lg font-semibold text-blueGray-800 mb-6 p-2">
+    Booking & Room Details
+  </h2>
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-x-3 gap-y-4 p-3">
+    {/* Arrival Date */}
+    <div>
+      <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+        Arrival Date
+      </label>
+      <input
+        type="date"
+        name="arrivalDate"
+        value={formData.arrivalDate}
+        onChange={handleChange}
+        className="w-full border border-gray-300 px-3 py-2 rounded text-sm shadow focus:outline-none focus:ring focus:ring-blue-200 bg-white"
+      />
+    </div>
 
-                      {/* Available Rooms (spans both columns if needed) */}
-                      <div className="col-span-2">
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Available Rooms
-                        </label>
-                        <AvailableRooms
-                          onSelect={handleAvailableRoomSelection}
-                          selectedParty={selectedParty}
-                          placeholder="Search customers..."
-                          selectedRoomData={selectedRoomData}
-                          setDisplayFoodPlan={setDisplayFoodPlan}
-                          sendToParent={handleAvailableRooms}
-                          formData={formData}
-                          selectedRoomId={selectedRoomId}
-                          isTariffRateChange={isTariffRateChange}
-                          roomIdToUpdate={roomId}
-                          roomFromDashboard={rooms}
-                          addTaxWithRate={formData.addTaxWithRate}
-                        />
-                      </div>
-                    </div>
-                  </div>
+    {/* Arrival Time */}
+    <div>
+      <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+        Arrival Time
+      </label>
+      <TimeSelector
+        initialTime={editData?.arrivalTime}
+        onTimeChange={handleArrivalTimeChange}
+      />
+    </div>
+
+    {/* Check Out Date */}
+    <div>
+      <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+        Check Out Date
+      </label>
+      <input
+        type="date"
+        name="checkOutDate"
+        value={formData.checkOutDate}
+        onChange={handleChange}
+        className="w-full border border-gray-300 px-3 py-2 rounded text-sm shadow focus:outline-none focus:ring focus:ring-blue-200 bg-white"
+      />
+    </div>
+
+    {/* Check Out Time */}
+    <div>
+      <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+        Check Out Time
+      </label>
+      <TimeSelector
+        initialTime={editData?.checkOutTime}
+        onTimeChange={handleCheckOutTimeChange}
+      />
+    </div>
+
+    {/* Booking Type */}
+    <div>
+      <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+        Booking Type
+      </label>
+      <select
+        name="bookingType"
+        value={formData.bookingType}
+        onChange={handleChange}
+        className="w-full border border-gray-300 px-3 py-2 rounded text-sm shadow focus:outline-none focus:ring focus:ring-blue-200 bg-white"
+      >
+        <option value="offline">Offline Booking</option>
+        <option value="online">Online Booking</option>
+      </select>
+    </div>
+
+    {/* Hotel Agent */}
+    <div>
+      <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+        Hotel Agent
+      </label>
+      <CustomerSearchInputBox
+        key={"hotelAgent"}
+        onSelect={handleAgentSelect}
+        isAgent={true}
+        selectedParty={hotelAgent}
+        placeholder="Search customers..."
+      />
+    </div>
+
+    {/* Stay Days */}
+    <div>
+      <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+        Stay Days
+      </label>
+      <input
+        type="text"
+        name="stayDays"
+        value={formData.stayDays}
+        onChange={handleChange}
+        className="w-full border border-gray-300 px-3 py-2 rounded text-sm shadow focus:outline-none focus:ring focus:ring-blue-200 bg-white"
+      />
+    </div>
+
+    {/* Visit of Purpose */}
+    <div>
+      <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+        Visit of purpose
+      </label>
+      <select
+        name="visitOfPurpose"
+        value={formData.visitOfPurpose}
+        onChange={handleChange}
+        className="w-full border border-gray-300 px-3 py-2 rounded text-sm shadow focus:outline-none focus:ring focus:ring-blue-200 bg-white"
+      >
+        <option value="All">Select Room Type</option>
+        {visitOfPurpose.map((data) => (
+          <option key={data?._id} value={data?._id}>
+            {data?.visitOfPurpose}
+          </option>
+        ))}
+      </select>
+    </div>
+
+    {/* Room Type */}
+    <div>
+      <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+        Room Type
+      </label>
+      <select
+        name="roomType"
+        value={formData.roomType}
+        onChange={handleChange}
+        className="w-full border border-gray-300 px-3 py-2 rounded text-sm shadow focus:outline-none focus:ring focus:ring-blue-200 bg-white"
+      >
+        <option value="All">Select Room Type</option>
+        {roomType.map((roomType) => (
+          <option key={roomType?._id} value={roomType?._id}>
+            {roomType?.brand}
+          </option>
+        ))}
+      </select>
+    </div>
+
+    {/* Add Tax With Rate & GRC (spans all columns) */}
+    <div className="col-span-full lg:col-span-5">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+        {isShowGrc && (
+          <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+            GRC NO
+          </label>
+        )}
+        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+          Add Tax With Rate
+        </label>
+      </div>
+      <div className="flex items-center gap-4">
+        {/* GRC Input */}
+        {isShowGrc && (
+          <input
+            type="text"
+            name="grcno"
+            value={formData.grcno || ""}
+            onChange={handleChange}
+            placeholder="GRC %"
+            className="w-24 border px-2 py-1 rounded text-sm focus:outline-none focus:ring bg-white border-gray-200"
+          />
+        )}
+        {/* Toggle */}
+        <button
+          type="button"
+          onClick={() =>
+            handleChange({
+              target: {
+                name: "addTaxWithRate",
+                value: !formData.addTaxWithRate,
+              },
+            })
+          }
+          className={`relative inline-flex h-6 w-11 items-center rounded-full transition
+            ${formData.addTaxWithRate ? "bg-green-600" : "bg-gray-300"}`}
+        >
+          <span
+            className={`inline-block h-5 w-5 transform rounded-full bg-white transition
+              ${formData.addTaxWithRate ? "translate-x-5" : "translate-x-1"}`}
+          />
+        </button>
+      </div>
+    </div>
+
+    {/* Available Rooms (spans all columns) */}
+    <div className="col-span-full lg:col-span-5">
+      <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+        Available Rooms
+      </label>
+      <AvailableRooms
+        onSelect={handleAvailableRoomSelection}
+        selectedParty={selectedParty}
+        placeholder="Search customers..."
+        selectedRoomData={selectedRoomData}
+        setDisplayFoodPlan={setDisplayFoodPlan}
+        sendToParent={handleAvailableRooms}
+        formData={formData}
+        selectedRoomId={selectedRoomId}
+        isTariffRateChange={isTariffRateChange}
+        roomIdToUpdate={roomId}
+        roomFromDashboard={rooms}
+        addTaxWithRate={formData.addTaxWithRate}
+      />
+    </div>
+  </div>
+</div>
+
+
 
                   <div className="flex flex-wrap pt-4">
                     {/* Booking Number */}

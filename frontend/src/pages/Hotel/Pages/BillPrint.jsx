@@ -26,14 +26,12 @@ const HotelBillPrint = () => {
   const [paymentModeDetails, setPaymentModeDetails] = useState([])
   // Props from location state
   const selectedCheckOut = location.state?.selectedCheckOut || []
-  console.log(selectedCheckOut)
 
   const checkoutmode = location?.state?.checkoutMode || null
   const cheinids = location?.state?.checkinIds
 
   // const selectedCustomerId = location.state?.customerId;
   const isForPreview = location.state?.isForPreview
-  console.log("isForPreview", isForPreview)
 
   // Component state (global for fetch results used across docs)
   const [outStanding, setOutStanding] = useState([])
@@ -41,7 +39,6 @@ const HotelBillPrint = () => {
   const [showSplitPopUp, setShowSplitPopUp] = useState(false)
   const [selected, setSelected] = useState("default")
   const printReference = useRef(null)
-  console.log("hhh")
   //   useEffect(() => {
   // console.log(paymentDetails)
   //     const paymentTypeDetails =
@@ -66,7 +63,6 @@ const HotelBillPrint = () => {
   //   }, [paymentDetails]);
   useEffect(() => {
     const splitDetails = paymentDetails?.paymentDetails?.splitDetails
-    console.log(splitDetails)
 
     if (!splitDetails || !splitDetails.length) {
       setPaymentModeDetails([])
@@ -75,7 +71,7 @@ const HotelBillPrint = () => {
 
     const mergedMap = {}
 
-    splitDetails.forEach((item) => {
+    splitDetails?.forEach((item) => {
       const key = `${item.customerName}-${item.subsource}`
 
       if (!mergedMap[key]) {
@@ -88,16 +84,12 @@ const HotelBillPrint = () => {
         mergedMap[key].amount += Number(item.amount)
       }
     })
-    console.log(splitDetails)
     setPaymentModeDetails(Object.values(mergedMap))
   }, [paymentDetails])
-  console.log(paymentModeDetails)
 
-  console.log("positivePaymentTypes", paymentModeDetails)
 
   // Fetch debit and KOT once for all docs shown
   const fetchDebitData = async (data) => {
-    console.log(data)
     try {
       const res = await api.post(
         `/api/sUsers/fetchOutStandingAndFoodData`,
@@ -118,18 +110,10 @@ const HotelBillPrint = () => {
   useEffect(() => {
     if (selectedCheckOut?.length > 0) {
       if (!isForPreview) {
-        console.log("hddddd")
-        console.log(selectedCheckOut[0].checkoutpaymenttypedetails)
-        // const positivePaymentTypes = Object.entries(
-        //   selectedCheckOut[0].paymenttypeDetails
-        // )
-        //   .filter(([_, amount]) => Number(amount) > 0)
-        //   .reduce((acc, [type, amount]) => {
-        //     acc[type] = Number(amount)
-        //     return acc
-        //   }, {})
+      
+     
         const mergedMap = {}
-        selectedCheckOut[0].checkoutpaymenttypedetails.forEach((item) => {
+        selectedCheckOut[0].checkoutpaymenttypedetails?.forEach((item) => {
           const key = `${item.customerName}-${item.mode}`
 
           if (!mergedMap[key]) {
@@ -145,7 +129,6 @@ const HotelBillPrint = () => {
 
         setPaymentModeDetails(Object.values(mergedMap))
       }
-console.log("hh")
       fetchDebitData(selectedCheckOut)
     }
   }, [JSON.stringify(selectedCheckOut)]) // ✅ CHANGED: Added JSON.stringify
@@ -176,13 +159,13 @@ console.log("hh")
   // Replace your transformDocToDateWiseLines function with this complete version:
 
   const transformDocToDateWiseLines = (doc) => {
+
     const result = []
 
-    ;(doc.selectedRooms || []).forEach((room) => {
+    ;(doc.selectedRooms || [])?.forEach((room) => {
       const roomStartDate = new Date(room.arrivalDate || doc.arrivalDate)
 
       const stayDays = room.stayDays || 1
-console.log(stayDays)
       const fullDays = Math.floor(stayDays)
       const fractionalDay = stayDays - fullDays
 
@@ -236,7 +219,6 @@ console.log(stayDays)
         fullDays > 0 ? totalAdditionalPaxWithTax / fullDays : 0
       const additionalPaxDataWithOutTaxPerDay =
         fullDays > 0 ? totalAdditionalPaxWithOutTax / fullDays : 0
-      console.log(fullDays)
 
       // Add full days
       for (let i = 0; i < fullDays; i++) {
@@ -245,7 +227,6 @@ console.log(stayDays)
         const formattedDate = currentDate
           .toLocaleDateString("en-GB")
           .replace(/\//g, "-")
-
         result.push({
           date: formattedDate,
           description: `Room Rent - Room ${room.roomName}`,
@@ -285,8 +266,7 @@ console.log(stayDays)
         const formattedFractionalDate = fractionalDate
           .toLocaleDateString("en-GB")
           .replace(/\//g, "-")
-        console.log(formattedFractionalDate)
-
+       
         result.push({
           date: formattedFractionalDate,
           description: `Room Rent - Room ${room.roomName} (Half Day)`,
@@ -324,7 +304,7 @@ console.log(stayDays)
 
   const getKotTotalsByRoom = (kots = []) => {
     const map = new Map()
-    kots.forEach((kot) => {
+    kots?.forEach((kot) => {
       const roomId = kot?.kotDetails?.roomId
       if (!roomId) return
       const amount = Number(
@@ -359,7 +339,7 @@ console.log(stayDays)
     const roomServiceKots = []
     const dineInKots = []
 
-    kotData.forEach((kot) => {
+    kotData?.forEach((kot) => {
       const kotRoomId = String(kot?.kotDetails?.roomId || kot?.roomId || "")
       const tableNumber =
         kot?.kotDetails?.tableNumber ||
@@ -400,7 +380,7 @@ console.log(stayDays)
 
     // 1. Add Room Service charges (grouped by room)
     const roomServiceTotals = {}
-    roomServiceKots.forEach((kot) => {
+    roomServiceKots?.forEach((kot) => {
       const roomId = String(kot?.kotDetails?.roomId || kot?.roomId || "")
       const amount = Number(
         kot?.finalAmount ?? kot?.subTotal ?? kot?.total ?? 0
@@ -419,7 +399,7 @@ console.log(stayDays)
       }
     })
 
-    Object.keys(roomServiceTotals).forEach((roomId) => {
+    Object.keys(roomServiceTotals)?.forEach((roomId) => {
       const roomName =
         (doc.selectedRooms || []).find(
           (r) => String(r?.roomId || r?._id || r?.id) === roomId
@@ -449,7 +429,7 @@ console.log(stayDays)
 
     // 2. Add Restaurant Dine In charges (grouped by table or as one line)
     const dineInTotals = {}
-    dineInKots.forEach((kot) => {
+    dineInKots?.forEach((kot) => {
       const tableNo =
         kot?.kotDetails?.tableNumber ||
         kot?.tableNumber ||
@@ -476,7 +456,7 @@ console.log(stayDays)
       }
     })
 
-    Object.keys(dineInTotals).forEach((tableNo) => {
+    Object.keys(dineInTotals)?.forEach((tableNo) => {
       const docNo = dineInTotals[tableNo].docNos.join(", ") || "-"
 
       console.log(
@@ -516,10 +496,8 @@ console.log(stayDays)
 
   // Build bill payload per doc; gate advances via useAdvances
   const prepareBillDataForDoc = (doc, useAdvances) => {
-console.log(doc)
     // Lines from room stay
     const dateWiseLines = transformDocToDateWiseLines(doc)
-    console.log(dateWiseLines)
     // Totals for room parts
     let roomTariffTotal = dateWiseLines.reduce(
       (t, i) => t + Number(i.baseAmount || 0),
@@ -530,7 +508,6 @@ console.log(doc)
       (t, i) => t + Number(i.foodPlanAmountWithOutTax || 0),
       0
     )
-    console.log(planAmount)
     const foodPlanAmountWithTax = dateWiseLines
       .reduce(
         (t, i) =>
@@ -539,8 +516,7 @@ console.log(doc)
             Number(i.foodPlanAmountWithOutTax || 0)),
         0
       )
-      .toFixed(2);
-    console.log(foodPlanAmountWithTax);
+      .toFixed(2)
 
     const additionalPaxAmount = (doc.selectedRooms || []).reduce(
       (total, room) => {
@@ -555,7 +531,6 @@ console.log(doc)
       },
       0
     )
-    console.log(dateWiseLines)
     const roomTaxTotal = dateWiseLines.reduce(
       (t, i) => t + Number(i.taxAmount || 0),
       0
@@ -567,9 +542,8 @@ console.log(doc)
         t +
         Number(i.additionalPaxDataWithTax || 0) -
         Number(i.additionalPaxDataWithOutTax || 0),
-      0,
-    );
-    console.log(roomTariffTotal);
+      0
+    )
 
     const sgstAmount = ((roomTaxTotal + additionalPaxTax) / 2).toFixed(2)
     const cgstAmount = ((roomTaxTotal + additionalPaxTax) / 2).toFixed(2)
@@ -597,7 +571,7 @@ console.log(doc)
       const groups = {}
 
       // Group charges by room
-      dateWiseLines.forEach((i) => {
+      dateWiseLines?.forEach((i) => {
         const k = i.roomName
         if (!groups[k]) groups[k] = []
         groups[k].push(i)
@@ -607,7 +581,7 @@ console.log(doc)
       const roomNames = Object.keys(groups)
 
       // Process each room's charges in order
-      roomNames.forEach((roomName, roomIndex) => {
+      roomNames?.forEach((roomName, roomIndex) => {
         const roomDays = groups[roomName]
 
         // Get the original room data for this room
@@ -635,7 +609,7 @@ console.log(doc)
         );
 
         // 1. Add FULL DAY room rent charges
-        fullDayCharges.forEach((item) => {
+        fullDayCharges?.forEach((item) => {
           charges.push({
             date: item.date,
             description: `Room Rent :${item.roomName}`,
@@ -681,7 +655,7 @@ console.log(doc)
         }
 
         // 3. Add HALF DAY room rent charges with CHECKOUT DATE
-        halfDayCharges.forEach((item) => {
+        halfDayCharges?.forEach((item) => {
           charges.push({
             date: item.date, // ✅ Use the actual half day date (checkout date)
             description: `Half Tariff :${item.roomName}`,
@@ -797,7 +771,7 @@ console.log(doc)
           (l) => l.roomName === roomName && l.type === "roomService"
         )
 
-        roomServiceLines.forEach((serviceLine) => {
+        roomServiceLines?.forEach((serviceLine) => {
           if (Number(serviceLine.amount) > 0) {
             charges.push({
               date: serviceLine.date,
@@ -818,7 +792,7 @@ console.log(doc)
           )
           console.log("Adding dine-in lines after first room:", dineInLines)
 
-          dineInLines.forEach((dineInLine) => {
+          dineInLines?.forEach((dineInLine) => {
             if (Number(dineInLine.amount) > 0) {
               charges.push({
                 date: dineInLine.date,
@@ -836,9 +810,6 @@ console.log(doc)
 
       return charges
     })()
-
-    const allcheckinids = doc?.allCheckInIds
-    const allpartyid = doc?.partyArray
 
     // Advances only on the decided bill
     let advanceEntries = useAdvances
@@ -869,17 +840,14 @@ console.log(doc)
         0
       )
 
-      console.log(reduceCheckoutTotal)
       advanceEntries = advanceEntries.filter(
         (t) => t.description !== "CheckOut"
       )
       advanceTotal = advanceTotal - reduceCheckoutTotal
     }
-    console.log(advanceTotal)
 
     // Combine charges and compute balances
     const allCharges = [...groupedRoomCharges, ...advanceEntries]
-console.log(allCharges)
     let cumulativeBalance = 0
     const chargesWithBalance = allCharges.map((charge) => {
       let currentAmount = Number(charge.amount || 0)
@@ -917,7 +885,6 @@ console.log(allCharges)
           : "0.00"
       }
     })
-    console.log(doc?.checkOutTime)
     console.log(
       roomTariffTotal,
       planAmount,
@@ -981,7 +948,6 @@ console.log(allCharges)
           paymentDetails?.paymentDetails?.selectedCreditor?.partyName
       }
     }
-console.log("hh")
     return {
       hotel: {
         name: organization?.name,
@@ -1038,15 +1004,13 @@ console.log("hh")
         mode: "Credit",
         total: grandTotal,
         advance: advanceTotal,
-        netPay,
-      },
-    };
-  };
-  console.log(selectedCheckOut);
+        netPay
+      }
+    }
+  }
   // Build all billData per doc; decide where advances appear
   const bills = useMemo(() => {
     const docs = selectedCheckOut || []
-
 
     if (!docs.length) return []
     const firstPrimaryIdx = findFirstPrimaryIdx(docs)
@@ -1058,7 +1022,6 @@ console.log("hh")
       return prepareBillDataForDoc(doc, useAdvances)
     })
   }, [selectedCheckOut, outStanding, kotData, organization])
-console.log(bills)
 
   const handlePrintPDF = (isPrint) => {
     const multi = bills && bills.length ? bills : []
@@ -1070,8 +1033,7 @@ console.log(bills)
       handleBillPrintInvoice(multi,organization); // pass array
     }
   }
-  console.log(paymentModeDetails)
-  console.log("bills", bills)
+ 
   return (
     <>
       <TitleDiv title="Bill Print" />
@@ -2087,12 +2049,12 @@ console.log(bills)
 
                 let balanceToPay = 0
                 bills.forEach((item) => (balanceToPay += item.payment.netPay))
-                console.log(balanceToPay)
                 const firstDoc = selectedCheckOut[0]
-                navigate("/sUsers/checkInList", {
+                navigate(location.state.path, {
                   state: {
                     selectedCheckOut,
                     selectedCustomer: firstDoc?.customerId,
+                    edit: location?.state?.edit || false,
                     balanceToPay,
                     kotData,
                     checkoutmode,
