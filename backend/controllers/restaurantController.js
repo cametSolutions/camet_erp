@@ -16,7 +16,8 @@ import Organization from "../models/OragnizationModel.js";
 import Table from "../models/TableModel.js";
 import { Godown } from "../models/subDetails.js";
 import { buildReceipt } from "../helpers/restaurantHelper.js";
-import { FoodPlan } from '../models/hotelSubMasterModal.js';
+import partyModel from "../models/partyModel.js";
+import { FoodPlan } from "../models/hotelSubMasterModal.js";
 import AdditionalCharges from "../models/additionalChargesModel.js";
 // Helper functions (you may need to create these or adjust based on your existing ones)
 import {
@@ -38,19 +39,23 @@ export const addItem = async (req, res) => {
 
     // Validate item code
 
-
     session.startTransaction();
     // 🔹 Check if product already exists (by name + company)
-    const existingItem = await productModel.findOne({
-      cmp_id: req.params.cmp_id,
-      product_name: { $regex: `^${formData.itemName.trim()}$`, $options: "i" }
-    }).session(session);
+    const existingItem = await productModel
+      .findOne({
+        cmp_id: req.params.cmp_id,
+        product_name: {
+          $regex: `^${formData.itemName.trim()}$`,
+          $options: "i",
+        },
+      })
+      .session(session);
 
     if (existingItem) {
       await session.abortTransaction();
       return res.status(409).json({
         success: false,
-        message: "Item already exists with this name"
+        message: "Item already exists with this name",
       });
     }
 
@@ -63,7 +68,9 @@ export const addItem = async (req, res) => {
       return res.status(400).json({ message: "HSN data missing" });
     }
 
-    let godown = await Godown.findOne({ cmp_id: req.params.cmp_id }).session(session);
+    let godown = await Godown.findOne({ cmp_id: req.params.cmp_id }).session(
+      session,
+    );
     if (!godown) {
       await session.abortTransaction();
       return res.status(400).json({ message: "godown data missing" });
@@ -115,7 +122,6 @@ export const addItem = async (req, res) => {
   }
 };
 
-
 // Get Items Controller
 export const getItems = async (req, res) => {
   try {
@@ -128,7 +134,7 @@ export const getItems = async (req, res) => {
       res,
       items,
       totalItems,
-      params
+      params,
     );
   } catch (error) {
     console.error("Error in getItems:", error);
@@ -239,7 +245,6 @@ export const searchItems = async (req, res) => {
   }
 };
 
-
 // Get Single Item Controller (for editing)
 export const getItemById = async (req, res) => {
   try {
@@ -317,7 +322,7 @@ export const updateItem = async (req, res) => {
         // new: true,
         session,
         // runValidators: true,
-      }
+      },
     );
 
     if (!updatedItem) {
@@ -411,16 +416,14 @@ export const generateKot = async (req, res) => {
     session.startTransaction();
 
     const cmp_id = req.params.cmp_id;
-    const organizationData = await Organization.findOne(
-      { _id: cmp_id },
-      null,
-      { session }
-    );
+    const organizationData = await Organization.findOne({ _id: cmp_id }, null, {
+      session,
+    });
 
     const voucherData = await VoucherSeriesModel.findOne(
       { voucherType: "memoRandom", cmp_id: cmp_id },
       null,
-      { session }
+      { session },
     );
 
     if (!voucherData) {
@@ -431,7 +434,7 @@ export const generateKot = async (req, res) => {
       cmp_id,
       "memoRandom",
       voucherData.series[0]._id.toString(),
-      session
+      session,
     );
 
     console.log("=== BACKEND RECEIVED KOT REQUEST ===");
@@ -443,18 +446,17 @@ export const generateKot = async (req, res) => {
     let foodPlanDetails = {
       planName: null,
       amount: 0,
-      isComplimentary: false
+      isComplimentary: false,
     };
 
     const foodPlanData = req.body.customer?.foodPlan;
 
     if (foodPlanData) {
-
       // ✅ DIRECT APPROACH - Use what frontend sends
       foodPlanDetails = {
-        planName: foodPlanData.planType || 'Complimentary',
+        planName: foodPlanData.planType || "Complimentary",
         amount: foodPlanData.amount || 0,
-        isComplimentary: Boolean(foodPlanData.isComplimentary) // ✅ Convert to boolean
+        isComplimentary: Boolean(foodPlanData.isComplimentary), // ✅ Convert to boolean
       };
 
       // Try to save the food plan ID if provided
@@ -468,11 +470,7 @@ export const generateKot = async (req, res) => {
           foodPlanId = null;
         }
       }
-
-
     }
-
-
 
     // Prepare the KOT data
     const kotData = {
@@ -498,14 +496,14 @@ export const generateKot = async (req, res) => {
       // ✅ Save food plan
       foodPlanId: foodPlanId,
       foodPlanDetails: foodPlanDetails,
-      isManuallyComplimentary: false
+      isManuallyComplimentary: false,
     };
 
     console.log("=== SAVING KOT ===");
     console.log("KOT Data:", {
       voucherNumber: kotData.voucherNumber,
       foodPlanId: kotData.foodPlanId,
-      foodPlanDetails: kotData.foodPlanDetails
+      foodPlanDetails: kotData.foodPlanDetails,
     });
 
     const kot = await kotModal.create([kotData], { session });
@@ -514,12 +512,12 @@ export const generateKot = async (req, res) => {
       const tableUpdate = await Table.findOneAndUpdate(
         { cmp_id, tableNumber: kotData.tableNumber },
         { $set: { status: "occupied" } },
-        { new: true, session }
+        { new: true, session },
       );
 
       if (!tableUpdate) {
         throw new Error(
-          `Table ${kotData.tableNumber} not found for company ${cmp_id}`
+          `Table ${kotData.tableNumber} not found for company ${cmp_id}`,
         );
       }
     }
@@ -560,12 +558,12 @@ export const editKot = async (req, res) => {
     const previousKot = await kotModal.findOne(
       { _id: req.params.kotId, cmp_id },
       null,
-      { session }
+      { session },
     );
 
     if (!previousKot) {
       throw new Error(
-        `KOT ${req.params.kotId} not found for company ${cmp_id}`
+        `KOT ${req.params.kotId} not found for company ${cmp_id}`,
       );
     }
 
@@ -593,7 +591,7 @@ export const editKot = async (req, res) => {
         status: req.body?.status,
         checkInNumber: req.body.customer?.checkInNumber,
       },
-      { new: true, session }
+      { new: true, session },
     );
 
     // If previous KOT was dine-in, free up the old table
@@ -601,12 +599,12 @@ export const editKot = async (req, res) => {
       const tableUpdate = await Table.findOneAndUpdate(
         { cmp_id, tableNumber: previousKot.tableNumber },
         { $set: { status: "available" } },
-        { new: true, session }
+        { new: true, session },
       );
 
       if (!tableUpdate) {
         throw new Error(
-          `Table ${previousKot.tableNumber} not found for company ${cmp_id}`
+          `Table ${previousKot.tableNumber} not found for company ${cmp_id}`,
         );
       }
     }
@@ -616,12 +614,12 @@ export const editKot = async (req, res) => {
       const tableUpdate = await Table.findOneAndUpdate(
         { cmp_id, tableNumber: updatedKot.tableNumber },
         { $set: { status: "occupied" } },
-        { new: true, session }
+        { new: true, session },
       );
 
       if (!tableUpdate) {
         throw new Error(
-          `Table ${updatedKot.tableNumber} not found for company ${cmp_id}`
+          `Table ${updatedKot.tableNumber} not found for company ${cmp_id}`,
         );
       }
     }
@@ -667,12 +665,12 @@ export const getKot = async (req, res) => {
         status: { $ne: "cancelled" },
       })
       .populate({
-        path: 'roomId',
-        select: 'roomName roomno' // ✅ CRITICAL - Select both fields
+        path: "roomId",
+        select: "roomName roomno", // ✅ CRITICAL - Select both fields
       })
-       .populate({
-        path: 'customer',
-        select: 'name phone address'
+      .populate({
+        path: "customer",
+        select: "name phone address",
       });
 
     res.status(200).json({
@@ -688,7 +686,6 @@ export const getKot = async (req, res) => {
   }
 };
 
-
 export const cancelKot = async (req, res) => {
   try {
     const { id } = req.params;
@@ -701,7 +698,7 @@ export const cancelKot = async (req, res) => {
         cancelReason: reason,
         cancelledAt: new Date(),
       },
-      { new: true }
+      { new: true },
     );
 
     if (!kot) {
@@ -754,7 +751,7 @@ export const getRoomDataForRestaurant = async (req, res) => {
 
     // Filter only those where today's date falls between arrivalDate & checkOutDate
     // const filtered = allData.filter((doc) => {
-      // arrivalDate/checkOutDate are stored as "YYYY-MM-DD" strings
+    // arrivalDate/checkOutDate are stored as "YYYY-MM-DD" strings
     //   const arrivalDate = new Date(doc.arrivalDate);
     //   arrivalDate.setHours(0, 0, 0, 0);
 
@@ -976,14 +973,14 @@ export const getRoomDataForRestaurant = async (req, res) => {
 
 // controllers/sUsersController.js
 
-
 export const directSale = async (req, res) => {
   const session = await mongoose.startSession();
 
   try {
     await session.withTransaction(async () => {
       const { cmp_id } = req.params;
-      const { paymentMethod, paymentDetails, selectedKotData, isDirectSale } = req.body;
+      const { paymentMethod, paymentDetails, selectedKotData, isDirectSale } =
+        req.body;
 
       if (!paymentDetails || !selectedKotData)
         throw new Error("Missing payment details or selected data");
@@ -996,13 +993,16 @@ export const directSale = async (req, res) => {
       if (cashAmt > 0 && onlineAmt > 0) resolvedPaymentMethod = "mixed";
 
       // Get voucher series for direct sales
-      const specificVoucherSeries = await getRestaurantVoucherSeries(cmp_id, session);
+      const specificVoucherSeries = await getRestaurantVoucherSeries(
+        cmp_id,
+        session,
+      );
 
       const saleNumber = await generateVoucherNumber(
         cmp_id,
         "sales",
         specificVoucherSeries._id.toString(),
-        session
+        session,
       );
 
       // Cash/Bank or Customer account
@@ -1013,14 +1013,14 @@ export const directSale = async (req, res) => {
         onlineAmt,
         selectedKotData,
         false,
-        session
+        session,
       );
 
       // Prepare structured party & payment arrays
       const paymentSplittingArray = createPaymentSplittingArray(
         paymentDetails,
         cashAmt,
-        onlineAmt
+        onlineAmt,
       );
 
       const party = mapPartyData(selectedParty);
@@ -1035,12 +1035,12 @@ export const directSale = async (req, res) => {
         party,
         selectedParty,
         paymentSplittingArray,
-        session
+        session,
       );
 
       // Settlement entries (cash/online)
       if (party?.paymentType !== "party") {
-        console.log("hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh")
+        console.log("hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh");
         await saveSettlement(
           paymentDetails,
           selectedParty,
@@ -1050,7 +1050,7 @@ export const directSale = async (req, res) => {
           cashAmt,
           onlineAmt,
           req,
-          session
+          session,
         );
       }
 
@@ -1066,8 +1066,8 @@ export const directSale = async (req, res) => {
         data: {
           salesRecord: salesRecordData, // Return the full object as-is
           _id: salesRecordData._id, // Also include _id at root for easy access
-          saleNumber: saleNumber
-        }
+          saleNumber: saleNumber,
+        },
       });
     });
   } catch (error) {
@@ -1080,7 +1080,6 @@ export const directSale = async (req, res) => {
     await session.endSession();
   }
 };
-
 
 // Update your updateKotPayment function in the backend
 
@@ -1098,12 +1097,12 @@ export const updateKotPayment = async (req, res) => {
         selectedKotData: kotData,
         isPostToRoom,
         additionalCharges = [],
-        discountCharge,    // ✅ NEW: From frontend dropdown
+        discountCharge, // ✅ NEW: From frontend dropdown
         discountAmount,
-        discountType,        // ✅ Extract discount type
+        discountType, // ✅ Extract discount type
         discountValue,
         isComplimentary = false,
-        isManuallyComplimentary = false,  // ✅ NEW: Discount amount
+        isManuallyComplimentary = false, // ✅ NEW: Discount amount
         note,
       } = req.body;
 
@@ -1115,14 +1114,15 @@ export const updateKotPayment = async (req, res) => {
 
       // console.log("table", kotData);
 
-
-
       if (!paymentDetails || !kotData) {
         throw new Error("Missing payment details or KOT data");
       }
 
       if (paymentDetails?.paymentMode === "credit") {
-        if (!paymentDetails.selectedCreditor || !paymentDetails.selectedCreditor._id) {
+        if (
+          !paymentDetails.selectedCreditor ||
+          !paymentDetails.selectedCreditor._id
+        ) {
           throw new Error("Please select a creditor for credit payment");
         }
       }
@@ -1140,10 +1140,6 @@ export const updateKotPayment = async (req, res) => {
         paymentMethod = "credit";
       }
 
-
-
-
-
       // ✅ Inject remarks
       if (note) {
         req.body.narration = note;
@@ -1151,13 +1147,10 @@ export const updateKotPayment = async (req, res) => {
         req.body.note = note;
       }
 
-
-
-
       // Voucher series
       const specificVoucherSeries = await getRestaurantVoucherSeries(
         cmp_id,
-        session
+        session,
       );
 
       // Voucher number
@@ -1165,11 +1158,10 @@ export const updateKotPayment = async (req, res) => {
         cmp_id,
         "sales",
         specificVoucherSeries._id.toString(),
-        session
+        session,
       );
       let creditParty;
       if (paymentMethod == "credit") {
-
         creditParty = await Party.findOne({
           cmp_id,
           _id: paymentDetails.selectedCreditor._id,
@@ -1184,20 +1176,20 @@ export const updateKotPayment = async (req, res) => {
         paymentMethod == "credit"
           ? creditParty
           : await getSelectedParty(
-            cmp_id,
-            paymentDetails,
-            cashAmt,
-            onlineAmt,
-            kotData,
-            isPostToRoom,
-            session
-          );
+              cmp_id,
+              paymentDetails,
+              cashAmt,
+              onlineAmt,
+              kotData,
+              isPostToRoom,
+              session,
+            );
 
       // Payment splitting
       const paymentSplittingArray = createPaymentSplittingArray(
         paymentDetails,
         cashAmt,
-        onlineAmt
+        onlineAmt,
       );
 
       const party = mapPartyData(selectedParty);
@@ -1214,7 +1206,7 @@ export const updateKotPayment = async (req, res) => {
         paymentSplittingArray,
         session,
         isComplimentary,
-        isManuallyComplimentary
+        isManuallyComplimentary,
       );
       // ✅ Calculate with DISCOUNT
       const originalTotal = Number(kotData?.total || 0);
@@ -1233,11 +1225,11 @@ export const updateKotPayment = async (req, res) => {
           savedVoucherData[0],
           paidAmount,
           pendingAmount,
-          session
+          session,
         );
       }
       if (party?.paymentType != "party" && paymentMethod != "credit") {
-        console.log("undddd")
+        console.log("undddd");
 
         await saveSettlement(
           paymentDetails,
@@ -1248,7 +1240,7 @@ export const updateKotPayment = async (req, res) => {
           cashAmt,
           onlineAmt,
           req,
-          session
+          session,
         );
       }
       if (paymentMethod == "credit") {
@@ -1273,7 +1265,10 @@ export const updateKotPayment = async (req, res) => {
         kotData?.voucherNumber.map(async (item) => {
           const kot = await kotModal.findById(item.id).lean();
 
-          if (kot?.tableNumber && !selectedTableNumber.includes(kot.tableNumber)) {
+          if (
+            kot?.tableNumber &&
+            !selectedTableNumber.includes(kot.tableNumber)
+          ) {
             selectedTableNumber.push(kot.tableNumber);
           }
 
@@ -1284,7 +1279,7 @@ export const updateKotPayment = async (req, res) => {
           const updateData = {
             paymentMethod,
             paymentCompleted: true,
-            status: 'completed',
+            status: "completed",
             discount: discountAmount,
             discountChargeId: discountCharge?._id,
             note: note,
@@ -1293,7 +1288,7 @@ export const updateKotPayment = async (req, res) => {
           // ✅ Handle complimentary flag
           if (isComplimentary) {
             // Mark as complimentary
-            updateData['foodPlanDetails.isComplimentary'] = true;
+            updateData["foodPlanDetails.isComplimentary"] = true;
             updateData.isManuallyComplimentary = isManuallyComplimentary;
           }
 
@@ -1302,9 +1297,9 @@ export const updateKotPayment = async (req, res) => {
           return kotModal.updateOne(
             { _id: item.id },
             { $set: updateData },
-            { session }
+            { session },
           );
-        })
+        }),
       );
 
       // console.log("Selected Table Numbers:", selectedTableNumber);
@@ -1317,7 +1312,7 @@ export const updateKotPayment = async (req, res) => {
         const pendingCount = await kotModal
           .countDocuments({
             cmp_id,
-            tableNumber: tableNumber,  // ✅ Direct field, not nested
+            tableNumber: tableNumber, // ✅ Direct field, not nested
             paymentCompleted: false,
           })
           .session(session);
@@ -1330,10 +1325,10 @@ export const updateKotPayment = async (req, res) => {
             { cmp_id, tableNumber },
             {
               status: "available",
-              currentOrders: 0,  // ✅ Reset order count
-              updatedAt: new Date()
+              currentOrders: 0, // ✅ Reset order count
+              updatedAt: new Date(),
             },
-            { new: true, session }
+            { new: true, session },
           );
 
           if (updateTableStatus) {
@@ -1373,56 +1368,67 @@ async function createSplitPaymentArray(payments, cmp_id, session) {
   const paymentArray = [];
 
   for (const payment of payments) {
-    console.log('Processing payment:', JSON.stringify(payment, null, 2));
+    console.log("Processing payment:", JSON.stringify(payment, null, 2));
 
     // Find the account (cash or bank) from the database
     const account = await Party.findOne({
       cmp_id,
       _id: payment.accountId,
     })
-      .populate('accountGroup')
+      .populate("accountGroup")
       .session(session)
       .lean();
 
-    console.log('Found account:', JSON.stringify(account, null, 2));
+    console.log("Found account:", JSON.stringify(account, null, 2));
 
     if (!account) {
-      throw new Error(`Payment account ${payment.accountName} (ID: ${payment.accountId}) not found in database`);
+      throw new Error(
+        `Payment account ${payment.accountName} (ID: ${payment.accountId}) not found in database`,
+      );
     }
 
-    const accountName = account.partyName || account.name || account.ledgerName || payment.accountName;
+    const accountName =
+      account.partyName ||
+      account.name ||
+      account.ledgerName ||
+      payment.accountName;
 
     if (!accountName) {
-      console.error('Account object:', account);
-      throw new Error(`Account has no name field. Available fields: ${Object.keys(account).join(', ')}`);
+      console.error("Account object:", account);
+      throw new Error(
+        `Account has no name field. Available fields: ${Object.keys(account).join(", ")}`,
+      );
     }
 
     // ✅ FIX: Map payment method to the correct type field
     let paymentType;
     const method = payment.method.toLowerCase();
 
-    if (method === 'cash') {
-      paymentType = 'cash';
-    } else if (['upi', 'online', 'card', 'bank'].includes(method)) {
-      paymentType = 'upi';
+    if (method === "cash") {
+      paymentType = "cash";
+    } else if (["upi", "online", "card", "bank"].includes(method)) {
+      paymentType = "upi";
     } else {
-      paymentType = 'upi'; // Default to upi for online payments
+      paymentType = "upi"; // Default to upi for online payments
     }
 
     // ✅ FIX: Create object matching the schema
     paymentArray.push({
-      type: paymentType,              // ✅ Required field
+      type: paymentType, // ✅ Required field
       amount: Number(payment.amount),
-      ref_id: account._id,           // ✅ Required field
+      ref_id: account._id, // ✅ Required field
       // Optional: Store additional info in a separate field if needed
       _metadata: {
         partyName: accountName,
         accountGroup: account.accountGroup,
-        method: payment.method
-      }
+        method: payment.method,
+      },
     });
 
-    console.log('Added to payment array:', paymentArray[paymentArray.length - 1]);
+    console.log(
+      "Added to payment array:",
+      paymentArray[paymentArray.length - 1],
+    );
   }
 
   return paymentArray;
@@ -1476,7 +1482,6 @@ async function createSplitPaymentArray(payments, cmp_id, session) {
 //   }
 // }
 
-
 async function getRestaurantVoucherSeries(cmp_id, session) {
   const SaleVoucher = await VoucherSeriesModel.findOne({
     cmp_id,
@@ -1485,7 +1490,7 @@ async function getRestaurantVoucherSeries(cmp_id, session) {
   if (!SaleVoucher) throw new Error("Sale voucher not found");
 
   const specificVoucherSeries = SaleVoucher.series.find(
-    (series) => series.under === "restaurant"
+    (series) => series.under === "restaurant",
   );
   if (!specificVoucherSeries)
     throw new Error("No 'restaurant' voucher series found");
@@ -1500,7 +1505,7 @@ async function getSelectedParty(
   onlineAmt,
   kotData,
   isPostToRoom,
-  session
+  session,
 ) {
   let partyId;
 
@@ -1587,7 +1592,6 @@ function createPaymentSplittingArray(paymentDetails, cashAmt, onlineAmt) {
 //   return paymentArray;
 // }
 
-
 // // NEW: Helper function to process split payment settlements
 // async function processSplitPaymentSettlements(
 //   payments,
@@ -1626,7 +1630,7 @@ function createPaymentSplittingArray(paymentDetails, cashAmt, onlineAmt) {
 //     await Settlement.create([settlementData], { session });
 
 //     // Update party balance if needed
-//     if (account.accountGroup?.name === "Cash-in-Hand" || 
+//     if (account.accountGroup?.name === "Cash-in-Hand" ||
 //         account.accountGroup?.name === "Bank Accounts") {
 //       await Party.updateOne(
 //         { _id: account._id },
@@ -1670,7 +1674,7 @@ async function createSalesVoucher(
   party,
   selectedParty,
   paymentSplittingArray,
-  session
+  session,
 ) {
   console.log("kotData", kotData);
 
@@ -1678,7 +1682,10 @@ async function createSalesVoucher(
   const originalTotal = Number(kotData?.subtotal || kotData?.total || 0); // 1000 ✅
   const additionalCharges = req.body.additionalCharges || [];
   const isComplimentary = req.body.isComplimentary || false;
-  console.log("🔍 BEFORE SAVE - additionalCharges:", JSON.stringify(additionalCharges, null, 2));
+  console.log(
+    "🔍 BEFORE SAVE - additionalCharges:",
+    JSON.stringify(additionalCharges, null, 2),
+  );
 
   // ✅ Calculate totals
   const totalAdditionalCharges = additionalCharges.reduce((sum, charge) => {
@@ -1686,16 +1693,16 @@ async function createSalesVoucher(
   }, 0);
 
   const discountTotal = additionalCharges
-    .filter(charge => charge.type === 'subtract')
+    .filter((charge) => charge.type === "subtract")
     .reduce((sum, charge) => sum + Number(charge.amount || 0), 0);
 
   const finalAmount = originalTotal - discountTotal;
 
   console.log("🔥 FINAL CALCULATIONS:", {
-    originalTotal,      // 1000
-    discountTotal,      // 200
-    finalAmount,        // 800
-    additionalCharges
+    originalTotal, // 1000
+    discountTotal, // 200
+    finalAmount, // 800
+    additionalCharges,
   });
 
   return await salesModel.create(
@@ -1731,13 +1738,11 @@ async function createSalesVoucher(
 
         paymentSplittingData: paymentSplittingArray,
         convertedFrom: kotData?.voucherNumber,
-      }
+      },
     ],
-    { session }
+    { session },
   );
 }
-
-
 
 async function createTallyEntry(
   cmp_id,
@@ -1747,7 +1752,7 @@ async function createTallyEntry(
   savedVoucher,
   paidAmount,
   pendingAmount,
-  session
+  session,
 ) {
   const tallyEntry = await TallyData.create(
     [
@@ -1770,7 +1775,7 @@ async function createTallyEntry(
         source: "sales",
       },
     ],
-    { session }
+    { session },
   );
 
   return tallyEntry[0]; // since .create with array returns an array
@@ -1785,12 +1790,11 @@ async function saveSettlement(
   cashAmt,
   onlineAmt,
   req,
-  session
+  session,
 ) {
-
   if (paymentDetails?.paymentMode === "single") {
-    console.log("hhh")
-    console.log("bbbbbbbbbbbbbbbbbbbbbb", req)
+    console.log("hhh");
+    console.log("bbbbbbbbbbbbbbbbbbbbbb", req);
     await saveSettlementData(
       selectedParty,
       cmp_id,
@@ -1803,7 +1807,7 @@ async function saveSettlement(
       new Date(),
       // selectedParty?.partyName,
       req,
-      session
+      session,
     );
   } else {
     if (cashAmt > 0) {
@@ -1819,7 +1823,7 @@ async function saveSettlement(
         new Date(),
         // selectedParty?.partyName,
         req,
-        session
+        session,
       );
     }
     if (onlineAmt > 0) {
@@ -1835,7 +1839,7 @@ async function saveSettlement(
         new Date(),
         // selectedParty?.partyName,
         req,
-        session
+        session,
       );
     }
   }
@@ -2001,7 +2005,7 @@ export const updateTable = async (req, res) => {
         description: description.trim(),
         updatedAt: new Date(),
       },
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     );
 
     res.status(200).json({
@@ -2091,7 +2095,7 @@ export const updateTableStatus = async (req, res) => {
     const updatedTable = await Table.findOneAndUpdate(
       { cmp_id, tableNumber },
       { status },
-      { new: true }
+      { new: true },
     );
 
     res.status(200).json({ success: true, data: updatedTable });
@@ -2112,7 +2116,6 @@ export const getKotDataByTable = async (req, res) => {
     if (status) {
       filter.status = status;
     }
-
 
     const kots = await kotModal.find(filter).sort({ createdAt: -1 });
     res.json({ success: true, data: kots });
@@ -2136,7 +2139,7 @@ export const updateConfigurationForKotApproval = async (req, res) => {
     const updatedDoc = await Organization.findOneAndUpdate(
       { _id: cmp_id },
       updateData,
-      { new: true }
+      { new: true },
     );
 
     if (!updatedDoc) {
@@ -2201,13 +2204,13 @@ export const getSummaryDashboard = async (req, res) => {
       startDate = new Date(
         selectedDate.getFullYear(),
         selectedDate.getMonth(),
-        1
+        1,
       );
       startDate.setHours(0, 0, 0, 0);
       endDate = new Date(
         selectedDate.getFullYear(),
         selectedDate.getMonth() + 1,
-        0
+        0,
       );
       endDate.setHours(23, 59, 59, 999);
     } else {
@@ -2221,13 +2224,13 @@ export const getSummaryDashboard = async (req, res) => {
     const startOfMonth = new Date(
       selectedDate.getFullYear(),
       selectedDate.getMonth(),
-      1
+      1,
     );
     startOfMonth.setHours(0, 0, 0, 0);
     const endOfMonth = new Date(
       selectedDate.getFullYear(),
       selectedDate.getMonth() + 1,
-      0
+      0,
     );
     endOfMonth.setHours(23, 59, 59, 999);
 
@@ -2241,7 +2244,7 @@ export const getSummaryDashboard = async (req, res) => {
     }).select("_id name companyName");
 
     console.log(
-      `Found ${organizations.length} organizations for owner ${owner}`
+      `Found ${organizations.length} organizations for owner ${owner}`,
     );
 
     if (organizations.length === 0) {
@@ -2559,17 +2562,17 @@ export const getSummaryDashboard = async (req, res) => {
     // Execute queries for daily and monthly data
     const [dailySales, monthlySales] = await Promise.all([
       salesModel.aggregate(
-        buildAggregationPipeline({ date: { $gte: startDate, $lte: endDate } })
+        buildAggregationPipeline({ date: { $gte: startDate, $lte: endDate } }),
       ),
       salesModel.aggregate(
         buildAggregationPipeline({
           date: { $gte: startOfMonth, $lte: endOfMonth },
-        })
+        }),
       ),
     ]);
 
     console.log(
-      `Found ${dailySales.length} daily sales and ${monthlySales.length} monthly sales`
+      `Found ${dailySales.length} daily sales and ${monthlySales.length} monthly sales`,
     );
 
     // Process daily and monthly data
@@ -2931,7 +2934,7 @@ export const getSummaryDashboard = async (req, res) => {
         (acc, outlet) => {
           acc.totalOutlets = finalOutletData.length;
           acc.totalOrganizations = new Set(
-            finalOutletData.map((o) => o.organizationId.toString())
+            finalOutletData.map((o) => o.organizationId.toString()),
           ).size;
           acc.totalSales += outlet.sales || 0;
           acc.totalOrders += outlet.orders || 0;
@@ -2948,7 +2951,7 @@ export const getSummaryDashboard = async (req, res) => {
           totalNetSales: 0,
           totalTax: 0,
           totalDiscount: 0,
-        }
+        },
       );
 
       // Add outlet data to response
@@ -2975,6 +2978,63 @@ export const getSummaryDashboard = async (req, res) => {
         process.env.NODE_ENV === "development"
           ? error.message
           : "Internal server error",
+    });
+  }
+};
+
+export const getComplementaryCashOrBank = async (req, res) => {
+  const cmp_id = new mongoose.Types.ObjectId(req.params.cmp_id);
+  try {
+    // Get all Bank/Cash accounts for the company
+    const accounts = await partyModel
+      .find({
+        cmp_id: cmp_id,
+        partyType: { $in: ["cash", "bank"] },
+      })
+      .select("_id partyName openingBalanceAmount isTaggedWithComplementary")
+      .sort({ partyName: 1 });
+
+    return res.status(200).json({
+      message: "Accounts found successfully",
+      success: true,
+      data: accounts,
+    });
+  } catch (error) {
+    console.error("getComplementaryCashOrBank error:", error);
+    return res.status(500).json({
+      error: "Internal Server Error",
+      details: error.message,
+    });
+  }
+};
+
+export const addComplementaryCashOrBank = async (req, res) => {
+  const cmp_id = new mongoose.Types.ObjectId(req.params.cmp_id)
+  const partyId = new mongoose.Types.ObjectId(req.body.cashOrBank)
+  const session = await mongoose.startSession();
+  try {
+  await partyModel.updateMany(
+  { cmp_id },
+  { $set: { isTaggedWithComplementary: false } },
+  { session }
+);
+
+const updated = await partyModel.findOneAndUpdate(
+  { _id: partyId, cmp_id },
+  { $set: { isTaggedWithComplementary: true } },
+  { new: true, session }
+);
+
+    return res.status(200).json({
+      message: "Updated successfully",
+      success: true,
+      data: updated,
+    });
+  } catch (error) {
+    console.error("getComplementaryCashOrBank error:", error);
+    return res.status(500).json({
+      error: "Internal Server Error",
+      details: error.message,
     });
   }
 };

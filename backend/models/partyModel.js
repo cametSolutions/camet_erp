@@ -77,6 +77,7 @@ const partySchema = new mongoose.Schema({
   upi_id: { type: String },
   bsr_code: { type: String },
   client_code: { type: String},
+  isTaggedWithComplementary : { type: Boolean, default: false },
 });
 
 // / ============= CRITICAL PARTY INDEXES =============

@@ -377,7 +377,12 @@ console.log("hhh")
                         ?.map((item) => item?.voucherNumber)
                         .join(", ")}
                   </div>
-                </div>
+                    </div>
+                         {data?.isComplimentary && (
+                     <div className="text-xm">
+                        Complementary
+                  </div>
+                  )}
               </>
             )}
           </div>

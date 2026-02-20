@@ -23,7 +23,7 @@ import api from "@/api/api";
 
 import { motion, AnimatePresence } from "framer-motion";
 
-import { Check, CreditCard, X, Banknote,Plus } from "lucide-react";
+import { Check, CreditCard, X, Banknote, Plus } from "lucide-react";
 import { generateAndPrintKOT } from "@/pages/Restuarant/Helper/kotPrintHelper";
 import { useNavigate } from "react-router-dom";
 // import VoucherPdf from "@/pages/voucher/voucherPdf/indian/VoucherPdf";
@@ -34,7 +34,6 @@ import VoucherThreeInchPdfFormat2 from "@/pages/voucher/voucherPdf/threeInchPdf/
 import { useReactToPrint } from "react-to-print";
 import CustomerSearchInputBox from "@/pages/Hotel/Components/CustomerSearchInPutBox";
 
-
 const OrdersDashboard = () => {
   const contentToPrint = useRef(null);
   const [activeFilter, setActiveFilter] = useState("ON PROCESS");
@@ -43,12 +42,12 @@ const OrdersDashboard = () => {
   const [orders, setOrders] = useState([]);
   const [loader, setLoader] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-const [isComplimentary, setIsComplimentary] = useState(false);
+  const [isComplimentary, setIsComplimentary] = useState(false);
   const [allAdditionalChargesFromRedux, setAllAdditionalChargesFromRedux] =
     useState([]);
   const [additionalCharges, setAdditionalCharges] = useState([]);
   const [selectedDiscountCharge, setSelectedDiscountCharge] = useState(null);
-const [billFormat, setBillFormat] = useState("format1");
+  const [billFormat, setBillFormat] = useState("format1");
   const [note, setNote] = useState("");
 
   const [saveLoader, setSaveLoader] = useState(false);
@@ -56,7 +55,7 @@ const [billFormat, setBillFormat] = useState("format1");
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [selectedDataForPayment, setSelectedDataForPayment] = useState({});
   const [selectedDate, setSelectedDate] = useState(
-    dayjs().format("YYYY-MM-DD")
+    dayjs().format("YYYY-MM-DD"),
   );
   const [paymentMode, setPaymentMode] = useState("single"); // "single" or "split"
   const [cashAmount, setCashAmount] = useState(0);
@@ -92,20 +91,21 @@ const [billFormat, setBillFormat] = useState("format1");
 
   const [discountType, setDiscountType] = useState("amount"); // "amount" or "percentage"
   const [discountValue, setDiscountValue] = useState(0);
+  const [isForComp, setIsForComp] = useState(false);
 
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
   const { _id: cmp_id, name: companyName } = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg
+    (state) => state.secSelectedOrganization.secSelectedOrg,
   );
 
   const org = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg
+    (state) => state.secSelectedOrganization.secSelectedOrg,
   );
 
   const { data, refreshHook } = useFetch(
-    `/api/sUsers/getKotData/${cmp_id}?date=${selectedDate}`
+    `/api/sUsers/getKotData/${cmp_id}?date=${selectedDate}`,
   );
 
   const fetchData = useCallback(async () => {
@@ -115,7 +115,7 @@ const [billFormat, setBillFormat] = useState("format1");
     try {
       // ✅ FIXED - Safe array handling
       let additionalChargesResponse = Array.isArray(
-        allAdditionalChargesFromRedux
+        allAdditionalChargesFromRedux,
       )
         ? allAdditionalChargesFromRedux
         : [];
@@ -125,33 +125,33 @@ const [billFormat, setBillFormat] = useState("format1");
           `/api/sUsers/additionalcharges/${cmp_id}`,
           {
             withCredentials: true,
-          }
+          },
         );
         additionalChargesResponse = Array.isArray(
-          response.data.additionalCharges
+          response.data.additionalCharges,
         )
           ? response.data.additionalCharges
           : Array.isArray(response.data)
-          ? response.data
-          : [];
+            ? response.data
+            : [];
 
         setAllAdditionalChargesFromRedux(additionalChargesResponse);
       }
 
       // ✅ Now SAFE to filter
       const discountCharges = additionalChargesResponse.filter((charge) =>
-        charge.name.toLowerCase().includes("discount")
+        charge.name.toLowerCase().includes("discount"),
       );
       setAdditionalCharges(discountCharges);
 
       // 3. Existing Series fetch logic
       const seriesResponse = await api.get(
         `/api/sUsers/getSeriesByVoucher/${cmp_id}?voucherType=sales`,
-        { withCredentials: true }
+        { withCredentials: true },
       );
       if (seriesResponse.data) {
         const specificSeries = seriesResponse.data.series?.find(
-          (item) => item.under === "restaurant"
+          (item) => item.under === "restaurant",
         );
         if (specificSeries) {
           const {
@@ -188,7 +188,7 @@ const [billFormat, setBillFormat] = useState("format1");
   }, [data, selectedDate]);
 
   const { data: paymentTypeData } = useFetch(
-    `/api/sUsers/getPaymentType/${cmp_id}`
+    `/api/sUsers/getPaymentType/${cmp_id}`,
   );
   useEffect(() => {
     if (paymentTypeData) {
@@ -205,20 +205,17 @@ const [billFormat, setBillFormat] = useState("format1");
     }
   }, [paymentTypeData]);
 
+  useEffect(() => {
+    // Get format from organization configuration
+    const print1 = org?.configurations?.[0]?.defaultPrint?.restaurantPrint1;
+    const print2 = org?.configurations?.[0]?.defaultPrint?.restaurantPrint2;
 
-
-useEffect(() => {
-  // Get format from organization configuration
-  const print1 = org?.configurations?.[0]?.defaultPrint?.restaurantPrint1;
-  const print2 = org?.configurations?.[0]?.defaultPrint?.restaurantPrint2;
-  
-  if (print2) {
-    setBillFormat("format2");
-  } else if (print1) {
-    setBillFormat("format1");
-  }
-}, [org]);
-
+    if (print2) {
+      setBillFormat("format2");
+    } else if (print1) {
+      setBillFormat("format1");
+    }
+  }, [org]);
 
   // const fetchData = useCallback(async () => {
   //   try {
@@ -260,42 +257,44 @@ useEffect(() => {
   // }, [fetchData]);
   // Status configuration
 
+  console.log(cashAmount);
+
   useEffect(() => {
-  const shouldOpenPaymentModal = sessionStorage.getItem('returnToPaymentModal');
-  const savedModalData = sessionStorage.getItem('paymentModalData');
-  
-  if (shouldOpenPaymentModal === 'true' && savedModalData) {
-    try {
-      const modalData = JSON.parse(savedModalData);
-      
-      // Restore modal state
-      setSelectedDataForPayment(modalData.selectedDataForPayment);
-      setPaymentMode(modalData.paymentMode);
-      setShowPaymentModal(true); // ✅ This is correct
-      
-      // Restore other relevant states
-      if (modalData.selectedKot) {
-        setSelectedKot(modalData.selectedKot);
+    const shouldOpenPaymentModal = sessionStorage.getItem(
+      "returnToPaymentModal",
+    );
+    const savedModalData = sessionStorage.getItem("paymentModalData");
+
+    if (shouldOpenPaymentModal === "true" && savedModalData) {
+      try {
+        const modalData = JSON.parse(savedModalData);
+
+        // Restore modal state
+        setSelectedDataForPayment(modalData.selectedDataForPayment);
+        setPaymentMode(modalData.paymentMode);
+        setShowPaymentModal(true); // ✅ This is correct
+
+        // Restore other relevant states
+        if (modalData.selectedKot) {
+          setSelectedKot(modalData.selectedKot);
+        }
+        if (modalData.discountAmount) {
+          setDiscountAmount(modalData.discountAmount);
+        }
+        if (modalData.note) {
+          setNote(modalData.note);
+        }
+
+        // Clear session storage
+        sessionStorage.removeItem("returnToPaymentModal");
+        sessionStorage.removeItem("paymentModalData");
+      } catch (error) {
+        console.error("Error restoring payment modal:", error);
+        sessionStorage.removeItem("returnToPaymentModal");
+        sessionStorage.removeItem("paymentModalData");
       }
-      if (modalData.discountAmount) {
-        setDiscountAmount(modalData.discountAmount);
-      }
-      if (modalData.note) {
-        setNote(modalData.note);
-      }
-      
-      // Clear session storage
-      sessionStorage.removeItem('returnToPaymentModal');
-      sessionStorage.removeItem('paymentModalData');
-    } catch (error) {
-      console.error('Error restoring payment modal:', error);
-      sessionStorage.removeItem('returnToPaymentModal');
-      sessionStorage.removeItem('paymentModalData');
     }
-  }
-}, []);
-
-
+  }, []);
 
   const statusConfig = {
     pending: {
@@ -357,7 +356,7 @@ useEffect(() => {
     let filtered = orders;
 
     filtered = filtered.filter(
-      (order) => !cancelledKots.some((cancelled) => cancelled.id === order._id)
+      (order) => !cancelledKots.some((cancelled) => cancelled.id === order._id),
     );
     // Filter by status based on user role and active filter
     // if (userRole === "kitchen") {
@@ -377,23 +376,23 @@ useEffect(() => {
       // Reception - All: Show all statuses
       filtered = filtered.filter((order) =>
         ["pending", "cooking", "ready_to_serve", "completed"].includes(
-          order.status
-        )
+          order.status,
+        ),
       );
     } else if (activeFilter === "ON PROCESS") {
       // Reception - On Process: Show pending, cooking, and ready_to_serve
       filtered = filtered.filter((order) =>
-        ["pending", "cooking", "ready_to_serve"].includes(order.status)
+        ["pending", "cooking", "ready_to_serve"].includes(order.status),
       );
     } else if (activeFilter === "KOT BILL PENDING") {
       // Reception - Completed: Show only completed orders
       filtered = filtered.filter(
-        (order) => order.status === "completed" && !order.paymentCompleted
+        (order) => order.status === "completed" && !order.paymentCompleted,
       );
     } else if (activeFilter === "COMPLETED") {
       // Reception - Completed: Show only completed orders
       filtered = filtered.filter(
-        (order) => order.status === "completed" && order.paymentCompleted
+        (order) => order.status === "completed" && order.paymentCompleted,
       );
     }
     // }
@@ -409,8 +408,8 @@ useEffect(() => {
               item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
               item.product_name
                 ?.toLowerCase()
-                .includes(searchQuery.toLowerCase())
-          )
+                .includes(searchQuery.toLowerCase()),
+          ),
       );
     }
 
@@ -424,7 +423,7 @@ useEffect(() => {
       const response = await api.put(
         `/api/sUsers/updateKotStatus/${orderId}`,
         { status: newStatus },
-        { withCredentials: true }
+        { withCredentials: true },
       );
 
       if (response.status === 200 || response.status === 201) {
@@ -432,8 +431,8 @@ useEffect(() => {
           prevOrders.map((order) =>
             order._id === orderId
               ? { ...order, status: newStatus, statusType: newStatus }
-              : order
-          )
+              : order,
+          ),
         );
       } else {
         console.error("Failed to update backend:", response.data || response);
@@ -441,7 +440,7 @@ useEffect(() => {
     } catch (error) {
       console.error(
         "Error updating order status:",
-        error.response?.data || error.message
+        error.response?.data || error.message,
       );
     } finally {
       setSaveLoader(false);
@@ -470,13 +469,13 @@ useEffect(() => {
 
       const response = await api.put(
         `/api/kot/cancel/${selectedOrderForCancel._id}`,
-        { reason: cancelReason }
+        { reason: cancelReason },
       );
 
       if (response.data.success) {
         // ✅ Remove the cancelled order from UI immediately
         setOrders((prevOrders) =>
-          prevOrders.filter((kot) => kot._id !== selectedOrderForCancel._id)
+          prevOrders.filter((kot) => kot._id !== selectedOrderForCancel._id),
         );
 
         setShowCancelModal(false);
@@ -532,17 +531,21 @@ useEffect(() => {
 
   useEffect(() => {
     if (salePrintData) {
-      navigate(`/sUsers/sharesalesThreeInch/${salePrintData._id}`);
+      billFormat === "format1"
+        ? navigate(`/sUsers/sharesalesThreeInch/${salePrintData._id}`)
+        : navigate(`/sUsers/sharesalesThreeInch2`, {
+            state: salePrintData,
+          });
     }
   }, [salePrintData, navigate]);
 
   const filteredOrders = getFilteredOrders();
 
-  console.log("filteredOrders", filteredOrders);
+  console.log("filteredOrders", selectedDataForPayment);
 
   const handleSavePayment = async (id) => {
+    console.log(paymentMode);
     setSaveLoader(true);
-    
 
     try {
       // Credit validation
@@ -617,7 +620,7 @@ useEffect(() => {
               Number(selectedDataForPayment?.total)
             ) {
               setPaymentError(
-                "Cash and online amounts together must equal total amount"
+                "Cash and online amounts together must equal total amount",
               );
               return;
             }
@@ -666,7 +669,7 @@ useEffect(() => {
               Number(selectedDataForPayment?.total)
             ) {
               setPaymentError(
-                "Cash and online amounts together must equal total amount"
+                "Cash and online amounts together must equal total amount",
               );
               return;
             }
@@ -691,27 +694,30 @@ useEffect(() => {
         // ✅ Use EXACTLY what's in preview - don't rebuild
         additionalCharges = previewForSales.additionalCharges;
       }
+      console.log("=== PAYMENT SUBMISSION ===");
+      const hasAutoComplimentary = selectedKot.some((kot) => {
+        const order = filteredOrders.find((o) => o._id === kot.id);
+        return order?.foodPlanDetails?.isComplimentary === true;
+      });
 
-       const hasAutoComplimentary = selectedKot.some((kot) => {
-      const order = filteredOrders.find((o) => o._id === kot.id);
-      return order?.foodPlanDetails?.isComplimentary === true;
-    });
+      const isManuallyComplimentary = isComplimentary && !hasAutoComplimentary;
 
-    const isManuallyComplimentary = isComplimentary && !hasAutoComplimentary;
+      console.log("=== PAYMENT SUBMISSION ===");
+      console.log("Is Complimentary:", isComplimentary);
+      console.log(
+        "Has Auto Complimentary (from Food Plan):",
+        hasAutoComplimentary,
+      );
+      console.log("Is Manually Complimentary:", isManuallyComplimentary);
 
-    console.log("=== PAYMENT SUBMISSION ===");
-    console.log("Is Complimentary:", isComplimentary);
-    console.log("Has Auto Complimentary (from Food Plan):", hasAutoComplimentary);
-    console.log("Is Manually Complimentary:", isManuallyComplimentary);
-
-    // Show appropriate toast message
-    if (isComplimentary) {
-      if (hasAutoComplimentary) {
-        toast.info("Processing complimentary order (Food Plan)");
-      } else {
-        toast.info("Processing manually marked complimentary order");
+      // Show appropriate toast message
+      if (isComplimentary) {
+        if (hasAutoComplimentary) {
+          toast.info("Processing complimentary order (Food Plan)");
+        } else {
+          toast.info("Processing manually marked complimentary order");
+        }
       }
-    }
       // ================= FINAL PAYMENT OBJECT =================
       const payment = {
         paymentMethod,
@@ -723,8 +729,8 @@ useEffect(() => {
         isPostToRoom,
         isDirectSale: selectedDataForPayment?.isDirectSale || false,
         additionalCharges: additionalCharges,
-          isComplimentary: isComplimentary, // ✅ ADD THIS
-             isManuallyComplimentary: isManuallyComplimentary, 
+        isComplimentary: isComplimentary, // ✅ ADD THIS
+        isManuallyComplimentary: isManuallyComplimentary,
         //  discountCharge: previewDiscountCharge,
         // discountAmount: previewDiscount,
         note,
@@ -736,29 +742,30 @@ useEffect(() => {
       const response = await api.put(
         `/api/sUsers/updateKotPayment/${cmp_id}`,
         payment,
-        { withCredentials: true }
+        { withCredentials: true },
       );
 
       if (response.status === 200 || response.status === 201) {
         setOrders((prev) =>
           prev.map((order) =>
-            order._id === id ? { ...order, paymentCompleted: true } : order
-          )
+            order._id === id ? { ...order, paymentCompleted: true } : order,
+          ),
         );
 
-         toast.success(
-        isComplimentary 
-          ? "Complimentary order processed successfully!" 
-          : response?.data?.message
-      );
+        toast.success(
+          isComplimentary
+            ? "Complimentary order processed successfully!"
+            : response?.data?.message,
+        );
         setShowPaymentModal(false);
         setSelectedDiscountCharge(null);
         setDiscountAmount(0);
         setDiscountType("amount");
         setDiscountValue(0);
         setNote("");
-        setIsComplimentary(false); // 
+        setIsComplimentary(false); //
         setPreviewForSales(null);
+        setIsForComp(false);
       }
     } catch (error) {
       console.error("Payment error:", error);
@@ -779,7 +786,7 @@ useEffect(() => {
     try {
       let saleData = await api.get(
         `/api/sUsers/getSalePrintData/${cmp_id}/${kotId}`,
-        { withCredentials: true }
+        { withCredentials: true },
       );
       setSalePrintData(saleData?.data?.data);
     } catch (error) {
@@ -807,7 +814,7 @@ useEffect(() => {
       if (findOne) {
         // remove if already selected
         setSelectedKot((prevSelected) =>
-          prevSelected.filter((item) => item.id !== order._id)
+          prevSelected.filter((item) => item.id !== order._id),
         );
       } else {
         // add new selection
@@ -830,20 +837,18 @@ useEffect(() => {
     setIsPostToRooms(postToRoom);
     let kotVoucherNumberArray = [];
 
-     let roomDetails = null; 
+    let roomDetails = null;
     let itemList = selectedKot.flatMap((item) => {
       let findOne = filteredOrders.find((order) => order._id == item.id);
       if (findOne) {
-
-
- if (!roomDetails && findOne.roomId) {
-        roomDetails = {
-          roomno: findOne.roomId?.roomno || findOne.roomId?.roomName,
-          roomName: findOne.roomId?.roomName,
-          guestName: findOne.customer?.name,
-          checkInNumber: findOne.checkInNumber,
-        };
-      }
+        if (!roomDetails && findOne.roomId) {
+          roomDetails = {
+            roomno: findOne.roomId?.roomno || findOne.roomId?.roomName,
+            roomName: findOne.roomId?.roomName,
+            guestName: findOne.customer?.name,
+            checkInNumber: findOne.checkInNumber,
+          };
+        }
 
         kotVoucherNumberArray.push({
           voucherNumber: findOne.voucherNumber,
@@ -902,7 +907,7 @@ useEffect(() => {
       isComplimentary: isComplimentary, // ✅ ADD THIS - Independent flag // After discount
       total: finalAmount,
       voucherNumber: kotVoucherNumberArray,
-       roomDetails: roomDetails,
+      roomDetails: roomDetails,
       party: {
         partyName: selectedKot[0]?.customer?.name,
         address: selectedKot[0]?.customer?.address,
@@ -913,10 +918,50 @@ useEffect(() => {
     setPreviewForSales(newObject);
   };
 
+  useEffect(() => {
+    if (
+      previewForSales?.isComplimentary &&
+      paymentMethod &&
+      isForComp &&
+      (selectedCash || selectedBank)
+    ) {
+      handleSavePayment();
+    }
+  }, [paymentMethod, selectedCash, selectedBank, isForComp]);
+
+  console.log(paymentMethod);
   const handleSaveSales = (status) => {
+    console.log(paymentMode);
     setConformationModal(false);
+    setSelectedDataForPayment(previewForSales);
     if (isPostToRoom && status) {
       handleSavePayment();
+      return;
+    }
+
+    if (previewForSales.isComplimentary) {
+      let newMergedCashOrBank = [
+        ...cashOrBank.bankDetails,
+        ...cashOrBank.cashDetails,
+      ];
+      console.log(newMergedCashOrBank);
+      let complementaryParty = newMergedCashOrBank.find(
+        (item) => item.isTaggedWithComplementary,
+      );
+      if (!complementaryParty) {
+        toast.error("Complementary selected cash or bank is not found");
+        return
+      }
+
+      setPaymentMethod(complementaryParty?.partyType);
+      if (complementaryParty.partyType == "cash") {
+        console.log(complementaryParty?._id);
+        setSelectedCash(complementaryParty?._id);
+      }
+      if (complementaryParty.partyType == "bank") {
+        setSelectedBank(complementaryParty?._id);
+      }
+      setIsForComp(true);
       return;
     }
 
@@ -927,7 +972,6 @@ useEffect(() => {
     }
     setShowVoucherPdf(false);
     setShowPaymentModal(true);
-    setSelectedDataForPayment(previewForSales);
   };
 
   console.log("selectedKot", showPaymentModal);
@@ -950,56 +994,58 @@ useEffect(() => {
   });
 
   console.log(additionalCharges);
-useEffect(() => {
+  useEffect(() => {
+    if (selectedKot.length > 0 && filteredOrders.length > 0) {
+      console.log("=== PAYMENT MODAL OPENED ===");
 
-  if (selectedKot.length > 0 && filteredOrders.length > 0) {
-    console.log("=== PAYMENT MODAL OPENED ===");
-    
-    // Check if any KOT has complimentary food plan
-    const hasComplimentaryFoodPlan = selectedKot.some((kot) => {
-      const order = filteredOrders.find((o) => o._id === kot.id);
-      
-      console.log("Checking KOT:", kot.voucherNumber);
-      console.log("Food Plan Details:", order?.foodPlanDetails);
-      console.log("Is Complimentary:", order?.foodPlanDetails?.isComplimentary);
-      
-      return order?.foodPlanDetails?.isComplimentary == true;
-    });
+      // Check if any KOT has complimentary food plan
+      const hasComplimentaryFoodPlan = selectedKot.some((kot) => {
+        const order = filteredOrders.find((o) => o._id === kot.id);
 
-    console.log("Has Complimentary Food Plan:", hasComplimentaryFoodPlan);
+        console.log("Checking KOT:", kot.voucherNumber);
+        console.log("Food Plan Details:", order?.foodPlanDetails);
+        console.log(
+          "Is Complimentary:",
+          order?.foodPlanDetails?.isComplimentary,
+        );
 
-    // ✅ Auto-tick checkbox if complimentary
-    setIsComplimentary(hasComplimentaryFoodPlan);
-  }
-}, [selectedKot]);
+        return order?.foodPlanDetails?.isComplimentary == true;
+      });
+
+      console.log("Has Complimentary Food Plan:", hasComplimentaryFoodPlan);
+
+      // ✅ Auto-tick checkbox if complimentary
+      setIsComplimentary(hasComplimentaryFoodPlan);
+    }
+  }, [selectedKot]);
 
   return (
     <>
-     {showVoucherPdf && (
-  <div>
-    {billFormat === "format1" ? (
-      <VoucherThreeInchPdf
-        contentToPrint={contentToPrint}
-        data={previewForSales}
-        org={org}
-        tab="sale"
-        isPreview={true}
-        sendToParent={handleSaveSales}
-        handlePrintData={handlePrint}
-      />
-    ) : (
-      <VoucherThreeInchPdfFormat2
-        contentToPrint={contentToPrint}
-        data={previewForSales}
-        org={org}
-        tab="sale"
-        isPreview={true}
-        sendToParent={handleSaveSales}
-        handlePrintData={handlePrint}
-      />
-    )}
-  </div>
-)}
+      {showVoucherPdf && (
+        <div>
+          {billFormat === "format1" ? (
+            <VoucherThreeInchPdf
+              contentToPrint={contentToPrint}
+              data={previewForSales}
+              org={org}
+              tab="sale"
+              isPreview={true}
+              sendToParent={handleSaveSales}
+              handlePrintData={handlePrint}
+            />
+          ) : (
+            <VoucherThreeInchPdfFormat2
+              contentToPrint={contentToPrint}
+              data={previewForSales}
+              org={org}
+              tab="sale"
+              isPreview={true}
+              sendToParent={handleSaveSales}
+              handlePrintData={handlePrint}
+            />
+          )}
+        </div>
+      )}
       {!showVoucherPdf && (
         <div className="min-h-screen bg-gray-50">
           {/* Header */}
@@ -1217,7 +1263,7 @@ useEffect(() => {
 
                     {/* Order Header */}
                     <div className="flex justify-between items-start p-3 pb-2 flex-shrink-0">
-                      <div className="flex items-start gap-2 min-w-0 flex-1">
+                      <div className="flex items-start gap-2 min-w-0 flex-1 ">
                         {/* Order type and timestamp */}
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 mb-1">
@@ -1226,26 +1272,36 @@ useEffect(() => {
                             </span>
                           </div>
 
-                          <div className="text-xs text-gray-500 flex items-center gap-1">
-                            <MdAccessTime className="w-3 h-3 flex-shrink-0" />
-                            <span>
-                              {new Date(order.createdAt).toLocaleDateString(
-                                "en-GB",
-                                {
-                                  day: "2-digit",
-                                  month: "short",
-                                  year: "numeric",
-                                }
-                              )}{" "}
-                              {new Date(order.createdAt).toLocaleTimeString(
-                                [],
-                                {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                  hour12: true,
-                                }
+                          {/* Date, Time & Complimentary - PROPER HIERARCHY */}
+                          <div className="flex items-center gap-3">
+                            {/* Timestamp */}
+                            <div className="text-xs text-gray-500 flex items-center gap-2 flex-shrink-0">
+                              <MdAccessTime className="w-3 h-3 flex-shrink-0" />
+                              <span className="truncate">
+                                {new Date(order.createdAt).toLocaleDateString(
+                                  "en-GB",
+                                  {
+                                    day: "2-digit",
+                                    month: "short",
+                                    year: "numeric",
+                                  },
+                                )}{" "}
+                                {new Date(order.createdAt).toLocaleTimeString(
+                                  [],
+                                  {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                    hour12: true,
+                                  },
+                                )}
+                              </span>
+                              {(order.isManuallyComplimentary ||
+                                order.foodPlanDetails?.isComplimentary) && (
+                                <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full font-medium flex-shrink-0 mt-1 justify-end">
+                                  COMP
+                                </span>
                               )}
-                            </span>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -1456,7 +1512,7 @@ useEffect(() => {
                               e.preventDefault();
                               console.log(
                                 "Cancel button clicked for order:",
-                                order
+                                order,
                               );
                               setSelectedOrderForCancel(order);
                               setShowCancelModal(true);
@@ -1531,8 +1587,10 @@ useEffect(() => {
 
                     {/* Total Amount Display */}
                     {userRole === "reception" && (
-                      <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-3 rounded-lg mb-2 border border-green-200
-                       ">
+                      <div
+                        className="bg-gradient-to-r from-green-50 to-emerald-50 p-3 rounded-lg mb-2 border border-green-200
+                       "
+                      >
                         {/* Subtotal */}
                         <div className="flex justify-between items-center text-sm">
                           <span className="font-medium text-green-800">
@@ -1543,7 +1601,7 @@ useEffect(() => {
                             {selectedKot
                               .reduce((total, kot) => {
                                 const order = filteredOrders.find(
-                                  (o) => o._id === kot.id
+                                  (o) => o._id === kot.id,
                                 );
                                 return total + (order?.total || 0);
                               }, 0)
@@ -1559,10 +1617,7 @@ useEffect(() => {
                           </label>
 
                           <div className="flex flex-col gap-2">
-                           
-                            <select
-                            value={additionalCharges[0]?._id}
-                            >
+                            <select value={additionalCharges[0]?._id}>
                               <option value="">Select Discount</option>
                               {additionalCharges.map((charge) => (
                                 <option key={charge._id} value={charge._id}>
@@ -1597,14 +1652,14 @@ useEffect(() => {
                                       const subtotal = selectedKot.reduce(
                                         (total, kot) => {
                                           const order = filteredOrders.find(
-                                            (o) => o._id === kot.id
+                                            (o) => o._id === kot.id,
                                           );
                                           return total + (order?.total || 0);
                                         },
-                                        0
+                                        0,
                                       );
                                       setDiscountAmount(
-                                        (subtotal * discountValue) / 100
+                                        (subtotal * discountValue) / 100,
                                       );
                                     }
                                   }}
@@ -1634,11 +1689,11 @@ useEffect(() => {
                                     const subtotal = selectedKot.reduce(
                                       (total, kot) => {
                                         const order = filteredOrders.find(
-                                          (o) => o._id === kot.id
+                                          (o) => o._id === kot.id,
                                         );
                                         return total + (order?.total || 0);
                                       },
-                                      0
+                                      0,
                                     );
 
                                     const calculatedAmount =
@@ -1708,88 +1763,114 @@ useEffect(() => {
                           />
                         </div>
                         <div className="mt-3 p-2 bg-green-50 border border-green-200 rounded-lg">
-  <label className="flex items-center gap-2 cursor-pointer">
-     <input
-      type="checkbox"
-      checked={isComplimentary}
-      onChange={(e) => {
-        const isChecked = e.target.checked;
-        console.log(isChecked)
-        setIsComplimentary(isChecked)
-        
-        // Check if auto-complimentary
-        const hasAutoComplimentary = selectedKot.some((kot) => {
-          const order = filteredOrders.find((o) => o._id === kot.id);
-          return order?.foodPlanDetails?.isComplimentary === true;
-        });
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={isComplimentary}
+                              onChange={(e) => {
+                                const isChecked = e.target.checked;
+                                console.log(isChecked);
+                                setIsComplimentary(isChecked);
 
-        if (!hasAutoComplimentary && isChecked) {
-          toast.info("Marking order as complimentary");
-        } else if (hasAutoComplimentary && !isChecked) {
-          toast.warning("This order has a complimentary food plan");
-        }
-      }}
-      className="mt-1 w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 flex-shrink-0"
-    />
-    
-    <div className="flex-1">
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-sm font-semibold text-green-700">
-          Mark as Complimentary
-        </span>
-        
-        {/* Show badge if auto-selected */}
-        {selectedKot.some((kot) => {
-          const order = filteredOrders.find((o) => o._id === kot.id);
-          return order?.foodPlanDetails?.isComplimentary === true;
-        }) && (
-          <span className="inline-flex items-center gap-1 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
-            ✓ Auto-selected (Food Plan)
-          </span>
-        )}
-      </div>
-      
-      {/* Show details when checked */}
-      {isComplimentary && (
-        <div className="mt-2 p-2 bg-white rounded border border-green-200">
-          {selectedKot.some((kot) => {
-            const order = filteredOrders.find((o) => o._id === kot.id);
-            return order?.foodPlanDetails?.isComplimentary === true;
-          }) ? (
-            <div className="space-y-1.5">
-              <p className="text-xs text-green-700 font-medium">
-                ✓ Complimentary Food Plans:
-              </p>
-              
-              {/* List each KOT */}
-              {selectedKot.map((kot) => {
-                const order = filteredOrders.find((o) => o._id === kot.id);
-                if (order?.foodPlanDetails?.planName) {
-                  return (
-                    <div key={kot.id} className="flex items-center justify-between text-xs bg-green-50 px-2 py-1 rounded">
-                      <span className="text-gray-700">
-                        KOT #{kot.voucherNumber}
-                      </span>
-                      <span className="font-medium text-green-700">
-                        {order.foodPlanDetails.planName}
-                        {order.foodPlanDetails.isComplimentary && " (Free)"}
-                      </span>
-                    </div>
-                  );
-                }
-                return null;
-              })}
-            </div>
-          ) : (
-            <p className="text-xs text-amber-700">
-              ⚠ Manually marked as complimentary (free service)
-            </p>
-          )}
-        </div>
-      )}
-    </div>
-  </label>
-</div>
+                                // Check if auto-complimentary
+                                const hasAutoComplimentary = selectedKot.some(
+                                  (kot) => {
+                                    const order = filteredOrders.find(
+                                      (o) => o._id === kot.id,
+                                    );
+                                    return (
+                                      order?.foodPlanDetails
+                                        ?.isComplimentary === true
+                                    );
+                                  },
+                                );
+
+                                if (!hasAutoComplimentary && isChecked) {
+                                  toast.info("Marking order as complimentary");
+                                } else if (hasAutoComplimentary && !isChecked) {
+                                  toast.warning(
+                                    "This order has a complimentary food plan",
+                                  );
+                                }
+                              }}
+                              className="mt-1 w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 flex-shrink-0"
+                            />
+
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-sm font-semibold text-green-700">
+                                  Mark as Complimentary
+                                </span>
+
+                                {/* Show badge if auto-selected */}
+                                {selectedKot.some((kot) => {
+                                  const order = filteredOrders.find(
+                                    (o) => o._id === kot.id,
+                                  );
+                                  return (
+                                    order?.foodPlanDetails?.isComplimentary ===
+                                    true
+                                  );
+                                }) && (
+                                  <span className="inline-flex items-center gap-1 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                                    ✓ Auto-selected (Food Plan)
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Show details when checked */}
+                              {isComplimentary && (
+                                <div className="mt-2 p-2 bg-white rounded border border-green-200">
+                                  {selectedKot.some((kot) => {
+                                    const order = filteredOrders.find(
+                                      (o) => o._id === kot.id,
+                                    );
+                                    return (
+                                      order?.foodPlanDetails
+                                        ?.isComplimentary === true
+                                    );
+                                  }) ? (
+                                    <div className="space-y-1.5">
+                                      <p className="text-xs text-green-700 font-medium">
+                                        ✓ Complimentary Food Plans:
+                                      </p>
+
+                                      {/* List each KOT */}
+                                      {selectedKot.map((kot) => {
+                                        const order = filteredOrders.find(
+                                          (o) => o._id === kot.id,
+                                        );
+                                        if (order?.foodPlanDetails?.planName) {
+                                          return (
+                                            <div
+                                              key={kot.id}
+                                              className="flex items-center justify-between text-xs bg-green-50 px-2 py-1 rounded"
+                                            >
+                                              <span className="text-gray-700">
+                                                KOT #{kot.voucherNumber}
+                                              </span>
+                                              <span className="font-medium text-green-700">
+                                                {order.foodPlanDetails.planName}
+                                                {order.foodPlanDetails
+                                                  .isComplimentary && " (Free)"}
+                                              </span>
+                                            </div>
+                                          );
+                                        }
+                                        return null;
+                                      })}
+                                    </div>
+                                  ) : (
+                                    <p className="text-xs text-amber-700">
+                                      ⚠ Manually marked as complimentary (free
+                                      service)
+                                    </p>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </label>
+                        </div>
 
                         {/* Final Total */}
                         <div className="border-t border-green-300 pt-2">
@@ -1802,7 +1883,7 @@ useEffect(() => {
                               {(
                                 selectedKot.reduce((total, kot) => {
                                   const order = filteredOrders.find(
-                                    (o) => o._id === kot.id
+                                    (o) => o._id === kot.id,
                                   );
                                   return total + (order?.total || 0);
                                 }, 0) - (discountAmount || 0)
@@ -1869,13 +1950,13 @@ useEffect(() => {
                         className="flex-2 px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg text-sm font-bold hover:from-green-600 hover:to-emerald-700 transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2 shadow-lg"
                         onClick={() => {
                           let findOneWithNoRoomService = selectedKot.find(
-                            (kot) => !kot.roomId
+                            (kot) => !kot.roomId,
                           );
                           console.log(findOneWithNoRoomService);
                           if (findOneWithNoRoomService) {
                             handleSalesPreview();
                             toast.warning(
-                              "Continue to room option only for room service"
+                              "Continue to room option only for room service",
                             );
                           } else {
                             setConformationModal(true);
@@ -1952,7 +2033,7 @@ useEffect(() => {
                             {item?.voucherNumber}
                             {","}
                           </span>
-                        )
+                        ),
                       )}
                     </span>
                   </div>
@@ -2131,7 +2212,7 @@ useEffect(() => {
                                   return;
                                 } else {
                                   setPaymentError(
-                                    "Sum of cash and online amount should be less than or equal to order total."
+                                    "Sum of cash and online amount should be less than or equal to order total.",
                                   );
                                 }
                               }}
@@ -2190,7 +2271,7 @@ useEffect(() => {
                                   return;
                                 } else {
                                   setPaymentError(
-                                    "Sum of cash and online amount should be less than or equal to order total."
+                                    "Sum of cash and online amount should be less than or equal to order total.",
                                   );
                                 }
                               }}
@@ -2261,53 +2342,64 @@ useEffect(() => {
                     </div>
                   </div>
                 )}
-{paymentMode === "credit" && (
-  <div className="mb-3">
-    <div className="flex items-center justify-between mb-3">
-      <label className="block text-sm font-medium text-gray-700">
-        Creditor
-      </label>
-    <button
-  onClick={() => {
-    sessionStorage.setItem('returnToPaymentModal', 'true');
-    sessionStorage.setItem('paymentModalData', JSON.stringify({
-      selectedDataForPayment,
-      paymentMode,
-      selectedKot,
-      discountAmount,
-      note
-    }));
-    
-    const returnUrl = encodeURIComponent(window.location.pathname);
-    window.open(`/sUsers/addParty?returnUrl=${returnUrl}`, '_blank');
-  }}
-  className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-lg text-xs font-semibold hover:from-blue-600 hover:to-indigo-600 transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105 active:scale-95"
->
-  <Plus className="w-3.5 h-3.5" />
-  <span>New Creditor</span>
-</button>
-    </div>
+                {paymentMode === "credit" && (
+                  <div className="mb-3">
+                    <div className="flex items-center justify-between mb-3">
+                      <label className="block text-sm font-medium text-gray-700">
+                        Creditor
+                      </label>
+                      <button
+                        onClick={() => {
+                          sessionStorage.setItem(
+                            "returnToPaymentModal",
+                            "true",
+                          );
+                          sessionStorage.setItem(
+                            "paymentModalData",
+                            JSON.stringify({
+                              selectedDataForPayment,
+                              paymentMode,
+                              selectedKot,
+                              discountAmount,
+                              note,
+                            }),
+                          );
 
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-2">
-        Select Creditor
-      </label>
-      <CustomerSearchInputBox
-        onSelect={(party) => {
-          setSelectedCreditor(party);
-        }}
-        selectedParty={{}}
-        isAgent={false}
-        placeholder="Search customers..."
-        sendSearchToParent={() => {}}
-      />
-      <p className="mt-1.5 text-xs text-gray-500 flex items-center gap-1">
-        <span className="w-1 h-1 bg-blue-500 rounded-full"></span>
-        Can't find customer? Click "New Creditor" to add one
-      </p>
-    </div>
-  </div>
-)}
+                          const returnUrl = encodeURIComponent(
+                            window.location.pathname,
+                          );
+                          window.open(
+                            `/sUsers/addParty?returnUrl=${returnUrl}`,
+                            "_blank",
+                          );
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-lg text-xs font-semibold hover:from-blue-600 hover:to-indigo-600 transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105 active:scale-95"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>New Creditor</span>
+                      </button>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Select Creditor
+                      </label>
+                      <CustomerSearchInputBox
+                        onSelect={(party) => {
+                          setSelectedCreditor(party);
+                        }}
+                        selectedParty={{}}
+                        isAgent={false}
+                        placeholder="Search customers..."
+                        sendSearchToParent={() => {}}
+                      />
+                      <p className="mt-1.5 text-xs text-gray-500 flex items-center gap-1">
+                        <span className="w-1 h-1 bg-blue-500 rounded-full"></span>
+                        Can't find customer? Click "New Creditor" to add one
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 {/* Error Message */}
                 {paymentError && (
