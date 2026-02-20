@@ -76,6 +76,7 @@ function SettingsCard({
     }
   }
 }
+console.log("option", option);
 
   return (
     <div>

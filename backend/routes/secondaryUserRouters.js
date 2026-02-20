@@ -71,8 +71,8 @@ import {
 import {
     addItem, getAllItems, getItems, getCategories, deleteItem, updateItem, generateKot, getKot, updateKotStatus, editKot,
     getRoomDataForRestaurant, updateKotPayment, getPaymentType, saveTableNumber, getSalePrintData, updateTable, getTables, deleteTable,
-    updateTableStatus, getKotDataByTable, updateConfigurationForKotApproval, getSummaryDashboard, cancelKot, directSale, searchItems
-} from '../controllers/restaurantController.js'
+    updateTableStatus, getKotDataByTable, updateConfigurationForKotApproval, getSummaryDashboard, cancelKot, directSale, searchItems,getComplementaryCashOrBank
+,addComplementaryCashOrBank} from '../controllers/restaurantController.js'
 
 
 router.post('/login', login)
@@ -396,6 +396,8 @@ router.post("/convertToAvailable/:cmp_id",convertToAvailable);
 router.post("/controlTaggedCheckIn/:cmp_id", authSecondary,controlTaggedCheckIn);
 router.post("/getHoldCheckOutData/:cmp_id",getHoldCheckIns);
 router.post("/unHoldCheckOut/:cmp_id",releaseHold);
+router.get('/getComplementaryCashOrBank/:cmp_id', authSecondary, secondaryIsBlocked, companyAuthentication, getComplementaryCashOrBank)
+router.post('/addComplementaryCashOrBank/:cmp_id', authSecondary, secondaryIsBlocked, companyAuthentication, addComplementaryCashOrBank)
 // Route to get detailed booking information for a specific room and date
 
 export default router

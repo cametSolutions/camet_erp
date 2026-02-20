@@ -45,9 +45,9 @@ const kotSchema = new mongoose.Schema({
       type: String,
       trim: true,
     },
-    status:{
-      type:String,
-      trim:true,
+    status: {
+      type: String,
+      trim: true,
     },
   },
   tableNumber: {
@@ -55,10 +55,10 @@ const kotSchema = new mongoose.Schema({
     trim: true,
   },
 
-   serviceType: {
+  serviceType: {
     type: String,
-    enum: ['Restaurant', 'Room Service', 'Dine-in'],
-    default: 'Restaurant'
+    enum: ["Restaurant", "Room Service", "Dine-in"],
+    default: "Restaurant",
   },
 
   total: {
@@ -76,7 +76,7 @@ const kotSchema = new mongoose.Schema({
     default: "pending",
   },
 
-   cancelReason: {
+  cancelReason: {
     type: String,
     trim: true,
   },
@@ -91,35 +91,36 @@ const kotSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
-  roomId:{
-    type:mongoose.Schema.Types.ObjectId,
-    ref:"Room"
+  roomId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Room",
   },
   checkInNumber: {
     type: String,
     trim: true,
   },
   discount: { type: Number, default: 0 },
-discountChargeId: { type: mongoose.Schema.Types.ObjectId, ref: 'AdditionalCharges' },
-note: { type: String },
- foodPlanId: {
+  discountChargeId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "AdditionalCharges",
+  },
+  note: { type: String },
+  foodPlanId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "FoodPlan",
-    default: null
+    default: null,
   },
-  
-  
+
   foodPlanDetails: {
     planName: { type: String, default: null },
     amount: { type: Number, default: 0 },
-    isComplimentary: { type: Boolean, default: false }
+    isComplimentary: { type: Boolean, default: false },
   },
-  
-  
+
   isManuallyComplimentary: {
     type: Boolean,
-    default: false
-  }
+    default: false,
+  },
 });
 
 export default mongoose.model("Kot", kotSchema);
