@@ -76,6 +76,10 @@ const AddRestuarentCategory = lazy(
   () =>
     import("@/pages/masters/product/productSubDetails/AddRestuarentCategory")
 )
+const ComplementaryCashOrBank = lazy(
+  () =>
+    import("../pages/masters/product/productSubDetails/ComplementaryCashOrBank")
+)
 const AddSubCategory = lazy(
   () => import("../pages/masters/product/productSubDetails/AddSubCategory")
 )
@@ -286,6 +290,11 @@ const VoucherPdfInitiator = lazy(
 const VoucherPdfInitiatorThreeInch = lazy(
   () => import("@/pages/voucher/voucherPdf/VoucherPdfInitiatorThreeInch")
 )
+
+const VoucherPdfInitiatorThreeInch2= lazy(
+  () => import("@/pages/voucher/voucherPdf/threeInchPdf/VoucherThreeInchPdfFormat2")
+)
+
 const WarrantyCard = lazy(
   () => import("@/pages/voucher/voucherPdf/warrantyCard/WarrantyCard")
 )
@@ -725,6 +734,14 @@ const Routers = () => {
             </ProtectedSecRoute>
           }
         ></Route>
+            <Route
+          path="/sUsers/shareSalesThreeInch2"
+          element={
+            <ProtectedSecRoute>
+              <VoucherPdfInitiatorThreeInch2 />
+            </ProtectedSecRoute>
+          }
+        ></Route>
         <Route
           path="/sUsers/shareVanSaleThreeInch/:id"
           element={
@@ -1158,6 +1175,14 @@ const Routers = () => {
           element={
             <ProtectedSecRoute>
               <AddRestuarentCategory />
+            </ProtectedSecRoute>
+          }
+        ></Route>
+        <Route
+          path="/sUsers/complementaryCashOrBank"
+          element={
+            <ProtectedSecRoute>
+              <ComplementaryCashOrBank />
             </ProtectedSecRoute>
           }
         ></Route>
