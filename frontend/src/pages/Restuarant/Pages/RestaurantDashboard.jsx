@@ -53,7 +53,7 @@ const RestaurantPOS = () => {
   const [isMobile, setIsMobile] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
   const [showOrderSummary, setShowOrderSummary] = useState(false);
-
+const [billFormat, setBillFormat] = useState("format1");
   const [showOptions, setShowOptions] = useState(false);
   const [searchTerms, setSearchTerms] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -122,6 +122,8 @@ const RestaurantPOS = () => {
   );
   const shouldFetch = Boolean(cmp_id);
 
+  
+
   const queryClient = useQueryClient();
   const isAdmin =
     JSON.parse(localStorage.getItem("sUserData")).role === "admin"
@@ -145,6 +147,20 @@ const RestaurantPOS = () => {
       });
     }
   }, [kotDataForEdit]);
+
+
+    useEffect(() => {
+      // Get format from organization configuration
+      const print1 = org?.configurations?.[0]?.defaultPrint?.restaurantPrint1;
+      const print2 = org?.configurations?.[0]?.defaultPrint?.restaurantPrint2;
+  
+      if (print2) {
+        setBillFormat("format2");
+      } else if (print1) {
+        setBillFormat("format1");
+      }
+    }, [org]);
+    
   // Add this useFetch hook with other data fetching
   const { data: paymentTypeData } = useFetch(
     shouldFetch ? `/api/sUsers/getPaymentType/${cmp_id}` : null,
@@ -185,7 +201,11 @@ const RestaurantPOS = () => {
 
   useEffect(() => {
     if (salePrintData) {
-      navigate(`/sUsers/sharesalesThreeInch/${salePrintData._id}`);
+      billFormat === "format1"
+        ? navigate(`/sUsers/sharesalesThreeInch/${salePrintData._id}`)
+        : navigate(`/sUsers/sharesalesThreeInch2`, {
+            state: salePrintData,
+          });
     }
   }, [salePrintData, navigate]);
   // Mobile detection
