@@ -54,10 +54,12 @@ function VoucherThreeInchPdfFormat2({
   useEffect(() => {
     if (data && data.items) {
       data.discount = data.additionalCharges?.[0]?.value || 0;
+      console.log(data?.items[0])
       const calculatedSubTotal = data.items
-        .reduce((acc, curr) => acc + Number(curr?.total) * Number(curr?.totalCount), 0)
+        .reduce((acc, curr) => acc + Number(curr?.total) - Number(curr?.totalIgstAmt), 0)
         .toFixed(2);
-      setSubTotal(Number(data?.subtotal || calculatedSubTotal));
+        console.log(calculatedSubTotal)
+      setSubTotal(Number( calculatedSubTotal || data?.subTotal));
     }
   }, [data]);
 
@@ -234,7 +236,7 @@ function VoucherThreeInchPdfFormat2({
         <div style={{ fontSize: "10px", marginBottom: "6px" }}>
           <div style={{ ...flexRow, fontWeight: "bold", marginBottom: "2px" }}>
             <div style={bold}>{getRoomNumber()}</div>
-            <div style={{ paddingRight: "3px", fontWeight: "bold" }}>Total: {subTotal.toFixed(2)}</div>
+            <div style={{ paddingRight: "3px", fontWeight: "bold" }}>Total: {netAmount}</div>
           </div>
 
           {data?.voucherNumber?.[0]?.checkInNumber && (
