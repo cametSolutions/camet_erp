@@ -957,11 +957,13 @@ console.log(allCharges)
 
     const totalPax = basePax + additionalPaxCount
 
+    console.log(doc)
+
     const convertNumberToWords = (amount) =>
       `${Math.round(amount || 0)} Rupees Only`
-    let partyName = doc?.customerId?.partyName
-    let partyAddress = doc?.customerId?.billingAddress || ""
-    let partyPhone = doc?.customerId?.mobileNumber || ""
+    let partyName = doc?.guestId?.partyName
+    let partyAddress = doc?.guestId?.billingAddress || ""
+    let partyPhone = doc?.guestId?.mobileNumber || ""
     let partyGstNo = doc?.customerId?.gstNo || ""
     let partyCompanyName = doc?.customerId?.partyName
 
@@ -981,7 +983,7 @@ console.log(allCharges)
           paymentDetails?.paymentDetails?.selectedCreditor?.partyName
       }
     }
-console.log("hh")
+console.log("hh",partyGstNo)
     return {
       hotel: {
         name: organization?.name,
@@ -1002,7 +1004,7 @@ console.log("hh")
         roomNo: guestRooms,
         grcNo: doc?.grcno,
         billNo: doc?.voucherNumber,
-        travelAgent: doc?.agentId?.name,
+        travelAgent: doc?.agentId?.partyName,
         address: partyAddress || "",
         phone: partyPhone || "",
         gstNo: partyGstNo || "",
