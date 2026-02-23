@@ -962,8 +962,8 @@ console.log(allCharges)
     const convertNumberToWords = (amount) =>
       `${Math.round(amount || 0)} Rupees Only`
     let partyName = doc?.guestId?.partyName
-    let partyAddress = doc?.customerId?.billingAddress || ""
-    let partyPhone = doc?.customerId?.mobileNumber || ""
+    let partyAddress = doc?.guestId?.billingAddress || ""
+    let partyPhone = doc?.guestId?.mobileNumber || ""
     let partyGstNo = doc?.customerId?.gstNo || ""
     let partyCompanyName = doc?.customerId?.partyName
 
