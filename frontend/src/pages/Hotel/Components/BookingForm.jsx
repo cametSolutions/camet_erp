@@ -14,6 +14,7 @@ import FoodPlanComponent from "./FoodPlanComponent";
 import useFetch from "@/customHook/useFetch";
 import OutStandingModal from "./OutStandingModal";
 import PaymentModal from "./PaymentModal";
+import OtherChargeSearchInPutBox from "./OtherChargeSearchInPutBox";
 
 function BookingForm({
   isLoading = false,
@@ -43,6 +44,7 @@ function BookingForm({
   const [country, setCountry] = useState("");
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [saveLoader, setSaveLoader] = useState(false);
+
   const navigate = useNavigate();
   const { _id: cmp_id, configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg,
@@ -193,6 +195,7 @@ function BookingForm({
         currentDate: editData?.arrivalDate || currentDateDefault,
         updatedDate: editData?.updatedDate || currentDateDefault,
         gstNo: editData?.gstNo || "",
+        otherChargeDetails: editData?.otherChargeDetails || [],
       }));
     }
   }, [editData]);
@@ -200,6 +203,8 @@ function BookingForm({
   useEffect(() => {
     if (roomId) setSelectedRoomId(roomId);
   }, [roomId]);
+
+  console.log(formData.otherChargeDetails);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -310,6 +315,7 @@ function BookingForm({
   };
 
   const handleArrivalTimeChange = (time) =>
+    console.log(time) ||
     setFormData((prev) => ({
       ...prev,
       arrivalTime: time,
@@ -380,19 +386,33 @@ function BookingForm({
       const foodPlanTotal = Number(formData?.foodPlanTotal || 0);
 
       // Total before discount
-      const totalAmount = roomTotal;
+      let otherChargeAmount = 0;
+      let finalOtherChargeAmount = 0;
+      if (formData.otherChargeDetails &&  Object.keys(formData.otherChargeDetails).length > 0) {
+        otherChargeAmount =
+          Math.round(Number(formData.otherChargeDetails?.amount || 0) *
+            Number(formData.otherChargeDetails?.charge?.taxPercentage || 0)) /
+          100;
+        finalOtherChargeAmount =
+        Math.round(Number(formData.otherChargeDetails?.amount) +
+          Number(otherChargeAmount))
+      }
 
+      const totalAmount = Math.round(roomTotal + finalOtherChargeAmount)
       // Apply discount
-      const discountAmount = Number(formData.discountAmount || 0);
-      const grandTotal = (totalAmount - discountAmount).toFixed(2);
-
+      const discountAmount = Math.round(Number(formData.discountAmount || 0))
+      const grandTotal =
+       Math.round ((totalAmount - discountAmount).toFixed(2) + finalOtherChargeAmount)
+   
       // Calculate balance
-      const totalAdvance = Number(formData.totalAdvance || 0);
-      const balanceToPay = (grandTotal - totalAdvance).toFixed(2);
+      const totalAdvance = Math.round(Number(formData.totalAdvance > 0 ? formData.totalAdvance :formData.advanceAmount || 0) )
+ 
+      const balanceToPay = Math.round(grandTotal - totalAdvance).toFixed(2);
+      console.log(balanceToPay);
 
       // Calculate discount percentage
       const discountPercentage =
-        totalAmount > 0 ? ((discountAmount / totalAmount) * 100).toFixed(2) : 0;
+        totalAmount > 0 ? Math.round((discountAmount / totalAmount) * 100).toFixed(2) : 0;
 
       setFormData((prev) => ({
         ...prev,
@@ -410,6 +430,7 @@ function BookingForm({
     formData.foodPlanTotal,
     formData.discountAmount,
     formData.totalAdvance,
+    formData.otherChargeDetails,
   ]);
 
   const handleDiscountPercentageChange = (e) => {
@@ -449,7 +470,7 @@ function BookingForm({
 
   const handleAdvanceAmountChange = (e) => {
     const { value } = e.target;
-    const advanceAmount = Number(value);
+    const advanceAmount = Math.round(Number(value))
     const previousAdvance = Number(editData?.previousAdvance || 0);
     const grandTotal = Number(formData?.grandTotal || 0);
     const totalAdvance = advanceAmount + previousAdvance;
@@ -554,6 +575,13 @@ function BookingForm({
         guestMobileNumber: party.mobileNumber,
       }));
     }
+  };
+  const handleSelectOtherCharge = (charge) => {
+    console.log(charge);
+    setFormData((prev) => ({
+      ...prev,
+      otherChargeDetails: charge,
+    }));
   };
 
   const handleAvailableRoomSelection = (selectedRoom) => {
@@ -1452,55 +1480,62 @@ function BookingForm({
                           ))}
                         </select>
                       </div>
-                          <div>
-    {/* Add Tax With Rate & GRC (spans all columns) */}
-                      <div className="col-span-full lg:col-span-5">
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                          {isShowGrc && (
+                      <div>
+                        {/* Add Tax With Rate & GRC (spans all columns) */}
+                        <div className="col-span-full lg:col-span-5">
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                            {isShowGrc && (
+                              <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                                GRC NO
+                              </label>
+                            )}
                             <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                              GRC NO
+                              Add Tax With Rate
                             </label>
-                          )}
-                          <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                            Add Tax With Rate
-                          </label>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          {/* GRC Input */}
-                          {isShowGrc && (
-                            <input
-                              type="text"
-                              name="grcno"
-                              value={formData.grcno || ""}
-                              onChange={handleChange}
-                              placeholder="GRC %"
-                              className="w-24 border px-2 py-1 rounded text-sm focus:outline-none focus:ring bg-white border-gray-200"
-                            />
-                          )}
-                          {/* Toggle */}
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleChange({
-                                target: {
-                                  name: "addTaxWithRate",
-                                  value: !formData.addTaxWithRate,
-                                },
-                              })
-                            }
-                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition
+                          </div>
+                          <div className="flex items-center gap-4">
+                            {/* GRC Input */}
+                            {isShowGrc && (
+                              <input
+                                type="text"
+                                name="grcno"
+                                value={formData.grcno || ""}
+                                onChange={handleChange}
+                                placeholder="GRC %"
+                                className="w-24 border px-2 py-1 rounded text-sm focus:outline-none focus:ring bg-white border-gray-200"
+                              />
+                            )}
+                            {/* Toggle */}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleChange({
+                                  target: {
+                                    name: "addTaxWithRate",
+                                    value: !formData.addTaxWithRate,
+                                  },
+                                })
+                              }
+                              className={`relative inline-flex h-6 w-11 items-center rounded-full transition
             ${formData.addTaxWithRate ? "bg-green-600" : "bg-gray-300"}`}
-                          >
-                            <span
-                              className={`inline-block h-5 w-5 transform rounded-full bg-white transition
+                            >
+                              <span
+                                className={`inline-block h-5 w-5 transform rounded-full bg-white transition
               ${formData.addTaxWithRate ? "translate-x-5" : "translate-x-1"}`}
-                            />
-                          </button>
+                              />
+                            </button>
+                          </div>
                         </div>
                       </div>
+                      <div className="lg:col-span-2">
+                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                          Other Charge
+                        </label>
+                        <OtherChargeSearchInPutBox
+                          onSelect={handleSelectOtherCharge}
+                          selectedCharge={formData.otherChargeDetails}
+                        />
                       </div>
-
-                  
 
                       {/* Available Rooms (spans all columns) */}
                       <div className="col-span-full lg:col-span-5">

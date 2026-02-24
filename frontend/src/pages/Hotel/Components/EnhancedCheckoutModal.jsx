@@ -59,7 +59,7 @@ export default function EnhancedCheckoutModal({
           checkout.selectedRooms.forEach((room) => {
             room.stayDays = calculatedDays;
           });
-          console.log(calculatedDays);
+          console.log(checkout);
           return {
             ...checkout,
             stayDays: calculatedDays,
@@ -308,6 +308,11 @@ export default function EnhancedCheckoutModal({
         if (checkout._id === id) {
           const arrival = new Date(checkout.arrivalDate);
           const checkoutDate = new Date(newDate);
+          const time = new Date(newDate).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: true // 12-hour format
+          })
           const diffTime = checkoutDate - arrival;
           const calculatedDays =
             diffTime === 0 ? 1 : Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -402,6 +407,7 @@ export default function EnhancedCheckoutModal({
           return {
             ...checkout,
             checkOutDate: newDate,
+            checkOutTime: time,
             stayDays: calculatedDays,
             selectedRooms: updatedRooms,
           };
@@ -553,6 +559,11 @@ export default function EnhancedCheckoutModal({
             selectedRooms: updatedRooms,
             stayDays: stayDays,
             checkOutDate: newCheckoutDate.toISOString().split("T")[0],
+            checkOutTime: newCheckoutDate.toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: true, // 12-hour format
+            }),
           };
         }
         return checkout;

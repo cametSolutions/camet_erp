@@ -240,7 +240,24 @@ const bookingSchema = new mongoose.Schema(
     grcno: String,
     isHold: { type: Boolean, default: false },
     taggedCheckIns: { type: mongoose.Schema.Types.ObjectId, ref: "CheckIn" },
-    holdArray:[]
+    holdArray:[],
+    otherChargeDetails: 
+  {
+    amount: {
+      type: Number,
+    },
+    charge: {
+      _id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Charge"
+      },
+      cmp_id: mongoose.Schema.Types.ObjectId,
+      Primary_user_id: mongoose.Schema.Types.ObjectId,
+      name: String,
+      hsn: String,
+      taxPercentage: Number
+    }
+  },
   },
   { timestamps: true },
 );

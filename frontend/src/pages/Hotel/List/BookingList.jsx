@@ -911,6 +911,7 @@ function BookingList() {
     setShowEnhancedCheckoutModal(true);
   };
   console.log(selectedCheckOut);
+
   const handleEnhancedCheckoutConfirm = async (roomAssignments, data) => {
     console.log(roomAssignments);
     setShowEnhancedCheckoutModal(false);
@@ -920,8 +921,10 @@ function BookingList() {
     console.log("hhhh");
     setShowPaymentModal(true);
     setIsPartial(true);
+    setSelectedCheckOut(data)
     // setShowCheckOutDateModal(true)
   };
+  console.log(selectedCheckOut)
 
   const handleCheckin = (e, el) => {
     console.log(el);
@@ -1076,6 +1079,7 @@ function BookingList() {
         item._id,
         {
           checkOutDate: item.checkOutDate,
+          checkOutTime: item.checkOutTime,
           stayDays: item.stayDays,
         },
       ]),
@@ -1083,12 +1087,13 @@ function BookingList() {
 
     const updatedCheckoutData = checkoutData.map((item) => {
       const roomData = roomAssignmentMap.get(item._id);
-
+console.log(roomData);
       return {
         ...item,
 
         // 🔹 Root level update
         checkOutDate: roomData?.checkOutDate ?? item.checkOutDate,
+        checkOutTime: roomData?.checkOutTime ?? item.checkOutTime,
         stayDays: roomData?.stayDays ?? item.stayDays,
 
         // 🔹 selectedRooms stayDays update

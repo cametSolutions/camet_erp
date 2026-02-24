@@ -17,18 +17,18 @@ export const taxCalculator = (
     const { hsnDetails } = data;
 
     // Calculate additional pax amount for specific room
-    const reducedAdditionalPaxAmount = taxCalculationRoomId
-      ? formData?.additionalPaxDetails?.reduce(
+    const reducedAdditionalPaxAmount = Math.round( taxCalculationRoomId
+      ?formData?.additionalPaxDetails?.reduce(
           (acc, item) =>
             item.roomId === taxCalculationRoomId
               ? acc + (Number(item.rate) || 0) * Number(data?.stayDays || 1)
               : acc,
           0,
         ) || 0
-      : 0;
+      : 0)
 
     // Calculate food plan amount for specific room
-    const reducedFoodPlanAmount = taxCalculationRoomId
+    const reducedFoodPlanAmount = Math.round(taxCalculationRoomId
       ? formData?.foodPlan?.reduce(
           (acc, item) =>
             item.roomId === taxCalculationRoomId
@@ -36,11 +36,11 @@ export const taxCalculator = (
               : acc,
           0,
         ) || 0
-      : 0;
+      : 0)
     console.log(reducedFoodPlanAmount);
     console.log(reducedAdditionalPaxAmount);
     const baseAmount = Number(data?.totalAmount || 0);
-    let totalAmount = baseAmount + reducedAdditionalPaxAmount;
+    let totalAmount = Math.round(baseAmount + reducedAdditionalPaxAmount)
 
     if (formData?.bookingType !== "offline") {
       totalAmount += reducedFoodPlanAmount;
@@ -75,59 +75,57 @@ export const taxCalculator = (
     console.log(taxRate);
     console.log(totalAmount);
     console.log(inclusive);
-    const taxAmount = (totalAmount * taxRate) / 100;
-    console.log(totalAmount);
-    console.log(taxAmount);
-    let amountWithTax = inclusive ? totalAmount : totalAmount + taxAmount;
+    const taxAmount = Math.round((totalAmount * taxRate) / 100)
+
+    let amountWithTax = Math.round(inclusive ? totalAmount : totalAmount + taxAmount)
     console.log(amountWithTax);
     // Handle per-component tax for display or tracking
     let foodPlanTaxRate =
-      formData?.bookingType == "offline" ? 5 : taxRate.toFixed(2);
-    console.log(foodPlanTaxRate);
+     Math.round(formData?.bookingType == "offline" ? 5 : taxRate.toFixed(2))
 
-    let additionalPaxAmountWithTax = inclusive
+    let additionalPaxAmountWithTax = Math.round(inclusive
       ? reducedAdditionalPaxAmount
       : reducedAdditionalPaxAmount +
-        (reducedAdditionalPaxAmount * taxRate) / 100;
+        (reducedAdditionalPaxAmount * taxRate) / 100) 
     console.log(inclusive);
-    let foodPlanAmountWithTax = inclusive
+    let foodPlanAmountWithTax =Math.round( inclusive
       ? Number(reducedFoodPlanAmount)
       : Number(reducedFoodPlanAmount) +
-        (Number(reducedFoodPlanAmount) * Number(foodPlanTaxRate || 0)) / 100;
+        (Number(reducedFoodPlanAmount) * Number(foodPlanTaxRate || 0)) / 100);
 
-    let foodPlanAmountWithOutTax = inclusive
+    let foodPlanAmountWithOutTax = Math.round(inclusive
       ? Number(reducedFoodPlanAmount) / (1 + Number(foodPlanTaxRate || 0) / 100)
-      : Number(reducedFoodPlanAmount);
+      : Number(reducedFoodPlanAmount))
 
     console.log(amountWithTax);
     console.log(foodPlanAmountWithTax);
     // For UI clarity, always return food plan in amountWithTax if booking is not offline
     if (formData?.bookingType == "offline") {
-      amountWithTax = Number(amountWithTax) + Number(foodPlanAmountWithTax);
+      amountWithTax = Math.round(Number(amountWithTax) + Number(foodPlanAmountWithTax))
     }
 
     console.log(amountWithTax);
 
     return {
       amountWithTax: Number(amountWithTax.toFixed(2)),
-      amountWithOutTax:
+      amountWithOutTax:Math.round(
         Number(baseAmount.toFixed(2)) +
         Number(reducedAdditionalPaxAmount) +
-        Number(reducedFoodPlanAmount),
-      taxRate: Number(taxRate.toFixed(2)),
+        Number(reducedFoodPlanAmount)),
+      taxRate:Math.round(Number(taxRate.toFixed(2))),
       foodPlanTaxRate:
-        formData?.bookingType == "offline" ? 5 : Number(taxRate.toFixed(2)),
-      taxAmount: Number(taxAmount.toFixed(2)),
-      totalCgstAmt: Number(taxAmount.toFixed(2) / 2 || 0),
-      totalSgstAmt: Number(taxAmount.toFixed(2) / 2 || 0),
-      totalIgstAmt: Number(taxAmount.toFixed(2) || 0),
-      additionalPaxAmountWithTax: Number(additionalPaxAmountWithTax.toFixed(2)),
-      additionalPaxAmountWithOutTax: Number(reducedAdditionalPaxAmount),
-      foodPlanAmountWithTax: Number(foodPlanAmountWithTax.toFixed(2)),
-      foodPlanAmountWithOutTax: Number(foodPlanAmountWithOutTax).toFixed(2), // ✅ Fixed typo from "foodPlaAmountWithOutTax"
-      baseAmount: Number(baseAmount.toFixed(2)),
+        Math.round(formData?.bookingType == "offline" ? 5 : Number(taxRate.toFixed(2))),
+      taxAmount: Math.round(Number(taxAmount.toFixed(2))),
+      totalCgstAmt: Math.round(Number(taxAmount.toFixed(2) / 2 || 0)),
+      totalSgstAmt: Math.round(Number(taxAmount.toFixed(2) / 2 || 0)),
+      totalIgstAmt: Math.round(Number(taxAmount.toFixed(2) || 0)),
+      additionalPaxAmountWithTax: Math.round(Number(additionalPaxAmountWithTax.toFixed(2))),
+      additionalPaxAmountWithOutTax: Math.round(Number(reducedAdditionalPaxAmount)),
+      foodPlanAmountWithTax:Math.round( Number(foodPlanAmountWithTax.toFixed(2))),
+      foodPlanAmountWithOutTax: Math.round(Number(foodPlanAmountWithOutTax).toFixed(2)), // ✅ Fixed typo from "foodPlaAmountWithOutTax"
+      baseAmount:Math.round( Number(baseAmount.toFixed(2))),
       baseAmountWithTax:
-        Number(baseAmount.toFixed(2)) + Number(taxAmount.toFixed(2)),
+        Math.round(Number(baseAmount.toFixed(2)) + Number(taxAmount.toFixed(2))),
     };
   } catch (error) {
     console.error("Error in taxCalculator:", error);
