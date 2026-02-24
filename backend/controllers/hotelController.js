@@ -11,7 +11,7 @@ import { Booking, CheckIn, CheckOut } from "../models/bookingModal.js";
 import ReceiptModel from "../models/receiptModel.js";
 import { formatToLocalDate } from "../helpers/helper.js";
 import salesModel from "../models/salesModel.js";
-
+import additionalChargesModel from "../models/additionalChargesModel.js";
 import Kot from "../models/kotModal.js";
 
 import {
@@ -1159,9 +1159,9 @@ export const roomBooking = async (req, res) => {
           advanceDate: new Date(),
           classification: "Cr",
           source: under,
-
           from: selectedModal.modelName, // ✅ store model name, not
           paymenttypeDetails,
+          otherChargeDetails: bookingData.otherChargeDetails,
         });
 
         await advanceObject.save({ session });
@@ -2338,13 +2338,14 @@ export const getDateBasedRoomsWithStatus = async (req, res) => {
       status: { $ne: "checkOut" },
       // arrivalDate: { $lte: selectedDate },
       // checkOutDate: { $gte: selectedDate },
-    }).populate("customerId")
-        .populate("guestId")
-        .populate("agentId")
-        .populate("isHotelAgent")
-        .populate("selectedRooms.selectedPriceLevel")
-        .populate("bookingId")
-        .populate("checkInId")
+    })
+      .populate("customerId")
+      .populate("guestId")
+      .populate("agentId")
+      .populate("isHotelAgent")
+      .populate("selectedRooms.selectedPriceLevel")
+      .populate("bookingId")
+      .populate("checkInId");
 
     // ✅ Send response
     return res.status(200).json({
@@ -2772,7 +2773,35 @@ export const convertCheckOutToSale = async (req, res) => {
             }
           });
         };
-
+        console.log(item.otherChargeDetails)
+        let otherCharges = {};
+        // handle other charges
+        if (
+          item.otherChargeDetails &&
+          Object.keys(item.otherChargeDetails).length > 0
+        ) {
+          console.log(item.otherChargeDetails)
+         otherCharges = [
+            {
+              _id: item.otherChargeDetails?.charge?._id,
+              option: item.otherChargeDetails?.charge?.name,
+              value: item.otherChargeDetails?.amount,
+              action: "add",
+              taxPercentage: item.otherChargeDetails?.charge?.taxPercentage,
+              taxAmt:
+                (Number(item.amount) *
+                  Number(item.otherChargeDetails?.charge?.taxPercentage)) /
+                  100 || 0,
+              hsn: item.otherChargeDetails?.charge?.hsn,
+              finalValue:
+                (Number(item.amount) *
+                  Number(item.otherChargeDetails?.charge?.taxPercentage)) /
+                  100 +
+                  Number(item.otherChargeDetails?.amount) || 0,
+            },
+          ];
+        }
+console.log("othercharges",otherCharges)
         // 1) start from existing paymentDetails.paymenttypeDetails
         const merged = { ...paymentDetails.paymenttypeDetails };
 
@@ -2956,6 +2985,7 @@ export const convertCheckOutToSale = async (req, res) => {
           checkInId,
           checkOutDoc[0]._id,
           amount,
+          otherCharges,
         );
         salesarray = savedVoucherData;
         if (savedVoucherData) {
@@ -3320,6 +3350,7 @@ async function createSalesVoucher(
   checkInId = null,
   checkOutId = null,
   amount = 0,
+  otherCharges
 ) {
   const AlreadyExistingItems = selectedCheckOut.flatMap(
     (item) => item.selectedRooms,
@@ -3412,6 +3443,7 @@ async function createSalesVoucher(
         convertedFrom,
         checkInId: checkInId,
         checkOutId: checkOutId,
+        additionalCharges : otherCharges,
       },
     ],
     { session },
@@ -4968,8 +5000,6 @@ export const controlTaggedCheckIn = async (req, res) => {
   }
 };
 
-
-
 export const getHoldCheckIns = async (req, res) => {
   try {
     const { holdCheckInIds } = req.body.data;
@@ -4979,24 +5009,25 @@ export const getHoldCheckIns = async (req, res) => {
     }
 
     // Convert to ObjectId
-    const objectIds = holdCheckInIds.map(id => new mongoose.Types.ObjectId(id));
+    const objectIds = holdCheckInIds.map(
+      (id) => new mongoose.Types.ObjectId(id),
+    );
 
     const holdData = await CheckIn.find({
       _id: { $in: objectIds },
-
-    }).populate("customerId")
+    })
+      .populate("customerId")
       .populate("guestId")
       .populate("agentId")
       .populate("isHotelAgent")
       .populate("selectedRooms.selectedPriceLevel")
       .populate("bookingId")
-      .populate("checkInId")
+      .populate("checkInId");
 
     return res.status(200).json({
       message: "Hold check-ins fetched successfully",
       holdData,
     });
-
   } catch (error) {
     console.error("getHoldCheckIns error:", error);
     return res.status(500).json({
@@ -5005,46 +5036,39 @@ export const getHoldCheckIns = async (req, res) => {
   }
 };
 
-
-
-
 export const releaseHold = async (req, res) => {
   const session = await mongoose.startSession();
 
   try {
     const { selectedCheckOut } = req.body.data;
-    let checkInIds = selectedCheckOut.map((item)=>item._id)
+    let checkInIds = selectedCheckOut.map((item) => item._id);
 
     if (!checkInIds || !checkInIds.length) {
       return res.status(400).json({ message: "Check-in IDs missing" });
     }
 
     // Convert to ObjectId
-    const objectIds = checkInIds.map(
-      (id) => new mongoose.Types.ObjectId(id)
-    );
+    const objectIds = checkInIds.map((id) => new mongoose.Types.ObjectId(id));
 
     await session.withTransaction(async () => {
-
       // 1️⃣ Remove IDs from holdArray
       await CheckIn.updateMany(
         { holdArray: { $in: checkInIds } },
         { $pull: { holdArray: { $in: checkInIds } } },
-        { session }
+        { session },
       );
 
       // 2️⃣ Update isHold false
       await CheckIn.updateMany(
         { _id: { $in: objectIds } },
         { $set: { isHold: false } },
-        { session }
+        { session },
       );
     });
 
     return res.status(200).json({
       message: "Hold released successfully",
     });
-
   } catch (error) {
     console.error("releaseHold error:", error);
     return res.status(500).json({
@@ -5055,3 +5079,43 @@ export const releaseHold = async (req, res) => {
   }
 };
 
+export const getOtherCharges = async (req, res) => {
+  const { cmp_id } = req.params;
+  const { owner: Primary_user_id, sUserId: secUserId } = req;
+  const { page = 1, limit = 20, search = "" } = req.query;
+
+  try {
+    const pageNum = parseInt(page);
+    const pageSize = parseInt(limit);
+    const skip = (pageNum - 1) * pageSize;
+
+    // Build optimized base query
+    let baseQuery = {
+      cmp_id: new mongoose.Types.ObjectId(cmp_id),
+      Primary_user_id,
+    };
+
+    // Build search query
+    if (search) {
+      const regex = new RegExp(search, "i");
+      baseQuery.$or = [{ name: regex }];
+    }
+
+    const OtherCharges = await additionalChargesModel.find(baseQuery);
+
+    res.status(200).json({
+      message: "OtherCharges fetched",
+      chargeList: OtherCharges,
+
+      pagination: {
+        // total: totalCount,
+        page: pageNum,
+        limit: pageSize,
+        // totalPages: Math.ceil(totalCount / pageSize),
+      },
+    });
+  } catch (error) {
+    console.error("Error in PartyList:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
