@@ -66,7 +66,7 @@ import {
     getallroomsCurrentStatus,
     getallnoncheckoutCheckins,
     getHotelSalesDetails, getRoomCheckInDetails, cancelBooking,getCheckoutStatementByDate,convertToAvailable,controlTaggedCheckIn,
-    getHoldCheckIns,releaseHold
+    getHoldCheckIns,releaseHold,getOtherCharges
 } from '../controllers/hotelController.js'
 import {
     addItem, getAllItems, getItems, getCategories, deleteItem, updateItem, generateKot, getKot, updateKotStatus, editKot,
@@ -398,6 +398,8 @@ router.post("/getHoldCheckOutData/:cmp_id",getHoldCheckIns);
 router.post("/unHoldCheckOut/:cmp_id",releaseHold);
 router.get('/getComplementaryCashOrBank/:cmp_id', authSecondary, secondaryIsBlocked, companyAuthentication, getComplementaryCashOrBank)
 router.post('/addComplementaryCashOrBank/:cmp_id', authSecondary, secondaryIsBlocked, companyAuthentication, addComplementaryCashOrBank)
+router.get('/otherCharges/:cmp_id', authSecondary, secondaryIsBlocked, companyAuthentication, getOtherCharges)
+
 // Route to get detailed booking information for a specific room and date
 
 export default router
