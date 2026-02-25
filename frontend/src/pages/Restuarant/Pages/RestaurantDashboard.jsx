@@ -53,7 +53,7 @@ const RestaurantPOS = () => {
   const [isMobile, setIsMobile] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
   const [showOrderSummary, setShowOrderSummary] = useState(false);
-const [billFormat, setBillFormat] = useState("format1");
+  const [billFormat, setBillFormat] = useState("format1");
   const [showOptions, setShowOptions] = useState(false);
   const [searchTerms, setSearchTerms] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -122,8 +122,6 @@ const [billFormat, setBillFormat] = useState("format1");
   );
   const shouldFetch = Boolean(cmp_id);
 
-  
-
   const queryClient = useQueryClient();
   const isAdmin =
     JSON.parse(localStorage.getItem("sUserData")).role === "admin"
@@ -148,19 +146,18 @@ const [billFormat, setBillFormat] = useState("format1");
     }
   }, [kotDataForEdit]);
 
+  useEffect(() => {
+    // Get format from organization configuration
+    const print1 = org?.configurations?.[0]?.defaultPrint?.restaurantPrint1;
+    const print2 = org?.configurations?.[0]?.defaultPrint?.restaurantPrint2;
 
-    useEffect(() => {
-      // Get format from organization configuration
-      const print1 = org?.configurations?.[0]?.defaultPrint?.restaurantPrint1;
-      const print2 = org?.configurations?.[0]?.defaultPrint?.restaurantPrint2;
-  
-      if (print2) {
-        setBillFormat("format2");
-      } else if (print1) {
-        setBillFormat("format1");
-      }
-    }, [org]);
-    
+    if (print2) {
+      setBillFormat("format2");
+    } else if (print1) {
+      setBillFormat("format1");
+    }
+  }, [org]);
+
   // Add this useFetch hook with other data fetching
   const { data: paymentTypeData } = useFetch(
     shouldFetch ? `/api/sUsers/getPaymentType/${cmp_id}` : null,
@@ -754,7 +751,7 @@ const [billFormat, setBillFormat] = useState("format1");
 
   const updateQuantity = (itemId, newQuantity) => {
     console.log("newQuantity:", newQuantity);
-  
+
     // else {
     setOrderItems(
       orderItems.map((item) =>
@@ -1707,102 +1704,100 @@ const [billFormat, setBillFormat] = useState("format1");
                 <div className="space-y-2">
                   {orderItems.map((item) => (
                     <div
-  key={item._id}
-  className="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-100 rounded-xl p-3 flex justify-between items-start hover:shadow-md transition-all duration-300 relative group"
->
-  {/* Close button in top-right corner */}
-  <button
-    className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white flex items-center justify-center rounded-full shadow-lg hover:scale-110 active:scale-95 transition-all duration-200 z-10"
-    onClick={() => removeFromOrder(item._id)} // You'll need to implement this function
-  >
-    ×
-  </button>
+                      key={item._id}
+                      className="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-100 rounded-xl p-3 flex justify-between items-start hover:shadow-md transition-all duration-300 relative group"
+                    >
+                      {/* Close button in top-right corner */}
+                      <button
+                        className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white flex items-center justify-center rounded-full shadow-lg hover:scale-110 active:scale-95 transition-all duration-200 z-10"
+                        onClick={() => removeFromOrder(item._id)} // You'll need to implement this function
+                      >
+                        ×
+                      </button>
 
-  <div className="flex-1 min-w-0 pr-2">
-    <h4 className="text-xs font-bold text-gray-800 line-clamp-2 mb-1">
-      {item.product_name}
-    </h4>
-    
-    <div className="flex items-center gap-2 flex-wrap">
-      <div className="flex items-center gap-1">
-        <span className="text-xs text-gray-600">₹</span>
-        <input
-          type="number"
-          value={item.price}
-          onChange={(e) => {
-            const newPrice = parseFloat(e.target.value);
-            setOrderItems(
-              orderItems.map((orderItem) =>
-                orderItem._id === item._id
-                  ? { ...orderItem, price: newPrice }
-                  : orderItem,
-              ),
-            );
-          }}
-          className="w-16 text-xs text-gray-600 bg-transparent border-none focus:outline-none focus:bg-white focus:border focus:border-indigo-300 focus:rounded px-1 py-0.5"
-          step="0.01"
-          min="0"
-        />
-        <span className="text-xs text-gray-600">
-          × {item.quantity}
-        </span>
-      </div>
-      <p className="text-xs font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-full">
-        ₹{(item.price * item.quantity).toFixed(2)}
-      </p>
-    </div>
-  </div>
+                      <div className="flex-1 min-w-0 pr-2">
+                        <h4 className="text-xs font-bold text-gray-800 line-clamp-2 mb-1">
+                          {item.product_name}
+                        </h4>
 
-  <div className="flex items-center gap-1.5">
-    <button
-      className="w-6 h-6 bg-gradient-to-r from-red-500 to-pink-500 text-white flex items-center justify-center rounded-full hover:from-red-600 hover:to-pink-600 hover:scale-110 active:scale-95 transition-all duration-200 shadow-lg disabled:opacity-50"
-      onClick={() =>
-        updateQuantity(
-          item._id,
-          Math.max(1, item.quantity - 1),
-        )
-      }
-      disabled={item.quantity <= 1}
-    >
-      <Minus className="w-3 h-3" />
-    </button>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs text-gray-600">₹</span>
+                            <input
+                              type="number"
+                              value={item.price}
+                              onChange={(e) => {
+                                const newPrice = parseFloat(e.target.value);
+                                setOrderItems(
+                                  orderItems.map((orderItem) =>
+                                    orderItem._id === item._id
+                                      ? { ...orderItem, price: newPrice }
+                                      : orderItem,
+                                  ),
+                                );
+                              }}
+                              className="w-16 text-xs text-gray-600 bg-transparent border-none focus:outline-none focus:bg-white focus:border focus:border-indigo-300 focus:rounded px-1 py-0.5"
+                              step="0.01"
+                              min="0"
+                            />
+                            <span className="text-xs text-gray-600">
+                              × {item.quantity}
+                            </span>
+                          </div>
+                          <p className="text-xs font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-full">
+                            ₹{(item.price * item.quantity).toFixed(2)}
+                          </p>
+                        </div>
+                      </div>
 
-    <div className="relative">
-      <input
-        className="text-sm font-bold w-12 text-center bg-white px-2 py-1 rounded-lg border border-gray-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-5"
-        type="text"
-        pattern="[0-9]*"
-        inputMode="numeric"
-        value={item.quantity == 0 ? "" : item.quantity}
-        onChange={(e) => {
-          const val = e.target.value;
-          if (
-            val === "" ||
-            val === "0" ||
-            /^\d+$/.test(val)
-          ) {
-            updateQuantity(item._id, parseInt(val) || 0);
-          }
-        }}
-        onBlur={(e) => {
-          const val = parseInt(e.target.value) || 1;
-          updateQuantity(item._id, Math.max(1, val));
-        }}
-      />
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          className="w-6 h-6 bg-gradient-to-r from-red-500 to-pink-500 text-white flex items-center justify-center rounded-full hover:from-red-600 hover:to-pink-600 hover:scale-110 active:scale-95 transition-all duration-200 shadow-lg disabled:opacity-50"
+                          onClick={() =>
+                            updateQuantity(
+                              item._id,
+                              Math.max(1, item.quantity - 1),
+                            )
+                          }
+                          disabled={item.quantity <= 1}
+                        >
+                          <Minus className="w-3 h-3" />
+                        </button>
 
-    </div>
+                        <div className="relative">
+                          <input
+                            className="text-sm font-bold w-12 text-center bg-white px-2 py-1 rounded-lg border border-gray-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-5"
+                            type="text"
+                            pattern="[0-9]*"
+                            inputMode="numeric"
+                            value={item.quantity == 0 ? "" : item.quantity}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (
+                                val === "" ||
+                                val === "0" ||
+                                /^\d+$/.test(val)
+                              ) {
+                                updateQuantity(item._id, parseInt(val) || 0);
+                              }
+                            }}
+                            onBlur={(e) => {
+                              const val = parseInt(e.target.value) || 1;
+                              updateQuantity(item._id, Math.max(1, val));
+                            }}
+                          />
+                        </div>
 
-    <button
-      className="w-6 h-6 bg-gradient-to-r from-green-500 to-emerald-500 text-white flex items-center justify-center rounded-full hover:from-green-600 hover:to-emerald-600 hover:scale-110 active:scale-95 transition-all duration-200 shadow-lg"
-      onClick={() =>
-        updateQuantity(item._id, item.quantity + 1)
-      }
-    >
-      <Plus className="w-3 h-3" />
-    </button>
-  </div>
-</div>
-
+                        <button
+                          className="w-6 h-6 bg-gradient-to-r from-green-500 to-emerald-500 text-white flex items-center justify-center rounded-full hover:from-green-600 hover:to-emerald-600 hover:scale-110 active:scale-95 transition-all duration-200 shadow-lg"
+                          onClick={() =>
+                            updateQuantity(item._id, item.quantity + 1)
+                          }
+                        >
+                          <Plus className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
                   ))}
                 </div>
               )}
@@ -1815,7 +1810,7 @@ const [billFormat, setBillFormat] = useState("format1");
                   Total Amount
                 </span>
                 <span className="text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                  ₹{getTotalAmount()}
+                  ₹{Math.round(getTotalAmount()).toFixed(2)}
                 </span>
               </div>
 
@@ -2302,7 +2297,7 @@ const [billFormat, setBillFormat] = useState("format1");
               <div className="border-t border-gray-200 pt-2 mt-2 flex justify-between font-semibold text-gray-800">
                 <span className="text-sm">Total Amount</span>
                 <span className="text-base text-blue-600">
-                  ₹{getTotalAmount()}
+                  ₹{Math.round(getTotalAmount()).toFixed(2)}
                 </span>
               </div>
 
