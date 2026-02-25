@@ -9,7 +9,7 @@ const RoomStatus = ({
   onClick,
   type,
 }) => {
-console.log(status)
+  console.log(status);
   const statusConfig = {
     vacant: {
       gradient: "from-emerald-500 to-teal-600",
@@ -22,7 +22,7 @@ console.log(status)
       border: "border-emerald-300/30",
       hoverBorder: "hover:border-emerald-200/50",
     },
-    "occupied" : {
+    occupied: {
       gradient: "from-sky-400 to-violet-600",
       shadow: "shadow-sky-500/25",
       hoverShadow: "hover:shadow-sky-500/40",
@@ -74,60 +74,56 @@ console.log(status)
     <div
       onClick={onClick}
       className={`
-        relative overflow-hidden rounded-xl cursor-pointer w-full
+        relative overflow-hidden rounded-lg cursor-pointer w-full
         bg-gradient-to-br ${config.gradient}
-        border-2 ${config.border} ${config.hoverBorder}
+        border ${config.border} ${config.hoverBorder}
         transition-all duration-300 ease-out
-        hover:scale-105 hover:-translate-y-1
+        hover:scale-105 hover:-translate-y-0.5
         ${config.shadow} ${config.hoverShadow}
-        hover:shadow-2xl ${config.glowColor}
-        group min-h-[45px] sm:min-h-[60px]
+        hover:shadow-lg ${config.glowColor}
+        group min-h-[38px]
         backdrop-blur-sm
         transform-gpu
       `}
     >
       {/* Animated background overlay */}
       <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 opacity-0 group-hover:opacity-100 transition-all duration-500 -translate-x-full group-hover:translate-x-full"></div>
-      
-      {/* Glass morphism effect */}
-      <div className="absolute inset-0 bg-white/5 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl"></div>
 
-      {/* Status indicator with pulse animation */}
-      <div className="absolute top-2 right-2">
-        <div className={`w-2 h-2 ${config.dotColor} rounded-full animate-pulse`}></div>
-        <div className={`absolute inset-0 w-2 h-2 ${config.dotColor} rounded-full opacity-75 animate-ping border-x-2 border-gray-500`}></div>
+      {/* Glass morphism effect */}
+      <div className="absolute inset-0 bg-white/5 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg"></div>
+
+      {/* Status dot */}
+      <div className="absolute top-1 right-1">
+        <div className={`w-1.5 h-1.5 ${config.dotColor} rounded-full animate-pulse`}></div>
+        <div className={`absolute inset-0 w-1.5 h-1.5 ${config.dotColor} rounded-full opacity-75 animate-ping border-x border-gray-500`}></div>
       </div>
 
       {/* Content */}
-      <div className="relative p-3 sm:p-4 h-full flex flex-col justify-between z-10">
-        <div className="flex justify-between items-start">
-          <div className="flex flex-col">
-            <span
-              className={`${config.textColor} font-bold text-sm sm:text-lg tracking-tight drop-shadow-sm group-hover:drop-shadow-md transition-all duration-200`}
-            >
-             <p> {room}</p>
-             <p className={`text-sm font-medium ${config.statusColor}`}>{status}</p>
+      <div className="relative px-2 py-1.5 h-full flex flex-col justify-between z-10">
+        <div className="flex flex-col">
+          {/* Room name */}
+          <span className={`${config.textColor} font-bold text-xs leading-tight tracking-tight drop-shadow-sm`}>
+            {room}
+          </span>
+          {/* Status label */}
+          <span className={`text-xs font-medium leading-tight ${config.statusColor}`}>
+            {status}
+          </span>
+          {type && (
+            <span className={`${config.textColor} text-xs opacity-80 font-medium leading-tight`}>
+              {type}
             </span>
-            {type && (
-              <span
-                className={`${config.textColor} text-xs sm:text-sm opacity-80 group-hover:opacity-100 transition-opacity duration-200 font-medium`}
-              >
-                {type}
-              </span>
-            )}
-          </div>
+          )}
         </div>
 
-        {/* Additional info section */}
+        {/* Guest / dates — only shown when data exists */}
         {(guest || checkIn || checkOut) && (
-          <div className="mt-2 space-y-1">
+          <div className="mt-1 space-y-0.5">
             {guest && (
-              <div className={`${config.textColor} text-xs opacity-75 group-hover:opacity-100 transition-opacity`}>
-                {guest}
-              </div>
+              <div className={`${config.textColor} text-xs opacity-75`}>{guest}</div>
             )}
             {(checkIn || checkOut) && (
-              <div className={`${config.textColor} text-xs opacity-75 group-hover:opacity-100 transition-opacity flex gap-2`}>
+              <div className={`${config.textColor} text-xs opacity-75 flex gap-1`}>
                 {checkIn && <span>In: {checkIn}</span>}
                 {checkOut && <span>Out: {checkOut}</span>}
               </div>
@@ -136,9 +132,10 @@ console.log(status)
         )}
       </div>
 
-      {/* Bottom highlight line */}
-      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white/20 group-hover:bg-white/40 transition-colors duration-300"></div>
+      {/* Bottom highlight */}
+      <div className="absolute bottom-0 left-0 right-0 h-px bg-white/20 group-hover:bg-white/40 transition-colors duration-300"></div>
     </div>
+
   );
 };
 

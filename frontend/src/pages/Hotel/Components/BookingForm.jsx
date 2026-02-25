@@ -924,7 +924,7 @@ function BookingForm({
   };
 
   const tariffMode = isTariffRateChange === true;
-
+console.log('hi');
   return (
     <>
       {isLoading || visitOfPurposeLoading || loading ? (

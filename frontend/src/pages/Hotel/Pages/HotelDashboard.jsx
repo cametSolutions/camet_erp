@@ -604,28 +604,23 @@ const HotelDashboard = () => {
     <>
       <style>
         {`
-        .custom-scroll::-webkit-scrollbar {
-          width: 8px;
-        }
-        .custom-scroll::-webkit-scrollbar-track {
-          background: rgba(255, 255, 255, 0.1);
-          border-radius: 4px;
-        }
-        .custom-scroll::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.3);
-          border-radius: 4px;
-        }
-        .custom-scroll::-webkit-scrollbar-thumb:hover {
-          background: rgba(255, 255, 255, 0.5);
-        }
+       .custom-scroll::-webkit-scrollbar { width: 6px; }
+      .custom-scroll::-webkit-scrollbar-track { background: rgba(255,255,255,0.1); border-radius:4px; }
+      .custom-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius:4px; }
+      .custom-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.5); }
+      @keyframes slide-in {
+        from { opacity:0; transform:translateX(-20px); }
+        to   { opacity:1; transform:translateX(0); }
+      }
+      .animate-slide-in { animation: slide-in 0.4s ease-out forwards; }
       `}
       </style>
-      <div className="min-h-screen bg-slate-900 relative overflow-hidden">
+      <div className="h-screen overflow-hidden bg-slate-900 relative flex flex-col">
         <AnimatedBackground />
 
         {/* Main Layout Container */}
-        <div className="relative z-10">
-          <div className="p-3">
+         <div className="relative z-10 flex flex-col h-full">
+         <div className="p-3 flex flex-col h-full overflow-hidden">
             {/* Header */}
             <div className="bg-[#0B1D34] p-3 mb-4">
               <div className="flex flex-col md:flex-row md:items-center gap-3">
@@ -893,13 +888,13 @@ const HotelDashboard = () => {
             </div>
 
             {/* Main Content Area - Side by Side Layout */}
-            <div className={`flex gap-6 ${isMobile ? "flex-col" : "flex-row"}`}>
+           <div className={`flex gap-6 flex-1 overflow-hidden ${isMobile ? "flex-col" : "flex-row"}`}>
               {/* Left Side - Room Grid */}
-              <div
-                className={`${
-                  isMobile ? "w-full" : showBookingDetails ? "flex-1" : "w-full"
-                } transition-all duration-300`}
-              >
+             <div
+  className={`${
+    isMobile ? "w-full" : showBookingDetails ? "flex-1" : "w-full"
+  } transition-all duration-300 overflow-y-auto custom-scroll`}
+>
                 {/* Loading State */}
                 {loader && (
                   <div className="flex justify-center items-center py-8">
@@ -915,23 +910,23 @@ const HotelDashboard = () => {
                           {brand} ({rooms.length})
                         </h2>
                         <div
-                          className={`grid gap-3 ${
-                            isMobile
-                              ? "grid-cols-2 sm:grid-cols-4"
-                              : showBookingDetails
-                                ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5"
-                                : "grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8"
-                          }`}
+                     className={`grid gap-2 ${
+  isMobile
+    ? "grid-cols-4 sm:grid-cols-6"
+    : showBookingDetails
+      ? "grid-cols-5 sm:grid-cols-6 md:grid-cols-7 lg:grid-cols-7"
+      : "grid-cols-5 sm:grid-cols-6 md:grid-cols-7 lg:grid-cols-8"
+}`}
                         >
                           {rooms.map((room, index) => (
                             <div
                               key={room._id}
                               style={{ animationDelay: `${index * 0.05}s` }}
-                              className={`animate-slide-in rounded-lg p-1 ${
-                                selectedRooms.some((r) => r.roomId === room._id)
-                                  ? "animate-bounce bg-white "
-                                  : ""
-                              }`}
+                             className={`animate-slide-in rounded p-0 ${
+    selectedRooms.some((r) => r.roomId === room._id)
+      ? "animate-bounce bg-white"
+      : ""
+  }`}
                               onClick={() => setSelectedRoom(room)}
                               onMouseEnter={(e) => {
                                 setHoveredRoomId(room._id);
@@ -948,13 +943,15 @@ const HotelDashboard = () => {
                                 handleConvertToAvailable(room);
                               }}
                             >
-                              <RoomStatus
-                                {...room}
-                                room={room.roomName}
-                                name={room.roomName}
-                                status={room.status}
-                                onClick={() => setSelectedRoom(room)}
-                              />
+                             <div style={{ transform: "scale(0.82)", transformOrigin: "top left", width: "122%" }}>
+  <RoomStatus
+    {...room}
+    room={room.roomName}
+    name={room.roomName}
+    status={room.status}
+    onClick={() => setSelectedRoom(room)}
+  />
+</div>
 
                               {hoveredRoomId === room._id &&
                                 ReactDOM.createPortal(
@@ -1005,7 +1002,7 @@ const HotelDashboard = () => {
                       isMobile
                         ? "fixed right-0 top-0 z-50 w-80 max-w-[90vw] h-full bg-[#0B1D34] border-l border-white/20 transform transition-transform duration-300 ease-in-out"
                         : "w-80 flex-shrink-0 bg-[#0B1D34] border border-white/20 rounded-lg"
-                    } flex flex-col h-screen ${isMobile ? "p-0" : "p-4"}`}
+                 } flex flex-col overflow-hidden ${isMobile ? "p-0" : "p-4"}`}
                     style={scrollbarStyles}
                   >
                     {/* Booking Section Header */}
