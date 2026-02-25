@@ -82,12 +82,16 @@ function VoucherThreeInchPdfFormat2({
       "N/A"
     }`;
   };
-
-  const netAmount = Number(data?.finalAmount || 0).toFixed(2);
-  const discount = Number(data?.discount || 0).toFixed(2);
-  const tax = calculateTotalTax().toFixed(2);
-  const cgst = (calculateTotalTax() / 2).toFixed(2);
-
+console.log(data)  
+  const netAmount = Math.round(Number(data?.finalAmount || 0)).toFixed(2);
+  const discount = Math.round(Number(data?.totalAdditionalCharges || data?.additionalCharges[0]?.amount)).toFixed(2);
+  console.log(discount)
+  const tax = Math.round(calculateTotalTax()).toFixed(2);
+  const cgst = Math.round(calculateTotalTax() / 2).toFixed(2);
+  console.log(cgst)
+  console.log(data?.subtotal)
+  const cgstPercentage = (Number(cgst) / Number(data.subtotal || data.subTotal)) * 100;
+console.log(cgstPercentage)
   const handlePrint = useReactToPrint({
     content: () => contentToPrint.current,
   });
@@ -199,17 +203,17 @@ function VoucherThreeInchPdfFormat2({
         <div style={{ fontSize: "10px", marginBottom: "4px" }}>
           <div style={{ ...flexRow, marginBottom: "2px", fontWeight: "bold" }}>
             <div style={{ marginLeft: "auto", width: "60px" }}>Amount</div>
-            <div style={textRight}>{subTotal.toFixed(2)}</div>
+            <div style={textRight}>{Math.round(subTotal).toFixed(2)}</div>
           </div>
 
           {isIndian && isSameState && calculateTotalTax() > 0 && (
             <>
               <div style={flexRow}>
-                <div style={{ marginLeft: "auto", width: "70px", fontWeight: "bold" }}>CGST @2.5%</div>
+                <div style={{ marginLeft: "auto", width: "70px", fontWeight: "bold" }}>CGST {Math.round(cgstPercentage)}%</div>
                 <div style={textRight}>{cgst}</div>
               </div>
               <div style={flexRow}>
-                <div style={{ marginLeft: "auto", width: "70px", fontWeight: "bold" }}>SGST @2.5%</div>
+                <div style={{ marginLeft: "auto", width: "70px", fontWeight: "bold" }}>SGST {Math.round(cgstPercentage)}%</div>
                 <div style={textRight}>{cgst}</div>
               </div>
             </>
@@ -236,7 +240,7 @@ function VoucherThreeInchPdfFormat2({
         <div style={{ fontSize: "10px", marginBottom: "6px" }}>
           <div style={{ ...flexRow, fontWeight: "bold", marginBottom: "2px" }}>
             <div style={bold}>{getRoomNumber()}</div>
-            <div style={{ paddingRight: "3px", fontWeight: "bold" }}>Total: {netAmount}</div>
+            <div style={{ paddingRight: "3px", fontWeight: "bold" }}>Total: {Math.round(data?.subTotal || data.subtotal).toFixed(2)}</div>
           </div>
 
           {data?.voucherNumber?.[0]?.checkInNumber && (
@@ -259,7 +263,8 @@ function VoucherThreeInchPdfFormat2({
 
         {/* Net Amount */}
         <div style={{ ...centerText, fontSize: "14px", fontWeight: "bold", marginBottom: "8px", paddingBottom: "6px", borderBottom: "1px dotted #000" }}>
-          Net Amount: {netAmount}
+          Net Amount: {netAmount 
+          }
         </div>
 
         {/* Footer */}
