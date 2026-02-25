@@ -12,7 +12,7 @@ function VoucherThreeInchPdf({
   sendToParent,
   handlePrintData,
 }) {
-console.log("hhh")
+console.log(data)
   const [subTotal, setSubTotal] = useState("");
   const [additinalCharge, setAdditinalCharge] = useState("");
   const [inWords, setInWords] = useState("");
@@ -76,14 +76,17 @@ console.log("hhh")
   useEffect(() => {
     if (data && data.items) {
       ///please check it is temperary
+      console.log(data);
       data.discount = data.additionalCharges[0]?.value;
       const calculatedSubTotal  = data.items
         .reduce(
-          (acc, curr) => acc + Number(curr?.total) * Number(curr?.totalCount),
+          (acc, curr) => acc + (Number(curr?.total) - Number(curr?.totalIgstAmt)),
           0
         )
         .toFixed(2);
-       setSubTotal(Number(data?.subtotal || calculatedSubTotal));
+        console.log(data.items[0].total);
+        console.log(data.subtotal);
+       setSubTotal(Number(calculatedSubTotal || data?.subTotal ));
 
       const addiTionalCharge = data?.additionalCharges
         ?.reduce((acc, curr) => {
