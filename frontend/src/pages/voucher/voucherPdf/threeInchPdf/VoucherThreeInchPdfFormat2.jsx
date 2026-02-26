@@ -81,13 +81,16 @@ function VoucherThreeInchPdfFormat2({
     if (!hasCheckIn || !roomNo) return null;
     return `Room: ${roomNo}`;
   };
-
-  // FIXED: All amounts properly rounded with Number().toFixed(2)
-  const netAmount = Number(data?.finalAmount || 0).toFixed(2);
-  const discount = Number(data?.discount || 0).toFixed(2);
-  const tax = Number(calculateTotalTax()).toFixed(2);
-  const cgst = Number(calculateTotalTax() / 2).toFixed(2);
-
+console.log(data)  
+  const netAmount = Math.round(Number(data?.finalAmount || 0)).toFixed(2);
+  const discount = Math.round(Number(data?.totalAdditionalCharges || data?.additionalCharges[0]?.amount)).toFixed(2);
+  console.log(discount)
+  const tax = Math.round(calculateTotalTax()).toFixed(2);
+  const cgst = Math.round(calculateTotalTax() / 2).toFixed(2);
+  console.log(cgst)
+  console.log(data?.subtotal)
+  const cgstPercentage = (Number(cgst) / Number(data.subtotal || data.subTotal)) * 100;
+console.log(cgstPercentage)
   const handlePrint = useReactToPrint({
     content: () => contentToPrint.current,
   });
@@ -213,12 +216,12 @@ function VoucherThreeInchPdfFormat2({
 
           <div style={{ borderBottom: "1px dotted #000", margin: "6px 0" }} />
 
-          {/* Totals */}
-          <div style={{ fontSize: "10px", marginBottom: "4px" }}>
-            <div style={{ ...flexRow, marginBottom: "2px", fontWeight: "bold" }}>
-              <div style={{ marginLeft: "auto", width: "60px" }}>Amount</div>
-              <div style={textRight}>{Number(subTotal).toFixed(2)}</div>  {/* FIXED: Proper rounding */}
-            </div>
+        {/* Totals */}
+        <div style={{ fontSize: "10px", marginBottom: "4px" }}>
+          <div style={{ ...flexRow, marginBottom: "2px", fontWeight: "bold" }}>
+            <div style={{ marginLeft: "auto", width: "60px" }}>Amount</div>
+            <div style={textRight}>{Math.round(subTotal).toFixed(2)}</div>
+          </div>
 
             {isIndian && isSameState && calculateTotalTax() > 0 && (
               <>
@@ -235,15 +238,15 @@ function VoucherThreeInchPdfFormat2({
 
             {isIndian && !isSameState && calculateTotalTax() > 0 && (
               <div style={flexRow}>
-                <div style={{ marginLeft: "auto", width: "70px" }}>IGST @5%</div>
-                <div style={textRight}>{tax}</div>
+                <div style={{ marginLeft: "auto", width: "70px", fontWeight: "bold" }}>CGST {Math.round(cgstPercentage)}%</div>
+                <div style={textRight}>{cgst}</div>
               </div>
             )}
 
             {!isIndian && calculateTotalTax() > 0 && (
               <div style={flexRow}>
-                <div style={{ marginLeft: "auto", width: "70px" }}>VAT</div>
-                <div style={textRight}>{tax}</div>
+                <div style={{ marginLeft: "auto", width: "70px", fontWeight: "bold" }}>SGST {Math.round(cgstPercentage)}%</div>
+                <div style={textRight}>{cgst}</div>
               </div>
             )}
           </div>
@@ -257,12 +260,18 @@ function VoucherThreeInchPdfFormat2({
               <div style={{ paddingRight: "3px", fontWeight: "bold" }}>Total: {netAmount}</div>
             </div>
 
-            {data?.voucherNumber?.[0]?.checkInNumber && (
-              <div style={flexRow}>
-                <div style={bold}>{data.voucherNumber[0].checkInNumber}</div>
-                <div style={{ paddingRight: "3px" }}>
-                  GST: <span style={bold}>{tax}</span>
-                </div>
+        {/* Final Details */}
+        <div style={{ fontSize: "10px", marginBottom: "6px" }}>
+          <div style={{ ...flexRow, fontWeight: "bold", marginBottom: "2px" }}>
+            <div style={bold}>{getRoomNumber()}</div>
+            <div style={{ paddingRight: "3px", fontWeight: "bold" }}>Total: {Math.round(data?.subTotal || data.subtotal).toFixed(2)}</div>
+          </div>
+
+          {data?.voucherNumber?.[0]?.checkInNumber && (
+            <div style={flexRow}>
+              <div style={bold}>{data.voucherNumber[0].checkInNumber}</div>
+              <div style={{ paddingRight: "3px" }}>
+                GST: <span style={bold}>{tax}</span>
               </div>
             )}
 
@@ -275,10 +284,11 @@ function VoucherThreeInchPdfFormat2({
 
           <div style={{ borderBottom: "1px dotted #000", margin: "6px 0" }} />
 
-          {/* Net Amount */}
-          <div style={{ ...centerText, fontSize: "14px", fontWeight: "bold", marginBottom: "8px", paddingBottom: "6px", borderBottom: "1px dotted #000" }}>
-            Net Amount: {netAmount}
-          </div>
+        {/* Net Amount */}
+        <div style={{ ...centerText, fontSize: "14px", fontWeight: "bold", marginBottom: "8px", paddingBottom: "6px", borderBottom: "1px dotted #000" }}>
+          Net Amount: {netAmount 
+          }
+        </div>
 
           {/* Footer */}
           <div style={{ ...centerText, fontSize: "11px", fontWeight: "bold", marginTop: "8px" }}>

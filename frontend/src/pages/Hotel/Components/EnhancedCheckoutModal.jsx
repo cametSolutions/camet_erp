@@ -143,8 +143,14 @@ export default function EnhancedCheckoutModal({
   };
 
   // Remove a room from checkout (partial checkout)
-  const handleRemoveRoom = (index) => {
-    const updated = checkouts.filter((_, i) => i !== index);
+  const handleRemoveRoom = (roomId) => {
+    console.log(roomId)
+    console.log(roomAssignments);
+    const updatedRomAssignments = roomAssignments.filter(
+      (room) => room.roomId !== roomId,
+    );
+    setRoomAssignments(updatedRomAssignments);
+    const updated = checkouts.filter((checkout) => checkout._id !== roomId);
     setCheckouts(updated);
   };
 
@@ -685,7 +691,7 @@ export default function EnhancedCheckoutModal({
                           </p>
                         </div>
                         <button
-                          onClick={() => handleRemoveRoom(i)}
+                          onClick={() => handleRemoveRoom(a.roomId)}
                           className="text-red-500 hover:text-red-700"
                         >
                           <Trash2 size={14} />

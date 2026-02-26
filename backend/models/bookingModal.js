@@ -105,6 +105,7 @@ const selectedRoomSchema = new mongoose.Schema({
   totalIgstAmt: Number,
   unit: String,
   lastRateUpdatedAt: { type: Date, default: Date.now },
+  isCheckedOut: { type: Boolean, default: false },
 });
 
 const bookingSchema = new mongoose.Schema(
