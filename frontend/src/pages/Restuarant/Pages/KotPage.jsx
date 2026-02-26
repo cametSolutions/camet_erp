@@ -891,6 +891,7 @@ const OrdersDashboard = () => {
     let newObject = {
       Date: new Date(),
       voucherType: "sales",
+        orderType: selectedKot.map(k => k.type).filter(Boolean).join(", "), 
       serialNumber: saleVoucherData?.series?.currentNumber,
       userLevelSerialNumber: saleVoucherData?.series?.currentNumber,
       salesNumber: saleVoucherData?.number,

@@ -5,7 +5,6 @@ import { defaultPrintSettings } from "../../../../../utils/defaultConfigurations
 import { useLocation } from "react-router-dom";
 import { useReactToPrint } from "react-to-print";
 import TitleDiv from "@/components/common/TitleDiv";
-import { Title } from "@radix-ui/react-dialog";
 
 function VoucherThreeInchPdfFormat2({
   data,
@@ -16,7 +15,7 @@ function VoucherThreeInchPdfFormat2({
   const [subTotal, setSubTotal] = useState(0);
   const location = useLocation();
   const contentToPrint = useRef(null);
-  
+
   !data && (data = location?.state);
   !org && (org = useSelector((state) => state?.secSelectedOrganization?.secSelectedOrg));
 
@@ -25,7 +24,7 @@ function VoucherThreeInchPdfFormat2({
   const isSameState = org?.state?.toLowerCase() === party?.state?.toLowerCase() || !party?.state;
 
   const voucherType = data?.voucherType;
-  
+
   const getVoucherNumber = () => {
     if (!voucherType) return "";
     if (voucherType === "sales" || voucherType === "vanSale") return "salesNumber";
@@ -58,8 +57,7 @@ function VoucherThreeInchPdfFormat2({
     }
   }, [data]);
 
-  // FIXED: Proper tax calculation with Number() wrapper
-  const calculateTotalTax = () => 
+  const calculateTotalTax = () =>
     Number(data?.items?.reduce((acc, curr) => {
       return acc + Number(curr?.totalIgstAmt || curr?.totalCgstAmt + curr?.totalSgstAmt || 0);
     }, 0) || 0);
@@ -73,24 +71,22 @@ function VoucherThreeInchPdfFormat2({
 
   const getRoomNumber = () => {
     const hasCheckIn = data?.voucherNumber?.[0]?.checkInNumber;
-    const roomNo = data?.roomDetails?.roomno ||
-                  data?.voucherNumber?.[0]?.roomNumber ||
-                  data?.roomId?.roomno ||
-                  data?.roomId?.roomName;
-    
+    const roomNo =
+      data?.roomDetails?.roomno ||
+      data?.voucherNumber?.[0]?.roomNumber ||
+      data?.roomId?.roomno ||
+      data?.roomId?.roomName;
+
     if (!hasCheckIn || !roomNo) return null;
     return `Room: ${roomNo}`;
   };
-console.log(data)  
+
   const netAmount = Math.round(Number(data?.finalAmount || 0)).toFixed(2);
-  const discount = Math.round(Number(data?.totalAdditionalCharges || data?.additionalCharges[0]?.amount)).toFixed(2);
-  console.log(discount)
+  const discount = Math.round(Number(data?.totalAdditionalCharges || data?.additionalCharges?.[0]?.amount)).toFixed(2);
   const tax = Math.round(calculateTotalTax()).toFixed(2);
   const cgst = Math.round(calculateTotalTax() / 2).toFixed(2);
-  console.log(cgst)
-  console.log(data?.subtotal)
-  const cgstPercentage = (Number(cgst) / Number(data.subtotal || data.subTotal)) * 100;
-console.log(cgstPercentage)
+  const cgstPercentage = (Number(cgst) / Number(data?.subtotal || data?.subTotal)) * 100;
+
   const handlePrint = useReactToPrint({
     content: () => contentToPrint.current,
   });
@@ -116,6 +112,7 @@ console.log(cgstPercentage)
   const textLeft = { textAlign: "left", paddingLeft: "3px" };
   const centerText = { textAlign: "center" };
   const bold = { fontWeight: "bold" };
+
   const headerGrid = {
     display: "grid",
     gridTemplateColumns: "35px 1fr 45px 55px 65px",
@@ -125,6 +122,7 @@ console.log(cgstPercentage)
     borderBottom: "1px dotted #000",
     marginBottom: "4px",
   };
+
   const itemGrid = {
     display: "grid",
     gridTemplateColumns: "35px 1fr 45px 55px 65px",
@@ -132,12 +130,13 @@ console.log(cgstPercentage)
     marginBottom: "2px",
     padding: "1px 0",
   };
-
+console.log(data)
   return (
     <>
       <TitleDiv title="Restaurant sale print" />
       <div className="grid mt-2">
         <div ref={contentToPrint} className="receipt-container" style={containerStyle}>
+
           {/* Header */}
           <div style={{ ...flexRow, marginBottom: "8px", paddingBottom: "6px", borderBottom: "1px dotted #000", alignItems: "flex-start", gap: "8px" }}>
             {org?.logo && (
@@ -152,7 +151,7 @@ console.log(cgstPercentage)
                 {org?.name}
               </div>
               {(org?.road || org?.place) && (
-                <div>{`${org?.road || ''}${org?.road && org?.place ? ', ' : ''}${org?.place || ''}`}</div>
+                <div>{`${org?.road || ""}${org?.road && org?.place ? ", " : ""}${org?.place || ""}`}</div>
               )}
               {org?.mobile && <div>PH: {org.mobile}</div>}
               {org?.gstNum && <div>GSTNO: {org.gstNum}</div>}
@@ -165,24 +164,33 @@ console.log(cgstPercentage)
           </div>
 
           {/* Bill Info */}
-          <div style={{ marginBottom: "6px", fontSize: "11px", fontWeight: "bold", paddingBottom: "6px", borderBottom: "1px dotted #000" }}>
-            <div style={flexRow}>
-              <span>Bill {getBillNumber()}</span>
-              <span>Date: {new Date(data?.Date || data?.createdAt).toLocaleDateString("en-GB")}</span>
-            </div>
-            <div style={flexRow}> 
-              {getTableNumber() && getTableNumber() !== "10" && (
-                <span>Table: {getTableNumber()}</span>
-              )}
-              <span>
-                Time: {new Date(data?.Date || data?.createdAt).toLocaleTimeString("en-GB", { 
-                  hour: "2-digit", 
-                  minute: "2-digit", 
-                  hour12: false 
-                })}
-              </span>
-            </div>
-          </div>
+<div style={{ marginBottom: "6px", fontSize: "11px", fontWeight: "bold", paddingBottom: "6px", borderBottom: "1px dotted #000" }}>
+  <div style={{ display: "flex" }}>
+    <span style={{ minWidth: "170px" }}>Bill {getBillNumber()}</span>
+    <span>Date: {new Date(data?.Date || data?.createdAt).toLocaleDateString("en-GB")}</span>
+  </div>
+  <div style={{ display: "flex" }}>
+    <span style={{ minWidth: "170px", visibility: getTableNumber() && getTableNumber() !== "10" ? "visible" : "hidden" }}>
+      Table: {getTableNumber()}
+    </span>
+    <span>
+      Time:{" "}
+      {new Date(data?.Date || data?.createdAt).toLocaleTimeString("en-GB", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      })}
+    </span>
+  </div>
+
+   {data?.orderType && (
+    <div style={{ marginTop: "2px" }}>
+      <span style={{ textTransform: "capitalize" }}>
+        {data.orderType.replace(/-/g, " ")}
+      </span>
+    </div>
+  )}
+</div>
 
           {/* Items Header */}
           <div style={headerGrid}>
@@ -193,60 +201,57 @@ console.log(cgstPercentage)
             <div style={textRight}>Amount</div>
           </div>
 
-          {/* FIXED: Items - Rate WITHOUT tax, Amount WITH tax */}
-          {data?.items?.map((el, index) => {
-            const total = Number(el?.total || 0);                    // WITH tax
-            const count = Number(el?.totalCount || 1);
-            // Calculate total tax for this item (IGST OR CGST+SGST)
-            const totalTax = Number(el?.totalIgstAmt || (el?.totalCgstAmt || 0) + (el?.totalSgstAmt || 0) || 0);
-            // Rate WITHOUT tax
-            const rateWithoutTax = count > 0 ? ((total - totalTax) / count).toFixed(2) : "0.00";
-            
-            return (
-              <div key={index} 
-              style={itemGrid}>
-                <div style={textLeft}>{index + 1}</div>
-                <div style={{ ...textLeft, wordBreak: "break-word" }}>{el.product_name}</div>
-                <div style={centerText}>{count}</div>
-                <div style={textRight}>{rateWithoutTax}</div>  {/* WITHOUT tax */}
-                <div style={textRight}>{total.toFixed(2)}</div>  {/* WITH tax */}
-              </div>
-            );
-          })}
+          {/* Items */}
+        {data?.items?.map((el, index) => {
+  const total = Number(el?.total || 0);
+  const count = Number(el?.totalCount || 1);
+  const totalTax = Number(el?.totalIgstAmt || (el?.totalCgstAmt || 0) + (el?.totalSgstAmt || 0) || 0);
+  const rateWithoutTax = count > 0 ? ((total - totalTax) / count).toFixed(2) : "0.00";
+  const amountWithoutTax = (Number(rateWithoutTax) * count).toFixed(2); // rate × qty
 
+  return (
+    <div key={index} style={itemGrid}>
+      <div style={textLeft}>{index + 1}</div>
+      <div style={{ ...textLeft, wordBreak: "break-word" }}>{el.product_name}</div>
+      <div style={centerText}>{count}</div>
+      <div style={textRight}>{rateWithoutTax}</div>
+      <div style={textRight}>{amountWithoutTax}</div> {/* rate × qty, no tax */}
+    </div>
+  );
+})}
           <div style={{ borderBottom: "1px dotted #000", margin: "6px 0" }} />
 
-        {/* Totals */}
-        <div style={{ fontSize: "10px", marginBottom: "4px" }}>
-          <div style={{ ...flexRow, marginBottom: "2px", fontWeight: "bold" }}>
-            <div style={{ marginLeft: "auto", width: "60px" }}>Amount</div>
-            <div style={textRight}>{Math.round(subTotal).toFixed(2)}</div>
-          </div>
+          {/* Totals */}
+          <div style={{ fontSize: "10px", marginBottom: "4px" }}>
+            <div style={{ ...flexRow, marginBottom: "2px", fontWeight: "bold" }}>
+              <div style={{ marginLeft: "auto", width: "60px" }}>Amount</div>
+              <div style={textRight}>{Math.round(subTotal).toFixed(2)}</div>
+            </div>
 
             {isIndian && isSameState && calculateTotalTax() > 0 && (
               <>
-                <div style={flexRow}>
-                  <div style={{ marginLeft: "auto", width: "70px", fontWeight: "bold" }}>CGST @2.5%</div>
-                  <div style={textRight}>{cgst}</div>
-                </div>
-                <div style={flexRow}>
-                  <div style={{ marginLeft: "auto", width: "70px", fontWeight: "bold" }}>SGST @2.5%</div>
-                  <div style={textRight}>{cgst}</div>
-                </div>
+                    <div style={flexRow}>
+                <div style={{ marginLeft: "auto", width: "70px", fontWeight: "bold" }}>CGST {Math.round(cgstPercentage)}%</div>
+                <div style={textRight}>{cgst}</div>
+              </div>
+              <div style={flexRow}>
+                <div style={{ marginLeft: "auto", width: "70px", fontWeight: "bold" }}>SGST {Math.round(cgstPercentage)}%</div>
+                <div style={textRight}>{cgst}</div>
+              </div>
               </>
             )}
 
             {isIndian && !isSameState && calculateTotalTax() > 0 && (
               <div style={flexRow}>
-                <div style={{ marginLeft: "auto", width: "70px", fontWeight: "bold" }}>CGST {Math.round(cgstPercentage)}%</div>
-                <div style={textRight}>{cgst}</div>
+                <div style={{ marginLeft: "auto", width: "70px", fontWeight: "bold" }}>IGST {Math.round(cgstPercentage * 2)}%</div>
+                <div style={textRight}>{tax}</div>
               </div>
             )}
 
             {!isIndian && calculateTotalTax() > 0 && (
               <div style={flexRow}>
-                <div style={{ marginLeft: "auto", width: "70px", fontWeight: "bold" }}>SGST {Math.round(cgstPercentage)}%</div>
-                <div style={textRight}>{cgst}</div>
+                <div style={{ marginLeft: "auto", width: "70px", fontWeight: "bold" }}>Tax {Math.round(cgstPercentage * 2)}%</div>
+                <div style={textRight}>{tax}</div>
               </div>
             )}
           </div>
@@ -254,26 +259,22 @@ console.log(cgstPercentage)
           <div style={{ borderBottom: "1px dotted #000", margin: "6px 0" }} />
 
           {/* Final Details */}
-          <div style={{ fontSize: "10px", marginBottom: "6px" }}>
-            <div style={{ ...flexRow, fontWeight: "bold", marginBottom: "2px" }}>
-              {getRoomNumber() && <div style={bold}>{getRoomNumber()}</div>}
-              <div style={{ paddingRight: "3px", fontWeight: "bold" }}>Total: {netAmount}</div>
-            </div>
+         <div style={{ fontSize: "10px", marginBottom: "6px" }}>
+  <div style={{ display: "flex", fontWeight: "bold", marginBottom: "2px" }}>
+    {getRoomNumber() && <div style={bold}>{getRoomNumber()}</div>}
+    <div style={{ marginLeft: "auto", paddingRight: "3px", fontWeight: "bold" }}>
+      Total: {netAmount}
+    </div>
+  </div>
 
-        {/* Final Details */}
-        <div style={{ fontSize: "10px", marginBottom: "6px" }}>
-          <div style={{ ...flexRow, fontWeight: "bold", marginBottom: "2px" }}>
-            <div style={bold}>{getRoomNumber()}</div>
-            <div style={{ paddingRight: "3px", fontWeight: "bold" }}>Total: {Math.round(data?.subTotal || data.subtotal).toFixed(2)}</div>
-          </div>
-
-          {data?.voucherNumber?.[0]?.checkInNumber && (
-            <div style={flexRow}>
-              <div style={bold}>{data.voucherNumber[0].checkInNumber}</div>
-              <div style={{ paddingRight: "3px" }}>
-                GST: <span style={bold}>{tax}</span>
+            {/* {data?.voucherNumber?.[0]?.checkInNumber && (
+              <div style={flexRow}>
+                <div style={bold}>{data.voucherNumber[0].checkInNumber}</div>
+                <div style={{ paddingRight: "3px" }}>
+                  GST: <span style={bold}>{tax}</span>
+                </div>
               </div>
-            )}
+            )} */}
 
             {Number(discount) > 0 && (
               <div style={{ ...flexRow, justifyContent: "flex-end", paddingRight: "3px", fontWeight: "bold" }}>
@@ -284,16 +285,16 @@ console.log(cgstPercentage)
 
           <div style={{ borderBottom: "1px dotted #000", margin: "6px 0" }} />
 
-        {/* Net Amount */}
-        <div style={{ ...centerText, fontSize: "14px", fontWeight: "bold", marginBottom: "8px", paddingBottom: "6px", borderBottom: "1px dotted #000" }}>
-          Net Amount: {netAmount 
-          }
-        </div>
+          {/* Net Amount */}
+          <div style={{ ...centerText, fontSize: "14px", fontWeight: "bold", marginBottom: "8px", paddingBottom: "6px", borderBottom: "1px dotted #000" }}>
+            Net Amount: {netAmount}
+          </div>
 
           {/* Footer */}
           <div style={{ ...centerText, fontSize: "11px", fontWeight: "bold", marginTop: "8px" }}>
             Thank You Visit Again
           </div>
+
         </div>
 
         {/* Controls */}
