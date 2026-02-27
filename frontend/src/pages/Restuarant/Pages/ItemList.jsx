@@ -116,85 +116,64 @@ const handleExcelExport = () => {
       toast.warning("No items to export");
       return;
     }
-
     setLoader(true);
 
-    // Prepare data for Excel with price levels
-   const excelData  = items.map(item => {
-  // Default empty rates
-  let priceRate = "";
-  let dineIn = "";
-  let takeAway = "";
-  let roomService = "";
-  let delivery = "";
+    const excelData = items.map(item => {
+      let priceRate = "", dineIn = "", takeAway = "", roomService = "", delivery = "";
 
-  item.Priceleveles?.forEach(pl => {
-    const level = pl?.pricelevel || {}; // 👈 safeguard
+      item.Priceleveles?.forEach(pl => {
+        const level = pl?.pricelevel || {};
+        if (!level.dineIn && !level.takeaway && !level.roomService && !level.delivery) {
+          priceRate = pl.pricerate;
+        }
+        if (level.dineIn === "enabled")      dineIn      = pl.pricerate;
+        if (level.takeaway === "enabled")    takeAway    = pl.pricerate;
+        if (level.roomService === "enabled") roomService = pl.pricerate;
+        if (level.delivery === "enabled")    delivery    = pl.pricerate;
+      });
 
-    // generic/default rate
-    if (!level.dineIn && !level.takeaway && !level.roomService && !level.delivery) {
-      priceRate = pl.pricerate;
-    }
-    if (level.dineIn === "enabled") dineIn = pl.pricerate;
-    if (level.takeaway === "enabled") takeAway = pl.pricerate;
-    if (level.roomService === "enabled") roomService = pl.pricerate;
-    if (level.delivery === "enabled") delivery = pl.pricerate;
-  });
+      return {
+        "Item ID": item._id || "",        // ✅ keep for update matching
+        "Product Name": item.product_name || "",
+        "HSN Code": item.hsn_code || "",
+        "Price Rate": priceRate,
+        "Dine In": dineIn,
+        "Take Away": takeAway,
+        "Room Service": roomService,
+        "Delivery": delivery,
+      };
+    });
 
-  return {
-    "Product Name": item.product_name || "",
-    "HSN Code": item.hsn_code || "",
-    "Price Rate": priceRate,
-    "Dine In": dineIn,
-    "Take Away": takeAway,
-    "Room Service": roomService,
-    "Delivery": delivery,
-    "Item ID": item._id || ""
-  };
-});
-
-
-    // Create worksheet
     const ws = XLSX.utils.json_to_sheet(excelData);
-
-    // Set column widths
     ws["!cols"] = [
-      { wch: 30 }, // Item Name
+      { wch: 25 }, // Item ID
+      { wch: 30 }, // Product Name
       { wch: 15 }, // HSN Code
       { wch: 12 }, // Price Rate
       { wch: 12 }, // Dine In
       { wch: 12 }, // Take Away
       { wch: 15 }, // Room Service
       { wch: 12 }, // Delivery
-      { wch: 25 }, // Item ID
     ];
 
-    // Create workbook
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Items Price Levels");
-
-    // Generate filename with timestamp
     const timestamp = new Date().toISOString().split("T")[0];
-    const filename = `Items_Price_Levels_${timestamp}.xlsx`;
-
-    // Save file
-    XLSX.writeFile(wb, filename);
-
+    XLSX.writeFile(wb, `Items_Price_Levels_${timestamp}.xlsx`);
     toast.success(`Exported ${items.length} items successfully`);
-    setLoader(false);
   } catch (error) {
     console.error("Export error:", error);
     toast.error("Failed to export items");
+  } finally {
     setLoader(false);
   }
 };
 
   // Excel Import Function - Updates using existing API
- const handleExcelImport = (event) => {
+const handleExcelImport = (event) => {
   const file = event.target.files[0];
   if (!file) return;
 
-  // Validate file type
   if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
     toast.error("Please upload a valid Excel file (.xlsx or .xls)");
     return;
@@ -207,12 +186,7 @@ const handleExcelExport = () => {
       setLoader(true);
       const data = new Uint8Array(e.target.result);
       const workbook = XLSX.read(data, { type: 'array' });
-      
-      // Get first sheet
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[sheetName];
-      
-      // Convert to JSON
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
       const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
       if (jsonData.length === 0) {
@@ -221,182 +195,252 @@ const handleExcelExport = () => {
         return;
       }
 
-      // Create a map of updates from Excel
-      const updatesMap = new Map();
-   jsonData.forEach(row => {
-  if (row['Item ID']) {
-    updatesMap.set(row['Item ID'], {
-      itemId: row['Item ID'],
-      product_name: row['Product Name'],
-      hsn_code: row['HSN Code'] || row['hsn_code'],
-      priceLevels: {
-        dineIn: parseFloat(row['Dine In']) || parseFloat(row['Price Rate']) || 0,
-        takeaway: parseFloat(row['Take Away']) || parseFloat(row['Price Rate']) || 0,
-        roomService: parseFloat(row['Room Service']) || parseFloat(row['Price Rate']) || 0,
-        delivery: parseFloat(row['Delivery']) || parseFloat(row['Price Rate']) || 0,
-      }
+      const toUpdate = [];  // rows with Item ID → update
+      const toCreate = [];  // rows without Item ID → create
+
+     jsonData.forEach(row => {
+  const productName = row['Product Name']?.toString().trim();
+  if (!productName) return;
+
+  // ✅ Clean HSN — remove \xa0 (non-breaking space) and normal spaces
+  const rawHsn = row['HSN Code']?.toString() || "";
+  const cleanHsn = rawHsn.replace(/\xa0/g, '').replace(/\s+/g, '').trim();
+
+  const priceLevels = {
+    default:     parseFloat(row['Price Rate'])   || 0,
+    dineIn:      parseFloat(row['Dine In'])      || parseFloat(row['Price Rate']) || 0,
+    takeaway:    parseFloat(row['Take Away'])    || parseFloat(row['Price Rate']) || 0,
+    roomService: parseFloat(row['Room Service']) || parseFloat(row['Price Rate']) || 0,
+    delivery:    parseFloat(row['Delivery'])     || parseFloat(row['Price Rate']) || 0,
+  };
+
+  const itemId = row['Item ID']?.toString().trim();
+
+  if (itemId) {
+    const currentItem = items.find(item => item._id === itemId);
+    if (currentItem) {
+      toUpdate.push({
+        productName,
+        hsn_code: cleanHsn,   // ✅ use cleaned HSN
+        priceLevels,
+        currentItem,
+      });
+    } else {
+      toCreate.push({
+        productName,
+        hsn_code: cleanHsn,   // ✅ use cleaned HSN
+        priceLevels,
+      });
+    }
+  } else {
+    toCreate.push({
+      productName,
+      hsn_code: cleanHsn,     // ✅ use cleaned HSN
+      priceLevels,
     });
   }
 });
 
-
-      if (updatesMap.size === 0) {
-        toast.error("No valid items found with Item IDs in the Excel file");
+      if (toUpdate.length === 0 && toCreate.length === 0) {
+        toast.error("No valid rows found in the Excel file");
         setLoader(false);
         return;
       }
 
-      // Show confirmation
+      // Show confirmation dialog
       const confirmation = await Swal.fire({
         title: 'Confirm Import',
-        html: `Found <strong>${updatesMap.size}</strong> items to update.<br/>`,
+        html: `
+          ${toUpdate.length > 0
+            ? `<div>✏️ <strong>${toUpdate.length}</strong> items will be <strong>updated</strong></div>`
+            : ''}
+          ${toCreate.length > 0
+            ? `
+              <div>➕ <strong>${toCreate.length}</strong> new items will be <strong>created</strong></div>
+              <div style="margin-top:10px; padding:10px; background:#fff3cd; border-radius:6px; font-size:12px; text-align:left">
+                ⚠️ <strong>Note for new items:</strong><br/>
+                HSN Code must already be registered in the system by your manager
+              </div>
+            `
+            : ''}
+        `,
         icon: 'question',
         showCancelButton: true,
         confirmButtonColor: '#3085d6',
         cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, update them!',
+        confirmButtonText: 'Yes, proceed!',
         cancelButtonText: 'Cancel',
       });
 
       if (!confirmation.isConfirmed) {
         setLoader(false);
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
-        }
+        if (fileInputRef.current) fileInputRef.current.value = '';
         return;
       }
 
-      // Update items one by one using your edit API
-      let successCount = 0;
+      let successUpdates = 0;
+      let successCreates = 0;
       let failCount = 0;
       const failedItems = [];
-      const updateArray = Array.from(updatesMap.values());
 
-      for (let i = 0; i < updateArray.length; i++) {
-        const update = updateArray[i];
+      // ── UPDATE existing items ──────────────────────────────
+      for (const { productName, hsn_code, priceLevels, currentItem } of toUpdate) {
         try {
-          // Find the current item to get its existing data
-          const currentItem = items.find(item => item._id === update.itemId);
-          
-          if (!currentItem) {
-            console.error(`Item ${update.itemId} not found in current items list`);
-            failCount++;
-            failedItems.push(`${update.product_name} (Item not found)`);
-            continue;
-          }
-
-          // Prepare formData with existing data + updates from Excel
           const formData = {
-            itemName: update.product_name || currentItem.product_name,
+            itemName: productName,
+            itemCode: currentItem.itemCode || "",
             foodCategory: currentItem.category?._id || currentItem.category,
             foodType: currentItem.sub_category?._id || currentItem.sub_category,
             unit: currentItem.unit,
-            hsn: update.hsn_code || currentItem.hsn_code, // FIXED: Use 'hsn' instead of 'hsn_code'
+            hsn: hsn_code || currentItem.hsn_code,  // controller uses formData.hsn
             cgst: currentItem.cgst,
             sgst: currentItem.sgst,
             igst: currentItem.igst,
-            imageUrl: currentItem.product_image ? { secure_url: currentItem.product_image } : undefined,
+            imageUrl: currentItem.product_image
+              ? { secure_url: currentItem.product_image }
+              : undefined,
           };
 
-          // Prepare tableData (price levels) with updates from Excel
+          // Build tableData matching existing price levels
           const tableData = currentItem.Priceleveles?.map(pl => {
-            const priceLevel = pl.pricelevel?._id || pl.pricelevel;
-            const priceLevelName = pl.pricelevel?.pricelevel?.toLowerCase().replace(/\s+/g, '_');
-            
-            // Use Excel price if available, otherwise keep existing price
-            const newPrice = update.priceLevels[priceLevelName] !== undefined 
-              ? update.priceLevels[priceLevelName] 
-              : pl.pricerate;
-            
+            const levelData = pl.pricelevel || {};
+            let newPrice = priceLevels.default;
+            if (levelData.dineIn === "enabled")      newPrice = priceLevels.dineIn;
+            if (levelData.takeaway === "enabled")    newPrice = priceLevels.takeaway;
+            if (levelData.roomService === "enabled") newPrice = priceLevels.roomService;
+            if (levelData.delivery === "enabled")    newPrice = priceLevels.delivery;
+
             return {
-              pricelevel: priceLevel,
-              pricerate: newPrice,
+              pricelevel: pl.pricelevel?._id || pl.pricelevel,
+              pricerate: newPrice || pl.pricerate,  // fallback to existing price
               priceDisc: pl.priceDisc || 0,
               applicabledt: pl.applicabledt || "",
-              serviceConfig: pl.serviceConfig || {
-                dineIn: "",
-                takeaway: "",
-                roomService: "",
-                delivery: ""
-              }
             };
           }) || [];
 
-          // Use the correct edit item endpoint
+          // matches route: POST /editItem/:cmp_id/:id
           await api.post(
-            `/api/sUsers/editItem/${orgId}/${update.itemId}`,
-            {
-              formData,
-              tableData,
-            },
-            {
-              headers: { "Content-Type": "application/json" },
-              withCredentials: true,
-            }
+            `/api/sUsers/editItem/${orgId}/${currentItem._id}`,
+            { formData, tableData },
+            { withCredentials: true }
           );
-          successCount++;
 
-          // Update local state for immediate UI feedback
-          setItems(prevItems =>
-            prevItems.map(item =>
-              item._id === update.itemId
-                ? { 
-                    ...item, 
-                    product_name: update.product_name || item.product_name,
-                    hsn_code: update.hsn_code || item.hsn_code,
-                    Priceleveles: tableData 
-                  }
-                : item
-            )
-          );
+          successUpdates++;
+
+          // Update local state immediately
+          setItems(prev => prev.map(item =>
+            item._id === currentItem._id
+              ? {
+                  ...item,
+                  product_name: productName,
+                  hsn_code,
+                  Priceleveles: tableData,
+                }
+              : item
+          ));
+
         } catch (error) {
-          console.error(`Failed to update item ${update.itemId}:`, error);
           failCount++;
-          failedItems.push(`${update.product_name} (${error.response?.data?.message || 'Update failed'})`);
+          failedItems.push(
+            `${productName} (${error.response?.data?.message || 'Update failed'})`
+          );
+        }
+      }
+
+      // ── CREATE new items ───────────────────────────────────
+      for (const { productName, hsn_code, priceLevels } of toCreate) {
+        try {
+          // HSN is required by your addItem controller
+          if (!hsn_code) {
+            failCount++;
+            failedItems.push(`${productName} (HSN Code is required — please add it in Excel)`);
+            continue;
+          }
+
+          const formData = {
+            itemName: productName,
+            itemCode: "",
+            hsn: hsn_code,        // controller uses formData.hsn
+            unit: "NOS",          // required field — adjust default if needed
+            cgst: 0,
+            sgst: 0,
+            igst: 0,
+            foodCategory: undefined,
+            foodType: undefined,
+          };
+
+          // Build tableData from Excel price levels
+          const tableData = [];
+          if (priceLevels.dineIn)      tableData.push({ pricerate: priceLevels.dineIn,      priceDisc: 0, applicabledt: "" });
+          if (priceLevels.takeaway)    tableData.push({ pricerate: priceLevels.takeaway,    priceDisc: 0, applicabledt: "" });
+          if (priceLevels.roomService) tableData.push({ pricerate: priceLevels.roomService, priceDisc: 0, applicabledt: "" });
+          if (priceLevels.delivery)    tableData.push({ pricerate: priceLevels.delivery,    priceDisc: 0, applicabledt: "" });
+
+          // Fallback if no specific levels
+          if (tableData.length === 0) {
+            tableData.push({ pricerate: priceLevels.default || 0, priceDisc: 0, applicabledt: "" });
+          }
+
+          // matches route: POST /addItem/:cmp_id
+          const res = await api.post(
+            `/api/sUsers/addItem/${orgId}`,
+            { formData, tableData },
+            { withCredentials: true }
+          );
+
+          successCreates++;
+
+          // Add new item to local state immediately
+          // your controller returns { data: newItem }
+          if (res.data?.data) {
+            setItems(prev => [res.data.data, ...prev]);
+          }
+
+        } catch (error) {
+          failCount++;
+          // Shows exact backend error e.g. "HSN not found", "godown missing" etc.
+          failedItems.push(
+            `${productName} (${error.response?.data?.message || 'Create failed'})`
+          );
         }
       }
 
       setLoader(false);
 
-      // Show results with details
-      if (successCount > 0) {
-        let resultHtml = `<strong>Success:</strong> ${successCount} items updated`;
-        if (failCount > 0) {
-          resultHtml += `<br/><strong>Failed:</strong> ${failCount} items`;
-          if (failedItems.length > 0) {
-            resultHtml += `<br/><br/><div style="text-align: left; max-height: 200px; overflow-y: auto;">`;
-            resultHtml += `<strong>Failed items:</strong><br/>`;
-            failedItems.forEach(item => {
-              resultHtml += `• ${item}<br/>`;
-            });
-            resultHtml += `</div>`;
-          }
-        }
-        
-        await Swal.fire({
-          title: 'Import Complete!',
-          html: resultHtml,
-          icon: successCount === updateArray.length ? 'success' : 'warning',
-          timer: failCount > 0 ? undefined : 3000,
-          timerProgressBar: failCount === 0,
-          showConfirmButton: failCount > 0,
-        });
+      // Show result summary
+      await Swal.fire({
+        title: 'Import Complete!',
+        html: `
+          ${successUpdates > 0
+            ? `<div>✅ <strong>${successUpdates}</strong> items updated</div>`
+            : ''}
+          ${successCreates > 0
+            ? `<div>➕ <strong>${successCreates}</strong> items created</div>`
+            : ''}
+          ${failCount > 0
+            ? `
+              <div style="color:#c0392b">❌ <strong>${failCount}</strong> failed</div>
+              <div style="text-align:left; max-height:150px; overflow-y:auto; margin-top:8px; font-size:12px">
+                ${failedItems.map(i => `• ${i}`).join('<br/>')}
+              </div>
+            `
+            : ''}
+        `,
+        icon: failCount > 0 ? 'warning' : 'success',
+        timer: failCount > 0 ? undefined : 3000,
+        timerProgressBar: failCount === 0,
+        showConfirmButton: failCount > 0,
+      });
 
-        // Refresh the list to get updated data
-        fetchRooms(1, searchTerm);
-      } else {
-        toast.error("Failed to update any items. Check if HSN codes exist in the system.");
-      }
+      // Refresh list to get latest data from server
+      fetchRooms(1, searchTerm);
 
     } catch (error) {
       console.error("Import error:", error);
       toast.error("Failed to process Excel file");
       setLoader(false);
     } finally {
-      // Reset file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
