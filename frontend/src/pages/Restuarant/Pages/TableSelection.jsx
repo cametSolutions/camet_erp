@@ -631,8 +631,9 @@ console.log(roomData)
                         };
                     }
                   };
-
-                  const statusConfig = getStatusConfig(table.status);
+const status = table.effectiveStatus || table.status;
+const statusConfig = getStatusConfig(status);
+                 
 
                   return (
                     <div
