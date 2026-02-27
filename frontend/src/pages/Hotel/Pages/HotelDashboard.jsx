@@ -578,7 +578,7 @@ const HotelDashboard = () => {
         state: {
           directConvertFromDashboard: actualCheckIn,
         },
-      }); 
+      });
     } else {
       try {
         let response = api.post(`/api/sUsers/convertToAvailable/${cmp_id}`, {
@@ -597,8 +597,6 @@ const HotelDashboard = () => {
       }
     }
   };
-
-
 
   return (
     <>
@@ -619,14 +617,14 @@ const HotelDashboard = () => {
         <AnimatedBackground />
 
         {/* Main Layout Container */}
-         <div className="relative z-10 flex flex-col h-full">
-         <div className="p-3 flex flex-col h-full overflow-hidden">
+        <div className="relative z-10 flex flex-col h-full">
+          <div className="p-3 flex flex-col h-full overflow-hidden">
             {/* Header */}
-            <div className="bg-[#0B1D34] p-3 mb-4">
+            <div className="bg-[#0B1D34] p-2 mb-4">
               <div className="flex flex-col md:flex-row md:items-center gap-3">
                 {/* Title */}
                 <div className="flex items-center gap-2 justify-center md:justify-start">
-                  <BedDouble className="w-5 h-5 text-cyan-400" />
+                  <BedDouble className="w-4 h-4 text-cyan-400" />
                   <h3 className="font-bold text-blue-400 text-base md:text-lg">
                     Room Status Overview
                   </h3>
@@ -635,28 +633,28 @@ const HotelDashboard = () => {
                 {/* Buttons */}
                 <div className="md:ml-auto flex flex-wrap gap-2">
                   <button
-                    className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold px-3 py-1 rounded text-sm"
+                    className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold px-2 py-1 rounded text-sm"
                     onClick={() => navigate("/sUsers/bookingList")}
                   >
                     Room Booking
                   </button>
 
                   <button
-                    className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold px-3 py-1 rounded text-sm"
+                    className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold px-2 py-1 rounded text-sm"
                     onClick={() => navigate("/sUsers/checkInList")}
                   >
                     Check In
                   </button>
 
                   <button
-                    className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold px-3 py-1 rounded text-sm"
+                    className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold px-2 py-1 rounded text-sm"
                     onClick={() => navigate("/sUsers/checkOutList")}
                   >
                     Check Out
                   </button>
 
                   <button
-                    className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold px-3 py-1 rounded text-sm"
+                    className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold px-2 py-1 rounded text-sm"
                     onClick={() => navigate("/sUsers/partyList")}
                   >
                     New Guest
@@ -664,7 +662,7 @@ const HotelDashboard = () => {
 
                   <button
                     className="
-          flex items-center gap-2 px-4 py-1.5 rounded-xl
+          flex items-center gap-2 px-2 py-1.5 rounded-xl
           font-semibold text-xs transition-all duration-300
           whitespace-nowrap
           bg-gradient-to-r from-green-600 to-emerald-600 text-white 
@@ -680,7 +678,7 @@ const HotelDashboard = () => {
 
                   <button
                     className="
-          flex items-center gap-2 px-4 py-1.5 rounded-xl
+          flex items-center gap-2 px-2 py-1.5 rounded-xl
           font-semibold text-xs transition-all duration-300
           whitespace-nowrap
           bg-gradient-to-r from-green-600 to-emerald-600 text-white 
@@ -695,7 +693,7 @@ const HotelDashboard = () => {
                   </button>
 
                   <button
-                    className="bg-gray-500 hover:bg-gray-600 text-white font-bold px-3 py-1 rounded text-sm flex items-center gap-1"
+                    className="bg-gray-500 hover:bg-gray-600 text-white font-bold px-2 py-1 rounded text-sm flex items-center gap-1"
                     onClick={() => setShowFilters(!showFilters)}
                   >
                     <Filter className="w-4 h-4" />
@@ -716,10 +714,10 @@ const HotelDashboard = () => {
             </div>
 
             {/* Date Selector */}
-            <div className="mb-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+            <div className="mb-2 flex flex-col sm:flex-row gap-4 items-start sm:items-center">
               {!showCalendar && (
                 <div>
-                  <div className="flex items-center gap-2 bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 shadow-sm">
+                  <div className="flex items-center gap-2 bg-slate-800 border border-slate-600 rounded-lg px-2 py-1 shadow-sm">
                     <label
                       htmlFor="selectedDate"
                       className="text-gray-300 text-sm font-medium whitespace-nowrap"
@@ -876,7 +874,7 @@ const HotelDashboard = () => {
               ].map((status, i) => (
                 <div key={i} className="flex items-center gap-2">
                   <div
-                    className={`w-7 h-6 rounded bg-gradient-to-r ${status.color} flex items-center justify-center`}
+                    className={`w-6 h-5 rounded bg-gradient-to-r ${status.color} flex items-center justify-center`}
                   >
                     <p className="text-white text-xs font-bold">
                       {status.count}
@@ -888,13 +886,15 @@ const HotelDashboard = () => {
             </div>
 
             {/* Main Content Area - Side by Side Layout */}
-           <div className={`flex gap-6 flex-1 overflow-hidden ${isMobile ? "flex-col" : "flex-row"}`}>
+            <div
+              className={`flex gap-6 flex-1 overflow-hidden ${isMobile ? "flex-col" : "flex-row"}`}
+            >
               {/* Left Side - Room Grid */}
-             <div
-  className={`${
-    isMobile ? "w-full" : showBookingDetails ? "flex-1" : "w-full"
-  } transition-all duration-300 overflow-y-auto custom-scroll`}
->
+              <div
+                className={`${
+                  isMobile ? "w-full" : showBookingDetails ? "flex-1" : "w-full"
+                } transition-all duration-300 overflow-y-auto custom-scroll`}
+              >
                 {/* Loading State */}
                 {loader && (
                   <div className="flex justify-center items-center py-8">
@@ -906,27 +906,27 @@ const HotelDashboard = () => {
                 {!loader && Object.entries(grouped).length > 0
                   ? Object.entries(grouped).map(([brand, rooms]) => (
                       <div key={brand} className="mt-3">
-                        <h2 className="text-white text-sm font-semibold mb-2">
+                        <h2 className="text-white text-sm font-semibold mb-2 ">
                           {brand} ({rooms.length})
                         </h2>
                         <div
-                     className={`grid gap-2 ${
-  isMobile
-    ? "grid-cols-4 sm:grid-cols-6"
-    : showBookingDetails
-      ? "grid-cols-5 sm:grid-cols-6 md:grid-cols-7 lg:grid-cols-7"
-      : "grid-cols-5 sm:grid-cols-6 md:grid-cols-7 lg:grid-cols-8"
-}`}
+                          className={`grid gap-2  ${
+                            isMobile
+                              ? "grid-cols-4 sm:grid-cols-6"
+                              : showBookingDetails
+                                ? "grid-cols-5 sm:grid-cols-6 md:grid-cols-6 lg:grid-cols-6"
+                                : "grid-cols-5 sm:grid-cols-6 md:grid-cols-6 lg:grid-cols-6"
+                          }`}
                         >
                           {rooms.map((room, index) => (
                             <div
                               key={room._id}
                               style={{ animationDelay: `${index * 0.05}s` }}
-                             className={`animate-slide-in rounded p-0 ${
-    selectedRooms.some((r) => r.roomId === room._id)
-      ? "animate-bounce bg-white"
-      : ""
-  }`}
+                              className={`animate-slide-in rounded  ${
+                                selectedRooms.some((r) => r.roomId === room._id)
+                                  ? "animate-bounce bg-white"
+                                  : ""
+                              }`}
                               onClick={() => setSelectedRoom(room)}
                               onMouseEnter={(e) => {
                                 setHoveredRoomId(room._id);
@@ -943,15 +943,22 @@ const HotelDashboard = () => {
                                 handleConvertToAvailable(room);
                               }}
                             >
-                             <div style={{ transform: "scale(0.82)", transformOrigin: "top left", width: "122%" }}>
-  <RoomStatus
-    {...room}
-    room={room.roomName}
-    name={room.roomName}
-    status={room.status}
-    onClick={() => setSelectedRoom(room)}
-  />
-</div>
+                              <div
+                                style={{
+                                  transform: "scale(0.82)",
+                                  transformOrigin: "top left",
+                                  width: "100%",
+                                  height: "100%",
+                                }}
+                              >
+                                <RoomStatus
+                                  {...room}
+                                  room={room.roomName}
+                                  name={room.roomName}
+                                  status={room.status}
+                                  onClick={() => setSelectedRoom(room)}
+                                />
+                              </div>
 
                               {hoveredRoomId === room._id &&
                                 ReactDOM.createPortal(
@@ -1002,7 +1009,7 @@ const HotelDashboard = () => {
                       isMobile
                         ? "fixed right-0 top-0 z-50 w-80 max-w-[90vw] h-full bg-[#0B1D34] border-l border-white/20 transform transition-transform duration-300 ease-in-out"
                         : "w-80 flex-shrink-0 bg-[#0B1D34] border border-white/20 rounded-lg"
-                 } flex flex-col overflow-hidden ${isMobile ? "p-0" : "p-4"}`}
+                    } flex flex-col overflow-hidden ${isMobile ? "p-0" : "p-4"}`}
                     style={scrollbarStyles}
                   >
                     {/* Booking Section Header */}

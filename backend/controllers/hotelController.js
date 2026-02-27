@@ -1380,6 +1380,7 @@ export const getBookings = async (req, res) => {
     // ✅ Process bookings to add payment status and travel agent info
     const processedBookings = bookings.map((booking) => {
       const processed = booking.toObject ? booking.toObject() : { ...booking };
+      
 
       // ✅ Add payment status (shows payment type names, not amounts)
       processed.paymentStatus = getPaymentStatus(processed.paymenttypeDetails);

@@ -248,6 +248,7 @@ function BookingList() {
       const totalAmount = calculateTotalAmount(
         location?.state?.selectedCheckOut,
       );
+      console.log(totalAmount);
 
       setSelectedDataForPayment((prevData) => ({
         ...prevData,
