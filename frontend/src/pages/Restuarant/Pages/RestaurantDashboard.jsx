@@ -371,7 +371,7 @@ const RestaurantPOS = () => {
         const params = new URLSearchParams();
         params.append("under", "restaurant");
         params.append("page", page);
-        params.append("limit", "100");
+        params.append("limit", "1000");
 
         const res = await api.get(
           `/api/sUsers/getAllItems/${cmp_id}?${params}`,
@@ -769,9 +769,9 @@ const RestaurantPOS = () => {
     );
   };
 
-  const getTotalItems = () => {
-    return orderItems.reduce((total, item) => total + item.quantity, 0);
-  };
+ const getTotalItems = () => {
+  return orderItems.length;
+};
 
   const handleCategorySelect = (category, name) => {
     let newObject = {
@@ -1041,7 +1041,7 @@ const RestaurantPOS = () => {
   return (
     <>
       {showPriceLevelSelect && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50">
+        <div className="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50 ">
           <div className="bg-white/95 backdrop-blur-xl p-4 md:p-6 rounded-xl shadow-2xl w-80 md:w-96 border border-white/20 animate-in zoom-in-95 duration-200">
             <label className="text-gray-800 mb-3 block font-semibold text-base md:text-lg">
               Select Price Level
@@ -1187,15 +1187,55 @@ const RestaurantPOS = () => {
                   </span>
                 </div>
 
-                <div
-                  className="hover:cursor-pointer hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-slate-800/50 border border-slate-700/60 rounded-md hover:bg-slate-700/60 transition-colors group"
-                  onClick={() => navigate("/sUsers/KotPage")}
-                >
-                  <Receipt className="w-3.5 h-3.5 text-amber-400 group-hover:text-amber-300" />
-                  <span className="text-xs font-medium text-gray-300 group-hover:text-gray-100">
-                    {orders?.length || 0}
-                  </span>
-                </div>
+               <div className="relative hidden sm:flex items-center">
+  {/* Orders button */}
+  <div
+    className="hover:cursor-pointer flex items-center gap-1.5 px-3 py-1.5 bg-slate-800/50 border border-slate-700/60 rounded-l-md hover:bg-slate-700/60 transition-colors group"
+    onClick={() => navigate("/sUsers/KotPage")}
+  >
+    <Receipt className="w-3.5 h-3.5 text-amber-400 group-hover:text-amber-300" />
+    <span className="text-xs font-medium text-gray-300 group-hover:text-gray-100">
+      {orders?.length || 0}
+    </span>
+  </div>
+
+  {/* Three-dot button */}
+  <div className="relative">
+    <button
+      onClick={() => setShowOptions((prev) => !prev)}
+      className="flex items-center justify-center px-2 py-1.5 bg-slate-800/50 border border-l-0 border-slate-700/60 rounded-r-md hover:bg-slate-700/60 transition-colors group"
+    >
+      <span className="flex flex-col gap-[3px] items-center justify-center">
+        <span className="w-[3px] h-[3px] bg-gray-400 rounded-full group-hover:bg-gray-200 transition-colors"></span>
+        <span className="w-[3px] h-[3px] bg-gray-400 rounded-full group-hover:bg-gray-200 transition-colors"></span>
+        <span className="w-[3px] h-[3px] bg-gray-400 rounded-full group-hover:bg-gray-200 transition-colors"></span>
+      </span>
+    </button>
+
+    {/* Dropdown */}
+    {showOptions && (
+      <>
+        {/* Backdrop to close */}
+        <div
+          className="fixed inset-0 z-40"
+          onClick={() => setShowOptions(false)}
+        />
+        <div className="absolute right-0 top-full mt-1 z-50 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden w-52 animate-in zoom-in-95 duration-150">
+          <button
+            onClick={() => {
+              setShowOptions(false);
+              navigate("/sUsers/BillSummary?type=restaurant");
+            }}
+            className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors"
+          >
+            <span className="text-base">📊</span>
+            <span className="font-medium">Daily Restaurant Sales</span>
+          </button>
+        </div>
+      </>
+    )}
+  </div>
+</div>
 
                 <button
                   className="hover:cursor-pointer sm:hidden bg-blue-600/80 hover:bg-blue-600 text-white rounded-md px-2.5 py-1.5 flex items-center gap-1 transition-colors border border-blue-500/50 shadow-lg shadow-blue-500/20 active:scale-95"
@@ -1319,10 +1359,22 @@ const RestaurantPOS = () => {
               </button>
             </div>
 
+ <h3 className="text-base font-bold text-gray-800 flex items-center gap-2">
+                   <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center"> 
+                    <ShoppingCart className="w-4 h-4 text-white" />
+                  </div> 
+                  <div> 
+                    <span className="hidden sm:inline">Order Summary</span>
+                    <span className="sm:hidden">Cart</span>
+                    <div className="text-xs font-normal text-gray-600">
+                      {getTotalItems()} items
+                    </div>
+                  </div> 
+                 </h3> 
             {/* Fixed Action Buttons */}
-            <div className="flex items-center gap-2 flex-shrink-0">
+            {/* <div className="flex items-center gap-2 flex-shrink-0"> */}
               {/* Daily Restaurant Sales Button */}
-              <button
+              {/* <button
                 onClick={() => navigate("/sUsers/BillSummary?type=restaurant")}
                 className="hidden md:flex
               items-center gap-2 px-3 py-1.5 rounded-lg
@@ -1336,8 +1388,8 @@ const RestaurantPOS = () => {
               >
                 <span className="text-sm">📊</span>
                 <span className="hidden lg:inline">Daily Restaurant Sales</span>
-              </button>
-            </div>
+              </button> */}
+            {/* </div> */}
           </div>
         </div>
 
@@ -1521,16 +1573,24 @@ const RestaurantPOS = () => {
                 </div>
               ) : (
                 <>
-                  <div className="mb-3">
-                    <h3 className="text-sm font-bold text-gray-700 flex items-center gap-1.5">
-                      <span className="w-2 h-2 bg-gradient-to-r from-indigo-500 to-blue-500 rounded-full"></span>
-                      {selectedSubcategory
-                        ? `${selectedCuisine?.categoryName} - ${selectedSubcategory?.subcategoryName} (${menuItems.length})`
-                        : searchTerm
-                          ? `Search Results (${menuItems.length})`
-                          : `All Items (${menuItems.length})`}
-                    </h3>
-                  </div>
+                <div className="mb-3 flex items-center justify-between">
+  <h3 className="text-sm font-bold text-gray-700 flex items-center gap-1.5">
+    <span className="w-2 h-2 bg-gradient-to-r from-indigo-500 to-blue-500 rounded-full"></span>
+    {selectedSubcategory
+      ? `${selectedCuisine?.categoryName} - (${menuItems.length})`
+      : searchTerm
+        ? `Search Results (${menuItems.length})`
+        : `All Items (${menuItems.length})`}
+  </h3>
+
+  <button
+    onClick={() => navigate("/sUsers/itemRegistration")}
+    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gradient-to-r from-indigo-500 to-blue-500 text-white text-xs font-semibold hover:from-indigo-600 hover:to-blue-600 hover:scale-105 active:scale-95 transition-all duration-200 shadow-md"
+  >
+    <Plus className="w-3.5 h-3.5" />
+    Add Item
+  </button>
+</div>
 
                   {menuItems.length === 0 ? (
                     <div className="flex items-center justify-center h-48">
@@ -1605,13 +1665,13 @@ const RestaurantPOS = () => {
                                 <img
                                   src={
                                     item.product_image ||
-                                    "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=150&h=150&fit=crop"
+                                    "https://i.pinimg.com/1200x/81/92/7e/81927ee1cf8fcd7715530b0856cf553d.jpg"
                                   }
                                   alt={item.product_name}
                                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-125"
                                   onError={(e) => {
                                     e.target.src =
-                                      "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=150&h=150&fit=crop";
+                                      "https://i.pinimg.com/1200x/81/92/7e/81927ee1cf8fcd7715530b0856cf553d.jpg";
                                   }}
                                 />
                               </div>
@@ -1666,20 +1726,9 @@ const RestaurantPOS = () => {
             w-full sm:w-80 md:w-72 bg-white/95 backdrop-blur-xl border-l border-gray-200/50 flex flex-col min-h-0 h-full shadow-2xl
           `}
           >
-            <div className="p-3 border-b border-gray-200/50 bg-gradient-to-br from-gray-50 to-gray-100">
-              <div className="flex items-center justify-between">
-                <h3 className="text-base font-bold text-gray-800 flex items-center gap-2">
-                  <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center">
-                    <ShoppingCart className="w-4 h-4 text-white" />
-                  </div>
-                  <div>
-                    <span className="hidden sm:inline">Order Summary</span>
-                    <span className="sm:hidden">Cart</span>
-                    <div className="text-xs font-normal text-gray-600">
-                      {getTotalItems()} items
-                    </div>
-                  </div>
-                </h3>
+            {/* <div className="p-3 border-b border-gray-200/50 bg-gradient-to-br from-gray-50 to-gray-100">
+              <div className="flex items-center justify-between"> */}
+               
                 {isMobile && (
                   <button
                     onClick={() => setShowOrderSummary(false)}
@@ -1688,8 +1737,8 @@ const RestaurantPOS = () => {
                     <X className="w-5 h-5" />
                   </button>
                 )}
-              </div>
-            </div>
+              {/* </div>
+            </div> */}
 
             <div className="flex-1 overflow-y-auto min-h-0 p-3">
               {orderItems.length === 0 ? (
@@ -1720,72 +1769,60 @@ const RestaurantPOS = () => {
                           {item.product_name}
                         </h4>
 
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <div className="flex items-center gap-1">
-                            <span className="text-xs text-gray-600">₹</span>
-                            <input
-                              type="number"
-                              value={item.price}
-                              onChange={(e) => {
-                                const newPrice = parseFloat(e.target.value);
-                                setOrderItems(
-                                  orderItems.map((orderItem) =>
-                                    orderItem._id === item._id
-                                      ? { ...orderItem, price: newPrice }
-                                      : orderItem,
-                                  ),
-                                );
-                              }}
-                              className="w-16 text-xs text-gray-600 bg-transparent border-none focus:outline-none focus:bg-white focus:border focus:border-indigo-300 focus:rounded px-1 py-0.5"
-                              step="0.01"
-                              min="0"
-                            />
-                            <span className="text-xs text-gray-600">
-                              × {item.quantity}
-                            </span>
-                          </div>
-                          <p className="text-xs font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-full">
-                            ₹{(item.price * item.quantity).toFixed(2)}
-                          </p>
-                        </div>
+                      <div className="flex items-center gap-1 mt-0.5">
+  <span className="text-xs text-gray-500">₹</span>
+  <input
+    type="number"
+    value={item.price}
+    onChange={(e) => {
+      const newPrice = parseFloat(e.target.value);
+      setOrderItems(
+        orderItems.map((orderItem) =>
+          orderItem._id === item._id
+            ? { ...orderItem, price: newPrice }
+            : orderItem,
+        ),
+      );
+    }}
+    className="w-11 text-xs text-gray-600 bg-transparent border-none focus:outline-none focus:bg-white focus:border focus:border-indigo-300 focus:rounded px-0.5"
+    step="0.01"
+    min="0"
+  />
+  <span className="text-xs text-gray-400">×{item.quantity} </span>
+  <span className="text-xs font-bold text-indigo-600">
+    ₹{(item.price * item.quantity).toFixed(2)}
+  </span>
+</div>
                       </div>
 
                       <div className="flex items-center gap-1.5">
                         <button
                           className="w-6 h-6 bg-gradient-to-r from-red-500 to-pink-500 text-white flex items-center justify-center rounded-full hover:from-red-600 hover:to-pink-600 hover:scale-110 active:scale-95 transition-all duration-200 shadow-lg disabled:opacity-50"
-                          onClick={() =>
-                            updateQuantity(
-                              item._id,
-                              Math.max(1, item.quantity - 1),
-                            )
-                          }
-                          disabled={item.quantity <= 1}
+                           onClick={() => updateQuantity(item._id, Math.max(0.5, parseFloat((item.quantity - 0.5).toFixed(2))))}
+    disabled={item.quantity <= 0.5}
                         >
                           <Minus className="w-3 h-3" />
                         </button>
 
                         <div className="relative">
                           <input
-                            className="text-sm font-bold w-12 text-center bg-white px-2 py-1 rounded-lg border border-gray-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-5"
-                            type="text"
-                            pattern="[0-9]*"
-                            inputMode="numeric"
-                            value={item.quantity == 0 ? "" : item.quantity}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              if (
-                                val === "" ||
-                                val === "0" ||
-                                /^\d+$/.test(val)
-                              ) {
-                                updateQuantity(item._id, parseInt(val) || 0);
-                              }
-                            }}
-                            onBlur={(e) => {
-                              const val = parseInt(e.target.value) || 1;
-                              updateQuantity(item._id, Math.max(1, val));
-                            }}
-                          />
+      className="text-sm font-bold w-14 text-center bg-white px-2 py-1 rounded-lg border border-gray-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+      type="number"
+      inputMode="decimal"
+      step="0.5"
+      min="0.5"
+      value={item.quantity === 0 ? "" : item.quantity}
+      onChange={(e) => {
+        const val = e.target.value;
+        if (val === "" || /^\d*\.?\d*$/.test(val)) {
+          updateQuantity(item._id, val === "" ? 0 : parseFloat(val) || 0);
+        }
+      }}
+      onBlur={(e) => {
+        const val = parseFloat(e.target.value);
+        updateQuantity(item._id, Math.max(0.5, isNaN(val) ? 0.5 : val));
+      }}
+    />
                         </div>
 
                         <button
