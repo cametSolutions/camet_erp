@@ -131,6 +131,7 @@ function VoucherThreeInchPdfFormat2({
     padding: "1px 0",
   };
 console.log(data)
+console.log({ cgst, tax, subTotal, cgstPercentage, totalTax: calculateTotalTax() });
   return (
     <>
       <TitleDiv title="Restaurant sale print" />
