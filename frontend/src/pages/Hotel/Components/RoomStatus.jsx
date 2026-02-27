@@ -81,7 +81,7 @@ const RoomStatus = ({
         hover:scale-105 hover:-translate-y-0.5
         ${config.shadow} ${config.hoverShadow}
         hover:shadow-lg ${config.glowColor}
-        group min-h-[38px]
+        group min-h-[60px]
         backdrop-blur-sm
         transform-gpu
       `}
@@ -102,15 +102,15 @@ const RoomStatus = ({
       <div className="relative px-2 py-1.5 h-full flex flex-col justify-between z-10">
         <div className="flex flex-col">
           {/* Room name */}
-          <span className={`${config.textColor} font-bold text-xs leading-tight tracking-tight drop-shadow-sm`}>
+          <span className={`${config.textColor} font-bold text-xl leading-tight tracking-tight drop-shadow-sm`}>
             {room}
           </span>
           {/* Status label */}
-          <span className={`text-xs font-medium leading-tight ${config.statusColor}`}>
+          <span className={`text-sm font-medium leading-tight ${config.statusColor}`}>
             {status}
           </span>
           {type && (
-            <span className={`${config.textColor} text-xs opacity-80 font-medium leading-tight`}>
+            <span className={`${config.textColor} text-sm opacity-80 font-medium leading-tight`}>
               {type}
             </span>
           )}
@@ -123,7 +123,7 @@ const RoomStatus = ({
               <div className={`${config.textColor} text-xs opacity-75`}>{guest}</div>
             )}
             {(checkIn || checkOut) && (
-              <div className={`${config.textColor} text-xs opacity-75 flex gap-1`}>
+              <div className={`${config.textColor} text-sm opacity-75 flex gap-1`}>
                 {checkIn && <span>In: {checkIn}</span>}
                 {checkOut && <span>Out: {checkOut}</span>}
               </div>
