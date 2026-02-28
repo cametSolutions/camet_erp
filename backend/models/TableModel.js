@@ -22,15 +22,8 @@ const tableSchema = new mongoose.Schema({
     type: String,
     trim: true,
   },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now,
-  },
-});
+
+},{ timestamps: true });
 
 // **ADD THIS VIRTUAL FIELD - 24 HOUR AUTO AVAILABLE LOGIC**
 tableSchema.virtual('effectiveStatus').get(function() {

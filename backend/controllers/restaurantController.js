@@ -1106,6 +1106,8 @@ export const updateKotPayment = async (req, res) => {
         note,
       } = req.body;
 
+      discountAmount = req?.body?.additionalCharges[0]?.amount || 0
+
       console.log("=== STEP 3: BACKEND RECEIVED ===");
       console.log("req.body.discountCharge:", discountCharge);
       console.log("req.body.discountAmount:", discountAmount);
@@ -1283,6 +1285,7 @@ export const updateKotPayment = async (req, res) => {
             discount: discountAmount,
             discountChargeId: discountCharge?._id,
             note: note,
+            
           };
 
           // ✅ Handle complimentary flag
