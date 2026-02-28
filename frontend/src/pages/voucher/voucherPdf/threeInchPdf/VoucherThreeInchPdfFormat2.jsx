@@ -85,8 +85,26 @@ function VoucherThreeInchPdfFormat2({
   const discount = Math.round(Number(data?.totalAdditionalCharges || data?.additionalCharges?.[0]?.amount)).toFixed(2);
   const tax = Math.round(calculateTotalTax()).toFixed(2);
   const cgst = Math.round(calculateTotalTax() / 2).toFixed(2);
-  const cgstPercentage = (Number(cgst) / Number(data?.subtotal || data?.subTotal)) * 100;
+  // const cgstPercentage = (Number(cgst) / Number(data?.subtotal || data?.subTotal)) * 100;
 
+
+
+  // Get actual tax rates directly from item data instead of back-calculating
+const getCgstPercentage = () => {
+  const item = data?.items?.find(el => el.cgst > 0);
+  return item?.cgst || 0;
+};
+const getSgstPercentage = () => {
+  const item = data?.items?.find(el => el.sgst > 0);
+  return item?.sgst || 0;
+};
+const getIgstPercentage = () => {
+  const item = data?.items?.find(el => el.igst > 0);
+  return item?.igst || 0;
+};
+const cgstPercentage = getCgstPercentage();
+const sgstPercentage = getSgstPercentage();
+const igstPercentage = getIgstPercentage();
   const handlePrint = useReactToPrint({
     content: () => contentToPrint.current,
   });
@@ -229,32 +247,65 @@ console.log({ cgst, tax, subTotal, cgstPercentage, totalTax: calculateTotalTax()
               <div style={textRight}>{Math.round(subTotal).toFixed(2)}</div>
             </div>
 
-            {isIndian && isSameState && calculateTotalTax() > 0 && (
-              <>
-                    <div style={flexRow}>
-                <div style={{ marginLeft: "auto", width: "70px", fontWeight: "bold" }}>CGST {Math.round(cgstPercentage)}%</div>
-                <div style={textRight}>{cgst}</div>
-              </div>
-              <div style={flexRow}>
-                <div style={{ marginLeft: "auto", width: "70px", fontWeight: "bold" }}>SGST {Math.round(cgstPercentage)}%</div>
-                <div style={textRight}>{cgst}</div>
-              </div>
-              </>
-            )}
+{isIndian && isSameState && calculateTotalTax() > 0 && (() => {
+  // Group items by their CGST rate and sum tax amounts per rate
+  const cgstGroups = {};
+  data?.items?.forEach((el) => {
+    const rate = el?.cgst || 0;
+    if (rate > 0) {
+      const itemCgst = Number(el?.totalCgstAmt || 0);
+      const itemSgst = Number(el?.totalSgstAmt || 0);
+      if (!cgstGroups[rate]) cgstGroups[rate] = { cgstAmt: 0, sgstAmt: 0, sgstRate: el?.sgst || rate };
+      cgstGroups[rate].cgstAmt += itemCgst;
+      cgstGroups[rate].sgstAmt += itemSgst;
+    }
+  });
 
-            {isIndian && !isSameState && calculateTotalTax() > 0 && (
-              <div style={flexRow}>
-                <div style={{ marginLeft: "auto", width: "70px", fontWeight: "bold" }}>IGST {Math.round(cgstPercentage * 2)}%</div>
-                <div style={textRight}>{tax}</div>
-              </div>
-            )}
+  const entries = Object.entries(cgstGroups);
 
-            {!isIndian && calculateTotalTax() > 0 && (
-              <div style={flexRow}>
-                <div style={{ marginLeft: "auto", width: "70px", fontWeight: "bold" }}>Tax {Math.round(cgstPercentage * 2)}%</div>
-                <div style={textRight}>{tax}</div>
-              </div>
-            )}
+  // Fallback: if no totalCgstAmt on items, use the overall cgst/sgst split
+  if (entries.length === 0) {
+    return (
+      <>
+        <div style={flexRow}>
+          <div style={{ marginLeft: "auto", width: "70px", fontWeight: "bold" }}>CGST {cgstPercentage}%</div>
+          <div style={textRight}>{cgst}</div>
+        </div>
+        <div style={flexRow}>
+          <div style={{ marginLeft: "auto", width: "70px", fontWeight: "bold" }}>SGST {sgstPercentage}%</div>
+          <div style={textRight}>{cgst}</div>
+        </div>
+      </>
+    );
+  }
+
+  return entries.map(([rate, { cgstAmt, sgstAmt, sgstRate }]) => (
+    <div key={rate}>
+      <div style={flexRow}>
+        <div style={{ marginLeft: "auto", width: "70px", fontWeight: "bold" }}>CGST {rate}%</div>
+        <div style={textRight}>{cgstAmt.toFixed(2)}</div>
+      </div>
+      <div style={flexRow}>
+        <div style={{ marginLeft: "auto", width: "70px", fontWeight: "bold" }}>SGST {sgstRate}%</div>
+        <div style={textRight}>{sgstAmt.toFixed(2)}</div>
+      </div>
+    </div>
+  ));
+})()}
+
+{isIndian && !isSameState && calculateTotalTax() > 0 && (
+  <div style={flexRow}>
+    <div style={{ marginLeft: "auto", width: "70px", fontWeight: "bold" }}>IGST {igstPercentage}%</div>
+    <div style={textRight}>{tax}</div>
+  </div>
+)}
+
+{!isIndian && calculateTotalTax() > 0 && (
+  <div style={flexRow}>
+    <div style={{ marginLeft: "auto", width: "70px", fontWeight: "bold" }}>Tax {igstPercentage}%</div>
+    <div style={textRight}>{tax}</div>
+  </div>
+)}
           </div>
 
           <div style={{ borderBottom: "1px dotted #000", margin: "6px 0" }} />
