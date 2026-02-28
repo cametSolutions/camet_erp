@@ -64,6 +64,7 @@ const kotSchema = new mongoose.Schema({
   total: {
     type: Number,
     required: true,
+    set: (val) => Math.round(val),
   },
 
   createdAt: {
@@ -99,7 +100,7 @@ const kotSchema = new mongoose.Schema({
     type: String,
     trim: true,
   },
-  discount: { type: Number, default: 0 },
+  discount: { type: Number, default: 0 ,set: (val) => Math.round(val),},
   discountChargeId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "AdditionalCharges",
