@@ -68,6 +68,7 @@ const RestaurantPOS = () => {
   const [orderType, setOrderType] = useState("dine-in");
   const [loading, setLoading] = useState(false);
   const [optionData, setOptionsData] = useState({});
+
   const [roomData, setRoomData] = useState({});
   const [showPriceLevelSelect, setShowPriceLevelSelect] = useState(false);
   const [priceLevelData, setPriceLevelData] = useState([]);
@@ -85,6 +86,8 @@ const RestaurantPOS = () => {
   const [selectedCash, setSelectedCash] = useState("");
   const [selectedBank, setSelectedBank] = useState("");
   const [cashOrBank, setCashOrBank] = useState({});
+
+
 
   const [currentPage, setCurrentPage] = useState(1);
   const observerTarget = useRef(null);
