@@ -67,6 +67,7 @@ const organizationSchema = new mongoose.Schema(
             hotelSales: false,
           },
         },
+
         defaultPrint: {
           type: Object,
           default: {
@@ -76,6 +77,15 @@ const organizationSchema = new mongoose.Schema(
             restaurantPrint2: false,
           },
         },
+           orderTypes: {
+      type: Object,
+      default: {
+        dineIn: false,
+        takeaway: false,
+        delivery: false,
+        roomService: false,
+      },
+    },
         showDescription: {
           type: Object,
           default: {
