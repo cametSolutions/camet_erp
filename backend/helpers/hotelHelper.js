@@ -144,7 +144,35 @@ export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
       selectedModal.countDocuments(filter),
     ]);
 
-    return { bookings, totalBookings };
+    const checkInNumbers = bookings.map((b) => b.voucherNumber);
+
+    // 2) Find all related sales in one query
+    const sales = await salesModel.find({isPostToRoom : true,
+      "convertedFrom.checkInNumber": { $in: checkInNumbers },
+    }).select("subTotal convertedFrom.checkInNumber"); // optional select
+
+ 
+    // 3) Build map: checkInNumber -> total subTotal
+    const totalByCheckIn = {};
+    for (const sale of sales) {
+      for (const conv of sale.convertedFrom || []) {
+        const key = conv.checkInNumber;
+        if (!key) continue;
+        totalByCheckIn[key] = (totalByCheckIn[key] || 0) + (sale.subTotal || 0);
+      }
+    }
+
+
+    // 4) Attach to bookings
+    const bookingsWithSales = bookings.map((b) => {
+      const total = totalByCheckIn[b.voucherNumber] || 0;
+      return {
+        ...b.toObject(),
+        restaurantSubTotal: total,
+      };
+    });
+
+    return { bookings:bookingsWithSales, totalBookings };
   } catch (error) {
     console.error("❌ Error fetching bookings from database:", error);
 

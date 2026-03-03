@@ -1377,6 +1377,7 @@ export const getBookings = async (req, res) => {
       params,
     );
 
+
     // ✅ Process bookings to add payment status and travel agent info
     const processedBookings = bookings.map((booking) => {
       const processed = booking.toObject ? booking.toObject() : { ...booking };
@@ -2511,6 +2512,7 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
         { "paymenttypeDetails.card": { $gt: "0" } },
       ],
     };
+    
 
     // ✅ CORRECTED: Get roomId and serviceType from ROOT level, not kotDetails
 
@@ -2518,8 +2520,9 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
       {
         $match: {
           "convertedFrom.id": { $exists: true, $ne: null },
-          "convertedFrom.checkInNumber": checkoutData[0].voucherNumber,
+          "convertedFrom.checkInNumber": checkoutData[0]?.checkInId?.voucherNumber || checkoutData[0]?.voucherNumber ,
           isComplimentary: false,
+          isPostToRoom:true
         },
       },
 
@@ -2646,7 +2649,7 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
 
         const salesData = await salesModel
           .findOne({
-            salesNumber: checkout.voucherNumber,
+            salesNumber: checkout.voucherNumber ,
           })
           .lean();
 
@@ -2739,6 +2742,9 @@ export const convertCheckOutToSale = async (req, res) => {
         checkoutMode,
         checkinIds,
       } = req.body;
+
+
+      console.log("isPostToRoom",isPostToRoom)
 
       let tracker = paymentDetails?.paymenttypeDetails;
 
@@ -2987,6 +2993,7 @@ console.log("othercharges",otherCharges)
           checkOutDoc[0]._id,
           amount,
           otherCharges,
+          // isPostToRoom = false,
         );
         salesarray = savedVoucherData;
         if (savedVoucherData) {
@@ -3351,12 +3358,14 @@ async function createSalesVoucher(
   checkInId = null,
   checkOutId = null,
   amount = 0,
+  isPostToRoom=false,
   otherCharges
 ) {
   const AlreadyExistingItems = selectedCheckOut.flatMap(
     (item) => item.selectedRooms,
   );
 
+     console.log("isPostToRoomffffffffff",isPostToRoom)
   let items = [];
 
   AlreadyExistingItems.forEach((room) => {
