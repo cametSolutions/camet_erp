@@ -12,7 +12,7 @@ function VoucherThreeInchPdf({
   sendToParent,
   handlePrintData,
 }) {
-console.log(data)
+  console.log(data);
   const [subTotal, setSubTotal] = useState("");
   const [additinalCharge, setAdditinalCharge] = useState("");
   const [inWords, setInWords] = useState("");
@@ -21,7 +21,7 @@ console.log(data)
 
   const IsIndian =
     useSelector(
-      (state) => state?.secSelectedOrganization?.secSelectedOrg?.country
+      (state) => state?.secSelectedOrganization?.secSelectedOrg?.country,
     ) === "India";
 
   const party = data?.party;
@@ -57,11 +57,11 @@ console.log(data)
   const allPrintConfigurations = useSelector(
     (state) =>
       state.secSelectedOrganization?.secSelectedOrg?.configurations[0]
-        ?.printConfiguration
+        ?.printConfiguration,
   );
 
   const matchedConfiguration = allPrintConfigurations?.find(
-    (item) => item.voucher === getConfigurationVoucherType()
+    (item) => item.voucher === getConfigurationVoucherType(),
   );
 
   const configurations =
@@ -70,7 +70,7 @@ console.log(data)
       : defaultPrintSettings;
 
   const selectedOrganization = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg
+    (state) => state.secSelectedOrganization.secSelectedOrg,
   );
 
   useEffect(() => {
@@ -78,15 +78,16 @@ console.log(data)
       ///please check it is temperary
       console.log(data);
       data.discount = data.additionalCharges[0]?.value;
-      const calculatedSubTotal  = data.items
+      const calculatedSubTotal = data.items
         .reduce(
-          (acc, curr) => acc + (Number(curr?.total) - Number(curr?.totalIgstAmt)),
-          0
+          (acc, curr) =>
+            acc + (Number(curr?.total) - Number(curr?.totalIgstAmt)),
+          0,
         )
         .toFixed(2);
-        console.log(data.items[0].total);
-        console.log(data.subtotal);
-       setSubTotal(Number(calculatedSubTotal || data?.subTotal ));
+      console.log(data.items[0].total);
+      console.log(data.subtotal);
+      setSubTotal(Number(calculatedSubTotal || data?.subTotal));
 
       const addiTionalCharge = data?.additionalCharges
         ?.reduce((acc, curr) => {
@@ -127,7 +128,7 @@ console.log(data)
   const calculateTotalTax = () => {
     const totalTax = data?.items?.reduce(
       (acc, curr) => (acc += curr?.totalIgstAmt || 0),
-      0
+      0,
     );
 
     return totalTax;
@@ -326,7 +327,7 @@ console.log(data)
                   <div>No: {data?.[getVoucherNumber()]}</div>
                   <div>
                     {new Date(data?.Date || data?.createdAt).toLocaleDateString(
-                      "en-GB"
+                      "en-GB",
                     )}
                   </div>
                 </div>
@@ -357,7 +358,7 @@ console.log(data)
                         hour: "2-digit",
                         minute: "2-digit",
                         hour12: true,
-                      }
+                      },
                     )}
                   </div>
                 </div>
@@ -380,12 +381,10 @@ console.log(data)
                         ?.map((item) => item?.voucherNumber)
                         .join(", ")}
                   </div>
-                    </div>
-                         {data?.isComplimentary && (
-                     <div className="text-xm">
-                        Complementary
-                  </div>
-                  )}
+                </div>
+                {data?.isComplimentary && (
+                  <div className="text-xm">Complementary</div>
+                )}
               </>
             )}
           </div>
@@ -457,10 +456,29 @@ console.log(data)
                   // console.log("welcome", el);
                   // console.log("welcome", data);
                   // console.log("welcome", el?.totalCount);
-
-                  const total = (el?.total || 0)
+                   const total = el?.total || 0;
                   const count = el?.totalCount || 0;
-                  const rate = count > 0 ? (total / count).toFixed(1) : "0";
+                  const totalTax = Number(
+    el?.totalIgstAmt || (el?.totalCgstAmt || 0) + (el?.totalSgstAmt || 0) || 0
+  );
+                  const addRateWithTax =
+                    org?.configurations?.[0]?.addRateWithTax?.restaurantSale ??
+                    org?.configurations?.[0]?.addRateWithTax?.sale ??
+                    true;
+                  const rate = addRateWithTax
+                    ? count > 0
+                      ? Math.round((total * 100) / (100 + el.igst)).toFixed(2)
+                      : "0.00" // WITH tax (like format 1)
+                    : count > 0
+                      ? ((total - totalTax) / count).toFixed(2)
+                      : "0.00"; // WITHOUT tax
+
+                  console.log({ rate });
+
+                  const amount = Math.round(Number(rate) * count).toFixed(2);
+
+                
+                  // const rate = count > 0 ? (total / count).toFixed(1) : "0";
 
                   return (
                     <div
@@ -513,7 +531,7 @@ console.log(data)
                           textAlign: "right",
                         }}
                       >
-                        {total?.toFixed(1)}
+                        {amount}
                       </div>
                     </div>
                   );
@@ -586,28 +604,27 @@ console.log(data)
             <div>
               {data?.items?.reduce(
                 (acc, curr) => acc + Number(curr?.totalCount),
-                0
+                0,
               )}
             </div>
           </div>
 
           {configurations?.showStockWiseAmount && (
-                        <>
+            <>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  fontSize: "12px",
+                  fontWeight: "bold",
+                  marginBottom: "8px",
+                }}
+              >
+                <div>SUBTOTAL:</div>
+                <div>{subTotal}</div>
+              </div>
 
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                fontSize: "12px",
-                fontWeight: "bold",
-                marginBottom: "8px",
-              }}
-            >
-              <div>SUBTOTAL:</div>
-               <div>{subTotal}</div>
-            </div>
-          
- {data?.discount > 0 && (
+              {data?.discount > 0 && (
                 <>
                   <div
                     style={{
@@ -651,7 +668,6 @@ console.log(data)
               )}
             </>
           )}
-
 
           {/* Tax Details */}
           {configurations?.showTaxAmount && (

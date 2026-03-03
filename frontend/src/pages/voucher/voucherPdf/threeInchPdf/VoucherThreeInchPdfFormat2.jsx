@@ -20,6 +20,8 @@ function VoucherThreeInchPdfFormat2({
   !data && (data = location?.state);
   !org && (org = useSelector((state) => state?.secSelectedOrganization?.secSelectedOrg));
 
+  console.log(data);
+
   const isIndian = useSelector((state) => state?.secSelectedOrganization?.secSelectedOrg?.country === "India");
   const party = data?.party;
   const isSameState = org?.state?.toLowerCase() === party?.state?.toLowerCase() || !party?.state;
@@ -247,19 +249,24 @@ const cgstGroups = data?.items?.reduce((acc, item) => {
     el?.totalIgstAmt || (el?.totalCgstAmt || 0) + (el?.totalSgstAmt || 0) || 0
   );
   console.log(el)
+  
+  console.log({ total, count, totalTax });
 
   // ✅ Same logic as Format 1 — addRateWithTax controls rate/amount display
   const addRateWithTax = org?.configurations?.[0]?.addRateWithTax?.restaurantSale 
     ?? org?.configurations?.[0]?.addRateWithTax?.sale 
     ?? true;
 
+    console.log({ addRateWithTax });
+
+
   const rate = addRateWithTax
-    ? (count > 0 ? (total / count).toFixed(2) : "0.00")           // WITH tax (like format 1)
+    ? (count > 0 ? Math.round(total * 100 / (100 + el.igst)).toFixed(2) : "0.00")           // WITH tax (like format 1)
     : (count > 0 ? ((total - totalTax) / count).toFixed(2) : "0.00"); // WITHOUT tax
 
-  const amount = addRateWithTax
-    ? total.toFixed(2)                          // WITH tax
-    : (Number(rate) * count).toFixed(2);        // WITHOUT tax
+    console.log({ rate });
+
+  const amount = Math.round(Number(rate) * count).toFixed(2);        // WITHOUT tax
 
   return (
     <div key={index} style={itemGrid}>
