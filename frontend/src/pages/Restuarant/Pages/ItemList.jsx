@@ -7,6 +7,7 @@ import { FaEdit , FaFileExcel, FaFileUpload} from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { MdDelete } from "react-icons/md";
 import Swal from "sweetalert2";
+import { PiBarcode } from "react-icons/pi";
 import * as XLSX from 'xlsx';
 import { FixedSizeList as List } from "react-window";
 import InfiniteLoader from "react-window-infinite-loader";
@@ -14,6 +15,7 @@ import { useSelector } from "react-redux";
 import SearchBar from "@/components/common/SearchBar";
 import TitleDiv from "@/components/common/TitleDiv";
 
+import BarcodeModal from "@/components/common/BarcodeModal";
 function ItemList() {
   const navigate = useNavigate();
   const [items, setItems] = useState([]);
@@ -23,6 +25,9 @@ function ItemList() {
   const [loader, setLoader] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [listHeight, setListHeight] = useState(0);
+
+ const [openModal, setOpenModal] = useState(false);
+const [selectedProductForPrint, setSelectedProductForPrint] = useState(null);
 
   const listRef = useRef();
   const fileInputRef = useRef(null);
@@ -110,6 +115,13 @@ const orgId = useSelector(
   }, [fetchRooms, searchTerm]);
 
 console.log(items)
+
+
+ const handlePrint = (el) => {
+    setOpenModal(true);
+    setSelectedProductForPrint(el);
+  };
+
 const handleExcelExport = () => {
   try {
     if (items.length === 0) {
@@ -532,6 +544,7 @@ const handleExcelImport = (event) => {
     // Return a loading placeholder if the item is not loaded yet
     if (!isItemLoaded(index)) {
       return (
+
         <div
           style={style}
           className="bg-white p-4 pb-6 drop-shadow-lg mt-4 flex flex-col rounded-sm"
@@ -602,6 +615,7 @@ const handleExcelImport = (event) => {
                 }}
                 className="text-red-500"
               />
+                <PiBarcode onClick={() => handlePrint(el)} />
             </div>
           </div>
         </div>
@@ -611,7 +625,11 @@ const handleExcelImport = (event) => {
 
   return (
     <>
-  
+    <BarcodeModal
+        isOpen={openModal}
+        onClose={() => setOpenModal(false)}
+        product={selectedProductForPrint}
+      />
       <div className="flex-1 bg-slate-50  h-screen overflow-hidden  ">
         <div className="sticky top-0 z-20 ">
           <TitleDiv

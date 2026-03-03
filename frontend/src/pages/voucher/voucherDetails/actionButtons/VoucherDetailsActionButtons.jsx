@@ -119,6 +119,7 @@ setisneedReceipt(true)
         setOpen={setShareDialogOpen}
         voucherId={_id}
         voucherType={voucherType}
+          data={data} 
       />
 
       <div className="flex justify-center space-x-8">

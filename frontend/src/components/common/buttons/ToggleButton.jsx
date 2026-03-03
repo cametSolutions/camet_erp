@@ -12,21 +12,30 @@ const ToggleButton = ({ isChecked, onToggle, option }) => {
     setChecked(isChecked);
   }, [isChecked]);
 
-  const handleCheckboxChange = () => {
-    const newChecked = !checked;
-    
-    const data = {
-      title: option.dbField,
-      checked: newChecked
+ const handleCheckboxChange = () => {
+  const newChecked = !checked;
+
+  let data;
+
+  if (option.dbField && option.dbField.includes('.')) {
+    const [fieldType, field] = option.dbField.split('.');
+    data = {
+      fieldType,   // "orderTypes"
+      field,       // "dineIn"
+      checked: newChecked,
+      title: option.dbField, // keep for kotApproval backward compat
     };
+  } else {
+    data = {
+      title: option.dbField,  // "kotApproval"
+      checked: newChecked,
+    };
+  }
 
-    if (onToggle) {
-      // Pass the new state to the parent component
-      // The parent will handle the API call and only update the state if successful
-      onToggle(data);
-    }
-  };
-
+  if (onToggle) {
+    onToggle(data);
+  }
+};
   return (
     <label className="flex cursor-pointer select-none items-center">
       <div className="relative">

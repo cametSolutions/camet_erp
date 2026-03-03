@@ -157,7 +157,7 @@ function AddOrgForm({ onSubmit, orgData = {} }) {
       !industry ||
       // (website && !website.trim()) ||
       !financialYear.trim() ||
-      // !landmark.trim() ||
+      !landmark.trim() ||
       !pin ||
       !mobile
     ) {

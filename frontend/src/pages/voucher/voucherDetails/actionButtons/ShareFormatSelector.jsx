@@ -24,7 +24,7 @@ import { IoDocumentTextSharp } from "react-icons/io5";
 import { formatVoucherType } from "../../../../../utils/formatVoucherType";
 import { BookText } from "lucide-react";
 
-export function ShareFormatSelector({ open, setOpen, voucherId, voucherType }) {
+export function ShareFormatSelector({ open, setOpen, voucherId, voucherType,data  }) {
   const [selectedFormat, setSelectedFormat] = useState("tax-invoice");
   const navigate = useNavigate();
 
@@ -44,9 +44,15 @@ export function ShareFormatSelector({ open, setOpen, voucherId, voucherType }) {
     formats.push(
       {
         id: "pos",
-        label: "POS Format",
+        label: "POS Format1",
         icon: <HiDocument size={20} />,
       },
+       {
+        id: "pos2",
+        label: "POS Format2 ",
+        icon: <HiDocument size={20} />,
+      },
+      
       {
         id: "warrantyCard",
         label: "Warranty Card",
@@ -55,19 +61,18 @@ export function ShareFormatSelector({ open, setOpen, voucherId, voucherType }) {
     );
   }
 
-  const handleContinue = () => {
-    let path;
-
-    if (selectedFormat === "tax-invoice") {
-      path = `/sUsers/share${voucherType}/${voucherId}`;
-    } else if (selectedFormat === "pos") {
-      path = `/sUsers/share${voucherType}ThreeInch/${voucherId}`;
-    } else if (selectedFormat === "warrantyCard") {
-      path = `/sUsers/share${voucherType}WarrantyCard/${voucherId}`;
-    }
-    navigate(path);
-    setOpen(false);
-  };
+ const handleContinue = () => {
+  if (selectedFormat === "tax-invoice") {
+    navigate(`/sUsers/share${voucherType}/${voucherId}`);
+  } else if (selectedFormat === "pos") {
+    navigate(`/sUsers/share${voucherType}ThreeInch/${voucherId}`);
+  } else if (selectedFormat === "pos2") {
+    navigate(`/sUsers/share${voucherType}ThreeInch2`, { state: data }); // ✅ correct syntax
+  } else if (selectedFormat === "warrantyCard") {
+    navigate(`/sUsers/share${voucherType}WarrantyCard/${voucherId}`);
+  }
+  setOpen(false);
+};
 
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
