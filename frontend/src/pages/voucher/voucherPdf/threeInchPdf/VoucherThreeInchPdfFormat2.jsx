@@ -168,6 +168,34 @@ const cgstGroups = data?.items?.reduce((acc, item) => {
   return acc;
 }, {}) || {};
 
+ const paymentSplits = data?.paymentSplittingData || [];
+
+  const prettyType = (type) => {
+    if (!type) return "";
+    const map = {
+      cash: "Cash",
+      upi: "UPI",
+      card: "Card",
+      bank: "Bank",
+    };
+    return map[type] || type.toUpperCase();
+  };
+
+  const getPaymentSummary = () => {
+    if (!paymentSplits.length) return null;
+
+    if (paymentSplits.length === 1) {
+      const p = paymentSplits[0];
+      return `${prettyType(p.type)}`;
+    }
+
+    return paymentSplits
+      .map(
+        (p) =>
+          `${prettyType(p.type)} `
+      )
+      .join(" | ");
+  };
 
 
   return (
@@ -286,7 +314,11 @@ const cgstGroups = data?.items?.reduce((acc, item) => {
               <div style={{ marginLeft: "auto", width: "60px" }}>Amount</div>
               <div style={textRight}>{Math.round(subTotal).toFixed(2)}</div>
             </div>
-
+  {getPaymentSummary() && (
+    <div style={{ ...bold }}>
+      Payment: {getPaymentSummary()}
+    </div>
+  )}
 {isIndian && isSameState && calculateTotalTax() > 0 && (() => {
   // Group items by their CGST rate and sum tax amounts per rate
  
@@ -344,10 +376,12 @@ const cgstGroups = data?.items?.reduce((acc, item) => {
          <div style={{ fontSize: "10px", marginBottom: "6px" }}>
   <div style={{ display: "flex", fontWeight: "bold", marginBottom: "2px" }}>
     {getRoomNumber() && <div style={bold}>{getRoomNumber()}</div>}
+   
     <div style={{ marginLeft: "auto", paddingRight: "3px", fontWeight: "bold" }}>
       Total: {netAmount}
     </div>
   </div>
+
 
             {/* {data?.voucherNumber?.[0]?.checkInNumber && (
               <div style={flexRow}>
