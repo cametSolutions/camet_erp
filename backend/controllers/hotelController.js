@@ -3810,7 +3810,7 @@ export const getRoomSwapHistory = async (req, res) => {
 
 export const getHotelSalesDetails = async (req, res) => {
   try {
-    const { cmp_id, type } = req.params;
+    const { cmp_id } = req.params;
     const { startDate, endDate, owner, businessType = "all" } = req.query;
 
     // Validate required parameters
@@ -3859,96 +3859,121 @@ export const getHotelSalesDetails = async (req, res) => {
         { isCancelled: null },
       ],
     };
-    if (type !== "all") {
-      query.checkOutId =
-        type === "hotel" || type === "all"
-          ? { $exists: true }
-          : { $exists: false };
-    }
 
+    // MongoDB aggregation pipeline to get all sales data with classification
     const salesData = await salesModel.aggregate([
-      // 1️⃣ Match
       { $match: query },
 
-      // 2️⃣ Checkout lookup (specific fields)
+      // Join with Party
       {
         $lookup: {
-          from: "checkouts",
-          let: { checkoutId: "$checkOutId" },
-          pipeline: [
-            {
-              $match: {
-                $expr: { $eq: ["$_id", "$$checkoutId"] },
-              },
-            },
-            {
-              $project: {
-                _id: 1,
-                voucherNumber: 1,
-                agentId: 1,
-              },
-            },
-          ],
-          as: "checkOut",
+          from: "parties",
+          localField: "party",
+          foreignField: "_id",
+          as: "partyDetails",
         },
       },
-      {
-        $unwind: {
-          path: "$checkOut",
-          preserveNullAndEmptyArrays: true,
-        },
-      },
+      { $unwind: { path: "$partyDetails", preserveNullAndEmptyArrays: true } },
 
-      // 3️⃣ KOT lookup (convertedFrom.id → ObjectId)
+      // Join with Organization
+      {
+        $lookup: {
+          from: "organizations",
+          localField: "cmp_id",
+          foreignField: "_id",
+          as: "organization",
+        },
+      },
+      { $unwind: { path: "$organization", preserveNullAndEmptyArrays: true } },
+
+      // Join with KOT
       {
         $lookup: {
           from: "kots",
-          let: { kotIds: "$convertedFrom.id" },
+          let: {
+            salesVoucherNumber: {
+              $arrayElemAt: ["$convertedFrom.voucherNumber", 0],
+            },
+          },
           pipeline: [
             {
               $match: {
                 $expr: {
-                  $in: [
-                    "$_id",
-                    {
-                      $map: {
-                        input: "$$kotIds",
-                        as: "id",
-                        in: { $toObjectId: "$$id" },
-                      },
-                    },
+                  $and: [
+                    { $ne: ["$$salesVoucherNumber", null] },
+                    { $eq: ["$voucherNumber", "$$salesVoucherNumber"] },
                   ],
                 },
               },
             },
-            {
-              $project: {
-                _id: 1,
-                voucherNumber: 1,
-                type: 1,
-                total: 1,
-                createdAt: 1,
-              },
-            },
+            { $project: { type: 1, voucherNumber: 1, tableNumber: 1 } },
           ],
-          as: "kotData",
-        },
-      },
-      {
-        $unwind: {
-          path: "$kotData",
-          preserveNullAndEmptyArrays: true,
+          as: "kotDetails",
         },
       },
 
-      // 4️⃣ Add createdHour + mealPeriod
+      // Derived fields
       {
         $addFields: {
-          createdHour: {
-            $hour: {
-              date: "$createdAt",
-              timezone: "+05:30",
-            },
+          createdHour: { $hour: { date: "$createdAt", timezone: "+05:30" } },
+          kotType: {
+            $cond: [
+              {
+                $and: [
+                  {
+                    $ne: [
+                      { $arrayElemAt: ["$convertedFrom.checkInNumber", 0] },
+                      null,
+                    ],
+                  },
+                  {
+                    $ne: [
+                      { $arrayElemAt: ["$convertedFrom.checkInNumber", 0] },
+                      "",
+                    ],
+                  },
+                ],
+              },
+              "Room Service",
+              {
+                $cond: [
+                  {
+                    $and: [
+                      {
+                        $ne: [
+                          { $arrayElemAt: ["$convertedFrom.tableNumber", 0] },
+                          null,
+                        ],
+                      },
+                      {
+                        $ne: [
+                          { $arrayElemAt: ["$convertedFrom.tableNumber", 0] },
+                          "",
+                        ],
+                      },
+                    ],
+                  },
+                  "Dine In",
+                  {
+                    $cond: [
+                      {
+                        $and: [{ $eq: ["$isTakeaway", true] }],
+                      },
+                      "Takeaway",
+                      {
+                        $cond: [
+                          {
+                            $and: [{ $eq: ["$isDelivery", true] }],
+                          },
+                          "Home Delivery",
+                          "Unknown",
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
           },
 
           mealPeriod: {
@@ -3960,7 +3985,7 @@ export const getHotelSalesDetails = async (req, res) => {
                       {
                         $gte: [
                           { $hour: { date: "$createdAt", timezone: "+05:30" } },
-                          5,
+                          7,
                         ],
                       },
                       {
@@ -3990,37 +4015,207 @@ export const getHotelSalesDetails = async (req, res) => {
                       },
                     ],
                   },
-                  then: "Lunch",
-                },
-                {
-                  case: {
-                    $and: [
-                      {
-                        $gte: [
-                          { $hour: { date: "$createdAt", timezone: "+05:30" } },
-                          18,
-                        ],
-                      },
-                      {
-                        $lt: [
-                          { $hour: { date: "$createdAt", timezone: "+05:30" } },
-                          23,
-                        ],
-                      },
-                    ],
-                  },
-                  then: "Dinner",
+                  then: "Lunch", // Changed from 15 to 18 to include snack time
                 },
               ],
-              default: "Late Night",
+              default: "Dinner",
+            },
+          },
+
+          // Classification (Hotel / Restaurant / Other)
+          businessClassification: {
+            $let: {
+              vars: {
+                hasCheckIn: {
+                  $and: [
+                    { $gt: [{ $size: "$convertedFrom" }, 0] },
+                    {
+                      $ne: [
+                        {
+                          $ifNull: [
+                            {
+                              $arrayElemAt: ["$convertedFrom.checkInNumber", 0],
+                            },
+                            "",
+                          ],
+                        },
+                        "",
+                      ],
+                    },
+                  ],
+                },
+                hasTable: {
+                  $and: [
+                    { $gt: [{ $size: "$convertedFrom" }, 0] },
+                    {
+                      $ne: [
+                        {
+                          $ifNull: [
+                            { $arrayElemAt: ["$convertedFrom.tableNumber", 0] },
+                            "",
+                          ],
+                        },
+                        "",
+                      ],
+                    },
+                  ],
+                },
+                kotType: {
+                  $cond: [
+                    { $gt: [{ $size: "$kotDetails" }, 0] },
+                    { $arrayElemAt: ["$kotDetails.type", 0] },
+                    null,
+                  ],
+                },
+              },
+              in: {
+                $switch: {
+                  branches: [
+                    // ✅ Rule 1: Has checkInNumber + KOT type is "Room Service" → Restaurant
+                    {
+                      case: {
+                        $and: [
+                          "$$hasCheckIn",
+                          { $eq: ["$$kotType", "Room Service"] },
+                        ],
+                      },
+                      then: "Restaurant",
+                    },
+                    // ✅ Rule 2: Has checkInNumber + KOT type is NOT "Room Service" → Hotel
+                    {
+                      case: {
+                        $and: [
+                          "$$hasCheckIn",
+                          { $ne: ["$$kotType", "Room Service"] },
+                          { $ne: ["$$kotType", null] },
+                        ],
+                      },
+                      then: "Hotel",
+                    },
+                    // ✅ Rule 3: Has checkInNumber but no KOT (direct checkout) → Hotel
+                    {
+                      case: {
+                        $and: ["$$hasCheckIn", { $eq: ["$$kotType", null] }],
+                      },
+                      then: "Hotel",
+                    },
+                    // ✅ Rule 4: Has tableNumber → Restaurant
+                    {
+                      case: "$$hasTable",
+                      then: "Restaurant",
+                    },
+                    // ✅ Rule 5: Takeaway → Restaurant
+                    {
+                      case: { $eq: ["$isTakeaway", true] },
+                      then: "Restaurant",
+                    },
+                    // ✅ Rule 6: Delivery → Restaurant
+                    {
+                      case: { $eq: ["$isDelivery", true] },
+                      then: "Restaurant",
+                    },
+                  ],
+                  default: "Restaurant",
+                },
+              },
             },
           },
         },
       },
+
+      // // Optional filter by classification
+      {
+        $match:
+          businessType === "all"
+            ? {}
+            : businessType === "hotel"
+            ? { businessClassification: "Hotel" }
+            : businessType === "restaurant"
+            ? { businessClassification: "Restaurant" }
+            : { businessClassification: { $in: ["Hotel", "Restaurant"] } },
+      },
+
+      // Final projection
+      {
+        $project: {
+          date: 1,
+          createdAt: 1,
+          createdHour: 1,
+          mealPeriod: 1,
+          salesNumber: 1,
+          serialNumber: 1,
+          kotType: 1,
+          partyAccount: 1,
+          "partyDetails.partyName": 1,
+          "partyDetails.businessType": 1,
+          "partyDetails.accountGroupName": 1,
+          items: 1,
+          subTotal: 1,
+          finalAmount: 1,
+          paymentSplittingData: 1,
+          businessType: 1,
+          department: 1,
+          category: 1,
+          tableNumber: 1,
+          waiterName: 1,
+          roomNumber: 1,
+          guestName: 1,
+          businessClassification: 1,
+          party: 1,
+
+          totalCgst: {
+            $sum: {
+              $map: {
+                input: "$items",
+                as: "item",
+                in: { $toDouble: { $ifNull: ["$$item.totalCgstAmt", 0] } },
+              },
+            },
+          },
+          totalSgst: {
+            $sum: {
+              $map: {
+                input: "$items",
+                as: "item",
+                in: { $toDouble: { $ifNull: ["$$item.totalSgstAmt", 0] } },
+              },
+            },
+          },
+          totalIgst: {
+            $sum: {
+              $map: {
+                input: "$items",
+                as: "item",
+                in: { $toDouble: { $ifNull: ["$$item.totalIgstAmt", 0] } },
+              },
+            },
+          },
+          totalDiscount: {
+            $sum: {
+              $map: {
+                input: "$items",
+                as: "item",
+                in: {
+                  $sum: {
+                    $map: {
+                      input: { $ifNull: ["$$item.GodownList", []] },
+                      as: "godown",
+                      in: {
+                        $toDouble: { $ifNull: ["$$godown.discountAmount", 0] },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+
+      { $sort: { date: -1, serialNumber: -1 } },
     ]);
 
-    console.log("salesData", salesData);
-
+    // console.log("salesData", salesData);
     // Transform data for frontend consumption
     const transformedData = salesData.map((sale) => {
       // Extract payment information
@@ -4028,7 +4223,7 @@ export const getHotelSalesDetails = async (req, res) => {
         bankAmount = 0,
         creditAmount = 0,
         upiAmount = 0,
-        cardAmount = 0;
+        chequeAmount = 0;
 
       const partyName =
         sale.party?.partyName ||
@@ -4058,20 +4253,37 @@ export const getHotelSalesDetails = async (req, res) => {
           const paymentType = payment.type?.toLowerCase() || "";
 
           switch (paymentType) {
+            case "cash":
+              cashAmount += amount;
+              break;
             case "upi":
               upiAmount += amount;
+              bankAmount += amount;
               break;
-            case "bank":
+            case "cheque":
+            case "check":
+              chequeAmount += amount;
               bankAmount += amount;
               break;
             case "card":
-              cardAmount += amount;
+            case "debit":
+            case "credit_card":
+              bankAmount += amount;
               break;
             case "credit":
               creditAmount += amount;
               break;
+            case "bank":
+            case "online":
+            case "netbanking":
+              bankAmount += amount;
+              break;
             default:
-              cashAmount += amount;
+              if (isCreditSale) {
+                creditAmount += amount;
+              } else {
+                cashAmount += amount;
+              }
               break;
           }
         });
@@ -4097,10 +4309,10 @@ export const getHotelSalesDetails = async (req, res) => {
       }
 
       let mode = "Cash"; // default
-      if (upiAmount > 0) {
+      if (upiAmount > 0 && upiAmount === bankAmount) {
         mode = "UPI";
-      } else if (cardAmount > 0) {
-        mode = "Card";
+      } else if (chequeAmount > 0) {
+        mode = "Cheque";
       } else if (creditAmount > 0) {
         mode = "Credit";
       } else if (bankAmount > 0) {
@@ -4116,15 +4328,6 @@ export const getHotelSalesDetails = async (req, res) => {
       const totalTax = (sale.totalCgst || 0) + (sale.totalSgst || 0);
       const nearestInt = Math.round(finalAmount);
       const roundOff = Number((nearestInt - finalAmount).toFixed(2));
-      let cgst = 0;
-      let sgst = 0;
-      let igst = 0;
-
-      sale.items.map((item) => {
-        cgst += Number(item.totalCgstAmt) || 0;
-        sgst += Number(item.totalSgstAmt) || 0;
-        igst += Number(item.totalIgstAmt) || 0;
-      });
 
       return {
         billNo: sale.salesNumber || sale.serialNumber?.toString() || "",
@@ -4137,79 +4340,59 @@ export const getHotelSalesDetails = async (req, res) => {
         disc: sale.totalDiscount || 0,
         roundOff: roundOff,
         total: subTotal,
-        cgst,
-        sgst,
-        igst,
+        cgst: sale.totalCgst || 0,
+        sgst: sale.totalSgst || 0,
+        igst: sale.totalIgst || 0,
         totalWithTax: finalAmount,
-        cash: Number(cashAmount).toFixed(2),
-        credit: Number(creditAmount).toFixed(2),
-        upi: Number(upiAmount).toFixed(2),
-        card: Number(cardAmount).toFixed(2),
-        bank: Number(bankAmount).toFixed(2),
+        cash: cashAmount,
+        credit: creditAmount,
+        upi: upiAmount,
+        cheque: chequeAmount,
+        bank: bankAmount,
         mode,
         creditDescription: partyName,
         partyName: partyName,
         partyAccount: sale.partyAccount || "Cash-in-Hand",
         items: sale.items || [],
+
+        // Business-specific fields
         businessClassification: sale.businessClassification,
+        // classificationReason: classificationReason,
+
+        // Restaurant-specific fields
         tableNumber: sale.tableNumber || "",
         waiterName: sale.waiterName || "",
+        // foodItems: foodItems,
+        // beverageItems: beverageItems,
+
+        // Hotel-specific fields
         roomNumber: sale.roomNumber || "",
         guestName: sale.guestName || partyName,
+        // accommodationItems: accommodationItems,
+
+        // General fields
         itemCount: sale.items?.length || 0,
         isHotelSale: sale.isHotelSale || false,
         isRestaurantSale: sale.isRestaurantSale || false,
-        isAgent: sale.checkOut?.agentId ? true : false,
-        kotDetails: sale.kotData,
-        kotType: sale.kotData?.type,
-        isHotel: sale.checkOut ? true : false,
       };
     });
-    console.log("transfored", transformedData);
 
     // Calculate summary totals with business type breakdown and meal period breakdown
     const summary = transformedData.reduce(
       (acc, item) => {
+        // General totals
         acc.totalAmount += item.amount || 0;
-        acc.grossTotal += Math.abs(
-          Number(item.amount) - Number(item?.igst || 0),
-        );
         acc.totalDiscount += item.disc || 0;
-        acc.totalCgst += Number(item.cgst) || 0;
+        acc.totalCgst += item.cgst || 0;
         acc.totalSgst += item.sgst || 0;
         acc.totalIgst += item.igst || 0;
-        acc.totalCash += Number(item.cash || 0);
-        acc.totalCredit += Number(item.credit || 0);
-        acc.totalUpi += Number(item.upi || 0);
-        acc.totalCard += Number(item.card || 0);
-        acc.totalBank += Number(item.bank || 0);
+        acc.totalCash += item.cash || 0;
+        acc.totalCredit += item.credit || 0;
+        acc.totalUpi += item.upi || 0;
+        acc.totalCheque += item.cheque || 0;
+        acc.totalBank += item.bank || 0;
         acc.totalFinalAmount += item.totalWithTax || 0;
         acc.totalRoundOff += item.roundOff || 0;
-        acc.totalDiscount += item.disc || 0;
-        acc.totalWithTax += item.disc || 0;
-        acc.totalRounded += item.disc || 0;
-        acc.totalCount += 1;
-
-        acc.countWithOutAgent = item?.isAgent
-          ? acc.countWithOutAgent + 0
-          : item?.isHotel
-            ? acc.countWithOutAgent + 1
-            : acc.countWithOutAgent + 0;
-
-        acc.agentCount += item?.isAgent ? 1 : 0;
-        acc.agentTotal += item?.isAgent ? item.amount : 0;
-
-        acc.hotelTotalAmount += item?.isHotel ? item.amount : 0;
-        acc.restaurantCount += item?.isHotel ? 0 : 1;
-
-        acc.restauratTotalAmount += item?.isHotel ? 0 : item.amount;
-
-        if (businessType === "restaurant" || businessType === "all") {
-          acc.IsTakeaway += item.kotDetails?.type === "takeaway" ? 1 : 0;
-          acc.IsDelivery += item.kotDetails?.type === "delivery" ? 1 : 0;
-          acc.IsRoomService += item.kotDetails?.type === "roomService" ? 1 : 0;
-          acc.IsDineIn += item.kotDetails?.type === "dine-in" ? 1 : 0;
-        }
 
         // Meal period breakdown
         const mealPeriod = item.mealPeriod || "Unknown";
@@ -4219,14 +4402,26 @@ export const getHotelSalesDetails = async (req, res) => {
         acc.mealPeriodBreakdown[mealPeriod].amount += item.totalWithTax || 0;
         acc.mealPeriodBreakdown[mealPeriod].count += 1;
 
+        // Business type breakdown
+        if (item.businessClassification === "Hotel") {
+          acc.hotelSales.amount += item.totalWithTax || 0;
+          acc.hotelSales.count += 1;
+          acc.hotelSales.rooms += item.accommodationItems?.length || 0;
+        } else if (item.businessClassification === "Restaurant") {
+          acc.restaurantSales.amount += item.totalWithTax || 0;
+          acc.restaurantSales.count += 1;
+          acc.restaurantSales.foodItems += item.foodItems?.length || 0;
+          acc.restaurantSales.beverageItems += item.beverageItems?.length || 0;
+        } else {
+          acc.otherSales.amount += item.totalWithTax || 0;
+          acc.otherSales.count += 1;
+        }
+
         return acc;
       },
       {
         // General totals
         totalAmount: 0,
-        hotelTotalAmount: 0,
-        restauratTotalAmount: 0,
-        grossTotal: 0,
         totalDiscount: 0,
         totalCgst: 0,
         totalSgst: 0,
@@ -4234,20 +4429,11 @@ export const getHotelSalesDetails = async (req, res) => {
         totalCash: 0,
         totalCredit: 0,
         totalUpi: 0,
-        totalCard: 0,
+        totalCheque: 0,
         totalBank: 0,
-        totalCash: 0,
         totalFinalAmount: 0,
         totalRoundOff: 0,
-        totalCount: 0,
-        countWithOutAgent: 0,
-        restaurantCount: 0,
-        agentCount: 0,
-        agentTotal: 0,
-        IsTakeaway: 0,
-        IsDelivery: 0,
-        IsRoomService: 0,
-        IsDineIn: 0,
+
         // Meal period breakdown
         mealPeriodBreakdown: {},
 
@@ -4260,7 +4446,7 @@ export const getHotelSalesDetails = async (req, res) => {
           beverageItems: 0,
         },
         otherSales: { amount: 0, count: 0 },
-      },
+      }
     );
 
     // Calculate analytics
@@ -4327,7 +4513,7 @@ export const getHotelSalesDetails = async (req, res) => {
           };
           return acc;
         },
-        {},
+        {}
       ),
       overallMetrics: {
         averageTicketSize:
@@ -4337,7 +4523,7 @@ export const getHotelSalesDetails = async (req, res) => {
           totalTransactions > 0
             ? transformedData.reduce(
                 (sum, order) => sum + (order.itemCount || 0),
-                0,
+                0
               ) / totalTransactions
             : 0,
       },
@@ -4347,29 +4533,25 @@ export const getHotelSalesDetails = async (req, res) => {
           ...new Set(
             transformedData
               .filter((s) => s.tableNumber)
-              .map((s) => s.tableNumber),
+              .map((s) => s.tableNumber)
           ),
         ].length,
         waitersActive: [
           ...new Set(
-            transformedData
-              .filter((s) => s.waiterName)
-              .map((s) => s.waiterName),
+            transformedData.filter((s) => s.waiterName).map((s) => s.waiterName)
           ),
         ].length,
         // Hotel metrics
         roomsOccupied: [
           ...new Set(
-            transformedData
-              .filter((s) => s.roomNumber)
-              .map((s) => s.roomNumber),
+            transformedData.filter((s) => s.roomNumber).map((s) => s.roomNumber)
           ),
         ].length,
         guestsServed: [
           ...new Set(
             transformedData
               .filter((s) => s.guestName && s.guestName !== "Cash")
-              .map((s) => s.guestName),
+              .map((s) => s.guestName)
           ),
         ].length,
       },
@@ -4380,6 +4562,7 @@ export const getHotelSalesDetails = async (req, res) => {
       data: {
         sales: transformedData,
         summary: summary,
+        analytics: analytics,
         companyId: cmp_id,
         owner: owner,
         dateRange: {
