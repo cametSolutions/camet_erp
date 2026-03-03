@@ -32,7 +32,7 @@ const TableTiles = ({
   setRoomDetails,
   roomDetails,
 }) => {
-console.log("hhh")
+  console.log("hhh");
   const sectionRef = useRef(null);
   const [tables, setTables] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -63,21 +63,21 @@ console.log("hhh")
   const navigate = useNavigate();
   const location = useLocation();
   const [showKotNotification, setShowKotNotification] = useState(
-    location.state?.fromTable
+    location.state?.fromTable,
   );
   const selectedKotFromRedirect = location.state?.selectedKot;
 
   const { _id: cmp_id, name: companyName } = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg
+    (state) => state.secSelectedOrganization.secSelectedOrg,
   );
 
   const org = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg
+    (state) => state.secSelectedOrganization.secSelectedOrg,
   );
 
   // Fetch payment type data
   const { data: paymentTypeData } = useFetch(
-    `/api/sUsers/getPaymentType/${cmp_id}`
+    `/api/sUsers/getPaymentType/${cmp_id}`,
   );
 
   useEffect(() => {
@@ -98,11 +98,11 @@ console.log("hhh")
     try {
       const response = await api.get(
         `/api/sUsers/getSeriesByVoucher/${cmp_id}?voucherType=sales`,
-        { withCredentials: true }
+        { withCredentials: true },
       );
       if (response.data) {
         const specificSeries = response.data.series?.find(
-          (item) => item.under === "restaurant"
+          (item) => item.under === "restaurant",
         );
         if (specificSeries) {
           const {
@@ -153,27 +153,27 @@ console.log("hhh")
     (room) =>
       room.roomName?.toLowerCase().includes(search.toLowerCase()) ||
       room.customerName?.toLowerCase().includes(search.toLowerCase()) ||
-      room.voucherNumber?.toLowerCase().includes(search.toLowerCase())
+      room.voucherNumber?.toLowerCase().includes(search.toLowerCase()),
   );
-console.log(roomData)
- const handleSelectRoom = (room) => {
-  console.log("=== SELECTING ROOM ===");
-  console.log("Room object:", room);
-  console.log("Food plan:", room?.foodPlan);
-  
-  setRoomDetails({
-    _id: room?.roomId || "",
-    roomno: room?.roomName || "",
-    guestName: room?.customerName || "",
-    CheckInNumber: room?.voucherNumber || "",
-    foodPlan: room?.foodPlan || null, // ✅ Pass the complete object
-  });
-  
-  setSearch(
-    `${room.roomName} - ${room.customerName} - ${room.voucherNumber}`
-  );
-  setShowResults(false);
-};
+  console.log(roomData);
+  const handleSelectRoom = (room) => {
+    console.log("=== SELECTING ROOM ===");
+    console.log("Room object:", room);
+    console.log("Food plan:", room?.foodPlan);
+
+    setRoomDetails({
+      _id: room?.roomId || "",
+      roomno: room?.roomName || "",
+      guestName: room?.customerName || "",
+      CheckInNumber: room?.voucherNumber || "",
+      foodPlan: room?.foodPlan || null, // ✅ Pass the complete object
+    });
+
+    setSearch(
+      `${room.roomName} - ${room.customerName} - ${room.voucherNumber}`,
+    );
+    setShowResults(false);
+  };
 
   // Fetch Tables from API
   const fetchTables = async () => {
@@ -236,7 +236,7 @@ console.log(roomData)
       let findOne = selectedKot.find((item) => item.id == order._id);
       if (findOne) {
         setSelectedKot((prevSelected) =>
-          prevSelected.filter((item) => item.id !== order._id)
+          prevSelected.filter((item) => item.id !== order._id),
         );
       } else {
         setSelectedKot((prevSelected) => [
@@ -270,7 +270,7 @@ console.log(roomData)
     try {
       let saleData = await api.get(
         `/api/sUsers/getSalePrintData/${cmp_id}/${kotId}`,
-        { withCredentials: true }
+        { withCredentials: true },
       );
       setSalePrintData(saleData?.data?.data);
     } catch (error) {
@@ -298,7 +298,7 @@ console.log(roomData)
 
     let totalAmount = itemList.reduce(
       (acc, item) => acc + Number(item.total),
-      0
+      0,
     );
 
     let newObject = {
@@ -361,7 +361,7 @@ console.log(roomData)
         selectedDataForPayment?.total
       ) {
         setPaymentError(
-          "Cash and online amounts together equal the total amount."
+          "Cash and online amounts together equal the total amount.",
         );
         setSaveLoader(false);
         return;
@@ -384,58 +384,55 @@ console.log(roomData)
           selectedKotData: selectedDataForPayment,
           isPostToRoom: isPostToRoom,
         },
-        { withCredentials: true }
+        { withCredentials: true },
       );
 
       if (response.status === 200 || response.status === 201) {
         setTableKOTs((prevOrders) =>
           prevOrders.map((order) =>
-            order._id === id ? { ...order, paymentCompleted: true } : order
-          )
+            order._id === id ? { ...order, paymentCompleted: true } : order,
+          ),
         );
-      const tableNumber = selectedDataForPayment?.tableNumber;
-      const remainingPendingKOTs = tableKOTs.filter(
-        (kot) => 
-          kot.tableNumber === tableNumber && 
-          kot._id !== id && 
-          !kot.paymentCompleted
-      );
+        const tableNumber = selectedDataForPayment?.tableNumber;
+        const remainingPendingKOTs = tableKOTs.filter(
+          (kot) =>
+            kot.tableNumber === tableNumber &&
+            kot._id !== id &&
+            !kot.paymentCompleted,
+        );
 
-      // If no more pending KOTs, update table status to available
-      if (remainingPendingKOTs.length === 0 && tableNumber) {
-        try {
-          await api.put(
-            `/api/sUsers/updateTableStatus/${cmp_id}/${tableNumber}`,
-            { status: "available" },
-            { withCredentials: true }
-          );
-          
-          // Refresh tables list to show updated status
-          await fetchTables();
-          
-          toast.success("Payment completed and table is now available");
-        } catch (tableError) {
-          console.error("Error updating table status:", tableError);
-          toast.warning("Payment completed but table status update failed");
+        // If no more pending KOTs, update table status to available
+        if (remainingPendingKOTs.length === 0 && tableNumber) {
+          try {
+            await api.put(
+              `/api/sUsers/updateTableStatus/${cmp_id}/${tableNumber}`,
+              { status: "available" },
+              { withCredentials: true },
+            );
+
+            // Refresh tables list to show updated status
+            await fetchTables();
+
+            toast.success("Payment completed and table is now available");
+          } catch (tableError) {
+            console.error("Error updating table status:", tableError);
+            toast.warning("Payment completed but table status update failed");
+          }
+        } else {
+          toast.success(response?.data?.message);
         }
-      } else {
-        toast.success(response?.data?.message);
-      }
 
-      setSelectedKot([]);
-      setShowVoucherPdf(false);
+        setSelectedKot([]);
+        setShowVoucherPdf(false);
         // Refresh the KOTs for the selected table
         if (selectedTable) {
           handleTableClick(selectedTable);
         }
-    
-      
-     
       }
     } catch (error) {
       console.error(
         "Error updating payment:",
-        error.response?.data || error.message
+        error.response?.data || error.message,
       );
       toast.error("Payment processing failed");
     } finally {
@@ -478,7 +475,7 @@ console.log(roomData)
               </h1>
               <div className="w-24 h-1 bg-gradient-to-r from-violet-500 to-blue-500 mx-auto rounded-full"></div>
             </div>
-            
+
             {/* Dropdown */}
             {roomData?.length > 0 && (
               <div className="relative mb-2">
@@ -516,7 +513,7 @@ console.log(roomData)
                 )}
               </div>
             )}
-       
+
             <>
               <div className="mb-3">
                 <div className="flex justify-center">
@@ -631,9 +628,8 @@ console.log(roomData)
                         };
                     }
                   };
-const status = table.effectiveStatus || table.status;
-const statusConfig = getStatusConfig(status);
-                 
+                  const status = table.effectiveStatus || table.status;
+                  const statusConfig = getStatusConfig(status);
 
                   return (
                     <div
@@ -849,7 +845,7 @@ const statusConfig = getStatusConfig(status);
                                         day: "2-digit",
                                         month: "short",
                                         year: "numeric",
-                                      }
+                                      },
                                     )}{" "}
                                     {new Date(kot.createdAt).toLocaleTimeString(
                                       [],
@@ -857,7 +853,7 @@ const statusConfig = getStatusConfig(status);
                                         hour: "2-digit",
                                         minute: "2-digit",
                                         hour12: true,
-                                      }
+                                      },
                                     )}
                                   </span>
                                 </div>
@@ -1075,7 +1071,7 @@ const statusConfig = getStatusConfig(status);
                               {selectedKot
                                 .reduce((total, kot) => {
                                   const order = tableKOTs.find(
-                                    (o) => o._id === kot.id
+                                    (o) => o._id === kot.id,
                                   );
                                   return total + (order?.total || 0);
                                 }, 0)
@@ -1136,12 +1132,12 @@ const statusConfig = getStatusConfig(status);
                             className="flex-2 px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg text-sm font-bold hover:from-green-600 hover:to-emerald-700 transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2 shadow-lg"
                             onClick={() => {
                               let findOneWithNoRoomService = selectedKot.find(
-                                (kot) => kot?.serviceWorker !== "roomService"
+                                (kot) => kot?.serviceWorker !== "roomService",
                               );
                               if (findOneWithNoRoomService) {
                                 handleSalesPreview();
                                 toast.warning(
-                                  "Continue to room option only for room service"
+                                  "Continue to room option only for room service",
                                 );
                               } else {
                                 setConformationModal(true);
@@ -1216,7 +1212,7 @@ const statusConfig = getStatusConfig(status);
                               ? ", "
                               : ""}
                           </span>
-                        )
+                        ),
                       )}
                     </span>
                   </div>
@@ -1381,7 +1377,7 @@ const statusConfig = getStatusConfig(status);
                                   setPaymentError("");
                                 } else {
                                   setPaymentError(
-                                    "Sum of cash and online amount cannot exceed order total."
+                                    "Sum of cash and online amount cannot exceed order total.",
                                   );
                                 }
                               }}
@@ -1447,7 +1443,7 @@ const statusConfig = getStatusConfig(status);
                                   setPaymentError("");
                                 } else {
                                   setPaymentError(
-                                    "Sum of cash and online amount cannot exceed order total."
+                                    "Sum of cash and online amount cannot exceed order total.",
                                   );
                                 }
                               }}
@@ -1576,24 +1572,24 @@ const statusConfig = getStatusConfig(status);
                             parseFloat(cashAmount || 0) +
                             parseFloat(onlineAmount || 0);
                           const orderTotal = parseFloat(
-                            selectedDataForPayment?.total || 0
+                            selectedDataForPayment?.total || 0,
                           );
 
                           if (totalEntered !== orderTotal) {
                             setPaymentError(
-                              "Split payment amounts must equal the order total"
+                              "Split payment amounts must equal the order total",
                             );
                             return;
                           }
                           if (cashAmount > 0 && !selectedCash) {
                             setPaymentError(
-                              "Please select a cash register for cash payment"
+                              "Please select a cash register for cash payment",
                             );
                             return;
                           }
                           if (onlineAmount > 0 && !selectedBank) {
                             setPaymentError(
-                              "Please select a payment method for online payment"
+                              "Please select a payment method for online payment",
                             );
                             return;
                           }
@@ -1601,7 +1597,7 @@ const statusConfig = getStatusConfig(status);
 
                         handleSavePayment(
                           selectedDataForPayment?._id,
-                          selectedDataForPayment?.tableNumber
+                          selectedDataForPayment?.tableNumber,
                         );
                       }}
                       disabled={saveLoader}

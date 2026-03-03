@@ -891,7 +891,10 @@ const OrdersDashboard = () => {
     let newObject = {
       Date: new Date(),
       voucherType: "sales",
-        orderType: selectedKot.map(k => k.type).filter(Boolean).join(", "), 
+      orderType: selectedKot
+        .map((k) => k.type)
+        .filter(Boolean)
+        .join(", "),
       serialNumber: saleVoucherData?.series?.currentNumber,
       userLevelSerialNumber: saleVoucherData?.series?.currentNumber,
       salesNumber: saleVoucherData?.number,
@@ -951,7 +954,7 @@ const OrdersDashboard = () => {
       );
       if (!complementaryParty) {
         toast.error("Complementary selected cash or bank is not found");
-        return
+        return;
       }
 
       setPaymentMethod(complementaryParty?.partyType);
@@ -1020,6 +1023,7 @@ const OrdersDashboard = () => {
     }
   }, [selectedKot]);
 
+  console.log("selectedKot", filteredOrders);
   return (
     <>
       {showVoucherPdf && (
@@ -1436,9 +1440,23 @@ const OrdersDashboard = () => {
                                 : "text-green-900"
                             }`}
                           >
-                            ₹{order.total.toFixed(2)}
+                            ₹{Number(order.total) - Number(order.discount || 0)}
                           </span>
                         </div>
+                        {order.discount > 0 && (
+                          <div className="flex justify-between items-center">
+                            <span
+                              className={`text-xs font-semibold ${
+                                isOrderSelected(order)
+                                  ? "text-blue-800"
+                                  : "text-green-800"
+                              }`}
+                            >
+                              {Math.round(order.total)}(total) -{" "}
+                              {Math.round(order.discount)}(discount)
+                            </span>
+                          </div>
+                        )}
                       </div>
                     )}
 
@@ -2465,7 +2483,7 @@ const OrdersDashboard = () => {
                   <div className="border-t border-gray-200 pt-2 mt-2 flex justify-between font-semibold text-gray-800">
                     <span className="text-sm">Total Amount </span>
                     <span className="text-base text-blue-600">
-                      ₹{selectedDataForPayment?.total}
+                      ₹{Math.round(selectedDataForPayment?.total)}
                     </span>
                   </div>
                   <div className="flex gap-2 mt-2">
