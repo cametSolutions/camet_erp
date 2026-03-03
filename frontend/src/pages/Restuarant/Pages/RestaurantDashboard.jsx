@@ -87,9 +87,8 @@ const RestaurantPOS = () => {
   const [selectedBank, setSelectedBank] = useState("");
   const [cashOrBank, setCashOrBank] = useState({});
 
-const [discountType, setDiscountType] = useState("amount"); // "amount" | "percentage"
-const [discountValue, setDiscountValue] = useState(0);      // user input
-
+  const [discountType, setDiscountType] = useState("amount"); // "amount" | "percentage"
+  const [discountValue, setDiscountValue] = useState(0); // user input
 
   const [currentPage, setCurrentPage] = useState(1);
   const observerTarget = useRef(null);
@@ -205,19 +204,18 @@ const [discountValue, setDiscountValue] = useState(0);      // user input
   const { configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg,
   );
-const config = configurations?.[0] || {};
-const orderTypesConfig = config.orderTypes || {};
+  const config = configurations?.[0] || {};
+  const orderTypesConfig = config.orderTypes || {};
 
-const getDefaultOrderType = () => {
-  if (orderTypesConfig.dineIn !== false) return "dine-in";
-  if (orderTypesConfig.takeaway !== false) return "takeaway";
-  if (orderTypesConfig.delivery !== false) return "delivery";
-  if (orderTypesConfig.roomService !== false) return "roomService";
-  return "direct-sale";
-};
+  const getDefaultOrderType = () => {
+    if (orderTypesConfig.dineIn !== false) return "dine-in";
+    if (orderTypesConfig.takeaway !== false) return "takeaway";
+    if (orderTypesConfig.delivery !== false) return "delivery";
+    if (orderTypesConfig.roomService !== false) return "roomService";
+    return "direct-sale";
+  };
 
-const [orderType, setOrderType] = useState(getDefaultOrderType());
-
+  const [orderType, setOrderType] = useState(getDefaultOrderType());
 
   const subcategoryIcons = {
     Pizza: "🍕",
@@ -417,6 +415,7 @@ const [orderType, setOrderType] = useState(getDefaultOrderType());
 
         const fetchedItems = res?.data?.items || [];
         const hasMoreData = res?.data?.pagination?.hasMore ?? false;
+        console.log("Fetched items:", fetchedItems);
 
         if (append) {
           // ✅ Prevent duplicates by filtering out existing items
@@ -570,37 +569,36 @@ const [orderType, setOrderType] = useState(getDefaultOrderType());
   }, [allItems, selectedSubcategory, searchTerm]);
 
   const searchTimeoutRef = useRef(null);
- const getTotalAmount = () => {
+  const getTotalAmount = () => {
     return orderItems.reduce(
       (total, item) => total + item.price * item.quantity,
       0,
     );
   };
 
-const grossTotal = Math.round(
-  selectedDataForPayment?.total || getTotalAmount()
-);
+  const grossTotal = Math.round(
+    selectedDataForPayment?.total || getTotalAmount(),
+  );
 
-let discountAmount = 0;
-if (discountType === "amount") {
-  discountAmount = Number(discountValue || 0);
-} else {
-  discountAmount = (Number(discountValue || 0) / 100) * grossTotal;
-}
+  let discountAmount = 0;
+  if (discountType === "amount") {
+    discountAmount = Number(discountValue || 0);
+  } else {
+    discountAmount = (Number(discountValue || 0) / 100) * grossTotal;
+  }
 
-if (discountAmount < 0) discountAmount = 0;
-if (discountAmount > grossTotal) discountAmount = grossTotal;
+  if (discountAmount < 0) discountAmount = 0;
+  if (discountAmount > grossTotal) discountAmount = grossTotal;
 
-// Shape expected by createSalesVoucher
-const additionalCharges = [];
-if (discountAmount > 0) {
-  additionalCharges.push({
-    name: "Discount",       // any label, not used in calc
-    type: "subtract",       // IMPORTANT: used for discountTotal
-    amount: discountAmount, // IMPORTANT: used for sums
-  });
-}
-
+  // Shape expected by createSalesVoucher
+  const additionalCharges = [];
+  if (discountAmount > 0) {
+    additionalCharges.push({
+      name: "Discount", // any label, not used in calc
+      type: "subtract", // IMPORTANT: used for discountTotal
+      amount: discountAmount, // IMPORTANT: used for sums
+    });
+  }
 
   const handleProcessDirectSalePayment = async () => {
     setSaveLoader(true);
@@ -632,12 +630,12 @@ if (discountAmount > 0) {
         {
           paymentMethod: paymentMethod,
           paymentDetails: paymentDetails,
-         selectedKotData: {
-      ...selectedDataForPayment,
-      // IMPORTANT: use subtotal/total BEFORE discount, because backend uses this
-      subtotal: grossTotal,
-      total: grossTotal,
-    },
+          selectedKotData: {
+            ...selectedDataForPayment,
+            // IMPORTANT: use subtotal/total BEFORE discount, because backend uses this
+            subtotal: grossTotal,
+            total: grossTotal,
+          },
           additionalCharges,
           isDirectSale: true,
         },
@@ -658,7 +656,6 @@ if (discountAmount > 0) {
           response?.data?.message || "Direct sale completed successfully!",
         );
 
-      
         const salesRecord = response?.data?.data?.salesRecord;
 
         if (salesRecord && salesRecord._id) {
@@ -781,6 +778,7 @@ if (discountAmount > 0) {
   const menuItems = items || [];
 
   const addToOrder = (item) => {
+    console.log("Adding to order:", item);
     const existingItem = orderItems.find(
       (orderItem) => orderItem._id === item._id,
     );
@@ -834,11 +832,9 @@ if (discountAmount > 0) {
   };
   console.log("orderItems:", orderItems);
 
- 
-
- const getTotalItems = () => {
-  return orderItems.length;
-};
+  const getTotalItems = () => {
+    return orderItems.length;
+  };
 
   const handleCategorySelect = (category, name) => {
     let newObject = {
@@ -1255,55 +1251,57 @@ if (discountAmount > 0) {
                   </span>
                 </div>
 
-               <div className="relative hidden sm:flex items-center">
-  {/* Orders button */}
-  <div
-    className="hover:cursor-pointer flex items-center gap-1.5 px-3 py-1.5 bg-slate-800/50 border border-slate-700/60 rounded-l-md hover:bg-slate-700/60 transition-colors group"
-    onClick={() => navigate("/sUsers/KotPage")}
-  >
-    <Receipt className="w-3.5 h-3.5 text-amber-400 group-hover:text-amber-300" />
-    <span className="text-xs font-medium text-gray-300 group-hover:text-gray-100">
-      {orders?.length || 0}
-    </span>
-  </div>
+                <div className="relative hidden sm:flex items-center">
+                  {/* Orders button */}
+                  <div
+                    className="hover:cursor-pointer flex items-center gap-1.5 px-3 py-1.5 bg-slate-800/50 border border-slate-700/60 rounded-l-md hover:bg-slate-700/60 transition-colors group"
+                    onClick={() => navigate("/sUsers/KotPage")}
+                  >
+                    <Receipt className="w-3.5 h-3.5 text-amber-400 group-hover:text-amber-300" />
+                    <span className="text-xs font-medium text-gray-300 group-hover:text-gray-100">
+                      {orders?.length || 0}
+                    </span>
+                  </div>
 
-  {/* Three-dot button */}
-  <div className="relative">
-    <button
-      onClick={() => setShowOptions((prev) => !prev)}
-      className="flex items-center justify-center px-2 py-1.5 bg-slate-800/50 border border-l-0 border-slate-700/60 rounded-r-md hover:bg-slate-700/60 transition-colors group"
-    >
-      <span className="flex flex-col gap-[3px] items-center justify-center">
-        <span className="w-[3px] h-[3px] bg-gray-400 rounded-full group-hover:bg-gray-200 transition-colors"></span>
-        <span className="w-[3px] h-[3px] bg-gray-400 rounded-full group-hover:bg-gray-200 transition-colors"></span>
-        <span className="w-[3px] h-[3px] bg-gray-400 rounded-full group-hover:bg-gray-200 transition-colors"></span>
-      </span>
-    </button>
+                  {/* Three-dot button */}
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowOptions((prev) => !prev)}
+                      className="flex items-center justify-center px-2 py-1.5 bg-slate-800/50 border border-l-0 border-slate-700/60 rounded-r-md hover:bg-slate-700/60 transition-colors group"
+                    >
+                      <span className="flex flex-col gap-[3px] items-center justify-center">
+                        <span className="w-[3px] h-[3px] bg-gray-400 rounded-full group-hover:bg-gray-200 transition-colors"></span>
+                        <span className="w-[3px] h-[3px] bg-gray-400 rounded-full group-hover:bg-gray-200 transition-colors"></span>
+                        <span className="w-[3px] h-[3px] bg-gray-400 rounded-full group-hover:bg-gray-200 transition-colors"></span>
+                      </span>
+                    </button>
 
-    {/* Dropdown */}
-    {showOptions && (
-      <>
-        {/* Backdrop to close */}
-        <div
-          className="fixed inset-0 z-40"
-          onClick={() => setShowOptions(false)}
-        />
-        <div className="absolute right-0 top-full mt-1 z-50 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden w-52 animate-in zoom-in-95 duration-150">
-          <button
-            onClick={() => {
-              setShowOptions(false);
-              navigate("/sUsers/BillSummary?type=restaurant");
-            }}
-            className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors"
-          >
-            <span className="text-base">📊</span>
-            <span className="font-medium">Daily Restaurant Sales</span>
-          </button>
-        </div>
-      </>
-    )}
-  </div>
-</div>
+                    {/* Dropdown */}
+                    {showOptions && (
+                      <>
+                        {/* Backdrop to close */}
+                        <div
+                          className="fixed inset-0 z-40"
+                          onClick={() => setShowOptions(false)}
+                        />
+                        <div className="absolute right-0 top-full mt-1 z-50 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden w-52 animate-in zoom-in-95 duration-150">
+                          <button
+                            onClick={() => {
+                              setShowOptions(false);
+                              navigate("/sUsers/BillSummary?type=restaurant");
+                            }}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors"
+                          >
+                            <span className="text-base">📊</span>
+                            <span className="font-medium">
+                              Daily Restaurant Sales
+                            </span>
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
 
                 <button
                   className="hover:cursor-pointer sm:hidden bg-blue-600/80 hover:bg-blue-600 text-white rounded-md px-2.5 py-1.5 flex items-center gap-1 transition-colors border border-blue-500/50 shadow-lg shadow-blue-500/20 active:scale-95"
@@ -1427,22 +1425,22 @@ if (discountAmount > 0) {
               </button>
             </div>
 
- <h3 className="text-base font-bold text-gray-800 flex items-center gap-2">
-                   <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center"> 
-                    <ShoppingCart className="w-4 h-4 text-white" />
-                  </div> 
-                  <div> 
-                    <span className="hidden sm:inline">Order Summary</span>
-                    <span className="sm:hidden">Cart</span>
-                    <div className="text-xs font-normal text-gray-600">
-                      {getTotalItems()} items
-                    </div>
-                  </div> 
-                 </h3> 
+            <h3 className="text-base font-bold text-gray-800 flex items-center gap-2">
+              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center">
+                <ShoppingCart className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <span className="hidden sm:inline">Order Summary</span>
+                <span className="sm:hidden">Cart</span>
+                <div className="text-xs font-normal text-gray-600">
+                  {getTotalItems()} items
+                </div>
+              </div>
+            </h3>
             {/* Fixed Action Buttons */}
             {/* <div className="flex items-center gap-2 flex-shrink-0"> */}
-              {/* Daily Restaurant Sales Button */}
-              {/* <button
+            {/* Daily Restaurant Sales Button */}
+            {/* <button
                 onClick={() => navigate("/sUsers/BillSummary?type=restaurant")}
                 className="hidden md:flex
               items-center gap-2 px-3 py-1.5 rounded-lg
@@ -1641,24 +1639,24 @@ if (discountAmount > 0) {
                 </div>
               ) : (
                 <>
-                <div className="mb-3 flex items-center justify-between">
-  <h3 className="text-sm font-bold text-gray-700 flex items-center gap-1.5">
-    <span className="w-2 h-2 bg-gradient-to-r from-indigo-500 to-blue-500 rounded-full"></span>
-    {selectedSubcategory
-      ? `${selectedCuisine?.categoryName} - (${menuItems.length})`
-      : searchTerm
-        ? `Search Results (${menuItems.length})`
-        : `All Items (${menuItems.length})`}
-  </h3>
+                  <div className="mb-3 flex items-center justify-between">
+                    <h3 className="text-sm font-bold text-gray-700 flex items-center gap-1.5">
+                      <span className="w-2 h-2 bg-gradient-to-r from-indigo-500 to-blue-500 rounded-full"></span>
+                      {selectedSubcategory
+                        ? `${selectedCuisine?.categoryName} - (${menuItems.length})`
+                        : searchTerm
+                          ? `Search Results (${menuItems.length})`
+                          : `All Items (${menuItems.length})`}
+                    </h3>
 
-  <button
-    onClick={() => navigate("/sUsers/itemRegistration")}
-    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gradient-to-r from-indigo-500 to-blue-500 text-white text-xs font-semibold hover:from-indigo-600 hover:to-blue-600 hover:scale-105 active:scale-95 transition-all duration-200 shadow-md"
-  >
-    <Plus className="w-3.5 h-3.5" />
-    Add Item
-  </button>
-</div>
+                    <button
+                      onClick={() => navigate("/sUsers/itemRegistration")}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gradient-to-r from-indigo-500 to-blue-500 text-white text-xs font-semibold hover:from-indigo-600 hover:to-blue-600 hover:scale-105 active:scale-95 transition-all duration-200 shadow-md"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      Add Item
+                    </button>
+                  </div>
 
                   {menuItems.length === 0 ? (
                     <div className="flex items-center justify-center h-48">
@@ -1796,16 +1794,16 @@ if (discountAmount > 0) {
           >
             {/* <div className="p-3 border-b border-gray-200/50 bg-gradient-to-br from-gray-50 to-gray-100">
               <div className="flex items-center justify-between"> */}
-               
-                {isMobile && (
-                  <button
-                    onClick={() => setShowOrderSummary(false)}
-                    className="text-gray-500 hover:text-gray-700 p-1 rounded-lg hover:bg-gray-100 transition-all duration-200"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                )}
-              {/* </div>
+
+            {isMobile && (
+              <button
+                onClick={() => setShowOrderSummary(false)}
+                className="text-gray-500 hover:text-gray-700 p-1 rounded-lg hover:bg-gray-100 transition-all duration-200"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            )}
+            {/* </div>
             </div> */}
 
             <div className="flex-1 overflow-y-auto min-h-0 p-3">
@@ -1837,60 +1835,76 @@ if (discountAmount > 0) {
                           {item.product_name}
                         </h4>
 
-                      <div className="flex items-center gap-1 mt-0.5">
-  <span className="text-xs text-gray-500">₹</span>
-  <input
-    type="number"
-    value={item.price}
-    onChange={(e) => {
-      const newPrice = parseFloat(e.target.value);
-      setOrderItems(
-        orderItems.map((orderItem) =>
-          orderItem._id === item._id
-            ? { ...orderItem, price: newPrice }
-            : orderItem,
-        ),
-      );
-    }}
-    className="w-11 text-xs text-gray-600 bg-transparent border-none focus:outline-none focus:bg-white focus:border focus:border-indigo-300 focus:rounded px-0.5"
-    step="0.01"
-    min="0"
-  />
-  <span className="text-xs text-gray-400">×{item.quantity} </span>
-  <span className="text-xs font-bold text-indigo-600">
-    ₹{(item.price * item.quantity).toFixed(2)}
-  </span>
-</div>
+                        <div className="flex items-center gap-1 mt-0.5">
+                          <span className="text-xs text-gray-500">₹</span>
+                          <input
+                            type="number"
+                            value={item.price}
+                            onChange={(e) => {
+                              const newPrice = parseFloat(e.target.value);
+                              setOrderItems(
+                                orderItems.map((orderItem) =>
+                                  orderItem._id === item._id
+                                    ? { ...orderItem, price: newPrice }
+                                    : orderItem,
+                                ),
+                              );
+                            }}
+                            className="w-11 text-xs text-gray-600 bg-transparent border-none focus:outline-none focus:bg-white focus:border focus:border-indigo-300 focus:rounded px-0.5"
+                            step="0.01"
+                            min="0"
+                          />
+                          <span className="text-xs text-gray-400">
+                            ×{item.quantity}{" "}
+                          </span>
+                          <span className="text-xs font-bold text-indigo-600">
+                            ₹{(item.price * item.quantity).toFixed(2)}
+                          </span>
+                        </div>
                       </div>
 
                       <div className="flex items-center gap-1.5">
                         <button
                           className="w-6 h-6 bg-gradient-to-r from-red-500 to-pink-500 text-white flex items-center justify-center rounded-full hover:from-red-600 hover:to-pink-600 hover:scale-110 active:scale-95 transition-all duration-200 shadow-lg disabled:opacity-50"
-                           onClick={() => updateQuantity(item._id, Math.max(0.5, parseFloat((item.quantity - 0.5).toFixed(2))))}
-    disabled={item.quantity <= 0.5}
+                          onClick={() =>
+                            updateQuantity(
+                              item._id,
+                              Math.max(
+                                0.5,
+                                parseFloat((item.quantity - 0.5).toFixed(2)),
+                              ),
+                            )
+                          }
+                          disabled={item.quantity <= 0.5}
                         >
                           <Minus className="w-3 h-3" />
                         </button>
 
                         <div className="relative">
                           <input
-      className="text-sm font-bold w-14 text-center bg-white px-2 py-1 rounded-lg border border-gray-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-      type="number"
-      inputMode="decimal"
-      step="0.5"
-      min="0.5"
-      value={item.quantity === 0 ? "" : item.quantity}
-      onChange={(e) => {
-        const val = e.target.value;
-        if (val === "" || /^\d*\.?\d*$/.test(val)) {
-          updateQuantity(item._id, val === "" ? 0 : parseFloat(val) || 0);
-        }
-      }}
-      onBlur={(e) => {
-        const val = parseFloat(e.target.value);
-        updateQuantity(item._id, Math.max(0.5, isNaN(val) ? 0.5 : val));
-      }}
-    />
+                            className="text-sm font-bold w-14 text-center bg-white px-2 py-1 rounded-lg border border-gray-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            type="number"
+                            inputMode="decimal"
+                            step="0.5"
+                            min="0.5"
+                            value={item.quantity === 0 ? "" : item.quantity}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val === "" || /^\d*\.?\d*$/.test(val)) {
+                                updateQuantity(
+                                  item._id,
+                                  val === "" ? 0 : parseFloat(val) || 0,
+                                );
+                              }
+                            }}
+                            onBlur={(e) => {
+                              const val = parseFloat(e.target.value);
+                              updateQuantity(
+                                item._id,
+                                Math.max(0.5, isNaN(val) ? 0.5 : val),
+                              );
+                            }}
+                          />
                         </div>
 
                         <button
@@ -1923,56 +1937,58 @@ if (discountAmount > 0) {
               <div className="mb-3">
                 <div className="grid grid-cols-2 gap-1.5 ">
                   {orderTypesConfig.dineIn !== false && (
-                  <button
-                    onClick={() => setOrderType("dine-in")}
-                    className={`flex flex-col items-center justify-center h-10 rounded-xl border transition-all duration-300 transform hover:scale-105 ${
-                      orderType === "dine-in"
-                        ? "border-transparent bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-indigo-500/25"
-                        : "border-gray-200 bg-white/80 text-gray-700 hover:border-indigo-300 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-blue-50"
-                    }`}
-                  >
-                    <Home className="w-4 h-4 mb-0.5" />
-                    <span className="font-semibold text-xs">Dine In</span>
-                  </button>
+                    <button
+                      onClick={() => setOrderType("dine-in")}
+                      className={`flex flex-col items-center justify-center h-10 rounded-xl border transition-all duration-300 transform hover:scale-105 ${
+                        orderType === "dine-in"
+                          ? "border-transparent bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-indigo-500/25"
+                          : "border-gray-200 bg-white/80 text-gray-700 hover:border-indigo-300 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-blue-50"
+                      }`}
+                    >
+                      <Home className="w-4 h-4 mb-0.5" />
+                      <span className="font-semibold text-xs">Dine In</span>
+                    </button>
                   )}
                   {orderTypesConfig.takeaway !== false && (
-                  <button
-                    onClick={() => setOrderType("takeaway")}
-                    className={`flex flex-col items-center justify-center  h-10 rounded-xl border transition-all duration-300 transform hover:scale-105 ${
-                      orderType === "takeaway"
-                        ? "border-transparent bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-indigo-500/25"
-                        : "border-gray-200 bg-white/80 text-gray-700 hover:border-indigo-300 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-blue-50"
-                    }`}
-                  >
-                    <Package className="w-4 h-4 mb-0.5" />
-                    <span className="font-semibold text-xs">Takeaway</span>
-                  </button>
+                    <button
+                      onClick={() => setOrderType("takeaway")}
+                      className={`flex flex-col items-center justify-center  h-10 rounded-xl border transition-all duration-300 transform hover:scale-105 ${
+                        orderType === "takeaway"
+                          ? "border-transparent bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-indigo-500/25"
+                          : "border-gray-200 bg-white/80 text-gray-700 hover:border-indigo-300 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-blue-50"
+                      }`}
+                    >
+                      <Package className="w-4 h-4 mb-0.5" />
+                      <span className="font-semibold text-xs">Takeaway</span>
+                    </button>
                   )}
                   {orderTypesConfig.delivery !== false && (
-                  <button
-                    onClick={() => setOrderType("delivery")}
-                    className={`flex flex-col items-center justify-center  h-10 rounded-xl border transition-all duration-300 transform hover:scale-105 ${
-                      orderType === "delivery"
-                        ? "border-transparent bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-indigo-500/25"
-                        : "border-gray-200 bg-white/80 text-gray-700 hover:border-indigo-300 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-blue-50"
-                    }`}
-                  >
-                    <Car className="w-4 h-4 mb-0.5" />
-                    <span className="font-semibold text-xs">Delivery</span>
-                  </button>
+                    <button
+                      onClick={() => setOrderType("delivery")}
+                      className={`flex flex-col items-center justify-center  h-10 rounded-xl border transition-all duration-300 transform hover:scale-105 ${
+                        orderType === "delivery"
+                          ? "border-transparent bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-indigo-500/25"
+                          : "border-gray-200 bg-white/80 text-gray-700 hover:border-indigo-300 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-blue-50"
+                      }`}
+                    >
+                      <Car className="w-4 h-4 mb-0.5" />
+                      <span className="font-semibold text-xs">Delivery</span>
+                    </button>
                   )}
                   {orderTypesConfig.roomService !== false && (
-                  <button
-                    onClick={() => setOrderType("roomService")}
-                    className={`flex flex-col items-center justify-center  h-10 rounded-xl border transition-all duration-300 transform hover:scale-105 ${
-                      orderType === "roomService"
-                        ? "border-transparent bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-indigo-500/25"
-                        : "border-gray-200 bg-white/80 text-gray-700 hover:border-indigo-300 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-blue-50"
-                    }`}
-                  >
-                    <Bed className="w-4 h-4 mb-0.5" />
-                    <span className="font-semibold text-xs">Room Service</span>
-                  </button>
+                    <button
+                      onClick={() => setOrderType("roomService")}
+                      className={`flex flex-col items-center justify-center  h-10 rounded-xl border transition-all duration-300 transform hover:scale-105 ${
+                        orderType === "roomService"
+                          ? "border-transparent bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-indigo-500/25"
+                          : "border-gray-200 bg-white/80 text-gray-700 hover:border-indigo-300 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-blue-50"
+                      }`}
+                    >
+                      <Bed className="w-4 h-4 mb-0.5" />
+                      <span className="font-semibold text-xs">
+                        Room Service
+                      </span>
+                    </button>
                   )}
                   <button
                     onClick={() => {
@@ -2408,77 +2424,79 @@ if (discountAmount > 0) {
                 ))}
               </div>
               <div className="mt-3 p-2 bg-white rounded-lg border border-gray-200 space-y-2">
-    <div className="flex items-center justify-between">
-      <span className="text-xs font-semibold text-gray-700">
-        Discount
-      </span>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-gray-700">
+                    Discount
+                  </span>
 
-      <div className="flex items-center gap-1 text-[11px] font-medium">
-        <button
-          type="button"
-          onClick={() => setDiscountType("amount")}
-          className={`px-2 py-1 rounded-md border text-xs ${
-            discountType === "amount"
-              ? "bg-blue-600 text-white border-blue-600"
-              : "bg-white text-gray-700 border-gray-300"
-          }`}
-        >
-          Amount
-        </button>
-        <button
-          type="button"
-          onClick={() => setDiscountType("percentage")}
-          className={`px-2 py-1 rounded-md border text-xs ${
-            discountType === "percentage"
-              ? "bg-blue-600 text-white border-blue-600"
-              : "bg-white text-gray-700 border-gray-300"
-          }`}
-        >
-          %
-        </button>
-      </div>
-    </div>
+                  <div className="flex items-center gap-1 text-[11px] font-medium">
+                    <button
+                      type="button"
+                      onClick={() => setDiscountType("amount")}
+                      className={`px-2 py-1 rounded-md border text-xs ${
+                        discountType === "amount"
+                          ? "bg-blue-600 text-white border-blue-600"
+                          : "bg-white text-gray-700 border-gray-300"
+                      }`}
+                    >
+                      Amount
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDiscountType("percentage")}
+                      className={`px-2 py-1 rounded-md border text-xs ${
+                        discountType === "percentage"
+                          ? "bg-blue-600 text-white border-blue-600"
+                          : "bg-white text-gray-700 border-gray-300"
+                      }`}
+                    >
+                      %
+                    </button>
+                  </div>
+                </div>
 
-    <div className="flex items-center gap-2">
-      <input
-        type="text"
-        min="0"
-        value={discountValue}
-        onChange={(e) => setDiscountValue(Number(e.target.value) || 0)}
-        className="flex-1 px-2 py-1.5 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
-        placeholder={
-          discountType === "amount" ? "Enter amount" : "Enter %"
-        }
-      />
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    min="0"
+                    value={discountValue}
+                    onChange={(e) =>
+                      setDiscountValue(Number(e.target.value) || 0)
+                    }
+                    className="flex-1 px-2 py-1.5 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    placeholder={
+                      discountType === "amount" ? "Enter amount" : "Enter %"
+                    }
+                  />
 
-      {/* Show calculated value if percentage */}
-      {discountType === "percentage" && (
-        <span className="text-[11px] text-gray-600 whitespace-nowrap">
-          = ₹
-          {(
-            (Number(discountValue || 0) / 100) *
-            Math.round(getTotalAmount())
-          ).toFixed(2)}
-        </span>
-      )}
-    </div>
-  </div>
+                  {/* Show calculated value if percentage */}
+                  {discountType === "percentage" && (
+                    <span className="text-[11px] text-gray-600 whitespace-nowrap">
+                      = ₹
+                      {(
+                        (Number(discountValue || 0) / 100) *
+                        Math.round(getTotalAmount())
+                      ).toFixed(2)}
+                    </span>
+                  )}
+                </div>
+              </div>
 
-  {/* Final total after discount */}
-  <div className="border-t border-gray-200 pt-2 mt-2 flex justify-between font-semibold text-gray-800">
-    <span className="text-sm">Net Amount</span>
-    <span className="text-base text-blue-600">
-      {(() => {
-        const gross = Math.round(getTotalAmount());
-        const disc =
-          discountType === "amount"
-            ? Number(discountValue || 0)
-            : (Number(discountValue || 0) / 100) * gross;
-        const net = Math.max(gross - disc, 0);
-        return `₹${net.toFixed(2)}`;
-      })()}
-    </span>
-  </div>
+              {/* Final total after discount */}
+              <div className="border-t border-gray-200 pt-2 mt-2 flex justify-between font-semibold text-gray-800">
+                <span className="text-sm">Net Amount</span>
+                <span className="text-base text-blue-600">
+                  {(() => {
+                    const gross = Math.round(getTotalAmount());
+                    const disc =
+                      discountType === "amount"
+                        ? Number(discountValue || 0)
+                        : (Number(discountValue || 0) / 100) * gross;
+                    const net = Math.max(gross - disc, 0);
+                    return `₹${net.toFixed(2)}`;
+                  })()}
+                </span>
+              </div>
 
               <button
                 onClick={handleProcessDirectSalePayment}
