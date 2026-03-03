@@ -246,6 +246,7 @@ const cgstGroups = data?.items?.reduce((acc, item) => {
   const totalTax = Number(
     el?.totalIgstAmt || (el?.totalCgstAmt || 0) + (el?.totalSgstAmt || 0) || 0
   );
+  console.log(el)
 
   // ✅ Same logic as Format 1 — addRateWithTax controls rate/amount display
   const addRateWithTax = org?.configurations?.[0]?.addRateWithTax?.restaurantSale 
