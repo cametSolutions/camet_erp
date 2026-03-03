@@ -52,7 +52,7 @@ const StockItem = () => {
     ...(industry === 6 || industry === 7 || industry === 8
       ? [
           {
-            title: "Restaurant Management",
+            title: "Food Product Management",
             description: "Filters only show product creation window if it's enabled",
             icon: <FiSettings />,
             to: "/sUsers/restuarentSettings",
