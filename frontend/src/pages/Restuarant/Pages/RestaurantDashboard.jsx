@@ -125,7 +125,24 @@ const [discountValue, setDiscountValue] = useState(0);      // user input
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id,
   );
+  
+  const industry = org?.industry;
   const shouldFetch = Boolean(cmp_id);
+
+    const getIndustryTitle = () => {
+    if (industry === 6) return "HMS";
+    if (industry === 7) return "RMS";
+    if (industry === 8) return "CMS";
+    return "RMS";
+  };
+
+  const getIndustrySubtitle = () => {
+    if (industry === 6) return "Hotel";
+    if (industry === 7) return "Hotel & Restaurant";
+    if (industry === 8) return "Cafe & Bakery";
+    return "Restaurant";
+  };
+
 
   const queryClient = useQueryClient();
   const isAdmin =
@@ -1137,14 +1154,15 @@ if (discountAmount > 0) {
                 <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center font-bold text-lg shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-shadow">
                   🍽️
                 </div>
-                <div>
-                  <h1 className="text-base md:text-lg font-bold text-white hidden md:block tracking-tight">
-                    RMS
-                  </h1>
-                  <p className="text-xs text-gray-400 hidden md:block">
-                    Restaurant
-                  </p>
-                </div>
+               <div>
+  <h1 className="text-base md:text-lg font-bold text-white hidden md:block tracking-tight">
+    {getIndustryTitle()}
+  </h1>
+  <p className="text-xs text-gray-400 hidden md:block">
+    {getIndustrySubtitle()}
+  </p>
+</div>
+
               </div>
 
               {/* Center Section - Price Levels */}
