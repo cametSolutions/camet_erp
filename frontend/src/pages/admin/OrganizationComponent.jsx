@@ -50,7 +50,7 @@ const OrganizationCard = ({ org, onToggle, isLoading }) => {
     if (!name) return '?';
     return name.split(' ').map(word => word[0]).join('').toUpperCase().slice(0, 2);
   };
-
+console.log(org);
   return (
 <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-xl hover:shadow-md hover:translate-y-1 transition-all duration-200 ease-in-out">
       {/* Header */}
@@ -136,7 +136,7 @@ const OrganizationComponent = ({ organizations, onToggle, isLoading }) => {
   }
 
 
-  
+  console.log(organizations)
 
   return (
     <div className=" bg-gray-50 min-h-screen">

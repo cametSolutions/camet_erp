@@ -65,9 +65,10 @@ const RestaurantPOS = () => {
   const [isEdit, setIsEdit] = useState(false);
   // const [currentTime, setCurrentTime] = useState(new Date())
   const [showKOTModal, setShowKOTModal] = useState(false);
-  const [orderType, setOrderType] = useState("dine-in");
+  // const [orderType, setOrderType] = useState("dine-in");
   const [loading, setLoading] = useState(false);
   const [optionData, setOptionsData] = useState({});
+
   const [roomData, setRoomData] = useState({});
   const [showPriceLevelSelect, setShowPriceLevelSelect] = useState(false);
   const [priceLevelData, setPriceLevelData] = useState([]);
@@ -85,6 +86,10 @@ const RestaurantPOS = () => {
   const [selectedCash, setSelectedCash] = useState("");
   const [selectedBank, setSelectedBank] = useState("");
   const [cashOrBank, setCashOrBank] = useState({});
+
+const [discountType, setDiscountType] = useState("amount"); // "amount" | "percentage"
+const [discountValue, setDiscountValue] = useState(0);      // user input
+
 
   const [currentPage, setCurrentPage] = useState(1);
   const observerTarget = useRef(null);
@@ -183,6 +188,19 @@ const RestaurantPOS = () => {
   const { configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg,
   );
+const config = configurations?.[0] || {};
+const orderTypesConfig = config.orderTypes || {};
+
+const getDefaultOrderType = () => {
+  if (orderTypesConfig.dineIn !== false) return "dine-in";
+  if (orderTypesConfig.takeaway !== false) return "takeaway";
+  if (orderTypesConfig.delivery !== false) return "delivery";
+  if (orderTypesConfig.roomService !== false) return "roomService";
+  return "direct-sale";
+};
+
+const [orderType, setOrderType] = useState(getDefaultOrderType());
+
 
   const subcategoryIcons = {
     Pizza: "🍕",
@@ -535,6 +553,37 @@ const RestaurantPOS = () => {
   }, [allItems, selectedSubcategory, searchTerm]);
 
   const searchTimeoutRef = useRef(null);
+ const getTotalAmount = () => {
+    return orderItems.reduce(
+      (total, item) => total + item.price * item.quantity,
+      0,
+    );
+  };
+
+const grossTotal = Math.round(
+  selectedDataForPayment?.total || getTotalAmount()
+);
+
+let discountAmount = 0;
+if (discountType === "amount") {
+  discountAmount = Number(discountValue || 0);
+} else {
+  discountAmount = (Number(discountValue || 0) / 100) * grossTotal;
+}
+
+if (discountAmount < 0) discountAmount = 0;
+if (discountAmount > grossTotal) discountAmount = grossTotal;
+
+// Shape expected by createSalesVoucher
+const additionalCharges = [];
+if (discountAmount > 0) {
+  additionalCharges.push({
+    name: "Discount",       // any label, not used in calc
+    type: "subtract",       // IMPORTANT: used for discountTotal
+    amount: discountAmount, // IMPORTANT: used for sums
+  });
+}
+
 
   const handleProcessDirectSalePayment = async () => {
     setSaveLoader(true);
@@ -566,7 +615,13 @@ const RestaurantPOS = () => {
         {
           paymentMethod: paymentMethod,
           paymentDetails: paymentDetails,
-          selectedKotData: selectedDataForPayment,
+         selectedKotData: {
+      ...selectedDataForPayment,
+      // IMPORTANT: use subtotal/total BEFORE discount, because backend uses this
+      subtotal: grossTotal,
+      total: grossTotal,
+    },
+          additionalCharges,
           isDirectSale: true,
         },
         { withCredentials: true },
@@ -586,7 +641,7 @@ const RestaurantPOS = () => {
           response?.data?.message || "Direct sale completed successfully!",
         );
 
-        // ✅ Get sale ID from response
+      
         const salesRecord = response?.data?.data?.salesRecord;
 
         if (salesRecord && salesRecord._id) {
@@ -762,12 +817,7 @@ const RestaurantPOS = () => {
   };
   console.log("orderItems:", orderItems);
 
-  const getTotalAmount = () => {
-    return orderItems.reduce(
-      (total, item) => total + item.price * item.quantity,
-      0,
-    );
-  };
+ 
 
  const getTotalItems = () => {
   return orderItems.length;
@@ -1665,13 +1715,13 @@ const RestaurantPOS = () => {
                                 <img
                                   src={
                                     item.product_image ||
-                                    "https://i.pinimg.com/1200x/81/92/7e/81927ee1cf8fcd7715530b0856cf553d.jpg"
+                                    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQTIHlLcm7fJCVUvJhvSF0kP-oXPPdwBxXHuQ&s"
                                   }
                                   alt={item.product_name}
                                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-125"
                                   onError={(e) => {
                                     e.target.src =
-                                      "https://i.pinimg.com/1200x/81/92/7e/81927ee1cf8fcd7715530b0856cf553d.jpg";
+                                      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQTIHlLcm7fJCVUvJhvSF0kP-oXPPdwBxXHuQ&s";
                                   }}
                                 />
                               </div>
@@ -1854,6 +1904,7 @@ const RestaurantPOS = () => {
               {/* Compact Order Type Selection */}
               <div className="mb-3">
                 <div className="grid grid-cols-2 gap-1.5 ">
+                  {orderTypesConfig.dineIn !== false && (
                   <button
                     onClick={() => setOrderType("dine-in")}
                     className={`flex flex-col items-center justify-center h-10 rounded-xl border transition-all duration-300 transform hover:scale-105 ${
@@ -1865,6 +1916,8 @@ const RestaurantPOS = () => {
                     <Home className="w-4 h-4 mb-0.5" />
                     <span className="font-semibold text-xs">Dine In</span>
                   </button>
+                  )}
+                  {orderTypesConfig.takeaway !== false && (
                   <button
                     onClick={() => setOrderType("takeaway")}
                     className={`flex flex-col items-center justify-center  h-10 rounded-xl border transition-all duration-300 transform hover:scale-105 ${
@@ -1876,6 +1929,8 @@ const RestaurantPOS = () => {
                     <Package className="w-4 h-4 mb-0.5" />
                     <span className="font-semibold text-xs">Takeaway</span>
                   </button>
+                  )}
+                  {orderTypesConfig.delivery !== false && (
                   <button
                     onClick={() => setOrderType("delivery")}
                     className={`flex flex-col items-center justify-center  h-10 rounded-xl border transition-all duration-300 transform hover:scale-105 ${
@@ -1887,6 +1942,8 @@ const RestaurantPOS = () => {
                     <Car className="w-4 h-4 mb-0.5" />
                     <span className="font-semibold text-xs">Delivery</span>
                   </button>
+                  )}
+                  {orderTypesConfig.roomService !== false && (
                   <button
                     onClick={() => setOrderType("roomService")}
                     className={`flex flex-col items-center justify-center  h-10 rounded-xl border transition-all duration-300 transform hover:scale-105 ${
@@ -1898,6 +1955,7 @@ const RestaurantPOS = () => {
                     <Bed className="w-4 h-4 mb-0.5" />
                     <span className="font-semibold text-xs">Room Service</span>
                   </button>
+                  )}
                   <button
                     onClick={() => {
                       console.log("Direct Sale button clicked"); // Debug log
@@ -2331,12 +2389,78 @@ const RestaurantPOS = () => {
                   </div>
                 ))}
               </div>
-              <div className="border-t border-gray-200 pt-2 mt-2 flex justify-between font-semibold text-gray-800">
-                <span className="text-sm">Total Amount</span>
-                <span className="text-base text-blue-600">
-                  ₹{Math.round(getTotalAmount()).toFixed(2)}
-                </span>
-              </div>
+              <div className="mt-3 p-2 bg-white rounded-lg border border-gray-200 space-y-2">
+    <div className="flex items-center justify-between">
+      <span className="text-xs font-semibold text-gray-700">
+        Discount
+      </span>
+
+      <div className="flex items-center gap-1 text-[11px] font-medium">
+        <button
+          type="button"
+          onClick={() => setDiscountType("amount")}
+          className={`px-2 py-1 rounded-md border text-xs ${
+            discountType === "amount"
+              ? "bg-blue-600 text-white border-blue-600"
+              : "bg-white text-gray-700 border-gray-300"
+          }`}
+        >
+          Amount
+        </button>
+        <button
+          type="button"
+          onClick={() => setDiscountType("percentage")}
+          className={`px-2 py-1 rounded-md border text-xs ${
+            discountType === "percentage"
+              ? "bg-blue-600 text-white border-blue-600"
+              : "bg-white text-gray-700 border-gray-300"
+          }`}
+        >
+          %
+        </button>
+      </div>
+    </div>
+
+    <div className="flex items-center gap-2">
+      <input
+        type="text"
+        min="0"
+        value={discountValue}
+        onChange={(e) => setDiscountValue(Number(e.target.value) || 0)}
+        className="flex-1 px-2 py-1.5 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+        placeholder={
+          discountType === "amount" ? "Enter amount" : "Enter %"
+        }
+      />
+
+      {/* Show calculated value if percentage */}
+      {discountType === "percentage" && (
+        <span className="text-[11px] text-gray-600 whitespace-nowrap">
+          = ₹
+          {(
+            (Number(discountValue || 0) / 100) *
+            Math.round(getTotalAmount())
+          ).toFixed(2)}
+        </span>
+      )}
+    </div>
+  </div>
+
+  {/* Final total after discount */}
+  <div className="border-t border-gray-200 pt-2 mt-2 flex justify-between font-semibold text-gray-800">
+    <span className="text-sm">Net Amount</span>
+    <span className="text-base text-blue-600">
+      {(() => {
+        const gross = Math.round(getTotalAmount());
+        const disc =
+          discountType === "amount"
+            ? Number(discountValue || 0)
+            : (Number(discountValue || 0) / 100) * gross;
+        const net = Math.max(gross - disc, 0);
+        return `₹${net.toFixed(2)}`;
+      })()}
+    </span>
+  </div>
 
               <button
                 onClick={handleProcessDirectSalePayment}

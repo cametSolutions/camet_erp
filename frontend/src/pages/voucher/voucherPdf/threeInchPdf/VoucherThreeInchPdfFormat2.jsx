@@ -1,6 +1,7 @@
 /* eslint-disable react/prop-types */
 import { useEffect, useState, useRef } from "react";
 import { useSelector } from "react-redux";
+
 import { defaultPrintSettings } from "../../../../../utils/defaultConfigurations";
 import { useLocation } from "react-router-dom";
 import { useReactToPrint } from "react-to-print";
@@ -150,6 +151,23 @@ const igstPercentage = getIgstPercentage();
   };
 console.log(data)
 console.log({ cgst, tax, subTotal, cgstPercentage, totalTax: calculateTotalTax() });
+const cgstGroups = data?.items?.reduce((acc, item) => {
+  const cgstRate = item?.cgst || 0;
+  const sgstRate = item?.sgst || 0;
+  const cgstAmt = Number(item?.totalCgstAmt || 0);
+  const sgstAmt = Number(item?.totalSgstAmt || 0);
+  if (cgstAmt > 0 || sgstAmt > 0) {
+    if (!acc[cgstRate]) {
+      acc[cgstRate] = { cgstAmt: 0, sgstAmt: 0, sgstRate };
+    }
+    acc[cgstRate].cgstAmt += cgstAmt;
+    acc[cgstRate].sgstAmt += sgstAmt;
+  }
+  return acc;
+}, {}) || {};
+
+
+
   return (
     <>
       <TitleDiv title="Restaurant sale print" />
@@ -221,20 +239,34 @@ console.log({ cgst, tax, subTotal, cgstPercentage, totalTax: calculateTotalTax()
           </div>
 
           {/* Items */}
-        {data?.items?.map((el, index) => {
+       {/* Items */}
+{data?.items?.map((el, index) => {
   const total = Number(el?.total || 0);
   const count = Number(el?.totalCount || 1);
-  const totalTax = Number(el?.totalIgstAmt || (el?.totalCgstAmt || 0) + (el?.totalSgstAmt || 0) || 0);
-  const rateWithoutTax = count > 0 ? ((total - totalTax) / count).toFixed(2) : "0.00";
-  const amountWithoutTax = (Number(rateWithoutTax) * count).toFixed(2); // rate × qty
+  const totalTax = Number(
+    el?.totalIgstAmt || (el?.totalCgstAmt || 0) + (el?.totalSgstAmt || 0) || 0
+  );
+
+  // ✅ Same logic as Format 1 — addRateWithTax controls rate/amount display
+  const addRateWithTax = org?.configurations?.[0]?.addRateWithTax?.restaurantSale 
+    ?? org?.configurations?.[0]?.addRateWithTax?.sale 
+    ?? true;
+
+  const rate = addRateWithTax
+    ? (count > 0 ? (total / count).toFixed(2) : "0.00")           // WITH tax (like format 1)
+    : (count > 0 ? ((total - totalTax) / count).toFixed(2) : "0.00"); // WITHOUT tax
+
+  const amount = addRateWithTax
+    ? total.toFixed(2)                          // WITH tax
+    : (Number(rate) * count).toFixed(2);        // WITHOUT tax
 
   return (
     <div key={index} style={itemGrid}>
       <div style={textLeft}>{index + 1}</div>
       <div style={{ ...textLeft, wordBreak: "break-word" }}>{el.product_name}</div>
       <div style={centerText}>{count}</div>
-      <div style={textRight}>{rateWithoutTax}</div>
-      <div style={textRight}>{amountWithoutTax}</div> {/* rate × qty, no tax */}
+      <div style={textRight}>{rate}</div>
+      <div style={textRight}>{amount}</div>
     </div>
   );
 })}
@@ -249,17 +281,7 @@ console.log({ cgst, tax, subTotal, cgstPercentage, totalTax: calculateTotalTax()
 
 {isIndian && isSameState && calculateTotalTax() > 0 && (() => {
   // Group items by their CGST rate and sum tax amounts per rate
-  const cgstGroups = {};
-  data?.items?.forEach((el) => {
-    const rate = el?.cgst || 0;
-    if (rate > 0) {
-      const itemCgst = Number(el?.totalCgstAmt || 0);
-      const itemSgst = Number(el?.totalSgstAmt || 0);
-      if (!cgstGroups[rate]) cgstGroups[rate] = { cgstAmt: 0, sgstAmt: 0, sgstRate: el?.sgst || rate };
-      cgstGroups[rate].cgstAmt += itemCgst;
-      cgstGroups[rate].sgstAmt += itemSgst;
-    }
-  });
+ 
 
   const entries = Object.entries(cgstGroups);
 

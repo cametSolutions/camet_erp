@@ -3581,7 +3581,13 @@ export const updateConfigurationForHotelAndRestaurant = async (req, res) => {
             data.checked,
         },
       };
-    } else if (data.title) {
+    } else if (data.fieldType === "orderTypes") {
+      updateData = {
+        $set: {
+          [`configurations.0.orderTypes.${data.field}`]: data.checked,
+        },
+      };
+      }  else if (data.title) {
       // Fallback for backward compatibility with old toggle structure
       updateData = {
         $set: {
