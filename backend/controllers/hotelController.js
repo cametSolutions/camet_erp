@@ -2512,6 +2512,7 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
         { "paymenttypeDetails.card": { $gt: "0" } },
       ],
     };
+    
 
     // ✅ CORRECTED: Get roomId and serviceType from ROOT level, not kotDetails
 
@@ -2519,7 +2520,7 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
       {
         $match: {
           "convertedFrom.id": { $exists: true, $ne: null },
-          "convertedFrom.checkInNumber": checkoutData[0].voucherNumber,
+          "convertedFrom.checkInNumber": checkoutData[0]?.checkInId?.voucherNumber || checkoutData[0]?.voucherNumber ,
           isComplimentary: false,
           isPostToRoom:true
         },
@@ -2648,7 +2649,7 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
 
         const salesData = await salesModel
           .findOne({
-            salesNumber: checkout.voucherNumber,
+            salesNumber: checkout.voucherNumber ,
           })
           .lean();
 

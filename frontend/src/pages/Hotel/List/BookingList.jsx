@@ -120,28 +120,28 @@ function BookingList() {
   );
   console.log(selectedCheckOut);
   // ADD THIS FUNCTION: Calculate total from all checkouts
- const calculateTotalAmount = (checkouts) => {
-  if (!checkouts || checkouts.length === 0) return 0;
+  const calculateTotalAmount = (checkouts) => {
+    if (!checkouts || checkouts.length === 0) return 0;
 
-  return checkouts.reduce((total, checkout) => {
-    const rooms = checkout.selectedRooms;
-    const advance = checkout.advanceAmount;
-    console.log(rooms);
-    console.log(advance);
-    // If no rooms, just keep current total
-    if (!Array.isArray(rooms) || rooms.length === 0) {
-      return total;
-    }
+    return checkouts.reduce((total, checkout) => {
+      const rooms = checkout.selectedRooms;
+      const advance = checkout.advanceAmount;
+      console.log(rooms);
+      console.log(advance);
+      // If no rooms, just keep current total
+      if (!Array.isArray(rooms) || rooms.length === 0) {
+        return total;
+      }
 
-    const checkoutTotal = rooms.reduce((sum, room) => {
-      console.log(room.baseAmountWithTax);
-      return sum + (parseFloat(room.baseAmountWithTax) || 0);
-    }, 0); // important: initial value
-console.log(checkout.advanceAmount);
-console.log(checkoutTotal);
-    return total + (checkoutTotal - Number(checkout.advanceAmount))
-  }, 0); // initial value for outer reduce
-};
+      const checkoutTotal = rooms.reduce((sum, room) => {
+        console.log(room.baseAmountWithTax);
+        return sum + (parseFloat(room.baseAmountWithTax) || 0);
+      }, 0); // important: initial value
+      console.log(checkout.advanceAmount);
+      console.log(checkoutTotal);
+      return total + (checkoutTotal - Number(checkout.advanceAmount));
+    }, 0); // initial value for outer reduce
+  };
 
   console.log(selectedCheckOut);
   useEffect(() => {
@@ -208,11 +208,13 @@ console.log(checkoutTotal);
   useEffect(() => {
     if (location?.state?.directConvertFromDashboard?.length > 0) {
       setSelectedCheckOut(location?.state?.directConvertFromDashboard);
-      setSelectedCustomer(location?.state?.directConvertFromDashboard[0]?.customerId?._id);
+      setSelectedCustomer(
+        location?.state?.directConvertFromDashboard[0]?.customerId?._id,
+      );
       setShowEnhancedCheckoutModal(true);
     }
   }, [location?.state?.directConvertFromDashboard]);
-  console.log(partylist?.partyList?.length)
+  console.log(partylist?.partyList?.length);
 
   useEffect(() => {
     if (
@@ -275,20 +277,24 @@ console.log(checkoutTotal);
     if (selectedCheckOut && selectedCheckOut.length > 0) {
       console.log("H");
       const totalAmount = calculateTotalAmount(selectedCheckOut);
-    
+
       const advanceAmount = selectedCheckOut.reduce((total, item) => {
-        return total + (Number(item.advanceAmount || 0 ) + Number(item.bookingId?.advanceAmount || 0))
-      },0)
+        return (
+          total +
+          (Number(item.advanceAmount || 0) +
+            Number(item.bookingId?.advanceAmount || 0))
+        );
+      }, 0);
 
       const restaurantSubTotal = selectedCheckOut.reduce((total, item) => {
-        return total + (item.restaurantSubTotal || 0)
-      },0)
-      console.log(restaurantSubTotal)
+        return total + (item.restaurantSubTotal || 0);
+      }, 0);
+      console.log(restaurantSubTotal);
       setSelectedDataForPayment((prevData) => ({
         ...prevData,
         total: totalAmount,
         advanceAmount: advanceAmount,
-        restaurantSubTotal: restaurantSubTotal
+        restaurantSubTotal: restaurantSubTotal,
       }));
     }
   }, [selectedCheckOut]);
@@ -457,7 +463,7 @@ console.log(checkoutTotal);
       } finally {
         setIsLoading(false);
         setLoader(false);
-        
+
         // setSelectedCheckOut([]);
       }
     },
@@ -941,10 +947,10 @@ console.log(checkoutTotal);
     console.log("hhhh");
     setShowPaymentModal(true);
     setIsPartial(true);
-    setSelectedCheckOut(data)
+    setSelectedCheckOut(data);
     // setShowCheckOutDateModal(true)
   };
-  console.log(selectedCheckOut)
+  console.log(selectedCheckOut);
 
   const handleCheckin = (e, el) => {
     console.log(el);
@@ -1107,7 +1113,7 @@ console.log(checkoutTotal);
 
     const updatedCheckoutData = checkoutData.map((item) => {
       const roomData = roomAssignmentMap.get(item._id);
-console.log(roomData);
+      console.log(roomData);
       return {
         ...item,
 
@@ -1794,7 +1800,7 @@ console.log(roomData);
     }
   };
 
-  console.log(selectedDataForPayment)
+  console.log(selectedDataForPayment);
 
   return (
     <>
@@ -2346,44 +2352,70 @@ console.log(roomData);
               )}
 
               <div className="bg-gray-50 p-3 rounded-lg">
-                 <div className="border-t border-gray-200 pt-2 mt-2 flex justify-between font-semibold text-gray-800">
+                <div className="border-t border-gray-200 pt-2 mt-2 flex justify-between font-semibold text-gray-800">
                   <span className="text-xs">Total Amount</span>
                   <span className="text-xs text-blue-600">
                     ₹
-                    {(Number(selectedDataForPayment?.total) + Number(selectedDataForPayment?.advanceAmount))?.toFixed(2) ||
-                      (Number(selectedCheckOut[0]?.balanceToPay) +  Number(selectedCheckOut[0]?.advance)).toFixed(2)}
-                  </span>
-                  
-                </div>
-                {(Number(selectedDataForPayment?.advanceAmount) > 0 || Number(selectedCheckOut[0]?.advanceAmount)) && (
-                <div className="border-t border-gray-200 pt-2 mt-2 flex justify-between font-semibold text-gray-800">
-                  <span className="text-xs">Total Advance</span>
-                  <span className="text-xs text-blue-600">
-                    (-)  ₹
-                  {selectedDataForPayment?.advanceAmount?.toFixed(2) ||
-                      (Number(selectedCheckOut[0]?.advanceAmount)).toFixed(2)} 
+                    {(
+                      Number(selectedDataForPayment?.total) +
+                      Number(selectedDataForPayment?.advanceAmount)
+                    )?.toFixed(2) ||
+                      (
+                        Number(selectedCheckOut[0]?.balanceToPay) +
+                        Number(selectedCheckOut[0]?.advance)
+                      ).toFixed(2)}
                   </span>
                 </div>
-                )}
-                  {(Number(selectedDataForPayment?.restaurantSubTotal) > 0 || Number(selectedCheckOut[0]?.restaurantSubTotal)) && (
-                <div className="border-t border-gray-200 pt-2 mt-2 flex justify-between font-semibold text-gray-800">
-                  <span className="text-xs">Restaurant Total</span>
-                  <span className="text-xs text-blue-600">
-                 (+)   ₹
-                    {Number(selectedDataForPayment?.restaurantSubTotal)?.toFixed(2) ||
-                      (Number(selectedCheckOut[0]?.restaurantSubTotal)).toFixed(2)} 
-                  </span>
-                </div>
-                )}
-              
-                 <div className="border-t border-gray-200 pt-2 mt-2 flex justify-between font-semibold text-gray-800 ">
+                {(() => {
+                  const advance = Number(
+                    selectedDataForPayment?.advanceAmount ??
+                      selectedCheckOut[0]?.advanceAmount ??
+                      0,
+                  );
+
+                  return (
+                    advance > 0 && (
+                      <div className="border-t border-gray-200 pt-2 mt-2 flex justify-between font-semibold text-gray-800">
+                        <span className="text-xs">Total Advance</span>
+                        <span className="text-xs text-blue-600">
+                          (-) ₹ {advance.toFixed(2)}
+                        </span>
+                      </div>
+                    )
+                  );
+                })()}
+                {(() => {
+                  const restaurantTotal = Number(
+                    selectedDataForPayment?.restaurantSubTotal ??
+                      selectedCheckOut?.[0]?.restaurantSubTotal ??
+                      0,
+                  );
+
+                  return (
+                    restaurantTotal > 0 && (
+                      <div className="border-t border-gray-200 pt-2 mt-2 flex justify-between font-semibold text-gray-800">
+                        <span className="text-xs">Restaurant Total</span>
+                        <span className="text-xs text-blue-600">
+                          (+) ₹ {restaurantTotal.toFixed(2)}
+                        </span>
+                      </div>
+                    )
+                  );
+                })()}
+
+                <div className="border-t border-gray-200 pt-2 mt-2 flex justify-between font-semibold text-gray-800 ">
                   <span className="text-sm">Amount To Pay</span>
                   <span className="text-sm text-blue-600">
                     ₹
-                    {((selectedDataForPayment?.total) +Number(selectedDataForPayment?.restaurantSubTotal)).toFixed(2) ||
-                      (Number(selectedCheckOut[0]?.balanceToPay) +  Number(selectedCheckOut[0]?.advance)).toFixed(2)}
+                    {(
+                      selectedDataForPayment?.total +
+                      Number(selectedDataForPayment?.restaurantSubTotal)
+                    ).toFixed(2) ||
+                      (
+                        Number(selectedCheckOut[0]?.balanceToPay) +
+                        Number(selectedCheckOut[0]?.advance)
+                      ).toFixed(2)}
                   </span>
-                  
                 </div>
                 <div className="flex gap-2 mt-2">
                   <button
