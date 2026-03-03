@@ -1715,13 +1715,13 @@ if (discountAmount > 0) {
                                 <img
                                   src={
                                     item.product_image ||
-                                    "https://i.pinimg.com/1200x/81/92/7e/81927ee1cf8fcd7715530b0856cf553d.jpg"
+                                    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQTIHlLcm7fJCVUvJhvSF0kP-oXPPdwBxXHuQ&s"
                                   }
                                   alt={item.product_name}
                                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-125"
                                   onError={(e) => {
                                     e.target.src =
-                                      "https://i.pinimg.com/1200x/81/92/7e/81927ee1cf8fcd7715530b0856cf553d.jpg";
+                                      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQTIHlLcm7fJCVUvJhvSF0kP-oXPPdwBxXHuQ&s";
                                   }}
                                 />
                               </div>

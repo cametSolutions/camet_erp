@@ -44,12 +44,12 @@ export function ShareFormatSelector({ open, setOpen, voucherId, voucherType,data
     formats.push(
       {
         id: "pos",
-        label: "POS Format",
+        label: "POS Format1",
         icon: <HiDocument size={20} />,
       },
        {
         id: "pos2",
-        label: "POS Format2 For Restuarent Only",
+        label: "POS Format2 ",
         icon: <HiDocument size={20} />,
       },
       
