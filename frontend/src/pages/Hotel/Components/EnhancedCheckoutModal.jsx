@@ -34,53 +34,108 @@ export default function EnhancedCheckoutModal({
     new Date().toISOString().split("T")[0],
   );
 
-  const [checkouts, setCheckouts] = useState(
-    selectedCheckIns.length > 0
-      ? selectedCheckIns.map((checkout) => {
-          const arrival = new Date(checkout.arrivalDate);
-          const checkoutDate = new Date(checkOutDateTracker);
+ const [checkouts, setCheckouts] = useState(
+  selectedCheckIns.length > 0
+    ? selectedCheckIns.map((checkout) => {
+        const arrival = new Date(checkout.arrivalDate);
+        const checkoutDate = new Date(checkOutDateTracker);
 
-          // Normalize time to avoid timezone issues
-          arrival.setHours(0, 0, 0, 0);
-          checkoutDate.setHours(0, 0, 0, 0);
+        // Normalize time
+        arrival.setHours(0, 0, 0, 0);
+        checkoutDate.setHours(0, 0, 0, 0);
 
-          const diffTime = checkoutDate - arrival;
+        const diffTime = checkoutDate - arrival;
+        const calculatedDays =
+          diffTime <= 0 ? 1 : diffTime / (1000 * 60 * 60 * 24);
 
-          const calculatedDays =
-            diffTime <= 0 ? 1 : diffTime / (1000 * 60 * 60 * 24);
+        const fullDays = Math.floor(calculatedDays);
+        const fractionalDay = calculatedDays - fullDays;
 
-          console.log(calculatedDays);
-          const time = new Date().toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: true, // 12-hour format
-          });
+        const updatedRooms =
+          checkout.selectedRooms?.map((room) => {
+            const originalStayDays = room.stayDays || 1;
 
-          checkout.selectedRooms.forEach((room) => {
-            room.stayDays = calculatedDays;
-          });
-          console.log(checkout);
-          return {
-            ...checkout,
-            stayDays: calculatedDays,
-            checkOutTime: time,
-            checkOutDate: checkOutDateTracker,
-            // actualCheckoutDate: checkout.checkOutDate,
-          };
-        })
-      : [
-          {
-            _id: "1",
-            checkOutDate: "2024-01-15",
-            arrivalDate: "2024-01-10",
-            voucherNumber: "V001",
-            stayDays: 2.5,
-            selectedRooms: [
-              { _id: "r1", roomName: "101", priceLevelRate: 2000 },
-            ],
-          },
-        ],
-  );
+            const originalBaseAmount = room.baseAmount || 0;
+            const originalTaxAmount = room.taxAmount || 0;
+            const originalFoodPlanWithTax =
+              room.foodPlanAmountWithTax || 0;
+            const originalFoodPlanWithoutTax =
+              room.foodPlanAmountWithOutTax || 0;
+            const originalPaxWithTax =
+              room.additionalPaxAmountWithTax || 0;
+            const originalPaxWithoutTax =
+              room.additionalPaxAmountWithOutTax || 0;
+
+            // Per day calculations
+            const basePerDay = originalBaseAmount / originalStayDays;
+            const taxPerDay = originalTaxAmount / originalStayDays;
+            const foodWithTaxPerDay =
+              originalFoodPlanWithTax / originalStayDays;
+            const foodWithoutTaxPerDay =
+              originalFoodPlanWithoutTax / originalStayDays;
+
+            const originalFullDays = Math.floor(originalStayDays);
+
+            const paxWithTaxPerDay =
+              originalFullDays > 0
+                ? originalPaxWithTax / originalFullDays
+                : 0;
+
+            const paxWithoutTaxPerDay =
+              originalFullDays > 0
+                ? originalPaxWithoutTax / originalFullDays
+                : 0;
+
+            // New totals
+            let newBase = fullDays * basePerDay;
+            let newTax = fullDays * taxPerDay;
+            let newFoodWithTax = fullDays * foodWithTaxPerDay;
+            let newFoodWithoutTax = fullDays * foodWithoutTaxPerDay;
+            let newPaxWithTax = fullDays * paxWithTaxPerDay;
+            let newPaxWithoutTax = fullDays * paxWithoutTaxPerDay;
+
+            // Add half-day (no pax for half day)
+            if (fractionalDay > 0) {
+              newBase += basePerDay * 0.5;
+              newTax += taxPerDay * 0.5;
+              newFoodWithTax += foodWithTaxPerDay * 0.5;
+              newFoodWithoutTax += foodWithoutTaxPerDay * 0.5;
+            }
+
+            return {
+              ...room,
+              stayDays: calculatedDays,
+              baseAmount: Math.round(newBase * 100) / 100,
+              taxAmount: Math.round(newTax * 100) / 100,
+              baseAmountWithTax:
+                Math.round((newBase + newTax) * 100) / 100,
+              foodPlanAmountWithTax:
+                Math.round(newFoodWithTax * 100) / 100,
+              foodPlanAmountWithOutTax:
+                Math.round(newFoodWithoutTax * 100) / 100,
+              additionalPaxAmountWithTax:
+                Math.round(newPaxWithTax * 100) / 100,
+              additionalPaxAmountWithOutTax:
+                Math.round(newPaxWithoutTax * 100) / 100,
+            };
+          }) || [];
+
+        const time = new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        });
+
+        return {
+          ...checkout,
+          stayDays: calculatedDays,
+          selectedRooms: updatedRooms,
+          checkOutTime: time,
+          checkOutDate: checkOutDateTracker,
+        };
+      })
+    : []
+);
   console.log(checkouts);
   const [originalCheckouts] = useState(() =>
     selectedCheckIns.length > 0
@@ -444,7 +499,7 @@ export default function EnhancedCheckoutModal({
               stayDays: newDays,
             };
           }
-
+console.log(newDays)
           const fullDays = Math.floor(stayDays);
           const fractionalDay = stayDays - fullDays;
 
