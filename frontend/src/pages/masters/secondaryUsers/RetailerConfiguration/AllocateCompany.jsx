@@ -189,7 +189,7 @@ const AllocateCompany = () => {
     const company = companyData.find((c) => c._id === companyId);
     return company?.name || "Unknown Company";
   };
-
+console.log(companyData);
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
       <TitleDiv
@@ -347,9 +347,9 @@ const AllocateCompany = () => {
                       </span>
                       <span
                         className="text-gray-700 font-semibold text-right flex-1 ml-2"
-                        title={company.place}
+                        title={company.landmark}
                       >
-                        {company.place ? truncateText(company.place, 15) : "-"}
+                        {company.landmark ? truncateText(company.road, 15) : "-"}
                       </span>
                     </div>
 

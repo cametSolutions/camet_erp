@@ -146,6 +146,45 @@ const restuarentSettings = () => {
       to: "/sUsers/complementaryCashOrBank",
       active: true,
     });
+     settingsOptions.push(
+    {
+      title: "Dine In",
+      description: "Enable Dine In in restaurant dashboard",
+      icon: <MdFoodBank />,
+      active: true,
+      toggle: true,
+      toggleValue: configurations[0]?.orderTypes?.dineIn ?? false,
+      dbField: "orderTypes.dineIn",
+    },
+    {
+      title: "Takeaway",
+      description: "Enable Takeaway in restaurant dashboard",
+      icon: <MdFoodBank />,
+      active: true,
+      toggle: true,
+      toggleValue: configurations[0]?.orderTypes?.takeaway ?? false,
+      dbField: "orderTypes.takeaway",
+    },
+    {
+      title: "Delivery",
+      description: "Enable Delivery in restaurant dashboard",
+      icon: <MdFoodBank />,
+      active: true,
+      toggle: true,
+      toggleValue: configurations[0]?.orderTypes?.delivery ?? false,
+      dbField: "orderTypes.delivery",
+    },
+    {
+      title: "Room Service",
+      description: "Enable Room Service in restaurant dashboard",
+      icon: <MdFoodBank />,
+      active: true,
+      toggle: true,
+      toggleValue: configurations[0]?.orderTypes?.roomService ?? false,
+      dbField: "orderTypes.roomService",
+    }
+  );
+
     
   }
 
