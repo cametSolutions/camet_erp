@@ -20,6 +20,8 @@ function VoucherThreeInchPdfFormat2({
   !data && (data = location?.state);
   !org && (org = useSelector((state) => state?.secSelectedOrganization?.secSelectedOrg));
 
+  console.log(data);
+
   const isIndian = useSelector((state) => state?.secSelectedOrganization?.secSelectedOrg?.country === "India");
   const party = data?.party;
   const isSameState = org?.state?.toLowerCase() === party?.state?.toLowerCase() || !party?.state;
@@ -166,6 +168,34 @@ const cgstGroups = data?.items?.reduce((acc, item) => {
   return acc;
 }, {}) || {};
 
+ const paymentSplits = data?.paymentSplittingData || [];
+
+  const prettyType = (type) => {
+    if (!type) return "";
+    const map = {
+      cash: "Cash",
+      upi: "UPI",
+      card: "Card",
+      bank: "Bank",
+    };
+    return map[type] || type.toUpperCase();
+  };
+
+  const getPaymentSummary = () => {
+    if (!paymentSplits.length) return null;
+
+    if (paymentSplits.length === 1) {
+      const p = paymentSplits[0];
+      return `${prettyType(p.type)}`;
+    }
+
+    return paymentSplits
+      .map(
+        (p) =>
+          `${prettyType(p.type)} `
+      )
+      .join(" | ");
+  };
 
 
   return (
@@ -246,19 +276,25 @@ const cgstGroups = data?.items?.reduce((acc, item) => {
   const totalTax = Number(
     el?.totalIgstAmt || (el?.totalCgstAmt || 0) + (el?.totalSgstAmt || 0) || 0
   );
+  console.log(el)
+  
+  console.log({ total, count, totalTax });
 
   // ✅ Same logic as Format 1 — addRateWithTax controls rate/amount display
   const addRateWithTax = org?.configurations?.[0]?.addRateWithTax?.restaurantSale 
     ?? org?.configurations?.[0]?.addRateWithTax?.sale 
     ?? true;
 
+    console.log({ addRateWithTax });
+
+
   const rate = addRateWithTax
-    ? (count > 0 ? (total / count).toFixed(2) : "0.00")           // WITH tax (like format 1)
+    ? (count > 0 ? Math.round(total * 100 / (100 + el.igst)).toFixed(2) : "0.00")           // WITH tax (like format 1)
     : (count > 0 ? ((total - totalTax) / count).toFixed(2) : "0.00"); // WITHOUT tax
 
-  const amount = addRateWithTax
-    ? total.toFixed(2)                          // WITH tax
-    : (Number(rate) * count).toFixed(2);        // WITHOUT tax
+    console.log({ rate });
+
+  const amount = Math.round(Number(rate) * count).toFixed(2);        // WITHOUT tax
 
   return (
     <div key={index} style={itemGrid}>
@@ -278,7 +314,11 @@ const cgstGroups = data?.items?.reduce((acc, item) => {
               <div style={{ marginLeft: "auto", width: "60px" }}>Amount</div>
               <div style={textRight}>{Math.round(subTotal).toFixed(2)}</div>
             </div>
-
+  {getPaymentSummary() && (
+    <div style={{ ...bold }}>
+      Payment: {getPaymentSummary()}
+    </div>
+  )}
 {isIndian && isSameState && calculateTotalTax() > 0 && (() => {
   // Group items by their CGST rate and sum tax amounts per rate
  
@@ -336,10 +376,12 @@ const cgstGroups = data?.items?.reduce((acc, item) => {
          <div style={{ fontSize: "10px", marginBottom: "6px" }}>
   <div style={{ display: "flex", fontWeight: "bold", marginBottom: "2px" }}>
     {getRoomNumber() && <div style={bold}>{getRoomNumber()}</div>}
+   
     <div style={{ marginLeft: "auto", paddingRight: "3px", fontWeight: "bold" }}>
       Total: {netAmount}
     </div>
   </div>
+
 
             {/* {data?.voucherNumber?.[0]?.checkInNumber && (
               <div style={flexRow}>

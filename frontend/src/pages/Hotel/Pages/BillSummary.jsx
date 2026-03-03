@@ -16,6 +16,7 @@ export const generatePDF = async (
   mealPeriodFilter,
 ) => {
   if (!salesData || salesData.length === 0) return;
+  
 
   const filterInfo = () => {
     const filters = [];
@@ -777,6 +778,7 @@ const BillSummary = () => {
 
       if (result.success) {
         setSalesData(result.data.sales || []);
+        console.log(result.data.summary);
         setSummary(result.data.summary || {});
 
         const formattedStart = formatDateForDisplay(start);
@@ -826,6 +828,8 @@ const BillSummary = () => {
       setLoading(false);
     }
   };
+
+  console.log(salesData[0]);
 
   const filteredSalesData = salesData.filter((item) => {
     const kotMatch = kotTypeFilter === "all" || item.kotType === kotTypeFilter;
@@ -1485,7 +1489,7 @@ const BillSummary = () => {
                         <tr className="bg-blue-50">
                           <td className="font-bold py-2 px-2">Hotel Sales</td>
                           <td className="text-right py-2 px-2">
-                            {summary.hotelSales.amount?.toFixed(2) || "0.00"}
+                            {summary.agentCount + summary.countWithOutAgent || "0.00"}
                           </td>
                         </tr>
                         <tr>
@@ -1493,7 +1497,7 @@ const BillSummary = () => {
                             - Transactions With Agent
                           </td>
                           <td className="text-right py-1 px-2">
-                            {summary.hotelSales.agentCount || 0}
+                            {summary.agentCount || 0}
                           </td>
                         </tr>
                          <tr>
@@ -1501,7 +1505,7 @@ const BillSummary = () => {
                             - Transactions With Out Agent
                           </td>
                           <td className="text-right py-1 px-2">
-                            {summary.hotelSales.agentWithOut || 0}
+                            {summary.countWithOutAgent || 0}
                           </td>
                         </tr>
                     
@@ -1517,7 +1521,7 @@ const BillSummary = () => {
                               Restaurant Sales
                             </td>
                             <td className="text-right py-2 px-2">
-                              {summary.restaurantSales.amount?.toFixed(2) ||
+                              {summary.restaurantCount ||
                                 "0.00"}
                             </td>
                           </tr>
@@ -1526,7 +1530,7 @@ const BillSummary = () => {
                               - Room Service
                             </td>
                             <td className="text-right py-1 px-2">
-                              {summary.restaurantSales.roomServiceCount || 0}
+                              {summary.IsRoomService || 0}
                             </td>
                           </tr>
                           <tr>
@@ -1534,7 +1538,7 @@ const BillSummary = () => {
                               - Take Away
                             </td>
                             <td className="text-right py-1 px-2">
-                              {summary.restaurantSales.takeawayCount || 0}
+                              {summary.IsTakeaway || 0}
                             </td>
                           </tr>
                           <tr>
@@ -1542,7 +1546,7 @@ const BillSummary = () => {
                               - Delivery
                             </td>
                             <td className="text-right py-1 px-2">
-                              {summary.restaurantSales.deliveryCount || 0}
+                              {summary.IsDelivery || 0}
                             </td>
                           </tr>
                           <tr>
@@ -1550,7 +1554,7 @@ const BillSummary = () => {
                               - Dine In
                             </td>
                             <td className="text-right py-1 px-2">
-                              {summary.restaurantSales.dineInCount || 0}
+                              {(summary.restaurantCount || 0) - ((summary.IsRoomService || 0) + (summary.IsTakeaway || 0) + (summary.IsDelivery || 0))}
                             </td>
                           </tr>
                           <tr>

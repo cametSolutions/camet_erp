@@ -1195,7 +1195,7 @@ export const updateKotPayment = async (req, res) => {
       );
 
       const party = mapPartyData(selectedParty);
-
+ console.log("selectedParty", isPostToRoom);
       // Save voucher
       const savedVoucherData = await createSalesVoucher(
         cmp_id,
@@ -1209,6 +1209,7 @@ export const updateKotPayment = async (req, res) => {
         session,
         isComplimentary,
         isManuallyComplimentary,
+        isPostToRoom,
       );
       // ✅ Calculate with DISCOUNT
       const originalTotal = Number(kotData?.total || 0);
@@ -1357,7 +1358,7 @@ export const updateKotPayment = async (req, res) => {
       });
     });
   } catch (error) {
-    // console.error("Error updating KOT:", error);
+    console.error("Error updating KOT:", error);
     res.status(500).json({
       success: false,
       message: error.message || "Internal server error while updating KOT",
@@ -1679,17 +1680,18 @@ async function createSalesVoucher(
   paymentSplittingArray,
   session,
 ) {
-  console.log("kotData", kotData);
+
 
   // ✅ FIXED: Use SUBTOTAL (BEFORE discount)
   const originalTotal = Number(kotData?.subtotal || kotData?.total || 0); // 1000 ✅
   const additionalCharges = req.body.additionalCharges || [];
   const isComplimentary = req.body.isComplimentary || false;
+  const isPostToRoom = req.body.isPostToRoom || false;
   console.log(
     "🔍 BEFORE SAVE - additionalCharges:",
     JSON.stringify(additionalCharges, null, 2),
   );
-
+  console.log("kotData", isPostToRoom);
   // ✅ Calculate totals
   const totalAdditionalCharges = additionalCharges.reduce((sum, charge) => {
     return sum + Number(charge.amount || 0);
@@ -1741,6 +1743,7 @@ async function createSalesVoucher(
 
         paymentSplittingData: paymentSplittingArray,
         convertedFrom: kotData?.voucherNumber,
+        isPostToRoom: isPostToRoom,
       },
     ],
     { session },

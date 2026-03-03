@@ -859,7 +859,7 @@ const OrdersDashboard = () => {
       }
       return findOne?.items || []; // return empty array if not found
     });
-
+console.log(itemList);
     let subtotal = itemList
       .reduce((acc, item) => acc + Number(item.total), 0)
       .toFixed(2);
