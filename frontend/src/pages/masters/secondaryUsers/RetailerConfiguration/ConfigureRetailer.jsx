@@ -41,6 +41,14 @@ export default function ConfigureRetailer() {
       data: { userData },
     },
     {
+      title: "SET TRANSACTION ACCESS",
+      description: "Manage user acess for transaction display",
+      icon: <HiLocationMarker />,
+      to: "/sUsers/AllocateTransaction",
+      active: true,
+      data: { userData },
+    },
+    {
       title: "SET VAN",
       description: "Configure delivery vehicles and routes",
       icon: <HiTruck />,

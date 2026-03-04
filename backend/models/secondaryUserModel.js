@@ -78,7 +78,8 @@ const secondaryUserSchema = new mongoose.Schema(
         stockTransferNumber: { type: Number },
         creditNoteNumber: { type: Number },
         debitNoteNumber: { type: Number },
-
+ ownTransactions: { type: Boolean, default: false },
+        allTransactions: { type: Boolean, default: false },
         // vanSaleGodown:{type:String}
       },
     ],

@@ -895,6 +895,81 @@ export const allocateCompany = async (req, res) => {
   }
 };
 
+
+
+
+
+export const updateTransactionAccess = async (req, res) => {
+  try {
+    const { userId, companyId, access } = req.body;
+
+    if (!userId || !companyId || !access) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Missing required fields" });
+    }
+
+    const secUser = await SecondaryUser.findById(userId);
+
+    if (!secUser) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    // ensure organization array contains this company
+    const orgIdStr = companyId.toString();
+    const alreadyAllocated = secUser.organization.some(
+      (org) => org.toString() === orgIdStr
+    );
+    if (!alreadyAllocated) {
+      secUser.organization.push(companyId);
+    }
+
+    // find configuration for this organization
+    let config = secUser.configurations.find(
+      (c) => c.organization?.toString() === orgIdStr
+    );
+
+    if (!config) {
+      // create new configuration for this org
+      config = {
+        organization: companyId,
+        ownTransactions: !!access.own,
+        allTransactions: !!access.all,
+      };
+      secUser.configurations.push(config);
+    } else {
+      // update existing flags
+      config.ownTransactions = !!access.own;
+      config.allTransactions = !!access.all;
+    }
+
+    const result = await secUser.save();
+
+    const updatedUser = await SecondaryUser.findById(userId)
+      .populate({
+        path: "organization",
+        select: "_id name",
+      })
+      .lean();
+
+    if (result) {
+      return res.status(200).json({
+        success: true,
+        message: "Transaction access updated successfully",
+        data: updatedUser,
+      });
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: "Failed to update transaction access",
+      });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, error: "Internal Server Error" });
+  }
+};
+
 // @desc  allocating PriceLevels
 // route put/api/sUsers/allocatePriceLevel
 
