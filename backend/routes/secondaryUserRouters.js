@@ -43,7 +43,7 @@ import { addEmailConfiguration, getConfiguration, getBarcodeList, addBarcodeData
 import { updateSecondaryUserConfiguration } from '../helpers/saleOrderHelper.js';
 import { addAccountGroupIdToOutstanding, addAccountGroupIdToParties, convertPrimaryToSecondary, createAccountGroups, updateDateFieldsByCompany, updateSalesItemUnitFields, updateUnitFields } from '../controllers/testingController.js';
 import { authPrimary } from '../middlewares/authPrimaryUsers.js';
-import { addSecondaryConfigurations, addSecUsers, allocateCompany, allocateSubDetails, editSecUSer, fetchConfigurationCurrentNumber, fetchGodownsAndPriceLevels, fetchSecondaryUsers, getSecUserDetails } from '../controllers/primaryUserController.js';
+import { addSecondaryConfigurations, addSecUsers, allocateCompany, allocateSubDetails, editSecUSer, fetchConfigurationCurrentNumber, fetchGodownsAndPriceLevels, fetchSecondaryUsers, getSecUserDetails,updateTransactionAccess } from '../controllers/primaryUserController.js';
 
 import { getSummary } from "../controllers/summaryController.js"
 import { getSummaryReport } from "../controllers/summaryController.js";
@@ -272,7 +272,7 @@ router.get('/fetchGodownsAndPriceLevels/:cmp_id', authPrimary, secondaryIsBlocke
 router.post('/addSecondaryConfigurations/:cmp_id/:userId', authPrimary, secondaryIsBlocked, companyAuthentication, addSecondaryConfigurations)
 router.put('/allocateCompany/:cmp_id', authPrimary, secondaryIsBlocked, companyAuthentication, allocateCompany)
 router.put('/allocateSubDetails/:cmp_id', authPrimary, secondaryIsBlocked, companyAuthentication, allocateSubDetails)
-
+router.put("/updateTransactionAccess/:cmp_id", authPrimary, secondaryIsBlocked, companyAuthentication,updateTransactionAccess);
 //// outstanding routes
 router.get('/getOutstandingSummary/:cmp_id', authSecondary, secondaryIsBlocked, companyAuthentication, getOutstandingSummary)
 

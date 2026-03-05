@@ -381,6 +381,10 @@ const AllocateCompany = lazy(
   () =>
     import("@/pages/masters/secondaryUsers/RetailerConfiguration/AllocateCompany")
 )
+const AllocateTransaction = lazy(
+  () =>
+    import("@/pages/masters/secondaryUsers/RetailerConfiguration/AllocateTransaction")
+)
 const AllocatePriceLevel = lazy(
   () =>
     import("@/pages/masters/secondaryUsers/RetailerConfiguration/AllocatePriceLevel")
@@ -1785,6 +1789,14 @@ const Routers = () => {
           element={
             <ProtectedSecRoute>
               <AllocateCompany />
+            </ProtectedSecRoute>
+          }
+        ></Route>
+          <Route
+          path="/sUsers/AllocateTransaction"
+          element={
+            <ProtectedSecRoute>
+              <AllocateTransaction />
             </ProtectedSecRoute>
           }
         ></Route>
