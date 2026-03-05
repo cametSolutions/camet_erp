@@ -476,7 +476,8 @@ export const generateKot = async (req, res) => {
     const kotData = {
       voucherNumber: kotNumber?.voucherNumber,
       primary_user_id: req.pUserId || req.owner,
-      secondary_user_id: req.sUserId,
+      Secondary_user_id: req.sUserId,
+
       cmp_id: cmp_id,
       items: req.body.items,
       type: req.body.type,
@@ -863,7 +864,8 @@ export const getRoomDataForRestaurant = async (req, res) => {
 //           Primary_user_id: req.pUserId || req.owner,
 //           kotId: kotData?._id,
 //           cmp_id: cmp_id,
-//           secondary_user_id: req.sUserId,
+//           Secondary_user_id: req.sUserId,
+
 //           party: selectedParty,
 //           items: kotData?.items,
 //           address: kotData?.customer,
@@ -1709,7 +1711,7 @@ async function createSalesVoucher(
     finalAmount, // 800
     additionalCharges,
   });
-
+console.log("req.sUserId",req.sUserId)
   return await salesModel.create(
     [
       {
@@ -1723,7 +1725,8 @@ async function createSalesVoucher(
         usedSeriesNumber: saleNumber.usedSeriesNumber,
         Primary_user_id: req.pUserId || req.owner,
         cmp_id,
-        secondary_user_id: req.sUserId,
+        Secondary_user_id: req.sUserId,
+
         party,
         partyAccount: selectedParty.accountGroup?.accountGroup,
         items: kotData?.items,

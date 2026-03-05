@@ -19,6 +19,7 @@ import mongoose from "mongoose";
 import TallyData from "../models/TallyData.js";
 import OragnizationModel from "../models/OragnizationModel.js";
 import nodemailer from "nodemailer";
+import SecondaryUser from "../models/secondaryUserModel.js";
 
 /////
 // @desc to  get transactions
@@ -39,18 +40,34 @@ export const transactions = async (req, res) => {
     selectedSecondaryUser,
   } = req.query;
 
-  const isAdmin = req.query.isAdmin === "true" ? true : false;
+  const isAdmin = req.query.isAdmin === "true";
 
-  let returnFullDetails = false;
-  if (fullDetails === "true") {
-    returnFullDetails = true;
-  }
+  let returnFullDetails = fullDetails === "true";
 
   try {
     // Parse ignore parameter - split by comma to handle multiple collections
     const ignoredCollections = ignore
       .split(",")
       .map((item) => item.trim().toLowerCase());
+
+const secUser = await SecondaryUser.findById(userId).lean();
+
+    if (!secUser) {
+      return res
+        .status(404)
+        .json({ status: false, message: "Secondary user not found" });
+    }
+
+    const cmpIdStr = cmp_id.toString();
+    const configForCompany = secUser.configurations?.find(
+      (c) => c.organization?.toString() === cmpIdStr
+    );
+
+    const ownTransactions =
+      configForCompany?.ownTransactions === true;
+    const allTransactions =
+      configForCompany?.allTransactions === true ;
+
 
     // Initialize dateFilter based on provided parameters
     let dateFilter = {};
@@ -92,6 +109,38 @@ export const transactions = async (req, res) => {
         },
       };
     }
+
+     let userFilter = {};
+
+    if (isAdmin) {
+      // Admin:
+      //  - if secondary user selected -> filter by that user
+      //  - else -> see all
+      if (selectedSecondaryUser) {
+        userFilter = {
+          Secondary_user_id: new mongoose.Types.ObjectId(selectedSecondaryUser),
+        };
+      } else {
+        userFilter = {}; // no filter
+      }
+    } else {
+      // Normal secondary user:
+      if (allTransactions) {
+        // all transactions for this company
+        userFilter = {};
+      } else if (ownTransactions) {
+        // only own transactions
+        userFilter = {
+          Secondary_user_id: new mongoose.Types.ObjectId(userId),
+        };
+      } else {
+        // default fallback: only own transactions (safer)
+        userFilter = {
+          Secondary_user_id: new mongoose.Types.ObjectId(userId),
+        };
+      }
+    }
+
     // Apply user filtering:
     // - If not an admin → filter with logged-in user's ID
     // - If admin:
@@ -104,15 +153,7 @@ export const transactions = async (req, res) => {
       ...(party_id
         ? { "party._id": new mongoose.Types.ObjectId(party_id) }
         : {}),
-      ...(!isAdmin
-        ? { Secondary_user_id: new mongoose.Types.ObjectId(userId) }
-        : selectedSecondaryUser
-        ? {
-            Secondary_user_id: new mongoose.Types.ObjectId(
-              selectedSecondaryUser
-            ),
-          }
-        : {}),
+      ...userFilter,
     };
     if (serialNumber !== "all") {
       matchCriteria.series_id = new mongoose.Types.ObjectId(serialNumber);
