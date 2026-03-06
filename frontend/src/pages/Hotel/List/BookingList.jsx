@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { FaEdit } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+import { taxCalculator } from "../Helper/taxCalculator";
 import {
   MdDelete,
   MdCheckCircle,
@@ -939,7 +940,63 @@ function BookingList() {
   console.log(selectedCheckOut);
 
   const handleEnhancedCheckoutConfirm = async (roomAssignments, data) => {
+    let updatedData = data;
+   
+if (selectedCheckOut !== data) {
+
+  updatedData = await Promise.all(
+    data.map(async (checkout) => {
+
+      const updatedRooms = await Promise.all(
+        (checkout.selectedRooms || []).map(async (room) => {
+
+          const taxResponse = await taxCalculator(
+            data = room,
+            configurations[0]?.addRateWithTax?.hotelSale,
+            checkout,
+            room.roomId
+          );
+    
+
+          return {
+            ...room,
+            amountAfterTax: taxResponse?.amountWithTax || room.totalAmount,
+            amountWithOutTax: taxResponse?.amountWithOutTax,
+            taxPercentage: taxResponse?.taxRate || 0,
+            foodPlanTaxRate: taxResponse?.foodPlanTaxRate || 0,
+            additionalPaxAmount: taxResponse?.additionalPaxAmount || 0,
+            foodPlanAmount: taxResponse?.foodPlanAmount || 0,
+            taxAmount: taxResponse?.taxAmount || 0,
+            additionalPaxAmountWithTax:
+              taxResponse?.additionalPaxAmountWithTax || 0,
+            additionalPaxAmountWithOutTax:
+              taxResponse?.additionalPaxAmountWithOutTax || 0,
+            foodPlanAmountWithTax:
+              taxResponse?.foodPlanAmountWithTax || 0,
+            foodPlanAmountWithOutTax:
+              taxResponse?.foodPlanAmountWithOutTax || 0,
+            baseAmount: taxResponse?.baseAmount || 0,
+            baseAmountWithTax: taxResponse?.baseAmountWithTax || 0,
+            totalCgstAmt: taxResponse?.totalCgstAmt || 0,
+            totalSgstAmt: taxResponse?.totalSgstAmt || 0,
+            totalIgstAmt: taxResponse?.totalIgstAmt || 0,
+          };
+
+        })
+      );
+
+      return {
+        ...checkout,
+        selectedRooms: updatedRooms
+      };
+
+    })
+  );
+
+}
+    console.log(updatedData);
     console.log(roomAssignments);
+    console.log(data)
     setShowEnhancedCheckoutModal(false);
     setdateandstaysdata(data);
     // ✅ ALWAYS show checkout date modal - no condition
@@ -947,7 +1004,7 @@ function BookingList() {
     console.log("hhhh");
     setShowPaymentModal(true);
     setIsPartial(true);
-    setSelectedCheckOut(data);
+    setSelectedCheckOut(updatedData);
     // setShowCheckOutDateModal(true)
   };
   console.log(selectedCheckOut);
@@ -1857,6 +1914,7 @@ function BookingList() {
             search={searchTerm}
             toogle={handletoogle}
             selectedCustomer={selectedCustomer}
+            setSelectedCheckOut={setSelectedCheckOut}
           />
         )}
 
