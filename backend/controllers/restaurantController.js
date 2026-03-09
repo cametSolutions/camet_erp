@@ -1235,6 +1235,7 @@ export const updateKotPayment = async (req, res) => {
         kotData,
         party,
         selectedParty,
+        req.body.additionalCharges || [],
         paymentSplittingArray,
         session,
         isComplimentary,
@@ -1565,7 +1566,7 @@ async function getSelectedParty(
     }
   }
   console.log("partyId", partyId);
-  const selectedParty = await Party.findOne({ cmp_id, _id: partyId })
+  const selectedParty = await Party.findOne({ _id: partyId })
     .populate("accountGroup")
     .session(session);
   if (!selectedParty) throw new Error(`Party not found: ${partyName}`);
@@ -1710,21 +1711,19 @@ async function createSalesVoucher(
   additionalChargesArray=null,
   session,
 ) {
+  // console.log("additionalChargesArray", additionalChargesArray);
   // ✅ FIXED: Use SUBTOTAL (BEFORE discount)
   const originalTotal = Number(kotData?.subtotal || kotData?.total || 0); // 1000 ✅
-  const additionalCharges = additionalChargesArray || req.body.additionalCharges || [];
+  const additionalCharges =  additionalChargesArray|| [];
   const isComplimentary = req.body.isComplimentary || false;
   const isPostToRoom = req.body.isPostToRoom || false;
-  console.log(
-    "🔍 BEFORE SAVE - additionalCharges:",
-    JSON.stringify(additionalCharges, null, 2),
-  );
-  console.log("kotData", isPostToRoom);
+
+  console.log("kotData", additionalCharges);
   // ✅ Calculate totals
-  const totalAdditionalCharges = additionalCharges.reduce((sum, charge) => {
+  const totalAdditionalCharges =  additionalCharges?.reduce((sum, charge) => {
     console.log("charge", charge);
     return sum + Number(charge.amount || charge.value || 0);
-  }, 0);
+  }, 0) 
 
   const discountTotal = additionalCharges
     .filter((charge) => charge.type === "subtract")
