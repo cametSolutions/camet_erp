@@ -981,8 +981,13 @@ export const directSale = async (req, res) => {
   try {
     await session.withTransaction(async () => {
       const { cmp_id } = req.params;
-      const { paymentMethod, paymentDetails, selectedKotData, isDirectSale } =
-        req.body;
+      const {
+        paymentMethod,
+        paymentDetails,
+        selectedKotData,
+        additionalCharges,
+        isDirectSale,
+      } = req.body;
 
       if (!paymentDetails || !selectedKotData)
         throw new Error("Missing payment details or selected data");
@@ -1026,7 +1031,29 @@ export const directSale = async (req, res) => {
       );
 
       const party = mapPartyData(selectedParty);
+      
+let additionalChargesArray = [];
+      if (additionalCharges.length > 0) {
+        let findOne =await AdditionalCharges.findOne({
+          name: "discount",
+        });
 
+        if(findOne) {
+          additionalChargesArray.push({
+            _id: findOne._id,
+            value:additionalCharges[0].amount ,
+            taxAmt: 0 ,
+            type : "subtract",
+            amount: additionalCharges[0].amount,
+            finalValue:additionalCharges[0].amount,
+          });
+        }else{
+          return res.status(400).json({
+            success: false,
+            message: "Please create additional charge named as discount",
+          })
+        }
+      }
       // Create a sales voucher entry (no KOT reference)
       const savedVoucherData = await createSalesVoucher(
         cmp_id,
@@ -1037,6 +1064,7 @@ export const directSale = async (req, res) => {
         party,
         selectedParty,
         paymentSplittingArray,
+        additionalChargesArray,
         session,
       );
 
@@ -1108,7 +1136,7 @@ export const updateKotPayment = async (req, res) => {
         note,
       } = req.body;
 
-      discountAmount = req?.body?.additionalCharges[0]?.amount || 0
+      discountAmount = req?.body?.additionalCharges[0]?.amount || 0;
 
       console.log("=== STEP 3: BACKEND RECEIVED ===");
       console.log("req.body.discountCharge:", discountCharge);
@@ -1197,7 +1225,7 @@ export const updateKotPayment = async (req, res) => {
       );
 
       const party = mapPartyData(selectedParty);
- console.log("selectedParty", isPostToRoom);
+      console.log("selectedParty", isPostToRoom);
       // Save voucher
       const savedVoucherData = await createSalesVoucher(
         cmp_id,
@@ -1288,7 +1316,6 @@ export const updateKotPayment = async (req, res) => {
             discount: discountAmount,
             discountChargeId: discountCharge?._id,
             note: note,
-            
           };
 
           // ✅ Handle complimentary flag
@@ -1680,13 +1707,12 @@ async function createSalesVoucher(
   party,
   selectedParty,
   paymentSplittingArray,
+  additionalChargesArray=null,
   session,
 ) {
-
-
   // ✅ FIXED: Use SUBTOTAL (BEFORE discount)
   const originalTotal = Number(kotData?.subtotal || kotData?.total || 0); // 1000 ✅
-  const additionalCharges = req.body.additionalCharges || [];
+  const additionalCharges = additionalChargesArray || req.body.additionalCharges || [];
   const isComplimentary = req.body.isComplimentary || false;
   const isPostToRoom = req.body.isPostToRoom || false;
   console.log(
@@ -1696,7 +1722,8 @@ async function createSalesVoucher(
   console.log("kotData", isPostToRoom);
   // ✅ Calculate totals
   const totalAdditionalCharges = additionalCharges.reduce((sum, charge) => {
-    return sum + Number(charge.amount || 0);
+    console.log("charge", charge);
+    return sum + Number(charge.amount || charge.value || 0);
   }, 0);
 
   const discountTotal = additionalCharges
@@ -1711,7 +1738,7 @@ async function createSalesVoucher(
     finalAmount, // 800
     additionalCharges,
   });
-console.log("req.sUserId",req.sUserId)
+  console.log("req.sUserId", req.sUserId);
   return await salesModel.create(
     [
       {
@@ -3018,21 +3045,21 @@ export const getComplementaryCashOrBank = async (req, res) => {
 };
 
 export const addComplementaryCashOrBank = async (req, res) => {
-  const cmp_id = new mongoose.Types.ObjectId(req.params.cmp_id)
-  const partyId = new mongoose.Types.ObjectId(req.body.cashOrBank)
+  const cmp_id = new mongoose.Types.ObjectId(req.params.cmp_id);
+  const partyId = new mongoose.Types.ObjectId(req.body.cashOrBank);
   const session = await mongoose.startSession();
   try {
-  await partyModel.updateMany(
-  { cmp_id },
-  { $set: { isTaggedWithComplementary: false } },
-  { session }
-);
+    await partyModel.updateMany(
+      { cmp_id },
+      { $set: { isTaggedWithComplementary: false } },
+      { session },
+    );
 
-const updated = await partyModel.findOneAndUpdate(
-  { _id: partyId, cmp_id },
-  { $set: { isTaggedWithComplementary: true } },
-  { new: true, session }
-);
+    const updated = await partyModel.findOneAndUpdate(
+      { _id: partyId, cmp_id },
+      { $set: { isTaggedWithComplementary: true } },
+      { new: true, session },
+    );
 
     return res.status(200).json({
       message: "Updated successfully",
