@@ -1377,11 +1377,9 @@ export const getBookings = async (req, res) => {
       params,
     );
 
-
     // ✅ Process bookings to add payment status and travel agent info
     const processedBookings = bookings.map((booking) => {
       const processed = booking.toObject ? booking.toObject() : { ...booking };
-      
 
       // ✅ Add payment status (shows payment type names, not amounts)
       processed.paymentStatus = getPaymentStatus(processed.paymenttypeDetails);
@@ -2512,7 +2510,6 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
         { "paymenttypeDetails.card": { $gt: "0" } },
       ],
     };
-    
 
     // ✅ CORRECTED: Get roomId and serviceType from ROOT level, not kotDetails
 
@@ -2520,9 +2517,11 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
       {
         $match: {
           "convertedFrom.id": { $exists: true, $ne: null },
-          "convertedFrom.checkInNumber": checkoutData[0]?.checkInId?.voucherNumber || checkoutData[0]?.voucherNumber ,
+          "convertedFrom.checkInNumber":
+            checkoutData[0]?.checkInId?.voucherNumber ||
+            checkoutData[0]?.voucherNumber,
           isComplimentary: false,
-          isPostToRoom:true
+          isPostToRoom: true,
         },
       },
 
@@ -2616,14 +2615,15 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
         if (checkInData.bookingId) {
           bookingSide = await TallyData.find({
             billId: checkInData.bookingId,
-            ...paymentGreaterThanZeroQuery,
+            // ...paymentGreaterThanZeroQuery,
           }).lean();
         }
 
         const checkInSide = await TallyData.find({
           billId: checkInId,
-          ...paymentGreaterThanZeroQuery,
+          // ...paymentGreaterThanZeroQuery,
         }).lean();
+        console.log("CHECK-IN SIDE:", checkInSide);
 
         [...bookingSide, ...checkInSide].forEach((item) => {
           advanceMap.set(String(item._id), item);
@@ -2642,34 +2642,40 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
           }).lean();
         }
 
+        console.log("BookingSide:", bookingSide.length);
+
         const checkInSide = await TallyData.find({
-          billId: checkout.checkInId._id,
+          billId: checkout.checkInId?._id || checkout._id,
           ...paymentGreaterThanZeroQuery,
         }).lean();
-
+        console.log("CheckInSide:", checkInSide.length);
         const salesData = await salesModel
           .findOne({
-            salesNumber: checkout.voucherNumber ,
+            salesNumber: checkout.voucherNumber,
           })
           .lean();
 
-        if (!salesData) continue;
+        console.log("SalesData:", salesData);
+        // if (!salesData) continue;
+        console.log("SalesData:", salesData);
+        let advanceData = [];
+        if (salesData) {
+          advanceData = await TallyData.find({
+            billId: salesData._id,
+            ...paymentGreaterThanZeroQuery,
+          }).lean();
 
-        const advanceData = await TallyData.find({
-          billId: salesData._id,
-          ...paymentGreaterThanZeroQuery,
-        }).lean();
+          if (advanceData.length) {
+            advanceData[0].isCheckOut = true;
 
-        if (advanceData.length) {
-          advanceData[0].isCheckOut = true;
+            const sum =
+              (bookingSide[0]?.bill_amount || 0) +
+              (checkInSide[0]?.bill_amount || 0);
 
-          const sum =
-            (bookingSide[0]?.bill_amount || 0) +
-            (checkInSide[0]?.bill_amount || 0);
-
-          advanceData[0].bill_amount = Math.abs(
-            advanceData[0].bill_amount - sum,
-          );
+            advanceData[0].bill_amount = Math.abs(
+              advanceData[0].bill_amount - sum,
+            );
+          }
         }
 
         [...bookingSide, ...checkInSide, ...advanceData].forEach((item) => {
@@ -2743,8 +2749,7 @@ export const convertCheckOutToSale = async (req, res) => {
         checkinIds,
       } = req.body;
 
-
-      console.log("isPostToRoom",isPostToRoom)
+      console.log("isPostToRoom", isPostToRoom);
 
       let tracker = paymentDetails?.paymenttypeDetails;
 
@@ -2780,15 +2785,15 @@ export const convertCheckOutToSale = async (req, res) => {
             }
           });
         };
-        console.log(item.otherChargeDetails)
+        console.log(item.otherChargeDetails);
         let otherCharges = {};
         // handle other charges
         if (
           item.otherChargeDetails &&
           Object.keys(item.otherChargeDetails).length > 0
         ) {
-          console.log(item.otherChargeDetails)
-         otherCharges = [
+          console.log(item.otherChargeDetails);
+          otherCharges = [
             {
               _id: item.otherChargeDetails?.charge?._id,
               option: item.otherChargeDetails?.charge?.name,
@@ -2808,7 +2813,7 @@ export const convertCheckOutToSale = async (req, res) => {
             },
           ];
         }
-console.log("othercharges",otherCharges)
+        console.log("othercharges", otherCharges);
         // 1) start from existing paymentDetails.paymenttypeDetails
         const merged = { ...paymentDetails.paymenttypeDetails };
 
@@ -3358,14 +3363,14 @@ async function createSalesVoucher(
   checkInId = null,
   checkOutId = null,
   amount = 0,
-  isPostToRoom=false,
-  otherCharges
+  isPostToRoom = false,
+  otherCharges,
 ) {
   const AlreadyExistingItems = selectedCheckOut.flatMap(
     (item) => item.selectedRooms,
   );
 
-     console.log("isPostToRoomffffffffff",isPostToRoom)
+  console.log("isPostToRoomffffffffff", isPostToRoom);
   let items = [];
 
   AlreadyExistingItems.forEach((room) => {
@@ -3453,7 +3458,7 @@ async function createSalesVoucher(
         convertedFrom,
         checkInId: checkInId,
         checkOutId: checkOutId,
-        additionalCharges : otherCharges,
+        additionalCharges: otherCharges,
       },
     ],
     { session },
@@ -3596,7 +3601,7 @@ export const updateConfigurationForHotelAndRestaurant = async (req, res) => {
           [`configurations.0.orderTypes.${data.field}`]: data.checked,
         },
       };
-      }  else if (data.title) {
+    } else if (data.title) {
       // Fallback for backward compatibility with old toggle structure
       updateData = {
         $set: {

@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { FaEdit } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+import { taxCalculator } from "../Helper/taxCalculator";
 import {
   MdDelete,
   MdCheckCircle,
@@ -100,7 +101,7 @@ function BookingList() {
     cashs: [],
   });
   const [combinedSources, setCombinedSources] = useState([]);
-  console.log(combinedSources);
+  console.log(selectedDataForPayment);
   const { roomId, roomName, filterByRoom } = location.state || {};
   const paymentDetails = useSelector((state) => state.paymentSlice);
   const { _id: cmp_id, configurations } = useSelector(
@@ -124,8 +125,9 @@ function BookingList() {
     if (!checkouts || checkouts.length === 0) return 0;
 
     return checkouts.reduce((total, checkout) => {
+      console.log(checkout);
       const rooms = checkout.selectedRooms;
-      const advance = checkout.advanceAmount;
+      const advance = Number((checkout?.advanceAmount || 0)) + (Number(checkout?.bookingId?.advanceAmount || 0));
       console.log(rooms);
       console.log(advance);
       // If no rooms, just keep current total
@@ -134,12 +136,12 @@ function BookingList() {
       }
 
       const checkoutTotal = rooms.reduce((sum, room) => {
-        console.log(room.baseAmountWithTax);
-        return sum + (parseFloat(room.baseAmountWithTax) || 0);
+        console.log(room.amountAfterTax);
+        return sum + (parseFloat(room.amountAfterTax) || 0);
       }, 0); // important: initial value
       console.log(checkout.advanceAmount);
       console.log(checkoutTotal);
-      return total + (checkoutTotal - Number(checkout.advanceAmount));
+      return total + (checkoutTotal - advance);
     }, 0); // initial value for outer reduce
   };
 
@@ -275,9 +277,9 @@ function BookingList() {
   // ADD THIS: Update total whenever selectedCheckOut changes
   useEffect(() => {
     if (selectedCheckOut && selectedCheckOut.length > 0) {
-      console.log("H");
+      console.log("H",selectedCheckOut);
       const totalAmount = calculateTotalAmount(selectedCheckOut);
-
+      console.log(totalAmount);
       const advanceAmount = selectedCheckOut.reduce((total, item) => {
         return (
           total +
@@ -289,6 +291,7 @@ function BookingList() {
       const restaurantSubTotal = selectedCheckOut.reduce((total, item) => {
         return total + (item.restaurantSubTotal || 0);
       }, 0);
+
       console.log(restaurantSubTotal);
       setSelectedDataForPayment((prevData) => ({
         ...prevData,
@@ -689,12 +692,13 @@ function BookingList() {
       setPaymentError("");
     }
   };
-  console.log(selectedOnlinetype);
+  console.log(processedCheckoutData);
   console.log("hddd");
   const handleSavePayment = async () => {
     console.log("hddd");
     console.log(selectedCheckOut);
     console.log(selectedCheckOut.length);
+    console.log(processedCheckoutData);
 
     setSaveLoader(true);
     let paymentDetails;
@@ -864,14 +868,15 @@ function BookingList() {
       selectedParty: selectedCustomer,
       restaurantBaseSaleData: restaurantBaseSaleData,
     });
+
     console.log(paymentDetails);
     console.log(selectedCheckOut);
-    console.log(selectedCheckOut.length);
+    console.log(processedCheckoutData);
 
     if (partial) {
       console.log("Hhhh");
       console.log(dateandstaysdata);
-      proceedToCheckout(dateandstaysdata, processedCheckoutData);
+     
       console.log(paymentDetails);
       dispatch(setPaymentDetails(paymentDetails));
       dispatch(setSelectedParty(selectedCustomer));
@@ -880,6 +885,7 @@ function BookingList() {
       dispatch(setOnlinepartyName(selectedonlinePartyname));
       dispatch(setOnlineType(selectedOnlinetype));
       setIsPartial(false);
+       proceedToCheckout(dateandstaysdata, processedCheckoutData);
     } else {
       console.log("hhhh");
       console.log(paymentDetails);
@@ -940,17 +946,74 @@ function BookingList() {
 
   const handleEnhancedCheckoutConfirm = async (roomAssignments, data) => {
     console.log(roomAssignments);
+    console.log(data);
+    let updatedData = data;
+   
+if (selectedCheckOut !== data) {
+
+  updatedData = await Promise.all(
+    data.map(async (checkout) => {
+
+      const updatedRooms = await Promise.all(
+        (checkout.selectedRooms || []).map(async (room) => {
+
+          const taxResponse = await taxCalculator(
+            data = room,
+            configurations[0]?.addRateWithTax?.hotelSale,
+            checkout,
+            room.roomId
+          );
+    
+
+          return {
+            ...room,
+            amountAfterTax: taxResponse?.amountWithTax || room.totalAmount,
+            amountWithOutTax: taxResponse?.amountWithOutTax,
+            taxPercentage: taxResponse?.taxRate || 0,
+            foodPlanTaxRate: taxResponse?.foodPlanTaxRate || 0,
+            additionalPaxAmount: taxResponse?.additionalPaxAmount || 0,
+            foodPlanAmount: taxResponse?.foodPlanAmount || 0,
+            taxAmount: taxResponse?.taxAmount || 0,
+            additionalPaxAmountWithTax:
+              taxResponse?.additionalPaxAmountWithTax || 0,
+            additionalPaxAmountWithOutTax:
+              taxResponse?.additionalPaxAmountWithOutTax || 0,
+            foodPlanAmountWithTax:
+              taxResponse?.foodPlanAmountWithTax || 0,
+            foodPlanAmountWithOutTax:
+              taxResponse?.foodPlanAmountWithOutTax || 0,
+            baseAmount: taxResponse?.baseAmount || 0,
+            baseAmountWithTax: taxResponse?.baseAmountWithTax || 0,
+            totalCgstAmt: taxResponse?.totalCgstAmt || 0,
+            totalSgstAmt: taxResponse?.totalSgstAmt || 0,
+            totalIgstAmt: taxResponse?.totalIgstAmt || 0,
+          };
+
+        })
+      );
+
+      return {
+        ...checkout,
+        selectedRooms: updatedRooms
+      };
+
+    })
+  );
+
+}
+console.log(updatedData);
+    setSelectedCheckOut(updatedData);
     setShowEnhancedCheckoutModal(false);
-    setdateandstaysdata(data);
+    setdateandstaysdata(updatedData);
     // ✅ ALWAYS show checkout date modal - no condition
     setProcessedCheckoutData(roomAssignments);
     console.log("hhhh");
     setShowPaymentModal(true);
     setIsPartial(true);
-    setSelectedCheckOut(data);
+  
     // setShowCheckOutDateModal(true)
   };
-  console.log(selectedCheckOut);
+console.log(console.log(processedCheckoutData))
 
   const handleCheckin = (e, el) => {
     console.log(el);
@@ -1099,17 +1162,19 @@ function BookingList() {
       checkoutData = Object.values(grouped);
       checkoutData[0].allCheckInIds = checkinids;
     }
-    console.log(checkoutData);
+    console.log(roomAssignments);
     const roomAssignmentMap = new Map(
-      roomAssignments.map((item) => [
+      roomAssignments?.map((item) => [
         item._id,
         {
           checkOutDate: item.checkOutDate,
           checkOutTime: item.checkOutTime,
           stayDays: item.stayDays,
+
         },
       ]),
     );
+    console.log(roomAssignmentMap);
 
     const updatedCheckoutData = checkoutData.map((item) => {
       const roomData = roomAssignmentMap.get(item._id);
@@ -1131,10 +1196,14 @@ function BookingList() {
     });
 
     console.log(updatedCheckoutData);
+    console.log(checkoutData[0])
+    console.log(checkoutMode)
+    
+
 
     dispatch(
       setPrintDetails({
-        selectedCheckOut: updatedCheckoutData,
+        selectedCheckOut: roomAssignments,
         customerId: checkoutData[0]?.customerId?._id,
         isForPreview: false,
         checkoutMode,
@@ -1147,7 +1216,7 @@ function BookingList() {
     console.log("Hhhhhhhh");
     navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
       state: {
-        selectedCheckOut: updatedCheckoutData,
+        selectedCheckOut: roomAssignments,
         customerId: checkoutData[0]?.customerId?._id,
         isForPreview: true,
         checkoutMode,
@@ -1857,6 +1926,7 @@ function BookingList() {
             search={searchTerm}
             toogle={handletoogle}
             selectedCustomer={selectedCustomer}
+            setSelectedCheckOut={setSelectedCheckOut}
           />
         )}
 
