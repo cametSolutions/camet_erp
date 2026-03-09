@@ -2643,7 +2643,7 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
         }
 
         const checkInSide = await TallyData.find({
-          billId: checkout.checkInId._id,
+          billId: checkout.checkInId._id || checkout._id,
           ...paymentGreaterThanZeroQuery,
         }).lean();
 

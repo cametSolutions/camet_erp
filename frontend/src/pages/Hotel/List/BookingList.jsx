@@ -135,8 +135,8 @@ function BookingList() {
       }
 
       const checkoutTotal = rooms.reduce((sum, room) => {
-        console.log(room.baseAmountWithTax);
-        return sum + (parseFloat(room.baseAmountWithTax) || 0);
+        console.log(room.amountAfterTax);
+        return sum + (parseFloat(room.amountAfterTax) || 0);
       }, 0); // important: initial value
       console.log(checkout.advanceAmount);
       console.log(checkoutTotal);
@@ -290,6 +290,7 @@ function BookingList() {
       const restaurantSubTotal = selectedCheckOut.reduce((total, item) => {
         return total + (item.restaurantSubTotal || 0);
       }, 0);
+
       console.log(restaurantSubTotal);
       setSelectedDataForPayment((prevData) => ({
         ...prevData,
@@ -696,6 +697,7 @@ function BookingList() {
     console.log("hddd");
     console.log(selectedCheckOut);
     console.log(selectedCheckOut.length);
+    console.log(processedCheckoutData);
 
     setSaveLoader(true);
     let paymentDetails;
@@ -940,6 +942,8 @@ function BookingList() {
   console.log(selectedCheckOut);
 
   const handleEnhancedCheckoutConfirm = async (roomAssignments, data) => {
+    console.log(roomAssignments);
+    console.log(data);
     let updatedData = data;
    
 if (selectedCheckOut !== data) {
@@ -994,20 +998,19 @@ if (selectedCheckOut !== data) {
   );
 
 }
-    console.log(updatedData);
-    console.log(roomAssignments);
-    console.log(data)
+
+    setSelectedCheckOut(updatedData);
     setShowEnhancedCheckoutModal(false);
-    setdateandstaysdata(data);
+    setdateandstaysdata(updatedData);
     // ✅ ALWAYS show checkout date modal - no condition
     setProcessedCheckoutData(roomAssignments);
     console.log("hhhh");
     setShowPaymentModal(true);
     setIsPartial(true);
-    setSelectedCheckOut(updatedData);
+  
     // setShowCheckOutDateModal(true)
   };
-  console.log(selectedCheckOut);
+console.log(console.log(processedCheckoutData))
 
   const handleCheckin = (e, el) => {
     console.log(el);
@@ -1156,9 +1159,9 @@ if (selectedCheckOut !== data) {
       checkoutData = Object.values(grouped);
       checkoutData[0].allCheckInIds = checkinids;
     }
-    console.log(checkoutData);
+    console.log(roomAssignments);
     const roomAssignmentMap = new Map(
-      roomAssignments.map((item) => [
+      roomAssignments?.map((item) => [
         item._id,
         {
           checkOutDate: item.checkOutDate,
