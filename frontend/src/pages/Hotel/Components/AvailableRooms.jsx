@@ -98,6 +98,7 @@ function AvailableRooms({
   isTariffRateChange = false,
   roomIdToUpdate = null,
   addTaxWithRate = false,
+  handleDeletion = () => {},
 }) {
   const [rooms, setRooms] = useState([]);
   const [search, setSearch] = useState("");
@@ -604,6 +605,7 @@ function AvailableRooms({
     let filteredRoom = bookings.filter((b) => b.roomId !== roomId);
     if(filteredRoom.length === 0) setRoomDeletedCompletely(true);
     setBookings(filteredRoom);
+    handleDeletion(roomId);
   };
 
   const handleSelect = async (room) => {
