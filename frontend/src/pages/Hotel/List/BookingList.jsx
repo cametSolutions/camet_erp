@@ -101,7 +101,7 @@ function BookingList() {
     cashs: [],
   });
   const [combinedSources, setCombinedSources] = useState([]);
-  console.log(combinedSources);
+  console.log(selectedDataForPayment);
   const { roomId, roomName, filterByRoom } = location.state || {};
   const paymentDetails = useSelector((state) => state.paymentSlice);
   const { _id: cmp_id, configurations } = useSelector(
@@ -125,8 +125,9 @@ function BookingList() {
     if (!checkouts || checkouts.length === 0) return 0;
 
     return checkouts.reduce((total, checkout) => {
+      console.log(checkout);
       const rooms = checkout.selectedRooms;
-      const advance = checkout.advanceAmount;
+      const advance = Number((checkout?.advanceAmount || 0)) + (Number(checkout?.bookingId?.advanceAmount || 0));
       console.log(rooms);
       console.log(advance);
       // If no rooms, just keep current total
@@ -140,7 +141,7 @@ function BookingList() {
       }, 0); // important: initial value
       console.log(checkout.advanceAmount);
       console.log(checkoutTotal);
-      return total + (checkoutTotal - Number(checkout.advanceAmount));
+      return total + (checkoutTotal - advance);
     }, 0); // initial value for outer reduce
   };
 
@@ -276,9 +277,9 @@ function BookingList() {
   // ADD THIS: Update total whenever selectedCheckOut changes
   useEffect(() => {
     if (selectedCheckOut && selectedCheckOut.length > 0) {
-      console.log("H");
+      console.log("H",selectedCheckOut);
       const totalAmount = calculateTotalAmount(selectedCheckOut);
-
+      console.log(totalAmount);
       const advanceAmount = selectedCheckOut.reduce((total, item) => {
         return (
           total +
@@ -691,7 +692,7 @@ function BookingList() {
       setPaymentError("");
     }
   };
-  console.log(selectedOnlinetype);
+  console.log(processedCheckoutData);
   console.log("hddd");
   const handleSavePayment = async () => {
     console.log("hddd");
@@ -867,14 +868,15 @@ function BookingList() {
       selectedParty: selectedCustomer,
       restaurantBaseSaleData: restaurantBaseSaleData,
     });
+
     console.log(paymentDetails);
     console.log(selectedCheckOut);
-    console.log(selectedCheckOut.length);
+    console.log(processedCheckoutData);
 
     if (partial) {
       console.log("Hhhh");
       console.log(dateandstaysdata);
-      proceedToCheckout(dateandstaysdata, processedCheckoutData);
+     
       console.log(paymentDetails);
       dispatch(setPaymentDetails(paymentDetails));
       dispatch(setSelectedParty(selectedCustomer));
@@ -883,6 +885,7 @@ function BookingList() {
       dispatch(setOnlinepartyName(selectedonlinePartyname));
       dispatch(setOnlineType(selectedOnlinetype));
       setIsPartial(false);
+       proceedToCheckout(dateandstaysdata, processedCheckoutData);
     } else {
       console.log("hhhh");
       console.log(paymentDetails);
@@ -998,7 +1001,7 @@ if (selectedCheckOut !== data) {
   );
 
 }
-
+console.log(updatedData);
     setSelectedCheckOut(updatedData);
     setShowEnhancedCheckoutModal(false);
     setdateandstaysdata(updatedData);
@@ -1167,9 +1170,11 @@ console.log(console.log(processedCheckoutData))
           checkOutDate: item.checkOutDate,
           checkOutTime: item.checkOutTime,
           stayDays: item.stayDays,
+
         },
       ]),
     );
+    console.log(roomAssignmentMap);
 
     const updatedCheckoutData = checkoutData.map((item) => {
       const roomData = roomAssignmentMap.get(item._id);
@@ -1191,10 +1196,14 @@ console.log(console.log(processedCheckoutData))
     });
 
     console.log(updatedCheckoutData);
+    console.log(checkoutData[0])
+    console.log(checkoutMode)
+    
+
 
     dispatch(
       setPrintDetails({
-        selectedCheckOut: updatedCheckoutData,
+        selectedCheckOut: roomAssignments,
         customerId: checkoutData[0]?.customerId?._id,
         isForPreview: false,
         checkoutMode,
@@ -1207,7 +1216,7 @@ console.log(console.log(processedCheckoutData))
     console.log("Hhhhhhhh");
     navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
       state: {
-        selectedCheckOut: updatedCheckoutData,
+        selectedCheckOut: roomAssignments,
         customerId: checkoutData[0]?.customerId?._id,
         isForPreview: true,
         checkoutMode,
