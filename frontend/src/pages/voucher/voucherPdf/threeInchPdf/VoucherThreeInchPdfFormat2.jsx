@@ -154,7 +154,7 @@ function VoucherThreeInchPdfFormat2({
   // MAIN CONTAINER: force left align
   const containerStyle = {
     width: "80mm",
-    margin: "0 auto",
+    margin: 2,
     fontFamily: "Arial, sans-serif",
     fontSize: "11px",
     lineHeight: 1.2,
@@ -643,9 +643,9 @@ function VoucherThreeInchPdfFormat2({
         </div>
 
         {/* Controls */}
-        <div className="flex gap-3 justify-center p-2">
+        <div className="flex gap-3 p-2">
           <button
-            className="px-3 py-1 rounded-lg bg-gray-500 text-white font-medium hover:bg-gray-600 active:scale-95 transition"
+            className="px-3 py-1 ml-24 rounded-lg bg-gray-500 text-white font-medium hover:bg-gray-600 active:scale-95 transition"
             onClick={handlePrint}
           >
             Print
