@@ -1469,7 +1469,7 @@ const BillSummary = () => {
                     <tr className="border-t-2 border-black">
                       <td className="font-bold py-1 text-sm">Net Sale</td>
                       <td className="text-right py-1 font-bold text-sm">
-                        {totals.totalWithTax.toFixed(2)}
+                        {Math.round(totals.totalWithTax).toFixed(2)}
                       </td>
                     </tr>
                   </tbody>
