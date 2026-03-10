@@ -161,6 +161,7 @@ function VoucherThreeInchPdfFormat2({
     padding: "4mm",
     border: "1px dotted #000",
     textAlign: "left",
+    boxSizing: "border-box",
   };
 
   const flexRow = {
@@ -239,14 +240,24 @@ function VoucherThreeInchPdfFormat2({
     <>
       <TitleDiv title="Restaurant sale print" />
 
-      {/* print-only CSS override to force left align if any global CSS interferes */}
+      {/* strong print CSS: 80mm page, zero margins, left aligned */}
       <style type="text/css" media="print">
         {`
+          @page {
+            size: 80mm auto;
+            margin: 0;
+          }
           html, body {
+            margin: 0 !important;
+            padding: 0 !important;
             text-align: left !important;
           }
           .receipt-container {
+            width: 80mm !important;
+            margin: 0 !important;
+            padding: 4mm !important;
             text-align: left !important;
+            box-sizing: border-box;
           }
         `}
       </style>
@@ -643,9 +654,9 @@ function VoucherThreeInchPdfFormat2({
         </div>
 
         {/* Controls */}
-        <div className="flex gap-3 justify-center p-2">
+        <div className="flex gap-3 p-2">
           <button
-            className="px-3 py-1 rounded-lg bg-gray-500 text-white font-medium hover:bg-gray-600 active:scale-95 transition"
+            className="px-3 py-1 ml-24 rounded-lg bg-gray-500 text-white font-medium hover:bg-gray-600 active:scale-95 transition"
             onClick={handlePrint}
           >
             Print
