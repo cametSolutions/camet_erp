@@ -153,7 +153,7 @@ function VoucherThreeInchPdfFormat2({
 
   // MAIN CONTAINER: force left align
 const containerStyle = {
-  width: "72mm",          // match TM‑T82 print width
+  width: "72mm",
   margin: 0,
   fontFamily: "Arial, sans-serif",
   fontSize: "11px",
@@ -256,13 +256,14 @@ const containerStyle = {
     }
     .receipt-container {
       width: 72mm !important;
-      margin: 0 !important;
+      margin: 0 0 0 4mm !important;   /* shift 4mm to the right */
       padding: 2mm 3mm !important;
       text-align: left !important;
       box-sizing: border-box;
     }
   `}
 </style>
+
 
 
       <div className="grid mt-2">
