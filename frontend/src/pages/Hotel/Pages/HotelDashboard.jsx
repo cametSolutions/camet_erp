@@ -508,9 +508,19 @@ const HotelDashboard = () => {
     scrollbarWidth: "thin",
     scrollbarColor: "rgba(0, 0, 0, 0.7) rgba(0, 0, 0, 0.2)", // black thumb, lighter black track
   };
+
   const handleConvertToAvailable = (room) => {
     let findOne = selectedRooms.find((r) => r.roomId === room._id);
     if (findOne) {
+      let checkIn = tooltipData?.checkins?.find((c) =>
+        c.selectedRooms?.some((sr) => sr.roomId === room._id),
+      );
+      checkIn.selectedRooms.forEach((r) => {
+        if (r.roomId.toString() == room._id.toString()) {
+          r.isCheckedOut = false;
+        }
+      });
+      
       setSelectedRooms(selectedRooms.filter((r) => r.roomId !== room._id));
       return;
     }
@@ -536,16 +546,22 @@ const HotelDashboard = () => {
       checkIn = tooltipData?.checkins?.find((c) =>
         c.selectedRooms?.some((sr) => sr.roomId === room._id),
       );
-      console.log(checkIn);
+
       let findConvert = convertDataToCheckout.some(
         (c) => c._id === checkIn._id,
       );
-      console.log(findConvert);
+      checkIn.selectedRooms.forEach((r) => {
+        if (r.roomId.toString() == room._id.toString()) {
+          r.isCheckedOut = true;
+        }
+      });
+
       if (!findConvert) {
         setConvertDataToCheckout((prev) => [...prev, checkIn]);
       }
     }
 
+    console.log(convertDataToCheckout);
     // Add room to selectedRooms
     const newObject = {
       roomId: room._id,
