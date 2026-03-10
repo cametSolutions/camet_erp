@@ -119,7 +119,8 @@ function BookingList() {
     `/api/sUsers/singlecheckoutpartylist/${cmp_id}`,
     { params: { voucher: getVoucherType() } },
   );
-  console.log(selectedCheckOut);
+  console.log("ssssssssssssssssssssssssssssssssssssssssssssssss",selectedCheckOut);
+
   // ADD THIS FUNCTION: Calculate total from all checkouts
   const calculateTotalAmount = (checkouts) => {
     if (!checkouts || checkouts.length === 0) return 0;
