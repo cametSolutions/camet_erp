@@ -7,12 +7,7 @@ import { useLocation } from "react-router-dom";
 import { useReactToPrint } from "react-to-print";
 import TitleDiv from "@/components/common/TitleDiv";
 
-function VoucherThreeInchPdfFormat2({
-  data,
-  org,
-  isPreview,
-  sendToParent,
-}) {
+function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
   const [subTotal, setSubTotal] = useState(0);
   const location = useLocation();
   const contentToPrint = useRef(null);
@@ -23,14 +18,15 @@ function VoucherThreeInchPdfFormat2({
       (state) => state?.secSelectedOrganization?.secSelectedOrg,
     ));
 
+  console.log(data);
+
   const isIndian = useSelector(
     (state) =>
       state?.secSelectedOrganization?.secSelectedOrg?.country === "India",
   );
   const party = data?.party;
   const isSameState =
-    org?.state?.toLowerCase() === party?.state?.toLowerCase() ||
-    !party?.state;
+    org?.state?.toLowerCase() === party?.state?.toLowerCase() || !party?.state;
 
   const voucherType = data?.voucherType;
 
@@ -86,9 +82,7 @@ function VoucherThreeInchPdfFormat2({
         return (
           acc +
           Number(
-            curr?.totalIgstAmt ||
-              curr?.totalCgstAmt + curr?.totalSgstAmt ||
-              0,
+            curr?.totalIgstAmt || curr?.totalCgstAmt + curr?.totalSgstAmt || 0,
           )
         );
       }, 0) || 0,
@@ -130,7 +124,9 @@ function VoucherThreeInchPdfFormat2({
   ).toFixed(2);
   const tax = Math.round(calculateTotalTax()).toFixed(2);
   const cgst = Math.round(calculateTotalTax() / 2).toFixed(2);
+  // const cgstPercentage = (Number(cgst) / Number(data?.subtotal || data?.subTotal)) * 100;
 
+  // Get actual tax rates directly from item data instead of back-calculating
   const getCgstPercentage = () => {
     const item = data?.items?.find((el) => el.cgst > 0);
     return item?.cgst || 0;
@@ -146,26 +142,21 @@ function VoucherThreeInchPdfFormat2({
   const cgstPercentage = getCgstPercentage();
   const sgstPercentage = getSgstPercentage();
   const igstPercentage = getIgstPercentage();
-
   const handlePrint = useReactToPrint({
     content: () => contentToPrint.current,
   });
 
-  // MAIN CONTAINER: force left align
-// JS style in component
-const containerStyle = {
-  width: "72mm",
-  margin: "0 auto",          // center on the roll
-  fontFamily: "Arial, sans-serif",
-  fontSize: "11px",
-  lineHeight: 1.2,
-  padding: "2mm 3mm",
-  border: "1px dotted #000",
-  textAlign: "left",
-  boxSizing: "border-box",
-};
-
-
+  const containerStyle = {
+    width: "72mm",
+    margin: "0 auto", // center on the roll
+    fontFamily: "Arial, sans-serif",
+    fontSize: "11px",
+    lineHeight: 1.2,
+    padding: "2mm 3mm",
+    border: "1px dotted #000",
+    textAlign: "left",
+    boxSizing: "border-box",
+  };
 
   const flexRow = {
     display: "flex",
@@ -179,25 +170,31 @@ const containerStyle = {
   const centerText = { textAlign: "center" };
   const bold = { fontWeight: "bold" };
 
- const headerGrid = {
-  display: "grid",
-  gridTemplateColumns: "0.6fr 2.2fr 0.7fr 1fr 1.1fr", // No, Item, Qty, Rate, Amount
-  fontSize: "11px",
-  fontWeight: "bold",
-  paddingBottom: "3px",
-  borderBottom: "1px dotted #000",
-  marginBottom: "4px",
-};
+  const headerGrid = {
+    display: "grid",
+    gridTemplateColumns: "0.6fr 2.2fr 0.7fr 1fr 1.1fr", // No, Item, Qty, Rate, Amount
+    fontSize: "11px",
+    fontWeight: "bold",
+    paddingBottom: "3px",
+    borderBottom: "1px dotted #000",
+    marginBottom: "4px",
+  };
 
-const itemGrid = {
-  display: "grid",
-  gridTemplateColumns: "0.6fr 2.2fr 0.7fr 1fr 1.1fr",
-  fontSize: "10px",
-  marginBottom: "2px",
-  padding: "1px 0",
-};
-
-
+  const itemGrid = {
+    display: "grid",
+    gridTemplateColumns: "0.6fr 2.2fr 0.7fr 1fr 1.1fr",
+    fontSize: "10px",
+    marginBottom: "2px",
+    padding: "1px 0",
+  };
+  console.log(data);
+  console.log({
+    cgst,
+    tax,
+    subTotal,
+    cgstPercentage,
+    totalTax: calculateTotalTax(),
+  });
   const cgstGroups =
     data?.items?.reduce((acc, item) => {
       const cgstRate = item?.cgst || 0;
@@ -235,19 +232,13 @@ const itemGrid = {
       return `${prettyType(p.type)}`;
     }
 
-    return paymentSplits
-      .map((p) => `${prettyType(p.type)} `)
-      .join(" | ");
+    return paymentSplits.map((p) => `${prettyType(p.type)} `).join(" | ");
   };
 
   return (
     <>
-      <TitleDiv title="Restaurant sale print" />
-
-      {/* strong print CSS: 80mm page, zero margins, left aligned */}
-
-<style type="text/css" media="print">
-  {`
+      <style type="text/css" media="print">
+        {`
     @page {
       size: 80mm auto;
       margin: 0;
@@ -265,11 +256,8 @@ const itemGrid = {
       box-sizing: border-box;
     }
   `}
-</style>
-
-
-
-
+      </style>
+      <TitleDiv title="Restaurant sale print" />
       <div className="grid mt-2">
         <div
           ref={contentToPrint}
@@ -291,29 +279,15 @@ const itemGrid = {
               <img
                 src={org.logo}
                 alt="Logo"
-                style={{
-                  width: "25mm",
-                  height: "auto",
-                  objectFit: "contain",
-                }}
+                style={{ width: "25mm", height: "auto", objectFit: "contain" }}
               />
             )}
             <div style={{ flex: 1, textAlign: "center" }}>
-              <div
-                style={{
-                  ...bold,
-                  fontSize: "16px",
-                  marginBottom: "2px",
-                }}
-              >
+              <div style={{ ...bold, fontSize: "16px", marginBottom: "2px" }}>
                 {org?.name}
               </div>
               {(org?.road || org?.place) && (
-                <div>{`${
-                  org?.road || ""
-                }${org?.road && org?.place ? ", " : ""}${
-                  org?.place || ""
-                }`}</div>
+                <div>{`${org?.road || ""}${org?.road && org?.place ? ", " : ""}${org?.place || ""}`}</div>
               )}
               {org?.mobile && <div>PH: {org.mobile}</div>}
               {org?.gstNum && <div>GSTNO: {org.gstNum}</div>}
@@ -351,14 +325,12 @@ const itemGrid = {
             }}
           >
             <div style={{ display: "flex" }}>
-              <span style={{ minWidth: "170px" }}>
-                Bill {getBillNumber()}
-              </span>
+              <span style={{ minWidth: "170px" }}>Bill {getBillNumber()}</span>
               <span>
                 Date:{" "}
-                {new Date(
-                  data?.Date || data?.createdAt,
-                ).toLocaleDateString("en-GB")}
+                {new Date(data?.Date || data?.createdAt).toLocaleDateString(
+                  "en-GB",
+                )}
               </span>
             </div>
             <div style={{ display: "flex" }}>
@@ -375,13 +347,14 @@ const itemGrid = {
               </span>
               <span>
                 Time:{" "}
-                {new Date(
-                  data?.Date || data?.createdAt,
-                ).toLocaleTimeString("en-GB", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  hour12: false,
-                })}
+                {new Date(data?.Date || data?.createdAt).toLocaleTimeString(
+                  "en-GB",
+                  {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    hour12: false,
+                  },
+                )}
               </span>
             </div>
 
@@ -404,6 +377,7 @@ const itemGrid = {
           </div>
 
           {/* Items */}
+          {/* Items */}
           {data?.items?.map((el, index) => {
             const total = Number(el?.total || 0);
             const count = Number(el?.totalCount || 1);
@@ -412,35 +386,34 @@ const itemGrid = {
                 (el?.totalCgstAmt || 0) + (el?.totalSgstAmt || 0) ||
                 0,
             );
+            console.log(el);
 
+            console.log({ total, count, totalTax });
+
+            // ✅ Same logic as Format 1 — addRateWithTax controls rate/amount display
             const addRateWithTax =
               org?.configurations?.[0]?.addRateWithTax?.restaurantSale ??
               org?.configurations?.[0]?.addRateWithTax?.sale ??
               true;
 
+            console.log({ addRateWithTax });
+
             const rate = addRateWithTax
               ? count > 0
-                ? Math.round(
-                    (total * 100) / (100 + el.igst),
-                  ).toFixed(2)
-                : "0.00"
+                ? Math.round((total * 100) / (100 + el.igst)).toFixed(2)
+                : "0.00" // WITH tax (like format 1)
               : count > 0
-              ? ((total - totalTax) / count).toFixed(2)
-              : "0.00";
+                ? ((total - totalTax) / count).toFixed(2)
+                : "0.00"; // WITHOUT tax
 
-            const amount = Math.round(
-              Number(rate) * count,
-            ).toFixed(2);
+            console.log({ rate });
+
+            const amount = Math.round(Number(rate) * count).toFixed(2); // WITHOUT tax
 
             return (
               <div key={index} style={itemGrid}>
                 <div style={textLeft}>{index + 1}</div>
-                <div
-                  style={{
-                    ...textLeft,
-                    wordBreak: "break-word",
-                  }}
-                >
+                <div style={{ ...textLeft, wordBreak: "break-word" }}>
                   {el.product_name}
                 </div>
                 <div style={centerText}>{count}</div>
@@ -449,41 +422,28 @@ const itemGrid = {
               </div>
             );
           })}
-
-          <div
-            style={{
-              borderBottom: "1px dotted #000",
-              margin: "6px 0",
-            }}
-          />
+          <div style={{ borderBottom: "1px dotted #000", margin: "6px 0" }} />
 
           {/* Totals */}
           <div style={{ fontSize: "10px", marginBottom: "4px" }}>
             <div
-              style={{
-                ...flexRow,
-                marginBottom: "2px",
-                fontWeight: "bold",
-              }}
+              style={{ ...flexRow, marginBottom: "2px", fontWeight: "bold" }}
             >
-              <div style={{ marginLeft: "auto", width: "60px" }}>
-                Amount
-              </div>
-              <div style={textRight}>
-                {Math.round(subTotal).toFixed(2)}
-              </div>
+              <div style={{ marginLeft: "auto", width: "60px" }}>Amount</div>
+              <div style={textRight}>{Math.round(subTotal).toFixed(2)}</div>
             </div>
-
             {getPaymentSummary() && (
               <div style={{ ...bold }}>Payment: {getPaymentSummary()}</div>
             )}
-
             {isIndian &&
               isSameState &&
               calculateTotalTax() > 0 &&
               (() => {
+                // Group items by their CGST rate and sum tax amounts per rate
+
                 const entries = Object.entries(cgstGroups);
 
+                // Fallback: if no totalCgstAmt on items, use the overall cgst/sgst split
                 if (entries.length === 0) {
                   return (
                     <>
@@ -515,58 +475,50 @@ const itemGrid = {
                   );
                 }
 
-                return entries.map(
-                  ([rate, { cgstAmt, sgstAmt, sgstRate }]) => (
-                    <div key={rate}>
-                      <div style={flexRow}>
-                        <div
-                          style={{
-                            marginLeft: "auto",
-                            width: "70px",
-                            fontWeight: "bold",
-                          }}
-                        >
-                          CGST {rate}%
-                        </div>
-                        <div style={textRight}>
-                          {cgstAmt.toFixed(2)}
-                        </div>
+                return entries.map(([rate, { cgstAmt, sgstAmt, sgstRate }]) => (
+                  <div key={rate}>
+                    <div style={flexRow}>
+                      <div
+                        style={{
+                          marginLeft: "auto",
+                          width: "70px",
+                          fontWeight: "bold",
+                        }}
+                      >
+                        CGST {rate}%
                       </div>
-                      <div style={flexRow}>
-                        <div
-                          style={{
-                            marginLeft: "auto",
-                            width: "70px",
-                            fontWeight: "bold",
-                          }}
-                        >
-                          SGST {sgstRate}%
-                        </div>
-                        <div style={textRight}>
-                          {sgstAmt.toFixed(2)}
-                        </div>
-                      </div>
+                      <div style={textRight}>{cgstAmt.toFixed(2)}</div>
                     </div>
-                  ),
-                );
+                    <div style={flexRow}>
+                      <div
+                        style={{
+                          marginLeft: "auto",
+                          width: "70px",
+                          fontWeight: "bold",
+                        }}
+                      >
+                        SGST {sgstRate}%
+                      </div>
+                      <div style={textRight}>{sgstAmt.toFixed(2)}</div>
+                    </div>
+                  </div>
+                ));
               })()}
 
-            {isIndian &&
-              !isSameState &&
-              calculateTotalTax() > 0 && (
-                <div style={flexRow}>
-                  <div
-                    style={{
-                      marginLeft: "auto",
-                      width: "70px",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    IGST {igstPercentage}%
-                  </div>
-                  <div style={textRight}>{tax}</div>
+            {isIndian && !isSameState && calculateTotalTax() > 0 && (
+              <div style={flexRow}>
+                <div
+                  style={{
+                    marginLeft: "auto",
+                    width: "70px",
+                    fontWeight: "bold",
+                  }}
+                >
+                  IGST {igstPercentage}%
                 </div>
-              )}
+                <div style={textRight}>{tax}</div>
+              </div>
+            )}
 
             {!isIndian && calculateTotalTax() > 0 && (
               <div style={flexRow}>
@@ -584,12 +536,7 @@ const itemGrid = {
             )}
           </div>
 
-          <div
-            style={{
-              borderBottom: "1px dotted #000",
-              margin: "6px 0",
-            }}
-          />
+          <div style={{ borderBottom: "1px dotted #000", margin: "6px 0" }} />
 
           {/* Final Details */}
           <div style={{ fontSize: "10px", marginBottom: "6px" }}>
@@ -613,6 +560,15 @@ const itemGrid = {
               </div>
             </div>
 
+            {/* {data?.voucherNumber?.[0]?.checkInNumber && (
+              <div style={flexRow}>
+                <div style={bold}>{data.voucherNumber[0].checkInNumber}</div>
+                <div style={{ paddingRight: "3px" }}>
+                  GST: <span style={bold}>{tax}</span>
+                </div>
+              </div>
+            )} */}
+
             {Number(discount) > 0 && (
               <div
                 style={{
@@ -627,12 +583,7 @@ const itemGrid = {
             )}
           </div>
 
-          <div
-            style={{
-              borderBottom: "1px dotted #000",
-              margin: "6px 0",
-            }}
-          />
+          <div style={{ borderBottom: "1px dotted #000", margin: "6px 0" }} />
 
           {/* Net Amount */}
           <div
@@ -662,9 +613,9 @@ const itemGrid = {
         </div>
 
         {/* Controls */}
-        <div className="flex gap-3 p-2">
+        <div className="flex gap-3 justify-center p-2">
           <button
-            className="px-3 py-1  rounded-lg bg-gray-500 text-white font-medium hover:bg-gray-600 active:scale-95 transition"
+            className="px-3 py-1 rounded-lg bg-gray-500 text-white font-medium hover:bg-gray-600 active:scale-95 transition"
             onClick={handlePrint}
           >
             Print
