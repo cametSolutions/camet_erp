@@ -152,9 +152,10 @@ function VoucherThreeInchPdfFormat2({
   });
 
   // MAIN CONTAINER: force left align
+// JS style in component
 const containerStyle = {
   width: "72mm",
-  margin: 0,
+  margin: "0 auto",          // center on the roll
   fontFamily: "Arial, sans-serif",
   fontSize: "11px",
   lineHeight: 1.2,
@@ -178,23 +179,24 @@ const containerStyle = {
   const centerText = { textAlign: "center" };
   const bold = { fontWeight: "bold" };
 
-  const headerGrid = {
-    display: "grid",
-    gridTemplateColumns: "35px 1fr 45px 55px 65px",
-    fontSize: "11px",
-    fontWeight: "bold",
-    paddingBottom: "3px",
-    borderBottom: "1px dotted #000",
-    marginBottom: "4px",
-  };
+ const headerGrid = {
+  display: "grid",
+  gridTemplateColumns: "0.6fr 2.2fr 0.7fr 1fr 1.1fr", // No, Item, Qty, Rate, Amount
+  fontSize: "11px",
+  fontWeight: "bold",
+  paddingBottom: "3px",
+  borderBottom: "1px dotted #000",
+  marginBottom: "4px",
+};
 
-  const itemGrid = {
-    display: "grid",
-    gridTemplateColumns: "35px 1fr 45px 55px 65px",
-    fontSize: "10px",
-    marginBottom: "2px",
-    padding: "1px 0",
-  };
+const itemGrid = {
+  display: "grid",
+  gridTemplateColumns: "0.6fr 2.2fr 0.7fr 1fr 1.1fr",
+  fontSize: "10px",
+  marginBottom: "2px",
+  padding: "1px 0",
+};
+
 
   const cgstGroups =
     data?.items?.reduce((acc, item) => {
@@ -243,6 +245,7 @@ const containerStyle = {
       <TitleDiv title="Restaurant sale print" />
 
       {/* strong print CSS: 80mm page, zero margins, left aligned */}
+
 <style type="text/css" media="print">
   {`
     @page {
@@ -256,13 +259,14 @@ const containerStyle = {
     }
     .receipt-container {
       width: 72mm !important;
-      margin: 0 0 0 4mm !important;   /* shift 4mm to the right */
+      margin: 0 auto !important;
       padding: 2mm 3mm !important;
       text-align: left !important;
       box-sizing: border-box;
     }
   `}
 </style>
+
 
 
 
