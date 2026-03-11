@@ -1,11 +1,35 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import api from "@/api/api";
 import { useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
 import TitleDiv from "@/components/common/TitleDiv";
 
-// For PDF export
-export const generatePDF = async (
+/* ===================== Helpers ===================== */
+
+const formatDisplayDate = (dateStr) => {
+  if (!dateStr) return "";
+  const date = new Date(dateStr);
+  const day = date.getDate().toString().padStart(2, "0");
+  const month = date.toLocaleDateString("en-GB", { month: "short" });
+  const year = date.getFullYear();
+  return `${day}-${month}-${year}`;
+};
+
+const computeKotBreakdown = (salesData) => {
+  return salesData.reduce((acc, item) => {
+    const kotType = item.kotType || "Unknown";
+    if (!acc[kotType]) acc[kotType] = { amount: 0, count: 0 };
+    acc[kotType].amount += item.totalWithTax || 0;
+    acc[kotType].count += 1;
+    return acc;
+  }, {});
+};
+
+const round2 = (value) => Math.round((value || 0)); // integer rounding
+
+/* ===================== PDF Export ===================== */
+
+export const generatePDF = (
   salesData,
   summary,
   owner,
@@ -13,10 +37,9 @@ export const generatePDF = async (
   businessType,
   totals,
   kotTypeFilter,
-  mealPeriodFilter,
+  mealPeriodFilter
 ) => {
   if (!salesData || salesData.length === 0) return;
-  
 
   const filterInfo = () => {
     const filters = [];
@@ -24,13 +47,15 @@ export const generatePDF = async (
     if (mealPeriodFilter !== "all")
       filters.push(`Meal Period: ${mealPeriodFilter}`);
     if (filters.length === 0) return "";
-    return `<div style="margin-top:4px;font-size:10px;">Filters: ${filters.join(" | ")}</div>`;
+    return `<div style="margin-top:4px;font-size:10px;">Filters: ${filters.join(
+      " | "
+    )}</div>`;
   };
 
   const printWindow = window.open(
     "",
     "_blank",
-    "width=1000,height=800,scrollbars=yes",
+    "width=1000,height=800,scrollbars=yes"
   );
 
   const html = `
@@ -98,17 +123,6 @@ export const generatePDF = async (
         background-color: #e5e7eb;
         font-weight: bold;
       }
-      .mode-badge {
-        display: inline-block;
-        padding: 2px 6px;
-        border-radius: 4px;
-        font-size: 9px;
-        font-weight: 600;
-      }
-      .credit  { background:#fee2e2; color:#b91c1c; }
-      .upi     { background:#dbeafe; color:#1d4ed8; }
-      .cash    { background:#dcfce7; color:#15803d; }
-
       .summary-section {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -168,7 +182,9 @@ export const generatePDF = async (
         ${owner?.address || ""} ${owner?.road || ""}
       </div>
       <div class="report-title">
-        SALES REGISTER OF THE OUTLET - ${businessType === "all" ? "ALL" : (businessType || "").toUpperCase()}
+        SALES REGISTER OF THE OUTLET - ${
+          businessType === "all" ? "ALL" : (businessType || "").toUpperCase()
+        }
       </div>
       <div class="report-info">
         <div>For the Period: <strong>${reportPeriod}</strong>${filterInfo()}</div>
@@ -206,57 +222,34 @@ export const generatePDF = async (
               row.partyAccount === "Sundry Debtors" ||
               row.mode === "Credit" ||
               (row.credit || 0) > 0;
-            const isCashSale =
-              (row.partyAccount === "Cash-in-Hand" ||
-                row.partyAccount === "CASH") &&
-              !isCreditSale;
-            const isBankSale =
-              (row.partyAccount === "Bank Accounts" ||
-                row.partyAccount === "Gpay") &&
-              !isCreditSale;
-
             const grossAmount = (row.amount || 0) - (row.igst || 0);
+            const totalTax =
+              (row.cgst || 0) + (row.sgst || 0) + (row.igst || 0);
 
             return `
               <tr>
                 <td class="text-left">${row.billNo || "-"}</td>
                 <td>${row.date ? new Date(row.date).toLocaleDateString() : "-"}</td>
                 <td class="text-left">${row.partyName || "-"}</td>
-                <td class="text-right">${grossAmount.toFixed(2)}</td>
-                <td>${(row.cgst || 0).toFixed(2)}</td>
-                <td>${(row.sgst || 0).toFixed(2)}</td>
-                <td>${(row.igst || 0).toFixed(2)}</td>
-                <td>${(row.disc || 0).toFixed(2)}</td>
-                <td>${(row.roundOff || 0).toFixed(2)}</td>
-                <td>${(row.totalWithTax || 0).toFixed(2)}</td>
-                <td class="text-right">${
-                  isCashSale ? (row.totalWithTax || 0).toFixed(2) : "-"
-                }</td>
-                <td class="text-right">${
-                  row.upi || row.partyAccount === "Bank"
-                    ? (row.totalWithTax || 0).toFixed(2)
-                    : "-"
-                }</td>
-                <td class="text-right">${
-                  isBankSale ? (row.totalWithTax || 0).toFixed(2) : "-"
-                }</td>
-                <td class="text-right">${
-                  row.card ? (row.totalWithTax || 0).toFixed(2) : "-"
-                }</td>
-                <td>
-                  <span class="mode-badge ${
-                    isCreditSale ? "credit" : isCashSale ? "cash" : "upi"
-                  }">
-                    ${isCreditSale ? "Credit" : isCashSale ? "Cash" : "Online"}
-                  </span>
-                </td>
+                <td class="text-right">${Math.round(grossAmount)}</td>
+                <td>${Math.round(row.cgst || 0)}</td>
+                <td>${Math.round(row.sgst || 0)}</td>
+                <td>${Math.round(totalTax)}</td>
+                <td>${Math.round(row.disc || 0)}</td>
+                <td>${Math.round(row.roundOff || 0)}</td>
+                <td>${Math.round(row.totalWithTax || 0)}</td>
+                <td class="text-right">${Math.round(Number(row.cash || 0))}</td>
+                <td class="text-right">${Math.round(Number(row.upi || 0))}</td>
+                <td class="text-right">${Math.round(Number(row.bank || 0))}</td>
+                <td class="text-right">${Math.round(Number(row.card || 0))}</td>
+                <td>${row.mode || "-"}</td>
                 ${
                   businessType !== "hotel"
                     ? `<td>${row.mealPeriod || "-"}</td><td>${row.kotType || "-"}</td>`
                     : ""
                 }
                 <td class="text-right">${
-                  isCreditSale ? (row.totalWithTax || 0).toFixed(2) : "-"
+                  isCreditSale ? Math.round(row.totalWithTax || 0) : "-"
                 }</td>
                 <td class="text-left">${
                   isCreditSale
@@ -269,20 +262,20 @@ export const generatePDF = async (
           .join("")}
         <tr class="totals-row">
           <td class="text-left" colspan="3">Total</td>
-          <td class="text-right">${totals.amount.toFixed(2)}</td>
-          <td>${totals.cgst.toFixed(2)}</td>
-          <td>${totals.sgst.toFixed(2)}</td>
-          <td>${totals.igst.toFixed(2)}</td>
-          <td>${totals.disc.toFixed(2)}</td>
-          <td>${totals.roundOff.toFixed(2)}</td>
-          <td>${totals.totalWithTax.toFixed(2)}</td>
-          <td class="text-right">${totals.cash.toFixed(2)}</td>
-          <td class="text-right">${totals.upi.toFixed(2)}</td>
-          <td class="text-right">${totals.bank.toFixed(2)}</td>
-          <td class="text-right">${totals.card || 0}</td>
+          <td class="text-right">${Math.round(totals.amount)}</td>
+          <td>${Math.round(totals.cgst)}</td>
+          <td>${Math.round(totals.sgst)}</td>
+          <td>${Math.round(totals.cgst + totals.sgst + totals.igst)}</td>
+          <td>${Math.round(totals.disc)}</td>
+          <td>${Math.round(totals.roundOff)}</td>
+          <td>${Math.round(totals.totalWithTax)}</td>
+          <td class="text-right">${Math.round(totals.cash)}</td>
+          <td class="text-right">${Math.round(totals.upi)}</td>
+          <td class="text-right">${Math.round(totals.bank || 0)}</td>
+          <td class="text-right">${Math.round(totals.card || 0)}</td>
           <td>-</td>
           ${businessType !== "hotel" ? "<td>-</td><td>-</td>" : ""}
-          <td class="text-right">${totals.credit.toFixed(2)}</td>
+          <td class="text-right">${Math.round(totals.credit)}</td>
           <td>-</td>
         </tr>
       </tbody>
@@ -292,19 +285,41 @@ export const generatePDF = async (
       <div>
         <div class="summary-title">Financial Summary</div>
         <table class="summary-table">
-          <tr><td><strong>Gross Amount</strong></td><td class="text-right">${totals.amount.toFixed(2)}</td></tr>
-          <tr><td><strong>Discount</strong></td><td class="text-right">${totals.disc.toFixed(2)}</td></tr>
-          <tr><td><strong>CGST</strong></td><td class="text-right">${totals.cgst.toFixed(2)}</td></tr>
-          <tr><td><strong>SGST</strong></td><td class="text-right">${totals.sgst.toFixed(2)}</td></tr>
-          <tr><td><strong>Total Tax</strong></td><td class="text-right">${totals.igst.toFixed(2)}</td></tr>
-          <tr><td><strong>Net Cash</strong></td><td class="text-right">${totals.cash.toFixed(2)}</td></tr>
-          <tr><td><strong>UPI</strong></td><td class="text-right">${totals.upi.toFixed(2)}</td></tr>
-          <tr><td><strong>Bank</strong></td><td class="text-right">${totals.bank.toFixed(2)}</td></tr>
-          <tr><td><strong>Card</strong></td><td class="text-right">${totals.card || 0}</td></tr>
-          <tr><td><strong>Credit Amount</strong></td><td class="text-right">${totals.credit.toFixed(2)}</td></tr>
+          <tr><td><strong>Gross Amount</strong></td><td class="text-right">${Math.round(
+            totals.amount
+          )}</td></tr>
+          <tr><td><strong>Discount</strong></td><td class="text-right">${Math.round(
+            totals.disc
+          )}</td></tr>
+          <tr><td><strong>CGST</strong></td><td class="text-right">${Math.round(
+            totals.cgst
+          )}</td></tr>
+          <tr><td><strong>SGST</strong></td><td class="text-right">${Math.round(
+            totals.sgst
+          )}</td></tr>
+          <tr><td><strong>Total Tax</strong></td><td class="text-right">${Math.round(
+            totals.cgst + totals.sgst + totals.igst
+          )}</td></tr>
+          <tr><td><strong>Cash</strong></td><td class="text-right">${Math.round(
+            totals.cash
+          )}</td></tr>
+          <tr><td><strong>UPI</strong></td><td class="text-right">${Math.round(
+            totals.upi
+          )}</td></tr>
+          <tr><td><strong>Bank</strong></td><td class="text-right">${Math.round(
+            totals.bank || 0
+          )}</td></tr>
+          <tr><td><strong>Card</strong></td><td class="text-right">${Math.round(
+            totals.card || 0
+          )}</td></tr>
+          <tr><td><strong>Credit Amount</strong></td><td class="text-right">${Math.round(
+            totals.credit
+          )}</td></tr>
           <tr class="total-row">
             <td><strong>Net Sales</strong></td>
-            <td class="text-right"><strong>${totals.totalWithTax.toFixed(2)}</strong></td>
+            <td class="text-right"><strong>${Math.round(
+              totals.totalWithTax
+            )}</strong></td>
           </tr>
         </table>
       </div>
@@ -313,93 +328,87 @@ export const generatePDF = async (
         <div class="summary-title">Business Type Breakdown</div>
         <table class="summary-table">
           ${
-            businessType === "hotel" && summary?.hotelSales
+            businessType !== "restaurant" && summary?.hotelSales
               ? `
             <tr style="background:#dbeafe;">
               <td><strong>Hotel Sales</strong></td>
-              <td class="text-right">${(summary.hotelSales.amount || 0).toFixed(2)}</td>
+              <td class="text-right">${
+                Math.round(summary.agentCount || 0) +
+                Math.round(summary.countWithOutAgent || 0)
+              }</td>
             </tr>
             <tr>
-              <td>- Transactions</td>
-              <td class="text-right">${summary.hotelSales.count || 0}</td>
+              <td>- Transactions With Agent</td>
+              <td class="text-right">${Math.round(summary.agentCount || 0)}</td>
+            </tr>
+            <tr>
+              <td>- Transactions With Out Agent</td>
+              <td class="text-right">${Math.round(
+                summary.countWithOutAgent || 0
+              )}</td>
             </tr>
           `
               : ""
           }
           ${
-            businessType === "restaurant" && summary?.restaurantSales
+            businessType !== "hotel" && summary?.restaurantSales
               ? `
             <tr style="background:#dcfce7;">
               <td><strong>Restaurant Sales</strong></td>
-              <td class="text-right">${(summary.restaurantSales.amount || 0).toFixed(2)}</td>
+              <td class="text-right">${Math.round(
+                summary.restaurantCount || 0
+              )}</td>
             </tr>
             <tr>
               <td>- Room Service</td>
-              <td class="text-right">${summary.restaurantSales.roomServiceCount || 0}</td>
+              <td class="text-right">${Math.round(
+                summary.IsRoomService || 0
+              )}</td>
             </tr>
             <tr>
               <td>- Take Away</td>
-              <td class="text-right">${summary.restaurantSales.takeawayCount || 0}</td>
+              <td class="text-right">${Math.round(
+                summary.IsTakeaway || 0
+              )}</td>
             </tr>
             <tr>
               <td>- Delivery</td>
-              <td class="text-right">${summary.restaurantSales.deliveryCount || 0}</td>
+              <td class="text-right">${Math.round(
+                summary.IsDelivery || 0
+              )}</td>
             </tr>
             <tr>
               <td>- Dine In</td>
-              <td class="text-right">${summary.restaurantSales.dineInCount || 0}</td>
+              <td class="text-right">${
+                Math.round(summary.restaurantCount || 0) -
+                (Math.round(summary.IsRoomService || 0) +
+                  Math.round(summary.IsTakeaway || 0) +
+                  Math.round(summary.IsDelivery || 0))
+              }</td>
             </tr>
             <tr>
               <td>- Others</td>
-              <td class="text-right">${summary.restaurantSales.otherCount || 0}</td>
+              <td class="text-right">${Math.round(
+                summary.restaurantSales.otherCount || 0
+              )}</td>
             </tr>
           `
               : ""
           }
-          ${
-            businessType === "all"
-              ? `
-            ${
-              summary?.hotelSales
-                ? `
-              <tr style="background:#dbeafe;">
-                <td><strong>Hotel Sales</strong></td>
-                <td class="text-right">${(summary.hotelSales.amount || 0).toFixed(2)}</td>
-              </tr>
-              <tr>
-                <td>- Transactions</td>
-                <td class="text-right">${summary.hotelSales.count || 0}</td>
-              </tr>
-            `
-                : ""
-            }
-            ${
-              summary?.restaurantSales
-                ? `
-              <tr style="background:#dcfce7;">
-                <td><strong>Restaurant Sales</strong></td>
-                <td class="text-right">${(summary.restaurantSales.amount || 0).toFixed(2)}</td>
-              </tr>
-              <tr>
-                <td>- Transactions</td>
-                <td class="text-right">${summary.restaurantSales.count || 0}</td>
-              </tr>
-            `
-                : ""
-            }
-            <tr class="total-row">
-              <td>Total Transactions</td>
-              <td class="text-right"><strong>${salesData.length}</strong></td>
-            </tr>
-          `
-              : ""
-          }
+          <tr class="total-row">
+            <td>Total Transactions</td>
+            <td class="text-right"><strong>${salesData.length}</strong></td>
+          </tr>
         </table>
       </div>
     </div>
 
     <div class="notes">
-      <div>This report shows ${businessType === "all" ? "all sales transactions" : businessType + " sales transactions"} only.</div>
+      <div>This report shows ${
+        businessType === "all"
+          ? "all sales transactions"
+          : businessType + " sales transactions"
+      } only.</div>
       <div>Complimentary and cancelled sales are not included in totals.</div>
     </div>
 
@@ -415,7 +424,8 @@ export const generatePDF = async (
   printWindow.document.close();
 };
 
-// For Excel export - CORRECTED
+/* ===================== Excel Export ===================== */
+
 const exportToExcel = (
   salesData,
   summary,
@@ -431,31 +441,22 @@ const exportToExcel = (
   if (mealPeriodFilter !== "all")
     filterInfo.push(`Meal Period: ${mealPeriodFilter}`);
 
-  const computeKotBreakdown = (salesData) => {
-    return salesData.reduce((acc, item) => {
-      const kotType = item.kotType || "Unknown";
-      if (!acc[kotType]) acc[kotType] = { amount: 0, count: 0 };
-      acc[kotType].amount += item.totalWithTax || 0;
-      acc[kotType].count += 1;
-      return acc;
-    }, {});
-  };
-
   const kotBreakdown = computeKotBreakdown(salesData);
 
   const csvContent = [
-    // Header information
     [owner?.companyName || owner?.name || "Sales Report"],
     [owner?.address || owner?.road || ""],
     [`Report Period: ${reportPeriod}`],
     [
-      `Business Type: ${businessType === "all" ? "All Sales" : businessType.charAt(0).toUpperCase() + businessType.slice(1)}`,
+      `Business Type: ${
+        businessType === "all"
+          ? "All Sales"
+          : businessType.charAt(0).toUpperCase() + businessType.slice(1)
+      }`,
     ],
     ...(filterInfo.length > 0 ? [[`Filters: ${filterInfo.join(", ")}`]] : []),
     [`Generated: ${new Date().toLocaleString()}`],
-    [], // Empty row
-
-    // Table headers
+    [],
     [
       "Bill No",
       "Date",
@@ -476,43 +477,31 @@ const exportToExcel = (
       "Credit",
       "Credit Description",
     ],
-
-    // Data rows
     ...salesData.map((row) => {
       const isCreditSale =
         row.partyAccount === "Sundry Debtors" ||
         row.mode === "Credit" ||
         (row.credit || 0) > 0;
-      const isCashSale =
-        (row.partyAccount === "Cash-in-Hand" || row.partyAccount === "CASH") &&
-        !isCreditSale;
-      const isBankSale =
-        (row.partyAccount === "Bank Accounts" || row.partyAccount === "Gpay") &&
-        !isCreditSale;
       const grossAmount = (row.amount || 0) - (row.igst || 0);
+      const totalTax =
+        (row.cgst || 0) + (row.sgst || 0) + (row.igst || 0);
 
       const baseRow = [
         row.billNo || "",
         row.date ? new Date(row.date).toLocaleDateString() : "",
         row.partyName || "",
-        grossAmount.toFixed(2),
-        (row.cgst || 0).toFixed(2),
-        (row.sgst || 0).toFixed(2),
-        (row.igst || 0).toFixed(2),
-        (row.disc || 0).toFixed(2),
-        (row.roundOff || 0).toFixed(2),
-        (row.totalWithTax || 0).toFixed(2),
-        isCashSale ? (row.totalWithTax || 0).toFixed(2) : "",
-        row.upi ? (row.totalWithTax || 0).toFixed(2) : "",
-        isBankSale ? (row.totalWithTax || 0).toFixed(2) : "",
-        row.card ? row.card : "",
-        isCreditSale
-          ? "Credit"
-          : isCashSale
-            ? "Cash"
-            : isBankSale
-              ? "Bank"
-              : "Online",
+        Math.round(grossAmount),
+        Math.round(row.cgst || 0),
+        Math.round(row.sgst || 0),
+        Math.round(totalTax),
+        Math.round(row.disc || 0),
+        Math.round(row.roundOff || 0),
+        Math.round(row.totalWithTax || 0),
+        Math.round(row.cash || 0),
+        Math.round(row.upi || 0),
+        Math.round(row.bank || 0),
+        Math.round(row.card || 0),
+        row.mode || "",
       ];
 
       if (businessType !== "hotel") {
@@ -520,141 +509,124 @@ const exportToExcel = (
         baseRow.push(row.kotType || "");
       }
 
-      baseRow.push(isCreditSale ? (row.totalWithTax || 0).toFixed(2) : "");
       baseRow.push(
-        isCreditSale ? row.creditDescription || row.partyName || "" : "",
+        isCreditSale ? Math.round(row.totalWithTax || 0) : "",
+        isCreditSale ? row.creditDescription || row.partyName || "" : ""
       );
 
       return baseRow;
     }),
-
-    // Totals row
     [
       "TOTAL",
       "",
       "",
-      totals.amount.toFixed(2),
-      totals.cgst.toFixed(2),
-      totals.sgst.toFixed(2),
-      totals.igst.toFixed(2),
-      totals.disc.toFixed(2),
-      totals.roundOff.toFixed(2),
-      totals.totalWithTax.toFixed(2),
-      totals.cash.toFixed(2),
-      totals.upi.toFixed(2),
-      (totals.bank || 0).toFixed(2),
-      totals.card || "0.00",
+      Math.round(totals.amount),
+      Math.round(totals.cgst),
+      Math.round(totals.sgst),
+      Math.round(totals.cgst + totals.sgst + totals.igst),
+      Math.round(totals.disc),
+      Math.round(totals.roundOff),
+      Math.round(totals.totalWithTax),
+      Math.round(totals.cash),
+      Math.round(totals.upi),
+      Math.round(totals.bank || 0),
+      Math.round(totals.card || 0),
       "",
       ...(businessType !== "hotel" ? ["", ""] : []),
-      totals.credit.toFixed(2),
+      Math.round(totals.credit),
       "",
     ],
-
-    [], // Empty row
-    // Summary section
+    [],
     ["FINANCIAL SUMMARY"],
-    ["Gross Amount", totals.amount.toFixed(2)],
-    ["Discount", totals.disc.toFixed(2)],
-    ["CGST", totals.cgst.toFixed(2)],
-    ["SGST", totals.sgst.toFixed(2)],
-    ["Total Tax", totals.igst.toFixed(2)],
-    ["Net Cash", totals.cash.toFixed(2)],
-    ["UPI", totals.upi.toFixed(2)],
-    ["Bank", (totals.bank || 0).toFixed(2)],
-    ["Card", totals.card || "0.00"],
-    ["Credit Amount", totals.credit.toFixed(2)],
-    ["Net Sale", totals.totalWithTax.toFixed(2)],
-
-    [], // Empty row
-
-    // Business breakdown
+    ["Gross Amount", Math.round(totals.amount)],
+    ["Discount", Math.round(totals.disc)],
+    ["CGST", Math.round(totals.cgst)],
+    ["SGST", Math.round(totals.sgst)],
+    ["Total Tax", Math.round(totals.cgst + totals.sgst + totals.igst)],
+    ["Cash", Math.round(totals.cash)],
+    ["UPI", Math.round(totals.upi)],
+    ["Bank", Math.round(totals.bank || 0)],
+    ["Card", Math.round(totals.card || 0)],
+    ["Credit Amount", Math.round(totals.credit)],
+    ["Net Sale", Math.round(totals.totalWithTax)],
+    [],
     ["BUSINESS TYPE BREAKDOWN"],
-    ...(businessType === "hotel" && summary.hotelSales
-      ? [
-          ["Hotel Sales", summary.hotelSales.amount?.toFixed(2) || "0.00"],
-          ["Hotel Transactions", summary.hotelSales.count || 0],
-        ]
-      : []),
-    ...(businessType === "restaurant" && summary.restaurantSales
+    ...(businessType !== "restaurant" && summary.hotelSales
       ? [
           [
-            "Restaurant Sales",
-            summary.restaurantSales.amount?.toFixed(2) || "0.00",
+            "Hotel Sales",
+            Math.round(summary.agentCount || 0) +
+              Math.round(summary.countWithOutAgent || 0),
           ],
-          ["Room Service", summary.restaurantSales.roomServiceCount || 0],
-          ["Take Away", summary.restaurantSales.takeawayCount || 0],
-          ["Delivery", summary.restaurantSales.deliveryCount || 0],
-          ["Dine In", summary.restaurantSales.dineInCount || 0],
-          ["Others", summary.restaurantSales.otherCount || 0],
+          ["Transactions With Agent", Math.round(summary.agentCount || 0)],
+          [
+            "Transactions With Out Agent",
+            Math.round(summary.countWithOutAgent || 0),
+          ],
         ]
       : []),
-    ...(businessType === "all"
+    ...(businessType !== "hotel" && summary.restaurantSales
       ? [
-          ...(summary.hotelSales
-            ? [
-                [
-                  "Hotel Sales",
-                  summary.hotelSales.amount?.toFixed(2) || "0.00",
-                ],
-                ["Hotel Transactions", summary.hotelSales.count || 0],
-              ]
-            : []),
-          ...(summary.restaurantSales
-            ? [
-                [
-                  "Restaurant Sales",
-                  summary.restaurantSales.amount?.toFixed(2) || "0.00",
-                ],
-                ["Restaurant Transactions", summary.restaurantSales.count || 0],
-              ]
-            : []),
+          ["Restaurant Sales", Math.round(summary.restaurantCount || 0)],
+          ["Room Service", Math.round(summary.IsRoomService || 0)],
+          ["Take Away", Math.round(summary.IsTakeaway || 0)],
+          ["Delivery", Math.round(summary.IsDelivery || 0)],
+          [
+            "Dine In",
+            Math.round(summary.restaurantCount || 0) -
+              (Math.round(summary.IsRoomService || 0) +
+                Math.round(summary.IsTakeaway || 0) +
+                Math.round(summary.IsDelivery || 0)),
+          ],
+          ["Others", Math.round(summary.restaurantSales.otherCount || 0)],
         ]
       : []),
     ["Total Transactions", salesData.length],
-
-    [], // Empty row
+    [],
     ["KOT TYPE BREAKDOWN"],
     ...Object.entries(kotBreakdown).map(([type, data]) => [
       type,
-      data.amount.toFixed(2),
+      Math.round(data.amount),
       data.count,
     ]),
     [
       "TOTAL",
-      Object.values(kotBreakdown)
-        .reduce((sum, k) => sum + k.amount, 0)
-        .toFixed(2),
+      Math.round(
+        Object.values(kotBreakdown).reduce((sum, k) => sum + k.amount, 0)
+      ),
       Object.values(kotBreakdown).reduce((sum, k) => sum + k.count, 0),
     ],
   ];
 
-  // Convert to CSV format
   const csv = csvContent
     .map((row) =>
       row
-        .map((cell) =>
-          typeof cell === "string" && (cell.includes(",") || cell.includes('"'))
-            ? `"${cell.replace(/"/g, '""')}"`
-            : cell,
-        )
-        .join(","),
+        .map((cell) => {
+          const value = cell == null ? "" : String(cell);
+          if (value.includes(",") || value.includes('"') || value.includes("\n")) {
+            return `"${value.replace(/"/g, '""')}"`;
+          }
+          return value;
+        })
+        .join(",")
     )
     .join("\n");
 
-  // Create and download file
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const link = document.createElement("a");
   const url = URL.createObjectURL(blob);
-  link.setAttribute("href", url);
   link.setAttribute(
     "download",
-    `Sales_Report_${reportPeriod.replace(/\s+/g, "_")}.csv`,
+    `Sales_Report_${reportPeriod.replace(/\s+/g, "_")}.csv`
   );
+  link.href = url;
   link.style.visibility = "hidden";
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
 };
+
+/* ===================== Main Component ===================== */
 
 const BillSummary = () => {
   const [startDate, setStartDate] = useState("");
@@ -670,33 +642,26 @@ const BillSummary = () => {
 
   const [businessType, setBusinessType] = useState(null);
   const [summary, setSummary] = useState({
-    totalAmount: 0,
-    totalDiscount: 0,
-    totalCgst: 0,
-    totalSgst: 0,
-    totalIgst: 0,
-    totalCash: 0,
-    totalCredit: 0,
-    totalUpi: 0,
-    totalCheque: 0,
-    totalBank: 0,
-    totalFinalAmount: 0,
-    totalRoundOff: 0,
+    hotelSales: null,
+    restaurantSales: null,
+    agentCount: 0,
+    countWithOutAgent: 0,
+    restaurantCount: 0,
+    IsRoomService: 0,
+    IsTakeaway: 0,
+    IsDelivery: 0,
   });
 
-  // Get URL parameters and Redux data
   const location = useLocation();
   const navigate = useNavigate();
 
   const cmp_id = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg._id,
+    (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
-
   const owner = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg,
+    (state) => state.secSelectedOrganization.secSelectedOrg
   );
 
-  // Extract business type from URL parameters
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
     const typeFromUrl = urlParams.get("type");
@@ -708,7 +673,9 @@ const BillSummary = () => {
   const updateDateTime = () => {
     const now = new Date();
     const formatted =
-      now.toLocaleDateString("en-GB") + " " + now.toTimeString().split(" ")[0];
+      now.toLocaleDateString("en-GB") +
+      " " +
+      now.toTimeString().split(" ")[0];
     setCurrentDateTime(formatted);
   };
 
@@ -724,15 +691,6 @@ const BillSummary = () => {
       kotTypes: ["all", ...kotTypes],
       mealPeriods: ["all", ...mealPeriods],
     };
-  };
-
-  const formatDateForDisplay = (dateStr) => {
-    if (!dateStr) return "";
-    const date = new Date(dateStr);
-    const day = date.getDate().toString().padStart(2, "0");
-    const month = date.toLocaleDateString("en-GB", { month: "short" });
-    const year = date.getFullYear();
-    return `${day}-${month}-${year}`;
   };
 
   const fetchSalesData = async (start = startDate, end = endDate) => {
@@ -764,72 +722,58 @@ const BillSummary = () => {
         startDate: start,
         endDate: end,
         owner: owner.owner || owner._id,
-        businessType: businessType,
+        businessType,
       };
 
       const response = await api.get(
         `/api/sUsers/hotel-sales/${cmp_id}/${businessType}`,
-        {
-          params: salesParams,
-        },
+        { params: salesParams }
       );
 
       const result = response.data;
 
       if (result.success) {
         setSalesData(result.data.sales || []);
-        console.log(result.data.summary);
         setSummary(result.data.summary || {});
-
-        const formattedStart = formatDateForDisplay(start);
-        const formattedEnd = formatDateForDisplay(end);
+        const formattedStart = formatDisplayDate(start);
+        const formattedEnd = formatDisplayDate(end);
         setReportPeriod(`${formattedStart} To ${formattedEnd}`);
         updateDateTime();
       } else {
         setError(result.message || "Failed to fetch sales data");
         setSalesData([]);
         setSummary({
-          totalAmount: 0,
-          totalDiscount: 0,
-          totalCgst: 0,
-          totalSgst: 0,
-          totalIgst: 0,
-          totalCash: 0,
-          totalCredit: 0,
-          totalUpi: 0,
-          totalCheque: 0,
-          totalBank: 0,
-          totalFinalAmount: 0,
-          totalRoundOff: 0,
+          hotelSales: null,
+          restaurantSales: null,
+          agentCount: 0,
+          countWithOutAgent: 0,
+          restaurantCount: 0,
+          IsRoomService: 0,
+          IsTakeaway: 0,
+          IsDelivery: 0,
         });
       }
     } catch (err) {
       console.error("Error fetching sales data:", err);
       setError(
         err.response?.data?.message ||
-          "Failed to fetch sales data. Please check your connection and try again.",
+          "Failed to fetch sales data. Please check your connection and try again."
       );
       setSalesData([]);
       setSummary({
-        totalAmount: 0,
-        totalDiscount: 0,
-        totalCgst: 0,
-        totalSgst: 0,
-        totalIgst: 0,
-        totalCash: 0,
-        totalCredit: 0,
-        totalUpi: 0,
-        totalCheque: 0,
-        totalBank: 0,
-        totalFinalAmount: 0,
-        totalRoundOff: 0,
+        hotelSales: null,
+        restaurantSales: null,
+        agentCount: 0,
+        countWithOutAgent: 0,
+        restaurantCount: 0,
+        IsRoomService: 0,
+        IsTakeaway: 0,
+        IsDelivery: 0,
       });
     } finally {
       setLoading(false);
     }
   };
-
-  console.log(salesData[0]);
 
   const filteredSalesData = salesData.filter((item) => {
     const kotMatch = kotTypeFilter === "all" || item.kotType === kotTypeFilter;
@@ -838,26 +782,10 @@ const BillSummary = () => {
     return kotMatch && mealMatch;
   });
 
-  const clearError = () => {
-    setError(null);
-  };
+  const clearError = () => setError(null);
 
-  // Calculate totals from the current salesData for display consistency
   const totals = filteredSalesData.reduce(
     (acc, item) => {
-      const isCashSale =
-        item.partyAccount === "Cash-in-Hand" || item.partyAccount === "CASH";
-
-      const isBankSale =
-        item.partyAccount === "Bank" ||
-        item.partyAccount === "Bank Accounts" ||
-        item.partyAccount === "Gpay";
-
-      const isCreditSale =
-        item.partyAccount === "Sundry Debtors" ||
-        item.mode === "Credit" ||
-        (item.credit || 0) > 0;
-
       const grossAmount = (item.amount || 0) - (item.igst || 0);
 
       return {
@@ -869,11 +797,11 @@ const BillSummary = () => {
         sgst: acc.sgst + (item.sgst || 0),
         igst: acc.igst + (item.igst || 0),
         totalWithTax: acc.totalWithTax + (item.totalWithTax || 0),
-        cash: acc.cash + (isCashSale ? item.totalWithTax || 0 : 0),
-        credit: acc.credit + (isCreditSale ? item.totalWithTax || 0 : 0),
-        upi: acc.upi + (item.upi ? item.totalWithTax || 0 : 0),
-        bank: acc.bank + (isBankSale ? item.totalWithTax || 0 : 0),
-        card: acc.card + (item.card ? item.totalWithTax || 0 : 0),
+        cash: acc.cash + Number(item.cash || 0),
+        credit: acc.credit + Number(item.credit || 0),
+        upi: acc.upi + (Number(item.upi) ? Number(item.upi) || 0 : 0),
+        bank: acc.bank + Number(item.bank || 0),
+        card: acc.card + (Number(item.card) ? Number(item.card) || 0 : 0),
       };
     },
     {
@@ -890,7 +818,7 @@ const BillSummary = () => {
       upi: 0,
       bank: 0,
       card: 0,
-    },
+    }
   );
 
   const { kotTypes, mealPeriods } = getFilterOptions();
@@ -919,10 +847,10 @@ const BillSummary = () => {
       summary,
       owner,
       reportPeriod,
-      businessType,
+      businessType || "all",
       totals,
       kotTypeFilter,
-      mealPeriodFilter,
+      mealPeriodFilter
     );
   };
 
@@ -936,10 +864,10 @@ const BillSummary = () => {
       summary,
       owner,
       reportPeriod,
-      businessType,
+      businessType || "all",
       totals,
       kotTypeFilter,
-      mealPeriodFilter,
+      mealPeriodFilter
     );
   };
 
@@ -952,29 +880,30 @@ const BillSummary = () => {
             : "Restaurant Daily Summary"
         }
       />
-      <div className="min-h-screen bg-gray-100 p-5">
-        <div className="max-w-6xl mx-auto bg-white p-5 rounded-lg shadow-lg">
+      <div className="min-h-screen bg-gradient-to-br from-gray-100 via-gray-50 to-gray-100 p-6">
+        <div className=" mx-auto bg-white p-6 md:p-8 rounded-2xl shadow-xl border border-gray-200">
           {/* Header */}
-          <div className="text-center border-b-2 border-black pb-3 mb-5">
-            <div className="text-lg font-bold mb-1">
+          <div className="text-center border-b border-gray-300 pb-4 mb-6">
+            <div className="text-xl md:text-2xl font-semibold tracking-wide text-gray-900">
               {owner?.companyName || owner?.name || "Sales Report"}
             </div>
-            <div className="text-xs text-gray-600">
-              {owner?.flat || owner?.road || "Sales Register"}
+            <div className="mt-1 text-xs md:text-sm text-gray-500">
+              {owner?.flat || owner?.road || "Sales Register of the Outlet"}
             </div>
-            <div className="text-sm font-bold mt-2">
-              SALES REGISTER OF THE OUTLET -{" "}
-              {businessType === "hotel" ? "Hotel" : "Restaurant"}
+            <div className="mt-3 inline-block px-4 py-1 rounded-full bg-gray-900 text-white text-xs md:text-sm font-semibold tracking-wide uppercase shadow-sm">
+              Sales Register - {businessType === "hotel" ? "Hotel" : "Restaurant"}
             </div>
           </div>
 
-          {/* Date Controls and Business Type Selector */}
-          <div className="bg-gray-50 p-4 rounded-md mb-5">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Left side - Date filters */}
+          {/* Filters */}
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-6 shadow-sm">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+              {/* Left: Dates + All */}
               <div className="flex flex-wrap items-center gap-4">
                 <div className="flex items-center gap-2">
-                  <label className="font-bold text-sm">From Date:</label>
+                  <label className="font-semibold text-xs md:text-sm text-gray-700">
+                    From Date
+                  </label>
                   <input
                     type="date"
                     value={startDate}
@@ -982,12 +911,14 @@ const BillSummary = () => {
                       setStartDate(e.target.value);
                       clearError();
                     }}
-                    className="px-2 py-2 border border-gray-300 rounded text-sm"
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-xs md:text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm"
                     disabled={loading}
                   />
                 </div>
                 <div className="flex items-center gap-2">
-                  <label className="font-bold text-sm">To Date:</label>
+                  <label className="font-semibold text-xs md:text-sm text-gray-700">
+                    To Date
+                  </label>
                   <input
                     type="date"
                     value={endDate}
@@ -995,12 +926,14 @@ const BillSummary = () => {
                       setEndDate(e.target.value);
                       clearError();
                     }}
-                    className="px-2 py-2 border border-gray-300 rounded text-sm"
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-xs md:text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm"
                     disabled={loading}
                   />
                 </div>
                 <div className="flex items-center gap-2">
-                  <label className="font-bold text-sm">All</label>
+                  <label className="font-semibold text-xs md:text-sm text-gray-700">
+                    All Types
+                  </label>
                   <input
                     type="checkbox"
                     onChange={(e) => {
@@ -1014,37 +947,41 @@ const BillSummary = () => {
                         }
                       }
                     }}
-                    className="px-2 py-2 border border-gray-300 rounded text-sm"
+                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                     disabled={loading}
                   />
                 </div>
               </div>
 
-              {/* Right side - KOT Type and Meal Period filters */}
+              {/* Right: KOT / Meal filters */}
               {businessType !== "hotel" && (
-                <div className="flex flex-wrap items-center gap-4 justify-end">
+                <div className="flex flex-wrap items-center gap-4 justify-start md:justify-end">
                   <div className="flex items-center gap-2">
-                    <label className="font-bold text-sm">KOT Type:</label>
+                    <label className="font-semibold text-xs md:text-sm text-gray-700">
+                      KOT Type
+                    </label>
                     <select
                       value={kotTypeFilter}
                       onChange={(e) => setKotTypeFilter(e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded text-sm bg-white"
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-xs md:text-sm bg-white shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                       disabled={loading}
                     >
                       {kotTypes.map((type) => (
                         <option key={type} value={type}>
-                          {type === "all" ? "All Types" : type}
+                          {type === "all" ? "All KOT Types" : type}
                         </option>
                       ))}
                     </select>
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <label className="font-bold text-sm">Meal Period:</label>
+                    <label className="font-semibold text-xs md:text-sm text-gray-700">
+                      Meal Period
+                    </label>
                     <select
                       value={mealPeriodFilter}
                       onChange={(e) => setMealPeriodFilter(e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded text-sm bg-white"
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-xs md:text-sm bg-white shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                       disabled={loading}
                     >
                       {mealPeriods.map((period) => (
@@ -1058,31 +995,30 @@ const BillSummary = () => {
               )}
             </div>
 
-            {/* Active filters display */}
             {(kotTypeFilter !== "all" || mealPeriodFilter !== "all") && (
               <div className="mt-3 flex flex-wrap gap-2 items-center">
-                <span className="text-sm font-semibold text-gray-600">
-                  Active Filters:
+                <span className="text-xs md:text-sm font-semibold text-gray-600">
+                  Active Filters
                 </span>
                 {kotTypeFilter !== "all" && (
-                  <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium flex items-center gap-2">
-                    KOT: {kotTypeFilter}
+                  <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium flex items-center gap-1 shadow-sm">
+                    <span>KOT: {kotTypeFilter}</span>
                     <button
                       onClick={() => setKotTypeFilter("all")}
-                      className="hover:bg-blue-200 rounded-full w-4 h-4 flex items-center justify-center"
-                      title="Clear filter"
+                      className="w-4 h-4 flex items-center justify-center rounded-full hover:bg-blue-200"
+                      title="Clear KOT filter"
                     >
                       ×
                     </button>
                   </span>
                 )}
                 {mealPeriodFilter !== "all" && (
-                  <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium flex items-center gap-2">
-                    Meal: {mealPeriodFilter}
+                  <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium flex items-center gap-1 shadow-sm">
+                    <span>Meal: {mealPeriodFilter}</span>
                     <button
                       onClick={() => setMealPeriodFilter("all")}
-                      className="hover:bg-green-200 rounded-full w-4 h-4 flex items-center justify-center"
-                      title="Clear filter"
+                      className="w-4 h-4 flex items-center justify-center rounded-full hover:bg-green-200"
+                      title="Clear meal filter"
                     >
                       ×
                     </button>
@@ -1093,26 +1029,25 @@ const BillSummary = () => {
                     setKotTypeFilter("all");
                     setMealPeriodFilter("all");
                   }}
-                  className="px-3 py-1 bg-gray-200 text-gray-700 rounded text-xs font-medium hover:bg-gray-300"
+                  className="ml-2 px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-xs font-medium hover:bg-gray-300 shadow-sm"
                 >
-                  Clear All Filters
+                  Clear All
                 </button>
               </div>
             )}
           </div>
 
-          {/* Error Message */}
+          {/* Error / Loading / Period */}
           {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-              <div className="flex justify-between items-center">
-                <div>
-                  <strong className="font-bold">Error: </strong>
-                  <span className="block sm:inline">{error}</span>
+            <div className="mb-4 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-red-800 shadow-sm">
+              <div className="flex justify-between items-start">
+                <div className="text-xs md:text-sm">
+                  <span className="font-semibold mr-1">Error:</span>
+                  <span>{error}</span>
                 </div>
                 <button
                   onClick={clearError}
-                  className="text-red-500 hover:text-red-700 font-bold text-xl"
-                  title="Close"
+                  className="ml-3 text-lg font-bold hover:text-red-600"
                 >
                   ×
                 </button>
@@ -1120,94 +1055,96 @@ const BillSummary = () => {
             </div>
           )}
 
-          {/* Loading Indicator */}
-          {loading && (
-            <div className="text-center py-8">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              <p className="mt-2 text-gray-600">Loading sales data...</p>
-            </div>
-          )}
-
-          {/* Report Info */}
           {reportPeriod && (
-            <div className="flex justify-between mb-4 text-xs">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-3 text-xs md:text-sm text-gray-600">
               <div>
-                For the Period{" "}
-                <span className="font-medium">{reportPeriod}</span>
+                Period:{" "}
+                <span className="font-semibold text-gray-900">
+                  {reportPeriod}
+                </span>
               </div>
-              <div>
-                Print Date & Time:{" "}
-                <span className="font-bold text-blue-600">
+              <div className="mt-1 md:mt-0">
+                Printed at{" "}
+                <span className="font-semibold text-blue-700">
                   {currentDateTime}
                 </span>
               </div>
             </div>
           )}
 
-          {/* Data Table */}
-          <div className="overflow-x-auto mb-5">
-            <table className="w-full border-collapse text-xs">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="border-t border-l border-black p-2 text-center font-bold">
+          {loading && (
+            <div className="text-center py-10">
+              <div className="mx-auto h-10 w-10 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+              <p className="mt-3 text-xs md:text-sm text-gray-600">
+                Fetching sales data, please wait...
+              </p>
+            </div>
+          )}
+
+          {/* Table */}
+          <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm bg-white mb-6">
+            <table className="w-full border-collapse text-[11px] md:text-xs">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
                     Bill No
                   </th>
-                  <th className="border-t border-black p-2 text-center font-bold">
+                  <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
                     Date
                   </th>
-                  <th className="border-t border-black p-2 text-center font-bold">
+                  <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
                     Agent Name
                   </th>
-                  <th className="border-t border-black p-2 text-center font-bold">
+                  <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
                     Gross Amount
                   </th>
-                  <th className="border-t border-black p-2 text-center font-bold">
+                  <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
                     CGST
                   </th>
-                  <th className="border-t border-black p-2 text-center font-bold">
+                  <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
                     SGST
                   </th>
-                  <th className="border-t border-black p-2 text-center font-bold">
+                  <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
                     Total Tax
                   </th>
-                  <th className="border-t border-black p-2 text-center font-bold">
+                  <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
                     Disc
                   </th>
-                  <th className="border-t border-black p-2 text-center font-bold">
-                    Round off
+                  <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
+                    Round Off
                   </th>
-                  <th className="border-t border-black p-2 text-center font-bold">
+                  <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
                     Net Total
                   </th>
-                  <th className="border-t border-black p-2 text-center font-bold">
+                  <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
                     Cash
                   </th>
-                  <th className="border-t border-black p-2 text-center font-bold">
+                  <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
                     UPI
                   </th>
-                  <th className="border-t border-black p-2 text-center font-bold">
+                  <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
                     Bank
                   </th>
-                  <th className="border-t border-black p-2 text-center font-bold">
+                  <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
                     Card
                   </th>
-                  <th className="border-t border-black p-2 text-center font-bold">
+                  <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
                     Mode
                   </th>
                   {businessType !== "hotel" && (
-                    <th className="border-t border-black p-2 text-center font-bold">
-                      Meal Period
-                    </th>
+                    <>
+                      <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
+                        Meal Period
+                      </th>
+                      <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
+                        KOT Type
+                      </th>
+                    </>
                   )}
-                  {businessType !== "hotel" && (
-                    <th className="border-t border-black p-2 text-center font-bold">
-                      Kot Type
-                    </th>
-                  )}
-                  <th className="border-t border-black p-2 text-center font-bold">
+                  <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
                     Credit
                   </th>
-                  <th className="border-t border-r border-black p-2 text-center font-bold">
+                  <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
                     Credit Description
                   </th>
                 </tr>
@@ -1216,14 +1153,14 @@ const BillSummary = () => {
                 {!loading && filteredSalesData.length === 0 ? (
                   <tr>
                     <td
-                      colSpan="19"
-                      className="border border-black p-4 text-center text-gray-500"
+                      colSpan={businessType !== "hotel" ? 19 : 17}
+                      className="border border-gray-200 px-3 py-6 text-center text-gray-500 text-xs"
                     >
                       {error
-                        ? "Unable to load data"
+                        ? "Unable to load data."
                         : `No ${
                             businessType === "all" ? "" : businessType
-                          } sales data found for the selected period`}
+                          } sales records found for the selected period.`}
                     </td>
                   </tr>
                 ) : (
@@ -1232,95 +1169,91 @@ const BillSummary = () => {
                       row.partyAccount === "Sundry Debtors" ||
                       row.mode === "Credit" ||
                       (row.credit || 0) > 0;
-
-                    const isCashSale =
-                      (row.partyAccount === "Cash-in-Hand" ||
-                        row.partyAccount === "CASH") &&
-                      !isCreditSale;
-
-                    const isBankSale =
-                      (row.partyAccount === "Bank Accounts" ||
-                        row.partyAccount === "Gpay") &&
-                      !isCreditSale;
+                    const gross = (row.amount || 0) - (row.igst || 0);
+                    const totalTax =
+                      (row.cgst || 0) + (row.sgst || 0) + (row.igst || 0);
 
                     return (
-                      <tr key={index} className="hover:bg-gray-50">
-                        <td className="border border-black p-2 text-left pl-3">
+                      <tr
+                        key={index}
+                        className={
+                          index % 2 === 0
+                            ? "bg-white hover:bg-gray-50"
+                            : "bg-gray-50 hover:bg-gray-100"
+                        }
+                      >
+                        <td className="border border-gray-200 px-2 py-1 text-left">
                           {row.billNo || "-"}
                         </td>
-                        <td className="border border-black p-2 text-center">
+                        <td className="border border-gray-200 px-2 py-1 text-center">
                           {row.date
                             ? new Date(row.date).toLocaleDateString()
                             : "-"}
                         </td>
-                        <td className="border border-black p-2 text-left">
-                          {row.partyName}
+                        <td className="border border-gray-200 px-2 py-1 text-left">
+                          {row.partyName || "-"}
                         </td>
-                        <td className="border border-black p-2 text-right pr-3">
-                          {((row.amount || 0) - (row.igst || 0)).toFixed(2)}
+                        <td className="border border-gray-200 px-2 py-1 text-right">
+                          {Math.round(gross)}
                         </td>
-
-                        <td className="border border-black p-2 text-center">
-                          {(row?.cgst || 0).toFixed(2)}
+                        <td className="border border-gray-200 px-2 py-1 text-right">
+                          {Math.round(row.cgst || 0)}
                         </td>
-                        <td className="border border-black p-2 text-center">
-                          {(row?.sgst || 0).toFixed(2)}
+                        <td className="border border-gray-200 px-2 py-1 text-right">
+                          {Math.round(row.sgst || 0)}
                         </td>
-                        <td className="border border-black p-2 text-center">
-                          {(row?.igst || 0).toFixed(2)}
+                        <td className="border border-gray-200 px-2 py-1 text-right">
+                          {Math.round(totalTax)}
                         </td>
-
-                        <td className="border border-black p-2 text-center">
-                          {(row.disc || 0).toFixed(2)}
+                        <td className="border border-gray-200 px-2 py-1 text-right">
+                          {Math.round(row.disc || 0)}
                         </td>
-                        <td className="border border-black p-2 text-center">
-                          {(row.roundOff || 0).toFixed(2)}
+                        <td className="border border-gray-200 px-2 py-1 text-right">
+                          {Math.round(row.roundOff || 0)}
                         </td>
-                        <td className="border border-black p-2 text-center">
-                          {(row.totalWithTax || 0).toFixed(2)}
+                        <td className="border border-gray-200 px-2 py-1 text-right">
+                          {Math.round(row.totalWithTax || 0)}
                         </td>
-                        <td className="border border-black p-2 text-center">
-                          {isCashSale
-                            ? (row.totalWithTax || 0).toFixed(2)
+                        <td className="border border-gray-200 px-2 py-1 text-right">
+                          {Number(row.cash)
+                            ? Math.round(Number(row.cash))
                             : "-"}
                         </td>
-                        <td className="border border-black p-2 text-center">
-                          {row?.upi ? (row.totalWithTax || 0).toFixed(2) : "-"}
-                        </td>
-                        <td className="border border-black p-2 text-center">
-                          {isBankSale
-                            ? (row.totalWithTax || 0).toFixed(2)
+                        <td className="border border-gray-200 px-2 py-1 text-right">
+                          {Number(row.upi)
+                            ? Math.round(Number(row.upi))
                             : "-"}
                         </td>
-                        <td className="border border-black p-2 text-center">
-                          {row?.card ? (row.totalWithTax || 0).toFixed(2) : "-"}
+                        <td className="border border-gray-200 px-2 py-1 text-right">
+                          {Number(row.bank)
+                            ? Math.round(Number(row.bank))
+                            : "-"}
                         </td>
-                        <td className="border border-black p-2 text-center">
-                          {isCreditSale
-                            ? "Credit"
-                            : isCashSale
-                              ? "Cash"
-                              : isBankSale
-                                ? "Bank"
-                                : "Online"}
+                        <td className="border border-gray-200 px-2 py-1 text-right">
+                          {Number(row.card)
+                            ? Math.round(Number(row.card))
+                            : "-"}
+                        </td>
+                        <td className="border border-gray-200 px-2 py-1 text-center">
+                          {row.mode || "-"}
                         </td>
                         {businessType !== "hotel" && (
                           <>
-                            <td className="border border-black p-2 text-center">
-                              {row?.mealPeriod || "-"}
+                            <td className="border border-gray-200 px-2 py-1 text-center">
+                              {row.mealPeriod || "-"}
                             </td>
-                            <td className="border border-black p-2 text-center">
-                              {row?.kotType || "-"}
+                            <td className="border border-gray-200 px-2 py-1 text-center">
+                              {row.kotType || "-"}
                             </td>
                           </>
                         )}
-                        <td className="border border-black p-2 text-center">
-                          {(row.credit || 0) > 0
-                            ? (row.totalWithTax || 0).toFixed(2)
+                        <td className="border border-gray-200 px-2 py-1 text-right">
+                          {isCreditSale
+                            ? Math.round(row.totalWithTax || 0)
                             : "-"}
                         </td>
-                        <td className="border border-black p-2 text-left">
-                          {(row.credit || 0) > 0
+                        <td className="border border-gray-200 px-2 py-1 text-left">
+                          {isCreditSale
                             ? row.creditDescription || row.partyName || "-"
                             : "-"}
                         </td>
@@ -1328,251 +1261,265 @@ const BillSummary = () => {
                     );
                   })
                 )}
-                {/* Totals Row */}
+
                 {filteredSalesData.length > 0 && (
-                  <tr className="border-t-2 border-black font-bold bg-gray-100">
-                    <td className="border border-black p-2 text-left pl-3">
+                  <tr className="bg-gray-900 text-white font-semibold">
+                    <td className="border border-gray-800 px-2 py-2 text-left">
                       Total
                     </td>
-                    <td className="border border-black p-2 text-center">-</td>
-                    <td className="border border-black p-2 text-center">-</td>
-                    <td className="border border-black p-2 text-right pr-3">
-                      {totals.amount.toFixed(2)}
+                    <td className="border border-gray-800 px-2 py-2 text-center">
+                      -
                     </td>
-                    <td className="border border-black p-2 text-center">
-                      {totals.cgst.toFixed(2)}
+                    <td className="border border-gray-800 px-2 py-2 text-center">
+                      -
                     </td>
-                    <td className="border border-black p-2 text-center">
-                      {totals.sgst.toFixed(2)}
+                    <td className="border border-gray-800 px-2 py-2 text-right">
+                      {Math.round(totals.amount)}
                     </td>
-                    <td className="border border-black p-2 text-center">
-                      {totals.igst.toFixed(2)}
+                    <td className="border border-gray-800 px-2 py-2 text-right">
+                      {Math.round(totals.cgst)}
                     </td>
-                    <td className="border border-black p-2 text-center">
-                      {totals.disc.toFixed(2)}
+                    <td className="border border-gray-800 px-2 py-2 text-right">
+                      {Math.round(totals.sgst)}
                     </td>
-                    <td className="border border-black p-2 text-center">
-                      {totals.roundOff.toFixed(2)}
+                    <td className="border border-gray-800 px-2 py-2 text-right">
+                      {Math.round(totals.cgst + totals.sgst + totals.igst)}
                     </td>
-                    <td className="border border-black p-2 text-center">
-                      {totals.totalWithTax.toFixed(2)}
+                    <td className="border border-gray-800 px-2 py-2 text-right">
+                      {Math.round(totals.disc)}
                     </td>
-
-                    <td className="border border-black p-2 text-center">
-                      {totals.cash.toFixed(2)}
+                    <td className="border border-gray-800 px-2 py-2 text-right">
+                      {Math.round(totals.roundOff)}
                     </td>
-                    <td className="border border-black p-2 text-center">
-                      {totals.upi.toFixed(2)}
+                    <td className="border border-gray-800 px-2 py-2 text-right">
+                      {Math.round(totals.totalWithTax)}
                     </td>
-                    <td className="border border-black p-2 text-center">
-                      {(totals.bank || 0).toFixed(2)}
+                    <td className="border border-gray-800 px-2 py-2 text-right">
+                      {Math.round(totals.cash)}
                     </td>
-                    <td className="border border-black p-2 text-center">
-                      {(totals.card || 0).toFixed(2)}
+                    <td className="border border-gray-800 px-2 py-2 text-right">
+                      {Math.round(totals.upi)}
                     </td>
-
-                    <td className="border border-black p-2 text-center">-</td>
+                    <td className="border border-gray-800 px-2 py-2 text-right">
+                      {Math.round(totals.bank || 0)}
+                    </td>
+                    <td className="border border-gray-800 px-2 py-2 text-right">
+                      {Math.round(totals.card || 0)}
+                    </td>
+                    <td className="border border-gray-800 px-2 py-2 text-center">
+                      -
+                    </td>
                     {businessType !== "hotel" && (
                       <>
-                        <td className="border border-black p-2 text-center">
+                        <td className="border border-gray-800 px-2 py-2 text-center">
                           -
                         </td>
-                        <td className="border border-black p-2 text-center">
+                        <td className="border border-gray-800 px-2 py-2 text-center">
                           -
                         </td>
                       </>
                     )}
-                    <td className="border border-black p-2 text-center">
-                      {totals.credit.toFixed(2)}
+                    <td className="border border-gray-800 px-2 py-2 text-right">
+                      {Math.round(totals.credit)}
                     </td>
-                    <td className="border border-black p-2 text-center">-</td>
+                    <td className="border border-gray-800 px-2 py-2 text-center">
+                      -
+                    </td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
 
-          {/* Summary Section with Business Breakdown */}
+          {/* Summary + Breakdown */}
           {salesData.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-4">
               {/* Financial Summary */}
-              <div className="text-xs">
-                <h3 className="font-bold mb-3 text-sm">Financial Summary</h3>
+              <div className="text-xs bg-gray-50 rounded-xl border border-gray-200 p-4 shadow-sm">
+                <h3 className="font-semibold mb-3 text-sm text-gray-800">
+                  Financial Summary
+                </h3>
                 <table className="w-full">
                   <tbody>
                     <tr>
-                      <td className="font-bold py-1">Gross Amount</td>
-                      <td className="text-right py-1">
-                        {totals.amount.toFixed(2)}
+                      <td className="py-1 text-gray-700 font-medium">
+                        Gross Amount
+                      </td>
+                      <td className="py-1 text-right text-gray-900">
+                        {Math.round(totals.amount)}
                       </td>
                     </tr>
                     <tr>
-                      <td className="font-bold py-1">Discount</td>
-                      <td className="text-right py-1">
-                        {totals.disc.toFixed(2)}
+                      <td className="py-1 text-gray-700 font-medium">
+                        Discount
+                      </td>
+                      <td className="py-1 text-right text-gray-900">
+                        {Math.round(totals.disc)}
                       </td>
                     </tr>
                     <tr>
-                      <td className="font-bold py-1">CGST</td>
-                      <td className="text-right py-1">
-                        {totals.cgst.toFixed(2)}
+                      <td className="py-1 text-gray-700 font-medium">CGST</td>
+                      <td className="py-1 text-right text-gray-900">
+                        {Math.round(totals.cgst)}
                       </td>
                     </tr>
                     <tr>
-                      <td className="font-bold py-1">SGST</td>
-                      <td className="text-right py-1">
-                        {totals.sgst.toFixed(2)}
+                      <td className="py-1 text-gray-700 font-medium">SGST</td>
+                      <td className="py-1 text-right text-gray-900">
+                        {Math.round(totals.sgst)}
                       </td>
                     </tr>
                     <tr>
-                      <td className="font-bold py-1">Total Tax</td>
-                      <td className="text-right py-1">
-                        {totals.igst.toFixed(2)}
+                      <td className="py-1 text-gray-700 font-medium">
+                        Total Tax
+                      </td>
+                      <td className="py-1 text-right text-gray-900">
+                        {Math.round(totals.cgst + totals.sgst + totals.igst)}
                       </td>
                     </tr>
                     <tr>
-                      <td className="font-bold py-1">Cash</td>
-                      <td className="text-right py-1">
-                        {totals.cash.toFixed(2)}
+                      <td className="py-1 text-gray-700 font-medium">Cash</td>
+                      <td className="py-1 text-right text-gray-900">
+                        {Math.round(totals.cash)}
                       </td>
                     </tr>
                     <tr>
-                      <td className="font-bold py-1">UPI</td>
-                      <td className="text-right py-1">
-                        {totals.upi.toFixed(2)}
+                      <td className="py-1 text-gray-700 font-medium">UPI</td>
+                      <td className="py-1 text-right text-gray-900">
+                        {Math.round(totals.upi)}
                       </td>
                     </tr>
                     <tr>
-                      <td className="font-bold py-1">Bank</td>
-                      <td className="text-right py-1">
-                        {(totals.bank || 0).toFixed(2)}
+                      <td className="py-1 text-gray-700 font-medium">Bank</td>
+                      <td className="py-1 text-right text-gray-900">
+                        {Math.round(totals.bank || 0)}
                       </td>
                     </tr>
                     <tr>
-                      <td className="font-bold py-1">Card</td>
-                      <td className="text-right py-1">
-                        {(totals.card || 0).toFixed(2)}
+                      <td className="py-1 text-gray-700 font-medium">Card</td>
+                      <td className="py-1 text-right text-gray-900">
+                        {Math.round(totals.card || 0)}
                       </td>
                     </tr>
                     <tr>
-                      <td className="font-bold py-1">Round off</td>
-                      <td className="text-right py-1">
-                        {totals.roundOff.toFixed(2)}
+                      <td className="py-1 text-gray-700 font-medium">
+                        Credit Amount
+                      </td>
+                      <td className="py-1 text-right text-gray-900">
+                        {Math.round(totals.credit)}
                       </td>
                     </tr>
-                    <tr>
-                      <td className="font-bold py-1">Credit Amount</td>
-                      <td className="text-right py-1">
-                        {totals.credit.toFixed(2)}
+                    <tr className="border-t border-gray-300">
+                      <td className="py-2 text-gray-900 font-semibold">
+                        Net Sale
                       </td>
-                    </tr>
-                    <tr className="border-t-2 border-black">
-                      <td className="font-bold py-1 text-sm">Net Sale</td>
-                      <td className="text-right py-1 font-bold text-sm">
-                        {Math.round(totals.totalWithTax).toFixed(2)}
+                      <td className="py-2 text-right text-gray-900 font-semibold">
+                        {Math.round(totals.totalWithTax)}
                       </td>
                     </tr>
                   </tbody>
                 </table>
               </div>
 
-              {/* Business Breakdown */}
-              <div className="text-xs">
-                <h3 className="font-bold mb-3 text-sm">
+              {/* Business Type Breakdown */}
+              <div className="text-xs bg-gray-50 rounded-xl border border-gray-200 p-4 shadow-sm">
+                <h3 className="font-semibold mb-3 text-sm text-gray-800">
                   Business Type Breakdown
                 </h3>
                 <table className="w-full">
                   <tbody>
-                    {businessType != "restaurant" && summary.hotelSales && (
-                      
-                     <>
+                    {businessType !== "restaurant" && summary.hotelSales && (
+                      <>
                         <tr className="bg-blue-50">
-                          <td className="font-bold py-2 px-2">Hotel Sales</td>
-                          <td className="text-right py-2 px-2">
-                            {summary.agentCount + summary.countWithOutAgent || "0.00"}
+                          <td className="font-semibold py-2 px-2 text-gray-800">
+                            Hotel Sales
+                          </td>
+                          <td className="text-right py-2 px-2 text-gray-900">
+                            {Math.round(summary.agentCount || 0) +
+                              Math.round(summary.countWithOutAgent || 0) ||
+                              "0"}
                           </td>
                         </tr>
                         <tr>
                           <td className="py-1 px-2 text-gray-600">
                             - Transactions With Agent
                           </td>
-                          <td className="text-right py-1 px-2">
-                            {summary.agentCount || 0}
+                          <td className="text-right py-1 px-2 text-gray-800">
+                            {Math.round(summary.agentCount || 0)}
                           </td>
                         </tr>
-                         <tr>
+                        <tr>
                           <td className="py-1 px-2 text-gray-600">
                             - Transactions With Out Agent
                           </td>
-                          <td className="text-right py-1 px-2">
-                            {summary.countWithOutAgent || 0}
+                          <td className="text-right py-1 px-2 text-gray-800">
+                            {Math.round(summary.countWithOutAgent || 0)}
                           </td>
                         </tr>
-                    
-                        
                       </>
                     )}
 
-                    {businessType != "hotel" &&
-                      summary.restaurantSales && (
-                        <>
-                          <tr className="bg-green-50">
-                            <td className="font-bold py-2 px-2">
-                              Restaurant Sales
-                            </td>
-                            <td className="text-right py-2 px-2">
-                              {summary.restaurantCount ||
-                                "0.00"}
-                            </td>
-                          </tr>
-                          <tr>
-                            <td className="py-1 px-2 text-gray-600">
-                              - Room Service
-                            </td>
-                            <td className="text-right py-1 px-2">
-                              {summary.IsRoomService || 0}
-                            </td>
-                          </tr>
-                          <tr>
-                            <td className="py-1 px-2 text-gray-600">
-                              - Take Away
-                            </td>
-                            <td className="text-right py-1 px-2">
-                              {summary.IsTakeaway || 0}
-                            </td>
-                          </tr>
-                          <tr>
-                            <td className="py-1 px-2 text-gray-600">
-                              - Delivery
-                            </td>
-                            <td className="text-right py-1 px-2">
-                              {summary.IsDelivery || 0}
-                            </td>
-                          </tr>
-                          <tr>
-                            <td className="py-1 px-2 text-gray-600">
-                              - Dine In
-                            </td>
-                            <td className="text-right py-1 px-2">
-                              {(summary.restaurantCount || 0) - ((summary.IsRoomService || 0) + (summary.IsTakeaway || 0) + (summary.IsDelivery || 0))}
-                            </td>
-                          </tr>
-                          <tr>
-                            <td className="py-1 px-2 text-gray-600">
-                              - Others
-                            </td>
-                            <td className="text-right py-1 px-2">
-                              {summary.restaurantSales.otherCount || 0}
-                            </td>
-                          </tr>
-                        </>
-                      )}
+                    {businessType !== "hotel" && summary.restaurantSales && (
+                      <>
+                        <tr className="bg-green-50">
+                          <td className="font-semibold py-2 px-2 text-gray-800">
+                            Restaurant Sales
+                          </td>
+                          <td className="text-right py-2 px-2 text-gray-900">
+                            {Math.round(summary.restaurantCount || 0) || "0"}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="py-1 px-2 text-gray-600">
+                            - Room Service
+                          </td>
+                          <td className="text-right py-1 px-2 text-gray-800">
+                            {Math.round(summary.IsRoomService || 0)}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="py-1 px-2 text-gray-600">
+                            - Take Away
+                          </td>
+                          <td className="text-right py-1 px-2 text-gray-800">
+                            {Math.round(summary.IsTakeaway || 0)}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="py-1 px-2 text-gray-600">
+                            - Delivery
+                          </td>
+                          <td className="text-right py-1 px-2 text-gray-800">
+                            {Math.round(summary.IsDelivery || 0)}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="py-1 px-2 text-gray-600">
+                            - Dine In
+                          </td>
+                          <td className="text-right py-1 px-2 text-gray-800">
+                            {Math.round(summary.restaurantCount || 0) -
+                              (Math.round(summary.IsRoomService || 0) +
+                                Math.round(summary.IsTakeaway || 0) +
+                                Math.round(summary.IsDelivery || 0))}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="py-1 px-2 text-gray-600">
+                            - Others
+                          </td>
+                          <td className="text-right py-1 px-2 text-gray-800">
+                            {Math.round(summary.restaurantSales.otherCount || 0)}
+                          </td>
+                        </tr>
+                      </>
+                    )}
 
-                    <tr className="border-t-2 border-black">
-                      <td className="font-bold py-2 px-2 text-sm">
+                    <tr className="border-t border-gray-300">
+                      <td className="font-semibold py-2 px-2 text-sm text-gray-900">
                         Total Transactions
                       </td>
-                      <td className="text-right py-2 px-2 font-bold text-sm">
+                      <td className="text-right py-2 px-2 font-semibold text-sm text-gray-900">
                         {filteredSalesData.length}
                       </td>
                     </tr>
@@ -1582,43 +1529,42 @@ const BillSummary = () => {
             </div>
           )}
 
-          {/* Note */}
-          <div className="text-xs italic text-gray-600 mt-5 border-t pt-3">
-            <div className="mb-1">
+          {/* Notes */}
+          <div className="mt-6 border-t border-gray-200 pt-3 text-[11px] text-gray-600 italic">
+            <div>
               * This report shows{" "}
               {businessType === "all"
                 ? "all sales transactions"
                 : `only ${businessType} sales transactions`}
-            </div>
-            <div className="mb-1">
-              * Sales are classified based on business type, party details,
-              amount threshold, department, or item analysis
+              .
             </div>
             <div>
-              * Complimentary and cancelled sales are not included in totals
+              * Sales are classified by business type, party details, amount
+              threshold, department, and item analysis.
             </div>
+            <div>* Complimentary and cancelled bills are excluded.</div>
           </div>
 
-          {/* Export and Action Buttons */}
-          <div className="text-center mt-5 no-print">
+          {/* Actions */}
+          <div className="mt-6 text-center">
             <div className="flex flex-wrap justify-center gap-3">
               <button
                 onClick={handlePDFExport}
                 disabled={filteredSalesData.length === 0}
-                className="px-6 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:bg-gray-400 text-sm font-medium flex items-center gap-2"
+                className="px-5 py-2 rounded-full bg-red-600 text-white text-xs md:text-sm font-semibold shadow-md hover:bg-red-700 disabled:bg-gray-400 flex items-center gap-2"
               >
-                📄 Export PDF
+                Export PDF
               </button>
               <button
                 onClick={handleExcelExport}
                 disabled={filteredSalesData.length === 0}
-                className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 text-sm font-medium flex items-center gap-2"
+                className="px-5 py-2 rounded-full bg-blue-600 text-white text-xs md:text-sm font-semibold shadow-md hover:bg-blue-700 disabled:bg-gray-400 flex items-center gap-2"
               >
-                📊 Export Excel
+                Export Excel
               </button>
               <button
                 onClick={() => navigate(-1)}
-                className="px-6 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 text-sm font-medium"
+                className="px-5 py-2 rounded-full bg-gray-700 text-white text-xs md:text-sm font-semibold shadow-md hover:bg-gray-800"
               >
                 Back
               </button>
