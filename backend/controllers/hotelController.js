@@ -4024,17 +4024,18 @@ export const getHotelSalesDetails = async (req, res) => {
       },
     ]);
 
-    console.log("salesData", salesData);
+    // console.log("salesData", salesData);
 
     // Transform data for frontend consumption
     const transformedData = salesData.map((sale) => {
+      // console.log("sale", sale);
       // Extract payment information
       let cashAmount = 0,
         bankAmount = 0,
         creditAmount = 0,
         upiAmount = 0,
         cardAmount = 0;
-
+console.log("shanmbu",sale)
       const partyName =
         sale.party?.partyName ||
         sale.partyDetails?.partyName ||
@@ -4053,15 +4054,14 @@ export const getHotelSalesDetails = async (req, res) => {
           sale.partyAccount !== "Bank Accounts" &&
           sale.partyAccount !== "Gpay" &&
           sale.partyAccount !== "Bank");
-
+      
       if (
         sale.paymentSplittingData &&
-        Array.isArray(sale.paymentSplittingData)
+        Array.isArray(sale.paymentSplittingData) && !isCreditSale
       ) {
         sale.paymentSplittingData.forEach((payment) => {
           const amount = Number(payment.amount) || 0;
           const paymentType = payment.type?.toLowerCase() || "";
-
           switch (paymentType) {
             case "upi":
               upiAmount += amount;
@@ -4101,6 +4101,7 @@ export const getHotelSalesDetails = async (req, res) => {
         }
       }
 
+      
       let mode = "Cash"; // default
       if (upiAmount > 0) {
         mode = "UPI";
@@ -4131,6 +4132,8 @@ export const getHotelSalesDetails = async (req, res) => {
         igst += Number(item.totalIgstAmt) || 0;
       });
 
+      console.log("disSSS",sale)
+
       return {
         billNo: sale.salesNumber || sale.serialNumber?.toString() || "",
         date: sale.date,
@@ -4139,7 +4142,7 @@ export const getHotelSalesDetails = async (req, res) => {
         mealPeriod: sale.mealPeriod,
         kotType: sale.kotType || "",
         amount: subTotal,
-        disc: sale.totalDiscount || 0,
+        disc: sale.totalAdditionalCharges || 0,
         roundOff: roundOff,
         total: subTotal,
         cgst,
@@ -4170,7 +4173,7 @@ export const getHotelSalesDetails = async (req, res) => {
         isHotel: sale.checkOut ? true : false,
       };
     });
-    console.log("transfored", transformedData);
+    // console.log("transfored", transformedData);
 
     // Calculate summary totals with business type breakdown and meal period breakdown
     const summary = transformedData.reduce(
