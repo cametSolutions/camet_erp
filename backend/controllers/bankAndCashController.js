@@ -512,6 +512,7 @@ export const addBankEntry = async (req, res) => {
     upi_id,
     cmp_id,
     bank_opening,
+    under,
   } = req.body;
 
   const Primary_user_id = req.pUserId || req.owner;
@@ -553,6 +554,7 @@ export const addBankEntry = async (req, res) => {
       bank_name,
       branch,
       upi_id,
+      under
     };
 
     // Create and save bank party
@@ -608,6 +610,7 @@ export const editBankEntry = async (req, res) => {
     upi_id,
     cmp_id,
     bank_opening,
+    under,
   } = req.body;
 
   const session = await mongoose.startSession();
@@ -635,6 +638,7 @@ export const editBankEntry = async (req, res) => {
       bank_name,
       branch,
       upi_id,
+      under
     };
     const updatedEntry = await partyModel.findOneAndUpdate(
       { _id: bank_id },

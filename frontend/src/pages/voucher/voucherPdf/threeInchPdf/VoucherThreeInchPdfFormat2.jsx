@@ -396,7 +396,8 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
               org?.configurations?.[0]?.addRateWithTax?.sale ??
               true;
 
-            console.log({ addRateWithTax });
+            console.log( addRateWithTax );
+            console.log(el.igst)
 
             const rate = addRateWithTax
               ? count > 0
