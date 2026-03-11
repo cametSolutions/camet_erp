@@ -778,7 +778,7 @@ const BillSummary = () => {
 
       if (result.success) {
         setSalesData(result.data.sales || []);
-        console.log(result.data.summary);
+        console.log(result.data);
         setSummary(result.data.summary || {});
 
         const formattedStart = formatDateForDisplay(start);
@@ -829,7 +829,7 @@ const BillSummary = () => {
     }
   };
 
-  console.log(salesData[0]);
+  console.log(salesData[10]);
 
   const filteredSalesData = salesData.filter((item) => {
     const kotMatch = kotTypeFilter === "all" || item.kotType === kotTypeFilter;
@@ -838,10 +838,12 @@ const BillSummary = () => {
     return kotMatch && mealMatch;
   });
 
+  console.log(filteredSalesData[4]);
+
   const clearError = () => {
     setError(null);
   };
-
+   console.log(filteredSalesData)
   // Calculate totals from the current salesData for display consistency
   const totals = filteredSalesData.reduce(
     (acc, item) => {
@@ -859,7 +861,8 @@ const BillSummary = () => {
         (item.credit || 0) > 0;
 
       const grossAmount = (item.amount || 0) - (item.igst || 0);
-
+   
+ 
       return {
         amount: acc.amount + grossAmount,
         disc: acc.disc + (item.disc || 0),
@@ -869,11 +872,11 @@ const BillSummary = () => {
         sgst: acc.sgst + (item.sgst || 0),
         igst: acc.igst + (item.igst || 0),
         totalWithTax: acc.totalWithTax + (item.totalWithTax || 0),
-        cash: acc.cash + (isCashSale ? item.totalWithTax || 0 : 0),
-        credit: acc.credit + (isCreditSale ? item.totalWithTax || 0 : 0),
-        upi: acc.upi + (item.upi ? item.totalWithTax || 0 : 0),
-        bank: acc.bank + (isBankSale ? item.totalWithTax || 0 : 0),
-        card: acc.card + (item.card ? item.totalWithTax || 0 : 0),
+        cash: acc.cash + (isCashSale ? Number(item.cash) || 0 : 0),
+        credit: acc.credit + (isCreditSale ? Number(item.credit) || 0 : 0),
+        upi: acc.upi + (Number(item.upi) ? Number(item.upi)|| 0 : 0),
+        bank: acc.bank + (isBankSale ? Number(item.bank) || 0 : 0),
+        card: acc.card + (Number(item.card) ? Number(item.card) || 0 : 0),
       };
     },
     {
@@ -1236,12 +1239,17 @@ const BillSummary = () => {
                     const isCashSale =
                       (row.partyAccount === "Cash-in-Hand" ||
                         row.partyAccount === "CASH") &&
-                      !isCreditSale;
+                      !isCreditSale && Number(row.cash) > 0;
 
                     const isBankSale =
                       (row.partyAccount === "Bank Accounts" ||
                         row.partyAccount === "Gpay") &&
-                      !isCreditSale;
+                      !isCreditSale
+
+                      console.log(row.upi);
+                      console.log(row.cash);
+                      console.log(row.bank);
+                      console.log(row.card);
 
                     return (
                       <tr key={index} className="hover:bg-gray-50">
@@ -1277,23 +1285,23 @@ const BillSummary = () => {
                           {(row.roundOff || 0).toFixed(2)}
                         </td>
                         <td className="border border-black p-2 text-center">
-                          {(row.totalWithTax || 0).toFixed(2)}
+                          {Math.round(row.totalWithTax || 0).toFixed(2)}
                         </td>
                         <td className="border border-black p-2 text-center">
-                          {isCashSale
-                            ? (row.totalWithTax || 0).toFixed(2)
+                          {isCashSale && Number(row?.cash)
+                            ? Math.round(row.cash || 0).toFixed(2)
                             : "-"}
                         </td>
                         <td className="border border-black p-2 text-center">
-                          {row?.upi ? (row.totalWithTax || 0).toFixed(2) : "-"}
+                          {Number(row?.upi) ?  Math.round(row.upi || 0).toFixed(2) : "-"}
                         </td>
                         <td className="border border-black p-2 text-center">
-                          {isBankSale
-                            ? (row.totalWithTax || 0).toFixed(2)
+                          {isBankSale && Number(row?.bank)
+                            ?  Math.round(row.bank || 0).toFixed(2)
                             : "-"}
                         </td>
                         <td className="border border-black p-2 text-center">
-                          {row?.card ? (row.totalWithTax || 0).toFixed(2) : "-"}
+                          {Number(row?.card)  ?  Math.round(row.card || 0).toFixed(2) : "-"}
                         </td>
                         <td className="border border-black p-2 text-center">
                           {isCreditSale
@@ -1316,7 +1324,7 @@ const BillSummary = () => {
                         )}
                         <td className="border border-black p-2 text-center">
                           {(row.credit || 0) > 0
-                            ? (row.totalWithTax || 0).toFixed(2)
+                            ?  Math.round(row.totalWithTax || 0).toFixed(2)
                             : "-"}
                         </td>
                         <td className="border border-black p-2 text-left">
@@ -1340,35 +1348,35 @@ const BillSummary = () => {
                       {totals.amount.toFixed(2)}
                     </td>
                     <td className="border border-black p-2 text-center">
-                      {totals.cgst.toFixed(2)}
+                      { Math.round(totals.cgst).toFixed(2)}
                     </td>
                     <td className="border border-black p-2 text-center">
-                      {totals.sgst.toFixed(2)}
+                      { Math.round(totals.sgst).toFixed(2)}
                     </td>
                     <td className="border border-black p-2 text-center">
-                      {totals.igst.toFixed(2)}
+                      { Math.round(totals.igst).toFixed(2)}
                     </td>
                     <td className="border border-black p-2 text-center">
-                      {totals.disc.toFixed(2)}
+                      { Math.round(totals.disc).toFixed(2)}
                     </td>
                     <td className="border border-black p-2 text-center">
-                      {totals.roundOff.toFixed(2)}
+                      { totals.roundOff.toFixed(2)}
                     </td>
                     <td className="border border-black p-2 text-center">
-                      {totals.totalWithTax.toFixed(2)}
+                      { Math.round(totals.totalWithTax).toFixed(2)}
                     </td>
 
                     <td className="border border-black p-2 text-center">
-                      {totals.cash.toFixed(2)}
+                      { Math.round(totals.cash).toFixed(2)}
                     </td>
                     <td className="border border-black p-2 text-center">
-                      {totals.upi.toFixed(2)}
+                      { Math.round(totals.upi).toFixed(2)}
                     </td>
                     <td className="border border-black p-2 text-center">
-                      {(totals.bank || 0).toFixed(2)}
+                      { Math.round(totals.bank || 0).toFixed(2)}
                     </td>
                     <td className="border border-black p-2 text-center">
-                      {(totals.card || 0).toFixed(2)}
+                      { Math.round(totals.card || 0).toFixed(2)}
                     </td>
 
                     <td className="border border-black p-2 text-center">-</td>
@@ -1383,7 +1391,7 @@ const BillSummary = () => {
                       </>
                     )}
                     <td className="border border-black p-2 text-center">
-                      {totals.credit.toFixed(2)}
+                      { Math.round(totals.credit).toFixed(2)}
                     </td>
                     <td className="border border-black p-2 text-center">-</td>
                   </tr>
@@ -1403,73 +1411,73 @@ const BillSummary = () => {
                     <tr>
                       <td className="font-bold py-1">Gross Amount</td>
                       <td className="text-right py-1">
-                        {totals.amount.toFixed(2)}
+                        { Math.round(totals.amount).toFixed(2)}
                       </td>
                     </tr>
                     <tr>
                       <td className="font-bold py-1">Discount</td>
                       <td className="text-right py-1">
-                        {totals.disc.toFixed(2)}
+                        { Math.round(totals.disc).toFixed(2)}
                       </td>
                     </tr>
                     <tr>
                       <td className="font-bold py-1">CGST</td>
                       <td className="text-right py-1">
-                        {totals.cgst.toFixed(2)}
+                        { Math.round(totals.cgst).toFixed(2)}
                       </td>
                     </tr>
                     <tr>
                       <td className="font-bold py-1">SGST</td>
                       <td className="text-right py-1">
-                        {totals.sgst.toFixed(2)}
+                        { Math.round(totals.sgst).toFixed(2)}
                       </td>
                     </tr>
                     <tr>
                       <td className="font-bold py-1">Total Tax</td>
                       <td className="text-right py-1">
-                        {totals.igst.toFixed(2)}
+                        { Math.round(totals.igst).toFixed(2)}
                       </td>
                     </tr>
                     <tr>
                       <td className="font-bold py-1">Cash</td>
                       <td className="text-right py-1">
-                        {totals.cash.toFixed(2)}
+                        { Math.round(totals.cash).toFixed(2)}
                       </td>
                     </tr>
                     <tr>
                       <td className="font-bold py-1">UPI</td>
                       <td className="text-right py-1">
-                        {totals.upi.toFixed(2)}
+                        { Math.round(totals.upi).toFixed(2)}
                       </td>
                     </tr>
                     <tr>
                       <td className="font-bold py-1">Bank</td>
                       <td className="text-right py-1">
-                        {(totals.bank || 0).toFixed(2)}
+                        { Math.round(totals.bank || 0).toFixed(2)}
                       </td>
                     </tr>
                     <tr>
                       <td className="font-bold py-1">Card</td>
                       <td className="text-right py-1">
-                        {(totals.card || 0).toFixed(2)}
+                        { Math.round(totals.card || 0).toFixed(2)}
                       </td>
                     </tr>
                     <tr>
                       <td className="font-bold py-1">Round off</td>
                       <td className="text-right py-1">
-                        {totals.roundOff.toFixed(2)}
+                        { totals.roundOff.toFixed(2)}
                       </td>
                     </tr>
                     <tr>
                       <td className="font-bold py-1">Credit Amount</td>
                       <td className="text-right py-1">
-                        {totals.credit.toFixed(2)}
+                        { Math.round(totals.credit).toFixed(2)}
                       </td>
                     </tr>
                     <tr className="border-t-2 border-black">
                       <td className="font-bold py-1 text-sm">Net Sale</td>
                       <td className="text-right py-1 font-bold text-sm">
-                        {totals.totalWithTax.toFixed(2)}
+                        {Math.round(totals.totalWithTax).toFixed(2)}
                       </td>
                     </tr>
                   </tbody>
