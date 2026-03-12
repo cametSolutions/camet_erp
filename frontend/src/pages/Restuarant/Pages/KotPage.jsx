@@ -885,6 +885,7 @@ console.log(itemList);
         discountType: discountType,
         note: note || "",
         isDiscount: true,
+        finalValue : Number(discountAmount),
       });
     }
 
