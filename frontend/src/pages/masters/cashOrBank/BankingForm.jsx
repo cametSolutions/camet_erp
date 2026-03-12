@@ -1,10 +1,6 @@
 import PropTypes from "prop-types";
 
-const BankingForm = ({ 
-  formData, 
-  setFormData, 
-  formType,
-}) => {
+const BankingForm = ({ formData, setFormData, formType }) => {
   const isOD = formType.includes("OD");
 
   return (
@@ -25,7 +21,7 @@ const BankingForm = ({
               type="text"
               className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none w-full ease-linear transition-all duration-150"
               onChange={(e) => {
-                setFormData({...formData, bank_name: e.target.value});
+                setFormData({ ...formData, bank_name: e.target.value });
               }}
               value={formData.bank_name}
               placeholder="Bank Name"
@@ -44,7 +40,7 @@ const BankingForm = ({
               type="text"
               className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none w-full ease-linear transition-all duration-150"
               onChange={(e) => {
-                setFormData({...formData, acholder_name: e.target.value});
+                setFormData({ ...formData, acholder_name: e.target.value });
               }}
               value={formData.acholder_name}
               placeholder="A/C Holder Name"
@@ -63,7 +59,7 @@ const BankingForm = ({
               type="number"
               className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none w-full ease-linear transition-all duration-150"
               onChange={(e) => {
-                setFormData({...formData, ac_no: e.target.value});
+                setFormData({ ...formData, ac_no: e.target.value });
               }}
               value={formData.ac_no}
               placeholder="A/C Number"
@@ -83,7 +79,7 @@ const BankingForm = ({
               type="text"
               className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none w-full ease-linear transition-all duration-150"
               onChange={(e) => {
-                setFormData({...formData, branch: e.target.value});
+                setFormData({ ...formData, branch: e.target.value });
               }}
               value={formData.branch}
               placeholder="Branch"
@@ -103,7 +99,7 @@ const BankingForm = ({
               type="number"
               className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none w-full ease-linear transition-all duration-150"
               onChange={(e) => {
-                setFormData({...formData, bank_opening: e.target.value});
+                setFormData({ ...formData, bank_opening: e.target.value });
               }}
               value={formData.bank_opening}
               placeholder={isOD ? "OD Opening" : "Bank Opening"}
@@ -123,7 +119,7 @@ const BankingForm = ({
               type="text"
               className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none w-full ease-linear transition-all duration-150"
               onChange={(e) => {
-                setFormData({...formData, ifsc: e.target.value});
+                setFormData({ ...formData, ifsc: e.target.value });
               }}
               value={formData.ifsc}
               placeholder="IFSC Code"
@@ -139,15 +135,37 @@ const BankingForm = ({
             >
               UPI ID
             </label>
+
             <input
               type="text"
               className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none w-full ease-linear transition-all duration-150"
               onChange={(e) => {
-                setFormData({...formData, upi_id: e.target.value});
+                setFormData({ ...formData, upi_id: e.target.value });
               }}
               value={formData.upi_id}
               placeholder="UPI ID"
             />
+          </div>
+        </div>
+        <div className="w-full lg:w-6/12 px-4">
+          <div className="relative w-full mb-3">
+            <label
+              className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+              htmlFor="upiId"
+            >
+              Under
+            </label>
+            <select
+              value={formData.under}
+              className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none w-full ease-linear transition-all duration-150"
+              onChange={(e) => {
+                setFormData({ ...formData, under: e.target.value });
+              }}
+            >
+              <option value="bank">Bank</option>
+              <option value="card">Card</option>
+              <option value="upi">UPI</option>
+            </select>
           </div>
         </div>
 
@@ -182,7 +200,7 @@ BankingForm.propTypes = {
   formData: PropTypes.object.isRequired,
   setFormData: PropTypes.func.isRequired,
   formType: PropTypes.string.isRequired,
-  loading: PropTypes.bool
+  loading: PropTypes.bool,
 };
 
 export default BankingForm;

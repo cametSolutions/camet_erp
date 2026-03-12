@@ -1,11 +1,10 @@
-import React, { useState, useEffect,useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Calendar } from "lucide-react";
 import { useSelector } from "react-redux";
 import api from "../../../api/api";
 import TitleDiv from "@/components/common/TitleDiv";
 import { toast } from "sonner";
-import {useReactToPrint} from "react-to-print";
-
+import { useReactToPrint } from "react-to-print";
 
 const HotelCheckoutStatement = () => {
   // ============ STATE MANAGEMENT ============
@@ -20,6 +19,8 @@ const HotelCheckoutStatement = () => {
   const { _id: cmp_id } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
+
+  const num = (v) => Number(v || 0);
 
   // ============ UTILITY FUNCTIONS ============
   function getTodayDate() {
@@ -70,12 +71,14 @@ const HotelCheckoutStatement = () => {
       });
 
       if (response.data.success) {
-        setCheckoutData(response.data.checkoutBills);
-        setSummary(response.data.summary);
+        setCheckoutData(response.data.checkoutBills || []);
+        setSummary(response.data.summary || null);
 
-        if (response.data.checkoutBills.length === 0) {
+        if (!response.data.checkoutBills || response.data.checkoutBills.length === 0) {
           setError(
-            `No checkout data found for ${formatDate(fromDate)} to ${formatDate(toDate)}`
+            `No checkout data found for ${formatDate(fromDate)} to ${formatDate(
+              toDate
+            )}`
           );
         }
       } else {
@@ -129,18 +132,24 @@ const HotelCheckoutStatement = () => {
   function renderTableHeader() {
     return (
       <tr className="border-b-2 border-black">
-        <th className="text-left py-2 px-1 font-semibold">Bill #</th>
-        <th className="text-left py-2 px-1 font-semibold">Date</th>
-        <th className="text-left py-2 px-1 font-semibold">Description</th>
-        <th className="text-left py-2 px-1 font-semibold">Room</th>
-        <th className="text-left py-2 px-1 font-semibold">Bill Amount</th>
-        <th className="text-left py-2 px-1 font-semibold">Cash</th>
-        <th className="text-left py-2 px-1 font-semibold">Bank</th>
-        <th className="text-left py-2 px-1 font-semibold">Card</th>
-        <th className="text-left py-2 px-1 font-semibold">Credit</th>
-        <th className="text-left py-2 px-1 font-semibold">UPI</th>
-        <th className="text-right py-2 px-1 font-semibold">Total</th>
-        <th className="text-left py-2 px-1 font-semibold">Mode</th>
+        <th className="text-left py-1.5 px-1 text-xs font-semibold">Bill #</th>
+        <th className="text-left py-1.5 px-1 text-xs font-semibold">Date</th>
+        <th className="text-left py-1.5 px-1 text-xs font-semibold">
+          Description
+        </th>
+        <th className="text-left py-1.5 px-1 text-xs font-semibold">Room</th>
+        <th className="text-right py-1.5 px-1 text-xs font-semibold">
+          Bill Amount
+        </th>
+        <th className="text-right py-1.5 px-1 text-xs font-semibold">Cash</th>
+        <th className="text-right py-1.5 px-1 text-xs font-semibold">Bank</th>
+        <th className="text-right py-1.5 px-1 text-xs font-semibold">Card</th>
+        <th className="text-right py-1.5 px-1 text-xs font-semibold">
+          Credit
+        </th>
+        <th className="text-right py-1.5 px-1 text-xs font-semibold">UPI</th>
+        <th className="text-right py-1.5 px-1 text-xs font-semibold">Total</th>
+        <th className="text-left py-1.5 px-1 text-xs font-semibold">Mode</th>
       </tr>
     );
   }
@@ -161,30 +170,32 @@ const HotelCheckoutStatement = () => {
     return (
       <tr
         key={index}
-        className="border-b border-gray-200 text-sm hover:bg-gray-50"
+        className="border-b border-gray-200 text-xs hover:bg-gray-50"
       >
         <td className="py-1 px-1">{item.billNo}</td>
         <td className="py-1 px-1">{formatDate(item.date)}</td>
         <td className="py-1 px-1">{item.customerName}</td>
         <td className="py-1 px-1">{item.roomName || "-"}</td>
-        <td className="py-1 px-1">{item.grandTotal || "-"}</td>
-        <td className="py-1 px-1">
-          {Number(item?.cash) > 0 ? item.cash.toFixed(2) : ""}
+        <td className="py-1 px-1 text-right">
+          {item.grandTotal != null ? num(item.grandTotal).toFixed(2) : "-"}
         </td>
-        <td className="py-1 px-1">
-          {Number(item?.bank) > 0 ? item.bank.toFixed(2) : ""}
+        <td className="py-1 px-1 text-right">
+          {Number(item?.cash) > 0 ? num(item.cash).toFixed(2) : ""}
         </td>
-        <td className="py-1 px-1">
-          {Number(item?.card) > 0 ? item.card.toFixed(2) : ""}
+        <td className="py-1 px-1 text-right">
+          {Number(item?.bank) > 0 ? num(item.bank).toFixed(2) : ""}
         </td>
-        <td className="py-1 px-1">
-          {Number(item?.credit) > 0 ? item.credit.toFixed(2) : ""}
+        <td className="py-1 px-1 text-right">
+          {Number(item?.card) > 0 ? num(item.card).toFixed(2) : ""}
         </td>
-        <td className="py-1 px-1">
-          {Number(item?.upi) > 0 ? item?.upi.toFixed(2) : ""}
+        <td className="py-1 px-1 text-right">
+          {Number(item?.credit) > 0 ? num(item.credit).toFixed(2) : ""}
+        </td>
+        <td className="py-1 px-1 text-right">
+          {Number(item?.upi) > 0 ? num(item.upi).toFixed(2) : ""}
         </td>
         <td className="text-right py-1 px-1 font-medium">
-          {item.advanceAmount.toFixed(2)}
+          {num(item.advanceAmount).toFixed(2)}
         </td>
         <td className="py-1 px-1">{getPaymentModeDisplay(item)}</td>
       </tr>
@@ -194,10 +205,10 @@ const HotelCheckoutStatement = () => {
   function renderEmptyState() {
     return (
       <tr>
-        <td colSpan="11" className="text-center py-8 text-gray-500">
+        <td colSpan="12" className="text-center py-6 text-gray-500">
           <div className="flex flex-col items-center">
             <svg
-              className="w-16 h-16 text-gray-300 mb-4"
+              className="w-12 h-12 text-gray-300 mb-3"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -209,8 +220,8 @@ const HotelCheckoutStatement = () => {
                 d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
               />
             </svg>
-            <p className="text-lg font-medium">No checkout records found</p>
-            <p className="text-sm mt-1">
+            <p className="text-sm font-medium">No checkout records found</p>
+            <p className="text-xs mt-1">
               from {formatDate(fromDate)} to {formatDate(toDate)}
             </p>
           </div>
@@ -220,165 +231,236 @@ const HotelCheckoutStatement = () => {
   }
 
   function renderSummary() {
-    if (checkoutData.length === 0) return null;
+    if (checkoutData.length === 0 || !summary) return null;
 
-    const totalAmount = Number(summary?.totalCheckoutAmount) || 0;
+    const totalAmount = num(summary?.totalCheckoutAmount);
 
     return (
-      <>
-        <tr className="border-t-2 border-black font-semibold bg-gray-50">
-          <td colSpan="6" className="py-2 px-1">
-            Total Amount
-          </td>
-          <td className="py-2 px-1">
-            {(summary?.advanceTotal || 0).toFixed(2)}
-          </td>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td className="text-right py-2 px-1">
-            {totalAmount?.toFixed(2)}
-          </td>
-          <td></td>
-        </tr>
-      </>
+      <tr className="border-t-2 border-black font-semibold bg-gray-100 text-xs">
+        <td colSpan="6" className="py-1.5 px-1 text-left">
+          Total Amount
+        </td>
+        <td className="py-1.5 px-1 text-right">
+          {num(summary?.advanceTotal).toFixed(2)}
+        </td>
+        <td className="py-1.5 px-1" />
+        <td className="py-1.5 px-1" />
+        <td className="py-1.5 px-1" />
+        <td className="text-right py-1.5 px-1">
+          {totalAmount.toFixed(2)}
+        </td>
+        <td className="py-1.5 px-1" />
+      </tr>
     );
   }
 
-  function renderSummarySection() {
-    if (checkoutData.length === 0) return null;
+ function renderSummarySection() {
+  if (checkoutData.length === 0 || !summary) return null;
 
-    return (
-      <div className="grid grid-cols-2 gap-8 mt-6 text-sm">
-        {/* Left Column */}
-        <div>
-          <div className="flex justify-between py-1">
-            <span>Total Reservation Adv :</span>
-            <span>{summary?.totalBookingAdvance}</span>
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 text-xs">
+      {/* Advance Summary */}
+      <div className="border border-gray-300 rounded-md p-3">
+        <h3 className="font-semibold mb-2 text-gray-800 text-sm">
+          Advance Summary
+        </h3>
+        <div className="space-y-1">
+          <div className="flex justify-between">
+            <span>Total Reservation Adv</span>
+            <span className="tabular-nums">
+              {num(summary?.totalBookingAdvance).toFixed(2)}
+            </span>
           </div>
-          <div className="flex justify-between py-1">
-            <span>Total CheckIn Adv :</span>
-            <span>{summary?.totalCheckingAdvance}</span>
+          <div className="flex justify-between">
+            <span>Total CheckIn Adv</span>
+            <span className="tabular-nums">
+              {num(summary?.totalCheckingAdvance).toFixed(2)}
+            </span>
           </div>
-          <div className="flex justify-between py-1">
-            <span>Total Before Res Adv :</span>
-            <span>0.00</span>
+          <div className="flex justify-between">
+            <span>Total Before Res Adv</span>
+            <span className="tabular-nums">0.00</span>
           </div>
-          <div className="flex justify-between py-1 mt-4 font-semibold border-t pt-2">
-            <span>Total Advance Amt :</span>
-            <span>{(summary?.totalAdvanceAmount || 0)}</span>
-          </div>
-        </div>
-
-        {/* Right Column */}
-        <div>
-          <div className="flex justify-between py-1">
-            <span>Total Checkout Amt :</span>
-            <span>{summary?.checkOutTimePaidAmount.toFixed(2)}</span>
-            <span className="ml-4 text-gray-600">Credit</span>
-            <span>{(summary?.creditTotal || 0).toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between py-1">
-            <span>Total Other Receipts :</span>
-            <span>{summary?.totalReceiptsAmount.toFixed(2)}</span>
-            <span className="ml-4 text-gray-600">Card</span>
-            <span>{(summary?.cardTotal || 0).toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between py-1">
-            <span>Total Checkout Refund :</span>
-            <span>{summary?.checkOutTimeRefundAmount.toFixed(2)}</span>
-            <span className="ml-4 text-gray-600">Bank</span>
-            <span>{(summary?.bankTotal || 0).toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between py-1">
-            <span>Total Advance Refund :</span>
-            <span>{summary?.checkOutTotalAdvanceRefundAmount.toFixed(2)}</span>
-            <span className="ml-4 text-gray-600">UPI</span>
-            <span>{(summary?.upiTotal || 0).toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between py-1">
-            <span>Total Refund Amt :</span>
-            <span>{summary?.totalRefundAmount.toFixed(2)}</span>
-            <span className="ml-4 text-gray-600">Cash</span>
-            <span>{(summary?.cashTotal || 0).toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between py-1">
-            <span>Total Other Payments Amt :</span>
-            <span>{summary?.totalotherPayments}</span>
-          </div>
-          <div className="flex justify-between py-1 mt-4 font-semibold border-t pt-2">
-            <span>Net Sale :</span>
-            <span>{(summary?.advanceTotal || 0).toFixed(2)}</span>
-            <span className="ml-4">Net Cash</span>
-            <span>{(summary?.transactionTotal || 0).toFixed(2)}</span>
+          <div className="border-t border-gray-300 pt-1.5 mt-2 flex justify-between font-semibold">
+            <span>Total Advance Amt</span>
+            <span className="tabular-nums">
+              {num(summary?.totalAdvanceAmount).toFixed(2)}
+            </span>
           </div>
         </div>
       </div>
-    );
-  }
+
+      {/* Payment Summary */}
+      <div className="border border-gray-300 rounded-md p-3">
+        <h3 className="font-semibold mb-2 text-gray-800 text-sm">
+          Payment Summary
+        </h3>
+
+        {/* Row 1 */}
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+          <div className="flex justify-between">
+            <span>Total Checkout Amt</span>
+            <span className="tabular-nums">
+              {num(summary?.checkOutTimePaidAmount).toFixed(2)}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span>Credit</span>
+            <span className="tabular-nums">
+              {num(summary?.creditTotal).toFixed(2)}
+            </span>
+          </div>
+
+          {/* Row 2 */}
+          <div className="flex justify-between">
+            <span>Total Other Receipts</span>
+            <span className="tabular-nums">
+              {num(summary?.totalReceiptsAmount).toFixed(2)}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span>Card</span>
+            <span className="tabular-nums">
+              {num(summary?.cardTotal).toFixed(2)}
+            </span>
+          </div>
+
+          {/* Row 3 */}
+          <div className="flex justify-between">
+            <span>Total Checkout Refund</span>
+            <span className="tabular-nums">
+              {num(summary?.checkOutTimeRefundAmount).toFixed(2)}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span>Bank</span>
+            <span className="tabular-nums">
+              {num(summary?.bankTotal).toFixed(2)}
+            </span>
+          </div>
+
+          {/* Row 4 */}
+          <div className="flex justify-between">
+            <span>Total Advance Refund</span>
+            <span className="tabular-nums">
+              {num(summary?.checkOutTotalAdvanceRefundAmount).toFixed(2)}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span>UPI</span>
+            <span className="tabular-nums">
+              {num(summary?.upiTotal).toFixed(2)}
+            </span>
+          </div>
+
+          {/* Row 5 */}
+          <div className="flex justify-between">
+            <span>Total Refund Amt</span>
+            <span className="tabular-nums">
+              {num(summary?.totalRefundAmount).toFixed(2)}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span>Cash</span>
+            <span className="tabular-nums">
+              {num(summary?.cashTotal).toFixed(2)}
+            </span>
+          </div>
+
+          {/* Row 6 – Other payments full width */}
+          <div className="flex justify-between col-span-2">
+            <span>Total Other Payments Amt</span>
+            <span className="tabular-nums">
+              {num(summary?.totalotherPayments).toFixed(2)}
+            </span>
+          </div>
+        </div>
+
+        {/* Bottom Net row */}
+        <div className="border-t border-gray-300 pt-1.5 mt-2 flex justify-between font-semibold">
+          <div className="flex gap-4">
+            <span>Net Sale</span>
+            <span className="tabular-nums">
+              {num(summary?.advanceTotal).toFixed(2)}
+            </span>
+          </div>
+          <div className="flex gap-4">
+            <span>Net Cash</span>
+            <span className="tabular-nums">
+              {num(summary?.transactionTotal).toFixed(2)}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
   // ============ MAIN RENDER ============
   return (
     <>
       <TitleDiv loading={loading} title="Checkout Statement" />
-      <div className="w-full max-w-5xl mx-auto p-6 bg-white" ref={contentToPrint}>
-        <div className="border-2 border-black p-6">
+      <div className="w-full max-w-5xl mx-auto p-4 md:p-6 bg-white" ref={contentToPrint}>
+        <div className="border-2 border-black p-4 md:p-6">
           {/* Header */}
-          <div className="text-center mb-6">
-            <h1 className="text-2xl font-bold tracking-wide underline">
+          <div className="text-center mb-4">
+            <h1 className="text-xl md:text-2xl font-bold tracking-wide underline">
               KGEES - HILLTOWN HOTEL
             </h1>
           </div>
 
           {/* Date Selection and Print Info */}
-          <div className="flex justify-between items-center mb-4 pb-2 border-b border-gray-400">
-            <div className="flex items-center gap-4">
-              <span className="font-semibold">From:</span>
-              <div className="flex items-center gap-2 border border-gray-300 px-3 py-1 rounded">
-                <Calendar size={16} />
-                <input
-                  type="date"
-                  name="fromDate"
-                  value={fromDate}
-                  onChange={handleDateChange}
-                  max={getTodayDate()}
-                  className="outline-none cursor-pointer"
-                />
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-3 pb-2 border-b border-gray-400 gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-xs md:text-sm">From:</span>
+                <div className="flex items-center gap-2 border border-gray-300 px-2 py-1 rounded">
+                  <Calendar size={16} />
+                  <input
+                    type="date"
+                    name="fromDate"
+                    value={fromDate}
+                    onChange={handleDateChange}
+                    max={getTodayDate()}
+                    className="outline-none cursor-pointer text-xs md:text-sm"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-xs md:text-sm">To:</span>
+                <div className="flex items-center gap-2 border border-gray-300 px-2 py-1 rounded">
+                  <Calendar size={16} />
+                  <input
+                    type="date"
+                    name="toDate"
+                    value={toDate}
+                    onChange={handleDateChange}
+                    max={getTodayDate()}
+                    className="outline-none cursor-pointer text-xs md:text-sm"
+                  />
+                </div>
               </div>
             </div>
-            <div className="flex items-center gap-4">
-              <span className="font-semibold">To:</span>
-              <div className="flex items-center gap-2 border border-gray-300 px-3 py-1 rounded">
-                <Calendar size={16} />
-                <input
-                  type="date"
-                  name="toDate"
-                  value={toDate}
-                  onChange={handleDateChange}
-                  max={getTodayDate()}
-                  className="outline-none cursor-pointer"
-                />
-              </div>
-            </div>
-            <div className="text-sm">
-              <span className="font-semibold">Print Date & Time:</span>{" "}
+            <div className="text-xs md:text-sm">
+              <span className="font-semibold">Print Date &amp; Time:</span>{" "}
               {getCurrentDateTime()}
             </div>
           </div>
 
-          <div className="text-sm mb-4">
+          <div className="text-xs md:text-sm mb-3">
             <span className="font-semibold">FO Cash Statement From</span>{" "}
             {formatDate(fromDate)}
-            <span className="font-semibold"> To</span> {formatDate(toDate)}
+            <span className="font-semibold"> To </span>
+            {formatDate(toDate)}
           </div>
 
           {/* Error Message */}
           {error && (
-            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 mb-3">
               <div className="flex">
                 <div className="flex-shrink-0">
                   <svg
-                    className="h-5 w-5 text-yellow-400"
+                    className="h-4 w-4 text-yellow-400"
                     viewBox="0 0 20 20"
                     fill="currentColor"
                   >
@@ -389,29 +471,36 @@ const HotelCheckoutStatement = () => {
                     />
                   </svg>
                 </div>
-                <div className="ml-3">
-                  <p className="text-sm text-yellow-700">{error}</p>
+                <div className="ml-2">
+                  <p className="text-xs md:text-sm text-yellow-700">{error}</p>
                 </div>
               </div>
             </div>
           )}
 
           {/* Table */}
-          <table className="w-full border-collapse mb-4">
-            <thead>{renderTableHeader()}</thead>
-            <tbody>
-              <tr className="border-b border-gray-300">
-                <td colSpan="11" className="py-2 px-1 font-semibold">
-                  Checkout Bills ({checkoutData.length}{" "}
-                  {checkoutData.length === 1 ? "record" : "records"})
-                </td>
-              </tr>
-              {checkoutData.length > 0
-                ? checkoutData.map((item, index) => renderTableRow(item, index))
-                : renderEmptyState()}
-              {renderSummary()}
-            </tbody>
-          </table>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse mb-3">
+              <thead>{renderTableHeader()}</thead>
+              <tbody>
+                <tr className="border-b border-gray-300 bg-gray-50">
+                  <td
+                    colSpan="12"
+                    className="py-1.5 px-1 font-semibold text-xs"
+                  >
+                    Checkout Bills ({checkoutData.length}{" "}
+                    {checkoutData.length === 1 ? "record" : "records"})
+                  </td>
+                </tr>
+                {checkoutData.length > 0
+                  ? checkoutData.map((item, index) =>
+                      renderTableRow(item, index)
+                    )
+                  : renderEmptyState()}
+                {renderSummary()}
+              </tbody>
+            </table>
+          </div>
 
           {/* Summary Section */}
           {renderSummarySection()}
@@ -422,7 +511,7 @@ const HotelCheckoutStatement = () => {
           <button
             onClick={handlePrint}
             disabled={checkoutData.length === 0}
-            className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold shadow-lg"
+            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold shadow-md text-sm"
           >
             {checkoutData.length === 0 ? "No Data to Print" : "Print Statement"}
           </button>
@@ -435,8 +524,9 @@ const HotelCheckoutStatement = () => {
               display: none !important;
             }
             body {
-              print-color-adjust: exact;
               -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+              margin: 0;
             }
           }
         `}</style>

@@ -54,6 +54,7 @@ const BankDetailsSchema = new mongoose.Schema({
       partyId: { type: mongoose.Schema.Types.ObjectId, ref: "Party" },
     },
   ],
+  under:{type:String,default:"bank"},
 });
 
 // 1. Compound index for main queries (most important)

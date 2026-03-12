@@ -15,6 +15,7 @@ const BankingManagement = () => {
     bank_name: "",
     branch: "",
     upi_id: "",
+    under: "bank",
     bank_opening: 0,
     od_limit: 0 // Only used for OD accounts
   });
@@ -67,11 +68,12 @@ const BankingManagement = () => {
             acholder_name: data.acholder_name || "",
             ac_no: data.ac_no || "",
             ifsc: data.ifsc || "",
-            bank_name: data.bank_name || "",
+            bank_name: data.bank_name || data?.partyName || "",
             branch: data.branch || "",
             upi_id: data.upi_id || "",
             bank_opening: data.bank_opening || 0,
-            od_limit: data.od_limit || 0 // Only for OD
+            od_limit: data.od_limit || 0, // Only for OD
+            under: data.under
           });
 
           console.log("Fetched data:", data);
