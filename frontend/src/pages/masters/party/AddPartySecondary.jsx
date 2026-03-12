@@ -18,6 +18,7 @@ function AddPartySecondary() {
   const queryClient = useQueryClient();
 
   const from = location.state?.from;
+  console.log(from);
   
   // Get returnUrl from query parameters
   const searchParams = new URLSearchParams(location.search);
@@ -59,6 +60,10 @@ function AddPartySecondary() {
         }
         if(from == "/sUsers/checkInPage"){
           navigate("/sUsers/bookingPage", { replace: true });
+          return;
+        }
+        if(from == "/sUsers/kotPage"){
+          navigate("/sUsers/kotPage", { state: { fromTable: true }, replace: true });
           return;
         }
 

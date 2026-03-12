@@ -1024,12 +1024,12 @@ export const directSale = async (req, res) => {
       );
 
       // Prepare structured party & payment arrays
-      const paymentSplittingArray = createPaymentSplittingArray(
+      const paymentSplittingArray =await createPaymentSplittingArray(
         paymentDetails,
         cashAmt,
         onlineAmt,
       );
-
+console.log("paymentSplittingArray", paymentSplittingArray);
       const party = mapPartyData(selectedParty);
       
 let additionalChargesArray = [];
@@ -1572,6 +1572,7 @@ async function getSelectedParty(
 }
 
 async function createPaymentSplittingArray (paymentDetails, cashAmt, onlineAmt) {
+  console.log("hhhhhhhhhhhhhhhh",paymentDetails, cashAmt, onlineAmt);
   const arr = [];
   if (cashAmt > 0) {
     let referral = await partyModel.findOne({_id: paymentDetails?.selectedCash});
@@ -1718,7 +1719,7 @@ async function createSalesVoucher(
   const isComplimentary = req.body.isComplimentary || false;
   const isPostToRoom = req.body.isPostToRoom || false;
 
-  console.log("kotData", additionalCharges);
+  console.log("kotData", paymentSplittingArray);
   // ✅ Calculate totals
   const totalAdditionalCharges =  additionalCharges?.reduce((sum, charge) => {
     console.log("charge", charge);

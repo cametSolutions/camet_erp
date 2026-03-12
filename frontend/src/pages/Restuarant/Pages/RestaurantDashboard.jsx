@@ -597,6 +597,7 @@ const RestaurantPOS = () => {
       name: "Discount", // any label, not used in calc
       type: "subtract", // IMPORTANT: used for discountTotal
       amount: discountAmount, // IMPORTANT: used for sums
+      finalValue: discountAmount,
     });
   }
 
@@ -623,6 +624,7 @@ const RestaurantPOS = () => {
           paymentMode: "single",
         };
       }
+console.log(selectedDataForPayment);
 
       // Step 2: Make API call
       const response = await api.post(
