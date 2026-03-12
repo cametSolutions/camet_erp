@@ -479,7 +479,7 @@ const exportToExcel = (
         row.mode === "Credit" ||
         (row.credit || 0) > 0;
       const grossAmount = (row.amount || 0) - (row.igst || 0);
-      const totalTax = (row.cgst || 0) + (row.sgst || 0);
+
 
       const baseRow = [
         row.billNo || "",
@@ -518,7 +518,7 @@ const exportToExcel = (
       Math.round(totals.amount),
       totals.cgst.toFixed(2),
       totals.sgst.toFixed(2),
-      (totals.cgst + totals.sgst).toFixed(2),
+      (totals.igst).toFixed(2),
       Math.round(totals.disc),
       Math.round(totals.roundOff),
       Math.round(totals.totalWithTax),
