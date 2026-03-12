@@ -1117,7 +1117,6 @@ let additionalChargesArray = [];
 
 export const updateKotPayment = async (req, res) => {
   const session = await mongoose.startSession();
-
   try {
     await session.withTransaction(async () => {
       const { cmp_id } = req.params;
@@ -1138,14 +1137,9 @@ export const updateKotPayment = async (req, res) => {
 
       discountAmount = req?.body?.additionalCharges[0]?.amount || 0;
 
-      console.log("=== STEP 3: BACKEND RECEIVED ===");
-      console.log("req.body.discountCharge:", discountCharge);
-      console.log("req.body.discountAmount:", discountAmount);
-      console.log("req.body.note:", note);
-      console.log("Type of discountAmount:", typeof discountAmount);
-
       // console.log("table", kotData);
-
+      console.log("req?.body",req?.body)
+    
       if (!paymentDetails || !kotData) {
         throw new Error("Missing payment details or KOT data");
       }
@@ -1171,6 +1165,7 @@ export const updateKotPayment = async (req, res) => {
       if (paymentDetails?.paymentMode == "credit") {
         paymentMethod = "credit";
       }
+
 
       // ✅ Inject remarks
       if (note) {
@@ -1218,12 +1213,14 @@ export const updateKotPayment = async (req, res) => {
             );
 
       // Payment splitting
-      const paymentSplittingArray = createPaymentSplittingArray(
+      const paymentSplittingArray = await createPaymentSplittingArray(
         paymentDetails,
         cashAmt,
         onlineAmt,
       );
 
+       console.log("paymentSplittingArray", paymentSplittingArray);
+      
       const party = mapPartyData(selectedParty);
       console.log("selectedParty", isPostToRoom);
       // Save voucher
@@ -1574,22 +1571,25 @@ async function getSelectedParty(
   return selectedParty;
 }
 
-function createPaymentSplittingArray(paymentDetails, cashAmt, onlineAmt) {
+async function createPaymentSplittingArray (paymentDetails, cashAmt, onlineAmt) {
   const arr = [];
   if (cashAmt > 0) {
+    let referral = await partyModel.findOne({_id: paymentDetails?.selectedCash});
     arr.push({
       type: "cash",
       amount: cashAmt,
       ref_id: paymentDetails?.selectedCash,
-      // ref_collection: "Cash",
+      reference_name: referral?.partyName,
     });
   }
   if (onlineAmt > 0) {
+  let referral = await partyModel.findOne({_id: paymentDetails?.selectedBank});
     arr.push({
-      type: "upi",
+      type: referral.under || "bank",
       amount: onlineAmt,
       ref_id: paymentDetails?.selectedBank,
-      // ref_collection: "BankDetails",
+      reference_name: referral?.partyName,
+
     });
   }
   return arr;

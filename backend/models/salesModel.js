@@ -8,7 +8,7 @@ const paymentSplitSchema = new Schema(
     type: {
       type: String,
       required: true,
-      enum: ["cash", "upi", "cheque", "credit"],
+      enum: ["cash", "upi","card","bank", "cheque", "credit"],
     },
     amount: { type: Number, default: 0 },
     ref_id: {
