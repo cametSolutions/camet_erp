@@ -1036,7 +1036,7 @@ const OrdersDashboard = () => {
 
   const handlePrintShow = () => {
     console.log(printData);
-    navigate(`/sUsers/sharesalesThreeInch2`, {
+    navigate(`/sUsers/sharesalesThreeInch2/${true}`, {
       state: printData.salesRecord,
     });
   };
