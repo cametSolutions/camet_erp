@@ -3,7 +3,7 @@ import { useEffect, useState, useRef } from "react";
 import { useSelector } from "react-redux";
 
 import { defaultPrintSettings } from "../../../../../utils/defaultConfigurations";
-import { useLocation } from "react-router-dom";
+import { useLocation,useParams  } from "react-router-dom";
 import { useReactToPrint } from "react-to-print";
 import TitleDiv from "@/components/common/TitleDiv";
 
@@ -19,8 +19,9 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
     ));
   let showPrintButton =
     org?.configurations?.[0]?.defaultPrint?.showBeforeSaleInRestaurant;
-  console.log(showPrintButton);
-  console.log(data);
+  const { isFinalized } = useParams();
+  console.log("isFinalized", isFinalized);
+  console.log("showPrintButton", showPrintButton);
 
   const isIndian = useSelector(
     (state) =>
@@ -623,7 +624,7 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
 
         {/* Controls */}
         <div className="flex gap-3 justify-center p-2">
-          {showPrintButton && (
+          {(showPrintButton  || isFinalized) && (
             <button
               className="px-3 py-1 rounded-lg bg-gray-500 text-white font-medium hover:bg-gray-600 active:scale-95 transition"
               onClick={handlePrint}
