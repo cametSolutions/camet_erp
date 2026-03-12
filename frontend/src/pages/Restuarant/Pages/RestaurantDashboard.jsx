@@ -597,6 +597,7 @@ const RestaurantPOS = () => {
       name: "Discount", // any label, not used in calc
       type: "subtract", // IMPORTANT: used for discountTotal
       amount: discountAmount, // IMPORTANT: used for sums
+      finalValue: discountAmount,
     });
   }
 

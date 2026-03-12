@@ -1170,9 +1170,7 @@ const BillSummary = () => {
                       row.mode === "Credit" ||
                       (row.credit || 0) > 0;
                     const gross = (row.amount || 0) - (row.igst || 0);
-                    const totalTax =
-                      (row.cgst || 0) + (row.sgst || 0) + (row.igst || 0);
-
+               
                     return (
                       <tr
                         key={index}
@@ -1203,7 +1201,7 @@ const BillSummary = () => {
                           {Math.round(row.sgst || 0)}
                         </td>
                         <td className="border border-gray-200 px-2 py-1 text-right">
-                          {Math.round(totalTax)}
+                          {Math.round(row.igst || 0)}
                         </td>
                         <td className="border border-gray-200 px-2 py-1 text-right">
                           {Math.round(row.disc || 0)}
