@@ -14,8 +14,9 @@ const ToggleButton = ({ isChecked, onToggle, option }) => {
 
  const handleCheckboxChange = () => {
   const newChecked = !checked;
-
+console.log("handleCheckboxChange", newChecked);
   let data;
+  console.log(option.dbField);
 
   if (option.dbField && option.dbField.includes('.')) {
     const [fieldType, field] = option.dbField.split('.');
