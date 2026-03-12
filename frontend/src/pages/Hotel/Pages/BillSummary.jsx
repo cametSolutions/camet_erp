@@ -1195,13 +1195,13 @@ const BillSummary = () => {
                           {Math.round(gross)}
                         </td>
                         <td className="border border-gray-200 px-2 py-1 text-right">
-                          {Math.round(row.cgst || 0)}
+                          {(row.cgst || 0).toFixed(2)}
                         </td>
                         <td className="border border-gray-200 px-2 py-1 text-right">
-                          {Math.round(row.sgst || 0)}
+                          {(row.sgst || 0).toFixed(2)}
                         </td>
                         <td className="border border-gray-200 px-2 py-1 text-right">
-                          {Math.round(row.igst || 0)}
+                          {(row.igst || 0).toFixed(2)}
                         </td>
                         <td className="border border-gray-200 px-2 py-1 text-right">
                           {Math.round(row.disc || 0)}
@@ -1275,13 +1275,13 @@ const BillSummary = () => {
                       {Math.round(totals.amount)}
                     </td>
                     <td className="border border-gray-800 px-2 py-2 text-right">
-                      {Math.round(totals.cgst)}
+                      {(totals.cgst).toFixed(2)}
                     </td>
                     <td className="border border-gray-800 px-2 py-2 text-right">
-                      {Math.round(totals.sgst)}
+                      {(totals.sgst).toFixed(2)}
                     </td>
                     <td className="border border-gray-800 px-2 py-2 text-right">
-                      {Math.round(totals.cgst + totals.sgst + totals.igst)}
+                      {Math.round(totals.cgst + totals.sgst)}
                     </td>
                     <td className="border border-gray-800 px-2 py-2 text-right">
                       {Math.round(totals.disc)}
@@ -1372,7 +1372,7 @@ const BillSummary = () => {
                         Total Tax
                       </td>
                       <td className="py-1 text-right text-gray-900">
-                        {Math.round(totals.cgst + totals.sgst + totals.igst)}
+                        {Math.round(totals.cgst + totals.sgst )}
                       </td>
                     </tr>
                     <tr>
