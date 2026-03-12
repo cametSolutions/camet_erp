@@ -260,39 +260,44 @@ const OrdersDashboard = () => {
   console.log(cashAmount);
 
   useEffect(() => {
-    const shouldOpenPaymentModal = sessionStorage.getItem(
-      "returnToPaymentModal",
-    );
-    const savedModalData = sessionStorage.getItem("paymentModalData");
+    if (location.state?.fromTable) {
+      const shouldOpenPaymentModal = sessionStorage.getItem(
+        "returnToPaymentModal",
+      );
+      const savedModalData = sessionStorage.getItem("paymentModalData");
 
-    if (shouldOpenPaymentModal === "true" && savedModalData) {
-      try {
-        const modalData = JSON.parse(savedModalData);
+      if (shouldOpenPaymentModal === "true" && savedModalData) {
+        try {
+          const modalData = JSON.parse(savedModalData);
 
-        // Restore modal state
-        setSelectedDataForPayment(modalData.selectedDataForPayment);
-        setPaymentMode(modalData.paymentMode);
-        setShowPaymentModal(true); // ✅ This is correct
+          // Restore modal state
+          setSelectedDataForPayment(modalData.selectedDataForPayment);
+          setPaymentMode(modalData.paymentMode);
+          setShowPaymentModal(true); // ✅ This is correct
 
-        // Restore other relevant states
-        if (modalData.selectedKot) {
-          setSelectedKot(modalData.selectedKot);
+          // Restore other relevant states
+          if (modalData.selectedKot) {
+            setSelectedKot(modalData.selectedKot);
+          }
+          if (modalData.discountAmount) {
+            setDiscountAmount(modalData.discountAmount);
+          }
+          if (modalData.note) {
+            setNote(modalData.note);
+          }
+
+          // Clear session storage
+          sessionStorage.removeItem("returnToPaymentModal");
+          sessionStorage.removeItem("paymentModalData");
+        } catch (error) {
+          console.error("Error restoring payment modal:", error);
+          sessionStorage.removeItem("returnToPaymentModal");
+          sessionStorage.removeItem("paymentModalData");
         }
-        if (modalData.discountAmount) {
-          setDiscountAmount(modalData.discountAmount);
-        }
-        if (modalData.note) {
-          setNote(modalData.note);
-        }
-
-        // Clear session storage
-        sessionStorage.removeItem("returnToPaymentModal");
-        sessionStorage.removeItem("paymentModalData");
-      } catch (error) {
-        console.error("Error restoring payment modal:", error);
-        sessionStorage.removeItem("returnToPaymentModal");
-        sessionStorage.removeItem("paymentModalData");
       }
+    } else {
+      sessionStorage.removeItem("returnToPaymentModal");
+      sessionStorage.removeItem("paymentModalData");
     }
   }, []);
 
@@ -859,7 +864,7 @@ const OrdersDashboard = () => {
       }
       return findOne?.items || []; // return empty array if not found
     });
-console.log(itemList);
+    console.log(itemList);
     let subtotal = itemList
       .reduce((acc, item) => acc + Number(item.total), 0)
       .toFixed(2);
@@ -885,7 +890,7 @@ console.log(itemList);
         discountType: discountType,
         note: note || "",
         isDiscount: true,
-        finalValue : Number(discountAmount),
+        finalValue: Number(discountAmount),
       });
     }
 
@@ -2385,13 +2390,9 @@ console.log(itemList);
                             }),
                           );
 
-                          const returnUrl = encodeURIComponent(
-                            window.location.pathname,
-                          );
-                          window.open(
-                            `/sUsers/addParty?returnUrl=${returnUrl}`,
-                            "_blank",
-                          );
+                          navigate("/sUsers/addParty", {
+                            state: { from: "/sUsers/kotPage" },
+                          });
                         }}
                         className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-lg text-xs font-semibold hover:from-blue-600 hover:to-indigo-600 transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105 active:scale-95"
                       >
