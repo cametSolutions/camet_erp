@@ -3549,7 +3549,7 @@ export const updateConfigurationForHotelAndRestaurant = async (req, res) => {
   try {
     const { cmp_id } = req.params;
     const data = req.body;
-
+console.log("xxxxxxxxxxxx1",data);
     let updateData = {};
 
     // Handle different types of updates
@@ -3601,16 +3601,25 @@ export const updateConfigurationForHotelAndRestaurant = async (req, res) => {
           [`configurations.0.orderTypes.${data.field}`]: data.checked,
         },
       };
-    } else if (data.title) {
+    }else if(data.title == "restaurantPrint"){
+      updateData = {
+          $set: {
+            [`configurations.0.defaultPrint.showBeforeSaleInRestaurant`]: data.checked,
+          },
+        };
+
+    }  else if (data.title) {
       // Fallback for backward compatibility with old toggle structure
       updateData = {
         $set: {
           [`configurations.0.addRateWithTax.${data.title}`]: data.checked,
         },
       };
-    } else {
+    }else {
       return res.status(400).json({ message: "Invalid data structure" });
     }
+
+    console.log("updateData", updateData);
 
     const updatedDoc = await Organization.findOneAndUpdate(
       { _id: cmp_id },

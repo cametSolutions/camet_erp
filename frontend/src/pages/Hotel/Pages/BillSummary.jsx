@@ -25,7 +25,7 @@ const computeKotBreakdown = (salesData) => {
   }, {});
 };
 
-const round2 = (value) => Math.round((value || 0)); // integer rounding
+const round2 = (value) => Math.round(value || 0); // integer rounding
 
 /* ===================== PDF Export ===================== */
 
@@ -37,7 +37,7 @@ export const generatePDF = (
   businessType,
   totals,
   kotTypeFilter,
-  mealPeriodFilter
+  mealPeriodFilter,
 ) => {
   if (!salesData || salesData.length === 0) return;
 
@@ -48,14 +48,14 @@ export const generatePDF = (
       filters.push(`Meal Period: ${mealPeriodFilter}`);
     if (filters.length === 0) return "";
     return `<div style="margin-top:4px;font-size:10px;">Filters: ${filters.join(
-      " | "
+      " | ",
     )}</div>`;
   };
 
   const printWindow = window.open(
     "",
     "_blank",
-    "width=1000,height=800,scrollbars=yes"
+    "width=1000,height=800,scrollbars=yes",
   );
 
   const html = `
@@ -224,7 +224,7 @@ export const generatePDF = (
               (row.credit || 0) > 0;
             const grossAmount = (row.amount || 0) - (row.igst || 0);
             const totalTax =
-              (row.cgst || 0) + (row.sgst || 0) + (row.igst || 0);
+              (row.cgst || 0) + (row.sgst || 0) ;
 
             return `
               <tr>
@@ -263,9 +263,9 @@ export const generatePDF = (
         <tr class="totals-row">
           <td class="text-left" colspan="3">Total</td>
           <td class="text-right">${Math.round(totals.amount)}</td>
-          <td>${Math.round(totals.cgst)}</td>
-          <td>${Math.round(totals.sgst)}</td>
-          <td>${Math.round(totals.cgst + totals.sgst + totals.igst)}</td>
+          <td>${totals.cgst.toFixed(2)}</td>
+          <td>${totals.sgst.toFixed(2)}</td>
+          <td>${(totals.cgst + totals.sgst).toFixed(2)}</td>
           <td>${Math.round(totals.disc)}</td>
           <td>${Math.round(totals.roundOff)}</td>
           <td>${Math.round(totals.totalWithTax)}</td>
@@ -286,39 +286,39 @@ export const generatePDF = (
         <div class="summary-title">Financial Summary</div>
         <table class="summary-table">
           <tr><td><strong>Gross Amount</strong></td><td class="text-right">${Math.round(
-            totals.amount
+            totals.amount,
           )}</td></tr>
           <tr><td><strong>Discount</strong></td><td class="text-right">${Math.round(
-            totals.disc
+            totals.disc,
           )}</td></tr>
           <tr><td><strong>CGST</strong></td><td class="text-right">${Math.round(
-            totals.cgst
+            totals.cgst,
           )}</td></tr>
           <tr><td><strong>SGST</strong></td><td class="text-right">${Math.round(
-            totals.sgst
+            totals.sgst,
           )}</td></tr>
           <tr><td><strong>Total Tax</strong></td><td class="text-right">${Math.round(
-            totals.cgst + totals.sgst + totals.igst
+            totals.cgst + totals.sgst,
           )}</td></tr>
           <tr><td><strong>Cash</strong></td><td class="text-right">${Math.round(
-            totals.cash
+            totals.cash,
           )}</td></tr>
           <tr><td><strong>UPI</strong></td><td class="text-right">${Math.round(
-            totals.upi
+            totals.upi,
           )}</td></tr>
           <tr><td><strong>Bank</strong></td><td class="text-right">${Math.round(
-            totals.bank || 0
+            totals.bank || 0,
           )}</td></tr>
           <tr><td><strong>Card</strong></td><td class="text-right">${Math.round(
-            totals.card || 0
+            totals.card || 0,
           )}</td></tr>
           <tr><td><strong>Credit Amount</strong></td><td class="text-right">${Math.round(
-            totals.credit
+            totals.credit,
           )}</td></tr>
           <tr class="total-row">
             <td><strong>Net Sales</strong></td>
             <td class="text-right"><strong>${Math.round(
-              totals.totalWithTax
+              totals.totalWithTax,
             )}</strong></td>
           </tr>
         </table>
@@ -344,7 +344,7 @@ export const generatePDF = (
             <tr>
               <td>- Transactions With Out Agent</td>
               <td class="text-right">${Math.round(
-                summary.countWithOutAgent || 0
+                summary.countWithOutAgent || 0,
               )}</td>
             </tr>
           `
@@ -356,26 +356,22 @@ export const generatePDF = (
             <tr style="background:#dcfce7;">
               <td><strong>Restaurant Sales</strong></td>
               <td class="text-right">${Math.round(
-                summary.restaurantCount || 0
+                summary.restaurantCount || 0,
               )}</td>
             </tr>
             <tr>
               <td>- Room Service</td>
               <td class="text-right">${Math.round(
-                summary.IsRoomService || 0
+                summary.IsRoomService || 0,
               )}</td>
             </tr>
             <tr>
               <td>- Take Away</td>
-              <td class="text-right">${Math.round(
-                summary.IsTakeaway || 0
-              )}</td>
+              <td class="text-right">${Math.round(summary.IsTakeaway || 0)}</td>
             </tr>
             <tr>
               <td>- Delivery</td>
-              <td class="text-right">${Math.round(
-                summary.IsDelivery || 0
-              )}</td>
+              <td class="text-right">${Math.round(summary.IsDelivery || 0)}</td>
             </tr>
             <tr>
               <td>- Dine In</td>
@@ -389,7 +385,7 @@ export const generatePDF = (
             <tr>
               <td>- Others</td>
               <td class="text-right">${Math.round(
-                summary.restaurantSales.otherCount || 0
+                summary.restaurantSales.otherCount || 0,
               )}</td>
             </tr>
           `
@@ -483,8 +479,7 @@ const exportToExcel = (
         row.mode === "Credit" ||
         (row.credit || 0) > 0;
       const grossAmount = (row.amount || 0) - (row.igst || 0);
-      const totalTax =
-        (row.cgst || 0) + (row.sgst || 0) + (row.igst || 0);
+      const totalTax = (row.cgst || 0) + (row.sgst || 0);
 
       const baseRow = [
         row.billNo || "",
@@ -511,7 +506,7 @@ const exportToExcel = (
 
       baseRow.push(
         isCreditSale ? Math.round(row.totalWithTax || 0) : "",
-        isCreditSale ? row.creditDescription || row.partyName || "" : ""
+        isCreditSale ? row.creditDescription || row.partyName || "" : "",
       );
 
       return baseRow;
@@ -521,9 +516,9 @@ const exportToExcel = (
       "",
       "",
       Math.round(totals.amount),
-      Math.round(totals.cgst),
-      Math.round(totals.sgst),
-      Math.round(totals.cgst + totals.sgst + totals.igst),
+      totals.cgst.toFixed(2),
+      totals.sgst.toFixed(2),
+      (totals.cgst + totals.sgst).toFixed(2),
       Math.round(totals.disc),
       Math.round(totals.roundOff),
       Math.round(totals.totalWithTax),
@@ -540,9 +535,9 @@ const exportToExcel = (
     ["FINANCIAL SUMMARY"],
     ["Gross Amount", Math.round(totals.amount)],
     ["Discount", Math.round(totals.disc)],
-    ["CGST", Math.round(totals.cgst)],
-    ["SGST", Math.round(totals.sgst)],
-    ["Total Tax", Math.round(totals.cgst + totals.sgst + totals.igst)],
+    ["CGST", (totals.cgst).toFixed(2)],
+    ["SGST",(totals.sgst).toFixed(2)],
+    ["Total Tax", (totals.cgst + totals.sgst).toFixed(2)],
     ["Cash", Math.round(totals.cash)],
     ["UPI", Math.round(totals.upi)],
     ["Bank", Math.round(totals.bank || 0)],
@@ -592,7 +587,7 @@ const exportToExcel = (
     [
       "TOTAL",
       Math.round(
-        Object.values(kotBreakdown).reduce((sum, k) => sum + k.amount, 0)
+        Object.values(kotBreakdown).reduce((sum, k) => sum + k.amount, 0),
       ),
       Object.values(kotBreakdown).reduce((sum, k) => sum + k.count, 0),
     ],
@@ -603,12 +598,16 @@ const exportToExcel = (
       row
         .map((cell) => {
           const value = cell == null ? "" : String(cell);
-          if (value.includes(",") || value.includes('"') || value.includes("\n")) {
+          if (
+            value.includes(",") ||
+            value.includes('"') ||
+            value.includes("\n")
+          ) {
             return `"${value.replace(/"/g, '""')}"`;
           }
           return value;
         })
-        .join(",")
+        .join(","),
     )
     .join("\n");
 
@@ -617,7 +616,7 @@ const exportToExcel = (
   const url = URL.createObjectURL(blob);
   link.setAttribute(
     "download",
-    `Sales_Report_${reportPeriod.replace(/\s+/g, "_")}.csv`
+    `Sales_Report_${reportPeriod.replace(/\s+/g, "_")}.csv`,
   );
   link.href = url;
   link.style.visibility = "hidden";
@@ -656,10 +655,10 @@ const BillSummary = () => {
   const navigate = useNavigate();
 
   const cmp_id = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg._id
+    (state) => state.secSelectedOrganization.secSelectedOrg._id,
   );
   const owner = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg
+    (state) => state.secSelectedOrganization.secSelectedOrg,
   );
 
   useEffect(() => {
@@ -673,9 +672,7 @@ const BillSummary = () => {
   const updateDateTime = () => {
     const now = new Date();
     const formatted =
-      now.toLocaleDateString("en-GB") +
-      " " +
-      now.toTimeString().split(" ")[0];
+      now.toLocaleDateString("en-GB") + " " + now.toTimeString().split(" ")[0];
     setCurrentDateTime(formatted);
   };
 
@@ -727,7 +724,7 @@ const BillSummary = () => {
 
       const response = await api.get(
         `/api/sUsers/hotel-sales/${cmp_id}/${businessType}`,
-        { params: salesParams }
+        { params: salesParams },
       );
 
       const result = response.data;
@@ -757,7 +754,7 @@ const BillSummary = () => {
       console.error("Error fetching sales data:", err);
       setError(
         err.response?.data?.message ||
-          "Failed to fetch sales data. Please check your connection and try again."
+          "Failed to fetch sales data. Please check your connection and try again.",
       );
       setSalesData([]);
       setSummary({
@@ -818,7 +815,7 @@ const BillSummary = () => {
       upi: 0,
       bank: 0,
       card: 0,
-    }
+    },
   );
 
   const { kotTypes, mealPeriods } = getFilterOptions();
@@ -850,7 +847,7 @@ const BillSummary = () => {
       businessType || "all",
       totals,
       kotTypeFilter,
-      mealPeriodFilter
+      mealPeriodFilter,
     );
   };
 
@@ -867,7 +864,7 @@ const BillSummary = () => {
       businessType || "all",
       totals,
       kotTypeFilter,
-      mealPeriodFilter
+      mealPeriodFilter,
     );
   };
 
@@ -891,7 +888,8 @@ const BillSummary = () => {
               {owner?.flat || owner?.road || "Sales Register of the Outlet"}
             </div>
             <div className="mt-3 inline-block px-4 py-1 rounded-full bg-gray-900 text-white text-xs md:text-sm font-semibold tracking-wide uppercase shadow-sm">
-              Sales Register - {businessType === "hotel" ? "Hotel" : "Restaurant"}
+              Sales Register -{" "}
+              {businessType === "hotel" ? "Hotel" : "Restaurant"}
             </div>
           </div>
 
@@ -1170,7 +1168,7 @@ const BillSummary = () => {
                       row.mode === "Credit" ||
                       (row.credit || 0) > 0;
                     const gross = (row.amount || 0) - (row.igst || 0);
-               
+
                     return (
                       <tr
                         key={index}
@@ -1218,9 +1216,7 @@ const BillSummary = () => {
                             : "-"}
                         </td>
                         <td className="border border-gray-200 px-2 py-1 text-right">
-                          {Number(row.upi)
-                            ? Math.round(Number(row.upi))
-                            : "-"}
+                          {Number(row.upi) ? Math.round(Number(row.upi)) : "-"}
                         </td>
                         <td className="border border-gray-200 px-2 py-1 text-right">
                           {Number(row.bank)
@@ -1275,10 +1271,10 @@ const BillSummary = () => {
                       {Math.round(totals.amount)}
                     </td>
                     <td className="border border-gray-800 px-2 py-2 text-right">
-                      {(totals.cgst).toFixed(2)}
+                      {totals.cgst.toFixed(2)}
                     </td>
                     <td className="border border-gray-800 px-2 py-2 text-right">
-                      {(totals.sgst).toFixed(2)}
+                      {totals.sgst.toFixed(2)}
                     </td>
                     <td className="border border-gray-800 px-2 py-2 text-right">
                       {Math.round(totals.cgst + totals.sgst)}
@@ -1372,7 +1368,7 @@ const BillSummary = () => {
                         Total Tax
                       </td>
                       <td className="py-1 text-right text-gray-900">
-                        {Math.round(totals.cgst + totals.sgst )}
+                        {Math.round(totals.cgst + totals.sgst)}
                       </td>
                     </tr>
                     <tr>
@@ -1434,8 +1430,7 @@ const BillSummary = () => {
                           </td>
                           <td className="text-right py-2 px-2 text-gray-900">
                             {Math.round(summary.agentCount || 0) +
-                              Math.round(summary.countWithOutAgent || 0) ||
-                              "0"}
+                              Math.round(summary.countWithOutAgent || 0) || "0"}
                           </td>
                         </tr>
                         <tr>
@@ -1492,9 +1487,7 @@ const BillSummary = () => {
                           </td>
                         </tr>
                         <tr>
-                          <td className="py-1 px-2 text-gray-600">
-                            - Dine In
-                          </td>
+                          <td className="py-1 px-2 text-gray-600">- Dine In</td>
                           <td className="text-right py-1 px-2 text-gray-800">
                             {Math.round(summary.restaurantCount || 0) -
                               (Math.round(summary.IsRoomService || 0) +
@@ -1503,11 +1496,11 @@ const BillSummary = () => {
                           </td>
                         </tr>
                         <tr>
-                          <td className="py-1 px-2 text-gray-600">
-                            - Others
-                          </td>
+                          <td className="py-1 px-2 text-gray-600">- Others</td>
                           <td className="text-right py-1 px-2 text-gray-800">
-                            {Math.round(summary.restaurantSales.otherCount || 0)}
+                            {Math.round(
+                              summary.restaurantSales.otherCount || 0,
+                            )}
                           </td>
                         </tr>
                       </>

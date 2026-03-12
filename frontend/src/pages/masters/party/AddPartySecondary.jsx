@@ -90,6 +90,7 @@ function AddPartySecondary() {
         title={"Add Party"}
         from={from}
         loading={loading}
+        fromPayment={from === "/sUsers/kotPage" ? true : false}
       />
 
       <AddPartyForm

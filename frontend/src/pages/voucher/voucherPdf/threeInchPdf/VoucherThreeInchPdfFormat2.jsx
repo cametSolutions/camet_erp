@@ -17,7 +17,9 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
     (org = useSelector(
       (state) => state?.secSelectedOrganization?.secSelectedOrg,
     ));
-
+  let showPrintButton =
+    org?.configurations?.[0]?.defaultPrint?.showBeforeSaleInRestaurant;
+  console.log(showPrintButton);
   console.log(data);
 
   const isIndian = useSelector(
@@ -621,12 +623,15 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
 
         {/* Controls */}
         <div className="flex gap-3 justify-center p-2">
-          <button
-            className="px-3 py-1 rounded-lg bg-gray-500 text-white font-medium hover:bg-gray-600 active:scale-95 transition"
-            onClick={handlePrint}
-          >
-            Print
-          </button>
+          {showPrintButton && (
+            <button
+              className="px-3 py-1 rounded-lg bg-gray-500 text-white font-medium hover:bg-gray-600 active:scale-95 transition"
+              onClick={handlePrint}
+            >
+              Print
+            </button>
+          )}
+
           {isPreview && (
             <>
               <button

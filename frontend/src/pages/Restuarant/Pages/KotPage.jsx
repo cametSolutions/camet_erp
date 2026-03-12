@@ -4,6 +4,7 @@ import useFetch from "@/customHook/useFetch";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
+import PrintModal from "@/pages/Hotel/Components/PrintModal";
 
 import {
   MdDescription,
@@ -92,6 +93,8 @@ const OrdersDashboard = () => {
   const [discountType, setDiscountType] = useState("amount"); // "amount" or "percentage"
   const [discountValue, setDiscountValue] = useState(0);
   const [isForComp, setIsForComp] = useState(false);
+  const [showPrintConfirmModal, setShowPrintConfirmModal] = useState(false);
+  const [printData, setPrintData] = useState(null);
 
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -546,7 +549,7 @@ const OrdersDashboard = () => {
 
   const filteredOrders = getFilteredOrders();
 
-  console.log("filteredOrders", selectedDataForPayment);
+  console.log("filteredOrders", filteredOrders);
 
   const handleSavePayment = async (id) => {
     console.log(paymentMode);
@@ -762,6 +765,7 @@ const OrdersDashboard = () => {
             ? "Complimentary order processed successfully!"
             : response?.data?.message,
         );
+        setPrintData(response?.data?.data);
         setShowPaymentModal(false);
         setSelectedDiscountCharge(null);
         setDiscountAmount(0);
@@ -771,6 +775,7 @@ const OrdersDashboard = () => {
         setIsComplimentary(false); //
         setPreviewForSales(null);
         setIsForComp(false);
+        setShowPrintConfirmModal(true);
       }
     } catch (error) {
       console.error("Payment error:", error);
@@ -1029,6 +1034,13 @@ const OrdersDashboard = () => {
     }
   }, [selectedKot]);
 
+  const handlePrintShow = () => {
+    console.log(printData);
+    navigate(`/sUsers/sharesalesThreeInch2`, {
+      state: printData.salesRecord,
+    });
+  };
+
   console.log("selectedKot", filteredOrders);
   return (
     <>
@@ -1199,6 +1211,8 @@ const OrdersDashboard = () => {
                 const isOrderSelected = (order) => {
                   return selectedKot.find((item) => item.id === order._id);
                 };
+                console.log(order._id);
+                console.log(selectedKotFromRedirect);
 
                 return (
                   <div
@@ -1211,7 +1225,8 @@ const OrdersDashboard = () => {
                     onClick={() => {
                       if (
                         showKotNotification &&
-                        order._id === selectedKotFromRedirect._id
+                        selectedKotFromRedirect &&
+                        order._id == selectedKotFromRedirect._id
                       ) {
                         setShowKotNotification(false);
                       }
@@ -2609,6 +2624,7 @@ const OrdersDashboard = () => {
           </AnimatePresence>
         </div>
       )}
+      {showPrintConfirmModal && <PrintModal onSubmit={handlePrintShow} />}
     </>
   );
 };
