@@ -623,6 +623,7 @@ const RestaurantPOS = () => {
           paymentMode: "single",
         };
       }
+console.log(selectedDataForPayment);
 
       // Step 2: Make API call
       const response = await api.post(

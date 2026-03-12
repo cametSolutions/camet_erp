@@ -232,7 +232,10 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
       return `${prettyType(p.type)}`;
     }
 
-    return paymentSplits.map((p) => `${prettyType(p.type)} `).join(" | ");
+    return paymentSplits
+      .filter((p) => p.amount > 0)
+      .map((p) => `${prettyType(p.type)}`)
+      .join(" | ");
   };
 
   return (
@@ -397,7 +400,7 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
               org?.configurations?.[0]?.addRateWithTax?.sale ??
               true;
 
-            console.log(addRateWithTax );
+            console.log(addRateWithTax);
             console.log(count);
             console.log(el.igst);
             console.log(total);
@@ -412,7 +415,7 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
 
             console.log({ rate });
 
-            const amount = Math.round(Number(rate) * count).toFixed(2); // WITHOUT tax
+            const amount = Math.round(Number(rate)).toFixed(2); // WITHOUT tax
 
             return (
               <div key={index} style={itemGrid}>
