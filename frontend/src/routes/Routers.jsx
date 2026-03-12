@@ -739,7 +739,7 @@ const Routers = () => {
           }
         ></Route>
             <Route
-          path="/sUsers/shareSalesThreeInch2"
+          path="/sUsers/shareSalesThreeInch2/:isFinalized"
           element={
             <ProtectedSecRoute>
               <VoucherPdfInitiatorThreeInch2 />

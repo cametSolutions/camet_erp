@@ -232,9 +232,9 @@ export const generatePDF = (
                 <td>${row.date ? new Date(row.date).toLocaleDateString() : "-"}</td>
                 <td class="text-left">${row.partyName || "-"}</td>
                 <td class="text-right">${Math.round(grossAmount)}</td>
-                <td>${Math.round(row.cgst || 0)}</td>
-                <td>${Math.round(row.sgst || 0)}</td>
-                <td>${Math.round(totalTax)}</td>
+                <td>${(row.cgst || 0).toFixed(2)}</td>
+                <td>${(row.sgst || 0).toFixed(2)}</td>
+                <td>${(row.igst || 0).toFixed(2)}</td>
                 <td>${Math.round(row.disc || 0)}</td>
                 <td>${Math.round(row.roundOff || 0)}</td>
                 <td>${Math.round(row.totalWithTax || 0)}</td>
@@ -265,7 +265,7 @@ export const generatePDF = (
           <td class="text-right">${Math.round(totals.amount)}</td>
           <td>${totals.cgst.toFixed(2)}</td>
           <td>${totals.sgst.toFixed(2)}</td>
-          <td>${(totals.cgst + totals.sgst).toFixed(2)}</td>
+          <td>${totals.igst.toFixed(2)}</td>
           <td>${Math.round(totals.disc)}</td>
           <td>${Math.round(totals.roundOff)}</td>
           <td>${Math.round(totals.totalWithTax)}</td>
@@ -479,16 +479,16 @@ const exportToExcel = (
         row.mode === "Credit" ||
         (row.credit || 0) > 0;
       const grossAmount = (row.amount || 0) - (row.igst || 0);
-      const totalTax = (row.cgst || 0) + (row.sgst || 0);
+
 
       const baseRow = [
         row.billNo || "",
         row.date ? new Date(row.date).toLocaleDateString() : "",
         row.partyName || "",
         Math.round(grossAmount),
-        Math.round(row.cgst || 0),
-        Math.round(row.sgst || 0),
-        Math.round(totalTax),
+        (row.cgst || 0).toFixed(2),
+        (row.sgst || 0).toFixed(2),
+        (row.igst || 0).toFixed(2),
         Math.round(row.disc || 0),
         Math.round(row.roundOff || 0),
         Math.round(row.totalWithTax || 0),
@@ -518,7 +518,7 @@ const exportToExcel = (
       Math.round(totals.amount),
       totals.cgst.toFixed(2),
       totals.sgst.toFixed(2),
-      (totals.cgst + totals.sgst).toFixed(2),
+      (totals.igst).toFixed(2),
       Math.round(totals.disc),
       Math.round(totals.roundOff),
       Math.round(totals.totalWithTax),
