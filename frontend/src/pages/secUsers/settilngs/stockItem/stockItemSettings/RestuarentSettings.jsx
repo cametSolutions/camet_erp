@@ -11,6 +11,7 @@ import { LiaMoneyCheckAltSolid } from "react-icons/lia";
 import { updateConfiguration } from "../../../../../../slices/secSelectedOrgSlice.js";
 import { useLocation } from "react-router-dom";
 import { SiCashapp } from "react-icons/si";
+import { TiPrinter } from "react-icons/ti";
 import api from "@/api/api";
 
 const restuarentSettings = () => {
@@ -21,7 +22,7 @@ const restuarentSettings = () => {
   const { industry, _id, configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg,
   );
-
+console.log(configurations);
   const handleToggleChangeFromParent = async (data) => {
     console.log(data);
     let url;
@@ -117,6 +118,15 @@ const restuarentSettings = () => {
       toggle: true,
       toggleValue: configurations[0]?.addRateWithTax?.restaurantSale,
       dbField: "restaurantSale",
+    });
+     settingsOptions.push({
+      title: "show Print Option BeforeSale",
+      description: "Better tax calculations for better organization",
+      icon: <TiPrinter />,
+      active: true,
+      toggle: true,
+      toggleValue: configurations[0]?.defaultPrint?.showBeforeSaleInRestaurant,
+      dbField: "restaurantPrint",
     });
     settingsOptions.push({
       title: "Default Print",

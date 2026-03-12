@@ -75,6 +75,7 @@ const organizationSchema = new mongoose.Schema(
             print2: false,
             restaurantPrint1: true,
             restaurantPrint2: false,
+            showBeforeSaleInRestaurant: false,
           },
         },
            orderTypes: {
