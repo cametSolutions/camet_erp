@@ -379,6 +379,7 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
           {/* Items */}
           {/* Items */}
           {data?.items?.map((el, index) => {
+            console.log(el);
             const total = Number(el?.total || 0);
             const count = Number(el?.totalCount || 1);
             const totalTax = Number(
@@ -396,8 +397,10 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
               org?.configurations?.[0]?.addRateWithTax?.sale ??
               true;
 
-            console.log( addRateWithTax );
-            console.log(el.igst)
+            console.log(addRateWithTax );
+            console.log(count);
+            console.log(el.igst);
+            console.log(total);
 
             const rate = addRateWithTax
               ? count > 0
