@@ -3,7 +3,7 @@ import { useEffect, useState, useRef } from "react";
 import { useSelector } from "react-redux";
 
 import { defaultPrintSettings } from "../../../../../utils/defaultConfigurations";
-import { useLocation,useParams  } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import { useReactToPrint } from "react-to-print";
 import TitleDiv from "@/components/common/TitleDiv";
 
@@ -227,19 +227,26 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
     return map[type] || type.toUpperCase();
   };
 
-  const getPaymentSummary = () => {
-    if (!paymentSplits.length) return null;
+// Payment splits LEFT side list
+const getPaymentSummary = () => {
+  if (!paymentSplits.length) return null;
+  console.log(paymentSplits);
 
-    if (paymentSplits.length === 1) {
-      const p = paymentSplits[0];
-      return `${prettyType(p.type)}`;
-    }
+  return paymentSplits
+    .filter((p) => p.amount > 0)
+    .map((p) => (
+      <div
+        key={p.type}
+        style={{
+          fontSize: "10px",
+          fontWeight: "bold",
+        }}
+      >
+        {prettyType(p.type)} : ₹ {p.amount.toFixed(2)}
+      </div>
+    ));
+};
 
-    return paymentSplits
-      .filter((p) => p.amount > 0)
-      .map((p) => `${prettyType(p.type)}`)
-      .join(" | ");
-  };
 
   return (
     <>
@@ -410,7 +417,7 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
 
             const rate = addRateWithTax
               ? count > 0
-                ? ((total * 100) / (100 + el.igst)/count).toFixed(2)
+                ? ((total * 100) / (100 + el.igst) / count).toFixed(2)
                 : "0.00" // WITH tax (like format 1)
               : count > 0
                 ? ((total - totalTax) / count).toFixed(2)
@@ -435,116 +442,153 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
           <div style={{ borderBottom: "1px dotted #000", margin: "6px 0" }} />
 
           {/* Totals */}
-          <div style={{ fontSize: "10px", marginBottom: "4px" }}>
-            <div
-              style={{ ...flexRow, marginBottom: "2px", fontWeight: "bold" }}
-            >
-              <div style={{ marginLeft: "auto", width: "60px" }}>Amount</div>
-              <div style={textRight}>{(subTotal).toFixed(2)}</div>
+
+       {/* Totals row: left = payment splits, right = Amount / taxes */}
+<div
+  style={{
+    fontSize: "10px",
+    marginBottom: "4px",
+    display: "flex",
+    flexDirection: "row",
+  }}
+>
+  {/* LEFT SIDE: payment splits */}
+  <div style={{ flex: 1 }}>
+    {getPaymentSummary()}
+  </div>
+
+  {/* RIGHT SIDE: Amount + taxes */}
+  <div style={{ flex: 1 }}>
+    {/* Amount */}
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "row",
+        marginBottom: "2px",
+        fontWeight: "bold",
+      }}
+    >
+      <div
+        style={{
+          marginLeft: "auto",
+          width: 60,
+          textAlign: "right",
+        }}
+      >
+        Amount
+      </div>
+      <div
+        style={{
+          width: 60,
+          textAlign: "right",
+        }}
+      >
+        {subTotal.toFixed(2)}
+      </div>
+    </div>
+
+    {/* same‑state Indian tax */}
+    {isIndian &&
+      isSameState &&
+      calculateTotalTax() > 0 &&
+      (() => {
+        const entries = Object.entries(cgstGroups);
+
+        if (entries.length === 0) {
+          return (
+            <>
+              <div style={flexRow}>
+                <div
+                  style={{
+                    marginLeft: "auto",
+                    width: 70,
+                    fontWeight: "bold",
+                  }}
+                >
+                  CGST {cgstPercentage}%
+                </div>
+                <div style={textRight}>{cgst}</div>
+              </div>
+              <div style={flexRow}>
+                <div
+                  style={{
+                    marginLeft: "auto",
+                    width: 70,
+                    fontWeight: "bold",
+                  }}
+                >
+                  SGST {sgstPercentage}%
+                </div>
+                <div style={textRight}>{cgst}</div>
+              </div>
+            </>
+          );
+        }
+
+        return entries.map(([rate, { cgstAmt, sgstAmt, sgstRate }]) => (
+          <div key={rate}>
+            <div style={flexRow}>
+              <div
+                style={{
+                  marginLeft: "auto",
+                  width: 70,
+                  fontWeight: "bold",
+                }}
+              >
+                CGST {rate}%
+              </div>
+              <div style={textRight}>{cgstAmt.toFixed(2)}</div>
             </div>
-            {getPaymentSummary() && (
-              <div style={{ ...bold }}>Payment: {getPaymentSummary()}</div>
-            )}
-            {isIndian &&
-              isSameState &&
-              calculateTotalTax() > 0 &&
-              (() => {
-                // Group items by their CGST rate and sum tax amounts per rate
-
-                const entries = Object.entries(cgstGroups);
-
-                // Fallback: if no totalCgstAmt on items, use the overall cgst/sgst split
-                if (entries.length === 0) {
-                  return (
-                    <>
-                      <div style={flexRow}>
-                        <div
-                          style={{
-                            marginLeft: "auto",
-                            width: "70px",
-                            fontWeight: "bold",
-                          }}
-                        >
-                          CGST {cgstPercentage}%
-                        </div>
-                        <div style={textRight}>{cgst}</div>
-                      </div>
-                      <div style={flexRow}>
-                        <div
-                          style={{
-                            marginLeft: "auto",
-                            width: "70px",
-                            fontWeight: "bold",
-                          }}
-                        >
-                          SGST {sgstPercentage}%
-                        </div>
-                        <div style={textRight}>{cgst}</div>
-                      </div>
-                    </>
-                  );
-                }
-
-                return entries.map(([rate, { cgstAmt, sgstAmt, sgstRate }]) => (
-                  <div key={rate}>
-                    <div style={flexRow}>
-                      <div
-                        style={{
-                          marginLeft: "auto",
-                          width: "70px",
-                          fontWeight: "bold",
-                        }}
-                      >
-                        CGST {rate}%
-                      </div>
-                      <div style={textRight}>{cgstAmt.toFixed(2)}</div>
-                    </div>
-                    <div style={flexRow}>
-                      <div
-                        style={{
-                          marginLeft: "auto",
-                          width: "70px",
-                          fontWeight: "bold",
-                        }}
-                      >
-                        SGST {sgstRate}%
-                      </div>
-                      <div style={textRight}>{sgstAmt.toFixed(2)}</div>
-                    </div>
-                  </div>
-                ));
-              })()}
-
-            {isIndian && !isSameState && calculateTotalTax() > 0 && (
-              <div style={flexRow}>
-                <div
-                  style={{
-                    marginLeft: "auto",
-                    width: "70px",
-                    fontWeight: "bold",
-                  }}
-                >
-                  IGST {igstPercentage}%
-                </div>
-                <div style={textRight}>{tax}</div>
+            <div style={flexRow}>
+              <div
+                style={{
+                  marginLeft: "auto",
+                  width: 70,
+                  fontWeight: "bold",
+                }}
+              >
+                SGST {sgstRate}%
               </div>
-            )}
-
-            {!isIndian && calculateTotalTax() > 0 && (
-              <div style={flexRow}>
-                <div
-                  style={{
-                    marginLeft: "auto",
-                    width: "70px",
-                    fontWeight: "bold",
-                  }}
-                >
-                  Tax {igstPercentage}%
-                </div>
-                <div style={textRight}>{tax}</div>
-              </div>
-            )}
+              <div style={textRight}>{sgstAmt.toFixed(2)}</div>
+            </div>
           </div>
+        ));
+      })()}
+
+    {/* IGST */}
+    {isIndian && !isSameState && calculateTotalTax() > 0 && (
+      <div style={flexRow}>
+        <div
+          style={{
+            marginLeft: "auto",
+            width: 70,
+            fontWeight: "bold",
+          }}
+        >
+          IGST {igstPercentage}%
+        </div>
+        <div style={textRight}>{tax}</div>
+      </div>
+    )}
+
+    {/* Non‑Indian tax */}
+    {!isIndian && calculateTotalTax() > 0 && (
+      <div style={flexRow}>
+        <div
+          style={{
+            marginLeft: "auto",
+            width: 70,
+            fontWeight: "bold",
+          }}
+        >
+          Tax {igstPercentage}%
+        </div>
+        <div style={textRight}>{tax}</div>
+      </div>
+    )}
+  </div>
+</div>
+
 
           <div style={{ borderBottom: "1px dotted #000", margin: "6px 0" }} />
 
@@ -624,7 +668,7 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
 
         {/* Controls */}
         <div className="flex gap-3 justify-center p-2">
-          {(showPrintButton  || isFinalized) && (
+          {(showPrintButton || isFinalized) && (
             <button
               className="px-3 py-1 rounded-lg bg-gray-500 text-white font-medium hover:bg-gray-600 active:scale-95 transition"
               onClick={handlePrint}

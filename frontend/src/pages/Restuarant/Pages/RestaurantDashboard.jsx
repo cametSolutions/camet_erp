@@ -124,11 +124,11 @@ const RestaurantPOS = () => {
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id,
   );
-  
+
   const industry = org?.industry;
   const shouldFetch = Boolean(cmp_id);
 
-    const getIndustryTitle = () => {
+  const getIndustryTitle = () => {
     if (industry === 6) return "HMS";
     if (industry === 7) return "RMS";
     if (industry === 8) return "CMS";
@@ -141,7 +141,6 @@ const RestaurantPOS = () => {
     if (industry === 8) return "Cafe & Bakery";
     return "Restaurant";
   };
-
 
   const queryClient = useQueryClient();
   const isAdmin =
@@ -624,7 +623,7 @@ const RestaurantPOS = () => {
           paymentMode: "single",
         };
       }
-console.log(selectedDataForPayment);
+      console.log(selectedDataForPayment);
 
       // Step 2: Make API call
       const response = await api.post(
@@ -1152,15 +1151,14 @@ console.log(selectedDataForPayment);
                 <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center font-bold text-lg shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-shadow">
                   🍽️
                 </div>
-               <div>
-  <h1 className="text-base md:text-lg font-bold text-white hidden md:block tracking-tight">
-    {getIndustryTitle()}
-  </h1>
-  <p className="text-xs text-gray-400 hidden md:block">
-    {getIndustrySubtitle()}
-  </p>
-</div>
-
+                <div>
+                  <h1 className="text-base md:text-lg font-bold text-white hidden md:block tracking-tight">
+                    {getIndustryTitle()}
+                  </h1>
+                  <p className="text-xs text-gray-400 hidden md:block">
+                    {getIndustrySubtitle()}
+                  </p>
+                </div>
               </div>
 
               {/* Center Section - Price Levels */}
@@ -2071,6 +2069,7 @@ console.log(selectedDataForPayment);
                 roomData={roomData}
                 setRoomDetails={setRoomDetails}
                 roomDetails={roomDetails}
+                showHeader={false}
               />
             </div>
           </div>
