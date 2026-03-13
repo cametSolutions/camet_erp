@@ -20,7 +20,7 @@ const fetchBankAndCashSources = async (cmp_id) => {
     `/api/sUsers/getBankAndCashSources/${cmp_id}`,
     {
       withCredentials: true,
-    }
+    },
   );
   return response.data.data;
 };
@@ -45,7 +45,9 @@ function PaymentSplitting() {
   // Payment mode display information
   const paymentModeInfo = {
     cash: { title: "Cash", model: "Cash" },
-    upi: { title: "NEFT/UPI", model: "BankDetails" },
+    upi: { title: "NEFT/UPI/CARD/BANK", model: "BankDetails" },
+    bank: { title: "NEFT/UPI/CARD/BANK", model: "BankDetails" },
+    card: { title: "NEFT/UPI/CARD/BANK", model: "BankDetails" },
     cheque: { title: "Cheque", model: "BankDetails" },
     credit: { title: "Credit", model: "Party" },
   };
@@ -55,7 +57,7 @@ function PaymentSplitting() {
   const queryClient = useQueryClient();
 
   const { _id: cmp_id, configurations } = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg
+    (state) => state.secSelectedOrganization.secSelectedOrg,
   );
   const { enablePaymentSplittingAsCompulsory = false } = configurations[0];
 
@@ -82,7 +84,7 @@ function PaymentSplitting() {
     selectedVoucherSeries: selectedVoucherSeriesFromRedux,
     note: noteFromRedux,
     mode: modeFromRedux,
-    id: _idFromRedux
+    id: _idFromRedux,
   } = useSelector((state) => state.commonVoucherSlice);
 
   // Fetch BankDetails and Cash sources using TanStack Query
@@ -122,7 +124,7 @@ function PaymentSplitting() {
       const partyId = party._id;
 
       const isPartySelected = paymentSplittingData?.find(
-        (item) => item?.type === "credit"
+        (item) => item?.type === "credit",
       )?.ref_id;
 
       setPaymentSplits((prevSplits) => {
@@ -132,7 +134,7 @@ function PaymentSplitting() {
           switch (split.type) {
             case "cash":
               matchingSource = cashs.find(
-                (cash) => (cash.cash_id || cash._id) === partyId
+                (cash) => (cash.cash_id || cash._id) === partyId,
               );
               if (matchingSource) {
                 return {
@@ -145,7 +147,7 @@ function PaymentSplitting() {
             case "upi":
             case "cheque":
               matchingSource = banks.find(
-                (bank) => (bank.bank_id || bank._id) === partyId
+                (bank) => (bank.bank_id || bank._id) === partyId,
               );
               if (matchingSource) {
                 return {
@@ -197,8 +199,8 @@ function PaymentSplitting() {
       prevSplits.map((split) =>
         split.type === "credit"
           ? { ...split, amount: balanceAmount > 0 ? balanceAmount : 0 }
-          : split
-      )
+          : split,
+      ),
     );
   }, [totalNonCreditAmount, totalWithAdditionalCharges]);
 
@@ -229,7 +231,7 @@ function PaymentSplitting() {
     }
 
     setPaymentSplits((prev) =>
-      prev.map((split) => (split.type === type ? { ...split, amount } : split))
+      prev.map((split) => (split.type === type ? { ...split, amount } : split)),
     );
   };
 
@@ -247,7 +249,7 @@ function PaymentSplitting() {
           return { ...split, ref_id };
         }
         return split;
-      })
+      }),
     );
   };
 
@@ -270,6 +272,8 @@ function PaymentSplitting() {
         }));
       case "upi":
       case "cheque":
+      case "card":
+      case "bank":
         return banks.map((BankDetails) => ({
           value: BankDetails.bank_id || BankDetails._id,
           label: BankDetails.bank_ledname,
@@ -292,10 +296,10 @@ function PaymentSplitting() {
 
       const requiredKeys = ["amount", "ref_id"]; // Only these must be filled
       const hasValue = requiredKeys.some(
-        (key) => split[key] && split[key].toString().trim() !== ""
+        (key) => split[key] && split[key].toString().trim() !== "",
       );
       const allFilled = requiredKeys.every(
-        (key) => split[key] && split[key].toString().trim() !== ""
+        (key) => split[key] && split[key].toString().trim() !== "",
       );
 
       if (hasValue && !allFilled) {
@@ -324,7 +328,7 @@ function PaymentSplitting() {
 
     dispatch(addPaymentSplits(data));
     dispatch(
-      updateTotalValue({ field: "totalPaymentSplits", value: totalAmount })
+      updateTotalValue({ field: "totalPaymentSplits", value: totalAmount }),
     );
 
     navigate(-1, { replace: true });
@@ -340,7 +344,7 @@ function PaymentSplitting() {
 
     dispatch(addPaymentSplits(data));
     dispatch(
-      updateTotalValue({ field: "totalPaymentSplits", value: totalAmount })
+      updateTotalValue({ field: "totalPaymentSplits", value: totalAmount }),
     );
 
     submitHandler();
@@ -368,7 +372,6 @@ function PaymentSplitting() {
   };
 
   console.log(_idFromRedux);
-  
 
   const getApiEndPoint = () => {
     if (voucherTypeFromRedux) {
@@ -408,7 +411,7 @@ function PaymentSplitting() {
 
     if (!selectedVoucherSeriesFromRedux?._id) {
       toast.error(
-        "Error with your voucher series. Please select a valid series."
+        "Error with your voucher series. Please select a valid series.",
       );
       return;
     }
@@ -438,17 +441,18 @@ function PaymentSplitting() {
         /// these values are not getting latest data,so we need to take it directly form store
         finalAmount: Number(reduxData?.finalAmount?.toFixed(2) || 0),
         finalOutstandingAmount: Number(
-          reduxData?.finalOutstandingAmount?.toFixed(2) || Number(reduxData?.finalAmount?.toFixed(2) || 0)
+          reduxData?.finalOutstandingAmount?.toFixed(2) ||
+            Number(reduxData?.finalAmount?.toFixed(2) || 0),
         ),
         subTotal: Number(reduxData?.subTotal?.toFixed(2) || 0),
         totalPaymentSplits: Number(
-          reduxData?.totalPaymentSplits?.toFixed(2) || 0
+          reduxData?.totalPaymentSplits?.toFixed(2) || 0,
         ),
         totalAdditionalCharges: Number(
-          reduxData?.totalAdditionalCharges?.toFixed(2) || 0
+          reduxData?.totalAdditionalCharges?.toFixed(2) || 0,
         ),
         totalWithAdditionalCharges: Number(
-          reduxData?.totalWithAdditionalCharges?.toFixed(2) || 0
+          reduxData?.totalWithAdditionalCharges?.toFixed(2) || 0,
         ),
         party,
         items,
@@ -476,7 +480,7 @@ function PaymentSplitting() {
         {
           headers: { "Content-Type": "application/json" },
           withCredentials: true,
-        }
+        },
       );
       toast.success(res.data.message);
 
@@ -502,6 +506,8 @@ function PaymentSplitting() {
     }
     navigate(-1, { replace: true });
   };
+
+  console.log(paymentSplittingData);
 
   return (
     <div className="min-h-screen bg-gray-50 w-full">
@@ -552,15 +558,15 @@ function PaymentSplitting() {
                   <div className="col-span-4 flex items-center">
                     {split.type === "credit" ? (
                       paymentSplittingData?.find(
-                        (item) => item?.type == "credit"
+                        (item) => item?.type == "credit",
                       )?.ref_id !== null || split.ref_id ? (
                         <span className="text-sm font-medium w-full p-2 border rounded-md border-gray-300 bg-gray-100 cursor-not-allowed">
                           {truncateText(
                             split.reference_name ||
                               paymentSplittingData?.find(
-                                (item) => item?.type == "credit"
+                                (item) => item?.type == "credit",
                               )?.reference_name,
-                            20
+                            20,
                           )}
                         </span>
                       ) : (
