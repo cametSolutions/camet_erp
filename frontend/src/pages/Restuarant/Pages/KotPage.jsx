@@ -549,7 +549,7 @@ const OrdersDashboard = () => {
 
   const filteredOrders = getFilteredOrders();
 
-  console.log("filteredOrders", filteredOrders);
+  console.log("filteredOrders", filteredOrders[20]);
 
   const handleSavePayment = async (id) => {
     console.log(paymentMode);
