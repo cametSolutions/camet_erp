@@ -410,7 +410,7 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
 
             const rate = addRateWithTax
               ? count > 0
-                ? ((total * 100) / (100 + el.igst)).toFixed(2)
+                ? ((total * 100) / (100 + el.igst)/count).toFixed(2)
                 : "0.00" // WITH tax (like format 1)
               : count > 0
                 ? ((total - totalTax) / count).toFixed(2)
@@ -418,7 +418,7 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
 
             console.log({ rate });
 
-            const amount = (Number(rate)).toFixed(2); // WITHOUT tax
+            const amount = (Number(rate) * count).toFixed(2); // WITHOUT tax
 
             return (
               <div key={index} style={itemGrid}>
