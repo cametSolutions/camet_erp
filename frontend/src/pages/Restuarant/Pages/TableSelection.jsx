@@ -12,6 +12,7 @@ import { Check, CreditCard, X, Banknote } from "lucide-react";
 import { generateAndPrintKOT } from "@/pages/Restuarant/Helper/kotPrintHelper";
 import VoucherPdf from "@/pages/voucher/voucherPdf/indian/VoucherPdf";
 import { toast } from "react-toastify";
+import TitleDiv from "@/components/common/TitleDiv";
 import {
   MdDescription,
   MdAccessTime,
@@ -31,6 +32,7 @@ const TableTiles = ({
   roomData,
   setRoomDetails,
   roomDetails,
+  showHeader = true,
 }) => {
   console.log("hhh");
   const sectionRef = useRef(null);
@@ -449,6 +451,8 @@ const TableTiles = ({
   };
   console.log(roomData);
   return (
+    <>
+   {showHeader && <TitleDiv title="Tables" />} 
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50 p-6">
       {/* Voucher PDF Modal */}
       {showVoucherPdf && (
@@ -1627,6 +1631,7 @@ const TableTiles = ({
         </>
       )}
     </div>
+    </>
   );
 };
 export default TableTiles;

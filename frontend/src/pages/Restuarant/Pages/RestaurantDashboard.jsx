@@ -124,11 +124,11 @@ const RestaurantPOS = () => {
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id,
   );
-  
+
   const industry = org?.industry;
   const shouldFetch = Boolean(cmp_id);
 
-    const getIndustryTitle = () => {
+  const getIndustryTitle = () => {
     if (industry === 6) return "HMS";
     if (industry === 7) return "RMS";
     if (industry === 8) return "CMS";
@@ -141,7 +141,6 @@ const RestaurantPOS = () => {
     if (industry === 8) return "Cafe & Bakery";
     return "Restaurant";
   };
-
 
   const queryClient = useQueryClient();
   const isAdmin =
@@ -624,7 +623,7 @@ const RestaurantPOS = () => {
           paymentMode: "single",
         };
       }
-console.log(selectedDataForPayment);
+      console.log(selectedDataForPayment);
 
       // Step 2: Make API call
       const response = await api.post(
@@ -1102,6 +1101,17 @@ console.log(selectedDataForPayment);
   const findOneCount = (id) => {
     return orderItems.find((item) => item._id === id)?.quantity || 0;
   };
+  const headerPriceRef = useRef(null);
+
+const scrollHeaderPrice = (direction) => {
+  if (!headerPriceRef.current) return;
+  const scrollAmount = 150;
+  headerPriceRef.current.scrollBy({
+    left: direction === "left" ? -scrollAmount : scrollAmount,
+    behavior: "smooth",
+  });
+};
+
 
   return (
     <>
@@ -1135,245 +1145,193 @@ console.log(selectedDataForPayment);
         </div>
       )}
 
-      <div className="h-screen overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex flex-col">
+      <div className="h-screen  overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex flex-col">
         {/* Compact Header */}
-        <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 text-white border-b border-slate-700/60 sticky top-0 z-50 shadow-lg">
-          {/* Main Header Row */}
-          <div className="px-3 md:px-6 py-2.5 md:py-3">
-            <div className="flex items-center justify-between gap-4 md:gap-5">
-              {/* Left Section - Logo & Title */}
-              <div className="flex items-center gap-2 flex-shrink-0">
+       <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 text-white border-b border-slate-700/60 sticky top-0 z-50 shadow-lg">
+ <div className="px-3 md:px-6 py-2.5 md:py-3">
+  <div className="flex items-center justify-between gap-2 md:gap-3">
+    {/* Left Section - Logo & Title */}
+    <div className="flex items-center gap-2 flex-shrink-0">
+      <button
+        className="md:hidden p-1.5 hover:bg-white/10 rounded-lg transition-colors duration-200"
+        onClick={() => setShowSidebar(!showSidebar)}
+      >
+        <MenuIcon className="w-5 h-5" />
+      </button>
+      <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center font-bold text-lg shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-shadow">
+        🍽️
+      </div>
+      <div className="hidden md:block">
+        <h1 className="text-base md:text-lg font-bold text-white tracking-tight">
+          {getIndustryTitle()}
+        </h1>
+        <p className="text-xs text-gray-400">
+          {getIndustrySubtitle()}
+        </p>
+      </div>
+    </div>
+
+    {/* Center Section - Price Levels (desktop only) */}
+    <div className="flex-1 hidden sm:block min-w-0">
+      {priceLevelData && priceLevelData.length > 0 && (
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-semibold text-gray-400 whitespace-nowrap flex-shrink-0 uppercase tracking-wider">
+            💳 Price:
+          </span>
+
+          <div className="relative flex-1 min-w-0 group">
+            {/* Left Scroll Button */}
+            <button
+              onClick={() => scrollHeaderPrice("left")}
+              className="absolute -left-3 top-1/2 -translate-y-1/2 z-30 p-1 text-gray-500 hover:text-gray-300 transition-all opacity-0 group-hover:opacity-100 hover:bg-slate-800/50 rounded"
+            >
+              <ChevronDown className="w-4 h-4 rotate-90" />
+            </button>
+
+            {/* Price Level Buttons */}
+            <div
+              ref={headerPriceRef}
+              className="flex gap-1.5 overflow-x-auto scrollbar-hide px-3 py-0.5"
+              style={{ scrollBehavior: "smooth" }}
+            >
+              {priceLevelData.map((level) => (
                 <button
-                  className="md:hidden p-1.5 hover:bg-white/10 rounded-lg transition-colors duration-200"
-                  onClick={() => setShowSidebar(!showSidebar)}
-                >
-                  <MenuIcon className="w-5 h-5" />
-                </button>
-                <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center font-bold text-lg shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-shadow">
-                  🍽️
-                </div>
-               <div>
-  <h1 className="text-base md:text-lg font-bold text-white hidden md:block tracking-tight">
-    {getIndustryTitle()}
-  </h1>
-  <p className="text-xs text-gray-400 hidden md:block">
-    {getIndustrySubtitle()}
-  </p>
-</div>
-
-              </div>
-
-              {/* Center Section - Price Levels */}
-              <div className="flex-1 hidden sm:block">
-                {priceLevelData && priceLevelData.length > 0 && (
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-xs font-semibold text-gray-400 whitespace-nowrap flex-shrink-0 uppercase tracking-wider">
-                      💳 Price:
-                    </span>
-
-                    {/* Scroll Container */}
-                    <div className="relative flex-1 min-w-0 group">
-                      {/* Left Scroll Button */}
-                      <button
-                        onClick={() => scroll("left")}
-                        className="absolute -left-3 top-1/2 -translate-y-1/2 z-30 p-1 text-gray-500 hover:text-gray-300 transition-all opacity-0 group-hover:opacity-100 hover:bg-slate-800/50 rounded"
-                      >
-                        <ChevronDown className="w-4 h-4 rotate-90" />
-                      </button>
-
-                      {/* Price Level Buttons */}
-                      <div
-                        ref={scrollContainerRef}
-                        className="flex gap-1.5 overflow-x-auto scrollbar-hide px-3 py-0.5"
-                        style={{ scrollBehavior: "smooth" }}
-                      >
-                        {priceLevelData.map((level, idx) => (
-                          <button
-                            key={level._id}
-                            onClick={() => {
-                              setSelectedPriceLevel(level._id);
-                              setOrderItems([]);
-                            }}
-                            className={`
-                          px-3 py-1.5 rounded-md font-semibold text-xs
-                          whitespace-nowrap flex-shrink-0 border transition-all duration-300
-                          hover:scale-105 active:scale-95 relative group/btn
-                          ${
-                            selectedPriceLevel === level._id
-                              ? "bg-blue-600/90 text-white border-blue-400/50 shadow-lg shadow-blue-500/30"
-                              : "bg-slate-800/60 text-gray-300 border-slate-700/50 hover:bg-slate-700/80 hover:text-gray-100 hover:border-slate-600"
-                          }
-                        `}
-                          >
-                            {level.pricelevel}
-                            {selectedPriceLevel === level._id && (
-                              <span className="absolute inset-0 rounded-md bg-blue-400/20 animate-pulse"></span>
-                            )}
-                          </button>
-                        ))}
-                      </div>
-
-                      {/* Right Scroll Button */}
-                      <button
-                        onClick={() => scroll("right")}
-                        className="absolute -right-3 top-1/2 -translate-y-1/2 z-30 p-1 text-gray-500 hover:text-gray-300 transition-all opacity-0 group-hover:opacity-100 hover:bg-slate-800/50 rounded"
-                      >
-                        <ChevronDown className="w-4 h-4 -rotate-90" />
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Right Section - Time & Table Info */}
-              <div className="flex items-center gap-2 md:gap-2.5 flex-shrink-0">
-                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800/50 border border-slate-700/60 rounded-md hover:bg-slate-700/60 transition-colors group">
-                  <Clock className="w-3.5 h-3.5 text-cyan-400 group-hover:text-cyan-300" />
-                  <Timer />
-                  {/* <span className="text-xs font-medium text-gray-300 group-hover:text-gray-100">
-                    {currentTime.toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      second: "2-digit"
-                    })}
-                  </span> */}
-                </div>
-
-                <div
-                  className="hover:cursor-pointer flex items-center gap-1.5 px-3 py-1.5 bg-slate-800/50 border border-slate-700/60 rounded-md hover:bg-slate-700/60 transition-colors group"
-                  onClick={() => navigate("/sUsers/TableSelection")}
-                >
-                  <Users className="w-3.5 h-3.5 text-emerald-400 group-hover:text-emerald-300" />
-                  <span className="text-xs font-medium text-gray-300 group-hover:text-gray-100">
-                    {orderType === "dine-in"
-                      ? `Table ${customerDetails.tableNumber}`
-                      : orderType === "roomService"
-                        ? `Room ${roomDetails.roomno || "---"}`
-                        : getOrderTypeDisplay(orderType)}
-                  </span>
-                </div>
-
-                <div className="relative hidden sm:flex items-center">
-                  {/* Orders button */}
-                  <div
-                    className="hover:cursor-pointer flex items-center gap-1.5 px-3 py-1.5 bg-slate-800/50 border border-slate-700/60 rounded-l-md hover:bg-slate-700/60 transition-colors group"
-                    onClick={() => navigate("/sUsers/KotPage")}
-                  >
-                    <Receipt className="w-3.5 h-3.5 text-amber-400 group-hover:text-amber-300" />
-                    <span className="text-xs font-medium text-gray-300 group-hover:text-gray-100">
-                      {orders?.length || 0}
-                    </span>
-                  </div>
-
-                  {/* Three-dot button */}
-                  <div className="relative">
-                    <button
-                      onClick={() => setShowOptions((prev) => !prev)}
-                      className="flex items-center justify-center px-2 py-1.5 bg-slate-800/50 border border-l-0 border-slate-700/60 rounded-r-md hover:bg-slate-700/60 transition-colors group"
-                    >
-                      <span className="flex flex-col gap-[3px] items-center justify-center">
-                        <span className="w-[3px] h-[3px] bg-gray-400 rounded-full group-hover:bg-gray-200 transition-colors"></span>
-                        <span className="w-[3px] h-[3px] bg-gray-400 rounded-full group-hover:bg-gray-200 transition-colors"></span>
-                        <span className="w-[3px] h-[3px] bg-gray-400 rounded-full group-hover:bg-gray-200 transition-colors"></span>
-                      </span>
-                    </button>
-
-                    {/* Dropdown */}
-                    {showOptions && (
-                      <>
-                        {/* Backdrop to close */}
-                        <div
-                          className="fixed inset-0 z-40"
-                          onClick={() => setShowOptions(false)}
-                        />
-                        <div className="absolute right-0 top-full mt-1 z-50 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden w-52 animate-in zoom-in-95 duration-150">
-                          <button
-                            onClick={() => {
-                              setShowOptions(false);
-                              navigate("/sUsers/BillSummary?type=restaurant");
-                            }}
-                            className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors"
-                          >
-                            <span className="text-base">📊</span>
-                            <span className="font-medium">
-                              Daily Restaurant Sales
-                            </span>
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                <button
-                  className="hover:cursor-pointer sm:hidden bg-blue-600/80 hover:bg-blue-600 text-white rounded-md px-2.5 py-1.5 flex items-center gap-1 transition-colors border border-blue-500/50 shadow-lg shadow-blue-500/20 active:scale-95"
-                  onClick={() => setShowOrderSummary(true)}
-                >
-                  <ShoppingCart className="w-3.5 h-3.5" />
-                  <span className="text-xs font-bold">
-                    {getTotalItems?.() || 0}
-                  </span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Mobile Price Level Section */}
-          <div className="sm:hidden bg-slate-800/40 border-t border-slate-700/40 px-3 py-2">
-            {priceLevelData && priceLevelData.length > 0 && (
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-gray-400 flex-shrink-0">
-                  Price:
-                </span>
-                <div className="flex gap-1 overflow-x-auto scrollbar-hide flex-1">
-                  {priceLevelData.map((level) => (
-                    <button
-                      key={level._id}
-                      onClick={() => {
-                        setSelectedPriceLevel(level._id);
-                        setOrderItems([]);
-                      }}
-                      className={`
-                    px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap flex-shrink-0 border transition-all
+                  key={level._id}
+                  onClick={() => {
+                    setSelectedPriceLevel(level._id);
+                    setOrderItems([]);
+                  }}
+                  className={`
+                    px-3 py-1.5 rounded-md font-semibold text-xs
+                    whitespace-nowrap flex-shrink-0 border transition-all duration-300
+                    hover:scale-105 active:scale-95 relative group/btn
                     ${
                       selectedPriceLevel === level._id
-                        ? "bg-blue-600 text-white border-blue-400/50"
-                        : "bg-slate-800 text-gray-400 border-slate-700"
+                        ? "bg-blue-600/90 text-white border-blue-400/50 shadow-lg shadow-blue-500/30"
+                        : "bg-slate-800/60 text-gray-300 border-slate-700/50 hover:bg-slate-700/80 hover:text-gray-100 hover:border-slate-600"
                     }
                   `}
-                    >
-                      {level.pricelevel}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Mobile Bottom Info Bar */}
-          <div className="sm:hidden bg-slate-800/40 border-t border-slate-700/40 px-3 py-1.5">
-            <div className="flex items-center justify-between gap-2 text-xs">
-              <div className="flex items-center gap-1 text-gray-400">
-                <Clock className="w-3 h-3 text-cyan-400" />
-                <Timer />
-                {/* <span className="font-medium">
-                  {currentTime.toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit"
-                  })}
-                </span> */}
-              </div>
-              <div className="flex items-center gap-1 text-gray-400">
-                <Users className="w-3 h-3 text-emerald-400" />
-                <span className="font-medium">
-                  {orderType === "dine-in"
-                    ? `T${customerDetails?.tableNumber || "--"}`
-                    : `R${roomDetails?.roomno || "--"}`}
-                </span>
-              </div>
+                >
+                  {level.pricelevel}
+                  {selectedPriceLevel === level._id && (
+                    <span className="absolute inset-0 rounded-md bg-blue-400/20 animate-pulse"></span>
+                  )}
+                </button>
+              ))}
             </div>
+
+            {/* Right Scroll Button */}
+            <button
+              onClick={() => scrollHeaderPrice("right")}
+              className="absolute -right-3 top-1/2 -translate-y-1/2 z-30 p-1 text-white hover:text-gray-300 transition-all opacity-0 group-hover:opacity-100 hover:bg-slate-800/50 rounded"
+            >
+              <ChevronDown className="w-4 h-4 -rotate-90 " />
+            </button>
           </div>
         </div>
+      )}
+    </div>
+
+    {/* Right Section - Time & Table Info */}
+    <div className="flex items-center gap-1.5 md:gap-2 flex-shrink">
+      <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-800/50 border border-slate-700/60 rounded-md hover:bg-slate-700/60 transition-colors group">
+        <Clock className="w-3.5 h-3.5 text-cyan-400 group-hover:text-cyan-300" />
+        <span className="  ">
+          <Timer />
+        </span>
+      </div>
+
+      {/* Table / Room button – compress text on small screens */}
+      <div
+        className="hover:cursor-pointer flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-800/50 border border-slate-700/60 rounded-md hover:bg-slate-700/60 transition-colors group"
+        onClick={() => navigate("/sUsers/TableSelection")}
+      >
+        <Users className="w-3.5 h-3.5 text-emerald-400 group-hover:text-emerald-300" />
+        {/* Full text on large screens */}
+        <span className="text-xs font-medium text-gray-300 group-hover:text-gray-100 hidden lg:inline">
+          {orderType === "dine-in"
+            ? `Table ${customerDetails.tableNumber}`
+            : orderType === "roomService"
+              ? `Room ${roomDetails.roomno || "---"}`
+              : getOrderTypeDisplay(orderType)}
+        </span>
+        {/* Compressed text on small/medium */}
+        <span className="text-xs font-medium text-gray-300 group-hover:text-gray-100 lg:hidden">
+          {orderType === "dine-in"
+            ? `T${customerDetails.tableNumber || ""}`
+            : orderType === "roomService"
+              ? `R${roomDetails.roomno || ""}`
+              : getOrderTypeDisplay(orderType).slice(0, 3)}
+        </span>
+      </div>
+
+      {/* Orders + 3-dots hidden on very small widths */}
+      <div className="relative hidden sm:flex items-center">
+        <div
+          className="hover:cursor-pointer flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-800/50 border border-slate-700/60 rounded-l-md hover:bg-slate-700/60 transition-colors group"
+          onClick={() => navigate("/sUsers/KotPage")}
+        >
+          <Receipt className="w-3.5 h-3.5 text-amber-400 group-hover:text-amber-300" />
+          <span className="text-xs font-medium text-gray-300 group-hover:text-gray-100 hidden md:inline">
+            Orders: {orders?.length || 0}
+          </span>
+          <span className="text-xs font-medium text-gray-300 group-hover:text-gray-100 md:hidden">
+            {orders?.length || 0}
+          </span>
+        </div>
+
+        <div className="relative">
+          <button
+            onClick={() => setShowOptions((prev) => !prev)}
+            className="flex items-center justify-center px-2 py-1.5 bg-slate-800/50 border border-l-0 border-slate-700/60 rounded-r-md hover:bg-slate-700/60 transition-colors group"
+          >
+            <span className="flex flex-col gap-[3px] items-center justify-center">
+              <span className="w-[3px] h-[3px] bg-gray-400 rounded-full group-hover:bg-gray-200 transition-colors"></span>
+              <span className="w-[3px] h-[3px] bg-gray-400 rounded-full group-hover:bg-gray-200 transition-colors"></span>
+              <span className="w-[3px] h-[3px] bg-gray-400 rounded-full group-hover:bg-gray-200 transition-colors"></span>
+            </span>
+          </button>
+          {showOptions && (
+            <>
+              <div
+                className="fixed inset-0 z-40"
+                onClick={() => setShowOptions(false)}
+              />
+              <div className="absolute right-0 top-full mt-1 z-50 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden w-52 animate-in zoom-in-95 duration-150">
+                <button
+                  onClick={() => {
+                    setShowOptions(false);
+                    navigate("/sUsers/BillSummary?type=restaurant");
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors"
+                >
+                  <span className="text-base">📊</span>
+                  <span className="font-medium">
+                    Daily Restaurant Sales
+                  </span>
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Mobile cart button – already compact */}
+      <button
+        className="hover:cursor-pointer sm:hidden bg-blue-600/80 hover:bg-blue-600 text-white rounded-md px-2.5 py-1.5 flex items-center gap-1 transition-colors border border-blue-500/50 shadow-lg shadow-blue-500/20 active:scale-95"
+        onClick={() => setShowOrderSummary(true)}
+      >
+        <ShoppingCart className="w-3.5 h-3.5" />
+        <span className="text-xs font-bold">
+          {getTotalItems?.() || 0}
+        </span>
+      </button>
+    </div>
+  </div>
+</div>
+
+</div>
+
 
         {/* Compact Cuisine Categories */}
         <div className="bg-white/90 backdrop-blur-sm border-b border-gray-200/50 shadow-lg sticky top-[60px] z-40">
@@ -2071,6 +2029,7 @@ console.log(selectedDataForPayment);
                 roomData={roomData}
                 setRoomDetails={setRoomDetails}
                 roomDetails={roomDetails}
+                showHeader={false}
               />
             </div>
           </div>

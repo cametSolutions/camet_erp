@@ -1044,6 +1044,7 @@ const OrdersDashboard = () => {
   console.log("selectedKot", filteredOrders);
   return (
     <>
+
       {showVoucherPdf && (
         <div>
           {billFormat === "format1" ? (
@@ -1072,7 +1073,7 @@ const OrdersDashboard = () => {
       {!showVoucherPdf && (
         <div className="min-h-screen bg-gray-50">
           {/* Header */}
-          <div className="bg-white px-4 py-3 border-b border-gray-200">
+          <div className="bg-white px-2 py-2 border-b border-gray-200">
             {/* Mobile Layout */}
             <div className="block sm:hidden">
               {/* First Row - Title */}
@@ -1157,7 +1158,7 @@ const OrdersDashboard = () => {
           </div>
 
           {/* Controls */}
-          <div className="bg-white px-4 py-3 border-b border-gray-200 flex justify-between items-center">
+          <div className="bg-white px-2 py-2 border-b border-gray-200 flex justify-between items-center">
             <div className="flex gap-2">
               {(userRole === "reception"
                 ? ["All", "ON PROCESS", "KOT BILL PENDING", "COMPLETED"]
@@ -1202,7 +1203,7 @@ const OrdersDashboard = () => {
           </div>
 
           {/* Orders Grid */}
-          <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="p-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             <>
               {/* Orders List */}
               {filteredOrders.map((order) => {
