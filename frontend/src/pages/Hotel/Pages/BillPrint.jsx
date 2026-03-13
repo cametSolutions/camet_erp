@@ -475,7 +475,7 @@ const HotelBillPrint = () => {
         dineInTotals[tableNo].docNos.push(kot.salesNumber);
       }
     });
-
+console.log("dineInTotals", dineInTotals)
     Object.keys(dineInTotals)?.forEach((tableNo) => {
       const docNo = dineInTotals[tableNo].docNos.join(", ") || "-";
 

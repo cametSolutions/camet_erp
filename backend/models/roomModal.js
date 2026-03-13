@@ -59,6 +59,7 @@ const roomSchema = new mongoose.Schema({
     status: {
   type: String,
   enum: ["vacant", "occupied", "booked", "dirty", "blocked"],
+  default: "vacant",
 }
 
 });
