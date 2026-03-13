@@ -242,7 +242,7 @@ const getPaymentSummary = () => {
           fontWeight: "bold",
         }}
       >
-        {prettyType(p.type)} : ₹ {p.amount.toFixed(2)}
+        {prettyType(p.type)} : ₹ {Math.round(p.amount).toFixed(2)}
       </div>
     ));
 };
