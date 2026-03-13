@@ -541,7 +541,7 @@ const OrdersDashboard = () => {
     if (salePrintData) {
       billFormat === "format1"
         ? navigate(`/sUsers/sharesalesThreeInch/${salePrintData._id}`)
-        : navigate(`/sUsers/sharesalesThreeInch2`, {
+        : navigate(`/sUsers/sharesalesThreeInch2/${true}`, {
             state: salePrintData,
           });
     }
@@ -549,7 +549,7 @@ const OrdersDashboard = () => {
 
   const filteredOrders = getFilteredOrders();
 
-  console.log("filteredOrders", filteredOrders);
+  console.log("filteredOrders", filteredOrders[20]);
 
   const handleSavePayment = async (id) => {
     console.log(paymentMode);
