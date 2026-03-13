@@ -11,7 +11,7 @@ export default function PrintModal({ onSubmit }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-gray-900 bg-opacity-70 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-md shadow-xl max-w-sm w-full p-6 border border-gray-200">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
