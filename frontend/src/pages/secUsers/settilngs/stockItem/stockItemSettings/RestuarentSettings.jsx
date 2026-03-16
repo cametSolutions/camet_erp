@@ -12,6 +12,8 @@ import { updateConfiguration } from "../../../../../../slices/secSelectedOrgSlic
 import { useLocation } from "react-router-dom";
 import { SiCashapp } from "react-icons/si";
 import { TiPrinter } from "react-icons/ti";
+import { IoCalculator } from "react-icons/io5";
+
 import api from "@/api/api";
 
 const restuarentSettings = () => {
@@ -111,7 +113,7 @@ console.log(configurations);
       dbField: "kotApproval",
     });
     settingsOptions.push({
-      title: "addRateWithTax",
+      title: "Rate include tax.",
       description: "Better tax calculations for better organization",
       icon: <LiaMoneyCheckAltSolid />,
       active: true,
@@ -120,6 +122,24 @@ console.log(configurations);
       dbField: "restaurantSale",
     });
      settingsOptions.push({
+      title: "Discount calculated with amount include tax.",
+      description: "Better management of amount and discount",
+      icon: <TiPrinter />,
+      active: true,
+      toggle: true,
+      toggleValue:configurations[0]?.discountBasedOnGrossAmount,
+      dbField: "discountBasedOnGrossAmount",
+    });
+    settingsOptions.push({
+      title: "Include tax with print",
+      description: "Better tax calculations for better organization",
+      icon: <IoCalculator />,
+      active: true,
+      toggle: true,
+      toggleValue: configurations[0]?.defaultPrint?.showPrintWithTaxInRestaurant,
+      dbField: "showPrintWithTaxInRestaurant",
+    });
+    settingsOptions.push({
       title: "show Print Option BeforeSale",
       description: "Better tax calculations for better organization",
       icon: <TiPrinter />,

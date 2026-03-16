@@ -259,15 +259,16 @@ const RestaurantPOS = () => {
   const filteredRooms = Array.isArray(roomData)
     ? roomData.filter(
         (room) =>
-          room.roomName?.toLowerCase().includes(searchTerms?.toLowerCase()) ||
+          room.roomName?.toLowerCase().includes(search?.toLowerCase()) ||
           room.customerName
             ?.toLowerCase()
-            .includes(searchTerms?.toLowerCase()) ||
+            .includes(search?.toLowerCase()) ||
           room.voucherNumber
             ?.toLowerCase()
-            .includes(searchTerms?.toLowerCase()),
+            .includes(search?.toLowerCase()),
       )
-    : [];
+    : [search];
+    console.log(filteredRooms)
 
   const handlePrint = useReactToPrint({
     content: () => contentToPrint.current,
@@ -301,12 +302,7 @@ const RestaurantPOS = () => {
     console.log("Food plan from room:", room?.foodPlan);
 
     const foodPlanData = room?.foodPlan
-      ? {
-          _id: room.foodPlan._id, // FoodPlan document ID
-          planType: room.foodPlan.planType, // e.g., "CP", "MAP", "Complimentary"
-          amount: room.foodPlan.amount,
-          isComplimentary: room.foodPlan.isComplimentary || false,
-        }
+      ? room?.foodPlan
       : null;
 
     console.log("Processed food plan data:", foodPlanData);
@@ -484,58 +480,51 @@ const RestaurantPOS = () => {
     shouldFetch ? `/api/sUsers/getRoomBasedOnBooking/${cmp_id}` : null,
   );
 
-  useEffect(() => {
-    if (roomBookingData) {
-      console.log("=== RAW ROOM BOOKING DATA ===");
-      console.log("First booking:", roomBookingData?.data);
+useEffect(() => {
+  if (roomBookingData) {
+    const rooms = roomBookingData?.data?.flatMap((room) => {
+      console.log("Processing booking, foodPlan array:", room?.foodPlan);
 
-      const getRooms = roomBookingData?.data?.flatMap((room) => {
-        console.log("Processing booking, foodPlan array:", room?.foodPlan);
+      return (
+        room?.selectedRooms?.map((selectedRoom) => {
+          const completeFoodPlan = [];
 
-        return (
-          room?.selectedRooms?.map((selectedRoom) => {
+          room.foodPlan?.forEach((data) => {
             // Find matching food plan for this room
-            const roomFoodPlan = room?.foodPlan?.find(
-              (fp) => fp.roomId === selectedRoom.roomId,
-            );
+            const roomFoodPlan = data.roomId === selectedRoom.roomId ? data : null;
 
-            console.log("=== ROOM FOOD PLAN ===");
-            console.log("Room:", selectedRoom.roomName);
-            console.log("Found food plan:", roomFoodPlan);
-
-            // ✅ Build complete food plan object
-            let completeFoodPlan = null;
+            // Build complete food plan object
             if (roomFoodPlan) {
-              completeFoodPlan = {
+              completeFoodPlan.push({
                 _id: roomFoodPlan._id || roomFoodPlan.foodPlanId,
                 planType: roomFoodPlan.planType || roomFoodPlan.foodPlan,
-                amount: roomFoodPlan.amount || 0,
+                amount: roomFoodPlan.amount ?? roomFoodPlan.rate ?? 0,
                 isComplimentary: roomFoodPlan.isComplimentary || false,
-              };
-
-              console.log("Complete food plan object:", completeFoodPlan);
+              });
             }
+          });
 
-            return {
-              ...selectedRoom,
-              customerName: room?.customerName,
-              mobileNumber: room?.mobileNumber,
-              voucherNumber: room?.voucherNumber,
-              foodPlan: completeFoodPlan, // ✅ This is the key part
-              bookingDate: room?.bookingDate,
-              arrivalDate: room?.arrivalDate,
-              checkOutDate: room?.checkOutDate,
-              stayDays: room?.stayDays,
-            };
-          }) || []
-        );
-      });
+          return {
+            ...selectedRoom,
+            customerName: room?.customerName,
+            mobileNumber: room?.mobileNumber,
+            voucherNumber: room?.voucherNumber,
+            foodPlan: completeFoodPlan,
+            bookingDate: room?.bookingDate,
+            arrivalDate: room?.arrivalDate,
+            checkOutDate: room?.checkOutDate,
+            stayDays: room?.stayDays,
+          };
+        }) || []
+      );
+    });
 
-      console.log("=== ALL PROCESSED ROOMS ===");
+    console.log("=== ALL PROCESSED ROOMS ===");
+    setRoomData(rooms);
+  }
+}, [roomBookingData]);
 
-      setRoomData(getRooms);
-    }
-  }, [roomBookingData]);
+
 
   useEffect(() => {
     if (error) {
@@ -999,7 +988,6 @@ const RestaurantPOS = () => {
       status: kotDataForEdit?.status || "pending",
       paymentMethod: orderType === "dine-in" ? null : "cash",
     };
-
     let url = isEdit
       ? `/api/sUsers/editKOT/${cmp_id}/${kotDataForEdit._id}`
       : `/api/sUsers/generateKOT/${cmp_id}`;
@@ -1147,7 +1135,7 @@ const scrollHeaderPrice = (direction) => {
 
       <div className="h-screen  overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex flex-col">
         {/* Compact Header */}
-       <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 text-white border-b border-slate-700/60 sticky top-0 z-50 shadow-lg">
+       <div className="bg-[#072134] text-white border-b border-slate-700/60 sticky top-0 z-50 shadow-lg">
  <div className="px-3 md:px-6 py-2.5 md:py-3">
   <div className="flex items-center justify-between gap-2 md:gap-3">
     {/* Left Section - Logo & Title */}

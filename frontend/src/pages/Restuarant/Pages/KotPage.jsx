@@ -5,6 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
 import PrintModal from "@/pages/Hotel/Components/PrintModal";
+import { IoIosArrowRoundBack } from "react-icons/io";
 
 import {
   MdDescription,
@@ -95,6 +96,7 @@ const OrdersDashboard = () => {
   const [isForComp, setIsForComp] = useState(false);
   const [showPrintConfirmModal, setShowPrintConfirmModal] = useState(false);
   const [printData, setPrintData] = useState(null);
+  
 
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -106,6 +108,11 @@ const OrdersDashboard = () => {
   const org = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg,
   );
+
+  const discountBasedOnGrossAmount = org.configurations[0].discountBasedOnGrossAmount
+
+  
+ 
 
   const { data, refreshHook } = useFetch(
     `/api/sUsers/getKotData/${cmp_id}?date=${selectedDate}`,
@@ -765,6 +772,9 @@ const OrdersDashboard = () => {
             ? "Complimentary order processed successfully!"
             : response?.data?.message,
         );
+
+        console.log(response.data.data)
+        
         setPrintData(response?.data?.data);
         setShowPaymentModal(false);
         setSelectedDiscountCharge(null);
@@ -798,6 +808,7 @@ const OrdersDashboard = () => {
         `/api/sUsers/getSalePrintData/${cmp_id}/${kotId}`,
         { withCredentials: true },
       );
+      console.log(saleData?.data?.data);
       setSalePrintData(saleData?.data?.data);
     } catch (error) {
       console.log(error);
@@ -837,6 +848,7 @@ const OrdersDashboard = () => {
             roomId: order?.roomId?._id, // keep roomId for validation
             checkInNumber: order?.checkInNumber,
             customer: order?.customer,
+            foodPlanDetails: order?.foodPlanDetails,
           },
         ]);
       }
@@ -849,7 +861,9 @@ const OrdersDashboard = () => {
 
     let roomDetails = null;
     let itemList = selectedKot.flatMap((item) => {
+      console.log(item)
       let findOne = filteredOrders.find((order) => order._id == item.id);
+      console.log(findOne.roomId)
       if (findOne) {
         if (!roomDetails && findOne.roomId) {
           roomDetails = {
@@ -857,6 +871,7 @@ const OrdersDashboard = () => {
             roomName: findOne.roomId?.roomName,
             guestName: findOne.customer?.name,
             checkInNumber: findOne.checkInNumber,
+            foodPlanDetails: item?.foodPlanDetails,
           };
         }
 
@@ -870,10 +885,11 @@ const OrdersDashboard = () => {
       return findOne?.items || []; // return empty array if not found
     });
     console.log(itemList);
-    let subtotal = itemList
-      .reduce((acc, item) => acc + Number(item.total), 0)
+    let subtotal =Math.round(itemList
+      .reduce((acc, item) => acc + Number(item.total), 0))
       .toFixed(2);
-    let finalAmount = (subtotal - (discountAmount || 0)).toFixed(2);
+      console.log(subtotal);
+    let finalAmount = Math.round(subtotal - (discountAmount || 0)).toFixed(2);
 
     let additionalChargesArray = [];
 
@@ -914,10 +930,10 @@ const OrdersDashboard = () => {
       partyAccount: "Cash-in-Hand",
       items: itemList,
       subtotal: subtotal, // Original total before discount
-      discount: discountAmount || 0, // Discount amount
-      discountCharge: selectedDiscountCharge,
+      discount: Math.round(discountAmount || 0), // Discount amount
+      discountCharge: Math.round(selectedDiscountCharge || 0),
       additionalCharges: additionalChargesArray, // Discount type details
-      finalAmount: finalAmount,
+      finalAmount: Math.round(finalAmount), // finalAmount,
       note: note || "",
       isComplimentary: isComplimentary, // ✅ ADD THIS - Independent flag // After discount
       total: finalAmount,
@@ -1035,13 +1051,13 @@ const OrdersDashboard = () => {
   }, [selectedKot]);
 
   const handlePrintShow = () => {
-    console.log(printData);
+    let updatedData = { ...printData.salesRecord,...printData?.kotData };
     navigate(`/sUsers/sharesalesThreeInch2/${true}`, {
-      state: printData.salesRecord,
+      state: updatedData
     });
   };
 
-  console.log("selectedKot", filteredOrders);
+  console.log("selectedKot", filteredOrders[0]);
   return (
     <>
 
@@ -1073,12 +1089,17 @@ const OrdersDashboard = () => {
       {!showVoucherPdf && (
         <div className="min-h-screen bg-gray-50">
           {/* Header */}
-          <div className="bg-white px-2 py-2 border-b border-gray-200">
+          <div className=" px-2 py-2 border-b border-gray-200 bg-[#012a4a]">
+
             {/* Mobile Layout */}
             <div className="block sm:hidden">
+              <IoIosArrowRoundBack
+                            onClick={() => navigate(-1)}
+                            className="cursor-pointer text-3xl text-white"
+                          />
               {/* First Row - Title */}
               <div className="mb-3">
-                <h1 className="text-lg font-semibold text-black text-center">
+                <h1 className="text-lg font-semibold text-gray-600  text-center">
                   {userRole === "kitchen"
                     ? "Kitchen Orders"
                     : "Reception Orders"}{" "}
@@ -1119,9 +1140,13 @@ const OrdersDashboard = () => {
             </div>
 
             {/* Desktop Layout (unchanged) */}
-            <div className="hidden sm:flex justify-between items-center">
+            <div className="hidden sm:flex justify-between items-center bg-">
               <div className="flex items-center gap-4">
-                <h1 className="text-xl font-semibold text-black">
+                <IoIosArrowRoundBack
+                            onClick={() => navigate(-1)}
+                            className="cursor-pointer text-3xl text-white"
+                          />
+                <h1 className="text-xl font-semibold text-gray-500 ">
                   {userRole === "kitchen"
                     ? "Kitchen Orders"
                     : "Reception Orders"}{" "}
@@ -2371,7 +2396,7 @@ const OrdersDashboard = () => {
                             <span>Difference:</span>
                             <span>
                               ₹
-                              {(
+                              {Math.round(
                                 selectedDataForPayment?.total -
                                 (parseFloat(cashAmount || 0) +
                                   parseFloat(onlineAmount || 0))

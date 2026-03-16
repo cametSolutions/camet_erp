@@ -41,23 +41,8 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
     return voucherType + "Number";
   };
 
-  const getConfigurationVoucherType = () => {
-    const currentVoucherType = data?.voucherType;
-    if (currentVoucherType === "sales" || currentVoucherType === "vanSale")
-      return "sale";
-    if (currentVoucherType === "saleOrder") return "saleOrder";
-    return "default";
-  };
 
-  const allPrintConfigurations = useSelector(
-    (state) =>
-      state.secSelectedOrganization?.secSelectedOrg?.configurations[0]
-        ?.printConfiguration,
-  );
 
-  const matchedConfiguration = allPrintConfigurations?.find(
-    (item) => item.voucher === getConfigurationVoucherType(),
-  );
 
   useEffect(() => {
     if (data && data.items) {
@@ -108,25 +93,41 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
     null;
 
   const getRoomNumber = () => {
-    const hasCheckIn = data?.voucherNumber?.[0]?.checkInNumber;
+    const hasCheckIn = data?.voucherNumber?.[0]?.checkInNumber  ;
     const roomNo =
       data?.roomDetails?.roomno ||
       data?.voucherNumber?.[0]?.roomNumber ||
       data?.roomId?.roomno ||
       data?.roomId?.roomName;
 
-    if (!hasCheckIn || !roomNo) return null;
+    if (!hasCheckIn && !roomNo) return null;
     return `Room: ${roomNo}`;
   };
+const getFoodPlan = () => {
+  console.log();
+  const hasCheckIn = data?.voucherNumber?.[0]?.checkInNumber;
+  const foodPlanArray = data?.roomDetails?.foodPlanDetails;
 
+  if (!hasCheckIn && !Array.isArray(foodPlanArray)) return null;
+
+  // array of names:
+  // return foodPlanArray.map(item => item.planType);
+
+  // or a single comma‑separated string:
+  const names = foodPlanArray.map(item => item.planType).join(", ");
+  return `Food Paln: ${names}`;
+};
   const netAmount = Math.round(Number(data?.finalAmount || 0)).toFixed(2);
   const discount = Math.round(
     Number(
       data?.totalAdditionalCharges || data?.additionalCharges?.[0]?.amount,
     ),
   ).toFixed(2);
+  console.log("discount", discount);
+  console.log("netAmount", netAmount);
   const tax = Math.round(calculateTotalTax()).toFixed(2);
   const cgst = Math.round(calculateTotalTax() / 2).toFixed(2);
+
   // const cgstPercentage = (Number(cgst) / Number(data?.subtotal || data?.subTotal)) * 100;
 
   // Get actual tax rates directly from item data instead of back-calculating
@@ -406,9 +407,10 @@ const getPaymentSummary = () => {
 
             // ✅ Same logic as Format 1 — addRateWithTax controls rate/amount display
             const addRateWithTax =
-              org?.configurations?.[0]?.addRateWithTax?.restaurantSale ??
-              org?.configurations?.[0]?.addRateWithTax?.sale ??
-              true;
+              org?.configurations?.[0]?.addRateWithTax?.restaurantSale 
+              // ??
+              // org?.configurations?.[0]?.addRateWithTax?.sale ??
+              // true;
 
             console.log(addRateWithTax);
             console.log(count);
@@ -494,7 +496,7 @@ const getPaymentSummary = () => {
       (() => {
         const entries = Object.entries(cgstGroups);
 
-        if (entries.length === 0) {
+        // if (entries.length === 0) {
           return (
             <>
               <div style={flexRow}>
@@ -523,36 +525,36 @@ const getPaymentSummary = () => {
               </div>
             </>
           );
-        }
+        // }
 
-        return entries.map(([rate, { cgstAmt, sgstAmt, sgstRate }]) => (
-          <div key={rate}>
-            <div style={flexRow}>
-              <div
-                style={{
-                  marginLeft: "auto",
-                  width: 70,
-                  fontWeight: "bold",
-                }}
-              >
-                CGST {rate}%
-              </div>
-              <div style={textRight}>{cgstAmt.toFixed(2)}</div>
-            </div>
-            <div style={flexRow}>
-              <div
-                style={{
-                  marginLeft: "auto",
-                  width: 70,
-                  fontWeight: "bold",
-                }}
-              >
-                SGST {sgstRate}%
-              </div>
-              <div style={textRight}>{sgstAmt.toFixed(2)}</div>
-            </div>
-          </div>
-        ));
+        // return entries.map(([rate, { cgstAmt, sgstAmt, sgstRate }]) => (
+        //   <div key={rate}>
+        //     <div style={flexRow}>
+        //       <div
+        //         style={{
+        //           marginLeft: "auto",
+        //           width: 70,
+        //           fontWeight: "bold",
+        //         }}
+        //       >
+        //         CGST {rate}%
+        //       </div>
+        //       <div style={textRight}>{cgstAmt.toFixed(2)}</div>
+        //     </div>
+        //     <div style={flexRow}>
+        //       <div
+        //         style={{
+        //           marginLeft: "auto",
+        //           width: 70,
+        //           fontWeight: "bold",
+        //         }}
+        //       >
+        //         SGST {sgstRate}%
+        //       </div>
+        //       <div style={textRight}>{sgstAmt.toFixed(2)}</div>
+        //     </div>
+        //   </div>
+        // ));
       })()}
 
     {/* IGST */}
@@ -602,7 +604,7 @@ const getPaymentSummary = () => {
               }}
             >
               {getRoomNumber() && <div style={bold}>{getRoomNumber()}</div>}
-
+              
               <div
                 style={{
                   marginLeft: "auto",
@@ -613,7 +615,7 @@ const getPaymentSummary = () => {
                 Total: {netAmount}
               </div>
             </div>
-
+ {getFoodPlan() && <div style={bold}>{getFoodPlan()}</div>}
             {/* {data?.voucherNumber?.[0]?.checkInNumber && (
               <div style={flexRow}>
                 <div style={bold}>{data.voucherNumber[0].checkInNumber}</div>
