@@ -11,7 +11,7 @@ function FoodPlanComponent({
   formData,
 }) {
   console.log("formData", formData);
-  
+
   const [foodPlan, setFoodPlan] = useState([
     { foodPlanId: "", foodPlan: "", rate: 0, isComplimentary: false }, // ✅ Added isComplimentary
   ]);
@@ -39,7 +39,7 @@ function FoodPlanComponent({
       // console.log(filteredData);
       sendDataToParent(filteredData, selectedRoomId);
     }
-  }, [foodPlan, selectedRoomId, sendDataToParent]);
+  }, [foodPlanData]);
 
   // Load existing data if editing or reopening
   useEffect(() => {
@@ -49,33 +49,33 @@ function FoodPlanComponent({
       selectedRoomId
     ) {
       let filteredData = formData.foodPlan?.filter(
-        (item) => item.roomId === selectedRoomId
+        (item) => item.roomId === selectedRoomId,
       );
       if (filteredData.length > 0) {
         setFoodPlan(filteredData);
       }
     }
   }, [selectedRoomId, formData]);
-  
-
 
   // Handle Dropdown Selection
   const handlePaxChange = (index, value) => {
-  let specificData = foodPlanData?.find((item) => item._id === value);
-  if (!specificData) return;
+    let specificData = foodPlanData?.find((item) => item._id === value);
+    if (!specificData) return;
 
-  const updatedRows = [...foodPlan];
-  updatedRows[index].foodPlan = specificData.foodPlan;
-  updatedRows[index].foodPlanId = specificData._id;
-  updatedRows[index].roomId = selectedRoomId;
-  
-  // ✅ Preserve BOTH original amount AND complimentary status
-  updatedRows[index].originalAmount = specificData.amount;  // Keep original price
-  updatedRows[index].isComplimentary = specificData.isComplimentary || false;
-  updatedRows[index].rate = specificData.isComplimentary ? 0 : specificData.amount;  // Display rate for calculations
-  
-  setFoodPlan(updatedRows);
-};
+    const updatedRows = [...foodPlan];
+    updatedRows[index].foodPlan = specificData.foodPlan;
+    updatedRows[index].foodPlanId = specificData._id;
+    updatedRows[index].roomId = selectedRoomId;
+
+    // ✅ Preserve BOTH original amount AND complimentary status
+    updatedRows[index].originalAmount = specificData.amount; // Keep original price
+    updatedRows[index].isComplimentary = specificData.isComplimentary || false;
+    updatedRows[index].rate = specificData.isComplimentary
+      ? 0
+      : specificData.amount; // Display rate for calculations
+
+    setFoodPlan(updatedRows);
+  };
 
   const handleRateChange = (index, value) => {
     const updatedRows = [...foodPlan];
@@ -83,38 +83,39 @@ function FoodPlanComponent({
     setFoodPlan(updatedRows);
   };
 
-  const handleDeleteRow = (index) => {
-    const updatedRows = foodPlan.slice(0, index); // Note: This logic seems to clear subsequent rows? 
-    // Usually you want to filter out only the deleted index:
-    // const updatedRows = foodPlan.filter((_, i) => i !== index);
-    
-    // Your original logic:
-    if (updatedRows.length === 0) {
-      updatedRows.push({ foodPlanId: "", foodPlan: "", rate: 0 });
-    }
-    setFoodPlan(updatedRows);
-  };
-
   // Improved delete function (Recommended replacement for above)
   const handleDeleteRowImproved = (index) => {
     const updatedRows = foodPlan.filter((_, i) => i !== index);
     if (updatedRows.length === 0) {
-       setFoodPlan([{ foodPlanId: "", foodPlan: "", rate: 0, isComplimentary: false }]);
+      setFoodPlan([
+        { foodPlanId: "", foodPlan: "", rate: 0, isComplimentary: false },
+      ]);
     } else {
-       setFoodPlan(updatedRows);
+      setFoodPlan(updatedRows);
     }
   };
 
   const handleAddRow = () => {
     const lastRow = foodPlan[foodPlan.length - 1];
-    if (!lastRow?.foodPlan) { // allow rate 0 if complimentary
+    if (!lastRow?.foodPlan) {
+      // allow rate 0 if complimentary
       toast.error("Please select a Food Plan first");
       return;
     }
-    setFoodPlan([...foodPlan, { foodPlanId: "", foodPlan: "", rate: 0, isComplimentary: false }]);
+    setFoodPlan([
+      ...foodPlan,
+      { foodPlanId: "", foodPlan: "", rate: 0, isComplimentary: false },
+    ]);
   };
 
-  console.log("foodPlan", foodPlan);
+  const handleSave = () => {
+    setDisplayFoodPlan(false);
+    if (foodPlan.length > 0) {
+      let filteredData = foodPlan.filter((item) => item.foodPlanId !== "");
+      // console.log(filteredData);
+      sendDataToParent(filteredData, selectedRoomId);
+    }
+  };
 
   return (
     <div className="">
@@ -130,7 +131,7 @@ function FoodPlanComponent({
           <div className="ml-auto flex gap-2">
             <button
               className="ml-auto px-4 py-2 text-sm font-semibold text-white bg-black rounded-md hover:bg-gray-800 transition-all duration-200"
-              onClick={() => setDisplayFoodPlan(false)}
+              onClick={handleSave}
             >
               Save
             </button>
@@ -149,7 +150,9 @@ function FoodPlanComponent({
             <table className="w-full table-auto border-collapse rounded-md">
               <thead className="bg-blue-50 text-blue-800 text-sm font-semibold">
                 <tr>
-                  <th className="px-4 py-2 text-left border-b">Select Food Plan</th>
+                  <th className="px-4 py-2 text-left border-b">
+                    Select Food Plan
+                  </th>
                   <th className="px-4 py-2 text-left border-b">Rate</th>
                   <th className="px-4 py-2 text-center border-b">Action</th>
                 </tr>
@@ -171,17 +174,17 @@ function FoodPlanComponent({
                         {foodPlanData?.map((el) => (
                           <option key={el?._id} value={el?._id}>
                             {/* ✅ Show "Plan Name - (Complimentary)" or "Plan Name - (Rate)" */}
-                            {el?.foodPlan} 
+                            {el?.foodPlan}
                             {el?.isComplimentary ? " (Free)" : ""}
                           </option>
                         ))}
                       </select>
-                      
+
                       {/* ✅ Small Badge Indicator */}
                       {row.isComplimentary && (
-                         <span className="text-xs text-green-600 font-semibold ml-1">
-                           Comp.
-                         </span>
+                        <span className="text-xs text-green-600 font-semibold ml-1">
+                          Comp.
+                        </span>
                       )}
                     </td>
 
@@ -191,8 +194,10 @@ function FoodPlanComponent({
                         type="number"
                         value={row?.rate}
                         // Disable rate editing if it is complimentary (Optional)
-                        // disabled={row.isComplimentary} 
-                        onChange={(e) => handleRateChange(index, e.target.value)}
+                        // disabled={row.isComplimentary}
+                        onChange={(e) =>
+                          handleRateChange(index, e.target.value)
+                        }
                         className={`w-full px-3 py-1.5 rounded border border-gray-300 text-center focus:outline-none focus:ring-2 focus:ring-blue-400 ${
                           row.isComplimentary ? "bg-gray-100 text-gray-500" : ""
                         }`}
@@ -233,7 +238,7 @@ function FoodPlanComponent({
             <div className="text-left text-gray-900 flex items-center font-bold">
               {foodPlan?.reduce(
                 (total, row) => total + Number(row?.rate || 0),
-                0
+                0,
               )}
             </div>
           </div>

@@ -3549,7 +3549,7 @@ export const updateConfigurationForHotelAndRestaurant = async (req, res) => {
   try {
     const { cmp_id } = req.params;
     const data = req.body;
-console.log("xxxxxxxxxxxx1",data);
+
     let updateData = {};
 
     // Handle different types of updates
@@ -3605,6 +3605,22 @@ console.log("xxxxxxxxxxxx1",data);
       updateData = {
           $set: {
             [`configurations.0.defaultPrint.showBeforeSaleInRestaurant`]: data.checked,
+          },
+        };
+
+    }
+    else if(data.title == "showPrintWithTaxInRestaurant"){
+      updateData = {
+          $set: {
+            [`configurations.0.defaultPrint.showPrintWithTaxInRestaurant`]: data.checked,
+          },
+        };
+
+    }
+    else if(data.title == "discountBasedOnGrossAmount"){
+      updateData = {
+          $set: {
+            [`configurations.0.discountBasedOnGrossAmount`]: data.checked,
           },
         };
 
@@ -4064,6 +4080,7 @@ export const getHotelSalesDetails = async (req, res) => {
           sale.partyAccount !== "Gpay" &&
           sale.partyAccount !== "Bank");
 
+          let PaymentModeArray =[]
       if (
         sale.paymentSplittingData &&
         Array.isArray(sale.paymentSplittingData) &&
@@ -4075,18 +4092,23 @@ export const getHotelSalesDetails = async (req, res) => {
           switch (paymentType) {
             case "upi":
               upiAmount += amount;
+              PaymentModeArray.push("UPI")
               break;
             case "bank":
               bankAmount += amount;
+              PaymentModeArray.push("BANK")
               break;
             case "card":
               cardAmount += amount;
+              PaymentModeArray.push("CARD")
               break;
             case "credit":
               creditAmount += amount;
+              PaymentModeArray.push("CREDIT")
               break;
             default:
               cashAmount += amount;
+              PaymentModeArray.push("CASH")
               break;
           }
         });
@@ -4114,13 +4136,18 @@ export const getHotelSalesDetails = async (req, res) => {
       let mode = "Cash"; // default
       if (upiAmount > 0) {
         mode = "UPI";
+            PaymentModeArray.push("UPI")
       } else if (cardAmount > 0) {
+            PaymentModeArray.push("CARD")
         mode = "Card";
       } else if (creditAmount > 0) {
+            PaymentModeArray.push("CREDIT")
         mode = "Credit";
       } else if (bankAmount > 0) {
+            PaymentModeArray.push("BANK")
         mode = "Bank";
       } else if (cashAmount > 0) {
+            PaymentModeArray.push("CASH")
         mode = "Cash";
       }
 
@@ -4180,6 +4207,7 @@ export const getHotelSalesDetails = async (req, res) => {
         kotDetails: sale.kotData,
         kotType: sale.kotData?.type,
         isHotel: sale.checkOut ? true : false,
+        PaymentModeArray:[...new Set(PaymentModeArray)],
       };
     });
     // console.log("transfored", transformedData);
