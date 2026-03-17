@@ -6,6 +6,7 @@ import { defaultPrintSettings } from "../../../../../utils/defaultConfigurations
 import { useLocation, useParams } from "react-router-dom";
 import { useReactToPrint } from "react-to-print";
 import TitleDiv from "@/components/common/TitleDiv";
+import { add } from "date-fns";
 
 function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
   const [subTotal, setSubTotal] = useState(0);
@@ -32,8 +33,13 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
     org?.state?.toLowerCase() === party?.state?.toLowerCase() || !party?.state;
 
   const voucherType = data?.voucherType;
-  const discountBasedOnGrossAmount = org.configurations[0].discountBasedOnGrossAmount
-  
+  const discountBasedOnGrossAmount =
+    org.configurations[0].discountBasedOnGrossAmount;
+  const includeTaxWithPrint =
+    org.configurations[0].defaultPrint?.showPrintWithTaxInRestaurant;
+
+  console.log("includeTaxWithPrint", includeTaxWithPrint);
+
   const getVoucherNumber = () => {
     if (!voucherType) return "";
     if (voucherType === "sales" || voucherType === "vanSale")
@@ -41,9 +47,6 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
     if (voucherType === "saleOrder") return "orderNumber";
     return voucherType + "Number";
   };
-
-
-
 
   useEffect(() => {
     if (data && data.items) {
@@ -61,9 +64,16 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
           0,
         )
         .toFixed(2);
-        console.log(data.discount, calculatedSubTotal, discountBasedOnGrossAmount);
-        let total = discountBasedOnGrossAmount ? (Number(calculatedSubTotal) || data?.subTotal) : 
-        (Number(calculatedSubTotal) - data?.discount) || (data?.subTotal - data?.discount)
+      console.log(
+        data.discount,
+        calculatedSubTotal,
+        discountBasedOnGrossAmount,
+      );
+      let total = discountBasedOnGrossAmount
+        ? Number(calculatedSubTotal) || data?.subTotal
+        : Number(calculatedSubTotal) - data?.discount ||
+          data?.subTotal - data?.discount;
+          
       setSubTotal(total);
     }
   }, [data]);
@@ -97,7 +107,7 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
     null;
 
   const getRoomNumber = () => {
-    const hasCheckIn = data?.voucherNumber?.[0]?.checkInNumber  ;
+    const hasCheckIn = data?.voucherNumber?.[0]?.checkInNumber;
     const roomNo =
       data?.roomDetails?.roomno ||
       data?.voucherNumber?.[0]?.roomNumber ||
@@ -107,20 +117,20 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
     if (!hasCheckIn && !roomNo) return null;
     return `Room: ${roomNo}`;
   };
-const getFoodPlan = () => {
-  console.log();
-  const hasCheckIn = data?.voucherNumber?.[0]?.checkInNumber;
-  const foodPlanArray = data?.roomDetails?.foodPlanDetails;
+  const getFoodPlan = () => {
+    console.log();
+    const hasCheckIn = data?.voucherNumber?.[0]?.checkInNumber;
+    const foodPlanArray = data?.roomDetails?.foodPlanDetails;
 
-  if (!hasCheckIn && !Array.isArray(foodPlanArray)) return null;
+    if (!hasCheckIn && !Array.isArray(foodPlanArray)) return null;
 
-  // array of names:
-  // return foodPlanArray.map(item => item.planType);
+    // array of names:
+    // return foodPlanArray.map(item => item.planType);
 
-  // or a single comma‑separated string:
-  const names = foodPlanArray.map(item => item.planType).join(", ");
-  return `Food Paln: ${names}`;
-};
+    // or a single comma‑separated string:
+    const names = foodPlanArray.map((item) => item.planType).join(", ");
+    return `Food Paln: ${names}`;
+  };
   const netAmount = Math.round(Number(data?.finalAmount || 0)).toFixed(2);
   const discount = Math.round(
     Number(
@@ -137,7 +147,6 @@ const getFoodPlan = () => {
   // Get actual tax rates directly from item data instead of back-calculating
   console.log(data?.items);
   const getCgstPercentage = () => {
-    
     const item = data?.items?.find((el) => el.cgst > 0);
     return item?.cgst || 0;
   };
@@ -237,26 +246,25 @@ const getFoodPlan = () => {
     return map[type] || type.toUpperCase();
   };
 
-// Payment splits LEFT side list
-const getPaymentSummary = () => {
-  if (!paymentSplits.length) return null;
-  console.log(paymentSplits);
+  // Payment splits LEFT side list
+  const getPaymentSummary = () => {
+    if (!paymentSplits.length) return null;
+    console.log(paymentSplits);
 
-  return paymentSplits
-    .filter((p) => p.amount > 0)
-    .map((p) => (
-      <div
-        key={p.type}
-        style={{
-          fontSize: "10px",
-          fontWeight: "bold",
-        }}
-      >
-        {prettyType(p.type)} : ₹ {Math.round(p.amount).toFixed(2)}
-      </div>
-    ));
-};
-
+    return paymentSplits
+      .filter((p) => p.amount > 0)
+      .map((p) => (
+        <div
+          key={p.type}
+          style={{
+            fontSize: "10px",
+            fontWeight: "bold",
+          }}
+        >
+          {prettyType(p.type)} : ₹ {Math.round(p.amount).toFixed(2)}
+        </div>
+      ));
+  };
 
   return (
     <>
@@ -416,25 +424,28 @@ const getPaymentSummary = () => {
 
             // ✅ Same logic as Format 1 — addRateWithTax controls rate/amount display
             const addRateWithTax =
-              org?.configurations?.[0]?.addRateWithTax?.restaurantSale 
-              // ??
-              // org?.configurations?.[0]?.addRateWithTax?.sale ??
-              // true;
+              org?.configurations?.[0]?.addRateWithTax?.restaurantSale;
+            // ??
+            // org?.configurations?.[0]?.addRateWithTax?.sale ??
+            // true;
 
             console.log(addRateWithTax);
             console.log(count);
             console.log(el.igst);
             console.log(total);
 
-            const rate = addRateWithTax
+            console.log(addRateWithTax)
+            console.log(includeTaxWithPrint)
+
+            const addRate = addRateWithTax
               ? count > 0
                 ? ((total * 100) / (100 + el.igst) / count).toFixed(2)
                 : "0.00" // WITH tax (like format 1)
               : count > 0
                 ? ((total - totalTax) / count).toFixed(2)
                 : "0.00"; // WITHOUT tax
-
-            console.log({ rate });
+console.log(addRate,totalTax)
+            const rate =  includeTaxWithPrint ? Number(addRate) + Number(totalTax/count) : addRate
 
             const amount = (Number(rate) * count).toFixed(2); // WITHOUT tax
 
@@ -454,152 +465,149 @@ const getPaymentSummary = () => {
 
           {/* Totals */}
 
-       {/* Totals row: left = payment splits, right = Amount / taxes */}
-<div
-  style={{
-    fontSize: "10px",
-    marginBottom: "4px",
-    display: "flex",
-    flexDirection: "row",
-  }}
->
-  {/* LEFT SIDE: payment splits */}
-  <div style={{ flex: 1 }}>
-    {getPaymentSummary()}
-  </div>
+          {/* Totals row: left = payment splits, right = Amount / taxes */}
+          <div
+            style={{
+              fontSize: "10px",
+              marginBottom: "4px",
+              display: "flex",
+              flexDirection: "row",
+            }}
+          >
+            {/* LEFT SIDE: payment splits */}
+            <div style={{ flex: 1 }}>{getPaymentSummary()}</div>
 
-  {/* RIGHT SIDE: Amount + taxes */}
-  <div style={{ flex: 1 }}>
-    {/* Amount */}
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "row",
-        marginBottom: "2px",
-        fontWeight: "bold",
-      }}
-    >
-      <div
-        style={{
-          marginLeft: "auto",
-          width: 60,
-          textAlign: "right",
-        }}
-      >
-        Amount
-      </div>
-      <div
-        style={{
-          width: 60,
-          textAlign: "right",
-        }}
-      >
-        {subTotal.toFixed(2)}
-      </div>
-    </div>
-
-    {/* same‑state Indian tax */}
-    {isIndian &&
-      isSameState &&
-      calculateTotalTax() > 0 &&
-      (() => {
-        const entries = Object.entries(cgstGroups);
-
-        // if (entries.length === 0) {
-          return (
-            <>
-              <div style={flexRow}>
+            {/* RIGHT SIDE: Amount + taxes */}
+            <div style={{ flex: 1 }}>
+              {/* Amount */}
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "row",
+                  marginBottom: "2px",
+                  fontWeight: "bold",
+                }}
+              >
                 <div
                   style={{
                     marginLeft: "auto",
-                    width: 70,
-                    fontWeight: "bold",
+                    width: 60,
+                    textAlign: "right",
                   }}
                 >
-                  CGST {cgstPercentage}%
+                  Amount
                 </div>
-                <div style={textRight}>{cgst}</div>
-              </div>
-              <div style={flexRow}>
                 <div
                   style={{
-                    marginLeft: "auto",
-                    width: 70,
-                    fontWeight: "bold",
+                    width: 60,
+                    textAlign: "right",
                   }}
                 >
-                  SGST {sgstPercentage}%
+                  {subTotal.toFixed(2)}
                 </div>
-                <div style={textRight}>{cgst}</div>
               </div>
-            </>
-          );
-        // }
 
-        // return entries.map(([rate, { cgstAmt, sgstAmt, sgstRate }]) => (
-        //   <div key={rate}>
-        //     <div style={flexRow}>
-        //       <div
-        //         style={{
-        //           marginLeft: "auto",
-        //           width: 70,
-        //           fontWeight: "bold",
-        //         }}
-        //       >
-        //         CGST {rate}%
-        //       </div>
-        //       <div style={textRight}>{cgstAmt.toFixed(2)}</div>
-        //     </div>
-        //     <div style={flexRow}>
-        //       <div
-        //         style={{
-        //           marginLeft: "auto",
-        //           width: 70,
-        //           fontWeight: "bold",
-        //         }}
-        //       >
-        //         SGST {sgstRate}%
-        //       </div>
-        //       <div style={textRight}>{sgstAmt.toFixed(2)}</div>
-        //     </div>
-        //   </div>
-        // ));
-      })()}
+              {/* same‑state Indian tax */}
+              {isIndian &&
+                isSameState &&
+                calculateTotalTax() > 0 &&
+                (() => {
+                  const entries = Object.entries(cgstGroups);
 
-    {/* IGST */}
-    {isIndian && !isSameState && calculateTotalTax() > 0 && (
-      <div style={flexRow}>
-        <div
-          style={{
-            marginLeft: "auto",
-            width: 70,
-            fontWeight: "bold",
-          }}
-        >
-          IGST {igstPercentage}%
-        </div>
-        <div style={textRight}>{tax}</div>
-      </div>
-    )}
+                  // if (entries.length === 0) {
+                  return (
+                    <>
+                      <div style={flexRow}>
+                        <div
+                          style={{
+                            marginLeft: "auto",
+                            width: 70,
+                            fontWeight: "bold",
+                          }}
+                        >
+                          CGST {cgstPercentage}%
+                        </div>
+                        <div style={textRight}>{cgst}</div>
+                      </div>
+                      <div style={flexRow}>
+                        <div
+                          style={{
+                            marginLeft: "auto",
+                            width: 70,
+                            fontWeight: "bold",
+                          }}
+                        >
+                          SGST {sgstPercentage}%
+                        </div>
+                        <div style={textRight}>{cgst}</div>
+                      </div>
+                    </>
+                  );
+                  // }
 
-    {/* Non‑Indian tax */}
-    {!isIndian && calculateTotalTax() > 0 && (
-      <div style={flexRow}>
-        <div
-          style={{
-            marginLeft: "auto",
-            width: 70,
-            fontWeight: "bold",
-          }}
-        >
-          Tax {igstPercentage}%
-        </div>
-        <div style={textRight}>{tax}</div>
-      </div>
-    )}
-  </div>
-</div>
+                  // return entries.map(([rate, { cgstAmt, sgstAmt, sgstRate }]) => (
+                  //   <div key={rate}>
+                  //     <div style={flexRow}>
+                  //       <div
+                  //         style={{
+                  //           marginLeft: "auto",
+                  //           width: 70,
+                  //           fontWeight: "bold",
+                  //         }}
+                  //       >
+                  //         CGST {rate}%
+                  //       </div>
+                  //       <div style={textRight}>{cgstAmt.toFixed(2)}</div>
+                  //     </div>
+                  //     <div style={flexRow}>
+                  //       <div
+                  //         style={{
+                  //           marginLeft: "auto",
+                  //           width: 70,
+                  //           fontWeight: "bold",
+                  //         }}
+                  //       >
+                  //         SGST {sgstRate}%
+                  //       </div>
+                  //       <div style={textRight}>{sgstAmt.toFixed(2)}</div>
+                  //     </div>
+                  //   </div>
+                  // ));
+                })()}
 
+              {/* IGST */}
+              {isIndian && !isSameState && calculateTotalTax() > 0 && (
+                <div style={flexRow}>
+                  <div
+                    style={{
+                      marginLeft: "auto",
+                      width: 70,
+                      fontWeight: "bold",
+                    }}
+                  >
+                    IGST {igstPercentage}%
+                  </div>
+                  <div style={textRight}>{tax}</div>
+                </div>
+              )}
+
+              {/* Non‑Indian tax */}
+              {!isIndian && calculateTotalTax() > 0 && (
+                <div style={flexRow}>
+                  <div
+                    style={{
+                      marginLeft: "auto",
+                      width: 70,
+                      fontWeight: "bold",
+                    }}
+                  >
+                    Tax {igstPercentage}%
+                  </div>
+                  <div style={textRight}>{tax}</div>
+                </div>
+              )}
+            </div>
+          </div>
 
           <div style={{ borderBottom: "1px dotted #000", margin: "6px 0" }} />
 
@@ -613,7 +621,7 @@ const getPaymentSummary = () => {
               }}
             >
               {getRoomNumber() && <div style={bold}>{getRoomNumber()}</div>}
-              
+
               <div
                 style={{
                   marginLeft: "auto",
@@ -624,7 +632,7 @@ const getPaymentSummary = () => {
                 Total: {netAmount}
               </div>
             </div>
- {getFoodPlan() && <div style={bold}>{getFoodPlan()}</div>}
+            {getFoodPlan() && <div style={bold}>{getFoodPlan()}</div>}
             {/* {data?.voucherNumber?.[0]?.checkInNumber && (
               <div style={flexRow}>
                 <div style={bold}>{data.voucherNumber[0].checkInNumber}</div>
