@@ -122,7 +122,7 @@ console.log(configurations);
       dbField: "restaurantSale",
     });
      settingsOptions.push({
-      title: "Discount calculated with amount include tax.",
+      title: "Discount based on amount include tax.",
       description: "Better management of amount and discount",
       icon: <TiPrinter />,
       active: true,

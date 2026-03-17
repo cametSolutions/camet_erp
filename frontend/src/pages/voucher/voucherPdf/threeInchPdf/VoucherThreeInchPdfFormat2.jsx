@@ -32,7 +32,8 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
     org?.state?.toLowerCase() === party?.state?.toLowerCase() || !party?.state;
 
   const voucherType = data?.voucherType;
-
+  const discountBasedOnGrossAmount = org.configurations[0].discountBasedOnGrossAmount
+  
   const getVoucherNumber = () => {
     if (!voucherType) return "";
     if (voucherType === "sales" || voucherType === "vanSale")
@@ -60,7 +61,10 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
           0,
         )
         .toFixed(2);
-      setSubTotal(Number(calculatedSubTotal || data?.subTotal));
+        console.log(data.discount, calculatedSubTotal, discountBasedOnGrossAmount);
+        let total = discountBasedOnGrossAmount ? (Number(calculatedSubTotal) || data?.subTotal) : 
+        (Number(calculatedSubTotal) - data?.discount) || (data?.subTotal - data?.discount)
+      setSubTotal(total);
     }
   }, [data]);
 
@@ -131,7 +135,9 @@ const getFoodPlan = () => {
   // const cgstPercentage = (Number(cgst) / Number(data?.subtotal || data?.subTotal)) * 100;
 
   // Get actual tax rates directly from item data instead of back-calculating
+  console.log(data?.items);
   const getCgstPercentage = () => {
+    
     const item = data?.items?.find((el) => el.cgst > 0);
     return item?.cgst || 0;
   };
@@ -146,6 +152,9 @@ const getFoodPlan = () => {
   const cgstPercentage = getCgstPercentage();
   const sgstPercentage = getSgstPercentage();
   const igstPercentage = getIgstPercentage();
+  console.log("cgstPercentage", cgstPercentage);
+  console.log("sgstPercentage", sgstPercentage);
+  console.log("igstPercentage", igstPercentage);
   const handlePrint = useReactToPrint({
     content: () => contentToPrint.current,
   });
