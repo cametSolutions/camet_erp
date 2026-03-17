@@ -891,16 +891,14 @@ const discountBasedOnGrossAmount = org.configurations[0].discountBasedOnGrossAmo
       .reduce((acc, item) => acc + Number(item.total), 0))
       .toFixed(2);
     }else{
-      console.log(itemList.length)
       let spiltDiscount = discountAmount / itemList.length;
-      console.log(spiltDiscount)
       subtotal =Math.round(itemList
       .reduce((acc, item) => acc + (Number(item.total)- spiltDiscount), 0))
       .toFixed(2);
     }
  
       console.log(subtotal);
-    let finalAmount =discountBasedOnGrossAmount ? Math.round(Number(subtotal) - (discountAmount || 0)).toFixed(2) : Math.round(subtotal ).toFixed(2)
+    let finalAmount = discountBasedOnGrossAmount ? Math.round(Number(subtotal) - (discountAmount || 0)).toFixed(2) : Math.round(subtotal ).toFixed(2)
 console.log(finalAmount)
     let additionalChargesArray = [];
 
