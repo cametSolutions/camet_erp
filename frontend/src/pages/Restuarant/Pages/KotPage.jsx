@@ -84,21 +84,22 @@ const OrdersDashboard = () => {
 
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [selectedOrderForCancel, setSelectedOrderForCancel] = useState(null);
-  const [cancelledKots, setCancelledKots] = useState([]);
+  // const [cancelledKots, setCancelledKots] = useState([]);
   const [cancelReason, setCancelReason] = useState("");
   const [cancelError, setCancelError] = useState("");
 
   const [discountAmount, setDiscountAmount] = useState(0);
-  const [discountCharge, setDiscountCharge] = useState(null);
+  // const [discountCharge, setDiscountCharge] = useState(null);
 
   const [discountType, setDiscountType] = useState("amount"); // "amount" or "percentage"
   const [discountValue, setDiscountValue] = useState(0);
   const [isForComp, setIsForComp] = useState(false);
   const [showPrintConfirmModal, setShowPrintConfirmModal] = useState(false);
   const [printData, setPrintData] = useState(null);
-  
+  const [selectedAdditionalChargeData, setSelectedAdditionalChargeData] =
+    useState(null);
 
-  const queryClient = useQueryClient();
+  // const queryClient = useQueryClient();
   const navigate = useNavigate();
 
   const { _id: cmp_id, name: companyName } = useSelector(
@@ -109,10 +110,8 @@ const OrdersDashboard = () => {
     (state) => state.secSelectedOrganization.secSelectedOrg,
   );
 
-
-const discountBasedOnGrossAmount = org.configurations[0].discountBasedOnGrossAmount
-  
- 
+  const discountBasedOnGrossAmount =
+    org.configurations[0].discountBasedOnGrossAmount;
 
   const { data, refreshHook } = useFetch(
     `/api/sUsers/getKotData/${cmp_id}?date=${selectedDate}`,
@@ -144,7 +143,7 @@ const discountBasedOnGrossAmount = org.configurations[0].discountBasedOnGrossAmo
           : Array.isArray(response.data)
             ? response.data
             : [];
-
+        setSelectedAdditionalChargeData(additionalChargesResponse[0]._id);
         setAllAdditionalChargesFromRedux(additionalChargesResponse);
       }
 
@@ -370,9 +369,9 @@ const discountBasedOnGrossAmount = org.configurations[0].discountBasedOnGrossAmo
   const getFilteredOrders = () => {
     let filtered = orders;
 
-    filtered = filtered.filter(
-      (order) => !cancelledKots.some((cancelled) => cancelled.id === order._id),
-    );
+    // filtered = filtered.filter(
+    //   (order) => !cancelledKots.some((cancelled) => cancelled.id === order._id),
+    // );
     // Filter by status based on user role and active filter
     // if (userRole === "kitchen") {
     //   if (activeFilter === "All") {
@@ -703,12 +702,29 @@ const discountBasedOnGrossAmount = org.configurations[0].discountBasedOnGrossAmo
       }
       // const previewDiscount = previewForSales?.discount || discountAmount;
       // const previewDiscountCharge = previewForSales?.discountCharge || discountCharge;
-      let additionalCharges = [];
 
+      let findOne = additionalCharges.find(
+        (charge) => charge._id === selectedAdditionalChargeData,
+      );
+
+      let additionalChargesData = [];
       if (previewForSales && previewForSales.additionalCharges) {
         // ✅ Use EXACTLY what's in preview - don't rebuild
-        additionalCharges = previewForSales.additionalCharges;
+        additionalChargesData = previewForSales.additionalCharges;
+        additionalChargesData = [
+          {
+            _id: findOne._id,
+            option: findOne.name,
+            value: previewForSales.additionalCharges[0].amount,
+            action: "sub",
+            taxPercentage: findOne.taxPercentage,
+            taxAmt: previewForSales.additionalCharges[0].taxAmount || 0,
+            hsn: findOne.hsn,
+            finalValue: previewForSales.additionalCharges[0].finalValue,
+          },
+        ];
       }
+      
       console.log("=== PAYMENT SUBMISSION ===");
       const hasAutoComplimentary = selectedKot.some((kot) => {
         const order = filteredOrders.find((o) => o._id === kot.id);
@@ -743,7 +759,7 @@ const discountBasedOnGrossAmount = org.configurations[0].discountBasedOnGrossAmo
         selectedKotData,
         isPostToRoom,
         isDirectSale: selectedDataForPayment?.isDirectSale || false,
-        additionalCharges: additionalCharges,
+        additionalCharges: additionalChargesData,
         isComplimentary: isComplimentary, // ✅ ADD THIS
         isManuallyComplimentary: isManuallyComplimentary,
         //  discountCharge: previewDiscountCharge,
@@ -751,8 +767,8 @@ const discountBasedOnGrossAmount = org.configurations[0].discountBasedOnGrossAmo
         note,
       };
 
-      console.log("=== PAYMENT OBJECT BEING SENT ===");
-      console.log(JSON.stringify(payment, null, 2));
+      console.log(payment);
+      return
 
       const response = await api.put(
         `/api/sUsers/updateKotPayment/${cmp_id}`,
@@ -773,8 +789,8 @@ const discountBasedOnGrossAmount = org.configurations[0].discountBasedOnGrossAmo
             : response?.data?.message,
         );
 
-        console.log(response.data.data)
-        
+        console.log(response.data.data);
+
         setPrintData(response?.data?.data);
         setShowPaymentModal(false);
         setSelectedDiscountCharge(null);
@@ -861,9 +877,9 @@ const discountBasedOnGrossAmount = org.configurations[0].discountBasedOnGrossAmo
 
     let roomDetails = null;
     let itemList = selectedKot.flatMap((item) => {
-      console.log(item)
+      console.log(item);
       let findOne = filteredOrders.find((order) => order._id == item.id);
-      console.log(findOne.roomId)
+      console.log(findOne.roomId);
       if (findOne) {
         if (!roomDetails && findOne.roomId) {
           roomDetails = {
@@ -885,21 +901,26 @@ const discountBasedOnGrossAmount = org.configurations[0].discountBasedOnGrossAmo
       return findOne?.items || []; // return empty array if not found
     });
     console.log(itemList);
-    let subtotal = 0
-    if(discountBasedOnGrossAmount){
-       subtotal =Math.round(itemList
-      .reduce((acc, item) => acc + Number(item.total), 0))
-      .toFixed(2);
-    }else{
+    let subtotal = 0;
+    if (discountBasedOnGrossAmount) {
+      subtotal = Math.round(
+        itemList.reduce((acc, item) => acc + Number(item.total), 0),
+      ).toFixed(2);
+    } else {
       let spiltDiscount = discountAmount / itemList.length;
-      subtotal =Math.round(itemList
-      .reduce((acc, item) => acc + (Number(item.total)- spiltDiscount), 0))
-      .toFixed(2);
+      subtotal = Math.round(
+        itemList.reduce(
+          (acc, item) => acc + (Number(item.total) - spiltDiscount),
+          0,
+        ),
+      ).toFixed(2);
     }
- 
-      console.log(subtotal);
-    let finalAmount = discountBasedOnGrossAmount ? Math.round(Number(subtotal) - (discountAmount || 0)).toFixed(2) : Math.round(subtotal ).toFixed(2)
-console.log(finalAmount)
+
+    console.log(subtotal);
+    let finalAmount = discountBasedOnGrossAmount
+      ? Math.round(Number(subtotal) - (discountAmount || 0)).toFixed(2)
+      : Math.round(subtotal).toFixed(2);
+    console.log(finalAmount);
     let additionalChargesArray = [];
 
     if (discountAmount > 0 && selectedDiscountCharge) {
@@ -1060,16 +1081,15 @@ console.log(finalAmount)
   }, [selectedKot]);
 
   const handlePrintShow = () => {
-    let updatedData = { ...printData.salesRecord,...printData?.kotData };
+    let updatedData = { ...printData.salesRecord, ...printData?.kotData };
     navigate(`/sUsers/sharesalesThreeInch2/${true}`, {
-      state: updatedData
+      state: updatedData,
     });
   };
 
   console.log("selectedKot", filteredOrders[0]);
   return (
     <>
-
       {showVoucherPdf && (
         <div>
           {billFormat === "format1" ? (
@@ -1099,13 +1119,12 @@ console.log(finalAmount)
         <div className="min-h-screen bg-gray-50">
           {/* Header */}
           <div className=" px-2 py-2 border-b border-gray-200 bg-[#012a4a]">
-
             {/* Mobile Layout */}
             <div className="block sm:hidden">
               <IoIosArrowRoundBack
-                            onClick={() => navigate(-1)}
-                            className="cursor-pointer text-3xl text-white"
-                          />
+                onClick={() => navigate(-1)}
+                className="cursor-pointer text-3xl text-white"
+              />
               {/* First Row - Title */}
               <div className="mb-3">
                 <h1 className="text-lg font-semibold text-gray-600  text-center">
@@ -1123,8 +1142,10 @@ console.log(finalAmount)
                   <select
                     value={userRole}
                     onChange={(e) => {
+                      setLoader(true);
                       setUserRole(e.target.value);
                       setActiveFilter("ON PROCESS");
+                      setLoader(false);
                     }}
                     className="px-2 py-1 border border-gray-300 rounded text-sm"
                   >
@@ -1152,9 +1173,9 @@ console.log(finalAmount)
             <div className="hidden sm:flex justify-between items-center bg-">
               <div className="flex items-center gap-4">
                 <IoIosArrowRoundBack
-                            onClick={() => navigate(-1)}
-                            className="cursor-pointer text-3xl text-white"
-                          />
+                  onClick={() => navigate(-1)}
+                  className="cursor-pointer text-3xl text-white"
+                />
                 <h1 className="text-xl font-semibold text-gray-500 ">
                   {userRole === "kitchen"
                     ? "Kitchen Orders"
@@ -1692,7 +1713,12 @@ console.log(finalAmount)
                           </label>
 
                           <div className="flex flex-col gap-2">
-                            <select value={additionalCharges[0]?._id}>
+                            <select
+                              value={additionalCharges[0]?._id}
+                              onChange={(e) =>
+                                setSelectedAdditionalChargeData(e.target.value)
+                              }
+                            >
                               <option value="">Select Discount</option>
                               {additionalCharges.map((charge) => (
                                 <option key={charge._id} value={charge._id}>
@@ -1733,9 +1759,17 @@ console.log(finalAmount)
                                         },
                                         0,
                                       );
-                                      setDiscountAmount(
-                                        (subtotal * discountValue) / 100,
-                                      );
+                                     
+                                       let findOne = additionalCharges.find(
+                                      (charge) => charge._id === selectedAdditionalChargeData,
+                                    );
+
+                                    console.log("findOne", findOne);
+                                    let calculatedAmount = (subtotal * discountValue) / 100
+                                    const tax = Number(findOne?.taxPercentage || 0);
+
+                                    let finalAmount = calculatedAmount * (1 + tax / 100);
+                                     setDiscountAmount(finalAmount);
                                     }
                                   }}
                                   className={`px-2 py-1.5 rounded-md text-xs font-medium transition-all ${
@@ -1776,7 +1810,18 @@ console.log(finalAmount)
                                         ? (subtotal * value) / 100
                                         : value;
 
-                                    setDiscountAmount(calculatedAmount);
+                                    let findOne = additionalCharges.find(
+                                      (charge) => charge._id === selectedAdditionalChargeData,
+                                    );
+
+                                    console.log("findOne", findOne);
+
+                                    const tax = Number(findOne?.taxPercentage || 0);
+
+                                    let finalAmount = calculatedAmount * (1 + tax / 100);
+
+                                    console.log(finalAmount)
+                                    setDiscountAmount(finalAmount);
 
                                     if (value > 0) {
                                       setSelectedDiscountCharge({
@@ -1814,7 +1859,7 @@ console.log(finalAmount)
                                   <span className="text-red-700">
                                     {discountType === "percentage"
                                       ? `${discountValue}% discount`
-                                      : "Discount"}
+                                      : "Discount"} ({additionalCharges.find((charge) => charge._id === selectedAdditionalChargeData)?.taxPercentage}%)
                                   </span>
                                   <span className="font-semibold text-red-800">
                                     - ₹{discountAmount.toFixed(2)}
@@ -2407,8 +2452,8 @@ console.log(finalAmount)
                               ₹
                               {Math.round(
                                 selectedDataForPayment?.total -
-                                (parseFloat(cashAmount || 0) +
-                                  parseFloat(onlineAmount || 0))
+                                  (parseFloat(cashAmount || 0) +
+                                    parseFloat(onlineAmount || 0)),
                               ).toFixed(2)}
                             </span>
                           </div>
