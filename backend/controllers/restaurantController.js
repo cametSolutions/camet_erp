@@ -1114,7 +1114,7 @@ export const updateKotPayment = async (req, res) => {
         note,
       } = req.body;
 
-      discountAmount = req?.body?.additionalCharges[0]?.amount || 0;
+      discountAmount = Number(req?.body?.additionalCharges[0]?.finalValue || 0)
 
       // console.log("table", kotData);
       console.log("req?.body", req?.body);
@@ -1704,12 +1704,12 @@ async function createSalesVoucher(
   // ✅ Calculate totals
   const totalAdditionalCharges = additionalCharges?.reduce((sum, charge) => {
     console.log("charge", charge);
-    return sum + Number(charge.amount || charge.value || 0);
+    return sum + Number(charge.finalValue ||charge.amount || charge.value || 0);
   }, 0);
 
   const discountTotal = additionalCharges
-    .filter((charge) => charge.type === "subtract")
-    .reduce((sum, charge) => sum + Number(charge.amount || 0), 0);
+    .filter((charge) => charge.action === "sub")
+    .reduce((sum, charge) => sum + Number(charge.finalValue || 0), 0);
 
   const finalAmount = originalTotal - discountTotal;
 

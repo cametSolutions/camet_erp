@@ -1691,7 +1691,7 @@ const scrollHeaderPrice = (direction) => {
                               </div>
 
                               {/* Product Name */}
-                              <h3 className="font-bold text-gray-800 text-xs mb-1.5 line-clamp-2 relative z-10 group-hover:text-indigo-700 transition-colors duration-300">
+                              <h3 className="font-bold text-gray-800 break-all text-xs mb-1.5 line-clamp-2 relative z-10 group-hover:text-indigo-700 transition-colors duration-300">
                                 {item.product_name.toUpperCase()}
                               </h3>
 

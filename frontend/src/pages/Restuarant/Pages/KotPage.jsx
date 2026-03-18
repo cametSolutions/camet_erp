@@ -711,11 +711,12 @@ const OrdersDashboard = () => {
       if (previewForSales && previewForSales.additionalCharges) {
         // ✅ Use EXACTLY what's in preview - don't rebuild
         additionalChargesData = previewForSales.additionalCharges;
+        console.log(additionalChargesData)
         additionalChargesData = [
           {
             _id: findOne._id,
             option: findOne.name,
-            value: previewForSales.additionalCharges[0].amount,
+            value: previewForSales.additionalCharges[0].amount || 0,
             action: "sub",
             taxPercentage: findOne.taxPercentage,
             taxAmt: previewForSales.additionalCharges[0].taxAmount || 0,
@@ -723,6 +724,7 @@ const OrdersDashboard = () => {
             finalValue: previewForSales.additionalCharges[0].finalValue,
           },
         ];
+          console.log(additionalChargesData)
       }
       
       console.log("=== PAYMENT SUBMISSION ===");
@@ -768,7 +770,6 @@ const OrdersDashboard = () => {
       };
 
       console.log(payment);
-      return
 
       const response = await api.put(
         `/api/sUsers/updateKotPayment/${cmp_id}`,
@@ -935,7 +936,7 @@ const OrdersDashboard = () => {
       additionalChargesArray.push({
         _id: selectedDiscountCharge._id || null,
         name: discountName, // ✅ Add name
-        amount: Number(discountAmount), // ✅ Calculated discount amount
+        amount: Number(discountValue), // ✅ Calculated discount amount
         type: "subtract",
         value: Number(discountValue), // ✅ Original input value
         discountType: discountType,
@@ -944,6 +945,7 @@ const OrdersDashboard = () => {
         finalValue: Number(discountAmount),
       });
     }
+    console.log(additionalChargesArray);
 
     let newObject = {
       Date: new Date(),
@@ -1768,7 +1770,7 @@ const OrdersDashboard = () => {
                                     let calculatedAmount = (subtotal * discountValue) / 100
                                     const tax = Number(findOne?.taxPercentage || 0);
 
-                                    let finalAmount = calculatedAmount * (1 + tax / 100);
+                                    let finalAmount = Number(calculatedAmount * (1 + tax / 100)).toFixed(2);
                                      setDiscountAmount(finalAmount);
                                     }
                                   }}
@@ -1818,7 +1820,7 @@ const OrdersDashboard = () => {
 
                                     const tax = Number(findOne?.taxPercentage || 0);
 
-                                    let finalAmount = calculatedAmount * (1 + tax / 100);
+                                    let finalAmount = Number(calculatedAmount * (1 + tax / 100)).toFixed(2);
 
                                     console.log(finalAmount)
                                     setDiscountAmount(finalAmount);
@@ -1862,7 +1864,7 @@ const OrdersDashboard = () => {
                                       : "Discount"} ({additionalCharges.find((charge) => charge._id === selectedAdditionalChargeData)?.taxPercentage}%)
                                   </span>
                                   <span className="font-semibold text-red-800">
-                                    - ₹{discountAmount.toFixed(2)}
+                                    - ₹{discountAmount}
                                   </span>
                                 </div>
                               </div>
@@ -2012,7 +2014,7 @@ const OrdersDashboard = () => {
                           </div>
                           {discountAmount > 0 && (
                             <div className="text-xs text-green-700 text-right mt-1">
-                              (After ₹{discountAmount.toFixed(2)} discount)
+                              (After ₹{discountAmount} discount)
                             </div>
                           )}
                         </div>
