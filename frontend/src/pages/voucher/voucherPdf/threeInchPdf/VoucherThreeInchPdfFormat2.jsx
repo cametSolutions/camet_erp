@@ -445,8 +445,8 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
               : count > 0
                 ? ((total - totalTax) / count).toFixed(2)
                 : "0.00"; // WITHOUT tax
-console.log(addRate,totalTax)
-            const rate =  includeTaxWithPrint ? Number(addRate) + Number(totalTax/count) : addRate
+
+            const rate =  includeTaxWithPrint ? Number(addRate) + Number(totalTax/count).toFixed(2) : addRate
 
             const amount = (Number(rate) * count).toFixed(2); // WITHOUT tax
 

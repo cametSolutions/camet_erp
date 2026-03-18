@@ -588,6 +588,7 @@ useEffect(() => {
       finalValue: discountAmount,
     });
   }
+  
 
   const handleProcessDirectSalePayment = async () => {
     setSaveLoader(true);
