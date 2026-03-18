@@ -123,7 +123,7 @@ const restuarentSettings = () => {
     });
     settingsOptions.push({
       title: "Include tax with print",
-      description: "In the tate and amount will print withe tax",
+      description: "In this option rate and amount will print with tax",
       icon: <IoCalculator />,
       active: true,
       toggle: true,

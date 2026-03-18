@@ -132,15 +132,16 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
     return `Food Paln: ${names}`;
   };
   const netAmount = Math.round(Number(data?.finalAmount || 0)).toFixed(2);
+
   const discount = Math.round(
     Number(
-      data?.totalAdditionalCharges || data?.additionalCharges?.[0]?.amount,
+      data?.totalAdditionalCharges || data?.additionalCharges?.[0]?.finalValue,
     ),
   ).toFixed(2);
   console.log("discount", discount);
   console.log("netAmount", netAmount);
   const tax = Math.round(calculateTotalTax()).toFixed(2);
-  const cgst = Math.round(calculateTotalTax() / 2).toFixed(2);
+  const cgst = (calculateTotalTax() / 2).toFixed(2);
 
   // const cgstPercentage = (Number(cgst) / Number(data?.subtotal || data?.subTotal)) * 100;
 
