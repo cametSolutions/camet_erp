@@ -100,7 +100,7 @@ const kotSchema = new mongoose.Schema({
     type: String,
     trim: true,
   },
-  discount: { type: Number, default: 0 ,set: (val) => Math.round(val),},
+  discount: { type: Number, default: 0, set: (val) => Math.round(val) },
   discountChargeId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "AdditionalCharges",
@@ -112,11 +112,14 @@ const kotSchema = new mongoose.Schema({
     default: null,
   },
 
-  foodPlanDetails: {
-    planName: { type: String, default: null },
-    amount: { type: Number, default: 0 },
-    isComplimentary: { type: Boolean, default: false },
-  },
+  foodPlanDetails: [
+    {
+      _id: { type: mongoose.Schema.Types.ObjectId, ref: "FoodPlan" },
+      planType: String,
+      amount: Number,
+      isComplimentary: Boolean,
+    },
+  ],
 
   isManuallyComplimentary: {
     type: Boolean,

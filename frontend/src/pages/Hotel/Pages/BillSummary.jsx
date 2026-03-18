@@ -223,8 +223,7 @@ export const generatePDF = (
               row.mode === "Credit" ||
               (row.credit || 0) > 0;
             const grossAmount = (row.amount || 0) - (row.igst || 0);
-            const totalTax =
-              (row.cgst || 0) + (row.sgst || 0) ;
+            const totalTax = (row.cgst || 0) + (row.sgst || 0);
 
             return `
               <tr>
@@ -242,7 +241,10 @@ export const generatePDF = (
                 <td class="text-right">${Math.round(Number(row.upi || 0))}</td>
                 <td class="text-right">${Math.round(Number(row.bank || 0))}</td>
                 <td class="text-right">${Math.round(Number(row.card || 0))}</td>
-                <td>${row.mode || "-"}</td>
+                <td>${row.PaymentModeArray &&
+                          row.PaymentModeArray.length > 0
+                            ? row.PaymentModeArray.join(", ")
+                            : "-"} </td>
                 ${
                   businessType !== "hotel"
                     ? `<td>${row.mealPeriod || "-"}</td><td>${row.kotType || "-"}</td>`
@@ -480,7 +482,6 @@ const exportToExcel = (
         (row.credit || 0) > 0;
       const grossAmount = (row.amount || 0) - (row.igst || 0);
 
-
       const baseRow = [
         row.billNo || "",
         row.date ? new Date(row.date).toLocaleDateString() : "",
@@ -496,7 +497,10 @@ const exportToExcel = (
         Math.round(row.upi || 0),
         Math.round(row.bank || 0),
         Math.round(row.card || 0),
-        row.mode || "",
+       row.PaymentModeArray &&
+                          row.PaymentModeArray.length > 0
+                            ? row.PaymentModeArray.join(", ")
+                            : "-"|| "",
       ];
 
       if (businessType !== "hotel") {
@@ -518,7 +522,7 @@ const exportToExcel = (
       Math.round(totals.amount),
       totals.cgst.toFixed(2),
       totals.sgst.toFixed(2),
-      (totals.igst).toFixed(2),
+      totals.igst.toFixed(2),
       Math.round(totals.disc),
       Math.round(totals.roundOff),
       Math.round(totals.totalWithTax),
@@ -535,8 +539,8 @@ const exportToExcel = (
     ["FINANCIAL SUMMARY"],
     ["Gross Amount", Math.round(totals.amount)],
     ["Discount", Math.round(totals.disc)],
-    ["CGST", (totals.cgst).toFixed(2)],
-    ["SGST",(totals.sgst).toFixed(2)],
+    ["CGST", totals.cgst.toFixed(2)],
+    ["SGST", totals.sgst.toFixed(2)],
     ["Total Tax", (totals.cgst + totals.sgst).toFixed(2)],
     ["Cash", Math.round(totals.cash)],
     ["UPI", Math.round(totals.upi)],
@@ -1228,9 +1232,13 @@ const BillSummary = () => {
                             ? Math.round(Number(row.card))
                             : "-"}
                         </td>
-                        <td className="border border-gray-200 px-2 py-1 text-center">
-                          {row.mode || "-"}
+                        <td className="border border-gray-200 px-2 py-1 text-center overflow-hidden">
+                          {row.PaymentModeArray &&
+                          row.PaymentModeArray.length > 0
+                            ? row.PaymentModeArray.join(", ")
+                            : "-"}
                         </td>
+
                         {businessType !== "hotel" && (
                           <>
                             <td className="border border-gray-200 px-2 py-1 text-center">

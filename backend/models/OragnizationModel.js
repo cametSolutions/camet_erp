@@ -76,17 +76,18 @@ const organizationSchema = new mongoose.Schema(
             restaurantPrint1: true,
             restaurantPrint2: false,
             showBeforeSaleInRestaurant: false,
+            showPrintWithTaxInRestaurant: true,
           },
         },
-           orderTypes: {
-      type: Object,
-      default: {
-        dineIn: false,
-        takeaway: false,
-        delivery: false,
-        roomService: false,
-      },
-    },
+        orderTypes: {
+          type: Object,
+          default: {
+            dineIn: false,
+            takeaway: false,
+            delivery: false,
+            roomService: false,
+          },
+        },
         showDescription: {
           type: Object,
           default: {
@@ -152,6 +153,11 @@ const organizationSchema = new mongoose.Schema(
           },
         ],
 
+        discountBasedOnGrossAmount: {
+          type: Boolean,
+          default: true,
+        },
+
         termsAndConditions: [
           {
             voucher: { type: String, default: "saleOrder" }, // Define the type for clarity
@@ -163,7 +169,7 @@ const organizationSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 organizationSchema.index({ owner: 1, name: 1 }, { unique: true });
