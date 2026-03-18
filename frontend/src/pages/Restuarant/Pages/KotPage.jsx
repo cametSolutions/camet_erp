@@ -395,10 +395,11 @@ const OrdersDashboard = () => {
 
     // Filter by search query
     if (searchQuery) {
+      console.log(filtered);
       filtered = filtered.filter(
         (order) =>
-          order.customer?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          order.id?.toString().includes(searchQuery) ||
+           order?.customer?.tableNumber?.toLowerCase().includes(searchQuery.toLowerCase())|| order?.customer?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          order?.id?.toString().includes(searchQuery) ||
           order.items.some(
             (item) =>
               item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -690,7 +691,7 @@ const OrdersDashboard = () => {
       );
 
       let additionalChargesData = [];
-      if (previewForSales && previewForSales.additionalCharges) {
+      if (previewForSales && previewForSales.additionalCharges.length > 0) {
         // ✅ Use EXACTLY what's in preview - don't rebuild
         additionalChargesData = previewForSales.additionalCharges;
         console.log(additionalChargesData)
