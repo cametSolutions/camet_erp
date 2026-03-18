@@ -368,24 +368,6 @@ const OrdersDashboard = () => {
   // Updated getFilteredOrders function with proper kitchen filtering
   const getFilteredOrders = () => {
     let filtered = orders;
-
-    // filtered = filtered.filter(
-    //   (order) => !cancelledKots.some((cancelled) => cancelled.id === order._id),
-    // );
-    // Filter by status based on user role and active filter
-    // if (userRole === "kitchen") {
-    //   if (activeFilter === "All") {
-    //     // Kitchen - All: Show all statuses
-    //     filtered = filtered.filter((order) =>
-    //       ["pending", "cooking", "ready_to_serve"].includes(order.status)
-    //     );
-    //   } else if (activeFilter === "On Process") {
-    //     // Kitchen - On Process: Show pending, cooking, and ready_to_serve
-    //     filtered = filtered.filter((order) =>
-    //       ["pending", "cooking", "ready_to_serve"].includes(order.status)
-    //     );
-    //   }
-    // } else if (userRole === "reception") {
     if (activeFilter === "All") {
       // Reception - All: Show all statuses
       filtered = filtered.filter((order) =>
