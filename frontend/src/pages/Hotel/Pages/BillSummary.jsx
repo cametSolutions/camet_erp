@@ -732,7 +732,7 @@ const BillSummary = () => {
       );
 
       const result = response.data;
-
+console.log(result.data.sales[8]);
       if (result.success) {
         setSalesData(result.data.sales || []);
         setSummary(result.data.summary || {});
