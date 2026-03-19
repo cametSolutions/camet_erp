@@ -1387,10 +1387,10 @@ const OrdersDashboard = () => {
                                 )}
                               </span>
                               <span className="text-black font-bold truncate flex ml-auto ">
-                                      {order.foodPlanDetails?.length > 0
-                                        ? ` ${order.foodPlanDetails.map((plan) => plan.planType).join(", ")}`
-                                        : ""}
-                                    </span>
+                                {order.foodPlanDetails?.length > 0
+                                  ? ` ${order.foodPlanDetails.map((plan) => plan.planType).join(", ")}`
+                                  : ""}
+                              </span>
                               {(order.isManuallyComplimentary ||
                                 order.foodPlanDetails?.isComplimentary) && (
                                 <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full font-medium">
@@ -1524,33 +1524,24 @@ const OrdersDashboard = () => {
                     >
                       {/* ── Group Header ── */}
                       <div className="flex items-center gap-2 mb-3 h-8">
-                        {/* Accent bar */}
                         <div className="w-0.5 h-full bg-gradient-to-b from-blue-500 to-indigo-500 rounded-full flex-shrink-0" />
-
-                        {/* Icon */}
                         {icon && (
                           <span className="text-sm flex-shrink-0 leading-none">
                             {icon}
                           </span>
                         )}
-
-                        {/* Label */}
                         <span className="text-sm font-bold text-gray-800 leading-none tracking-wide truncate">
                           {label}
                         </span>
-
-                        {/* Badge — always same height, never shifts */}
                         <span className="flex-shrink-0 inline-flex items-center h-5 px-2 text-[10px] font-bold text-blue-600 bg-blue-50 border border-blue-100 rounded-full leading-none">
                           {orders?.length}{" "}
                           {orders?.length === 1 ? "order" : "orders"}
                         </span>
-
-                        {/* Trailing line */}
                         <div className="flex-1 h-px bg-gradient-to-r from-gray-200 to-transparent min-w-[8px]" />
                       </div>
 
-                      {/* Cards */}
-                      <div className="flex flex-wrap gap-3">
+                      {/* ── Cards Row ── */}
+                      <div className="flex flex-nowrap gap-3 overflow-x-auto pb-1">
                         {orders.map((order) => {
                           const currentStatusConfig =
                             statusConfig[order.status];
@@ -1558,11 +1549,13 @@ const OrdersDashboard = () => {
                             (item) => item.id === order._id,
                           );
                           const isExpanded = expandedOrders[order._id];
+                          const discountedTotal =
+                            Number(order.total) - Number(order.discount || 0);
 
                           return (
                             <div
                               key={order._id}
-                              style={{ width: cardW }}
+                              style={{ width: cardW, minWidth: cardW }}
                               className={`relative rounded-xl border bg-white overflow-hidden flex flex-col transition-all duration-200 ${
                                 isSelected
                                   ? "border-blue-500 ring-2 ring-blue-200 shadow-lg"
@@ -1581,7 +1574,7 @@ const OrdersDashboard = () => {
                                 </div>
                               )}
 
-                              {/* Card Header */}
+                              {/* ── Card Header ── */}
                               <div
                                 className={`px-2 py-1.5 bg-gradient-to-r border-b cursor-pointer ${
                                   isSelected
@@ -1622,14 +1615,14 @@ const OrdersDashboard = () => {
                                       e.stopPropagation();
                                       handleEditKot(order);
                                     }}
-                                    className="flex-shrink-0 ml-1"
+                                    className="flex-shrink-0 ml-1 w-6 h-6 rounded flex items-center justify-center hover:bg-blue-100 transition-colors"
                                   >
                                     <FaRegEdit className="w-3 h-3 text-blue-600 hover:text-blue-800" />
                                   </button>
                                 </div>
                               </div>
 
-                              {/* Body */}
+                              {/* ── Card Body ── */}
                               <div
                                 className="px-2 py-2 flex flex-col gap-1.5 flex-1 cursor-pointer"
                                 onClick={() => {
@@ -1653,6 +1646,7 @@ const OrdersDashboard = () => {
                                     </span>
                                   )}
                                 </div>
+
                                 <div className="flex items-center gap-1 text-[10px] text-gray-500">
                                   <MdAccessTime className="w-3 h-3 flex-shrink-0" />
                                   <span className="truncate">
@@ -1670,21 +1664,16 @@ const OrdersDashboard = () => {
                                       minute: "2-digit",
                                       hour12: true,
                                     })}
-                                    
                                   </span>
-                                     <span className="text-black font-bold truncate flex ml-auto ">
-                                      {order.foodPlanDetails?.length > 0
-                                        ? ` ${order.foodPlanDetails.map((plan) => plan.planType).join(", ")}`
-                                        : ""}
+                                  {order.foodPlanDetails?.length > 0 && (
+                                    <span className="text-black font-bold truncate flex ml-auto">
+                                      {order.foodPlanDetails
+                                        .map((plan) => plan.planType)
+                                        .join(", ")}
                                     </span>
+                                  )}
                                 </div>
-                                {/* { order.foodPlanDetails?.length > 0  && (
-                        <div className="flex items-center gap-1 text-[10px] text-black text-bold">
-                      <span className="truncate">
-                         Food Plan :  
-                      </span>
-                    </div>
-                     )} */}
+
                                 <div
                                   className={`self-start flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${currentStatusConfig.bgColor} ${currentStatusConfig.textColor}`}
                                 >
@@ -1693,6 +1682,7 @@ const OrdersDashboard = () => {
                                   />
                                   {currentStatusConfig.label}
                                 </div>
+
                                 <div className="flex items-center justify-between mt-0.5">
                                   <span
                                     className={`text-[10px] font-medium flex items-center gap-1 px-1.5 py-0.5 rounded-md ${
@@ -1710,11 +1700,7 @@ const OrdersDashboard = () => {
                                   </span>
                                   <div className="text-right">
                                     <div className="text-xs font-bold text-gray-900">
-                                      ₹
-                                      {(
-                                        Number(order.total) -
-                                        Number(order.discount || 0)
-                                      ).toFixed(0)}
+                                      ₹{discountedTotal.toFixed(0)}
                                     </div>
                                     {order.discount > 0 && (
                                       <div className="text-[9px] text-gray-400 line-through">
@@ -1725,11 +1711,12 @@ const OrdersDashboard = () => {
                                 </div>
                               </div>
 
-                              {/* Action buttons */}
+                              {/* ── Action Buttons ── */}
                               <div
                                 className="px-2 pb-2 flex gap-1"
                                 onClick={(e) => e.stopPropagation()}
                               >
+                                {/* Expand toggle */}
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -1757,6 +1744,8 @@ const OrdersDashboard = () => {
                                     />
                                   </svg>
                                 </button>
+
+                                {/* Print Bill */}
                                 {order?.paymentCompleted && (
                                   <button
                                     onClick={(e) => {
@@ -1769,6 +1758,8 @@ const OrdersDashboard = () => {
                                     Print
                                   </button>
                                 )}
+
+                                {/* KOT */}
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -1779,6 +1770,8 @@ const OrdersDashboard = () => {
                                   <MdPrint className="w-2.5 h-2.5" />
                                   KOT
                                 </button>
+
+                                {/* Cancel — icon only to reduce accidental taps */}
                                 {!order?.paymentCompleted && (
                                   <button
                                     onClick={(e) => {
@@ -1787,15 +1780,15 @@ const OrdersDashboard = () => {
                                       setSelectedOrderForCancel(order);
                                       setShowCancelModal(true);
                                     }}
-                                    className="flex-1 h-6 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-md text-[9px] font-semibold hover:from-red-600 hover:to-red-700 transition-all flex items-center justify-center gap-0.5"
+                                    title="Cancel order"
+                                    className="flex-shrink-0 w-6 h-6 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-md hover:from-red-600 hover:to-red-700 transition-all flex items-center justify-center"
                                   >
-                                    <MdCancel className="w-2.5 h-2.5" />
-                                    Cancel
+                                    <MdCancel className="w-3 h-3" />
                                   </button>
                                 )}
                               </div>
 
-                              {/* Expanded items panel */}
+                              {/* ── Expanded Items Panel ── */}
                               {isExpanded && (
                                 <div className="border-t border-blue-100 bg-gradient-to-r from-blue-50 to-indigo-50">
                                   <div className="flex items-center gap-1.5 px-2 pt-2 pb-1.5">
@@ -1865,11 +1858,7 @@ const OrdersDashboard = () => {
                                           </span>
                                         )}
                                         <span className="text-xs font-black text-blue-900">
-                                          ₹
-                                          {(
-                                            Number(order.total) -
-                                            Number(order.discount || 0)
-                                          ).toFixed(2)}
+                                          ₹{discountedTotal.toFixed(2)}
                                         </span>
                                       </div>
                                     </div>
