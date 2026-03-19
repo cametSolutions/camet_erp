@@ -182,7 +182,7 @@ const RestaurantPOS = () => {
       setAdditionalChargeData(response?.data?.additionalCharges);
       console.log(response?.data?.additionalCharges);
       let discountCharge = response?.data?.additionalCharges.find(
-        (charge) => charge.name === "discount",
+        (charge) => charge.name.toLowerCase() === "discount" || "DISCOUNT",
       );
       console.log(discountCharge);
       console.log(response?.data?.additionalCharges);
@@ -2476,13 +2476,13 @@ console.log(taxAmount);
                   {/* Show calculated value if percentage */}
                 
                 </div>
-                  
+                  {additionalChargeDataBasedOnSelection?.length > 0 &&(
                     <span className="text-sm text-gray-600 whitespace-nowrap">
                      {`DiscountAmount(${additionalChargeDataBasedOnSelection[0]?.taxPercentage}%
                      ${additionalChargeDataBasedOnSelection[0]?.value}) ₹ 
                      ${additionalChargeDataBasedOnSelection[0]?.finalValue}`}
                     </span>
-                  
+                  )}
                       {/* <span className="text-sm text-gray-600 whitespace-nowrap">
                       = ₹
                       {(
@@ -2498,7 +2498,7 @@ console.log(taxAmount);
                 <span className="text-base text-blue-600">
                   {(() => {
                     const gross = Math.round(getTotalAmount());
-                    const net = Math.max(gross - additionalChargeDataBasedOnSelection[0]?.finalValue , 0);
+                    const net = Math.max(gross - (additionalChargeDataBasedOnSelection[0]?.finalValue || 0) , 0);
                     return `₹${net.toFixed(2)}`;
                   })()}
                 </span>

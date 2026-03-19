@@ -73,7 +73,7 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
         ? Number(calculatedSubTotal) || data?.subTotal
         : Number(calculatedSubTotal) - data?.discount ||
           data?.subTotal - data?.discount;
-          
+
       setSubTotal(total);
     }
   }, [data]);
@@ -414,45 +414,35 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
             console.log(el);
             const total = Number(el?.total || 0);
             const count = Number(el?.totalCount || 1);
-            const totalTax = Number(
-              el?.totalIgstAmt ||
-                (el?.totalCgstAmt || 0) + (el?.totalSgstAmt || 0) ||
-                0,
-            );
-            console.log(el);
 
-            console.log({ total, count, totalTax });
+            const totalTax =
+              el?.totalIgstAmt != null
+                ? Number(el.totalIgstAmt)
+                : Number(el?.totalCgstAmt || 0) + Number(el?.totalSgstAmt || 0);
 
-            // ✅ Same logic as Format 1 — addRateWithTax controls rate/amount display
+            const igst = Number(el?.igst || 0);
             const addRateWithTax =
               org?.configurations?.[0]?.addRateWithTax?.restaurantSale;
-            // ??
-            // org?.configurations?.[0]?.addRateWithTax?.sale ??
-            // true;
-
-            console.log(addRateWithTax);
-            console.log(count);
-            console.log(el.igst);
-            console.log(total);
-
-            console.log(addRateWithTax)
-            console.log(includeTaxWithPrint)
-
             const addRate = addRateWithTax
               ? count > 0
-                ? ((total * 100) / (100 + el.igst) / count).toFixed(2)
-                : "0.00" // WITH tax (like format 1)
+                ? ((total * 100) / (100 + igst) / count).toFixed(2)
+                : "0.00"
               : count > 0
                 ? ((total - totalTax) / count).toFixed(2)
-                : "0.00"; // WITHOUT tax
-            
-            const rate =  includeTaxWithPrint ? (Number(addRate) + Number(totalTax/count)).toFixed(2) : addRate
-            console.log(rate);
-            console.log(count)
-            const amount = (Number(rate) * count)
+                : "0.00";
 
-            console.log(rate);
-            console.log(amount);  
+            console.log(addRate);
+            console.log(totalTax / count);
+
+            const rate = includeTaxWithPrint
+              ? count > 0
+                ? (
+                    Number(addRate) + Number((totalTax / count).toFixed(2))
+                  ).toFixed(2)
+                : "0.00"
+              : addRate;
+
+            const amount = (Number(rate) * count).toFixed(2);
 
             return (
               <div key={index} style={itemGrid}>
