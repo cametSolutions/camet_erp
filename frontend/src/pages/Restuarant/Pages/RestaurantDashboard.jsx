@@ -609,7 +609,7 @@ const RestaurantPOS = () => {
       let paymentDetails;
       if (paymentMethod === "cash") {
         paymentDetails = {
-          cashAmount: selectedDataForPayment?.total,
+          cashAmount: selectedDataForPayment?.total - additionalCharges[0]?.finalValue,
           onlineAmount: 0,
           selectedCash,
           selectedBank,
@@ -618,13 +618,14 @@ const RestaurantPOS = () => {
       } else {
         paymentDetails = {
           cashAmount: 0,
-          onlineAmount: selectedDataForPayment?.total,
+          onlineAmount: selectedDataForPayment?.total - additionalCharges[0]?.finalValue,
           selectedCash,
           selectedBank,
           paymentMode: "single",
         };
       }
       console.log(selectedDataForPayment);
+      console.log(paymentDetails);
 
       // Step 2: Make API call
       const response = await api.post(

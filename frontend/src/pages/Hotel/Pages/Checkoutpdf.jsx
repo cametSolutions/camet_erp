@@ -128,6 +128,8 @@ const HotelCheckoutStatement = () => {
     }
   }, [fromDate, toDate, cmp_id]);
 
+  console.log(summary)
+
   // ============ RENDER HELPERS ============
   function renderTableHeader() {
     return (

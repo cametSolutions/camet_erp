@@ -43,11 +43,11 @@ function EditBooking() {
     }
   }, [data]);
 
-  const handleSubmit = async (data,paymentData) => {
+  const handleSubmit = async (data,paymentData,paymenttypeDetails) => {
     try {
       let response = await api.put(
         `/api/sUsers/updateRoomBooking/${editData._id}`,
-      { data: data, modal: "Booking", paymentData: paymentData, orgId: organization._id },
+      { data: data, modal: "Booking", paymentData: paymentData, orgId: organization._id,paymenttypeDetails:paymenttypeDetails },
         { withCredentials: true }
       );
       if (response?.data?.success) {
