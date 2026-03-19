@@ -35,15 +35,16 @@ const SplitPayment = ({
     ...(cashOrBank.cashDetails || []).map((cash) => ({
       id: cash._id,
       name: cash.partyName,
-      type: "cash",
+      type: cash.under,
     })),
     ...(cashOrBank.bankDetails || []).map((bank) => ({
       id: bank._id,
       name: bank.partyName,
-      type: "bank",
+      type: bank.under,
     })),
   ];
-
+console.log(combinedSources)
+console.log(cashOrBank)
   // Update parent component whenever rows change
   useEffect(() => {
     const totalSplitAmount = splitPaymentRows.reduce(
@@ -210,7 +211,7 @@ const SplitPayment = ({
                 <option value="">Select Source</option>
                 {combinedSources.map((source) => (
                   <option key={source.id} value={source.id}>
-                    {source.name} ({source.type === "cash" ? "Cash" : "Bank"})
+                    {source.name} ({source.type })
                   </option>
                 ))}
               </select>

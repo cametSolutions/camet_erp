@@ -74,6 +74,7 @@ function BookingForm({
 
   useEffect(() => {
     if (submitLoader) {
+      console.log("submitLoader", submitLoader);
       setShowPaymentModal(true);
       setSaveLoader(true);
     }
@@ -941,7 +942,7 @@ function BookingForm({
       card: card,
       credit: credit,
     };
-
+    // setSaveLoader(false) 
     handleSubmit(payload, paymentData, paymenttypeDetails);
   };
 
@@ -1014,6 +1015,7 @@ function BookingForm({
               selected={voucherNumber}
               totalAmount={Number(formData?.advanceAmount)}
               saveLoader={saveLoader}
+              setSaveLoader={setSaveLoader}
               onClose={handleClose}
               onPaymentSave={handlePayment}
               cmp_id={cmp_id}
