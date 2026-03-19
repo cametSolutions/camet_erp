@@ -86,10 +86,15 @@ const RestaurantPOS = () => {
   const [selectedCash, setSelectedCash] = useState("");
   const [selectedBank, setSelectedBank] = useState("");
   const [cashOrBank, setCashOrBank] = useState({});
-
   const [discountType, setDiscountType] = useState("amount"); // "amount" | "percentage"
   const [discountValue, setDiscountValue] = useState(0); // user input
-
+  const [additionalChargeData, setAdditionalChargeData] = useState([]);
+  const [selectedAdditionalCharge, setSelectedAdditionalCharge] =
+    useState(null);
+  const [
+    additionalChargeDataBasedOnSelection,
+    setAdditionalChargeDataBasedOnSelection,
+  ] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const observerTarget = useRef(null);
   const scrollContainerRef = useRef(null);
@@ -165,6 +170,28 @@ const RestaurantPOS = () => {
       });
     }
   }, [kotDataForEdit]);
+
+  useEffect(() => {
+    const callAdditionalCharge = async () => {
+      const response = await api.get(
+        `/api/sUsers/additionalcharges/${cmp_id}`,
+        {
+          withCredentials: true,
+        },
+      );
+      setAdditionalChargeData(response?.data?.additionalCharges);
+      console.log(response?.data?.additionalCharges);
+      let discountCharge = response?.data?.additionalCharges.find(
+        (charge) => charge.name === "discount",
+      );
+      console.log(discountCharge);
+      console.log(response?.data?.additionalCharges);
+      setSelectedAdditionalCharge(
+        discountCharge?._id || response?.data?.additionalCharges[0]?._id,
+      );
+    };
+    callAdditionalCharge();
+  }, []);
 
   useEffect(() => {
     // Get format from organization configuration
@@ -260,15 +287,11 @@ const RestaurantPOS = () => {
     ? roomData.filter(
         (room) =>
           room.roomName?.toLowerCase().includes(search?.toLowerCase()) ||
-          room.customerName
-            ?.toLowerCase()
-            .includes(search?.toLowerCase()) ||
-          room.voucherNumber
-            ?.toLowerCase()
-            .includes(search?.toLowerCase()),
+          room.customerName?.toLowerCase().includes(search?.toLowerCase()) ||
+          room.voucherNumber?.toLowerCase().includes(search?.toLowerCase()),
       )
     : [search];
-    console.log(filteredRooms)
+  console.log(filteredRooms);
 
   const handlePrint = useReactToPrint({
     content: () => contentToPrint.current,
@@ -301,9 +324,7 @@ const RestaurantPOS = () => {
     console.log("Selected room object:", room);
     console.log("Food plan from room:", room?.foodPlan);
 
-    const foodPlanData = room?.foodPlan
-      ? room?.foodPlan
-      : null;
+    const foodPlanData = room?.foodPlan ? room?.foodPlan : null;
 
     console.log("Processed food plan data:", foodPlanData);
     // ✅ Create fresh object without spread operator
@@ -480,51 +501,50 @@ const RestaurantPOS = () => {
     shouldFetch ? `/api/sUsers/getRoomBasedOnBooking/${cmp_id}` : null,
   );
 
-useEffect(() => {
-  if (roomBookingData) {
-    const rooms = roomBookingData?.data?.flatMap((room) => {
-      console.log("Processing booking, foodPlan array:", room?.foodPlan);
+  useEffect(() => {
+    if (roomBookingData) {
+      const rooms = roomBookingData?.data?.flatMap((room) => {
+        console.log("Processing booking, foodPlan array:", room?.foodPlan);
 
-      return (
-        room?.selectedRooms?.map((selectedRoom) => {
-          const completeFoodPlan = [];
+        return (
+          room?.selectedRooms?.map((selectedRoom) => {
+            const completeFoodPlan = [];
 
-          room.foodPlan?.forEach((data) => {
-            // Find matching food plan for this room
-            const roomFoodPlan = data.roomId === selectedRoom.roomId ? data : null;
+            room.foodPlan?.forEach((data) => {
+              // Find matching food plan for this room
+              const roomFoodPlan =
+                data.roomId === selectedRoom.roomId ? data : null;
 
-            // Build complete food plan object
-            if (roomFoodPlan) {
-              completeFoodPlan.push({
-                _id: roomFoodPlan._id || roomFoodPlan.foodPlanId,
-                planType: roomFoodPlan.planType || roomFoodPlan.foodPlan,
-                amount: roomFoodPlan.amount ?? roomFoodPlan.rate ?? 0,
-                isComplimentary: roomFoodPlan.isComplimentary || false,
-              });
-            }
-          });
+              // Build complete food plan object
+              if (roomFoodPlan) {
+                completeFoodPlan.push({
+                  _id: roomFoodPlan._id || roomFoodPlan.foodPlanId,
+                  planType: roomFoodPlan.planType || roomFoodPlan.foodPlan,
+                  amount: roomFoodPlan.amount ?? roomFoodPlan.rate ?? 0,
+                  isComplimentary: roomFoodPlan.isComplimentary || false,
+                });
+              }
+            });
 
-          return {
-            ...selectedRoom,
-            customerName: room?.customerName,
-            mobileNumber: room?.mobileNumber,
-            voucherNumber: room?.voucherNumber,
-            foodPlan: completeFoodPlan,
-            bookingDate: room?.bookingDate,
-            arrivalDate: room?.arrivalDate,
-            checkOutDate: room?.checkOutDate,
-            stayDays: room?.stayDays,
-          };
-        }) || []
-      );
-    });
+            return {
+              ...selectedRoom,
+              customerName: room?.customerName,
+              mobileNumber: room?.mobileNumber,
+              voucherNumber: room?.voucherNumber,
+              foodPlan: completeFoodPlan,
+              bookingDate: room?.bookingDate,
+              arrivalDate: room?.arrivalDate,
+              checkOutDate: room?.checkOutDate,
+              stayDays: room?.stayDays,
+            };
+          }) || []
+        );
+      });
 
-    console.log("=== ALL PROCESSED ROOMS ===");
-    setRoomData(rooms);
-  }
-}, [roomBookingData]);
-
-
+      console.log("=== ALL PROCESSED ROOMS ===");
+      setRoomData(rooms);
+    }
+  }, [roomBookingData]);
 
   useEffect(() => {
     if (error) {
@@ -579,16 +599,7 @@ useEffect(() => {
   if (discountAmount > grossTotal) discountAmount = grossTotal;
 
   // Shape expected by createSalesVoucher
-  const additionalCharges = [];
-  if (discountAmount > 0) {
-    additionalCharges.push({
-      name: "Discount", // any label, not used in calc
-      type: "subtract", // IMPORTANT: used for discountTotal
-      amount: discountAmount, // IMPORTANT: used for sums
-      finalValue: discountAmount,
-    });
-  }
-  
+  const additionalCharges = additionalChargeDataBasedOnSelection
 
   const handleProcessDirectSalePayment = async () => {
     setSaveLoader(true);
@@ -1092,15 +1103,42 @@ useEffect(() => {
   };
   const headerPriceRef = useRef(null);
 
-const scrollHeaderPrice = (direction) => {
-  if (!headerPriceRef.current) return;
-  const scrollAmount = 150;
-  headerPriceRef.current.scrollBy({
-    left: direction === "left" ? -scrollAmount : scrollAmount,
-    behavior: "smooth",
-  });
-};
+  const scrollHeaderPrice = (direction) => {
+    if (!headerPriceRef.current) return;
+    const scrollAmount = 150;
+    headerPriceRef.current.scrollBy({
+      left: direction === "left" ? -scrollAmount : scrollAmount,
+      behavior: "smooth",
+    });
+  };
 
+  const handleDiscountChange = (discountValue,discountType) => {
+    let amount =  Number(discountValue) || 0;
+    let findOne = additionalChargeData.find(
+      (d) => d._id === selectedAdditionalCharge,
+    );
+    if(discountType === "percentage"){
+        const gross = Math.round(getTotalAmount());
+      discountValue = (Number(gross) * Number(discountValue)) / 100;
+    }
+    let taxAmount = (Number(discountValue) * findOne.taxPercentage) / 100;
+console.log(taxAmount);
+    setAdditionalChargeDataBasedOnSelection([
+      {
+        _id: findOne._id,
+        option: findOne.name,
+        value: Number(discountValue) || 0,
+        action: "sub",
+        taxPercentage: findOne.taxPercentage,
+        taxAmt: taxAmount || 0,
+        hsn: findOne.hsn,
+        finalValue: Number(discountValue) + taxAmount,
+      },
+    ]);
+
+    setDiscountValue(amount || 0);
+  };
+  console.log(additionalChargeDataBasedOnSelection);
 
   return (
     <>
@@ -1136,61 +1174,61 @@ const scrollHeaderPrice = (direction) => {
 
       <div className="h-screen  overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex flex-col">
         {/* Compact Header */}
-       <div className="bg-[#072134] text-white border-b border-slate-700/60 sticky top-0 z-50 shadow-lg">
- <div className="px-3 md:px-6 py-2.5 md:py-3">
-  <div className="flex items-center justify-between gap-2 md:gap-3">
-    {/* Left Section - Logo & Title */}
-    <div className="flex items-center gap-2 flex-shrink-0">
-      <button
-        className="md:hidden p-1.5 hover:bg-white/10 rounded-lg transition-colors duration-200"
-        onClick={() => setShowSidebar(!showSidebar)}
-      >
-        <MenuIcon className="w-5 h-5" />
-      </button>
-      <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center font-bold text-lg shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-shadow">
-        🍽️
-      </div>
-      <div className="hidden md:block">
-        <h1 className="text-base md:text-lg font-bold text-white tracking-tight">
-          {getIndustryTitle()}
-        </h1>
-        <p className="text-xs text-gray-400">
-          {getIndustrySubtitle()}
-        </p>
-      </div>
-    </div>
-
-    {/* Center Section - Price Levels (desktop only) */}
-    <div className="flex-1 hidden sm:block min-w-0">
-      {priceLevelData && priceLevelData.length > 0 && (
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-gray-400 whitespace-nowrap flex-shrink-0 uppercase tracking-wider">
-            💳 Price:
-          </span>
-
-          <div className="relative flex-1 min-w-0 group">
-            {/* Left Scroll Button */}
-            <button
-              onClick={() => scrollHeaderPrice("left")}
-              className="absolute -left-3 top-1/2 -translate-y-1/2 z-30 p-1 text-gray-500 hover:text-gray-300 transition-all opacity-0 group-hover:opacity-100 hover:bg-slate-800/50 rounded"
-            >
-              <ChevronDown className="w-4 h-4 rotate-90" />
-            </button>
-
-            {/* Price Level Buttons */}
-            <div
-              ref={headerPriceRef}
-              className="flex gap-1.5 overflow-x-auto scrollbar-hide px-3 py-0.5"
-              style={{ scrollBehavior: "smooth" }}
-            >
-              {priceLevelData.map((level) => (
+        <div className="bg-[#072134] text-white border-b border-slate-700/60 sticky top-0 z-50 shadow-lg">
+          <div className="px-3 md:px-6 py-2.5 md:py-3">
+            <div className="flex items-center justify-between gap-2 md:gap-3">
+              {/* Left Section - Logo & Title */}
+              <div className="flex items-center gap-2 flex-shrink-0">
                 <button
-                  key={level._id}
-                  onClick={() => {
-                    setSelectedPriceLevel(level._id);
-                    setOrderItems([]);
-                  }}
-                  className={`
+                  className="md:hidden p-1.5 hover:bg-white/10 rounded-lg transition-colors duration-200"
+                  onClick={() => setShowSidebar(!showSidebar)}
+                >
+                  <MenuIcon className="w-5 h-5" />
+                </button>
+                <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center font-bold text-lg shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-shadow">
+                  🍽️
+                </div>
+                <div className="hidden md:block">
+                  <h1 className="text-base md:text-lg font-bold text-white tracking-tight">
+                    {getIndustryTitle()}
+                  </h1>
+                  <p className="text-xs text-gray-400">
+                    {getIndustrySubtitle()}
+                  </p>
+                </div>
+              </div>
+
+              {/* Center Section - Price Levels (desktop only) */}
+              <div className="flex-1 hidden sm:block min-w-0">
+                {priceLevelData && priceLevelData.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-gray-400 whitespace-nowrap flex-shrink-0 uppercase tracking-wider">
+                      💳 Price:
+                    </span>
+
+                    <div className="relative flex-1 min-w-0 group">
+                      {/* Left Scroll Button */}
+                      <button
+                        onClick={() => scrollHeaderPrice("left")}
+                        className="absolute -left-3 top-1/2 -translate-y-1/2 z-30 p-1 text-gray-500 hover:text-gray-300 transition-all opacity-0 group-hover:opacity-100 hover:bg-slate-800/50 rounded"
+                      >
+                        <ChevronDown className="w-4 h-4 rotate-90" />
+                      </button>
+
+                      {/* Price Level Buttons */}
+                      <div
+                        ref={headerPriceRef}
+                        className="flex gap-1.5 overflow-x-auto scrollbar-hide px-3 py-0.5"
+                        style={{ scrollBehavior: "smooth" }}
+                      >
+                        {priceLevelData.map((level) => (
+                          <button
+                            key={level._id}
+                            onClick={() => {
+                              setSelectedPriceLevel(level._id);
+                              setOrderItems([]);
+                            }}
+                            className={`
                     px-3 py-1.5 rounded-md font-semibold text-xs
                     whitespace-nowrap flex-shrink-0 border transition-all duration-300
                     hover:scale-105 active:scale-95 relative group/btn
@@ -1200,127 +1238,125 @@ const scrollHeaderPrice = (direction) => {
                         : "bg-slate-800/60 text-gray-300 border-slate-700/50 hover:bg-slate-700/80 hover:text-gray-100 hover:border-slate-600"
                     }
                   `}
+                          >
+                            {level.pricelevel}
+                            {selectedPriceLevel === level._id && (
+                              <span className="absolute inset-0 rounded-md bg-blue-400/20 animate-pulse"></span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Right Scroll Button */}
+                      <button
+                        onClick={() => scrollHeaderPrice("right")}
+                        className="absolute -right-3 top-1/2 -translate-y-1/2 z-30 p-1 text-white hover:text-gray-300 transition-all opacity-0 group-hover:opacity-100 hover:bg-slate-800/50 rounded"
+                      >
+                        <ChevronDown className="w-4 h-4 -rotate-90 " />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Right Section - Time & Table Info */}
+              <div className="flex items-center gap-1.5 md:gap-2 flex-shrink">
+                <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-800/50 border border-slate-700/60 rounded-md hover:bg-slate-700/60 transition-colors group">
+                  <Clock className="w-3.5 h-3.5 text-cyan-400 group-hover:text-cyan-300" />
+                  <span className="  ">
+                    <Timer />
+                  </span>
+                </div>
+
+                {/* Table / Room button – compress text on small screens */}
+                <div
+                  className="hover:cursor-pointer flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-800/50 border border-slate-700/60 rounded-md hover:bg-slate-700/60 transition-colors group"
+                  onClick={() => navigate("/sUsers/TableSelection")}
                 >
-                  {level.pricelevel}
-                  {selectedPriceLevel === level._id && (
-                    <span className="absolute inset-0 rounded-md bg-blue-400/20 animate-pulse"></span>
-                  )}
-                </button>
-              ))}
-            </div>
+                  <Users className="w-3.5 h-3.5 text-emerald-400 group-hover:text-emerald-300" />
+                  {/* Full text on large screens */}
+                  <span className="text-xs font-medium text-gray-300 group-hover:text-gray-100 hidden lg:inline">
+                    {orderType === "dine-in"
+                      ? `Table ${customerDetails.tableNumber}`
+                      : orderType === "roomService"
+                        ? `Room ${roomDetails.roomno || "---"}`
+                        : getOrderTypeDisplay(orderType)}
+                  </span>
+                  {/* Compressed text on small/medium */}
+                  <span className="text-xs font-medium text-gray-300 group-hover:text-gray-100 lg:hidden">
+                    {orderType === "dine-in"
+                      ? `T${customerDetails.tableNumber || ""}`
+                      : orderType === "roomService"
+                        ? `R${roomDetails.roomno || ""}`
+                        : getOrderTypeDisplay(orderType).slice(0, 3)}
+                  </span>
+                </div>
 
-            {/* Right Scroll Button */}
-            <button
-              onClick={() => scrollHeaderPrice("right")}
-              className="absolute -right-3 top-1/2 -translate-y-1/2 z-30 p-1 text-white hover:text-gray-300 transition-all opacity-0 group-hover:opacity-100 hover:bg-slate-800/50 rounded"
-            >
-              <ChevronDown className="w-4 h-4 -rotate-90 " />
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
+                {/* Orders + 3-dots hidden on very small widths */}
+                <div className="relative hidden sm:flex items-center">
+                  <div
+                    className="hover:cursor-pointer flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-800/50 border border-slate-700/60 rounded-l-md hover:bg-slate-700/60 transition-colors group"
+                    onClick={() => navigate("/sUsers/KotPage")}
+                  >
+                    <Receipt className="w-3.5 h-3.5 text-amber-400 group-hover:text-amber-300" />
+                    <span className="text-xs font-medium text-gray-300 group-hover:text-gray-100 hidden md:inline">
+                      Orders: {orders?.length || 0}
+                    </span>
+                    <span className="text-xs font-medium text-gray-300 group-hover:text-gray-100 md:hidden">
+                      {orders?.length || 0}
+                    </span>
+                  </div>
 
-    {/* Right Section - Time & Table Info */}
-    <div className="flex items-center gap-1.5 md:gap-2 flex-shrink">
-      <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-800/50 border border-slate-700/60 rounded-md hover:bg-slate-700/60 transition-colors group">
-        <Clock className="w-3.5 h-3.5 text-cyan-400 group-hover:text-cyan-300" />
-        <span className="  ">
-          <Timer />
-        </span>
-      </div>
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowOptions((prev) => !prev)}
+                      className="flex items-center justify-center px-2 py-1.5 bg-slate-800/50 border border-l-0 border-slate-700/60 rounded-r-md hover:bg-slate-700/60 transition-colors group"
+                    >
+                      <span className="flex flex-col gap-[3px] items-center justify-center">
+                        <span className="w-[3px] h-[3px] bg-gray-400 rounded-full group-hover:bg-gray-200 transition-colors"></span>
+                        <span className="w-[3px] h-[3px] bg-gray-400 rounded-full group-hover:bg-gray-200 transition-colors"></span>
+                        <span className="w-[3px] h-[3px] bg-gray-400 rounded-full group-hover:bg-gray-200 transition-colors"></span>
+                      </span>
+                    </button>
+                    {showOptions && (
+                      <>
+                        <div
+                          className="fixed inset-0 z-40"
+                          onClick={() => setShowOptions(false)}
+                        />
+                        <div className="absolute right-0 top-full mt-1 z-50 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden w-52 animate-in zoom-in-95 duration-150">
+                          <button
+                            onClick={() => {
+                              setShowOptions(false);
+                              navigate("/sUsers/BillSummary?type=restaurant");
+                            }}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors"
+                          >
+                            <span className="text-base">📊</span>
+                            <span className="font-medium">
+                              Daily Restaurant Sales
+                            </span>
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
 
-      {/* Table / Room button – compress text on small screens */}
-      <div
-        className="hover:cursor-pointer flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-800/50 border border-slate-700/60 rounded-md hover:bg-slate-700/60 transition-colors group"
-        onClick={() => navigate("/sUsers/TableSelection")}
-      >
-        <Users className="w-3.5 h-3.5 text-emerald-400 group-hover:text-emerald-300" />
-        {/* Full text on large screens */}
-        <span className="text-xs font-medium text-gray-300 group-hover:text-gray-100 hidden lg:inline">
-          {orderType === "dine-in"
-            ? `Table ${customerDetails.tableNumber}`
-            : orderType === "roomService"
-              ? `Room ${roomDetails.roomno || "---"}`
-              : getOrderTypeDisplay(orderType)}
-        </span>
-        {/* Compressed text on small/medium */}
-        <span className="text-xs font-medium text-gray-300 group-hover:text-gray-100 lg:hidden">
-          {orderType === "dine-in"
-            ? `T${customerDetails.tableNumber || ""}`
-            : orderType === "roomService"
-              ? `R${roomDetails.roomno || ""}`
-              : getOrderTypeDisplay(orderType).slice(0, 3)}
-        </span>
-      </div>
-
-      {/* Orders + 3-dots hidden on very small widths */}
-      <div className="relative hidden sm:flex items-center">
-        <div
-          className="hover:cursor-pointer flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-800/50 border border-slate-700/60 rounded-l-md hover:bg-slate-700/60 transition-colors group"
-          onClick={() => navigate("/sUsers/KotPage")}
-        >
-          <Receipt className="w-3.5 h-3.5 text-amber-400 group-hover:text-amber-300" />
-          <span className="text-xs font-medium text-gray-300 group-hover:text-gray-100 hidden md:inline">
-            Orders: {orders?.length || 0}
-          </span>
-          <span className="text-xs font-medium text-gray-300 group-hover:text-gray-100 md:hidden">
-            {orders?.length || 0}
-          </span>
-        </div>
-
-        <div className="relative">
-          <button
-            onClick={() => setShowOptions((prev) => !prev)}
-            className="flex items-center justify-center px-2 py-1.5 bg-slate-800/50 border border-l-0 border-slate-700/60 rounded-r-md hover:bg-slate-700/60 transition-colors group"
-          >
-            <span className="flex flex-col gap-[3px] items-center justify-center">
-              <span className="w-[3px] h-[3px] bg-gray-400 rounded-full group-hover:bg-gray-200 transition-colors"></span>
-              <span className="w-[3px] h-[3px] bg-gray-400 rounded-full group-hover:bg-gray-200 transition-colors"></span>
-              <span className="w-[3px] h-[3px] bg-gray-400 rounded-full group-hover:bg-gray-200 transition-colors"></span>
-            </span>
-          </button>
-          {showOptions && (
-            <>
-              <div
-                className="fixed inset-0 z-40"
-                onClick={() => setShowOptions(false)}
-              />
-              <div className="absolute right-0 top-full mt-1 z-50 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden w-52 animate-in zoom-in-95 duration-150">
+                {/* Mobile cart button – already compact */}
                 <button
-                  onClick={() => {
-                    setShowOptions(false);
-                    navigate("/sUsers/BillSummary?type=restaurant");
-                  }}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors"
+                  className="hover:cursor-pointer sm:hidden bg-blue-600/80 hover:bg-blue-600 text-white rounded-md px-2.5 py-1.5 flex items-center gap-1 transition-colors border border-blue-500/50 shadow-lg shadow-blue-500/20 active:scale-95"
+                  onClick={() => setShowOrderSummary(true)}
                 >
-                  <span className="text-base">📊</span>
-                  <span className="font-medium">
-                    Daily Restaurant Sales
+                  <ShoppingCart className="w-3.5 h-3.5" />
+                  <span className="text-xs font-bold">
+                    {getTotalItems?.() || 0}
                   </span>
                 </button>
               </div>
-            </>
-          )}
+            </div>
+          </div>
         </div>
-      </div>
-
-      {/* Mobile cart button – already compact */}
-      <button
-        className="hover:cursor-pointer sm:hidden bg-blue-600/80 hover:bg-blue-600 text-white rounded-md px-2.5 py-1.5 flex items-center gap-1 transition-colors border border-blue-500/50 shadow-lg shadow-blue-500/20 active:scale-95"
-        onClick={() => setShowOrderSummary(true)}
-      >
-        <ShoppingCart className="w-3.5 h-3.5" />
-        <span className="text-xs font-bold">
-          {getTotalItems?.() || 0}
-        </span>
-      </button>
-    </div>
-  </div>
-</div>
-
-</div>
-
 
         {/* Compact Cuisine Categories */}
         <div className="bg-white/90 backdrop-blur-sm border-b border-gray-200/50 shadow-lg sticky top-[60px] z-40">
@@ -2382,7 +2418,10 @@ const scrollHeaderPrice = (direction) => {
                   <div className="flex items-center gap-1 text-[11px] font-medium">
                     <button
                       type="button"
-                      onClick={() => setDiscountType("amount")}
+                      onClick={() => {
+                        setDiscountType("amount")
+                        handleDiscountChange(discountValue,"amount")
+                      }}
                       className={`px-2 py-1 rounded-md border text-xs ${
                         discountType === "amount"
                           ? "bg-blue-600 text-white border-blue-600"
@@ -2393,7 +2432,9 @@ const scrollHeaderPrice = (direction) => {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setDiscountType("percentage")}
+                      onClick={() => {setDiscountType("percentage")
+                         handleDiscountChange(discountValue,"percentage")}
+                      }
                       className={`px-2 py-1 rounded-md border text-xs ${
                         discountType === "percentage"
                           ? "bg-blue-600 text-white border-blue-600"
@@ -2406,13 +2447,26 @@ const scrollHeaderPrice = (direction) => {
                 </div>
 
                 <div className="flex items-center gap-2">
+                  <select
+                    value={selectedAdditionalCharge}
+                    onChange={(e) => {
+                      setSelectedAdditionalCharge(e.target.value);
+                      handleDiscountChange(discountValue,discountType);
+                    }}
+                    name=""
+                    id=""
+                  >
+                    {additionalChargeData?.map((charge) => (
+                      <option key={charge._id} value={charge._id}>
+                        {charge.name}
+                      </option>
+                    ))}
+                  </select>
                   <input
                     type="text"
                     min="0"
                     value={discountValue}
-                    onChange={(e) =>
-                      setDiscountValue(Number(e.target.value) || 0)
-                    }
+                    onChange={(e) => handleDiscountChange(e.target.value,discountType)}
                     className="flex-1 px-2 py-1.5 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
                     placeholder={
                       discountType === "amount" ? "Enter amount" : "Enter %"
@@ -2420,16 +2474,22 @@ const scrollHeaderPrice = (direction) => {
                   />
 
                   {/* Show calculated value if percentage */}
-                  {discountType === "percentage" && (
-                    <span className="text-[11px] text-gray-600 whitespace-nowrap">
+                
+                </div>
+                  
+                    <span className="text-sm text-gray-600 whitespace-nowrap">
+                     {`DiscountAmount(${additionalChargeDataBasedOnSelection[0]?.taxPercentage}%
+                     ${additionalChargeDataBasedOnSelection[0]?.value}) ₹ 
+                     ${additionalChargeDataBasedOnSelection[0]?.finalValue}`}
+                    </span>
+                  
+                      {/* <span className="text-sm text-gray-600 whitespace-nowrap">
                       = ₹
                       {(
                         (Number(discountValue || 0) / 100) *
                         Math.round(getTotalAmount())
                       ).toFixed(2)}
-                    </span>
-                  )}
-                </div>
+                    </span> */}
               </div>
 
               {/* Final total after discount */}
@@ -2438,11 +2498,7 @@ const scrollHeaderPrice = (direction) => {
                 <span className="text-base text-blue-600">
                   {(() => {
                     const gross = Math.round(getTotalAmount());
-                    const disc =
-                      discountType === "amount"
-                        ? Number(discountValue || 0)
-                        : (Number(discountValue || 0) / 100) * gross;
-                    const net = Math.max(gross - disc, 0);
+                    const net = Math.max(gross - additionalChargeDataBasedOnSelection[0]?.finalValue , 0);
                     return `₹${net.toFixed(2)}`;
                   })()}
                 </span>
