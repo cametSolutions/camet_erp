@@ -1011,28 +1011,7 @@ export const directSale = async (req, res) => {
       console.log("paymentSplittingArray", paymentSplittingArray);
       const party = mapPartyData(selectedParty);
 
-      let additionalChargesArray = [];
-      if (additionalCharges.length > 0) {
-        let findOne = await AdditionalCharges.findOne({
-          name: "discount",
-        });
-
-        if (findOne) {
-          additionalChargesArray.push({
-            _id: findOne._id,
-            value: additionalCharges[0].amount,
-            taxAmt: 0,
-            type: "subtract",
-            amount: additionalCharges[0].amount,
-            finalValue: additionalCharges[0].amount,
-          });
-        } else {
-          return res.status(400).json({
-            success: false,
-            message: "Please create additional charge named as discount",
-          });
-        }
-      }
+      let additionalChargesArray = additionalCharges
       // Create a sales voucher entry (no KOT reference)
       const savedVoucherData = await createSalesVoucher(
         cmp_id,
