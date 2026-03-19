@@ -609,7 +609,7 @@ const RestaurantPOS = () => {
       let paymentDetails;
       if (paymentMethod === "cash") {
         paymentDetails = {
-          cashAmount: selectedDataForPayment?.total - additionalCharges[0]?.finalValue,
+          cashAmount: selectedDataForPayment?.total - (additionalCharges[0]?.finalValue || 0),
           onlineAmount: 0,
           selectedCash,
           selectedBank,
@@ -618,7 +618,7 @@ const RestaurantPOS = () => {
       } else {
         paymentDetails = {
           cashAmount: 0,
-          onlineAmount: selectedDataForPayment?.total - additionalCharges[0]?.finalValue,
+          onlineAmount: selectedDataForPayment?.total - (additionalCharges[0]?.finalValue || 0),
           selectedCash,
           selectedBank,
           paymentMode: "single",
