@@ -49,6 +49,9 @@ console.log("HHH")
       updatedData = data
     }
 
+    console.log(updatedData)
+    console.log(paymentData)
+    console.log(paymenttypeDetails)
     try {
       console.log(updatedData)
       

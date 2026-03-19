@@ -1686,6 +1686,7 @@ export const updateBooking = async (req, res) => {
     const orgId = req.body?.orgId;
     const isTariffRateChange = req.body?.isTariffRateChange || false;
     const roomIdToEdit = req.body?.roomIdToEdit;
+    const paymenttypeDetails = req.body?.paymenttypeDetails;
 
     if (!bookingData?.arrivalDate) {
       return res.status(400).json({ message: "Missing required fields" });
@@ -1872,8 +1873,10 @@ export const updateBooking = async (req, res) => {
           accountGroup: bookingData.accountGroup,
           user_id: req.sUserId,
           advanceAmount: bookingData.advanceAmount,
+          paymenttypeDetails: paymentData,
           advanceDate: new Date(),
           classification: "Cr",
+          paymenttypeDetails,
           source: "hotel",
           from: selectedModal.modelName,
         });
@@ -2050,6 +2053,7 @@ export const updateBooking = async (req, res) => {
       }
 
       bookingData.advanceTracking = Array.from(advanceMap.entries());
+      bookingData.paymenttypeDetails = paymenttypeDetails;
 
       // 3) Finally, update booking/checkIn/checkOut document
       const updateResult = await selectedModal.findByIdAndUpdate(
@@ -4083,12 +4087,12 @@ export const getHotelSalesDetails = async (req, res) => {
           let PaymentModeArray =[]
       if (
         sale.paymentSplittingData &&
-        Array.isArray(sale.paymentSplittingData) &&
-        !isCreditSale
+        Array.isArray(sale.paymentSplittingData) 
       ) {
         sale.paymentSplittingData.forEach((payment) => {
           const amount = Number(payment.amount) || 0;
           const paymentType = payment.type?.toLowerCase() || "";
+         if (amount > 0) {
           switch (paymentType) {
             case "upi":
               upiAmount += amount;
@@ -4111,6 +4115,7 @@ export const getHotelSalesDetails = async (req, res) => {
               PaymentModeArray.push("CASH")
               break;
           }
+        }
         });
       } else {
         // No payment splitting data - determine based on party account and name

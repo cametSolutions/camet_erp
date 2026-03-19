@@ -2360,7 +2360,7 @@ const OrdersDashboard = () => {
                         >
                           {cashOrBank?.cashDetails?.map((cashier) => (
                             <option key={cashier._id} value={cashier._id}>
-                              {cashier.partyName}
+                              {cashier.partyName} - ({cashier.under})
                             </option>
                           ))}
                         </select>
@@ -2385,7 +2385,7 @@ const OrdersDashboard = () => {
                           </option>
                           {cashOrBank?.bankDetails?.map((cashier) => (
                             <option key={cashier._id} value={cashier._id}>
-                              {cashier.partyName}
+                              {cashier.partyName} - ({cashier.under})
                             </option>
                           ))}
                         </select>
@@ -2454,7 +2454,7 @@ const OrdersDashboard = () => {
                             </option>
                             {cashOrBank?.cashDetails?.map((cashier) => (
                               <option key={cashier._id} value={cashier._id}>
-                                {cashier.partyName}
+                                {cashier.partyName} -  {cashier.under}
                               </option>
                             ))}
                           </select>
@@ -2513,7 +2513,7 @@ const OrdersDashboard = () => {
                             </option>
                             {cashOrBank?.bankDetails?.map((cashier) => (
                               <option key={cashier._id} value={cashier._id}>
-                                {cashier.partyName}
+                                {cashier.partyName} - {cashier.under}
                               </option>
                             ))}
                           </select>
