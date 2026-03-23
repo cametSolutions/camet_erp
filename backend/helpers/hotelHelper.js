@@ -72,7 +72,6 @@ export const sendRoomResponse = (res, rooms, totalRooms, params) => {
 // helper function used to add search concept with booking
 // helper function used to add search concept with booking
 export const buildDatabaseFilterForBooking = (params) => {
-
   let filter = {
     cmp_id: params.cmp_id,
     Primary_user_id: params.Primary_user_id,
@@ -91,8 +90,18 @@ export const buildDatabaseFilterForBooking = (params) => {
       filter.$or = [
         { voucherNumber: { $regex: params.searchTerm, $options: "i" } },
         { customerName: { $regex: params.searchTerm, $options: "i" } },
-        { "selectedRooms.roomName": { $regex: params.searchTerm, $options: "i" } },
-        { "selectedRooms.roomNumber": { $regex: params.searchTerm, $options: "i" } },
+        {
+          "selectedRooms.roomName": {
+            $regex: params.searchTerm,
+            $options: "i",
+          },
+        },
+        {
+          "selectedRooms.roomNumber": {
+            $regex: params.searchTerm,
+            $options: "i",
+          },
+        },
       ];
     } else {
       filter = { ...filter, status: { $exists: false } };
@@ -116,7 +125,6 @@ export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
     let selectedModal;
     if (params?.modal == "booking") {
       selectedModal = Booking;
-      
     } else if (params?.modal == "checkIn") {
       selectedModal = CheckIn;
     } else {
@@ -147,21 +155,22 @@ export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
     const checkInNumbers = bookings.map((b) => b.voucherNumber);
 
     // 2) Find all related sales in one query
-    const sales = await salesModel.find({isPostToRoom : true,
-      "convertedFrom.checkInNumber": { $in: checkInNumbers },
-    }).select("subTotal convertedFrom.checkInNumber"); // optional select
+    const sales = await salesModel
+      .find({
+        isPostToRoom: true,
+        "convertedFrom.checkInNumber": { $in: checkInNumbers },
+      })
+      .select("finalAmount isPostToRoom convertedFrom.checkInNumber"); // optional select
 
- 
     // 3) Build map: checkInNumber -> total subTotal
     const totalByCheckIn = {};
     for (const sale of sales) {
       for (const conv of sale.convertedFrom || []) {
         const key = conv.checkInNumber;
         if (!key) continue;
-        totalByCheckIn[key] = (totalByCheckIn[key] || 0) + (sale.subTotal || 0);
+        totalByCheckIn[key] = (totalByCheckIn[key] || 0) + (sale.isPostToRoom ? sale.finalAmount : 0 || 0);
       }
     }
-
 
     // 4) Attach to bookings
     const bookingsWithSales = bookings.map((b) => {
@@ -172,7 +181,7 @@ export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
       };
     });
 
-    return { bookings:bookingsWithSales, totalBookings };
+    return { bookings: bookingsWithSales, totalBookings };
   } catch (error) {
     console.error("❌ Error fetching bookings from database:", error);
 
@@ -226,7 +235,7 @@ export const updateStatus = async (roomData, status, session) => {
   await roomModal.updateMany(
     { _id: { $in: ids } },
     { $set: { status } },
-    { session }
+    { session },
   );
 };
 // hotelVoucherSeries.js
@@ -238,7 +247,7 @@ export async function hotelVoucherSeries(cmp_id, session) {
   if (!SaleVoucher) throw new Error("Sale voucher not found");
 
   const specificVoucherSeries = SaleVoucher.series.find(
-    (series) => series.under === "hotel"
+    (series) => series.under === "hotel",
   );
   if (!specificVoucherSeries)
     throw new Error("No 'hotel' voucher series found");
@@ -251,7 +260,7 @@ export const updateReceiptForRooms = async (
   checkInNumber,
   saleNumber,
   saleId,
-  session
+  session,
 ) => {
   const bookingNumberStr = String(bookingNumber);
   const checkInNumberStr = String(checkInNumber);
@@ -283,7 +292,7 @@ export const updateReceiptForRooms = async (
       });
 
       await receipt.save({ session });
-    })
+    }),
   );
 
   // console.log("Receipts updated successfully.");
@@ -479,9 +488,9 @@ export const createReceiptForSales = async (
   createdTallyData,
   req,
   restaurantBaseSaleData = [],
-  session
+  session,
 ) => {
-  console.log("cmpidin the createreceiptforsale", cmp_id)
+  console.log("cmpidin the createreceiptforsale", cmp_id);
   console.log("call for create receipt");
   const receipts = [];
 
@@ -498,18 +507,20 @@ export const createReceiptForSales = async (
 
   // Get checkInId from request
   // const checkInId = req.body.selectedCheckOut?.map((it) => it.allCheckInIds)
-  const checkInId = req.body.selectedCheckOut
-    ?.flatMap((it) => it.allCheckInIds);
+  const checkInId = req.body.selectedCheckOut?.flatMap(
+    (it) => it.allCheckInIds,
+  );
 
   if (!checkInId) {
     throw new Error("Missing checkInId in selectedCheckOut");
   }
 
   // Find all sales with this checkInId
-  const allSales = await salesModel.find({
-    checkInId: { $in: checkInId },
-    cmp_id,
-  })
+  const allSales = await salesModel
+    .find({
+      checkInId: { $in: checkInId },
+      cmp_id,
+    })
     .sort({ createdAt: 1 }) // FIFO: oldest first
     .session(session);
 
@@ -518,10 +529,12 @@ export const createReceiptForSales = async (
   // ============ CASE 1: SPLIT PAYMENT MODE ============
   if (payment?.paymentMode === "split") {
     const splitDetails = payment?.splitDetails || [];
-    // Find all outstandings for this customer from sales with this 
-    const customerids = splitDetails.map((item) => new mongoose.Types.ObjectId(item.customer))
-    console.log("custmereidsssss", customerids)
-    console.log("salesids", saleIds)
+    // Find all outstandings for this customer from sales with this
+    const customerids = splitDetails.map(
+      (item) => new mongoose.Types.ObjectId(item.customer),
+    );
+    console.log("custmereidsssss", customerids);
+    console.log("salesids", saleIds);
     const outstandings = await TallyData.find({
       billId: { $in: saleIds },
       cmp_id,
@@ -532,13 +545,12 @@ export const createReceiptForSales = async (
 
     if (outstandings.length === 0) {
       console.log(`No outstanding found for customer ${customerids}`);
-
     }
-    let balancetoset = amount
+    let balancetoset = amount;
     // Process each split detail
     for (const split of splitDetails) {
       if (split.sourceType === "credit") {
-        continue
+        continue;
       }
       const billData = [];
       const splitCustomerId = split.customer;
@@ -552,24 +564,28 @@ export const createReceiptForSales = async (
         cmp_id,
         "receipt",
         series_id,
-        session
+        session,
       );
       const serialNumber = await getNewSerialNumber(
         receiptModel,
         "serialNumber",
-        session
+        session,
       );
 
       const paymentDetails =
         splitSourceType === "cash"
           ? { cash_ledname: customerName, cash_name: customerName }
           : { bank_ledname: customerName, bank_name: customerName };
-      const matchedoutstanding = outstandings.find((item) => item.party_id === splitCustomerId)
-      const matchedsale = allSales.find((item) => String(item.party?._id) === String(splitCustomerId))
-      console.log("outstandings", outstandings)
+      const matchedoutstanding = outstandings.find(
+        (item) => item.party_id === splitCustomerId,
+      );
+      const matchedsale = allSales.find(
+        (item) => String(item.party?._id) === String(splitCustomerId),
+      );
+      console.log("outstandings", outstandings);
       for (const item of outstandings) {
-        const sale = allSales.find(s => s.salesNumber === item.bill_no)
-        console.log("ssssalesssssssss", sale)
+        const sale = allSales.find((s) => s.salesNumber === item.bill_no);
+        console.log("ssssalesssssssss", sale);
         billData.push({
           _id: item._id,
           bill_no: sale.salesNumber,
@@ -579,11 +595,9 @@ export const createReceiptForSales = async (
           source: "hotel",
           settledAmount: splitAmount,
           remainingAmount: 0,
-        })
-
+        });
       }
-      console.log("billdata", billData)
-
+      console.log("billdata", billData);
 
       const newReceipt = await buildReceipt(
         receiptVoucher,
@@ -597,27 +611,22 @@ export const createReceiptForSales = async (
         series_id,
         billData,
         req,
-        session
+        session,
       );
 
       receipts.push(newReceipt);
 
-
-
-
-
-      balancetoset -= splitAmount
-
+      balancetoset -= splitAmount;
     }
 
     for (const item of outstandings) {
       // 1. Find matching sale for this outstanding
-      const sale = allSales.find(s => s.salesNumber === item.bill_no);
+      const sale = allSales.find((s) => s.salesNumber === item.bill_no);
       if (!sale) continue;
 
       // 2. Find ALL receipts matching this sale's salesNumber
       const receipts = await receiptModel.find({
-        'billData.bill_no': sale.salesNumber  // Matches any billData.bill_no
+        "billData.bill_no": sale.salesNumber, // Matches any billData.bill_no
       });
 
       // 3. Push ALL matching receipts to this outstanding
@@ -627,22 +636,19 @@ export const createReceiptForSales = async (
           {
             $push: {
               appliedReceipts: {
-                $each: receipts.map(receipt => ({
+                $each: receipts.map((receipt) => ({
                   _id: receipt._id,
                   receiptNumber: receipt.receiptNumber,
-                  settledAmount: receipt.settledAmount,  // or calculate per receipt
+                  settledAmount: receipt.settledAmount, // or calculate per receipt
                   date: new Date(),
-                }))
-              }
-            }
+                })),
+              },
+            },
           },
-          { session }
+          { session },
         );
       }
     }
-
-
-
   }
 
   // ============ CASE 2: SINGLE PAYMENT MODE (FIFO) ============
@@ -679,7 +685,7 @@ export const createReceiptForSales = async (
             source: "receipt",
           },
         ],
-        { session }
+        { session },
       );
 
       const billData = [
@@ -699,22 +705,22 @@ export const createReceiptForSales = async (
         cmp_id,
         "receipt",
         series_id,
-        session
+        session,
       );
       const serialNumber = await getNewSerialNumber(
         receiptModel,
         "serialNumber",
-        session
+        session,
       );
 
       const paymentDetails =
         paymentMethod === "cash"
           ? { cash_ledname: customerName, cash_name: customerName }
           : { bank_ledname: customerName, bank_name: customerName };
-      console.log("checkkkkkkkkkkkkk", cmp_id)
-      console.log("seriesiddd", series_id)
-      console.log("partyidd", partyId)
-      const balancetoset = null
+      console.log("checkkkkkkkkkkkkk", cmp_id);
+      console.log("seriesiddd", series_id);
+      console.log("partyidd", partyId);
+      const balancetoset = null;
       const newReceipt = await buildReceipt(
         receiptVoucher,
         serialNumber,
@@ -727,7 +733,7 @@ export const createReceiptForSales = async (
         series_id,
         billData,
         req,
-        session
+        session,
       );
 
       receipts.push(newReceipt);
@@ -740,7 +746,7 @@ export const createReceiptForSales = async (
             bill_no: newReceipt.receiptNumber,
           },
         },
-        { session }
+        { session },
       );
 
       return receipts;
@@ -757,7 +763,9 @@ export const createReceiptForSales = async (
       const pendingAmount = outstanding.bill_pending_amt || 0;
       const settleAmount = Math.min(amountLeft, pendingAmount);
 
-      const matchedsale = allSales.find((item) => String(item.party?._id) === String(outstanding.party_id))
+      const matchedsale = allSales.find(
+        (item) => String(item.party?._id) === String(outstanding.party_id),
+      );
 
       billData.push({
         _id: outstanding._id,
@@ -802,7 +810,7 @@ export const createReceiptForSales = async (
             source: "receipt",
           },
         ],
-        { session }
+        { session },
       );
 
       advanceTallyId = advanceTally[0]._id;
@@ -824,20 +832,20 @@ export const createReceiptForSales = async (
       cmp_id,
       "receipt",
       series_id,
-      session
+      session,
     );
     const serialNumber = await getNewSerialNumber(
       receiptModel,
       "serialNumber",
-      session
+      session,
     );
 
     const paymentDetails =
       paymentMethod === "cash"
         ? { cash_ledname: customerName, cash_name: customerName }
         : { bank_ledname: customerName, bank_name: customerName };
-    console.log("cmpid before buildreceipt", cmp_id)
-    const balancetoset = null
+    console.log("cmpid before buildreceipt", cmp_id);
+    const balancetoset = null;
     const newReceipt = await buildReceipt(
       receiptVoucher,
       serialNumber,
@@ -850,7 +858,7 @@ export const createReceiptForSales = async (
       series_id,
       billData,
       req,
-      session
+      session,
     );
 
     receipts.push(newReceipt);
@@ -872,7 +880,7 @@ export const createReceiptForSales = async (
             },
           },
         },
-        { session }
+        { session },
       );
     }
 
@@ -885,7 +893,7 @@ export const createReceiptForSales = async (
             bill_no: newReceipt.receiptNumber,
           },
         },
-        { session }
+        { session },
       );
     }
   }
@@ -905,9 +913,9 @@ const buildReceipt = async (
   series_id,
   billData,
   req,
-  session
+  session,
 ) => {
-  console.log("cmpid in the buld receipt", cmp_id)
+  console.log("cmpid in the buld receipt", cmp_id);
   let selectedParty = await Party.findOne({ _id: partyId })
     .populate("accountGroup")
     .session(session);
@@ -921,7 +929,7 @@ const buildReceipt = async (
 
     delete selectedParty.accountGroup;
   }
-  console.log("line 886 hotelhelper")
+  console.log("line 886 hotelhelper");
   const receipt = new receiptModel({
     createdAt: new Date(),
     date: await formatToLocalDate(new Date(), cmp_id, session),
@@ -946,10 +954,6 @@ const buildReceipt = async (
   return await receipt.save({ session });
 };
 
-
-
-
-
 export const saveSettlementDataHotel = async (
   party,
   orgId,
@@ -963,7 +967,7 @@ export const saveSettlementDataHotel = async (
   selectedCashOrBank,
   selectedModal,
   req,
-  session
+  session,
 ) => {
   try {
     const object = {
@@ -977,7 +981,12 @@ export const saveSettlementDataHotel = async (
       partyName: partyName || party?.partyName,
       partyType: party?.partyType?.toLowerCase(), // must match ["cash","bank","party"]
       sourceId: selectedCashOrBank,
-      sourceType: paymentMethod?.toLowerCase() || null, // must match enum
+      sourceType:
+        paymentMethod?.toLowerCase() === "cash"
+          ? "cash"
+          : ["card", "upi"].includes(paymentMethod?.toLowerCase())
+            ? "bank"
+            : paymentMethod?.toLowerCase() || null, // must match enum
       cmp_id: orgId,
       Primary_user_id: req?.pUserId || req?.owner, // must not be null
       settlement_date: createdAt ? new Date(createdAt) : new Date(),
@@ -1002,7 +1011,9 @@ export const deleteReceipt = async (tallyId, session = null) => {
     }
 
     // Delete receipts by billId
-    const receiptQuery = receiptModel.deleteMany({ "billData.billId": tallyId });
+    const receiptQuery = receiptModel.deleteMany({
+      "billData.billId": tallyId,
+    });
     if (session) {
       receiptQuery.session(session);
     }
@@ -1043,6 +1054,3 @@ export const deleteSettlements = async (tallyId, session = null) => {
     throw error;
   }
 };
-
-
-

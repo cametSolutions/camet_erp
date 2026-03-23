@@ -16,7 +16,7 @@ const HotelCheckoutStatement = () => {
   const [error, setError] = useState(null);
   const contentToPrint = useRef(null);
 
-  const { _id: cmp_id } = useSelector(
+  const { _id: cmp_id ,  name :organizationName } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
 
@@ -405,7 +405,7 @@ const HotelCheckoutStatement = () => {
           {/* Header */}
           <div className="text-center mb-4">
             <h1 className="text-xl md:text-2xl font-bold tracking-wide underline">
-              KGEES - HILLTOWN HOTEL
+              {organizationName}
             </h1>
           </div>
 

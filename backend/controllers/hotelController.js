@@ -1873,7 +1873,7 @@ export const updateBooking = async (req, res) => {
           accountGroup: bookingData.accountGroup,
           user_id: req.sUserId,
           advanceAmount: bookingData.advanceAmount,
-          paymenttypeDetails: paymentData,
+          // paymenttypeDetails: paymentData,
           advanceDate: new Date(),
           classification: "Cr",
           paymenttypeDetails,
@@ -2647,7 +2647,7 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
         }
 
         console.log("BookingSide:", bookingSide.length);
-
+        console.log("CheckInId:", checkout.checkInId?._id || checkout._id);
         const checkInSide = await TallyData.find({
           billId: checkout.checkInId?._id || checkout._id,
           ...paymentGreaterThanZeroQuery,
@@ -2738,7 +2738,7 @@ export const convertCheckOutToSale = async (req, res) => {
   const session = await mongoose.startSession();
   try {
     let isAnyPartial = false;
-
+    let checkOutAfterSave = [];
     await session.withTransaction(async () => {
       const { cmp_id } = req.params;
       console.log("cmpidddd", cmp_id);
@@ -2768,6 +2768,7 @@ export const convertCheckOutToSale = async (req, res) => {
       // Process each checkout separately
       let results;
       let salesarray;
+     
       for (const item of selectedCheckOut) {
         // console.log("itemdddddd", item);
         const bookingVoucherNumber =
@@ -2978,6 +2979,20 @@ export const convertCheckOutToSale = async (req, res) => {
           ],
           { session },
         );
+        const createdDoc = checkOutDoc[0];
+
+        const updatedDoc = await CheckOut.findById(createdDoc._id)
+          .populate("customerId")
+          .populate("guestId")
+          .populate("agentId")
+          .populate("isHotelAgent")
+          .populate("selectedRooms.selectedPriceLevel")
+          .populate("bookingId")
+          .populate("checkInId")
+          .lean()
+          .session(session);
+
+        checkOutAfterSave.push(updatedDoc);
 
         const amount = [item].reduce((total, el) => {
           const itemTotal = el.selectedRooms.reduce(
@@ -3278,6 +3293,7 @@ export const convertCheckOutToSale = async (req, res) => {
         : "Checkout(s) converted to Sales successfully",
       data: {
         results: req._multiCheckoutResults,
+        checkOutAfterSave
       },
     });
   } catch (error) {
@@ -3605,37 +3621,34 @@ export const updateConfigurationForHotelAndRestaurant = async (req, res) => {
           [`configurations.0.orderTypes.${data.field}`]: data.checked,
         },
       };
-    }else if(data.title == "restaurantPrint"){
+    } else if (data.title == "restaurantPrint") {
       updateData = {
-          $set: {
-            [`configurations.0.defaultPrint.showBeforeSaleInRestaurant`]: data.checked,
-          },
-        };
-
-    }
-    else if(data.title == "showPrintWithTaxInRestaurant"){
+        $set: {
+          [`configurations.0.defaultPrint.showBeforeSaleInRestaurant`]:
+            data.checked,
+        },
+      };
+    } else if (data.title == "showPrintWithTaxInRestaurant") {
       updateData = {
-          $set: {
-            [`configurations.0.defaultPrint.showPrintWithTaxInRestaurant`]: data.checked,
-          },
-        };
-
-    }
-    else if(data.title == "discountBasedOnGrossAmount"){
+        $set: {
+          [`configurations.0.defaultPrint.showPrintWithTaxInRestaurant`]:
+            data.checked,
+        },
+      };
+    } else if (data.title == "discountBasedOnGrossAmount") {
       updateData = {
-          $set: {
-            [`configurations.0.discountBasedOnGrossAmount`]: data.checked,
-          },
-        };
-
-    }  else if (data.title) {
+        $set: {
+          [`configurations.0.discountBasedOnGrossAmount`]: data.checked,
+        },
+      };
+    } else if (data.title) {
       // Fallback for backward compatibility with old toggle structure
       updateData = {
         $set: {
           [`configurations.0.addRateWithTax.${data.title}`]: data.checked,
         },
       };
-    }else {
+    } else {
       return res.status(400).json({ message: "Invalid data structure" });
     }
 
@@ -4084,38 +4097,38 @@ export const getHotelSalesDetails = async (req, res) => {
           sale.partyAccount !== "Gpay" &&
           sale.partyAccount !== "Bank");
 
-          let PaymentModeArray =[]
+      let PaymentModeArray = [];
       if (
         sale.paymentSplittingData &&
-        Array.isArray(sale.paymentSplittingData) 
+        Array.isArray(sale.paymentSplittingData)
       ) {
         sale.paymentSplittingData.forEach((payment) => {
           const amount = Number(payment.amount) || 0;
           const paymentType = payment.type?.toLowerCase() || "";
-         if (amount > 0) {
-          switch (paymentType) {
-            case "upi":
-              upiAmount += amount;
-              PaymentModeArray.push("UPI")
-              break;
-            case "bank":
-              bankAmount += amount;
-              PaymentModeArray.push("BANK")
-              break;
-            case "card":
-              cardAmount += amount;
-              PaymentModeArray.push("CARD")
-              break;
-            case "credit":
-              creditAmount += amount;
-              PaymentModeArray.push("CREDIT")
-              break;
-            default:
-              cashAmount += amount;
-              PaymentModeArray.push("CASH")
-              break;
+          if (amount > 0) {
+            switch (paymentType) {
+              case "upi":
+                upiAmount += amount;
+                PaymentModeArray.push("UPI");
+                break;
+              case "bank":
+                bankAmount += amount;
+                PaymentModeArray.push("BANK");
+                break;
+              case "card":
+                cardAmount += amount;
+                PaymentModeArray.push("CARD");
+                break;
+              case "credit":
+                creditAmount += amount;
+                PaymentModeArray.push("CREDIT");
+                break;
+              default:
+                cashAmount += amount;
+                PaymentModeArray.push("CASH");
+                break;
+            }
           }
-        }
         });
       } else {
         // No payment splitting data - determine based on party account and name
@@ -4141,18 +4154,18 @@ export const getHotelSalesDetails = async (req, res) => {
       let mode = "Cash"; // default
       if (upiAmount > 0) {
         mode = "UPI";
-            PaymentModeArray.push("UPI")
+        PaymentModeArray.push("UPI");
       } else if (cardAmount > 0) {
-            PaymentModeArray.push("CARD")
+        PaymentModeArray.push("CARD");
         mode = "Card";
       } else if (creditAmount > 0) {
-            PaymentModeArray.push("CREDIT")
+        PaymentModeArray.push("CREDIT");
         mode = "Credit";
       } else if (bankAmount > 0) {
-            PaymentModeArray.push("BANK")
+        PaymentModeArray.push("BANK");
         mode = "Bank";
       } else if (cashAmount > 0) {
-            PaymentModeArray.push("CASH")
+        PaymentModeArray.push("CASH");
         mode = "Cash";
       }
 
@@ -4212,7 +4225,7 @@ export const getHotelSalesDetails = async (req, res) => {
         kotDetails: sale.kotData,
         kotType: sale.kotData?.type,
         isHotel: sale.checkOut ? true : false,
-        PaymentModeArray:[...new Set(PaymentModeArray)],
+        PaymentModeArray: [...new Set(PaymentModeArray)],
       };
     });
     // console.log("transfored", transformedData);
