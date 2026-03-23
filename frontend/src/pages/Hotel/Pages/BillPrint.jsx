@@ -319,7 +319,7 @@ console.log(mergedMap);
         .filter(Boolean),
     );
 
-    console.log("Room IDs in this checkout:",kotData[]);
+   
 
     // Split KOTs based on available fields
     const roomServiceKots = [];
@@ -811,7 +811,7 @@ console.log("allpartyid", outStanding);
     // Advances only on the decided bill
     let advanceEntries = useAdvances
       ? (outStanding || [])
-          .filter((t) => doc?._id === t.billId || doc?.bookingId?._id === t.billId)
+          .filter((t) => doc?._id === t.billId || doc?.bookingId?._id === t.billId || doc?.checkInId?._id === t.billId)
           .map((t) => ({
             date: formatDate(t.bill_date || t.billdate || new Date()),
             description: t.isCheckOut ? "CheckOut" : "Advance",
@@ -824,7 +824,7 @@ console.log("allpartyid", outStanding);
 
     let advanceTotal = useAdvances
       ? (outStanding || [])
- .filter((t) => doc?._id === t.billId || doc?.bookingId?._id === t.billId)
+ .filter((t) => doc?._id === t.billId || doc?.bookingId?._id === t.billId || doc?.checkInId?._id === t.billId)
           .reduce(
             (sum, t) => sum + Number(t.bill_amount || t.billamount || 0),
             0,
