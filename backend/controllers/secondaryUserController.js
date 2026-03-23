@@ -1661,6 +1661,7 @@ export const getBankAndCashSources = async (req, res) => {
 
     const selectFields = {
       partyName: 1,
+      under: 1
     };
 
     if (source === 'bank') {
@@ -1696,11 +1697,13 @@ export const getBankAndCashSources = async (req, res) => {
     const transformedBanks = banks.map(bank => ({
       _id: bank._id,
       bank_ledname: bank.partyName,
+      under: bank.under
     }));
 
     const transformedCashs = cashs.map(cash => ({
       _id: cash._id,
       cash_ledname: cash.partyName,
+      under: cash.under
     }));
 
     // Return fetched data with a consistent structure

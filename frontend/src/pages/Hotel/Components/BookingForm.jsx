@@ -501,8 +501,9 @@ function BookingForm({
     }
 
     setErrorObject((prev) => ({ ...prev, advanceAmount: "" }));
-
+console.log("advanceAmount", advanceAmount,isFor);
     if (isFor === "deliveryNote" || isFor === "sales") {
+      console.log("advanceAmount", advanceAmount);
       setFormData((prev) => ({
         ...prev,
         advanceAmount: value,
@@ -515,7 +516,7 @@ function BookingForm({
         ...prev,
         advanceAmount: value,
         balanceToPay: (grandTotal - advanceAmount).toFixed(2),
-        totalAdvance: advanceAmount,
+        totalAdvance: totalAdvance,
         updatedDate: currentDateDefault,
       }));
     }
@@ -894,11 +895,13 @@ function BookingForm({
     if (
       Number(formData.advanceAmount) <= 0 ||
       formData.advanceAmount == editData?.advanceAmount
+
     ) {
       if (isSubmittingRef.current) return;
       isSubmittingRef.current = true;
       console.log(payload);
-      handleSubmit(payload);
+      let paymenttypeDetails= editData?.paymenttypeDetails
+      handleSubmit(payload,null,paymenttypeDetails);
     } else {
       setFormData((prev) => ({ ...prev, ...payload }));
       setShowPaymentModal(true);
