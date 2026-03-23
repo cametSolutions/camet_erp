@@ -319,7 +319,7 @@ console.log(mergedMap);
         .filter(Boolean),
     );
 
-    console.log("Room IDs in this checkout:",kotData[0]);
+    console.log("Room IDs in this checkout:",kotData[]);
 
     // Split KOTs based on available fields
     const roomServiceKots = [];
