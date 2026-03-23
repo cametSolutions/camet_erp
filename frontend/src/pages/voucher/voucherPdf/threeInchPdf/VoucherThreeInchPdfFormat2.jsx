@@ -128,7 +128,7 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
     // return foodPlanArray.map(item => item.planType);
 
     // or a single comma‑separated string:
-    const names = foodPlanArray.map((item) => item.planType).join(", ");
+    const names = foodPlanArray?.map((item) => item.planType).join(", ");
     return `Food Paln: ${names}`;
   };
   const netAmount = Math.round(Number(data?.finalAmount || 0)).toFixed(2);
