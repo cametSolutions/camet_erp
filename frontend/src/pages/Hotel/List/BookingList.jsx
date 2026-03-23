@@ -630,6 +630,7 @@ function BookingList() {
         const selectedCustomerData = selectedCheckOut?.find(
           (c) => c.customerId._id === selectedCustomer,
         );
+        console.log(selectedCustomerData);
         paymentDetails = {
           cashAmount:
             selectedDataForPayment?.total ||
