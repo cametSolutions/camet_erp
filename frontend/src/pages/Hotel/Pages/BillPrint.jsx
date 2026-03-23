@@ -319,13 +319,13 @@ console.log(mergedMap);
         .filter(Boolean),
     );
 
-    console.log("Room IDs in this checkout:", Array.from(roomIdSet));
+   
 
     // Split KOTs based on available fields
     const roomServiceKots = [];
     const dineInKots = [];
 
-    kotData?.forEach((kot) => {
+    kotData.filter((t) => doc?.voucherNumber === t.convertedFrom[0].checkInNumber)?.forEach((kot) => {
       const kotRoomId = String(kot?.kotDetails?.roomId || kot?.roomId || "");
       const tableNumber =
         kot?.kotDetails?.tableNumber ||
@@ -806,11 +806,12 @@ console.log("dineInTotals", dineInTotals)
 
     const allcheckinids = doc?.allCheckInIds;
     const allpartyid = doc?.partyArray;
-
+console.log(doc);
+console.log("allpartyid", outStanding);
     // Advances only on the decided bill
     let advanceEntries = useAdvances
       ? (outStanding || [])
-          // .filter((t) => allpartyid?.includes(t.party_id))
+          .filter((t) => doc?._id === t.billId || doc?.bookingId?._id === t.billId || doc?.checkInId?._id === t.billId)
           .map((t) => ({
             date: formatDate(t.bill_date || t.billdate || new Date()),
             description: t.isCheckOut ? "CheckOut" : "Advance",
@@ -823,7 +824,7 @@ console.log("dineInTotals", dineInTotals)
 
     let advanceTotal = useAdvances
       ? (outStanding || [])
-          // .filter((t) => allpartyid?.includes(t.party_id))
+ .filter((t) => doc?._id === t.billId || doc?.bookingId?._id === t.billId || doc?.checkInId?._id === t.billId)
           .reduce(
             (sum, t) => sum + Number(t.bill_amount || t.billamount || 0),
             0,
@@ -1031,6 +1032,7 @@ console.log("dineInTotals", dineInTotals)
 
     if (!docs.length) return [];
     const firstPrimaryIdx = findFirstPrimaryIdx(docs);
+    console.log(docs.length);
 
     return docs.map((doc, idx) => {
       // Rule: if this doc owns advances, show here; else show on firstPrimaryIdx
