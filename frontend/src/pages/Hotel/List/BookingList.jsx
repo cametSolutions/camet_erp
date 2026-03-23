@@ -5,17 +5,10 @@ import { FaEdit } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { taxCalculator } from "../Helper/taxCalculator";
-import {
-  MdDelete,
-  MdCheckCircle,
-  MdPayment,
-  MdVisibility,
-  MdCancel,
-} from "react-icons/md";
+import { MdDelete, MdVisibility, MdCancel } from "react-icons/md";
 import { motion } from "framer-motion";
 
 import Swal from "sweetalert2";
-import CheckoutDateModal from "../Components/CheckoutDateModal";
 import EnhancedCheckoutModal from "../Components/EnhancedCheckoutModal";
 import HoldModal from "../Components/HoldModal";
 import CustomerSearchInputBox from "../Components/CustomerSearchInPutBox";
@@ -50,9 +43,7 @@ function BookingList() {
   const [loader, setLoader] = useState(false);
   const [searchTerm, setSearchTerm] = useState("pending");
   const [listHeight, setListHeight] = useState(0);
-  const [activeTab, setActiveTab] = useState("pending");
   const [partial, setIsPartial] = useState(false);
-  const [checkOutUpdated, setCheckOutUpdated] = useState(false);
   const [selectedCheckOut, setSelectedCheckOut] = useState([]);
   const [roomswithCurrentstatus, setroomswithCurrentStatus] = useState([]);
   const [selectedonlinePartyname, setselectedOnlinepartyName] = useState(null);
@@ -66,7 +57,6 @@ function BookingList() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [selectedDataForPayment, setSelectedDataForPayment] = useState(null);
-  const [showCheckOutDateModal, setShowCheckOutDateModal] = useState(false);
   const [checkoutMode, setCheckoutMode] = useState("multiple");
   const [paymentMode, setPaymentMode] = useState("single");
   const [cashAmount, setCashAmount] = useState(0);
@@ -77,7 +67,6 @@ function BookingList() {
   const [cashOrBank, setCashOrBank] = useState({});
   const [checkinidsarray, setcheckinids] = useState(null);
   const [restaurantBaseSaleData, setRestaurantBaseSaleData] = useState({});
-  const [showSelectionModal, setShowSelectionModal] = useState(true);
   const [showEnhancedCheckoutModal, setShowEnhancedCheckoutModal] =
     useState(false);
   const [showEnhancedHoldModal, setShowEnhancedHoldModal] = useState(false);
@@ -85,6 +74,7 @@ function BookingList() {
   const [processedCheckoutData, setProcessedCheckoutData] = useState(null);
   const [selectedCreditor, setSelectedCreditor] = useState("");
   const [dateandstaysdata, setdateandstaysdata] = useState([]);
+  const [finalPrintData,setFinalPrintData] = useState([])
   // NEW: State for split payment rows and sources
   const [splitPaymentRows, setSplitPaymentRows] = useState([
     {
@@ -96,61 +86,54 @@ function BookingList() {
       customerName: "",
     },
   ]);
-  const [bankAndCashSources, setBankAndCashSources] = useState({
-    banks: [],
-    cashs: [],
-  });
   const [combinedSources, setCombinedSources] = useState([]);
-  console.log(selectedDataForPayment);
   const { roomId, roomName, filterByRoom } = location.state || {};
   const paymentDetails = useSelector((state) => state.paymentSlice);
   const { _id: cmp_id, configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg,
   );
-  const [results, setResults] = useState([]);
   const getVoucherType = () => {
     const path = location.pathname;
     if (path.includes("Receipt")) return "receipt";
     if (path.includes("Payment")) return "payment";
     return "sale";
   };
-  console.log(paymentMethod);
+
   const { data: partylist } = useFetch(
     `/api/sUsers/singlecheckoutpartylist/${cmp_id}`,
     { params: { voucher: getVoucherType() } },
   );
-  console.log("ssssssssssssssssssssssssssssssssssssssssssssssss",selectedCheckOut);
 
   // ADD THIS FUNCTION: Calculate total from all checkouts
   const calculateTotalAmount = (checkouts) => {
     if (!checkouts || checkouts.length === 0) return 0;
 
     return checkouts.reduce((total, checkout) => {
-      console.log(checkout);
       const rooms = checkout.selectedRooms;
-      const advance = Number((checkout?.advanceAmount || 0)) + (Number(checkout?.bookingId?.advanceAmount || 0));
-      console.log(rooms);
-      console.log(advance);
+      const advance =
+        Number(checkout?.advanceAmount || 0) +
+        Number(checkout?.bookingId?.advanceAmount || 0);
+
       // If no rooms, just keep current total
       if (!Array.isArray(rooms) || rooms.length === 0) {
         return total;
       }
 
+      console.log(checkouts);
       const checkoutTotal = rooms.reduce((sum, room) => {
-        console.log(room.amountAfterTax);
+        console.log(rooms);
         return sum + (parseFloat(room.amountAfterTax) || 0);
       }, 0); // important: initial value
-      console.log(checkout.advanceAmount);
+
+
       console.log(checkoutTotal);
+      console.log(advance);
       return total + (checkoutTotal - advance);
     }, 0); // initial value for outer reduce
   };
-
-  console.log(selectedCheckOut);
   useEffect(() => {
     if (location.pathname === "/sUsers/bookingList") {
       const fetchStatus = async () => {
-        console.log("H", cmp_id);
         try {
           const res = await api.get(
             `/api/sUsers/getallnoncheckoutCheckins/${cmp_id}`,
@@ -158,7 +141,6 @@ function BookingList() {
               withCredentials: true,
             },
           );
-          console.log(res.data.data);
           const a = res.data.data.map((item) => {
             return {
               roomId: item._id,
@@ -173,10 +155,7 @@ function BookingList() {
               }
             });
           });
-          console.log(ids);
           setroomswithCurrentStatus(ids);
-          console.log(a);
-          console.log(res.data);
         } catch (error) {
           console.log(error.message);
         }
@@ -185,22 +164,6 @@ function BookingList() {
       fetchStatus();
     }
   }, [location.pathname, cmp_id]);
-
-  // useEffect(() => {
-  // // when global selectedCustomer changes, sync into selectedCheckOut
-  //     if (!selectedCustomer) return
-  // console.log("hhhh")
-  //     const match = parties.find((p) => p._id === selectedCustomer)
-  //     if (!match) return
-  // console.log(match)
-  // console.log("hhh")
-  //     setSelectedCheckOut((prev) =>
-  //       prev.map((item) => ({
-  //         ...item,
-  //         selectedCustomer: match
-  //       }))
-  //     )
-  // }, [selectedCustomer]);
 
   useEffect(() => {
     if (partylist && partylist.partyList.length) {
@@ -217,19 +180,16 @@ function BookingList() {
       setShowEnhancedCheckoutModal(true);
     }
   }, [location?.state?.directConvertFromDashboard]);
-  console.log(partylist?.partyList?.length);
 
   useEffect(() => {
     if (
       location?.state?.selectedCheckOut &&
       paymentDetails?.printData?.selectedCheckOut?.length > 0
     ) {
-      console.log(location?.state?.selectedCheckOut);
       setSelectedCheckOut(location?.state?.selectedCheckOut);
       setSelectedCustomer(location?.state?.selectedCustomer?._id);
       setRestaurantBaseSaleData(location?.state?.kotData);
       setCheckoutMode(location?.state?.checkoutmode);
-      console.log(location.state.balanceToPay);
       setcheckinids(location?.state?.cheinids);
       setPaymentMode(paymentDetails?.paymentMode);
 
@@ -249,19 +209,10 @@ function BookingList() {
         setselectedOnlinetype(paymentDetails?.onlineType);
       }
 
-      console.log(
-        "IIIIIIIIIII",
-        paymentDetails?.paymentMode,
-        paymentDetails,
-        selectedBank,
-        selectedCash,
-      );
-
       // CHANGED: Calculate total from all checkouts' selectedRooms
       const totalAmount = calculateTotalAmount(
         location?.state?.selectedCheckOut,
       );
-      console.log(totalAmount);
 
       setSelectedDataForPayment((prevData) => ({
         ...prevData,
@@ -272,15 +223,12 @@ function BookingList() {
       }
     }
   }, [location?.state?.selectedCheckOut]);
-  console.log("IIIIIIIIIII", location?.state?.selectedCheckOut);
 
-  console.log("IIIIIIIIIII", paymentDetails.printData);
   // ADD THIS: Update total whenever selectedCheckOut changes
   useEffect(() => {
     if (selectedCheckOut && selectedCheckOut.length > 0) {
-      console.log("H",selectedCheckOut);
       const totalAmount = calculateTotalAmount(selectedCheckOut);
-      console.log(totalAmount);
+      
       const advanceAmount = selectedCheckOut.reduce((total, item) => {
         return (
           total +
@@ -292,17 +240,18 @@ function BookingList() {
       const restaurantSubTotal = selectedCheckOut.reduce((total, item) => {
         return total + (item.restaurantSubTotal || 0);
       }, 0);
-
-      console.log(restaurantSubTotal);
+console.log(totalAmount,restaurantSubTotal);
       setSelectedDataForPayment((prevData) => ({
         ...prevData,
-        total: totalAmount,
+        total: totalAmount ,
         advanceAmount: advanceAmount,
         restaurantSubTotal: restaurantSubTotal,
+        totalWithRestaurant: totalAmount + restaurantSubTotal
       }));
     }
   }, [selectedCheckOut]);
 
+  console.log(selectedDataForPayment, "selectedCheckOut");
   const searchData = (data) => {
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
@@ -327,7 +276,6 @@ function BookingList() {
   const { data: paymentTypeData } = useFetch(
     `/api/sUsers/getPaymentType/${cmp_id}`,
   );
-  console.log(paymentTypeData);
 
   // NEW: Fetch bank and cash sources
   useEffect(() => {
@@ -340,21 +288,18 @@ function BookingList() {
 
         if (response.data && response.data.data) {
           const { banks, cashs } = response.data.data;
-          console.log(banks);
-          console.log(cashs);
-          setBankAndCashSources({ banks, cashs });
 
           // Combine banks and cash into a single array for the dropdown
           const combined = [
             ...cashs.map((cash) => ({
               id: cash._id,
               name: cash.cash_ledname,
-              type: "cash",
+              type: cash?.under || "cash",
             })),
             ...banks.map((bank) => ({
               id: bank._id,
               name: bank.bank_ledname,
-              type: "bank",
+              type: bank?.under || "bank",
             })),
             { id: "credit", name: "credit", type: "credit" },
           ];
@@ -381,7 +326,6 @@ function BookingList() {
         bankDetails.length > 0 &&
         (selectedBank == "" || selectedBank == null)
       ) {
-        console.log("kkkkkkk", bankDetails[0]);
         setSelectedBank(bankDetails[0]._id);
         setselectedOnlinepartyName(bankDetails[0].partyName);
         setselectedOnlinetype(bankDetails[0].partyType);
@@ -396,11 +340,9 @@ function BookingList() {
       }
     }
   }, [paymentTypeData]);
-  console.log(selectedOnlinetype);
-  console.log(selectedBank);
+
   const fetchBookings = useCallback(
     async (pageNumber = 1, searchTerm = "") => {
-      console.log("h");
       if (isLoading) return;
 
       setIsLoading(true);
@@ -425,10 +367,8 @@ function BookingList() {
         } else if (location.pathname == "/sUsers/bookingList") {
           params.append("modal", "booking");
         } else {
-          console.log("h");
           params.append("modal", "checkOut");
         }
-        console.log(params);
         const res = await api.get(
           `/api/sUsers/getBookings/${cmp_id}?${params}`,
           {
@@ -452,7 +392,6 @@ function BookingList() {
         }
 
         if (pageNumber === 1) {
-          console.log("d");
           setBookings(bookingData);
         } else {
           setBookings((prev) => [...prev, ...bookingData]);
@@ -472,24 +411,13 @@ function BookingList() {
       }
     },
 
-    [cmp_id, activeTab, filterByRoom, roomId, location.pathname],
+    [cmp_id, filterByRoom, roomId, location.pathname],
   );
 
   useEffect(() => {
     fetchBookings(1, searchTerm);
-  }, [fetchBookings, searchTerm, activeTab]);
+  }, [fetchBookings, searchTerm]);
 
-  // useEffect(() => {
-  //   if (selectedCheckOut.length > 0) {
-  //     let prevObject = {};
-  //     let total = selectedCheckOut.reduce(
-  //       (acc, item) => acc + Number(item.balanceToPay),
-  //       0
-  //     );
-  //     prevObject.total = total;
-  //     setSelectedDataForPayment(prevObject);
-  //   }
-  // }, [selectedCheckOut]);
   console.log(selectedDataForPayment);
   const handleSingleCheckoutformultiplechekin = (selectcustomer) => {
     console.log(selectedCustomer);
@@ -683,9 +611,11 @@ function BookingList() {
       (sum, row) => sum + (parseFloat(row.amount) || 0),
       0,
     );
+    console.log(total);
+    console.log(selectedDataForPayment);
     if (
       total >
-      (selectedDataForPayment?.total ||
+      (selectedDataForPayment?.totalWithRestaurant ||
         Number(selectedCheckOut[0]?.balanceToPay)?.toFixed(2))
     ) {
       setPaymentError("Total split amount exceeds order total");
@@ -693,8 +623,6 @@ function BookingList() {
       setPaymentError("");
     }
   };
-  console.log(processedCheckoutData);
-  console.log("hddd");
   const handleSavePayment = async () => {
     console.log("hddd");
     console.log(selectedCheckOut);
@@ -706,6 +634,13 @@ function BookingList() {
 
     if (paymentMode == "single") {
       if (paymentMethod == "cash") {
+        const selected = cashOrBank?.cashDetails?.find(
+          (c) => c._id === selectedCash,
+        );
+        const selectedCustomerData = selectedCheckOut?.find(
+          (c) => c.customerId._id === selectedCustomer,
+        );
+        console.log(selectedCustomerData);
         paymentDetails = {
           cashAmount:
             selectedDataForPayment?.total ||
@@ -714,6 +649,19 @@ function BookingList() {
           selectedCash: selectedCash,
           selectedBank: "",
           paymentMode: paymentMode,
+          splitDetails: [
+            {
+              customer: selectedCustomerData.customerId.customerName,
+              source: selectedCash,
+              sourceType: "cash",
+              amount:
+                selectedDataForPayment?.total ||
+                Number(selectedCheckOut[0]?.balanceToPay),
+              customerName: selectedCustomerData.customerId.partyName,
+              subsource: selected.partyName,
+            },
+          ],
+
           paymenttypeDetails: {
             cash:
               selectedDataForPayment?.total ||
@@ -725,11 +673,13 @@ function BookingList() {
           },
         };
       } else {
-        console.log(
-          "selectedonlinePartyname",
-          selectedonlinePartyname,
-          selectedOnlinetype,
+        const selected = cashOrBank?.bankDetails?.find(
+          (c) => c._id === selectedBank,
         );
+        const selectedCustomerData = selectedCheckOut?.find(
+          (c) => c.customerId._id === selectedCustomer,
+        );
+        console.log(selected);
         paymentDetails = {
           cashAmount: cashAmount,
           onlineAmount:
@@ -738,24 +688,32 @@ function BookingList() {
           selectedCash: "",
           selectedBank: selectedBank,
           paymentMode: paymentMode,
+          splitDetails: [
+            {
+              customer: selectedCustomerData.customerId.customerName,
+              source: selectedCash,
+              sourceType: "bank",
+              amount:
+                selectedDataForPayment?.total ||
+                Number(selectedCheckOut[0]?.balanceToPay),
+              customerName: selectedCustomerData.customerId.partyName,
+              subsource: selected.partyName,
+            },
+          ],
           paymenttypeDetails: {
             cash: 0,
             bank:
-              selectedonlinePartyname !== "paytm" &&
-              selectedonlinePartyname !== "gpay" &&
-              selectedonlinePartyname !== "card" &&
-              selectedOnlinetype == "bank"
+              selected.under == "bank"
                 ? selectedDataForPayment?.total ||
                   Number(selectedCheckOut[0]?.balanceToPay)
                 : 0,
             upi:
-              selectedonlinePartyname === "paytm" ||
-              selectedonlinePartyname === "gpay"
+              selected.under == "upi"
                 ? selectedDataForPayment?.total ||
                   Number(selectedCheckOut[0]?.balanceToPay)
                 : 0,
             card:
-              selectedonlinePartyname === "card"
+              selected.under == "card"
                 ? selectedDataForPayment?.total ||
                   Number(selectedCheckOut[0]?.balanceToPay)
                 : 0,
@@ -793,7 +751,7 @@ function BookingList() {
       );
 
       let payment = (
-        selectedDataForPayment?.total ||
+        selectedDataForPayment?.totalWithRestaurant ||
         Number(selectedCheckOut[0]?.balanceToPay) ||
         0
       ).toFixed(2);
@@ -877,7 +835,7 @@ function BookingList() {
     if (partial) {
       console.log("Hhhh");
       console.log(dateandstaysdata);
-     
+
       console.log(paymentDetails);
       dispatch(setPaymentDetails(paymentDetails));
       dispatch(setSelectedParty(selectedCustomer));
@@ -886,12 +844,9 @@ function BookingList() {
       dispatch(setOnlinepartyName(selectedonlinePartyname));
       dispatch(setOnlineType(selectedOnlinetype));
       setIsPartial(false);
-       proceedToCheckout(dateandstaysdata, processedCheckoutData);
+      proceedToCheckout(dateandstaysdata, processedCheckoutData);
     } else {
-      console.log("hhhh");
-      console.log(paymentDetails);
-      console.log(selectedCheckOut);
-
+  
       try {
         const response = await api.post(
           `/api/sUsers/convertCheckOutToSale/${cmp_id}`,
@@ -911,7 +866,8 @@ function BookingList() {
         if (response.status === 200 || response.status === 201) {
           console.log(response);
           toast.success(response?.data?.message);
-
+          console.log(response?.data.data.checkOutAfterSave);
+          setFinalPrintData(response?.data.data.checkOutAfterSave);
           handleCloseBasedOnDate();
         }
       } catch (error) {
@@ -938,71 +894,57 @@ function BookingList() {
       }
     }
   };
-  console.log("h", results);
-  const handleCheckOutData = async () => {
-    setShowSelectionModal(false);
-    setShowEnhancedCheckoutModal(true);
-  };
-  console.log(selectedCheckOut);
 
   const handleEnhancedCheckoutConfirm = async (roomAssignments, data) => {
     console.log(roomAssignments);
     console.log(data);
     let updatedData = data;
-   
-if (selectedCheckOut !== data) {
 
-  updatedData = await Promise.all(
-    data.map(async (checkout) => {
+    if (selectedCheckOut !== data) {
+      updatedData = await Promise.all(
+        data.map(async (checkout) => {
+          const updatedRooms = await Promise.all(
+            (checkout.selectedRooms || []).map(async (room) => {
+              const taxResponse = await taxCalculator(
+                (data = room),
+                configurations[0]?.addRateWithTax?.hotelSale,
+                checkout,
+                room.roomId,
+              );
 
-      const updatedRooms = await Promise.all(
-        (checkout.selectedRooms || []).map(async (room) => {
-
-          const taxResponse = await taxCalculator(
-            data = room,
-            configurations[0]?.addRateWithTax?.hotelSale,
-            checkout,
-            room.roomId
+              return {
+                ...room,
+                amountAfterTax: taxResponse?.amountWithTax || room.totalAmount,
+                amountWithOutTax: taxResponse?.amountWithOutTax,
+                taxPercentage: taxResponse?.taxRate || 0,
+                foodPlanTaxRate: taxResponse?.foodPlanTaxRate || 0,
+                additionalPaxAmount: taxResponse?.additionalPaxAmount || 0,
+                foodPlanAmount: taxResponse?.foodPlanAmount || 0,
+                taxAmount: taxResponse?.taxAmount || 0,
+                additionalPaxAmountWithTax:
+                  taxResponse?.additionalPaxAmountWithTax || 0,
+                additionalPaxAmountWithOutTax:
+                  taxResponse?.additionalPaxAmountWithOutTax || 0,
+                foodPlanAmountWithTax: taxResponse?.foodPlanAmountWithTax || 0,
+                foodPlanAmountWithOutTax:
+                  taxResponse?.foodPlanAmountWithOutTax || 0,
+                baseAmount: taxResponse?.baseAmount || 0,
+                baseAmountWithTax: taxResponse?.baseAmountWithTax || 0,
+                totalCgstAmt: taxResponse?.totalCgstAmt || 0,
+                totalSgstAmt: taxResponse?.totalSgstAmt || 0,
+                totalIgstAmt: taxResponse?.totalIgstAmt || 0,
+              };
+            }),
           );
-    
 
           return {
-            ...room,
-            amountAfterTax: taxResponse?.amountWithTax || room.totalAmount,
-            amountWithOutTax: taxResponse?.amountWithOutTax,
-            taxPercentage: taxResponse?.taxRate || 0,
-            foodPlanTaxRate: taxResponse?.foodPlanTaxRate || 0,
-            additionalPaxAmount: taxResponse?.additionalPaxAmount || 0,
-            foodPlanAmount: taxResponse?.foodPlanAmount || 0,
-            taxAmount: taxResponse?.taxAmount || 0,
-            additionalPaxAmountWithTax:
-              taxResponse?.additionalPaxAmountWithTax || 0,
-            additionalPaxAmountWithOutTax:
-              taxResponse?.additionalPaxAmountWithOutTax || 0,
-            foodPlanAmountWithTax:
-              taxResponse?.foodPlanAmountWithTax || 0,
-            foodPlanAmountWithOutTax:
-              taxResponse?.foodPlanAmountWithOutTax || 0,
-            baseAmount: taxResponse?.baseAmount || 0,
-            baseAmountWithTax: taxResponse?.baseAmountWithTax || 0,
-            totalCgstAmt: taxResponse?.totalCgstAmt || 0,
-            totalSgstAmt: taxResponse?.totalSgstAmt || 0,
-            totalIgstAmt: taxResponse?.totalIgstAmt || 0,
+            ...checkout,
+            selectedRooms: updatedRooms,
           };
-
-        })
+        }),
       );
-
-      return {
-        ...checkout,
-        selectedRooms: updatedRooms
-      };
-
-    })
-  );
-
-}
-console.log(updatedData);
+    }
+    console.log(updatedData);
     setSelectedCheckOut(updatedData);
     setShowEnhancedCheckoutModal(false);
     setdateandstaysdata(updatedData);
@@ -1011,10 +953,8 @@ console.log(updatedData);
     console.log("hhhh");
     setShowPaymentModal(true);
     setIsPartial(true);
-  
-    // setShowCheckOutDateModal(true)
   };
-console.log(console.log(processedCheckoutData))
+  console.log(console.log(processedCheckoutData));
 
   const handleCheckin = (e, el) => {
     console.log(el);
@@ -1171,7 +1111,6 @@ console.log(console.log(processedCheckoutData))
           checkOutDate: item.checkOutDate,
           checkOutTime: item.checkOutTime,
           stayDays: item.stayDays,
-
         },
       ]),
     );
@@ -1197,10 +1136,8 @@ console.log(console.log(processedCheckoutData))
     });
 
     console.log(updatedCheckoutData);
-    console.log(checkoutData[0])
-    console.log(checkoutMode)
-    
-
+    console.log(checkoutData[0]);
+    console.log(checkoutMode);
 
     dispatch(
       setPrintDetails({
@@ -1287,8 +1224,7 @@ console.log(console.log(processedCheckoutData))
 
     setCheckoutMode(checkoutMode === "single" ? "multiple" : "single");
   };
-  console.log(selectedCheckOut);
-
+  console.log( selectedDataForPayment)
   const TableHeader = () => (
     <div className="bg-gray-100 border-b border-gray-300 sticky top-0 z-10">
       <div className="flex items-center px-4 py-3 text-xs font-bold text-gray-800 uppercase tracking-wider md:hidden">
@@ -1339,11 +1275,6 @@ console.log(console.log(processedCheckoutData))
 
   const isSelected = (id) => selectedIds.has(id);
 
-  //   const isSelected = (el) => {
-  // console.log(selectedCheckOut)
-  // console.log(el)
-  //     return selectedCheckOut.some((item) => item._id === el._id)
-  //   }
   const Row = ({ index, style }) => {
     if (!isItemLoaded(index)) {
       return (
@@ -1592,15 +1523,15 @@ console.log(console.log(processedCheckoutData))
           <div className="w-24 text-center text-gray-600 text-xs">
             ₹
             {el?.advanceAmount
-              ? formatCurrency(el.advanceAmount).replace("₹", "")
+              ? formatCurrency(el.bookingId ? Number(el.bookingId?.advanceAmount || 0) + Number(el.advanceAmount) : el.advanceAmount).replace("₹", "")
               : "0.00"}
           </div>
 
           <div className="w-28 text-center text-gray-800 font-semibold text-xs">
             ₹
             {el?.grandTotal
-              ? formatCurrency(el.grandTotal).replace("₹", "")
-              : "6,000.00"}
+              ? formatCurrency(el.roomTotal).replace("₹", "")
+              : "00.00"}
           </div>
 
           <div className="w-32 flex items-center justify-center gap-1">
@@ -1740,7 +1671,7 @@ console.log(console.log(processedCheckoutData))
   };
 
   const handleCloseBasedOnDate = () => {
-    console.log("hh");
+    console.log("hh",processedCheckoutData);
 
     if (processedCheckoutData) {
       const updatedCheckoutData = processedCheckoutData.map((group) => ({
@@ -1784,32 +1715,32 @@ console.log(console.log(processedCheckoutData))
 
       proceedToCheckout(updatedCheckoutData);
       // setProcessedCheckoutData(null)
-    } else {
-      console.log("hhhhhhddd");
-      const hasPrint1 = configurations[0]?.defaultPrint?.print1;
-      navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
-        state: {
-          selectedCheckOut:
-            checkouts?.length > 0 ? checkouts : selectedCheckOut,
-          customerId: selectedCustomer,
-          isForPreview: true,
-        },
-      });
     }
-
-    setShowCheckOutDateModal(false); // ✅ ADDED: Close modal
+    // } else {
+    //   console.log("hhhhhhddd");
+    //   const hasPrint1 = configurations[0]?.defaultPrint?.print1;
+    //   navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
+    //     state: {
+    //       selectedCheckOut: selectedCheckOut,
+    //       customerId: selectedCustomer,
+    //       isForPreview: true,
+    //     },
+    //   });
+    // }
   };
 
   console.log(paymentDetails.printData);
 
   const handlePrintShow = () => {
     const hasPrint1 = configurations[0]?.defaultPrint?.print1;
-    const printData = structuredClone(paymentDetails.printData);
-
     dispatch(removeAll());
 
-    navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
-      state: printData,
+  navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
+      state: {
+        selectedCheckOut: finalPrintData,
+        customerId: selectedCustomer,
+        isForPreview: false,
+      },
     });
   };
 
@@ -2006,6 +1937,7 @@ console.log(console.log(processedCheckoutData))
                     setSplitPaymentRows([
                       { customer: "", source: "", sourceType: "", amount: "" },
                     ]);
+                    window.location.reload();
                   }}
                   className="text-gray-400 hover:text-gray-600"
                 >
@@ -2162,7 +2094,7 @@ console.log(console.log(processedCheckoutData))
                       >
                         {cashOrBank?.cashDetails?.map((cashier) => (
                           <option key={cashier._id} value={cashier._id}>
-                            {cashier.partyName}
+                            {cashier.partyName} - {cashier?.under}
                           </option>
                         ))}
                       </select>
@@ -2201,7 +2133,7 @@ console.log(console.log(processedCheckoutData))
                             data-partyname={cashier.partyName}
                             data-partyType={cashier.partyType}
                           >
-                            {cashier.partyName}
+                            {cashier.partyName} - ({cashier?.under})
                           </option>
                         ))}
                       </select>
@@ -2285,13 +2217,7 @@ console.log(console.log(processedCheckoutData))
                             {/* <option value="credit">Credit</option> */}
                             {combinedSources.map((source) => (
                               <option key={source.id} value={source.id}>
-                                {source.name} (
-                                {source.type === "cash"
-                                  ? "Cash"
-                                  : source.type === "credit"
-                                    ? "credit"
-                                    : "Bank"}
-                                )
+                                {source.name}({source?.type})
                               </option>
                             ))}
                           </select>
@@ -2364,20 +2290,20 @@ console.log(console.log(processedCheckoutData))
                       <span>Order Total:</span>
                       <span>
                         ₹{" "}
-                        {selectedDataForPayment?.total?.toFixed(2) ||
+                        {selectedDataForPayment?.totalWithRestaurant?.toFixed(2) ||
                           Number(selectedCheckOut[0]?.balanceToPay)?.toFixed(2)}
                       </span>
                     </div>
                     {splitPaymentRows.reduce(
                       (sum, row) => sum + (parseFloat(row.amount) || 0),
                       0,
-                    ) !== selectedDataForPayment?.total && (
+                    ) !== selectedDataForPayment?.totalWithRestaurant && (
                       <div className="flex justify-between text-xs text-amber-600 mt-1">
                         <span>Difference:</span>
                         <span>
                           ₹
                           {(
-                            (selectedDataForPayment?.total ||
+                            (selectedDataForPayment?.totalWithRestaurant ||
                               Number(
                                 selectedCheckOut[0]?.balanceToPay,
                               )?.toFixed(2)) -

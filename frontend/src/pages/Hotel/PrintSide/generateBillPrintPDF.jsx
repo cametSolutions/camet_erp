@@ -1,14 +1,12 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 
-// Margins and spacing
-const MARGIN = 12;
-const TOP_OFFSET = 5;
-const BOTTOM_MARGIN = 15;
-const HEADER_HEIGHT = 50; // Reserve space for header
-const FOOTER_HEIGHT = 40; // Reserve space for footer (adjusted to prevent overlap)
+// ─── Layout Constants ────────────────────────────────────────────────────────
+const MARGIN = 10;
+const HEADER_HEIGHT = 42; // height reserved at top of every continuation page
+const FOOTER_HEIGHT = 38; // height reserved at bottom of every page
 
-// Base64 image fetch
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 const getBase64FromUrl = async (url) => {
   if (!url) return null;
   try {
@@ -17,45 +15,42 @@ const getBase64FromUrl = async (url) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onloadend = () => resolve(reader.result);
-      reader.onerror = () => reject(new Error('Failed to read image'));
+      reader.onerror = () => reject(new Error("Failed to read image"));
       reader.readAsDataURL(blob);
     });
   } catch (err) {
-    console.error('Failed to fetch image from URL:', url, err);
+    console.error("Failed to fetch image:", url, err);
     return null;
   }
 };
 
-// Draw header (will be called for each page)
+// ─── Header ──────────────────────────────────────────────────────────────────
+// Returns the Y coordinate right after the header divider line
 const drawHeader = async (doc, billData, base64Logo) => {
   const pageWidth = doc.internal.pageSize.width;
-  const headerStartY = MARGIN;
+  const startY = MARGIN;
 
-  // Logo (left)
+  // Logo – left side
   if (base64Logo) {
     try {
-      doc.addImage(base64Logo, "PNG", MARGIN, headerStartY, 30, 30);
-    } catch (err) {
-      console.error("Failed to add logo to PDF page", err);
-    }
+      doc.addImage(base64Logo, "PNG", MARGIN, startY, 28, 28);
+    } catch (_) {}
   }
 
+  // Hotel info – right side
   const rightX = pageWidth - MARGIN;
-  let headerY = headerStartY + 3;
+  let y = startY + 3;
 
-  // Hotel name
-  doc.setFontSize(14);
+  doc.setFontSize(13);
   doc.setFont("helvetica", "bold");
-  doc.text(billData?.hotel?.name?.toUpperCase() || "", rightX, headerY, {
+  doc.text((billData?.hotel?.name || "").toUpperCase(), rightX, y, {
     align: "right",
   });
-  headerY += 5;
+  y += 5;
 
-  // Details
-  doc.setFontSize(8);
+  doc.setFontSize(7.5);
   doc.setFont("helvetica", "normal");
 
-  // Split address by comma into multiple lines
   const addressParts = (billData?.hotel?.address || "")
     .split(",")
     .map((s) => s.trim())
@@ -64,300 +59,349 @@ const drawHeader = async (doc, billData, base64Logo) => {
   const infoLines = [
     ...addressParts,
     `Phone: ${billData?.hotel?.phone || ""}`,
-    `E-mail: ${billData?.hotel?.email || ""} | Website: ${
-      billData?.hotel?.website || ""
-    }`,
-    `PAN NO: ${billData?.hotel?.pan || ""} | GSTIN: ${
-      billData?.hotel?.gstin || ""
-    }`,
-    `SAC CODE-${billData?.hotel?.sacCode || ""}`,
+    `E-mail: ${billData?.hotel?.email || ""}  |  Website: ${billData?.hotel?.website || ""}`,
+    `PAN NO: ${billData?.hotel?.pan || ""}  |  GSTIN: ${billData?.hotel?.gstin || ""}`,
+    `SAC CODE - ${billData?.hotel?.sacCode || ""}`,
   ].filter(Boolean);
 
-  const logoX = MARGIN;
-  const logoWidth = 30;
-  const gapAfterLogo = 8;
-  const textLeftLimit = logoX + logoWidth + gapAfterLogo;
-  const textRight = rightX;
-  const maxTextWidth = textRight - textLeftLimit;
+  // Keep text away from logo on the left
+  const maxW = rightX - (MARGIN + 30 + 6); // full width minus logo zone
 
   infoLines.forEach((line) => {
-    const wrapped = doc.splitTextToSize(line, maxTextWidth);
-    wrapped.forEach((wLine) => {
-      doc.text(wLine, textRight, headerY, { align: "right" });
-      headerY += 3.5;
+    const wrapped = doc.splitTextToSize(line, maxW);
+    wrapped.forEach((wl) => {
+      doc.text(wl, rightX, y, { align: "right" });
+      y += 3.2;
     });
   });
 
-  // Draw line under header
-  const headerEndY = Math.max(headerY, headerStartY + 35);
-  doc.setLineWidth(0.5);
-  doc.line(MARGIN, headerEndY, pageWidth - MARGIN, headerEndY);
+  // Divider
+  const endY = Math.max(y + 1, startY + 32);
+  doc.setDrawColor(0);
+  doc.setLineWidth(0.4);
+  doc.line(MARGIN, endY, pageWidth - MARGIN, endY);
 
-  return headerEndY + 3;
+  return endY + 3; // content starts here
 };
 
-// Draw footer (will be called for each page)
-const drawFooter = (doc, billData, currentPageNum, totalPages) => {
+// ─── Footer ───────────────────────────────────────────────────────────────────
+// Drawn at a fixed position from the bottom; accepts final page count so we can
+// write "Page X of Y" correctly.
+const drawFooter = (doc, pageInBill, totalPagesInBill) => {
   const pageWidth = doc.internal.pageSize.width;
   const pageHeight = doc.internal.pageSize.height;
-  const footerStartY = pageHeight - FOOTER_HEIGHT;
 
+  const contentW = pageWidth - 2 * MARGIN;
+  const halfW = contentW / 2;
+  const thirdW = contentW / 3;
+
+  // ── Row 1: disclaimer strip (height 10) ──────────────────────────────────
+  const row1H = 10;
+  const row1Y = pageHeight - FOOTER_HEIGHT;
+
+  doc.setDrawColor(0);
   doc.setLineWidth(0.3);
-
-  // Top message box
-  const msgBoxHeight = 8; // Reduced from 10
-  doc.rect(MARGIN, footerStartY, pageWidth - 2 * MARGIN, msgBoxHeight);
-  doc.line(
-    MARGIN + (pageWidth - 2 * MARGIN) / 2,
-    footerStartY,
-    MARGIN + (pageWidth - 2 * MARGIN) / 2,
-    footerStartY + msgBoxHeight
-  );
+  // outer rect
+  doc.rect(MARGIN, row1Y, contentW, row1H);
+  // vertical divider at midpoint
+  doc.line(MARGIN + halfW, row1Y, MARGIN + halfW, row1Y + row1H);
 
   doc.setFontSize(7);
   doc.setFont("helvetica", "bold");
   doc.text(
     "Please Deposit Your Room and Locker Keys",
     MARGIN + 2,
-    footerStartY + 3.5 // Reduced from 4
+    row1Y + 4
   );
 
   doc.setFont("helvetica", "normal");
-  const rightText = doc.splitTextToSize(
+  const disclaimer = doc.splitTextToSize(
     "Regardless of charge instructions, I agree to be held personally liable for the payment of total amount of bill. Please collect receipt if you have paid cash.",
-    (pageWidth - 2 * MARGIN) / 2 - 4
+    halfW - 4
   );
-  doc.text(
-    rightText,
-    MARGIN + (pageWidth - 2 * MARGIN) / 2 + 2,
-    footerStartY + 2.5 // Further reduced to fit in smaller box
-  );
+  doc.text(disclaimer, MARGIN + halfW + 2, row1Y + 3);
 
-  // Signature boxes
-  const sigStartY = footerStartY + msgBoxHeight;
-  const sigHeight = 13; // Reduced from 16
-  doc.rect(MARGIN, sigStartY, pageWidth - 2 * MARGIN, sigHeight);
-  doc.line(
-    MARGIN + (pageWidth - 2 * MARGIN) / 3,
-    sigStartY,
-    MARGIN + (pageWidth - 2 * MARGIN) / 3,
-    sigStartY + sigHeight
-  );
-  doc.line(
-    MARGIN + (2 * (pageWidth - 2 * MARGIN)) / 3,
-    sigStartY,
-    MARGIN + (2 * (pageWidth - 2 * MARGIN)) / 3,
-    sigStartY + sigHeight
-  );
+  // ── Row 2: signature strip (height 15) ───────────────────────────────────
+  const row2H = 15;
+  const row2Y = row1Y + row1H;
+
+  doc.rect(MARGIN, row2Y, contentW, row2H);
+  // two vertical dividers → three equal columns
+  doc.line(MARGIN + thirdW, row2Y, MARGIN + thirdW, row2Y + row2H);
+  doc.line(MARGIN + 2 * thirdW, row2Y, MARGIN + 2 * thirdW, row2Y + row2H);
 
   doc.setFont("helvetica", "bold");
-  doc.text("Prepared By", MARGIN + 2, sigStartY + 3.5); // Reduced from 4
-  doc.text("Manager", MARGIN + (pageWidth - 2 * MARGIN) / 3 + 2, sigStartY + 3.5); // Reduced from 4
-  doc.text(
-    "Guest Signature & Date",
-    MARGIN + (2 * (pageWidth - 2 * MARGIN)) / 3 + 2,
-    sigStartY + 3.5 // Reduced from 4
-  );
+  doc.setFontSize(7);
+  doc.text("Prepared By", MARGIN + 2, row2Y + 4);
+  doc.text("Manager", MARGIN + thirdW + 2, row2Y + 4);
+  doc.text("Guest Signature & Date", MARGIN + 2 * thirdW + 2, row2Y + 4);
 
   doc.setFont("helvetica", "normal");
-  doc.text("FO", MARGIN + 2, sigStartY + 11); // Reduced from 13
+  doc.text("FO", MARGIN + 2, row2Y + 12);
 
-  // Final strip
-  const finalY = sigStartY + sigHeight;
-  const finalHeight = 7; // Reduced from 8
+  // ── Row 3: closing strip (height 8) ──────────────────────────────────────
+  const row3H = 8;
+  const row3Y = row2Y + row2H;
 
-  // Use thicker line for all borders in footer
-  doc.setLineWidth(0.3);
-  doc.rect(MARGIN, finalY, pageWidth - 2 * MARGIN, finalHeight);
-  doc.line(
-    pageWidth - MARGIN - 30,
-    finalY,
-    pageWidth - MARGIN - 30,
-    finalY + finalHeight
-  );
+  doc.rect(MARGIN, row3Y, contentW, row3H);
+  // vertical divider 30 mm from right
+  doc.line(pageWidth - MARGIN - 30, row3Y, pageWidth - MARGIN - 30, row3Y + row3H);
 
-  doc.setFontSize(7);
   doc.setFont("helvetica", "italic");
+  doc.setFontSize(7);
   doc.text(
     "We hope you enjoyed your stay and would like to welcome you back...",
     MARGIN + 2,
-    finalY + 4.5 // Reduced from 5
+    row3Y + 5
   );
 
   doc.setFont("helvetica", "normal");
-  doc.text("Original Bill", pageWidth - MARGIN - 15, finalY + 2.5, { // Reduced from 3
-    align: "center",
-  });
-  doc.text(`Page ${currentPageNum} of ${totalPages}`, pageWidth - MARGIN - 15, finalY + 5.5, { // Reduced from 6
-    align: "center",
-  });
+  doc.text("Original Bill", pageWidth - MARGIN - 15, row3Y + 3, { align: "center" });
+  doc.text(
+    `Page ${pageInBill} of ${totalPagesInBill}`,
+    pageWidth - MARGIN - 15,
+    row3Y + 6.5,
+    { align: "center" }
+  );
 };
 
-const drawSingleBill = async (doc, billData, billNo, totalBills, base64Logo) => {
+// ─── Guest Info Block ─────────────────────────────────────────────────────────
+const drawGuestInfo = (doc, billData, startY) => {
   const pageWidth = doc.internal.pageSize.width;
-  const pageHeight = doc.internal.pageSize.height;
+  const contentW = pageWidth - 2 * MARGIN;
+  const blockH = 38;
 
-  // Track pages for this bill
-  const billStartPage = doc.internal.getCurrentPageInfo().pageNumber;
-  let currentPageInBill = 1;
-  let totalPagesInBill = 1;
-
-  // Draw initial header
-  let currentY = await drawHeader(doc, billData, base64Logo);
-
-  // --- Guest & Bill Info (2 COLUMNS) ---
-  doc.setFontSize(8);
-  doc.setFont("helvetica", "normal");
-
-  const infoStartY = currentY;
-  const guestInfoHeight = 35;
-  
-  // Draw outer border
+  doc.setDrawColor(0);
   doc.setLineWidth(0.3);
-  doc.rect(MARGIN, infoStartY, pageWidth - 2 * MARGIN, guestInfoHeight);
+  doc.rect(MARGIN, startY, contentW, blockH);
 
-  // Define column positions (2 columns) - right column moved further right for more left space
-  const leftColX = MARGIN + 2;
-  const rightColX = MARGIN + (pageWidth - 2 * MARGIN) * 0.6 + 2;
-  
-  let lineY = infoStartY + 4;
-  const lineSpacing = 4.5;
+  // Two columns: left 58 %, right 42 %
+  const leftW = contentW * 0.58;
+  const lx = MARGIN + 2;        // text start – left col
+  const rx = MARGIN + leftW + 2; // text start – right col
+  const labelW = 20;             // label column width
+  const labelWR = 22;
 
-  // LEFT COLUMN - Guest Information
-  // Row 1: GRC No
+  let ly = startY + 4.5;
+  let ry = startY + 4.5;
+  const ls = 4.5; // line spacing
+
+  const cell = (x, y, label, value, lw = labelW) => {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.text(label, x, y);
+    doc.setFont("helvetica", "normal");
+    doc.text(`: ${value || ""}`, x + lw, y);
+  };
+
+  // Row 1
+  cell(lx, ly, "GRC No", billData?.guest?.grcNo || "");
+  cell(rx, ry, "Bill No", billData?.guest?.billNo || "", labelWR);
+  ly += ls; ry += ls;
+
+  // Row 2
+  cell(lx, ly, "GUEST", billData?.guest?.name || "");
+  cell(rx, ry, "Date", billData?.stay?.billDate || "", labelWR);
+  ly += ls; ry += ls;
+
+  // Row 3 – Address (may wrap) + Arrival
   doc.setFont("helvetica", "bold");
-  doc.text("GRC No", leftColX, lineY);
+  doc.text("Address", lx, ly);
   doc.setFont("helvetica", "normal");
-  doc.text(`: ${billData?.guest?.grcNo || ""}`, leftColX + 18, lineY);
+  const addrMaxW = leftW - labelW - 6;
+  const addrLines = doc.splitTextToSize(`: ${billData?.guest?.address || ""}`, addrMaxW);
+  doc.text(addrLines, lx + labelW, ly);
+  cell(rx, ry, "Arrival", billData?.stay?.arrival || "", labelWR);
+  const addrH = Math.max(addrLines.length * 3.5, ls);
+  ly += addrH; ry += ls;
 
-  // RIGHT COLUMN - Bill Information
-  doc.setFont("helvetica", "bold");
-  doc.text("Bill No", rightColX, lineY);
-  doc.setFont("helvetica", "normal");
-  doc.text(`: ${billData?.guest?.billNo || ""}`, rightColX + 18, lineY);
-  
-  lineY += lineSpacing;
+  // Row 4
+  cell(lx, ly, "Phone", billData?.guest?.phone || "");
+  cell(rx, ry, "Departure", billData?.stay?.departure || "", labelWR);
+  ly += ls; ry += ls;
 
-  // Row 2: Guest Name and Date
-  doc.setFont("helvetica", "bold");
-  doc.text("GUEST", leftColX, lineY);
-  doc.setFont("helvetica", "normal");
-  doc.text(`: ${billData?.guest?.name || ""}`, leftColX + 18, lineY);
+  // Row 5
+  cell(lx, ly, "Room No", billData?.guest?.roomNo || "");
+  cell(rx, ry, "Plan", `${billData?.stay?.plan || ""}  Pax ${billData?.stay?.pax || ""}`, labelWR);
+  ly += ls; ry += ls;
 
-  doc.setFont("helvetica", "bold");
-  doc.text("Date", rightColX, lineY);
-  doc.setFont("helvetica", "normal");
-  doc.text(`: ${billData?.stay?.billDate || ""}`, rightColX + 18, lineY);
-
-  lineY += lineSpacing;
-
-  // Row 3: Address and Arrival
-  doc.setFont("helvetica", "bold");
-  doc.text("Address", leftColX, lineY);
-  doc.setFont("helvetica", "normal");
-  const addressText = billData?.guest?.address || "";
-  const addressWidth = (pageWidth - 2 * MARGIN) * 0.6 - 25; // Use 60% of width minus offset
-  const addressLines = doc.splitTextToSize(`: ${addressText}`, addressWidth);
-  doc.text(addressLines, leftColX + 18, lineY);
-
-  doc.setFont("helvetica", "bold");
-  doc.text("Arrival", rightColX, lineY);
-  doc.setFont("helvetica", "normal");
-  doc.text(`: ${billData?.stay?.arrival || ""}`, rightColX + 18, lineY);
-
-  lineY += Math.max(addressLines.length * 3.5, lineSpacing);
-
-  // Row 4: Phone and Departure
-  doc.setFont("helvetica", "bold");
-  doc.text("Phone", leftColX, lineY);
-  doc.setFont("helvetica", "normal");
-  doc.text(`: ${billData?.guest?.phone || ""}`, leftColX + 18, lineY);
-
-  doc.setFont("helvetica", "bold");
-  doc.text("Departure", rightColX, lineY);
-  doc.setFont("helvetica", "normal");
-  doc.text(`: ${billData?.stay?.departure || ""}`, rightColX + 18, lineY);
-
-  lineY += lineSpacing;
-
-  // Row 5: Room No and Plan
-  doc.setFont("helvetica", "bold");
-  doc.text("Room No", leftColX, lineY);
-  doc.setFont("helvetica", "normal");
-  doc.text(`: ${billData?.guest?.roomNo || ""}`, leftColX + 18, lineY);
-
-  doc.setFont("helvetica", "bold");
-  doc.text("Plan", rightColX, lineY);
-  doc.setFont("helvetica", "normal");
-  doc.text(`: ${billData?.stay?.plan || ""} Pax ${billData?.stay?.pax || ""}`, rightColX + 18, lineY);
-
-  lineY += lineSpacing;
-
-  // Row 6: GST No (if exists) and Tariff
+  // Row 6 – conditional GST / Travel Agent  +  Tariff
   if (billData?.guest?.gstNo) {
-    doc.setFont("helvetica", "bold");
-    doc.text("GST No", leftColX, lineY);
-    doc.setFont("helvetica", "normal");
-    doc.text(`: ${billData?.guest?.gstNo || ""}`, leftColX + 18, lineY);
-  }
-
-  doc.setFont("helvetica", "bold");
-  doc.text("Tariff", rightColX, lineY);
-  doc.setFont("helvetica", "normal");
-  doc.text(`: ${(billData?.stay?.tariff || "").toString()}`, rightColX + 18, lineY);
-
-  lineY += lineSpacing;
-
-  // Row 7: Company (only if GST No exists) / Travel Agent and No. of Days
-  if (billData?.guest?.companyName && billData?.guest?.gstNo) {
-    doc.setFont("helvetica", "bold");
-    doc.text("Company", leftColX, lineY);
-    doc.setFont("helvetica", "normal");
-    doc.text(`: ${billData?.guest?.companyName || ""}`, leftColX + 20, lineY);
+    cell(lx, ly, "GST No", billData?.guest?.gstNo || "");
   } else if (billData?.guest?.travelAgent) {
-    doc.setFont("helvetica", "bold");
-    doc.text("Travel Agent", leftColX, lineY);
-    doc.setFont("helvetica", "normal");
-    doc.text(`: ${billData?.guest?.travelAgent || ""}`, leftColX + 25, lineY);
+    cell(lx, ly, "Travel Agent", billData?.guest?.travelAgent || "", 24);
+  }
+  cell(rx, ry, "Tariff", String(billData?.stay?.tariff || ""), labelWR);
+  ly += ls; ry += ls;
+
+  // Row 7 – Company (if GST) + No. of Days
+  if (billData?.guest?.gstNo && billData?.guest?.companyName) {
+    cell(lx, ly, "Company", billData?.guest?.companyName || "", 22);
+  }
+  cell(rx, ry, "No. of Days", String(billData?.stay?.days || ""), labelWR);
+
+  return startY + blockH + 4;
+};
+
+// ─── Charges Table ────────────────────────────────────────────────────────────
+const drawChargesTable = async (doc, billData, startY, base64Logo, billStartPage) => {
+  const pageWidth = doc.internal.pageSize.width;
+
+  await new Promise((resolve) => {
+    autoTable(doc, {
+      head: [["Date", "Doc No", "Description", "Amount", "Taxes", "Advance", "Balance"]],
+      body: (billData?.charges || []).map((c) => [
+        c.date || "",
+        c.docNo || "",
+        c.description || "",
+        c.amount !== undefined ? Number(c.amount || 0).toFixed(2) : "",
+        c.taxes !== "" && c.taxes !== undefined ? String(c.taxes) : "",
+        c.advance || "",
+        c.balance || "",
+      ]),
+      startY,
+      margin: {
+        left: MARGIN,
+        right: MARGIN,
+        top: HEADER_HEIGHT + 5,
+        bottom: FOOTER_HEIGHT + 5,
+      },
+      tableWidth: pageWidth - 2 * MARGIN,
+      styles: {
+        fontSize: 7.5,
+        cellPadding: 1.8,
+        lineColor: [0, 0, 0],
+        lineWidth: 0.2,
+        textColor: [0, 0, 0],
+        overflow: "linebreak",
+      },
+      headStyles: {
+        fillColor: [245, 245, 245],
+        textColor: [0, 0, 0],
+        fontStyle: "bold",
+        halign: "left",
+        fontSize: 7.5,
+      },
+      columnStyles: {
+        0: { cellWidth: 20, halign: "left" },
+        1: { cellWidth: 22, halign: "center" },
+        2: { cellWidth: "auto", halign: "left" },
+        3: { cellWidth: 22, halign: "right" },
+        4: { cellWidth: 18, halign: "right" },
+        5: { cellWidth: 20, halign: "right" },
+        6: { cellWidth: 22, halign: "right" },
+      },
+      didParseCell: (data) => {
+        if (data.section !== "body") return;
+        const desc = data.row.raw?.[2] || "";
+        if (data.column.index === 2) {
+          if (desc.includes("CGST") || desc.includes("SGST")) {
+            data.cell.styles.fillColor = [248, 248, 248];
+            data.cell.styles.textColor = [80, 80, 80];
+          }
+          if (desc === "Advance" || desc === "CheckOut") {
+            data.cell.styles.fontStyle = "bold";
+          }
+          if (desc.startsWith("Restaurant") || desc.startsWith("Room Service")) {
+            data.cell.styles.fontStyle = "bold";
+          }
+        }
+        // highlight advance row
+        if (desc === "Advance" || desc === "CheckOut") {
+          data.cell.styles.fillColor = [255, 255, 240];
+        }
+      },
+      didDrawPage: async (data) => {
+        const currentPage = doc.internal.getCurrentPageInfo().pageNumber;
+        // On continuation pages: draw header again
+        if (currentPage > billStartPage) {
+          await drawHeader(doc, billData, base64Logo);
+        }
+        // Draw footer placeholder on every page (page numbers fixed later)
+        drawFooter(doc, 1, 1);
+      },
+    });
+    resolve();
+  });
+
+  return doc.lastAutoTable.finalY + 4;
+};
+
+// ─── Summary + Payment tables ─────────────────────────────────────────────────
+const drawSummaryAndPayment = (doc, billData, startY, isForPreview, paymentModeDetails) => {
+  const pageWidth = doc.internal.pageSize.width;
+  const contentW = pageWidth - 2 * MARGIN;
+  const halfW = (contentW - 4) / 2;
+
+  // ── Summary rows ─────────────────────────────────────────────────────────
+  const summaryRows = [];
+
+  summaryRows.push([
+    "Room Rent",
+    Number(billData?.summary?.roomRent || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 }),
+  ]);
+
+  if (Number(billData?.summary?.foodPlan || 0) > 0) {
+    summaryRows.push([
+      "Food Plan",
+      Number(billData.summary.foodPlan).toLocaleString("en-IN", { minimumFractionDigits: 2 }),
+    ]);
   }
 
-  doc.setFont("helvetica", "bold");
-  doc.text("No. of Days", rightColX, lineY);
-  doc.setFont("helvetica", "normal");
-  doc.text(`: ${(billData?.stay?.days || "").toString()}`, rightColX + 22, lineY);
+  if (Number(billData?.summary?.sgst || 0) > 0) {
+    summaryRows.push([
+      "SGST on Rent",
+      Number(billData.summary.sgst).toLocaleString("en-IN", { minimumFractionDigits: 2 }),
+    ]);
+  }
 
-  currentY = infoStartY + guestInfoHeight + 5;
+  if (Number(billData?.summary?.cgst || 0) > 0) {
+    summaryRows.push([
+      "CGST on Rent",
+      Number(billData.summary.cgst).toLocaleString("en-IN", { minimumFractionDigits: 2 }),
+    ]);
+  }
 
-  // --- Charges Table with page breaks ---
+  if (Number(billData?.summary?.restaurant || 0) > 0) {
+    summaryRows.push([
+      "Dine-In",
+      Number(billData.summary.restaurant).toLocaleString("en-IN", { minimumFractionDigits: 2 }),
+    ]);
+  }
+
+  if (Number(billData?.summary?.roomService || 0) > 0) {
+    summaryRows.push([
+      "Room Service",
+      Number(billData.summary.roomService).toLocaleString("en-IN", { minimumFractionDigits: 2 }),
+    ]);
+  }
+
+  if (Number(billData?.summary?.otherChargeAmount || 0) > 0) {
+    summaryRows.push([
+      "Other Charges",
+      Number(billData.summary.otherChargeAmount).toLocaleString("en-IN", { minimumFractionDigits: 2 }),
+    ]);
+  }
+
+  summaryRows.push([
+    { content: "Total", styles: { fontStyle: "bold", fillColor: [245, 245, 245] } },
+    {
+      content: Number(billData?.summary?.total || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 }),
+      styles: { fontStyle: "bold", fillColor: [245, 245, 245], halign: "right" },
+    },
+  ]);
+
   autoTable(doc, {
     head: [
       [
-        "Date",
-        "Doc No",
-        "Description",
-        "Amount",
-        "Taxes",
-        "Advance",
-        "Balance",
+        { content: "Summary", styles: { fontStyle: "bold" } },
+        { content: "Amount", styles: { fontStyle: "bold", halign: "right" } },
       ],
     ],
-    body: (billData?.charges || []).map((charge) => [
-      charge.date || "",
-      charge.docNo || "",
-      charge.description || "",
-      charge.amount !== undefined ? Number(charge.amount || 0).toFixed(2) : "",
-      charge.taxes || "",
-      charge.advance || "",
-      charge.balance || "",
-    ]),
-    startY: currentY,
-    margin: {
-      left: MARGIN,
-      right: MARGIN,
-      top: HEADER_HEIGHT + 15,
-      bottom: FOOTER_HEIGHT + 8 // Increased from 5 to prevent overlap
-    },
-    tableWidth: pageWidth - 2 * MARGIN,
+    body: summaryRows,
+    startY,
+    margin: { left: MARGIN, right: MARGIN + halfW + 4 },
+    tableWidth: halfW,
     styles: {
       fontSize: 8,
       cellPadding: 2,
@@ -369,168 +413,107 @@ const drawSingleBill = async (doc, billData, billNo, totalBills, base64Logo) => 
       fillColor: [245, 245, 245],
       textColor: [0, 0, 0],
       fontStyle: "bold",
-      halign: "left",
-    },
-    columnStyles: {
-      0: { cellWidth: 22, halign: "left" },
-      1: { cellWidth: 22, halign: "center" },
-      2: { cellWidth: 60, halign: "left" },
-      3: { cellWidth: 22, halign: "right" },
-      4: { cellWidth: 18, halign: "right" },
-      5: { cellWidth: 20, halign: "right" },
-      6: { cellWidth: 22, halign: "right" },
-    },
-    didParseCell: (data) => {
-      const text = data.cell?.text?.[0] || "";
-      if (text.includes("Advance")) {
-        data.cell.styles.fontStyle = "bold";
-      }
-      if (text.includes("CGST") || text.includes("SGST")) {
-        data.cell.styles.fillColor = [240, 240, 240];
-      }
-      if (text.startsWith("Restaurant") || text.startsWith("Room Service")) {
-        data.cell.styles.fontStyle = "bold";
-      }
-    },
-    didDrawPage: async (data) => {
-      const currentPage = doc.internal.getCurrentPageInfo().pageNumber;
-
-      // Draw header on every page except first
-      if (currentPage > billStartPage) {
-        await drawHeader(doc, billData, base64Logo);
-      }
-
-      // Always draw footer on every page
-      const tempPageNum = currentPage - billStartPage + 1;
-      drawFooter(doc, billData, tempPageNum, tempPageNum);
-      currentPageInBill++;
-    },
-  });
-
-  currentY = doc.lastAutoTable.finalY + 5;
-
-  // Check if we need a new page for summary
-  if (currentY > pageHeight - FOOTER_HEIGHT - 50) {
-    doc.addPage();
-    currentY = await drawHeader(doc, billData, base64Logo);
-
-    // Draw footer on the new page
-    const newPageNum = doc.internal.getCurrentPageInfo().pageNumber;
-    const pageNumForFooter = newPageNum - billStartPage + 1;
-    drawFooter(doc, billData, pageNumForFooter, pageNumForFooter);
-  }
-
-  // --- Summary & Payment Tables (Side by Side) ---
-  const halfWidth = (pageWidth - 2 * MARGIN - 4) / 2;
-
-  // Summary table (left side)
-  const summaryRows = [
-    ["Room Rent", Number(billData?.summary?.roomRent || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })],
-  ];
-
-  if (billData?.summary?.foodPlan > 0) {
-    summaryRows.push(["Food Plan", Number(billData.summary.foodPlan || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })]);
-  }
-
-  summaryRows.push(
-    ["SGST on Rent", Number(billData?.summary?.sgst || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })],
-    ["CGST on Rent", Number(billData?.summary?.cgst || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })]
-  );
-
-  if (billData?.summary?.restaurant > 0) {
-    summaryRows.push(["Restaurant", Number(billData.summary.restaurant || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })]);
-  }
-
-  if (billData?.summary?.roomService > 0) {
-    summaryRows.push(["Room Service", Number(billData.summary.roomService || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })]);
-  }
-
-  summaryRows.push(["Total", Number(billData?.summary?.total || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })]);
-
-  autoTable(doc, {
-    head: [["Summary", "Amount"]],
-    body: summaryRows,
-    startY: currentY,
-    margin: { left: MARGIN, right: MARGIN + halfWidth + 4 },
-    tableWidth: halfWidth,
-    styles: {
-      fontSize: 9,
-      cellPadding: 2,
-      lineColor: [0, 0, 0],
-      lineWidth: 0.2,
-    },
-    headStyles: {
-      fillColor: [245, 245, 245],
-      textColor: [0, 0, 0],
-      fontStyle: "bold",
     },
     columnStyles: {
       0: { halign: "left" },
-      1: { halign: "right" }
-    },
-    didParseCell: (data) => {
-      if (data.section === "body" && data.cell.raw === "Total") {
-        data.cell.styles.fillColor = [245, 245, 245];
-        data.cell.styles.fontStyle = "bold";
-      }
-      if (data.section === "body" && data.row.index === summaryRows.length - 1) {
-        data.cell.styles.fillColor = [245, 245, 245];
-        data.cell.styles.fontStyle = "bold";
-      }
+      1: { halign: "right" },
     },
   });
 
-  // Payment table (right side)
-  const paymentRows = [
-    [
-      { content: "PAYMODE", styles: { fontStyle: "bold" } },
-      { content: "AMOUNT", styles: { fontStyle: "bold", halign: "center" } }
-    ]
-  ];
+  // ── Payment rows ──────────────────────────────────────────────────────────
+  const paymentBody = [];
 
-  // Add payment mode details
-  if (billData?.paymentModeDetails) {
-    Object.entries(billData.paymentModeDetails).forEach(([key, amount]) => {
-      paymentRows.push([
-        key.toUpperCase(),
-        Number(amount).toLocaleString("en-IN", { minimumFractionDigits: 2 })
+  // Header-like row inside body
+  paymentBody.push([
+    { content: "PAYMODE", styles: { fontStyle: "bold" } },
+    { content: "AMOUNT", styles: { fontStyle: "bold", halign: "center" } },
+  ]);
+
+  console.log(paymentModeDetails)
+  // Payment mode details (array of { customerName, mode, amount })
+  if (Array.isArray(paymentModeDetails) && paymentModeDetails.length > 0) {
+    
+    paymentModeDetails.forEach((item) => {
+      paymentBody.push([
+        `${item.customerName || ""} (${(item.mode || "").toUpperCase()})`,
+        {
+          content: Number(item.amount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 }),
+          styles: { halign: "right" },
+        },
       ]);
     });
-  } else {
-    paymentRows.push([
-      billData?.payment?.mode || "Credit",
-      Number(billData?.payment?.total || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })
-    ]);
   }
 
-  paymentRows.push(
-    [{ content: billData?.guest?.name || "", colSpan: 2, styles: { halign: "center", fontStyle: "bold" } }],
-    [{ content: billData?.summary?.totalWords || "", colSpan: 2, styles: { fontSize: 8 } }],
-    [
-      { content: "Total :", styles: { fontStyle: "bold" } },
-      { content: Number(billData?.payment?.total || 0).toFixed(2), styles: { fontStyle: "bold", halign: "right" } }
-    ],
-    [
-      "Less Advance:",
-      { content: Number(billData?.payment?.advance || 0).toFixed(2), styles: { halign: "right" } }
-    ],
-    [
-      { content: "Net Pay :", styles: { fontStyle: "bold" } },
-      { content: Number(billData?.payment?.netPay || 0).toFixed(2), styles: { fontStyle: "bold", halign: "right" } }
-    ]
-  );
+  // Total words
+  paymentBody.push([
+    {
+      content: billData?.summary?.totalWords || "",
+      colSpan: 2,
+      styles: { fontSize: 7.5, fontStyle: "bold" },
+    },
+  ]);
+
+  // Total / Advance / Net Pay section
+  if (!isForPreview) {
+    paymentBody.push(
+      [
+        { content: "Total ", styles: { fontStyle: "bold" } },
+        {
+          content: Number(billData?.payment?.total || 0).toFixed(2),
+          styles: { fontStyle: "bold", halign: "right" },
+        },
+      ],
+        [
+        { content: "Total Advance ", styles: { fontStyle: "bold" } },
+        {
+          content: Number(billData?.payment?.advance || 0).toFixed(2),
+          styles: { fontStyle: "bold", halign: "right" },
+        },
+      ],
+      [
+        { content: "Net Pay ", styles: { fontStyle: "bold" } },
+        {
+          content: Number(billData?.payment?.netPay || 0).toFixed(2),
+          styles: { fontStyle: "bold", halign: "right" },
+        },
+      ]
+    );
+  } else {
+    paymentBody.push(
+      [
+        "Total :",
+        { content: Number(billData?.payment?.total || 0).toFixed(2), styles: { halign: "right" } },
+      ],
+      [
+        "Less Advance:",
+        { content: Number(billData?.payment?.advance || 0).toFixed(2), styles: { halign: "right" } },
+      ],
+      [
+        { content: "Net Pay :", styles: { fontStyle: "bold" } },
+        {
+          content: Number(billData?.payment?.netPay || 0).toFixed(2),
+          styles: { fontStyle: "bold", halign: "right" },
+        },
+      ]
+    );
+  }
 
   autoTable(doc, {
-    head: [["Payment Details", ""]],
-    body: paymentRows,
-    startY: currentY,
-    margin: { left: MARGIN + halfWidth + 4, right: MARGIN },
-    tableWidth: halfWidth,
+    head: [
+      [
+        { content: "Payment Details", colSpan: 2, styles: { fontStyle: "bold" } },
+      ],
+    ],
+    body: paymentBody,
+    startY,
+    margin: { left: MARGIN + halfW + 4, right: MARGIN },
+    tableWidth: halfW,
     styles: {
-      fontSize: 9,
+      fontSize: 8,
       cellPadding: 2,
       lineColor: [0, 0, 0],
       lineWidth: 0.2,
+      textColor: [0, 0, 0],
     },
     headStyles: {
       fillColor: [245, 245, 245],
@@ -539,72 +522,65 @@ const drawSingleBill = async (doc, billData, billNo, totalBills, base64Logo) => 
     },
     columnStyles: {
       0: { halign: "left" },
-      1: { halign: "right" }
+      1: { halign: "right" },
     },
   });
 
-  // Draw footer on the last page
-  const finalPageNum = doc.internal.getCurrentPageInfo().pageNumber;
-  totalPagesInBill = finalPageNum - billStartPage + 1;
-
-  // Update all page numbers for this bill
-  for (let i = billStartPage; i <= finalPageNum; i++) {
-    doc.setPage(i);
-    const pageInBill = i - billStartPage + 1;
-
-    // Redraw footer with correct page numbers
-    const pageWidth = doc.internal.pageSize.width;
-    const pageHeight = doc.internal.pageSize.height;
-    const footerY = pageHeight - FOOTER_HEIGHT + 8 + 13; // Position of final strip (8 for msgBox + 13 for sigBox)
-    const finalHeight = 7; // Reduced from 8
-
-    // Clear previous page number area
-    doc.setFillColor(255, 255, 255);
-    doc.rect(pageWidth - MARGIN - 30, footerY, 30, finalHeight, 'F');
-
-    // Redraw complete border around the final strip with proper line width
-    doc.setDrawColor(0, 0, 0);
-    doc.setLineWidth(0.3);
-
-    // Redraw the complete rectangle border
-    doc.rect(MARGIN, footerY, pageWidth - 2 * MARGIN, finalHeight);
-
-    // Redraw the vertical divider line
-    doc.line(
-      pageWidth - MARGIN - 30,
-      footerY,
-      pageWidth - MARGIN - 30,
-      footerY + finalHeight
-    );
-
-    // Redraw the text on left side
-    doc.setFontSize(7);
-    doc.setFont("helvetica", "italic");
-    doc.text(
-      "We hope you enjoyed your stay and would like to welcome you back...",
-      MARGIN + 2,
-      footerY + 4.5 // Reduced from 5
-    );
-
-    // Draw correct page number on right side
-    doc.setFont("helvetica", "normal");
-    doc.text("Original Bill", pageWidth - MARGIN - 15, footerY + 2.5, { // Reduced from 3
-      align: "center",
-    });
-    doc.text(`Page ${pageInBill} of ${totalPagesInBill}`, pageWidth - MARGIN - 15, footerY + 5.5, { // Reduced from 6
-      align: "center",
-    });
-  }
-
-  return finalPageNum;
+  return Math.max(doc.lastAutoTable.finalY, startY) + 2;
 };
 
-// Main print/download logic
+// ─── Draw one complete bill ───────────────────────────────────────────────────
+const drawSingleBill = async (
+  doc,
+  billData,
+  isForPreview,
+  paymentModeDetails,
+  base64Logo
+) => {
+  const pageHeight = doc.internal.pageSize.height;
+  const billStartPage = doc.internal.getCurrentPageInfo().pageNumber;
+
+  // 1. Header
+  let y = await drawHeader(doc, billData, base64Logo);
+
+  // 2. Guest info block
+  y = drawGuestInfo(doc, billData, y);
+
+  // 3. Charges table (handles page breaks internally)
+  y = await drawChargesTable(doc, billData, y, base64Logo, billStartPage);
+
+  // 4. If not enough room for summary + footer, add a new page
+  const neededH = 60 + FOOTER_HEIGHT; // rough estimate for summary tables
+  if (y + neededH > pageHeight - FOOTER_HEIGHT) {
+    doc.addPage();
+    y = await drawHeader(doc, billData, base64Logo);
+  }
+
+  // 5. Summary + Payment tables
+  drawSummaryAndPayment(doc, billData, y, isForPreview, paymentModeDetails);
+
+  // 6. Fix all page numbers for this bill now that we know total pages
+  const finalPage = doc.internal.getCurrentPageInfo().pageNumber;
+  const totalPagesInBill = finalPage - billStartPage + 1;
+
+  for (let p = billStartPage; p <= finalPage; p++) {
+    doc.setPage(p);
+    drawFooter(doc, p - billStartPage + 1, totalPagesInBill);
+  }
+
+  return finalPage;
+};
+
+// ─── Public API ───────────────────────────────────────────────────────────────
 export const generateBillPrintPDF = async (
   billDataOrArray,
   isPrint = false,
-  organization
+  organization,
+  isForPreview = false,
+  paymentModeDetails = []
 ) => {
+
+  console.log(paymentModeDetails);
   const bills = Array.isArray(billDataOrArray)
     ? billDataOrArray
     : [billDataOrArray];
@@ -613,7 +589,6 @@ export const generateBillPrintPDF = async (
 
   const doc = new jsPDF("p", "mm", "a4");
 
-  // Load logo
   let base64Logo = null;
   try {
     base64Logo = await getBase64FromUrl(organization?.logo);
@@ -621,13 +596,15 @@ export const generateBillPrintPDF = async (
     console.error("Failed to load logo", err);
   }
 
-  const totalBills = bills.length;
-
   for (let i = 0; i < bills.length; i++) {
-    if (i > 0) {
-      doc.addPage();
-    }
-    await drawSingleBill(doc, bills[i], i + 1, totalBills, base64Logo);
+    if (i > 0) doc.addPage();
+    await drawSingleBill(
+      doc,
+      bills[i],
+      isForPreview,
+      paymentModeDetails,
+      base64Logo
+    );
   }
 
   if (isPrint) {
@@ -637,10 +614,10 @@ export const generateBillPrintPDF = async (
     if (w) {
       w.onload = () => {
         w.print();
-        setTimeout(() => URL.revokeObjectURL(url), 1010);
+        setTimeout(() => URL.revokeObjectURL(url), 1500);
       };
     } else {
-      alert("Please allow popups to print the invoice");
+      alert("Please allow popups to print the invoice.");
     }
   } else {
     const filename =
@@ -651,10 +628,35 @@ export const generateBillPrintPDF = async (
   }
 };
 
-export const handleBillPrintInvoice = async (billDataOrArray, organization) => {
-  await generateBillPrintPDF(billDataOrArray, true, organization);
+export const handleBillPrintInvoice = async (
+  billDataOrArray,
+  organization,
+  paymentModeDetails = [],
+  isForPreview = false,
+   
+) => {
+    console.log(paymentModeDetails);
+  await generateBillPrintPDF(
+    billDataOrArray,
+    true,
+    organization,
+    isForPreview,
+    paymentModeDetails
+  );
 };
 
-export const handleBillDownloadPDF = async (billDataOrArray, organization) => {
-  await generateBillPrintPDF(billDataOrArray, false, organization);
+export const handleBillDownloadPDF = async (
+  billDataOrArray,
+  organization,
+  isForPreview = false,
+  paymentModeDetails = []
+) => {
+  console.log(paymentModeDetails);
+  await generateBillPrintPDF(
+    billDataOrArray,
+    false,
+    organization,
+    isForPreview,
+    paymentModeDetails
+  );
 };
