@@ -78,7 +78,7 @@ const HotelBillPrint = () => {
     console.log(data);
     try {
       const res = await api.post(
-        `/api/sUsers/fetchOutStandingAndFoodData`,
+        `/api/sUsers/fetchOutStandingAndFoodData/${organization._id}`,
         { data },
         { withCredentials: true },
       );

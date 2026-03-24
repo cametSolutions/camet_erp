@@ -2494,6 +2494,7 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
   try {
     const checkoutData = req.body?.data;
     const isForPreview = req.body?.isForPreview;
+    const cmp_id = new mongoose.Types.ObjectId(req.params.cmp_id);
 
     if (!checkoutData || checkoutData.length === 0) {
       return res.status(400).json({
@@ -2527,6 +2528,7 @@ await Promise.all(
             checkout?.voucherNumber,
           isComplimentary: false,
           isPostToRoom: true,
+          cmp_id,
         },
       },
       {
