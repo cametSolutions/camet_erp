@@ -1090,6 +1090,7 @@ export const updateKotPayment = async (req, res) => {
         discountValue,
         isComplimentary = false,
         isManuallyComplimentary = false, // ✅ NEW: Discount amount
+        discountBasedOnGrossAmount,
         note,
       } = req.body;
 
@@ -1191,10 +1192,12 @@ export const updateKotPayment = async (req, res) => {
         selectedParty,
         paymentSplittingArray,
         req.body.additionalCharges || [],
+           discountBasedOnGrossAmount,
         session,
         isComplimentary,
         isManuallyComplimentary,
         isPostToRoom,
+        
       );
       // ✅ Calculate with DISCOUNT
       const originalTotal = Number(kotData?.total || 0);
@@ -1670,6 +1673,7 @@ async function createSalesVoucher(
   selectedParty,
   paymentSplittingArray,
   additionalChargesArray = null,
+     discountBasedOnGrossAmount,  
   session,
 ) {
   // console.log("additionalChargesArray", additionalChargesArray);
@@ -1690,7 +1694,7 @@ async function createSalesVoucher(
     .filter((charge) => charge.action === "sub")
     .reduce((sum, charge) => sum + Number(charge.finalValue || 0), 0);
 
-  const finalAmount = originalTotal - discountTotal;
+  const finalAmount =    discountBasedOnGrossAmount ? originalTotal - discountTotal : originalTotal
 
   console.log("🔥 FINAL CALCULATIONS:", {
     originalTotal, // 1000
