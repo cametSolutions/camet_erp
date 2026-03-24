@@ -83,7 +83,7 @@ const HotelBillPrint = () => {
         { withCredentials: true },
       );
       if (res.data.success) {
-        console.log("res.data.data", res.data.data);
+        console.log("res.data.data", res.data.kotData.length);
         setOutStanding(res.data.data || []);
         setKotData(res.data.kotData || []);
       }
@@ -308,7 +308,7 @@ console.log(mergedMap);
   const buildPerRoomRestaurantLinesForDoc = (doc) => {
     console.log("=== Building restaurant lines ===");
     console.log("Doc:", doc);
-    console.log("All KOT Data:", kotData);
+    console.log("All KOT Data:", kotData.length);
 
     const lines = [];
 
@@ -325,7 +325,10 @@ console.log(mergedMap);
     const roomServiceKots = [];
     const dineInKots = [];
 
-    kotData.filter((t) => doc?.voucherNumber === t.convertedFrom[0].checkInNumber)?.forEach((kot) => {
+    kotData?.forEach((kot) => {
+      console.log(doc)
+      console.log(kot);
+      if(doc.voucherNumber !== kot?.convertedFrom[0].checkInNumber) return;
       const kotRoomId = String(kot?.kotDetails?.roomId || kot?.roomId || "");
       const tableNumber =
         kot?.kotDetails?.tableNumber ||
@@ -1059,6 +1062,7 @@ console.log("allpartyid", outStanding);
           return { ...charge, balance: bal.toFixed(2) };
         });
 
+        
         // Zero out room-related summary fields
         bill.summary.roomRent = "0.00";
         bill.summary.sgst = "0.00";
@@ -1140,7 +1144,7 @@ console.log("allpartyid", outStanding);
     });
   }, [selectedCheckOut, outStanding, kotData, organization, activeMode]);
 
-  console.log("bills", bills[0]);
+  console.log("bills", bills[1]);
 
   const handlePrintPDF = (isPrint) => {
     const multi = bills && bills.length ? bills : [];

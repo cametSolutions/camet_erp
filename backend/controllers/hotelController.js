@@ -2516,20 +2516,19 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
     };
 
     // ✅ CORRECTED: Get roomId and serviceType from ROOT level, not kotDetails
-
+await Promise.all(
+  checkoutData.map(async (checkout) => {
     const docs = await salesModel.aggregate([
       {
         $match: {
           "convertedFrom.id": { $exists: true, $ne: null },
           "convertedFrom.checkInNumber":
-            checkoutData[0]?.checkInId?.voucherNumber ||
-            checkoutData[0]?.voucherNumber,
+            checkout?.checkInId?.voucherNumber ||
+            checkout?.voucherNumber,
           isComplimentary: false,
           isPostToRoom: true,
         },
       },
-
-      // Convert convertedFrom.id (string) → ObjectId
       {
         $addFields: {
           convertedFromObjId: {
@@ -2541,8 +2540,6 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
           },
         },
       },
-
-      // ✅ UPDATED: Lookup from KOT collection using ROOT level fields
       {
         $lookup: {
           from: "kots",
@@ -2558,17 +2555,15 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
             {
               $project: {
                 _id: 0,
-                roomId: "$roomId", // ✅ From root level
-                tableNumber: "$tableNumber", // ✅ From root level
-                serviceType: "$serviceType", // ✅ From root level
+                roomId: 1,
+                tableNumber: 1,
+                serviceType: 1,
               },
             },
           ],
           as: "kotDetails",
         },
       },
-
-      // Flatten
       {
         $unwind: {
           path: "$kotDetails",
@@ -2577,11 +2572,10 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
       },
     ]);
 
-    console.log("=== KOT DATA WITH SERVICE TYPE ===");
-    console.log("Total KOTs found:", docs.length);
     docs.forEach((doc, idx) => {
       console.log(`KOT ${idx + 1}:`, {
         salesNumber: doc.salesNumber,
+        convertedFromId: doc.convertedFrom,
         roomId: doc.kotDetails?.roomId,
         tableNumber: doc.kotDetails?.tableNumber,
         serviceType: doc.kotDetails?.serviceType,
@@ -2590,7 +2584,8 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
     });
 
     allKotData.push(...docs);
-
+  })
+);
     const uniqueIds = new Set();
     const advanceMap = new Map(); // prevents duplicates by _id
 
