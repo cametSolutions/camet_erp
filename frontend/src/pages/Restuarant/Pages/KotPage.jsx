@@ -758,6 +758,7 @@ const OrdersDashboard = () => {
         //  discountCharge: previewDiscountCharge,
         // discountAmount: previewDiscount,
         note,
+        discountBasedOnGrossAmount:discountBasedOnGrossAmount
       };
 
       console.log(payment);
