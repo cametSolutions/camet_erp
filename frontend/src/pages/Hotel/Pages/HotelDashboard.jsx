@@ -584,12 +584,14 @@ console.log(baseStatus);
     } else if (selectedRooms[0].status === "occupied") {
       console.log(convertDataToCheckout);
       const selectedRoomIds = selectedRooms.map((r) => r.roomId);
-
-      const actualCheckIn = convertDataToCheckout.filter((checkIn) =>
-        checkIn.selectedRooms.some((room) =>
-          selectedRoomIds.includes(room.roomId),
-        ),
-      );
+ const actualCheckIn = convertDataToCheckout
+  .map(checkIn => ({
+    ...checkIn,
+    selectedRooms: checkIn.selectedRooms
+      .filter(room => selectedRoomIds.includes(room.roomId))
+      .map(room => ({ ...room, included: true })),
+  }))
+      console.log(actualCheckIn[0].selectedRooms.length);
       navigate("/sUsers/checkInList", {
         state: {
           directConvertFromDashboard: actualCheckIn,

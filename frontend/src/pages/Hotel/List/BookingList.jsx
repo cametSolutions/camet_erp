@@ -119,15 +119,10 @@ function BookingList() {
         return total;
       }
 
-      console.log(checkouts);
       const checkoutTotal = rooms.reduce((sum, room) => {
-        console.log(rooms);
         return sum + (parseFloat(room.amountAfterTax) || 0);
       }, 0); // important: initial value
 
-
-      console.log(checkoutTotal);
-      console.log(advance);
       return total + (checkoutTotal - advance);
     }, 0); // initial value for outer reduce
   };
@@ -173,6 +168,7 @@ function BookingList() {
 
   useEffect(() => {
     if (location?.state?.directConvertFromDashboard?.length > 0) {
+      console.log(location?.state?.directConvertFromDashboard);
       setSelectedCheckOut(location?.state?.directConvertFromDashboard);
       setSelectedCustomer(
         location?.state?.directConvertFromDashboard[0]?.customerId?._id,
@@ -228,7 +224,6 @@ function BookingList() {
   useEffect(() => {
     if (selectedCheckOut && selectedCheckOut.length > 0) {
       const totalAmount = calculateTotalAmount(selectedCheckOut);
-      
       const advanceAmount = selectedCheckOut.reduce((total, item) => {
         return (
           total +
@@ -240,18 +235,16 @@ function BookingList() {
       const restaurantSubTotal = selectedCheckOut.reduce((total, item) => {
         return total + (item.restaurantSubTotal || 0);
       }, 0);
-console.log(totalAmount,restaurantSubTotal);
+
       setSelectedDataForPayment((prevData) => ({
         ...prevData,
-        total: totalAmount ,
+        total: totalAmount,
         advanceAmount: advanceAmount,
         restaurantSubTotal: restaurantSubTotal,
-        totalWithRestaurant: totalAmount + restaurantSubTotal
       }));
     }
   }, [selectedCheckOut]);
 
-  console.log(selectedDataForPayment, "selectedCheckOut");
   const searchData = (data) => {
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
@@ -611,11 +604,9 @@ console.log(totalAmount,restaurantSubTotal);
       (sum, row) => sum + (parseFloat(row.amount) || 0),
       0,
     );
-    console.log(total);
-    console.log(selectedDataForPayment);
     if (
       total >
-      (selectedDataForPayment?.totalWithRestaurant ||
+      (selectedDataForPayment?.total ||
         Number(selectedCheckOut[0]?.balanceToPay)?.toFixed(2))
     ) {
       setPaymentError("Total split amount exceeds order total");
@@ -651,13 +642,13 @@ console.log(totalAmount,restaurantSubTotal);
           paymentMode: paymentMode,
           splitDetails: [
             {
-              customer: selectedCustomerData.customerId.customerName,
+              customer: selectedCustomerData?.customerId?.partyName || selectedCheckOut[0]?.customerId?.partyName,
               source: selectedCash,
               sourceType: "cash",
               amount:
                 selectedDataForPayment?.total ||
                 Number(selectedCheckOut[0]?.balanceToPay),
-              customerName: selectedCustomerData.customerId.partyName,
+              customerName: selectedCustomerData?.customerId?.partyName || selectedCheckOut[0]?.customerId?.partyName,
               subsource: selected.partyName,
             },
           ],
@@ -690,13 +681,13 @@ console.log(totalAmount,restaurantSubTotal);
           paymentMode: paymentMode,
           splitDetails: [
             {
-              customer: selectedCustomerData.customerId.customerName,
+              customer: selectedCustomerData?.customerId?.partyName || selectedCheckOut[0]?.customerId?.partyName,
               source: selectedCash,
               sourceType: "bank",
               amount:
                 selectedDataForPayment?.total ||
                 Number(selectedCheckOut[0]?.balanceToPay),
-              customerName: selectedCustomerData.customerId.partyName,
+              customerName: selectedCustomerData?.customerId?.partyName ||  selectedCheckOut[0]?.customerId?.partyName,
               subsource: selected.partyName,
             },
           ],
@@ -751,7 +742,7 @@ console.log(totalAmount,restaurantSubTotal);
       );
 
       let payment = (
-        selectedDataForPayment?.totalWithRestaurant ||
+        selectedDataForPayment?.total ||
         Number(selectedCheckOut[0]?.balanceToPay) ||
         0
       ).toFixed(2);
@@ -2290,20 +2281,20 @@ console.log(totalAmount,restaurantSubTotal);
                       <span>Order Total:</span>
                       <span>
                         ₹{" "}
-                        {selectedDataForPayment?.totalWithRestaurant?.toFixed(2) ||
+                        {selectedDataForPayment?.total?.toFixed(2) ||
                           Number(selectedCheckOut[0]?.balanceToPay)?.toFixed(2)}
                       </span>
                     </div>
                     {splitPaymentRows.reduce(
                       (sum, row) => sum + (parseFloat(row.amount) || 0),
                       0,
-                    ) !== selectedDataForPayment?.totalWithRestaurant && (
+                    ) !== selectedDataForPayment?.total && (
                       <div className="flex justify-between text-xs text-amber-600 mt-1">
                         <span>Difference:</span>
                         <span>
                           ₹
                           {(
-                            (selectedDataForPayment?.totalWithRestaurant ||
+                            (selectedDataForPayment?.total ||
                               Number(
                                 selectedCheckOut[0]?.balanceToPay,
                               )?.toFixed(2)) -
