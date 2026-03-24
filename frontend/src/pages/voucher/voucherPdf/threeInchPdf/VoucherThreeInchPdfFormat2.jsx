@@ -77,18 +77,85 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
       setSubTotal(total);
     }
   }, [data]);
+  // 1) helper: get line taxable value after discount
+const getItemTaxableAfterDiscount = (item, totalDiscount, grossAmount) => {
+  const lineGross = Number(item.total || 0);        // with tax
+  const totalTax =
+    Number(item.totalIgstAmt || 0)
 
-  const calculateTotalTax = () =>
+  const lineBeforeTax = lineGross - totalTax;       // taxable before discount
+
+  // proportional discount share on this line
+  const lineDiscount =
+    grossAmount > 0 ? (lineBeforeTax / grossAmount) * totalDiscount : 0;
+
+  // taxable value after discount, like Tally’s "Taxable Value" column
+  return lineBeforeTax - lineDiscount;
+};
+
+  // 2) main function: when discountBasedOnGrossAmount is false
+const calculateTotalTaxWithDiscountLogic = () => {
+  if (!data?.items?.length) return 0;
+
+  const totalDiscount =
     Number(
-      data?.items?.reduce((acc, curr) => {
-        return (
-          acc +
-          Number(
-            curr?.totalIgstAmt || curr?.totalCgstAmt + curr?.totalSgstAmt || 0,
-          )
-        );
-      }, 0) || 0,
+      data?.totalAdditionalCharges || data?.additionalCharges?.[0]?.finalValue,
+    ) || 0;
+
+  // gross taxable (sum of all items before discount)
+  const grossTaxable = data.items.reduce((acc, item) => {
+    const lineTax =
+      Number(item.totalIgstAmt || 0) 
+    const lineBeforeTax = Number(item.total || 0) - lineTax;
+    return acc + lineBeforeTax;
+  }, 0);
+
+  const isInterState = !isSameState;
+
+  const totalTax = data.items.reduce((acc, item) => {
+    const taxableAfterDiscount = getItemTaxableAfterDiscount(
+      item,
+      totalDiscount,
+      grossTaxable,
     );
+
+    if (isInterState) {
+      // IGST on discounted taxable value
+      const igstRate = Number(item.igst || 0);
+      return acc + (taxableAfterDiscount * igstRate) / 100;
+    }
+
+    // CGST + SGST on discounted taxable value
+    const cgstRate = Number(item.cgst || 0);
+    const sgstRate = Number(item.sgst || 0);
+    return (
+      acc +
+      (taxableAfterDiscount * cgstRate) / 100 +
+      (taxableAfterDiscount * sgstRate) / 100
+    );
+  }, 0);
+
+  return Number(totalTax.toFixed(2));
+};
+
+
+const calculateTotalTax = () =>
+  discountBasedOnGrossAmount
+    ? /* old simple sum of stored tax amounts */
+      Number(
+        data?.items?.reduce((acc, curr) => {
+          return (
+            acc +
+            Number(
+              curr?.totalIgstAmt ||
+                curr?.totalCgstAmt + curr?.totalSgstAmt ||
+                0,
+            )
+          );
+        }, 0) || 0,
+      )
+    : calculateTotalTaxWithDiscountLogic(); // function above
+
 
   const getBillNumber = () =>
     data?.[getVoucherNumber()] ||
@@ -131,6 +198,7 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
     const names = foodPlanArray?.map((item) => item.planType).join(", ");
     return `Food Paln: ${names}`;
   };
+  console.log(data);
   const netAmount = Math.round(Number(data?.finalAmount || 0)).toFixed(2);
 
   const discount = Math.round(

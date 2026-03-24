@@ -893,20 +893,30 @@ const OrdersDashboard = () => {
       return findOne?.items || []; // return empty array if not found
     });
     console.log(itemList);
-    let subtotal = 0;
-    if (discountBasedOnGrossAmount) {
-      subtotal = Math.round(
-        itemList.reduce((acc, item) => acc + Number(item.total), 0),
-      ).toFixed(2);
-    } else {
-      let spiltDiscount = discountAmount / itemList.length;
-      subtotal = Math.round(
-        itemList.reduce(
-          (acc, item) => acc + (Number(item.total) - spiltDiscount),
-          0,
-        ),
-      ).toFixed(2);
-    }
+   let subtotal;
+
+
+
+if (discountBasedOnGrossAmount) {
+  const gross = itemList.reduce((acc, item) => acc + Number(item.total || 0), 0);
+  subtotal = Math.round(gross).toFixed(2);
+} else {
+  const gross = itemList.reduce((acc, item) => acc + Number(item.total || 0) - Number(item.totalIgstAmt || 0), 0);
+  const totalDiscount = Number(discountAmount || 0);
+
+  const net = itemList.reduce((acc, item) => {
+    console.log(item)
+    const lineTotal = Number(item.total || 0)
+    console.log(lineTotal)
+    const share =
+      gross > 0 ? (lineTotal / gross) * totalDiscount : 0; // proportional
+      console.log(share)
+    return acc + (lineTotal - share);
+  }, 0);
+
+  subtotal = Math.round(net).toFixed(2);
+}
+
 
     console.log(subtotal);
     let finalAmount = discountBasedOnGrossAmount
