@@ -511,6 +511,8 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
 
             const amount = (Number(rate) * count).toFixed(2);
 
+            
+
             return (
               <div key={index} style={itemGrid}>
                 <div style={textLeft}>{index + 1}</div>
@@ -524,6 +526,7 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
             );
           })}
           <div style={{ borderBottom: "1px dotted #000", margin: "6px 0" }} />
+          
 
           {/* Totals */}
 
@@ -542,6 +545,33 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
             {/* RIGHT SIDE: Amount + taxes */}
             <div style={{ flex: 1 }}>
               {!discountBasedOnGrossAmount && discount && (
+                <>
+                  <div
+                style={{
+                  display: "flex",
+                  flexDirection: "row",
+                  marginBottom: "2px",
+                  fontWeight: "bold",
+                }}
+              >
+                <div
+                  style={{
+                    marginLeft: "auto",
+                    width: 60,
+                    textAlign: "right",
+                  }}
+                >
+                  SubTotal
+                </div>
+                <div
+                  style={{
+                    width: 60,
+                    textAlign: "right",
+                  }}
+                >
+                  {Number(subTotal) + Number(discount)}
+                </div>
+              </div>
                 <div
                 style={{
                   display: "flex",
@@ -568,6 +598,8 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
                   {discount}
                 </div>
               </div>
+                </>
+           
               )}
               
               {/* Amount */}
