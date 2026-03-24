@@ -151,12 +151,14 @@ export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
         .limit(limit > 0 ? limit : 0),
       selectedModal.countDocuments(filter),
     ]);
+    console.log(filter)
 
     const checkInNumbers = bookings.map((b) => b.voucherNumber);
 
     // 2) Find all related sales in one query
     const sales = await salesModel
       .find({
+        cmp_id: filter.cmp_id,
         isPostToRoom: true,
         "convertedFrom.checkInNumber": { $in: checkInNumbers },
       })

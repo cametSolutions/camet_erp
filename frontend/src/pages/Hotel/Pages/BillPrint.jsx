@@ -26,7 +26,7 @@ const HotelBillPrint = () => {
   const [paymentModeDetails, setPaymentModeDetails] = useState([]);
   // Props from location state
   const selectedCheckOut = location.state?.selectedCheckOut || [];
-  console.log(selectedCheckOut);
+  console.log(selectedCheckOut[1]);
   console.log(paymentDetails);
 
   const checkoutmode = location?.state?.checkoutMode || null;
@@ -78,7 +78,7 @@ const HotelBillPrint = () => {
     console.log(data);
     try {
       const res = await api.post(
-        `/api/sUsers/fetchOutStandingAndFoodData`,
+        `/api/sUsers/fetchOutStandingAndFoodData/${organization._id}`,
         { data },
         { withCredentials: true },
       );

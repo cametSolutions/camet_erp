@@ -168,7 +168,6 @@ function BookingList() {
 
   useEffect(() => {
     if (location?.state?.directConvertFromDashboard?.length > 0) {
-      console.log(location?.state?.directConvertFromDashboard);
       setSelectedCheckOut(location?.state?.directConvertFromDashboard);
       setSelectedCustomer(
         location?.state?.directConvertFromDashboard[0]?.customerId?._id,
@@ -241,6 +240,7 @@ function BookingList() {
         total: totalAmount,
         advanceAmount: advanceAmount,
         restaurantSubTotal: restaurantSubTotal,
+        totalWithRestaurantSubTotal: totalAmount + restaurantSubTotal,
       }));
     }
   }, [selectedCheckOut]);
@@ -606,7 +606,7 @@ function BookingList() {
     );
     if (
       total >
-      (selectedDataForPayment?.total ||
+      (selectedDataForPayment?.totalWithRestaurantSubTotal ||
         Number(selectedCheckOut[0]?.balanceToPay)?.toFixed(2))
     ) {
       setPaymentError("Total split amount exceeds order total");
@@ -634,7 +634,7 @@ function BookingList() {
         console.log(selectedCustomerData);
         paymentDetails = {
           cashAmount:
-            selectedDataForPayment?.total ||
+            selectedDataForPayment?.totalWithRestaurantSubTotal ||
             Number(selectedCheckOut[0]?.balanceToPay),
           onlineAmount: onlineAmount,
           selectedCash: selectedCash,
@@ -646,7 +646,7 @@ function BookingList() {
               source: selectedCash,
               sourceType: "cash",
               amount:
-                selectedDataForPayment?.total ||
+                selectedDataForPayment?.totalWithRestaurantSubTotal ||
                 Number(selectedCheckOut[0]?.balanceToPay),
               customerName: selectedCustomerData?.customerId?.partyName || selectedCheckOut[0]?.customerId?.partyName,
               subsource: selected.partyName,
@@ -655,7 +655,7 @@ function BookingList() {
 
           paymenttypeDetails: {
             cash:
-              selectedDataForPayment?.total ||
+              selectedDataForPayment?.totalWithRestaurantSubTotal ||
               Number(selectedCheckOut[0]?.balanceToPay),
             bank: 0,
             card: 0,
@@ -674,7 +674,7 @@ function BookingList() {
         paymentDetails = {
           cashAmount: cashAmount,
           onlineAmount:
-            selectedDataForPayment?.total ||
+            selectedDataForPayment?.totalWithRestaurantSubTotal ||
             Number(selectedCheckOut[0]?.balanceToPay),
           selectedCash: "",
           selectedBank: selectedBank,
@@ -685,7 +685,7 @@ function BookingList() {
               source: selectedCash,
               sourceType: "bank",
               amount:
-                selectedDataForPayment?.total ||
+                selectedDataForPayment?.totalWithRestaurantSubTotal ||
                 Number(selectedCheckOut[0]?.balanceToPay),
               customerName: selectedCustomerData?.customerId?.partyName ||  selectedCheckOut[0]?.customerId?.partyName,
               subsource: selected.partyName,
@@ -695,17 +695,17 @@ function BookingList() {
             cash: 0,
             bank:
               selected.under == "bank"
-                ? selectedDataForPayment?.total ||
+                ? selectedDataForPayment?.totalWithRestaurantSubTotal ||
                   Number(selectedCheckOut[0]?.balanceToPay)
                 : 0,
             upi:
               selected.under == "upi"
-                ? selectedDataForPayment?.total ||
+                ? selectedDataForPayment?.totalWithRestaurantSubTotal ||
                   Number(selectedCheckOut[0]?.balanceToPay)
                 : 0,
             card:
               selected.under == "card"
-                ? selectedDataForPayment?.total ||
+                ? selectedDataForPayment?.totalWithRestaurantSubTotal ||
                   Number(selectedCheckOut[0]?.balanceToPay)
                 : 0,
             credit: 0,
@@ -720,7 +720,7 @@ function BookingList() {
       }
       paymentDetails = {
         cashAmount:
-          selectedDataForPayment?.total ||
+          selectedDataForPayment?.totalWithRestaurantSubTotal ||
           Number(selectedCheckOut[0]?.balanceToPay),
         selectedCreditor: selectedCreditor,
         paymentMode: paymentMode,
@@ -729,7 +729,7 @@ function BookingList() {
           bank: 0,
           upi: 0,
           credit:
-            selectedDataForPayment?.total ||
+            selectedDataForPayment?.totalWithRestaurantSubTotal ||
             Number(selectedCheckOut[0]?.balanceToPay),
           card: 0,
         },
@@ -742,7 +742,7 @@ function BookingList() {
       );
 
       let payment = (
-        selectedDataForPayment?.total ||
+        selectedDataForPayment?.totalWithRestaurantSubTotal ||
         Number(selectedCheckOut[0]?.balanceToPay) ||
         0
       ).toFixed(2);
@@ -814,7 +814,7 @@ function BookingList() {
       paymentMethod: paymentMode,
       paymentDetails: paymentDetails,
       selectedCheckOut: selectedCheckOut,
-      paidBalance: selectedDataForPayment?.total,
+      paidBalance: selectedDataForPayment?.totalWithRestaurantSubTotal,
       selectedParty: selectedCustomer,
       restaurantBaseSaleData: restaurantBaseSaleData,
     });
@@ -845,7 +845,7 @@ function BookingList() {
             paymentMethod: paymentMethod,
             paymentDetails: paymentDetails,
             selectedCheckOut: selectedCheckOut,
-            paidBalance: selectedDataForPayment?.total,
+            paidBalance: selectedDataForPayment?.totalWithRestaurantSubTotal,
             selectedParty: selectedCustomer,
             restaurantBaseSaleData: restaurantBaseSaleData,
             checkoutMode, //to check if the checkout is single or multiple
@@ -1196,6 +1196,7 @@ function BookingList() {
     if (checkoutMode === "multiple") {
       console.log("hhhh");
       const match = parties.find((p) => p._id === selectedCustomer);
+      console.log(match);
       if (!match) return;
 
       setSelectedCheckOut((prev) =>
@@ -1215,7 +1216,7 @@ function BookingList() {
 
     setCheckoutMode(checkoutMode === "single" ? "multiple" : "single");
   };
-  console.log( selectedDataForPayment)
+  console.log( checkoutMode);
   const TableHeader = () => (
     <div className="bg-gray-100 border-b border-gray-300 sticky top-0 z-10">
       <div className="flex items-center px-4 py-3 text-xs font-bold text-gray-800 uppercase tracking-wider md:hidden">
