@@ -614,11 +614,11 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
                 <div
                   style={{
                     marginLeft: "auto",
-                    width: 60,
+                    width: 80,
                     textAlign: "right",
                   }}
                 >
-                  Amount
+                 Gross Amount
                 </div>
                 <div
                   style={{
