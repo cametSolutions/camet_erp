@@ -69,9 +69,10 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
         calculatedSubTotal,
         discountBasedOnGrossAmount,
       );
+      console.log("data?.subTotal", data);
       let total = discountBasedOnGrossAmount
         ? Number(calculatedSubTotal) || data?.subTotal
-        : Number(calculatedSubTotal) - data?.discount ||
+        : Number(calculatedSubTotal) - data?.additionalCharges?.[0]?.finalValue ||
           data?.subTotal - data?.discount;
 
       setSubTotal(total);

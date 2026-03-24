@@ -919,9 +919,9 @@ if (discountBasedOnGrossAmount) {
 }
 
 
-    console.log(subtotal);
+    console.log(subtotal,discountAmount);
     let finalAmount = discountBasedOnGrossAmount
-      ? Math.round(Number(subtotal) - (discountAmount || 0)).toFixed(2)
+      ? Math.round(Number(subtotal) - Number(discountAmount || 0)).toFixed(2)
       : Math.round(subtotal).toFixed(2);
     console.log(finalAmount);
     let additionalChargesArray = [];
