@@ -200,11 +200,10 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
   console.log(data);
   const netAmount = Math.round(Number(data?.finalAmount || 0)).toFixed(2);
 
-  const discount = Math.round(
+  const discount = 
     Number(
       data?.totalAdditionalCharges || data?.additionalCharges?.[0]?.finalValue,
-    ),
-  ).toFixed(2);
+    ).toFixed(2);
   console.log("discount", discount);
   console.log("netAmount", netAmount);
   const tax = Math.round(calculateTotalTax()).toFixed(2);
@@ -569,7 +568,7 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
                     textAlign: "right",
                   }}
                 >
-                  {Number(subTotal) + Number(discount)}
+                  {(Number(subTotal) + Number(discount)).toFixed(2)}
                 </div>
               </div>
                 <div
@@ -614,11 +613,11 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
                 <div
                   style={{
                     marginLeft: "auto",
-                    width: 60,
+                    width: 80,
                     textAlign: "right",
                   }}
                 >
-                  Amount
+                 Gross Amount
                 </div>
                 <div
                   style={{
