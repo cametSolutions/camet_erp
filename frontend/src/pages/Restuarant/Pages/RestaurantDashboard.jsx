@@ -642,6 +642,7 @@ const getTotalAmount = () => {
 };
 
 
+
   const grossTotal = Math.round(
     selectedDataForPayment?.total || getTotalAmount(),
   );
@@ -702,8 +703,8 @@ console.log(grossTotal);
           selectedKotData: {
             ...selectedDataForPayment,
             // IMPORTANT: use subtotal/total BEFORE discount, because backend uses this
-            subtotal: grossTotal,
-            total: grossTotal,
+            subtotal: amount,
+            total: amount,
             finalAmount: amount,
           },
           additionalCharges,
@@ -2460,7 +2461,7 @@ console.log(grossTotal);
                   >
                     {cashOrBank?.cashDetails?.map((cashier) => (
                       <option key={cashier._id} value={cashier._id}>
-                        {cashier.partyName}
+                        {cashier.partyName} - ({cashier.under})
                       </option>
                     ))}
                   </select>
@@ -2483,7 +2484,7 @@ console.log(grossTotal);
                     </option>
                     {cashOrBank?.bankDetails?.map((bank) => (
                       <option key={bank._id} value={bank._id}>
-                        {bank.partyName}
+                        {bank.partyName} - ({bank.under || "Bank"})
                       </option>
                     ))}
                   </select>
