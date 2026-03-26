@@ -661,14 +661,19 @@ const getTotalAmount = () => {
 
   const handleProcessDirectSalePayment = async () => {
     setSaveLoader(true);
+    console.log(selectedDataForPayment);
+    console.log(additionalCharges);
+    console.log(paymentMethod);
+
 
     try {
       // Step 1: Prepare paymentDetails
       let paymentDetails;
       let amount = await getTotalAmount();
+          console.log(amount)
       if (paymentMethod === "cash") {
         paymentDetails = {
-          cashAmount:Math.round(discountBasedOnGrossAmount ? amount - additionalCharges[0]?.finalValue : amount),
+          cashAmount:Math.round(discountBasedOnGrossAmount ? amount - (additionalCharges[0]?.finalValue ||0  ) : amount),
           onlineAmount: 0,
           selectedCash,
           selectedBank,
@@ -677,7 +682,7 @@ const getTotalAmount = () => {
       } else {
         paymentDetails = {
           cashAmount: 0,
-          onlineAmount:Math.round(discountBasedOnGrossAmount ? amount - additionalCharges[0]?.finalValue : amount),
+          onlineAmount:Math.round(discountBasedOnGrossAmount ? amount - (additionalCharges[0]?.finalValue ||0  ) : amount),
           selectedCash,
           selectedBank,
           paymentMode: "single",
@@ -697,8 +702,8 @@ console.log(grossTotal);
           selectedKotData: {
             ...selectedDataForPayment,
             // IMPORTANT: use subtotal/total BEFORE discount, because backend uses this
-            subtotal: amount,
-            total: amount,
+            subtotal: grossTotal,
+            total: grossTotal,
             finalAmount: amount,
           },
           additionalCharges,
