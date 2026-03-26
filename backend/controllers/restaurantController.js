@@ -966,6 +966,7 @@ export const directSale = async (req, res) => {
         selectedKotData,
         additionalCharges,
         isDirectSale,
+        discountBasedOnGrossAmount,
       } = req.body;
 
       if (!paymentDetails || !selectedKotData)
@@ -1023,6 +1024,7 @@ export const directSale = async (req, res) => {
         selectedParty,
         paymentSplittingArray,
         additionalChargesArray,
+        discountBasedOnGrossAmount,
         session,
       );
 
