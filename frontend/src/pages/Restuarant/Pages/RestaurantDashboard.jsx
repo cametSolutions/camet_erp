@@ -668,7 +668,7 @@ const getTotalAmount = () => {
       let amount = await getTotalAmount();
       if (paymentMethod === "cash") {
         paymentDetails = {
-          cashAmount:discountBasedOnGrossAmount ? amount - additionalCharges[0]?.finalValue : amount,
+          cashAmount:Math.round(discountBasedOnGrossAmount ? amount - additionalCharges[0]?.finalValue : amount),
           onlineAmount: 0,
           selectedCash,
           selectedBank,
@@ -677,7 +677,7 @@ const getTotalAmount = () => {
       } else {
         paymentDetails = {
           cashAmount: 0,
-          onlineAmount:discountBasedOnGrossAmount ? amount - additionalCharges[0]?.finalValue : amount,
+          onlineAmount:Math.round(discountBasedOnGrossAmount ? amount - additionalCharges[0]?.finalValue : amount),
           selectedCash,
           selectedBank,
           paymentMode: "single",
