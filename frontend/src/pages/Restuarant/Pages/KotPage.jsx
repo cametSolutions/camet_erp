@@ -758,7 +758,7 @@ const OrdersDashboard = () => {
         //  discountCharge: previewDiscountCharge,
         // discountAmount: previewDiscount,
         note,
-        discountBasedOnGrossAmount: discountBasedOnGrossAmount,
+        discountBasedOnGrossAmount:discountBasedOnGrossAmount
       };
 
       console.log(payment);
@@ -894,35 +894,32 @@ const OrdersDashboard = () => {
       return findOne?.items || []; // return empty array if not found
     });
     console.log(itemList);
-    let subtotal;
+   let subtotal;
 
-    if (discountBasedOnGrossAmount) {
-      const gross = itemList.reduce(
-        (acc, item) => acc + Number(item.total || 0),
-        0,
-      );
-      subtotal = Math.round(gross).toFixed(2);
-    } else {
-      const gross = itemList.reduce(
-        (acc, item) =>
-          acc + Number(item.total || 0) - Number(item.totalIgstAmt || 0),
-        0,
-      );
-      const totalDiscount = Number(discountAmount || 0);
 
-      const net = itemList.reduce((acc, item) => {
-        console.log(item);
-        const lineTotal = Number(item.total || 0);
-        console.log(lineTotal);
-        const share = gross > 0 ? (lineTotal / gross) * totalDiscount : 0; // proportional
-        console.log(share);
-        return acc + (lineTotal - share);
-      }, 0);
 
-      subtotal = Math.round(net).toFixed(2);
-    }
+if (discountBasedOnGrossAmount) {
+  const gross = itemList.reduce((acc, item) => acc + Number(item.total || 0), 0);
+  subtotal = Math.round(gross).toFixed(2);
+} else {
+  const gross = itemList.reduce((acc, item) => acc + Number(item.total || 0) - Number(item.totalIgstAmt || 0), 0);
+  const totalDiscount = Number(discountAmount || 0);
 
-    console.log(subtotal, discountAmount);
+  const net = itemList.reduce((acc, item) => {
+    console.log(item)
+    const lineTotal = Number(item.total || 0)
+    console.log(lineTotal)
+    const share =
+      gross > 0 ? (lineTotal / gross) * totalDiscount : 0; // proportional
+      console.log(share)
+    return acc + (lineTotal - share);
+  }, 0);
+
+  subtotal = Math.round(net).toFixed(2);
+}
+
+
+    console.log(subtotal,discountAmount);
     let finalAmount = discountBasedOnGrossAmount
       ? Math.round(Number(subtotal) - Number(discountAmount || 0)).toFixed(2)
       : Math.round(subtotal).toFixed(2);
@@ -1981,11 +1978,7 @@ const OrdersDashboard = () => {
                                 ₹
                               </button>
                               <button
-                                onClick={() => {
-                                  setDiscountType("percentage")
-                                  setDiscountAmount(0);
-                                  setDiscountValue(0);
-                                }}
+                                onClick={() => setDiscountType("percentage")}
                                 className={`px-2 py-1.5 rounded-md text-xs font-medium transition-all ${discountType === "percentage" ? "bg-white text-red-600 shadow-sm" : "text-gray-600"}`}
                               >
                                 %
@@ -2001,81 +1994,38 @@ const OrdersDashboard = () => {
                                 onChange={(e) => {
                                   const value = parseFloat(e.target.value) || 0;
                                   setDiscountValue(value);
-
-                                  // Get selected KOT items
-                                  const itemList = selectedKot
-                                    .map((kot) =>
-                                      filteredOrders.find(
+                                  const subtotal = selectedKot.reduce(
+                                    (total, kot) => {
+                                      const order = filteredOrders.find(
                                         (o) => o._id === kot.id,
-                                      ),
-                                    )
-                                    .filter(Boolean);
-
-                                  let subtotal = 0;
-
-                                  if (discountBasedOnGrossAmount) {
-                                    // Discount on gross amount
-                                    const gross = itemList.reduce(
-                                      (acc, item) =>
-                                        acc + Number(item.total || 0),
-                                      0,
-                                    );
-
-                                    subtotal = gross;
-                                  } else {
-                                    // Discount on amount excluding IGST
-                                    console.log(itemList);
-                                    subtotal = itemList
-                                      .map((items) => items.items || [])
-                                      .flat()
-                                      .reduce(
-                                        (acc, item) =>
-                                          acc +
-                                          Number(item.total || 0) -
-                                          Number(item.totalIgstAmt || 0),
-                                        0,
                                       );
-                                  }
-
-                                  console.log(subtotal);
-
-                                  // Calculate discount amount
+                                      return total + (order?.total || 0);
+                                    },
+                                    0,
+                                  );
                                   const calculatedAmount =
                                     discountType === "percentage"
                                       ? (subtotal * value) / 100
                                       : value;
-
                                   const findOne = additionalCharges.find(
                                     (charge) =>
                                       charge._id ===
                                       selectedAdditionalChargeData,
                                   );
-
                                   const tax = Number(
                                     findOne?.taxPercentage || 0,
                                   );
-
-                                  // Add tax to discount amount
-                                  const finalDiscountAmount =
-                                    calculatedAmount * (1 + tax / 100);
-
                                   setDiscountAmount(
-                                    finalDiscountAmount.toFixed(2),
+                                    Number(
+                                      calculatedAmount * (1 + tax / 100),
+                                    ).toFixed(2),
                                   );
-
-                                  if (value > 0) {
+                                  if (value > 0)
                                     setSelectedDiscountCharge({
-                                      name: `Manual Discount (${
-                                        discountType === "percentage"
-                                          ? `${value}%`
-                                          : `₹${value}`
-                                      })`,
+                                      name: `Manual Discount (${discountType === "percentage" ? `${value}%` : `₹${value}`})`,
                                       amount: value,
                                       type: discountType,
                                     });
-                                  } else {
-                                    setSelectedDiscountCharge(null);
-                                  }
                                 }}
                                 placeholder={
                                   discountType === "percentage" ? "0" : "0.00"
@@ -2515,7 +2465,7 @@ const OrdersDashboard = () => {
                             </option>
                             {cashOrBank?.cashDetails?.map((cashier) => (
                               <option key={cashier._id} value={cashier._id}>
-                                {cashier.partyName} - {cashier.under}
+                                {cashier.partyName} -  {cashier.under}
                               </option>
                             ))}
                           </select>
