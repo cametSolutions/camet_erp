@@ -642,6 +642,7 @@ const getTotalAmount = () => {
 };
 
 
+
   const grossTotal = Math.round(
     selectedDataForPayment?.total || getTotalAmount(),
   );
@@ -661,14 +662,19 @@ const getTotalAmount = () => {
 
   const handleProcessDirectSalePayment = async () => {
     setSaveLoader(true);
+    console.log(selectedDataForPayment);
+    console.log(additionalCharges);
+    console.log(paymentMethod);
+
 
     try {
       // Step 1: Prepare paymentDetails
       let paymentDetails;
       let amount = await getTotalAmount();
+          console.log(amount)
       if (paymentMethod === "cash") {
         paymentDetails = {
-          cashAmount:Math.round(discountBasedOnGrossAmount ? amount - additionalCharges[0]?.finalValue : amount),
+          cashAmount:Math.round(discountBasedOnGrossAmount ? amount - (additionalCharges[0]?.finalValue ||0  ) : amount),
           onlineAmount: 0,
           selectedCash,
           selectedBank,
@@ -677,7 +683,7 @@ const getTotalAmount = () => {
       } else {
         paymentDetails = {
           cashAmount: 0,
-          onlineAmount:Math.round(discountBasedOnGrossAmount ? amount - additionalCharges[0]?.finalValue : amount),
+          onlineAmount:Math.round(discountBasedOnGrossAmount ? amount - (additionalCharges[0]?.finalValue ||0  ) : amount),
           selectedCash,
           selectedBank,
           paymentMode: "single",
@@ -2455,7 +2461,7 @@ console.log(grossTotal);
                   >
                     {cashOrBank?.cashDetails?.map((cashier) => (
                       <option key={cashier._id} value={cashier._id}>
-                        {cashier.partyName}
+                        {cashier.partyName} - ({cashier.under})
                       </option>
                     ))}
                   </select>
@@ -2478,7 +2484,7 @@ console.log(grossTotal);
                     </option>
                     {cashOrBank?.bankDetails?.map((bank) => (
                       <option key={bank._id} value={bank._id}>
-                        {bank.partyName}
+                        {bank.partyName} - ({bank.under || "Bank"})
                       </option>
                     ))}
                   </select>
