@@ -130,6 +130,9 @@ const RestaurantPOS = () => {
     (state) => state.secSelectedOrganization.secSelectedOrg._id,
   );
 
+  const discountBasedOnGrossAmount =
+    org.configurations[0].discountBasedOnGrossAmount;
+
   const industry = org?.industry;
   const shouldFetch = Boolean(cmp_id);
 
@@ -577,12 +580,67 @@ const RestaurantPOS = () => {
   }, [allItems, selectedSubcategory, searchTerm]);
 
   const searchTimeoutRef = useRef(null);
-  const getTotalAmount = () => {
-    return orderItems.reduce(
-      (total, item) => total + item.price * item.quantity,
-      0,
+// getTotalAmount — just returns gross (no discount inside)
+const getItemTaxableAfterDiscount = (item, totalDiscount, grossTaxable) => {
+  const totalValue = Number(item?.total || item.price * item.quantity || 0);
+  const igstRate = Number(item?.igst || 0);
+  const cgstRate = Number(item?.cgst || 0);
+  const sgstRate = Number(item?.sgst || 0);
+  const taxRate = igstRate > 0 ? igstRate : cgstRate + sgstRate;
+
+  // Strip tax to get pre-tax value
+  const preTaxValue = totalValue / (1 + taxRate / 100);
+
+  if (grossTaxable === 0) return preTaxValue;
+
+  // Proportional discount share for this item
+  const itemDiscountShare = (preTaxValue / grossTaxable) * totalDiscount;
+  return preTaxValue - itemDiscountShare;
+};
+
+const getTotalAmount = () => {
+  if (!orderItems?.length) return 0;
+
+  const totalDiscount =
+    Number(additionalChargeDataBasedOnSelection?.[0]?.finalValue) || 0;
+
+  // grossTaxable = sum of all pre-tax values
+  const grossTaxable = orderItems.reduce((acc, item) => {
+    const totalValue = Number(item?.total || item.price * item.quantity || 0);
+    const igstRate = Number(item?.igst || 0);
+    const cgstRate = Number(item?.cgst || 0);
+    const sgstRate = Number(item?.sgst || 0);
+    const taxRate = igstRate > 0 ? igstRate : cgstRate + sgstRate;
+    const preTaxValue = totalValue / (1 + taxRate / 100);
+    return acc + preTaxValue;
+  }, 0);
+
+  return orderItems.reduce((total, item) => {
+    const totalValue = Number(item?.total || item.price * item.quantity || 0);
+
+    if (discountBasedOnGrossAmount) {
+      return total + totalValue;
+    }
+
+    const igstRate = Number(item?.igst || 0);
+    const cgstRate = Number(item?.cgst || 0);
+    const sgstRate = Number(item?.sgst || 0);
+    const isInterState = igstRate > 0;
+
+    const taxableAfterDiscount = getItemTaxableAfterDiscount(
+      item,
+      totalDiscount,
+      grossTaxable,
     );
-  };
+
+    const taxOnDiscounted = isInterState
+      ? (taxableAfterDiscount * igstRate) / 100
+      : (taxableAfterDiscount * cgstRate) / 100 +
+        (taxableAfterDiscount * sgstRate) / 100;
+    return total + taxableAfterDiscount + taxOnDiscounted;
+  }, 0);
+};
+
 
   const grossTotal = Math.round(
     selectedDataForPayment?.total || getTotalAmount(),
@@ -599,7 +657,7 @@ const RestaurantPOS = () => {
   if (discountAmount > grossTotal) discountAmount = grossTotal;
 
   // Shape expected by createSalesVoucher
-  const additionalCharges = additionalChargeDataBasedOnSelection
+  const additionalCharges = additionalChargeDataBasedOnSelection;
 
   const handleProcessDirectSalePayment = async () => {
     setSaveLoader(true);
@@ -607,9 +665,10 @@ const RestaurantPOS = () => {
     try {
       // Step 1: Prepare paymentDetails
       let paymentDetails;
+      let amount = await getTotalAmount();
       if (paymentMethod === "cash") {
         paymentDetails = {
-          cashAmount: selectedDataForPayment?.total - (additionalCharges[0]?.finalValue || 0),
+          cashAmount:Math.round(discountBasedOnGrossAmount ? amount - additionalCharges[0]?.finalValue : amount),
           onlineAmount: 0,
           selectedCash,
           selectedBank,
@@ -618,7 +677,7 @@ const RestaurantPOS = () => {
       } else {
         paymentDetails = {
           cashAmount: 0,
-          onlineAmount: selectedDataForPayment?.total - (additionalCharges[0]?.finalValue || 0),
+          onlineAmount:Math.round(discountBasedOnGrossAmount ? amount - additionalCharges[0]?.finalValue : amount),
           selectedCash,
           selectedBank,
           paymentMode: "single",
@@ -627,6 +686,8 @@ const RestaurantPOS = () => {
       console.log(selectedDataForPayment);
       console.log(paymentDetails);
 
+console.log(amount);
+console.log(grossTotal);
       // Step 2: Make API call
       const response = await api.post(
         `/api/sUsers/directSale/${cmp_id}`,
@@ -636,11 +697,13 @@ const RestaurantPOS = () => {
           selectedKotData: {
             ...selectedDataForPayment,
             // IMPORTANT: use subtotal/total BEFORE discount, because backend uses this
-            subtotal: grossTotal,
-            total: grossTotal,
+            subtotal: amount,
+            total: amount,
+            finalAmount: amount,
           },
           additionalCharges,
           isDirectSale: true,
+          discountBasedOnGrossAmount: discountBasedOnGrossAmount,
         },
         { withCredentials: true },
       );
@@ -927,6 +990,7 @@ const RestaurantPOS = () => {
     setPaymentMode("single");
     setPaymentMethod("cash");
     setShowPaymentModal(true);
+    
   };
   const generateKOT = async (selectedTableNumber, tableStatus) => {
     let updatedItems = [];
@@ -1113,31 +1177,64 @@ const RestaurantPOS = () => {
     });
   };
 
-  const handleDiscountChange = (discountValue,discountType) => {
-    let amount =  Number(discountValue) || 0;
-    let findOne = additionalChargeData.find(
+  const handleDiscountChange = (discountValue, discountType) => {
+    const inputAmount = Number(discountValue) || 0;
+
+    const findOne = additionalChargeData.find(
       (d) => d._id === selectedAdditionalCharge,
     );
-    if(discountType === "percentage"){
-        const gross = Math.round(getTotalAmount());
-      discountValue = (Number(gross) * Number(discountValue)) / 100;
+
+    if (!findOne) return;
+
+    console.log(selectedDataForPayment);
+
+    const flatItems = selectedDataForPayment?.items || [];
+
+    console.log(flatItems);
+
+    let baseAmount = 0;
+    let calculatedDiscount = inputAmount;
+
+    if (discountType === "percentage") {
+      if (discountBasedOnGrossAmount) {
+        baseAmount = flatItems.reduce(
+          (acc, item) => acc + Number(item?.total || 0),
+          0,
+        );
+      } else {
+        baseAmount = flatItems.reduce(
+          (acc, item) =>
+            acc + Number(item?.total || 0) - Number(item?.totalIgstAmt || 0),
+          0,
+        );
+      }
+
+      console.log(baseAmount);
+
+      calculatedDiscount = ((baseAmount * inputAmount) / 100).toFixed(2);
     }
-    let taxAmount = (Number(discountValue) * findOne.taxPercentage) / 100;
-console.log(taxAmount);
+
+    const taxAmount =
+      (Number(calculatedDiscount || 0) * Number(findOne?.taxPercentage || 0)) /
+      100;
+
+    console.log(taxAmount);
+    console.log(calculatedDiscount);
+
     setAdditionalChargeDataBasedOnSelection([
       {
         _id: findOne._id,
         option: findOne.name,
-        value: Number(discountValue) || 0,
+        value: Number(calculatedDiscount) || 0,
         action: "sub",
-        taxPercentage: findOne.taxPercentage,
+        taxPercentage: Number(findOne?.taxPercentage || 0),
         taxAmt: taxAmount || 0,
         hsn: findOne.hsn,
-        finalValue: Number(discountValue) + taxAmount,
+        finalValue: Number(calculatedDiscount) + taxAmount,
       },
     ]);
 
-    setDiscountValue(amount || 0);
+    setDiscountValue(inputAmount);
   };
   console.log(additionalChargeDataBasedOnSelection);
 
@@ -2420,8 +2517,8 @@ console.log(taxAmount);
                     <button
                       type="button"
                       onClick={() => {
-                        setDiscountType("amount")
-                        handleDiscountChange(discountValue,"amount")
+                        setDiscountType("amount");
+                        handleDiscountChange(discountValue, "amount");
                       }}
                       className={`px-2 py-1 rounded-md border text-xs ${
                         discountType === "amount"
@@ -2433,9 +2530,10 @@ console.log(taxAmount);
                     </button>
                     <button
                       type="button"
-                      onClick={() => {setDiscountType("percentage")
-                         handleDiscountChange(discountValue,"percentage")}
-                      }
+                      onClick={() => {
+                        setDiscountType("percentage");
+                        handleDiscountChange(discountValue, "percentage");
+                      }}
                       className={`px-2 py-1 rounded-md border text-xs ${
                         discountType === "percentage"
                           ? "bg-blue-600 text-white border-blue-600"
@@ -2452,7 +2550,7 @@ console.log(taxAmount);
                     value={selectedAdditionalCharge}
                     onChange={(e) => {
                       setSelectedAdditionalCharge(e.target.value);
-                      handleDiscountChange(discountValue,discountType);
+                      handleDiscountChange(discountValue, discountType);
                     }}
                     name=""
                     id=""
@@ -2467,7 +2565,9 @@ console.log(taxAmount);
                     type="text"
                     min="0"
                     value={discountValue}
-                    onChange={(e) => handleDiscountChange(e.target.value,discountType)}
+                    onChange={(e) =>
+                      handleDiscountChange(e.target.value, discountType)
+                    }
                     className="flex-1 px-2 py-1.5 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
                     placeholder={
                       discountType === "amount" ? "Enter amount" : "Enter %"
@@ -2475,16 +2575,15 @@ console.log(taxAmount);
                   />
 
                   {/* Show calculated value if percentage */}
-                
                 </div>
-                  {additionalChargeDataBasedOnSelection?.length > 0 &&(
-                    <span className="text-sm text-gray-600 whitespace-nowrap">
-                     {`DiscountAmount(${additionalChargeDataBasedOnSelection[0]?.taxPercentage}%
+                {additionalChargeDataBasedOnSelection?.length > 0 && (
+                  <span className="text-sm text-gray-600 whitespace-nowrap">
+                    {`DiscountAmount(${additionalChargeDataBasedOnSelection[0]?.taxPercentage}%
                      ${additionalChargeDataBasedOnSelection[0]?.value}) ₹ 
                      ${additionalChargeDataBasedOnSelection[0]?.finalValue}`}
-                    </span>
-                  )}
-                      {/* <span className="text-sm text-gray-600 whitespace-nowrap">
+                  </span>
+                )}
+                {/* <span className="text-sm text-gray-600 whitespace-nowrap">
                       = ₹
                       {(
                         (Number(discountValue || 0) / 100) *
@@ -2497,11 +2596,13 @@ console.log(taxAmount);
               <div className="border-t border-gray-200 pt-2 mt-2 flex justify-between font-semibold text-gray-800">
                 <span className="text-sm">Net Amount</span>
                 <span className="text-base text-blue-600">
-                  {(() => {
-                    const gross = Math.round(getTotalAmount());
-                    const net = Math.max(gross - (additionalChargeDataBasedOnSelection[0]?.finalValue || 0) , 0);
-                    return `₹${net.toFixed(2)}`;
-                  })()}
+{(() => {
+  const gross = getTotalAmount();
+  const discount = additionalChargeDataBasedOnSelection[0]?.finalValue || 0;
+  // setSelectedDataForPayment((prev) => ({ ...prev, total: gross,fubd }));
+  const net = Math.round(discountBasedOnGrossAmount ? gross - discount : gross);
+  return `₹${net.toFixed(2)}`;
+})()}
                 </span>
               </div>
 
