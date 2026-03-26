@@ -584,6 +584,7 @@ const RestaurantPOS = () => {
     );
   };
 
+
   const grossTotal = Math.round(
     selectedDataForPayment?.total || getTotalAmount(),
   );
@@ -603,13 +604,19 @@ const RestaurantPOS = () => {
 
   const handleProcessDirectSalePayment = async () => {
     setSaveLoader(true);
+    console.log(selectedDataForPayment);
+    console.log(additionalCharges);
+    console.log(paymentMethod);
+
 
     try {
       // Step 1: Prepare paymentDetails
       let paymentDetails;
+      let amount = await getTotalAmount();
+          console.log(amount)
       if (paymentMethod === "cash") {
         paymentDetails = {
-          cashAmount: selectedDataForPayment?.total - (additionalCharges[0]?.finalValue || 0),
+          cashAmount:Math.round(discountBasedOnGrossAmount ? amount - (additionalCharges[0]?.finalValue ||0  ) : amount),
           onlineAmount: 0,
           selectedCash,
           selectedBank,
@@ -618,7 +625,7 @@ const RestaurantPOS = () => {
       } else {
         paymentDetails = {
           cashAmount: 0,
-          onlineAmount: selectedDataForPayment?.total - (additionalCharges[0]?.finalValue || 0),
+          onlineAmount:Math.round(discountBasedOnGrossAmount ? amount - (additionalCharges[0]?.finalValue ||0  ) : amount),
           selectedCash,
           selectedBank,
           paymentMode: "single",
@@ -2358,7 +2365,7 @@ console.log(taxAmount);
                   >
                     {cashOrBank?.cashDetails?.map((cashier) => (
                       <option key={cashier._id} value={cashier._id}>
-                        {cashier.partyName}
+                        {cashier.partyName} - ({cashier.under})
                       </option>
                     ))}
                   </select>
@@ -2381,7 +2388,7 @@ console.log(taxAmount);
                     </option>
                     {cashOrBank?.bankDetails?.map((bank) => (
                       <option key={bank._id} value={bank._id}>
-                        {bank.partyName}
+                        {bank.partyName} - ({bank.under || "Bank"})
                       </option>
                     ))}
                   </select>
