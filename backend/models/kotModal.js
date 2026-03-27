@@ -111,6 +111,10 @@ const kotSchema = new mongoose.Schema({
     ref: "FoodPlan",
     default: null,
   },
+  isParent: {
+    type: Boolean,
+    default: true,
+  },
 
   foodPlanDetails: [
     {
