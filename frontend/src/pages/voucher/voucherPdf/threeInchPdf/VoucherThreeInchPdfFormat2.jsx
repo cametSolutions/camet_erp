@@ -70,7 +70,6 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
         discountBasedOnGrossAmount,
       );
       console.log("data?.subTotal", data);
-      console.log("data?.discount", data?.calculatedSubTotal);
       let total = discountBasedOnGrossAmount
         ? Number(calculatedSubTotal) || data?.subTotal
         : Number(calculatedSubTotal) -
@@ -765,7 +764,7 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
               </div>
             )} */}
 
-            {/* {Number(discount) > 0 && ( */}
+            {Number(discount) > 0 && (
               <div
                 style={{
                   ...flexRow,
@@ -776,11 +775,11 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
               >
                 {discountBasedOnGrossAmount && (
                   <>
-                    Discount: <span style={bold}>{discount || "0.00"}</span>
+                    Discount: <span style={bold}>{discount}</span>
                   </>
                 )}
               </div>
-            {/* )} */}
+            )}
           </div>
 
           <div style={{ borderBottom: "1px dotted #000", margin: "6px 0" }} />
