@@ -66,13 +66,13 @@ import {
     getallroomsCurrentStatus,
     getallnoncheckoutCheckins,
     getHotelSalesDetails, getRoomCheckInDetails, cancelBooking,getCheckoutStatementByDate,convertToAvailable,controlTaggedCheckIn,
-    getHoldCheckIns,releaseHold,getOtherCharges
+    getHoldCheckIns,releaseHold,getOtherCharges,getFlashReportForDate
 } from '../controllers/hotelController.js'
 import {
     addItem, getAllItems, getItems, getCategories, deleteItem, updateItem, generateKot, getKot, updateKotStatus, editKot,
     getRoomDataForRestaurant, updateKotPayment, getPaymentType, saveTableNumber, getSalePrintData, updateTable, getTables, deleteTable,
     updateTableStatus, getKotDataByTable, updateConfigurationForKotApproval, getSummaryDashboard, cancelKot, directSale, searchItems,getComplementaryCashOrBank
-,addComplementaryCashOrBank} from '../controllers/restaurantController.js'
+,addComplementaryCashOrBank,getRestaurantCategoryWiseSalesReport,getRestaurantDateWiseItemReport} from '../controllers/restaurantController.js'
 
 
 router.post('/login', login)
@@ -399,7 +399,9 @@ router.post("/unHoldCheckOut/:cmp_id",releaseHold);
 router.get('/getComplementaryCashOrBank/:cmp_id', authSecondary, secondaryIsBlocked, companyAuthentication, getComplementaryCashOrBank)
 router.post('/addComplementaryCashOrBank/:cmp_id', authSecondary, secondaryIsBlocked, companyAuthentication, addComplementaryCashOrBank)
 router.get('/otherCharges/:cmp_id', authSecondary, secondaryIsBlocked, companyAuthentication, getOtherCharges)
-
+router.get("/flash-report", getFlashReportForDate);
+router.get("/restaurant-category-wise-sales", getRestaurantCategoryWiseSalesReport);
+router.get("/restaurant-date-wise-item-report", getRestaurantDateWiseItemReport);
 // Route to get detailed booking information for a specific room and date
 
 export default router

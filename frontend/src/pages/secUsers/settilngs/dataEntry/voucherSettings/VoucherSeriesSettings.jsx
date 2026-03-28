@@ -70,7 +70,7 @@ const VoucherSeriesSettings = () => {
       title: "Receipt",
       description: "Configure voucher series for Receipts",
       icon: <IoReceiptSharp />,
-      to: "/sUsers/voucherSeriesList",
+      to: "",
       active: true,
       from: "receipt",
     },

@@ -5135,3 +5135,174 @@ export const getOtherCharges = async (req, res) => {
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
+
+
+
+
+
+
+
+export const getFlashReportForDate = async (req, res) => {
+  try {
+    const { cmp_id, date } = req.query; // "2026-03-07"
+
+    if (!cmp_id || !date) {
+      return res.status(400).json({
+        success: false,
+        message: "cmp_id and date are required",
+      });
+    }
+
+    // 1) Load company once for header
+    const org = await Organization.findById(cmp_id).lean();
+    const companyName = org?.orgName || org?.name || "Hotel";
+
+    // 2) All checkouts for this company and date
+    const checkouts = await CheckOut.find({
+      cmp_id,
+      checkOutDate: date, // stored as "YYYY-MM-DD"
+    }).lean();
+
+    if (!checkouts.length) {
+      return res.status(404).json({
+        success: false,
+        message: "No checkouts found for this date",
+      });
+    }
+
+    // ===== ROOM STATISTICS =====
+
+    // totalRooms = total selectedRooms count across all checkouts
+    let totalRooms = 0;
+
+    // for pax + revenue
+    let paxDomestic = 0;
+    let roomApartment = 0; // sum of selectedRooms[].amountAfterTax
+    let roomExtraBed = 0;  // if you track as separate charge, adjust later
+
+    checkouts.forEach((co) => {
+      if (Array.isArray(co.selectedRooms)) {
+        totalRooms += co.selectedRooms.length;
+
+        co.selectedRooms.forEach((r) => {
+          // pax
+          if (typeof r.pax === "number") {
+            paxDomestic += r.pax;
+          }
+
+          // total room rent = sum of each room's amountAfterTax
+          if (typeof r.amountAfterTax === "number") {
+            roomApartment += r.amountAfterTax;
+          } else if (r.amountAfterTax != null) {
+            roomApartment += Number(r.amountAfterTax) || 0;
+          }
+        });
+      }
+    });
+
+    const blockedRooms = 0; // if you track blocked rooms in some table, compute there
+    const saleableRooms = totalRooms - blockedRooms;
+
+    const occupiedPaid = totalRooms; // each selected room treated as occupied paid
+    const occupiedComp = 0;         // if you mark complimentary rooms, subtract here
+    const totalOccupied = occupiedPaid + occupiedComp;
+
+    const paxForeign = 0; // you can compute from guestCountry != "India" later
+    const totalPax = paxDomestic + paxForeign;
+
+    const adults = totalPax; // until you split adults/children
+    const children = 0;
+    const males = totalPax;
+    const females = 0;
+    const noShows = 0;
+
+    // ===== REVENUE =====
+
+    // foodPlanTotal already stored at checkout level
+    const foodPlanTotal = checkouts.reduce(
+      (sum, co) => sum + Number(co.foodPlanTotal || 0),
+      0
+    );
+
+    const roomTotal = roomApartment + roomExtraBed;
+    const fbTotal = foodPlanTotal;
+
+    const grandTotal = checkouts.reduce(
+      (sum, co) => sum + Number(co.grandTotal || 0),
+      0
+    );
+
+    // ===== ARR / OCCUPANCY =====
+    const occPercent =
+      totalRooms > 0 ? (occupiedPaid / totalRooms) * 100 : 0;
+
+    const arrTotalRooms =
+      totalRooms > 0 ? roomTotal / totalRooms : 0;
+
+    const arrSaleableRooms =
+      saleableRooms > 0 ? roomTotal / saleableRooms : 0;
+
+    const arrOccupiedRooms =
+      totalOccupied > 0 ? roomTotal / totalOccupied : 0;
+
+    const reportDate = new Date(date);
+    const dayLabel = reportDate.toLocaleDateString("en-GB"); // 07/03/2026
+    const monthLabel = reportDate.toLocaleString("en-GB", {
+      month: "long",
+    }); // March
+
+    const data = {
+      companyName,
+      fromDate: date,
+      toDate: date,
+      dayLabel,
+      monthLabel,
+
+      totalRooms,
+      blockedRooms,
+      saleableRooms,
+      occupiedPaid,
+      occupiedComp,
+      totalOccupied,
+
+      paxDomestic,
+      paxForeign,
+      totalPax,
+      adults,
+      children,
+      males,
+      females,
+      noShows,
+
+      occPercent: Number(occPercent.toFixed(2)),
+      arrTotalRooms,
+      arrSaleableRooms,
+      arrOccupiedRooms,
+
+      roomApartment,          // total room rent (sum of amountAfterTax of selectedRooms)
+      roomExtraBed,           // keep 0 for now
+      roomTotal,
+
+      fbPlanRate: fbTotal,    // if you later split plan/service/restaurant, adjust
+      fbRoomService: 0,
+      fbRestaurant: 0,
+      fbTotal,
+
+      otherRevenues: 0,
+      modRevenues: 0,
+      grandTotal,
+    };
+
+    return res.json({
+      success: true,
+      data,
+    });
+  } catch (err) {
+    console.error("Flash report error", err);
+    return res.status(500).json({
+      success: false,
+      message: "Server error generating flash report",
+    });
+  }
+};
+

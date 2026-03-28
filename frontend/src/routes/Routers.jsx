@@ -126,6 +126,13 @@ const OrderSummary = lazy(
   () => import("../pages/secUsers/Reports/orderSummary/OrderSummary")
 )
 
+const Categoryreportres = lazy(
+  () => import("../pages/secUsers/Reports/Categoryreportres")
+)
+
+const Itemwisereport = lazy(
+  () => import("../pages/secUsers/Reports/Itemwisereport")
+)
 // Cash/Bank Management
 const BalancePage = lazy(
   () => import("../pages/masters/cashOrBank/BalancePage")
@@ -432,6 +439,7 @@ const TableSelection = lazy(
 )
 const CheckOutPrint = lazy(() => import("@/pages/Hotel/Pages/CheckOutPrint"))
 const BillPrint = lazy(() => import("@/pages/Hotel/Pages/BillPrint"))
+const HotelFlashReport =lazy(()=>import("@/pages/Hotel/Pages/HotelFlashReport"))
 const SummaryDashboard = lazy(
   () => import("@/pages/Hotel/Pages/SummaryDashboard")
 )
@@ -2103,6 +2111,14 @@ const Routers = () => {
           }
         />
 
+ <Route
+          path="/sUsers/HotelFlashReport"
+          element={
+            <ProtectedSecRoute>
+              <HotelFlashReport />
+            </ProtectedSecRoute>
+          }
+        />
         <Route
           path="/sUsers/SummaryDashboard"
           element={
@@ -2132,6 +2148,22 @@ const Routers = () => {
           element={
             <ProtectedSecRoute>
               <Checkoutpdf />
+            </ProtectedSecRoute>
+          }
+        />
+         <Route
+          path="/sUsers/categoryprint"
+          element={
+            <ProtectedSecRoute>
+              <Categoryreportres />
+            </ProtectedSecRoute>
+          }
+        />
+         <Route
+          path="/sUsers/itemwisereport"
+          element={
+            <ProtectedSecRoute>
+              <Itemwisereport />
             </ProtectedSecRoute>
           }
         />
