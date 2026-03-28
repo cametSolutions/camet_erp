@@ -20,7 +20,7 @@ import {
   Car,
   Bed,
   ArrowLeft,
-  ChevronLeft,
+  Tag,
   ChevronDown,
 } from "lucide-react";
 
@@ -38,6 +38,7 @@ import { taxCalculatorForRestaurant } from "@/pages/Hotel/Helper/taxCalculator";
 import { useLocation } from "react-router-dom";
 import { FaArrowLeft } from "react-icons/fa6";
 import { useQueryClient } from "@tanstack/react-query";
+import ParentKotPage from "../components/ParentKotPage";
 const RestaurantPOS = () => {
   const [selectedCuisine, setSelectedCuisine] = useState("");
   const [selectedSubcategory, setSelectedSubcategory] = useState("");
@@ -91,6 +92,8 @@ const RestaurantPOS = () => {
   const [additionalChargeData, setAdditionalChargeData] = useState([]);
   const [selectedAdditionalCharge, setSelectedAdditionalCharge] =
     useState(null);
+  const [showParentKots, setShowParentKots] = useState(false);
+  const [selectedParentKot, setSelectedParentKot] = useState(null);
   const [
     additionalChargeDataBasedOnSelection,
     setAdditionalChargeDataBasedOnSelection,
@@ -580,68 +583,69 @@ const RestaurantPOS = () => {
   }, [allItems, selectedSubcategory, searchTerm]);
 
   const searchTimeoutRef = useRef(null);
-// getTotalAmount — just returns gross (no discount inside)
-const getItemTaxableAfterDiscount = (item, totalDiscount, grossTaxable) => {
-  const totalValue = Number(item?.total || item.price * item.quantity || 0);
-  const igstRate = Number(item?.igst || 0);
-  const cgstRate = Number(item?.cgst || 0);
-  const sgstRate = Number(item?.sgst || 0);
-  const taxRate = igstRate > 0 ? igstRate : cgstRate + sgstRate;
-
-  // Strip tax to get pre-tax value
-  const preTaxValue = totalValue / (1 + taxRate / 100);
-
-  if (grossTaxable === 0) return preTaxValue;
-
-  // Proportional discount share for this item
-  const itemDiscountShare = (preTaxValue / grossTaxable) * totalDiscount;
-  return preTaxValue - itemDiscountShare;
-};
-
-const getTotalAmount = () => {
-  if (!orderItems?.length) return 0;
-
-  const totalDiscount =
-    Number(additionalChargeDataBasedOnSelection?.[0]?.finalValue) || 0;
-
-  // grossTaxable = sum of all pre-tax values
-  const grossTaxable = orderItems.reduce((acc, item) => {
+  // getTotalAmount — just returns gross (no discount inside)
+  const getItemTaxableAfterDiscount = (item, totalDiscount, grossTaxable) => {
     const totalValue = Number(item?.total || item.price * item.quantity || 0);
     const igstRate = Number(item?.igst || 0);
     const cgstRate = Number(item?.cgst || 0);
     const sgstRate = Number(item?.sgst || 0);
     const taxRate = igstRate > 0 ? igstRate : cgstRate + sgstRate;
+
+    // Strip tax to get pre-tax value
     const preTaxValue = totalValue / (1 + taxRate / 100);
-    return acc + preTaxValue;
-  }, 0);
 
-  return orderItems.reduce((total, item) => {
-    const totalValue = Number(item?.total || item.price * item.quantity || 0);
+    if (grossTaxable === 0) return preTaxValue;
 
-    if (discountBasedOnGrossAmount) {
-      return total + totalValue;
+    // Proportional discount share for this item
+    const itemDiscountShare = (preTaxValue / grossTaxable) * totalDiscount;
+    return preTaxValue - itemDiscountShare;
+  };
+
+  const getTotalAmount = (finalProductData) => {
+    if (!orderItems?.length) return 0;
+    let orderItemsAre = orderItems;
+    if (finalProductData?.length > 0) {
+      orderItemsAre = finalProductData;
     }
+    const totalDiscount =
+      Number(additionalChargeDataBasedOnSelection?.[0]?.finalValue) || 0;
 
-    const igstRate = Number(item?.igst || 0);
-    const cgstRate = Number(item?.cgst || 0);
-    const sgstRate = Number(item?.sgst || 0);
-    const isInterState = igstRate > 0;
+    // grossTaxable = sum of all pre-tax values
+    const grossTaxable = orderItemsAre.reduce((acc, item) => {
+      const totalValue = Number(item?.total || item.price * item.quantity || 0);
+      const igstRate = Number(item?.igst || 0);
+      const cgstRate = Number(item?.cgst || 0);
+      const sgstRate = Number(item?.sgst || 0);
+      const taxRate = igstRate > 0 ? igstRate : cgstRate + sgstRate;
+      const preTaxValue = totalValue / (1 + taxRate / 100);
+      return acc + preTaxValue;
+    }, 0);
 
-    const taxableAfterDiscount = getItemTaxableAfterDiscount(
-      item,
-      totalDiscount,
-      grossTaxable,
-    );
+    return orderItemsAre.reduce((total, item) => {
+      const totalValue = Number(item?.total || item.price * item.quantity || 0);
 
-    const taxOnDiscounted = isInterState
-      ? (taxableAfterDiscount * igstRate) / 100
-      : (taxableAfterDiscount * cgstRate) / 100 +
-        (taxableAfterDiscount * sgstRate) / 100;
-    return total + taxableAfterDiscount + taxOnDiscounted;
-  }, 0);
-};
+      if (discountBasedOnGrossAmount) {
+        return total + totalValue;
+      }
 
+      const igstRate = Number(item?.igst || 0);
+      const cgstRate = Number(item?.cgst || 0);
+      const sgstRate = Number(item?.sgst || 0);
+      const isInterState = igstRate > 0;
 
+      const taxableAfterDiscount = getItemTaxableAfterDiscount(
+        item,
+        totalDiscount,
+        grossTaxable,
+      );
+
+      const taxOnDiscounted = isInterState
+        ? (taxableAfterDiscount * igstRate) / 100
+        : (taxableAfterDiscount * cgstRate) / 100 +
+          (taxableAfterDiscount * sgstRate) / 100;
+      return total + taxableAfterDiscount + taxOnDiscounted;
+    }, 0);
+  };
 
   const grossTotal = Math.round(
     selectedDataForPayment?.total || getTotalAmount(),
@@ -666,15 +670,18 @@ const getTotalAmount = () => {
     console.log(additionalCharges);
     console.log(paymentMethod);
 
-
     try {
       // Step 1: Prepare paymentDetails
       let paymentDetails;
       let amount = await getTotalAmount();
-          console.log(amount)
+      console.log(amount);
       if (paymentMethod === "cash") {
         paymentDetails = {
-          cashAmount:Math.round(discountBasedOnGrossAmount ? amount - (additionalCharges[0]?.finalValue ||0  ) : amount),
+          cashAmount: Math.round(
+            discountBasedOnGrossAmount
+              ? amount - (additionalCharges[0]?.finalValue || 0)
+              : amount,
+          ),
           onlineAmount: 0,
           selectedCash,
           selectedBank,
@@ -683,7 +690,11 @@ const getTotalAmount = () => {
       } else {
         paymentDetails = {
           cashAmount: 0,
-          onlineAmount:Math.round(discountBasedOnGrossAmount ? amount - (additionalCharges[0]?.finalValue ||0  ) : amount),
+          onlineAmount: Math.round(
+            discountBasedOnGrossAmount
+              ? amount - (additionalCharges[0]?.finalValue || 0)
+              : amount,
+          ),
           selectedCash,
           selectedBank,
           paymentMode: "single",
@@ -692,8 +703,8 @@ const getTotalAmount = () => {
       console.log(selectedDataForPayment);
       console.log(paymentDetails);
 
-console.log(amount);
-console.log(grossTotal);
+      console.log(amount);
+      console.log(grossTotal);
       // Step 2: Make API call
       const response = await api.post(
         `/api/sUsers/directSale/${cmp_id}`,
@@ -996,8 +1007,8 @@ console.log(grossTotal);
     setPaymentMode("single");
     setPaymentMethod("cash");
     setShowPaymentModal(true);
-    
   };
+
   const generateKOT = async (selectedTableNumber, tableStatus) => {
     let updatedItems = [];
     let orderCustomerDetails = {
@@ -1005,6 +1016,7 @@ console.log(grossTotal);
       tableNumber: selectedTableNumber,
       tableStatus,
     };
+
     updatedItems = orderItems.map((item) => {
       return {
         ...item,
@@ -1029,6 +1041,36 @@ console.log(grossTotal);
         totalActualCount: item?.quantity,
       };
     });
+    const batchArray = updatedItems;
+    if (selectedParentKot) {
+      selectedParentKot.items.forEach((newItem) => {
+        console.log(newItem);
+        console.log(updatedItems);
+        const existingIndex = updatedItems.findIndex(
+          (i) => i._id === newItem._id,
+        );
+
+        if (existingIndex !== -1) {
+          // Item already exists — update quantity and price only
+          updatedItems[existingIndex] = {
+            ...updatedItems[existingIndex],
+            quantity:
+              (updatedItems[existingIndex].quantity || 0) +
+              (newItem.quantity || 0),
+            totalCount:
+              (updatedItems[existingIndex].totalCount || 0) +
+              (newItem.totalCount || 0),
+            total:
+              (updatedItems[existingIndex].total || 0) + (newItem.total || 0),
+            price: newItem.price, // take latest price
+          };
+        } else {
+          // New item — add it
+          updatedItems = [...updatedItems, newItem];
+        }
+      });
+    }
+
     let finalProductData = await taxCalculatorForRestaurant(
       updatedItems,
       configurations[0]?.addRateWithTax?.restaurantSale,
@@ -1066,14 +1108,18 @@ console.log(grossTotal);
       items: [...finalProductData],
       type: orderType,
       customer: orderCustomerDetails,
-      total: getTotalAmount(),
+      total: getTotalAmount(finalProductData) || 0,
       timestamp: new Date(),
       status: kotDataForEdit?.status || "pending",
       paymentMethod: orderType === "dine-in" ? null : "cash",
+      batchArray: batchArray,
     };
-    let url = isEdit
-      ? `/api/sUsers/editKOT/${cmp_id}/${kotDataForEdit._id}`
-      : `/api/sUsers/generateKOT/${cmp_id}`;
+
+    let url = selectedParentKot
+      ? `/api/sUsers/editKOT/${cmp_id}/${selectedParentKot._id}`
+      : isEdit
+        ? `/api/sUsers/editKOT/${cmp_id}/${kotDataForEdit._id}`
+        : `/api/sUsers/generateKOT/${cmp_id}`;
 
     try {
       let response = await api.post(url, newOrder, {
@@ -1099,24 +1145,25 @@ console.log(grossTotal);
     } catch (error) {
       console.log(error);
       toast.error(error.response.data.message);
+    } finally {
+      setOrders([...orders, newOrder]);
+      setOrderItems([]);
+      setOrderNumber(orderNumber + 1);
+      setShowKOTModal(false);
+      setIsEdit(false);
+      setCustomerDetails({
+        name: "",
+        phone: "",
+        address: "",
+        tableNumber: "10",
+      });
+      toast.success(
+        kotDataForEdit
+          ? "KOT updated successfully!"
+          : "KOT generated successfully!",
+      );
+      navigate(location.pathname, { replace: true, state: {} });
     }
-
-    setOrders([...orders, newOrder]);
-    setOrderItems([]);
-    setOrderNumber(orderNumber + 1);
-    setShowKOTModal(false);
-    setIsEdit(false);
-    setCustomerDetails({
-      name: "",
-      phone: "",
-      address: "",
-      tableNumber: "10",
-    });
-    toast.success(
-      kotDataForEdit
-        ? "KOT updated successfully!"
-        : "KOT generated successfully!",
-    );
   };
 
   // ✅ Handle search with debounce
@@ -1168,6 +1215,8 @@ console.log(grossTotal);
     setShowPriceLevelSelect(false);
     setSelectedPriceLevel(value);
   };
+
+  console.log(selectedParentKot);
 
   const findOneCount = (id) => {
     return orderItems.find((item) => item._id === id)?.quantity || 0;
@@ -1242,7 +1291,10 @@ console.log(grossTotal);
 
     setDiscountValue(inputAmount);
   };
-  console.log(additionalChargeDataBasedOnSelection);
+
+const handleTagKotConfirmation = (parentKot) => {
+  console.log(parentKot)
+};
 
   return (
     <>
@@ -1738,13 +1790,27 @@ console.log(grossTotal);
                           : `All Items (${menuItems.length})`}
                     </h3>
 
-                    <button
-                      onClick={() => navigate("/sUsers/itemRegistration")}
-                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gradient-to-r from-indigo-500 to-blue-500 text-white text-xs font-semibold hover:from-indigo-600 hover:to-blue-600 hover:scale-105 active:scale-95 transition-all duration-200 shadow-md"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      Add Item
-                    </button>
+                    <div className="flex items-center gap-3">
+                      {/* Secondary Action - Tag To Kot */}
+                      <button
+                        onClick={() => {
+                          setShowParentKots(true);
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-indigo-300 bg-indigo-50 text-indigo-700 text-xs font-semibold hover:bg-indigo-100 hover:border-indigo-400 active:scale-95 transition-all duration-150"
+                      >
+                        <Tag className="w-3.5 h-3.5" />
+                        Tag To Kot
+                      </button>
+
+                      {/* Primary Action - Add Item */}
+                      <button
+                        onClick={() => navigate("/sUsers/itemRegistration")}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 active:scale-95 transition-all duration-150 shadow-sm shadow-indigo-200"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        Add Item
+                      </button>
+                    </div>
                   </div>
 
                   {menuItems.length === 0 ? (
@@ -2159,6 +2225,8 @@ console.log(grossTotal);
                 setRoomDetails={setRoomDetails}
                 roomDetails={roomDetails}
                 showHeader={false}
+                taggedParent={selectedParentKot}
+                setSelectedParentKot={setSelectedParentKot}
               />
             </div>
           </div>
@@ -2247,30 +2315,6 @@ console.log(grossTotal);
                         </ul>
                       )}
                     </div>
-                    {/* <select
-                      value={roomDetails._id}
-                      onChange={(e) => {
-                        const selectedRoom = roomData.find(
-                          (room) => room.roomId === e.target.value
-                        );
-                        setRoomDetails({
-                          ...roomDetails,
-                          _id: selectedRoom?.roomId || "",
-                          roomno: selectedRoom?.roomName || "",
-                          guestName: selectedRoom?.customerName || "",
-                          CheckInNumber: selectedRoom?.voucherNumber || "",
-                        });
-                      }}
-                      className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 text-sm bg-white transition-all duration-200"
-                    >
-                      <option value="">Select a room</option>
-                      {roomData?.map((room) => (
-                        <option value={room.roomId} key={room.roomId}>
-                          {room?.roomName} - {room?.customerName} -{" "}
-                          {room?.voucherNumber}
-                        </option>
-                      ))}
-                    </select> */}
                   </div>
 
                   <div>
@@ -2602,13 +2646,18 @@ console.log(grossTotal);
               <div className="border-t border-gray-200 pt-2 mt-2 flex justify-between font-semibold text-gray-800">
                 <span className="text-sm">Net Amount</span>
                 <span className="text-base text-blue-600">
-{(() => {
-  const gross = getTotalAmount();
-  const discount = additionalChargeDataBasedOnSelection[0]?.finalValue || 0;
-  // setSelectedDataForPayment((prev) => ({ ...prev, total: gross,fubd }));
-  const net = Math.round(discountBasedOnGrossAmount ? gross - discount : gross);
-  return `₹${net.toFixed(2)}`;
-})()}
+                  {(() => {
+                    const gross = getTotalAmount();
+                    const discount =
+                      additionalChargeDataBasedOnSelection[0]?.finalValue || 0;
+                    console.log(discount);
+                    console.log(discountBasedOnGrossAmount);
+                    console.log(gross);
+                    const net = Math.round(
+                      discountBasedOnGrossAmount ? gross - discount : gross,
+                    );
+                    return `₹${net.toFixed(2)}`;
+                  })()}
                 </span>
               </div>
 
@@ -2643,19 +2692,18 @@ console.log(grossTotal);
           </motion.div>
         </div>
       )}
-      {/* {showVoucherPdf && salePrintData && (
-      <div style={{ display: 'none' }}>
-        <VoucherThreeInchPdf
-          contentToPrint={contentToPrint}
-          data={salePrintData}
-          org={org}
-          tab="sale"
-          isPreview={false}
-          handlePrintData={handlePrint}
-        />
-      </div>
-    )} */}
-
+      {showParentKots && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[85vh] overflow-y-auto">
+            <ParentKotPage
+              setShowParentKots={setShowParentKots}
+              cmp_id={cmp_id}
+              setSelectedParentKot={setSelectedParentKot}
+              handleTagKotConfirmation={handleTagKotConfirmation}
+            />
+          </div>
+        </div>
+      )}
       {/* Optimized CSS */}
       <style jsx>{`
         .scrollbar-hide {
