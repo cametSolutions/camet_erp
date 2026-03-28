@@ -601,14 +601,17 @@ const RestaurantPOS = () => {
     return preTaxValue - itemDiscountShare;
   };
 
-  const getTotalAmount = () => {
+  const getTotalAmount = (finalProductData) => {
     if (!orderItems?.length) return 0;
-
+    let orderItemsAre = orderItems;
+    if (finalProductData?.length > 0) {
+      orderItemsAre = finalProductData;
+    }
     const totalDiscount =
       Number(additionalChargeDataBasedOnSelection?.[0]?.finalValue) || 0;
 
     // grossTaxable = sum of all pre-tax values
-    const grossTaxable = orderItems.reduce((acc, item) => {
+    const grossTaxable = orderItemsAre.reduce((acc, item) => {
       const totalValue = Number(item?.total || item.price * item.quantity || 0);
       const igstRate = Number(item?.igst || 0);
       const cgstRate = Number(item?.cgst || 0);
@@ -618,7 +621,7 @@ const RestaurantPOS = () => {
       return acc + preTaxValue;
     }, 0);
 
-    return orderItems.reduce((total, item) => {
+    return orderItemsAre.reduce((total, item) => {
       const totalValue = Number(item?.total || item.price * item.quantity || 0);
 
       if (discountBasedOnGrossAmount) {
@@ -1005,6 +1008,7 @@ const RestaurantPOS = () => {
     setPaymentMethod("cash");
     setShowPaymentModal(true);
   };
+
   const generateKOT = async (selectedTableNumber, tableStatus) => {
     let updatedItems = [];
     let orderCustomerDetails = {
@@ -1012,6 +1016,7 @@ const RestaurantPOS = () => {
       tableNumber: selectedTableNumber,
       tableStatus,
     };
+
     updatedItems = orderItems.map((item) => {
       return {
         ...item,
@@ -1036,6 +1041,36 @@ const RestaurantPOS = () => {
         totalActualCount: item?.quantity,
       };
     });
+    const batchArray = updatedItems;
+    if (selectedParentKot) {
+      selectedParentKot.items.forEach((newItem) => {
+        console.log(newItem);
+        console.log(updatedItems);
+        const existingIndex = updatedItems.findIndex(
+          (i) => i._id === newItem._id,
+        );
+
+        if (existingIndex !== -1) {
+          // Item already exists — update quantity and price only
+          updatedItems[existingIndex] = {
+            ...updatedItems[existingIndex],
+            quantity:
+              (updatedItems[existingIndex].quantity || 0) +
+              (newItem.quantity || 0),
+            totalCount:
+              (updatedItems[existingIndex].totalCount || 0) +
+              (newItem.totalCount || 0),
+            total:
+              (updatedItems[existingIndex].total || 0) + (newItem.total || 0),
+            price: newItem.price, // take latest price
+          };
+        } else {
+          // New item — add it
+          updatedItems = [...updatedItems, newItem];
+        }
+      });
+    }
+
     let finalProductData = await taxCalculatorForRestaurant(
       updatedItems,
       configurations[0]?.addRateWithTax?.restaurantSale,
@@ -1073,14 +1108,18 @@ const RestaurantPOS = () => {
       items: [...finalProductData],
       type: orderType,
       customer: orderCustomerDetails,
-      total: getTotalAmount(),
+      total: getTotalAmount(finalProductData) || 0,
       timestamp: new Date(),
       status: kotDataForEdit?.status || "pending",
       paymentMethod: orderType === "dine-in" ? null : "cash",
+      batchArray: batchArray,
     };
-    let url = isEdit
-      ? `/api/sUsers/editKOT/${cmp_id}/${kotDataForEdit._id}`
-      : `/api/sUsers/generateKOT/${cmp_id}`;
+
+    let url = selectedParentKot
+      ? `/api/sUsers/editKOT/${cmp_id}/${selectedParentKot._id}`
+      : isEdit
+        ? `/api/sUsers/editKOT/${cmp_id}/${kotDataForEdit._id}`
+        : `/api/sUsers/generateKOT/${cmp_id}`;
 
     try {
       let response = await api.post(url, newOrder, {
@@ -1106,24 +1145,25 @@ const RestaurantPOS = () => {
     } catch (error) {
       console.log(error);
       toast.error(error.response.data.message);
+    } finally {
+      setOrders([...orders, newOrder]);
+      setOrderItems([]);
+      setOrderNumber(orderNumber + 1);
+      setShowKOTModal(false);
+      setIsEdit(false);
+      setCustomerDetails({
+        name: "",
+        phone: "",
+        address: "",
+        tableNumber: "10",
+      });
+      toast.success(
+        kotDataForEdit
+          ? "KOT updated successfully!"
+          : "KOT generated successfully!",
+      );
+      navigate(location.pathname, { replace: true, state: {} });
     }
-
-    setOrders([...orders, newOrder]);
-    setOrderItems([]);
-    setOrderNumber(orderNumber + 1);
-    setShowKOTModal(false);
-    setIsEdit(false);
-    setCustomerDetails({
-      name: "",
-      phone: "",
-      address: "",
-      tableNumber: "10",
-    });
-    toast.success(
-      kotDataForEdit
-        ? "KOT updated successfully!"
-        : "KOT generated successfully!",
-    );
   };
 
   // ✅ Handle search with debounce
@@ -1176,7 +1216,7 @@ const RestaurantPOS = () => {
     setSelectedPriceLevel(value);
   };
 
-  console.log(selectedParentKot)
+  console.log(selectedParentKot);
 
   const findOneCount = (id) => {
     return orderItems.find((item) => item._id === id)?.quantity || 0;
@@ -1252,10 +1292,9 @@ const RestaurantPOS = () => {
     setDiscountValue(inputAmount);
   };
 
-  const hanldeParentKot = (data) => {
-    setKotDataForEdit(data);
-    setShowKOTModal(true);
-  };
+const handleTagKotConfirmation = (parentKot) => {
+  console.log(parentKot)
+};
 
   return (
     <>
@@ -2186,8 +2225,8 @@ const RestaurantPOS = () => {
                 setRoomDetails={setRoomDetails}
                 roomDetails={roomDetails}
                 showHeader={false}
-                taggedParent = {selectedParentKot}
-                setSelectedParentKot = {setSelectedParentKot}
+                taggedParent={selectedParentKot}
+                setSelectedParentKot={setSelectedParentKot}
               />
             </div>
           </div>
@@ -2653,17 +2692,18 @@ const RestaurantPOS = () => {
           </motion.div>
         </div>
       )}
-     {showParentKots && (
-  <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center">
-    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[85vh] overflow-y-auto">
-      <ParentKotPage
-        setShowParentKots={setShowParentKots}
-        cmp_id={cmp_id}
-        setSelectedParentKot={setSelectedParentKot}
-      />
-    </div>
-  </div>
-)}
+      {showParentKots && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[85vh] overflow-y-auto">
+            <ParentKotPage
+              setShowParentKots={setShowParentKots}
+              cmp_id={cmp_id}
+              setSelectedParentKot={setSelectedParentKot}
+              handleTagKotConfirmation={handleTagKotConfirmation}
+            />
+          </div>
+        </div>
+      )}
       {/* Optimized CSS */}
       <style jsx>{`
         .scrollbar-hide {

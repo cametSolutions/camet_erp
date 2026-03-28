@@ -36,7 +36,7 @@ const TableTiles = ({
   taggedParent,
   setSelectedParentKot,
 }) => {
-  console.log("hhh");
+  console.log("hhh",taggedParent);
   const sectionRef = useRef(null);
   const [tables, setTables] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -451,7 +451,9 @@ const TableTiles = ({
   const isOrderSelected = (order) => {
     return selectedKot.find((item) => item.id === order._id);
   };
+
   console.log(roomData);
+
   return (
     <>
       {showHeader && <TitleDiv title="Tables" />}
@@ -561,7 +563,7 @@ const TableTiles = ({
                         Tagged KOT:
                       </span>
                       <span className="text-xs font-bold text-indigo-600">
-                        {taggedParent.voucherNumber}-{taggedParent.type}-{taggedParent.tableNumber}
+                        {taggedParent.voucherNumber}-{taggedParent.type}-{taggedParent.tableNumber && taggedParent.tableNumber}
                       </span>
                       <button
                         onClick={() => setSelectedParentKot(null)}

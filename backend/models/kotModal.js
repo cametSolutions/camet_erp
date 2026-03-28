@@ -1,4 +1,35 @@
 import mongoose from "mongoose";
+const kitchenBatchSchema = new mongoose.Schema(
+  {
+    batchNo: {
+      type: Number,
+      required: true,
+    },
+
+    printedAt: {
+      type: Date,
+      default: Date.now,
+    },
+
+    note: {
+      type: String,
+      default: "",
+    },
+
+    itemIds: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+      },
+    ],
+
+    status: {
+      type: String,
+      enum: ["pending", "printed", "completed"],
+      default: "printed",
+    },
+  },
+  { _id: false }
+);
 
 const kotSchema = new mongoose.Schema({
   primary_user_id: {
@@ -75,6 +106,11 @@ const kotSchema = new mongoose.Schema({
   status: {
     type: String,
     default: "pending",
+  },
+
+    kitchenBatches: {
+    type: [kitchenBatchSchema],
+    default: [],
   },
 
   cancelReason: {

@@ -432,7 +432,7 @@ export const generateAndPrintKOT = (
   restaurantName = "ABC RESTAURANT",
   useHTML = true
 ) => {
-console.log("hhh")
+
   try {
     validateOrderData(orderData);
 

@@ -1,19 +1,26 @@
 import React, { useState, useEffect } from "react";
 import useFetch from "@/customHook/useFetch";
 import {
-  UtensilsCrossed, Hash, LayoutGrid, IndianRupee,
-  X, Search, CalendarDays, ChevronLeft, ChevronRight
+  UtensilsCrossed,
+  Hash,
+  LayoutGrid,
+  IndianRupee,
+  X,
+  Search,
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
-function ParentKotPage({ setShowParentKots, cmp_id ,setSelectedParentKot}) {
+function ParentKotPage({ setShowParentKots, cmp_id, setSelectedParentKot,handleTagKotConfirmation }) {
   const [kotData, setKotData] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDate, setSelectedDate] = useState(
-    new Date().toISOString().split("T")[0]
+    new Date().toISOString().split("T")[0],
   );
 
   const { data, loading } = useFetch(
-    `/api/sUsers/getKotData/${cmp_id}?date=${selectedDate}`
+    `/api/sUsers/getKotData/${cmp_id}?date=${selectedDate}`,
   );
 
   useEffect(() => {
@@ -32,7 +39,11 @@ function ParentKotPage({ setShowParentKots, cmp_id ,setSelectedParentKot}) {
   const formatDisplay = (dateStr) => {
     const d = new Date(dateStr);
     if (isToday) return "Today";
-    return d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+    return d.toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
   };
 
   const typeColors = {
@@ -44,7 +55,8 @@ function ParentKotPage({ setShowParentKots, cmp_id ,setSelectedParentKot}) {
   const filtered = kotData.filter((kot) => {
     const q = searchQuery.toLowerCase();
     return (
-      kot.voucherNumber?.toLowerCase().includes(q) ||
+      (kot.status !== "completed" &&
+        kot.voucherNumber?.toLowerCase().includes(q)) ||
       kot.tableNumber?.toString().includes(q) ||
       kot.type?.toLowerCase().includes(q)
     );
@@ -55,7 +67,9 @@ function ParentKotPage({ setShowParentKots, cmp_id ,setSelectedParentKot}) {
       {/* Header */}
       <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-slate-100">
         <div>
-          <h1 className="text-base font-bold text-slate-800 tracking-tight">KOT Orders</h1>
+          <h1 className="text-base font-bold text-slate-800 tracking-tight">
+            KOT Orders
+          </h1>
           <p className="text-[11px] text-slate-400">Kitchen Order Tickets</p>
         </div>
         <button
@@ -107,7 +121,9 @@ function ParentKotPage({ setShowParentKots, cmp_id ,setSelectedParentKot}) {
           {/* Today shortcut */}
           {!isToday && (
             <button
-              onClick={() => setSelectedDate(new Date().toISOString().split("T")[0])}
+              onClick={() =>
+                setSelectedDate(new Date().toISOString().split("T")[0])
+              }
               className="text-[10px] font-semibold px-2.5 py-1.5 rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-100 hover:bg-indigo-100 transition-colors whitespace-nowrap"
             >
               Today
@@ -128,7 +144,10 @@ function ParentKotPage({ setShowParentKots, cmp_id ,setSelectedParentKot}) {
             className="flex-1 bg-transparent text-xs text-slate-700 placeholder:text-slate-400 outline-none"
           />
           {searchQuery && (
-            <button onClick={() => setSearchQuery("")} className="text-slate-400 hover:text-slate-600">
+            <button
+              onClick={() => setSearchQuery("")}
+              className="text-slate-400 hover:text-slate-600"
+            >
               <X className="w-3 h-3" />
             </button>
           )}
@@ -142,7 +161,10 @@ function ParentKotPage({ setShowParentKots, cmp_id ,setSelectedParentKot}) {
             {filtered.length} of {kotData.length} orders
           </span>
           <span className="text-[10px] font-semibold text-indigo-500">
-            ₹{filtered.reduce((s, k) => s + (k.total || 0), 0).toLocaleString("en-IN")}
+            ₹
+            {filtered
+              .reduce((s, k) => s + (k.total || 0), 0)
+              .toLocaleString("en-IN")}
           </span>
         </div>
       )}
@@ -152,7 +174,10 @@ function ParentKotPage({ setShowParentKots, cmp_id ,setSelectedParentKot}) {
         {/* Loading */}
         {loading &&
           [1, 2, 3].map((i) => (
-            <div key={i} className="h-20 rounded-xl bg-slate-100 animate-pulse" />
+            <div
+              key={i}
+              className="h-20 rounded-xl bg-slate-100 animate-pulse"
+            />
           ))}
 
         {/* Empty */}
@@ -163,7 +188,9 @@ function ParentKotPage({ setShowParentKots, cmp_id ,setSelectedParentKot}) {
               {searchQuery ? "No matching KOTs" : "No KOTs for this date"}
             </p>
             <p className="text-xs mt-1 text-slate-400">
-              {searchQuery ? "Try a different search term" : "Try selecting a different date"}
+              {searchQuery
+                ? "Try a different search term"
+                : "Try selecting a different date"}
             </p>
           </div>
         )}
@@ -173,9 +200,9 @@ function ParentKotPage({ setShowParentKots, cmp_id ,setSelectedParentKot}) {
           <div
             key={kot._id?.$oid || kot._id}
             className="bg-white rounded-xl border border-slate-100 shadow-sm px-4 py-3 flex items-center justify-between hover:shadow-md hover:border-indigo-100 transition-all duration-200"
-            onClick={()=>{
-                setSelectedParentKot(kot)
-                setShowParentKots(false)
+            onClick={() => {
+              handleTagKotConfirmation(kot);
+              setShowParentKots(false);
             }}
           >
             {/* Left */}
@@ -188,7 +215,8 @@ function ParentKotPage({ setShowParentKots, cmp_id ,setSelectedParentKot}) {
               </div>
               <span
                 className={`self-start text-[10px] font-semibold px-2 py-0.5 rounded-full capitalize ${
-                  typeColors[kot.type] || "bg-slate-100 text-slate-600 border border-slate-200"
+                  typeColors[kot.type] ||
+                  "bg-slate-100 text-slate-600 border border-slate-200"
                 }`}
               >
                 {kot.type}
@@ -200,9 +228,13 @@ function ParentKotPage({ setShowParentKots, cmp_id ,setSelectedParentKot}) {
               <div className="flex flex-col items-center">
                 <div className="flex items-center gap-1 text-slate-400">
                   <LayoutGrid className="w-3 h-3" />
-                  <span className="text-[10px] font-medium uppercase tracking-wide">Table</span>
+                  <span className="text-[10px] font-medium uppercase tracking-wide">
+                    Table
+                  </span>
                 </div>
-                <span className="text-sm font-bold text-slate-700">{kot.tableNumber}</span>
+                <span className="text-sm font-bold text-slate-700">
+                  {kot.tableNumber}
+                </span>
               </div>
 
               <div className="w-px h-8 bg-slate-100" />
@@ -210,9 +242,13 @@ function ParentKotPage({ setShowParentKots, cmp_id ,setSelectedParentKot}) {
               <div className="flex flex-col items-center">
                 <div className="flex items-center gap-1 text-slate-400">
                   <IndianRupee className="w-3 h-3" />
-                  <span className="text-[10px] font-medium uppercase tracking-wide">Total</span>
+                  <span className="text-[10px] font-medium uppercase tracking-wide">
+                    Total
+                  </span>
                 </div>
-                <span className="text-sm font-bold text-indigo-600">₹{kot.total}</span>
+                <span className="text-sm font-bold text-indigo-600">
+                  ₹{kot.total}
+                </span>
               </div>
             </div>
           </div>
