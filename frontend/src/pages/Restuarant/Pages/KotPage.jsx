@@ -1696,6 +1696,8 @@ if (discountBasedOnGrossAmount) {
                           const discountedTotal =
                             Number(order.total) - Number(order.discount || 0);
 
+                            console.log(order);
+
                           return (
                             <div
                               key={order._id}
