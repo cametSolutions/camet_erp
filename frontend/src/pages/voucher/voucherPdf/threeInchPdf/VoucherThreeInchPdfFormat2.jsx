@@ -31,7 +31,8 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
 
   const voucherType = data?.voucherType;
   const discountBasedOnGrossAmount =
-    org.configurations[0].discountBasedOnGrossAmount;
+  org?.configurations?.[0]?.discountBasedOnGrossAmount ?? false;
+
   const includeTaxWithPrint =
     org.configurations[0].defaultPrint?.showPrintWithTaxInRestaurant;
 

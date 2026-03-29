@@ -116,8 +116,8 @@ const OrdersDashboard = () => {
     (state) => state.secSelectedOrganization.secSelectedOrg,
   );
 
-  const discountBasedOnGrossAmount =
-    org.configurations[0].discountBasedOnGrossAmount;
+ const discountBasedOnGrossAmount =
+  org?.configurations?.[0]?.discountBasedOnGrossAmount ?? false;
 
   const { data, refreshHook } = useFetch(
     `/api/sUsers/getKotData/${cmp_id}?date=${selectedDate}`,

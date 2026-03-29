@@ -135,9 +135,9 @@ const RestaurantPOS = () => {
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id,
   );
-
-  const discountBasedOnGrossAmount =
-    org.configurations[0].discountBasedOnGrossAmount;
+const discountBasedOnGrossAmount =
+  org?.configurations?.[0]?.discountBasedOnGrossAmount ?? false;
+ 
 
   const industry = org?.industry;
   const shouldFetch = Boolean(cmp_id);
