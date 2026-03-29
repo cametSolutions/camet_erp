@@ -39,6 +39,8 @@ import { useLocation } from "react-router-dom";
 import { FaArrowLeft } from "react-icons/fa6";
 import { useQueryClient } from "@tanstack/react-query";
 import ParentKotPage from "../components/ParentKotPage";
+import { applyBatchEdit } from "@/pages/Restuarant/Helper/RestaurantDashBoardHelper.jsx";
+
 const RestaurantPOS = () => {
   const [selectedCuisine, setSelectedCuisine] = useState("");
   const [selectedSubcategory, setSelectedSubcategory] = useState("");
@@ -75,6 +77,8 @@ const RestaurantPOS = () => {
   const [priceLevelData, setPriceLevelData] = useState([]);
   const [selectedPriceLevel, setSelectedPriceLevel] = useState(null);
   const kotDataForEdit = location.state?.kotData;
+  const kotFullData = location.state?.order
+  const editBatchNo = location.state?.batchNo;
 
   // Add these states near the other state declarations
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -93,7 +97,6 @@ const RestaurantPOS = () => {
   const [selectedAdditionalCharge, setSelectedAdditionalCharge] =
     useState(null);
   const [showParentKots, setShowParentKots] = useState(false);
-  const [selectedParentKot, setSelectedParentKot] = useState(null);
   const [
     additionalChargeDataBasedOnSelection,
     setAdditionalChargeDataBasedOnSelection,
@@ -1004,7 +1007,7 @@ const RestaurantPOS = () => {
     setShowPaymentModal(true);
   };
 
-  const generateKOT = async (selectedTableNumber, tableStatus) => {
+  const generateKOT = async (selectedTableNumber, tableStatus, parentKot) => {
     let updatedItems = [];
     let orderCustomerDetails = {
       ...customerDetails,
@@ -1036,9 +1039,36 @@ const RestaurantPOS = () => {
         totalActualCount: item?.quantity,
       };
     });
-    const batchArray = updatedItems;
-    if (selectedParentKot) {
-      selectedParentKot.items.forEach((newItem) => {
+    let batchArray = [];
+    if (editBatchNo) {
+
+const result = applyBatchEdit({
+  kotDataForEdit: kotFullData,       // full kot
+  batchNo: editBatchNo,              // which batch
+  editedBatchItems: orderItems,      // current batch items (updated)
+  updatedItems: kotFullData.items,   // full items before this edit
+});
+console.log("result", result);
+
+      batchArray = result.updatedBatches
+      updatedItems = result.updatedItems
+    } else {
+      batchArray = [
+        {
+          batchNo: parentKot ? parentKot.kitchenBatches.length + 1 : 1,
+          printedAt: new Date(),
+          items: updatedItems.map((item) => ({
+            itemId: item._id,
+            quantity: item.quantity,
+            product_name: item.product_name,
+          })),
+          status: "pending",
+        },
+      ];
+    }
+
+    if (parentKot) {
+      parentKot.items.forEach((newItem) => {
         console.log(newItem);
         console.log(updatedItems);
         const existingIndex = updatedItems.findIndex(
@@ -1070,8 +1100,17 @@ const RestaurantPOS = () => {
       updatedItems,
       configurations[0]?.addRateWithTax?.restaurantSale,
     );
+    console.log(parentKot);
 
-    if (orderType === "dine-in") {
+    if (parentKot) {
+      orderCustomerDetails = {
+        roomId: parentKot?.roomId,
+        checkInNumber: parentKot?.CheckInNumber,
+        name: parentKot?.customer?.na,
+        tableNumber: parentKot?.tableNumber,
+        foodPlan: parentKot?.foodPlan || null,
+      };
+    } else if (orderType === "dine-in") {
       if (roomDetails && Object.keys(roomDetails).length > 0) {
         orderCustomerDetails = {
           roomId: roomDetails?._id,
@@ -1107,11 +1146,11 @@ const RestaurantPOS = () => {
       timestamp: new Date(),
       status: kotDataForEdit?.status || "pending",
       paymentMethod: orderType === "dine-in" ? null : "cash",
-      batchArray: batchArray,
+      kitchenBatches: batchArray,
     };
 
-    let url = selectedParentKot
-      ? `/api/sUsers/editKOT/${cmp_id}/${selectedParentKot._id}`
+    let url = parentKot
+      ? `/api/sUsers/editKOT/${cmp_id}/${parentKot._id}`
       : isEdit
         ? `/api/sUsers/editKOT/${cmp_id}/${kotDataForEdit._id}`
         : `/api/sUsers/generateKOT/${cmp_id}`;
@@ -1199,7 +1238,7 @@ const RestaurantPOS = () => {
       kotNo: data?.voucherNumber,
       tableNo: data?.tableNumber,
       type: data.type,
-      items: data?.items,
+      items: orderItems,
       createdAt: new Date(),
     };
 
@@ -1210,8 +1249,6 @@ const RestaurantPOS = () => {
     setShowPriceLevelSelect(false);
     setSelectedPriceLevel(value);
   };
-
-  console.log(selectedParentKot);
 
   const findOneCount = (id) => {
     return orderItems.find((item) => item._id === id)?.quantity || 0;
@@ -1254,9 +1291,9 @@ console.log(taxAmount);
     setDiscountValue(amount || 0);
   };
 
-const handleTagKotConfirmation = (parentKot) => {
-  console.log(parentKot)
-};
+  const handleTagKotConfirmation = (parentKot) => {
+    generateKOT(null, null, parentKot);
+  };
 
   return (
     <>
@@ -1754,16 +1791,17 @@ const handleTagKotConfirmation = (parentKot) => {
 
                     <div className="flex items-center gap-3">
                       {/* Secondary Action - Tag To Kot */}
-                      <button
-                        onClick={() => {
-                          setShowParentKots(true);
-                        }}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-indigo-300 bg-indigo-50 text-indigo-700 text-xs font-semibold hover:bg-indigo-100 hover:border-indigo-400 active:scale-95 transition-all duration-150"
-                      >
-                        <Tag className="w-3.5 h-3.5" />
-                        Tag To Kot
-                      </button>
-
+                      {orderItems.length > 0 && (
+                        <button
+                          onClick={() => {
+                            setShowParentKots(true);
+                          }}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-indigo-300 bg-indigo-50 text-indigo-700 text-xs font-semibold hover:bg-indigo-100 hover:border-indigo-400 active:scale-95 transition-all duration-150"
+                        >
+                          <Tag className="w-3.5 h-3.5" />
+                          Tag To Kot
+                        </button>
+                      )}
                       {/* Primary Action - Add Item */}
                       <button
                         onClick={() => navigate("/sUsers/itemRegistration")}
@@ -2187,8 +2225,6 @@ const handleTagKotConfirmation = (parentKot) => {
                 setRoomDetails={setRoomDetails}
                 roomDetails={roomDetails}
                 showHeader={false}
-                taggedParent={selectedParentKot}
-                setSelectedParentKot={setSelectedParentKot}
               />
             </div>
           </div>
@@ -2658,7 +2694,6 @@ const handleTagKotConfirmation = (parentKot) => {
             <ParentKotPage
               setShowParentKots={setShowParentKots}
               cmp_id={cmp_id}
-              setSelectedParentKot={setSelectedParentKot}
               handleTagKotConfirmation={handleTagKotConfirmation}
             />
           </div>
