@@ -35,6 +35,7 @@ import VoucherThreeInchPdf from "@/pages/voucher/voucherPdf/threeInchPdf/Voucher
 import VoucherThreeInchPdfFormat2 from "@/pages/voucher/voucherPdf/threeInchPdf/VoucherThreeInchPdfFormat2";
 import { useReactToPrint } from "react-to-print";
 import CustomerSearchInputBox from "@/pages/Hotel/Components/CustomerSearchInPutBox";
+import KitchenBatchesViewForPrintAndEdit from "../components/KitchenBatchesViewForPrintAndEdit";
 
 const OrdersDashboard = () => {
   const contentToPrint = useRef(null);
@@ -73,7 +74,6 @@ const OrdersDashboard = () => {
   const [previewForSales, setPreviewForSales] = useState(null);
   const [conformationModal, setConformationModal] = useState(false);
   const [isPostToRoom, setIsPostToRooms] = useState(false);
-
   const location = useLocation();
   const selectedKotFromRedirect = location.state?.selectedKot;
   const fromTable = location.state?.fromTable ?? false;
@@ -99,6 +99,9 @@ const OrdersDashboard = () => {
   const [selectedAdditionalChargeData, setSelectedAdditionalChargeData] =
     useState(null);
   const [expandedOrders, setExpandedOrders] = useState({});
+  const [showBatchWiseKotPrint, setShowBatchWiseKotPrint] = useState(false);
+  const [dataForBatchWisePrint, setDataForBatchWisePrint] = useState(null);
+  const [selectedMode, setSelectedMode] = useState(null);
   const toggleExpand = (id) =>
     setExpandedOrders((prev) => ({ ...prev, [id]: !prev[id] }));
 
@@ -228,48 +231,6 @@ const OrdersDashboard = () => {
       setBillFormat("format1");
     }
   }, [org]);
-
-  // const fetchData = useCallback(async () => {
-  //   try {
-  //     const response = await api.get(
-  //       `/api/sUsers/getSeriesByVoucher/${cmp_id}?voucherType=sales`,
-  //       { withCredentials: true }
-  //     );
-  //     if (response.data) {
-  //       const specificSeries = response.data.series?.find(
-  //         (item) => item.under === "restaurant"
-  //       );
-  //       if (specificSeries) {
-  //         const {
-  //           prefix = "",
-  //           currentNumber = 0,
-  //           suffix = "",
-  //           width = 3,
-  //         } = specificSeries;
-
-  //         const paddedNumber = String(currentNumber).padStart(width, "0");
-  //         const specificNumber = `${prefix}${paddedNumber}${suffix}`;
-  //         let newSaleOjbect = {
-  //           series: specificSeries,
-  //           number: specificNumber,
-  //         };
-
-  //         setSaleVoucherData(newSaleOjbect);
-  //       }
-  //     }
-  //   } catch (error) {
-  //     console.log(error);
-  //     toast.error(error.response?.data?.message || "Error fetching data");
-  //   } finally {
-  //     setLoader(false);
-  //   }
-  // }, [cmp_id]);
-  // useEffect(() => {
-  //   fetchData();
-  // }, [fetchData]);
-  // Status configuration
-
-  console.log(cashAmount);
 
   useEffect(() => {
     if (location.state?.fromTable) {
@@ -421,23 +382,43 @@ const OrdersDashboard = () => {
     return filtered;
   };
 
-  const handleStatusChange = async (orderId, newStatus) => {
+  const handleStatusChange = async (orderId, newStatus, batchNo) => {
+    console.log(newStatus);
     setSaveLoader(true);
 
     try {
       const response = await api.put(
         `/api/sUsers/updateKotStatus/${orderId}`,
-        { status: newStatus },
+        { status: newStatus, batchNo },
         { withCredentials: true },
       );
 
       if (response.status === 200 || response.status === 201) {
         setOrders((prevOrders) =>
-          prevOrders.map((order) =>
-            order._id === orderId
-              ? { ...order, status: newStatus, statusType: newStatus }
-              : order,
-          ),
+          prevOrders.map((order) => {
+            if (order._id !== orderId) return order;
+
+            const updatedBatches = order.kitchenBatches?.map((batch) =>
+              batch.batchNo === batchNo
+                ? { ...batch, status: newStatus }
+                : batch,
+            );
+
+            const allCompleted =
+              updatedBatches?.length > 0 &&
+              updatedBatches.every((b) => b.status === "completed");
+
+            console.log(allCompleted);
+            console.log(updatedBatches);
+            console.log(order.status);
+
+            return {
+              ...order,
+              status: allCompleted ? "completed" : order.status,
+              statusType: allCompleted ? "completed" : order.statusType,
+              kitchenBatches: updatedBatches,
+            };
+          }),
         );
       } else {
         console.error("Failed to update backend:", response.data || response);
@@ -453,18 +434,43 @@ const OrdersDashboard = () => {
   };
 
   // function used to perform print  with kot
-  const handleKotPrint = (data) => {
-    console.log(data);
+  const handleKotPrint = (data, batchNo) => {
+    let newItems = data?.items || [];
+
+    if (batchNo !== null && batchNo !== undefined && batchNo !== "") {
+      console.log(batchNo);
+      const batchData = data.kitchenBatches.find(
+        (item) => item.batchNo === batchNo,
+      );
+
+      if (batchData) {
+        const batchItemIds = batchData.items.map((i) => i.itemId.toString());
+
+        newItems = data.items
+          .filter((item) => batchItemIds.includes(item._id.toString()))
+          .map((item) => {
+            const batchItem = batchData.items.find(
+              (i) => i.itemId.toString() === item._id.toString(),
+            );
+            return {
+              ...item,
+              quantity: batchItem?.quantity ?? item.quantity,
+            };
+          });
+      }
+    }
     const orderData = {
       kotNo: data?.voucherNumber,
       tableNo: data?.tableNumber,
-      items: data?.items,
+      items: newItems,
       createdAt: data?.createdAt,
       customerName: data?.customer?.name,
       type: data?.type,
     };
-    console.log(orderData);
 
+    setSelectedMode(null);
+    setShowBatchWiseKotPrint(false);
+    setDataForBatchWisePrint(null);
     generateAndPrintKOT(orderData, true, false, companyName);
   };
 
@@ -1041,17 +1047,17 @@ if (discountBasedOnGrossAmount) {
 
   console.log("selectedKot", showPaymentModal);
 
-  const handleEditKot = (kotData) => {
-    console.log(kotData);
+  const handleEditKot = (kotData,batchNo,order) => {
     if (kotData?.paymentCompleted) {
       toast.error("Kot Payment is completed so you can't edit");
       return;
     }
+    console.log("KOT to be edited:", order);
     // else if (kotData?.status === "completed") {
     //   toast.error("Kot is already completed so you can't edit");
     //   return;
     // }
-    navigate("/sUsers/RestaurantDashboard", { state: { kotData } });
+    navigate("/sUsers/RestaurantDashboard", { state: { kotData,batchNo,order} });
   };
 
   const handlePrint = useReactToPrint({
@@ -1133,6 +1139,12 @@ if (discountBasedOnGrossAmount) {
     if (bIsTable) return 1;
     return fixedOrder.indexOf(a) - fixedOrder.indexOf(b);
   });
+
+  const handleDataPrintBasedOnBatch = (order, mode) => {
+    setSelectedMode(mode);
+    setDataForBatchWisePrint(order);
+    setShowBatchWiseKotPrint(true);
+  };
 
   console.log("selectedKot", groupedOrders["table_85"]);
   return (
@@ -1308,18 +1320,43 @@ if (discountBasedOnGrossAmount) {
             {userRole === "kitchen" && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {filteredOrders
-                  // .flatMap(([, { orders }]) => orders)
+                  .flatMap((order) => {
+                    if (order.kitchenBatches?.length > 0) {
+                      return order.kitchenBatches.map((batch) => ({
+                        ...order,
+                        _batchNo: batch.batchNo,
+                        _batchItems: batch.items,
+                        _batchStatus: batch.status,
+                        _batchPrintedAt: batch.printedAt,
+                        _batchCardId: `${order._id}_${batch.batchNo}`,
+                        status: batch.status,
+                      }));
+                    }
+                    return [
+                      {
+                        ...order,
+                        _batchNo: null,
+                        _batchItems: null,
+                        _batchCardId: order._id,
+                        status: order.status,
+                      },
+                    ];
+                  })
                   .map((order) => {
+                    if (order.status == "completed") {
+                      return;
+                    }
                     const currentStatusConfig = statusConfig[order.status];
                     const availableStatuses = getAvailableStatuses(
                       order.status,
                     );
                     const isOrderSelected = (o) =>
                       selectedKot.find((item) => item.id === o._id);
+                    const displayItems = order._batchItems ?? order.items;
 
                     return (
                       <div
-                        key={order._id}
+                        key={order._batchCardId}
                         className={`group relative bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border overflow-hidden h-96 flex flex-col cursor-pointer ${
                           isOrderSelected(order)
                             ? "border-blue-500 ring-2 ring-blue-200 bg-blue-50"
@@ -1335,48 +1372,94 @@ if (discountBasedOnGrossAmount) {
                           handleSelectMultipleKots(order);
                         }}
                       >
+                        {/* Selected tick */}
                         {isOrderSelected(order) && (
                           <div className="absolute top-2 right-2 z-10 bg-blue-500 rounded-full p-1 shadow-lg animate-bounce">
                             <MdCheckCircle className="w-4 h-4 text-white" />
                           </div>
                         )}
+
+                        {/* Status color bar */}
                         <div
                           className={`h-1 w-full ${currentStatusConfig.bgColor}`}
                         />
+
+                        {/* ── Card Header ── */}
                         <div
-                          className={`px-3 py-2 bg-gradient-to-r border-b flex-shrink-0 ${isOrderSelected(order) ? "from-blue-100 to-indigo-100 border-blue-200" : "from-blue-50 to-indigo-50 border-blue-100"}`}
+                          className={`px-3 py-2 bg-gradient-to-r border-b flex-shrink-0 ${
+                            isOrderSelected(order)
+                              ? "from-blue-100 to-indigo-100 border-blue-200"
+                              : "from-blue-50 to-indigo-50 border-blue-100"
+                          }`}
                         >
                           <div className="flex items-center justify-center gap-4">
                             <div
-                              className={`flex items-center gap-2 px-3 py-1 rounded-lg shadow-sm border ${isOrderSelected(order) ? "bg-blue-100 border-blue-300" : "bg-white border-blue-200"}`}
+                              className={`flex items-center gap-2 px-3 py-1 rounded-lg shadow-sm border ${
+                                isOrderSelected(order)
+                                  ? "bg-blue-100 border-blue-300"
+                                  : "bg-white border-blue-200"
+                              }`}
                             >
                               <MdDescription className="w-4 h-4 text-blue-600" />
                               <span
-                                className={`px-2 py-1 rounded-md text-xs font-medium ${isOrderSelected(order) ? "bg-blue-200 text-blue-800" : "bg-gray-100 text-gray-700"}`}
+                                className={`px-2 py-1 rounded-md text-xs font-medium ${
+                                  isOrderSelected(order)
+                                    ? "bg-blue-200 text-blue-800"
+                                    : "bg-gray-100 text-gray-700"
+                                }`}
                               >
-                                {order.type} - {order?.tableNumber}
+                                {order.type}
+                                {order?.tableNumber
+                                  ? ` - ${order.tableNumber}`
+                                  : ""}
                                 <span>
                                   {order.roomId?.roomName && order?.tableNumber
-                                    ? ","
+                                    ? ", "
                                     : " "}
                                   {order.roomId?.roomName}
                                 </span>
                               </span>
                             </div>
-                            <FaRegEdit
-                              className="w-4 h-4 text-blue-600"
+                            <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleEditKot(order);
+                                handleKotPrint(order, order._batchNo);
                               }}
-                            />
+                              className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg text-xs font-semibold hover:from-blue-600 hover:to-blue-700 transition-all"
+                            >
+                              <MdPrint className="w-3.5 h-3.5" />
+                              KOT
+                            </button>
+                            {/* <FaRegEdit
+                  className="w-4 h-4 text-blue-600"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleEditKot(order);
+                  }}
+                /> */}
                           </div>
                         </div>
+
+                        {/* ── Voucher + Batch Badge + Time ── */}
                         <div className="flex justify-between items-start p-3 pb-2 flex-shrink-0">
                           <div className="min-w-0 flex-1">
-                            <span className="text-sm font-bold text-blue-900">
-                              #{order.voucherNumber}
-                            </span>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-sm font-bold text-blue-900">
+                                #{order.voucherNumber}
+                              </span>
+                              {order._batchNo && (
+                                <span className="text-[10px] font-black text-white bg-blue-500 px-2 py-0.5 rounded-full leading-none">
+                                  KOT {order._batchNo}
+                                </span>
+                              )}
+                              {(order.isManuallyComplimentary ||
+                                order.foodPlanDetails?.isComplimentary) && (
+                                <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full font-medium">
+                                  COMP
+                                </span>
+                              )}
+                            </div>
+
                             <div className="text-xs text-gray-500 flex items-center gap-2 mt-1">
                               <MdAccessTime className="w-3 h-3 flex-shrink-0" />
                               <span className="truncate">
@@ -1397,19 +1480,34 @@ if (discountBasedOnGrossAmount) {
                                   },
                                 )}
                               </span>
-                              <span className="text-black font-bold truncate flex ml-auto ">
-                                {order.foodPlanDetails?.length > 0
-                                  ? ` ${order.foodPlanDetails.map((plan) => plan.planType).join(", ")}`
-                                  : ""}
-                              </span>
-                              {(order.isManuallyComplimentary ||
-                                order.foodPlanDetails?.isComplimentary) && (
-                                <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full font-medium">
-                                  COMP
+                              {order.foodPlanDetails?.length > 0 && (
+                                <span className="text-black font-bold truncate flex ml-auto">
+                                  {order.foodPlanDetails
+                                    .map((plan) => plan.planType)
+                                    .join(", ")}
                                 </span>
                               )}
                             </div>
+
+                            {/* Batch print time */}
+                            {order._batchPrintedAt && (
+                              <div className="text-[10px] text-gray-400 flex items-center gap-1 mt-0.5">
+                                <MdPrint className="w-3 h-3 flex-shrink-0" />
+                                <span>
+                                  Printed:{" "}
+                                  {new Date(
+                                    order._batchPrintedAt,
+                                  ).toLocaleTimeString([], {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                    hour12: true,
+                                  })}
+                                </span>
+                              </div>
+                            )}
                           </div>
+
+                          {/* Order status pill */}
                           <div
                             className={`flex-shrink-0 px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1 ${currentStatusConfig.bgColor} ${currentStatusConfig.textColor}`}
                           >
@@ -1419,17 +1517,29 @@ if (discountBasedOnGrossAmount) {
                             {currentStatusConfig.label}
                           </div>
                         </div>
+
+                        {/* ── Items List ── */}
                         <div className="flex-1 px-3 overflow-hidden min-h-0">
                           <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1 flex items-center gap-1">
                             <MdList className="w-3 h-3 text-gray-400" />
-                            Items ({order.items.length}
-                            {order.moreItems ? `+${order.moreItems}` : ""})
+                            {order._batchNo
+                              ? `KOT ${order._batchNo} Items`
+                              : "Items"}{" "}
+                            ({displayItems.length}
+                            {!order._batchNo && order.moreItems
+                              ? `+${order.moreItems}`
+                              : ""}
+                            )
                           </h4>
                           <div className="h-full overflow-y-auto space-y-1.5 pr-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-                            {order.items.map((item, index) => (
+                            {displayItems.map((item, index) => (
                               <div
                                 key={index}
-                                className={`flex items-center justify-between p-2 rounded-lg transition-colors border ${isOrderSelected(order) ? "bg-blue-50 hover:bg-blue-100 border-blue-200" : "bg-gray-50 hover:bg-gray-100 border-gray-100"}`}
+                                className={`flex items-center justify-between p-2 rounded-lg transition-colors border ${
+                                  isOrderSelected(order)
+                                    ? "bg-blue-50 hover:bg-blue-100 border-blue-200"
+                                    : "bg-gray-50 hover:bg-gray-100 border-gray-100"
+                                }`}
                               >
                                 <div className="flex-1 min-w-0 pr-3">
                                   <div className="text-xs text-gray-800 font-medium leading-tight">
@@ -1443,7 +1553,11 @@ if (discountBasedOnGrossAmount) {
                                 </div>
                                 <div className="text-center flex-shrink-0">
                                   <span
-                                    className={`text-xs font-semibold px-2 py-0.5 rounded-full min-w-[24px] inline-block ${isOrderSelected(order) ? "bg-blue-200 text-blue-900" : "bg-blue-100 text-blue-800"}`}
+                                    className={`text-xs font-semibold px-2 py-0.5 rounded-full min-w-[24px] inline-block ${
+                                      isOrderSelected(order)
+                                        ? "bg-blue-200 text-blue-900"
+                                        : "bg-blue-100 text-blue-800"
+                                    }`}
                                   >
                                     {item?.quantity}
                                   </span>
@@ -1453,17 +1567,24 @@ if (discountBasedOnGrossAmount) {
                                 </div>
                               </div>
                             ))}
-                            {order.moreItems && (
+
+                            {/* moreItems only applies to non-batch cards */}
+                            {!order._batchNo && order.moreItems && (
                               <div className="text-center py-2">
                                 <div
-                                  className={`inline-flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-full border ${isOrderSelected(order) ? "bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-700 border-blue-200" : "bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 border-purple-200"}`}
+                                  className={`inline-flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-full border ${
+                                    isOrderSelected(order)
+                                      ? "bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-700 border-blue-200"
+                                      : "bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 border-purple-200"
+                                  }`}
                                 >
                                   <MdAdd className="w-3 h-3" />
                                   {order.moreItems} more items
                                 </div>
                               </div>
                             )}
-                            {order.items.length === 0 && (
+
+                            {displayItems.length === 0 && (
                               <div className="text-center py-4">
                                 <MdInbox className="w-8 h-8 text-gray-300 mx-auto mb-2" />
                                 <p className="text-xs text-gray-500">
@@ -1473,6 +1594,8 @@ if (discountBasedOnGrossAmount) {
                             )}
                           </div>
                         </div>
+
+                        {/* ── Update Status ── */}
                         <div className="mx-3 mb-2 p-2 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg border border-orange-100 flex-shrink-0">
                           <div className="flex items-center gap-1 mb-2">
                             <MdRefresh
@@ -1489,7 +1612,11 @@ if (discountBasedOnGrossAmount) {
                                   key={status}
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    handleStatusChange(order._id, status);
+                                    handleStatusChange(
+                                      order._id,
+                                      status,
+                                      order._batchNo,
+                                    );
                                   }}
                                   className="flex-1 px-2 py-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded text-xs font-semibold hover:from-blue-600 hover:to-blue-700 transform hover:scale-105 transition-all duration-200"
                                 >
@@ -1505,8 +1632,14 @@ if (discountBasedOnGrossAmount) {
                             )}
                           </div>
                         </div>
+
+                        {/* Hover overlay */}
                         <div
-                          className={`absolute inset-0 pointer-events-none transition-all duration-200 ${isOrderSelected(order) ? "bg-blue-500 bg-opacity-5" : "group-hover:bg-gray-500 group-hover:bg-opacity-5"}`}
+                          className={`absolute inset-0 pointer-events-none transition-all duration-200 ${
+                            isOrderSelected(order)
+                              ? "bg-blue-500 bg-opacity-5"
+                              : "group-hover:bg-gray-500 group-hover:bg-opacity-5"
+                          }`}
                         />
                       </div>
                     );
@@ -1624,7 +1757,14 @@ if (discountBasedOnGrossAmount) {
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      handleEditKot(order);
+                                      if (order.kitchenBatches.length > 1) {
+                                        handleDataPrintBasedOnBatch(
+                                          order,
+                                          "edit",
+                                        );
+                                      } else {
+                                        handleEditKot(order);
+                                      }
                                     }}
                                     className="flex-shrink-0 ml-1 w-6 h-6 rounded flex items-center justify-center hover:bg-blue-100 transition-colors"
                                   >
@@ -1761,6 +1901,7 @@ if (discountBasedOnGrossAmount) {
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
+
                                       handlePrintData(order._id);
                                     }}
                                     className="flex-1 h-6 bg-white text-emerald-700 border border-emerald-200 rounded-md text-[9px] font-semibold hover:bg-emerald-50 transition-all flex items-center justify-center gap-0.5"
@@ -1774,7 +1915,14 @@ if (discountBasedOnGrossAmount) {
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    handleKotPrint(order);
+                                    if (order.kitchenBatches.length > 1) {
+                                      handleDataPrintBasedOnBatch(
+                                        order,
+                                        "print",
+                                      );
+                                    } else {
+                                      handleKotPrint(order);
+                                    }
                                   }}
                                   className="flex-1 h-6 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-md text-[9px] font-semibold hover:from-blue-600 hover:to-blue-700 transition-all flex items-center justify-center gap-0.5"
                                 >
@@ -1978,7 +2126,11 @@ if (discountBasedOnGrossAmount) {
                                 ₹
                               </button>
                               <button
-                                onClick={() => setDiscountType("percentage")}
+                                onClick={() => {
+                                  setDiscountType("percentage");
+                                  setDiscountAmount(0);
+                                  setDiscountValue(0);
+                                }}
                                 className={`px-2 py-1.5 rounded-md text-xs font-medium transition-all ${discountType === "percentage" ? "bg-white text-red-600 shadow-sm" : "text-gray-600"}`}
                               >
                                 %
@@ -2809,6 +2961,20 @@ if (discountBasedOnGrossAmount) {
         </div>
       )}
       {showPrintConfirmModal && <PrintModal onSubmit={handlePrintShow} />}
+      {showBatchWiseKotPrint && dataForBatchWisePrint && selectedMode && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[85vh] overflow-y-auto"></div>
+          <KitchenBatchesViewForPrintAndEdit
+            order={dataForBatchWisePrint}
+            setShowBatchWiseKotPrint={setShowBatchWiseKotPrint}
+            onPrintBatch={handleKotPrint}
+            onEditBatch={handleEditKot}
+            mode={selectedMode}
+            setSelectedMode={setSelectedMode}
+            setDataForBatchWisePrint={setDataForBatchWisePrint}
+          />
+        </div>
+      )}
     </>
   );
 };

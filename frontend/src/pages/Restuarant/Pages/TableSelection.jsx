@@ -33,10 +33,8 @@ const TableTiles = ({
   setRoomDetails,
   roomDetails,
   showHeader = true,
-  taggedParent,
-  setSelectedParentKot,
 }) => {
-  console.log("hhh",taggedParent);
+
   const sectionRef = useRef(null);
   const [tables, setTables] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -528,10 +526,10 @@ const TableTiles = ({
                   <div className="bg-white/80 backdrop-blur-sm rounded-xl px-3 py-2 shadow-lg border border-white/30">
                     <div className="flex flex-wrap justify-center gap-4">
                       {[
-                        { color: "emerald", label: "Available" },
-                        { color: "rose", label: "Occupied" },
+                        { color: "green", label: "Available" },
+                        { color: "red", label: "Occupied" },
                         { color: "amber", label: "Reserved" },
-                        { color: "sky", label: "Cleaning" },
+                        { color: "blue", label: "Cleaning" },
                       ].map(({ color, label }) => (
                         <div
                           key={label}
@@ -556,7 +554,7 @@ const TableTiles = ({
                   </div>
 
                   {/* Tagged Parent */}
-                  {taggedParent && (
+                  {/* {taggedParent && (
                     <div className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 border border-indigo-200 rounded-lg">
                       <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
                       <span className="text-xs text-slate-500 font-medium">
@@ -572,7 +570,7 @@ const TableTiles = ({
                         <X className="w-3 h-3" />
                       </button>
                     </div>
-                  )}
+                  )} */}
                 </div>
               </>
             </div>

@@ -477,6 +477,7 @@ export const generateKot = async (req, res) => {
       foodPlanId: foodPlanId,
       foodPlanDetails: foodPlanData,
       isManuallyComplimentary: false,
+      kitchenBatches:req.body.kitchenBatches
     };
 
     console.log("=== SAVING KOT ===");
@@ -557,22 +558,24 @@ export const editKot = async (req, res) => {
     console.log("req.body?.status", req.body?.status);
 
     // Update the KOT
-    const updatedKot = await kotModal.findOneAndUpdate(
-      { _id: req.params.kotId, cmp_id },
-      {
-        items: req.body.items,
-        type: req.body.type,
-        customer: customer,
-        tableNumber: req.body.customer?.tableNumber,
-        total: req.body.total,
-        status: req.body.status || "pending",
-        paymentMethod: req.body.paymentMethod,
-        roomId: req.body.customer?.roomId,
-        status: req.body?.status,
-        checkInNumber: req.body.customer?.checkInNumber,
-      },
-      { new: true, session },
-    );
+   const updatedKot = await kotModal.findOneAndUpdate(
+  { _id: req.params.kotId, cmp_id },
+  {
+    $set: {
+      items: req.body.items,
+      type: req.body.type,
+      customer: customer,
+      tableNumber: req.body.customer?.tableNumber,
+      total: req.body.total,
+      status: req.body.status || "pending",
+      paymentMethod: req.body.paymentMethod,
+      roomId: req.body.customer?.roomId,
+      checkInNumber: req.body.customer?.checkInNumber,
+      kitchenBatches: req.body.kitchenBatches
+    },
+  },
+  { new: true, session }
+);
 
     // If previous KOT was dine-in, free up the old table
     if (previousKot.tableNumber && previousKot.type === "dine-in") {
@@ -702,11 +705,53 @@ export const cancelKot = async (req, res) => {
 // function used to update kot
 export const updateKotStatus = async (req, res) => {
   try {
-    const kot = await kotModal.updateOne({ _id: req.params.kotId }, req.body);
-    res.status(200).json({
-      success: true,
-      data: kot,
-    });
+    const { batchNo, status, ...rest } = req.body;
+
+    let updateQuery;
+
+    if (batchNo) {
+      // Step 1: Update the matching batch's status
+      await kotModal.updateOne(
+        { _id: req.params.kotId },
+        { $set: { "kitchenBatches.$[batch].status": status } },
+        { arrayFilters: [{ "batch.batchNo": batchNo }] }
+      );
+
+      // Step 2: Fetch the updated KOT to check all batch statuses
+      const updatedKot = await kotModal.findById(req.params.kotId);
+
+      const allBatchesCompleted =
+        updatedKot.kitchenBatches.length > 0 &&
+        updatedKot.kitchenBatches.every((batch) => batch.status === "completed");
+
+      // Step 3: If all batches are completed, update KOT status too
+      if (allBatchesCompleted) {
+        await kotModal.updateOne(
+          { _id: req.params.kotId },
+          { $set: { status: "completed" } }
+        );
+      }
+
+      // Step 4: Return the final updated KOT
+      const finalKot = await kotModal.findById(req.params.kotId);
+
+      return res.status(200).json({
+        success: true,
+        data: finalKot,
+      });
+    } else {
+      // No batchNo — update the whole KOT document normally
+      updateQuery = { $set: rest };
+      const kot = await kotModal.updateOne(
+        { _id: req.params.kotId },
+        updateQuery
+      );
+
+      return res.status(200).json({
+        success: true,
+        data: kot,
+      });
+    }
   } catch (error) {
     console.error("Error updating KOT:", error);
     res.status(500).json({
@@ -715,7 +760,6 @@ export const updateKotStatus = async (req, res) => {
     });
   }
 };
-
 // function used to fetch room data based on room booking
 export const getRoomDataForRestaurant = async (req, res) => {
   try {

@@ -5,23 +5,28 @@ const kitchenBatchSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-
     printedAt: {
       type: Date,
       default: Date.now,
     },
-
-    note: {
-      type: String,
-      default: "",
-    },
-
-    itemIds: [
+    items: [
       {
-        type: mongoose.Schema.Types.ObjectId,
+        itemId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Item", // add your ref if needed
+          required: true,
+        },
+        quantity: {
+          type: Number,
+          required: true,
+        },
+        product_name: {
+          type: String,
+          required: true,
+        },
+        _id: false,
       },
     ],
-
     status: {
       type: String,
       enum: ["pending", "printed", "completed"],
