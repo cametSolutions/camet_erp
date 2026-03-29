@@ -77,7 +77,7 @@ const RestaurantPOS = () => {
   const [priceLevelData, setPriceLevelData] = useState([]);
   const [selectedPriceLevel, setSelectedPriceLevel] = useState(null);
   const kotDataForEdit = location.state?.kotData;
-  const kotFullData = location.state?.order
+  const kotFullData = location.state?.order;
   const editBatchNo = location.state?.batchNo;
 
   // Add these states near the other state declarations
@@ -1046,17 +1046,15 @@ const RestaurantPOS = () => {
     });
     let batchArray = [];
     if (editBatchNo) {
+      const result = applyBatchEdit({
+        kotDataForEdit: kotFullData, // full kot
+        batchNo: editBatchNo, // which batch
+        editedBatchItems: orderItems, // current batch items (updated)
+        updatedItems: kotFullData.items, // full items before this edit
+      });
 
-const result = applyBatchEdit({
-  kotDataForEdit: kotFullData,       // full kot
-  batchNo: editBatchNo,              // which batch
-  editedBatchItems: orderItems,      // current batch items (updated)
-  updatedItems: kotFullData.items,   // full items before this edit
-});
-console.log("result", result);
-
-      batchArray = result.updatedBatches
-      updatedItems = result.updatedItems
+      batchArray = result.updatedBatches;
+      updatedItems = result.updatedItems;
     } else {
       batchArray = [
         {
@@ -1152,7 +1150,10 @@ console.log("result", result);
       status: kotDataForEdit?.status || "pending",
       paymentMethod: orderType === "dine-in" ? null : "cash",
       kitchenBatches: batchArray,
+      parentTag:parentKot ? true : false
     };
+
+    console.log(newOrder);
 
     let url = parentKot
       ? `/api/sUsers/editKOT/${cmp_id}/${parentKot._id}`
@@ -1166,9 +1167,10 @@ console.log("result", result);
       });
       if (response.data?.success) {
         handleKotPrint(response.data?.data);
+        console.log(selectedTableNumber);
         if (orderType === "dine-in") {
           await api.put(
-            "/api/sUsers/updateTableStatus/${cmp_id}",
+            `/api/sUsers/updateTableStatus/${cmp_id}/${selectedTableNumber}`,
             {
               tableNumber: selectedTableNumber,
               status: "occupied",
