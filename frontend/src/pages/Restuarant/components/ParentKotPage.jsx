@@ -12,7 +12,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 
-function ParentKotPage({ setShowParentKots, cmp_id, setSelectedParentKot,handleTagKotConfirmation }) {
+function ParentKotPage({ setShowParentKots, cmp_id,handleTagKotConfirmation }) {
   const [kotData, setKotData] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDate, setSelectedDate] = useState(
@@ -52,15 +52,15 @@ function ParentKotPage({ setShowParentKots, cmp_id, setSelectedParentKot,handleT
     delivery: "bg-blue-100 text-blue-700 border border-blue-200",
   };
 
-  const filtered = kotData.filter((kot) => {
-    const q = searchQuery.toLowerCase();
-    return (
-      (kot.status !== "completed" &&
-        kot.voucherNumber?.toLowerCase().includes(q)) ||
-      kot.tableNumber?.toString().includes(q) ||
-      kot.type?.toLowerCase().includes(q)
-    );
-  });
+const filtered = kotData.filter((kot) => {
+  const q = searchQuery.toLowerCase();
+  const matchesSearch =
+    kot.voucherNumber?.toLowerCase().includes(q) ||
+    kot.tableNumber?.toString().includes(q) ||
+    kot.type?.toLowerCase().includes(q);
+
+  return !kot.paymentCompleted  && matchesSearch;
+});
 
   return (
     <div className="flex flex-col h-full max-h-[85vh]">
@@ -199,7 +199,7 @@ function ParentKotPage({ setShowParentKots, cmp_id, setSelectedParentKot,handleT
         {filtered.map((kot) => (
           <div
             key={kot._id?.$oid || kot._id}
-            className="bg-white rounded-xl border border-slate-100 shadow-sm px-4 py-3 flex items-center justify-between hover:shadow-md hover:border-indigo-100 transition-all duration-200"
+            className="bg-white rounded-xl border border-slate-100 shadow-sm px-4 py-3 flex items-center justify-between hover:shadow-md hover:bg-slate-300 hover:border-indigo-100 transition-all duration-200"
             onClick={() => {
               handleTagKotConfirmation(kot);
               setShowParentKots(false);
