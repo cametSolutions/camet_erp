@@ -557,8 +557,10 @@ export const editKot = async (req, res) => {
 
     console.log("req.body?.status", req.body?.status);
 
+    let tag = req.body?.parentTag;
+
     // Update the KOT
-   const updatedKot = await kotModal.findOneAndUpdate(
+const updatedKot = await kotModal.findOneAndUpdate(
   { _id: req.params.kotId, cmp_id },
   {
     $set: {
@@ -571,8 +573,12 @@ export const editKot = async (req, res) => {
       paymentMethod: req.body.paymentMethod,
       roomId: req.body.customer?.roomId,
       checkInNumber: req.body.customer?.checkInNumber,
-      kitchenBatches: req.body.kitchenBatches
+ 
+      ...(!tag && { kitchenBatches: req.body.kitchenBatches }),
     },
+    ...(tag && {
+      $push: { kitchenBatches: req.body.kitchenBatches }
+    }),
   },
   { new: true, session }
 );
@@ -1322,12 +1328,13 @@ export const updateKotPayment = async (req, res) => {
             note: note,
           };
 
-          // ✅ Handle complimentary flag
-          if (isComplimentary) {
-            // Mark as complimentary
-            updateData["foodPlanDetails.isComplimentary"] = true;
-            updateData.isManuallyComplimentary = isManuallyComplimentary;
-          }
+     if (isComplimentary) {
+      updateData.foodPlanDetails = {
+        ...(kot?.foodPlanDetails || {}),
+        isComplimentary: true,
+      };
+      updateData.isManuallyComplimentary = isManuallyComplimentary;
+    }
 
           console.log("Update data:", updateData);
 
