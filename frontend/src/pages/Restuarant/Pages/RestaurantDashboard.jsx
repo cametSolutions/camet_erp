@@ -2503,7 +2503,7 @@ console.log(taxAmount);
                   >
                     {cashOrBank?.cashDetails?.map((cashier) => (
                       <option key={cashier._id} value={cashier._id}>
-                        {cashier.partyName} - ({cashier.under})
+                        {cashier.partyName}
                       </option>
                     ))}
                   </select>
@@ -2526,7 +2526,7 @@ console.log(taxAmount);
                     </option>
                     {cashOrBank?.bankDetails?.map((bank) => (
                       <option key={bank._id} value={bank._id}>
-                        {bank.partyName} - ({bank.under || "Bank"})
+                        {bank.partyName}
                       </option>
                     ))}
                   </select>
