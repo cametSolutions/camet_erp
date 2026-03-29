@@ -665,7 +665,7 @@ const discountBasedOnGrossAmount =
   if (discountAmount > grossTotal) discountAmount = grossTotal;
 
   // Shape expected by createSalesVoucher
-  const additionalCharges = additionalChargeDataBasedOnSelection;
+  const additionalCharges = additionalChargeDataBasedOnSelection
 
   const handleProcessDirectSalePayment = async () => {
     setSaveLoader(true);
@@ -717,13 +717,11 @@ const discountBasedOnGrossAmount =
           selectedKotData: {
             ...selectedDataForPayment,
             // IMPORTANT: use subtotal/total BEFORE discount, because backend uses this
-            subtotal: amount,
-            total: amount,
-            finalAmount: amount,
+            subtotal: grossTotal,
+            total: grossTotal,
           },
           additionalCharges,
           isDirectSale: true,
-          discountBasedOnGrossAmount: discountBasedOnGrossAmount,
         },
         { withCredentials: true },
       );
@@ -1271,64 +1269,31 @@ const discountBasedOnGrossAmount =
     });
   };
 
-  const handleDiscountChange = (discountValue, discountType) => {
-    const inputAmount = Number(discountValue) || 0;
-
-    const findOne = additionalChargeData.find(
+  const handleDiscountChange = (discountValue,discountType) => {
+    let amount =  Number(discountValue) || 0;
+    let findOne = additionalChargeData.find(
       (d) => d._id === selectedAdditionalCharge,
     );
-
-    if (!findOne) return;
-
-    console.log(selectedDataForPayment);
-
-    const flatItems = selectedDataForPayment?.items || [];
-
-    console.log(flatItems);
-
-    let baseAmount = 0;
-    let calculatedDiscount = inputAmount;
-
-    if (discountType === "percentage") {
-      if (discountBasedOnGrossAmount) {
-        baseAmount = flatItems.reduce(
-          (acc, item) => acc + Number(item?.total || 0),
-          0,
-        );
-      } else {
-        baseAmount = flatItems.reduce(
-          (acc, item) =>
-            acc + Number(item?.total || 0) - Number(item?.totalIgstAmt || 0),
-          0,
-        );
-      }
-
-      console.log(baseAmount);
-
-      calculatedDiscount = ((baseAmount * inputAmount) / 100).toFixed(2);
+    if(discountType === "percentage"){
+        const gross = Math.round(getTotalAmount());
+      discountValue = (Number(gross) * Number(discountValue)) / 100;
     }
-
-    const taxAmount =
-      (Number(calculatedDiscount || 0) * Number(findOne?.taxPercentage || 0)) /
-      100;
-
-    console.log(taxAmount);
-    console.log(calculatedDiscount);
-
+    let taxAmount = (Number(discountValue) * findOne.taxPercentage) / 100;
+console.log(taxAmount);
     setAdditionalChargeDataBasedOnSelection([
       {
         _id: findOne._id,
         option: findOne.name,
-        value: Number(calculatedDiscount) || 0,
+        value: Number(discountValue) || 0,
         action: "sub",
-        taxPercentage: Number(findOne?.taxPercentage || 0),
+        taxPercentage: findOne.taxPercentage,
         taxAmt: taxAmount || 0,
         hsn: findOne.hsn,
-        finalValue: Number(calculatedDiscount) + taxAmount,
+        finalValue: Number(discountValue) + taxAmount,
       },
     ]);
 
-    setDiscountValue(inputAmount);
+    setDiscountValue(amount || 0);
   };
 
   const handleTagKotConfirmation = (parentKot) => {
@@ -2543,7 +2508,7 @@ const discountBasedOnGrossAmount =
                   >
                     {cashOrBank?.cashDetails?.map((cashier) => (
                       <option key={cashier._id} value={cashier._id}>
-                        {cashier.partyName} - ({cashier.under})
+                        {cashier.partyName}
                       </option>
                     ))}
                   </select>
@@ -2566,7 +2531,7 @@ const discountBasedOnGrossAmount =
                     </option>
                     {cashOrBank?.bankDetails?.map((bank) => (
                       <option key={bank._id} value={bank._id}>
-                        {bank.partyName} - ({bank.under || "Bank"})
+                        {bank.partyName}
                       </option>
                     ))}
                   </select>
@@ -2605,8 +2570,8 @@ const discountBasedOnGrossAmount =
                     <button
                       type="button"
                       onClick={() => {
-                        setDiscountType("amount");
-                        handleDiscountChange(discountValue, "amount");
+                        setDiscountType("amount")
+                        handleDiscountChange(discountValue,"amount")
                       }}
                       className={`px-2 py-1 rounded-md border text-xs ${
                         discountType === "amount"
@@ -2618,10 +2583,9 @@ const discountBasedOnGrossAmount =
                     </button>
                     <button
                       type="button"
-                      onClick={() => {
-                        setDiscountType("percentage");
-                        handleDiscountChange(discountValue, "percentage");
-                      }}
+                      onClick={() => {setDiscountType("percentage")
+                         handleDiscountChange(discountValue,"percentage")}
+                      }
                       className={`px-2 py-1 rounded-md border text-xs ${
                         discountType === "percentage"
                           ? "bg-blue-600 text-white border-blue-600"
@@ -2638,7 +2602,7 @@ const discountBasedOnGrossAmount =
                     value={selectedAdditionalCharge}
                     onChange={(e) => {
                       setSelectedAdditionalCharge(e.target.value);
-                      handleDiscountChange(discountValue, discountType);
+                      handleDiscountChange(discountValue,discountType);
                     }}
                     name=""
                     id=""
@@ -2653,9 +2617,7 @@ const discountBasedOnGrossAmount =
                     type="text"
                     min="0"
                     value={discountValue}
-                    onChange={(e) =>
-                      handleDiscountChange(e.target.value, discountType)
-                    }
+                    onChange={(e) => handleDiscountChange(e.target.value,discountType)}
                     className="flex-1 px-2 py-1.5 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
                     placeholder={
                       discountType === "amount" ? "Enter amount" : "Enter %"
@@ -2663,15 +2625,16 @@ const discountBasedOnGrossAmount =
                   />
 
                   {/* Show calculated value if percentage */}
+                
                 </div>
-                {additionalChargeDataBasedOnSelection?.length > 0 && (
-                  <span className="text-sm text-gray-600 whitespace-nowrap">
-                    {`DiscountAmount(${additionalChargeDataBasedOnSelection[0]?.taxPercentage}%
+                  {additionalChargeDataBasedOnSelection?.length > 0 &&(
+                    <span className="text-sm text-gray-600 whitespace-nowrap">
+                     {`DiscountAmount(${additionalChargeDataBasedOnSelection[0]?.taxPercentage}%
                      ${additionalChargeDataBasedOnSelection[0]?.value}) ₹ 
                      ${additionalChargeDataBasedOnSelection[0]?.finalValue}`}
-                  </span>
-                )}
-                {/* <span className="text-sm text-gray-600 whitespace-nowrap">
+                    </span>
+                  )}
+                      {/* <span className="text-sm text-gray-600 whitespace-nowrap">
                       = ₹
                       {(
                         (Number(discountValue || 0) / 100) *

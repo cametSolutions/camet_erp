@@ -6,6 +6,7 @@ import { defaultPrintSettings } from "../../../../../utils/defaultConfigurations
 import { useLocation, useParams } from "react-router-dom";
 import { useReactToPrint } from "react-to-print";
 import TitleDiv from "@/components/common/TitleDiv";
+import { add } from "date-fns";
 
 function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
   const [subTotal, setSubTotal] = useState(0);
@@ -20,6 +21,8 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
   let showPrintButton =
     org?.configurations?.[0]?.defaultPrint?.showBeforeSaleInRestaurant;
   const { isFinalized } = useParams();
+  console.log("isFinalized", isFinalized);
+  console.log("showPrintButton", showPrintButton);
 
   const isIndian = useSelector(
     (state) =>
@@ -36,6 +39,7 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
   const includeTaxWithPrint =
     org.configurations[0].defaultPrint?.showPrintWithTaxInRestaurant;
 
+  console.log("includeTaxWithPrint", includeTaxWithPrint);
 
   const getVoucherNumber = () => {
     if (!voucherType) return "";
@@ -67,7 +71,6 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
         discountBasedOnGrossAmount,
       );
       console.log("data?.subTotal", data);
-      console.log("data?.discount", data?.calculatedSubTotal);
       let total = discountBasedOnGrossAmount
         ? Number(calculatedSubTotal) || data?.subTotal
         : Number(calculatedSubTotal) -
@@ -195,15 +198,13 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
     const names = foodPlanArray?.map((item) => item.planType).join(", ");
     return `Food Paln: ${names}`;
   };
-  console.log(data?.finalAmount);
   console.log(data);
   const netAmount = Math.round(Number(data?.finalAmount || 0)).toFixed(2);
 
-  const discount = Number(
-    data?.totalAdditionalCharges ||
-      data?.additionalCharges?.[0]?.finalValue ||
-      0,
-  ).toFixed(2);
+  const discount = 
+    Number(
+      data?.totalAdditionalCharges || data?.additionalCharges?.[0]?.finalValue,
+    ).toFixed(2);
   console.log("discount", discount);
   console.log("netAmount", netAmount);
   const tax = Math.round(calculateTotalTax()).toFixed(2);
@@ -332,8 +333,6 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
         </div>
       ));
   };
-
-  console.log(discount);
 
   return (
     <>
@@ -512,6 +511,8 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
 
             const amount = (Number(rate) * count).toFixed(2);
 
+            
+
             return (
               <div key={index} style={itemGrid}>
                 <div style={textLeft}>{index + 1}</div>
@@ -525,6 +526,7 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
             );
           })}
           <div style={{ borderBottom: "1px dotted #000", margin: "6px 0" }} />
+          
 
           {/* Totals */}
 
@@ -545,62 +547,61 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
               {!discountBasedOnGrossAmount && discount && (
                 <>
                   <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "row",
-                      marginBottom: "2px",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    <div
-                      style={{
-                        marginLeft: "auto",
-                        width: 60,
-                        textAlign: "right",
-                      }}
-                    >
-                      SubTotal
-                    </div>
-                    <div
-                      style={{
-                        width: 60,
-                        textAlign: "right",
-                      }}
-                    >
-                      {(Number(subTotal || 0) + Number(discount || 0)).toFixed(
-                        2,
-                      )}
-                    </div>
-                  </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "row",
-                      marginBottom: "2px",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    <div
-                      style={{
-                        marginLeft: "auto",
-                        width: 60,
-                        textAlign: "right",
-                      }}
-                    >
-                      Discount
-                    </div>
-                    <div
-                      style={{
-                        width: 60,
-                        textAlign: "right",
-                      }}
-                    >
-                      {discount}
-                    </div>
-                  </div>
+                style={{
+                  display: "flex",
+                  flexDirection: "row",
+                  marginBottom: "2px",
+                  fontWeight: "bold",
+                }}
+              >
+                <div
+                  style={{
+                    marginLeft: "auto",
+                    width: 60,
+                    textAlign: "right",
+                  }}
+                >
+                  SubTotal
+                </div>
+                <div
+                  style={{
+                    width: 60,
+                    textAlign: "right",
+                  }}
+                >
+                  {(Number(subTotal) + Number(discount)).toFixed(2)}
+                </div>
+              </div>
+                <div
+                style={{
+                  display: "flex",
+                  flexDirection: "row",
+                  marginBottom: "2px",
+                  fontWeight: "bold",
+                }}
+              >
+                <div
+                  style={{
+                    marginLeft: "auto",
+                    width: 60,
+                    textAlign: "right",
+                  }}
+                >
+                  Discount
+                </div>
+                <div
+                  style={{
+                    width: 60,
+                    textAlign: "right",
+                  }}
+                >
+                  {discount}
+                </div>
+              </div>
                 </>
+           
               )}
-
+              
               {/* Amount */}
               <div
                 style={{
@@ -617,7 +618,7 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
                     textAlign: "right",
                   }}
                 >
-                  Gross Amount
+                 Gross Amount
                 </div>
                 <div
                   style={{
@@ -764,7 +765,7 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
               </div>
             )} */}
 
-            {/* {Number(discount) > 0 && ( */}
+            {Number(discount) > 0 && (
               <div
                 style={{
                   ...flexRow,
@@ -775,11 +776,11 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
               >
                 {discountBasedOnGrossAmount && (
                   <>
-                    Discount: <span style={bold}>{discount || "0.00"}</span>
+                    Discount: <span style={bold}>{discount}</span>
                   </>
                 )}
               </div>
-            {/* )} */}
+            )}
           </div>
 
           <div style={{ borderBottom: "1px dotted #000", margin: "6px 0" }} />
