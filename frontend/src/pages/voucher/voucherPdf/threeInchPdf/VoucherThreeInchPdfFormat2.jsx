@@ -74,6 +74,8 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
             (data?.additionalCharges?.[0]?.finalValue || 0) ||
           data?.subTotal - data?.discount;
 
+          console.log("total", total);
+
       setSubTotal(total);
     }
   }, [data]);
@@ -625,7 +627,7 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
                     textAlign: "right",
                   }}
                 >
-                  {subTotal.toFixed(2)}
+                  {subTotal?.toFixed(2)}
                 </div>
               </div>
 

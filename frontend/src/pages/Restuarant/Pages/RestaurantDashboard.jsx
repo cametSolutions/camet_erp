@@ -872,7 +872,7 @@ const discountBasedOnGrossAmount =
       setOrderItems(
         orderItems.map((orderItem) =>
           orderItem._id === item._id
-            ? { ...orderItem, quantity: orderItem.quantity + 1 }
+            ? { ...orderItem, quantity: orderItem.quantity + 1 , remainingQty: orderItem.remainingQty + 1}
             : orderItem,
         ),
       );
@@ -897,7 +897,7 @@ const discountBasedOnGrossAmount =
         }
       }
 
-      setOrderItems([...orderItems, { ...item, quantity: 1, price: price }]);
+      setOrderItems([...orderItems, { ...item, quantity: 1, remainingQty:1, price: price }]);
     }
   };
 
@@ -911,7 +911,7 @@ const discountBasedOnGrossAmount =
     // else {
     setOrderItems(
       orderItems.map((item) =>
-        item._id === itemId ? { ...item, quantity: newQuantity } : item,
+        item._id === itemId ? { ...item, quantity: newQuantity , remainingQty: newQuantity } : item,
       ),
     );
     // }

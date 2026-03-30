@@ -152,10 +152,20 @@ const OrdersDashboard = () => {
           : Array.isArray(response.data)
             ? response.data
             : [];
-        setSelectedAdditionalChargeData(additionalChargesResponse[0]._id);
+           const discountCharges = additionalChargesResponse.filter((charge) =>
+  charge.name?.toLowerCase().includes("discount")
+);
+
+setAdditionalCharges(discountCharges);
+
+if (discountCharges.length > 0) {
+  setSelectedAdditionalChargeData(discountCharges[0]._id);
+} else {
+  setSelectedAdditionalChargeData(additionalChargesResponse[0]?._id);
+}
         setAllAdditionalChargesFromRedux(additionalChargesResponse);
       }
-
+console.log(selectedAdditionalChargeData);
       // ✅ Now SAFE to filter
       const discountCharges = additionalChargesResponse.filter((charge) =>
         charge.name.toLowerCase().includes("discount"),
@@ -406,6 +416,8 @@ const OrdersDashboard = () => {
                 : batch,
             );
 
+            console.log(updatedBatches);
+
             const allCompleted =
               updatedBatches?.length > 0 &&
               updatedBatches.every((b) => b.status === "completed");
@@ -435,6 +447,8 @@ const OrdersDashboard = () => {
     }
   };
 
+  console.log(orders[20]?.voucherNumber);
+  console.log(orders[20]?.status);
   // function used to perform print  with kot
   const handleKotPrint = (data, batchNo) => {
     let newItems = data?.items || [];
@@ -1710,7 +1724,7 @@ const OrdersDashboard = () => {
                       <div className="flex flex-nowrap gap-3 overflow-x-auto pb-1">
                         {orders.map((order) => {
                           const currentStatusConfig =
-                            statusConfig[order.status];
+                            statusConfig[order.kitchenBatches.length > 0 ? order.kitchenBatches[0].status : order.status];
                           const isSelected = selectedKot.find(
                             (item) => item.id === order._id,
                           );
@@ -2344,7 +2358,7 @@ const OrdersDashboard = () => {
                             className="mt-1 w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 flex-shrink-0"
                           />
                           <span className="text-sm font-semibold text-green-700">
-                            Specific checkout
+                            Item-wise split
                           </span>
                         </label>
                       </div>
