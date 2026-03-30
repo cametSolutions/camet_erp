@@ -66,7 +66,8 @@ import {
     getallroomsCurrentStatus,
     getallnoncheckoutCheckins,
     getHotelSalesDetails, getRoomCheckInDetails, cancelBooking,getCheckoutStatementByDate,convertToAvailable,controlTaggedCheckIn,
-    getHoldCheckIns,releaseHold,getOtherCharges,getFlashReportForDate
+    getHoldCheckIns,releaseHold,getOtherCharges,getFlashReportForDate,
+    getTouristReport,getFoodPlanReport,getOccupancyCheckoutReport
 } from '../controllers/hotelController.js'
 import {
     addItem, getAllItems, getItems, getCategories, deleteItem, updateItem, generateKot, getKot, updateKotStatus, editKot,
@@ -402,6 +403,9 @@ router.get('/otherCharges/:cmp_id', authSecondary, secondaryIsBlocked, companyAu
 router.get("/flash-report", getFlashReportForDate);
 router.get("/restaurant-category-wise-sales", getRestaurantCategoryWiseSalesReport);
 router.get("/restaurant-date-wise-item-report", getRestaurantDateWiseItemReport);
+router.get("/tourist-report", getTouristReport);
+router.get("/foodplan-report", getFoodPlanReport);
+router.get("/occupancy-checkout-report", getOccupancyCheckoutReport);
 // Route to get detailed booking information for a specific room and date
 
 export default router

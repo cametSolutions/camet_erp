@@ -5,11 +5,22 @@ import SuspenseLoader from "@/components/common/SuspenseLoader"
 import { ErrorTestComponent } from "@/components/errorBoundaries/ErrorTestComponent"
 import OutstandingListOfAccVoucherEdit from "@/pages/accountingVoucher/voucherCreation/OutstandingListOfAccVoucherEdit"
 
+
 // Lazy load all components
 const SecHome = lazy(() => import("../pages/secUsers/SecHome"))
 const Outstanding = lazy(
   () => import("../pages/voucherReports/outstanding/Outstanding")
 )
+const TouristReport = lazy(
+  () => import("../pages/Hotel/Pages/TouristReport ")
+)
+const FoodPlanReportPage  = lazy(
+  () => import("../pages/Hotel/Pages/FoodPlanReportPage ")
+)
+const OccupancyCheckoutReport  = lazy(
+  () => import("../pages/Hotel/Pages/OccupancyCheckoutReport")
+)
+
 const OutstandingDetails = lazy(
   () => import("../pages/voucherReports/outstanding/OutstandingDetails")
 )
@@ -2167,6 +2178,10 @@ const Routers = () => {
             </ProtectedSecRoute>
           }
         />
+            <Route path="/sUsers/tourist-report" element={ <ProtectedSecRoute><TouristReport /></ProtectedSecRoute>} />
+              <Route path="/sUsers/foodplan-report" element={ <ProtectedSecRoute><FoodPlanReportPage /></ProtectedSecRoute>} />
+               <Route path="/sUsers/occupancy-checkout-report" element={ <ProtectedSecRoute><OccupancyCheckoutReport /></ProtectedSecRoute>} />
+            
       </Routes>
     </Suspense>
   )
