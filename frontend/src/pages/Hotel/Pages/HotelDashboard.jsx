@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import CalenderComponent from "../Components/CalenderComponent";
 import ReactDOM from "react-dom";
 import RoomSwapModal from "./RoomSwapModal ";
+import ReportsMenu from "./ReportsMenu";
 
 const HotelDashboard = () => {
   const [rooms, setRooms] = useState([]);
@@ -678,7 +679,7 @@ console.log(baseStatus);
                     New Guest
                   </button>
 
-                  <button
+                  {/* <button
                     className="
           flex items-center gap-2 px-2 py-1.5 rounded-xl
           font-semibold text-xs transition-all duration-300
@@ -709,7 +710,23 @@ console.log(baseStatus);
                     <span className="text-sm">📊</span>
                     FO DAILY STATEMENT
                   </button>
-
+  <button
+                    className="
+          flex items-center gap-2 px-2 py-1.5 rounded-xl
+          font-semibold text-xs transition-all duration-300
+          whitespace-nowrap
+          bg-gradient-to-r from-green-600 to-emerald-600 text-white 
+          border-transparent shadow-lg shadow-emerald-500/25
+          hover:scale-105 active:scale-95 transform
+          hover:from-green-700 hover:to-emerald-700
+        "
+                    onClick={() => navigate("/sUsers/HotelFlashReport")}
+                  >
+                    <span className="text-sm">📊</span>
+                    HOTEL FLASH REPORT
+                  </button> */}
+                  <div className="flex items-center gap-2">
+  <ReportsMenu />
                   <button
                     className="bg-gray-500 hover:bg-gray-600 text-white font-bold px-2 py-1 rounded text-sm flex items-center gap-1"
                     onClick={() => setShowFilters(!showFilters)}
@@ -717,7 +734,7 @@ console.log(baseStatus);
                     <Filter className="w-4 h-4" />
                     Filters
                   </button>
-
+</div>
                   {isMobile && (
                     <button
                       onClick={() => setShowBookingDetails(!showBookingDetails)}
