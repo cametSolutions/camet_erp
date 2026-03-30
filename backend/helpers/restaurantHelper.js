@@ -147,3 +147,170 @@ console.log("line 125 restarurant")
 
   return await receipt.save({ session });
 };
+
+
+
+export const round2 = (num) => Number((Number(num) || 0).toFixed(2));
+
+export const calculateTax = ({
+  remainingQty = 0,
+  price = 0,
+  discountType = "none",
+  discountPercentage = 0,
+  discountAmount = 0,
+  cgst = 0,
+  sgst = 0,
+  igst = 0,
+  cess = 0,
+  addlCess = 0,
+  isTaxIncluded = true,
+}) => {
+  const qty = Number(remainingQty || 0);
+  const unitPrice = Number(price || 0);
+
+  const cgstRate = Number(cgst || 0);
+  const sgstRate = Number(sgst || 0);
+  const igstRate = Number(igst || 0);
+  const cessRate = Number(cess || 0);
+  const addlCessRate = Number(addlCess || 0);
+
+  const discountPct = Number(discountPercentage || 0);
+  const flatDiscount = Number(discountAmount || 0);
+
+  let unitDiscount = 0;
+
+  if (discountType === "percentage") {
+    unitDiscount = (unitPrice * discountPct) / 100;
+  } else if (discountType === "amount") {
+    unitDiscount = flatDiscount;
+  }
+
+  unitDiscount = Math.min(unitDiscount, unitPrice);
+
+  const discountedUnitPrice = Math.max(unitPrice - unitDiscount, 0);
+
+  const totalTaxRate =
+    cgstRate + sgstRate + igstRate + cessRate + addlCessRate;
+
+  let basePricePerUnit = 0;
+  let taxableAmount = 0;
+
+  if (isTaxIncluded) {
+    basePricePerUnit =
+      totalTaxRate > 0
+        ? discountedUnitPrice / (1 + totalTaxRate / 100)
+        : discountedUnitPrice;
+
+    taxableAmount = basePricePerUnit * qty;
+  } else {
+    basePricePerUnit = discountedUnitPrice;
+    taxableAmount = discountedUnitPrice * qty;
+  }
+
+  const cgstAmount = (taxableAmount * cgstRate) / 100;
+  const sgstAmount = (taxableAmount * sgstRate) / 100;
+  const igstAmount = (taxableAmount * igstRate) / 100;
+  const cessAmount = (taxableAmount * cessRate) / 100;
+  const additionalCessAmount = (taxableAmount * addlCessRate) / 100;
+
+  const totalTaxAmount =
+    cgstAmount +
+    sgstAmount +
+    igstAmount +
+    cessAmount +
+    additionalCessAmount;
+
+  const total = isTaxIncluded
+    ? discountedUnitPrice * qty
+    : taxableAmount + totalTaxAmount;
+
+  return {
+    remainingQty: qty,
+    price: round2(unitPrice),
+
+    discountType,
+    discountPercentage: round2(discountPct),
+    discountAmount: round2(unitDiscount),
+    discountedUnitPrice: round2(discountedUnitPrice),
+
+    basePrice: round2(basePricePerUnit),
+    taxableAmount: round2(taxableAmount),
+
+    cgstValue: round2(cgstRate),
+    sgstValue: round2(sgstRate),
+    igstValue: round2(igstRate),
+    cessValue: round2(cessRate),
+    addlCessValue: round2(addlCessRate),
+
+    cgstAmount: round2(cgstAmount),
+    sgstAmount: round2(sgstAmount),
+    igstAmount: round2(igstAmount),
+    cessAmount: round2(cessAmount),
+    additionalCessAmount: round2(additionalCessAmount),
+
+    totalTaxAmount: round2(totalTaxAmount),
+    total: round2(total),
+    isTaxIncluded,
+  };
+};
+
+
+export const recalculateKotItem = (item = {}) => {
+  const remainingQty = Number(item?.remainingQuantity || 0);
+
+  const calc = calculateTax({
+    remainingQty,
+    price: item?.price || 0,
+    discountType: item?.discountType || "none",
+    discountPercentage: item?.discountPercentage || 0,
+    discountAmount: item?.discountAmount || 0,
+    cgst: item?.cgst || 0,
+    sgst: item?.sgst || 0,
+    igst: item?.igst || 0,
+    cess: item?.cess || 0,
+    addlCess: item?.addlCess || 0,
+    isTaxIncluded:
+      item?.taxInclusive ?? item?.isTaxIncluded ?? true,
+  });
+
+  return {
+    ...item,
+
+    // use remaining qty for all current calculations
+    remainingQty: calc.remainingQty,
+
+    // optional: if you want frontend compatibility
+    quantity: calc.remainingQty,
+
+    price: calc.price,
+    discountType: calc.discountType,
+    discountPercentage: calc.discountPercentage,
+    discountAmount: calc.discountAmount,
+
+    basePrice: calc.basePrice,
+    taxableAmount: calc.taxableAmount,
+
+    cgstValue: calc.cgstValue,
+    sgstValue: calc.sgstValue,
+    igstValue: calc.igstValue,
+    cessValue: calc.cessValue,
+    addlCessValue: calc.addlCessValue,
+
+    cgstAmount: calc.cgstAmount,
+    sgstAmount: calc.sgstAmount,
+    igstAmount: calc.igstAmount,
+    cessAmount: calc.cessAmount,
+    additionalCessAmount: calc.additionalCessAmount,
+
+    totalCgstAmt: calc.cgstAmount,
+    totalSgstAmt: calc.sgstAmount,
+    totalIgstAmt: calc.igstAmount,
+    totalCessAmt: calc.cessAmount,
+    totalAddlCessAmt: calc.additionalCessAmount,
+
+    total: calc.total,
+    individualTotal: calc.total,
+    isTaxIncluded: calc.isTaxIncluded,
+    taxInclusive: calc.isTaxIncluded,
+  };
+};
