@@ -1,20 +1,20 @@
 /* eslint-disable react/jsx-key */
 /* eslint-disable react/prop-types */
 /* eslint-disable no-undef */
-import { IoIosArrowRoundBack } from "react-icons/io"
-import { useNavigate } from "react-router-dom"
-import { useSelector } from "react-redux"
-import { useState } from "react"
-import CustomBarLoader from "./CustomBarLoader"
+import { IoIosArrowRoundBack } from "react-icons/io";
+import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { useState } from "react";
+import CustomBarLoader from "./CustomBarLoader";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuTrigger
-} from "../../components/ui/dropdown-menu"
-import { BsThreeDotsVertical } from "react-icons/bs"
+  DropdownMenuTrigger,
+} from "../../components/ui/dropdown-menu";
+import { BsThreeDotsVertical } from "react-icons/bs";
 
 function TitleDiv({
   title,
@@ -25,56 +25,61 @@ function TitleDiv({
   rightSideContentOnClick = null,
   dropdownContents = [],
   customNavigate = null,
-  summaryType = null
+  summaryType = null,
+  fromPayment = false,
 }) {
-  const navigate = useNavigate()
-  const [showModal, setShowModal] = useState(false)
-
+  const navigate = useNavigate();
+  const [showModal, setShowModal] = useState(false);
 
   const handleNavigate = () => {
     if (customNavigate) {
-      customNavigate()
-      return
+      customNavigate();
+      return;
     }
     if (from) {
       if (summaryType) {
         navigate("/sUsers/summaryReport", {
-          state: {summaryType}
-        })///for summaryreport for sales,purchase,ordersumamry
+          state: { summaryType },
+        }); ///for summaryreport for sales,purchase,ordersumamry
+      } else if (fromPayment) {
+        navigate("/sUsers/kotPage", {
+          state: { fromTable: true },
+          replace: true,
+        });
       } else {
-        navigate(from, { replace: true })
+        navigate(from, { replace: true });
       }
     } else {
-      navigate(-1, { replace: true })
+      navigate(-1, { replace: true });
     }
-  }
+  };
 
   const { type } =
     useSelector((state) => state?.secSelectedOrganization?.secSelectedOrg) ||
-    "self"
+    "self";
 
   const handleRightClick = () => {
     if (rightSideContentOnClick) {
-      rightSideContentOnClick()
+      rightSideContentOnClick();
     } else {
-      setShowModal(true)
+      setShowModal(true);
     }
-  }
+  };
 
   const handleDropdownClick = (item) => {
     if (item?.data) {
-      localStorage.setItem(item?.savingName, JSON.stringify(item.data))
+      localStorage.setItem(item?.savingName, JSON.stringify(item.data));
     }
     navigate(item?.to, {
       state: {
-        from: item?.from
-      }
-    })
-  }
+        from: item?.from,
+      },
+    });
+  };
 
   return (
     <div className="sticky top-0 z-50 ">
-      <div className="bg-[#012a4a] text-white p-3 flex items-center gap-3 text-lg justify-between">
+      <div className="bg-[#0B1D34] text-white p-3 flex items-center gap-3 text-lg justify-between">
         <div className="flex items-center justify-center gap-2">
           <IoIosArrowRoundBack
             onClick={handleNavigate}
@@ -84,53 +89,51 @@ function TitleDiv({
         </div>
 
         <div>
-        {rightSideContent && (
-          <button
-            onClick={handleRightClick}
-            className="font-bold text-sm pr-2 cursor-pointer hover:scale-105 duration-300 ease-in-out hover:text-gray-200"
-          >
-            {rightSideContent}
-          </button>
-        )}
+          {rightSideContent && (
+            <button
+              onClick={handleRightClick}
+              className="font-bold text-sm pr-2 cursor-pointer hover:scale-105 duration-300 ease-in-out hover:text-gray-200"
+            >
+              {rightSideContent}
+            </button>
+          )}
 
-        {dropdownContents.length > 0 && (
-          <DropdownMenu>
-            <DropdownMenuTrigger>
-              <BsThreeDotsVertical />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="mr-4 bg-[#012a4a] text-white text-xs p-2">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {dropdownContents.map((item, index) => {
-                const isDisabled = item?.typeSpecific && type !== "self"
-                return (
-                  <div
-                    key={index}
-                    onClick={() => handleDropdownClick(item)}
-                    style={
-                      isDisabled
-                        ? { pointerEvents: "none", opacity: "0.5" }
-                        : {}
-                    }
-                  >
-                    <DropdownMenuItem
-                      className={`${
-                        isDisabled ? "cursor-not-allowed" : "cursor-pointer"
-                      }   `}
-                      onClick={isDisabled ? undefined : item.onClick}
+          {dropdownContents.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger>
+                <BsThreeDotsVertical />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="mr-4 bg-[#012a4a] text-white text-xs p-2">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {dropdownContents.map((item, index) => {
+                  const isDisabled = item?.typeSpecific && type !== "self";
+                  return (
+                    <div
+                      key={index}
+                      onClick={() => handleDropdownClick(item)}
+                      style={
+                        isDisabled
+                          ? { pointerEvents: "none", opacity: "0.5" }
+                          : {}
+                      }
                     >
-                      {item.title}
-                    </DropdownMenuItem>
-                  </div>
-                )
-              })}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
-      </div>
-
+                      <DropdownMenuItem
+                        className={`${
+                          isDisabled ? "cursor-not-allowed" : "cursor-pointer"
+                        }   `}
+                        onClick={isDisabled ? undefined : item.onClick}
+                      >
+                        {item.title}
+                      </DropdownMenuItem>
+                    </div>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
-
+      </div>
 
       {loading && <CustomBarLoader />}
 
@@ -143,7 +146,7 @@ function TitleDiv({
         </div>
       )}
     </div>
-  )
+  );
 }
 
-export default TitleDiv
+export default TitleDiv;

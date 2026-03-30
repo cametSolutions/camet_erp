@@ -509,18 +509,28 @@ const HotelDashboard = () => {
     scrollbarWidth: "thin",
     scrollbarColor: "rgba(0, 0, 0, 0.7) rgba(0, 0, 0, 0.2)", // black thumb, lighter black track
   };
+
   const handleConvertToAvailable = (room) => {
     let findOne = selectedRooms.find((r) => r.roomId === room._id);
     if (findOne) {
+      let checkIn = tooltipData?.checkins?.find((c) =>
+        c.selectedRooms?.some((sr) => sr.roomId === room._id),
+      );
+      checkIn.selectedRooms.forEach((r) => {
+        if (r.roomId.toString() == room._id.toString()) {
+          r.isCheckedOut = false;
+        }
+      });
+      
       setSelectedRooms(selectedRooms.filter((r) => r.roomId !== room._id));
       return;
     }
     const baseStatus =
       selectedRooms.length > 0 ? selectedRooms[0].status : room.status;
-
+console.log(baseStatus);
     const allowedStatuses =
-      baseStatus === "available" || baseStatus === "vacant"
-        ? ["available", "vacant"]
+      baseStatus === "available" || baseStatus === "vacant" || baseStatus === "booked"
+        ? ["available", "vacant", "booked"]
         : baseStatus == "occupied"
           ? ["occupied"]
           : ["dirty", "blocked", "booked"];
@@ -537,16 +547,22 @@ const HotelDashboard = () => {
       checkIn = tooltipData?.checkins?.find((c) =>
         c.selectedRooms?.some((sr) => sr.roomId === room._id),
       );
-      console.log(checkIn);
+
       let findConvert = convertDataToCheckout.some(
         (c) => c._id === checkIn._id,
       );
-      console.log(findConvert);
+      checkIn.selectedRooms.forEach((r) => {
+        if (r.roomId.toString() == room._id.toString()) {
+          r.isCheckedOut = true;
+        }
+      });
+
       if (!findConvert) {
         setConvertDataToCheckout((prev) => [...prev, checkIn]);
       }
     }
 
+    console.log(convertDataToCheckout);
     // Add room to selectedRooms
     const newObject = {
       roomId: room._id,
@@ -569,12 +585,14 @@ const HotelDashboard = () => {
     } else if (selectedRooms[0].status === "occupied") {
       console.log(convertDataToCheckout);
       const selectedRoomIds = selectedRooms.map((r) => r.roomId);
-
-      const actualCheckIn = convertDataToCheckout.filter((checkIn) =>
-        checkIn.selectedRooms.some((room) =>
-          selectedRoomIds.includes(room.roomId),
-        ),
-      );
+ const actualCheckIn = convertDataToCheckout
+  .map(checkIn => ({
+    ...checkIn,
+    selectedRooms: checkIn.selectedRooms
+      .filter(room => selectedRoomIds.includes(room.roomId))
+      .map(room => ({ ...room, included: true })),
+  }))
+      console.log(actualCheckIn[0].selectedRooms.length);
       navigate("/sUsers/checkInList", {
         state: {
           directConvertFromDashboard: actualCheckIn,

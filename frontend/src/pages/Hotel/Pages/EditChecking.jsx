@@ -13,18 +13,18 @@ function EditChecking() {
   const location = useLocation();
   const editData = location?.state;
   const isTariffRateChange = location?.state?.fromDashboard === true;
-const roomIdToEdit = location?.state?.roomId; 
-console.log("h",editData)
+  const roomIdToEdit = location?.state?.roomId;
+
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const [outStanding, setOutStanding] = useState([]);
 
   const { data, loading: advanceLoading } = useFetch(
-    `/api/sUsers/getBookingAdvanceData/${editData?._id}?type=${"EditChecking"}`
+    `/api/sUsers/getBookingAdvanceData/${editData?._id}?type=${"EditChecking"}`,
   );
 
   const organization = useSelector(
-    (state) => state?.secSelectedOrganization?.secSelectedOrg
+    (state) => state?.secSelectedOrganization?.secSelectedOrg,
   );
 
   useEffect(() => {
@@ -35,16 +35,18 @@ console.log("h",editData)
 
   useEffect(() => {
     if (editData) {
-      editData.previousAdvance = Number(editData?.bookingId?.advanceAmount || 0);
+      editData.previousAdvance = Number(
+        editData?.bookingId?.advanceAmount || 0,
+      );
       editData.totalAdvance =
         Number(editData?.bookingId?.advanceAmount || 0) +
         Number(editData?.advanceAmount || 0);
     }
   }, [editData]);
 
-  const handleSubmit = async (payload, paymentData) => {
+  const handleSubmit = async (payload, paymentData,paymenttypeDetails) => {
     try {
-console.log(payload)
+      console.log(paymentData,paymenttypeDetails);
 
       const response = await api.put(
         `/api/sUsers/updateRoomBooking/${editData._id}`,
@@ -55,23 +57,27 @@ console.log(payload)
           orgId: organization._id,
           isTariffRateChange: isTariffRateChange, // ✅ Pass flag
           roomIdToEdit: roomIdToEdit,
+          paymenttypeDetails
         },
-        { withCredentials: true }
+        { withCredentials: true },
       );
       if (response?.data?.success) {
-        toast.success(isTariffRateChange 
+        toast.success(
+          isTariffRateChange
             ? `Room tariff updated successfully. ${response.data.roomsCount} room(s) in check-in.`
-            : response?.data?.message
+            : response?.data?.message,
         );
-      isTariffRateChange ? navigate("/sUsers/hotelDashBoard") :  navigate("/sUsers/checkInList");
+        isTariffRateChange
+          ? navigate("/sUsers/hotelDashBoard")
+          : navigate("/sUsers/checkInList");
       }
     } catch (error) {
       toast.error(error?.response?.data?.message || "Update faile`d");
+    } finally {
+      // Reset the submitting flag
+      isSubmittingRef.current = false;
+      setLoading(false);
     }
-       finally {
-    // Reset the submitting flag
-    isSubmittingRef.current = false;
-  }
   };
 
   return (
@@ -102,8 +108,9 @@ console.log(payload)
             // isFor={"deliveryNote"}
             outStanding={outStanding}
             isTariffRateChange={isTariffRateChange}
-           roomId={roomIdToEdit}
-           isShowGrc={true}
+            roomId={roomIdToEdit}
+            submitLoader={loading}
+            isShowGrc={true}
           />
         </div>
       )}

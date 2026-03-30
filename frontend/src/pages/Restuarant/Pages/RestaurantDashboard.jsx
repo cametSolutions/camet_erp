@@ -20,7 +20,7 @@ import {
   Car,
   Bed,
   ArrowLeft,
-  ChevronLeft,
+  Tag,
   ChevronDown,
 } from "lucide-react";
 
@@ -38,6 +38,9 @@ import { taxCalculatorForRestaurant } from "@/pages/Hotel/Helper/taxCalculator";
 import { useLocation } from "react-router-dom";
 import { FaArrowLeft } from "react-icons/fa6";
 import { useQueryClient } from "@tanstack/react-query";
+import ParentKotPage from "../components/ParentKotPage";
+import { applyBatchEdit } from "@/pages/Restuarant/Helper/RestaurantDashBoardHelper.jsx";
+
 const RestaurantPOS = () => {
   const [selectedCuisine, setSelectedCuisine] = useState("");
   const [selectedSubcategory, setSelectedSubcategory] = useState("");
@@ -74,6 +77,8 @@ const RestaurantPOS = () => {
   const [priceLevelData, setPriceLevelData] = useState([]);
   const [selectedPriceLevel, setSelectedPriceLevel] = useState(null);
   const kotDataForEdit = location.state?.kotData;
+  const kotFullData = location.state?.order
+  const editBatchNo = location.state?.batchNo;
 
   // Add these states near the other state declarations
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -86,10 +91,16 @@ const RestaurantPOS = () => {
   const [selectedCash, setSelectedCash] = useState("");
   const [selectedBank, setSelectedBank] = useState("");
   const [cashOrBank, setCashOrBank] = useState({});
-
   const [discountType, setDiscountType] = useState("amount"); // "amount" | "percentage"
   const [discountValue, setDiscountValue] = useState(0); // user input
-
+  const [additionalChargeData, setAdditionalChargeData] = useState([]);
+  const [selectedAdditionalCharge, setSelectedAdditionalCharge] =
+    useState(null);
+  const [showParentKots, setShowParentKots] = useState(false);
+  const [
+    additionalChargeDataBasedOnSelection,
+    setAdditionalChargeDataBasedOnSelection,
+  ] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const observerTarget = useRef(null);
   const scrollContainerRef = useRef(null);
@@ -124,11 +135,14 @@ const RestaurantPOS = () => {
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id,
   );
-  
+
+  const discountBasedOnGrossAmount =
+    org.configurations[0].discountBasedOnGrossAmount;
+
   const industry = org?.industry;
   const shouldFetch = Boolean(cmp_id);
 
-    const getIndustryTitle = () => {
+  const getIndustryTitle = () => {
     if (industry === 6) return "HMS";
     if (industry === 7) return "RMS";
     if (industry === 8) return "CMS";
@@ -141,7 +155,6 @@ const RestaurantPOS = () => {
     if (industry === 8) return "Cafe & Bakery";
     return "Restaurant";
   };
-
 
   const queryClient = useQueryClient();
   const isAdmin =
@@ -166,6 +179,28 @@ const RestaurantPOS = () => {
       });
     }
   }, [kotDataForEdit]);
+
+  useEffect(() => {
+    const callAdditionalCharge = async () => {
+      const response = await api.get(
+        `/api/sUsers/additionalcharges/${cmp_id}`,
+        {
+          withCredentials: true,
+        },
+      );
+      setAdditionalChargeData(response?.data?.additionalCharges);
+      console.log(response?.data?.additionalCharges);
+      let discountCharge = response?.data?.additionalCharges.find(
+        (charge) => charge.name.toLowerCase() === "discount" || "DISCOUNT",
+      );
+      console.log(discountCharge);
+      console.log(response?.data?.additionalCharges);
+      setSelectedAdditionalCharge(
+        discountCharge?._id || response?.data?.additionalCharges[0]?._id,
+      );
+    };
+    callAdditionalCharge();
+  }, []);
 
   useEffect(() => {
     // Get format from organization configuration
@@ -233,7 +268,7 @@ const RestaurantPOS = () => {
     if (salePrintData) {
       billFormat === "format1"
         ? navigate(`/sUsers/sharesalesThreeInch/${salePrintData._id}`)
-        : navigate(`/sUsers/sharesalesThreeInch2`, {
+        : navigate(`/sUsers/sharesalesThreeInch2/${true}`, {
             state: salePrintData,
           });
     }
@@ -260,15 +295,12 @@ const RestaurantPOS = () => {
   const filteredRooms = Array.isArray(roomData)
     ? roomData.filter(
         (room) =>
-          room.roomName?.toLowerCase().includes(searchTerms?.toLowerCase()) ||
-          room.customerName
-            ?.toLowerCase()
-            .includes(searchTerms?.toLowerCase()) ||
-          room.voucherNumber
-            ?.toLowerCase()
-            .includes(searchTerms?.toLowerCase()),
+          room.roomName?.toLowerCase().includes(search?.toLowerCase()) ||
+          room.customerName?.toLowerCase().includes(search?.toLowerCase()) ||
+          room.voucherNumber?.toLowerCase().includes(search?.toLowerCase()),
       )
-    : [];
+    : [search];
+  console.log(filteredRooms);
 
   const handlePrint = useReactToPrint({
     content: () => contentToPrint.current,
@@ -301,14 +333,7 @@ const RestaurantPOS = () => {
     console.log("Selected room object:", room);
     console.log("Food plan from room:", room?.foodPlan);
 
-    const foodPlanData = room?.foodPlan
-      ? {
-          _id: room.foodPlan._id, // FoodPlan document ID
-          planType: room.foodPlan.planType, // e.g., "CP", "MAP", "Complimentary"
-          amount: room.foodPlan.amount,
-          isComplimentary: room.foodPlan.isComplimentary || false,
-        }
-      : null;
+    const foodPlanData = room?.foodPlan ? room?.foodPlan : null;
 
     console.log("Processed food plan data:", foodPlanData);
     // ✅ Create fresh object without spread operator
@@ -487,42 +512,35 @@ const RestaurantPOS = () => {
 
   useEffect(() => {
     if (roomBookingData) {
-      console.log("=== RAW ROOM BOOKING DATA ===");
-      console.log("First booking:", roomBookingData?.data);
-
-      const getRooms = roomBookingData?.data?.flatMap((room) => {
+      const rooms = roomBookingData?.data?.flatMap((room) => {
         console.log("Processing booking, foodPlan array:", room?.foodPlan);
 
         return (
           room?.selectedRooms?.map((selectedRoom) => {
-            // Find matching food plan for this room
-            const roomFoodPlan = room?.foodPlan?.find(
-              (fp) => fp.roomId === selectedRoom.roomId,
-            );
+            const completeFoodPlan = [];
 
-            console.log("=== ROOM FOOD PLAN ===");
-            console.log("Room:", selectedRoom.roomName);
-            console.log("Found food plan:", roomFoodPlan);
+            room.foodPlan?.forEach((data) => {
+              // Find matching food plan for this room
+              const roomFoodPlan =
+                data.roomId === selectedRoom.roomId ? data : null;
 
-            // ✅ Build complete food plan object
-            let completeFoodPlan = null;
-            if (roomFoodPlan) {
-              completeFoodPlan = {
-                _id: roomFoodPlan._id || roomFoodPlan.foodPlanId,
-                planType: roomFoodPlan.planType || roomFoodPlan.foodPlan,
-                amount: roomFoodPlan.amount || 0,
-                isComplimentary: roomFoodPlan.isComplimentary || false,
-              };
-
-              console.log("Complete food plan object:", completeFoodPlan);
-            }
+              // Build complete food plan object
+              if (roomFoodPlan) {
+                completeFoodPlan.push({
+                  _id: roomFoodPlan._id || roomFoodPlan.foodPlanId,
+                  planType: roomFoodPlan.planType || roomFoodPlan.foodPlan,
+                  amount: roomFoodPlan.amount ?? roomFoodPlan.rate ?? 0,
+                  isComplimentary: roomFoodPlan.isComplimentary || false,
+                });
+              }
+            });
 
             return {
               ...selectedRoom,
               customerName: room?.customerName,
               mobileNumber: room?.mobileNumber,
               voucherNumber: room?.voucherNumber,
-              foodPlan: completeFoodPlan, // ✅ This is the key part
+              foodPlan: completeFoodPlan,
               bookingDate: room?.bookingDate,
               arrivalDate: room?.arrivalDate,
               checkOutDate: room?.checkOutDate,
@@ -533,8 +551,7 @@ const RestaurantPOS = () => {
       });
 
       console.log("=== ALL PROCESSED ROOMS ===");
-
-      setRoomData(getRooms);
+      setRoomData(rooms);
     }
   }, [roomBookingData]);
 
@@ -569,11 +586,68 @@ const RestaurantPOS = () => {
   }, [allItems, selectedSubcategory, searchTerm]);
 
   const searchTimeoutRef = useRef(null);
-  const getTotalAmount = () => {
-    return orderItems.reduce(
-      (total, item) => total + item.price * item.quantity,
-      0,
-    );
+  // getTotalAmount — just returns gross (no discount inside)
+  const getItemTaxableAfterDiscount = (item, totalDiscount, grossTaxable) => {
+    const totalValue = Number(item?.total || item.price * item.quantity || 0);
+    const igstRate = Number(item?.igst || 0);
+    const cgstRate = Number(item?.cgst || 0);
+    const sgstRate = Number(item?.sgst || 0);
+    const taxRate = igstRate > 0 ? igstRate : cgstRate + sgstRate;
+
+    // Strip tax to get pre-tax value
+    const preTaxValue = totalValue / (1 + taxRate / 100);
+
+    if (grossTaxable === 0) return preTaxValue;
+
+    // Proportional discount share for this item
+    const itemDiscountShare = (preTaxValue / grossTaxable) * totalDiscount;
+    return preTaxValue - itemDiscountShare;
+  };
+
+  const getTotalAmount = (finalProductData) => {
+    if (!orderItems?.length) return 0;
+    let orderItemsAre = orderItems;
+    if (finalProductData?.length > 0) {
+      orderItemsAre = finalProductData;
+    }
+    const totalDiscount =
+      Number(additionalChargeDataBasedOnSelection?.[0]?.finalValue) || 0;
+
+    // grossTaxable = sum of all pre-tax values
+    const grossTaxable = orderItemsAre.reduce((acc, item) => {
+      const totalValue = Number(item?.total || item.price * item.quantity || 0);
+      const igstRate = Number(item?.igst || 0);
+      const cgstRate = Number(item?.cgst || 0);
+      const sgstRate = Number(item?.sgst || 0);
+      const taxRate = igstRate > 0 ? igstRate : cgstRate + sgstRate;
+      const preTaxValue = totalValue / (1 + taxRate / 100);
+      return acc + preTaxValue;
+    }, 0);
+
+    return orderItemsAre.reduce((total, item) => {
+      const totalValue = Number(item?.total || item.price * item.quantity || 0);
+
+      if (discountBasedOnGrossAmount) {
+        return total + totalValue;
+      }
+
+      const igstRate = Number(item?.igst || 0);
+      const cgstRate = Number(item?.cgst || 0);
+      const sgstRate = Number(item?.sgst || 0);
+      const isInterState = igstRate > 0;
+
+      const taxableAfterDiscount = getItemTaxableAfterDiscount(
+        item,
+        totalDiscount,
+        grossTaxable,
+      );
+
+      const taxOnDiscounted = isInterState
+        ? (taxableAfterDiscount * igstRate) / 100
+        : (taxableAfterDiscount * cgstRate) / 100 +
+          (taxableAfterDiscount * sgstRate) / 100;
+      return total + taxableAfterDiscount + taxOnDiscounted;
+    }, 0);
   };
 
   const grossTotal = Math.round(
@@ -591,24 +665,26 @@ const RestaurantPOS = () => {
   if (discountAmount > grossTotal) discountAmount = grossTotal;
 
   // Shape expected by createSalesVoucher
-  const additionalCharges = [];
-  if (discountAmount > 0) {
-    additionalCharges.push({
-      name: "Discount", // any label, not used in calc
-      type: "subtract", // IMPORTANT: used for discountTotal
-      amount: discountAmount, // IMPORTANT: used for sums
-    });
-  }
+  const additionalCharges = additionalChargeDataBasedOnSelection;
 
   const handleProcessDirectSalePayment = async () => {
     setSaveLoader(true);
+    console.log(selectedDataForPayment);
+    console.log(additionalCharges);
+    console.log(paymentMethod);
 
     try {
       // Step 1: Prepare paymentDetails
       let paymentDetails;
+      let amount = await getTotalAmount();
+      console.log(amount);
       if (paymentMethod === "cash") {
         paymentDetails = {
-          cashAmount: selectedDataForPayment?.total,
+          cashAmount: Math.round(
+            discountBasedOnGrossAmount
+              ? amount - (additionalCharges[0]?.finalValue || 0)
+              : amount,
+          ),
           onlineAmount: 0,
           selectedCash,
           selectedBank,
@@ -617,13 +693,21 @@ const RestaurantPOS = () => {
       } else {
         paymentDetails = {
           cashAmount: 0,
-          onlineAmount: selectedDataForPayment?.total,
+          onlineAmount: Math.round(
+            discountBasedOnGrossAmount
+              ? amount - (additionalCharges[0]?.finalValue || 0)
+              : amount,
+          ),
           selectedCash,
           selectedBank,
           paymentMode: "single",
         };
       }
+      console.log(selectedDataForPayment);
+      console.log(paymentDetails);
 
+      console.log(amount);
+      console.log(grossTotal);
       // Step 2: Make API call
       const response = await api.post(
         `/api/sUsers/directSale/${cmp_id}`,
@@ -633,11 +717,13 @@ const RestaurantPOS = () => {
           selectedKotData: {
             ...selectedDataForPayment,
             // IMPORTANT: use subtotal/total BEFORE discount, because backend uses this
-            subtotal: grossTotal,
-            total: grossTotal,
+            subtotal: amount,
+            total: amount,
+            finalAmount: amount,
           },
           additionalCharges,
           isDirectSale: true,
+          discountBasedOnGrossAmount: discountBasedOnGrossAmount,
         },
         { withCredentials: true },
       );
@@ -925,13 +1011,15 @@ const RestaurantPOS = () => {
     setPaymentMethod("cash");
     setShowPaymentModal(true);
   };
-  const generateKOT = async (selectedTableNumber, tableStatus) => {
+
+  const generateKOT = async (selectedTableNumber, tableStatus, parentKot) => {
     let updatedItems = [];
     let orderCustomerDetails = {
       ...customerDetails,
       tableNumber: selectedTableNumber,
       tableStatus,
     };
+
     updatedItems = orderItems.map((item) => {
       return {
         ...item,
@@ -956,12 +1044,78 @@ const RestaurantPOS = () => {
         totalActualCount: item?.quantity,
       };
     });
+    let batchArray = [];
+    if (editBatchNo) {
+
+const result = applyBatchEdit({
+  kotDataForEdit: kotFullData,       // full kot
+  batchNo: editBatchNo,              // which batch
+  editedBatchItems: orderItems,      // current batch items (updated)
+  updatedItems: kotFullData.items,   // full items before this edit
+});
+console.log("result", result);
+
+      batchArray = result.updatedBatches
+      updatedItems = result.updatedItems
+    } else {
+      batchArray = [
+        {
+          batchNo: parentKot ? parentKot.kitchenBatches.length + 1 : 1,
+          printedAt: new Date(),
+          items: updatedItems.map((item) => ({
+            itemId: item._id,
+            quantity: item.quantity,
+            product_name: item.product_name,
+          })),
+          status: "pending",
+        },
+      ];
+    }
+
+    if (parentKot) {
+      parentKot.items.forEach((newItem) => {
+        console.log(newItem);
+        console.log(updatedItems);
+        const existingIndex = updatedItems.findIndex(
+          (i) => i._id === newItem._id,
+        );
+
+        if (existingIndex !== -1) {
+          // Item already exists — update quantity and price only
+          updatedItems[existingIndex] = {
+            ...updatedItems[existingIndex],
+            quantity:
+              (updatedItems[existingIndex].quantity || 0) +
+              (newItem.quantity || 0),
+            totalCount:
+              (updatedItems[existingIndex].totalCount || 0) +
+              (newItem.totalCount || 0),
+            total:
+              (updatedItems[existingIndex].total || 0) + (newItem.total || 0),
+            price: newItem.price, // take latest price
+          };
+        } else {
+          // New item — add it
+          updatedItems = [...updatedItems, newItem];
+        }
+      });
+    }
+
     let finalProductData = await taxCalculatorForRestaurant(
       updatedItems,
       configurations[0]?.addRateWithTax?.restaurantSale,
     );
+    console.log(parentKot);
 
-    if (orderType === "dine-in") {
+    if (parentKot) {
+      orderCustomerDetails = {
+        roomId: parentKot?.roomId,
+        checkInNumber: parentKot?.CheckInNumber,
+        name: parentKot?.customer?.na,
+        tableNumber: parentKot?.tableNumber,
+        foodPlan: parentKot?.foodPlan || null,
+      };
+    } else if (orderType === "dine-in") {
       if (roomDetails && Object.keys(roomDetails).length > 0) {
         orderCustomerDetails = {
           roomId: roomDetails?._id,
@@ -993,15 +1147,18 @@ const RestaurantPOS = () => {
       items: [...finalProductData],
       type: orderType,
       customer: orderCustomerDetails,
-      total: getTotalAmount(),
+      total: getTotalAmount(finalProductData) || 0,
       timestamp: new Date(),
       status: kotDataForEdit?.status || "pending",
       paymentMethod: orderType === "dine-in" ? null : "cash",
+      kitchenBatches: batchArray,
     };
 
-    let url = isEdit
-      ? `/api/sUsers/editKOT/${cmp_id}/${kotDataForEdit._id}`
-      : `/api/sUsers/generateKOT/${cmp_id}`;
+    let url = parentKot
+      ? `/api/sUsers/editKOT/${cmp_id}/${parentKot._id}`
+      : isEdit
+        ? `/api/sUsers/editKOT/${cmp_id}/${kotDataForEdit._id}`
+        : `/api/sUsers/generateKOT/${cmp_id}`;
 
     try {
       let response = await api.post(url, newOrder, {
@@ -1027,24 +1184,25 @@ const RestaurantPOS = () => {
     } catch (error) {
       console.log(error);
       toast.error(error.response.data.message);
+    } finally {
+      setOrders([...orders, newOrder]);
+      setOrderItems([]);
+      setOrderNumber(orderNumber + 1);
+      setShowKOTModal(false);
+      setIsEdit(false);
+      setCustomerDetails({
+        name: "",
+        phone: "",
+        address: "",
+        tableNumber: "10",
+      });
+      toast.success(
+        kotDataForEdit
+          ? "KOT updated successfully!"
+          : "KOT generated successfully!",
+      );
+      navigate(location.pathname, { replace: true, state: {} });
     }
-
-    setOrders([...orders, newOrder]);
-    setOrderItems([]);
-    setOrderNumber(orderNumber + 1);
-    setShowKOTModal(false);
-    setIsEdit(false);
-    setCustomerDetails({
-      name: "",
-      phone: "",
-      address: "",
-      tableNumber: "10",
-    });
-    toast.success(
-      kotDataForEdit
-        ? "KOT updated successfully!"
-        : "KOT generated successfully!",
-    );
   };
 
   // ✅ Handle search with debounce
@@ -1085,7 +1243,7 @@ const RestaurantPOS = () => {
       kotNo: data?.voucherNumber,
       tableNo: data?.tableNumber,
       type: data.type,
-      items: data?.items,
+      items: orderItems,
       createdAt: new Date(),
     };
 
@@ -1099,6 +1257,80 @@ const RestaurantPOS = () => {
 
   const findOneCount = (id) => {
     return orderItems.find((item) => item._id === id)?.quantity || 0;
+  };
+  const headerPriceRef = useRef(null);
+
+  const scrollHeaderPrice = (direction) => {
+    if (!headerPriceRef.current) return;
+    const scrollAmount = 150;
+    headerPriceRef.current.scrollBy({
+      left: direction === "left" ? -scrollAmount : scrollAmount,
+      behavior: "smooth",
+    });
+  };
+
+  const handleDiscountChange = (discountValue, discountType) => {
+    const inputAmount = Number(discountValue) || 0;
+
+    const findOne = additionalChargeData.find(
+      (d) => d._id === selectedAdditionalCharge,
+    );
+
+    if (!findOne) return;
+
+    console.log(selectedDataForPayment);
+
+    const flatItems = selectedDataForPayment?.items || [];
+
+    console.log(flatItems);
+
+    let baseAmount = 0;
+    let calculatedDiscount = inputAmount;
+
+    if (discountType === "percentage") {
+      if (discountBasedOnGrossAmount) {
+        baseAmount = flatItems.reduce(
+          (acc, item) => acc + Number(item?.total || 0),
+          0,
+        );
+      } else {
+        baseAmount = flatItems.reduce(
+          (acc, item) =>
+            acc + Number(item?.total || 0) - Number(item?.totalIgstAmt || 0),
+          0,
+        );
+      }
+
+      console.log(baseAmount);
+
+      calculatedDiscount = ((baseAmount * inputAmount) / 100).toFixed(2);
+    }
+
+    const taxAmount =
+      (Number(calculatedDiscount || 0) * Number(findOne?.taxPercentage || 0)) /
+      100;
+
+    console.log(taxAmount);
+    console.log(calculatedDiscount);
+
+    setAdditionalChargeDataBasedOnSelection([
+      {
+        _id: findOne._id,
+        option: findOne.name,
+        value: Number(calculatedDiscount) || 0,
+        action: "sub",
+        taxPercentage: Number(findOne?.taxPercentage || 0),
+        taxAmt: taxAmount || 0,
+        hsn: findOne.hsn,
+        finalValue: Number(calculatedDiscount) + taxAmount,
+      },
+    ]);
+
+    setDiscountValue(inputAmount);
+  };
+
+  const handleTagKotConfirmation = (parentKot) => {
+    generateKOT(null, null, parentKot);
   };
 
   return (
@@ -1133,12 +1365,11 @@ const RestaurantPOS = () => {
         </div>
       )}
 
-      <div className="h-screen overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex flex-col">
+      <div className="h-screen  overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex flex-col">
         {/* Compact Header */}
-        <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 text-white border-b border-slate-700/60 sticky top-0 z-50 shadow-lg">
-          {/* Main Header Row */}
+        <div className="bg-[#072134] text-white border-b border-slate-700/60 sticky top-0 z-50 shadow-lg">
           <div className="px-3 md:px-6 py-2.5 md:py-3">
-            <div className="flex items-center justify-between gap-4 md:gap-5">
+            <div className="flex items-center justify-between gap-2 md:gap-3">
               {/* Left Section - Logo & Title */}
               <div className="flex items-center gap-2 flex-shrink-0">
                 <button
@@ -1150,30 +1381,28 @@ const RestaurantPOS = () => {
                 <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center font-bold text-lg shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-shadow">
                   🍽️
                 </div>
-               <div>
-  <h1 className="text-base md:text-lg font-bold text-white hidden md:block tracking-tight">
-    {getIndustryTitle()}
-  </h1>
-  <p className="text-xs text-gray-400 hidden md:block">
-    {getIndustrySubtitle()}
-  </p>
-</div>
-
+                <div className="hidden md:block">
+                  <h1 className="text-base md:text-lg font-bold text-white tracking-tight">
+                    {getIndustryTitle()}
+                  </h1>
+                  <p className="text-xs text-gray-400">
+                    {getIndustrySubtitle()}
+                  </p>
+                </div>
               </div>
 
-              {/* Center Section - Price Levels */}
-              <div className="flex-1 hidden sm:block">
+              {/* Center Section - Price Levels (desktop only) */}
+              <div className="flex-1 hidden sm:block min-w-0">
                 {priceLevelData && priceLevelData.length > 0 && (
-                  <div className="flex items-center gap-2.5">
+                  <div className="flex items-center gap-2">
                     <span className="text-xs font-semibold text-gray-400 whitespace-nowrap flex-shrink-0 uppercase tracking-wider">
                       💳 Price:
                     </span>
 
-                    {/* Scroll Container */}
                     <div className="relative flex-1 min-w-0 group">
                       {/* Left Scroll Button */}
                       <button
-                        onClick={() => scroll("left")}
+                        onClick={() => scrollHeaderPrice("left")}
                         className="absolute -left-3 top-1/2 -translate-y-1/2 z-30 p-1 text-gray-500 hover:text-gray-300 transition-all opacity-0 group-hover:opacity-100 hover:bg-slate-800/50 rounded"
                       >
                         <ChevronDown className="w-4 h-4 rotate-90" />
@@ -1181,11 +1410,11 @@ const RestaurantPOS = () => {
 
                       {/* Price Level Buttons */}
                       <div
-                        ref={scrollContainerRef}
+                        ref={headerPriceRef}
                         className="flex gap-1.5 overflow-x-auto scrollbar-hide px-3 py-0.5"
                         style={{ scrollBehavior: "smooth" }}
                       >
-                        {priceLevelData.map((level, idx) => (
+                        {priceLevelData.map((level) => (
                           <button
                             key={level._id}
                             onClick={() => {
@@ -1193,15 +1422,15 @@ const RestaurantPOS = () => {
                               setOrderItems([]);
                             }}
                             className={`
-                          px-3 py-1.5 rounded-md font-semibold text-xs
-                          whitespace-nowrap flex-shrink-0 border transition-all duration-300
-                          hover:scale-105 active:scale-95 relative group/btn
-                          ${
-                            selectedPriceLevel === level._id
-                              ? "bg-blue-600/90 text-white border-blue-400/50 shadow-lg shadow-blue-500/30"
-                              : "bg-slate-800/60 text-gray-300 border-slate-700/50 hover:bg-slate-700/80 hover:text-gray-100 hover:border-slate-600"
-                          }
-                        `}
+                    px-3 py-1.5 rounded-md font-semibold text-xs
+                    whitespace-nowrap flex-shrink-0 border transition-all duration-300
+                    hover:scale-105 active:scale-95 relative group/btn
+                    ${
+                      selectedPriceLevel === level._id
+                        ? "bg-blue-600/90 text-white border-blue-400/50 shadow-lg shadow-blue-500/30"
+                        : "bg-slate-800/60 text-gray-300 border-slate-700/50 hover:bg-slate-700/80 hover:text-gray-100 hover:border-slate-600"
+                    }
+                  `}
                           >
                             {level.pricelevel}
                             {selectedPriceLevel === level._id && (
@@ -1213,10 +1442,10 @@ const RestaurantPOS = () => {
 
                       {/* Right Scroll Button */}
                       <button
-                        onClick={() => scroll("right")}
-                        className="absolute -right-3 top-1/2 -translate-y-1/2 z-30 p-1 text-gray-500 hover:text-gray-300 transition-all opacity-0 group-hover:opacity-100 hover:bg-slate-800/50 rounded"
+                        onClick={() => scrollHeaderPrice("right")}
+                        className="absolute -right-3 top-1/2 -translate-y-1/2 z-30 p-1 text-white hover:text-gray-300 transition-all opacity-0 group-hover:opacity-100 hover:bg-slate-800/50 rounded"
                       >
-                        <ChevronDown className="w-4 h-4 -rotate-90" />
+                        <ChevronDown className="w-4 h-4 -rotate-90 " />
                       </button>
                     </div>
                   </div>
@@ -1224,46 +1453,53 @@ const RestaurantPOS = () => {
               </div>
 
               {/* Right Section - Time & Table Info */}
-              <div className="flex items-center gap-2 md:gap-2.5 flex-shrink-0">
-                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800/50 border border-slate-700/60 rounded-md hover:bg-slate-700/60 transition-colors group">
+              <div className="flex items-center gap-1.5 md:gap-2 flex-shrink">
+                <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-800/50 border border-slate-700/60 rounded-md hover:bg-slate-700/60 transition-colors group">
                   <Clock className="w-3.5 h-3.5 text-cyan-400 group-hover:text-cyan-300" />
-                  <Timer />
-                  {/* <span className="text-xs font-medium text-gray-300 group-hover:text-gray-100">
-                    {currentTime.toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      second: "2-digit"
-                    })}
-                  </span> */}
+                  <span className="  ">
+                    <Timer />
+                  </span>
                 </div>
 
+                {/* Table / Room button – compress text on small screens */}
                 <div
-                  className="hover:cursor-pointer flex items-center gap-1.5 px-3 py-1.5 bg-slate-800/50 border border-slate-700/60 rounded-md hover:bg-slate-700/60 transition-colors group"
+                  className="hover:cursor-pointer flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-800/50 border border-slate-700/60 rounded-md hover:bg-slate-700/60 transition-colors group"
                   onClick={() => navigate("/sUsers/TableSelection")}
                 >
                   <Users className="w-3.5 h-3.5 text-emerald-400 group-hover:text-emerald-300" />
-                  <span className="text-xs font-medium text-gray-300 group-hover:text-gray-100">
+                  {/* Full text on large screens */}
+                  <span className="text-xs font-medium text-gray-300 group-hover:text-gray-100 hidden lg:inline">
                     {orderType === "dine-in"
                       ? `Table ${customerDetails.tableNumber}`
                       : orderType === "roomService"
                         ? `Room ${roomDetails.roomno || "---"}`
                         : getOrderTypeDisplay(orderType)}
                   </span>
+                  {/* Compressed text on small/medium */}
+                  <span className="text-xs font-medium text-gray-300 group-hover:text-gray-100 lg:hidden">
+                    {orderType === "dine-in"
+                      ? `T${customerDetails.tableNumber || ""}`
+                      : orderType === "roomService"
+                        ? `R${roomDetails.roomno || ""}`
+                        : getOrderTypeDisplay(orderType).slice(0, 3)}
+                  </span>
                 </div>
 
+                {/* Orders + 3-dots hidden on very small widths */}
                 <div className="relative hidden sm:flex items-center">
-                  {/* Orders button */}
                   <div
-                    className="hover:cursor-pointer flex items-center gap-1.5 px-3 py-1.5 bg-slate-800/50 border border-slate-700/60 rounded-l-md hover:bg-slate-700/60 transition-colors group"
+                    className="hover:cursor-pointer flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-800/50 border border-slate-700/60 rounded-l-md hover:bg-slate-700/60 transition-colors group"
                     onClick={() => navigate("/sUsers/KotPage")}
                   >
                     <Receipt className="w-3.5 h-3.5 text-amber-400 group-hover:text-amber-300" />
-                    <span className="text-xs font-medium text-gray-300 group-hover:text-gray-100">
+                    <span className="text-xs font-medium text-gray-300 group-hover:text-gray-100 hidden md:inline">
+                      Orders: {orders?.length || 0}
+                    </span>
+                    <span className="text-xs font-medium text-gray-300 group-hover:text-gray-100 md:hidden">
                       {orders?.length || 0}
                     </span>
                   </div>
 
-                  {/* Three-dot button */}
                   <div className="relative">
                     <button
                       onClick={() => setShowOptions((prev) => !prev)}
@@ -1275,8 +1511,6 @@ const RestaurantPOS = () => {
                         <span className="w-[3px] h-[3px] bg-gray-400 rounded-full group-hover:bg-gray-200 transition-colors"></span>
                       </span>
                     </button>
-
-                    {/* Dropdown */}
                     {showOptions && (
   <>
     {/* Backdrop to close */}
@@ -1333,6 +1567,7 @@ const RestaurantPOS = () => {
                   </div>
                 </div>
 
+                {/* Mobile cart button – already compact */}
                 <button
                   className="hover:cursor-pointer sm:hidden bg-blue-600/80 hover:bg-blue-600 text-white rounded-md px-2.5 py-1.5 flex items-center gap-1 transition-colors border border-blue-500/50 shadow-lg shadow-blue-500/20 active:scale-95"
                   onClick={() => setShowOrderSummary(true)}
@@ -1342,62 +1577,6 @@ const RestaurantPOS = () => {
                     {getTotalItems?.() || 0}
                   </span>
                 </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Mobile Price Level Section */}
-          <div className="sm:hidden bg-slate-800/40 border-t border-slate-700/40 px-3 py-2">
-            {priceLevelData && priceLevelData.length > 0 && (
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-gray-400 flex-shrink-0">
-                  Price:
-                </span>
-                <div className="flex gap-1 overflow-x-auto scrollbar-hide flex-1">
-                  {priceLevelData.map((level) => (
-                    <button
-                      key={level._id}
-                      onClick={() => {
-                        setSelectedPriceLevel(level._id);
-                        setOrderItems([]);
-                      }}
-                      className={`
-                    px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap flex-shrink-0 border transition-all
-                    ${
-                      selectedPriceLevel === level._id
-                        ? "bg-blue-600 text-white border-blue-400/50"
-                        : "bg-slate-800 text-gray-400 border-slate-700"
-                    }
-                  `}
-                    >
-                      {level.pricelevel}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Mobile Bottom Info Bar */}
-          <div className="sm:hidden bg-slate-800/40 border-t border-slate-700/40 px-3 py-1.5">
-            <div className="flex items-center justify-between gap-2 text-xs">
-              <div className="flex items-center gap-1 text-gray-400">
-                <Clock className="w-3 h-3 text-cyan-400" />
-                <Timer />
-                {/* <span className="font-medium">
-                  {currentTime.toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit"
-                  })}
-                </span> */}
-              </div>
-              <div className="flex items-center gap-1 text-gray-400">
-                <Users className="w-3 h-3 text-emerald-400" />
-                <span className="font-medium">
-                  {orderType === "dine-in"
-                    ? `T${customerDetails?.tableNumber || "--"}`
-                    : `R${roomDetails?.roomno || "--"}`}
-                </span>
               </div>
             </div>
           </div>
@@ -1679,13 +1858,28 @@ const RestaurantPOS = () => {
                           : `All Items (${menuItems.length})`}
                     </h3>
 
-                    <button
-                      onClick={() => navigate("/sUsers/itemRegistration")}
-                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gradient-to-r from-indigo-500 to-blue-500 text-white text-xs font-semibold hover:from-indigo-600 hover:to-blue-600 hover:scale-105 active:scale-95 transition-all duration-200 shadow-md"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      Add Item
-                    </button>
+                    <div className="flex items-center gap-3">
+                      {/* Secondary Action - Tag To Kot */}
+                      {orderItems.length > 0 && (
+                        <button
+                          onClick={() => {
+                            setShowParentKots(true);
+                          }}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-indigo-300 bg-indigo-50 text-indigo-700 text-xs font-semibold hover:bg-indigo-100 hover:border-indigo-400 active:scale-95 transition-all duration-150"
+                        >
+                          <Tag className="w-3.5 h-3.5" />
+                          Tag To Kot
+                        </button>
+                      )}
+                      {/* Primary Action - Add Item */}
+                      <button
+                        onClick={() => navigate("/sUsers/itemRegistration")}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 active:scale-95 transition-all duration-150 shadow-sm shadow-indigo-200"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        Add Item
+                      </button>
+                    </div>
                   </div>
 
                   {menuItems.length === 0 ? (
@@ -1773,7 +1967,7 @@ const RestaurantPOS = () => {
                               </div>
 
                               {/* Product Name */}
-                              <h3 className="font-bold text-gray-800 text-xs mb-1.5 line-clamp-2 relative z-10 group-hover:text-indigo-700 transition-colors duration-300">
+                              <h3 className="font-bold text-gray-800 break-all text-xs mb-1.5 line-clamp-2 relative z-10 group-hover:text-indigo-700 transition-colors duration-300">
                                 {item.product_name.toUpperCase()}
                               </h3>
 
@@ -2099,6 +2293,7 @@ const RestaurantPOS = () => {
                 roomData={roomData}
                 setRoomDetails={setRoomDetails}
                 roomDetails={roomDetails}
+                showHeader={false}
               />
             </div>
           </div>
@@ -2187,30 +2382,6 @@ const RestaurantPOS = () => {
                         </ul>
                       )}
                     </div>
-                    {/* <select
-                      value={roomDetails._id}
-                      onChange={(e) => {
-                        const selectedRoom = roomData.find(
-                          (room) => room.roomId === e.target.value
-                        );
-                        setRoomDetails({
-                          ...roomDetails,
-                          _id: selectedRoom?.roomId || "",
-                          roomno: selectedRoom?.roomName || "",
-                          guestName: selectedRoom?.customerName || "",
-                          CheckInNumber: selectedRoom?.voucherNumber || "",
-                        });
-                      }}
-                      className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 text-sm bg-white transition-all duration-200"
-                    >
-                      <option value="">Select a room</option>
-                      {roomData?.map((room) => (
-                        <option value={room.roomId} key={room.roomId}>
-                          {room?.roomName} - {room?.customerName} -{" "}
-                          {room?.voucherNumber}
-                        </option>
-                      ))}
-                    </select> */}
                   </div>
 
                   <div>
@@ -2401,7 +2572,7 @@ const RestaurantPOS = () => {
                   >
                     {cashOrBank?.cashDetails?.map((cashier) => (
                       <option key={cashier._id} value={cashier._id}>
-                        {cashier.partyName}
+                        {cashier.partyName} - ({cashier.under})
                       </option>
                     ))}
                   </select>
@@ -2424,7 +2595,7 @@ const RestaurantPOS = () => {
                     </option>
                     {cashOrBank?.bankDetails?.map((bank) => (
                       <option key={bank._id} value={bank._id}>
-                        {bank.partyName}
+                        {bank.partyName} - ({bank.under || "Bank"})
                       </option>
                     ))}
                   </select>
@@ -2462,7 +2633,10 @@ const RestaurantPOS = () => {
                   <div className="flex items-center gap-1 text-[11px] font-medium">
                     <button
                       type="button"
-                      onClick={() => setDiscountType("amount")}
+                      onClick={() => {
+                        setDiscountType("amount");
+                        handleDiscountChange(discountValue, "amount");
+                      }}
                       className={`px-2 py-1 rounded-md border text-xs ${
                         discountType === "amount"
                           ? "bg-blue-600 text-white border-blue-600"
@@ -2473,7 +2647,10 @@ const RestaurantPOS = () => {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setDiscountType("percentage")}
+                      onClick={() => {
+                        setDiscountType("percentage");
+                        handleDiscountChange(discountValue, "percentage");
+                      }}
                       className={`px-2 py-1 rounded-md border text-xs ${
                         discountType === "percentage"
                           ? "bg-blue-600 text-white border-blue-600"
@@ -2486,12 +2663,27 @@ const RestaurantPOS = () => {
                 </div>
 
                 <div className="flex items-center gap-2">
+                  <select
+                    value={selectedAdditionalCharge}
+                    onChange={(e) => {
+                      setSelectedAdditionalCharge(e.target.value);
+                      handleDiscountChange(discountValue, discountType);
+                    }}
+                    name=""
+                    id=""
+                  >
+                    {additionalChargeData?.map((charge) => (
+                      <option key={charge._id} value={charge._id}>
+                        {charge.name}
+                      </option>
+                    ))}
+                  </select>
                   <input
                     type="text"
                     min="0"
                     value={discountValue}
                     onChange={(e) =>
-                      setDiscountValue(Number(e.target.value) || 0)
+                      handleDiscountChange(e.target.value, discountType)
                     }
                     className="flex-1 px-2 py-1.5 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
                     placeholder={
@@ -2500,16 +2692,21 @@ const RestaurantPOS = () => {
                   />
 
                   {/* Show calculated value if percentage */}
-                  {discountType === "percentage" && (
-                    <span className="text-[11px] text-gray-600 whitespace-nowrap">
+                </div>
+                {additionalChargeDataBasedOnSelection?.length > 0 && (
+                  <span className="text-sm text-gray-600 whitespace-nowrap">
+                    {`DiscountAmount(${additionalChargeDataBasedOnSelection[0]?.taxPercentage}%
+                     ${additionalChargeDataBasedOnSelection[0]?.value}) ₹ 
+                     ${additionalChargeDataBasedOnSelection[0]?.finalValue}`}
+                  </span>
+                )}
+                {/* <span className="text-sm text-gray-600 whitespace-nowrap">
                       = ₹
                       {(
                         (Number(discountValue || 0) / 100) *
                         Math.round(getTotalAmount())
                       ).toFixed(2)}
-                    </span>
-                  )}
-                </div>
+                    </span> */}
               </div>
 
               {/* Final total after discount */}
@@ -2517,12 +2714,15 @@ const RestaurantPOS = () => {
                 <span className="text-sm">Net Amount</span>
                 <span className="text-base text-blue-600">
                   {(() => {
-                    const gross = Math.round(getTotalAmount());
-                    const disc =
-                      discountType === "amount"
-                        ? Number(discountValue || 0)
-                        : (Number(discountValue || 0) / 100) * gross;
-                    const net = Math.max(gross - disc, 0);
+                    const gross = getTotalAmount();
+                    const discount =
+                      additionalChargeDataBasedOnSelection[0]?.finalValue || 0;
+                    console.log(discount);
+                    console.log(discountBasedOnGrossAmount);
+                    console.log(gross);
+                    const net = Math.round(
+                      discountBasedOnGrossAmount ? gross - discount : gross,
+                    );
                     return `₹${net.toFixed(2)}`;
                   })()}
                 </span>
@@ -2559,19 +2759,17 @@ const RestaurantPOS = () => {
           </motion.div>
         </div>
       )}
-      {/* {showVoucherPdf && salePrintData && (
-      <div style={{ display: 'none' }}>
-        <VoucherThreeInchPdf
-          contentToPrint={contentToPrint}
-          data={salePrintData}
-          org={org}
-          tab="sale"
-          isPreview={false}
-          handlePrintData={handlePrint}
-        />
-      </div>
-    )} */}
-
+      {showParentKots && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[85vh] overflow-y-auto">
+            <ParentKotPage
+              setShowParentKots={setShowParentKots}
+              cmp_id={cmp_id}
+              handleTagKotConfirmation={handleTagKotConfirmation}
+            />
+          </div>
+        </div>
+      )}
       {/* Optimized CSS */}
       <style jsx>{`
         .scrollbar-hide {

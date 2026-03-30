@@ -18,6 +18,7 @@ function AddPartySecondary() {
   const queryClient = useQueryClient();
 
   const from = location.state?.from;
+  console.log(from);
   
   // Get returnUrl from query parameters
   const searchParams = new URLSearchParams(location.search);
@@ -61,6 +62,10 @@ function AddPartySecondary() {
           navigate("/sUsers/bookingPage", { replace: true });
           return;
         }
+        if(from == "/sUsers/kotPage"){
+          navigate("/sUsers/kotPage", { state: { fromTable: true }, replace: true });
+          return;
+        }
 
         if (from === "accountingVoucher") {
           dispatch(addPartyInAccountingVouchers(res.data.result));
@@ -85,6 +90,7 @@ function AddPartySecondary() {
         title={"Add Party"}
         from={from}
         loading={loading}
+        fromPayment={from === "/sUsers/kotPage" ? true : false}
       />
 
       <AddPartyForm

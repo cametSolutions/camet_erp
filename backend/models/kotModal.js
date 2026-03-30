@@ -1,4 +1,40 @@
 import mongoose from "mongoose";
+const kitchenBatchSchema = new mongoose.Schema(
+  {
+    batchNo: {
+      type: Number,
+      required: true,
+    },
+    printedAt: {
+      type: Date,
+      default: Date.now,
+    },
+    items: [
+      {
+        itemId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Item", // add your ref if needed
+          required: true,
+        },
+        quantity: {
+          type: Number,
+          required: true,
+        },
+        product_name: {
+          type: String,
+          required: true,
+        },
+        _id: false,
+      },
+    ],
+    status: {
+      type: String,
+      enum: ["pending", "printed", "completed"],
+      default: "printed",
+    },
+  },
+  { _id: false }
+);
 
 const kotSchema = new mongoose.Schema({
   primary_user_id: {
@@ -77,6 +113,11 @@ const kotSchema = new mongoose.Schema({
     default: "pending",
   },
 
+    kitchenBatches: {
+    type: [kitchenBatchSchema],
+    default: [],
+  },
+
   cancelReason: {
     type: String,
     trim: true,
@@ -100,7 +141,7 @@ const kotSchema = new mongoose.Schema({
     type: String,
     trim: true,
   },
-  discount: { type: Number, default: 0 ,set: (val) => Math.round(val),},
+  discount: { type: Number, default: 0, set: (val) => Math.round(val) },
   discountChargeId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "AdditionalCharges",
@@ -111,12 +152,19 @@ const kotSchema = new mongoose.Schema({
     ref: "FoodPlan",
     default: null,
   },
-
-  foodPlanDetails: {
-    planName: { type: String, default: null },
-    amount: { type: Number, default: 0 },
-    isComplimentary: { type: Boolean, default: false },
+  isParent: {
+    type: Boolean,
+    default: true,
   },
+
+  foodPlanDetails: [
+    {
+      _id: { type: mongoose.Schema.Types.ObjectId, ref: "FoodPlan" },
+      planType: String,
+      amount: Number,
+      isComplimentary: Boolean,
+    },
+  ],
 
   isManuallyComplimentary: {
     type: Boolean,

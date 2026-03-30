@@ -106,7 +106,7 @@ export default function SattvaInvoice() {
   const fetchDebitData = async (data) => {
     try {
       const res = await api.post(
-        `/api/sUsers/fetchOutStandingAndFoodData`,
+        `/api/sUsers/fetchOutStandingAndFoodData/${organization._id}`,
         { data: data, isForPreview: isForPreview },
         { withCredentials: true }
       );

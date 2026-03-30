@@ -11,6 +11,7 @@ function PaymentModal({
   selected,
   totalAmount,
   saveLoader = false,
+  setSaveLoader,
   onClose,
   onPaymentSave,
   cmp_id,
@@ -94,7 +95,7 @@ function PaymentModal({
 
   const handleSavePayment = () => {
     if (!validatePayment()) return;
-
+     setSaveLoader(true)
     const paymentData = {
       mode: paymentMode,
       totalAmount,
@@ -102,9 +103,24 @@ function PaymentModal({
     };
 
     if (paymentMode === "single") {
+      console.log(cashOrBank)
+      console.log(selectedCash)
+      console.log(selectedBank)
+      console.log(paymentMethod)
+      let findOne
+      if(paymentMethod==="cash"){
+        findOne = cashOrBank?.cashDetails?.find((c) => c._id === selectedCash);
+      }else{
+        findOne = cashOrBank?.bankDetails?.find((b) => b._id === selectedBank);
+      }
+      console.log(findOne)
+      if (!findOne) {
+        setPaymentError("Please select a select cash or bank details");
+        return;
+      }
       paymentData.payments.push({
         method: paymentMethod,
-        paymentType:(selectedonlinepartyName==="paytm"||selectedonlinepartyName==="gpay")?"upi":selectedonlinepartyName==="card"?"card":paymentMethod==="cash"?"cash":(selectedonlinepartyName!=="paytm"&&selectedonlinepartyName!=="gpay"&&selectedonlinepartyName !=="card")&&selectedonlinetype==="bank"?"bank":"credit",
+        paymentType: findOne.under,
         amount: totalAmount,
         accountId: paymentMethod === "cash" ? selectedCash : selectedBank,
         accountName:
@@ -112,15 +128,44 @@ function PaymentModal({
             ? cashOrBank?.cashDetails?.find((c) => c._id === selectedCash)?.partyName
             : cashOrBank?.bankDetails?.find((b) => b._id === selectedBank)?.partyName,
       });
+  //      [
+  //   {
+  //     customerId: '686bba949ac90a1bbad462d0',
+  //     method: 'bank',
+  //     amount: 900,
+  //     accountId: '6895c06d14dac3df95ec3a72',
+  //     accountName: 'SBI'
+  //   },
+  //   {
+  //     customerId: '686bba949ac90a1bbad462d0',
+  //     method: 'bank',
+  //     amount: 100,
+  //     accountId: '6937a9a69dff8a752b57f945',
+  //     accountName: 'card'
+  //   }
+  // ]
     } else if (paymentMode === "split") {
-      // Use the split payment data (no need for splitDetails as payments already has everything)
-      // paymentData.splitDetails
-      console.log(splitPaymentData.payments)
-      paymentData.payments = splitPaymentData.payments.map((payment) => ({
-        ...payment,
-       paymentType:(payment.accountName==="paytm"||payment.accountName==="gpay")?"upi": payment.accountName==="card"? "card" :payment.method==="bank"?"bank":"cash",
-      }))
+  console.log(splitPaymentData.payments);
+
+  paymentData.payments = splitPaymentData.payments.map((payment) => {
+    let findOne;
+
+    if (payment.method === "cash") {
+      findOne = cashOrBank?.cashDetails?.find(
+        (c) => c._id === payment.accountId
+      );
+    } else {
+      findOne = cashOrBank?.bankDetails?.find(
+        (b) => b._id === payment.accountId
+      );
     }
+
+    return {
+      ...payment,
+      paymentType: findOne?.under || "",
+    };
+  });
+}
     onPaymentSave?.(paymentData);
   };
 
@@ -142,6 +187,8 @@ function PaymentModal({
     }
     return false;
   };
+
+  console.log(saveLoader)
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -263,7 +310,7 @@ function PaymentModal({
                   <option value="">Select Cash Account</option>
                   {cashOrBank?.cashDetails?.map((cashier) => (
                     <option key={cashier._id} value={cashier._id}>
-                      {cashier.partyName}
+                      {cashier.partyName} - ({cashier.under})
                     </option>
                   ))}
                 </select>
@@ -296,7 +343,7 @@ function PaymentModal({
                     <option key={cashier._id} value={cashier._id}
                     data-partyname={cashier.partyName}
                     data-partyType={cashier.partyType}>
-                      {cashier.partyName}
+                      {cashier.partyName} -({cashier.under})
                     </option>
                   ))}
                 </select>

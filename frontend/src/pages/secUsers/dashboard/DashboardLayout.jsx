@@ -8,7 +8,7 @@ import DashboardSummary from "./DashboardSummary";
 import { useState } from "react";
 import TodaysTransaction from "./TodaysTransaction";
 import { toast } from "sonner";
-
+import { IoIosRefresh } from "react-icons/io";
 function DashBoardLayout({
   handleToggleSidebar,
   org,
@@ -17,11 +17,11 @@ function DashBoardLayout({
   type,
 }) {
   const [tab, setTab] = useState("transactions");
-console.log("hdd")
+  console.log("hdd");
   return (
     <div className="overflow-hidden h-screen">
       <div className="sticky top-0   h-[100px] ">
-        <div className="bg-[#012a4a]   p-3  text-white text-lg font-bold flex items-center gap-3  shadow-lg">
+        <div className="bg-[#0B1D34]  p-3  text-white text-lg font-bold flex items-center gap-3  shadow-lg">
           <IoReorderThreeSharp
             onClick={handleToggleSidebar}
             className="block md:hidden text-3xl"
@@ -57,19 +57,22 @@ console.log("hdd")
           />
           {/* tiles */}
 
-         {/* <button onClick={() => toast('Toast')}>Render Toast</button> */}
+          {/* <button onClick={() => toast('Toast')}>Render Toast</button> */}
 
           <hr className="border" />
 
           <div className=" hidden  sm:flex items-center   z-10  w-full pl-4">
             <div className=" bg-white p-2 w-1/2 text-gray-500 text-xs md:text-sm font-bold flex items-center gap-3  ">
               <p> Today's Transactions</p>
+
               {/* 
                 <p className="text-[9px] md:text-sm">
                   ( {new Date().toDateString()} )
                 </p> */}
               <CiCalendarDate className="text-xl font-bold text-violet-500" />
               <FaCaretDown />
+              <IoIosRefresh className="text-blue-600 font-extrabold w-4 h-4 cursor-pointer hover:rotate-180 transition-transform duration-300"
+              onClick={() => window.location.reload()} />
             </div>
             <div className=" bg-white p-2  w-1/2 text-gray-500 text-xs md:text-sm font-bold flex items-center gap-3  ">
               <p> Summary</p>

@@ -78,6 +78,7 @@ const partySchema = new mongoose.Schema({
   bsr_code: { type: String },
   client_code: { type: String},
   isTaggedWithComplementary : { type: Boolean, default: false },
+  under: { type: String, default: "cash" },
 });
 
 // / ============= CRITICAL PARTY INDEXES =============

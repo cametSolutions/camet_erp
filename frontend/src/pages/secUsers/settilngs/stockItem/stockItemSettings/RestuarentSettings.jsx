@@ -11,6 +11,9 @@ import { LiaMoneyCheckAltSolid } from "react-icons/lia";
 import { updateConfiguration } from "../../../../../../slices/secSelectedOrgSlice.js";
 import { useLocation } from "react-router-dom";
 import { SiCashapp } from "react-icons/si";
+import { TiPrinter } from "react-icons/ti";
+import { IoCalculator } from "react-icons/io5";
+
 import api from "@/api/api";
 
 const restuarentSettings = () => {
@@ -21,7 +24,7 @@ const restuarentSettings = () => {
   const { industry, _id, configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg,
   );
-
+  console.log(configurations);
   const handleToggleChangeFromParent = async (data) => {
     console.log(data);
     let url;
@@ -110,13 +113,42 @@ const restuarentSettings = () => {
       dbField: "kotApproval",
     });
     settingsOptions.push({
-      title: "addRateWithTax",
-      description: "Better tax calculations for better organization",
+      title: "Rate include tax (for entry).",
+      description: "Rate shows with tax in entry",
       icon: <LiaMoneyCheckAltSolid />,
       active: true,
       toggle: true,
       toggleValue: configurations[0]?.addRateWithTax?.restaurantSale,
       dbField: "restaurantSale",
+    });
+    settingsOptions.push({
+      title: "Include tax with print",
+      description: "In this option rate and amount will print with tax",
+      icon: <IoCalculator />,
+      active: true,
+      toggle: true,
+      toggleValue:
+        configurations[0]?.defaultPrint?.showPrintWithTaxInRestaurant,
+      dbField: "showPrintWithTaxInRestaurant",
+    });
+    settingsOptions.push({
+      title: "Discount based on amount include tax.",
+      description: "Better management of amount and discount",
+      icon: <TiPrinter />,
+      active: true,
+      toggle: true,
+      toggleValue: configurations[0]?.discountBasedOnGrossAmount,
+      dbField: "discountBasedOnGrossAmount",
+    });
+
+    settingsOptions.push({
+      title: "show Print Option BeforeSale",
+      description: "Better tax calculations for better organization",
+      icon: <TiPrinter />,
+      active: true,
+      toggle: true,
+      toggleValue: configurations[0]?.defaultPrint?.showBeforeSaleInRestaurant,
+      dbField: "restaurantPrint",
     });
     settingsOptions.push({
       title: "Default Print",
@@ -146,46 +178,44 @@ const restuarentSettings = () => {
       to: "/sUsers/complementaryCashOrBank",
       active: true,
     });
-     settingsOptions.push(
-    {
-      title: "Dine In",
-      description: "Enable Dine In in restaurant dashboard",
-      icon: <MdFoodBank />,
-      active: true,
-      toggle: true,
-      toggleValue: configurations[0]?.orderTypes?.dineIn ?? false,
-      dbField: "orderTypes.dineIn",
-    },
-    {
-      title: "Takeaway",
-      description: "Enable Takeaway in restaurant dashboard",
-      icon: <MdFoodBank />,
-      active: true,
-      toggle: true,
-      toggleValue: configurations[0]?.orderTypes?.takeaway ?? false,
-      dbField: "orderTypes.takeaway",
-    },
-    {
-      title: "Delivery",
-      description: "Enable Delivery in restaurant dashboard",
-      icon: <MdFoodBank />,
-      active: true,
-      toggle: true,
-      toggleValue: configurations[0]?.orderTypes?.delivery ?? false,
-      dbField: "orderTypes.delivery",
-    },
-    {
-      title: "Room Service",
-      description: "Enable Room Service in restaurant dashboard",
-      icon: <MdFoodBank />,
-      active: true,
-      toggle: true,
-      toggleValue: configurations[0]?.orderTypes?.roomService ?? false,
-      dbField: "orderTypes.roomService",
-    }
-  );
-
-    
+    settingsOptions.push(
+      {
+        title: "Dine In",
+        description: "Enable Dine In in restaurant dashboard",
+        icon: <MdFoodBank />,
+        active: true,
+        toggle: true,
+        toggleValue: configurations[0]?.orderTypes?.dineIn ?? false,
+        dbField: "orderTypes.dineIn",
+      },
+      {
+        title: "Takeaway",
+        description: "Enable Takeaway in restaurant dashboard",
+        icon: <MdFoodBank />,
+        active: true,
+        toggle: true,
+        toggleValue: configurations[0]?.orderTypes?.takeaway ?? false,
+        dbField: "orderTypes.takeaway",
+      },
+      {
+        title: "Delivery",
+        description: "Enable Delivery in restaurant dashboard",
+        icon: <MdFoodBank />,
+        active: true,
+        toggle: true,
+        toggleValue: configurations[0]?.orderTypes?.delivery ?? false,
+        dbField: "orderTypes.delivery",
+      },
+      {
+        title: "Room Service",
+        description: "Enable Room Service in restaurant dashboard",
+        icon: <MdFoodBank />,
+        active: true,
+        toggle: true,
+        toggleValue: configurations[0]?.orderTypes?.roomService ?? false,
+        dbField: "orderTypes.roomService",
+      },
+    );
   }
 
   return (
@@ -193,7 +223,9 @@ const restuarentSettings = () => {
       <TitleDiv
         title={
           industry === 6 || industry === 7 || industry === 8
-            ? pathname === "/sUsers/restuarentSettings" ? "Restaurant Management" : "Room Management"
+            ? pathname === "/sUsers/restuarentSettings"
+              ? "Restaurant Management"
+              : "Room Management"
             : "Stock Item Settings"
         }
         from="/sUsers/StockItem"

@@ -67,7 +67,7 @@ export function ShareFormatSelector({ open, setOpen, voucherId, voucherType,data
   } else if (selectedFormat === "pos") {
     navigate(`/sUsers/share${voucherType}ThreeInch/${voucherId}`);
   } else if (selectedFormat === "pos2") {
-    navigate(`/sUsers/share${voucherType}ThreeInch2`, { state: data }); // ✅ correct syntax
+    navigate(`/sUsers/share${voucherType}ThreeInch2/${true}`, { state: data }); // ✅ correct syntax
   } else if (selectedFormat === "warrantyCard") {
     navigate(`/sUsers/share${voucherType}WarrantyCard/${voucherId}`);
   }

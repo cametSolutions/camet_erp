@@ -850,7 +850,7 @@ const handleNonCreditMode = async (
 ) => {
 
   console.log("here came call in non credit mode");
-  const validModes = ["cash", "upi", "cheque"];
+  const validModes = ["cash", "upi", "cheque", "card", "bank"];
 
   if (!validModes.includes(mode)) {
     throw new Error(`Invalid payment mode: ${mode}`);

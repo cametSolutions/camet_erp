@@ -35,7 +35,6 @@ import VoucherThreeInchPdf from "@/pages/voucher/voucherPdf/threeInchPdf/Voucher
 import VoucherThreeInchPdfFormat2 from "@/pages/voucher/voucherPdf/threeInchPdf/VoucherThreeInchPdfFormat2";
 import { useReactToPrint } from "react-to-print";
 import CustomerSearchInputBox from "@/pages/Hotel/Components/CustomerSearchInPutBox";
-import KitchenBatchesViewForPrintAndEdit from "../components/KitchenBatchesViewForPrintAndEdit";
 
 const OrdersDashboard = () => {
   const contentToPrint = useRef(null);
@@ -74,6 +73,7 @@ const OrdersDashboard = () => {
   const [previewForSales, setPreviewForSales] = useState(null);
   const [conformationModal, setConformationModal] = useState(false);
   const [isPostToRoom, setIsPostToRooms] = useState(false);
+
   const location = useLocation();
   const selectedKotFromRedirect = location.state?.selectedKot;
   const fromTable = location.state?.fromTable ?? false;
@@ -98,12 +98,6 @@ const OrdersDashboard = () => {
   const [printData, setPrintData] = useState(null);
   const [selectedAdditionalChargeData, setSelectedAdditionalChargeData] =
     useState(null);
-  const [expandedOrders, setExpandedOrders] = useState({});
-  const [showBatchWiseKotPrint, setShowBatchWiseKotPrint] = useState(false);
-  const [dataForBatchWisePrint, setDataForBatchWisePrint] = useState(null);
-  const [selectedMode, setSelectedMode] = useState(null);
-  const toggleExpand = (id) =>
-    setExpandedOrders((prev) => ({ ...prev, [id]: !prev[id] }));
 
   // const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -231,6 +225,48 @@ const OrdersDashboard = () => {
       setBillFormat("format1");
     }
   }, [org]);
+
+  // const fetchData = useCallback(async () => {
+  //   try {
+  //     const response = await api.get(
+  //       `/api/sUsers/getSeriesByVoucher/${cmp_id}?voucherType=sales`,
+  //       { withCredentials: true }
+  //     );
+  //     if (response.data) {
+  //       const specificSeries = response.data.series?.find(
+  //         (item) => item.under === "restaurant"
+  //       );
+  //       if (specificSeries) {
+  //         const {
+  //           prefix = "",
+  //           currentNumber = 0,
+  //           suffix = "",
+  //           width = 3,
+  //         } = specificSeries;
+
+  //         const paddedNumber = String(currentNumber).padStart(width, "0");
+  //         const specificNumber = `${prefix}${paddedNumber}${suffix}`;
+  //         let newSaleOjbect = {
+  //           series: specificSeries,
+  //           number: specificNumber,
+  //         };
+
+  //         setSaleVoucherData(newSaleOjbect);
+  //       }
+  //     }
+  //   } catch (error) {
+  //     console.log(error);
+  //     toast.error(error.response?.data?.message || "Error fetching data");
+  //   } finally {
+  //     setLoader(false);
+  //   }
+  // }, [cmp_id]);
+  // useEffect(() => {
+  //   fetchData();
+  // }, [fetchData]);
+  // Status configuration
+
+  console.log(cashAmount);
 
   useEffect(() => {
     if (location.state?.fromTable) {
@@ -362,12 +398,7 @@ const OrdersDashboard = () => {
       console.log(filtered);
       filtered = filtered.filter(
         (order) =>
-          order?.customer?.tableNumber
-            ?.toLowerCase()
-            .includes(searchQuery.toLowerCase()) ||
-          order?.customer?.name
-            ?.toLowerCase()
-            .includes(searchQuery.toLowerCase()) ||
+           order?.customer?.tableNumber?.toLowerCase().includes(searchQuery.toLowerCase())|| order?.customer?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
           order?.id?.toString().includes(searchQuery) ||
           order.items.some(
             (item) =>
@@ -382,43 +413,23 @@ const OrdersDashboard = () => {
     return filtered;
   };
 
-  const handleStatusChange = async (orderId, newStatus, batchNo) => {
-    console.log(newStatus);
+  const handleStatusChange = async (orderId, newStatus) => {
     setSaveLoader(true);
 
     try {
       const response = await api.put(
         `/api/sUsers/updateKotStatus/${orderId}`,
-        { status: newStatus, batchNo },
+        { status: newStatus },
         { withCredentials: true },
       );
 
       if (response.status === 200 || response.status === 201) {
         setOrders((prevOrders) =>
-          prevOrders.map((order) => {
-            if (order._id !== orderId) return order;
-
-            const updatedBatches = order.kitchenBatches?.map((batch) =>
-              batch.batchNo === batchNo
-                ? { ...batch, status: newStatus }
-                : batch,
-            );
-
-            const allCompleted =
-              updatedBatches?.length > 0 &&
-              updatedBatches.every((b) => b.status === "completed");
-
-            console.log(allCompleted);
-            console.log(updatedBatches);
-            console.log(order.status);
-
-            return {
-              ...order,
-              status: allCompleted ? "completed" : order.status,
-              statusType: allCompleted ? "completed" : order.statusType,
-              kitchenBatches: updatedBatches,
-            };
-          }),
+          prevOrders.map((order) =>
+            order._id === orderId
+              ? { ...order, status: newStatus, statusType: newStatus }
+              : order,
+          ),
         );
       } else {
         console.error("Failed to update backend:", response.data || response);
@@ -434,43 +445,18 @@ const OrdersDashboard = () => {
   };
 
   // function used to perform print  with kot
-  const handleKotPrint = (data, batchNo) => {
-    let newItems = data?.items || [];
-
-    if (batchNo !== null && batchNo !== undefined && batchNo !== "") {
-      console.log(batchNo);
-      const batchData = data.kitchenBatches.find(
-        (item) => item.batchNo === batchNo,
-      );
-
-      if (batchData) {
-        const batchItemIds = batchData.items.map((i) => i.itemId.toString());
-
-        newItems = data.items
-          .filter((item) => batchItemIds.includes(item._id.toString()))
-          .map((item) => {
-            const batchItem = batchData.items.find(
-              (i) => i.itemId.toString() === item._id.toString(),
-            );
-            return {
-              ...item,
-              quantity: batchItem?.quantity ?? item.quantity,
-            };
-          });
-      }
-    }
+  const handleKotPrint = (data) => {
+    console.log(data);
     const orderData = {
       kotNo: data?.voucherNumber,
       tableNo: data?.tableNumber,
-      items: newItems,
+      items: data?.items,
       createdAt: data?.createdAt,
       customerName: data?.customer?.name,
       type: data?.type,
     };
+    console.log(orderData);
 
-    setSelectedMode(null);
-    setShowBatchWiseKotPrint(false);
-    setDataForBatchWisePrint(null);
     generateAndPrintKOT(orderData, true, false, companyName);
   };
 
@@ -552,7 +538,7 @@ const OrdersDashboard = () => {
 
   const filteredOrders = getFilteredOrders();
 
-  console.log("filteredOrders", filteredOrders);
+  console.log("filteredOrders", filteredOrders[20]);
 
   const handleSavePayment = async (id) => {
     console.log(paymentMode);
@@ -708,7 +694,7 @@ const OrdersDashboard = () => {
       if (previewForSales && previewForSales.additionalCharges.length > 0) {
         // ✅ Use EXACTLY what's in preview - don't rebuild
         additionalChargesData = previewForSales.additionalCharges;
-        console.log(additionalChargesData);
+        console.log(additionalChargesData)
         additionalChargesData = [
           {
             _id: findOne._id,
@@ -721,9 +707,9 @@ const OrdersDashboard = () => {
             finalValue: previewForSales.additionalCharges[0].finalValue,
           },
         ];
-        console.log(additionalChargesData);
+          console.log(additionalChargesData)
       }
-
+      
       console.log("=== PAYMENT SUBMISSION ===");
       const hasAutoComplimentary = selectedKot.some((kot) => {
         const order = filteredOrders.find((o) => o._id === kot.id);
@@ -764,7 +750,6 @@ const OrdersDashboard = () => {
         //  discountCharge: previewDiscountCharge,
         // discountAmount: previewDiscount,
         note,
-        discountBasedOnGrossAmount: discountBasedOnGrossAmount,
       };
 
       console.log(payment);
@@ -900,37 +885,24 @@ const OrdersDashboard = () => {
       return findOne?.items || []; // return empty array if not found
     });
     console.log(itemList);
-    let subtotal;
-
+    let subtotal = 0;
     if (discountBasedOnGrossAmount) {
-      const gross = itemList.reduce(
-        (acc, item) => acc + Number(item.total || 0),
-        0,
-      );
-      subtotal = Math.round(gross).toFixed(2);
+      subtotal = Math.round(
+        itemList.reduce((acc, item) => acc + Number(item.total), 0),
+      ).toFixed(2);
     } else {
-      const gross = itemList.reduce(
-        (acc, item) =>
-          acc + Number(item.total || 0) - Number(item.totalIgstAmt || 0),
-        0,
-      );
-      const totalDiscount = Number(discountAmount || 0);
-
-      const net = itemList.reduce((acc, item) => {
-        console.log(item);
-        const lineTotal = Number(item.total || 0);
-        console.log(lineTotal);
-        const share = gross > 0 ? (lineTotal / gross) * totalDiscount : 0; // proportional
-        console.log(share);
-        return acc + (lineTotal - share);
-      }, 0);
-
-      subtotal = Math.round(net).toFixed(2);
+      let spiltDiscount = discountAmount / itemList.length;
+      subtotal = Math.round(
+        itemList.reduce(
+          (acc, item) => acc + (Number(item.total) - spiltDiscount),
+          0,
+        ),
+      ).toFixed(2);
     }
 
-    console.log(subtotal, discountAmount);
+    console.log(subtotal);
     let finalAmount = discountBasedOnGrossAmount
-      ? Math.round(Number(subtotal) - Number(discountAmount || 0)).toFixed(2)
+      ? Math.round(Number(subtotal) - (discountAmount || 0)).toFixed(2)
       : Math.round(subtotal).toFixed(2);
     console.log(finalAmount);
     let additionalChargesArray = [];
@@ -1050,17 +1022,17 @@ const OrdersDashboard = () => {
 
   console.log("selectedKot", showPaymentModal);
 
-  const handleEditKot = (kotData,batchNo,order) => {
+  const handleEditKot = (kotData) => {
+    console.log(kotData);
     if (kotData?.paymentCompleted) {
       toast.error("Kot Payment is completed so you can't edit");
       return;
     }
-    console.log("KOT to be edited:", order);
     // else if (kotData?.status === "completed") {
     //   toast.error("Kot is already completed so you can't edit");
     //   return;
     // }
-    navigate("/sUsers/RestaurantDashboard", { state: { kotData,batchNo,order} });
+    navigate("/sUsers/RestaurantDashboard", { state: { kotData } });
   };
 
   const handlePrint = useReactToPrint({
@@ -1100,56 +1072,9 @@ const OrdersDashboard = () => {
     });
   };
 
-  const groupedOrders = filteredOrders.reduce((groups, order) => {
-    let groupKey;
-    let groupLabel;
+  
 
-    if (order.type === "Room Service" || order.type === "roomService") {
-      groupKey = "room_service";
-      groupLabel = "🛎️ Room Service";
-    } else if (order.type === "Takeaway" || order.type === "takeaway") {
-      groupKey = "takeaway";
-      groupLabel = "🥡 Takeaway";
-    } else if (order.type === "delivery" || order.type === "Delivery ") {
-      groupKey = "delivery ";
-      groupLabel = "🥡 delivery ";
-    } else if (order.type === "dine-in") {
-      const table = order.tableNumber || "Unknown";
-      groupKey = `table_${table}`;
-      groupLabel = `🍽️ Table ${table}`;
-    } else {
-      groupKey = "other";
-      groupLabel = "📋 Other Orders";
-    }
-
-    if (!groups[groupKey]) {
-      groups[groupKey] = { label: groupLabel, orders: [] };
-    }
-    groups[groupKey].orders.push(order);
-    return groups;
-  }, {});
-
-  const sortedGroups = Object.entries(groupedOrders).sort(([a], [b]) => {
-    const fixedOrder = ["room_service", "takeaway", "other"];
-    const aIsTable = a.startsWith("table_");
-    const bIsTable = b.startsWith("table_");
-
-    if (aIsTable && bIsTable) {
-      // Alphabetical sort for table codes like A01, A02, B01
-      return a.localeCompare(b);
-    }
-    if (aIsTable) return -1;
-    if (bIsTable) return 1;
-    return fixedOrder.indexOf(a) - fixedOrder.indexOf(b);
-  });
-
-  const handleDataPrintBasedOnBatch = (order, mode) => {
-    setSelectedMode(mode);
-    setDataForBatchWisePrint(order);
-    setShowBatchWiseKotPrint(true);
-  };
-
-  console.log("selectedKot", groupedOrders["table_85"]);
+  console.log("selectedKot", filteredOrders[0]);
   return (
     <>
       {showVoucherPdf && (
@@ -1319,151 +1244,107 @@ const OrdersDashboard = () => {
             </div>
           </div>
 
-          <div className="p-2">
-            {userRole === "kitchen" && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {filteredOrders
-                  .flatMap((order) => {
-                    if (order.kitchenBatches?.length > 0) {
-                      return order.kitchenBatches.map((batch) => ({
-                        ...order,
-                        _batchNo: batch.batchNo,
-                        _batchItems: batch.items,
-                        _batchStatus: batch.status,
-                        _batchPrintedAt: batch.printedAt,
-                        _batchCardId: `${order._id}_${batch.batchNo}`,
-                        status: batch.status,
-                      }));
-                    }
-                    return [
-                      {
-                        ...order,
-                        _batchNo: null,
-                        _batchItems: null,
-                        _batchCardId: order._id,
-                        status: order.status,
-                      },
-                    ];
-                  })
-                  .map((order) => {
-                    if (order.status == "completed") {
-                      return;
-                    }
-                    const currentStatusConfig = statusConfig[order.status];
-                    const availableStatuses = getAvailableStatuses(
-                      order.status,
-                    );
-                    const isOrderSelected = (o) =>
-                      selectedKot.find((item) => item.id === o._id);
-                    const displayItems = order._batchItems ?? order.items;
+          {/* Orders Grid */}
+          <div className="p-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <>
+              {/* Orders List */}
+              {filteredOrders.map((order) => {
+                const currentStatusConfig = statusConfig[order.status];
+                const availableStatuses = getAvailableStatuses(order.status);
+                const isOrderSelected = (order) => {
+                  return selectedKot.find((item) => item.id === order._id);
+                };
+                console.log(order._id);
+                console.log(selectedKotFromRedirect);
 
-                    return (
-                      <div
-                        key={order._batchCardId}
-                        className={`group relative bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border overflow-hidden h-96 flex flex-col cursor-pointer ${
-                          isOrderSelected(order)
-                            ? "border-blue-500 ring-2 ring-blue-200 bg-blue-50"
-                            : "border-gray-100 hover:border-blue-200"
-                        }`}
-                        onClick={() => {
-                          if (
-                            showKotNotification &&
-                            selectedKotFromRedirect &&
-                            order._id == selectedKotFromRedirect._id
-                          )
-                            setShowKotNotification(false);
-                          handleSelectMultipleKots(order);
-                        }}
-                      >
-                        {/* Selected tick */}
-                        {isOrderSelected(order) && (
-                          <div className="absolute top-2 right-2 z-10 bg-blue-500 rounded-full p-1 shadow-lg animate-bounce">
-                            <MdCheckCircle className="w-4 h-4 text-white" />
-                          </div>
-                        )}
+                return (
+                  <div
+                    key={order.id}
+                    className={`group relative bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border overflow-hidden h-96 flex flex-col cursor-pointer ${
+                      isOrderSelected(order)
+                        ? "border-blue-500 ring-2 ring-blue-200 bg-blue-50"
+                        : "border-gray-100 hover:border-blue-200"
+                    }`}
+                    onClick={() => {
+                      if (
+                        showKotNotification &&
+                        selectedKotFromRedirect &&
+                        order._id == selectedKotFromRedirect._id
+                      ) {
+                        setShowKotNotification(false);
+                      }
+                      handleSelectMultipleKots(order);
+                    }}
+                  >
+                    {/* Selection indicator - Tick mark */}
+                    {isOrderSelected(order) && (
+                      <div className="absolute top-2 right-2 z-10 bg-blue-500 rounded-full p-1 shadow-lg animate-bounce">
+                        <MdCheckCircle className="w-4 h-4 text-white" />
+                      </div>
+                    )}
 
-                        {/* Status color bar */}
+                    {/* Status indicator bar */}
+                    <div
+                      className={`h-1 w-full ${currentStatusConfig.bgColor}`}
+                    />
+
+                    {/* Invoice Number - Independent Display */}
+                    <div
+                      className={`px-3 py-2 bg-gradient-to-r border-b flex-shrink-0 ${
+                        isOrderSelected(order)
+                          ? "from-blue-100 to-indigo-100 border-blue-200"
+                          : "from-blue-50 to-indigo-50 border-blue-100"
+                      }`}
+                    >
+                      <div className="flex items-center justify-center gap-4">
                         <div
-                          className={`h-1 w-full ${currentStatusConfig.bgColor}`}
-                        />
-
-                        {/* ── Card Header ── */}
-                        <div
-                          className={`px-3 py-2 bg-gradient-to-r border-b flex-shrink-0 ${
+                          className={`flex items-center gap-2 px-3 py-1 rounded-lg shadow-sm border ${
                             isOrderSelected(order)
-                              ? "from-blue-100 to-indigo-100 border-blue-200"
-                              : "from-blue-50 to-indigo-50 border-blue-100"
+                              ? "bg-blue-100 border-blue-300"
+                              : "bg-white border-blue-200"
                           }`}
                         >
-                          <div className="flex items-center justify-center gap-4">
-                            <div
-                              className={`flex items-center gap-2 px-3 py-1 rounded-lg shadow-sm border ${
-                                isOrderSelected(order)
-                                  ? "bg-blue-100 border-blue-300"
-                                  : "bg-white border-blue-200"
-                              }`}
-                            >
-                              <MdDescription className="w-4 h-4 text-blue-600" />
-                              <span
-                                className={`px-2 py-1 rounded-md text-xs font-medium ${
-                                  isOrderSelected(order)
-                                    ? "bg-blue-200 text-blue-800"
-                                    : "bg-gray-100 text-gray-700"
-                                }`}
-                              >
-                                {order.type}
-                                {order?.tableNumber
-                                  ? ` - ${order.tableNumber}`
-                                  : ""}
-                                <span>
-                                  {order.roomId?.roomName && order?.tableNumber
-                                    ? ", "
-                                    : " "}
-                                  {order.roomId?.roomName}
-                                </span>
-                              </span>
-                            </div>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleKotPrint(order, order._batchNo);
-                              }}
-                              className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg text-xs font-semibold hover:from-blue-600 hover:to-blue-700 transition-all"
-                            >
-                              <MdPrint className="w-3.5 h-3.5" />
-                              KOT
-                            </button>
-                            {/* <FaRegEdit
-                  className="w-4 h-4 text-blue-600"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleEditKot(order);
-                  }}
-                /> */}
-                          </div>
+                          <MdDescription className="w-4 h-4 text-blue-600" />
+                          <span
+                            className={`px-2 py-1 rounded-md text-xs font-medium ${
+                              isOrderSelected(order)
+                                ? "bg-blue-200 text-blue-800"
+                                : "bg-gray-100 text-gray-700"
+                            }`}
+                          >
+                            {order.type} - {order?.tableNumber}
+                            <span>
+                              {order.roomId?.roomName && order?.tableNumber
+                                ? ","
+                                : " "}
+                              {order.roomId?.roomName}
+                            </span>
+                          </span>
                         </div>
+                        <div className="flex items-center gap-2">
+                          <FaRegEdit
+                            className="w-4 h-4 text-blue-600"
+                            onClick={() => handleEditKot(order)}
+                          />
+                        </div>
+                      </div>
+                    </div>
 
-                        {/* ── Voucher + Batch Badge + Time ── */}
-                        <div className="flex justify-between items-start p-3 pb-2 flex-shrink-0">
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="text-sm font-bold text-blue-900">
-                                #{order.voucherNumber}
-                              </span>
-                              {order._batchNo && (
-                                <span className="text-[10px] font-black text-white bg-blue-500 px-2 py-0.5 rounded-full leading-none">
-                                  KOT {order._batchNo}
-                                </span>
-                              )}
-                              {(order.isManuallyComplimentary ||
-                                order.foodPlanDetails?.isComplimentary) && (
-                                <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full font-medium">
-                                  COMP
-                                </span>
-                              )}
-                            </div>
+                    {/* Order Header */}
+                    <div className="flex justify-between items-start p-3 pb-2 flex-shrink-0">
+                      <div className="flex items-start gap-2 min-w-0 flex-1 ">
+                        {/* Order type and timestamp */}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-sm font-bold text-blue-900">
+                              #{order.voucherNumber}
+                            </span>
+                          </div>
 
-                            <div className="text-xs text-gray-500 flex items-center gap-2 mt-1">
+                          {/* Date, Time & Complimentary - PROPER HIERARCHY */}
+                          <div className="flex items-center gap-3">
+                            {/* Timestamp */}
+                            <div className="text-xs text-gray-500 flex items-center gap-2 flex-shrink-0">
                               <MdAccessTime className="w-3 h-3 flex-shrink-0" />
                               <span className="truncate">
                                 {new Date(order.createdAt).toLocaleDateString(
@@ -1483,78 +1364,63 @@ const OrdersDashboard = () => {
                                   },
                                 )}
                               </span>
-                              {order.foodPlanDetails?.length > 0 && (
-                                <span className="text-black font-bold truncate flex ml-auto">
-                                  {order.foodPlanDetails
-                                    .map((plan) => plan.planType)
-                                    .join(", ")}
+                              {(order.isManuallyComplimentary ||
+                                order.foodPlanDetails?.isComplimentary) && (
+                                <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full font-medium flex-shrink-0 mt-1 justify-end">
+                                  COMP
                                 </span>
                               )}
                             </div>
-
-                            {/* Batch print time */}
-                            {order._batchPrintedAt && (
-                              <div className="text-[10px] text-gray-400 flex items-center gap-1 mt-0.5">
-                                <MdPrint className="w-3 h-3 flex-shrink-0" />
-                                <span>
-                                  Printed:{" "}
-                                  {new Date(
-                                    order._batchPrintedAt,
-                                  ).toLocaleTimeString([], {
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                    hour12: true,
-                                  })}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Order status pill */}
-                          <div
-                            className={`flex-shrink-0 px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1 ${currentStatusConfig.bgColor} ${currentStatusConfig.textColor}`}
-                          >
-                            <div
-                              className={`w-1.5 h-1.5 rounded-full ${currentStatusConfig.iconColor} animate-pulse`}
-                            />
-                            {currentStatusConfig.label}
                           </div>
                         </div>
+                      </div>
 
-                        {/* ── Items List ── */}
-                        <div className="flex-1 px-3 overflow-hidden min-h-0">
-                          <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1 flex items-center gap-1">
-                            <MdList className="w-3 h-3 text-gray-400" />
-                            {order._batchNo
-                              ? `KOT ${order._batchNo} Items`
-                              : "Items"}{" "}
-                            ({displayItems.length}
-                            {!order._batchNo && order.moreItems
-                              ? `+${order.moreItems}`
-                              : ""}
-                            )
-                          </h4>
-                          <div className="h-full overflow-y-auto space-y-1.5 pr-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-                            {displayItems.map((item, index) => (
-                              <div
-                                key={index}
-                                className={`flex items-center justify-between p-2 rounded-lg transition-colors border ${
-                                  isOrderSelected(order)
-                                    ? "bg-blue-50 hover:bg-blue-100 border-blue-200"
-                                    : "bg-gray-50 hover:bg-gray-100 border-gray-100"
-                                }`}
-                              >
-                                <div className="flex-1 min-w-0 pr-3">
-                                  <div className="text-xs text-gray-800 font-medium leading-tight">
-                                    {item?.product_name}
-                                  </div>
-                                  {item?.description && (
-                                    <div className="text-xs text-gray-500 truncate mt-0.5">
-                                      {item?.description}
-                                    </div>
-                                  )}
+                      {/* Status badge */}
+                      <div
+                        className={`flex-shrink-0 px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1 ${currentStatusConfig.bgColor} ${currentStatusConfig.textColor}`}
+                      >
+                        <div
+                          className={`w-1.5 h-1.5 rounded-full ${currentStatusConfig.iconColor} animate-pulse`}
+                        />
+                        {currentStatusConfig.label}
+                      </div>
+                    </div>
+
+                    {/* Order Items - Scrollable Section */}
+                    <div className="flex-1 px-3 overflow-hidden min-h-0">
+                      <div className="mb-2">
+                        <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1 flex items-center gap-1">
+                          <MdList className="w-3 h-3 text-gray-400" />
+                          Items ({order.items.length}
+                          {order.moreItems ? `+${order.moreItems}` : ""})
+                        </h4>
+                      </div>
+
+                      {/* Scrollable Items Container */}
+                      <div className="h-full overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400">
+                        <div className="space-y-1.5">
+                          {order.items.map((item, index) => (
+                            <div
+                              key={index}
+                              className={`flex items-center justify-between p-2 rounded-lg transition-colors border ${
+                                isOrderSelected(order)
+                                  ? "bg-blue-50 hover:bg-blue-100 border-blue-200"
+                                  : "bg-gray-50 hover:bg-gray-100 border-gray-100"
+                              }`}
+                            >
+                              <div className="flex-1 min-w-0 pr-3">
+                                <div className="text-xs text-gray-800 font-medium leading-tight">
+                                  {item?.product_name}
                                 </div>
-                                <div className="text-center flex-shrink-0">
+                                {item?.description && (
+                                  <div className="text-xs text-gray-500 truncate mt-0.5">
+                                    {item?.description}
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="flex items-center gap-2 flex-shrink-0">
+                                <div className="text-center">
                                   <span
                                     className={`text-xs font-semibold px-2 py-0.5 rounded-full min-w-[24px] inline-block ${
                                       isOrderSelected(order)
@@ -1568,849 +1434,668 @@ const OrdersDashboard = () => {
                                     qty
                                   </div>
                                 </div>
+
+                                {userRole === "reception" && (
+                                  <div className="text-right min-w-[50px]">
+                                    <div className="font-bold text-xs text-gray-900">
+                                      ₹{item?.price?.toFixed(2)}
+                                    </div>
+                                    <div className="text-xs text-gray-500">
+                                      ₹{item?.total?.toFixed(2)}
+                                    </div>
+                                  </div>
+                                )}
                               </div>
-                            ))}
+                            </div>
+                          ))}
 
-                            {/* moreItems only applies to non-batch cards */}
-                            {!order._batchNo && order.moreItems && (
-                              <div className="text-center py-2">
-                                <div
-                                  className={`inline-flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-full border ${
-                                    isOrderSelected(order)
-                                      ? "bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-700 border-blue-200"
-                                      : "bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 border-purple-200"
-                                  }`}
-                                >
-                                  <MdAdd className="w-3 h-3" />
-                                  {order.moreItems} more items
-                                </div>
-                              </div>
-                            )}
-
-                            {displayItems.length === 0 && (
-                              <div className="text-center py-4">
-                                <MdInbox className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                                <p className="text-xs text-gray-500">
-                                  No items in this order
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* ── Update Status ── */}
-                        <div className="mx-3 mb-2 p-2 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg border border-orange-100 flex-shrink-0">
-                          <div className="flex items-center gap-1 mb-2">
-                            <MdRefresh
-                              className={`w-3 h-3 text-orange-600 ${loader ? "animate-spin" : ""}`}
-                            />
-                            <span className="text-xs font-semibold text-orange-800">
-                              Update Status
-                            </span>
-                          </div>
-                          <div className="flex gap-1">
-                            {availableStatuses.length > 0 ? (
-                              availableStatuses.map((status) => (
-                                <button
-                                  key={status}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleStatusChange(
-                                      order._id,
-                                      status,
-                                      order._batchNo,
-                                    );
-                                  }}
-                                  className="flex-1 px-2 py-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded text-xs font-semibold hover:from-blue-600 hover:to-blue-700 transform hover:scale-105 transition-all duration-200"
-                                >
-                                  {statusConfig[status].label}
-                                </button>
-                              ))
-                            ) : (
-                              <div className="w-full text-center py-1">
-                                <span className="text-xs text-gray-500 italic">
-                                  No updates available
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Hover overlay */}
-                        <div
-                          className={`absolute inset-0 pointer-events-none transition-all duration-200 ${
-                            isOrderSelected(order)
-                              ? "bg-blue-500 bg-opacity-5"
-                              : "group-hover:bg-gray-500 group-hover:bg-opacity-5"
-                          }`}
-                        />
-                      </div>
-                    );
-                  })}
-              </div>
-            )}
-
-            {/* ══════════════════════════════════════════
-      RECEPTION — grouped, small box cards
-  ══════════════════════════════════════════ */}
-            {userRole === "reception" && (
-              <div className="flex flex-wrap gap-x-6 gap-y-8 items-start">
-                {sortedGroups.map(([groupKey, { label, orders, icon }]) => {
-                  const cardW = 180;
-                  const gapW = 12;
-                  const groupW =
-                    orders.length * cardW + (orders.length - 1) * gapW;
-
-                  return (
-                    <div
-                      key={groupKey}
-                      className="flex-shrink-0"
-                      style={{
-                        width: Math.min(groupW, window.innerWidth - 32),
-                      }}
-                    >
-                      {/* ── Group Header ── */}
-                      <div className="flex items-center gap-2 mb-3 h-8">
-                        <div className="w-0.5 h-full bg-gradient-to-b from-blue-500 to-indigo-500 rounded-full flex-shrink-0" />
-                        {icon && (
-                          <span className="text-sm flex-shrink-0 leading-none">
-                            {icon}
-                          </span>
-                        )}
-                        <span className="text-sm font-bold text-gray-800 leading-none tracking-wide truncate">
-                          {label}
-                        </span>
-                        <span className="flex-shrink-0 inline-flex items-center h-5 px-2 text-[10px] font-bold text-blue-600 bg-blue-50 border border-blue-100 rounded-full leading-none">
-                          {orders?.length}{" "}
-                          {orders?.length === 1 ? "order" : "orders"}
-                        </span>
-                        <div className="flex-1 h-px bg-gradient-to-r from-gray-200 to-transparent min-w-[8px]" />
-                      </div>
-
-                      {/* ── Cards Row ── */}
-                      <div className="flex flex-nowrap gap-3 overflow-x-auto pb-1">
-                        {orders.map((order) => {
-                          const currentStatusConfig =
-                            statusConfig[order.status];
-                          const isSelected = selectedKot.find(
-                            (item) => item.id === order._id,
-                          );
-                          const isExpanded = expandedOrders[order._id];
-                          const discountedTotal =
-                            Number(order.total) - Number(order.discount || 0);
-
-                          return (
-                            <div
-                              key={order._id}
-                              style={{ width: cardW, minWidth: cardW }}
-                              className={`relative rounded-xl border bg-white overflow-hidden flex flex-col transition-all duration-200 ${
-                                isSelected
-                                  ? "border-blue-500 ring-2 ring-blue-200 shadow-lg"
-                                  : "border-gray-100 hover:border-blue-200 shadow-md hover:shadow-xl hover:-translate-y-0.5"
-                              }`}
-                            >
-                              {/* Status color bar */}
+                          {/* Additional items indicator */}
+                          {order.moreItems && (
+                            <div className="text-center py-2">
                               <div
-                                className={`h-1 w-full flex-shrink-0 ${currentStatusConfig.bgColor}`}
-                              />
-
-                              {/* Selected tick */}
-                              {isSelected && (
-                                <div className="absolute top-2 right-2 z-10 bg-blue-500 rounded-full p-0.5 shadow-lg animate-bounce">
-                                  <MdCheckCircle className="w-3 h-3 text-white" />
-                                </div>
-                              )}
-
-                              {/* ── Card Header ── */}
-                              <div
-                                className={`px-2 py-1.5 bg-gradient-to-r border-b cursor-pointer ${
-                                  isSelected
-                                    ? "from-blue-100 to-indigo-100 border-blue-200"
-                                    : "from-blue-50 to-indigo-50 border-blue-100"
+                                className={`inline-flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-full border ${
+                                  isOrderSelected(order)
+                                    ? "bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-700 border-blue-200"
+                                    : "bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 border-purple-200"
                                 }`}
-                                onClick={() => {
-                                  if (
-                                    showKotNotification &&
-                                    selectedKotFromRedirect &&
-                                    order._id == selectedKotFromRedirect._id
-                                  )
-                                    setShowKotNotification(false);
-                                  handleSelectMultipleKots(order);
-                                }}
                               >
-                                <div className="flex items-center justify-between gap-1">
-                                  <div
-                                    className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium flex-1 min-w-0 ${
-                                      isSelected
-                                        ? "bg-blue-200 text-blue-800"
-                                        : "bg-gray-100 text-gray-700"
-                                    }`}
-                                  >
-                                    <MdDescription className="w-2.5 h-2.5 text-blue-600 flex-shrink-0" />
-                                    <span className="truncate">
-                                      {order.type}
-                                      {order?.tableNumber
-                                        ? ` · ${order.tableNumber}`
-                                        : ""}
-                                      {order.roomId?.roomName
-                                        ? ` · ${order.roomId.roomName}`
-                                        : ""}
-                                    </span>
-                                  </div>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      if (order.kitchenBatches.length > 1) {
-                                        handleDataPrintBasedOnBatch(
-                                          order,
-                                          "edit",
-                                        );
-                                      } else {
-                                        handleEditKot(order);
-                                      }
-                                    }}
-                                    className="flex-shrink-0 ml-1 w-6 h-6 rounded flex items-center justify-center hover:bg-blue-100 transition-colors"
-                                  >
-                                    <FaRegEdit className="w-3 h-3 text-blue-600 hover:text-blue-800" />
-                                  </button>
-                                </div>
+                                <MdAdd className="w-3 h-3" />
+                                {order.moreItems} more items
                               </div>
-
-                              {/* ── Card Body ── */}
-                              <div
-                                className="px-2 py-2 flex flex-col gap-1.5 flex-1 cursor-pointer"
-                                onClick={() => {
-                                  if (
-                                    showKotNotification &&
-                                    selectedKotFromRedirect &&
-                                    order._id == selectedKotFromRedirect._id
-                                  )
-                                    setShowKotNotification(false);
-                                  handleSelectMultipleKots(order);
-                                }}
-                              >
-                                <div className="flex items-center gap-1">
-                                  <span className="text-sm font-bold text-blue-900">
-                                    #{order.voucherNumber}
-                                  </span>
-                                  {(order.isManuallyComplimentary ||
-                                    order.foodPlanDetails?.isComplimentary) && (
-                                    <span className="text-[9px] bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded-full font-medium">
-                                      COMP
-                                    </span>
-                                  )}
-                                </div>
-
-                                <div className="flex items-center gap-1 text-[10px] text-gray-500">
-                                  <MdAccessTime className="w-3 h-3 flex-shrink-0" />
-                                  <span className="truncate">
-                                    {new Date(
-                                      order.createdAt,
-                                    ).toLocaleDateString("en-GB", {
-                                      day: "2-digit",
-                                      month: "short",
-                                    })}
-                                    {" · "}
-                                    {new Date(
-                                      order.createdAt,
-                                    ).toLocaleTimeString([], {
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                      hour12: true,
-                                    })}
-                                  </span>
-                                  {order.foodPlanDetails?.length > 0 && (
-                                    <span className="text-black font-bold truncate flex ml-auto">
-                                      {order.foodPlanDetails
-                                        .map((plan) => plan.planType)
-                                        .join(", ")}
-                                    </span>
-                                  )}
-                                </div>
-
-                                <div
-                                  className={`self-start flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${currentStatusConfig.bgColor} ${currentStatusConfig.textColor}`}
-                                >
-                                  <div
-                                    className={`w-1.5 h-1.5 rounded-full ${currentStatusConfig.iconColor} animate-pulse`}
-                                  />
-                                  {currentStatusConfig.label}
-                                </div>
-
-                                <div className="flex items-center justify-between mt-0.5">
-                                  <span
-                                    className={`text-[10px] font-medium flex items-center gap-1 px-1.5 py-0.5 rounded-md ${
-                                      isSelected
-                                        ? "bg-blue-100 text-blue-700"
-                                        : "bg-gray-100 text-gray-600"
-                                    }`}
-                                  >
-                                    <MdList className="w-2.5 h-2.5" />
-                                    {order.items.length}
-                                    {order.moreItems
-                                      ? `+${order.moreItems}`
-                                      : ""}{" "}
-                                    items
-                                  </span>
-                                  <div className="text-right">
-                                    <div className="text-xs font-bold text-gray-900">
-                                      ₹{discountedTotal.toFixed(0)}
-                                    </div>
-                                    {order.discount > 0 && (
-                                      <div className="text-[9px] text-gray-400 line-through">
-                                        ₹{Number(order.total).toFixed(0)}
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* ── Action Buttons ── */}
-                              <div
-                                className="px-2 pb-2 flex gap-1"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                {/* Expand toggle */}
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    toggleExpand(order._id);
-                                  }}
-                                  className={`flex-shrink-0 w-6 h-6 rounded-md flex items-center justify-center transition-all duration-200 ${
-                                    isExpanded
-                                      ? "bg-blue-600 text-white"
-                                      : isSelected
-                                        ? "bg-blue-100 text-blue-600 hover:bg-blue-200"
-                                        : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                                  }`}
-                                >
-                                  <svg
-                                    className={`w-3 h-3 transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`}
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                    strokeWidth={2.5}
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      d="M19 9l-7 7-7-7"
-                                    />
-                                  </svg>
-                                </button>
-
-                                {/* Print Bill */}
-                                {order?.paymentCompleted && (
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-
-                                      handlePrintData(order._id);
-                                    }}
-                                    className="flex-1 h-6 bg-white text-emerald-700 border border-emerald-200 rounded-md text-[9px] font-semibold hover:bg-emerald-50 transition-all flex items-center justify-center gap-0.5"
-                                  >
-                                    <MdVisibility className="w-2.5 h-2.5" />
-                                    Print
-                                  </button>
-                                )}
-
-                                {/* KOT */}
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (order.kitchenBatches.length > 1) {
-                                      handleDataPrintBasedOnBatch(
-                                        order,
-                                        "print",
-                                      );
-                                    } else {
-                                      handleKotPrint(order);
-                                    }
-                                  }}
-                                  className="flex-1 h-6 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-md text-[9px] font-semibold hover:from-blue-600 hover:to-blue-700 transition-all flex items-center justify-center gap-0.5"
-                                >
-                                  <MdPrint className="w-2.5 h-2.5" />
-                                  KOT
-                                </button>
-
-                                {/* Cancel — icon only to reduce accidental taps */}
-                                {!order?.paymentCompleted && (
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      e.preventDefault();
-                                      setSelectedOrderForCancel(order);
-                                      setShowCancelModal(true);
-                                    }}
-                                    title="Cancel order"
-                                    className="flex-shrink-0 w-6 h-6 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-md hover:from-red-600 hover:to-red-700 transition-all flex items-center justify-center"
-                                  >
-                                    <MdCancel className="w-3 h-3" />
-                                  </button>
-                                )}
-                              </div>
-
-                              {/* ── Expanded Items Panel ── */}
-                              {isExpanded && (
-                                <div className="border-t border-blue-100 bg-gradient-to-r from-blue-50 to-indigo-50">
-                                  <div className="flex items-center gap-1.5 px-2 pt-2 pb-1.5">
-                                    <MdList className="w-3 h-3 text-blue-600" />
-                                    <span className="text-[10px] font-bold text-blue-800 uppercase tracking-wide">
-                                      Order Items
-                                    </span>
-                                    <span className="ml-auto text-[9px] font-bold bg-blue-200 text-blue-800 px-1.5 py-0.5 rounded-full">
-                                      {order.items.length}
-                                      {order.moreItems
-                                        ? `+${order.moreItems}`
-                                        : ""}
-                                    </span>
-                                  </div>
-                                  <div className="px-2 pb-2 space-y-1">
-                                    {order.items.map((item, idx) => (
-                                      <div
-                                        key={idx}
-                                        className={`flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 border ${
-                                          isSelected
-                                            ? "bg-blue-100 border-blue-200"
-                                            : "bg-white border-blue-100"
-                                        }`}
-                                      >
-                                        <div className="min-w-0 flex-1">
-                                          <div className="text-[10px] font-semibold text-gray-800 truncate leading-tight">
-                                            {item?.product_name}
-                                          </div>
-                                          {item?.description && (
-                                            <div className="text-[9px] text-gray-400 truncate">
-                                              {item.description}
-                                            </div>
-                                          )}
-                                        </div>
-                                        <div className="flex items-center gap-1.5 flex-shrink-0">
-                                          <span
-                                            className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[22px] text-center ${
-                                              isSelected
-                                                ? "bg-blue-300 text-blue-900"
-                                                : "bg-blue-100 text-blue-800"
-                                            }`}
-                                          >
-                                            ×{item?.quantity}
-                                          </span>
-                                          <span className="text-[9px] text-gray-500 font-medium min-w-[32px] text-right">
-                                            ₹{item?.total?.toFixed(0)}
-                                          </span>
-                                        </div>
-                                      </div>
-                                    ))}
-                                    {order.moreItems && (
-                                      <div className="flex items-center justify-center gap-1 py-0.5">
-                                        <MdAdd className="w-3 h-3 text-blue-500" />
-                                        <span className="text-[9px] font-semibold text-blue-600">
-                                          {order.moreItems} more items
-                                        </span>
-                                      </div>
-                                    )}
-                                    <div className="flex items-center justify-between pt-1 mt-0.5 border-t border-blue-200">
-                                      <span className="text-[10px] font-bold text-blue-800">
-                                        Total
-                                      </span>
-                                      <div className="flex items-center gap-2">
-                                        {order.discount > 0 && (
-                                          <span className="text-[9px] text-gray-400 line-through">
-                                            ₹{Number(order.total).toFixed(2)}
-                                          </span>
-                                        )}
-                                        <span className="text-xs font-black text-blue-900">
-                                          ₹{discountedTotal.toFixed(2)}
-                                        </span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
                             </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+                          )}
 
-            {/* ── Floating Pay Button ── */}
-            {selectedKot.length > 0 && (
-              <div className="fixed bottom-6 right-6 z-50 max-h-screen animate-slideUp">
-                <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-4 min-w-[280px]">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                        <MdCheckCircle className="w-5 h-5 text-white" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-gray-900">
-                          {selectedKot.length} item
-                          {selectedKot.length > 1 ? "s" : ""} selected
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          Ready for payment
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => setSelectedKot([])}
-                      className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded-full transition-all"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                  <div className="max-h-32 overflow-y-auto mb-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-                    <div className="space-y-2">
-                      {selectedKot.map((item) => (
-                        <div
-                          key={item.id}
-                          className="flex items-center justify-between text-xs bg-gray-50 p-2 rounded-lg"
-                        >
-                          <span className="font-medium text-gray-700">
-                            #{item.voucherNumber}
-                          </span>
-                          <span className="text-gray-500 capitalize">
-                            {item.type}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  {userRole === "reception" && (
-                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-3 rounded-lg mb-2 border border-green-200">
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="font-medium text-green-800">
-                          Subtotal
-                        </span>
-                        <span className="font-semibold text-green-900">
-                          ₹
-                          {selectedKot
-                            .reduce((total, kot) => {
-                              const order = filteredOrders.find(
-                                (o) => o._id === kot.id,
-                              );
-                              return total + (order?.total || 0);
-                            }, 0)
-                            .toFixed(2)}
-                        </span>
-                      </div>
-                      <div className="border border-red-200 rounded-lg p-3 mb-2 bg-red-50">
-                        <label className="block text-xs font-semibold text-red-700 mb-2">
-                          Discount
-                        </label>
-                        <div className="flex flex-col gap-2">
-                          <select
-                            value={selectedAdditionalChargeData}
-                            onChange={(e) =>
-                              setSelectedAdditionalChargeData(e.target.value)
-                            }
-                          >
-                            <option value="">Select Discount</option>
-                            {additionalCharges.map((charge) => (
-                              <option key={charge._id} value={charge._id}>
-                                {charge.name}
-                              </option>
-                            ))}
-                          </select>
-                          <div className="flex gap-2">
-                            <div className="flex bg-gray-200 rounded-lg p-1">
-                              <button
-                                onClick={() => {
-                                  setDiscountType("amount");
-                                  if (discountValue > 0)
-                                    setDiscountAmount(discountValue);
-                                }}
-                                className={`px-2 py-1.5 rounded-md text-xs font-medium transition-all ${discountType === "amount" ? "bg-white text-red-600 shadow-sm" : "text-gray-600"}`}
-                              >
-                                ₹
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setDiscountType("percentage");
-                                  setDiscountAmount(0);
-                                  setDiscountValue(0);
-                                }}
-                                className={`px-2 py-1.5 rounded-md text-xs font-medium transition-all ${discountType === "percentage" ? "bg-white text-red-600 shadow-sm" : "text-gray-600"}`}
-                              >
-                                %
-                              </button>
-                            </div>
-                            <div className="flex-1 relative">
-                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs">
-                                {discountType === "percentage" ? "%" : "₹"}
-                              </span>
-                              <input
-                                type="number"
-                                value={discountValue || ""}
-                                onChange={(e) => {
-                                  const value = parseFloat(e.target.value) || 0;
-                                  setDiscountValue(value);
-
-                                  // Get selected KOT items
-                                  const itemList = selectedKot
-                                    .map((kot) =>
-                                      filteredOrders.find(
-                                        (o) => o._id === kot.id,
-                                      ),
-                                    )
-                                    .filter(Boolean);
-
-                                  let subtotal = 0;
-
-                                  if (discountBasedOnGrossAmount) {
-                                    // Discount on gross amount
-                                    const gross = itemList.reduce(
-                                      (acc, item) =>
-                                        acc + Number(item.total || 0),
-                                      0,
-                                    );
-
-                                    subtotal = gross;
-                                  } else {
-                                    // Discount on amount excluding IGST
-                                    console.log(itemList);
-                                    subtotal = itemList
-                                      .map((items) => items.items || [])
-                                      .flat()
-                                      .reduce(
-                                        (acc, item) =>
-                                          acc +
-                                          Number(item.total || 0) -
-                                          Number(item.totalIgstAmt || 0),
-                                        0,
-                                      );
-                                  }
-
-                                  console.log(subtotal);
-
-                                  // Calculate discount amount
-                                  const calculatedAmount =
-                                    discountType === "percentage"
-                                      ? (subtotal * value) / 100
-                                      : value;
-
-                                  const findOne = additionalCharges.find(
-                                    (charge) =>
-                                      charge._id ===
-                                      selectedAdditionalChargeData,
-                                  );
-
-                                  const tax = Number(
-                                    findOne?.taxPercentage || 0,
-                                  );
-
-                                  // Add tax to discount amount
-                                  const finalDiscountAmount =
-                                    calculatedAmount * (1 + tax / 100);
-
-                                  setDiscountAmount(
-                                    finalDiscountAmount.toFixed(2),
-                                  );
-
-                                  if (value > 0) {
-                                    setSelectedDiscountCharge({
-                                      name: `Manual Discount (${
-                                        discountType === "percentage"
-                                          ? `${value}%`
-                                          : `₹${value}`
-                                      })`,
-                                      amount: value,
-                                      type: discountType,
-                                    });
-                                  } else {
-                                    setSelectedDiscountCharge(null);
-                                  }
-                                }}
-                                placeholder={
-                                  discountType === "percentage" ? "0" : "0.00"
-                                }
-                                className="w-full pl-7 pr-3 py-2 border border-red-300 rounded-lg focus:ring-2 focus:ring-red-400 text-sm"
-                                min="0"
-                                max={
-                                  discountType === "percentage"
-                                    ? "100"
-                                    : undefined
-                                }
-                                step={
-                                  discountType === "percentage" ? "1" : "0.01"
-                                }
-                              />
-                            </div>
-                          </div>
-                          {discountValue > 0 && (
-                            <div className="p-2 bg-red-100 rounded-lg">
-                              <div className="flex justify-between items-center text-xs">
-                                <span className="text-red-700">
-                                  {discountType === "percentage"
-                                    ? `${discountValue}% discount`
-                                    : "Discount"}{" "}
-                                  (
-                                  {
-                                    additionalCharges.find(
-                                      (c) =>
-                                        c._id === selectedAdditionalChargeData,
-                                    )?.taxPercentage
-                                  }
-                                  %)
-                                </span>
-                                <span className="font-semibold text-red-800">
-                                  - ₹{discountAmount}
-                                </span>
-                              </div>
+                          {/* Empty state */}
+                          {order.items.length === 0 && (
+                            <div className="text-center py-4">
+                              <MdInbox className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                              <p className="text-xs text-gray-500">
+                                No items in this order
+                              </p>
                             </div>
                           )}
                         </div>
                       </div>
-                      <div>
-                        <label className="block text-xs font-semibold text-green-800 mb-1">
-                          Remarks
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="Enter note (optional)"
-                          className="w-full px-3 py-2 text-sm border border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
-                          value={note}
-                          onChange={(e) => setNote(e.target.value)}
-                        />
-                      </div>
-                      <div className="mt-3 p-2 bg-green-50 border border-green-200 rounded-lg">
-                        <label className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={isComplimentary}
-                            onChange={(e) => {
-                              const isChecked = e.target.checked;
-                              setIsComplimentary(isChecked);
-                              const hasAuto = selectedKot.some((kot) => {
-                                const order = filteredOrders.find(
-                                  (o) => o._id === kot.id,
-                                );
-                                return (
-                                  order?.foodPlanDetails?.isComplimentary ===
-                                  true
-                                );
-                              });
-                              if (!hasAuto && isChecked)
-                                toast.info("Marking order as complimentary");
-                              else if (hasAuto && !isChecked)
-                                toast.warning(
-                                  "This order has a complimentary food plan",
-                                );
-                            }}
-                            className="mt-1 w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 flex-shrink-0"
-                          />
-                          <span className="text-sm font-semibold text-green-700">
-                            Mark as Complimentary
-                          </span>
-                        </label>
-                      </div>
-                      <div className="border-t border-green-300 pt-2 mt-2">
+                    </div>
+
+                    {/* Order Total - Reception */}
+                    {userRole === "reception" && (
+                      <div
+                        className={`px-3 py-2 bg-gradient-to-r border-t flex-shrink-0 ${
+                          isOrderSelected(order)
+                            ? "from-blue-100 to-emerald-100 border-blue-200"
+                            : "from-green-50 to-emerald-50 border-green-100"
+                        }`}
+                      >
                         <div className="flex justify-between items-center">
-                          <span className="text-sm font-bold text-green-800">
+                          <span
+                            className={`text-xs font-semibold ${
+                              isOrderSelected(order)
+                                ? "text-blue-800"
+                                : "text-green-800"
+                            }`}
+                          >
                             Total Amount
                           </span>
-                          <span className="text-lg font-bold text-green-900">
+                          <span
+                            className={`text-sm font-bold ${
+                              isOrderSelected(order)
+                                ? "text-blue-900"
+                                : "text-green-900"
+                            }`}
+                          >
+                            ₹{Number(order.total) - Number(order.discount || 0)}
+                          </span>
+                        </div>
+                        {order.discount > 0 && (
+                          <div className="flex justify-between items-center">
+                            <span
+                              className={`text-xs font-semibold ${
+                                isOrderSelected(order)
+                                  ? "text-blue-800"
+                                  : "text-green-800"
+                              }`}
+                            >
+                              {Math.round(order.total)}(total) -{" "}
+                              {Math.round(order.discount)}(discount)
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Kitchen Status Update */}
+                    {userRole === "kitchen" && (
+                      <div className="mx-3 mb-2 p-2 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg border border-orange-100 flex-shrink-0">
+                        <div className="flex items-center gap-1 mb-2">
+                          <MdRefresh
+                            className={`w-3 h-3 text-orange-600 ${
+                              loader ? "animate-spin" : ""
+                            }`}
+                          />
+                          <span className="text-xs font-semibold text-orange-800">
+                            Update Status
+                          </span>
+                        </div>
+                        <div className="flex gap-1">
+                          {availableStatuses.length > 0 ? (
+                            availableStatuses.map((status) => (
+                              <button
+                                key={status}
+                                onClick={(e) => {
+                                  e.stopPropagation(); // Prevent card selection when clicking status button
+                                  handleStatusChange(order._id, status);
+                                }}
+                                className="flex-1 px-2 py-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded text-xs font-semibold hover:from-blue-600 hover:to-blue-700 transform hover:scale-105 transition-all duration-200"
+                              >
+                                {statusConfig[status].label}
+                              </button>
+                            ))
+                          ) : (
+                            <div className="w-full text-center py-1">
+                              <span className="text-xs text-gray-500 italic">
+                                No updates available
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Action Buttons */}
+                    {userRole === "reception" && (
+                      <div className="p-3 pt-2 flex gap-2 flex-shrink-0">
+                        {order?.paymentCompleted && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation(); // Prevent card selection when clicking action button
+                              handlePrintData(order._id);
+                            }}
+                            className="flex-1 group px-3 py-1.5 bg-white text-emerald-700 border border-emerald-200 rounded-lg text-xs font-semibold hover:bg-emerald-50 hover:border-emerald-300 transition-all duration-200 hover:scale-105 flex items-center justify-center gap-1"
+                          >
+                            <MdVisibility className="w-3 h-3 group-hover:rotate-12 transition-transform duration-200" />
+                            Print
+                          </button>
+                        )}
+                        <button
+                          className="flex-1 group px-3 py-1.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg text-xs font-semibold hover:from-blue-600 hover:to-blue-700 transition-all duration-200 hover:scale-105 flex items-center justify-center gap-1"
+                          onClick={(e) => {
+                            e.stopPropagation(); // Prevent card selection when clicking action button
+                            handleKotPrint(order);
+                          }}
+                        >
+                          <MdPrint className="w-3 h-3 group-hover:rotate-12 transition-transform duration-200" />
+                          Kot Print
+                        </button>
+                        {!order?.paymentCompleted && (
+                          <button
+                            className="flex-1 group px-3 py-1.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg text-xs font-semibold hover:from-red-600 hover:to-red-700 transition-all duration-200 hover:scale-105 flex items-center justify-center gap-1"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              console.log(
+                                "Cancel button clicked for order:",
+                                order,
+                              );
+                              setSelectedOrderForCancel(order);
+                              setShowCancelModal(true);
+                              console.log("Modal should open now");
+                            }}
+                          >
+                            <MdCancel className="w-3 h-3 group-hover:rotate-12 transition-transform duration-200" />
+                            Cancel
+                          </button>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Click indicator overlay */}
+                    <div
+                      className={`absolute inset-0 pointer-events-none transition-all duration-200 ${
+                        isOrderSelected(order)
+                          ? "bg-blue-500 bg-opacity-5"
+                          : "group-hover:bg-gray-500 group-hover:bg-opacity-5"
+                      }`}
+                    />
+                  </div>
+                );
+              })}
+
+              {/* Floating Pay Button - Show when items are selected */}
+              {selectedKot.length > 0 && (
+                <div className="fixed bottom-6 right-6 z-50 max-h-screen  animate-slideUp">
+                  <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-4 min-w-[280px]">
+                    {/* Selected Items Count */}
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                          <MdCheckCircle className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900">
+                            {selectedKot.length} item
+                            {selectedKot.length > 1 ? "s" : ""} selected
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            Ready for payment
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setSelectedKot([])}
+                        className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded-full transition-all"
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    {/* Selected Items List */}
+                    <div className="max-h-32 overflow-y-auto mb-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+                      <div className="space-y-2">
+                        {selectedKot.map((item, index) => (
+                          <div
+                            key={item.id}
+                            className="flex items-center justify-between text-xs bg-gray-50 p-2 rounded-lg"
+                          >
+                            <span className="font-medium text-gray-700">
+                              #{item.voucherNumber}
+                            </span>
+                            <span className="text-gray-500 capitalize">
+                              {item.type}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Total Amount Display */}
+                    {userRole === "reception" && (
+                      <div
+                        className="bg-gradient-to-r from-green-50 to-emerald-50 p-3 rounded-lg mb-2 border border-green-200
+                       "
+                      >
+                        {/* Subtotal */}
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="font-medium text-green-800">
+                            Subtotal
+                          </span>
+                          <span className="font-semibold text-green-900">
                             ₹
-                            {(
-                              selectedKot.reduce((total, kot) => {
+                            {selectedKot
+                              .reduce((total, kot) => {
                                 const order = filteredOrders.find(
                                   (o) => o._id === kot.id,
                                 );
                                 return total + (order?.total || 0);
-                              }, 0) - (discountAmount || 0)
-                            ).toFixed(2)}
+                              }, 0)
+                              .toFixed(2)}
                           </span>
                         </div>
-                        {discountAmount > 0 && (
-                          <div className="text-xs text-green-700 text-right mt-1">
-                            (After ₹{discountAmount} discount)
+
+                        {/* Discount Selection */}
+                        {/* Discount Selection */}
+                        <div className="border border-red-200 rounded-lg p-3 mb-2 bg-red-50">
+                          <label className="block text-xs font-semibold text-red-700 mb-2">
+                            Discount
+                          </label>
+
+                          <div className="flex flex-col gap-2">
+                            <select
+                              value={additionalCharges[0]?._id}
+                              onChange={(e) =>
+                                setSelectedAdditionalChargeData(e.target.value)
+                              }
+                            >
+                              <option value="">Select Discount</option>
+                              {additionalCharges.map((charge) => (
+                                <option key={charge._id} value={charge._id}>
+                                  {charge.name}
+                                </option>
+                              ))}
+                            </select>
+
+                            {/* Toggle and Input */}
+                            <div className="flex gap-2">
+                              {/* Toggle Buttons */}
+                              <div className="flex bg-gray-200 rounded-lg p-1">
+                                <button
+                                  onClick={() => {
+                                    setDiscountType("amount");
+                                    if (discountValue > 0) {
+                                      setDiscountAmount(discountValue);
+                                    }
+                                  }}
+                                  className={`px-2 py-1.5 rounded-md text-xs font-medium transition-all ${
+                                    discountType === "amount"
+                                      ? "bg-white text-red-600 shadow-sm"
+                                      : "text-gray-600"
+                                  }`}
+                                >
+                                  ₹
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setDiscountType("percentage");
+                                    if (discountValue > 0) {
+                                      const subtotal = selectedKot.reduce(
+                                        (total, kot) => {
+                                          const order = filteredOrders.find(
+                                            (o) => o._id === kot.id,
+                                          );
+                                          return total + (order?.total || 0);
+                                        },
+                                        0,
+                                      );
+                                     
+                                       let findOne = additionalCharges.find(
+                                      (charge) => charge._id === selectedAdditionalChargeData,
+                                    );
+
+                                    console.log("findOne", findOne);
+                                    let calculatedAmount = (subtotal * discountValue) / 100
+                                    const tax = Number(findOne?.taxPercentage || 0);
+
+                                    let finalAmount = Number(calculatedAmount * (1 + tax / 100)).toFixed(2);
+                                     setDiscountAmount(finalAmount);
+                                    }
+                                  }}
+                                  className={`px-2 py-1.5 rounded-md text-xs font-medium transition-all ${
+                                    discountType === "percentage"
+                                      ? "bg-white text-red-600 shadow-sm"
+                                      : "text-gray-600"
+                                  }`}
+                                >
+                                  %
+                                </button>
+                              </div>
+
+                              {/* Input Field */}
+                              <div className="flex-1 relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs">
+                                  {discountType === "percentage" ? "%" : "₹"}
+                                </span>
+                                <input
+                                  type="number"
+                                  value={discountValue || ""}
+                                  onChange={(e) => {
+                                    const value =
+                                      parseFloat(e.target.value) || 0;
+                                    setDiscountValue(value);
+
+                                    const subtotal = selectedKot.reduce(
+                                      (total, kot) => {
+                                        const order = filteredOrders.find(
+                                          (o) => o._id === kot.id,
+                                        );
+                                        return total + (order?.total || 0);
+                                      },
+                                      0,
+                                    );
+
+                                    const calculatedAmount =
+                                      discountType === "percentage"
+                                        ? (subtotal * value) / 100
+                                        : value;
+
+                                    let findOne = additionalCharges.find(
+                                      (charge) => charge._id === selectedAdditionalChargeData,
+                                    );
+
+                                    console.log("findOne", findOne);
+
+                                    const tax = Number(findOne?.taxPercentage || 0);
+
+                                    let finalAmount = Number(calculatedAmount * (1 + tax / 100)).toFixed(2);
+
+                                    console.log(finalAmount)
+                                    setDiscountAmount(finalAmount);
+
+                                    if (value > 0) {
+                                      setSelectedDiscountCharge({
+                                        name: `Manual Discount (${
+                                          discountType === "percentage"
+                                            ? `${value}%`
+                                            : `₹${value}`
+                                        })`,
+                                        amount: value,
+                                        type: discountType,
+                                      });
+                                    }
+                                  }}
+                                  placeholder={
+                                    discountType === "percentage" ? "0" : "0.00"
+                                  }
+                                  className="w-full pl-7 pr-3 py-2 border border-red-300 rounded-lg focus:ring-2 focus:ring-red-400 text-sm"
+                                  min="0"
+                                  max={
+                                    discountType === "percentage"
+                                      ? "100"
+                                      : undefined
+                                  }
+                                  step={
+                                    discountType === "percentage" ? "1" : "0.01"
+                                  }
+                                />
+                              </div>
+                            </div>
+
+                            {/* Calculated Discount Display */}
+                            {discountValue > 0 && (
+                              <div className="p-2 bg-red-100 rounded-lg">
+                                <div className="flex justify-between items-center text-xs">
+                                  <span className="text-red-700">
+                                    {discountType === "percentage"
+                                      ? `${discountValue}% discount`
+                                      : "Discount"} ({additionalCharges.find((charge) => charge._id === selectedAdditionalChargeData)?.taxPercentage}%)
+                                  </span>
+                                  <span className="font-semibold text-red-800">
+                                    - ₹{discountAmount}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
                           </div>
-                        )}
+                        </div>
+                        {/* Remarks/Note */}
+                        <div>
+                          <label className="block text-xs font-semibold text-green-800 mb-1">
+                            Remarks
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="Enter note (optional)"
+                            className="w-full px-3 py-2 text-sm border border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
+                            value={note}
+                            onChange={(e) => setNote(e.target.value)}
+                          />
+                        </div>
+                        <div className="mt-3 p-2 bg-green-50 border border-green-200 rounded-lg">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={isComplimentary}
+                              onChange={(e) => {
+                                const isChecked = e.target.checked;
+                                console.log(isChecked);
+                                setIsComplimentary(isChecked);
+
+                                // Check if auto-complimentary
+                                const hasAutoComplimentary = selectedKot.some(
+                                  (kot) => {
+                                    const order = filteredOrders.find(
+                                      (o) => o._id === kot.id,
+                                    );
+                                    return (
+                                      order?.foodPlanDetails
+                                        ?.isComplimentary === true
+                                    );
+                                  },
+                                );
+
+                                if (!hasAutoComplimentary && isChecked) {
+                                  toast.info("Marking order as complimentary");
+                                } else if (hasAutoComplimentary && !isChecked) {
+                                  toast.warning(
+                                    "This order has a complimentary food plan",
+                                  );
+                                }
+                              }}
+                              className="mt-1 w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 flex-shrink-0"
+                            />
+
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-sm font-semibold text-green-700">
+                                  Mark as Complimentary
+                                </span>
+
+                                {/* Show badge if auto-selected */}
+                                {selectedKot.some((kot) => {
+                                  const order = filteredOrders.find(
+                                    (o) => o._id === kot.id,
+                                  );
+                                  return (
+                                    order?.foodPlanDetails?.isComplimentary ===
+                                    true
+                                  );
+                                }) && (
+                                  <span className="inline-flex items-center gap-1 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                                    ✓ Auto-selected (Food Plan)
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Show details when checked */}
+                              {isComplimentary && (
+                                <div className="mt-2 p-2 bg-white rounded border border-green-200">
+                                  {selectedKot.some((kot) => {
+                                    const order = filteredOrders.find(
+                                      (o) => o._id === kot.id,
+                                    );
+                                    return (
+                                      order?.foodPlanDetails
+                                        ?.isComplimentary === true
+                                    );
+                                  }) ? (
+                                    <div className="space-y-1.5">
+                                      <p className="text-xs text-green-700 font-medium">
+                                        ✓ Complimentary Food Plans:
+                                      </p>
+
+                                      {/* List each KOT */}
+                                      {selectedKot.map((kot) => {
+                                        const order = filteredOrders.find(
+                                          (o) => o._id === kot.id,
+                                        );
+                                        if (order?.foodPlanDetails?.planName) {
+                                          return (
+                                            <div
+                                              key={kot.id}
+                                              className="flex items-center justify-between text-xs bg-green-50 px-2 py-1 rounded"
+                                            >
+                                              <span className="text-gray-700">
+                                                KOT #{kot.voucherNumber}
+                                              </span>
+                                              <span className="font-medium text-green-700">
+                                                {order.foodPlanDetails.planName}
+                                                {order.foodPlanDetails
+                                                  .isComplimentary && " (Free)"}
+                                              </span>
+                                            </div>
+                                          );
+                                        }
+                                        return null;
+                                      })}
+                                    </div>
+                                  ) : (
+                                    <p className="text-xs text-amber-700">
+                                      ⚠ Manually marked as complimentary (free
+                                      service)
+                                    </p>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </label>
+                        </div>
+
+                        {/* Final Total */}
+                        <div className="border-t border-green-300 pt-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm font-bold text-green-800">
+                              Total Amount
+                            </span>
+                            <span className="text-lg font-bold text-green-900">
+                              ₹
+                              {(
+                                selectedKot.reduce((total, kot) => {
+                                  const order = filteredOrders.find(
+                                    (o) => o._id === kot.id,
+                                  );
+                                  return total + (order?.total || 0);
+                                }, 0) - (discountAmount || 0)
+                              ).toFixed(2)}
+                            </span>
+                          </div>
+                          {discountAmount > 0 && (
+                            <div className="text-xs text-green-700 text-right mt-1">
+                              (After ₹{discountAmount} discount)
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  )}
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setSelectedKot([])}
-                      className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-all duration-200"
-                    >
-                      Clear All
-                    </button>
-                    <button
-                      className="flex-2 px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg text-sm font-bold hover:from-green-600 hover:to-emerald-700 transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2 shadow-lg"
-                      onClick={() => {
-                        const findOneWithNoRoomService = selectedKot.find(
-                          (kot) => !kot.roomId,
-                        );
-                        if (findOneWithNoRoomService) {
-                          handleSalesPreview();
-                          toast.warning(
-                            "Continue to room option only for room service",
+                    )}
+
+                    {conformationModal && (
+                      <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+                        <div className="bg-white rounded-2xl shadow-lg w-96 p-6 space-y-4">
+                          <h2 className="text-lg font-semibold text-gray-800">
+                            How would you like to proceed?
+                          </h2>
+                          <p className="text-sm text-gray-600">
+                            Choose to continue with payment or post the bill to
+                            the room.
+                          </p>
+
+                          <div className="flex flex-col gap-3">
+                            <button
+                              onClick={() => {
+                                handleSalesPreview(false);
+                              }}
+                              className="w-full px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg font-semibold hover:from-green-600 hover:to-emerald-700 transition-all duration-200 shadow-md"
+                            >
+                              Continue to Payment
+                            </button>
+                            <button
+                              onClick={() => {
+                                handleSalesPreview(true);
+                              }}
+                              className="w-full px-4 py-2 bg-blue-100 text-blue-700 rounded-lg font-semibold hover:bg-blue-200 transition-all duration-200"
+                            >
+                              Post to Room
+                            </button>
+                            <button
+                              onClick={() => setConformationModal(false)}
+                              className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-all duration-200"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setSelectedKot([])}
+                        className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-all duration-200"
+                      >
+                        Clear All
+                      </button>
+                      <button
+                        className="flex-2 px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg text-sm font-bold hover:from-green-600 hover:to-emerald-700 transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2 shadow-lg"
+                        onClick={() => {
+                          let findOneWithNoRoomService = selectedKot.find(
+                            (kot) => !kot.roomId,
                           );
-                        } else setConformationModal(true);
-                      }}
-                    >
-                      <MdPayment className="w-4 h-4" />
-                      Pay Now
-                    </button>
+                          console.log(findOneWithNoRoomService);
+                          if (findOneWithNoRoomService) {
+                            handleSalesPreview();
+                            toast.warning(
+                              "Continue to room option only for room service",
+                            );
+                          } else {
+                            setConformationModal(true);
+                          }
+                        }}
+                      >
+                        <MdPayment className="w-4 h-4" />
+                        Pay Now
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {conformationModal && (
-              <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-                <div className="bg-white rounded-2xl shadow-lg w-96 p-6 space-y-4">
-                  <h2 className="text-lg font-semibold text-gray-800">
-                    How would you like to proceed?
-                  </h2>
-                  <p className="text-sm text-gray-600">
-                    Choose to continue with payment or post the bill to the
-                    room.
-                  </p>
-                  <div className="flex flex-col gap-3">
-                    <button
-                      onClick={() => handleSalesPreview(false)}
-                      className="w-full px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg font-semibold hover:from-green-600 hover:to-emerald-700 transition-all duration-200 shadow-md"
-                    >
-                      Continue to Payment
-                    </button>
-                    <button
-                      onClick={() => handleSalesPreview(true)}
-                      className="w-full px-4 py-2 bg-blue-100 text-blue-700 rounded-lg font-semibold hover:bg-blue-200 transition-all duration-200"
-                    >
-                      Post to Room
-                    </button>
-                    <button
-                      onClick={() => setConformationModal(false)}
-                      className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-all duration-200"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
+              {/* Custom CSS for animations */}
+              <style jsx>{`
+                @keyframes slideUp {
+                  from {
+                    transform: translateY(100px);
+                    opacity: 0;
+                  }
+                  to {
+                    transform: translateY(0);
+                    opacity: 1;
+                  }
+                }
 
-            <style jsx>{`
-              @keyframes slideUp {
-                from {
-                  transform: translateY(100px);
-                  opacity: 0;
+                .animate-slideUp {
+                  animation: slideUp 0.3s ease-out;
                 }
-                to {
-                  transform: translateY(0);
-                  opacity: 1;
-                }
-              }
-              .animate-slideUp {
-                animation: slideUp 0.3s ease-out;
-              }
-            `}</style>
+              `}</style>
+            </>
           </div>
           {showPaymentModal && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -2569,7 +2254,7 @@ const OrdersDashboard = () => {
                         >
                           {cashOrBank?.cashDetails?.map((cashier) => (
                             <option key={cashier._id} value={cashier._id}>
-                              {cashier.partyName} - ({cashier.under})
+                              {cashier.partyName}
                             </option>
                           ))}
                         </select>
@@ -2594,7 +2279,7 @@ const OrdersDashboard = () => {
                           </option>
                           {cashOrBank?.bankDetails?.map((cashier) => (
                             <option key={cashier._id} value={cashier._id}>
-                              {cashier.partyName} - ({cashier.under})
+                              {cashier.partyName}
                             </option>
                           ))}
                         </select>
@@ -2663,7 +2348,7 @@ const OrdersDashboard = () => {
                             </option>
                             {cashOrBank?.cashDetails?.map((cashier) => (
                               <option key={cashier._id} value={cashier._id}>
-                                {cashier.partyName} - {cashier.under}
+                                {cashier.partyName}
                               </option>
                             ))}
                           </select>
@@ -2722,7 +2407,7 @@ const OrdersDashboard = () => {
                             </option>
                             {cashOrBank?.bankDetails?.map((cashier) => (
                               <option key={cashier._id} value={cashier._id}>
-                                {cashier.partyName} - {cashier.under}
+                                {cashier.partyName}
                               </option>
                             ))}
                           </select>
@@ -3007,20 +2692,6 @@ const OrdersDashboard = () => {
         </div>
       )}
       {showPrintConfirmModal && <PrintModal onSubmit={handlePrintShow} />}
-      {showBatchWiseKotPrint && dataForBatchWisePrint && selectedMode && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[85vh] overflow-y-auto"></div>
-          <KitchenBatchesViewForPrintAndEdit
-            order={dataForBatchWisePrint}
-            setShowBatchWiseKotPrint={setShowBatchWiseKotPrint}
-            onPrintBatch={handleKotPrint}
-            onEditBatch={handleEditKot}
-            mode={selectedMode}
-            setSelectedMode={setSelectedMode}
-            setDataForBatchWisePrint={setDataForBatchWisePrint}
-          />
-        </div>
-      )}
     </>
   );
 };

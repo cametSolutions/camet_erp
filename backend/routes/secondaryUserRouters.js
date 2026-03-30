@@ -379,7 +379,7 @@ router.put('/updateTableStatus/:cmp_id/:tableNumber',authSecondary,updateTableSt
 router.get('/getKotDataByTable/:cmp_id',authSecondary,getKotDataByTable )
 router.get('/getDateBasedRoomsWithStatus/:cmp_id',authSecondary,getDateBasedRoomsWithStatus)
 router.put('/checkOutWithArray/:cmp_id',authSecondary,checkoutWithArrayOfData)
-router.post('/fetchOutStandingAndFoodData',authSecondary,fetchOutStandingAndFoodData)
+router.post('/fetchOutStandingAndFoodData/:cmp_id',authSecondary,fetchOutStandingAndFoodData)
 router.post('/convertCheckOutToSale/:cmp_id',authSecondary,convertCheckOutToSale)
 router.put('/updateConfigurationForHotelAndRestaurant/:cmp_id',authSecondary,updateConfigurationForHotelAndRestaurant)
 router.put('/updateConfigurationForKotApproval/:cmp_id',authSecondary,updateConfigurationForKotApproval)

@@ -74,6 +74,7 @@ function BookingForm({
 
   useEffect(() => {
     if (submitLoader) {
+      console.log("submitLoader", submitLoader);
       setShowPaymentModal(true);
       setSaveLoader(true);
     }
@@ -388,31 +389,45 @@ function BookingForm({
       // Total before discount
       let otherChargeAmount = 0;
       let finalOtherChargeAmount = 0;
-      if (formData.otherChargeDetails &&  Object.keys(formData.otherChargeDetails).length > 0) {
+      if (
+        formData.otherChargeDetails &&
+        Object.keys(formData.otherChargeDetails).length > 0
+      ) {
         otherChargeAmount =
-          Math.round(Number(formData.otherChargeDetails?.amount || 0) *
-            Number(formData.otherChargeDetails?.charge?.taxPercentage || 0)) /
-          100;
-        finalOtherChargeAmount =
-        Math.round(Number(formData.otherChargeDetails?.amount) +
-          Number(otherChargeAmount))
+          Math.round(
+            Number(formData.otherChargeDetails?.amount || 0) *
+              Number(formData.otherChargeDetails?.charge?.taxPercentage || 0),
+          ) / 100;
+        finalOtherChargeAmount = Math.round(
+          Number(formData.otherChargeDetails?.amount) +
+            Number(otherChargeAmount),
+        );
       }
 
-      const totalAmount = Math.round(roomTotal + finalOtherChargeAmount)
+      const totalAmount = Math.round(roomTotal + finalOtherChargeAmount);
       // Apply discount
-      const discountAmount = Math.round(Number(formData.discountAmount || 0))
-      const grandTotal =
-       Math.round ((totalAmount - discountAmount).toFixed(2) + finalOtherChargeAmount)
-   
+      const discountAmount = Math.round(Number(formData.discountAmount || 0));
+      const grandTotal = Math.round(
+        (totalAmount - discountAmount).toFixed(2) + finalOtherChargeAmount,
+      );
+
       // Calculate balance
-      const totalAdvance = Math.round(Number(formData.totalAdvance > 0 ? formData.totalAdvance :formData.advanceAmount || 0) )
- 
+      const totalAdvance = Math.round(
+        Number(
+          formData.totalAdvance > 0
+            ? formData.totalAdvance
+            : formData.advanceAmount || 0,
+        ),
+      );
+
       const balanceToPay = Math.round(grandTotal - totalAdvance).toFixed(2);
       console.log(balanceToPay);
 
       // Calculate discount percentage
       const discountPercentage =
-        totalAmount > 0 ? Math.round((discountAmount / totalAmount) * 100).toFixed(2) : 0;
+        totalAmount > 0
+          ? Math.round((discountAmount / totalAmount) * 100).toFixed(2)
+          : 0;
 
       setFormData((prev) => ({
         ...prev,
@@ -470,7 +485,7 @@ function BookingForm({
 
   const handleAdvanceAmountChange = (e) => {
     const { value } = e.target;
-    const advanceAmount = Math.round(Number(value))
+    const advanceAmount = Math.round(Number(value));
     const previousAdvance = Number(editData?.previousAdvance || 0);
     const grandTotal = Number(formData?.grandTotal || 0);
     const totalAdvance = advanceAmount + previousAdvance;
@@ -486,8 +501,9 @@ function BookingForm({
     }
 
     setErrorObject((prev) => ({ ...prev, advanceAmount: "" }));
-
+console.log("advanceAmount", advanceAmount,isFor);
     if (isFor === "deliveryNote" || isFor === "sales") {
+      console.log("advanceAmount", advanceAmount);
       setFormData((prev) => ({
         ...prev,
         advanceAmount: value,
@@ -500,7 +516,7 @@ function BookingForm({
         ...prev,
         advanceAmount: value,
         balanceToPay: (grandTotal - advanceAmount).toFixed(2),
-        totalAdvance: advanceAmount,
+        totalAdvance: totalAdvance,
         updatedDate: currentDateDefault,
       }));
     }
@@ -879,11 +895,13 @@ function BookingForm({
     if (
       Number(formData.advanceAmount) <= 0 ||
       formData.advanceAmount == editData?.advanceAmount
+
     ) {
       if (isSubmittingRef.current) return;
       isSubmittingRef.current = true;
       console.log(payload);
-      handleSubmit(payload);
+      let paymenttypeDetails= editData?.paymenttypeDetails
+      handleSubmit(payload,null,paymenttypeDetails);
     } else {
       setFormData((prev) => ({ ...prev, ...payload }));
       setShowPaymentModal(true);
@@ -927,8 +945,44 @@ function BookingForm({
       card: card,
       credit: credit,
     };
-
+    // setSaveLoader(false) 
     handleSubmit(payload, paymentData, paymenttypeDetails);
+  };
+
+  const handleDeletion = (roomId) => {
+    const existingDetails = Array.isArray(formData?.foodPlan)
+      ? formData.foodPlan
+      : [];
+    const filterData = existingDetails.filter((i) => i.roomId !== roomId);
+    const totalAmount = [...filterData].reduce(
+      (acc, item) => acc + Number(item.rate),
+      0,
+    );
+    const existingDetailsAdditionalPax = Array.isArray(
+      formData?.additionalPaxDetails,
+    )
+      ? formData.additionalPaxDetails
+      : [];
+    const filterAdditionalData = existingDetailsAdditionalPax.filter(
+      (i) => i.roomId !== roomId,
+    );
+    const AdditionalPaxTotalAmount = [...filterAdditionalData].reduce(
+      (acc, item) => acc + Number(item.rate),
+      0,
+    );
+    console.log(filterData);
+    console.log(totalAmount);
+    console.log(filterAdditionalData);
+    console.log(AdditionalPaxTotalAmount);
+
+    setFormData((prev) => ({
+      ...prev,
+      foodPlan: [...filterData],
+      foodPlanTotal: totalAmount,
+      additionalPaxDetails: [...filterAdditionalData],
+      paxTotal: AdditionalPaxTotalAmount,
+      updatedDate: currentDateDefault,
+    }));
   };
 
   const handleClose = () => setShowPaymentModal(false);
@@ -952,7 +1006,7 @@ function BookingForm({
   };
 
   const tariffMode = isTariffRateChange === true;
-console.log('hi');
+  console.log("hi");
   return (
     <>
       {isLoading || visitOfPurposeLoading || loading ? (
@@ -964,6 +1018,7 @@ console.log('hi');
               selected={voucherNumber}
               totalAmount={Number(formData?.advanceAmount)}
               saveLoader={saveLoader}
+              setSaveLoader={setSaveLoader}
               onClose={handleClose}
               onPaymentSave={handlePayment}
               cmp_id={cmp_id}
@@ -1555,6 +1610,7 @@ console.log('hi');
                           roomIdToUpdate={roomId}
                           roomFromDashboard={rooms}
                           addTaxWithRate={formData.addTaxWithRate}
+                          handleDeletion={handleDeletion}
                         />
                       </div>
                     </div>
