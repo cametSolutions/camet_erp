@@ -73,6 +73,38 @@ const ReportsMenu = () => {
             <span className="text-sm">📊</span>
             HOTEL FLASH REPORT
           </button>
+          <button
+            className={reportBtnBase}
+            onClick={() => {
+              setOpen(false);
+              navigate("/sUsers/tourist-report");
+            }}
+          >
+            <span className="text-sm">📊</span>
+            HOTEL PAX REPORT
+          </button>
+
+            <button
+            className={reportBtnBase}
+            onClick={() => {
+              setOpen(false);
+              navigate("/sUsers/foodplan-report");
+            }}
+          >
+            <span className="text-sm">📊</span>
+            HOTEL FOODPLAN REPORT
+          </button>
+
+            <button
+            className={reportBtnBase}
+            onClick={() => {
+              setOpen(false);
+              navigate("/sUsers/occupancy-checkout-report");
+            }}
+          >
+            <span className="text-sm">📊</span>
+            HOTEL OOCUPANCY REPORT
+          </button>
         </div>
       )}
     </div>
