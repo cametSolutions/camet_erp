@@ -872,7 +872,7 @@ const discountBasedOnGrossAmount =
       setOrderItems(
         orderItems.map((orderItem) =>
           orderItem._id === item._id
-            ? { ...orderItem, quantity: orderItem.quantity + 1 , remainingQuantity: orderItem.remainingQuantity + 1}
+            ? { ...orderItem, quantity: orderItem.quantity + 1 }
             : orderItem,
         ),
       );
@@ -897,13 +897,13 @@ const discountBasedOnGrossAmount =
         }
       }
 
-      setOrderItems([...orderItems, { ...item, quantity: 1,remainingQuantity: 1, price: price }]);
+      setOrderItems([...orderItems, { ...item, quantity: 1, price: price }]);
     }
   };
 
   const removeFromOrder = (itemId) => {
     setOrderItems(orderItems.filter((item) => item._id !== itemId));
-  }; 
+  };
 
   const updateQuantity = (itemId, newQuantity) => {
     console.log("newQuantity:", newQuantity);
@@ -911,7 +911,7 @@ const discountBasedOnGrossAmount =
     // else {
     setOrderItems(
       orderItems.map((item) =>
-        item._id === itemId ? { ...item, quantity: newQuantity , remainingQuantity: newQuantity} : item,
+        item._id === itemId ? { ...item, quantity: newQuantity } : item,
       ),
     );
     // }
