@@ -3115,3 +3115,270 @@ export const addComplementaryCashOrBank = async (req, res) => {
     });
   }
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+export const getRestaurantCategoryWiseSalesReport = async (req, res) => {
+  try {
+    const { cmp_id, startDate, endDate } = req.query;
+
+    if (!cmp_id) {
+      return res.status(400).json({
+        success: false,
+        message: "cmp_id is required",
+      });
+    }
+
+    if (!startDate || !endDate) {
+      return res.status(400).json({
+        success: false,
+        message: "startDate and endDate are required",
+      });
+    }
+
+    const voucherSeriesDocs = await VoucherSeriesModel.find({
+      cmp_id: new mongoose.Types.ObjectId(cmp_id),
+      voucherType: "sales",
+    }).lean();
+
+    if (!voucherSeriesDocs.length) {
+      return res.status(200).json({
+        success: true,
+        data: [],
+        message: "No voucher series found for this company",
+      });
+    }
+
+    const restaurantSeries = voucherSeriesDocs.flatMap((doc) =>
+      (doc.series || []).filter(
+        (series) => String(series.under || "").toLowerCase() === "restaurant"
+      )
+    );
+
+    if (!restaurantSeries.length) {
+      return res.status(200).json({
+        success: true,
+        data: [],
+        message: "No restaurant voucher series found",
+      });
+    }
+
+    const restaurantSeriesIds = restaurantSeries.map((series) =>
+      new mongoose.Types.ObjectId(series._id)
+    );
+
+    const salesFilter = {
+      cmp_id: new mongoose.Types.ObjectId(cmp_id),
+      series_id: { $in: restaurantSeriesIds },
+      isCancelled: false,
+      date: {
+        $gte: new Date(`${startDate}T00:00:00.000Z`),
+        $lte: new Date(`${endDate}T23:59:59.999Z`),
+      },
+    };
+
+    const restaurantSales = await salesModel.find(salesFilter).lean();
+
+    if (!restaurantSales.length) {
+      return res.status(200).json({
+        success: true,
+        data: [],
+        message: "No restaurant sales found for selected date range",
+      });
+    }
+
+    const categoryIds = [
+      ...new Set(
+        restaurantSales.flatMap((sale) =>
+          (sale.items || [])
+            .map((item) => item.category)
+            .filter(Boolean)
+            .map((id) => id.toString())
+        )
+      ),
+    ];
+
+    const categories = await Category.find({
+      _id: {
+        $in: categoryIds.map((id) => new mongoose.Types.ObjectId(id)),
+      },
+    }).lean();
+
+    const categoryMap = {};
+    categories.forEach((cat) => {
+      categoryMap[cat._id.toString()] =
+        cat.category || cat.categoryName || cat.name || "Uncategorized";
+    });
+
+    const grouped = {};
+
+    restaurantSales.forEach((sale) => {
+      (sale.items || []).forEach((item) => {
+        const categoryId = item.category
+          ? item.category.toString()
+          : "uncategorized";
+
+        const categoryName = categoryMap[categoryId] || "Uncategorized";
+        const qty = Number(item.totalCount || item.totalActualCount || 0);
+        const amount = Number(item.total || 0);
+
+        if (!grouped[categoryName]) {
+          grouped[categoryName] = {
+            categoryName,
+            totalQty: 0,
+            totalAmount: 0,
+            items: [],
+          };
+        }
+
+        grouped[categoryName].items.push({
+          sale_id: sale._id,
+          salesNumber: sale.salesNumber,
+          date: sale.date,
+          product_id: item._id,
+          product_name: item.product_name,
+          unit: item.unit || "Nos",
+          qty,
+          amount,
+          category_id: item.category || null,
+        });
+
+        grouped[categoryName].totalQty += qty;
+        grouped[categoryName].totalAmount += amount;
+      });
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Restaurant category wise sales report fetched successfully",
+      data: Object.values(grouped),
+    });
+  } catch (error) {
+    console.error("getRestaurantCategoryWiseSalesReport ERROR:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch restaurant category wise sales report",
+      error: error.message,
+    });
+  }
+};
+
+export const getRestaurantDateWiseItemReport = async (req, res) => {
+  try {
+    const { cmp_id, startDate, endDate } = req.query;
+
+    if (!cmp_id) {
+      return res.status(400).json({
+        success: false,
+        message: "cmp_id is required",
+      });
+    }
+
+    if (!startDate || !endDate) {
+      return res.status(400).json({
+        success: false,
+        message: "startDate and endDate are required",
+      });
+    }
+
+    const voucherSeriesDocs = await VoucherSeriesModel.find({
+      cmp_id: new mongoose.Types.ObjectId(cmp_id),
+      voucherType: "sales",
+    }).lean();
+
+    const restaurantSeries = voucherSeriesDocs.flatMap((doc) =>
+      (doc.series || []).filter(
+        (series) => String(series.under || "").toLowerCase() === "restaurant"
+      )
+    );
+
+    if (!restaurantSeries.length) {
+      return res.status(200).json({
+        success: true,
+        data: [],
+        message: "No restaurant voucher series found",
+      });
+    }
+
+    const restaurantSeriesIds = restaurantSeries.map(
+      (series) => new mongoose.Types.ObjectId(series._id)
+    );
+
+    const sales = await salesModel.find({
+      cmp_id: new mongoose.Types.ObjectId(cmp_id),
+      series_id: { $in: restaurantSeriesIds },
+      isCancelled: false,
+      date: {
+        $gte: new Date(`${startDate}T00:00:00.000Z`),
+        $lte: new Date(`${endDate}T23:59:59.999Z`),
+      },
+    })
+      .sort({ date: 1, salesNumber: 1 })
+      .lean();
+
+    if (!sales.length) {
+      return res.status(200).json({
+        success: true,
+        data: [],
+        message: "No restaurant sales found for selected date range",
+      });
+    }
+
+    const groupedByDate = {};
+
+    sales.forEach((sale) => {
+      const dateKey = new Date(sale.date).toLocaleDateString("en-GB");
+
+      if (!groupedByDate[dateKey]) {
+        groupedByDate[dateKey] = {
+          date: sale.date,
+          displayDate: dateKey,
+          items: [],
+          totalQty: 0,
+          totalAmount: 0,
+        };
+      }
+
+      (sale.items || []).forEach((item) => {
+        const qty = Number(item.totalCount || item.totalActualCount || 0);
+        const amount = Number(item.total || 0);
+
+        groupedByDate[dateKey].items.push({
+          billNo: sale.salesNumber || "",
+          product_name: item.product_name || "",
+          unit: item.unit || "Nos",
+          qty,
+          amount,
+        });
+
+        groupedByDate[dateKey].totalQty += qty;
+        groupedByDate[dateKey].totalAmount += amount;
+      });
+    });
+
+    const result = Object.values(groupedByDate);
+
+    return res.status(200).json({
+      success: true,
+      message: "Restaurant date wise item report fetched successfully",
+      data: result,
+    });
+  } catch (error) {
+    console.error("getRestaurantDateWiseItemReport ERROR:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch restaurant date wise item report",
+      error: error.message,
+    });
+  }
+};

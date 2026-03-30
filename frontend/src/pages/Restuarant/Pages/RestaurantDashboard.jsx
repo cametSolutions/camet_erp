@@ -1514,27 +1514,58 @@ const discountBasedOnGrossAmount =
                       </span>
                     </button>
                     {showOptions && (
-                      <>
-                        <div
-                          className="fixed inset-0 z-40"
-                          onClick={() => setShowOptions(false)}
-                        />
-                        <div className="absolute right-0 top-full mt-1 z-50 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden w-52 animate-in zoom-in-95 duration-150">
-                          <button
-                            onClick={() => {
-                              setShowOptions(false);
-                              navigate("/sUsers/BillSummary?type=restaurant");
-                            }}
-                            className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors"
-                          >
-                            <span className="text-base">📊</span>
-                            <span className="font-medium">
-                              Daily Restaurant Sales
-                            </span>
-                          </button>
-                        </div>
-                      </>
-                    )}
+  <>
+    {/* Backdrop to close */}
+    <div
+      className="fixed inset-0 z-40"
+      onClick={() => setShowOptions(false)}
+    />
+    <div className="absolute right-0 top-full mt-1 z-50 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden w-52 animate-in zoom-in-95 duration-150">
+      
+      {/* Existing: Daily Restaurant Sales */}
+      <button
+        onClick={() => {
+          setShowOptions(false);
+          navigate("/sUsers/BillSummary?type=restaurant");
+        }}
+        className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors"
+      >
+        <span className="text-base">📊</span>
+        <span className="font-medium">Daily Restaurant Sales</span>
+      </button>
+
+      {/* Divider */}
+      <div className="border-t border-gray-100" />
+
+      {/* New: Category Wise Sales */}
+      <button
+        onClick={() => {
+          setShowOptions(false);
+          navigate("/sUsers/categoryprint");
+        }}
+        className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors"
+      >
+        <span className="text-base">🗂️</span>
+        <span className="font-medium">Category Wise Sales</span>
+      </button>
+
+        <button
+        onClick={() => {
+          setShowOptions(false);
+          navigate("/sUsers/itemwisereport");
+        }}
+        className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors"
+      >
+        <span className="text-base">🗂️</span>
+        <span className="font-medium">Item Wise Sales</span>
+      </button>
+
+
+    </div>
+    
+    
+  </>
+)}
                   </div>
                 </div>
 

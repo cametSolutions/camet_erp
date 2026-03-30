@@ -117,9 +117,22 @@ const HotelCheckoutStatement = () => {
     }
   }
 
-  const handlePrint = useReactToPrint({
+   const handlePrint = useReactToPrint({
     content: () => contentToPrint.current,
+    pageStyle: `
+      @page {
+        size: A4;
+        margin: 15mm 10mm 15mm 10mm;
+      }
+      @media print {
+        body {
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+      }
+    `,
   });
+
 
   // ============ EFFECTS ============
   useEffect(() => {
@@ -400,7 +413,7 @@ const HotelCheckoutStatement = () => {
 
   // ============ MAIN RENDER ============
   return (
-    <>
+ <>
       <TitleDiv loading={loading} title="Checkout Statement" />
       <div className="w-full max-w-5xl mx-auto p-4 md:p-6 bg-white" ref={contentToPrint}>
         <div className="border-2 border-black p-4 md:p-6">
@@ -508,8 +521,32 @@ const HotelCheckoutStatement = () => {
           {renderSummarySection()}
         </div>
 
+        {/* Error Message */}
+        {error && (
+          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg
+                  className="h-5 w-5 text-yellow-400"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-yellow-700">{error}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Print Button */}
-        <div className="mt-4 text-center no-print">
+        <div className="text-center">
           <button
             onClick={handlePrint}
             disabled={checkoutData.length === 0}
@@ -533,6 +570,107 @@ const HotelCheckoutStatement = () => {
           }
         `}</style>
       </div>
+
+      {/* Print Content */}
+      <div ref={contentToPrint} className="print-content">
+        <div className="border-2 border-black px-4 py-3 text-xs">
+          {/* Header */}
+          <div className="flex justify-between items-start mb-2">
+            <div className="flex-1 text-center">
+              <h1 className="text-xl font-bold tracking-wide">
+                KGEES - HILLTOWN HOTEL
+              </h1>
+              <p className="text-sm font-semibold mt-1">FO CASH STATEMENT</p>
+            </div>
+            <div className="text-right text-[10px]">
+              <p>
+                <span className="font-semibold">Print Date & Time:</span>{" "}
+                {getCurrentDateTime()}
+              </p>
+            </div>
+          </div>
+
+          {/* Period Info */}
+          <div className="text-xs mb-2 border-b border-gray-400 pb-1">
+            <span className="font-semibold">From:</span> {formatDate(fromDate)}
+            {"  "}
+            <span className="font-semibold ml-2">To:</span> {formatDate(toDate)}
+          </div>
+
+          {/* Checkout Bills Section Title */}
+          <div className="text-sm font-semibold mb-1">
+            Checkout Bills ({checkoutData.length}{" "}
+            {checkoutData.length === 1 ? "record" : "records"})
+          </div>
+
+          {/* Table */}
+          <table className="w-full border-collapse text-[11px] print-table">
+            <thead>
+              {renderTableHeader()}
+            </thead>
+            <tbody>
+              {checkoutData.length > 0
+                ? checkoutData.map((item, index) => renderTableRow(item, index))
+                : renderEmptyState()}
+            </tbody>
+            <tfoot>
+              {renderSummary()}
+            </tfoot>
+          </table>
+
+          {/* Summary Section */}
+          {renderSummarySection()}
+        </div>
+      </div>
+
+      {/* Print Styles */}
+      <style jsx>{`
+        @media print {
+          .no-print {
+            display: none !important;
+          }
+
+          .print-content {
+            width: 100%;
+            margin: 0;
+            padding: 0;
+          }
+
+          body {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+            margin: 0;
+            padding: 0;
+          }
+
+          /* Table head repeats on every page */
+          .print-table thead {
+            display: table-header-group;
+          }
+
+          .print-table tfoot {
+            display: table-footer-group;
+          }
+
+          /* Prevent page breaks inside rows */
+          .print-table tr {
+            page-break-inside: avoid;
+          }
+
+          /* Keep table layout compact */
+          .print-table {
+            page-break-inside: auto;
+          }
+        }
+
+        @media screen {
+          .print-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+          }
+        }
+      `}</style>
     </>
   );
 };
