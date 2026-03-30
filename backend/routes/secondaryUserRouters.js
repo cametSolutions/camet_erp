@@ -69,7 +69,7 @@ import {
     getHoldCheckIns,releaseHold,getOtherCharges
 } from '../controllers/hotelController.js'
 import {
-    addItem, getAllItems, getItems, getCategories, deleteItem, updateItem, generateKot, getKot, updateKotStatus, editKot,
+    addItem, getAllItems, getItems, getCategories, deleteItem, updateItem, generateKot, getKot,getKotDash, updateKotStatus, editKot,
     getRoomDataForRestaurant, updateKotPayment, getPaymentType, saveTableNumber, getSalePrintData, updateTable, getTables, deleteTable,
     updateTableStatus, getKotDataByTable, updateConfigurationForKotApproval, getSummaryDashboard, cancelKot, directSale, searchItems,getComplementaryCashOrBank
 ,addComplementaryCashOrBank} from '../controllers/restaurantController.js'
@@ -358,6 +358,7 @@ router.get('/getItems/:cmp_id', authSecondary, getItems)
 router.get('/searchItems', authSecondary, searchItems)
 router.delete('/deleteItem/:id', authSecondary, deleteItem)
 router.get('/getKotData/:cmp_id', authSecondary, secondaryIsBlocked, getKot)
+router.get('/getKotDataDash/:cmp_id', authSecondary, secondaryIsBlocked, getKotDash)
 router.put('/updateKotStatus/:kotId', authSecondary, secondaryIsBlocked, updateKotStatus)
 router.get('/getRoomBasedOnBooking/:cmp_id', authSecondary, secondaryIsBlocked, getRoomDataForRestaurant)
 router.put("/updateKotPayment/:cmp_id", authSecondary, secondaryIsBlocked, updateKotPayment)

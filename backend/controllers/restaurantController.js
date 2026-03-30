@@ -19,6 +19,7 @@ import { buildReceipt } from "../helpers/restaurantHelper.js";
 import partyModel from "../models/partyModel.js";
 import { FoodPlan } from "../models/hotelSubMasterModal.js";
 import AdditionalCharges from "../models/additionalChargesModel.js";
+import { recalculateKotItem, round2 } from "../helpers/restaurantHelper.js";
 // Helper functions (you may need to create these or adjust based on your existing ones)
 import {
   buildDatabaseFilterForRoom,
@@ -675,6 +676,102 @@ export const getKot = async (req, res) => {
   }
 };
 
+
+export const getKotDash = async (req, res) => {
+  try {
+    const { cmp_id } = req.params;
+    let { date } = req.query;
+
+    if (!date) {
+      date = new Date().toISOString().slice(0, 10);
+    }
+
+    const start = new Date(`${date}T00:00:00.000Z`);
+    const end = new Date(`${date}T23:59:59.999Z`);
+
+    const kot = await kotModal
+      .find({
+        cmp_id,
+        createdAt: { $gte: start, $lte: end },
+        status: { $ne: "cancelled" },
+      })
+      .populate({
+        path: "roomId",
+        select: "roomName roomno",
+      })
+      .populate({
+        path: "customer",
+        select: "name phone address",
+      })
+      .lean();
+
+    const recalculatedKot = kot.map((kotDoc) => {
+      const recalculatedItems = (kotDoc?.items || []).map((item) =>
+        recalculateKotItem(item)
+      );
+
+      const kotTotal = recalculatedItems.reduce(
+        (sum, item) => sum + Number(item?.total || 0),
+        0
+      );
+
+      const totalTaxableAmount = recalculatedItems.reduce(
+        (sum, item) => sum + Number(item?.taxableAmount || 0),
+        0
+      );
+
+      const totalCgstAmt = recalculatedItems.reduce(
+        (sum, item) => sum + Number(item?.totalCgstAmt || 0),
+        0
+      );
+
+      const totalSgstAmt = recalculatedItems.reduce(
+        (sum, item) => sum + Number(item?.totalSgstAmt || 0),
+        0
+      );
+
+      const totalIgstAmt = recalculatedItems.reduce(
+        (sum, item) => sum + Number(item?.totalIgstAmt || 0),
+        0
+      );
+
+      const totalCessAmt = recalculatedItems.reduce(
+        (sum, item) => sum + Number(item?.totalCessAmt || 0),
+        0
+      );
+
+      const totalAddlCessAmt = recalculatedItems.reduce(
+        (sum, item) => sum + Number(item?.totalAddlCessAmt || 0),
+        0
+      );
+
+      return {
+        ...kotDoc,
+        items: recalculatedItems,
+        total: round2(kotTotal),
+        taxableAmount: round2(totalTaxableAmount),
+        totalCgstAmt: round2(totalCgstAmt),
+        totalSgstAmt: round2(totalSgstAmt),
+        totalIgstAmt: round2(totalIgstAmt),
+        totalCessAmt: round2(totalCessAmt),
+        totalAddlCessAmt: round2(totalAddlCessAmt),
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      data: recalculatedKot,
+    });
+  } catch (error) {
+    console.error("Error fetching KOT:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error while fetching KOT",
+    });
+  }
+};
+
+
 export const cancelKot = async (req, res) => {
   try {
     const { id } = req.params;
@@ -1146,6 +1243,8 @@ export const updateKotPayment = async (req, res) => {
         note,
       } = req.body;
 
+
+
       discountAmount = Number(req?.body?.additionalCharges[0]?.finalValue || 0)
 
       // console.log("table", kotData);
@@ -1304,31 +1403,70 @@ export const updateKotPayment = async (req, res) => {
       paymentCompleted = true;
       let selectedTableNumber = [];
 
-      await Promise.all(
-        kotData?.voucherNumber.map(async (item) => {
-          const kot = await kotModal.findById(item.id).lean();
+await Promise.all(
+  kotData?.voucherNumber.map(async (item) => {
+    const kot = await kotModal.findById(item.id).lean();
+    if (!kot) return;
 
-          if (
-            kot?.tableNumber &&
-            !selectedTableNumber.includes(kot.tableNumber)
-          ) {
-            selectedTableNumber.push(kot.tableNumber);
-          }
+    if (
+      kot?.tableNumber &&
+      !selectedTableNumber.includes(kot.tableNumber)
+    ) {
+      selectedTableNumber.push(kot.tableNumber);
+    }
 
-          console.log(`=== UPDATING KOT ${item.id} ===`);
-          console.log("Current food plan:", kot.foodPlanDetails);
+    console.log(`=== UPDATING KOT ${item.id} ===`);
 
-          // Build update object
-          const updateData = {
-            paymentMethod,
-            paymentCompleted: true,
-            status: "completed",
-            discount: discountAmount,
-            discountChargeId: discountCharge?._id,
-            note: note,
-          };
+    const selectedItems = kotData?.items || [];
 
-     if (isComplimentary) {
+    const billedItemMap = new Map(
+      selectedItems.map((si) => [
+        String(si._id),
+        Number(si.quantity || 0),
+      ])
+    );
+
+    const updatedItems = (kot?.items || []).map((kotItem) => {
+      const billedQty = Number(
+        billedItemMap.get(String(kotItem._id)) || 0
+      );
+
+      // ✅ use remainingQuantity if exists
+      const currentRemainingQty =
+        kotItem.remainingQuantity ?? kotItem.quantity ?? 0;
+
+      // ✅ IMPORTANT: if already 0 → skip completely
+      if (currentRemainingQty <= 0) {
+        return kotItem; // 🔥 no change at all
+      }
+
+      // ✅ calculate only if remaining > 0
+      const remainingQuantity = Math.max(
+        currentRemainingQty - billedQty,
+        0
+      );
+
+      return {
+        ...kotItem,
+        remainingQuantity,
+      };
+    });
+
+    const hasRemaining = updatedItems.some(
+      (i) => Number(i.remainingQuantity || 0) > 0
+    );
+
+    const updateData = {
+      paymentMethod,
+      paymentCompleted: !hasRemaining,
+      discount: discountAmount,
+      discountChargeId: discountCharge?._id,
+      note,
+      items: updatedItems,
+      ...(!hasRemaining && { status: "completed" }),
+    };
+
+    if (isComplimentary) {
       updateData.foodPlanDetails = {
         ...(kot?.foodPlanDetails || {}),
         isComplimentary: true,
@@ -1336,16 +1474,15 @@ export const updateKotPayment = async (req, res) => {
       updateData.isManuallyComplimentary = isManuallyComplimentary;
     }
 
-          console.log("Update data:", updateData);
+    console.log("Update data:", updateData);
 
-          return kotModal.updateOne(
-            { _id: item.id },
-            { $set: updateData },
-            { session },
-          );
-        }),
-      );
-
+    return kotModal.updateOne(
+      { _id: item.id },
+      { $set: updateData },
+      { session }
+    );
+  })
+);
       // console.log("Selected Table Numbers:", selectedTableNumber);
 
       // Check pending
