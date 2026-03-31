@@ -326,9 +326,8 @@ console.log(mergedMap);
     const dineInKots = [];
 
     kotData?.forEach((kot) => {
-      console.log( doc.checkInId.voucherNumber)
       console.log(kot);
-      let voucherNumber = doc.checkInId.voucherNumber ? doc.checkInId.voucherNumber : kot?.convertedFrom[0].checkInNumber 
+      let voucherNumber = doc?.checkInId?.voucherNumber ? doc.checkInId.voucherNumber : kot?.convertedFrom[0].checkInNumber 
       if(voucherNumber!== kot?.convertedFrom[0].checkInNumber) return;
       const kotRoomId = String(kot?.kotDetails?.roomId || kot?.roomId || "");
       const tableNumber =
@@ -613,6 +612,7 @@ console.log("dineInTotals", dineInTotals)
             item.description?.includes("Half Tariff"),
         );
         console.log(doc?.addFoodPlanWithRate);
+        console.log(foodPlanAmountWithTax);
 
         // 1. Add FULL DAY room rent charges
         fullDayCharges?.forEach((item) => {
@@ -620,12 +620,13 @@ console.log("dineInTotals", dineInTotals)
             date: item.date,
             description: `Room Rent :${item.roomName}`,
             docNo: item.docNo || "-",
-            amount: (item.baseAmount + (doc?.addFoodPlanWithRate ? 0 :  item.foodPlanAmountWithTax)).toFixed(2),
+            amount: (item.baseAmount + Number(doc?.addFoodPlanWithRate ? 0 :  item.foodPlanAmountWithTax)).toFixed(2),
             taxes: (item.taxAmount || 0).toFixed(2),
             advance: "",
             roomName: item.roomName,
           });
         });
+        console.log(charges);
 
         // 2. Add CGST and SGST for FULL DAYS (if any)
         if (fullDayCharges.length > 0) {
