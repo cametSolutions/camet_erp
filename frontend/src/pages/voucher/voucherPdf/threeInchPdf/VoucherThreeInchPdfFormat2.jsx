@@ -339,7 +339,7 @@ useEffect(() => {
             fontWeight: "bold",
           }}
         >
-        Party : {p?.credit_reference_type}
+        Party : {p?.credit_reference_type} {p?.creditor_gst && `(${p.creditor_gst})`}
         </div>
         )}
         </>

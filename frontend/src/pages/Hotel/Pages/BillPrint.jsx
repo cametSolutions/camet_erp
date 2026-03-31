@@ -83,7 +83,7 @@ const HotelBillPrint = () => {
         { withCredentials: true },
       );
       if (res.data.success) {
-        console.log("res.data.data", res.data.kotData.length);
+        console.log("res.data.data", res.data.kotData);
         setOutStanding(res.data.data || []);
         setKotData(res.data.kotData || []);
       }
@@ -326,9 +326,10 @@ console.log(mergedMap);
     const dineInKots = [];
 
     kotData?.forEach((kot) => {
-      console.log(doc)
+      console.log( doc.checkInId.voucherNumber)
       console.log(kot);
-      if(doc.voucherNumber !== kot?.convertedFrom[0].checkInNumber) return;
+      let voucherNumber = doc.checkInId.voucherNumber ? doc.checkInId.voucherNumber : kot?.convertedFrom[0].checkInNumber 
+      if(voucherNumber!== kot?.convertedFrom[0].checkInNumber) return;
       const kotRoomId = String(kot?.kotDetails?.roomId || kot?.roomId || "");
       const tableNumber =
         kot?.kotDetails?.tableNumber ||
