@@ -2199,29 +2199,27 @@ console.log(selectedAdditionalChargeData);
 
                                   let subtotal = 0;
 
-                                  if (discountBasedOnGrossAmount) {
-                                    // Discount on gross amount
-                                    const gross = itemList.reduce(
-                                      (acc, item) =>
-                                        acc + Number(item.total || 0),
-                                      0,
-                                    );
+                                const flatItems = itemList.map((x) => x.items || []).flat();
+                                
+if (discountBasedOnGrossAmount) {
+  subtotal = flatItems.reduce(
+    (acc, item) => acc + Number(item.total || item.individualTotal || 0),
+    0
+  );
+} else {
+  subtotal = flatItems.reduce((acc, item) => {
+    const total = Number(item.total || item.individualTotal || 0);
 
-                                    subtotal = gross;
-                                  } else {
-                                    // Discount on amount excluding IGST
-                                    console.log(itemList);
-                                    subtotal = itemList
-                                      .map((items) => items.items || [])
-                                      .flat()
-                                      .reduce(
-                                        (acc, item) =>
-                                          acc +
-                                          Number(item.total || 0) -
-                                          Number(item.totalIgstAmt || 0),
-                                        0,
-                                      );
-                                  }
+    // ✅ get accurate IGST
+    const igst =
+      Number(item?.GodownList?.[0]?.igstAmount) ||
+      Number(item?.igstAmount) ||
+      Number(item?.totalIgstAmt) ||
+      0;
+
+    return acc + (total - igst);
+  }, 0);
+}
 
                                   console.log(subtotal);
 
