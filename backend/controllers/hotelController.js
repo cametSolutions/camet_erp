@@ -3612,7 +3612,17 @@ export const updateConfigurationForHotelAndRestaurant = async (req, res) => {
             data.checked,
         },
       };
-    } else if (data.fieldType === "orderTypes") {
+    }
+    else if (data.title === "foodPlaWithRoomRate") {
+      console.log("foodPlaWithRoomRate");
+      // Handle existing addRateWithTax toggle updates
+      updateData = {
+        $set: {
+          [`configurations.0.foodPlaWithRoomRate`]:
+            data.checked,
+        },
+      };
+     } else if (data.fieldType === "orderTypes") {
       updateData = {
         $set: {
           [`configurations.0.orderTypes.${data.field}`]: data.checked,
@@ -5193,5 +5203,557 @@ export const getOtherCharges = async (req, res) => {
   } catch (error) {
     console.error("Error in PartyList:", error);
     res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+
+
+
+
+
+
+export const getFlashReportForDate = async (req, res) => {
+  try {
+    const { cmp_id, date } = req.query; // "2026-03-07"
+
+    if (!cmp_id || !date) {
+      return res.status(400).json({
+        success: false,
+        message: "cmp_id and date are required",
+      });
+    }
+
+    // 1) Load company once for header
+    const org = await Organization.findById(cmp_id).lean();
+    const companyName = org?.orgName || org?.name || "Hotel";
+
+    // 2) All checkouts for this company and date
+    const checkouts = await CheckOut.find({
+      cmp_id,
+      checkOutDate: date, // stored as "YYYY-MM-DD"
+    }).lean();
+
+    if (!checkouts.length) {
+      return res.status(404).json({
+        success: false,
+        message: "No checkouts found for this date",
+      });
+    }
+
+    // ===== ROOM STATISTICS =====
+
+    // totalRooms = total selectedRooms count across all checkouts
+    let totalRooms = 0;
+
+    // for pax + revenue
+    let paxDomestic = 0;
+    let roomApartment = 0; // sum of selectedRooms[].amountAfterTax
+    let roomExtraBed = 0;  // if you track as separate charge, adjust later
+
+    checkouts.forEach((co) => {
+      if (Array.isArray(co.selectedRooms)) {
+        totalRooms += co.selectedRooms.length;
+
+        co.selectedRooms.forEach((r) => {
+          // pax
+          if (typeof r.pax === "number") {
+            paxDomestic += r.pax;
+          }
+
+          // total room rent = sum of each room's amountAfterTax
+          if (typeof r.amountAfterTax === "number") {
+            roomApartment += r.amountAfterTax;
+          } else if (r.amountAfterTax != null) {
+            roomApartment += Number(r.amountAfterTax) || 0;
+          }
+        });
+      }
+    });
+
+    const blockedRooms = 0; // if you track blocked rooms in some table, compute there
+    const saleableRooms = totalRooms - blockedRooms;
+
+    const occupiedPaid = totalRooms; // each selected room treated as occupied paid
+    const occupiedComp = 0;         // if you mark complimentary rooms, subtract here
+    const totalOccupied = occupiedPaid + occupiedComp;
+
+    const paxForeign = 0; // you can compute from guestCountry != "India" later
+    const totalPax = paxDomestic + paxForeign;
+
+    const adults = totalPax; // until you split adults/children
+    const children = 0;
+    const males = totalPax;
+    const females = 0;
+    const noShows = 0;
+
+    // ===== REVENUE =====
+
+    // foodPlanTotal already stored at checkout level
+    const foodPlanTotal = checkouts.reduce(
+      (sum, co) => sum + Number(co.foodPlanTotal || 0),
+      0
+    );
+
+    const roomTotal = roomApartment + roomExtraBed;
+    const fbTotal = foodPlanTotal;
+
+    const grandTotal = checkouts.reduce(
+      (sum, co) => sum + Number(co.grandTotal || 0),
+      0
+    );
+
+    // ===== ARR / OCCUPANCY =====
+    const occPercent =
+      totalRooms > 0 ? (occupiedPaid / totalRooms) * 100 : 0;
+
+    const arrTotalRooms =
+      totalRooms > 0 ? roomTotal / totalRooms : 0;
+
+    const arrSaleableRooms =
+      saleableRooms > 0 ? roomTotal / saleableRooms : 0;
+
+    const arrOccupiedRooms =
+      totalOccupied > 0 ? roomTotal / totalOccupied : 0;
+
+    const reportDate = new Date(date);
+    const dayLabel = reportDate.toLocaleDateString("en-GB"); // 07/03/2026
+    const monthLabel = reportDate.toLocaleString("en-GB", {
+      month: "long",
+    }); // March
+
+    const data = {
+      companyName,
+      fromDate: date,
+      toDate: date,
+      dayLabel,
+      monthLabel,
+
+      totalRooms,
+      blockedRooms,
+      saleableRooms,
+      occupiedPaid,
+      occupiedComp,
+      totalOccupied,
+
+      paxDomestic,
+      paxForeign,
+      totalPax,
+      adults,
+      children,
+      males,
+      females,
+      noShows,
+
+      occPercent: Number(occPercent.toFixed(2)),
+      arrTotalRooms,
+      arrSaleableRooms,
+      arrOccupiedRooms,
+
+      roomApartment,          // total room rent (sum of amountAfterTax of selectedRooms)
+      roomExtraBed,           // keep 0 for now
+      roomTotal,
+
+      fbPlanRate: fbTotal,    // if you later split plan/service/restaurant, adjust
+      fbRoomService: 0,
+      fbRestaurant: 0,
+      fbTotal,
+
+      otherRevenues: 0,
+      modRevenues: 0,
+      grandTotal,
+    };
+
+    return res.json({
+      success: true,
+      data,
+    });
+  } catch (err) {
+    console.error("Flash report error", err);
+    return res.status(500).json({
+      success: false,
+      message: "Server error generating flash report",
+    });
+  }
+};
+
+
+export const getTouristReport = async (req, res) => {
+  try {
+    const { fromDate, toDate, countryField = "country" } = req.query;
+
+    const match = {};
+
+    if (fromDate || toDate) {
+      match.arrivalDate = {};
+      if (fromDate) match.arrivalDate.$gte = fromDate;
+      if (toDate) match.arrivalDate.$lte = toDate;
+    }
+
+    const fieldToGroup =
+      countryField === "guestCountry" ? "$guestCountry" : "$country";
+
+    const report = await CheckOut.aggregate([
+      { $match: match },
+
+      {
+        $addFields: {
+          selectedRooms: { $ifNull: ["$selectedRooms", []] },
+          additionalPaxDetails: { $ifNull: ["$additionalPaxDetails", []] },
+        },
+      },
+      {
+        $addFields: {
+          roomPaxTotal: {
+            $sum: {
+              $map: {
+                input: "$selectedRooms",
+                as: "room",
+                in: { $ifNull: ["$$room.pax", 0] },
+              },
+            },
+          },
+          additionalPaxCount: {
+            $size: "$additionalPaxDetails",
+          },
+        },
+      },
+      {
+        $addFields: {
+          totalPax: {
+            $add: ["$roomPaxTotal", "$additionalPaxCount"],
+          },
+          groupedCountry: {
+            $cond: [
+              {
+                $or: [
+                  { $eq: [fieldToGroup, null] },
+                  { $eq: [fieldToGroup, ""] },
+                ],
+              },
+              "UNKNOWN",
+              { $toUpper: fieldToGroup },
+            ],
+          },
+        },
+      },
+      {
+        $group: {
+          _id: "$groupedCountry",
+          pax: { $sum: "$totalPax" },
+          bookings: { $sum: 1 },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          nation: "$_id",
+          pax: 1,
+          bookings: 1,
+        },
+      },
+      { $sort: { pax: -1, nation: 1 } },
+    ]);
+
+    const totalPax = report.reduce((sum, item) => sum + item.pax, 0);
+    const totalBookings = report.reduce((sum, item) => sum + item.bookings, 0);
+
+    return res.status(200).json({
+      success: true,
+      message: "Tourist report fetched successfully",
+      filters: {
+        fromDate: fromDate || null,
+        toDate: toDate || null,
+        countryField,
+      },
+      summary: {
+        totalNations: report.length,
+        totalPax,
+        totalBookings,
+      },
+      data: report,
+    });
+  } catch (error) {
+    console.error("getTouristReport error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch tourist report",
+      error: error.message,
+    });
+  }
+};
+
+
+
+
+
+export const getFoodPlanReport = async (req, res) => {
+  try {
+    const { fromDate, toDate } = req.query;
+
+    const match = {};
+    if (fromDate || toDate) {
+      match.checkOutDate = {};
+      if (fromDate) match.checkOutDate.$gte = fromDate;
+      if (toDate) match.checkOutDate.$lte = toDate;
+    }
+
+    const pipeline = [
+      { $match: match },
+
+      {
+        $unwind: {
+          path: "$foodPlan",
+          preserveNullAndEmptyArrays: false,
+        },
+      },
+
+      {
+        $lookup: {
+          from: "foodplans",
+          localField: "foodPlan.foodPlanId",
+          foreignField: "_id",
+          as: "foodPlanMaster",
+        },
+      },
+      {
+        $unwind: {
+          path: "$foodPlanMaster",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+
+      {
+        $addFields: {
+          foodPlanCode: {
+            $ifNull: ["$foodPlanMaster.code", "$foodPlan.foodPlan"],
+          },
+          itemName: "$foodPlan.foodPlan",
+          qty: 1,
+          rate: { $ifNull: ["$foodPlan.rate", 0] },
+          amount: { $ifNull: ["$foodPlan.rate", 0] },
+          billNo: "$voucherNumber",
+          billDate: "$checkOutDate",
+          remarks: {
+            $cond: [
+              { $eq: ["$isHotelAgent", true] },
+              "AGENT",
+              "",
+            ],
+          },
+        },
+      },
+
+      {
+        $group: {
+          _id: {
+            foodPlanCode: "$foodPlanCode",
+            itemName: "$itemName",
+            rate: "$rate",
+          },
+          totalQty: { $sum: "$qty" },
+          totalAmount: { $sum: "$amount" },
+          docs: {
+            $push: {
+              billNo: "$billNo",
+              billDate: "$billDate",
+              itemName: "$itemName",
+              qty: "$qty",
+              rate: "$rate",
+              amount: "$amount",
+              remarks: "$remarks",
+            },
+          },
+        },
+      },
+
+      {
+        $group: {
+          _id: "$_id.foodPlanCode",
+          foodPlan: { $first: "$_id.foodPlanCode" },
+          items: {
+            $push: {
+              itemName: "$_id.itemName",
+              rate: "$_id.rate",
+              totalQty: "$totalQty",
+              totalAmount: "$totalAmount",
+            },
+          },
+          rows: { $push: "$docs" },
+          subTotal: { $sum: "$totalAmount" },
+        },
+      },
+
+      { $sort: { foodPlan: 1 } },
+    ];
+
+    const data = await CheckOut.aggregate(pipeline);
+
+    const grandTotal = data.reduce((sum, fp) => sum + (fp.subTotal || 0), 0);
+
+    return res.json({
+      success: true,
+      fromDate: fromDate || null,
+      toDate: toDate || null,
+      grandTotal,
+      foodPlans: data,
+    });
+  } catch (err) {
+    console.error("FoodPlan report error", err);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to generate food plan report",
+      error: err.message,
+    });
+  }
+};
+
+
+
+export const getOccupancyCheckoutReport = async (req, res) => {
+  try {
+    const { fromDate, toDate } = req.query;
+
+    const match = {};
+    if (fromDate || toDate) {
+      match.checkOutDate = {};
+      if (fromDate) match.checkOutDate.$gte = fromDate;
+      if (toDate) match.checkOutDate.$lte = toDate;
+    }
+
+    const checkouts = await CheckOut.find(match).lean();
+
+    const allRooms = await roomModal.find({}, { roomName: 1, roomType: 1 }).lean();
+
+    const rows = [];
+    const planMap = {};
+    const occupiedRoomNames = new Set();
+
+    let roomRevenue = 0;
+    let domestic = 0;
+    let foreigners = 0;
+    let single = 0;
+    let doubleRoom = 0;
+    let triple = 0;
+    let other = 0;
+    let additionalPaxTotal = 0;
+
+    checkouts.forEach((doc, docIndex) => {
+      const isDomestic = (doc?.country || doc?.guestCountry || "").toLowerCase() === "";
+      if (isDomestic) domestic += 1;
+      else foreigners += 1;
+
+      const additionalPaxCount = Array.isArray(doc?.additionalPaxDetails)
+        ? doc.additionalPaxDetails.length
+        : 0;
+
+      additionalPaxTotal += additionalPaxCount;
+
+      (doc?.selectedRooms || []).forEach((room, roomIndex) => {
+        const pax = Number(room?.pax || 0);
+        const tariff = Number(room?.amountAfterTax || room?.totalAmount || room?.baseAmountWithTax || room?.baseAmount || 0);
+
+        roomRevenue += tariff;
+        occupiedRoomNames.add(room?.roomName);
+
+        const roomTypeName =
+          room?.roomType?.roomTypeName ||
+          room?.roomType?.name ||
+          "";
+
+        const type = roomTypeName.toLowerCase();
+        if (type.includes("single")) single += 1;
+        else if (type.includes("double")) doubleRoom += 1;
+        else if (type.includes("triple")) triple += 1;
+        else other += 1;
+
+        let planName = "";
+        if (Array.isArray(doc?.foodPlan) && doc.foodPlan.length > 0) {
+          planName = doc.foodPlan[0]?.foodPlan || "Plan";
+        } else {
+          planName = "";
+        }
+
+        if (!planMap[planName]) {
+          planMap[planName] = {
+            plan: planName,
+            rms: 0,
+            pax: 0,
+            addnl: 0,
+            total: 0,
+          };
+        }
+
+        planMap[planName].rms += 1;
+        planMap[planName].pax += pax;
+        planMap[planName].total += pax;
+
+        rows.push({
+          slNo: rows.length + 1,
+          room: room?.roomName || "",
+          grcNo: doc?.grcno || "",
+          guestName: doc?.guestName || doc?.customerName || "",
+          company: doc?.company || "",
+          pax,
+          arrivalDate: doc?.arrivalDate || "",
+          arrivalTime: doc?.arrivalTime || "",
+          departureDate: doc?.checkOutDate || "",
+          plan: planName,
+          tariff,
+          discountPercent: Number(doc?.discountPercentage || 0),
+          discountAmount: Number(doc?.discountAmount || 0),
+        });
+      });
+    });
+
+    const occupiedRooms = occupiedRoomNames.size;
+    const totalRooms = allRooms.length;
+    const vacant = Math.max(totalRooms - occupiedRooms, 0);
+    const occupancyPercentage =
+      totalRooms > 0 ? Number(((occupiedRooms / totalRooms) * 100).toFixed(2)) : 0;
+    const arr = occupiedRooms > 0 ? Number((roomRevenue / occupiedRooms).toFixed(2)) : 0;
+
+    const roomStatus = allRooms
+      .map((room) => ({
+        roomNo: room.roomName,
+        status: occupiedRoomNames.has(room.roomName) ? "Occupied" : "Vacant",
+      }))
+      .sort((a, b) => String(a.roomNo).localeCompare(String(b.roomNo)));
+
+    const planSummary = Object.values(planMap).map((item) => ({
+      ...item,
+      addnl: additionalPaxTotal,
+      total: item.pax + additionalPaxTotal,
+    }));
+
+    return res.status(200).json({
+      success: true,
+      reportDate: toDate || new Date().toISOString().slice(0, 10),
+      printDateTime: new Date(),
+      summary: {
+        occupancyPercentage,
+        houseCount: rows.reduce((sum, item) => sum + Number(item.pax || 0), 0),
+        domestic,
+        foreigners,
+        roomRevenue: Number(roomRevenue.toFixed(2)),
+        arr,
+        roomsOccupied: occupiedRooms,
+        single,
+        double: doubleRoom,
+        triple,
+        other,
+        vacant,
+        totalRooms,
+      },
+      planSummary,
+      rows,
+      roomStatus,
+    });
+  } catch (error) {
+    console.error("getOccupancyCheckoutReport error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to generate occupancy checkout report",
+      error: error.message,
+    });
   }
 };

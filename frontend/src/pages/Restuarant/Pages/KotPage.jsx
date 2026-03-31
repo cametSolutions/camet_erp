@@ -6,6 +6,7 @@ import { useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
 import PrintModal from "@/pages/Hotel/Components/PrintModal";
 import { IoIosArrowRoundBack } from "react-icons/io";
+import ItemSelector from "../components/ItemSelector";
 
 import {
   MdDescription,
@@ -78,6 +79,7 @@ const OrdersDashboard = () => {
   const selectedKotFromRedirect = location.state?.selectedKot;
   const fromTable = location.state?.fromTable ?? false;
   const [showKotNotification, setShowKotNotification] = useState(fromTable);
+  const [specificSelectedKotItemWise, setSpecificSelectedKotItemWise] = useState(null);
   // state used for showing pdf print
 
   const [salePrintData, setSalePrintData] = useState(null);
@@ -102,6 +104,7 @@ const OrdersDashboard = () => {
   const [showBatchWiseKotPrint, setShowBatchWiseKotPrint] = useState(false);
   const [dataForBatchWisePrint, setDataForBatchWisePrint] = useState(null);
   const [selectedMode, setSelectedMode] = useState(null);
+  const [isSpecific,setIsSpecific] = useState(false);
   const toggleExpand = (id) =>
     setExpandedOrders((prev) => ({ ...prev, [id]: !prev[id] }));
 
@@ -120,7 +123,7 @@ const OrdersDashboard = () => {
   org?.configurations?.[0]?.discountBasedOnGrossAmount ?? false;
 
   const { data, refreshHook } = useFetch(
-    `/api/sUsers/getKotData/${cmp_id}?date=${selectedDate}`,
+    `/api/sUsers/getKotDataDash/${cmp_id}?date=${selectedDate}`,
   );
 
   const fetchData = useCallback(async () => {
@@ -149,10 +152,20 @@ const OrdersDashboard = () => {
           : Array.isArray(response.data)
             ? response.data
             : [];
-        setSelectedAdditionalChargeData(additionalChargesResponse[0]._id);
+           const discountCharges = additionalChargesResponse.filter((charge) =>
+  charge.name?.toLowerCase().includes("discount")
+);
+
+setAdditionalCharges(discountCharges);
+
+if (discountCharges.length > 0) {
+  setSelectedAdditionalChargeData(discountCharges[0]._id);
+} else {
+  setSelectedAdditionalChargeData(additionalChargesResponse[0]?._id);
+}
         setAllAdditionalChargesFromRedux(additionalChargesResponse);
       }
-
+console.log(selectedAdditionalChargeData);
       // ✅ Now SAFE to filter
       const discountCharges = additionalChargesResponse.filter((charge) =>
         charge.name.toLowerCase().includes("discount"),
@@ -197,7 +210,6 @@ const OrdersDashboard = () => {
 
   useEffect(() => {
     if (data) {
-      console.log(data?.data[23]);
       setOrders(data?.data);
     }
   }, [data, selectedDate]);
@@ -404,6 +416,8 @@ const OrdersDashboard = () => {
                 : batch,
             );
 
+            console.log(updatedBatches);
+
             const allCompleted =
               updatedBatches?.length > 0 &&
               updatedBatches.every((b) => b.status === "completed");
@@ -433,6 +447,8 @@ const OrdersDashboard = () => {
     }
   };
 
+  console.log(orders[20]?.voucherNumber);
+  console.log(orders[20]?.status);
   // function used to perform print  with kot
   const handleKotPrint = (data, batchNo) => {
     let newItems = data?.items || [];
@@ -454,7 +470,7 @@ const OrdersDashboard = () => {
             );
             return {
               ...item,
-              quantity: batchItem?.quantity ?? item.quantity,
+              quantity: batchItem?.remainingQty ?? item.remainingQty,
             };
           });
       }
@@ -768,7 +784,6 @@ const OrdersDashboard = () => {
       };
 
       console.log(payment);
-
       const response = await api.put(
         `/api/sUsers/updateKotPayment/${cmp_id}`,
         payment,
@@ -876,9 +891,9 @@ const OrdersDashboard = () => {
 
     let roomDetails = null;
     let itemList = selectedKot.flatMap((item) => {
-      console.log(item);
+
       let findOne = filteredOrders.find((order) => order._id == item.id);
-      console.log(findOne.roomId);
+      
       if (findOne) {
         if (!roomDetails && findOne.roomId) {
           roomDetails = {
@@ -1005,7 +1020,7 @@ const OrdersDashboard = () => {
 
   console.log(paymentMethod);
   const handleSaveSales = (status) => {
-    console.log(paymentMode);
+   refreshHook()
     setConformationModal(false);
     setSelectedDataForPayment(previewForSales);
     if (isPostToRoom && status) {
@@ -1046,6 +1061,7 @@ const OrdersDashboard = () => {
     }
     setShowVoucherPdf(false);
     setShowPaymentModal(true);
+    
   };
 
   console.log("selectedKot", showPaymentModal);
@@ -1149,7 +1165,24 @@ const OrdersDashboard = () => {
     setShowBatchWiseKotPrint(true);
   };
 
-  console.log("selectedKot", groupedOrders["table_85"]);
+  const handleSpecificItemSale = (data) => {
+    console.log("data", data);
+    setOrders((prevOrders) =>
+  prevOrders.map((order) => {
+    const matchedItem = data.find((item) => item._id === order._id);
+
+    if (matchedItem) {
+      return { ...order, ...matchedItem };
+    }
+
+    return order;
+  })
+);
+    setSpecificSelectedKotItemWise(data)
+  }
+
+
+
   return (
     <>
       {showVoucherPdf && (
@@ -1691,7 +1724,7 @@ const OrdersDashboard = () => {
                       <div className="flex flex-nowrap gap-3 overflow-x-auto pb-1">
                         {orders.map((order) => {
                           const currentStatusConfig =
-                            statusConfig[order.status];
+                            statusConfig[order.kitchenBatches.length > 0 ? order.kitchenBatches[0].status : order.status];
                           const isSelected = selectedKot.find(
                             (item) => item.id === order._id,
                           );
@@ -2041,7 +2074,7 @@ const OrdersDashboard = () => {
 
             {/* ── Floating Pay Button ── */}
             {selectedKot.length > 0 && (
-              <div className="fixed bottom-6 right-6 z-50 max-h-screen animate-slideUp">
+               <div className="fixed bottom-4 right-4 z-50 w-[320px] max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-2xl border border-gray-200 p-4 animate-slideUp">
                 <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-4 min-w-[280px]">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
@@ -2059,7 +2092,10 @@ const OrdersDashboard = () => {
                       </div>
                     </div>
                     <button
-                      onClick={() => setSelectedKot([])}
+                      onClick={() => {
+                        setSelectedKot([])
+                        refreshHook()
+                      }}
                       className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded-full transition-all"
                     >
                       ✕
@@ -2310,6 +2346,22 @@ const OrdersDashboard = () => {
                           </span>
                         </label>
                       </div>
+                          <div className="mt-3 p-2 bg-green-50 border border-green-200 rounded-lg">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={isSpecific}
+                            onChange={(e) => {
+                              refreshHook()
+                              setIsSpecific(e.target.checked);
+                            }}
+                            className="mt-1 w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 flex-shrink-0"
+                          />
+                          <span className="text-sm font-semibold text-green-700">
+                            Item-wise split
+                          </span>
+                        </label>
+                      </div>
                       <div className="border-t border-green-300 pt-2 mt-2">
                         <div className="flex justify-between items-center">
                           <span className="text-sm font-bold text-green-800">
@@ -2337,7 +2389,10 @@ const OrdersDashboard = () => {
                   )}
                   <div className="flex gap-2">
                     <button
-                      onClick={() => setSelectedKot([])}
+                      onClick={() => {
+                        setSelectedKot([])
+                        refreshHook()
+                      }}
                       className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-all duration-200"
                     >
                       Clear All
@@ -2508,6 +2563,7 @@ const OrdersDashboard = () => {
                         setCashAmount(0);
                         setOnlineAmount(0);
                         setPaymentError("");
+                        setPaymentMethod("credit")
                         // Reset split payment selections
                         // setSelectedCash("");
                         // setSelectedBank("");
@@ -3022,6 +3078,15 @@ const OrdersDashboard = () => {
             setDataForBatchWisePrint={setDataForBatchWisePrint}
           />
         </div>
+      )}
+      {isSpecific && (
+        <ItemSelector
+        items={selectedKot}
+        kotData={filteredOrders}
+        onChange = {handleSpecificItemSale}
+        onClose = {() => setIsSpecific(false)}
+     
+         />
       )}
     </>
   );
