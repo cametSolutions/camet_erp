@@ -210,6 +210,8 @@ console.log(selectedAdditionalChargeData);
 
   useEffect(() => {
     if (data) {
+      
+       console.log(data?.data[data.data.length -1]);
       setOrders(data?.data);
     }
   }, [data, selectedDate]);
@@ -1728,6 +1730,7 @@ console.log(selectedAdditionalChargeData);
                           const isSelected = selectedKot.find(
                             (item) => item.id === order._id,
                           );
+                          console.log(order.total);
                           const isExpanded = expandedOrders[order._id];
                           const discountedTotal =
                             Number(order.total) - Number(order.discount || 0);

@@ -190,13 +190,13 @@ export const calculateTax = ({
   unitDiscount = Math.min(unitDiscount, unitPrice);
 
   const discountedUnitPrice = Math.max(unitPrice - unitDiscount, 0);
-
+console.log("discountedUnitPrice", discountedUnitPrice)
   const totalTaxRate =
-    cgstRate + sgstRate + igstRate + cessRate + addlCessRate;
+    cgstRate + sgstRate ;
 
   let basePricePerUnit = 0;
   let taxableAmount = 0;
-
+console.log("isTaxIncluded", isTaxIncluded)
   if (isTaxIncluded) {
     basePricePerUnit =
       totalTaxRate > 0
@@ -208,6 +208,7 @@ export const calculateTax = ({
     basePricePerUnit = discountedUnitPrice;
     taxableAmount = discountedUnitPrice * qty;
   }
+  console.log("taxableAmount",basePricePerUnit, taxableAmount)
 
   const cgstAmount = (taxableAmount * cgstRate) / 100;
   const sgstAmount = (taxableAmount * sgstRate) / 100;
@@ -217,15 +218,12 @@ export const calculateTax = ({
 
   const totalTaxAmount =
     cgstAmount +
-    sgstAmount +
-    igstAmount +
-    cessAmount +
-    additionalCessAmount;
+    sgstAmount 
 
   const total = isTaxIncluded
     ? discountedUnitPrice * qty
     : taxableAmount + totalTaxAmount;
-
+console.log("total",total)
   return {
     remainingQty: qty,
     price: round2(unitPrice),
@@ -258,10 +256,10 @@ export const calculateTax = ({
 
 
 export const recalculateKotItem = (item = {}) => {
-  const remainingQty = Number(item?.remainingQty ?? item?.remainingQuantity ?? 0);
+  const remainingQty = Number(item?.remainingQty ?? item?.remainingQty ?? 0);
 
   // ❌ skip if no remaining
-  if (remainingQty <= 0) return null;
+  if (remainingQty <= 0 ) return null;
 
   const calc = calculateTax({
     remainingQty,

@@ -204,7 +204,7 @@ useEffect(() => {
       data?.additionalCharges?.[0]?.finalValue ||
       0,
   ).toFixed(2);
-  console.log("discount", discount);
+  console.log("discount", Number(discount));
   console.log("netAmount", netAmount);
   const tax = Math.round(calculateTotalTax()).toFixed(2);
   const cgst = (calculateTotalTax() / 2).toFixed(2);
@@ -595,6 +595,8 @@ useEffect(() => {
                       fontWeight: "bold",
                     }}
                   >
+                    {Number(discount) > 0 && (
+                      <>
                     <div
                       style={{
                         marginLeft: "auto",
@@ -612,6 +614,8 @@ useEffect(() => {
                     >
                       {discount}
                     </div>
+                    </>
+                    )}
                   </div>
                 </>
               )}
@@ -788,7 +792,7 @@ useEffect(() => {
                   fontWeight: "bold",
                 }}
               >
-                {discountBasedOnGrossAmount && (
+                {discountBasedOnGrossAmount && Number(discount) &&  (
                   <>
                     Discount: <span style={bold}>{discount || "0.00"}</span>
                   </>
