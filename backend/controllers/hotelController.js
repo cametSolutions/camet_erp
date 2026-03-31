@@ -3612,7 +3612,17 @@ export const updateConfigurationForHotelAndRestaurant = async (req, res) => {
             data.checked,
         },
       };
-    } else if (data.fieldType === "orderTypes") {
+    }
+    else if (data.title === "foodPlaWithRoomRate") {
+      console.log("foodPlaWithRoomRate");
+      // Handle existing addRateWithTax toggle updates
+      updateData = {
+        $set: {
+          [`configurations.0.foodPlaWithRoomRate`]:
+            data.checked,
+        },
+      };
+     } else if (data.fieldType === "orderTypes") {
       updateData = {
         $set: {
           [`configurations.0.orderTypes.${data.field}`]: data.checked,

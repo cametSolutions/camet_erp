@@ -45,11 +45,13 @@ function BookingForm({
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [saveLoader, setSaveLoader] = useState(false);
 
-  const navigate = useNavigate();
+
   const { _id: cmp_id, configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg,
-  );
-
+  ); 
+  let addFoodPlanWithRate = configurations?.[0]?.foodPlaWithRoomRate;
+  
+  const [includeFoodRateWithRoom, setIncludeFoodRateWithRoom] = useState(addFoodPlanWithRate ?? false);
   const { data, loading } = useFetch(
     `/api/sUsers/getProductSubDetails/${cmp_id}?type=roomType`,
   );
@@ -141,6 +143,7 @@ function BookingForm({
         highestDate =
           currentDateDefault > highestDate ? currentDateDefault : highestDate;
       }
+      console.log("editData", editData);
       setFormData((prev) => ({
         ...prev,
         country: editData?.country,
@@ -197,7 +200,9 @@ function BookingForm({
         updatedDate: editData?.updatedDate || currentDateDefault,
         gstNo: editData?.gstNo || "",
         otherChargeDetails: editData?.otherChargeDetails || [],
+        addFoodPlanWithRate: editData?.addFoodPlanWithRate,
       }));
+      setIncludeFoodRateWithRoom(editData?.addFoodPlanWithRate);
     }
   }, [editData]);
 
@@ -642,6 +647,7 @@ console.log("advanceAmount", advanceAmount,isFor);
       ...prev,
       foodPlan: [...filterData, ...details],
       foodPlanTotal: totalAmount,
+      addFoodPlanWithRate:includeFoodRateWithRoom,
       updatedDate: currentDateDefault,
     }));
   };
@@ -1611,6 +1617,7 @@ console.log("advanceAmount", advanceAmount,isFor);
                           roomFromDashboard={rooms}
                           addTaxWithRate={formData.addTaxWithRate}
                           handleDeletion={handleDeletion}
+                          includeFoodRateWithRoom={includeFoodRateWithRoom}
                         />
                       </div>
                     </div>
@@ -1853,6 +1860,7 @@ console.log("advanceAmount", advanceAmount,isFor);
                   isTariffRateChange={isTariffRateChange}
                   roomIdToUpdate={roomId}
                   addTaxWithRate={formData.addTaxWithRate}
+                  includeFoodRateWithRoom={includeFoodRateWithRoom}
                 />
               </div>
 
@@ -1909,6 +1917,8 @@ console.log("advanceAmount", advanceAmount,isFor);
                   setDisplayFoodPlan={setDisplayFoodPlan}
                   selectedRoomId={selectedRoomId}
                   formData={formData}
+                  includeFoodRateWithRoom={includeFoodRateWithRoom}
+                  setIncludeFoodRateWithRoom={setIncludeFoodRateWithRoom}
                 />
               </div>
             </div>

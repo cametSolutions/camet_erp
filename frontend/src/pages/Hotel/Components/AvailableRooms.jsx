@@ -99,6 +99,7 @@ function AvailableRooms({
   roomIdToUpdate = null,
   addTaxWithRate = false,
   handleDeletion = () => {},
+  includeFoodRateWithRoom
 }) {
   const [rooms, setRooms] = useState([]);
   const [search, setSearch] = useState("");
@@ -370,6 +371,7 @@ function AvailableRooms({
           addTaxWithRate,
           formData,
           booking.roomId,
+          includeFoodRateWithRoom
         );
 
         return {
