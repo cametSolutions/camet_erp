@@ -13,7 +13,7 @@ import api from "../../../../../api/api";
 import { toast } from "react-toastify";
 import { LiaMoneyCheckAltSolid } from "react-icons/lia";
 import { updateConfiguration } from "../../../../../../slices/secSelectedOrgSlice.js";
-
+import { IoFastFoodOutline } from "react-icons/io5";
 import { useDispatch } from "react-redux";
 const StockItemSettings = () => {
   const dispatch = useDispatch();
@@ -105,6 +105,16 @@ const StockItemSettings = () => {
             icon: <IoRestaurantOutline />,
             to: "/sUsers/foodPlan",
             active: true,
+          },
+          {
+            title: "Add food plan with room rate",
+            description: "Add food plan with room rate for better organization",
+            icon: <IoFastFoodOutline />,
+            to: "sec",
+            active: true,
+            toggle: true,
+            toggleValue: configurations[0]?.foodPlaWithRoomRate,
+            dbField: "foodPlaWithRoomRate",
           },
           {
             title: "addRateWithTax",

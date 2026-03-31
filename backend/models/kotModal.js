@@ -112,7 +112,6 @@ const kotSchema = new mongoose.Schema({
     type: String,
     default: "pending",
   },
-
     kitchenBatches: {
     type: [kitchenBatchSchema],
     default: [],

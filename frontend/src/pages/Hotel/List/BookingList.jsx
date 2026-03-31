@@ -901,7 +901,10 @@ function BookingList() {
                 configurations[0]?.addRateWithTax?.hotelSale,
                 checkout,
                 room.roomId,
+                checkout?.addFoodPlanWithRate
               );
+
+              console.log(room.totalAmount)
 
               return {
                 ...room,

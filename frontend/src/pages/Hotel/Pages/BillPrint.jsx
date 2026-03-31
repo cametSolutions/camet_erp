@@ -490,16 +490,12 @@ console.log("dineInTotals", dineInTotals)
     const dateWiseLines = transformDocToDateWiseLines(doc);
     console.log(dateWiseLines);
     // Totals for room parts
-    let roomTariffTotal = dateWiseLines.reduce(
-      (t, i) => t + Number(i.baseAmount || 0),
-      0,
-    );
-
-    const planAmount = dateWiseLines.reduce(
+      const planAmount = dateWiseLines.reduce(
       (t, i) => t + Number(i.foodPlanAmountWithOutTax || 0),
       0,
     );
-    console.log(planAmount);
+
+        console.log(planAmount);
     const foodPlanAmountWithTax = dateWiseLines
       .reduce(
         (t, i) =>
@@ -510,6 +506,18 @@ console.log("dineInTotals", dineInTotals)
       )
       .toFixed(2);
     console.log(foodPlanAmountWithTax);
+    console.log(planAmount);
+
+    let roomTariffTotal =  !doc?.addFoodPlanWithRate ? dateWiseLines.reduce(
+      (t, i) => t + Number(i.baseAmount || 0),
+      0,
+    ) :  dateWiseLines.reduce(
+      (t, i) => t + Number(i.baseAmount || 0),
+      0,
+    ) - (planAmount + Number(foodPlanAmountWithTax));
+
+  
+
 
     const additionalPaxAmount = (doc.selectedRooms || []).reduce(
       (total, room) => {
@@ -603,6 +611,7 @@ console.log("dineInTotals", dineInTotals)
             item.description?.includes("Half Day") ||
             item.description?.includes("Half Tariff"),
         );
+        console.log(doc?.addFoodPlanWithRate);
 
         // 1. Add FULL DAY room rent charges
         fullDayCharges?.forEach((item) => {
@@ -610,7 +619,7 @@ console.log("dineInTotals", dineInTotals)
             date: item.date,
             description: `Room Rent :${item.roomName}`,
             docNo: item.docNo || "-",
-            amount: (item.baseAmount + item.foodPlanAmountWithTax).toFixed(2),
+            amount: (item.baseAmount + (doc?.addFoodPlanWithRate ? 0 :  item.foodPlanAmountWithTax)).toFixed(2),
             taxes: (item.taxAmount || 0).toFixed(2),
             advance: "",
             roomName: item.roomName,
@@ -656,7 +665,7 @@ console.log("dineInTotals", dineInTotals)
             date: item.date, // ✅ Use the actual half day date (checkout date)
             description: `Half Tariff :${item.roomName}`,
             docNo: item.docNo || "-",
-            amount: (item.baseAmount + item.foodPlanAmountWithTax).toFixed(2),
+            amount: (item.baseAmount + (doc?.addFoodPlanWithRate ? 0 :  item.foodPlanAmountWithTax)).toFixed(2),
             taxes: (item.taxAmount || 0).toFixed(2),
             advance: "",
             roomName: item.roomName,
@@ -1062,7 +1071,6 @@ console.log("allpartyid", outStanding);
           return { ...charge, balance: bal.toFixed(2) };
         });
 
-        
         // Zero out room-related summary fields
         bill.summary.roomRent = "0.00";
         bill.summary.sgst = "0.00";
