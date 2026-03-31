@@ -323,6 +323,7 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
     return paymentSplits
       .filter((p) => p.amount > 0)
       .map((p) => (
+        <>
         <div
           key={p.type}
           style={{
@@ -332,8 +333,21 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
         >
           {prettyType(p.type)} : ₹ {Math.round(p.amount).toFixed(2)}
         </div>
+        {p?.credit_reference_type&& (
+        <div
+          key={p.type}
+          style={{
+            fontSize: "10px",
+            fontWeight: "bold",
+          }}
+        >
+        Party : {p?.credit_reference_type}
+        </div>
+        )}
+        </>
+        
       ));
-  };
+  }; 
 
   console.log(discount);
 
@@ -541,6 +555,7 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
           >
             {/* LEFT SIDE: payment splits */}
             <div style={{ flex: 1 }}>{getPaymentSummary()}</div>
+           
 
             {/* RIGHT SIDE: Amount + taxes */}
             <div style={{ flex: 1 }}>
@@ -636,7 +651,7 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
                 isSameState &&
                 calculateTotalTax() > 0 &&
                 (() => {
-                  const entries = Object.entries(cgstGroups);
+                 
 
                   // if (entries.length === 0) {
                   return (

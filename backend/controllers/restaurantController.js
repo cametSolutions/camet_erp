@@ -706,9 +706,9 @@ export const getKotDash = async (req, res) => {
       .lean();
 
     const recalculatedKot = kot.map((kotDoc) => {
-      const recalculatedItems = (kotDoc?.items || []).map((item) =>
-        recalculateKotItem(item)
-      );
+   const recalculatedItems = (kotDoc?.items || [])
+  .map((item) => recalculateKotItem(item))
+  .filter(Boolean); // 🔥 removes null / skipped items
 
       const kotTotal = recalculatedItems.reduce(
         (sum, item) => sum + Number(item?.total || 0),
@@ -1433,7 +1433,7 @@ await Promise.all(
 
       // ✅ use remainingQuantity if exists
       const currentRemainingQty =
-        kotItem.remainingQuantity ?? kotItem.quantity ?? 0;
+        kotItem.remainingQty ?? kotItem.quantity ?? 0;
 
       // ✅ IMPORTANT: if already 0 → skip completely
       if (currentRemainingQty <= 0) {
@@ -1441,19 +1441,19 @@ await Promise.all(
       }
 
       // ✅ calculate only if remaining > 0
-      const remainingQuantity = Math.max(
+      const remainingQty = Math.max(
         currentRemainingQty - billedQty,
         0
       );
 
       return {
         ...kotItem,
-        remainingQuantity,
+        remainingQty,
       };
     });
 
     const hasRemaining = updatedItems.some(
-      (i) => Number(i.remainingQuantity || 0) > 0
+      (i) => Number(i.remainingQty || 0) > 0
     );
 
     const updateData = {
@@ -1724,7 +1724,16 @@ async function getSelectedParty(
 async function createPaymentSplittingArray(paymentDetails, cashAmt, onlineAmt) {
   console.log("hhhhhhhhhhhhhhhh", paymentDetails, cashAmt, onlineAmt);
   const arr = [];
-  if (cashAmt > 0) {
+  if(paymentDetails?.paymentMode === "credit" && cashAmt > 0) {
+      arr.push({
+      type: "credit",
+      amount: cashAmt,
+      ref_id: paymentDetails?.selectedCreditor?._id,
+      reference_name: paymentDetails?.selectedCreditor?.partyName,
+      credit_reference_type :paymentDetails?.selectedCreditor?.partyName
+    });
+  }
+  if (paymentDetails?.paymentMode !== "credit" && cashAmt > 0) {
     let referral = await partyModel.findOne({
       _id: paymentDetails?.selectedCash,
     });

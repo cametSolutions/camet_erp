@@ -470,7 +470,7 @@ console.log(selectedAdditionalChargeData);
             );
             return {
               ...item,
-              quantity: batchItem?.quantity ?? item.quantity,
+              quantity: batchItem?.remainingQty ?? item.remainingQty,
             };
           });
       }
@@ -784,7 +784,6 @@ console.log(selectedAdditionalChargeData);
       };
 
       console.log(payment);
-
       const response = await api.put(
         `/api/sUsers/updateKotPayment/${cmp_id}`,
         payment,
@@ -1181,6 +1180,7 @@ console.log(selectedAdditionalChargeData);
 );
     setSpecificSelectedKotItemWise(data)
   }
+
 
 
   return (
@@ -2563,6 +2563,7 @@ console.log(selectedAdditionalChargeData);
                         setCashAmount(0);
                         setOnlineAmount(0);
                         setPaymentError("");
+                        setPaymentMethod("credit")
                         // Reset split payment selections
                         // setSelectedCash("");
                         // setSelectedBank("");

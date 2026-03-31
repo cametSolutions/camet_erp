@@ -168,6 +168,8 @@ export const calculateTax = ({
   const qty = Number(remainingQty || 0);
   const unitPrice = Number(price || 0);
 
+  console.log("unitPrice", qty);
+
   const cgstRate = Number(cgst || 0);
   const sgstRate = Number(sgst || 0);
   const igstRate = Number(igst || 0);
@@ -256,7 +258,10 @@ export const calculateTax = ({
 
 
 export const recalculateKotItem = (item = {}) => {
-  const remainingQty = Number(item?.remainingQuantity || 0);
+  const remainingQty = Number(item?.remainingQty ?? item?.remainingQuantity ?? 0);
+
+  // ❌ skip if no remaining
+  if (remainingQty <= 0) return null;
 
   const calc = calculateTax({
     remainingQty,
@@ -275,11 +280,7 @@ export const recalculateKotItem = (item = {}) => {
 
   return {
     ...item,
-
-    // use remaining qty for all current calculations
     remainingQty: calc.remainingQty,
-
-    // optional: if you want frontend compatibility
     quantity: calc.remainingQty,
 
     price: calc.price,

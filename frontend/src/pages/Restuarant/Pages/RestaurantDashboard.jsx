@@ -135,9 +135,8 @@ const RestaurantPOS = () => {
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id,
   );
-const discountBasedOnGrossAmount =
-  org?.configurations?.[0]?.discountBasedOnGrossAmount ?? false;
- 
+  const discountBasedOnGrossAmount =
+    org?.configurations?.[0]?.discountBasedOnGrossAmount ?? false;
 
   const industry = org?.industry;
   const shouldFetch = Boolean(cmp_id);
@@ -872,7 +871,11 @@ const discountBasedOnGrossAmount =
       setOrderItems(
         orderItems.map((orderItem) =>
           orderItem._id === item._id
-            ? { ...orderItem, quantity: orderItem.quantity + 1 , remainingQty: orderItem.remainingQty + 1}
+            ? {
+                ...orderItem,
+                quantity: orderItem.quantity + 1,
+                remainingQty: orderItem.remainingQty + 1,
+              }
             : orderItem,
         ),
       );
@@ -897,7 +900,10 @@ const discountBasedOnGrossAmount =
         }
       }
 
-      setOrderItems([...orderItems, { ...item, quantity: 1, remainingQty:1, price: price }]);
+      setOrderItems([
+        ...orderItems,
+        { ...item, quantity: 1, remainingQty: 1, price: price },
+      ]);
     }
   };
 
@@ -911,7 +917,9 @@ const discountBasedOnGrossAmount =
     // else {
     setOrderItems(
       orderItems.map((item) =>
-        item._id === itemId ? { ...item, quantity: newQuantity , remainingQty: newQuantity } : item,
+        item._id === itemId
+          ? { ...item, quantity: newQuantity, remainingQty: newQuantity }
+          : item,
       ),
     );
     // }
@@ -1150,7 +1158,7 @@ const discountBasedOnGrossAmount =
       status: kotDataForEdit?.status || "pending",
       paymentMethod: orderType === "dine-in" ? null : "cash",
       kitchenBatches: batchArray,
-      parentTag:parentKot ? true : false
+      parentTag: parentKot ? true : false,
     };
 
     console.log(newOrder);
@@ -1198,6 +1206,9 @@ const discountBasedOnGrossAmount =
         address: "",
         tableNumber: "10",
       });
+      setSearch("");
+      setShowResults(true);
+      setRoomDetails({});
       toast.success(
         kotDataForEdit
           ? "KOT updated successfully!"
@@ -1474,7 +1485,7 @@ const discountBasedOnGrossAmount =
                     {orderType === "dine-in"
                       ? `Table ${customerDetails.tableNumber}`
                       : orderType === "roomService"
-                        ? `Room ${roomDetails.roomno || "---"}`
+                        ? `Room ${roomDetails?.roomno || "---"}`
                         : getOrderTypeDisplay(orderType)}
                   </span>
                   {/* Compressed text on small/medium */}
@@ -1482,7 +1493,7 @@ const discountBasedOnGrossAmount =
                     {orderType === "dine-in"
                       ? `T${customerDetails.tableNumber || ""}`
                       : orderType === "roomService"
-                        ? `R${roomDetails.roomno || ""}`
+                        ? `R${roomDetails?.roomno || ""}`
                         : getOrderTypeDisplay(orderType).slice(0, 3)}
                   </span>
                 </div>
@@ -1514,58 +1525,57 @@ const discountBasedOnGrossAmount =
                       </span>
                     </button>
                     {showOptions && (
-  <>
-    {/* Backdrop to close */}
-    <div
-      className="fixed inset-0 z-40"
-      onClick={() => setShowOptions(false)}
-    />
-    <div className="absolute right-0 top-full mt-1 z-50 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden w-52 animate-in zoom-in-95 duration-150">
-      
-      {/* Existing: Daily Restaurant Sales */}
-      <button
-        onClick={() => {
-          setShowOptions(false);
-          navigate("/sUsers/BillSummary?type=restaurant");
-        }}
-        className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors"
-      >
-        <span className="text-base">📊</span>
-        <span className="font-medium">Daily Restaurant Sales</span>
-      </button>
+                      <>
+                        {/* Backdrop to close */}
+                        <div
+                          className="fixed inset-0 z-40"
+                          onClick={() => setShowOptions(false)}
+                        />
+                        <div className="absolute right-0 top-full mt-1 z-50 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden w-52 animate-in zoom-in-95 duration-150">
+                          {/* Existing: Daily Restaurant Sales */}
+                          <button
+                            onClick={() => {
+                              setShowOptions(false);
+                              navigate("/sUsers/BillSummary?type=restaurant");
+                            }}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors"
+                          >
+                            <span className="text-base">📊</span>
+                            <span className="font-medium">
+                              Daily Restaurant Sales
+                            </span>
+                          </button>
 
-      {/* Divider */}
-      <div className="border-t border-gray-100" />
+                          {/* Divider */}
+                          <div className="border-t border-gray-100" />
 
-      {/* New: Category Wise Sales */}
-      <button
-        onClick={() => {
-          setShowOptions(false);
-          navigate("/sUsers/categoryprint");
-        }}
-        className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors"
-      >
-        <span className="text-base">🗂️</span>
-        <span className="font-medium">Category Wise Sales</span>
-      </button>
+                          {/* New: Category Wise Sales */}
+                          <button
+                            onClick={() => {
+                              setShowOptions(false);
+                              navigate("/sUsers/categoryprint");
+                            }}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors"
+                          >
+                            <span className="text-base">🗂️</span>
+                            <span className="font-medium">
+                              Category Wise Sales
+                            </span>
+                          </button>
 
-        <button
-        onClick={() => {
-          setShowOptions(false);
-          navigate("/sUsers/itemwisereport");
-        }}
-        className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors"
-      >
-        <span className="text-base">🗂️</span>
-        <span className="font-medium">Item Wise Sales</span>
-      </button>
-
-
-    </div>
-    
-    
-  </>
-)}
+                          <button
+                            onClick={() => {
+                              setShowOptions(false);
+                              navigate("/sUsers/itemwisereport");
+                            }}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors"
+                          >
+                            <span className="text-base">🗂️</span>
+                            <span className="font-medium">Item Wise Sales</span>
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -2478,6 +2488,9 @@ const discountBasedOnGrossAmount =
                 onClick={() => {
                   setShowKOTModal(false);
                   setRoomDetails({});
+                  setSearch("");
+                  setShowResults(true);
+                  setRoomDetails(null);
                 }}
                 className="flex-1 bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 hover:scale-105 active:scale-95"
               >

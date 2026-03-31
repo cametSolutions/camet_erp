@@ -40,6 +40,7 @@ export const taxCalculator = (
     console.log(reducedFoodPlanAmount);
     console.log(reducedAdditionalPaxAmount);
     const baseAmount = Number(data?.totalAmount || 0);
+    console.log(data);
     let totalAmount = Math.round(baseAmount + reducedAdditionalPaxAmount)
 
     if (formData?.bookingType !== "offline") {
@@ -53,7 +54,7 @@ export const taxCalculator = (
     console.log(hsnDetails);
     if (Array.isArray(hsnDetails?.rows)) {
       for (const row of hsnDetails.rows) {
-        const slab = getApplicableTaxSlab(row, totalAmount);
+        const slab = getApplicableTaxSlab(row, data?.priceLevelRate);
         console.log(slab);
 
         if (slab) {
