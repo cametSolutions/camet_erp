@@ -4,6 +4,7 @@ import hsnModel from "../models/hsnModel.js";
 import productModel from "../models/productModel.js";
 import { Category } from "../models/subDetails.js"; // Adjust path as needed
 import kotModal from "../models/kotModal.js";
+import roomModal from "../models/roomModal.js";
 import { generateVoucherNumber } from "../helpers/voucherHelper.js";
 import salesModel from "../models/salesModel.js";
 import TallyData from "../models/TallyData.js";
@@ -3525,6 +3526,275 @@ export const getRestaurantDateWiseItemReport = async (req, res) => {
       success: false,
       message: "Failed to fetch restaurant date wise item report",
       error: error.message,
+    });
+  }
+};
+
+// adjust path if needed
+
+
+
+// import kotModal from "../models/kotModal.js"; // you already have this
+
+
+
+export const getKotRegister = async (req, res, next) => {
+  try {
+    const { from, to, type, status, search } = req.query;
+
+    const match = {};
+
+    // date filter: default = today
+    if (from || to) {
+      match.createdAt = {};
+      if (from) match.createdAt.$gte = new Date(`${from}T00:00:00.000Z`);
+      if (to) match.createdAt.$lte = new Date(`${to}T23:59:59.999Z`);
+    } else {
+      const now = new Date();
+      const startOfDay = new Date(now);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(now);
+      endOfDay.setHours(23, 59, 59, 999);
+      match.createdAt = { $gte: startOfDay, $lte: endOfDay };
+    }
+
+    if (type) match.type = type;          // keep same casing as stored: "roomService"
+    if (status) match.status = status.toLowerCase();
+
+    const pipeline = [
+      { $match: match },
+
+      // JOIN Room collection using roomId from KOT
+      {
+        $lookup: {
+          from: roomModal.collection.name,   // e.g. "rooms"
+          localField: "roomId",              // field in KOT doc
+          foreignField: "_id",               // Room _id
+          as: "roomDetails",
+        },
+      },
+      {
+        $unwind: {
+          path: "$roomDetails",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+
+      { $unwind: "$kitchenBatches" },
+      { $unwind: "$kitchenBatches.items" },
+
+      {
+        $project: {
+          _id: 0,
+          kotId: "$_id",
+          date: {
+            $dateToString: {
+              format: "%d-%m-%Y",
+              date: "$createdAt",
+              timezone: "Asia/Kolkata",
+            },
+          },
+          kotNo: "$voucherNumber",
+          batchNo: "$kitchenBatches.batchNo",
+          itemId: "$kitchenBatches.items._id",
+          itemName: "$kitchenBatches.items.product_name",
+          qty: { $ifNull: ["$kitchenBatches.items.quantity", 0] },
+
+          kotType: {
+            $switch: {
+              branches: [
+                { case: { $eq: ["$type", "dine-in"] }, then: "DINE-IN" },
+                { case: { $eq: ["$type", "roomService"] }, then: "ROOM SERVICE" },
+                { case: { $eq: ["$type", "takeaway"] }, then: "TAKEAWAY" },
+              ],
+              default: { $toUpper: "$type" },
+            },
+          },
+
+          // show Room.roomName, fallback to checkIn/table if no room
+          roomNo: {
+            $ifNull: [
+              "$roomDetails.roomName",   // "1001A"
+            
+              "",
+            ],
+          },
+
+          foodPlan: "",
+          status: { $toUpper: "$status" },
+       remarks: { $ifNull: ["$note", "$cancelReason", ""] },
+
+        printedAt: "$kitchenBatches.printedAt",
+        },
+      },
+
+      ...(search
+        ? [
+            {
+              $match: {
+                $or: [
+                  { kotNo: { $regex: search, $options: "i" } },
+                  { itemName: { $regex: search, $options: "i" } },
+                  { roomNo: { $regex: search, $options: "i" } },
+                ],
+              },
+            },
+          ]
+        : []),
+
+      { $sort: { printedAt: 1, kotNo: 1, batchNo: 1 } },
+    ];
+
+    const rows = await kotModal.aggregate(pipeline);
+
+    return res.status(200).json({
+      success: true,
+      message: "Today KOT register fetched successfully",
+      data: rows,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+
+
+
+// controllers/salesRegisterController.js
+
+
+export const getSalesRegister = async (req, res) => {
+  try {
+    // Today range in UTC (matches your date + timestamps)
+    const start = new Date();
+    start.setUTCHours(0, 0, 0, 0);
+
+    const end = new Date();
+    end.setUTCHours(23, 59, 59, 999);
+
+    // Optional filters from query (payment type + search)
+    const { status, search } = req.query;
+
+    const filter = {
+      date: { $gte: start, $lte: end },
+      isCancelled: { $ne: true }, // ignore cancelled bills for register
+    };
+
+    // status = payment type filter from UI (CASH, UPI, CASH/UPI, CREDIT, COMPLEMENTORY, SPONSOR)
+    // We'll filter on the flattened rows after computing paymentType.
+    const sales = await salesModel.find(filter)
+      .select(
+        "date salesNumber party.partyName items paymentSplittingData isComplimentary isPostToRoom note"
+      )
+      .sort({ date: -1, salesNumber: -1 })
+      .lean();
+
+    // Helper to derive a display paymentType from paymentSplittingData + flags
+    const derivePaymentType = (sale) => {
+      if (sale.isComplimentary) return "COMPLEMENTORY";
+
+      // credit vs other payments
+      const splits = sale.paymentSplittingData || [];
+      const nonZero = splits.filter((s) => (s.amount || 0) > 0);
+      if (!nonZero.length) return "-";
+
+      const hasCash = nonZero.some((s) => s.type === "cash");
+      const hasUpi = nonZero.some((s) => s.type === "upi");
+      const hasCard = nonZero.some((s) => s.type === "card");
+      const hasBank = nonZero.some((s) => s.type === "bank");
+      const hasCheque = nonZero.some((s) => s.type === "cheque");
+      const hasCredit = nonZero.some((s) => s.type === "credit");
+
+      if (hasCredit && !hasCash && !hasUpi && !hasCard && !hasBank && !hasCheque) {
+        return "CREDIT";
+      }
+
+      if (hasCash && hasUpi && nonZero.length === 2) return "CASH/UPI";
+      if (hasCash && !hasUpi && !hasCard && !hasBank && !hasCheque) return "CASH";
+      if (!hasCash && hasUpi && !hasCard && !hasBank && !hasCheque) return "UPI";
+
+      // more complex mixes – show generic
+      return "CASH/UPI";
+    };
+
+    const todayStr = (d) =>
+      d instanceof Date ? d.toISOString().split("T")[0] : "-";
+
+    // Flatten: each item line becomes one row for the register
+    let rows = [];
+    for (const sale of sales) {
+      const paymentType = derivePaymentType(sale);
+      const customer = sale.party?.partyName || "CASH";
+      const dateStr = todayStr(sale.date);
+
+      (sale.items || []).forEach((item) => {
+        const gdn = (item.GodownList && item.GodownList[0]) || {};
+        const qty = gdn.count ?? item.totalCount ?? 0;
+        const rate =
+          gdn.basePrice ??
+          gdn.selectedPriceRate ??
+          item.item_mrp ??
+          0;
+
+        const amount = gdn.taxableAmount ?? gdn.basePrice ?? item.total ?? 0;
+        const taxAmount =
+          (gdn.cgstAmt || 0) +
+          (gdn.sgstAmt || 0) +
+          (gdn.igstAmt || 0) +
+          (gdn.cessAmt || 0) +
+          (gdn.addlCessAmt || 0);
+
+        const discAmount = gdn.discountAmount || 0;
+        const billAmount = gdn.individualTotal ?? item.total ?? amount + taxAmount - discAmount;
+
+        rows.push({
+          date: dateStr,
+          billNo: sale.salesNumber,
+          customer,
+          itemName: item.product_name || "",
+          qty,
+          rate,
+          amount,
+          taxAmount,
+          discAmount,
+          billAmount,
+          billType: sale.isPostToRoom ? "ROOM SERVICE" : "DINE-IN", // adjust if you have a real field
+          roomNo: sale.checkInId ? "ROOM" : "", // you may map from checkIn data if needed
+          foodPlan: "-", // you don't have foodPlan in schema; keep "-" or derive from elsewhere
+          paymentType,
+          sponsorName: "", // not in schema
+          remarks: sale.note || "",
+        });
+      });
+    }
+
+    // Apply payment-type filter at row level (because derivePaymentType is computed)
+    if (status) {
+      rows = rows.filter((r) => r.paymentType === status);
+    }
+
+    // Apply search at row level (customer / item / remarks)
+    const { search: searchQuery } = req.query;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      rows = rows.filter(
+        (r) =>
+          r.customer.toLowerCase().includes(q) ||
+          r.itemName.toLowerCase().includes(q) ||
+          (r.remarks || "").toLowerCase().includes(q)
+      );
+    }
+
+    res.status(200).json({
+      success: true,
+      data: rows,
+    });
+  } catch (error) {
+    console.error("getTodaySalesRegister error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch today's sales register",
     });
   }
 };
