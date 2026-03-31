@@ -78,7 +78,7 @@ const RestaurantPOS = () => {
   const [priceLevelData, setPriceLevelData] = useState([]);
   const [selectedPriceLevel, setSelectedPriceLevel] = useState(null);
   const kotDataForEdit = location.state?.kotData;
-  const kotFullData = location.state?.order
+  const kotFullData = location.state?.order;
   const editBatchNo = location.state?.batchNo;
 
   // Add these states near the other state declarations
@@ -136,9 +136,8 @@ const RestaurantPOS = () => {
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id,
   );
-
   const discountBasedOnGrossAmount =
-    org.configurations[0].discountBasedOnGrossAmount;
+    org?.configurations?.[0]?.discountBasedOnGrossAmount ?? false;
 
   const industry = org?.industry;
   const shouldFetch = Boolean(cmp_id);
@@ -873,7 +872,11 @@ const RestaurantPOS = () => {
       setOrderItems(
         orderItems.map((orderItem) =>
           orderItem._id === item._id
-            ? { ...orderItem, quantity: orderItem.quantity + 1 }
+            ? {
+                ...orderItem,
+                quantity: orderItem.quantity + 1,
+                remainingQty: orderItem.remainingQty + 1,
+              }
             : orderItem,
         ),
       );
@@ -898,7 +901,10 @@ const RestaurantPOS = () => {
         }
       }
 
-      setOrderItems([...orderItems, { ...item, quantity: 1, price: price }]);
+      setOrderItems([
+        ...orderItems,
+        { ...item, quantity: 1, remainingQty: 1, price: price },
+      ]);
     }
   };
 
@@ -912,7 +918,9 @@ const RestaurantPOS = () => {
     // else {
     setOrderItems(
       orderItems.map((item) =>
-        item._id === itemId ? { ...item, quantity: newQuantity } : item,
+        item._id === itemId
+          ? { ...item, quantity: newQuantity, remainingQty: newQuantity }
+          : item,
       ),
     );
     // }
@@ -1047,17 +1055,15 @@ const RestaurantPOS = () => {
     });
     let batchArray = [];
     if (editBatchNo) {
+      const result = applyBatchEdit({
+        kotDataForEdit: kotFullData, // full kot
+        batchNo: editBatchNo, // which batch
+        editedBatchItems: orderItems, // current batch items (updated)
+        updatedItems: kotFullData.items, // full items before this edit
+      });
 
-const result = applyBatchEdit({
-  kotDataForEdit: kotFullData,       // full kot
-  batchNo: editBatchNo,              // which batch
-  editedBatchItems: orderItems,      // current batch items (updated)
-  updatedItems: kotFullData.items,   // full items before this edit
-});
-console.log("result", result);
-
-      batchArray = result.updatedBatches
-      updatedItems = result.updatedItems
+      batchArray = result.updatedBatches;
+      updatedItems = result.updatedItems;
     } else {
       batchArray = [
         {
@@ -1153,7 +1159,10 @@ console.log("result", result);
       status: kotDataForEdit?.status || "pending",
       paymentMethod: orderType === "dine-in" ? null : "cash",
       kitchenBatches: batchArray,
+      parentTag: parentKot ? true : false,
     };
+
+    console.log(newOrder);
 
     let url = parentKot
       ? `/api/sUsers/editKOT/${cmp_id}/${parentKot._id}`
@@ -1167,9 +1176,10 @@ console.log("result", result);
       });
       if (response.data?.success) {
         handleKotPrint(response.data?.data);
+        console.log(selectedTableNumber);
         if (orderType === "dine-in") {
           await api.put(
-            "/api/sUsers/updateTableStatus/${cmp_id}",
+            `/api/sUsers/updateTableStatus/${cmp_id}/${selectedTableNumber}`,
             {
               tableNumber: selectedTableNumber,
               status: "occupied",
@@ -1197,6 +1207,9 @@ console.log("result", result);
         address: "",
         tableNumber: "10",
       });
+      setSearch("");
+      setShowResults(true);
+      setRoomDetails({});
       toast.success(
         kotDataForEdit
           ? "KOT updated successfully!"
@@ -1473,7 +1486,7 @@ console.log("result", result);
                     {orderType === "dine-in"
                       ? `Table ${customerDetails.tableNumber}`
                       : orderType === "roomService"
-                        ? `Room ${roomDetails.roomno || "---"}`
+                        ? `Room ${roomDetails?.roomno || "---"}`
                         : getOrderTypeDisplay(orderType)}
                   </span>
                   {/* Compressed text on small/medium */}
@@ -1481,7 +1494,7 @@ console.log("result", result);
                     {orderType === "dine-in"
                       ? `T${customerDetails.tableNumber || ""}`
                       : orderType === "roomService"
-                        ? `R${roomDetails.roomno || ""}`
+                        ? `R${roomDetails?.roomno || ""}`
                         : getOrderTypeDisplay(orderType).slice(0, 3)}
                   </span>
                 </div>
@@ -2503,6 +2516,9 @@ console.log("result", result);
                 onClick={() => {
                   setShowKOTModal(false);
                   setRoomDetails({});
+                  setSearch("");
+                  setShowResults(true);
+                  setRoomDetails(null);
                 }}
                 className="flex-1 bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 hover:scale-105 active:scale-95"
               >

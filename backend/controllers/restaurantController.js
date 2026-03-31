@@ -19,6 +19,7 @@ import { buildReceipt } from "../helpers/restaurantHelper.js";
 import partyModel from "../models/partyModel.js";
 import { FoodPlan } from "../models/hotelSubMasterModal.js";
 import AdditionalCharges from "../models/additionalChargesModel.js";
+import { recalculateKotItem, round2 } from "../helpers/restaurantHelper.js";
 // Helper functions (you may need to create these or adjust based on your existing ones)
 import {
   buildDatabaseFilterForRoom,
@@ -557,8 +558,10 @@ export const editKot = async (req, res) => {
 
     console.log("req.body?.status", req.body?.status);
 
+    let tag = req.body?.parentTag;
+
     // Update the KOT
-   const updatedKot = await kotModal.findOneAndUpdate(
+const updatedKot = await kotModal.findOneAndUpdate(
   { _id: req.params.kotId, cmp_id },
   {
     $set: {
@@ -571,8 +574,12 @@ export const editKot = async (req, res) => {
       paymentMethod: req.body.paymentMethod,
       roomId: req.body.customer?.roomId,
       checkInNumber: req.body.customer?.checkInNumber,
-      kitchenBatches: req.body.kitchenBatches
+ 
+      ...(!tag && { kitchenBatches: req.body.kitchenBatches }),
     },
+    ...(tag && {
+      $push: { kitchenBatches: req.body.kitchenBatches }
+    }),
   },
   { new: true, session }
 );
@@ -668,6 +675,102 @@ export const getKot = async (req, res) => {
     });
   }
 };
+
+
+export const getKotDash = async (req, res) => {
+  try {
+    const { cmp_id } = req.params;
+    let { date } = req.query;
+
+    if (!date) {
+      date = new Date().toISOString().slice(0, 10);
+    }
+
+    const start = new Date(`${date}T00:00:00.000Z`);
+    const end = new Date(`${date}T23:59:59.999Z`);
+
+    const kot = await kotModal
+      .find({
+        cmp_id,
+        createdAt: { $gte: start, $lte: end },
+        status: { $ne: "cancelled" },
+      })
+      .populate({
+        path: "roomId",
+        select: "roomName roomno",
+      })
+      .populate({
+        path: "customer",
+        select: "name phone address",
+      })
+      .lean();
+
+    const recalculatedKot = kot.map((kotDoc) => {
+   const recalculatedItems = (kotDoc?.items || [])
+  .map((item) => recalculateKotItem(item))
+  .filter(Boolean); // 🔥 removes null / skipped items
+
+      const kotTotal = recalculatedItems.reduce(
+        (sum, item) => sum + Number(item?.total || 0),
+        0
+      );
+
+      const totalTaxableAmount = recalculatedItems.reduce(
+        (sum, item) => sum + Number(item?.taxableAmount || 0),
+        0
+      );
+
+      const totalCgstAmt = recalculatedItems.reduce(
+        (sum, item) => sum + Number(item?.totalCgstAmt || 0),
+        0
+      );
+
+      const totalSgstAmt = recalculatedItems.reduce(
+        (sum, item) => sum + Number(item?.totalSgstAmt || 0),
+        0
+      );
+
+      const totalIgstAmt = recalculatedItems.reduce(
+        (sum, item) => sum + Number(item?.totalIgstAmt || 0),
+        0
+      );
+
+      const totalCessAmt = recalculatedItems.reduce(
+        (sum, item) => sum + Number(item?.totalCessAmt || 0),
+        0
+      );
+
+      const totalAddlCessAmt = recalculatedItems.reduce(
+        (sum, item) => sum + Number(item?.totalAddlCessAmt || 0),
+        0
+      );
+
+      return {
+        ...kotDoc,
+        items: recalculatedItems,
+        total: round2(kotTotal),
+        taxableAmount: round2(totalTaxableAmount),
+        totalCgstAmt: round2(totalCgstAmt),
+        totalSgstAmt: round2(totalSgstAmt),
+        totalIgstAmt: round2(totalIgstAmt),
+        totalCessAmt: round2(totalCessAmt),
+        totalAddlCessAmt: round2(totalAddlCessAmt),
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      data: recalculatedKot,
+    });
+  } catch (error) {
+    console.error("Error fetching KOT:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error while fetching KOT",
+    });
+  }
+};
+
 
 export const cancelKot = async (req, res) => {
   try {
@@ -1140,6 +1243,8 @@ export const updateKotPayment = async (req, res) => {
         note,
       } = req.body;
 
+
+
       discountAmount = Number(req?.body?.additionalCharges[0]?.finalValue || 0)
 
       // console.log("table", kotData);
@@ -1298,47 +1403,86 @@ export const updateKotPayment = async (req, res) => {
       paymentCompleted = true;
       let selectedTableNumber = [];
 
-      await Promise.all(
-        kotData?.voucherNumber.map(async (item) => {
-          const kot = await kotModal.findById(item.id).lean();
+await Promise.all(
+  kotData?.voucherNumber.map(async (item) => {
+    const kot = await kotModal.findById(item.id).lean();
+    if (!kot) return;
 
-          if (
-            kot?.tableNumber &&
-            !selectedTableNumber.includes(kot.tableNumber)
-          ) {
-            selectedTableNumber.push(kot.tableNumber);
-          }
+    if (
+      kot?.tableNumber &&
+      !selectedTableNumber.includes(kot.tableNumber)
+    ) {
+      selectedTableNumber.push(kot.tableNumber);
+    }
 
-          console.log(`=== UPDATING KOT ${item.id} ===`);
-          console.log("Current food plan:", kot.foodPlanDetails);
+    console.log(`=== UPDATING KOT ${item.id} ===`);
 
-          // Build update object
-          const updateData = {
-            paymentMethod,
-            paymentCompleted: true,
-            status: "completed",
-            discount: discountAmount,
-            discountChargeId: discountCharge?._id,
-            note: note,
-          };
+    const selectedItems = kotData?.items || [];
 
-          // ✅ Handle complimentary flag
-          if (isComplimentary) {
-            // Mark as complimentary
-            updateData["foodPlanDetails.isComplimentary"] = true;
-            updateData.isManuallyComplimentary = isManuallyComplimentary;
-          }
+    const billedItemMap = new Map(
+      selectedItems.map((si) => [
+        String(si._id),
+        Number(si.quantity || 0),
+      ])
+    );
 
-          console.log("Update data:", updateData);
-
-          return kotModal.updateOne(
-            { _id: item.id },
-            { $set: updateData },
-            { session },
-          );
-        }),
+    const updatedItems = (kot?.items || []).map((kotItem) => {
+      const billedQty = Number(
+        billedItemMap.get(String(kotItem._id)) || 0
       );
 
+      // ✅ use remainingQuantity if exists
+      const currentRemainingQty =
+        kotItem.remainingQty ?? kotItem.quantity ?? 0;
+
+      // ✅ IMPORTANT: if already 0 → skip completely
+      if (currentRemainingQty <= 0) {
+        return kotItem; // 🔥 no change at all
+      }
+
+      // ✅ calculate only if remaining > 0
+      const remainingQty = Math.max(
+        currentRemainingQty - billedQty,
+        0
+      );
+
+      return {
+        ...kotItem,
+        remainingQty,
+      };
+    });
+
+    const hasRemaining = updatedItems.some(
+      (i) => Number(i.remainingQty || 0) > 0
+    );
+
+    const updateData = {
+      paymentMethod,
+      paymentCompleted: !hasRemaining,
+      discount: discountAmount,
+      discountChargeId: discountCharge?._id,
+      note,
+      items: updatedItems,
+      ...(!hasRemaining && { status: "completed" }),
+    };
+
+    if (isComplimentary) {
+      updateData.foodPlanDetails = {
+        ...(kot?.foodPlanDetails || {}),
+        isComplimentary: true,
+      };
+      updateData.isManuallyComplimentary = isManuallyComplimentary;
+    }
+
+    console.log("Update data:", updateData);
+
+    return kotModal.updateOne(
+      { _id: item.id },
+      { $set: updateData },
+      { session }
+    );
+  })
+);
       // console.log("Selected Table Numbers:", selectedTableNumber);
 
       // Check pending
@@ -1580,7 +1724,16 @@ async function getSelectedParty(
 async function createPaymentSplittingArray(paymentDetails, cashAmt, onlineAmt) {
   console.log("hhhhhhhhhhhhhhhh", paymentDetails, cashAmt, onlineAmt);
   const arr = [];
-  if (cashAmt > 0) {
+  if(paymentDetails?.paymentMode === "credit" && cashAmt > 0) {
+      arr.push({
+      type: "credit",
+      amount: cashAmt,
+      ref_id: paymentDetails?.selectedCreditor?._id,
+      reference_name: paymentDetails?.selectedCreditor?.partyName,
+      credit_reference_type :paymentDetails?.selectedCreditor?.partyName
+    });
+  }
+  if (paymentDetails?.paymentMode !== "credit" && cashAmt > 0) {
     let referral = await partyModel.findOne({
       _id: paymentDetails?.selectedCash,
     });

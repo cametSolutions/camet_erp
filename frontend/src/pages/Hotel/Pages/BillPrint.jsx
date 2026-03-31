@@ -2000,7 +2000,7 @@ console.log(paymentModeDetails);
                               )}
                             </div>
                             <div style={{ fontWeight: "bold" }}>
-                              {Number(billData?.payment?.netPay || 0).toFixed(
+                              {Number(Math.round(billData?.payment?.netPay || 0)).toFixed(
                                 2,
                               )}
                             </div>
