@@ -165,137 +165,137 @@
 //   }
 // };
 
-export const taxCalculatorForRestaurant = (
-  tableData = [],
-  inclusive = false,
-) => {
-  console.log(inclusive);
-  return tableData.map((item) => {
-    // Map through GodownList for each product
-    const updatedGodownList = item.GodownList.map((godown) => {
-      const price = Number(item.price) || 0;
-      const igst = Number(item.igst) || 0;
-      const cgst = Number(item.cgst) || 0;
-      const sgst = Number(item.sgst) || 0;
-      const count = Number(godown.count) || 1;
-      const cess = Number(item?.cess) || 0;
-      const addlCess = Number(item?.addl_cess) || 0;
+// export const taxCalculatorForRestaurant = (
+//   tableData = [],
+//   inclusive = false,
+// ) => {
+//   console.log(inclusive);
+//   return tableData.map((item) => {
+//     // Map through GodownList for each product
+//     const updatedGodownList = item.GodownList.map((godown) => {
+//       const price = Number(item.price) || 0;
+//       const igst = Number(item.igst) || 0;
+//       const cgst = Number(item.cgst) || 0;
+//       const sgst = Number(item.sgst) || 0;
+//       const count = Number(godown.count) || 1;
+//       const cess = Number(item?.cess) || 0;
+//       const addlCess = Number(item?.addl_cess) || 0;
 
-      console.log(godown.count);
+//       console.log(godown.count);
 
-      // Determine total tax rate
-      const totalTaxRate = igst || cgst + sgst;
-      let taxableAmount;
-      let igstAmount, cgstAmount, sgstAmount, cessAmount, additionalCessAmount;
-      let individualTotal;
-      let basePrice = price;
+//       // Determine total tax rate
+//       const totalTaxRate = igst || cgst + sgst;
+//       let taxableAmount;
+//       let igstAmount, cgstAmount, sgstAmount, cessAmount, additionalCessAmount;
+//       let individualTotal;
+//       let basePrice = price;
 
-      if (inclusive) {
-        // Tax Inclusive: Manager's Formula
-        // Total amount paid by customer
-        const totalAmount = price * count;
-        basePrice = Number((basePrice / (1 + totalTaxRate / 100)).toFixed(2));
-        // Calculate taxable amount: Total * 100 / (100 + Tax%)
-        taxableAmount = (totalAmount * 100) / (100 + totalTaxRate);
-        // Tax = Total - Taxable Amount
-        const totalTaxAmount = totalAmount - taxableAmount;
+//       if (inclusive) {
+//         // Tax Inclusive: Manager's Formula
+//         // Total amount paid by customer
+//         const totalAmount = price * count;
+//         basePrice = Number((basePrice / (1 + totalTaxRate / 100)).toFixed(2));
+//         // Calculate taxable amount: Total * 100 / (100 + Tax%)
+//         taxableAmount = (totalAmount * 100) / (100 + totalTaxRate);
+//         // Tax = Total - Taxable Amount
+//         const totalTaxAmount = totalAmount - taxableAmount;
 
-        // Split tax based on IGST or CGST+SGST
-        igstAmount = totalTaxAmount;
-        cgstAmount = totalTaxAmount / 2;
-        sgstAmount = totalTaxAmount / 2;
+//         // Split tax based on IGST or CGST+SGST
+//         igstAmount = totalTaxAmount;
+//         cgstAmount = totalTaxAmount / 2;
+//         sgstAmount = totalTaxAmount / 2;
 
-        // Cess calculation on taxable amount
-        cessAmount = (taxableAmount * cess) / 100;
-        additionalCessAmount = (taxableAmount * addlCess) / 100;
+//         // Cess calculation on taxable amount
+//         cessAmount = (taxableAmount * cess) / 100;
+//         additionalCessAmount = (taxableAmount * addlCess) / 100;
 
-        // Individual total remains the same (already inclusive)
-        individualTotal = totalAmount + cessAmount + additionalCessAmount;
-      } else {
-        // Tax Exclusive: Manager's Formula
-        // Taxable amount
-        taxableAmount = price * count;
+//         // Individual total remains the same (already inclusive)
+//         individualTotal = totalAmount + cessAmount + additionalCessAmount;
+//       } else {
+//         // Tax Exclusive: Manager's Formula
+//         // Taxable amount
+//         taxableAmount = price * count;
 
-        // Calculate tax: Taxable * Tax% / 100
-        const totalTaxAmount = (taxableAmount * totalTaxRate) / 100;
+//         // Calculate tax: Taxable * Tax% / 100
+//         const totalTaxAmount = (taxableAmount * totalTaxRate) / 100;
 
-        // Split tax based on IGST or CGST+SGST
-        igstAmount = totalTaxAmount;
-        cgstAmount = totalTaxAmount / 2;
-        sgstAmount = totalTaxAmount / 2;
+//         // Split tax based on IGST or CGST+SGST
+//         igstAmount = totalTaxAmount;
+//         cgstAmount = totalTaxAmount / 2;
+//         sgstAmount = totalTaxAmount / 2;
 
-        // Cess calculation
-        cessAmount = (taxableAmount * cess) / 100;
-        additionalCessAmount = (taxableAmount * addlCess) / 100;
+//         // Cess calculation
+//         cessAmount = (taxableAmount * cess) / 100;
+//         additionalCessAmount = (taxableAmount * addlCess) / 100;
 
-        // Individual total = Taxable + All Taxes
-        individualTotal =
-          taxableAmount + totalTaxAmount + cessAmount + additionalCessAmount;
-      }
+//         // Individual total = Taxable + All Taxes
+//         individualTotal =
+//           taxableAmount + totalTaxAmount + cessAmount + additionalCessAmount;
+//       }
 
-      return {
-        ...godown,
-        basePrice: Number(basePrice),
-        discountAmount: 0,
-        discountPercentage: 0,
-        discountType: "none",
-        taxableAmount: Number(taxableAmount.toFixed(2)),
-        cgstValue: Number(cgst.toFixed(2)),
-        sgstValue: Number(sgst.toFixed(2)),
-        igstValue: Number(igst.toFixed(2)),
-        cessValue: Number(cess.toFixed(2)),
-        addlCessValue: Number(addlCess.toFixed(2)),
-        igstAmount: Number(igstAmount.toFixed(2)),
-        cgstAmount: Number(cgstAmount.toFixed(2)),
-        sgstAmount: Number(sgstAmount.toFixed(2)),
-        cessAmount: Number(cessAmount.toFixed(2)),
-        additionalCessAmount: Number(additionalCessAmount.toFixed(2)),
-        individualTotal: Number(individualTotal.toFixed(2)),
-        isTaxIncluded: inclusive,
-      };
-    });
+//       return {
+//         ...godown,
+//         basePrice: Number(basePrice),
+//         discountAmount: 0,
+//         discountPercentage: 0,
+//         discountType: "none",
+//         taxableAmount: Number(taxableAmount.toFixed(2)),
+//         cgstValue: Number(cgst.toFixed(2)),
+//         sgstValue: Number(sgst.toFixed(2)),
+//         igstValue: Number(igst.toFixed(2)),
+//         cessValue: Number(cess.toFixed(2)),
+//         addlCessValue: Number(addlCess.toFixed(2)),
+//         igstAmount: Number(igstAmount.toFixed(2)),
+//         cgstAmount: Number(cgstAmount.toFixed(2)),
+//         sgstAmount: Number(sgstAmount.toFixed(2)),
+//         cessAmount: Number(cessAmount.toFixed(2)),
+//         additionalCessAmount: Number(additionalCessAmount.toFixed(2)),
+//         individualTotal: Number(individualTotal.toFixed(2)),
+//         isTaxIncluded: inclusive,
+//       };
+//     });
 
-    // Sum up totals from GodownList
-    const total = updatedGodownList.reduce(
-      (sum, g) => sum + g.individualTotal,
-      0,
-    );
-    const totalCgstAmt = updatedGodownList.reduce(
-      (sum, g) => sum + g.cgstAmount,
-      0,
-    );
-    const totalSgstAmt = updatedGodownList.reduce(
-      (sum, g) => sum + g.sgstAmount,
-      0,
-    );
-    const totalIgstAmt = updatedGodownList.reduce(
-      (sum, g) => sum + g.igstAmount,
-      0,
-    );
-    const totalCessAmt = updatedGodownList.reduce(
-      (sum, g) => sum + g.cessAmount,
-      0,
-    );
-    const totalAddlCessAmt = updatedGodownList.reduce(
-      (sum, g) => sum + g.additionalCessAmount,
-      0,
-    );
+//     // Sum up totals from GodownList
+//     const total = updatedGodownList.reduce(
+//       (sum, g) => sum + g.individualTotal,
+//       0,
+//     );
+//     const totalCgstAmt = updatedGodownList.reduce(
+//       (sum, g) => sum + g.cgstAmount,
+//       0,
+//     );
+//     const totalSgstAmt = updatedGodownList.reduce(
+//       (sum, g) => sum + g.sgstAmount,
+//       0,
+//     );
+//     const totalIgstAmt = updatedGodownList.reduce(
+//       (sum, g) => sum + g.igstAmount,
+//       0,
+//     );
+//     const totalCessAmt = updatedGodownList.reduce(
+//       (sum, g) => sum + g.cessAmount,
+//       0,
+//     );
+//     const totalAddlCessAmt = updatedGodownList.reduce(
+//       (sum, g) => sum + g.additionalCessAmount,
+//       0,
+//     );
 
-    // Return product with updated GodownList & totals
-    return {
-      ...item,
-      GodownList: updatedGodownList,
-      total,
-      totalCgstAmt,
-      totalSgstAmt,
-      totalIgstAmt,
-      totalCessAmt,
-      totalAddlCessAmt,
-      added: true,
-      taxInclusive: inclusive,
-    };
-  });
-};
+//     // Return product with updated GodownList & totals
+//     return {
+//       ...item,
+//       GodownList: updatedGodownList,
+//       total,
+//       totalCgstAmt,
+//       totalSgstAmt,
+//       totalIgstAmt,
+//       totalCessAmt,
+//       totalAddlCessAmt,
+//       added: true,
+//       taxInclusive: inclusive,
+//     };
+//   });
+// };
 
 
 export const taxCalculator = (
@@ -500,21 +500,16 @@ export const taxCalculatorForRestaurant = (
   tableData = [],
   inclusive = false,
 ) => {
-  console.log(inclusive);
   return tableData.map((item) => {
-    // Map through GodownList for each product
     const updatedGodownList = item.GodownList.map((godown) => {
-      const price = Number(item.price) || 0;
-      const igst = Number(item.igst) || 0;
-      const cgst = Number(item.cgst) || 0;
-      const sgst = Number(item.sgst) || 0;
-      const count = Number(godown.count) || 1;
-      const cess = Number(item?.cess) || 0;
-      const addlCess = Number(item?.addl_cess) || 0;
+      const price    = Number(item.price)     || 0;
+      const igst     = Number(item.igst)      || 0;
+      const cgst     = Number(item.cgst)      || 0;
+      const sgst     = Number(item.sgst)      || 0;
+      const count    = Number(godown.count)   || 1;
+      const cess     = Number(item?.cess)     || 0;
+      const addlCess = Number(item?.addl_cess)|| 0;
 
-      console.log(godown.count);
-
-      // Determine total tax rate
       const totalTaxRate = igst || cgst + sgst;
       let taxableAmount;
       let igstAmount, cgstAmount, sgstAmount, cessAmount, additionalCessAmount;
@@ -522,108 +517,69 @@ export const taxCalculatorForRestaurant = (
       let basePrice = price;
 
       if (inclusive) {
-        // Tax Inclusive: Manager's Formula
-        // Total amount paid by customer
         const totalAmount = price * count;
-        basePrice = Number((basePrice / (1 + totalTaxRate / 100)).toFixed(2));
-        // Calculate taxable amount: Total * 100 / (100 + Tax%)
+        basePrice    = Number((basePrice / (1 + totalTaxRate / 100)).toFixed(2));
         taxableAmount = (totalAmount * 100) / (100 + totalTaxRate);
-        // Tax = Total - Taxable Amount
         const totalTaxAmount = totalAmount - taxableAmount;
 
-        // Split tax based on IGST or CGST+SGST
-        igstAmount = totalTaxAmount;
-        cgstAmount = totalTaxAmount / 2;
-        sgstAmount = totalTaxAmount / 2;
-
-        // Cess calculation on taxable amount
-        cessAmount = (taxableAmount * cess) / 100;
+        igstAmount           = totalTaxAmount;
+        cgstAmount           = totalTaxAmount / 2;
+        sgstAmount           = totalTaxAmount / 2;
+        cessAmount           = (taxableAmount * cess)     / 100;
         additionalCessAmount = (taxableAmount * addlCess) / 100;
-
-        // Individual total remains the same (already inclusive)
-        individualTotal = totalAmount + cessAmount + additionalCessAmount;
+        individualTotal      = totalAmount + cessAmount + additionalCessAmount;
       } else {
-        // Tax Exclusive: Manager's Formula
-        // Taxable amount
-        taxableAmount = price * count;
-
-        // Calculate tax: Taxable * Tax% / 100
+        taxableAmount        = price * count;
         const totalTaxAmount = (taxableAmount * totalTaxRate) / 100;
 
-        // Split tax based on IGST or CGST+SGST
-        igstAmount = totalTaxAmount;
-        cgstAmount = totalTaxAmount / 2;
-        sgstAmount = totalTaxAmount / 2;
-
-        // Cess calculation
-        cessAmount = (taxableAmount * cess) / 100;
+        igstAmount           = totalTaxAmount;
+        cgstAmount           = totalTaxAmount / 2;
+        sgstAmount           = totalTaxAmount / 2;
+        cessAmount           = (taxableAmount * cess)     / 100;
         additionalCessAmount = (taxableAmount * addlCess) / 100;
-
-        // Individual total = Taxable + All Taxes
-        individualTotal =
-          taxableAmount + totalTaxAmount + cessAmount + additionalCessAmount;
+        individualTotal      = taxableAmount + totalTaxAmount + cessAmount + additionalCessAmount;
       }
 
       return {
         ...godown,
-        basePrice: Number(basePrice),
-        discountAmount: 0,
-        discountPercentage: 0,
-        discountType: "none",
-        taxableAmount: Number(taxableAmount.toFixed(2)),
-        cgstValue: Number(cgst.toFixed(2)),
-        sgstValue: Number(sgst.toFixed(2)),
-        igstValue: Number(igst.toFixed(2)),
-        cessValue: Number(cess.toFixed(2)),
-        addlCessValue: Number(addlCess.toFixed(2)),
-        igstAmount: Number(igstAmount.toFixed(2)),
-        cgstAmount: Number(cgstAmount.toFixed(2)),
-        sgstAmount: Number(sgstAmount.toFixed(2)),
-        cessAmount: Number(cessAmount.toFixed(2)),
+        basePrice:            Number(basePrice),
+        discountAmount:       0,
+        discountPercentage:   0,
+        discountType:         "none",
+        taxableAmount:        Number(taxableAmount.toFixed(2)),
+        cgstValue:            Number(cgst.toFixed(2)),
+        sgstValue:            Number(sgst.toFixed(2)),
+        igstValue:            Number(igst.toFixed(2)),
+        cessValue:            Number(cess.toFixed(2)),
+        addlCessValue:        Number(addlCess.toFixed(2)),
+        igstAmount:           Number(igstAmount.toFixed(2)),
+        cgstAmount:           Number(cgstAmount.toFixed(2)),
+        sgstAmount:           Number(sgstAmount.toFixed(2)),
+        cessAmount:           Number(cessAmount.toFixed(2)),
         additionalCessAmount: Number(additionalCessAmount.toFixed(2)),
-        individualTotal: Number(individualTotal.toFixed(2)),
-        isTaxIncluded: inclusive,
+        individualTotal:      Number(individualTotal.toFixed(2)),
+        isTaxIncluded:        inclusive,
       };
     });
 
-    // Sum up totals from GodownList
-    const total = updatedGodownList.reduce(
-      (sum, g) => sum + g.individualTotal,
-      0,
-    );
-    const totalCgstAmt = updatedGodownList.reduce(
-      (sum, g) => sum + g.cgstAmount,
-      0,
-    );
-    const totalSgstAmt = updatedGodownList.reduce(
-      (sum, g) => sum + g.sgstAmount,
-      0,
-    );
-    const totalIgstAmt = updatedGodownList.reduce(
-      (sum, g) => sum + g.igstAmount,
-      0,
-    );
-    const totalCessAmt = updatedGodownList.reduce(
-      (sum, g) => sum + g.cessAmount,
-      0,
-    );
-    const totalAddlCessAmt = updatedGodownList.reduce(
-      (sum, g) => sum + g.additionalCessAmount,
-      0,
-    );
+    const total           = updatedGodownList.reduce((sum, g) => sum + g.individualTotal,      0);
+    const totalCgstAmt    = updatedGodownList.reduce((sum, g) => sum + g.cgstAmount,           0);
+    const totalSgstAmt    = updatedGodownList.reduce((sum, g) => sum + g.sgstAmount,           0);
+    const totalIgstAmt    = updatedGodownList.reduce((sum, g) => sum + g.igstAmount,           0);
+    const totalCessAmt    = updatedGodownList.reduce((sum, g) => sum + g.cessAmount,           0);
+    const totalAddlCessAmt= updatedGodownList.reduce((sum, g) => sum + g.additionalCessAmount, 0);
 
-    // Return product with updated GodownList & totals
     return {
       ...item,
-      GodownList: updatedGodownList,
+      GodownList:      updatedGodownList,
       total,
       totalCgstAmt,
       totalSgstAmt,
       totalIgstAmt,
       totalCessAmt,
       totalAddlCessAmt,
-      added: true,
-      taxInclusive: inclusive,
+      added:           true,
+      taxInclusive:    inclusive,
     };
   });
 };
