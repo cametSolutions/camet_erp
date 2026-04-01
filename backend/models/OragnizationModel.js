@@ -58,6 +58,10 @@ const organizationSchema = new mongoose.Schema(
           default: false,
         },
         kotAutoApproval: { type: Boolean, default: false },
+        foodPlaWithRoomRate: {
+          type: Boolean,
+          default: true,
+          },
         addRateWithTax: {
           type: Object,
           default: {

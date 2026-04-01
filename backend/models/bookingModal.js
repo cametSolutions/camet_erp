@@ -158,6 +158,7 @@ const bookingSchema = new mongoose.Schema(
     advanceAmount: String,
     totalAmount: String,
     balanceToPay: String,
+    addFoodPlanWithRate: { type: Boolean, default: false },
     guestName: String,
     guestId: { type: mongoose.Schema.Types.ObjectId, ref: "Party" },
     guestCountry: String,
