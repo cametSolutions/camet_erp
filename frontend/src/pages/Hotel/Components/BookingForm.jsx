@@ -15,7 +15,6 @@ import useFetch from "@/customHook/useFetch";
 import OutStandingModal from "./OutStandingModal";
 import PaymentModal from "./PaymentModal";
 import OtherChargeSearchInPutBox from "./OtherChargeSearchInPutBox";
-
 function BookingForm({
   isLoading = false,
   setIsLoading = false,
