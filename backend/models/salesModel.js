@@ -21,6 +21,10 @@ const paymentSplitSchema = new Schema(
       type: String,
       default: "", // Only relevant for credit
     },
+       creditor_gst: {
+      type: String,
+      default: "", // Only relevant for credit
+    },
     credit_reference_type: {
       type: String,
       default: "", // Only relevant for credit

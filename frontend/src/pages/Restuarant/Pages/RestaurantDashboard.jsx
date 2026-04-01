@@ -1112,6 +1112,8 @@ const RestaurantPOS = () => {
       updatedItems,
       configurations[0]?.addRateWithTax?.restaurantSale,
     );
+    console.log(finalProductData);
+    // return
     console.log(parentKot);
 
     if (parentKot) {
@@ -1162,7 +1164,6 @@ const RestaurantPOS = () => {
       parentTag: parentKot ? true : false,
     };
 
-    console.log(newOrder);
 
     let url = parentKot
       ? `/api/sUsers/editKOT/${cmp_id}/${parentKot._id}`

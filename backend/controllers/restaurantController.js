@@ -1731,7 +1731,8 @@ async function createPaymentSplittingArray(paymentDetails, cashAmt, onlineAmt) {
       amount: cashAmt,
       ref_id: paymentDetails?.selectedCreditor?._id,
       reference_name: paymentDetails?.selectedCreditor?.partyName,
-      credit_reference_type :paymentDetails?.selectedCreditor?.partyName
+      credit_reference_type :paymentDetails?.selectedCreditor?.partyName,
+      creditor_gst:paymentDetails?.selectedCreditor?.gstNo
     });
   }
   if (paymentDetails?.paymentMode !== "credit" && cashAmt > 0) {
