@@ -127,6 +127,9 @@ const SalesSummary = lazy(
 const SummaryReport = lazy(
   () => import("@/pages/secUsers/Reports/SummaryReport")
 )
+const SaleRegisterPage = lazy(
+  () => import("@/pages/secUsers/Reports/SaleRegisterPage")
+)
 const PartyFilterList = lazy(
   () => import("../components/Filters/party/PartyFilterList")
 )
@@ -254,6 +257,10 @@ const PendingOrders = lazy(
 const SalesSummaryTable = lazy(
   () => import("../pages/secUsers/Reports/salesSummary/SalesSummaryTable")
 )
+const KotRegisterPage = lazy(
+  () => import("../pages/secUsers/Reports/KotRegisterPage")
+)
+
 const OutstandingSummary = lazy(
   () => import("../pages/secUsers/OutstandingSummary")
 )
@@ -2181,7 +2188,10 @@ const Routers = () => {
             <Route path="/sUsers/tourist-report" element={ <ProtectedSecRoute><TouristReport /></ProtectedSecRoute>} />
               <Route path="/sUsers/foodplan-report" element={ <ProtectedSecRoute><FoodPlanReportPage /></ProtectedSecRoute>} />
                <Route path="/sUsers/occupancy-checkout-report" element={ <ProtectedSecRoute><OccupancyCheckoutReport /></ProtectedSecRoute>} />
-            
+         <Route path="/sUsers/register" element={ <ProtectedSecRoute><KotRegisterPage /></ProtectedSecRoute>} />   
+        
+        <Route path="/sUsers/sales-register" element={<ProtectedSecRoute><SaleRegisterPage /></ProtectedSecRoute>} />
+
       </Routes>
     </Suspense>
   )
