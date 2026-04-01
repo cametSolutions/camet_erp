@@ -156,32 +156,51 @@ export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
     const checkInNumbers = bookings.map((b) => b.voucherNumber);
 
     // 2) Find all related sales in one query
-    const sales = await salesModel
-      .find({
-        cmp_id: filter.cmp_id,
-        isPostToRoom: true,
-        "convertedFrom.checkInNumber": { $in: checkInNumbers },
-      })
-      .select("finalAmount isPostToRoom convertedFrom.checkInNumber"); // optional select
+   const sales = await salesModel
+  .find({
+    cmp_id: filter.cmp_id,
+    isPostToRoom: true,
+    isCancelled: false,
+    "convertedFrom.checkInNumber": { $in: checkInNumbers },
+  })
+  .select("_id finalAmount isPostToRoom convertedFrom.checkInNumber");
 
-    // 3) Build map: checkInNumber -> total subTotal
-    const totalByCheckIn = {};
-    for (const sale of sales) {
-      for (const conv of sale.convertedFrom || []) {
-        const key = conv.checkInNumber;
-        if (!key) continue;
-        totalByCheckIn[key] = (totalByCheckIn[key] || 0) + (sale.isPostToRoom ? sale.finalAmount : 0 || 0);
-      }
-    }
+// 3) Build map: checkInNumber -> total finalAmount
+const totalByCheckIn = {};
+const processedSaleIds = new Set();
 
-    // 4) Attach to bookings
-    const bookingsWithSales = bookings.map((b) => {
-      const total = totalByCheckIn[b.voucherNumber] || 0;
-      return {
-        ...b.toObject(),
-        restaurantSubTotal: total,
-      };
-    });
+for (const sale of sales) {
+  const saleId = String(sale._id);
+
+  // Skip repeated sale document
+  if (processedSaleIds.has(saleId)) continue;
+  processedSaleIds.add(saleId);
+
+  const saleAmount = sale.isPostToRoom ? Number(sale.finalAmount || 0) : 0;
+
+  // Avoid repeated checkInNumber inside same sale
+  const uniqueCheckInNumbers = new Set(
+    (sale.convertedFrom || [])
+      .map((conv) => conv?.checkInNumber)
+      .filter(Boolean)
+  );
+
+  for (const checkInNumber of uniqueCheckInNumbers) {
+    totalByCheckIn[checkInNumber] =
+      (totalByCheckIn[checkInNumber] || 0) + saleAmount;
+  }
+}
+
+// 4) Attach to bookings
+const bookingsWithSales = bookings.map((b) => {
+  const voucherNumber = b.voucherNumber;
+  const total = Number(totalByCheckIn[voucherNumber] || 0);
+
+  return {
+    ...b.toObject(),
+    restaurantSubTotal: total,
+  };
+});
 
     return { bookings: bookingsWithSales, totalBookings };
   } catch (error) {

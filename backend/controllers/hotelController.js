@@ -2529,6 +2529,7 @@ await Promise.all(
           isComplimentary: false,
           isPostToRoom: true,
           cmp_id,
+          isCancelled:false,
         },
       },
       {
@@ -2585,9 +2586,18 @@ await Promise.all(
       });
     });
 
-    allKotData.push(...docs);
+    console.log("ALL KOT DATAaaa", docs);
+    
+
+docs.forEach((doc) => {
+  if (!allKotData.some((item) => String(item._id) === String(doc._id))) {
+    allKotData.push(doc);
+  }
+});
+    
   })
 );
+console.log("ALL KOT DATA", allKotData);
     const uniqueIds = new Set();
     const advanceMap = new Map(); // prevents duplicates by _id
 

@@ -446,16 +446,32 @@ console.log(mergedMap);
     });
 console.log("dineInTotals", dineInTotals)
     Object.keys(dineInTotals)?.forEach((tableNo) => {
-      const docNo = dineInTotals[tableNo].docNos.join(", ") || "-";
+      const docNo = dineInTotals[tableNo].docNos
+console.log("docNo", docNo)
+      const formatDocNos = (docNos = []) => {
+  if (!docNos.length) return "";
 
-      console.log(
-        `Adding Dine In line: Table ${tableNo} = ${dineInTotals[tableNo].amount}`,
-      );
-      console.log("yyy ", tableNo);
+  const first = docNos[0];
+
+  // Split: TFRS / 0013 / 26-27
+  const [prefix, firstNumber, suffix] = first.split("/");
+
+  const formatted = docNos.map((doc, index) => {
+    const parts = doc.split("/");
+    const number = parts[1]; // only number part
+
+    return index === 0
+      ? `${prefix}/${firstNumber}/${suffix}` // full
+      : number; // only number
+  });
+
+  return formatted.join(", ");
+};
+      const docNoFormatted = formatDocNos(docNo);
       lines.push({
         date: dineInTotals[tableNo].date,
         description: `Restaurant Dine In - ${tableNo}`,
-        docNo: docNo,
+        docNo: docNoFormatted,
         amount: Number(dineInTotals[tableNo].amount || 0),
         taxes: 0,
         advance: "",

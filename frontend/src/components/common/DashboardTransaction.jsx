@@ -86,9 +86,9 @@ console.log(from)
                 <p className="font-bold mt-2 text-[11.3px]  text-left text-gray-600 ">
                   {party_name}
                 </p>
-                 <p className="font-bold mt-2 text-[11.3px]  text-left text-gray-600 ">
+                 {/* <p className="font-bold mt-2 text-[11.3px]  text-left text-gray-600 ">
                   {party_name}
-                </p>
+                </p> */}
               </div>
 
               {/* date/type */}
