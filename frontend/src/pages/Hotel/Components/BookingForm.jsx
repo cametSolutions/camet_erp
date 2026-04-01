@@ -15,7 +15,7 @@ import useFetch from "@/customHook/useFetch";
 import OutStandingModal from "./OutStandingModal";
 import PaymentModal from "./PaymentModal";
 import OtherChargeSearchInPutBox from "./OtherChargeSearchInPutBox";
-
+import BookingSummaryTables from "./BookingSummaryTables";
 function BookingForm({
   isLoading = false,
   setIsLoading = false,
@@ -45,13 +45,16 @@ function BookingForm({
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [saveLoader, setSaveLoader] = useState(false);
 
-
+  const [advances, setAdvances] = useState([]);
+  const [charges, setCharges] = useState([]);
   const { _id: cmp_id, configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg,
-  ); 
+  );
   let addFoodPlanWithRate = configurations?.[0]?.foodPlaWithRoomRate;
-  
-  const [includeFoodRateWithRoom, setIncludeFoodRateWithRoom] = useState(addFoodPlanWithRate ?? false);
+
+  const [includeFoodRateWithRoom, setIncludeFoodRateWithRoom] = useState(
+    addFoodPlanWithRate ?? false,
+  );
   const { data, loading } = useFetch(
     `/api/sUsers/getProductSubDetails/${cmp_id}?type=roomType`,
   );
@@ -506,7 +509,7 @@ function BookingForm({
     }
 
     setErrorObject((prev) => ({ ...prev, advanceAmount: "" }));
-console.log("advanceAmount", advanceAmount,isFor);
+    console.log("advanceAmount", advanceAmount, isFor);
     if (isFor === "deliveryNote" || isFor === "sales") {
       console.log("advanceAmount", advanceAmount);
       setFormData((prev) => ({
@@ -647,7 +650,7 @@ console.log("advanceAmount", advanceAmount,isFor);
       ...prev,
       foodPlan: [...filterData, ...details],
       foodPlanTotal: totalAmount,
-      addFoodPlanWithRate:includeFoodRateWithRoom,
+      addFoodPlanWithRate: includeFoodRateWithRoom,
       updatedDate: currentDateDefault,
     }));
   };
@@ -901,13 +904,12 @@ console.log("advanceAmount", advanceAmount,isFor);
     if (
       Number(formData.advanceAmount) <= 0 ||
       formData.advanceAmount == editData?.advanceAmount
-
     ) {
       if (isSubmittingRef.current) return;
       isSubmittingRef.current = true;
       console.log(payload);
-      let paymenttypeDetails= editData?.paymenttypeDetails
-      handleSubmit(payload,null,paymenttypeDetails);
+      let paymenttypeDetails = editData?.paymenttypeDetails;
+      handleSubmit(payload, null, paymenttypeDetails);
     } else {
       setFormData((prev) => ({ ...prev, ...payload }));
       setShowPaymentModal(true);
@@ -951,7 +953,7 @@ console.log("advanceAmount", advanceAmount,isFor);
       card: card,
       credit: credit,
     };
-    // setSaveLoader(false) 
+    // setSaveLoader(false)
     handleSubmit(payload, paymentData, paymenttypeDetails);
   };
 
@@ -1624,139 +1626,144 @@ console.log("advanceAmount", advanceAmount,isFor);
                   </div>
 
                   <div className="flex flex-wrap pt-4">
-                    {/* Booking Number */}
+                    {/* ── LEFT — two sub-columns ── */}
                     <div className="w-full lg:w-6/12 px-4">
-                      <div className="relative w-full mb-3">
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Total Amount
-                        </label>
-                        <input
-                          type="number"
-                          name="totalAmount"
-                          value={formData.totalAmount}
-                          readOnly
-                          className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                        />
-                      </div>
-                    </div>
-                    <div className="w-full lg:w-6/12 px-4">
-                      <div className="relative w-full mb-3">
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Discount Percentage
-                        </label>
-                        <input
-                          type="number"
-                          name="discountPercentage"
-                          value={formData?.discountPercentage}
-                          onChange={handleDiscountPercentageChange}
-                          min="0"
-                          max="100"
-                          step="0.01"
-                          className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                        />
-                      </div>
-                    </div>
-                    <div className="w-full lg:w-6/12 px-4">
-                      <div className="relative w-full mb-3">
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Discount Amount
-                        </label>
-                        <input
-                          type="number"
-                          name="discountAmount"
-                          value={
-                            formData?.discountAmount === "0"
-                              ? ""
-                              : formData?.discountAmount
-                          }
-                          onChange={handleDiscountAmountChange}
-                          min="0"
-                          step="0.01"
-                          className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                        />
-                      </div>
-                    </div>
-                    <div className="w-full lg:w-6/12 px-4">
-                      <div className="relative w-full mb-3">
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          {isFor == "sales" ? "Amount" : "Advance Amount"}
-                        </label>
-                        <input
-                          type="number"
-                          name="advanceAmount"
-                          value={formData?.advanceAmount}
-                          onChange={handleAdvanceAmountChange}
-                          className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                        />
-                        {errorObject?.advanceAmount &&
-                          errorObject?.advanceAmount !== "" && (
-                            <span className="text-red-500">
-                              {errorObject?.advanceAmount}
-                            </span>
-                          )}
-                      </div>
-                    </div>
-                    <div className="w-full lg:w-6/12 px-4">
-                      <div className="relative w-full mb-3">
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Previous Advance
-                        </label>
-                        <input
-                          type="number"
-                          readOnly
-                          value={formData?.previousAdvance}
-                          className="text-red-500 border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                        />
-                      </div>
-                    </div>
-                    <div className="w-full lg:w-6/12 px-4">
-                      <div className="relative w-full mb-3">
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Total given advance
-                        </label>
-                        <input
-                          type="number"
-                          readOnly
-                          value={Number(formData?.totalAdvance)}
-                          className="text-red-500 border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                        />
-                      </div>
-                    </div>
-                    <div className="w-full lg:w-6/12 px-4">
-                      <div className="relative w-full mb-3">
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Balance To Be Paid
-                        </label>
-                        <input
-                          type="number"
-                          name="balanceToPay"
-                          value={formData.balanceToPay}
-                          className="text-red-500 border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                        />
-                      </div>
-                    </div>
+                      <div className="flex flex-wrap">
+                        {/* ── Column 1: Totals & Discount ── */}
+                        <div className="w-full lg:w-6/12 lg:pr-2">
+                          <div className="relative w-full mb-3">
+                            <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                              Total Amount
+                            </label>
+                            <input
+                              type="number"
+                              name="totalAmount"
+                              value={formData.totalAmount}
+                              readOnly
+                              className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                            />
+                          </div>
 
-                    <div className="w-full lg:w-6/12 px-4">
-                      <div className="relative w-full mb-3">
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Grand Total
-                        </label>
-                        <div className="space-y-2">
-                          {/* Original Amount */}
-                          {/* <div className="text-xs text-gray-500">
-        Original: ₹(Number{formData?.grandTotal?.toFixed(2)})
-      </div> */}
-                          {/* Rounded Amount */}
-                          <input
-                            type="number"
-                            name="grandTotal"
-                            value={Math.round(formData.grandTotal)}
-                            className="text-green-500 border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                            readOnly
-                          />
+                          <div className="relative w-full mb-3">
+                            <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                              Discount Percentage
+                            </label>
+                            <input
+                              type="number"
+                              name="discountPercentage"
+                              value={formData?.discountPercentage}
+                              onChange={handleDiscountPercentageChange}
+                              min="0"
+                              max="100"
+                              step="0.01"
+                              className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                            />
+                          </div>
+
+                          <div className="relative w-full mb-3">
+                            <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                              Discount Amount
+                            </label>
+                            <input
+                              type="number"
+                              name="discountAmount"
+                              value={
+                                formData?.discountAmount === "0"
+                                  ? ""
+                                  : formData?.discountAmount
+                              }
+                              onChange={handleDiscountAmountChange}
+                              min="0"
+                              step="0.01"
+                              className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                            />
+                          </div>
+
+                          <div className="relative w-full mb-3">
+                            <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                              Grand Total
+                            </label>
+                            <input
+                              type="number"
+                              name="grandTotal"
+                              value={Math.round(formData.grandTotal)}
+                              readOnly
+                              className="text-green-500 border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                            />
+                          </div>
+                        </div>
+
+                        {/* ── Column 2: Advance & Balance ── */}
+                        <div className="w-full lg:w-6/12 lg:pl-2">
+                          <div className="relative w-full mb-3">
+                            <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                              {isFor === "sales" ? "Amount" : "Advance Amount"}
+                            </label>
+                            <input
+                              type="number"
+                              name="advanceAmount"
+                              value={formData?.advanceAmount}
+                              onChange={handleAdvanceAmountChange}
+                              className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                            />
+                            {errorObject?.advanceAmount &&
+                              errorObject?.advanceAmount !== "" && (
+                                <span className="text-red-500">
+                                  {errorObject?.advanceAmount}
+                                </span>
+                              )}
+                          </div>
+
+                          <div className="relative w-full mb-3">
+                            <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                              Previous Advance
+                            </label>
+                            <input
+                              type="number"
+                              readOnly
+                              value={formData?.previousAdvance}
+                              className="text-red-500 border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                            />
+                          </div>
+
+                          <div className="relative w-full mb-3">
+                            <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                              Total Given Advance
+                            </label>
+                            <input
+                              type="number"
+                              readOnly
+                              value={Number(formData?.totalAdvance)}
+                              className="text-red-500 border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                            />
+                          </div>
+
+                          <div className="relative w-full mb-3">
+                            <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                              Balance To Be Paid
+                            </label>
+                            <input
+                              type="number"
+                              name="balanceToPay"
+                              value={formData.balanceToPay}
+                              className="text-red-500 border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                            />
+                          </div>
                         </div>
                       </div>
                     </div>
+                    {/* ── end LEFT ── */}
+
+                    {/* ── RIGHT — Advance Receipt on top, Other Charges below ── */}
+                    <div className="w-full lg:w-6/12 px-4">
+                      <BookingSummaryTables
+                        advanceReceipts={advances}
+                        onAdvanceChange={setAdvances}
+                        otherCharges={charges}
+                        onChargesChange={setCharges}
+                      />
+                    </div>
+                    {/* ── end RIGHT ── */}
                   </div>
 
                   {/* Save Button */}
