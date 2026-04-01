@@ -15,10 +15,14 @@ const RoomTooltipContent = ({ room, tooltipData }) => {
 
   if (checkin) {
     return (
-      <div className="z-9999">
+      <div className="z-9999 ">
         <div>
           Guest:{" "}
-          <span className="font-bold">{checkin.customerName || "N/A"}</span>
+          <span className="font-bold">{checkin.customerName || "N/A"} {checkin.arrivalTime || "N/A"}</span>
+        </div>
+        <div>
+          Check-In Date:{" "}
+          <span className="font-bold">{checkin.arrivalDate || "N/A"} {checkin.checkOutTime || "N/A"}</span>
         </div>
         <div>
           Check-Out Date:{" "}

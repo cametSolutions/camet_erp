@@ -107,7 +107,7 @@ const RoomStatus = ({
           </span>
           {/* Status label */}
           <span className={`text-sm font-medium leading-tight ${config.statusColor}`}>
-            {status}
+            {status == "dirty" ? "Cleaning" : status}
           </span>
           {type && (
             <span className={`${config.textColor} text-sm opacity-80 font-medium leading-tight`}>
