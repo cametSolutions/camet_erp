@@ -21,13 +21,14 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
     org?.configurations?.[0]?.defaultPrint?.showBeforeSaleInRestaurant;
   const { isFinalized } = useParams();
 
-  const isIndian = useSelector(
-    (state) =>
-      state?.secSelectedOrganization?.secSelectedOrg?.country === "India",
-  );
+  // const isIndian = useSelector(
+  //   (state) =>
+  //     state?.secSelectedOrganization?.secSelectedOrg?.country === "India",
+  // );
+  const isIndian = true
   const party = data?.party;
-  const isSameState =
-    org?.state?.toLowerCase() === party?.state?.toLowerCase() || !party?.state;
+  const isSameState = "kerala"
+    // org?.state?.toLowerCase() === party?.state?.toLowerCase() || !party?.state;
 
   const voucherType = data?.voucherType;
   const discountBasedOnGrossAmount =
@@ -50,6 +51,8 @@ useEffect(() => {
 
   const discountValue = Number(data?.additionalCharges?.[0]?.finalValue || 0);
 
+
+
   const grossTotal = data.items.reduce(
     (acc, curr) => acc + Number(curr?.total || 0),
     0
@@ -67,10 +70,10 @@ useEffect(() => {
   );
 
   const finalSubTotal = discountBasedOnGrossAmount
-    ? grossTotal - discountValue
+    ? taxableSubTotal - discountValue
     : taxableSubTotal - discountValue;
 
-  console.log("grossTotal", grossTotal);
+  console.log("grossTotal", discountBasedOnGrossAmount ,grossTotal);
   console.log("taxableSubTotal", taxableSubTotal);
   console.log("discountValue", discountValue);
   console.log("finalSubTotal", finalSubTotal);
@@ -557,7 +560,7 @@ useEffect(() => {
 
             {/* RIGHT SIDE: Amount + taxes */}
             <div style={{ flex: 1 }}>
-              {!discountBasedOnGrossAmount && discount && (
+              {!discountBasedOnGrossAmount && Number(discount) > 0 && (
                 <>
                   <div
                     style={{
