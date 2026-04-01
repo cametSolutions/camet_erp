@@ -3664,39 +3664,62 @@ export const getKotRegister = async (req, res, next) => {
 // controllers/salesRegisterController.js
 
 
+// controllers/salesRegisterController.js
+
 export const getSalesRegister = async (req, res) => {
   try {
-    // Today range in UTC (matches your date + timestamps)
-    const start = new Date();
-    start.setUTCHours(0, 0, 0, 0);
+    const { from, to, status, search, includeCancelled } = req.query;
 
-    const end = new Date();
-    end.setUTCHours(23, 59, 59, 999);
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, "0");
+    const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(
+      now.getDate()
+    )}`;
 
-    // Optional filters from query (payment type + search)
-    const { status, search } = req.query;
+    const fromStr = from || todayStr;
+    const toStr = to || fromStr;
+
+    const start = new Date(`${fromStr}T00:00:00.000`);
+    const end = new Date(`${toStr}T23:59:59.999`);
 
     const filter = {
       date: { $gte: start, $lte: end },
-      isCancelled: { $ne: true }, // ignore cancelled bills for register
     };
 
-    // status = payment type filter from UI (CASH, UPI, CASH/UPI, CREDIT, COMPLEMENTORY, SPONSOR)
-    // We'll filter on the flattened rows after computing paymentType.
-    const sales = await salesModel.find(filter)
-      .select(
-        "date salesNumber party.partyName items paymentSplittingData isComplimentary isPostToRoom note"
-      )
+    // if you want to hide cancelled by default:
+    if (!includeCancelled) {
+      filter.isCancelled = { $ne: true };
+    }
+
+    const sales = await salesModel
+      .find(filter)
+      .select(`
+        _id
+        date
+        salesNumber
+        party.partyName
+        items
+        paymentSplittingData
+        isComplimentary
+        isPostToRoom
+        isCancelled
+        note
+        checkInId
+        despatchDetails
+        subTotal
+        totalWithAdditionalCharges
+        finalAmount
+        selectedDate
+      `)
       .sort({ date: -1, salesNumber: -1 })
       .lean();
 
-    // Helper to derive a display paymentType from paymentSplittingData + flags
     const derivePaymentType = (sale) => {
       if (sale.isComplimentary) return "COMPLEMENTORY";
 
-      // credit vs other payments
       const splits = sale.paymentSplittingData || [];
-      const nonZero = splits.filter((s) => (s.amount || 0) > 0);
+      const nonZero = splits.filter((s) => Number(s?.amount || 0) > 0);
+
       if (!nonZero.length) return "-";
 
       const hasCash = nonZero.some((s) => s.type === "cash");
@@ -3705,96 +3728,162 @@ export const getSalesRegister = async (req, res) => {
       const hasBank = nonZero.some((s) => s.type === "bank");
       const hasCheque = nonZero.some((s) => s.type === "cheque");
       const hasCredit = nonZero.some((s) => s.type === "credit");
+      const hasSponsor = nonZero.some((s) => s.type === "sponsor");
 
-      if (hasCredit && !hasCash && !hasUpi && !hasCard && !hasBank && !hasCheque) {
+      if (
+        hasCredit &&
+        !hasCash &&
+        !hasUpi &&
+        !hasCard &&
+        !hasBank &&
+        !hasCheque
+      ) {
         return "CREDIT";
+      }
+
+      if (
+        hasSponsor &&
+        !hasCash &&
+        !hasUpi &&
+        !hasCard &&
+        !hasBank &&
+        !hasCheque &&
+        !hasCredit
+      ) {
+        return "SPONSOR";
       }
 
       if (hasCash && hasUpi && nonZero.length === 2) return "CASH/UPI";
       if (hasCash && !hasUpi && !hasCard && !hasBank && !hasCheque) return "CASH";
       if (!hasCash && hasUpi && !hasCard && !hasBank && !hasCheque) return "UPI";
 
-      // more complex mixes – show generic
       return "CASH/UPI";
     };
 
-    const todayStr = (d) =>
-      d instanceof Date ? d.toISOString().split("T")[0] : "-";
+    const formatDate = (d) => {
+      if (!d) return "-";
+      const dt = new Date(d);
+      if (Number.isNaN(dt.getTime())) return "-";
+      const dd = String(dt.getDate()).padStart(2, "0");
+      const mm = String(dt.getMonth() + 1).padStart(2, "0");
+      const yyyy = dt.getFullYear();
+      return `${dd}-${mm}-${yyyy}`;
+    };
 
-    // Flatten: each item line becomes one row for the register
-    let rows = [];
-    for (const sale of sales) {
-      const paymentType = derivePaymentType(sale);
-      const customer = sale.party?.partyName || "CASH";
-      const dateStr = todayStr(sale.date);
+    let rows = sales.map((sale) => {
+      const items = sale.items || [];
+      const additionalCharges = sale?.despatchDetails?.additionalCharges || [];
 
-      (sale.items || []).forEach((item) => {
-        const gdn = (item.GodownList && item.GodownList[0]) || {};
-        const qty = gdn.count ?? item.totalCount ?? 0;
-        const rate =
-          gdn.basePrice ??
-          gdn.selectedPriceRate ??
-          item.item_mrp ??
-          0;
+      const itemNames = items
+        .map((item) => item?.product_name || "")
+        .filter(Boolean)
+        .join(", ");
 
-        const amount = gdn.taxableAmount ?? gdn.basePrice ?? item.total ?? 0;
-        const taxAmount =
-          (gdn.cgstAmt || 0) +
-          (gdn.sgstAmt || 0) +
-          (gdn.igstAmt || 0) +
-          (gdn.cessAmt || 0) +
-          (gdn.addlCessAmt || 0);
+      const itemRates = items
+        .map((item) => {
+          const gdn = item?.GodownList?.[0] || {};
+          const qty = Number(
+            item?.totalCount ?? item?.totalActualCount ?? 0
+          ) || 1;
 
-        const discAmount = gdn.discountAmount || 0;
-        const billAmount = gdn.individualTotal ?? item.total ?? amount + taxAmount - discAmount;
+          const rawRate =
+            gdn.basePrice ??
+            gdn.selectedPriceRate ??
+            item?.Priceleveles?.[0]?.pricerate ??
+            item?.item_mrp ??
+            (Number(item?.total || 0) / qty);
 
-        rows.push({
-          date: dateStr,
-          billNo: sale.salesNumber,
-          customer,
-          itemName: item.product_name || "",
-          qty,
-          rate,
-          amount,
-          taxAmount,
-          discAmount,
-          billAmount,
-          billType: sale.isPostToRoom ? "ROOM SERVICE" : "DINE-IN", // adjust if you have a real field
-          roomNo: sale.checkInId ? "ROOM" : "", // you may map from checkIn data if needed
-          foodPlan: "-", // you don't have foodPlan in schema; keep "-" or derive from elsewhere
-          paymentType,
-          sponsorName: "", // not in schema
-          remarks: sale.note || "",
-        });
-      });
-    }
+          return Number(rawRate || 0).toFixed(2);
+        })
+        .join(", ");
 
-    // Apply payment-type filter at row level (because derivePaymentType is computed)
+      const qty = items.reduce(
+        (sum, item) =>
+          sum + Number(item?.totalCount ?? item?.totalActualCount ?? 0),
+        0
+      );
+
+      const amount = Number(
+        sale?.subTotal ??
+          sale?.despatchDetails?.subTotal ??
+          items.reduce((sum, item) => sum + Number(item?.total || 0), 0)
+      );
+
+      const taxAmount = items.reduce(
+        (sum, item) =>
+          sum +
+          Number(item?.totalCgstAmt || 0) +
+          Number(item?.totalSgstAmt || 0) +
+          Number(item?.totalIgstAmt || 0) +
+          Number(item?.totalCessAmt || 0) +
+          Number(item?.totalAddlCessAmt || 0),
+        0
+      );
+
+      const discAmount = additionalCharges.reduce((sum, charge) => {
+        const option = String(charge?.option || "").trim().toLowerCase();
+        const action = String(charge?.action || "").trim().toLowerCase();
+
+        if (option === "discount" && action === "sub") {
+          return sum + Number(charge?.finalValue ?? charge?.value ?? 0);
+        }
+        return sum;
+      }, 0);
+
+      const billAmount = Number(
+        sale?.totalWithAdditionalCharges ??
+          sale?.despatchDetails?.totalWithAdditionalCharges ??
+          sale?.finalAmount ??
+          amount
+      );
+
+      return {
+        saleId: sale._id || sale.salesNumber,
+        date: formatDate(sale.date),
+        billNo: sale.salesNumber || "-",
+        customer: sale.party?.partyName || "CASH",
+        itemName: itemNames || "-",
+        rate: itemRates || "-",
+        qty,
+        amount,
+        taxAmount,
+        discAmount,
+        billAmount,
+        billType: sale.isPostToRoom ? "ROOM SERVICE" : "DINE-IN",
+        roomNo: sale.checkInId ? "ROOM" : "",
+        foodPlan: "-",
+        paymentType: derivePaymentType(sale),
+        sponsorName: "",
+        remarks: sale.note || "",
+        isCancelled: sale.isCancelled === true ? "CANCELLED" : "-", // NEW
+      };
+    });
+
     if (status) {
       rows = rows.filter((r) => r.paymentType === status);
     }
 
-    // Apply search at row level (customer / item / remarks)
-    const { search: searchQuery } = req.query;
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
+    if (search) {
+      const q = search.toLowerCase().trim();
       rows = rows.filter(
         (r) =>
-          r.customer.toLowerCase().includes(q) ||
-          r.itemName.toLowerCase().includes(q) ||
-          (r.remarks || "").toLowerCase().includes(q)
+          (r.customer || "").toLowerCase().includes(q) ||
+          (r.itemName || "").toLowerCase().includes(q) ||
+          (r.remarks || "").toLowerCase().includes(q) ||
+          (r.billNo || "").toLowerCase().includes(q)
       );
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       data: rows,
     });
   } catch (error) {
-    console.error("getTodaySalesRegister error:", error);
-    res.status(500).json({
+    console.error("getSalesRegister error:", error);
+    return res.status(500).json({
       success: false,
-      message: "Failed to fetch today's sales register",
+      message: "Failed to fetch sales register",
+      error: error.message,
     });
   }
 };
