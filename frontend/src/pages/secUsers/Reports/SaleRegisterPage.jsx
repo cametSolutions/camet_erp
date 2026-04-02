@@ -1,5 +1,6 @@
 // pages/SalesRegister.jsx
 import { useEffect, useMemo, useState } from "react";
+import { useSelector } from "react-redux";
 import api from "@/api/api";
 import * as XLSX from "xlsx";
 
@@ -54,6 +55,10 @@ export default function SaleRegisterPage() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
 
+    const { _id: cmp_id } = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg
+  );
+
   const getToday = () => {
     const d = new Date();
     const pad = (n) => String(n).padStart(2, "0");
@@ -74,8 +79,17 @@ export default function SaleRegisterPage() {
     try {
       setLoading(true);
 
+        if (!cmp_id) {
+        console.error("cmp_id is undefined, cannot fetch sales register");
+        setRows([]);
+        return;
+      }
+
       const cleanedParams = Object.fromEntries(
-        Object.entries(customFilters).filter(([_, v]) => v !== "")
+        Object.entries({
+          cmp_id,         // <-- include company id
+          ...customFilters,
+        }).filter(([_, v]) => v !== "")
       );
 
       const { data } = await api.get("/api/sUsers/sales-register", {

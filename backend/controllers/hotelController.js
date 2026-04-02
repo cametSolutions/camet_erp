@@ -5212,83 +5212,83 @@ export const getOtherCharges = async (req, res) => {
 
 
 
+
+
 export const getFlashReportForDate = async (req, res) => {
   try {
-    const { cmp_id, date } = req.query; // "2026-03-07"
+    const { cmp_id, fromDate, toDate } = req.query;
 
-    if (!cmp_id || !date) {
+    if (!cmp_id || !fromDate || !toDate) {
       return res.status(400).json({
         success: false,
-        message: "cmp_id and date are required",
+        message: "cmp_id, fromDate and toDate are required",
       });
     }
 
-    // 1) Load company once for header
+    if (fromDate > toDate) {
+      return res.status(400).json({
+        success: false,
+        message: "From Date cannot be greater than To Date",
+      });
+    }
+
     const org = await Organization.findById(cmp_id).lean();
     const companyName = org?.orgName || org?.name || "Hotel";
 
-    // 2) All checkouts for this company and date
     const checkouts = await CheckOut.find({
       cmp_id,
-      checkOutDate: date, // stored as "YYYY-MM-DD"
+      checkOutDate: {
+        $gte: fromDate,
+        $lte: toDate,
+      },
     }).lean();
 
     if (!checkouts.length) {
       return res.status(404).json({
         success: false,
-        message: "No checkouts found for this date",
+        message: "No checkouts found for selected date range",
       });
     }
 
-    // ===== ROOM STATISTICS =====
-
-    // totalRooms = total selectedRooms count across all checkouts
     let totalRooms = 0;
-
-    // for pax + revenue
     let paxDomestic = 0;
-    let roomApartment = 0; // sum of selectedRooms[].amountAfterTax
-    let roomExtraBed = 0;  // if you track as separate charge, adjust later
+    let roomApartment = 0;
+    let roomExtraBed = 0;
 
     checkouts.forEach((co) => {
       if (Array.isArray(co.selectedRooms)) {
         totalRooms += co.selectedRooms.length;
 
         co.selectedRooms.forEach((r) => {
-          // pax
           if (typeof r.pax === "number") {
             paxDomestic += r.pax;
+          } else if (r?.pax != null) {
+            paxDomestic += Number(r.pax) || 0;
           }
 
-          // total room rent = sum of each room's amountAfterTax
           if (typeof r.amountAfterTax === "number") {
             roomApartment += r.amountAfterTax;
-          } else if (r.amountAfterTax != null) {
+          } else if (r?.amountAfterTax != null) {
             roomApartment += Number(r.amountAfterTax) || 0;
           }
         });
       }
     });
 
-    const blockedRooms = 0; // if you track blocked rooms in some table, compute there
+    const blockedRooms = 0;
     const saleableRooms = totalRooms - blockedRooms;
-
-    const occupiedPaid = totalRooms; // each selected room treated as occupied paid
-    const occupiedComp = 0;         // if you mark complimentary rooms, subtract here
+    const occupiedPaid = totalRooms;
+    const occupiedComp = 0;
     const totalOccupied = occupiedPaid + occupiedComp;
 
-    const paxForeign = 0; // you can compute from guestCountry != "India" later
+    const paxForeign = 0;
     const totalPax = paxDomestic + paxForeign;
-
-    const adults = totalPax; // until you split adults/children
+    const adults = totalPax;
     const children = 0;
     const males = totalPax;
     const females = 0;
     const noShows = 0;
 
-    // ===== REVENUE =====
-
-    // foodPlanTotal already stored at checkout level
     const foodPlanTotal = checkouts.reduce(
       (sum, co) => sum + Number(co.foodPlanTotal || 0),
       0
@@ -5302,7 +5302,6 @@ export const getFlashReportForDate = async (req, res) => {
       0
     );
 
-    // ===== ARR / OCCUPANCY =====
     const occPercent =
       totalRooms > 0 ? (occupiedPaid / totalRooms) * 100 : 0;
 
@@ -5315,16 +5314,16 @@ export const getFlashReportForDate = async (req, res) => {
     const arrOccupiedRooms =
       totalOccupied > 0 ? roomTotal / totalOccupied : 0;
 
-    const reportDate = new Date(date);
-    const dayLabel = reportDate.toLocaleDateString("en-GB"); // 07/03/2026
+    const reportDate = new Date(toDate);
+    const dayLabel = reportDate.toLocaleDateString("en-GB");
     const monthLabel = reportDate.toLocaleString("en-GB", {
       month: "long",
-    }); // March
+    });
 
     const data = {
       companyName,
-      fromDate: date,
-      toDate: date,
+      fromDate,
+      toDate,
       dayLabel,
       monthLabel,
 
@@ -5345,22 +5344,22 @@ export const getFlashReportForDate = async (req, res) => {
       noShows,
 
       occPercent: Number(occPercent.toFixed(2)),
-      arrTotalRooms,
-      arrSaleableRooms,
-      arrOccupiedRooms,
+      arrTotalRooms: Number(arrTotalRooms.toFixed(2)),
+      arrSaleableRooms: Number(arrSaleableRooms.toFixed(2)),
+      arrOccupiedRooms: Number(arrOccupiedRooms.toFixed(2)),
 
-      roomApartment,          // total room rent (sum of amountAfterTax of selectedRooms)
-      roomExtraBed,           // keep 0 for now
-      roomTotal,
+      roomApartment: Number(roomApartment.toFixed(2)),
+      roomExtraBed: Number(roomExtraBed.toFixed(2)),
+      roomTotal: Number(roomTotal.toFixed(2)),
 
-      fbPlanRate: fbTotal,    // if you later split plan/service/restaurant, adjust
+      fbPlanRate: Number(fbTotal.toFixed(2)),
       fbRoomService: 0,
       fbRestaurant: 0,
-      fbTotal,
+      fbTotal: Number(fbTotal.toFixed(2)),
 
       otherRevenues: 0,
       modRevenues: 0,
-      grandTotal,
+      grandTotal: Number(grandTotal.toFixed(2)),
     };
 
     return res.json({

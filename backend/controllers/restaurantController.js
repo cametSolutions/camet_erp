@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import Item from "../models/restaurantModels.js"; // Adjust path as needed
 import hsnModel from "../models/hsnModel.js";
 import productModel from "../models/productModel.js";
-import { Category } from "../models/subDetails.js"; // Adjust path as needed
+import { Category, Subcategory } from "../models/subDetails.js"; // Adjust path as needed
 import kotModal from "../models/kotModal.js";
 import roomModal from "../models/roomModal.js";
 import { generateVoucherNumber } from "../helpers/voucherHelper.js";
@@ -3264,17 +3264,6 @@ export const addComplementaryCashOrBank = async (req, res) => {
 };
 
 
-
-
-
-
-
-
-
-
-
-
-
 export const getRestaurantCategoryWiseSalesReport = async (req, res) => {
   try {
     const { cmp_id, startDate, endDate } = req.query;
@@ -3320,8 +3309,8 @@ export const getRestaurantCategoryWiseSalesReport = async (req, res) => {
       });
     }
 
-    const restaurantSeriesIds = restaurantSeries.map((series) =>
-      new mongoose.Types.ObjectId(series._id)
+    const restaurantSeriesIds = restaurantSeries.map(
+      (series) => new mongoose.Types.ObjectId(series._id)
     );
 
     const salesFilter = {
@@ -3355,11 +3344,32 @@ export const getRestaurantCategoryWiseSalesReport = async (req, res) => {
       ),
     ];
 
-    const categories = await Category.find({
-      _id: {
-        $in: categoryIds.map((id) => new mongoose.Types.ObjectId(id)),
-      },
-    }).lean();
+    const subcategoryIds = [
+      ...new Set(
+        restaurantSales.flatMap((sale) =>
+          (sale.items || [])
+            .map((item) => item.sub_category)
+            .filter(Boolean)
+            .map((id) => id.toString())
+        )
+      ),
+    ];
+
+    const categories = categoryIds.length
+      ? await Category.find({
+          _id: {
+            $in: categoryIds.map((id) => new mongoose.Types.ObjectId(id)),
+          },
+        }).lean()
+      : [];
+
+    const subcategories = subcategoryIds.length
+      ? await Subcategory.find({
+          _id: {
+            $in: subcategoryIds.map((id) => new mongoose.Types.ObjectId(id)),
+          },
+        }).lean()
+      : [];
 
     const categoryMap = {};
     categories.forEach((cat) => {
@@ -3367,15 +3377,33 @@ export const getRestaurantCategoryWiseSalesReport = async (req, res) => {
         cat.category || cat.categoryName || cat.name || "Uncategorized";
     });
 
+    const subcategoryMap = {};
+    subcategories.forEach((sub) => {
+      subcategoryMap[sub._id.toString()] =
+        sub.subcategory || sub.subcategoryName || sub.name || "Uncategorized";
+    });
+
     const grouped = {};
 
     restaurantSales.forEach((sale) => {
+      console.log("SALE:", sale.salesNumber, "ITEMS:", sale.items?.length || 0);
       (sale.items || []).forEach((item) => {
-        const categoryId = item.category
-          ? item.category.toString()
+         console.log({
+      salesNumber: sale.salesNumber,
+      product_name: item.product_name,
+      category: item.category,
+      sub_category: item.sub_category,
+      qty: item.totalCount || item.totalActualCount || 0,
+      total: item.total || 0,
+    });
+        const categoryId = item.category ? item.category.toString() : "uncategorized";
+        const subcategoryId = item.sub_category
+          ? item.sub_category.toString()
           : "uncategorized";
 
         const categoryName = categoryMap[categoryId] || "Uncategorized";
+        const subcategoryName = subcategoryMap[subcategoryId] || "Uncategorized";
+
         const qty = Number(item.totalCount || item.totalActualCount || 0);
         const amount = Number(item.total || 0);
 
@@ -3384,31 +3412,55 @@ export const getRestaurantCategoryWiseSalesReport = async (req, res) => {
             categoryName,
             totalQty: 0,
             totalAmount: 0,
+            subcategories: {},
+          };
+        }
+
+        if (!grouped[categoryName].subcategories[subcategoryName]) {
+          grouped[categoryName].subcategories[subcategoryName] = {
+            subcategoryName,
+            totalQty: 0,
+            totalAmount: 0,
             items: [],
           };
         }
 
-        grouped[categoryName].items.push({
+        grouped[categoryName].subcategories[subcategoryName].items.push({
           sale_id: sale._id,
           salesNumber: sale.salesNumber,
           date: sale.date,
-          product_id: item._id,
-          product_name: item.product_name,
+          product_id: item._id || null,
+          product_name: item.product_name || "",
           unit: item.unit || "Nos",
           qty,
           amount,
           category_id: item.category || null,
+          subcategory_id: item.sub_category || null,
         });
 
         grouped[categoryName].totalQty += qty;
         grouped[categoryName].totalAmount += amount;
+        grouped[categoryName].subcategories[subcategoryName].totalQty += qty;
+        grouped[categoryName].subcategories[subcategoryName].totalAmount += amount;
       });
     });
+
+    const result = Object.values(grouped).map((cat) => ({
+      categoryName: cat.categoryName,
+      totalQty: cat.totalQty,
+      totalAmount: cat.totalAmount,
+      subcategories: Object.values(cat.subcategories).map((sub) => ({
+        subcategoryName: sub.subcategoryName,
+        totalQty: sub.totalQty,
+        totalAmount: sub.totalAmount,
+        items: sub.items.sort((a, b) => new Date(a.date) - new Date(b.date)),
+      })),
+    }));
 
     return res.status(200).json({
       success: true,
       message: "Restaurant category wise sales report fetched successfully",
-      data: Object.values(grouped),
+      data: result,
     });
   } catch (error) {
     console.error("getRestaurantCategoryWiseSalesReport ERROR:", error);
@@ -3661,14 +3713,30 @@ export const getKotRegister = async (req, res, next) => {
 
 
 
-// controllers/salesRegisterController.js
 
 
-// controllers/salesRegisterController.js
+
+
+
+
 
 export const getSalesRegister = async (req, res) => {
   try {
-    const { from, to, status, search, includeCancelled } = req.query;
+    const {
+      cmp_id,
+      from,
+      to,
+      status,
+      search,
+      includeCancelled,
+    } = req.query;
+console.log("cmp_id",cmp_id)
+    if (!cmp_id) {
+      return res.status(400).json({
+        success: false,
+        message: "cmp_id is required",
+      });
+    }
 
     const now = new Date();
     const pad = (n) => String(n).padStart(2, "0");
@@ -3679,15 +3747,46 @@ export const getSalesRegister = async (req, res) => {
     const fromStr = from || todayStr;
     const toStr = to || fromStr;
 
-    const start = new Date(`${fromStr}T00:00:00.000`);
-    const end = new Date(`${toStr}T23:59:59.999`);
+    const start = new Date(`${fromStr}T00:00:00.000Z`);
+    const end = new Date(`${toStr}T23:59:59.999Z`);
+
+    const voucherSeriesDocs = await VoucherSeriesModel.find({
+      cmp_id: new mongoose.Types.ObjectId(cmp_id),
+      voucherType: "sales",
+    }).lean();
+
+    if (!voucherSeriesDocs.length) {
+      return res.status(200).json({
+        success: true,
+        data: [],
+      });
+    }
+
+    const restaurantSeries = voucherSeriesDocs.flatMap((doc) =>
+      (doc.series || []).filter(
+        (series) => String(series?.under || "").trim().toLowerCase() === "restaurant"
+      )
+    );
+
+    if (!restaurantSeries.length) {
+      return res.status(200).json({
+        success: true,
+        data: [],
+      });
+    }
+
+    const restaurantSeriesIds = restaurantSeries.map((series) => series._id);
 
     const filter = {
-      date: { $gte: start, $lte: end },
+      cmp_id: new mongoose.Types.ObjectId(cmp_id),
+      series_id: { $in: restaurantSeriesIds },
+      date: {
+        $gte: start,
+        $lte: end,
+      },
     };
 
-    // if you want to hide cancelled by default:
-    if (!includeCancelled) {
+    if (!includeCancelled || includeCancelled === "false") {
       filter.isCancelled = { $ne: true };
     }
 
@@ -3696,7 +3795,9 @@ export const getSalesRegister = async (req, res) => {
       .select(`
         _id
         date
+        selectedDate
         salesNumber
+        series_id
         party.partyName
         items
         paymentSplittingData
@@ -3709,7 +3810,6 @@ export const getSalesRegister = async (req, res) => {
         subTotal
         totalWithAdditionalCharges
         finalAmount
-        selectedDate
       `)
       .sort({ date: -1, salesNumber: -1 })
       .lean();
@@ -3722,13 +3822,27 @@ export const getSalesRegister = async (req, res) => {
 
       if (!nonZero.length) return "-";
 
-      const hasCash = nonZero.some((s) => s.type === "cash");
-      const hasUpi = nonZero.some((s) => s.type === "upi");
-      const hasCard = nonZero.some((s) => s.type === "card");
-      const hasBank = nonZero.some((s) => s.type === "bank");
-      const hasCheque = nonZero.some((s) => s.type === "cheque");
-      const hasCredit = nonZero.some((s) => s.type === "credit");
-      const hasSponsor = nonZero.some((s) => s.type === "sponsor");
+      const hasCash = nonZero.some(
+        (s) => String(s?.type || "").toLowerCase() === "cash"
+      );
+      const hasUpi = nonZero.some(
+        (s) => String(s?.type || "").toLowerCase() === "upi"
+      );
+      const hasCard = nonZero.some(
+        (s) => String(s?.type || "").toLowerCase() === "card"
+      );
+      const hasBank = nonZero.some(
+        (s) => String(s?.type || "").toLowerCase() === "bank"
+      );
+      const hasCheque = nonZero.some(
+        (s) => String(s?.type || "").toLowerCase() === "cheque"
+      );
+      const hasCredit = nonZero.some(
+        (s) => String(s?.type || "").toLowerCase() === "credit"
+      );
+      const hasSponsor = nonZero.some(
+        (s) => String(s?.type || "").toLowerCase() === "sponsor"
+      );
 
       if (
         hasCredit &&
@@ -3756,6 +3870,9 @@ export const getSalesRegister = async (req, res) => {
       if (hasCash && hasUpi && nonZero.length === 2) return "CASH/UPI";
       if (hasCash && !hasUpi && !hasCard && !hasBank && !hasCheque) return "CASH";
       if (!hasCash && hasUpi && !hasCard && !hasBank && !hasCheque) return "UPI";
+      if (hasCard && !hasCash && !hasUpi && !hasBank && !hasCheque) return "CARD";
+      if (hasBank && !hasCash && !hasUpi && !hasCard && !hasCheque) return "BANK";
+      if (hasCheque && !hasCash && !hasUpi && !hasCard && !hasBank) return "CHEQUE";
 
       return "CASH/UPI";
     };
@@ -3770,25 +3887,64 @@ export const getSalesRegister = async (req, res) => {
       return `${dd}-${mm}-${yyyy}`;
     };
 
-    let rows = sales.map((sale) => {
-      const items = sale.items || [];
+    const getDiscountAmount = (sale) => {
       const additionalCharges = sale?.despatchDetails?.additionalCharges || [];
 
+      const fromAdditionalCharges = additionalCharges.reduce((sum, charge) => {
+        const option = String(
+          charge?.option || charge?.label || charge?.name || ""
+        )
+          .trim()
+          .toLowerCase();
+
+        const action = String(charge?.action || "")
+          .trim()
+          .toLowerCase();
+
+        const isDiscount =
+          option === "discount" ||
+          option === "disc" ||
+          option === "discount amount";
+
+        const isSub =
+          action === "sub" ||
+          action === "minus" ||
+          action === "less" ||
+          action === "-";
+
+        if (isDiscount && isSub) {
+          return sum + Number(charge?.finalValue ?? charge?.value ?? 0);
+        }
+
+        return sum;
+      }, 0);
+
+      return Number(
+        fromAdditionalCharges ||
+          sale?.discountAmount ||
+          sale?.despatchDetails?.discountAmount ||
+          sale?.despatchDetails?.totalAdditionalCharges ||
+          0
+      );
+    };
+
+    let rows = sales.map((sale) => {
+      const items = sale.items || [];
+
       const itemNames = items
-        .map((item) => item?.product_name || "")
+        .map((item) => item?.product_name || item?.itemName || "")
         .filter(Boolean)
         .join(", ");
 
       const itemRates = items
         .map((item) => {
           const gdn = item?.GodownList?.[0] || {};
-          const qty = Number(
-            item?.totalCount ?? item?.totalActualCount ?? 0
-          ) || 1;
+          const qty =
+            Number(item?.totalCount ?? item?.totalActualCount ?? item?.qty ?? 0) || 1;
 
           const rawRate =
-            gdn.basePrice ??
-            gdn.selectedPriceRate ??
+            gdn?.basePrice ??
+            gdn?.selectedPriceRate ??
             item?.Priceleveles?.[0]?.pricerate ??
             item?.item_mrp ??
             (Number(item?.total || 0) / qty);
@@ -3799,7 +3955,7 @@ export const getSalesRegister = async (req, res) => {
 
       const qty = items.reduce(
         (sum, item) =>
-          sum + Number(item?.totalCount ?? item?.totalActualCount ?? 0),
+          sum + Number(item?.totalCount ?? item?.totalActualCount ?? item?.qty ?? 0),
         0
       );
 
@@ -3820,15 +3976,7 @@ export const getSalesRegister = async (req, res) => {
         0
       );
 
-      const discAmount = additionalCharges.reduce((sum, charge) => {
-        const option = String(charge?.option || "").trim().toLowerCase();
-        const action = String(charge?.action || "").trim().toLowerCase();
-
-        if (option === "discount" && action === "sub") {
-          return sum + Number(charge?.finalValue ?? charge?.value ?? 0);
-        }
-        return sum;
-      }, 0);
+      const discAmount = getDiscountAmount(sale);
 
       const billAmount = Number(
         sale?.totalWithAdditionalCharges ??
@@ -3855,22 +4003,26 @@ export const getSalesRegister = async (req, res) => {
         paymentType: derivePaymentType(sale),
         sponsorName: "",
         remarks: sale.note || "",
-        isCancelled: sale.isCancelled === true ? "CANCELLED" : "-", // NEW
+        isCancelled: sale.isCancelled === true ? "CANCELLED" : "-",
       };
     });
 
     if (status) {
-      rows = rows.filter((r) => r.paymentType === status);
+      rows = rows.filter(
+        (r) =>
+          String(r.paymentType || "").toUpperCase() ===
+          String(status || "").toUpperCase()
+      );
     }
 
     if (search) {
       const q = search.toLowerCase().trim();
       rows = rows.filter(
         (r) =>
-          (r.customer || "").toLowerCase().includes(q) ||
-          (r.itemName || "").toLowerCase().includes(q) ||
-          (r.remarks || "").toLowerCase().includes(q) ||
-          (r.billNo || "").toLowerCase().includes(q)
+          String(r.customer || "").toLowerCase().includes(q) ||
+          String(r.itemName || "").toLowerCase().includes(q) ||
+          String(r.remarks || "").toLowerCase().includes(q) ||
+          String(r.billNo || "").toLowerCase().includes(q)
       );
     }
 
