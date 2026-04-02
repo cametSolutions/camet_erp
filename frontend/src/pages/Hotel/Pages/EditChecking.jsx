@@ -45,8 +45,9 @@ function EditChecking() {
   }, [editData]);
 
   const handleSubmit = async (payload, paymentData,paymenttypeDetails) => {
+    console.log(payload,paymentData,paymenttypeDetails)
     try {
-      console.log(paymentData,paymenttypeDetails);
+
 
       const response = await api.put(
         `/api/sUsers/updateRoomBooking/${editData._id}`,
