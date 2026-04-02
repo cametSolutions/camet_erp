@@ -142,7 +142,7 @@ function BookingForm({
         highestDate =
           currentDateDefault > highestDate ? currentDateDefault : highestDate;
       }
-      console.log("editData", editData);
+      console.log("editData", editData?.guestId);
       setFormData((prev) => ({
         ...prev,
         country: editData?.country,
@@ -171,8 +171,8 @@ function BookingForm({
         voucherId: editData?.voucherId,
         customerName: editData?.customerId?.partyName,
         accountGroup: editData?.customerId?.accountGroup,
-        guestName: editData?.guestId?.partyName,
-        guestId: editData?.guestId?._id,
+        guestName: editData?.guestId?.partyName  ,
+        guestId: editData?.guestId?._id || editData?.guestId,
         guestCountry: editData?.country,
         guestState: editData?.state,
         guestPinCode: editData?.pinCode,
@@ -764,7 +764,7 @@ console.log("advanceAmount", advanceAmount,isFor);
     console.log(guestDetailedAddress);
     console.log(guestMobileNumber);
 
-    if (!customerId) {
+    if (!customerId && !isTariffRateChange) {
       try {
         const dataObject = {
           accountGroup: "",
@@ -817,7 +817,7 @@ console.log("advanceAmount", advanceAmount,isFor);
         return;
       }
     }
-    if (customerId && !guestId && guestName != customerName) {
+    if (customerId && !guestId && guestName != customerName && !isTariffRateChange) {
       try {
         const dataObject = {
           accountGroup: "",

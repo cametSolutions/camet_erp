@@ -624,7 +624,7 @@ const RestaurantPOS = () => {
       return acc + preTaxValue;
     }, 0);
 
-    return orderItemsAre.reduce((total, item) => {
+    return Math.round(orderItemsAre.reduce((total, item) => {
       const totalValue = Number(item?.total || item.price * item.quantity || 0);
 
       if (discountBasedOnGrossAmount) {
@@ -647,7 +647,7 @@ const RestaurantPOS = () => {
         : (taxableAfterDiscount * cgstRate) / 100 +
           (taxableAfterDiscount * sgstRate) / 100;
       return total + taxableAfterDiscount + taxOnDiscounted;
-    }, 0);
+    }, 0))
   };
 
   const grossTotal = Math.round(
@@ -1501,7 +1501,7 @@ const RestaurantPOS = () => {
                 </div>
 
                 {/* Orders + 3-dots hidden on very small widths */}
-                <div className="relative hidden sm:flex items-center">
+                <div className="relative  sm:flex items-center">
                   <div
                     className="hover:cursor-pointer flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-800/50 border border-slate-700/60 rounded-l-md hover:bg-slate-700/60 transition-colors group"
                     onClick={() => navigate("/sUsers/KotPage")}
