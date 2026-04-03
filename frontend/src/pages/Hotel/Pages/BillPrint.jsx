@@ -1928,7 +1928,9 @@ console.log(paymentModeDetails);
                         AMOUNT
                       </td>
                     </tr>
-                    {paymentModeDetails.map((item, index) => (
+                    {selected == "default" && (
+                      <>
+                    { paymentModeDetails.map((item, index) => (
                       <tr key={index}>
                         <td
                           style={{
@@ -1951,7 +1953,34 @@ console.log(paymentModeDetails);
                         </td>
                       </tr>
                     ))}
+                    </>
+                    )}
 
+                     {(selected == "room" || selected == "restaurant") && (
+                      <>
+                      <tr>
+                        <td
+                          style={{
+                            border: "1px solid #000",
+                            padding: "4px",
+                          }}
+                        >
+                          {selected == "room" ? "Room" : "Restaurant"}
+                        </td>
+                        <td
+                          style={{
+                            border: "1px solid #000",
+                            padding: "4px",
+                            textAlign: "right",
+                          }}
+                        >
+                          {billData?.summary?.total.toLocaleString("en-IN", {
+                            minimumFractionDigits: 2,
+                          })}
+                        </td>
+                      </tr>
+                    </>
+                    )}
                     <tr>
                       <td
                         style={{ border: "1px solid #000", padding: "4px" }}
