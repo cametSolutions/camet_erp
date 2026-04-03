@@ -582,12 +582,7 @@ function BookingList() {
       console.log(selectedSource);
       updatedRows[index].source = value;
       updatedRows[index].sourceType = selectedSource ? selectedSource.type : "";
-      updatedRows[index].subsource =
-        selectedSource.name === "paytm" || selectedSource.name === "gpay"
-          ? "upi"
-          : selectedSource.name === "card"
-            ? "card"
-            : selectedSource.type;
+      updatedRows[index].subsource = selectedSource.name
     } else if (field === "customer") {
       console.log(name);
       console.log(field);
@@ -683,7 +678,7 @@ function BookingList() {
           splitDetails: [
             {
               customer: selectedCustomerData?.customerId?.partyName || selectedCheckOut[0]?.customerId?.partyName,
-              source: selectedCash,
+              source: selectedBank,
               sourceType: "bank",
               amount:
                 selectedDataForPayment?.totalWithRestaurantSubTotal ||
@@ -820,9 +815,6 @@ function BookingList() {
       restaurantBaseSaleData: restaurantBaseSaleData,
     });
 
-    console.log(paymentDetails);
-    console.log(selectedCheckOut);
-    console.log(processedCheckoutData);
 
     if (partial) {
       console.log("Hhhh");

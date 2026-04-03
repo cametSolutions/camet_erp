@@ -1697,7 +1697,7 @@ async function getSelectedParty(
   if (isPostToRoom) {
     console.log("koptData", kotData?.voucherNumber[0]?.checkInNumber);
     let checkInData = await CheckIn.findOne({
-      voucherNumber: kotData?.voucherNumber[0]?.checkInNumber,
+      voucherNumber: kotData?.voucherNumber[0]?.checkInNumber, cmp_id :cmp_id
     }).session(session);
     console.log("checkInData", checkInData);
     partyId = checkInData?.customerId.toString();
@@ -1714,7 +1714,7 @@ async function getSelectedParty(
     }
   }
   console.log("partyId", partyId);
-  const selectedParty = await Party.findOne({ _id: partyId })
+  const selectedParty = await Party.findOne({ _id: partyId ,cmp_id:cmp_id })
     .populate("accountGroup")
     .session(session);
   if (!selectedParty) throw new Error(`Party not found: ${partyName}`);
