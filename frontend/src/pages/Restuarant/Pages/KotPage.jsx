@@ -793,11 +793,16 @@ console.log(selectedAdditionalChargeData);
       );
 
       if (response.status === 200 || response.status === 201) {
-        setOrders((prev) =>
-          prev.map((order) =>
-            order._id === id ? { ...order, paymentCompleted: true } : order,
-          ),
-        );
+ setOrders((prev) =>
+    prev.map((order) =>
+      selectedKotData.voucherNumber.some(
+        (selected) => selected.voucherNumber === order.voucherNumber
+      )
+        ? { ...order, paymentCompleted: true , status:"completed"  }
+        : order
+    )
+  );
+
 
         toast.success(
           isComplimentary
