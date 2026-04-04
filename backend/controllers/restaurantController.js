@@ -3513,15 +3513,16 @@ export const getRestaurantDateWiseItemReport = async (req, res) => {
       (series) => new mongoose.Types.ObjectId(series._id)
     );
 
-    const sales = await salesModel.find({
-      cmp_id: new mongoose.Types.ObjectId(cmp_id),
-      series_id: { $in: restaurantSeriesIds },
-      isCancelled: false,
-      date: {
-        $gte: new Date(`${startDate}T00:00:00.000Z`),
-        $lte: new Date(`${endDate}T23:59:59.999Z`),
-      },
-    })
+    const sales = await salesModel
+      .find({
+        cmp_id: new mongoose.Types.ObjectId(cmp_id),
+        series_id: { $in: restaurantSeriesIds },
+        isCancelled: false,
+        date: {
+          $gte: new Date(`${startDate}T00:00:00.000Z`),
+          $lte: new Date(`${endDate}T23:59:59.999Z`),
+        },
+      })
       .sort({ date: 1, salesNumber: 1 })
       .lean();
 
@@ -3532,6 +3533,35 @@ export const getRestaurantDateWiseItemReport = async (req, res) => {
         message: "No restaurant sales found for selected date range",
       });
     }
+
+    // 1) take voucher numbers from convertedFrom
+    const kotVoucherNumbers = [
+      ...new Set(
+        sales.flatMap((sale) =>
+          (sale.convertedFrom || [])
+            .map((cf) => cf?.voucherNumber)
+            .filter(Boolean)
+        )
+      ),
+    ];
+
+    // 2) fetch KOT docs and populate room
+    const kotDocs = await kotModal
+      .find({
+        voucherNumber: { $in: kotVoucherNumbers },
+        cmp_id: new mongoose.Types.ObjectId(cmp_id),
+      })
+      .populate({
+        path: "roomId",
+        select: "roomName roomNo roomNumber",
+      })
+      .lean();
+
+    // 3) map by voucherNumber
+    const kotMap = {};
+    kotDocs.forEach((kot) => {
+      kotMap[kot.voucherNumber] = kot;
+    });
 
     const groupedByDate = {};
 
@@ -3548,12 +3578,24 @@ export const getRestaurantDateWiseItemReport = async (req, res) => {
         };
       }
 
+      const firstConverted = sale.convertedFrom?.[0];
+      const linkedKot = firstConverted?.voucherNumber
+        ? kotMap[firstConverted.voucherNumber]
+        : null;
+
       (sale.items || []).forEach((item) => {
         const qty = Number(item.totalCount || item.totalActualCount || 0);
         const amount = Number(item.total || 0);
 
         groupedByDate[dateKey].items.push({
           billNo: sale.salesNumber || "",
+          kotNo: linkedKot?.voucherNumber || firstConverted?.voucherNumber || "",
+          kotType: linkedKot?.type || "",
+          roomNo:
+            linkedKot?.roomId?.roomName ||
+            linkedKot?.roomId?.roomNo ||
+            linkedKot?.roomId?.roomNumber ||
+            "",
           product_name: item.product_name || "",
           unit: item.unit || "Nos",
           qty,
@@ -3582,11 +3624,7 @@ export const getRestaurantDateWiseItemReport = async (req, res) => {
   }
 };
 
-// adjust path if needed
 
-
-
-// import kotModal from "../models/kotModal.js"; // you already have this
 
 
 

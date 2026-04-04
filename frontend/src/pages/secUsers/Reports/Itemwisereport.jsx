@@ -81,32 +81,46 @@ export default function HotelReport() {
 
     reportData.forEach((day) => {
       rows.push([day.displayDate]);
-      rows.push(["Sl No", "Bill No", "Item Name", "Unit", "Qty", "Amount"]);
+    rows.push(["Sl No", "Bill No", "KOT No", "KOT Type", "Room No", "Item Name", "Unit", "Qty", "Amount"]);
 
       day.items.forEach((item, idx) => {
-        rows.push([
-          idx + 1,
-          item.billNo || "",
-          item.product_name || "",
-          item.unit || "Nos",
-          Number(item.qty || 0),
-          Number(item.amount || 0),
-        ]);
+       rows.push([
+  idx + 1,
+  item.billNo || "",
+  item.kotNo || "",
+  item.kotType || "",
+  item.roomNo || "",
+  item.product_name || "",
+  item.unit || "Nos",
+  Number(item.qty || 0),
+  Number(item.amount || 0),
+]);
       });
 
-      rows.push([
-        "",
-        "",
-        "Sub Total",
-        "",
-        Number(day.totalQty || 0),
-        Number(day.totalAmount || 0),
-      ]);
+     rows.push([
+  "",
+  "",
+  "",
+  "",
+  "Sub Total",
+  "",
+  Number(day.totalQty || 0),
+  Number(day.totalAmount || 0),
+]);
 
       rows.push([]);
     });
 
-    rows.push(["", "", "Grand Total", "", grandTotals.qty, grandTotals.amount]);
+   rows.push([
+  "",
+  "",
+  "",
+  "",
+  "Grand Total",
+  "",
+  grandTotals.qty,
+  grandTotals.amount,
+]);
 
     return rows;
   };
@@ -115,14 +129,17 @@ export default function HotelReport() {
     const rows = buildExportRows();
     const ws = XLSX.utils.aoa_to_sheet(rows);
 
-    ws["!cols"] = [
-      { wch: 10 },
-      { wch: 20 },
-      { wch: 35 },
-      { wch: 12 },
-      { wch: 12 },
-      { wch: 15 },
-    ];
+   ws["!cols"] = [
+  { wch: 8 },   // Sl
+  { wch: 14 },  // Bill
+  { wch: 18 },  // KOT no
+  { wch: 14 },  // KOT type
+  { wch: 14 },  // Room
+  { wch: 30 },  // Item
+  { wch: 10 },  // Unit
+  { wch: 10 },  // Qty
+  { wch: 14 },  // Amount
+];
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Date Wise Report");
@@ -156,27 +173,43 @@ export default function HotelReport() {
 
       day.items.forEach((item, idx) => {
         body.push([
-          idx + 1,
-          item.billNo || "",
-          item.product_name || "",
-          item.unit || "Nos",
-          Number(item.qty || 0).toFixed(2),
-          fmt(item.amount || 0),
-        ]);
+  idx + 1,
+  item.billNo || "",
+  item.kotNo || "",
+  item.kotType || "",
+  item.roomNo || "",
+  item.product_name || "",
+  item.unit || "Nos",
+  Number(item.qty || 0).toFixed(2),
+  fmt(item.amount || 0),
+]);
       });
 
       body.push([
-        "",
-        "",
-        "Sub Total",
-        "",
-        Number(day.totalQty || 0).toFixed(2),
-        fmt(day.totalAmount || 0),
-      ]);
+  "",
+  "",
+  "",
+  "",
+  "",
+  "Sub Total",
+  "",
+  Number(day.totalQty || 0).toFixed(2),
+  fmt(day.totalAmount || 0),
+]);
 
       autoTable(doc, {
         startY: finalY + 2,
-        head: [["Sl No", "Bill No", "Item Name", "Unit", "Qty", "Amount"]],
+      head: [[
+  "Sl No",
+  "Bill No",
+  "KOT No",
+  "KOT Type",
+  "Room No",
+  "Item Name",
+  "Unit",
+  "Qty",
+  "Amount",
+]],
         body,
         styles: {
           fontSize: 8.5,
@@ -186,14 +219,17 @@ export default function HotelReport() {
           fillColor: [26, 58, 92],
           textColor: 255,
         },
-        columnStyles: {
-          0: { cellWidth: 14 },
-          1: { cellWidth: 30 },
-          2: { cellWidth: 65 },
-          3: { cellWidth: 20 },
-          4: { halign: "right", cellWidth: 20 },
-          5: { halign: "right", cellWidth: 28 },
-        },
+     columnStyles: {
+  0: { cellWidth: 10 },   // Sl
+  1: { cellWidth: 20 },   // Bill
+  2: { cellWidth: 24 },   // KOT no
+  3: { cellWidth: 18 },   // KOT type
+  4: { cellWidth: 18 },   // Room
+  5: { cellWidth: 40 },   // Item
+  6: { cellWidth: 16 },   // Unit
+  7: { halign: "right", cellWidth: 18 }, // Qty
+  8: { halign: "right", cellWidth: 22 }, // Amount
+},
         didParseCell: (hookData) => {
           if (hookData.row.raw && hookData.row.raw[2] === "Sub Total") {
             hookData.cell.styles.fontStyle = "bold";
@@ -207,14 +243,18 @@ export default function HotelReport() {
 
     autoTable(doc, {
       startY: finalY + 6,
-      body: [[
-        "",
-        "",
-        "Grand Total",
-        "",
-        Number(grandTotals.qty || 0).toFixed(2),
-        fmt(grandTotals.amount || 0),
-      ]],
+     body: [[
+  "",
+  "",
+  "",
+  "",
+  "",
+  "Grand Total",
+  "",
+  Number(grandTotals.qty || 0).toFixed(2),
+  fmt(grandTotals.amount || 0),
+]],
+// same columnStyles (0..8)
       styles: {
         fontSize: 9,
         fontStyle: "bold",
@@ -361,42 +401,48 @@ export default function HotelReport() {
                 marginTop: 8,
               }}
             >
-              <thead>
-                <tr style={{ background: "#1a3a5c", color: "white" }}>
-                  <th style={{ padding: 8, textAlign: "left" }}>Sl No</th>
-                  <th style={{ padding: 8, textAlign: "left" }}>Bill No</th>
-                  <th style={{ padding: 8, textAlign: "left" }}>Item Name</th>
-                  <th style={{ padding: 8, textAlign: "left" }}>Unit</th>
-                  <th style={{ padding: 8, textAlign: "right" }}>Qty</th>
-                  <th style={{ padding: 8, textAlign: "right" }}>Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                {day.items.map((row, idx) => (
-                  <tr key={idx} style={{ borderBottom: "1px solid #eee" }}>
-                    <td style={{ padding: 8 }}>{idx + 1}</td>
-                    <td style={{ padding: 8 }}>{row.billNo || "-"}</td>
-                    <td style={{ padding: 8 }}>{row.product_name || "-"}</td>
-                    <td style={{ padding: 8 }}>{row.unit || "-"}</td>
-                    <td style={{ padding: 8, textAlign: "right" }}>{row.qty || 0}</td>
-                    <td style={{ padding: 8, textAlign: "right" }}>
-                      {fmt(row.amount)}
-                    </td>
-                  </tr>
-                ))}
+           <thead>
+  <tr style={{ background: "#1a3a5c", color: "white" }}>
+    <th style={{ padding: 8, textAlign: "left" }}>Sl No</th>
+    <th style={{ padding: 8, textAlign: "left" }}>Bill No</th>
+    <th style={{ padding: 8, textAlign: "left" }}>KOT No</th>
+    <th style={{ padding: 8, textAlign: "left" }}>KOT Type</th>
+    <th style={{ padding: 8, textAlign: "left" }}>Room No</th>
+    <th style={{ padding: 8, textAlign: "left" }}>Item Name</th>
+    <th style={{ padding: 8, textAlign: "left" }}>Unit</th>
+    <th style={{ padding: 8, textAlign: "right" }}>Qty</th>
+    <th style={{ padding: 8, textAlign: "right" }}>Amount</th>
+  </tr>
+</thead>
+            <tbody>
+  {day.items.map((row, idx) => (
+    <tr key={idx} style={{ borderBottom: "1px solid #eee" }}>
+      <td style={{ padding: 8 }}>{idx + 1}</td>
+      <td style={{ padding: 8 }}>{row.billNo || "-"}</td>
+      <td style={{ padding: 8 }}>{row.kotNo || "-"}</td>
+      <td style={{ padding: 8 }}>{row.kotType || "-"}</td>
+      <td style={{ padding: 8 }}>{row.roomNo || "-"}</td>
+      <td style={{ padding: 8 }}>{row.product_name || "-"}</td>
+      <td style={{ padding: 8 }}>{row.unit || "-"}</td>
+      <td style={{ padding: 8, textAlign: "right" }}>{row.qty || 0}</td>
+      <td style={{ padding: 8, textAlign: "right" }}>
+        {fmt(row.amount)}
+      </td>
+    </tr>
+  ))}
 
-                <tr style={{ background: "#f5f7fb", fontWeight: 700 }}>
-                  <td colSpan={4} style={{ padding: 8 }}>
-                    Sub Total
-                  </td>
-                  <td style={{ padding: 8, textAlign: "right" }}>
-                    {day.totalQty || 0}
-                  </td>
-                  <td style={{ padding: 8, textAlign: "right" }}>
-                    {fmt(day.totalAmount)}
-                  </td>
-                </tr>
-              </tbody>
+  <tr style={{ background: "#f5f7fb", fontWeight: 700 }}>
+    <td colSpan={7} style={{ padding: 8 }}>
+      Sub Total
+    </td>
+    <td style={{ padding: 8, textAlign: "right" }}>
+      {day.totalQty || 0}
+    </td>
+    <td style={{ padding: 8, textAlign: "right" }}>
+      {fmt(day.totalAmount)}
+    </td>
+  </tr>
+</tbody>
             </table>
           </div>
         ))}

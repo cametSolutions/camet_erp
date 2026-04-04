@@ -5378,22 +5378,24 @@ export const getFlashReportForDate = async (req, res) => {
 
 export const getTouristReport = async (req, res) => {
   try {
-    const { fromDate, toDate, countryField = "country" } = req.query;
+    let { fromDate, toDate, countryField = "country" } = req.query;
 
-    const match = {};
+    const todayStr = new Date().toISOString().slice(0, 10);
+    fromDate = fromDate || todayStr;
+    toDate = toDate || todayStr;
 
-    if (fromDate || toDate) {
-      match.arrivalDate = {};
-      if (fromDate) match.arrivalDate.$gte = fromDate;
-      if (toDate) match.arrivalDate.$lte = toDate;
-    }
+    const match = {
+      arrivalDate: {
+        $gte: fromDate,
+        $lte: toDate,
+      },
+    };
 
     const fieldToGroup =
       countryField === "guestCountry" ? "$guestCountry" : "$country";
 
-    const report = await CheckOut.aggregate([
+    const report = await CheckIn.aggregate([
       { $match: match },
-
       {
         $addFields: {
           selectedRooms: { $ifNull: ["$selectedRooms", []] },
@@ -5460,8 +5462,8 @@ export const getTouristReport = async (req, res) => {
       success: true,
       message: "Tourist report fetched successfully",
       filters: {
-        fromDate: fromDate || null,
-        toDate: toDate || null,
+        fromDate,
+        toDate,
         countryField,
       },
       summary: {
@@ -5487,14 +5489,18 @@ export const getTouristReport = async (req, res) => {
 
 export const getFoodPlanReport = async (req, res) => {
   try {
-    const { fromDate, toDate } = req.query;
+    let { fromDate, toDate } = req.query;
 
-    const match = {};
-    if (fromDate || toDate) {
-      match.checkOutDate = {};
-      if (fromDate) match.checkOutDate.$gte = fromDate;
-      if (toDate) match.checkOutDate.$lte = toDate;
-    }
+    const todayStr = new Date().toISOString().slice(0, 10);
+    fromDate = fromDate || todayStr;
+    toDate = toDate || todayStr;
+
+    const match = {
+      arrivalDate: {
+        $gte: fromDate,
+        $lte: toDate,
+      },
+    };
 
     const pipeline = [
       { $match: match },
@@ -5523,15 +5529,43 @@ export const getFoodPlanReport = async (req, res) => {
 
       {
         $addFields: {
+          foodPlanName: {
+            $ifNull: ["$foodPlanMaster.foodPlan", "$foodPlan.foodPlan"],
+          },
           foodPlanCode: {
             $ifNull: ["$foodPlanMaster.code", "$foodPlan.foodPlan"],
           },
-          itemName: "$foodPlan.foodPlan",
-          qty: 1,
+          itemName: {
+            $ifNull: [
+              "$foodPlan.itemName",
+              {
+                $ifNull: [
+                  "$foodPlan.foodItemName",
+                  {
+                    $ifNull: [
+                      "$foodPlan.name",
+                      "$foodPlan.foodPlan",
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+          qty: { $ifNull: ["$foodPlan.qty", 1] },
           rate: { $ifNull: ["$foodPlan.rate", 0] },
-          amount: { $ifNull: ["$foodPlan.rate", 0] },
+          amount: {
+            $ifNull: [
+              "$foodPlan.amount",
+              {
+                $multiply: [
+                  { $ifNull: ["$foodPlan.qty", 1] },
+                  { $ifNull: ["$foodPlan.rate", 0] },
+                ],
+              },
+            ],
+          },
           billNo: "$voucherNumber",
-          billDate: "$checkOutDate",
+          billDate: "$arrivalDate",
           remarks: {
             $cond: [
               { $eq: ["$isHotelAgent", true] },
@@ -5546,6 +5580,7 @@ export const getFoodPlanReport = async (req, res) => {
         $group: {
           _id: {
             foodPlanCode: "$foodPlanCode",
+            foodPlanName: "$foodPlanName",
             itemName: "$itemName",
             rate: "$rate",
           },
@@ -5555,6 +5590,7 @@ export const getFoodPlanReport = async (req, res) => {
             $push: {
               billNo: "$billNo",
               billDate: "$billDate",
+              foodPlanName: "$foodPlanName",
               itemName: "$itemName",
               qty: "$qty",
               rate: "$rate",
@@ -5569,6 +5605,7 @@ export const getFoodPlanReport = async (req, res) => {
         $group: {
           _id: "$_id.foodPlanCode",
           foodPlan: { $first: "$_id.foodPlanCode" },
+          foodPlanName: { $first: "$_id.foodPlanName" },
           items: {
             $push: {
               itemName: "$_id.itemName",
@@ -5582,17 +5619,17 @@ export const getFoodPlanReport = async (req, res) => {
         },
       },
 
-      { $sort: { foodPlan: 1 } },
+      { $sort: { foodPlanName: 1, foodPlan: 1 } },
     ];
 
-    const data = await CheckOut.aggregate(pipeline);
+    const data = await CheckIn.aggregate(pipeline);
 
     const grandTotal = data.reduce((sum, fp) => sum + (fp.subTotal || 0), 0);
 
     return res.json({
       success: true,
-      fromDate: fromDate || null,
-      toDate: toDate || null,
+      fromDate,
+      toDate,
       grandTotal,
       foodPlans: data,
     });
@@ -5610,16 +5647,20 @@ export const getFoodPlanReport = async (req, res) => {
 
 export const getOccupancyCheckoutReport = async (req, res) => {
   try {
-    const { fromDate, toDate } = req.query;
+    let { fromDate, toDate } = req.query;
 
-    const match = {};
-    if (fromDate || toDate) {
-      match.checkOutDate = {};
-      if (fromDate) match.checkOutDate.$gte = fromDate;
-      if (toDate) match.checkOutDate.$lte = toDate;
-    }
+    const todayStr = new Date().toISOString().slice(0, 10);
+    fromDate = fromDate || todayStr;
+    toDate = toDate || todayStr;
 
-    const checkouts = await CheckOut.find(match).lean();
+    const match = {
+      arrivalDate: {
+        $gte: fromDate,
+        $lte: toDate,
+      },
+    };
+
+    const checkins = await CheckIn.find(match).lean();
 
     const allRooms = await roomModal.find({}, { roomName: 1, roomType: 1 }).lean();
 
@@ -5636,8 +5677,10 @@ export const getOccupancyCheckoutReport = async (req, res) => {
     let other = 0;
     let additionalPaxTotal = 0;
 
-    checkouts.forEach((doc, docIndex) => {
-      const isDomestic = (doc?.country || doc?.guestCountry || "").toLowerCase() === "";
+    checkins.forEach((doc) => {
+      const country = (doc?.country || doc?.guestCountry || "").trim().toLowerCase();
+      const isDomestic = !country || country === "india";
+
       if (isDomestic) domestic += 1;
       else foreigners += 1;
 
@@ -5647,9 +5690,15 @@ export const getOccupancyCheckoutReport = async (req, res) => {
 
       additionalPaxTotal += additionalPaxCount;
 
-      (doc?.selectedRooms || []).forEach((room, roomIndex) => {
+      (doc?.selectedRooms || []).forEach((room) => {
         const pax = Number(room?.pax || 0);
-        const tariff = Number(room?.amountAfterTax || room?.totalAmount || room?.baseAmountWithTax || room?.baseAmount || 0);
+        const tariff = Number(
+          room?.amountAfterTax ||
+          room?.totalAmount ||
+          room?.baseAmountWithTax ||
+          room?.baseAmount ||
+          0
+        );
 
         roomRevenue += tariff;
         occupiedRoomNames.add(room?.roomName);
@@ -5660,6 +5709,7 @@ export const getOccupancyCheckoutReport = async (req, res) => {
           "";
 
         const type = roomTypeName.toLowerCase();
+
         if (type.includes("single")) single += 1;
         else if (type.includes("double")) doubleRoom += 1;
         else if (type.includes("triple")) triple += 1;
@@ -5668,8 +5718,6 @@ export const getOccupancyCheckoutReport = async (req, res) => {
         let planName = "";
         if (Array.isArray(doc?.foodPlan) && doc.foodPlan.length > 0) {
           planName = doc.foodPlan[0]?.foodPlan || "Plan";
-        } else {
-          planName = "";
         }
 
         if (!planMap[planName]) {
@@ -5684,7 +5732,8 @@ export const getOccupancyCheckoutReport = async (req, res) => {
 
         planMap[planName].rms += 1;
         planMap[planName].pax += pax;
-        planMap[planName].total += pax;
+        planMap[planName].addnl += additionalPaxCount;
+        planMap[planName].total += pax + additionalPaxCount;
 
         rows.push({
           slNo: rows.length + 1,
@@ -5707,9 +5756,16 @@ export const getOccupancyCheckoutReport = async (req, res) => {
     const occupiedRooms = occupiedRoomNames.size;
     const totalRooms = allRooms.length;
     const vacant = Math.max(totalRooms - occupiedRooms, 0);
+
     const occupancyPercentage =
-      totalRooms > 0 ? Number(((occupiedRooms / totalRooms) * 100).toFixed(2)) : 0;
-    const arr = occupiedRooms > 0 ? Number((roomRevenue / occupiedRooms).toFixed(2)) : 0;
+      totalRooms > 0
+        ? Number(((occupiedRooms / totalRooms) * 100).toFixed(2))
+        : 0;
+
+    const arr =
+      occupiedRooms > 0
+        ? Number((roomRevenue / occupiedRooms).toFixed(2))
+        : 0;
 
     const roomStatus = allRooms
       .map((room) => ({
@@ -5718,15 +5774,11 @@ export const getOccupancyCheckoutReport = async (req, res) => {
       }))
       .sort((a, b) => String(a.roomNo).localeCompare(String(b.roomNo)));
 
-    const planSummary = Object.values(planMap).map((item) => ({
-      ...item,
-      addnl: additionalPaxTotal,
-      total: item.pax + additionalPaxTotal,
-    }));
+    const planSummary = Object.values(planMap);
 
     return res.status(200).json({
       success: true,
-      reportDate: toDate || new Date().toISOString().slice(0, 10),
+      reportDate: toDate,
       printDateTime: new Date(),
       summary: {
         occupancyPercentage,
