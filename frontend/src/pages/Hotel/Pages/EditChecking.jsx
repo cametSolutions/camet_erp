@@ -15,6 +15,7 @@ function EditChecking() {
   const isTariffRateChange = location?.state?.fromDashboard === true;
   const roomIdToEdit = location?.state?.roomId;
 
+  console.log(editData, "editData");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const [outStanding, setOutStanding] = useState([]);
