@@ -23,9 +23,13 @@ function RoomCard({ room, isSelected, isBooked, onClick, disabled }) {
       onClick={!disabled && !isBooked ? onClick : undefined}
       className={`${getCardColor()} rounded-lg p-2 transition-all duration-200 transform hover:scale-105 shadow-md min-h-[50px] flex flex-col items-center justify-center`}
     >
-      <span className="text-lg font-bold">{room.roomNumber || room.roomName}</span>
+      <span className="text-lg font-bold">
+        {room.roomNumber || room.roomName}
+      </span>
       {room.roomType?.brand && (
-        <span className="text-[10px] mt-0.5 opacity-90 truncate max-w-full">{room.roomType.brand}</span>
+        <span className="text-[10px] mt-0.5 opacity-90 truncate max-w-full">
+          {room.roomType.brand}
+        </span>
       )}
     </div>
   );
@@ -45,11 +49,14 @@ function VisualRoomSelector({
       <h3 className="text-sm font-semibold text-gray-700 mb-3">
         Select Rooms (Click to add)
       </h3>
-      
+
       {loading ? (
         <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-8 lg:grid-cols-10 gap-2">
           {[...Array(20)].map((_, i) => (
-            <div key={i} className="bg-gray-200 rounded-lg h-12 animate-pulse"></div>
+            <div
+              key={i}
+              className="bg-gray-200 rounded-lg h-12 animate-pulse"
+            ></div>
           ))}
         </div>
       ) : rooms.length === 0 ? (
@@ -61,7 +68,7 @@ function VisualRoomSelector({
           {rooms.map((room) => {
             const isBooked = bookedRoomIds.includes(room._id);
             const isSelected = selectedRooms.some(
-              (selected) => selected.roomId === room._id
+              (selected) => selected.roomId === room._id,
             );
 
             return (
@@ -77,8 +84,6 @@ function VisualRoomSelector({
           })}
         </div>
       )}
-
-     
     </div>
   );
 }
@@ -94,12 +99,12 @@ function AvailableRooms({
   sendToParent,
   formData,
   selectedRoomId,
-  roomFromDashboard =[],
+  roomFromDashboard = [],
   isTariffRateChange = false,
   roomIdToUpdate = null,
   addTaxWithRate = false,
   handleDeletion = () => {},
-  includeFoodRateWithRoom
+  includeFoodRateWithRoom,
 }) {
   const [rooms, setRooms] = useState([]);
   const [search, setSearch] = useState("");
@@ -122,7 +127,7 @@ function AvailableRooms({
   const PAGE_SIZE = 50;
   useEffect(() => {
     const fetchBookings = async () => {
-      if (formData?.selectedRooms?.length > 0 ) {
+      if (formData?.selectedRooms?.length > 0) {
         const updatedBookings = await Promise.all(
           formData.selectedRooms.map(async (booking) => {
             const normalizedBooking = {
@@ -155,6 +160,7 @@ function AvailableRooms({
               totalSgstAmt: booking.totalSgstAmt,
               totalIgstAmt: booking.totalIgstAmt,
               dateTariffs: booking.dateTariffs || {},
+              isSwapped: booking.isSwapped,
             };
 
             const taxCalculation = await calculateTax(normalizedBooking);
@@ -167,13 +173,13 @@ function AvailableRooms({
         if (specificRoom) {
           handleSelect(specificRoom);
         }
-      }else if (roomFromDashboard?.length > 0 && !roomDeletedCompletely) {
+      } else if (roomFromDashboard?.length > 0 && !roomDeletedCompletely) {
         console.log(roomFromDashboard);
         roomFromDashboard.map((room) => {
           let specificRoom = rooms.find((roomId) => roomId._id === room.roomId);
           console.log(specificRoom);
           handleSelect(specificRoom);
-        })
+        });
       }
     };
 
@@ -189,7 +195,7 @@ function AvailableRooms({
   useEffect(() => {
     if (!formData?.additionalPaxDetails && !formData?.foodPlan) return;
     if (!selectedRoomId) return;
-    
+
     const bookingData = bookings?.find(
       (item) => item.roomId === selectedRoomId,
     );
@@ -208,7 +214,7 @@ function AvailableRooms({
 
   useEffect(() => {
     if (!formData?.bookingType) return;
-    
+
     const handleBookingTypeChange = async () => {
       if (bookings?.length > 0) {
         const updatedBookings = await Promise.all(
@@ -295,7 +301,6 @@ function AvailableRooms({
   );
 
   useEffect(() => {
-    
     if (!bookings?.length) return;
 
     const recalc = async () => {
@@ -306,63 +311,66 @@ function AvailableRooms({
     recalc();
   }, [addTaxWithRate]);
 
-  const recalculateBookingTotals = useCallback((booking) => {
-    const checkInDate = formData?.arrivalDate || formData?.checkInDate;
-    const checkOutDate = formData?.checkOutDate;
+  const recalculateBookingTotals = useCallback(
+    (booking) => {
+      const checkInDate = formData?.arrivalDate || formData?.checkInDate;
+      const checkOutDate = formData?.checkOutDate;
 
-    if (!checkInDate || !checkOutDate) {
-      // Fallback to simple calculation if dates are not available
-      const baseAmount =
-        Number(booking.priceLevelRate || 0) * Number(booking.stayDays || 0);
+      if (!checkInDate || !checkOutDate) {
+        // Fallback to simple calculation if dates are not available
+        const baseAmount =
+          Number(booking.priceLevelRate || 0) * Number(booking.stayDays || 0);
+        return {
+          ...booking,
+          totalAmount: baseAmount,
+        };
+      }
+
+      const stayDates = [];
+      const currentDate = new Date(checkInDate);
+      const endDate = new Date(checkOutDate);
+
+      while (currentDate < endDate) {
+        const formattedDate = currentDate.toISOString().split("T")[0];
+        stayDates.push(formattedDate);
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+
+      let totalAmount = 0;
+      const dateTariffs = booking.dateTariffs || {};
+      const defaultRate = Number(booking.priceLevelRate || 0);
+      const tariffDates = Object.keys(dateTariffs).sort();
+
+      stayDates.forEach((date) => {
+        if (dateTariffs[date]) {
+          totalAmount += Number(dateTariffs[date]);
+        } else {
+          let applicableRate = defaultRate;
+
+          for (let i = tariffDates.length - 1; i >= 0; i--) {
+            if (tariffDates[i] <= date) {
+              applicableRate = Number(dateTariffs[tariffDates[i]]);
+              break;
+            }
+          }
+
+          totalAmount += applicableRate;
+        }
+      });
+
       return {
         ...booking,
-        totalAmount: baseAmount,
+        totalAmount: totalAmount,
       };
-    }
-
-    const stayDates = [];
-    const currentDate = new Date(checkInDate);
-    const endDate = new Date(checkOutDate);
-
-    while (currentDate < endDate) {
-      const formattedDate = currentDate.toISOString().split("T")[0];
-      stayDates.push(formattedDate);
-      currentDate.setDate(currentDate.getDate() + 1);
-    }
-
-    let totalAmount = 0;
-    const dateTariffs = booking.dateTariffs || {};
-    const defaultRate = Number(booking.priceLevelRate || 0);
-    const tariffDates = Object.keys(dateTariffs).sort();
-
-    stayDates.forEach((date) => {
-      if (dateTariffs[date]) {
-        totalAmount += Number(dateTariffs[date]);
-      } else {
-        let applicableRate = defaultRate;
-
-        for (let i = tariffDates.length - 1; i >= 0; i--) {
-          if (tariffDates[i] <= date) {
-            applicableRate = Number(dateTariffs[tariffDates[i]]);
-            break;
-          }
-        }
-
-        totalAmount += applicableRate;
-      }
-    });
-
-    return {
-      ...booking,
-      totalAmount: totalAmount,
-    };
-  }, [formData]);
+    },
+    [formData],
+  );
 
   console.log(bookings);
   const calculateTax = useCallback(
     async (booking) => {
       if (!booking) return booking;
-      
+
       const updatedRoom = recalculateBookingTotals(booking);
 
       try {
@@ -371,7 +379,7 @@ function AvailableRooms({
           addTaxWithRate,
           formData,
           booking.roomId,
-          includeFoodRateWithRoom
+          includeFoodRateWithRoom,
         );
 
         return {
@@ -410,9 +418,9 @@ function AvailableRooms({
   );
 
   useEffect(() => {
-    console.log("hai")
+    console.log("hai");
     if (pendingRoomQueue.length === 0) return;
-    
+
     const roomIdToUpdate = pendingRoomQueue[0];
     const roomToUpdate = bookings.find((b) => b.roomId === roomIdToUpdate);
 
@@ -438,8 +446,7 @@ function AvailableRooms({
   }, [pendingRoomQueue, bookings, calculateTax]);
 
   useEffect(() => {
-
-    console.log("jsdkf")
+    console.log("jsdkf");
     if (bookings.length > 0) {
       const total = bookings.reduce(
         (acc, b) => acc + Number(b.amountAfterTax || b.totalAmount || 0),
@@ -481,8 +488,7 @@ function AvailableRooms({
         setTotalAmount(finalTotal);
         sendToParent(bookings, finalTotal);
       }
-    }
-     else {
+    } else {
       setTotalAmount(0);
       sendToParent([], 0);
     }
@@ -492,7 +498,6 @@ function AvailableRooms({
     roomIdToUpdate,
     // sendToParent,
   ]);
-  
 
   const handlePriceLevelChange = (e, roomId) => {
     const selectedLevelId = e.target.value;
@@ -543,12 +548,10 @@ function AvailableRooms({
     );
   };
 
- 
-
   const handlePriceLevelRateChange = (e, roomId) => {
-     const value = e.target.value;
-     console.log(value);
-  const newRate = value === "" ? "" : Number(value); // allow empty input
+    const value = e.target.value;
+    console.log(value);
+    const newRate = value === "" ? "" : Number(value); // allow empty input
     console.log("Rate Change - New Rate:", newRate, "for Room:", roomId);
     if (isTariffRateChange) {
       setBookings((prev) =>
@@ -605,7 +608,7 @@ function AvailableRooms({
       return;
     }
     let filteredRoom = bookings.filter((b) => b.roomId !== roomId);
-    if(filteredRoom.length === 0) setRoomDeletedCompletely(true);
+    if (filteredRoom.length === 0) setRoomDeletedCompletely(true);
     setBookings(filteredRoom);
     handleDeletion(roomId);
   };
@@ -627,7 +630,7 @@ function AvailableRooms({
       hsnDetails: room.hsn,
       totalAmount: defaultRate * stayDays,
     };
-    
+
     booking = await calculateTax(booking);
     setBookings((prev) =>
       prev.some((b) => b.roomId === booking.roomId) ? prev : [...prev, booking],
@@ -636,8 +639,6 @@ function AvailableRooms({
     setSearch("");
     onSelect(room);
   };
-
- 
 
   const handleSearch = useCallback(
     (term) => {
@@ -683,7 +684,7 @@ function AvailableRooms({
   // Add this useEffect after your existing useEffects, before the console.log(bookings)
   useEffect(() => {
     // Refresh rooms when bookings change to update the dropdown
-    if (isOpen && cmp_id ) {
+    if (isOpen && cmp_id) {
       fetchRooms(1, search);
     }
   }, [bookings.length]); // Triggers when rooms are added/removed from bookings
@@ -698,10 +699,10 @@ function AvailableRooms({
       prev.includes(roomIdToUpdate) ? prev : [...prev, roomIdToUpdate],
     );
   };
-console.log(formData?.foodPlan)
-console.log(formData)
+  console.log(formData?.foodPlan);
+  console.log(formData);
 
-const bookedRoomIds = bookings.map((b) => b.roomId);
+  const bookedRoomIds = bookings.map((b) => b.roomId);
   return showHistory ? (
     <TariffHistory
       isOpen={showHistory}
@@ -781,12 +782,19 @@ const bookedRoomIds = bookings.map((b) => b.roomId);
                             roomIdToUpdate.toString()
                         );
                       }
+                      console.log(booking);
                       return true;
                     })
                     .map((booking, index) => (
                       <tr
                         key={booking?.roomId}
-                        className="hover:bg-blue-50/50 transition-all duration-200"
+                        className={`transition-all duration-200
+    ${
+      booking?.isSwapped
+        ? "bg-red-100 text-red-700 hover:bg-red-200 cursor-not-allowed opacity-80"
+        : "hover:bg-blue-50/50"
+    }
+  `}
                       >
                         <td className="px-1 py-1 text-center font-medium text-blue-600 text-xs">
                           {index + 1}
@@ -840,7 +848,7 @@ const bookedRoomIds = bookings.map((b) => b.roomId);
                             </span>
                           )}
                         </td>
-                        
+
                         {!isTariffRateChange ? (
                           <td className="px-1 py-1">
                             <input
@@ -871,7 +879,7 @@ const bookedRoomIds = bookings.map((b) => b.roomId);
                             />
                           </td>
                         )}
-                        
+
                         <td className="px-1 py-1">
                           <input
                             type="number"
@@ -1039,7 +1047,7 @@ const bookedRoomIds = bookings.map((b) => b.roomId);
                                   )}
                                 </p>
                               </div>
-                              
+
                               {!isTariffRateChange && (
                                 <button
                                   onClick={() => handleDelete(booking.roomId)}

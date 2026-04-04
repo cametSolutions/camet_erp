@@ -13,7 +13,6 @@ import {
   handleBillDownloadPDF,
 } from "../PrintSide/generateBillPrintPDF";
 
-
 const HotelBillPrint = () => {
   // Router and Redux state
   const location = useLocation();
@@ -72,7 +71,6 @@ const HotelBillPrint = () => {
     setPaymentModeDetails(Object.values(mergedMap));
   }, [paymentDetails]);
 
-
   // Fetch debit and KOT once for all docs shown
   const fetchDebitData = async (data) => {
     console.log(data);
@@ -112,7 +110,7 @@ const HotelBillPrint = () => {
             mergedMap[key].amount += Number(item.amount);
           }
         });
-console.log(mergedMap);
+        console.log(mergedMap);
         setPaymentModeDetails(Object.values(mergedMap));
       }
       console.log("hh");
@@ -319,16 +317,16 @@ console.log(mergedMap);
         .filter(Boolean),
     );
 
-   
-
     // Split KOTs based on available fields
     const roomServiceKots = [];
     const dineInKots = [];
 
     kotData?.forEach((kot) => {
       console.log(kot);
-      let voucherNumber = doc?.checkInId?.voucherNumber ? doc.checkInId.voucherNumber : kot?.convertedFrom[0].checkInNumber 
-      if(voucherNumber!== kot?.convertedFrom[0].checkInNumber) return;
+      let voucherNumber = doc?.checkInId?.voucherNumber
+        ? doc.checkInId.voucherNumber
+        : kot?.convertedFrom[0].checkInNumber;
+      if (voucherNumber !== kot?.convertedFrom[0].checkInNumber) return;
       const kotRoomId = String(kot?.kotDetails?.roomId || kot?.roomId || "");
       const tableNumber =
         kot?.kotDetails?.tableNumber ||
@@ -444,30 +442,37 @@ console.log(mergedMap);
         dineInTotals[tableNo].docNos.push(kot.salesNumber);
       }
     });
-console.log("dineInTotals", dineInTotals)
+    console.log("dineInTotals", dineInTotals);
     Object.keys(dineInTotals)?.forEach((tableNo) => {
-      const docNo = dineInTotals[tableNo].docNos
-console.log("docNo", docNo)
+      const docNo = dineInTotals[tableNo].docNos;
+      console.log("docNo", docNo);
       const formatDocNos = (docNos = []) => {
-  if (!docNos.length) return "";
+        if (!docNos.length) return "";
 
-  const first = docNos[0];
+        const splitDocs = docNos.map((doc) => doc.split("-"));
 
-  // Split: TFRS / 0013 / 26-27
-  const [prefix, firstNumber, suffix] = first.split("/");
+        const firstPrefix = splitDocs[0]?.[0];
+        const firstSuffix = splitDocs[0]?.[2];
 
-  const formatted = docNos.map((doc, index) => {
-    const parts = doc.split("/");
-    const number = parts[1]; // only number part
+        const isSameFormat = splitDocs.every(
+          ([prefix, , suffix]) =>
+            prefix === firstPrefix && suffix === firstSuffix,
+        );
 
-    return index === 0
-      ? `${prefix}/${firstNumber}/${suffix}` // full
-      : number; // only number
-  });
+        // ✅ If same prefix & suffix → shorten format
+        if (isSameFormat) {
+          return splitDocs
+            .map(([prefix, number, suffix], index) =>
+              index === 0 ? `${prefix}-${number}-${suffix}` : number,
+            )
+            .join(", ");
+        }
 
-  return formatted.join(", ");
-};
+        // ❌ If different → return full values
+        return docNos.join(", ");
+      };
       const docNoFormatted = formatDocNos(docNo);
+      console.log("docNoFormatted", docNoFormatted);
       lines.push({
         date: dineInTotals[tableNo].date,
         description: `Restaurant Dine In - ${tableNo}`,
@@ -506,12 +511,12 @@ console.log("docNo", docNo)
     const dateWiseLines = transformDocToDateWiseLines(doc);
     console.log(dateWiseLines);
     // Totals for room parts
-      const planAmount = dateWiseLines.reduce(
+    const planAmount = dateWiseLines.reduce(
       (t, i) => t + Number(i.foodPlanAmountWithOutTax || 0),
       0,
     );
 
-        console.log(planAmount);
+    console.log(planAmount);
     const foodPlanAmountWithTax = dateWiseLines
       .reduce(
         (t, i) =>
@@ -524,16 +529,10 @@ console.log("docNo", docNo)
     console.log(foodPlanAmountWithTax);
     console.log(planAmount);
 
-    let roomTariffTotal =  !doc?.addFoodPlanWithRate ? dateWiseLines.reduce(
-      (t, i) => t + Number(i.baseAmount || 0),
-      0,
-    ) :  dateWiseLines.reduce(
-      (t, i) => t + Number(i.baseAmount || 0),
-      0,
-    ) - (planAmount + Number(foodPlanAmountWithTax));
-
-  
-
+    let roomTariffTotal = !doc?.addFoodPlanWithRate
+      ? dateWiseLines.reduce((t, i) => t + Number(i.baseAmount || 0), 0)
+      : dateWiseLines.reduce((t, i) => t + Number(i.baseAmount || 0), 0) -
+        (planAmount + Number(foodPlanAmountWithTax));
 
     const additionalPaxAmount = (doc.selectedRooms || []).reduce(
       (total, room) => {
@@ -636,7 +635,10 @@ console.log("docNo", docNo)
             date: item.date,
             description: `Room Rent :${item.roomName}`,
             docNo: item.docNo || "-",
-            amount: (item.baseAmount + Number(doc?.addFoodPlanWithRate ? 0 :  item.foodPlanAmountWithTax)).toFixed(2),
+            amount: (
+              item.baseAmount +
+              Number(doc?.addFoodPlanWithRate ? 0 : item.foodPlanAmountWithTax)
+            ).toFixed(2),
             taxes: (item.taxAmount || 0).toFixed(2),
             advance: "",
             roomName: item.roomName,
@@ -683,7 +685,10 @@ console.log("docNo", docNo)
             date: item.date, // ✅ Use the actual half day date (checkout date)
             description: `Half Tariff :${item.roomName}`,
             docNo: item.docNo || "-",
-            amount: (item.baseAmount + (doc?.addFoodPlanWithRate ? 0 :  item.foodPlanAmountWithTax)).toFixed(2),
+            amount: (
+              item.baseAmount +
+              (doc?.addFoodPlanWithRate ? 0 : item.foodPlanAmountWithTax)
+            ).toFixed(2),
             taxes: (item.taxAmount || 0).toFixed(2),
             advance: "",
             roomName: item.roomName,
@@ -836,12 +841,17 @@ console.log("docNo", docNo)
 
     const allcheckinids = doc?.allCheckInIds;
     const allpartyid = doc?.partyArray;
-console.log(doc);
-console.log("allpartyid", outStanding);
+    console.log(doc);
+    console.log("allpartyid", outStanding);
     // Advances only on the decided bill
     let advanceEntries = useAdvances
       ? (outStanding || [])
-          .filter((t) => doc?._id === t.billId || doc?.bookingId?._id === t.billId || doc?.checkInId?._id === t.billId)
+          .filter(
+            (t) =>
+              doc?._id === t.billId ||
+              doc?.bookingId?._id === t.billId ||
+              doc?.checkInId?._id === t.billId,
+          )
           .map((t) => ({
             date: formatDate(t.bill_date || t.billdate || new Date()),
             description: t.isCheckOut ? "CheckOut" : "Advance",
@@ -854,7 +864,12 @@ console.log("allpartyid", outStanding);
 
     let advanceTotal = useAdvances
       ? (outStanding || [])
- .filter((t) => doc?._id === t.billId || doc?.bookingId?._id === t.billId || doc?.checkInId?._id === t.billId)
+          .filter(
+            (t) =>
+              doc?._id === t.billId ||
+              doc?.bookingId?._id === t.billId ||
+              doc?.checkInId?._id === t.billId,
+          )
           .reduce(
             (sum, t) => sum + Number(t.bill_amount || t.billamount || 0),
             0,
@@ -943,7 +958,8 @@ console.log("allpartyid", outStanding);
       Number(foodPlanAmountWithTax) +
       Number(sgstAmount) +
       Number(cgstAmount) +
-      Number(restaurantTotal)+ otherChargeAmount;
+      Number(restaurantTotal) +
+      otherChargeAmount;
     const netPay = Math.abs(grandTotal - advanceTotal);
 
     // Compose hotel/guest info per doc
@@ -1107,7 +1123,6 @@ console.log("allpartyid", outStanding);
         // No advance deduction for restaurant bill
         bill.payment.advance = 0;
         bill.payment.netPay = restaurantOnlyTotal;
-
       } else if (activeMode === "room") {
         // Keep only room-related charges + advances; exclude restaurant / dine-in charges
         bill.charges = bill.charges.filter((c) => {
@@ -1170,16 +1185,16 @@ console.log("allpartyid", outStanding);
     });
   }, [selectedCheckOut, outStanding, kotData, organization, activeMode]);
 
-  console.log("bills", bills[1]);
+  console.log("bills", bills);
 
   const handlePrintPDF = (isPrint) => {
     const multi = bills && bills.length ? bills : [];
     if (!multi.length) return;
-console.log(paymentModeDetails);
+    console.log(paymentModeDetails);
     if (!isPrint) {
-      handleBillDownloadPDF(multi, organization,paymentModeDetails); // pass array
+      handleBillDownloadPDF(multi, organization, paymentModeDetails); // pass array
     } else {
-      handleBillPrintInvoice(multi, organization,paymentModeDetails); // pass array
+      handleBillPrintInvoice(multi, organization, paymentModeDetails); // pass array
     }
   };
   console.log(paymentModeDetails);
@@ -1707,7 +1722,9 @@ console.log(paymentModeDetails);
                   <tbody>
                     {activeMode !== "restaurant" && (
                       <tr>
-                        <td style={{ border: "1px solid #000", padding: "4px" }}>
+                        <td
+                          style={{ border: "1px solid #000", padding: "4px" }}
+                        >
                           Room Rent
                         </td>
                         <td
@@ -1717,36 +1734,39 @@ console.log(paymentModeDetails);
                             textAlign: "right",
                           }}
                         >
-                          {Number(billData?.summary?.roomRent || 0).toLocaleString("en-IN", {
+                          {Number(
+                            billData?.summary?.roomRent || 0,
+                          ).toLocaleString("en-IN", {
                             minimumFractionDigits: 2,
                           })}
                         </td>
                       </tr>
                     )}
 
-                    {activeMode !== "restaurant" && billData?.summary?.foodPlan > 0 && (
-                      <tr>
-                        <td
-                          style={{ border: "1px solid #000", padding: "4px" }}
-                        >
-                          Food Plan
-                        </td>
-                        <td
-                          style={{
-                            border: "1px solid #000",
-                            padding: "4px",
-                            textAlign: "right",
-                          }}
-                        >
-                          {billData?.summary?.foodPlan?.toLocaleString(
-                            "en-IN",
-                            {
-                              minimumFractionDigits: 2,
-                            },
-                          )}
-                        </td>
-                      </tr>
-                    )}
+                    {activeMode !== "restaurant" &&
+                      billData?.summary?.foodPlan > 0 && (
+                        <tr>
+                          <td
+                            style={{ border: "1px solid #000", padding: "4px" }}
+                          >
+                            Food Plan
+                          </td>
+                          <td
+                            style={{
+                              border: "1px solid #000",
+                              padding: "4px",
+                              textAlign: "right",
+                            }}
+                          >
+                            {billData?.summary?.foodPlan?.toLocaleString(
+                              "en-IN",
+                              {
+                                minimumFractionDigits: 2,
+                              },
+                            )}
+                          </td>
+                        </tr>
+                      )}
                     {activeMode !== "restaurant" && billData?.summary?.sgst && (
                       <tr>
                         <td
@@ -1787,72 +1807,78 @@ console.log(paymentModeDetails);
                         </td>
                       </tr>
                     )}
-                    {activeMode !== "room" && billData?.summary?.restaurant > 0 && (
-                      <tr>
-                        <td
-                          style={{ border: "1px solid #000", padding: "4px" }}
-                        >
-                          Dine-In
-                        </td>
-                        <td
-                          style={{
-                            border: "1px solid #000",
-                            padding: "4px",
-                            textAlign: "right",
-                          }}
-                        >
-                          {billData?.summary?.restaurant?.toLocaleString("en-IN", {
-                            minimumFractionDigits: 2,
-                          })}
-                        </td>
-                      </tr>
-                    )}
-                    {activeMode !== "room" && billData?.summary?.roomService > 0 && (
-                      <tr>
-                        <td
-                          style={{ border: "1px solid #000", padding: "4px" }}
-                        >
-                          Room Service
-                        </td>
-                        <td
-                          style={{
-                            border: "1px solid #000",
-                            padding: "4px",
-                            textAlign: "right",
-                          }}
-                        >
-                          {billData?.summary?.roomService?.toLocaleString(
-                            "en-IN",
-                            {
-                              minimumFractionDigits: 2,
-                            },
-                          )}
-                        </td>
-                      </tr>
-                    )}
-                    {activeMode !== "restaurant" && billData?.summary?.otherChargeAmount > 0 && (
-                      <tr>
-                        <td
-                          style={{ border: "1px solid #000", padding: "4px" }}
-                        >
-                          Other Charges
-                        </td>
-                        <td
-                          style={{
-                            border: "1px solid #000",
-                            padding: "4px",
-                            textAlign: "right",
-                          }}
-                        >
-                          {billData?.summary?.otherChargeAmount?.toLocaleString(
-                            "en-IN",
-                            {
-                              minimumFractionDigits: 2,
-                            },
-                          )}
-                        </td>
-                      </tr>
-                    )}
+                    {activeMode !== "room" &&
+                      billData?.summary?.restaurant > 0 && (
+                        <tr>
+                          <td
+                            style={{ border: "1px solid #000", padding: "4px" }}
+                          >
+                            Dine-In
+                          </td>
+                          <td
+                            style={{
+                              border: "1px solid #000",
+                              padding: "4px",
+                              textAlign: "right",
+                            }}
+                          >
+                            {billData?.summary?.restaurant?.toLocaleString(
+                              "en-IN",
+                              {
+                                minimumFractionDigits: 2,
+                              },
+                            )}
+                          </td>
+                        </tr>
+                      )}
+                    {activeMode !== "room" &&
+                      billData?.summary?.roomService > 0 && (
+                        <tr>
+                          <td
+                            style={{ border: "1px solid #000", padding: "4px" }}
+                          >
+                            Room Service
+                          </td>
+                          <td
+                            style={{
+                              border: "1px solid #000",
+                              padding: "4px",
+                              textAlign: "right",
+                            }}
+                          >
+                            {billData?.summary?.roomService?.toLocaleString(
+                              "en-IN",
+                              {
+                                minimumFractionDigits: 2,
+                              },
+                            )}
+                          </td>
+                        </tr>
+                      )}
+                    {activeMode !== "restaurant" &&
+                      billData?.summary?.otherChargeAmount > 0 && (
+                        <tr>
+                          <td
+                            style={{ border: "1px solid #000", padding: "4px" }}
+                          >
+                            Other Charges
+                          </td>
+                          <td
+                            style={{
+                              border: "1px solid #000",
+                              padding: "4px",
+                              textAlign: "right",
+                            }}
+                          >
+                            {billData?.summary?.otherChargeAmount?.toLocaleString(
+                              "en-IN",
+                              {
+                                minimumFractionDigits: 2,
+                              },
+                            )}
+                          </td>
+                        </tr>
+                      )}
 
                     <tr style={{ backgroundColor: "#f5f5f5" }}>
                       <td
@@ -1872,9 +1898,12 @@ console.log(paymentModeDetails);
                           fontWeight: "bold",
                         }}
                       >
-                        {Number(billData?.summary?.total || 0).toLocaleString("en-IN", {
-                          minimumFractionDigits: 2,
-                        })}
+                        {Number(billData?.summary?.total || 0).toLocaleString(
+                          "en-IN",
+                          {
+                            minimumFractionDigits: 2,
+                          },
+                        )}
                       </td>
                     </tr>
                   </tbody>
@@ -1930,56 +1959,56 @@ console.log(paymentModeDetails);
                     </tr>
                     {selected == "default" && (
                       <>
-                    { paymentModeDetails.map((item, index) => (
-                      <tr key={index}>
-                        <td
-                          style={{
-                            border: "1px solid #000",
-                            padding: "4px",
-                          }}
-                        >
-                          {item.customerName} ({item.mode.toUpperCase()})
-                        </td>
-                        <td
-                          style={{
-                            border: "1px solid #000",
-                            padding: "4px",
-                            textAlign: "right",
-                          }}
-                        >
-                          {item.amount.toLocaleString("en-IN", {
-                            minimumFractionDigits: 2,
-                          })}
-                        </td>
-                      </tr>
-                    ))}
-                    </>
+                        {paymentModeDetails.map((item, index) => (
+                          <tr key={index}>
+                            <td
+                              style={{
+                                border: "1px solid #000",
+                                padding: "4px",
+                              }}
+                            >
+                              {item.customerName} ({item.mode.toUpperCase()})
+                            </td>
+                            <td
+                              style={{
+                                border: "1px solid #000",
+                                padding: "4px",
+                                textAlign: "right",
+                              }}
+                            >
+                              {item.amount.toLocaleString("en-IN", {
+                                minimumFractionDigits: 2,
+                              })}
+                            </td>
+                          </tr>
+                        ))}
+                      </>
                     )}
 
-                     {(selected == "room" || selected == "restaurant") && (
+                    {(selected == "room" || selected == "restaurant") && (
                       <>
-                      <tr>
-                        <td
-                          style={{
-                            border: "1px solid #000",
-                            padding: "4px",
-                          }}
-                        >
-                          {selected == "room" ? "Room" : "Restaurant"}
-                        </td>
-                        <td
-                          style={{
-                            border: "1px solid #000",
-                            padding: "4px",
-                            textAlign: "right",
-                          }}
-                        >
-                          {billData?.summary?.total.toLocaleString("en-IN", {
-                            minimumFractionDigits: 2,
-                          })}
-                        </td>
-                      </tr>
-                    </>
+                        <tr>
+                          <td
+                            style={{
+                              border: "1px solid #000",
+                              padding: "4px",
+                            }}
+                          >
+                            {selected == "room" ? "Room" : "Restaurant"}
+                          </td>
+                          <td
+                            style={{
+                              border: "1px solid #000",
+                              padding: "4px",
+                              textAlign: "right",
+                            }}
+                          >
+                            {billData?.summary?.total.toLocaleString("en-IN", {
+                              minimumFractionDigits: 2,
+                            })}
+                          </td>
+                        </tr>
+                      </>
                     )}
                     <tr>
                       <td
@@ -2055,9 +2084,9 @@ console.log(paymentModeDetails);
                               )}
                             </div>
                             <div style={{ fontWeight: "bold" }}>
-                              {Number(Math.round(billData?.payment?.netPay || 0)).toFixed(
-                                2,
-                              )}
+                              {Number(
+                                Math.round(billData?.payment?.netPay || 0),
+                              ).toFixed(2)}
                             </div>
                           </td>
                         </>

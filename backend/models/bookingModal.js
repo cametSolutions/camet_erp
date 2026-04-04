@@ -104,6 +104,8 @@ const selectedRoomSchema = new mongoose.Schema({
   totalSgstAmt: Number,
   totalIgstAmt: Number,
   unit: String,
+  isSwapped: { type: Boolean, default: false },
+  swappingDateFrom: { type: Date },
   lastRateUpdatedAt: { type: Date, default: Date.now },
   isCheckedOut: { type: Boolean, default: false },
 });
