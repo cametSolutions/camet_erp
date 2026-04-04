@@ -344,10 +344,10 @@ const HotelDashboard = () => {
     }
     if (action === "swapRoom") {
       // Check if room is available for swap (should be vacant)
-      // if (selectedRoomData.status !== "vacant") {
-      //   alert("Room must be vacant to swap guests into it");
-      //   return;
-      // }
+      if (selectedRoomData.status == "occupied") {
+        toast.error("Room must be vacant to swap guests into it");
+        return;
+      }
       setShowRoomModal(false);
       setShowRoomSwapModal(true);
       return;

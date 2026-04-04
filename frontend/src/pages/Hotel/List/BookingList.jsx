@@ -1785,6 +1785,7 @@ function BookingList() {
         toast.error(error?.response?.data?.message || "Something went wrong");
       } finally {
         fetchBookings();
+         setSelectedCheckOut([])
       }
     }
   };
@@ -1860,6 +1861,7 @@ function BookingList() {
             )}
             cmp_id={cmp_id}
             fetchBookings={fetchBookings}
+            setSelectedCheckOut={setSelectedCheckOut}
           />
         )}
         {showPrintConfirmModal && <PrintModal onSubmit={handlePrintShow} />}

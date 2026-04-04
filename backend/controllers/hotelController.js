@@ -44,6 +44,7 @@ import {
 } from "../helpers/hotelHelper.js";
 import receiptModel from "../models/receiptModel.js";
 import paymentModel from "../models/paymentModel.js";
+import { PriceLevel } from "../models/subDetails.js";
 // function used to save additional pax details
 export const saveAdditionalPax = async (req, res) => {
   try {
@@ -2241,7 +2242,7 @@ export const getAllRoomsWithStatusForDate = async (req, res) => {
     const bookedRoomIds = new Set();
     for (const booking of bookings) {
       for (const selRoom of booking.selectedRooms) {
-        if (selRoom.roomId) {
+        if (selRoom.roomId )  {
           bookedRoomIds.add(selRoom.roomId.toString());
         }
       }
@@ -2250,7 +2251,7 @@ export const getAllRoomsWithStatusForDate = async (req, res) => {
     const occupiedRoomIds = new Set();
     for (const checkin of AllCheckIns) {
       for (const selRoom of checkin.selectedRooms) {
-        if (selRoom.roomId) {
+        if (selRoom.roomId &&  selRoom.isSwapped === false && checkin.isHold == false ) {
           occupiedRoomIds.add(selRoom.roomId.toString());
         }
       }
@@ -2259,7 +2260,7 @@ export const getAllRoomsWithStatusForDate = async (req, res) => {
     // --- Mark each room's status
     const roomsWithStatus = allRooms.map((room) => {
       let status = room?.status;
-      if (occupiedRoomIds.has(room._id.toString())) {
+      if (occupiedRoomIds.has(room._id.toString() )) {
         status = "occupied";
       } else if (bookedRoomIds.has(room._id.toString())) {
         status = "booked";
@@ -3701,6 +3702,7 @@ export const checkedInGuest = async (req, res) => {
 
     const activeCheckIns = await CheckIn.find({
       cmp_id: new mongoose.Types.ObjectId(cmp_id),
+      status: { $ne: "checkOut" },
     })
       .populate("customerId", "customerName mobileNumber email") // if referenced
       .populate("selectedRooms.roomId", "roomName roomType roomFloor bedType")
@@ -3722,88 +3724,154 @@ export const checkedInGuest = async (req, res) => {
   }
 };
 
+
+
 export const swapRoom = async (req, res) => {
+  const session = await mongoose.startSession();
+
   try {
+    session.startTransaction();
+
     const { checkInId } = req.params;
-    const { newRoomId, oldRoomId } = req.body;
+    const { newRoomId, oldRoomId,selectedDate } = req.body;
 
     if (!newRoomId || !oldRoomId) {
+      await session.abortTransaction();
+      session.endSession();
+
       return res.status(400).json({
         success: false,
         message: "Both new room ID and old room ID are required",
       });
     }
 
-    // 🔹 Find CheckIn document
-    const checkIn = await CheckIn.findById(checkInId);
+    const checkIn = await CheckIn.findById(checkInId).session(session);
+
     if (!checkIn) {
+      await session.abortTransaction();
+      session.endSession();
+
       return res.status(404).json({
         success: false,
         message: "CheckIn record not found",
       });
     }
 
-    // 🔹 Find the index of old room inside selectedRooms
     const checkInRoomIndex = checkIn.selectedRooms.findIndex((r) => {
       const currentId =
         r.roomId && r.roomId._id
           ? r.roomId._id.toString()
           : r.roomId.toString();
+
       return currentId === oldRoomId.toString();
     });
 
     if (checkInRoomIndex === -1) {
+      await session.abortTransaction();
+      session.endSession();
+
       return res.status(400).json({
         success: false,
-        message: `Old room not found in CheckIn. Searching for: "${oldRoomId}". Available rooms: ${checkIn.selectedRooms
-          .map((r, idx) => {
-            const roomId =
-              typeof r.roomId === "object" && r.roomId?._id
-                ? r.roomId._id.toString()
-                : r.roomId.toString();
-            return `[${idx}] ${roomId} (${r.roomName || "No name"})`;
-          })
-          .join(", ")}`,
+        message: "Old room not found in CheckIn",
       });
     }
 
-    // 🔹 Verify new room exists and is vacant
-    const newRoom = await roomModal.findById(newRoomId);
+    const newRoom = await roomModal
+      .findById(newRoomId)
+      .populate("roomType")
+      .populate("hsn")
+      .session(session);
+
     if (!newRoom) {
+      await session.abortTransaction();
+      session.endSession();
+
       return res.status(404).json({
         success: false,
         message: "New room not found",
       });
     }
-    if (newRoom.status !== "vacant") {
+
+    if (!["vacant", "available"].includes(newRoom.status)) {
+      await session.abortTransaction();
+      session.endSession();
+
       return res.status(400).json({
         success: false,
         message: "New room is not available for swap",
       });
     }
 
-    // 🔹 Get old room details
-    const oldRoom = await roomModal.findById(oldRoomId);
+    const oldRoom = await roomModal.findById(oldRoomId).session(session);
 
-    // 🔹 Update room statuses
-    await roomModal.findByIdAndUpdate(oldRoomId, { status: "dirty" });
-    await roomModal.findByIdAndUpdate(newRoomId, { status: "occupied" });
+    if (!oldRoom) {
+      await session.abortTransaction();
+      session.endSession();
 
-    // Update roomId
-    checkIn.selectedRooms[checkInRoomIndex].roomId = newRoomId;
+      return res.status(404).json({
+        success: false,
+        message: "Old room not found",
+      });
+    }
 
-    // Update room name/number based on schema
+    // room status updates
+    await roomModal.findByIdAndUpdate(
+      oldRoomId,
+      { status: "dirty" },
+      { isSwapped: true},
+      { new: true, session }
+    );
+
+    await roomModal.findByIdAndUpdate(
+      newRoomId,
+      { status: "occupied" },
+      { new: true, session }
+    );
+
+    // close old selected room row
+    checkIn.selectedRooms[checkInRoomIndex].isSwapped = true;
+    checkIn.selectedRooms[checkInRoomIndex].swappingDateFrom = selectedDate;
+
+    const totalAmount = Number(newRoom.priceLevel?.[0]?.priceRate || 0);
+    const taxPercentage = Number(newRoom.igst || 0);
+    const taxAmount = (totalAmount * taxPercentage) / 100;
+
+    let selectedPriceLevel = await PriceLevel.findOne({ _id: newRoom.priceLevel[0].priceLevel });
+    checkIn.selectedRooms.push({
+      roomId: newRoom._id,
+      roomName: newRoom.roomName,
+      priceLevel: selectedPriceLevel,
+      roomType: newRoom.roomType,
+      dateTariffs: {},
+      pax: 2,
+      priceLevelRate: newRoom.priceLevel?.[0].priceRate,
+      stayDays: 0,
+      hsnDetails: newRoom?.hsn || oldRoom?.hsn,
+      totalAmount,
+      amountAfterTax: totalAmount + taxAmount,
+      amountWithOutTax: totalAmount,
+      taxPercentage,
+      taxAmount,
+      baseAmount: totalAmount,
+      baseAmountWithTax: totalAmount + taxAmount,
+      totalCgstAmt: taxAmount / 2,
+      totalSgstAmt: taxAmount / 2,
+      totalIgstAmt: taxAmount,
+      isSwapped: false,
+    });
+
     if (checkIn.selectedRooms[checkInRoomIndex].hasOwnProperty("roomName")) {
-      checkIn.selectedRooms[checkInRoomIndex].roomName = newRoom.roomName;
-    }
-    if (checkIn.selectedRooms[checkInRoomIndex].hasOwnProperty("roomNumber")) {
-      checkIn.selectedRooms[checkInRoomIndex].roomNumber = newRoom.roomNumber;
+      checkIn.selectedRooms[checkInRoomIndex].roomName = oldRoom.roomName;
     }
 
-    // 🔹 Add room swap history to CheckIn
+    if (checkIn.selectedRooms[checkInRoomIndex].hasOwnProperty("roomNumber")) {
+      checkIn.selectedRooms[checkInRoomIndex].roomNumber = oldRoom.roomNumber;
+    }
+
     if (!checkIn.roomSwapHistory) {
       checkIn.roomSwapHistory = [];
     }
+
     checkIn.roomSwapHistory.push({
       fromRoomId: oldRoomId,
       toRoomId: newRoomId,
@@ -3811,9 +3879,13 @@ export const swapRoom = async (req, res) => {
       reason: "Guest requested room change",
     });
 
-    // 🔹 Mark as modified and save CheckIn
     checkIn.markModified("selectedRooms");
-    const savedCheckIn = await checkIn.save();
+    checkIn.markModified("roomSwapHistory");
+
+    await checkIn.save({ session });
+
+    await session.commitTransaction();
+    session.endSession();
 
     return res.status(200).json({
       success: true,
@@ -3833,7 +3905,11 @@ export const swapRoom = async (req, res) => {
       },
     });
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+
     console.error("Error in swapRoom:", error);
+
     return res.status(500).json({
       success: false,
       message: "Failed to swap room",
@@ -5084,6 +5160,15 @@ export const controlTaggedCheckIn = async (req, res) => {
       }));
 
       await CheckIn.bulkWrite(bulkOps, { session });
+    for (const h of holds) {
+  for (const room of h.selectedRooms) {
+    await roomModal.updateOne(
+      { _id: new mongoose.Types.ObjectId(room.roomId) },
+      { status: "dirty" }
+
+    );
+  }
+}
     });
 
     session.endSession();
@@ -5136,30 +5221,71 @@ export const releaseHold = async (req, res) => {
   const session = await mongoose.startSession();
 
   try {
-    const { selectedCheckOut } = req.body.data;
-    let checkInIds = selectedCheckOut.map((item) => item._id);
+    const { selectedCheckOut } = req.body.data || {};
 
-    if (!checkInIds || !checkInIds.length) {
+    if (!selectedCheckOut?.length) {
       return res.status(400).json({ message: "Check-in IDs missing" });
     }
 
-    // Convert to ObjectId
+    const checkInIds = selectedCheckOut.map((item) => item._id);
     const objectIds = checkInIds.map((id) => new mongoose.Types.ObjectId(id));
 
     await session.withTransaction(async () => {
-      // 1️⃣ Remove IDs from holdArray
+      // 1. remove from holdArray
       await CheckIn.updateMany(
         { holdArray: { $in: checkInIds } },
         { $pull: { holdArray: { $in: checkInIds } } },
-        { session },
+        { session }
       );
 
-      // 2️⃣ Update isHold false
+      // 2. release hold flag
       await CheckIn.updateMany(
         { _id: { $in: objectIds } },
-        { $set: { isHold: false } },
-        { session },
+        {
+          $set: {
+            isHold: false,
+            taggedCheckIns: null,
+          },
+        },
+        { session }
       );
+
+      // 3. validate room status before restoring
+      for (const h of selectedCheckOut) {
+        for (const room of h.selectedRooms || []) {
+          const roomId = new mongoose.Types.ObjectId(room.roomId);
+
+          // check if this room belongs to any active checkin after hold release
+          const activeCheckIn = await CheckIn.findOne({
+            _id: { $in: objectIds },
+            isHold: false,
+            status: { $ne: "checkedout" },
+            selectedRooms: {
+              $elemMatch: {
+                roomId: roomId,
+              },
+            },
+          }).session(session);
+
+          if (!activeCheckIn) {
+            continue;
+          }
+
+          // optional: don't overwrite if room already occupied by unrelated flow
+          const existingRoom = await roomModal.findById(roomId).session(session);
+
+          if (!existingRoom) continue;
+
+          // restore only when room is in releasable state
+          if (["vacant", "booked", "dirty", "blocked"].includes(existingRoom.status)) {
+            await roomModal.updateOne(
+              { _id: roomId },
+              { $set: { status: "occupied" } },
+              { session }
+            );
+          }
+        }
+      }
     });
 
     return res.status(200).json({
