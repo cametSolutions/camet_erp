@@ -2251,7 +2251,12 @@ export const getAllRoomsWithStatusForDate = async (req, res) => {
     const occupiedRoomIds = new Set();
     for (const checkin of AllCheckIns) {
       for (const selRoom of checkin.selectedRooms) {
-        if (selRoom.roomId &&  selRoom.isSwapped === false && checkin.isHold == false ) {
+        console.log("selRoom", selRoom);
+        if (
+  selRoom?.roomId &&
+  !selRoom?.isSwapped &&
+  !checkin?.isHold
+){
           occupiedRoomIds.add(selRoom.roomId.toString());
         }
       }
@@ -2341,6 +2346,7 @@ export const getDateBasedRoomsWithStatus = async (req, res) => {
     const checkins = await CheckIn.find({
       cmp_id,
       status: { $ne: "checkOut" },
+      isHold: false,
       // arrivalDate: { $lte: selectedDate },
       // checkOutDate: { $gte: selectedDate },
     })
@@ -5277,7 +5283,7 @@ export const releaseHold = async (req, res) => {
           if (!existingRoom) continue;
 
           // restore only when room is in releasable state
-          if (["vacant", "booked", "dirty", "blocked"].includes(existingRoom.status)) {
+          if (["vacant", "booked", "dirty", "blocked", "available"].includes(existingRoom.status)) {
             await roomModal.updateOne(
               { _id: roomId },
               { $set: { status: "occupied" } },
