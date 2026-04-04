@@ -775,6 +775,7 @@ export const getRooms = async (req, res) => {
     const AllCheckIns = await CheckIn.find({
       cmp_id: req.params.cmp_id,
       status: { $ne: "checkOut" },
+      isHold: false,
       arrivalDate: { $lte: checkOutDate },
       checkOutDate: { $gte: arrivalDate },
     }).select("selectedRooms checkOutDate arrivalDate roomDetails");
