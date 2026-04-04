@@ -193,7 +193,7 @@ const handleConfirm = async () => {
             >
               <option value="">Select tag check-in</option>
 
-              {checkInData.map((hold) => (
+              {checkInData.filter((checkIn) => !checkIn.isHold).map((hold) => (
                 <option key={hold._id} value={hold._id}>
                   #{hold.voucherNumber}
                 </option>
