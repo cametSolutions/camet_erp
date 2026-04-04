@@ -2236,7 +2236,7 @@ export const getAllRoomsWithStatusForDate = async (req, res) => {
     const AllCheckIns = await CheckIn.find({
       cmp_id,
       status: { $ne: "checkOut" },
-    }).select("selectedRooms checkOutDate arrivalDate");
+    }).select("selectedRooms checkOutDate arrivalDate isHold");
 
     // --- Collect booked room IDs
     const bookedRoomIds = new Set();
@@ -2251,12 +2251,8 @@ export const getAllRoomsWithStatusForDate = async (req, res) => {
     const occupiedRoomIds = new Set();
     for (const checkin of AllCheckIns) {
       for (const selRoom of checkin.selectedRooms) {
-        console.log("selRoom", selRoom);
-        if (
-  selRoom?.roomId &&
-  !selRoom?.isSwapped &&
-  !checkin?.isHold
-){
+        console.log("selRoom", checkin);
+        if (selRoom?.roomId &&!selRoom?.isSwapped &&!checkin?.isHold){
           occupiedRoomIds.add(selRoom.roomId.toString());
         }
       }
