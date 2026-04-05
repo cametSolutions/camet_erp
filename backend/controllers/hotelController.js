@@ -5186,17 +5186,17 @@ export const controlTaggedCheckIn = async (req, res) => {
 
 export const getHoldCheckIns = async (req, res) => {
   try {
-    const { holdCheckInIds } = req.body.data;
+    const { holdCheckInIds } = req.body.data || {};
 
     if (!holdCheckInIds || !holdCheckInIds.length) {
       return res.status(400).json({ message: "Hold check-in IDs missing" });
     }
 
-    // Convert to ObjectId
     const objectIds = holdCheckInIds.map(
       (id) => new mongoose.Types.ObjectId(id),
     );
 
+    // 1) Fetch hold check-ins
     const holdData = await CheckIn.find({
       _id: { $in: objectIds },
     })
@@ -5208,9 +5208,63 @@ export const getHoldCheckIns = async (req, res) => {
       .populate("bookingId")
       .populate("checkInId");
 
+    // 2) Get check-in numbers from fetched data
+    const checkInNumbers = holdData
+      .map((b) => b?.voucherNumber)
+      .filter(Boolean);
+
+    // 3) Find all related posted room sales
+    const sales = await salesModel
+      .find({
+        cmp_id: holdData?.[0]?.cmp_id, // or req.params.cmp_id if you pass cmp_id from params
+        isPostToRoom: true,
+        isCancelled: false,
+        "convertedFrom.checkInNumber": { $in: checkInNumbers },
+      })
+      .select("_id finalAmount isPostToRoom convertedFrom.checkInNumber");
+
+    // 4) Build map: checkInNumber -> total finalAmount
+    const totalByCheckIn = {};
+    const processedSaleIds = new Set();
+
+    for (const sale of sales) {
+      const saleId = String(sale._id);
+
+      // avoid duplicate sale doc
+      if (processedSaleIds.has(saleId)) continue;
+      processedSaleIds.add(saleId);
+
+      const saleAmount = sale.isPostToRoom
+        ? Number(sale.finalAmount || 0)
+        : 0;
+
+      // avoid repeated checkInNumber inside same sale
+      const uniqueCheckInNumbers = new Set(
+        (sale.convertedFrom || [])
+          .map((conv) => conv?.checkInNumber)
+          .filter(Boolean),
+      );
+
+      for (const checkInNumber of uniqueCheckInNumbers) {
+        totalByCheckIn[checkInNumber] =
+          (totalByCheckIn[checkInNumber] || 0) + saleAmount;
+      }
+    }
+
+    // 5) Attach restaurant subtotal to each hold check-in
+    const holdDataWithSales = holdData.map((b) => {
+      const voucherNumber = b?.voucherNumber;
+      const total = Number(totalByCheckIn[voucherNumber] || 0);
+
+      return {
+        ...b.toObject(),
+        restaurantSubTotal: total,
+      };
+    });
+
     return res.status(200).json({
       message: "Hold check-ins fetched successfully",
-      holdData,
+      holdData: holdDataWithSales,
     });
   } catch (error) {
     console.error("getHoldCheckIns error:", error);
