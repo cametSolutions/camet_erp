@@ -223,7 +223,7 @@ function BookingList() {
   useEffect(() => {
     if (selectedCheckOut && selectedCheckOut.length > 0) {
       const totalAmount = calculateTotalAmount(selectedCheckOut);
-      console.log(selectedCheckOut);
+      console.log(selectedCheckOut.length);
       const advanceAmount = selectedCheckOut.reduce((total, item) => {
         return (
           total +
@@ -231,6 +231,7 @@ function BookingList() {
             Number(item.bookingId?.advanceAmount || 0))
         );
       }, 0);
+      console.log(selectedCheckOut[1]);
 
       const restaurantSubTotal = selectedCheckOut.reduce((total, item) => {
         return total + (item.restaurantSubTotal || 0);
