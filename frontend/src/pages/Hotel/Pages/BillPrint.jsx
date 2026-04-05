@@ -303,192 +303,317 @@ const HotelBillPrint = () => {
   // Build per-room restaurant line for a doc's rooms only
   // Build per-room restaurant line for a doc's rooms only
   // Build per-room restaurant line for a doc's rooms only
+  // const buildPerRoomRestaurantLinesForDoc = (doc) => {
+  //   console.log("=== Building restaurant lines ===");
+  //   console.log("Doc:", doc);
+  //   console.log("All KOT Data:", kotData.length);
+
+  //   const lines = [];
+
+  //   // Get all room IDs from this document
+  //   const roomIdSet = new Set(
+  //     (doc.selectedRooms || [])
+  //       .map((r) => String(r?.roomId || r?._id || r?.id))
+  //       .filter(Boolean),
+  //   );
+
+  //   // Split KOTs based on available fields
+  //   const roomServiceKots = [];
+  //   const dineInKots = [];
+
+  //   kotData?.forEach((kot) => {
+  //     console.log(kot);
+  //     let voucherNumber = doc?.checkInId?.voucherNumber
+  //       ? doc.checkInId.voucherNumber
+  //       : kot?.convertedFrom[0].checkInNumber;
+  //       console.log(voucherNumber);
+  //     if (voucherNumber !== kot?.convertedFrom[0].checkInNumber) return;
+  //     const kotRoomId = String(kot?.kotDetails?.roomId || kot?.roomId || "");
+  //     const tableNumber =
+  //       kot?.kotDetails?.tableNumber ||
+  //       kot?.tableNumber ||
+  //       kot?.customer?.tableNumber;
+  //     const type = kot?.type || "";
+
+  //     console.log(
+  //       `KOT ${kot?.salesNumber}: roomId=${kotRoomId}, tableNumber=${tableNumber}, type=${type}`,
+  //     );
+
+  //     // CLASSIFICATION LOGIC:
+  //     // 1. If KOT has tableNumber -> it's DINE IN (even if it has roomId)
+  //     // 2. If KOT has roomId but NO tableNumber -> it's ROOM SERVICE
+  //     // 3. If type is "takeaway" or "delivery" -> treat as DINE IN
+
+  //     if (tableNumber) {
+  //       // Has table number = Dine In
+  //       dineInKots.push(kot);
+  //       console.log(`  -> RESTAURANT DINE IN (has tableNumber)`);
+  //     } else if (type === "takeaway" || type === "delivery") {
+  //       // Takeaway/Delivery = Dine In
+  //       dineInKots.push(kot);
+  //       console.log(`  -> RESTAURANT DINE IN (takeaway/delivery)`);
+  //     } else if (kotRoomId && roomIdSet.has(kotRoomId)) {
+  //       // Has roomId but no table = Room Service
+  //       roomServiceKots.push(kot);
+  //       console.log(`  -> ROOM SERVICE (has roomId, no table)`);
+  //     } else {
+  //       // Default to Dine In if unclear
+  //       dineInKots.push(kot);
+  //       console.log(`  -> RESTAURANT DINE IN (default)`);
+  //     }
+  //   });
+
+  //   console.log("Room Service KOTs:", roomServiceKots.length);
+  //   console.log("Dine In KOTs:", dineInKots.length);
+
+  //   // 1. Add Room Service charges (grouped by room)
+  //   const roomServiceTotals = {};
+  //   roomServiceKots?.forEach((kot) => {
+  //     const roomId = String(kot?.kotDetails?.roomId || kot?.roomId || "");
+  //     const amount = Number(
+  //       kot?.finalAmount ?? kot?.subTotal ?? kot?.total ?? 0,
+  //     );
+
+  //     if (!roomServiceTotals[roomId]) {
+  //       roomServiceTotals[roomId] = {
+  //         amount: 0,
+  //         docNos: [],
+  //       };
+  //     }
+  //     roomServiceTotals[roomId].date = kot.date;
+  //     roomServiceTotals[roomId].amount += amount;
+  //     if (kot?.salesNumber) {
+  //       roomServiceTotals[roomId].docNos.push(kot.salesNumber);
+  //     }
+  //   });
+
+  //   Object.keys(roomServiceTotals)?.forEach((roomId) => {
+  //     const roomName =
+  //       (doc.selectedRooms || []).find(
+  //         (r) => String(r?.roomId || r?._id || r?.id) === roomId,
+  //       )?.roomName || "Unknown Room";
+
+  //     const docNo = roomServiceTotals[roomId].docNos.join(", ") || "-";
+
+  //     console.log(
+  //       `Adding Room Service line: ${roomName} = ${roomServiceTotals[roomId].amount}`,
+  //     );
+  //     console.log("xxx ", roomServiceTotals[roomId].date);
+  //     const d = new Date(roomServiceTotals[roomId].date);
+  //     let date = `${d.getDate().toString().padStart(2, "0")}-${(d.getMonth() + 1).toString().padStart(2, "0")}-${d.getFullYear()}`;
+
+  //     lines.push({
+  //       date: date,
+  //       description: `Room Service - ${roomName}`,
+  //       docNo: docNo,
+  //       amount: Number(roomServiceTotals[roomId].amount || 0),
+  //       taxes: 0,
+  //       advance: "",
+  //       roomName: roomName,
+  //       roomId: roomId,
+  //       type: "roomService",
+  //     });
+  //   });
+
+  //   // 2. Add Restaurant Dine In charges (grouped by table or as one line)
+  //   const dineInTotals = {};
+  //   dineInKots?.forEach((kot) => {
+  //     const tableNo =
+  //       kot?.kotDetails?.tableNumber ||
+  //       kot?.tableNumber ||
+  //       kot?.customer?.tableNumber ||
+  //       "Restaurant";
+  //     const amount = Number(
+  //       kot?.finalAmount ?? kot?.subTotal ?? kot?.total ?? 0,
+  //     );
+
+  //     if (!dineInTotals[tableNo]) {
+  //       dineInTotals[tableNo] = {
+  //         amount: 0,
+  //         docNos: [],
+  //       };
+  //     }
+
+  //     dineInTotals[tableNo].amount += amount;
+  //     const d = new Date(kot.date);
+  //     dineInTotals[tableNo].date =
+  //       `${d.getDate().toString().padStart(2, "0")}-${(d.getMonth() + 1).toString().padStart(2, "0")}-${d.getFullYear()}`;
+
+  //     if (kot?.salesNumber) {
+  //       dineInTotals[tableNo].docNos.push(kot.salesNumber);
+  //     }
+  //   });
+  //   console.log("dineInTotals", dineInTotals);
+  //   Object.keys(dineInTotals)?.forEach((tableNo) => {
+  //     const docNo = dineInTotals[tableNo].docNos;
+  //     console.log("docNo", docNo);
+  //     const formatDocNos = (docNos = []) => {
+  //       if (!docNos.length) return "";
+
+  //       const splitDocs = docNos.map((doc) => doc.split("-"));
+
+  //       const firstPrefix = splitDocs[0]?.[0];
+  //       const firstSuffix = splitDocs[0]?.[2];
+
+  //       const isSameFormat = splitDocs.every(
+  //         ([prefix, , suffix]) =>
+  //           prefix === firstPrefix && suffix === firstSuffix,
+  //       );
+
+  //       // ✅ If same prefix & suffix → shorten format
+  //       if (isSameFormat) {
+  //         return splitDocs
+  //           .map(([prefix, number, suffix], index) =>
+  //             index === 0 ? `${prefix}-${number}-${suffix}` : number,
+  //           )
+  //           .join(", ");
+  //       }
+
+  //       // ❌ If different → return full values
+  //       return docNos.join(", ");
+  //     };
+  //     const docNoFormatted = formatDocNos(docNo);
+  //     console.log("docNoFormatted", docNoFormatted);
+  //     lines.push({
+  //       date: dineInTotals[tableNo].date,
+  //       description: `Restaurant Dine In - ${tableNo}`,
+  //       docNo: docNoFormatted,
+  //       amount: Number(dineInTotals[tableNo].amount || 0),
+  //       taxes: 0,
+  //       advance: "",
+  //       roomName: "",
+  //       roomId: "",
+  //       type: "dineIn",
+  //     });
+  //   });
+
+  //   console.log("=== Final restaurant lines ===", lines);
+  //   return lines;
+  // };
+
   const buildPerRoomRestaurantLinesForDoc = (doc) => {
-    console.log("=== Building restaurant lines ===");
-    console.log("Doc:", doc);
-    console.log("All KOT Data:", kotData.length);
+  const lines = [];
 
-    const lines = [];
+  // safer check-in number for current checkout doc
+  const currentCheckInNumber =
+    doc?.checkInId?.voucherNumber ||
+    doc?.checkInNumber ||
+    doc?.voucherNumber ||
+    "";
 
-    // Get all room IDs from this document
-    const roomIdSet = new Set(
-      (doc.selectedRooms || [])
-        .map((r) => String(r?.roomId || r?._id || r?.id))
-        .filter(Boolean),
+  // all room ids of this checkout
+  const roomIdSet = new Set(
+    (doc.selectedRooms || [])
+      .map((r) => String(r?.roomId || r?._id || r?.id))
+      .filter(Boolean),
+  );
+
+  // keep only KOTs that belong to THIS checkout/check-in
+  const currentDocKots = (kotData || []).filter((kot) => {
+    const convertedFrom = kot?.convertedFrom || [];
+
+    const belongsToThisCheckIn = convertedFrom.some(
+      (cf) =>
+        String(cf?.checkInNumber || "") === String(currentCheckInNumber),
     );
 
-    // Split KOTs based on available fields
-    const roomServiceKots = [];
-    const dineInKots = [];
+    return belongsToThisCheckIn;
+  });
 
-    kotData?.forEach((kot) => {
-      console.log(kot);
-      let voucherNumber = doc?.checkInId?.voucherNumber
-        ? doc.checkInId.voucherNumber
-        : kot?.convertedFrom[0].checkInNumber;
-      if (voucherNumber !== kot?.convertedFrom[0].checkInNumber) return;
-      const kotRoomId = String(kot?.kotDetails?.roomId || kot?.roomId || "");
-      const tableNumber =
-        kot?.kotDetails?.tableNumber ||
-        kot?.tableNumber ||
-        kot?.customer?.tableNumber;
-      const type = kot?.type || "";
+  const roomServiceTotals = {};
+  const dineInTotals = {};
 
-      console.log(
-        `KOT ${kot?.salesNumber}: roomId=${kotRoomId}, tableNumber=${tableNumber}, type=${type}`,
-      );
+  currentDocKots.forEach((kot) => {
+    const kotRoomId = String(kot?.kotDetails?.roomId || kot?.roomId || "");
+    const tableNo =
+      kot?.kotDetails?.tableNumber ||
+      kot?.tableNumber ||
+      kot?.customer?.tableNumber ||
+      "";
 
-      // CLASSIFICATION LOGIC:
-      // 1. If KOT has tableNumber -> it's DINE IN (even if it has roomId)
-      // 2. If KOT has roomId but NO tableNumber -> it's ROOM SERVICE
-      // 3. If type is "takeaway" or "delivery" -> treat as DINE IN
+    const type = String(kot?.type || "").toLowerCase();
 
-      if (tableNumber) {
-        // Has table number = Dine In
-        dineInKots.push(kot);
-        console.log(`  -> RESTAURANT DINE IN (has tableNumber)`);
-      } else if (type === "takeaway" || type === "delivery") {
-        // Takeaway/Delivery = Dine In
-        dineInKots.push(kot);
-        console.log(`  -> RESTAURANT DINE IN (takeaway/delivery)`);
-      } else if (kotRoomId && roomIdSet.has(kotRoomId)) {
-        // Has roomId but no table = Room Service
-        roomServiceKots.push(kot);
-        console.log(`  -> ROOM SERVICE (has roomId, no table)`);
-      } else {
-        // Default to Dine In if unclear
-        dineInKots.push(kot);
-        console.log(`  -> RESTAURANT DINE IN (default)`);
-      }
-    });
+    const amount = Number(
+      kot?.finalAmount ?? kot?.subTotal ?? kot?.total ?? 0,
+    );
 
-    console.log("Room Service KOTs:", roomServiceKots.length);
-    console.log("Dine In KOTs:", dineInKots.length);
+    const salesNo = kot?.salesNumber || "-";
 
-    // 1. Add Room Service charges (grouped by room)
-    const roomServiceTotals = {};
-    roomServiceKots?.forEach((kot) => {
-      const roomId = String(kot?.kotDetails?.roomId || kot?.roomId || "");
-      const amount = Number(
-        kot?.finalAmount ?? kot?.subTotal ?? kot?.total ?? 0,
-      );
+    const kotDateValue = kot?.date || kot?.createdAt || new Date();
+    const d = new Date(kotDateValue);
+    const formattedDate = `${String(d.getDate()).padStart(2, "0")}-${String(
+      d.getMonth() + 1,
+    ).padStart(2, "0")}-${d.getFullYear()}`;
 
-      if (!roomServiceTotals[roomId]) {
-        roomServiceTotals[roomId] = {
+    // ROOM SERVICE:
+    // has roomId matched with this checkout rooms AND no table number
+    if (kotRoomId && roomIdSet.has(kotRoomId) && !tableNo) {
+      if (!roomServiceTotals[kotRoomId]) {
+        roomServiceTotals[kotRoomId] = {
           amount: 0,
           docNos: [],
-        };
-      }
-      roomServiceTotals[roomId].date = kot.date;
-      roomServiceTotals[roomId].amount += amount;
-      if (kot?.salesNumber) {
-        roomServiceTotals[roomId].docNos.push(kot.salesNumber);
-      }
-    });
-
-    Object.keys(roomServiceTotals)?.forEach((roomId) => {
-      const roomName =
-        (doc.selectedRooms || []).find(
-          (r) => String(r?.roomId || r?._id || r?.id) === roomId,
-        )?.roomName || "Unknown Room";
-
-      const docNo = roomServiceTotals[roomId].docNos.join(", ") || "-";
-
-      console.log(
-        `Adding Room Service line: ${roomName} = ${roomServiceTotals[roomId].amount}`,
-      );
-      console.log("xxx ", roomServiceTotals[roomId].date);
-      const d = new Date(roomServiceTotals[roomId].date);
-      let date = `${d.getDate().toString().padStart(2, "0")}-${(d.getMonth() + 1).toString().padStart(2, "0")}-${d.getFullYear()}`;
-
-      lines.push({
-        date: date,
-        description: `Room Service - ${roomName}`,
-        docNo: docNo,
-        amount: Number(roomServiceTotals[roomId].amount || 0),
-        taxes: 0,
-        advance: "",
-        roomName: roomName,
-        roomId: roomId,
-        type: "roomService",
-      });
-    });
-
-    // 2. Add Restaurant Dine In charges (grouped by table or as one line)
-    const dineInTotals = {};
-    dineInKots?.forEach((kot) => {
-      const tableNo =
-        kot?.kotDetails?.tableNumber ||
-        kot?.tableNumber ||
-        kot?.customer?.tableNumber ||
-        "Restaurant";
-      const amount = Number(
-        kot?.finalAmount ?? kot?.subTotal ?? kot?.total ?? 0,
-      );
-
-      if (!dineInTotals[tableNo]) {
-        dineInTotals[tableNo] = {
-          amount: 0,
-          docNos: [],
+          date: formattedDate,
         };
       }
 
-      dineInTotals[tableNo].amount += amount;
-      const d = new Date(kot.date);
-      dineInTotals[tableNo].date =
-        `${d.getDate().toString().padStart(2, "0")}-${(d.getMonth() + 1).toString().padStart(2, "0")}-${d.getFullYear()}`;
+      roomServiceTotals[kotRoomId].amount += amount;
+      if (salesNo !== "-") roomServiceTotals[kotRoomId].docNos.push(salesNo);
+      return;
+    }
 
-      if (kot?.salesNumber) {
-        dineInTotals[tableNo].docNos.push(kot.salesNumber);
-      }
-    });
-    console.log("dineInTotals", dineInTotals);
-    Object.keys(dineInTotals)?.forEach((tableNo) => {
-      const docNo = dineInTotals[tableNo].docNos;
-      console.log("docNo", docNo);
-      const formatDocNos = (docNos = []) => {
-        if (!docNos.length) return "";
+    // DINE IN / TAKEAWAY / DELIVERY:
+    // only one common restaurant section for this doc
+    const dineKey = tableNo || "Restaurant";
 
-        const splitDocs = docNos.map((doc) => doc.split("-"));
-
-        const firstPrefix = splitDocs[0]?.[0];
-        const firstSuffix = splitDocs[0]?.[2];
-
-        const isSameFormat = splitDocs.every(
-          ([prefix, , suffix]) =>
-            prefix === firstPrefix && suffix === firstSuffix,
-        );
-
-        // ✅ If same prefix & suffix → shorten format
-        if (isSameFormat) {
-          return splitDocs
-            .map(([prefix, number, suffix], index) =>
-              index === 0 ? `${prefix}-${number}-${suffix}` : number,
-            )
-            .join(", ");
-        }
-
-        // ❌ If different → return full values
-        return docNos.join(", ");
+    if (!dineInTotals[dineKey]) {
+      dineInTotals[dineKey] = {
+        amount: 0,
+        docNos: [],
+        date: formattedDate,
       };
-      const docNoFormatted = formatDocNos(docNo);
-      console.log("docNoFormatted", docNoFormatted);
-      lines.push({
-        date: dineInTotals[tableNo].date,
-        description: `Restaurant Dine In - ${tableNo}`,
-        docNo: docNoFormatted,
-        amount: Number(dineInTotals[tableNo].amount || 0),
-        taxes: 0,
-        advance: "",
-        roomName: "",
-        roomId: "",
-        type: "dineIn",
-      });
-    });
+    }
 
-    console.log("=== Final restaurant lines ===", lines);
-    return lines;
-  };
+    dineInTotals[dineKey].amount += amount;
+    if (salesNo !== "-") dineInTotals[dineKey].docNos.push(salesNo);
+  });
+
+  // room service lines
+  Object.keys(roomServiceTotals).forEach((roomId) => {
+    const roomName =
+      (doc.selectedRooms || []).find(
+        (r) => String(r?.roomId || r?._id || r?.id) === roomId,
+      )?.roomName || "Unknown Room";
+
+    lines.push({
+      date: roomServiceTotals[roomId].date,
+      description: `Room Service - ${roomName}`,
+      docNo: [...new Set(roomServiceTotals[roomId].docNos)].join(", ") || "-",
+      amount: Number(roomServiceTotals[roomId].amount || 0),
+      taxes: 0,
+      advance: "",
+      roomName,
+      roomId,
+      type: "roomService",
+    });
+  });
+
+  // dine-in lines
+  Object.keys(dineInTotals).forEach((tableNo) => {
+    lines.push({
+      date: dineInTotals[tableNo].date,
+      description: `Restaurant Dine In - ${tableNo}`,
+      docNo: [...new Set(dineInTotals[tableNo].docNos)].join(", ") || "-",
+      amount: Number(dineInTotals[tableNo].amount || 0),
+      taxes: 0,
+      advance: "",
+      roomName: "",
+      roomId: "",
+      type: "dineIn",
+    });
+  });
+
+  return lines;
+};
 
   // Helpers to decide where to show advances
   const docOwnsAdvances = (doc) => {
@@ -951,6 +1076,8 @@ const HotelBillPrint = () => {
           Number(doc?.otherChargeDetails?.amount) || 0;
     }
 
+    
+
     const grandTotal =
       Number(roomTariffTotal) +
       Number(additionalPaxAmount) +
@@ -1137,6 +1264,9 @@ const HotelBillPrint = () => {
         // Recalculate balance for filtered charges
         // Advance entries have a negative amount so they correctly reduce the running balance
         let bal = 0;
+        
+        console.log(bill.charges);
+
         bill.charges = bill.charges.map((charge) => {
           const amt = Number(charge.amount || 0);
           const tax = Number(charge.taxes || 0);
