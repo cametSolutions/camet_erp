@@ -775,6 +775,7 @@ export const getRooms = async (req, res) => {
     const AllCheckIns = await CheckIn.find({
       cmp_id: req.params.cmp_id,
       status: { $ne: "checkOut" },
+      isHold: false,
       arrivalDate: { $lte: checkOutDate },
       checkOutDate: { $gte: arrivalDate },
     }).select("selectedRooms checkOutDate arrivalDate roomDetails");
@@ -2236,7 +2237,7 @@ export const getAllRoomsWithStatusForDate = async (req, res) => {
     const AllCheckIns = await CheckIn.find({
       cmp_id,
       status: { $ne: "checkOut" },
-    }).select("selectedRooms checkOutDate arrivalDate");
+    }).select("selectedRooms checkOutDate arrivalDate isHold");
 
     // --- Collect booked room IDs
     const bookedRoomIds = new Set();
@@ -2251,7 +2252,8 @@ export const getAllRoomsWithStatusForDate = async (req, res) => {
     const occupiedRoomIds = new Set();
     for (const checkin of AllCheckIns) {
       for (const selRoom of checkin.selectedRooms) {
-        if (selRoom.roomId &&  selRoom.isSwapped === false && checkin.isHold == false ) {
+        console.log("selRoom", checkin);
+        if (selRoom?.roomId &&!selRoom?.isSwapped &&!checkin?.isHold){
           occupiedRoomIds.add(selRoom.roomId.toString());
         }
       }
@@ -2341,6 +2343,7 @@ export const getDateBasedRoomsWithStatus = async (req, res) => {
     const checkins = await CheckIn.find({
       cmp_id,
       status: { $ne: "checkOut" },
+      isHold: false,
       // arrivalDate: { $lte: selectedDate },
       // checkOutDate: { $gte: selectedDate },
     })
@@ -3836,7 +3839,8 @@ export const swapRoom = async (req, res) => {
     const taxPercentage = Number(newRoom.igst || 0);
     const taxAmount = (totalAmount * taxPercentage) / 100;
 
-    let selectedPriceLevel = await PriceLevel.findOne({ _id: newRoom.priceLevel[0].priceLevel });
+    let selectedPriceLevel = await PriceLevel.findOne({ _id: newRoom.priceLevel?.[0]?.priceLevel });
+    selectedPriceLevel = selectedPriceLevel ? selectedPriceLevel : []
     checkIn.selectedRooms.push({
       roomId: newRoom._id,
       roomName: newRoom.roomName,
@@ -3844,7 +3848,7 @@ export const swapRoom = async (req, res) => {
       roomType: newRoom.roomType,
       dateTariffs: {},
       pax: 2,
-      priceLevelRate: newRoom.priceLevel?.[0].priceRate,
+      priceLevelRate: newRoom.priceLevel?.[0]?.priceRate || 0,
       stayDays: 0,
       hsnDetails: newRoom?.hsn || oldRoom?.hsn,
       totalAmount,
@@ -5183,17 +5187,17 @@ export const controlTaggedCheckIn = async (req, res) => {
 
 export const getHoldCheckIns = async (req, res) => {
   try {
-    const { holdCheckInIds } = req.body.data;
+    const { holdCheckInIds } = req.body.data || {};
 
     if (!holdCheckInIds || !holdCheckInIds.length) {
       return res.status(400).json({ message: "Hold check-in IDs missing" });
     }
 
-    // Convert to ObjectId
     const objectIds = holdCheckInIds.map(
       (id) => new mongoose.Types.ObjectId(id),
     );
 
+    // 1) Fetch hold check-ins
     const holdData = await CheckIn.find({
       _id: { $in: objectIds },
     })
@@ -5205,9 +5209,63 @@ export const getHoldCheckIns = async (req, res) => {
       .populate("bookingId")
       .populate("checkInId");
 
+    // 2) Get check-in numbers from fetched data
+    const checkInNumbers = holdData
+      .map((b) => b?.voucherNumber)
+      .filter(Boolean);
+
+    // 3) Find all related posted room sales
+    const sales = await salesModel
+      .find({
+        cmp_id: holdData?.[0]?.cmp_id, // or req.params.cmp_id if you pass cmp_id from params
+        isPostToRoom: true,
+        isCancelled: false,
+        "convertedFrom.checkInNumber": { $in: checkInNumbers },
+      })
+      .select("_id finalAmount isPostToRoom convertedFrom.checkInNumber");
+
+    // 4) Build map: checkInNumber -> total finalAmount
+    const totalByCheckIn = {};
+    const processedSaleIds = new Set();
+
+    for (const sale of sales) {
+      const saleId = String(sale._id);
+
+      // avoid duplicate sale doc
+      if (processedSaleIds.has(saleId)) continue;
+      processedSaleIds.add(saleId);
+
+      const saleAmount = sale.isPostToRoom
+        ? Number(sale.finalAmount || 0)
+        : 0;
+
+      // avoid repeated checkInNumber inside same sale
+      const uniqueCheckInNumbers = new Set(
+        (sale.convertedFrom || [])
+          .map((conv) => conv?.checkInNumber)
+          .filter(Boolean),
+      );
+
+      for (const checkInNumber of uniqueCheckInNumbers) {
+        totalByCheckIn[checkInNumber] =
+          (totalByCheckIn[checkInNumber] || 0) + saleAmount;
+      }
+    }
+
+    // 5) Attach restaurant subtotal to each hold check-in
+    const holdDataWithSales = holdData.map((b) => {
+      const voucherNumber = b?.voucherNumber;
+      const total = Number(totalByCheckIn[voucherNumber] || 0);
+
+      return {
+        ...b.toObject(),
+        restaurantSubTotal: total,
+      };
+    });
+
     return res.status(200).json({
       message: "Hold check-ins fetched successfully",
-      holdData,
+      holdData: holdDataWithSales,
     });
   } catch (error) {
     console.error("getHoldCheckIns error:", error);
@@ -5277,7 +5335,7 @@ export const releaseHold = async (req, res) => {
           if (!existingRoom) continue;
 
           // restore only when room is in releasable state
-          if (["vacant", "booked", "dirty", "blocked"].includes(existingRoom.status)) {
+          if (["vacant", "booked", "dirty", "blocked", "available"].includes(existingRoom.status)) {
             await roomModal.updateOne(
               { _id: roomId },
               { $set: { status: "occupied" } },
