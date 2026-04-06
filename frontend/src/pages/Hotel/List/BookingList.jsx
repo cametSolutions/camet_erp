@@ -74,7 +74,7 @@ function BookingList() {
   const [processedCheckoutData, setProcessedCheckoutData] = useState(null);
   const [selectedCreditor, setSelectedCreditor] = useState("");
   const [dateandstaysdata, setdateandstaysdata] = useState([]);
-  const [finalPrintData,setFinalPrintData] = useState([])
+  const [finalPrintData, setFinalPrintData] = useState([]);
   // NEW: State for split payment rows and sources
   const [splitPaymentRows, setSplitPaymentRows] = useState([
     {
@@ -583,7 +583,7 @@ function BookingList() {
       console.log(selectedSource);
       updatedRows[index].source = value;
       updatedRows[index].sourceType = selectedSource ? selectedSource.type : "";
-      updatedRows[index].subsource = selectedSource.name
+      updatedRows[index].subsource = selectedSource.name;
     } else if (field === "customer") {
       console.log(name);
       console.log(field);
@@ -639,13 +639,17 @@ function BookingList() {
           paymentMode: paymentMode,
           splitDetails: [
             {
-              customer: selectedCustomerData?.customerId?.partyName || selectedCheckOut[0]?.customerId?.partyName,
+              customer:
+                selectedCustomerData?.customerId?.partyName ||
+                selectedCheckOut[0]?.customerId?.partyName,
               source: selectedCash,
               sourceType: "cash",
               amount:
                 selectedDataForPayment?.totalWithRestaurantSubTotal ||
                 Number(selectedCheckOut[0]?.balanceToPay),
-              customerName: selectedCustomerData?.customerId?.partyName || selectedCheckOut[0]?.customerId?.partyName,
+              customerName:
+                selectedCustomerData?.customerId?.partyName ||
+                selectedCheckOut[0]?.customerId?.partyName,
               subsource: selected.partyName,
             },
           ],
@@ -678,13 +682,17 @@ function BookingList() {
           paymentMode: paymentMode,
           splitDetails: [
             {
-              customer: selectedCustomerData?.customerId?.partyName || selectedCheckOut[0]?.customerId?.partyName,
+              customer:
+                selectedCustomerData?.customerId?.partyName ||
+                selectedCheckOut[0]?.customerId?.partyName,
               source: selectedBank,
               sourceType: "bank",
               amount:
                 selectedDataForPayment?.totalWithRestaurantSubTotal ||
                 Number(selectedCheckOut[0]?.balanceToPay),
-              customerName: selectedCustomerData?.customerId?.partyName ||  selectedCheckOut[0]?.customerId?.partyName,
+              customerName:
+                selectedCustomerData?.customerId?.partyName ||
+                selectedCheckOut[0]?.customerId?.partyName,
               subsource: selected.partyName,
             },
           ],
@@ -816,7 +824,6 @@ function BookingList() {
       restaurantBaseSaleData: restaurantBaseSaleData,
     });
 
-
     if (partial) {
       console.log("Hhhh");
       console.log(dateandstaysdata);
@@ -831,7 +838,6 @@ function BookingList() {
       setIsPartial(false);
       proceedToCheckout(dateandstaysdata, processedCheckoutData);
     } else {
-  
       try {
         const response = await api.post(
           `/api/sUsers/convertCheckOutToSale/${cmp_id}`,
@@ -895,10 +901,10 @@ function BookingList() {
                 configurations[0]?.addRateWithTax?.hotelSale,
                 checkout,
                 room.roomId,
-                checkout?.addFoodPlanWithRate
+                checkout?.addFoodPlanWithRate,
               );
 
-              console.log(room.totalAmount)
+              console.log(room.totalAmount);
 
               return {
                 ...room,
@@ -1213,7 +1219,7 @@ function BookingList() {
 
     setCheckoutMode(checkoutMode === "single" ? "multiple" : "single");
   };
-  console.log( checkoutMode);
+  console.log(checkoutMode);
   const TableHeader = () => (
     <div className="bg-gray-100 border-b border-gray-300 sticky top-0 z-10">
       <div className="flex items-center px-4 py-3 text-xs font-bold text-gray-800 uppercase tracking-wider md:hidden">
@@ -1512,7 +1518,12 @@ function BookingList() {
           <div className="w-24 text-center text-gray-600 text-xs">
             ₹
             {el?.advanceAmount
-              ? formatCurrency(el.bookingId ? Number(el.bookingId?.advanceAmount || 0) + Number(el.advanceAmount) : el.advanceAmount).replace("₹", "")
+              ? formatCurrency(
+                  el.bookingId
+                    ? Number(el.bookingId?.advanceAmount || 0) +
+                        Number(el.advanceAmount)
+                    : el.advanceAmount,
+                ).replace("₹", "")
               : "0.00"}
           </div>
 
@@ -1660,7 +1671,7 @@ function BookingList() {
   };
 
   const handleCloseBasedOnDate = () => {
-    console.log("hh",processedCheckoutData);
+    console.log("hh", processedCheckoutData);
 
     if (processedCheckoutData) {
       const updatedCheckoutData = processedCheckoutData.map((group) => ({
@@ -1724,7 +1735,7 @@ function BookingList() {
     const hasPrint1 = configurations[0]?.defaultPrint?.print1;
     dispatch(removeAll());
 
-  navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
+    navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
       state: {
         selectedCheckOut: finalPrintData,
         customerId: selectedCustomer,
@@ -1786,7 +1797,7 @@ function BookingList() {
         toast.error(error?.response?.data?.message || "Something went wrong");
       } finally {
         fetchBookings();
-         setSelectedCheckOut([])
+        setSelectedCheckOut([]);
       }
     }
   };

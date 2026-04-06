@@ -3839,7 +3839,8 @@ export const swapRoom = async (req, res) => {
     const taxPercentage = Number(newRoom.igst || 0);
     const taxAmount = (totalAmount * taxPercentage) / 100;
 
-    let selectedPriceLevel = await PriceLevel.findOne({ _id: newRoom.priceLevel[0].priceLevel });
+    let selectedPriceLevel = await PriceLevel.findOne({ _id: newRoom.priceLevel?.[0]?.priceLevel });
+    selectedPriceLevel = selectedPriceLevel ? selectedPriceLevel : []
     checkIn.selectedRooms.push({
       roomId: newRoom._id,
       roomName: newRoom.roomName,
@@ -3847,7 +3848,7 @@ export const swapRoom = async (req, res) => {
       roomType: newRoom.roomType,
       dateTariffs: {},
       pax: 2,
-      priceLevelRate: newRoom.priceLevel?.[0].priceRate,
+      priceLevelRate: newRoom.priceLevel?.[0]?.priceRate || 0,
       stayDays: 0,
       hsnDetails: newRoom?.hsn || oldRoom?.hsn,
       totalAmount,

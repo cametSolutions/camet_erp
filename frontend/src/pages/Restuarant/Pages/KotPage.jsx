@@ -558,8 +558,11 @@ console.log(selectedAdditionalChargeData);
     setUserRole(role);
   }, []);
 
+
+
   useEffect(() => {
     if (salePrintData) {
+      console.log("salePrintData", salePrintData);
       billFormat === "format1"
         ? navigate(`/sUsers/sharesalesThreeInch/${salePrintData._id}`)
         : navigate(`/sUsers/sharesalesThreeInch2/${true}`, {
@@ -1117,7 +1120,9 @@ console.log(selectedAdditionalChargeData);
   }, [selectedKot]);
 
   const handlePrintShow = () => {
+
     let updatedData = { ...printData.salesRecord, ...printData?.kotData };
+    console.log(updatedData);
     navigate(`/sUsers/sharesalesThreeInch2/${true}`, {
       state: updatedData,
     });
