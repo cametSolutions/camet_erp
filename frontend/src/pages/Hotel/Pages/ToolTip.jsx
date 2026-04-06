@@ -3,7 +3,7 @@ const Tooltip = ({ children, style }) => (
     className="z-9999 bg-gray-900/95 backdrop-blur-sm text-white text-xs rounded-lg shadow-2xl px-4 py-2 border border-gray-700/50
                max-w-none whitespace-nowrap"
     style={{
-      width: "200px",        
+      width: "250px",        
       maxHeight: "120px",   
       overflowY: "auto",     
       filter: "drop-shadow(0 10px 25px rgba(0, 0, 0, 0.4))",

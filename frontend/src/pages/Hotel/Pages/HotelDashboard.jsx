@@ -344,10 +344,10 @@ const HotelDashboard = () => {
     }
     if (action === "swapRoom") {
       // Check if room is available for swap (should be vacant)
-      // if (selectedRoomData.status !== "vacant") {
-      //   alert("Room must be vacant to swap guests into it");
-      //   return;
-      // }
+      if (selectedRoomData.status == "occupied") {
+        toast.error("Room must be vacant to swap guests into it");
+        return;
+      }
       setShowRoomModal(false);
       setShowRoomSwapModal(true);
       return;
@@ -655,21 +655,22 @@ console.log(baseStatus);
                     className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold px-2 py-1 rounded text-sm"
                     onClick={() => navigate("/sUsers/bookingList")}
                   >
-                    Room Booking
+                   Room Reservations
                   </button>
 
                   <button
                     className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold px-2 py-1 rounded text-sm"
                     onClick={() => navigate("/sUsers/checkInList")}
                   >
-                    Check In
+                    Currently Occupied
+
                   </button>
 
                   <button
                     className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold px-2 py-1 rounded text-sm"
                     onClick={() => navigate("/sUsers/checkOutList")}
                   >
-                    Check Out
+                    Completed Stays
                   </button>
 
                   <button
@@ -859,7 +860,7 @@ console.log(baseStatus);
                       <option value="vacant">Vacant</option>
                       <option value="occupied">Occupied</option>
                       <option value="booked">Booked</option>
-                      <option value="dirty">Dirty</option>
+                      <option value="dirty">Cleaning</option>
                       <option value="blocked">Blocked</option>
                     </select>
                   </div>
@@ -897,7 +898,7 @@ console.log(baseStatus);
                   count: statusCounts.booked,
                 },
                 {
-                  label: "Dirty",
+                  label: "Cleaning",
                   color: "from-yellow-500 to-orange-600",
                   count: statusCounts.dirty,
                 },

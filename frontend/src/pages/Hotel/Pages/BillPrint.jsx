@@ -13,7 +13,6 @@ import {
   handleBillDownloadPDF,
 } from "../PrintSide/generateBillPrintPDF";
 
-
 const HotelBillPrint = () => {
   // Router and Redux state
   const location = useLocation();
@@ -72,7 +71,6 @@ const HotelBillPrint = () => {
     setPaymentModeDetails(Object.values(mergedMap));
   }, [paymentDetails]);
 
-
   // Fetch debit and KOT once for all docs shown
   const fetchDebitData = async (data) => {
     console.log(data);
@@ -83,7 +81,7 @@ const HotelBillPrint = () => {
         { withCredentials: true },
       );
       if (res.data.success) {
-        console.log("res.data.data", res.data.kotData.length);
+        console.log("res.data.data", res.data.kotData);
         setOutStanding(res.data.data || []);
         setKotData(res.data.kotData || []);
       }
@@ -112,7 +110,7 @@ const HotelBillPrint = () => {
             mergedMap[key].amount += Number(item.amount);
           }
         });
-console.log(mergedMap);
+        console.log(mergedMap);
         setPaymentModeDetails(Object.values(mergedMap));
       }
       console.log("hh");
@@ -305,169 +303,317 @@ console.log(mergedMap);
   // Build per-room restaurant line for a doc's rooms only
   // Build per-room restaurant line for a doc's rooms only
   // Build per-room restaurant line for a doc's rooms only
+  // const buildPerRoomRestaurantLinesForDoc = (doc) => {
+  //   console.log("=== Building restaurant lines ===");
+  //   console.log("Doc:", doc);
+  //   console.log("All KOT Data:", kotData.length);
+
+  //   const lines = [];
+
+  //   // Get all room IDs from this document
+  //   const roomIdSet = new Set(
+  //     (doc.selectedRooms || [])
+  //       .map((r) => String(r?.roomId || r?._id || r?.id))
+  //       .filter(Boolean),
+  //   );
+
+  //   // Split KOTs based on available fields
+  //   const roomServiceKots = [];
+  //   const dineInKots = [];
+
+  //   kotData?.forEach((kot) => {
+  //     console.log(kot);
+  //     let voucherNumber = doc?.checkInId?.voucherNumber
+  //       ? doc.checkInId.voucherNumber
+  //       : kot?.convertedFrom[0].checkInNumber;
+  //       console.log(voucherNumber);
+  //     if (voucherNumber !== kot?.convertedFrom[0].checkInNumber) return;
+  //     const kotRoomId = String(kot?.kotDetails?.roomId || kot?.roomId || "");
+  //     const tableNumber =
+  //       kot?.kotDetails?.tableNumber ||
+  //       kot?.tableNumber ||
+  //       kot?.customer?.tableNumber;
+  //     const type = kot?.type || "";
+
+  //     console.log(
+  //       `KOT ${kot?.salesNumber}: roomId=${kotRoomId}, tableNumber=${tableNumber}, type=${type}`,
+  //     );
+
+  //     // CLASSIFICATION LOGIC:
+  //     // 1. If KOT has tableNumber -> it's DINE IN (even if it has roomId)
+  //     // 2. If KOT has roomId but NO tableNumber -> it's ROOM SERVICE
+  //     // 3. If type is "takeaway" or "delivery" -> treat as DINE IN
+
+  //     if (tableNumber) {
+  //       // Has table number = Dine In
+  //       dineInKots.push(kot);
+  //       console.log(`  -> RESTAURANT DINE IN (has tableNumber)`);
+  //     } else if (type === "takeaway" || type === "delivery") {
+  //       // Takeaway/Delivery = Dine In
+  //       dineInKots.push(kot);
+  //       console.log(`  -> RESTAURANT DINE IN (takeaway/delivery)`);
+  //     } else if (kotRoomId && roomIdSet.has(kotRoomId)) {
+  //       // Has roomId but no table = Room Service
+  //       roomServiceKots.push(kot);
+  //       console.log(`  -> ROOM SERVICE (has roomId, no table)`);
+  //     } else {
+  //       // Default to Dine In if unclear
+  //       dineInKots.push(kot);
+  //       console.log(`  -> RESTAURANT DINE IN (default)`);
+  //     }
+  //   });
+
+  //   console.log("Room Service KOTs:", roomServiceKots.length);
+  //   console.log("Dine In KOTs:", dineInKots.length);
+
+  //   // 1. Add Room Service charges (grouped by room)
+  //   const roomServiceTotals = {};
+  //   roomServiceKots?.forEach((kot) => {
+  //     const roomId = String(kot?.kotDetails?.roomId || kot?.roomId || "");
+  //     const amount = Number(
+  //       kot?.finalAmount ?? kot?.subTotal ?? kot?.total ?? 0,
+  //     );
+
+  //     if (!roomServiceTotals[roomId]) {
+  //       roomServiceTotals[roomId] = {
+  //         amount: 0,
+  //         docNos: [],
+  //       };
+  //     }
+  //     roomServiceTotals[roomId].date = kot.date;
+  //     roomServiceTotals[roomId].amount += amount;
+  //     if (kot?.salesNumber) {
+  //       roomServiceTotals[roomId].docNos.push(kot.salesNumber);
+  //     }
+  //   });
+
+  //   Object.keys(roomServiceTotals)?.forEach((roomId) => {
+  //     const roomName =
+  //       (doc.selectedRooms || []).find(
+  //         (r) => String(r?.roomId || r?._id || r?.id) === roomId,
+  //       )?.roomName || "Unknown Room";
+
+  //     const docNo = roomServiceTotals[roomId].docNos.join(", ") || "-";
+
+  //     console.log(
+  //       `Adding Room Service line: ${roomName} = ${roomServiceTotals[roomId].amount}`,
+  //     );
+  //     console.log("xxx ", roomServiceTotals[roomId].date);
+  //     const d = new Date(roomServiceTotals[roomId].date);
+  //     let date = `${d.getDate().toString().padStart(2, "0")}-${(d.getMonth() + 1).toString().padStart(2, "0")}-${d.getFullYear()}`;
+
+  //     lines.push({
+  //       date: date,
+  //       description: `Room Service - ${roomName}`,
+  //       docNo: docNo,
+  //       amount: Number(roomServiceTotals[roomId].amount || 0),
+  //       taxes: 0,
+  //       advance: "",
+  //       roomName: roomName,
+  //       roomId: roomId,
+  //       type: "roomService",
+  //     });
+  //   });
+
+  //   // 2. Add Restaurant Dine In charges (grouped by table or as one line)
+  //   const dineInTotals = {};
+  //   dineInKots?.forEach((kot) => {
+  //     const tableNo =
+  //       kot?.kotDetails?.tableNumber ||
+  //       kot?.tableNumber ||
+  //       kot?.customer?.tableNumber ||
+  //       "Restaurant";
+  //     const amount = Number(
+  //       kot?.finalAmount ?? kot?.subTotal ?? kot?.total ?? 0,
+  //     );
+
+  //     if (!dineInTotals[tableNo]) {
+  //       dineInTotals[tableNo] = {
+  //         amount: 0,
+  //         docNos: [],
+  //       };
+  //     }
+
+  //     dineInTotals[tableNo].amount += amount;
+  //     const d = new Date(kot.date);
+  //     dineInTotals[tableNo].date =
+  //       `${d.getDate().toString().padStart(2, "0")}-${(d.getMonth() + 1).toString().padStart(2, "0")}-${d.getFullYear()}`;
+
+  //     if (kot?.salesNumber) {
+  //       dineInTotals[tableNo].docNos.push(kot.salesNumber);
+  //     }
+  //   });
+  //   console.log("dineInTotals", dineInTotals);
+  //   Object.keys(dineInTotals)?.forEach((tableNo) => {
+  //     const docNo = dineInTotals[tableNo].docNos;
+  //     console.log("docNo", docNo);
+  //     const formatDocNos = (docNos = []) => {
+  //       if (!docNos.length) return "";
+
+  //       const splitDocs = docNos.map((doc) => doc.split("-"));
+
+  //       const firstPrefix = splitDocs[0]?.[0];
+  //       const firstSuffix = splitDocs[0]?.[2];
+
+  //       const isSameFormat = splitDocs.every(
+  //         ([prefix, , suffix]) =>
+  //           prefix === firstPrefix && suffix === firstSuffix,
+  //       );
+
+  //       // ✅ If same prefix & suffix → shorten format
+  //       if (isSameFormat) {
+  //         return splitDocs
+  //           .map(([prefix, number, suffix], index) =>
+  //             index === 0 ? `${prefix}-${number}-${suffix}` : number,
+  //           )
+  //           .join(", ");
+  //       }
+
+  //       // ❌ If different → return full values
+  //       return docNos.join(", ");
+  //     };
+  //     const docNoFormatted = formatDocNos(docNo);
+  //     console.log("docNoFormatted", docNoFormatted);
+  //     lines.push({
+  //       date: dineInTotals[tableNo].date,
+  //       description: `Restaurant Dine In - ${tableNo}`,
+  //       docNo: docNoFormatted,
+  //       amount: Number(dineInTotals[tableNo].amount || 0),
+  //       taxes: 0,
+  //       advance: "",
+  //       roomName: "",
+  //       roomId: "",
+  //       type: "dineIn",
+  //     });
+  //   });
+
+  //   console.log("=== Final restaurant lines ===", lines);
+  //   return lines;
+  // };
+
   const buildPerRoomRestaurantLinesForDoc = (doc) => {
-    console.log("=== Building restaurant lines ===");
-    console.log("Doc:", doc);
-    console.log("All KOT Data:", kotData.length);
+  const lines = [];
 
-    const lines = [];
+  // safer check-in number for current checkout doc
+  const currentCheckInNumber =
+    doc?.checkInId?.voucherNumber ||
+    doc?.checkInNumber ||
+    doc?.voucherNumber ||
+    "";
 
-    // Get all room IDs from this document
-    const roomIdSet = new Set(
-      (doc.selectedRooms || [])
-        .map((r) => String(r?.roomId || r?._id || r?.id))
-        .filter(Boolean),
+  // all room ids of this checkout
+  const roomIdSet = new Set(
+    (doc.selectedRooms || [])
+      .map((r) => String(r?.roomId || r?._id || r?.id))
+      .filter(Boolean),
+  );
+
+  // keep only KOTs that belong to THIS checkout/check-in
+  const currentDocKots = (kotData || []).filter((kot) => {
+    const convertedFrom = kot?.convertedFrom || [];
+
+    const belongsToThisCheckIn = convertedFrom.some(
+      (cf) =>
+        String(cf?.checkInNumber || "") === String(currentCheckInNumber),
     );
 
-   
+    return belongsToThisCheckIn;
+  });
 
-    // Split KOTs based on available fields
-    const roomServiceKots = [];
-    const dineInKots = [];
+  const roomServiceTotals = {};
+  const dineInTotals = {};
 
-    kotData?.forEach((kot) => {
-      console.log(doc)
-      console.log(kot);
-      if(doc.voucherNumber !== kot?.convertedFrom[0].checkInNumber) return;
-      const kotRoomId = String(kot?.kotDetails?.roomId || kot?.roomId || "");
-      const tableNumber =
-        kot?.kotDetails?.tableNumber ||
-        kot?.tableNumber ||
-        kot?.customer?.tableNumber;
-      const type = kot?.type || "";
+  currentDocKots.forEach((kot) => {
+    const kotRoomId = String(kot?.kotDetails?.roomId || kot?.roomId || "");
+    const tableNo =
+      kot?.kotDetails?.tableNumber ||
+      kot?.tableNumber ||
+      kot?.customer?.tableNumber ||
+      "";
 
-      console.log(
-        `KOT ${kot?.salesNumber}: roomId=${kotRoomId}, tableNumber=${tableNumber}, type=${type}`,
-      );
+    const type = String(kot?.type || "").toLowerCase();
 
-      // CLASSIFICATION LOGIC:
-      // 1. If KOT has tableNumber -> it's DINE IN (even if it has roomId)
-      // 2. If KOT has roomId but NO tableNumber -> it's ROOM SERVICE
-      // 3. If type is "takeaway" or "delivery" -> treat as DINE IN
+    const amount = Number(
+      kot?.finalAmount ?? kot?.subTotal ?? kot?.total ?? 0,
+    );
 
-      if (tableNumber) {
-        // Has table number = Dine In
-        dineInKots.push(kot);
-        console.log(`  -> RESTAURANT DINE IN (has tableNumber)`);
-      } else if (type === "takeaway" || type === "delivery") {
-        // Takeaway/Delivery = Dine In
-        dineInKots.push(kot);
-        console.log(`  -> RESTAURANT DINE IN (takeaway/delivery)`);
-      } else if (kotRoomId && roomIdSet.has(kotRoomId)) {
-        // Has roomId but no table = Room Service
-        roomServiceKots.push(kot);
-        console.log(`  -> ROOM SERVICE (has roomId, no table)`);
-      } else {
-        // Default to Dine In if unclear
-        dineInKots.push(kot);
-        console.log(`  -> RESTAURANT DINE IN (default)`);
-      }
-    });
+    const salesNo = kot?.salesNumber || "-";
 
-    console.log("Room Service KOTs:", roomServiceKots.length);
-    console.log("Dine In KOTs:", dineInKots.length);
+    const kotDateValue = kot?.date || kot?.createdAt || new Date();
+    const d = new Date(kotDateValue);
+    const formattedDate = `${String(d.getDate()).padStart(2, "0")}-${String(
+      d.getMonth() + 1,
+    ).padStart(2, "0")}-${d.getFullYear()}`;
 
-    // 1. Add Room Service charges (grouped by room)
-    const roomServiceTotals = {};
-    roomServiceKots?.forEach((kot) => {
-      const roomId = String(kot?.kotDetails?.roomId || kot?.roomId || "");
-      const amount = Number(
-        kot?.finalAmount ?? kot?.subTotal ?? kot?.total ?? 0,
-      );
-
-      if (!roomServiceTotals[roomId]) {
-        roomServiceTotals[roomId] = {
+    // ROOM SERVICE:
+    // has roomId matched with this checkout rooms AND no table number
+    if (kotRoomId && roomIdSet.has(kotRoomId) && !tableNo) {
+      if (!roomServiceTotals[kotRoomId]) {
+        roomServiceTotals[kotRoomId] = {
           amount: 0,
           docNos: [],
-        };
-      }
-      roomServiceTotals[roomId].date = kot.date;
-      roomServiceTotals[roomId].amount += amount;
-      if (kot?.salesNumber) {
-        roomServiceTotals[roomId].docNos.push(kot.salesNumber);
-      }
-    });
-
-    Object.keys(roomServiceTotals)?.forEach((roomId) => {
-      const roomName =
-        (doc.selectedRooms || []).find(
-          (r) => String(r?.roomId || r?._id || r?.id) === roomId,
-        )?.roomName || "Unknown Room";
-
-      const docNo = roomServiceTotals[roomId].docNos.join(", ") || "-";
-
-      console.log(
-        `Adding Room Service line: ${roomName} = ${roomServiceTotals[roomId].amount}`,
-      );
-      console.log("xxx ", roomServiceTotals[roomId].date);
-      const d = new Date(roomServiceTotals[roomId].date);
-      let date = `${d.getDate().toString().padStart(2, "0")}-${(d.getMonth() + 1).toString().padStart(2, "0")}-${d.getFullYear()}`;
-
-      lines.push({
-        date: date,
-        description: `Room Service - ${roomName}`,
-        docNo: docNo,
-        amount: Number(roomServiceTotals[roomId].amount || 0),
-        taxes: 0,
-        advance: "",
-        roomName: roomName,
-        roomId: roomId,
-        type: "roomService",
-      });
-    });
-
-    // 2. Add Restaurant Dine In charges (grouped by table or as one line)
-    const dineInTotals = {};
-    dineInKots?.forEach((kot) => {
-      const tableNo =
-        kot?.kotDetails?.tableNumber ||
-        kot?.tableNumber ||
-        kot?.customer?.tableNumber ||
-        "Restaurant";
-      const amount = Number(
-        kot?.finalAmount ?? kot?.subTotal ?? kot?.total ?? 0,
-      );
-
-      if (!dineInTotals[tableNo]) {
-        dineInTotals[tableNo] = {
-          amount: 0,
-          docNos: [],
+          date: formattedDate,
         };
       }
 
-      dineInTotals[tableNo].amount += amount;
-      const d = new Date(kot.date);
-      dineInTotals[tableNo].date =
-        `${d.getDate().toString().padStart(2, "0")}-${(d.getMonth() + 1).toString().padStart(2, "0")}-${d.getFullYear()}`;
+      roomServiceTotals[kotRoomId].amount += amount;
+      if (salesNo !== "-") roomServiceTotals[kotRoomId].docNos.push(salesNo);
+      return;
+    }
 
-      if (kot?.salesNumber) {
-        dineInTotals[tableNo].docNos.push(kot.salesNumber);
-      }
+    // DINE IN / TAKEAWAY / DELIVERY:
+    // only one common restaurant section for this doc
+    const dineKey = tableNo || "Restaurant";
+
+    if (!dineInTotals[dineKey]) {
+      dineInTotals[dineKey] = {
+        amount: 0,
+        docNos: [],
+        date: formattedDate,
+      };
+    }
+
+    dineInTotals[dineKey].amount += amount;
+    if (salesNo !== "-") dineInTotals[dineKey].docNos.push(salesNo);
+  });
+
+  // room service lines
+  Object.keys(roomServiceTotals).forEach((roomId) => {
+    const roomName =
+      (doc.selectedRooms || []).find(
+        (r) => String(r?.roomId || r?._id || r?.id) === roomId,
+      )?.roomName || "Unknown Room";
+
+    lines.push({
+      date: roomServiceTotals[roomId].date,
+      description: `Room Service - ${roomName}`,
+      docNo: [...new Set(roomServiceTotals[roomId].docNos)].join(", ") || "-",
+      amount: Number(roomServiceTotals[roomId].amount || 0),
+      taxes: 0,
+      advance: "",
+      roomName,
+      roomId,
+      type: "roomService",
     });
-console.log("dineInTotals", dineInTotals)
-    Object.keys(dineInTotals)?.forEach((tableNo) => {
-      const docNo = dineInTotals[tableNo].docNos.join(", ") || "-";
+  });
 
-      console.log(
-        `Adding Dine In line: Table ${tableNo} = ${dineInTotals[tableNo].amount}`,
-      );
-      console.log("yyy ", tableNo);
-      lines.push({
-        date: dineInTotals[tableNo].date,
-        description: `Restaurant Dine In - ${tableNo}`,
-        docNo: docNo,
-        amount: Number(dineInTotals[tableNo].amount || 0),
-        taxes: 0,
-        advance: "",
-        roomName: "",
-        roomId: "",
-        type: "dineIn",
-      });
+  // dine-in lines
+  Object.keys(dineInTotals).forEach((tableNo) => {
+    lines.push({
+      date: dineInTotals[tableNo].date,
+      description: `Restaurant Dine In - ${tableNo}`,
+      docNo: [...new Set(dineInTotals[tableNo].docNos)].join(", ") || "-",
+      amount: Number(dineInTotals[tableNo].amount || 0),
+      taxes: 0,
+      advance: "",
+      roomName: "",
+      roomId: "",
+      type: "dineIn",
     });
+  });
 
-    console.log("=== Final restaurant lines ===", lines);
-    return lines;
-  };
+  return lines;
+};
 
   // Helpers to decide where to show advances
   const docOwnsAdvances = (doc) => {
@@ -490,12 +636,12 @@ console.log("dineInTotals", dineInTotals)
     const dateWiseLines = transformDocToDateWiseLines(doc);
     console.log(dateWiseLines);
     // Totals for room parts
-      const planAmount = dateWiseLines.reduce(
+    const planAmount = dateWiseLines.reduce(
       (t, i) => t + Number(i.foodPlanAmountWithOutTax || 0),
       0,
     );
 
-        console.log(planAmount);
+    console.log(planAmount);
     const foodPlanAmountWithTax = dateWiseLines
       .reduce(
         (t, i) =>
@@ -508,16 +654,10 @@ console.log("dineInTotals", dineInTotals)
     console.log(foodPlanAmountWithTax);
     console.log(planAmount);
 
-    let roomTariffTotal =  !doc?.addFoodPlanWithRate ? dateWiseLines.reduce(
-      (t, i) => t + Number(i.baseAmount || 0),
-      0,
-    ) :  dateWiseLines.reduce(
-      (t, i) => t + Number(i.baseAmount || 0),
-      0,
-    ) - (planAmount + Number(foodPlanAmountWithTax));
-
-  
-
+    let roomTariffTotal = !doc?.addFoodPlanWithRate
+      ? dateWiseLines.reduce((t, i) => t + Number(i.baseAmount || 0), 0)
+      : dateWiseLines.reduce((t, i) => t + Number(i.baseAmount || 0), 0) -
+        (planAmount + Number(foodPlanAmountWithTax));
 
     const additionalPaxAmount = (doc.selectedRooms || []).reduce(
       (total, room) => {
@@ -612,6 +752,7 @@ console.log("dineInTotals", dineInTotals)
             item.description?.includes("Half Tariff"),
         );
         console.log(doc?.addFoodPlanWithRate);
+        console.log(foodPlanAmountWithTax);
 
         // 1. Add FULL DAY room rent charges
         fullDayCharges?.forEach((item) => {
@@ -619,12 +760,16 @@ console.log("dineInTotals", dineInTotals)
             date: item.date,
             description: `Room Rent :${item.roomName}`,
             docNo: item.docNo || "-",
-            amount: (item.baseAmount + (doc?.addFoodPlanWithRate ? 0 :  item.foodPlanAmountWithTax)).toFixed(2),
+            amount: (
+              item.baseAmount +
+              Number(doc?.addFoodPlanWithRate ? 0 : item.foodPlanAmountWithTax)
+            ).toFixed(2),
             taxes: (item.taxAmount || 0).toFixed(2),
             advance: "",
             roomName: item.roomName,
           });
         });
+        console.log(charges);
 
         // 2. Add CGST and SGST for FULL DAYS (if any)
         if (fullDayCharges.length > 0) {
@@ -665,7 +810,10 @@ console.log("dineInTotals", dineInTotals)
             date: item.date, // ✅ Use the actual half day date (checkout date)
             description: `Half Tariff :${item.roomName}`,
             docNo: item.docNo || "-",
-            amount: (item.baseAmount + (doc?.addFoodPlanWithRate ? 0 :  item.foodPlanAmountWithTax)).toFixed(2),
+            amount: (
+              item.baseAmount +
+              (doc?.addFoodPlanWithRate ? 0 : item.foodPlanAmountWithTax)
+            ).toFixed(2),
             taxes: (item.taxAmount || 0).toFixed(2),
             advance: "",
             roomName: item.roomName,
@@ -818,12 +966,17 @@ console.log("dineInTotals", dineInTotals)
 
     const allcheckinids = doc?.allCheckInIds;
     const allpartyid = doc?.partyArray;
-console.log(doc);
-console.log("allpartyid", outStanding);
+    console.log(doc);
+    console.log("allpartyid", outStanding);
     // Advances only on the decided bill
     let advanceEntries = useAdvances
       ? (outStanding || [])
-          .filter((t) => doc?._id === t.billId || doc?.bookingId?._id === t.billId || doc?.checkInId?._id === t.billId)
+          .filter(
+            (t) =>
+              doc?._id === t.billId ||
+              doc?.bookingId?._id === t.billId ||
+              doc?.checkInId?._id === t.billId,
+          )
           .map((t) => ({
             date: formatDate(t.bill_date || t.billdate || new Date()),
             description: t.isCheckOut ? "CheckOut" : "Advance",
@@ -836,7 +989,12 @@ console.log("allpartyid", outStanding);
 
     let advanceTotal = useAdvances
       ? (outStanding || [])
- .filter((t) => doc?._id === t.billId || doc?.bookingId?._id === t.billId || doc?.checkInId?._id === t.billId)
+          .filter(
+            (t) =>
+              doc?._id === t.billId ||
+              doc?.bookingId?._id === t.billId ||
+              doc?.checkInId?._id === t.billId,
+          )
           .reduce(
             (sum, t) => sum + Number(t.bill_amount || t.billamount || 0),
             0,
@@ -918,6 +1076,8 @@ console.log("allpartyid", outStanding);
           Number(doc?.otherChargeDetails?.amount) || 0;
     }
 
+    
+
     const grandTotal =
       Number(roomTariffTotal) +
       Number(additionalPaxAmount) +
@@ -925,7 +1085,8 @@ console.log("allpartyid", outStanding);
       Number(foodPlanAmountWithTax) +
       Number(sgstAmount) +
       Number(cgstAmount) +
-      Number(restaurantTotal)+ otherChargeAmount;
+      Number(restaurantTotal) +
+      otherChargeAmount;
     const netPay = Math.abs(grandTotal - advanceTotal);
 
     // Compose hotel/guest info per doc
@@ -1089,7 +1250,6 @@ console.log("allpartyid", outStanding);
         // No advance deduction for restaurant bill
         bill.payment.advance = 0;
         bill.payment.netPay = restaurantOnlyTotal;
-
       } else if (activeMode === "room") {
         // Keep only room-related charges + advances; exclude restaurant / dine-in charges
         bill.charges = bill.charges.filter((c) => {
@@ -1104,6 +1264,9 @@ console.log("allpartyid", outStanding);
         // Recalculate balance for filtered charges
         // Advance entries have a negative amount so they correctly reduce the running balance
         let bal = 0;
+        
+        console.log(bill.charges);
+
         bill.charges = bill.charges.map((charge) => {
           const amt = Number(charge.amount || 0);
           const tax = Number(charge.taxes || 0);
@@ -1152,16 +1315,16 @@ console.log("allpartyid", outStanding);
     });
   }, [selectedCheckOut, outStanding, kotData, organization, activeMode]);
 
-  console.log("bills", bills[1]);
+  console.log("bills", bills);
 
   const handlePrintPDF = (isPrint) => {
     const multi = bills && bills.length ? bills : [];
     if (!multi.length) return;
-console.log(paymentModeDetails);
+    console.log(paymentModeDetails);
     if (!isPrint) {
-      handleBillDownloadPDF(multi, organization,paymentModeDetails); // pass array
+      handleBillDownloadPDF(multi, organization, paymentModeDetails); // pass array
     } else {
-      handleBillPrintInvoice(multi, organization,paymentModeDetails); // pass array
+      handleBillPrintInvoice(multi, organization, paymentModeDetails); // pass array
     }
   };
   console.log(paymentModeDetails);
@@ -1689,7 +1852,9 @@ console.log(paymentModeDetails);
                   <tbody>
                     {activeMode !== "restaurant" && (
                       <tr>
-                        <td style={{ border: "1px solid #000", padding: "4px" }}>
+                        <td
+                          style={{ border: "1px solid #000", padding: "4px" }}
+                        >
                           Room Rent
                         </td>
                         <td
@@ -1699,36 +1864,39 @@ console.log(paymentModeDetails);
                             textAlign: "right",
                           }}
                         >
-                          {Number(billData?.summary?.roomRent || 0).toLocaleString("en-IN", {
+                          {Number(
+                            billData?.summary?.roomRent || 0,
+                          ).toLocaleString("en-IN", {
                             minimumFractionDigits: 2,
                           })}
                         </td>
                       </tr>
                     )}
 
-                    {activeMode !== "restaurant" && billData?.summary?.foodPlan > 0 && (
-                      <tr>
-                        <td
-                          style={{ border: "1px solid #000", padding: "4px" }}
-                        >
-                          Food Plan
-                        </td>
-                        <td
-                          style={{
-                            border: "1px solid #000",
-                            padding: "4px",
-                            textAlign: "right",
-                          }}
-                        >
-                          {billData?.summary?.foodPlan?.toLocaleString(
-                            "en-IN",
-                            {
-                              minimumFractionDigits: 2,
-                            },
-                          )}
-                        </td>
-                      </tr>
-                    )}
+                    {activeMode !== "restaurant" &&
+                      billData?.summary?.foodPlan > 0 && (
+                        <tr>
+                          <td
+                            style={{ border: "1px solid #000", padding: "4px" }}
+                          >
+                            Food Plan
+                          </td>
+                          <td
+                            style={{
+                              border: "1px solid #000",
+                              padding: "4px",
+                              textAlign: "right",
+                            }}
+                          >
+                            {billData?.summary?.foodPlan?.toLocaleString(
+                              "en-IN",
+                              {
+                                minimumFractionDigits: 2,
+                              },
+                            )}
+                          </td>
+                        </tr>
+                      )}
                     {activeMode !== "restaurant" && billData?.summary?.sgst && (
                       <tr>
                         <td
@@ -1769,72 +1937,78 @@ console.log(paymentModeDetails);
                         </td>
                       </tr>
                     )}
-                    {activeMode !== "room" && billData?.summary?.restaurant > 0 && (
-                      <tr>
-                        <td
-                          style={{ border: "1px solid #000", padding: "4px" }}
-                        >
-                          Dine-In
-                        </td>
-                        <td
-                          style={{
-                            border: "1px solid #000",
-                            padding: "4px",
-                            textAlign: "right",
-                          }}
-                        >
-                          {billData?.summary?.restaurant?.toLocaleString("en-IN", {
-                            minimumFractionDigits: 2,
-                          })}
-                        </td>
-                      </tr>
-                    )}
-                    {activeMode !== "room" && billData?.summary?.roomService > 0 && (
-                      <tr>
-                        <td
-                          style={{ border: "1px solid #000", padding: "4px" }}
-                        >
-                          Room Service
-                        </td>
-                        <td
-                          style={{
-                            border: "1px solid #000",
-                            padding: "4px",
-                            textAlign: "right",
-                          }}
-                        >
-                          {billData?.summary?.roomService?.toLocaleString(
-                            "en-IN",
-                            {
-                              minimumFractionDigits: 2,
-                            },
-                          )}
-                        </td>
-                      </tr>
-                    )}
-                    {activeMode !== "restaurant" && billData?.summary?.otherChargeAmount > 0 && (
-                      <tr>
-                        <td
-                          style={{ border: "1px solid #000", padding: "4px" }}
-                        >
-                          Other Charges
-                        </td>
-                        <td
-                          style={{
-                            border: "1px solid #000",
-                            padding: "4px",
-                            textAlign: "right",
-                          }}
-                        >
-                          {billData?.summary?.otherChargeAmount?.toLocaleString(
-                            "en-IN",
-                            {
-                              minimumFractionDigits: 2,
-                            },
-                          )}
-                        </td>
-                      </tr>
-                    )}
+                    {activeMode !== "room" &&
+                      billData?.summary?.restaurant > 0 && (
+                        <tr>
+                          <td
+                            style={{ border: "1px solid #000", padding: "4px" }}
+                          >
+                            Dine-In
+                          </td>
+                          <td
+                            style={{
+                              border: "1px solid #000",
+                              padding: "4px",
+                              textAlign: "right",
+                            }}
+                          >
+                            {billData?.summary?.restaurant?.toLocaleString(
+                              "en-IN",
+                              {
+                                minimumFractionDigits: 2,
+                              },
+                            )}
+                          </td>
+                        </tr>
+                      )}
+                    {activeMode !== "room" &&
+                      billData?.summary?.roomService > 0 && (
+                        <tr>
+                          <td
+                            style={{ border: "1px solid #000", padding: "4px" }}
+                          >
+                            Room Service
+                          </td>
+                          <td
+                            style={{
+                              border: "1px solid #000",
+                              padding: "4px",
+                              textAlign: "right",
+                            }}
+                          >
+                            {billData?.summary?.roomService?.toLocaleString(
+                              "en-IN",
+                              {
+                                minimumFractionDigits: 2,
+                              },
+                            )}
+                          </td>
+                        </tr>
+                      )}
+                    {activeMode !== "restaurant" &&
+                      billData?.summary?.otherChargeAmount > 0 && (
+                        <tr>
+                          <td
+                            style={{ border: "1px solid #000", padding: "4px" }}
+                          >
+                            Other Charges
+                          </td>
+                          <td
+                            style={{
+                              border: "1px solid #000",
+                              padding: "4px",
+                              textAlign: "right",
+                            }}
+                          >
+                            {billData?.summary?.otherChargeAmount?.toLocaleString(
+                              "en-IN",
+                              {
+                                minimumFractionDigits: 2,
+                              },
+                            )}
+                          </td>
+                        </tr>
+                      )}
 
                     <tr style={{ backgroundColor: "#f5f5f5" }}>
                       <td
@@ -1854,9 +2028,12 @@ console.log(paymentModeDetails);
                           fontWeight: "bold",
                         }}
                       >
-                        {Number(billData?.summary?.total || 0).toLocaleString("en-IN", {
-                          minimumFractionDigits: 2,
-                        })}
+                        {Number(billData?.summary?.total || 0).toLocaleString(
+                          "en-IN",
+                          {
+                            minimumFractionDigits: 2,
+                          },
+                        )}
                       </td>
                     </tr>
                   </tbody>
@@ -1910,30 +2087,59 @@ console.log(paymentModeDetails);
                         AMOUNT
                       </td>
                     </tr>
-                    {paymentModeDetails.map((item, index) => (
-                      <tr key={index}>
-                        <td
-                          style={{
-                            border: "1px solid #000",
-                            padding: "4px",
-                          }}
-                        >
-                          {item.customerName} ({item.mode.toUpperCase()})
-                        </td>
-                        <td
-                          style={{
-                            border: "1px solid #000",
-                            padding: "4px",
-                            textAlign: "right",
-                          }}
-                        >
-                          {item.amount.toLocaleString("en-IN", {
-                            minimumFractionDigits: 2,
-                          })}
-                        </td>
-                      </tr>
-                    ))}
+                    {selected == "default" && (
+                      <>
+                        {paymentModeDetails.map((item, index) => (
+                          <tr key={index}>
+                            <td
+                              style={{
+                                border: "1px solid #000",
+                                padding: "4px",
+                              }}
+                            >
+                              {item.customerName} ({item.mode.toUpperCase()})
+                            </td>
+                            <td
+                              style={{
+                                border: "1px solid #000",
+                                padding: "4px",
+                                textAlign: "right",
+                              }}
+                            >
+                              {item.amount.toLocaleString("en-IN", {
+                                minimumFractionDigits: 2,
+                              })}
+                            </td>
+                          </tr>
+                        ))}
+                      </>
+                    )}
 
+                    {(selected == "room" || selected == "restaurant") && (
+                      <>
+                        <tr>
+                          <td
+                            style={{
+                              border: "1px solid #000",
+                              padding: "4px",
+                            }}
+                          >
+                            {selected == "room" ? "Room" : "Restaurant"}
+                          </td>
+                          <td
+                            style={{
+                              border: "1px solid #000",
+                              padding: "4px",
+                              textAlign: "right",
+                            }}
+                          >
+                            {billData?.summary?.total.toLocaleString("en-IN", {
+                              minimumFractionDigits: 2,
+                            })}
+                          </td>
+                        </tr>
+                      </>
+                    )}
                     <tr>
                       <td
                         style={{ border: "1px solid #000", padding: "4px" }}
@@ -2008,9 +2214,9 @@ console.log(paymentModeDetails);
                               )}
                             </div>
                             <div style={{ fontWeight: "bold" }}>
-                              {Number(Math.round(billData?.payment?.netPay || 0)).toFixed(
-                                2,
-                              )}
+                              {Number(
+                                Math.round(billData?.payment?.netPay || 0),
+                              ).toFixed(2)}
                             </div>
                           </td>
                         </>

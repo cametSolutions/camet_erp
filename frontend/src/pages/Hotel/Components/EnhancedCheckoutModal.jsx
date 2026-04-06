@@ -310,8 +310,10 @@ export default function EnhancedCheckoutModal({
       (item) => item.selectedCustomer._id === firstCustomer._id,
     );
 
+    console.log(isSameCustomer);
+
     let result;
-    console.log("HHHh");
+    
     if (isSameCustomer) {
       console.log("HHHhh");
       // 🔥 Merge ALL into ONE customer

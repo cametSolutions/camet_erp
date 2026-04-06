@@ -21,13 +21,14 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
     org?.configurations?.[0]?.defaultPrint?.showBeforeSaleInRestaurant;
   const { isFinalized } = useParams();
 
-  const isIndian = useSelector(
-    (state) =>
-      state?.secSelectedOrganization?.secSelectedOrg?.country === "India",
-  );
+  // const isIndian = useSelector(
+  //   (state) =>
+  //     state?.secSelectedOrganization?.secSelectedOrg?.country === "India",
+  // );
+  const isIndian = true
   const party = data?.party;
-  const isSameState =
-    org?.state?.toLowerCase() === party?.state?.toLowerCase() || !party?.state;
+  const isSameState = "kerala"
+    // org?.state?.toLowerCase() === party?.state?.toLowerCase() || !party?.state;
 
   const voucherType = data?.voucherType;
   const discountBasedOnGrossAmount =
@@ -45,40 +46,40 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
     return voucherType + "Number";
   };
 
-  useEffect(() => {
-    if (data && data.items) {
-      data.discount = data.additionalCharges?.[0]?.value || 0;
-      const calculatedSubTotal = data.items
-        .reduce(
-          (acc, curr) =>
-            acc +
-            Number(curr?.total) -
-            Number(
-              curr?.totalIgstAmt ||
-                curr?.totalCgstAmt + curr?.totalSgstAmt ||
-                0,
-            ),
-          0,
-        )
-        .toFixed(2);
-      console.log(
-        data.discount,
-        calculatedSubTotal,
-        discountBasedOnGrossAmount,
-      );
-      console.log("data?.subTotal", data);
-      console.log("data?.discount", data?.calculatedSubTotal);
-      let total = discountBasedOnGrossAmount
-        ? Number(calculatedSubTotal) || data?.subTotal
-        : Number(calculatedSubTotal) -
-            (data?.additionalCharges?.[0]?.finalValue || 0) ||
-          data?.subTotal - data?.discount;
+useEffect(() => {
+  if (!data?.items?.length) return;
 
-          console.log("total", total);
+  const discountValue = Number(data?.additionalCharges?.[0]?.finalValue || 0);
 
-      setSubTotal(total);
-    }
-  }, [data]);
+
+
+  const grossTotal = data.items.reduce(
+    (acc, curr) => acc + Number(curr?.total || 0),
+    0
+  );
+
+  const taxableSubTotal = data.items.reduce(
+    (acc, curr) =>
+      acc +
+      Number(
+        curr?.GodownList?.[0]?.taxableAmount ??
+          curr?.taxableAmount ??
+          0
+      ),
+    0
+  );
+
+  const finalSubTotal = discountBasedOnGrossAmount
+    ? taxableSubTotal - discountValue
+    : taxableSubTotal - discountValue;
+
+  console.log("grossTotal", discountBasedOnGrossAmount ,grossTotal);
+  console.log("taxableSubTotal", taxableSubTotal);
+  console.log("discountValue", discountValue);
+  console.log("finalSubTotal", finalSubTotal);
+
+  setSubTotal(Number(finalSubTotal.toFixed(2)));
+}, [data, discountBasedOnGrossAmount]);
   // 1) helper: get line taxable value after discount
   const getItemTaxableAfterDiscount = (item, totalDiscount, grossAmount) => {
     const lineGross = Number(item.total || 0); // with tax
@@ -206,7 +207,7 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
       data?.additionalCharges?.[0]?.finalValue ||
       0,
   ).toFixed(2);
-  console.log("discount", discount);
+  console.log("discount", Number(discount));
   console.log("netAmount", netAmount);
   const tax = Math.round(calculateTotalTax()).toFixed(2);
   const cgst = (calculateTotalTax() / 2).toFixed(2);
@@ -341,7 +342,7 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
             fontWeight: "bold",
           }}
         >
-        Party : {p?.credit_reference_type}
+        Party : {p?.credit_reference_type} {p?.creditor_gst && `(${p.creditor_gst})`}
         </div>
         )}
         </>
@@ -559,7 +560,7 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
 
             {/* RIGHT SIDE: Amount + taxes */}
             <div style={{ flex: 1 }}>
-              {!discountBasedOnGrossAmount && discount && (
+              {!discountBasedOnGrossAmount && Number(discount) > 0 && (
                 <>
                   <div
                     style={{
@@ -597,6 +598,8 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
                       fontWeight: "bold",
                     }}
                   >
+                    {Number(discount) > 0 && (
+                      <>
                     <div
                       style={{
                         marginLeft: "auto",
@@ -614,6 +617,8 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
                     >
                       {discount}
                     </div>
+                    </>
+                    )}
                   </div>
                 </>
               )}
@@ -790,7 +795,7 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
                   fontWeight: "bold",
                 }}
               >
-                {discountBasedOnGrossAmount && (
+                {discountBasedOnGrossAmount && Number(discount) &&  (
                   <>
                     Discount: <span style={bold}>{discount || "0.00"}</span>
                   </>
