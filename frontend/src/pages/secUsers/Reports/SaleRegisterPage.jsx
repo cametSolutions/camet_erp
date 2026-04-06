@@ -1,5 +1,6 @@
 // pages/SalesRegister.jsx
 import { useEffect, useMemo, useState } from "react";
+import { useSelector } from "react-redux";
 import api from "@/api/api";
 import * as XLSX from "xlsx";
 
@@ -54,9 +55,19 @@ export default function SaleRegisterPage() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
 
+    const { _id: cmp_id } = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg
+  );
+
+  const getToday = () => {
+    const d = new Date();
+    const pad = (n) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  };
+
   const [filters, setFilters] = useState({
-    from: "",
-    to: "",
+    from: getToday(),
+    to: getToday(),
     status: "",
     search: "",
   });
@@ -65,20 +76,26 @@ export default function SaleRegisterPage() {
     setFilters((prev) => ({ ...prev, [key]: value }));
 
   const fetchRegister = async (customFilters = filters) => {
-    try{
+    try {
       setLoading(true);
+
+        if (!cmp_id) {
+        console.error("cmp_id is undefined, cannot fetch sales register");
+        setRows([]);
+        return;
+      }
+
       const cleanedParams = Object.fromEntries(
-        Object.entries(customFilters).filter(([_, v]) => v !== "")
+        Object.entries({
+          cmp_id,         // <-- include company id
+          ...customFilters,
+        }).filter(([_, v]) => v !== "")
       );
 
-      // IMPORTANT: this is the “like KOT page” style:
-      //  - single endpoint
-      //  - filters passed as query params
       const { data } = await api.get("/api/sUsers/sales-register", {
         params: cleanedParams,
       });
 
-      // expecting { data: [...rows] } similar to KOT register
       setRows(data?.data || []);
     } catch (error) {
       console.error("Failed to fetch Sales register", error);
@@ -90,17 +107,40 @@ export default function SaleRegisterPage() {
 
   useEffect(() => {
     fetchRegister();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleFilterSubmit = () => fetchRegister(filters);
 
   const handleReset = () => {
-    const resetFilters = { from: "", to: "", status: "", search: "" };
+    const resetFilters = {
+      from: getToday(),
+      to: getToday(),
+      status: "",
+      search: "",
+    };
     setFilters(resetFilters);
     fetchRegister(resetFilters);
   };
 
-  // Plan summary (CP / MAP / AP / -) like KOT planSummary
+  // ---- SUMMARIES ----
+
+  const topItems = useMemo(() => {
+    const map = {};
+    rows.forEach((row) => {
+      (row.itemName || "")
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .forEach((name) => {
+          map[name] = (map[name] || 0) + 1;
+        });
+    });
+    return Object.entries(map)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
+  }, [rows]);
+
   const planSummary = useMemo(
     () =>
       rows.reduce((acc, row) => {
@@ -114,7 +154,6 @@ export default function SaleRegisterPage() {
     [rows]
   );
 
-  // Payment type summary (CASH / UPI / ...) similar to typeSummary
   const paymentSummary = useMemo(
     () =>
       rows.reduce((acc, row) => {
@@ -125,27 +164,47 @@ export default function SaleRegisterPage() {
     [rows]
   );
 
-  // Totals
+  const billTypeSummary = useMemo(
+    () =>
+      rows.reduce((acc, row) => {
+        const key = row.billType?.trim() || "-";
+        acc[key] = (acc[key] || 0) + 1;
+        return acc;
+      }, {}),
+    [rows]
+  );
+
+  const cancelledCount = useMemo(
+    () => rows.filter((r) => r.isCancelled === "CANCELLED").length,
+    [rows]
+  );
+
   const totalQty = useMemo(
-    () => rows.reduce((sum, r) => sum + (r.qty || 0), 0),
+    () => rows.reduce((sum, r) => sum + Number(r.qty || 0), 0),
     [rows]
   );
-  const totalTaxable = useMemo(
-    () => rows.reduce((sum, r) => sum + (r.amount || 0), 0),
+
+  const totalAmount = useMemo(
+    () => rows.reduce((sum, r) => sum + Number(r.amount || 0), 0),
     [rows]
   );
+
   const totalTax = useMemo(
-    () => rows.reduce((sum, r) => sum + (r.taxAmount || 0), 0),
+    () => rows.reduce((sum, r) => sum + Number(r.taxAmount || 0), 0),
     [rows]
   );
+
   const totalDisc = useMemo(
-    () => rows.reduce((sum, r) => sum + (r.discAmount || 0), 0),
+    () => rows.reduce((sum, r) => sum + Number(r.discAmount || 0), 0),
     [rows]
   );
+
   const totalBill = useMemo(
-    () => rows.reduce((sum, r) => sum + (r.billAmount || 0), 0),
+    () => rows.reduce((sum, r) => sum + Number(r.billAmount || 0), 0),
     [rows]
   );
+
+  // ---- EXPORT ----
 
   const handleExportExcel = () => {
     if (!rows.length) return;
@@ -156,8 +215,8 @@ export default function SaleRegisterPage() {
       Customer: row.customer || "-",
       "Item Name": row.itemName || "-",
       Qty: row.qty ?? 0,
-      Rate: row.rate ?? 0,
-      "Taxable Amount": row.amount ?? 0,
+      Rate: row.rate || "-",
+      Amount: row.amount ?? 0,
       "Tax Amount": row.taxAmount ?? 0,
       "Disc Amount": row.discAmount ?? 0,
       "Bill Amount": row.billAmount ?? 0,
@@ -165,64 +224,40 @@ export default function SaleRegisterPage() {
       "Room No": row.roomNo || "-",
       "Food Plan": row.foodPlan || "-",
       "Payment Type": row.paymentType || "-",
+      "Is Cancelled": row.isCancelled || "-",
       Sponsor: row.sponsorName || "-",
       Remarks: row.remarks || "-",
     }));
 
-    const planRows = Object.entries(planSummary).map(([plan, count]) => ({
-      "Food Plan": plan,
-      Count: count,
-    }));
-
-    const payRows = Object.entries(paymentSummary).map(([type, count]) => ({
-      "Payment Type": type,
-      Count: count,
-    }));
-
+    // Extra sheets/summaries if you want, but here just one main sheet
+    const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.json_to_sheet(exportData);
 
     ws["!cols"] = [
       { wch: 12 }, // Date
-      { wch: 10 }, // Bill No
+      { wch: 14 }, // Bill No
       { wch: 20 }, // Customer
-      { wch: 24 }, // Item
-      { wch: 6 },  // Qty
-      { wch: 8 },  // Rate
-      { wch: 12 }, // Taxable
-      { wch: 10 }, // Tax
-      { wch: 10 }, // Disc
-      { wch: 12 }, // Bill Amount
-      { wch: 12 }, // Bill Type
+      { wch: 42 }, // Item
+      { wch: 8 }, // Qty
+      { wch: 16 }, // Rate
+      { wch: 14 }, // Amount
+      { wch: 14 }, // Tax
+      { wch: 14 }, // Disc
+      { wch: 14 }, // Bill
+      { wch: 14 }, // Bill type
       { wch: 10 }, // Room
       { wch: 12 }, // Plan
       { wch: 14 }, // Payment
+      { wch: 14 }, // IsCancelled
       { wch: 16 }, // Sponsor
       { wch: 24 }, // Remarks
     ];
 
-    const mainRows = exportData.length + 1;
-    const summaryStartRow = mainRows + 3;
-
-    XLSX.utils.sheet_add_aoa(ws, [["PLAN SUMMARY"]], {
-      origin: `A${summaryStartRow}`,
-    });
-    XLSX.utils.sheet_add_json(ws, planRows, {
-      origin: `A${summaryStartRow + 1}`,
-      skipHeader: false,
-    });
-
-    XLSX.utils.sheet_add_aoa(ws, [["PAYMENT TYPE SUMMARY"]], {
-      origin: `E${summaryStartRow}`,
-    });
-    XLSX.utils.sheet_add_json(ws, payRows, {
-      origin: `E${summaryStartRow + 1}`,
-      skipHeader: false,
-    });
-
-    const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Sales Register");
     XLSX.writeFile(wb, "Sales-Register.xlsx");
   };
+
+  // ---- PRINT ----
 
   const handlePrint = () => {
     if (!rows.length) return;
@@ -236,26 +271,39 @@ export default function SaleRegisterPage() {
         <td>${row.customer || "-"}</td>
         <td>${row.itemName || "-"}</td>
         <td style="text-align:center">${row.qty ?? 0}</td>
-        <td style="text-align:right">${fmt(row.rate)}</td>
+        <td>${row.rate || "-"}</td>
         <td style="text-align:right">${fmt(row.amount)}</td>
         <td style="text-align:right">${fmt(row.taxAmount)}</td>
         <td style="text-align:right">${fmt(row.discAmount)}</td>
         <td style="text-align:right">${fmt(row.billAmount)}</td>
-        <td><span class="badge ${getBillTypeBadgeClass(
-          row.billType
-        ).replace("bg-", "bg-").replace("text-", "text-")}">${
-          row.billType || "-"
-        }</span></td>
+        <td>${row.billType || "-"}</td>
         <td>${row.roomNo || "-"}</td>
         <td>${row.foodPlan || "-"}</td>
         <td><span class="badge ${printPaymentClass(
           row.paymentType
         )}">${row.paymentType || "-"}</span></td>
+        <td>${row.isCancelled || "-"}</td>
         <td>${row.sponsorName || "-"}</td>
         <td>${row.remarks || "-"}</td>
       </tr>`
       )
       .join("");
+
+    const billTypeRowsHtml =
+      Object.entries(billTypeSummary)
+        .map(
+          ([k, v]) =>
+            `<tr><td>${k}</td><td style="text-align:right">${v}</td></tr>`
+        )
+        .join("") || `<tr><td colspan="2">No data</td></tr>`;
+
+    const topRowsHtml =
+      topItems
+        .map(
+          ([item, qty]) =>
+            `<tr><td>${item}</td><td style="text-align:right">${qty}</td></tr>`
+        )
+        .join("") || `<tr><td colspan="2">No data</td></tr>`;
 
     const planRowsHtml =
       Object.entries(planSummary)
@@ -273,7 +321,23 @@ export default function SaleRegisterPage() {
         )
         .join("") || `<tr><td colspan="2">No data</td></tr>`;
 
-    const win = window.open("", "", "height=900,width=1300");
+    const salesSummaryHtml = `
+      <tr><td>Amount</td><td style="text-align:right">${fmt(
+        totalAmount
+      )}</td></tr>
+      <tr><td>Discount Amount</td><td style="text-align:right">${fmt(
+        totalDisc
+      )}</td></tr>
+      <tr><td>Tax Amount</td><td style="text-align:right">${fmt(
+        totalTax
+      )}</td></tr>
+      <tr><td>Total Sales Amount</td><td style="text-align:right">${fmt(
+        totalBill
+      )}</td></tr>
+      <tr><td>Cancelled Bills</td><td style="text-align:right">${cancelledCount}</td></tr>
+    `;
+
+    const win = window.open("", "", "height=900,width=1400");
     if (!win) return;
 
     win.document.write(`<!DOCTYPE html>
@@ -281,113 +345,83 @@ export default function SaleRegisterPage() {
 <head>
   <title>Sales Register</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: system-ui, sans-serif; padding: 20px; font-size: 12px; color: #1e293b; }
-    .header {
-      background: #7f1d1d;
-      color: #fff;
-      text-align: center;
-      padding: 10px 16px;
-      font-size: 16px;
-      font-weight: 700;
-      letter-spacing: .06em;
-      margin-bottom: 10px;
-    }
-    .meta {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 20px;
-      padding-bottom: 10px;
-      font-size: 11px;
-      color: #475569;
-      border-bottom: 1px solid #cbd5e1;
-      margin-bottom: 12px;
-    }
-    .meta span strong { color: #1e293b; }
-    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-    th {
-      background: #7f1d1d;
-      color: #fff;
-      border: 1px solid #475569;
-      padding: 5px 8px;
-      text-align: left;
-      font-weight: 600;
-      font-size: 11px;
-    }
-    td { border: 1px solid #cbd5e1; padding: 4px 8px; }
-    tr:nth-child(even) td { background: #f8fafc; }
-    .badge {
-      display: inline-block;
-      padding: 1px 6px;
-      border-radius: 4px;
-      font-size: 10px;
-      font-weight: 600;
-    }
-    .pay-cashupi { background:#e0f2fe; color:#1d4ed8; }
-    .pay-cash { background:#e0f2fe; color:#0369a1; }
-    .pay-upi { background:#ede9fe; color:#6d28d9; }
-    .pay-credit { background:#fee2e2; color:#b91c1c; }
-    .pay-complementory { background:#f3e8ff; color:#7e22ce; }
-    .pay-sponsor { background:#fef9c3; color:#b45309; }
-    .pay-default { background:#f1f5f9; color:#475569; }
-    .summaries {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 24px;
-      max-width: 560px;
-    }
-    .summary-label {
-      font-weight: 700;
-      font-size: 13px;
-      padding: 6px 8px;
-      border-bottom: 2px solid #7f1d1d;
-    }
-    @media print {
-      @page { size: A4 landscape; margin: 10mm; }
-    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Arial,sans-serif;padding:18px;font-size:12px;color:#111827}
+    h2{text-align:center;margin-bottom:12px}
+    table{width:100%;border-collapse:collapse;margin-bottom:18px}
+    th,td{border:1px solid #9ca3af;padding:6px}
+    th{background:#e7b6b6;text-align:left}
+    .badge{display:inline-block;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700}
+    .pay-cashupi{background:#e0e7ff;color:#4338ca}
+    .pay-cash{background:#e0f2fe;color:#0369a1}
+    .pay-upi{background:#f3e8ff;color:#7c3aed}
+    .pay-credit{background:#ffe4e6;color:#be123c}
+    .pay-complementory{background:#f3e8ff;color:#7e22ce}
+    .pay-sponsor{background:#fef3c7;color:#b45309}
+    .pay-default{background:#f1f5f9;color:#475569}
+    .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+    .box-title{background:#e7b6b6;border:1px solid #9ca3af;border-bottom:none;padding:6px;font-weight:700}
+    @media print{@page{size:A4 landscape;margin:8mm}body{padding:0}}
   </style>
 </head>
 <body>
-  <div class="header">SALES REGISTER</div>
-  <div class="meta">
-    <span><strong>From:</strong> ${filters.from || "All"}</span>
-    <span><strong>To:</strong> ${filters.to || "All"}</span>
-    <span><strong>Payment Filter:</strong> ${filters.status || "All"}</span>
-    <span><strong>Total Records:</strong> ${rows.length}</span>
-    <span><strong>Printed:</strong> ${new Date().toLocaleString()}</span>
-  </div>
-
+  <h2>RESTAURANT SALES REGISTER</h2>
   <table>
     <thead>
       <tr>
         <th>DATE</th>
         <th>BILL NO</th>
         <th>CUSTOMER</th>
-        <th>ITEM</th>
+        <th>ITEM NAME</th>
         <th>QTY</th>
         <th>RATE</th>
-        <th>TAXABLE</th>
-        <th>TAX</th>
-        <th>DISC</th>
+        <th>AMOUNT</th>
+        <th>TAX AMT</th>
+        <th>DIS. AMT</th>
         <th>BILL AMOUNT</th>
         <th>BILL TYPE</th>
         <th>ROOM NO</th>
-        <th>PLAN</th>
-        <th>PAYMENT</th>
-        <th>SPONSOR</th>
+        <th>FOOD PLAN</th>
+        <th>PAYMENT TYPE</th>
+        <th>ISCANCELLED</th>
+        <th>SPONSOR NAME</th>
         <th>REMARKS</th>
       </tr>
     </thead>
-    <tbody>${tableRows}</tbody>
+    <tbody>
+      ${tableRows}
+      <tr>
+        <td colspan="4" style="font-weight:700">TOTAL</td>
+        <td style="text-align:right;font-weight:700">${totalQty}</td>
+        <td></td>
+        <td style="text-align:right;font-weight:700">${fmt(totalAmount)}</td>
+        <td style="text-align:right;font-weight:700">${fmt(totalTax)}</td>
+        <td style="text-align:right;font-weight:700">${fmt(totalDisc)}</td>
+        <td style="text-align:right;font-weight:700">${fmt(totalBill)}</td>
+        <td colspan="7"></td>
+      </tr>
+    </tbody>
   </table>
 
-  <div class="summaries">
+  <div class="grid">
     <div>
-      <div class="summary-label">PLAN SUMMARY</div>
+      <div class="box-title">FIVE TOP SALE ITEM QTY</div>
+      <table><tbody>${topRowsHtml}</tbody></table>
+    </div>
+    <div>
+      <div class="box-title">SALES SUMMARY</div>
+      <table><tbody>${salesSummaryHtml}</tbody></table>
+    </div>
+    <div>
+      <div class="box-title">BILL TYPE SUMMARY</div>
+      <table><tbody>${billTypeRowsHtml}</tbody></table>
+    </div>
+    <div>
+      <div class="box-title">PLAN SUMMARY</div>
       <table><tbody>${planRowsHtml}</tbody></table>
     </div>
     <div>
-      <div class="summary-label">PAYMENT TYPE SUMMARY</div>
+      <div class="box-title">PAYMENT TYPE SUMMARY</div>
       <table><tbody>${payRowsHtml}</tbody></table>
     </div>
   </div>
@@ -399,8 +433,10 @@ export default function SaleRegisterPage() {
     setTimeout(() => {
       win.print();
       win.close();
-    }, 400);
+    }, 500);
   };
+
+  // ---- RENDER ----
 
   return (
     <div className="min-h-screen bg-slate-100 p-4 md:p-6">
@@ -420,9 +456,7 @@ export default function SaleRegisterPage() {
                 <input
                   type="date"
                   value={filters.from}
-                  onChange={(e) =>
-                    handleChangeFilter("from", e.target.value)
-                  }
+                  onChange={(e) => handleChangeFilter("from", e.target.value)}
                   className="w-full rounded-md border border-slate-300 px-3 py-2 outline-none focus:border-red-500"
                 />
               </div>
@@ -434,16 +468,44 @@ export default function SaleRegisterPage() {
                 <input
                   type="date"
                   value={filters.to}
-                  onChange={(e) =>
-                    handleChangeFilter("to", e.target.value)
-                  }
+                  onChange={(e) => handleChangeFilter("to", e.target.value)}
                   className="w-full rounded-md border border-slate-300 px-3 py-2 outline-none focus:border-red-500"
                 />
               </div>
 
-              
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-slate-600">
+                  Payment Type
+                </label>
+                <select
+                  value={filters.status}
+                  onChange={(e) =>
+                    handleChangeFilter("status", e.target.value)
+                  }
+                  className="w-full rounded-md border border-slate-300 px-3 py-2 outline-none focus:border-red-500"
+                >
+                  {STATUS_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-             
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-slate-600">
+                  Search
+                </label>
+                <input
+                  type="text"
+                  placeholder="Bill no / customer / item"
+                  value={filters.search}
+                  onChange={(e) =>
+                    handleChangeFilter("search", e.target.value)
+                  }
+                  className="w-full rounded-md border border-slate-300 px-3 py-2 outline-none focus:border-red-500"
+                />
+              </div>
 
               <div className="flex flex-wrap gap-2 pt-4 xl:col-span-2 xl:self-end xl:pt-0">
                 <button
@@ -452,18 +514,26 @@ export default function SaleRegisterPage() {
                 >
                   View
                 </button>
-              
+
+                <button
+                  onClick={handleReset}
+                  className="rounded-md bg-slate-500 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-600"
+                >
+                  Reset
+                </button>
+
                 <button
                   onClick={handleExportExcel}
                   disabled={!rows.length}
-                  className="inline-flex items-center gap-1.5 rounded-md bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="rounded-md bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-40"
                 >
                   Export Excel
                 </button>
+
                 <button
                   onClick={handlePrint}
                   disabled={!rows.length}
-                  className="inline-flex items-center gap-1.5 rounded-md bg-slate-700 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="rounded-md bg-slate-700 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-40"
                 >
                   Print
                 </button>
@@ -473,24 +543,25 @@ export default function SaleRegisterPage() {
 
           {/* TABLE */}
           <div className="overflow-x-auto">
-            <table className="min-w-[1200px] border-collapse text-sm">
+            <table className="min-w-[1450px] border-collapse text-sm">
               <thead className="sticky top-0 z-10 bg-[#0b1d34] text-white">
                 <tr>
                   {[
                     "DATE",
                     "BILL NO",
                     "CUSTOMER",
-                    "ITEM",
+                    "ITEM NAME",
                     "QTY",
                     "RATE",
-                    "TAXABLE",
-                    "TAX",
+                    "AMOUNT",
+                    "TAX AMT",
                     "DISC",
                     "BILL AMOUNT",
                     "BILL TYPE",
                     "ROOM NO",
                     "PLAN",
                     "PAYMENT",
+                    "ISCANCELLED",
                     "SPONSOR",
                     "REMARKS",
                   ].map((head) => (
@@ -507,7 +578,7 @@ export default function SaleRegisterPage() {
                 {loading ? (
                   <tr>
                     <td
-                      colSpan={16}
+                      colSpan={17}
                       className="border border-slate-300 px-4 py-6 text-center"
                     >
                       Loading...
@@ -516,7 +587,7 @@ export default function SaleRegisterPage() {
                 ) : rows.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={16}
+                      colSpan={17}
                       className="border border-slate-300 px-4 py-6 text-center text-slate-500"
                     >
                       No sales register data found
@@ -525,7 +596,7 @@ export default function SaleRegisterPage() {
                 ) : (
                   rows.map((row, index) => (
                     <tr
-                      key={`${row.billNo}-${row.itemId || index}`}
+                      key={`${row.billNo}-${row.saleId || index}`}
                       className="hover:bg-slate-50"
                     >
                       <td className="border border-slate-300 px-3 py-2">
@@ -543,8 +614,8 @@ export default function SaleRegisterPage() {
                       <td className="border border-slate-300 px-3 py-2 text-center">
                         {row.qty ?? 0}
                       </td>
-                      <td className="border border-slate-300 px-3 py-2 text-right">
-                        {fmt(row.rate)}
+                      <td className="border border-slate-300 px-3 py-2">
+                        {row.rate || "-"}
                       </td>
                       <td className="border border-slate-300 px-3 py-2 text-right">
                         {fmt(row.amount)}
@@ -583,6 +654,9 @@ export default function SaleRegisterPage() {
                         </span>
                       </td>
                       <td className="border border-slate-300 px-3 py-2">
+                        {row.isCancelled || "-"}
+                      </td>
+                      <td className="border border-slate-300 px-3 py-2">
                         {row.sponsorName || "-"}
                       </td>
                       <td className="border border-slate-300 px-3 py-2">
@@ -606,7 +680,7 @@ export default function SaleRegisterPage() {
                     </td>
                     <td />
                     <td className="px-3 py-2.5 text-right text-sm font-bold">
-                      {fmt(totalTaxable)}
+                      {fmt(totalAmount)}
                     </td>
                     <td className="px-3 py-2.5 text-right text-sm font-bold">
                       {fmt(totalTax)}
@@ -617,7 +691,7 @@ export default function SaleRegisterPage() {
                     <td className="px-3 py-2.5 text-right text-sm font-bold">
                       {fmt(totalBill)}
                     </td>
-                    <td colSpan={6} />
+                    <td colSpan={7} />
                   </tr>
                 </tfoot>
               )}
@@ -625,10 +699,134 @@ export default function SaleRegisterPage() {
           </div>
 
           {/* SUMMARY SECTION */}
-          <div className="grid gap-6 p-4 md:grid-cols-2">
+          <div className="grid gap-6 p-4 md:grid-cols-2 lg:grid-cols-4">
+            {/* TOP 5 ITEMS */}
             <div className="max-w-sm">
               <div className="border border-slate-500">
-                <div className="px-3 py-2 text-lg font-bold">PLAN SUMMARY</div>
+                <div className="px-3 py-2 text-lg font-bold">
+                  FIVE TOP SALE ITEM QTY
+                </div>
+                <table className="w-full">
+                  <tbody>
+                    {topItems.length === 0 ? (
+                      <tr>
+                        <td
+                          colSpan={2}
+                          className="border border-slate-300 px-3 py-2 text-slate-500"
+                        >
+                          No data
+                        </td>
+                      </tr>
+                    ) : (
+                      topItems.map(([item, qty]) => (
+                        <tr key={item}>
+                          <td className="border border-slate-300 px-3 py-2">
+                            {item}
+                          </td>
+                          <td className="border border-slate-300 px-3 py-2 text-right font-medium">
+                            {qty}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* SALES SUMMARY */}
+            <div className="max-w-sm">
+              <div className="border border-slate-500">
+                <div className="px-3 py-2 text-lg font-bold">
+                  SALES SUMMARY
+                </div>
+                <table className="w-full">
+                  <tbody>
+                    <tr>
+                      <td className="border border-slate-300 px-3 py-2">
+                        Amount
+                      </td>
+                      <td className="border border-slate-300 px-3 py-2 text-right font-medium">
+                        {fmt(totalAmount)}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="border border-slate-300 px-3 py-2">
+                        Discount Amount
+                      </td>
+                      <td className="border border-slate-300 px-3 py-2 text-right font-medium">
+                        {fmt(totalDisc)}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="border border-slate-300 px-3 py-2">
+                        Tax Amount
+                      </td>
+                      <td className="border border-slate-300 px-3 py-2 text-right font-medium">
+                        {fmt(totalTax)}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="border border-slate-300 px-3 py-2">
+                        Total Sales Amount
+                      </td>
+                      <td className="border border-slate-300 px-3 py-2 text-right font-medium">
+                        {fmt(totalBill)}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="border border-slate-300 px-3 py-2">
+                        Cancelled Bills
+                      </td>
+                      <td className="border border-slate-300 px-3 py-2 text-right font-medium">
+                        {cancelledCount}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* BILL TYPE SUMMARY */}
+            <div className="max-w-sm">
+              <div className="border border-slate-500">
+                <div className="px-3 py-2 text-lg font-bold">
+                  BILL TYPE SUMMARY
+                </div>
+                <table className="w-full">
+                  <tbody>
+                    {Object.keys(billTypeSummary).length === 0 ? (
+                      <tr>
+                        <td
+                          colSpan={2}
+                          className="border border-slate-300 px-3 py-2 text-slate-500"
+                        >
+                          No data
+                        </td>
+                      </tr>
+                    ) : (
+                      Object.entries(billTypeSummary).map(([type, count]) => (
+                        <tr key={type}>
+                          <td className="border border-slate-300 px-3 py-2">
+                            {type}
+                          </td>
+                          <td className="border border-slate-300 px-3 py-2 text-right font-medium">
+                            {count}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* PLAN SUMMARY */}
+            <div className="max-w-sm">
+              <div className="border border-slate-500">
+                <div className="px-3 py-2 text-lg font-bold">
+                  PLAN SUMMARY
+                </div>
                 <table className="w-full">
                   <tbody>
                     {Object.keys(planSummary).length === 0 ? (
@@ -657,6 +855,7 @@ export default function SaleRegisterPage() {
               </div>
             </div>
 
+            {/* PAYMENT TYPE SUMMARY */}
             <div className="max-w-sm">
               <div className="border border-slate-500">
                 <div className="px-3 py-2 text-lg font-bold">
@@ -690,6 +889,7 @@ export default function SaleRegisterPage() {
               </div>
             </div>
           </div>
+          {/* END SUMMARY */}
         </div>
       </div>
     </div>

@@ -6,7 +6,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
 const fmt = (n) =>
-  (n || 0).toLocaleString("en-IN", {
+  Number(n || 0).toLocaleString("en-IN", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
@@ -75,41 +75,68 @@ export default function HotelReport() {
   const buildExportRows = () => {
     const rows = [];
 
-    rows.push(["Category Wise Sales Summary of the Outlet", "Ac Restaurant"]);
+    rows.push(["Category Wise Sales Summary of the Outlet", "", "", "", "", "", "Ac Restaurant"]);
     rows.push([`For the Period ${fromDate} To ${toDate}`]);
     rows.push([]);
-    rows.push(["Sl No", "Item Name", "Unit", "Qty", "Amount"]);
+    rows.push(["Sl No", "Category", "Subcategory", "Item Name", "Unit", "Qty", "Amount"]);
 
-     let slNoCounter = 1;
+    let slNoCounter = 1;
+
     reportData.forEach((category) => {
-      rows.push([category.categoryName]);
+      rows.push([category.categoryName, "", "", "", "", "", ""]);
 
-      category.items.forEach((item) => {
+      (category.subcategories || []).forEach((sub) => {
+        rows.push(["", "", sub.subcategoryName, "", "", "", ""]);
+
+        (sub.items || []).forEach((item) => {
+          rows.push([
+            slNoCounter++,
+            category.categoryName,
+            sub.subcategoryName,
+            item.product_name || "",
+            item.unit || "Nos",
+            Number(item.qty || 0),
+            Number(item.amount || 0),
+          ]);
+        });
+
         rows.push([
-        slNoCounter++,
-          item.product_name || "",
-          item.unit || "Nos",
-          Number(item.qty || 0),
-          Number(item.amount || 0),
+          "",
+          "",
+          `${sub.subcategoryName} Sub Total`,
+          "",
+          "",
+          Number(sub.totalQty || 0),
+          Number(sub.totalAmount || 0),
         ]);
+        rows.push([]);
       });
 
-      rows.push(["", "Sub Total", "", Number(category.totalQty || 0), Number(category.totalAmount || 0)]);
+      rows.push([
+        "",
+        `${category.categoryName} Total`,
+        "",
+        "",
+        "",
+        Number(category.totalQty || 0),
+        Number(category.totalAmount || 0),
+      ]);
       rows.push([]);
     });
 
-    rows.push(["", "Grand Total", "", grandTotals.qty, grandTotals.amount]);
+    rows.push(["", "Grand Total", "", "", "", grandTotals.qty, grandTotals.amount]);
 
     return rows;
   };
 
   const exportToExcel = () => {
     const rows = buildExportRows();
-
     const ws = XLSX.utils.aoa_to_sheet(rows);
 
     ws["!cols"] = [
       { wch: 10 },
+      { wch: 22 },
+      { wch: 22 },
       { wch: 35 },
       { wch: 12 },
       { wch: 12 },
@@ -121,39 +148,68 @@ export default function HotelReport() {
 
     XLSX.writeFile(
       wb,
-      `restaurant-category-wise-report-${fromDate}-to-${toDate}.xlsx`
+      `restaurant-category-subcategory-report-${fromDate}-to-${toDate}.xlsx`
     );
   };
 
   const exportToPDF = () => {
-    const doc = new jsPDF("p", "mm", "a4");
+    const doc = new jsPDF("l", "mm", "a4");
 
     doc.setFontSize(13);
     doc.text("Category Wise Sales Summary of the Outlet", 14, 12);
     doc.setFontSize(11);
-    doc.text("Ac Restaurant", 150, 12);
+    doc.text("Ac Restaurant", 240, 12);
     doc.text(`For the Period ${fromDate} To ${toDate}`, 14, 18);
 
-    let body = [];
+    const body = [];
+    let slNoCounter = 1;
 
     reportData.forEach((category) => {
       body.push([
-        { content: category.categoryName, colSpan: 5, styles: { fontStyle: "bold", fillColor: [230, 230, 250] } },
+        {
+          content: `Category: ${category.categoryName}`,
+          colSpan: 7,
+          styles: { fontStyle: "bold", fillColor: [221, 228, 240] },
+        },
       ]);
-let slNoCounter = 1;
-      category.items.forEach((item) => {
+
+      (category.subcategories || []).forEach((sub) => {
         body.push([
-          slNoCounter++,
-          item.product_name || "",
-          item.unit || "Nos",
-          Number(item.qty || 0).toFixed(2),
-          fmt(item.amount || 0),
+          {
+            content: `Subcategory: ${sub.subcategoryName}`,
+            colSpan: 7,
+            styles: { fontStyle: "bold", fillColor: [238, 242, 247] },
+          },
+        ]);
+
+        (sub.items || []).forEach((item) => {
+          body.push([
+            slNoCounter++,
+            category.categoryName,
+            sub.subcategoryName,
+            item.product_name || "",
+            item.unit || "Nos",
+            Number(item.qty || 0).toFixed(2),
+            fmt(item.amount || 0),
+          ]);
+        });
+
+        body.push([
+          "",
+          "",
+          `${sub.subcategoryName} Sub Total`,
+          "",
+          "",
+          Number(sub.totalQty || 0).toFixed(2),
+          fmt(sub.totalAmount || 0),
         ]);
       });
 
       body.push([
         "",
-        "Sub Total",
+        `${category.categoryName} Total`,
+        "",
+        "",
         "",
         Number(category.totalQty || 0).toFixed(2),
         fmt(category.totalAmount || 0),
@@ -164,16 +220,18 @@ let slNoCounter = 1;
       "",
       "Grand Total",
       "",
+      "",
+      "",
       Number(grandTotals.qty || 0).toFixed(2),
       fmt(grandTotals.amount || 0),
     ]);
 
     autoTable(doc, {
       startY: 24,
-      head: [["Sl No", "Item Name", "Unit", "Qty", "Amount"]],
+      head: [["Sl No", "Category", "Subcategory", "Item Name", "Unit", "Qty", "Amount"]],
       body,
       styles: {
-        fontSize: 9,
+        fontSize: 8,
         cellPadding: 2,
       },
       headStyles: {
@@ -181,33 +239,33 @@ let slNoCounter = 1;
         textColor: 255,
       },
       columnStyles: {
-        0: { cellWidth: 18 },
-        1: { cellWidth: 78 },
-        2: { cellWidth: 25 },
-        3: { halign: "right", cellWidth: 25 },
-        4: { halign: "right", cellWidth: 30 },
+        0: { cellWidth: 16 },
+        1: { cellWidth: 28 },
+        2: { cellWidth: 30 },
+        3: { cellWidth: 70 },
+        4: { cellWidth: 20 },
+        5: { halign: "right", cellWidth: 22 },
+        6: { halign: "right", cellWidth: 28 },
       },
-      didParseCell: (data) => {
-        if (
-          data.row.raw &&
-          data.row.raw[1] === "Sub Total"
-        ) {
-          data.cell.styles.fontStyle = "bold";
-          data.cell.styles.fillColor = [245, 247, 251];
+      didParseCell: (hookData) => {
+        if (hookData.row.raw && hookData.row.raw[2]?.includes?.("Sub Total")) {
+          hookData.cell.styles.fontStyle = "bold";
+          hookData.cell.styles.fillColor = [245, 247, 251];
         }
 
-        if (
-          data.row.raw &&
-          data.row.raw[1] === "Grand Total"
-        ) {
-          data.cell.styles.fontStyle = "bold";
-          data.cell.styles.fillColor = [26, 58, 92];
-          data.cell.styles.textColor = 255;
+        if (hookData.row.raw && hookData.row.raw[1]?.includes?.("Total")) {
+          hookData.cell.styles.fontStyle = "bold";
+        }
+
+        if (hookData.row.raw && hookData.row.raw[1] === "Grand Total") {
+          hookData.cell.styles.fontStyle = "bold";
+          hookData.cell.styles.fillColor = [26, 58, 92];
+          hookData.cell.styles.textColor = 255;
         }
       },
     });
 
-    doc.save(`restaurant-category-wise-report-${fromDate}-to-${toDate}.pdf`);
+    doc.save(`restaurant-category-subcategory-report-${fromDate}-to-${toDate}.pdf`);
   };
 
   return (
@@ -287,6 +345,7 @@ let slNoCounter = 1;
             borderRadius: 6,
             cursor: "pointer",
             fontWeight: 600,
+            opacity: reportData.length ? 1 : 0.6,
           }}
         >
           Export Excel
@@ -303,6 +362,7 @@ let slNoCounter = 1;
             borderRadius: 6,
             cursor: "pointer",
             fontWeight: 600,
+            opacity: reportData.length ? 1 : 0.6,
           }}
         >
           Export PDF
@@ -322,56 +382,95 @@ let slNoCounter = 1;
           <div key={category.categoryName} style={{ marginBottom: 24 }}>
             <h3
               style={{
-                background: "#eef2f7",
+                background: "#dde4f0",
                 padding: 10,
                 borderRadius: 4,
+                marginBottom: 10,
               }}
             >
               {category.categoryName}
             </h3>
 
-            <table
+            {(category.subcategories || []).map((sub) => (
+              <div key={sub.subcategoryName} style={{ marginBottom: 16 }}>
+                <h4
+                  style={{
+                    background: "#eef2f7",
+                    padding: 8,
+                    borderRadius: 4,
+                    marginBottom: 6,
+                  }}
+                >
+                  {sub.subcategoryName} 
+                </h4>
+
+             <table
+  style={{
+    width: "100%",
+    borderCollapse: "collapse",
+    marginTop: 8,
+  }}
+>
+  <thead>
+    <tr style={{ background: "#1a3a5c", color: "white" }}>
+      <th style={{ padding: 8, textAlign: "left" }}>Sl No</th>
+      <th style={{ padding: 8, textAlign: "left" }}>Sales No</th>
+      <th style={{ padding: 8, textAlign: "left" }}>Date</th>
+      <th style={{ padding: 8, textAlign: "left" }}>Item</th>
+      <th style={{ padding: 8, textAlign: "left" }}>Unit</th>
+      <th style={{ padding: 8, textAlign: "right" }}>Qty</th>
+      <th style={{ padding: 8, textAlign: "right" }}>Amount</th>
+    </tr>
+  </thead>
+  <tbody>
+    {(sub.items || []).map((row, idx) => (
+      <tr
+        key={`${row.sale_id}-${row.product_id}-${idx}`}
+        style={{ borderBottom: "1px solid #eee" }}
+      >
+        <td style={{ padding: 8 }}>{idx + 1}</td>
+        <td style={{ padding: 8 }}>{row.salesNumber || "-"}</td>
+        <td style={{ padding: 8 }}>
+          {row.date ? new Date(row.date).toLocaleDateString("en-GB") : "-"}
+        </td>
+        <td style={{ padding: 8 }}>{row.product_name || "-"}</td>
+        <td style={{ padding: 8 }}>{row.unit || "-"}</td>
+        <td style={{ padding: 8, textAlign: "right" }}>
+          {Number(row.qty || 0).toFixed(2)}
+        </td>
+        <td style={{ padding: 8, textAlign: "right" }}>
+          {fmt(row.amount)}
+        </td>
+      </tr>
+    ))}
+
+    <tr style={{ background: "#f5f7fb", fontWeight: 700 }}>
+      <td colSpan={5} style={{ padding: 8 }}>
+        {sub.subcategoryName} Sub Total
+      </td>
+      <td style={{ padding: 8, textAlign: "right" }}>
+        {Number(sub.totalQty || 0).toFixed(2)}
+      </td>
+      <td style={{ padding: 8, textAlign: "right" }}>
+        {fmt(sub.totalAmount)}
+      </td>
+    </tr>
+  </tbody>
+</table>
+              </div>
+            ))}
+
+            <div
               style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                marginTop: 8,
+                background: "#dfe8f5",
+                padding: 10,
+                borderRadius: 4,
+                fontWeight: 700,
               }}
             >
-              <thead>
-                <tr style={{ background: "#1a3a5c", color: "white" }}>
-                  <th style={{ padding: 8, textAlign: "left" }}>Sl No</th>
-                  <th style={{ padding: 8, textAlign: "left" }}>Item</th>
-                  <th style={{ padding: 8, textAlign: "left" }}>Unit</th>
-                  <th style={{ padding: 8, textAlign: "right" }}>Qty</th>
-                  <th style={{ padding: 8, textAlign: "right" }}>Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                {category.items.map((row, idx) => (
-                  <tr key={idx} style={{ borderBottom: "1px solid #eee" }}>
-                    <td style={{ padding: 8 }}>{idx+1 || "-"}</td>
-                    <td style={{ padding: 8 }}>{row.product_name || "-"}</td>
-                    <td style={{ padding: 8 }}>{row.unit || "-"}</td>
-                    <td style={{ padding: 8, textAlign: "right" }}>{row.qty || 0}</td>
-                    <td style={{ padding: 8, textAlign: "right" }}>
-                      {fmt(row.amount)}
-                    </td>
-                  </tr>
-                ))}
-
-                <tr style={{ background: "#f5f7fb", fontWeight: 700 }}>
-                  <td colSpan={3} style={{ padding: 8 }}>
-                    Sub Total
-                  </td>
-                  <td style={{ padding: 8, textAlign: "right" }}>
-                    {category.totalQty || 0}
-                  </td>
-                  <td style={{ padding: 8, textAlign: "right" }}>
-                    {fmt(category.totalAmount)}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+              {category.categoryName} Total Qty: {Number(category.totalQty || 0).toFixed(2)} |
+              Amount: ₹{fmt(category.totalAmount)}
+            </div>
           </div>
         ))}
 
@@ -386,7 +485,7 @@ let slNoCounter = 1;
             fontWeight: 700,
           }}
         >
-          Grand Total Qty: {grandTotals.qty} | Grand Total Amount: ₹
+          Grand Total Qty: {Number(grandTotals.qty || 0).toFixed(2)} | Grand Total Amount: ₹
           {fmt(grandTotals.amount)}
         </div>
       )}
