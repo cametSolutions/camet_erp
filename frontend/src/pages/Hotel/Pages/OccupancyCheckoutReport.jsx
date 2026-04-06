@@ -80,6 +80,20 @@ const OccupancyCheckoutReport = () => {
     window.print();
   };
 
+// helper (add near top of file)
+const formatDateTime = (value) => {
+  if (!value) return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value; // fallback if not a valid date
+  return d.toLocaleString("en-GB", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
   const handleExportExcel = () => {
     const wb = XLSX.utils.book_new();
 
@@ -330,8 +344,8 @@ const OccupancyCheckoutReport = () => {
                       <td className="px-2 py-2">{row.guestName}</td>
                       <td className="px-2 py-2">{row.company}</td>
                       <td className="px-2 py-2 text-right">{row.pax}</td>
-                      <td className="px-2 py-2">{row.arrivalDate} {row.arrivalTime}</td>
-                      <td className="px-2 py-2">{row.departureDate}</td>
+                      <td className="px-2 py-2">{formatDateTime(row.arrivalDate)}</td>
+                      <td className="px-2 py-2">{formatDateTime(row.departureDate)}</td>
                       <td className="px-2 py-2">{row.plan}</td>
                       <td className="px-2 py-2 text-right">{row.tariff}</td>
                       <td className="px-2 py-2 text-right">{row.discountPercent}</td>
