@@ -1,27 +1,23 @@
-// HotelFlashReportWithPreview.jsx
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   Document,
   Page,
   Text,
   View,
   StyleSheet,
-  PDFViewer,
   Font,
   pdf,
 } from "@react-pdf/renderer";
 import * as XLSX from "xlsx";
-import api from "../../../api/api"; // adjust path
+import api from "../../../api/api";
 import { useSelector } from "react-redux";
 
-// Optional font
 Font.register({
   family: "Roboto",
   src: "https://cdnjs.cloudflare.com/ajax/libs/ink/3.1.10/fonts/Roboto/roboto-light-webfont.ttf",
 });
 
-// ====== PDF styles ======
-const styles = StyleSheet.create({
+const pdfStyles = StyleSheet.create({
   page: {
     padding: 30,
     fontSize: 10,
@@ -83,14 +79,14 @@ const styles = StyleSheet.create({
   },
 });
 
-// ====== helpers ======
-const formatNumber = (v) =>
-  typeof v === "number"
-    ? v.toLocaleString("en-IN", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      })
-    : "";
+const formatNumber = (v, isPercent = false) => {
+  const n = Number(v || 0);
+  if (isPercent) return `${n.toFixed(2)}%`;
+  return n.toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
 
 const formatDate = (d) =>
   new Date(d).toLocaleDateString("en-GB", {
@@ -99,53 +95,44 @@ const formatDate = (d) =>
     year: "numeric",
   });
 
-// table rows
 const Row = ({ label, d, m, isPercent }) => (
-  <View style={styles.tableRow}>
-    <Text style={styles.col1}>{label}</Text>
-    <Text style={styles.col2}>
-      {formatNumber(d)}
-      {isPercent && d !== undefined ? "%" : ""}
-    </Text>
-    <Text style={styles.col3}>
-      {formatNumber(m)}
-      {isPercent && m !== undefined ? "%" : ""}
-    </Text>
+  <View style={pdfStyles.tableRow}>
+    <Text style={pdfStyles.col1}>{label}</Text>
+    <Text style={pdfStyles.col2}>{formatNumber(d, isPercent)}</Text>
+    <Text style={pdfStyles.col3}>{formatNumber(m, isPercent)}</Text>
   </View>
 );
 
 const TotalRow = ({ label, d, m }) => (
-  <View style={styles.totalRow}>
-    <Text style={styles.col1}>{label}</Text>
-    <Text style={styles.col2}>{formatNumber(d)}</Text>
-    <Text style={styles.col3}>{formatNumber(m)}</Text>
+  <View style={pdfStyles.totalRow}>
+    <Text style={pdfStyles.col1}>{label}</Text>
+    <Text style={pdfStyles.col2}>{formatNumber(d)}</Text>
+    <Text style={pdfStyles.col3}>{formatNumber(m)}</Text>
   </View>
 );
 
-// ====== PDF document ======
 const FlashReportPDF = ({ data }) => (
   <Document>
-    <Page size="A4" style={styles.page}>
-      <View style={styles.border}>
-        <View style={styles.header}>
-          <Text style={styles.title}>{data?.companyName}</Text>
-          <Text style={styles.subtitle}>Hotel Flash Report</Text>
+    <Page size="A4" style={pdfStyles.page}>
+      <View style={pdfStyles.border}>
+        <View style={pdfStyles.header}>
+          <Text style={pdfStyles.title}>{data?.companyName}</Text>
+          <Text style={pdfStyles.subtitle}>Hotel Flash Report</Text>
         </View>
 
-        <View style={styles.dateRow}>
+        <View style={pdfStyles.dateRow}>
           <Text>
             Report From {formatDate(data?.fromDate)} To {formatDate(data?.toDate)}
           </Text>
         </View>
 
-        <View style={styles.tableHeader}>
-          <Text style={styles.col1}>Particulars</Text>
-          <Text style={styles.col2}>{data?.dayLabel}</Text>
-          <Text style={styles.col3}>{data?.monthLabel}</Text>
+        <View style={pdfStyles.tableHeader}>
+          <Text style={pdfStyles.col1}>Particulars</Text>
+          <Text style={pdfStyles.col2}>{data?.dayLabel}</Text>
+          <Text style={pdfStyles.col3}>{data?.monthLabel}</Text>
         </View>
 
-        {/* ROOM STATISTICS */}
-        <Text style={styles.sectionTitle}>ROOM STATISTICS:-</Text>
+        <Text style={pdfStyles.sectionTitle}>ROOM STATISTICS:-</Text>
         <Row label="(A) Total Rooms" d={data?.totalRooms} m={data?.totalRooms} />
         <Row label="(B) Blocked Rooms" d={data?.blockedRooms} m={data?.blockedRooms} />
         <Row label="(C) Total Saleable (A-B)" d={data?.saleableRooms} m={data?.saleableRooms} />
@@ -160,39 +147,23 @@ const FlashReportPDF = ({ data }) => (
         <Row label="(L) No of Males" d={data?.males} m={data?.males} />
         <Row label="(M) No of Females" d={data?.females} m={data?.females} />
         <Row label="(N) No Shows" d={data?.noShows} m={data?.noShows} />
-        <Row
-          label="(O) % of Occupancy (D/A)%"
-          d={data?.occPercent}
-          m={data?.occPercent}
-          isPercent
-        />
+        <Row label="(O) % of Occupancy (D/A)%" d={data?.occPercent} m={data?.occPercent} isPercent />
         <Row label="(P) ARR (Total Rooms)" d={data?.arrTotalRooms} m={data?.arrTotalRooms} />
         <Row label="(Q) ARR (Saleable Rooms)" d={data?.arrSaleableRooms} m={data?.arrSaleableRooms} />
         <Row label="(R) ARR (Occupied Rooms)" d={data?.arrOccupiedRooms} m={data?.arrOccupiedRooms} />
 
-        {/* ROOM REVENUE */}
-        <Text style={styles.sectionTitle}>ROOM REVENUE</Text>
-        <Row
-          label="Apartment Charges (Accrued)"
-          d={data?.roomApartment}
-          m={data?.roomApartment}
-        />
-        <Row
-          label="Extra Bed Charges (Accrued)"
-          d={data?.roomExtraBed}
-          m={data?.roomExtraBed}
-        />
+        <Text style={pdfStyles.sectionTitle}>ROOM REVENUE</Text>
+        <Row label="Apartment Charges (Accrued)" d={data?.roomApartment} m={data?.roomApartment} />
+        <Row label="Extra Bed Charges (Accrued)" d={data?.roomExtraBed} m={data?.roomExtraBed} />
         <TotalRow label="Total : ROOM REVENUE" d={data?.roomTotal} m={data?.roomTotal} />
 
-        {/* F&B REVENUE */}
-        <Text style={styles.sectionTitle}>F&B REVENUE</Text>
+        <Text style={pdfStyles.sectionTitle}>F&B REVENUE</Text>
         <Row label="Plan Rate (Accrued)" d={data?.fbPlanRate} m={data?.fbPlanRate} />
         <Row label="Rustic Room Service" d={data?.fbRoomService} m={data?.fbRoomService} />
         <Row label="Rustic Barn Restaurant" d={data?.fbRestaurant} m={data?.fbRestaurant} />
         <TotalRow label="Total : F&B REVENUE" d={data?.fbTotal} m={data?.fbTotal} />
 
-        {/* OTHER REVENUES */}
-        <Text style={styles.sectionTitle}>OTHER REVENUES</Text>
+        <Text style={pdfStyles.sectionTitle}>OTHER REVENUES</Text>
         <Row label="MOD REVENUES" d={data?.modRevenues} m={data?.modRevenues} />
         <TotalRow label="Grand Total" d={data?.grandTotal} m={data?.grandTotal} />
       </View>
@@ -200,52 +171,70 @@ const FlashReportPDF = ({ data }) => (
   </Document>
 );
 
-// ====== MAIN COMPONENT: CALL API + SHOW PREVIEW MODAL ======
-const HotelFlashReport = () => {
-  const [reportData, setReportData] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [showPreview, setShowPreview] = useState(false);
+const DataRow = ({ label, d, m, isPercent = false, bold = false }) => (
+  <tr className="border-b border-gray-200">
+    <td className={`px-3 py-2 text-sm text-gray-800 ${bold ? "font-bold" : ""}`}>
+      {label}
+    </td>
+    <td className={`px-3 py-2 text-sm text-right text-gray-800 ${bold ? "font-bold" : ""}`}>
+      {formatNumber(d, isPercent)}
+    </td>
+    <td className={`px-3 py-2 text-sm text-right text-gray-800 ${bold ? "font-bold" : ""}`}>
+      {formatNumber(m, isPercent)}
+    </td>
+  </tr>
+);
 
+const HotelFlashReportPage = () => {
   const { _id: cmp_id } =
     useSelector((s) => s.secSelectedOrganization.secSelectedOrg) || {};
 
-  // put your date selector or just use today
   const today = new Date().toISOString().slice(0, 10);
 
-  // call backend API inside this component
-  useEffect(() => {
-    if (!cmp_id) return;
-    const fetchReport = async () => {
-      try {
-        setLoading(true);
-        setError("");
-        const res = await api.get("/api/sUsers/flash-report", {
-          params: { cmp_id, date: today },
-        });
-        if (res.data.success) {
-          setReportData(res.data.data);
-          setShowPreview(true); // open preview automatically
-        } else {
-          setError(res.data.message || "Failed to load flash report");
-        }
-      } catch (err) {
-        setError(
-          err.response?.data?.message || "Error loading flash report"
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchReport();
-  }, [cmp_id, today]);
+  const [fromDate, setFromDate] = useState(today);
+  const [toDate, setToDate] = useState(today);
+  const [reportData, setReportData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  // print current PDF
+  const fetchReport = async () => {
+    if (!cmp_id || !fromDate || !toDate) return;
+
+    if (fromDate > toDate) {
+      setError("From Date cannot be greater than To Date");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError("");
+      setReportData(null);
+
+      const res = await api.get("/api/sUsers/flash-report", {
+        params: { cmp_id, fromDate, toDate },
+      });
+
+      if (res.data.success) {
+        setReportData(res.data.data);
+      } else {
+        setError(res.data.message || "Failed to load flash report");
+      }
+    } catch (err) {
+      setError(
+        err.response?.data?.message || "Error loading flash report"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handlePrint = async () => {
     if (!reportData) return;
+
     const blob = await pdf(<FlashReportPDF data={reportData} />).toBlob();
     const url = URL.createObjectURL(blob);
-    const win = window.open(url);
+    const win = window.open(url, "_blank");
+
     if (win) {
       win.onload = () => {
         win.focus();
@@ -254,16 +243,18 @@ const HotelFlashReport = () => {
     }
   };
 
-  // export current data to Excel (same structure as your sheet)
   const handleExportExcel = () => {
     if (!reportData) return;
+
     const d = reportData;
+
     const rows = [
-      [d.companyName || "Hotel"], // title
+      [d.companyName || "Hotel"],
       ["Hotel Flash Report"],
       [`Report From ${formatDate(d.fromDate)} To ${formatDate(d.toDate)}`],
       [],
       ["Particulars", d.dayLabel, d.monthLabel],
+
       ["ROOM STATISTICS:-"],
       ["(A) Total Rooms", d.totalRooms, d.totalRooms],
       ["(B) Blocked Rooms", d.blockedRooms, d.blockedRooms],
@@ -283,17 +274,20 @@ const HotelFlashReport = () => {
       ["(P) ARR(Total Rooms)", d.arrTotalRooms, d.arrTotalRooms],
       ["(Q) ARR(Saleable Rooms)", d.arrSaleableRooms, d.arrSaleableRooms],
       ["(R) ARR(Occupied Rooms)", d.arrOccupiedRooms, d.arrOccupiedRooms],
+
       [],
       ["ROOM REVENUE"],
       ["Apartment Charges (Accrued)", d.roomApartment, d.roomApartment],
       ["Extra Bed Charges (Accrued)", d.roomExtraBed, d.roomExtraBed],
       ["Total : ROOM REVENUE", d.roomTotal, d.roomTotal],
+
       [],
       ["F&B REVENUE"],
       ["Plan Rate (Accrued)", d.fbPlanRate, d.fbPlanRate],
       ["Rustic Room Service", d.fbRoomService, d.fbRoomService],
       ["Rustic Barn Restaurant", d.fbRestaurant, d.fbRestaurant],
       ["Total : F&B REVENUE", d.fbTotal, d.fbTotal],
+
       [],
       ["OTHER REVENUES"],
       ["MOD REVENUES", d.modRevenues, d.modRevenues],
@@ -303,65 +297,181 @@ const HotelFlashReport = () => {
     const ws = XLSX.utils.aoa_to_sheet(rows);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Flash Report");
-    XLSX.writeFile(wb, `Hotel-Flash-Report-${d.fromDate}.xlsx`);
+    XLSX.writeFile(wb, `Hotel-Flash-Report-${d.fromDate}-to-${d.toDate}.xlsx`);
   };
 
-  if (loading) {
-    return (
-      <div className="p-4 text-center text-gray-600">
-        Loading flash report...
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="p-4 text-center text-red-600">
-        {error}
-      </div>
-    );
-  }
-
-  if (!reportData || !showPreview) return null;
-
-  // only preview modal, no extra "open" button
   return (
-    <div className="fixed inset-0 z-50 bg-black bg-opacity-70 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col">
-        {/* header */}
-        <div className="flex justify-between items-center px-4 py-2 border-b border-gray-200">
-          <h3 className="text-lg font-semibold">Hotel Flash Report Preview</h3>
-          <div className="flex gap-2">
-            <button
-              onClick={handlePrint}
-              className="bg-green-600 text-white px-4 py-2 rounded text-sm font-semibold"
-            >
-              Print
-            </button>
-            <button
-              onClick={handleExportExcel}
-              className="bg-amber-500 text-white px-4 py-2 rounded text-sm font-semibold"
-            >
-              Export to Excel
-            </button>
-            <button
-              onClick={() => setShowPreview(false)}
-              className="bg-red-600 text-white px-4 py-2 rounded text-sm font-semibold"
-            >
-              Close
-            </button>
+    <div className="min-h-screen bg-gray-100 p-4 md:p-6">
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+        <div className="border-b border-gray-200 p-4 md:p-6">
+          <div className="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">
+                Hotel Flash Report
+              </h1>
+              <p className="text-sm text-gray-500 mt-1">
+                Select from date and to date, then load the report.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-end gap-3">
+              <div className="flex flex-col">
+                <label className="text-sm font-medium text-gray-700 mb-1">
+                  From Date
+                </label>
+                <input
+                  type="date"
+                  value={fromDate}
+                  onChange={(e) => setFromDate(e.target.value)}
+                  className="border border-gray-300 rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="flex flex-col">
+                <label className="text-sm font-medium text-gray-700 mb-1">
+                  To Date
+                </label>
+                <input
+                  type="date"
+                  value={toDate}
+                  min={fromDate}
+                  onChange={(e) => setToDate(e.target.value)}
+                  className="border border-gray-300 rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <button
+                onClick={fetchReport}
+                disabled={loading}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md disabled:opacity-50"
+              >
+                {loading ? "Loading..." : "Load Report"}
+              </button>
+
+              <button
+                onClick={handlePrint}
+                disabled={!reportData}
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md disabled:opacity-50"
+              >
+                Print
+              </button>
+
+              <button
+                onClick={handleExportExcel}
+                disabled={!reportData}
+                className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-md disabled:opacity-50"
+              >
+                Export Excel
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* PDF preview */}
-        <div className="flex-1 overflow-hidden">
-          <PDFViewer width="100%" height="100%" showToolbar={true}>
-            <FlashReportPDF data={reportData} />
-          </PDFViewer>
+        <div className="p-4 md:p-6">
+          {error && (
+            <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-red-600">
+              {error}
+            </div>
+          )}
+
+          {!reportData && !loading && !error && (
+            <div className="py-16 text-center text-gray-500">
+              Select the date range and click Load Report
+            </div>
+          )}
+
+          {reportData && (
+            <div className="max-w-5xl mx-auto bg-white border border-gray-300 shadow-sm">
+              <div className="px-6 pt-6 text-center">
+                <h2 className="text-3xl font-bold uppercase text-gray-900">
+                  {reportData.companyName}
+                </h2>
+                <p className="text-base font-semibold text-gray-800 underline">
+                  Hotel Flash Report
+                </p>
+              </div>
+
+              <div className="px-6 pt-4 pb-2 text-sm text-gray-700">
+                Report From {formatDate(reportData.fromDate)} To{" "}
+                {formatDate(reportData.toDate)}
+              </div>
+
+              <div className="px-6 pb-6 overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="border-t border-b-2 border-gray-400">
+                      <th className="px-3 py-2 text-left text-sm font-semibold text-gray-900">
+                        Particulars
+                      </th>
+                      <th className="px-3 py-2 text-right text-sm font-semibold text-gray-900">
+                        {reportData.dayLabel}
+                      </th>
+                      <th className="px-3 py-2 text-right text-sm font-semibold text-gray-900">
+                        {reportData.monthLabel}
+                      </th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    <tr>
+                      <td colSpan="3" className="px-3 py-3 text-sm font-bold text-gray-900">
+                        ROOM STATISTICS:-
+                      </td>
+                    </tr>
+                    <DataRow label="(A) Total Rooms" d={reportData.totalRooms} m={reportData.totalRooms} />
+                    <DataRow label="(B) Blocked Rooms" d={reportData.blockedRooms} m={reportData.blockedRooms} />
+                    <DataRow label="(C) Total Saleable (A-B)" d={reportData.saleableRooms} m={reportData.saleableRooms} />
+                    <DataRow label="(D) Occupied Rooms (Paid)" d={reportData.occupiedPaid} m={reportData.occupiedPaid} />
+                    <DataRow label="(E) Occupied Rooms (Comp/House Use)" d={reportData.occupiedComp} m={reportData.occupiedComp} />
+                    <DataRow label="(F) Total Occupied Rooms (D+E)" d={reportData.totalOccupied} m={reportData.totalOccupied} />
+                    <DataRow label="(G) No of Pax - Domestic" d={reportData.paxDomestic} m={reportData.paxDomestic} />
+                    <DataRow label="(H) No of Pax - Foreigners" d={reportData.paxForeign} m={reportData.paxForeign} />
+                    <DataRow label="(I) Total Pax (G+H)" d={reportData.totalPax} m={reportData.totalPax} />
+                    <DataRow label="(J) No of Adults" d={reportData.adults} m={reportData.adults} />
+                    <DataRow label="(K) No of Children" d={reportData.children} m={reportData.children} />
+                    <DataRow label="(L) No of Males" d={reportData.males} m={reportData.males} />
+                    <DataRow label="(M) No of Females" d={reportData.females} m={reportData.females} />
+                    <DataRow label="(N) No Shows" d={reportData.noShows} m={reportData.noShows} />
+                    <DataRow label="(O) % of Occupancy (D/A)%" d={reportData.occPercent} m={reportData.occPercent} isPercent />
+                    <DataRow label="(P) ARR (Total Rooms)" d={reportData.arrTotalRooms} m={reportData.arrTotalRooms} />
+                    <DataRow label="(Q) ARR (Saleable Rooms)" d={reportData.arrSaleableRooms} m={reportData.arrSaleableRooms} />
+                    <DataRow label="(R) ARR (Occupied Rooms)" d={reportData.arrOccupiedRooms} m={reportData.arrOccupiedRooms} />
+
+                    <tr>
+                      <td colSpan="3" className="px-3 py-3 text-sm font-bold text-gray-900">
+                        ROOM REVENUE
+                      </td>
+                    </tr>
+                    <DataRow label="Apartment Charges (Accrued)" d={reportData.roomApartment} m={reportData.roomApartment} />
+                    <DataRow label="Extra Bed Charges (Accrued)" d={reportData.roomExtraBed} m={reportData.roomExtraBed} />
+                    <DataRow label="Total : ROOM REVENUE" d={reportData.roomTotal} m={reportData.roomTotal} bold />
+
+                    <tr>
+                      <td colSpan="3" className="px-3 py-3 text-sm font-bold text-gray-900">
+                        F&B REVENUE
+                      </td>
+                    </tr>
+                    <DataRow label="Plan Rate (Accrued)" d={reportData.fbPlanRate} m={reportData.fbPlanRate} />
+                    <DataRow label="Rustic Room Service" d={reportData.fbRoomService} m={reportData.fbRoomService} />
+                    <DataRow label="Rustic Barn Restaurant" d={reportData.fbRestaurant} m={reportData.fbRestaurant} />
+                    <DataRow label="Total : F&B REVENUE" d={reportData.fbTotal} m={reportData.fbTotal} bold />
+
+                    <tr>
+                      <td colSpan="3" className="px-3 py-3 text-sm font-bold text-gray-900">
+                        OTHER REVENUES
+                      </td>
+                    </tr>
+                    <DataRow label="MOD REVENUES" d={reportData.modRevenues} m={reportData.modRevenues} />
+                    <DataRow label="Grand Total" d={reportData.grandTotal} m={reportData.grandTotal} bold />
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
 };
 
-export default HotelFlashReport;
+export default HotelFlashReportPage;

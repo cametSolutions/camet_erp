@@ -4,11 +4,12 @@ import api from "@/api/api";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 
+const getToday = () => new Date().toISOString().slice(0, 10);
 
 const TouristReport = () => {
   const [filters, setFilters] = useState({
-    fromDate: "2025-08-01",
-    toDate: "2026-03-23",
+    fromDate: getToday(),
+    toDate: getToday(),
   });
 
   const [rows, setRows] = useState([]);

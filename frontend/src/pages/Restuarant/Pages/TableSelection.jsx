@@ -498,24 +498,33 @@ const TableTiles = ({
 
                   {/* Dropdown results */}
                   {showResults && search && (
-                    <ul className="absolute z-10 w-full bg-white border rounded-lg shadow max-h-60 overflow-y-auto">
-                      {filteredRooms.length > 0 ? (
-                        filteredRooms.map((room) => (
-                          <li
-                            key={room.roomId}
-                            className="px-4 py-2 hover:bg-violet-100 cursor-pointer"
-                            onClick={() => handleSelectRoom(room)}
-                          >
-                            {room.roomName} - {room.customerName} -{" "}
-                            {room.voucherNumber}
-                          </li>
-                        ))
-                      ) : (
-                        <li className="px-4 py-2 text-gray-500">
-                          No results found
-                        </li>
-                      )}
-                    </ul>
+                    <ul className="absolute z-10 mt-1 w-full min-w-[700px] bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+  {filteredRooms.length > 0 ? (
+    <>
+      <li className="sticky top-0 z-10 grid grid-cols-[120px_180px_180px_180px] gap-2 px-4 py-2 text-xs font-semibold text-gray-600 uppercase bg-gray-100 border-b">
+        <span>Room No</span>
+        <span>Customer Name</span>
+        <span>Guest Name</span>
+        <span>Check-In No</span>
+      </li>
+
+      {filteredRooms.map((room) => (
+        <li
+          key={room.roomId}
+          className="grid grid-cols-[120px_180px_180px_180px] gap-2 px-4 py-2 text-sm cursor-pointer hover:bg-violet-100 border-b last:border-b-0"
+          onClick={() => handleSelectRoom(room)}
+        >
+          <span className="truncate">{room.roomName}</span>
+          <span className="truncate">{room.customerName}</span>
+          <span className="truncate">{room.guestName}</span>
+          <span className="truncate">{room.voucherNumber}</span>
+        </li>
+      ))}
+    </>
+  ) : (
+    <li className="px-4 py-2 text-gray-500">No results found</li>
+  )}
+</ul>
                   )}
                 </div>
               )}

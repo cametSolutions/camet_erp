@@ -803,10 +803,10 @@ export const getRooms = async (req, res) => {
 
     // Add booked room IDs
     overlappingBookings.forEach((booking) => {
-      if (booking.selectedRooms && Array.isArray(booking.selectedRooms)) {
+      if (booking.selectedRooms && Array.isArray(booking.selectedRooms )) {
         booking.selectedRooms.forEach((room) => {
           const roomId = room.roomId || room._id || room;
-          if (roomId) {
+          if (roomId ) {
             occupiedRoomId.add(roomId.toString());
           }
         });
@@ -815,10 +815,10 @@ export const getRooms = async (req, res) => {
     // console.log("allcheckins", AllCheckIns)
     // Add checked-in room IDs
     AllCheckIns.forEach((checkIn) => {
-      if (checkIn.selectedRooms && Array.isArray(checkIn.selectedRooms)) {
+      if (checkIn.selectedRooms && Array.isArray(checkIn.selectedRooms) && !checkIn.isHold) {
         checkIn.selectedRooms.forEach((room) => {
           const roomId = room.roomId || room._id || room;
-          if (roomId) {
+          if (roomId && !room.isSwapped) {
             occupiedRoomId.add(roomId.toString());
           }
         });
@@ -865,7 +865,6 @@ export const getRooms = async (req, res) => {
     });
   }
 };
-
 // function used to get all rooms
 
 export const getAllRooms = async (req, res) => {
@@ -2243,7 +2242,7 @@ export const getAllRoomsWithStatusForDate = async (req, res) => {
     const bookedRoomIds = new Set();
     for (const booking of bookings) {
       for (const selRoom of booking.selectedRooms) {
-        if (selRoom.roomId )  {
+        if (selRoom.roomId ) {
           bookedRoomIds.add(selRoom.roomId.toString());
         }
       }
@@ -2253,7 +2252,7 @@ export const getAllRoomsWithStatusForDate = async (req, res) => {
     for (const checkin of AllCheckIns) {
       for (const selRoom of checkin.selectedRooms) {
         console.log("selRoom", checkin);
-        if (selRoom?.roomId &&!selRoom?.isSwapped &&!checkin?.isHold){
+        if (selRoom?.roomId && !selRoom?.isSwapped && !checkin?.isHold) {
           occupiedRoomIds.add(selRoom.roomId.toString());
         }
       }
@@ -2262,7 +2261,7 @@ export const getAllRoomsWithStatusForDate = async (req, res) => {
     // --- Mark each room's status
     const roomsWithStatus = allRooms.map((room) => {
       let status = room?.status;
-      if (occupiedRoomIds.has(room._id.toString() )) {
+      if (occupiedRoomIds.has(room._id.toString())) {
         status = "occupied";
       } else if (bookedRoomIds.has(room._id.toString())) {
         status = "booked";
@@ -2337,6 +2336,7 @@ export const getDateBasedRoomsWithStatus = async (req, res) => {
       status: { $ne: "checkIn" },
       arrivalDate: { $lte: selectedDate },
       checkOutDate: { $gte: selectedDate },
+      
     });
 
     // 2. Fetch check-ins (status not 'checkOut')
@@ -2521,87 +2521,86 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
     };
 
     // ✅ CORRECTED: Get roomId and serviceType from ROOT level, not kotDetails
-await Promise.all(
-  checkoutData.map(async (checkout) => {
-    const docs = await salesModel.aggregate([
-      {
-        $match: {
-          "convertedFrom.id": { $exists: true, $ne: null },
-          "convertedFrom.checkInNumber":
-            checkout?.checkInId?.voucherNumber ||
-            checkout?.voucherNumber,
-          isComplimentary: false,
-          isPostToRoom: true,
-          cmp_id,
-          isCancelled:false,
-        },
-      },
-      {
-        $addFields: {
-          convertedFromObjId: {
-            $map: {
-              input: "$convertedFrom",
-              as: "cf",
-              in: { $toObjectId: "$$cf.id" },
+    await Promise.all(
+      checkoutData.map(async (checkout) => {
+        const docs = await salesModel.aggregate([
+          {
+            $match: {
+              "convertedFrom.id": { $exists: true, $ne: null },
+              "convertedFrom.checkInNumber":
+                checkout?.checkInId?.voucherNumber || checkout?.voucherNumber,
+              isComplimentary: false,
+              isPostToRoom: true,
+              cmp_id,
+              isCancelled: false,
             },
           },
-        },
-      },
-      {
-        $lookup: {
-          from: "kots",
-          let: { cfIds: "$convertedFromObjId" },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $in: ["$_id", "$$cfIds"],
+          {
+            $addFields: {
+              convertedFromObjId: {
+                $map: {
+                  input: "$convertedFrom",
+                  as: "cf",
+                  in: { $toObjectId: "$$cf.id" },
                 },
               },
             },
-            {
-              $project: {
-                _id: 0,
-                roomId: 1,
-                tableNumber: 1,
-                serviceType: 1,
-              },
+          },
+          {
+            $lookup: {
+              from: "kots",
+              let: { cfIds: "$convertedFromObjId" },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: {
+                      $in: ["$_id", "$$cfIds"],
+                    },
+                  },
+                },
+                {
+                  $project: {
+                    _id: 0,
+                    roomId: 1,
+                    tableNumber: 1,
+                    serviceType: 1,
+                  },
+                },
+              ],
+              as: "kotDetails",
             },
-          ],
-          as: "kotDetails",
-        },
-      },
-      {
-        $unwind: {
-          path: "$kotDetails",
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-    ]);
+          },
+          {
+            $unwind: {
+              path: "$kotDetails",
+              preserveNullAndEmptyArrays: true,
+            },
+          },
+        ]);
 
-    docs.forEach((doc, idx) => {
-      console.log(`KOT ${idx + 1}:`, {
-        salesNumber: doc.salesNumber,
-        convertedFromId: doc.convertedFrom,
-        roomId: doc.kotDetails?.roomId,
-        tableNumber: doc.kotDetails?.tableNumber,
-        serviceType: doc.kotDetails?.serviceType,
-        amount: doc.finalAmount,
-      });
-    });
+        docs.forEach((doc, idx) => {
+          console.log(`KOT ${idx + 1}:`, {
+            salesNumber: doc.salesNumber,
+            convertedFromId: doc.convertedFrom,
+            roomId: doc.kotDetails?.roomId,
+            tableNumber: doc.kotDetails?.tableNumber,
+            serviceType: doc.kotDetails?.serviceType,
+            amount: doc.finalAmount,
+          });
+        });
 
-    console.log("ALL KOT DATAaaa", docs);
-    
+        console.log("ALL KOT DATAaaa", docs);
 
-docs.forEach((doc) => {
-  if (!allKotData.some((item) => String(item._id) === String(doc._id))) {
-    allKotData.push(doc);
-  }
-});
-    
-  })
-);
-console.log("ALL KOT DATA", allKotData);
+        docs.forEach((doc) => {
+          if (
+            !allKotData.some((item) => String(item._id) === String(doc._id))
+          ) {
+            allKotData.push(doc);
+          }
+        });
+      }),
+    );
+    console.log("ALL KOT DATA", allKotData);
     const uniqueIds = new Set();
     const advanceMap = new Map(); // prevents duplicates by _id
 
@@ -2779,7 +2778,7 @@ export const convertCheckOutToSale = async (req, res) => {
       // Process each checkout separately
       let results;
       let salesarray;
-     
+
       for (const item of selectedCheckOut) {
         // console.log("itemdddddd", item);
         const bookingVoucherNumber =
@@ -3304,7 +3303,7 @@ export const convertCheckOutToSale = async (req, res) => {
         : "Checkout(s) converted to Sales successfully",
       data: {
         results: req._multiCheckoutResults,
-        checkOutAfterSave
+        checkOutAfterSave,
       },
     });
   } catch (error) {
@@ -3626,17 +3625,15 @@ export const updateConfigurationForHotelAndRestaurant = async (req, res) => {
             data.checked,
         },
       };
-    }
-    else if (data.title === "foodPlaWithRoomRate") {
+    } else if (data.title === "foodPlaWithRoomRate") {
       console.log("foodPlaWithRoomRate");
       // Handle existing addRateWithTax toggle updates
       updateData = {
         $set: {
-          [`configurations.0.foodPlaWithRoomRate`]:
-            data.checked,
+          [`configurations.0.foodPlaWithRoomRate`]: data.checked,
         },
       };
-     } else if (data.fieldType === "orderTypes") {
+    } else if (data.fieldType === "orderTypes") {
       updateData = {
         $set: {
           [`configurations.0.orderTypes.${data.field}`]: data.checked,
@@ -3727,8 +3724,6 @@ export const checkedInGuest = async (req, res) => {
   }
 };
 
-
-
 export const swapRoom = async (req, res) => {
   const session = await mongoose.startSession();
 
@@ -3736,7 +3731,7 @@ export const swapRoom = async (req, res) => {
     session.startTransaction();
 
     const { checkInId } = req.params;
-    const { newRoomId, oldRoomId,selectedDate } = req.body;
+    const { newRoomId, oldRoomId, selectedDate } = req.body;
 
     if (!newRoomId || !oldRoomId) {
       await session.abortTransaction();
@@ -3821,14 +3816,14 @@ export const swapRoom = async (req, res) => {
     await roomModal.findByIdAndUpdate(
       oldRoomId,
       { status: "dirty" },
-      { isSwapped: true},
-      { new: true, session }
+      { isSwapped: true },
+      { new: true, session },
     );
 
     await roomModal.findByIdAndUpdate(
       newRoomId,
       { status: "occupied" },
-      { new: true, session }
+      { new: true, session },
     );
 
     // close old selected room row
@@ -3839,7 +3834,25 @@ export const swapRoom = async (req, res) => {
     const taxPercentage = Number(newRoom.igst || 0);
     const taxAmount = (totalAmount * taxPercentage) / 100;
 
-    let selectedPriceLevel = await PriceLevel.findOne({ _id: newRoom.priceLevel[0].priceLevel });
+    const selected = new Date(selectedDate);
+    const checkout = new Date(checkIn?.checkOutDate);
+    const arrivedAt = new Date(checkIn?.arrivalDate);
+
+    let stayedDays = Math.ceil((selected - checkout) / (1000 * 60 * 60 * 24));
+
+    let stayedDaysAtOldRoom = Math.ceil(
+      (arrivedAt - selected) / (1000 * 60 * 60 * 24),
+    );
+
+    // 🔥 Fix: if same day or negative → make it 1
+    if (stayedDays <= 0) {
+      stayedDays = 1;
+    }
+
+    let selectedPriceLevel = await PriceLevel.findOne({
+      _id: newRoom.priceLevel?.[0]?.priceLevel,
+    });
+    selectedPriceLevel = selectedPriceLevel ? selectedPriceLevel : [];
     checkIn.selectedRooms.push({
       roomId: newRoom._id,
       roomName: newRoom.roomName,
@@ -3847,8 +3860,8 @@ export const swapRoom = async (req, res) => {
       roomType: newRoom.roomType,
       dateTariffs: {},
       pax: 2,
-      priceLevelRate: newRoom.priceLevel?.[0].priceRate,
-      stayDays: 0,
+      priceLevelRate: newRoom.priceLevel?.[0]?.priceRate || 0,
+      stayDays: stayedDays,
       hsnDetails: newRoom?.hsn || oldRoom?.hsn,
       totalAmount,
       amountAfterTax: totalAmount + taxAmount,
@@ -3860,7 +3873,18 @@ export const swapRoom = async (req, res) => {
       totalCgstAmt: taxAmount / 2,
       totalSgstAmt: taxAmount / 2,
       totalIgstAmt: taxAmount,
+      swappingDateFrom: selectedDate,
       isSwapped: false,
+    });
+
+    checkIn.selectedRooms = checkIn.selectedRooms.map((room) => {
+      if (String(room.roomId) === String(oldRoom.roomId)) {
+        return {
+          ...room,
+          swappingDateFrom: selectedDate,
+        };
+      }
+      return room;
     });
 
     if (checkIn.selectedRooms[checkInRoomIndex].hasOwnProperty("roomName")) {
@@ -3868,7 +3892,7 @@ export const swapRoom = async (req, res) => {
     }
 
     if (checkIn.selectedRooms[checkInRoomIndex].hasOwnProperty("roomNumber")) {
-      checkIn.selectedRooms[checkInRoomIndex].roomNumber = oldRoom.roomNumber;
+      checkIn.selectedRooms[checkInRoomIndex].roomName = oldRoom.roomName;
     }
 
     if (!checkIn.roomSwapHistory) {
@@ -5163,15 +5187,14 @@ export const controlTaggedCheckIn = async (req, res) => {
       }));
 
       await CheckIn.bulkWrite(bulkOps, { session });
-    for (const h of holds) {
-  for (const room of h.selectedRooms) {
-    await roomModal.updateOne(
-      { _id: new mongoose.Types.ObjectId(room.roomId) },
-      { status: "dirty" }
-
-    );
-  }
-}
+      for (const h of holds) {
+        for (const room of h.selectedRooms) {
+          await roomModal.updateOne(
+            { _id: new mongoose.Types.ObjectId(room.roomId) },
+            { status: "dirty" },
+          );
+        }
+      }
     });
 
     session.endSession();
@@ -5234,9 +5257,7 @@ export const getHoldCheckIns = async (req, res) => {
       if (processedSaleIds.has(saleId)) continue;
       processedSaleIds.add(saleId);
 
-      const saleAmount = sale.isPostToRoom
-        ? Number(sale.finalAmount || 0)
-        : 0;
+      const saleAmount = sale.isPostToRoom ? Number(sale.finalAmount || 0) : 0;
 
       // avoid repeated checkInNumber inside same sale
       const uniqueCheckInNumbers = new Set(
@@ -5292,7 +5313,7 @@ export const releaseHold = async (req, res) => {
       await CheckIn.updateMany(
         { holdArray: { $in: checkInIds } },
         { $pull: { holdArray: { $in: checkInIds } } },
-        { session }
+        { session },
       );
 
       // 2. release hold flag
@@ -5304,7 +5325,7 @@ export const releaseHold = async (req, res) => {
             taggedCheckIns: null,
           },
         },
-        { session }
+        { session },
       );
 
       // 3. validate room status before restoring
@@ -5329,16 +5350,22 @@ export const releaseHold = async (req, res) => {
           }
 
           // optional: don't overwrite if room already occupied by unrelated flow
-          const existingRoom = await roomModal.findById(roomId).session(session);
+          const existingRoom = await roomModal
+            .findById(roomId)
+            .session(session);
 
           if (!existingRoom) continue;
 
           // restore only when room is in releasable state
-          if (["vacant", "booked", "dirty", "blocked", "available"].includes(existingRoom.status)) {
+          if (
+            ["vacant", "booked", "dirty", "blocked", "available"].includes(
+              existingRoom.status,
+            )
+          ) {
             await roomModal.updateOne(
               { _id: roomId },
               { $set: { status: "occupied" } },
-              { session }
+              { session },
             );
           }
         }
@@ -5399,92 +5426,84 @@ export const getOtherCharges = async (req, res) => {
   }
 };
 
-
-
-
-
-
-
 export const getFlashReportForDate = async (req, res) => {
   try {
-    const { cmp_id, date } = req.query; // "2026-03-07"
+    const { cmp_id, fromDate, toDate } = req.query;
 
-    if (!cmp_id || !date) {
+    if (!cmp_id || !fromDate || !toDate) {
       return res.status(400).json({
         success: false,
-        message: "cmp_id and date are required",
+        message: "cmp_id, fromDate and toDate are required",
       });
     }
 
-    // 1) Load company once for header
+    if (fromDate > toDate) {
+      return res.status(400).json({
+        success: false,
+        message: "From Date cannot be greater than To Date",
+      });
+    }
+
     const org = await Organization.findById(cmp_id).lean();
     const companyName = org?.orgName || org?.name || "Hotel";
 
-    // 2) All checkouts for this company and date
     const checkouts = await CheckOut.find({
       cmp_id,
-      checkOutDate: date, // stored as "YYYY-MM-DD"
+      checkOutDate: {
+        $gte: fromDate,
+        $lte: toDate,
+      },
     }).lean();
 
     if (!checkouts.length) {
       return res.status(404).json({
         success: false,
-        message: "No checkouts found for this date",
+        message: "No checkouts found for selected date range",
       });
     }
 
-    // ===== ROOM STATISTICS =====
-
-    // totalRooms = total selectedRooms count across all checkouts
     let totalRooms = 0;
-
-    // for pax + revenue
     let paxDomestic = 0;
-    let roomApartment = 0; // sum of selectedRooms[].amountAfterTax
-    let roomExtraBed = 0;  // if you track as separate charge, adjust later
+    let roomApartment = 0;
+    let roomExtraBed = 0;
 
     checkouts.forEach((co) => {
       if (Array.isArray(co.selectedRooms)) {
         totalRooms += co.selectedRooms.length;
 
         co.selectedRooms.forEach((r) => {
-          // pax
           if (typeof r.pax === "number") {
             paxDomestic += r.pax;
+          } else if (r?.pax != null) {
+            paxDomestic += Number(r.pax) || 0;
           }
 
-          // total room rent = sum of each room's amountAfterTax
           if (typeof r.amountAfterTax === "number") {
             roomApartment += r.amountAfterTax;
-          } else if (r.amountAfterTax != null) {
+          } else if (r?.amountAfterTax != null) {
             roomApartment += Number(r.amountAfterTax) || 0;
           }
         });
       }
     });
 
-    const blockedRooms = 0; // if you track blocked rooms in some table, compute there
+    const blockedRooms = 0;
     const saleableRooms = totalRooms - blockedRooms;
-
-    const occupiedPaid = totalRooms; // each selected room treated as occupied paid
-    const occupiedComp = 0;         // if you mark complimentary rooms, subtract here
+    const occupiedPaid = totalRooms;
+    const occupiedComp = 0;
     const totalOccupied = occupiedPaid + occupiedComp;
 
-    const paxForeign = 0; // you can compute from guestCountry != "India" later
+    const paxForeign = 0;
     const totalPax = paxDomestic + paxForeign;
-
-    const adults = totalPax; // until you split adults/children
+    const adults = totalPax;
     const children = 0;
     const males = totalPax;
     const females = 0;
     const noShows = 0;
 
-    // ===== REVENUE =====
-
-    // foodPlanTotal already stored at checkout level
     const foodPlanTotal = checkouts.reduce(
       (sum, co) => sum + Number(co.foodPlanTotal || 0),
-      0
+      0,
     );
 
     const roomTotal = roomApartment + roomExtraBed;
@@ -5492,32 +5511,27 @@ export const getFlashReportForDate = async (req, res) => {
 
     const grandTotal = checkouts.reduce(
       (sum, co) => sum + Number(co.grandTotal || 0),
-      0
+      0,
     );
 
-    // ===== ARR / OCCUPANCY =====
-    const occPercent =
-      totalRooms > 0 ? (occupiedPaid / totalRooms) * 100 : 0;
+    const occPercent = totalRooms > 0 ? (occupiedPaid / totalRooms) * 100 : 0;
 
-    const arrTotalRooms =
-      totalRooms > 0 ? roomTotal / totalRooms : 0;
+    const arrTotalRooms = totalRooms > 0 ? roomTotal / totalRooms : 0;
 
-    const arrSaleableRooms =
-      saleableRooms > 0 ? roomTotal / saleableRooms : 0;
+    const arrSaleableRooms = saleableRooms > 0 ? roomTotal / saleableRooms : 0;
 
-    const arrOccupiedRooms =
-      totalOccupied > 0 ? roomTotal / totalOccupied : 0;
+    const arrOccupiedRooms = totalOccupied > 0 ? roomTotal / totalOccupied : 0;
 
-    const reportDate = new Date(date);
-    const dayLabel = reportDate.toLocaleDateString("en-GB"); // 07/03/2026
+    const reportDate = new Date(toDate);
+    const dayLabel = reportDate.toLocaleDateString("en-GB");
     const monthLabel = reportDate.toLocaleString("en-GB", {
       month: "long",
-    }); // March
+    });
 
     const data = {
       companyName,
-      fromDate: date,
-      toDate: date,
+      fromDate,
+      toDate,
       dayLabel,
       monthLabel,
 
@@ -5538,22 +5552,22 @@ export const getFlashReportForDate = async (req, res) => {
       noShows,
 
       occPercent: Number(occPercent.toFixed(2)),
-      arrTotalRooms,
-      arrSaleableRooms,
-      arrOccupiedRooms,
+      arrTotalRooms: Number(arrTotalRooms.toFixed(2)),
+      arrSaleableRooms: Number(arrSaleableRooms.toFixed(2)),
+      arrOccupiedRooms: Number(arrOccupiedRooms.toFixed(2)),
 
-      roomApartment,          // total room rent (sum of amountAfterTax of selectedRooms)
-      roomExtraBed,           // keep 0 for now
-      roomTotal,
+      roomApartment: Number(roomApartment.toFixed(2)),
+      roomExtraBed: Number(roomExtraBed.toFixed(2)),
+      roomTotal: Number(roomTotal.toFixed(2)),
 
-      fbPlanRate: fbTotal,    // if you later split plan/service/restaurant, adjust
+      fbPlanRate: Number(fbTotal.toFixed(2)),
       fbRoomService: 0,
       fbRestaurant: 0,
-      fbTotal,
+      fbTotal: Number(fbTotal.toFixed(2)),
 
       otherRevenues: 0,
       modRevenues: 0,
-      grandTotal,
+      grandTotal: Number(grandTotal.toFixed(2)),
     };
 
     return res.json({
@@ -5569,25 +5583,26 @@ export const getFlashReportForDate = async (req, res) => {
   }
 };
 
-
 export const getTouristReport = async (req, res) => {
   try {
-    const { fromDate, toDate, countryField = "country" } = req.query;
+    let { fromDate, toDate, countryField = "country" } = req.query;
 
-    const match = {};
+    const todayStr = new Date().toISOString().slice(0, 10);
+    fromDate = fromDate || todayStr;
+    toDate = toDate || todayStr;
 
-    if (fromDate || toDate) {
-      match.arrivalDate = {};
-      if (fromDate) match.arrivalDate.$gte = fromDate;
-      if (toDate) match.arrivalDate.$lte = toDate;
-    }
+    const match = {
+      arrivalDate: {
+        $gte: fromDate,
+        $lte: toDate,
+      },
+    };
 
     const fieldToGroup =
       countryField === "guestCountry" ? "$guestCountry" : "$country";
 
-    const report = await CheckOut.aggregate([
+    const report = await CheckIn.aggregate([
       { $match: match },
-
       {
         $addFields: {
           selectedRooms: { $ifNull: ["$selectedRooms", []] },
@@ -5654,8 +5669,8 @@ export const getTouristReport = async (req, res) => {
       success: true,
       message: "Tourist report fetched successfully",
       filters: {
-        fromDate: fromDate || null,
-        toDate: toDate || null,
+        fromDate,
+        toDate,
         countryField,
       },
       summary: {
@@ -5675,20 +5690,20 @@ export const getTouristReport = async (req, res) => {
   }
 };
 
-
-
-
-
 export const getFoodPlanReport = async (req, res) => {
   try {
-    const { fromDate, toDate } = req.query;
+    let { fromDate, toDate } = req.query;
 
-    const match = {};
-    if (fromDate || toDate) {
-      match.checkOutDate = {};
-      if (fromDate) match.checkOutDate.$gte = fromDate;
-      if (toDate) match.checkOutDate.$lte = toDate;
-    }
+    const todayStr = new Date().toISOString().slice(0, 10);
+    fromDate = fromDate || todayStr;
+    toDate = toDate || todayStr;
+
+    const match = {
+      arrivalDate: {
+        $gte: fromDate,
+        $lte: toDate,
+      },
+    };
 
     const pipeline = [
       { $match: match },
@@ -5717,21 +5732,42 @@ export const getFoodPlanReport = async (req, res) => {
 
       {
         $addFields: {
+          foodPlanName: {
+            $ifNull: ["$foodPlanMaster.foodPlan", "$foodPlan.foodPlan"],
+          },
           foodPlanCode: {
             $ifNull: ["$foodPlanMaster.code", "$foodPlan.foodPlan"],
           },
-          itemName: "$foodPlan.foodPlan",
-          qty: 1,
-          rate: { $ifNull: ["$foodPlan.rate", 0] },
-          amount: { $ifNull: ["$foodPlan.rate", 0] },
-          billNo: "$voucherNumber",
-          billDate: "$checkOutDate",
-          remarks: {
-            $cond: [
-              { $eq: ["$isHotelAgent", true] },
-              "AGENT",
-              "",
+          itemName: {
+            $ifNull: [
+              "$foodPlan.itemName",
+              {
+                $ifNull: [
+                  "$foodPlan.foodItemName",
+                  {
+                    $ifNull: ["$foodPlan.name", "$foodPlan.foodPlan"],
+                  },
+                ],
+              },
             ],
+          },
+          qty: { $ifNull: ["$foodPlan.qty", 1] },
+          rate: { $ifNull: ["$foodPlan.rate", 0] },
+          amount: {
+            $ifNull: [
+              "$foodPlan.amount",
+              {
+                $multiply: [
+                  { $ifNull: ["$foodPlan.qty", 1] },
+                  { $ifNull: ["$foodPlan.rate", 0] },
+                ],
+              },
+            ],
+          },
+          billNo: "$voucherNumber",
+          billDate: "$arrivalDate",
+          remarks: {
+            $cond: [{ $eq: ["$isHotelAgent", true] }, "AGENT", ""],
           },
         },
       },
@@ -5740,6 +5776,7 @@ export const getFoodPlanReport = async (req, res) => {
         $group: {
           _id: {
             foodPlanCode: "$foodPlanCode",
+            foodPlanName: "$foodPlanName",
             itemName: "$itemName",
             rate: "$rate",
           },
@@ -5749,6 +5786,7 @@ export const getFoodPlanReport = async (req, res) => {
             $push: {
               billNo: "$billNo",
               billDate: "$billDate",
+              foodPlanName: "$foodPlanName",
               itemName: "$itemName",
               qty: "$qty",
               rate: "$rate",
@@ -5763,6 +5801,7 @@ export const getFoodPlanReport = async (req, res) => {
         $group: {
           _id: "$_id.foodPlanCode",
           foodPlan: { $first: "$_id.foodPlanCode" },
+          foodPlanName: { $first: "$_id.foodPlanName" },
           items: {
             $push: {
               itemName: "$_id.itemName",
@@ -5776,17 +5815,17 @@ export const getFoodPlanReport = async (req, res) => {
         },
       },
 
-      { $sort: { foodPlan: 1 } },
+      { $sort: { foodPlanName: 1, foodPlan: 1 } },
     ];
 
-    const data = await CheckOut.aggregate(pipeline);
+    const data = await CheckIn.aggregate(pipeline);
 
     const grandTotal = data.reduce((sum, fp) => sum + (fp.subTotal || 0), 0);
 
     return res.json({
       success: true,
-      fromDate: fromDate || null,
-      toDate: toDate || null,
+      fromDate,
+      toDate,
       grandTotal,
       foodPlans: data,
     });
@@ -5800,22 +5839,26 @@ export const getFoodPlanReport = async (req, res) => {
   }
 };
 
-
-
 export const getOccupancyCheckoutReport = async (req, res) => {
   try {
-    const { fromDate, toDate } = req.query;
+    let { fromDate, toDate } = req.query;
 
-    const match = {};
-    if (fromDate || toDate) {
-      match.checkOutDate = {};
-      if (fromDate) match.checkOutDate.$gte = fromDate;
-      if (toDate) match.checkOutDate.$lte = toDate;
-    }
+    const todayStr = new Date().toISOString().slice(0, 10);
+    fromDate = fromDate || todayStr;
+    toDate = toDate || todayStr;
 
-    const checkouts = await CheckOut.find(match).lean();
+    const match = {
+      arrivalDate: {
+        $gte: fromDate,
+        $lte: toDate,
+      },
+    };
 
-    const allRooms = await roomModal.find({}, { roomName: 1, roomType: 1 }).lean();
+    const checkins = await CheckIn.find(match).lean();
+
+    const allRooms = await roomModal
+      .find({}, { roomName: 1, roomType: 1 })
+      .lean();
 
     const rows = [];
     const planMap = {};
@@ -5830,8 +5873,12 @@ export const getOccupancyCheckoutReport = async (req, res) => {
     let other = 0;
     let additionalPaxTotal = 0;
 
-    checkouts.forEach((doc, docIndex) => {
-      const isDomestic = (doc?.country || doc?.guestCountry || "").toLowerCase() === "";
+    checkins.forEach((doc) => {
+      const country = (doc?.country || doc?.guestCountry || "")
+        .trim()
+        .toLowerCase();
+      const isDomestic = !country || country === "india";
+
       if (isDomestic) domestic += 1;
       else foreigners += 1;
 
@@ -5841,19 +5888,24 @@ export const getOccupancyCheckoutReport = async (req, res) => {
 
       additionalPaxTotal += additionalPaxCount;
 
-      (doc?.selectedRooms || []).forEach((room, roomIndex) => {
+      (doc?.selectedRooms || []).forEach((room) => {
         const pax = Number(room?.pax || 0);
-        const tariff = Number(room?.amountAfterTax || room?.totalAmount || room?.baseAmountWithTax || room?.baseAmount || 0);
+        const tariff = Number(
+          room?.amountAfterTax ||
+            room?.totalAmount ||
+            room?.baseAmountWithTax ||
+            room?.baseAmount ||
+            0,
+        );
 
         roomRevenue += tariff;
         occupiedRoomNames.add(room?.roomName);
 
         const roomTypeName =
-          room?.roomType?.roomTypeName ||
-          room?.roomType?.name ||
-          "";
+          room?.roomType?.roomTypeName || room?.roomType?.name || "";
 
         const type = roomTypeName.toLowerCase();
+
         if (type.includes("single")) single += 1;
         else if (type.includes("double")) doubleRoom += 1;
         else if (type.includes("triple")) triple += 1;
@@ -5862,8 +5914,6 @@ export const getOccupancyCheckoutReport = async (req, res) => {
         let planName = "";
         if (Array.isArray(doc?.foodPlan) && doc.foodPlan.length > 0) {
           planName = doc.foodPlan[0]?.foodPlan || "Plan";
-        } else {
-          planName = "";
         }
 
         if (!planMap[planName]) {
@@ -5878,7 +5928,8 @@ export const getOccupancyCheckoutReport = async (req, res) => {
 
         planMap[planName].rms += 1;
         planMap[planName].pax += pax;
-        planMap[planName].total += pax;
+        planMap[planName].addnl += additionalPaxCount;
+        planMap[planName].total += pax + additionalPaxCount;
 
         rows.push({
           slNo: rows.length + 1,
@@ -5901,9 +5952,14 @@ export const getOccupancyCheckoutReport = async (req, res) => {
     const occupiedRooms = occupiedRoomNames.size;
     const totalRooms = allRooms.length;
     const vacant = Math.max(totalRooms - occupiedRooms, 0);
+
     const occupancyPercentage =
-      totalRooms > 0 ? Number(((occupiedRooms / totalRooms) * 100).toFixed(2)) : 0;
-    const arr = occupiedRooms > 0 ? Number((roomRevenue / occupiedRooms).toFixed(2)) : 0;
+      totalRooms > 0
+        ? Number(((occupiedRooms / totalRooms) * 100).toFixed(2))
+        : 0;
+
+    const arr =
+      occupiedRooms > 0 ? Number((roomRevenue / occupiedRooms).toFixed(2)) : 0;
 
     const roomStatus = allRooms
       .map((room) => ({
@@ -5912,15 +5968,11 @@ export const getOccupancyCheckoutReport = async (req, res) => {
       }))
       .sort((a, b) => String(a.roomNo).localeCompare(String(b.roomNo)));
 
-    const planSummary = Object.values(planMap).map((item) => ({
-      ...item,
-      addnl: additionalPaxTotal,
-      total: item.pax + additionalPaxTotal,
-    }));
+    const planSummary = Object.values(planMap);
 
     return res.status(200).json({
       success: true,
-      reportDate: toDate || new Date().toISOString().slice(0, 10),
+      reportDate: toDate,
       printDateTime: new Date(),
       summary: {
         occupancyPercentage,

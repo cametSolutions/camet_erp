@@ -4,6 +4,8 @@ import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import api from "@/api/api";
 
+const getToday = () => new Date().toISOString().slice(0, 10);
+
 const formatDisplayDate = (value) => {
   if (!value) return "";
   const d = new Date(value);
@@ -17,9 +19,9 @@ const formatDisplayDate = (value) => {
 
 const FoodPlanReportPage = () => {
   const [filters, setFilters] = useState({
-    fromDate: "2026-03-01",
-    toDate: "2026-03-24",
-  });
+  fromDate: getToday(),
+  toDate: getToday(),
+});
 
   const [data, setData] = useState([]);
   const [grandTotal, setGrandTotal] = useState(0);
