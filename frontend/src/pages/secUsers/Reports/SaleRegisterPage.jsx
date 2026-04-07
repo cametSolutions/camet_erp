@@ -55,10 +55,9 @@ export default function SaleRegisterPage() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
 
-    const { _id: cmp_id } = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg
-  );
-
+   const cmp_id = useSelector(
+       (state) => state.secSelectedOrganization.secSelectedOrg._id
+     );
   const getToday = () => {
     const d = new Date();
     const pad = (n) => String(n).padStart(2, "0");
@@ -128,7 +127,7 @@ export default function SaleRegisterPage() {
   const topItems = useMemo(() => {
     const map = {};
     rows.forEach((row) => {
-      (row.itemName || "")
+      (row?.itemName || "")
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean)
@@ -145,8 +144,8 @@ export default function SaleRegisterPage() {
     () =>
       rows.reduce((acc, row) => {
         const key =
-          typeof row.foodPlan === "string" && row.foodPlan.trim()
-            ? row.foodPlan.trim()
+          typeof row?.foodPlan === "string" && row?.foodPlan.trim()
+            ? row?.foodPlan.trim()
             : "-";
         acc[key] = (acc[key] || 0) + 1;
         return acc;
@@ -157,7 +156,7 @@ export default function SaleRegisterPage() {
   const paymentSummary = useMemo(
     () =>
       rows.reduce((acc, row) => {
-        const key = row.paymentType?.trim() || "-";
+        const key = row?.paymentType?.trim() || "-";
         acc[key] = (acc[key] || 0) + 1;
         return acc;
       }, {}),
@@ -167,7 +166,7 @@ export default function SaleRegisterPage() {
   const billTypeSummary = useMemo(
     () =>
       rows.reduce((acc, row) => {
-        const key = row.billType?.trim() || "-";
+        const key = row?.billType?.trim() || "-";
         acc[key] = (acc[key] || 0) + 1;
         return acc;
       }, {}),
@@ -175,103 +174,153 @@ export default function SaleRegisterPage() {
   );
 
   const cancelledCount = useMemo(
-    () => rows.filter((r) => r.isCancelled === "CANCELLED").length,
+    () => rows.filter((r) => r?.isCancelled === "CANCELLED").length,
     [rows]
   );
 
   const totalQty = useMemo(
-    () => rows.reduce((sum, r) => sum + Number(r.qty || 0), 0),
+    () => rows.reduce((sum, r) => sum + Number(r?.qty || 0), 0),
     [rows]
   );
 
   const totalAmount = useMemo(
-    () => rows.reduce((sum, r) => sum + Number(r.amount || 0), 0),
+    () => rows.reduce((sum, r) => sum + Number(r?.amount || 0), 0),
     [rows]
   );
 
   const totalTax = useMemo(
-    () => rows.reduce((sum, r) => sum + Number(r.taxAmount || 0), 0),
+    () => rows.reduce((sum, r) => sum + Number(r?.taxAmount || 0), 0),
     [rows]
   );
 
   const totalDisc = useMemo(
-    () => rows.reduce((sum, r) => sum + Number(r.discAmount || 0), 0),
+    () => rows.reduce((sum, r) => sum + Number(r?.discAmount || 0), 0),
     [rows]
   );
 
   const totalBill = useMemo(
-    () => rows.reduce((sum, r) => sum + Number(r.billAmount || 0), 0),
+    () => rows.reduce((sum, r) => sum + Number(r?.billAmount || 0), 0),
     [rows]
   );
 
+
+
+
+  // convert each bill (row) with itemDetails[] into multiple lines
+const getFlattenedRows = () => {
+  const flattened = [];
+
+  rows.forEach((row) => {
+    const items = row?.itemDetails && Array.isArray(row?.itemDetails)
+      ? row?.itemDetails
+      : [];
+
+    // if no itemDetails, keep single line as now
+    if (!items.length) {
+      flattened.push(row);
+      return;
+    }
+
+    items.forEach((item, idx) => {
+      flattened.push({
+        // bill-level fields (repeat)
+        date: row.date,
+        billNo: row.billNo,
+        customer: row.customer,
+        billType: row.billType,
+        roomNo: row.roomNo,
+        foodPlan: row.foodPlan,
+        paymentType: row.paymentType,
+        isCancelled: row.isCancelled,
+        sponsorName: row.sponsorName,
+        remarks: row.remarks,
+        saleId: row.saleId,
+
+        // item-level fields (change per line)
+        itemName: item.name || "-",
+        qty: item.qty ?? 0,
+        rate: item.rate ?? 0,
+        amount: item.amount ?? 0,
+        taxAmount: item.taxAmount ?? 0,
+        discAmount: idx === 0 ? row.discAmount ?? 0 : 0,
+        billAmount: idx === 0 ? row.billAmount ?? 0 : 0,
+      });
+    });
+  });
+
+  return flattened;
+};
   // ---- EXPORT ----
 
+  const flatRows = getFlattenedRows();
+
   const handleExportExcel = () => {
-    if (!rows.length) return;
+  const flatRows = getFlattenedRows();
+  if (!flatRows.length) return;
 
-    const exportData = rows.map((row) => ({
-      Date: row.date || "-",
-      "Bill No": row.billNo || "-",
-      Customer: row.customer || "-",
-      "Item Name": row.itemName || "-",
-      Qty: row.qty ?? 0,
-      Rate: row.rate || "-",
-      Amount: row.amount ?? 0,
-      "Tax Amount": row.taxAmount ?? 0,
-      "Disc Amount": row.discAmount ?? 0,
-      "Bill Amount": row.billAmount ?? 0,
-      "Bill Type": row.billType || "-",
-      "Room No": row.roomNo || "-",
-      "Food Plan": row.foodPlan || "-",
-      "Payment Type": row.paymentType || "-",
-      "Is Cancelled": row.isCancelled || "-",
-      Sponsor: row.sponsorName || "-",
-      Remarks: row.remarks || "-",
-    }));
+  const exportData = flatRows.map((row) => ({
+    Date: row.date || "-",
+    "Bill No": row.billNo || "-",
+    Customer: row.customer || "-",
+    "Item Details": row.itemName || "-",
+    Qty: row.qty ?? 0,
+    Rate: row.rate ?? 0,
+    Amount: row.amount ?? 0,
+    "Tax Amount": row.taxAmount ?? 0,
+    "Disc Amount": row.discAmount ?? 0,
+    "Bill Amount": row.billAmount ?? 0,
+    "Bill Type": row.billType || "-",
+    "Room No": row.roomNo || "-",
+    "Food Plan": row.foodPlan || "-",
+    "Payment Type": row.paymentType || "-",
+    "Is Cancelled": row.isCancelled || "-",
+    Sponsor: row.sponsorName || "-",
+    Remarks: row.remarks || "-",
+  }));
 
-    // Extra sheets/summaries if you want, but here just one main sheet
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.json_to_sheet(exportData);
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(exportData);
 
-    ws["!cols"] = [
-      { wch: 12 }, // Date
-      { wch: 14 }, // Bill No
-      { wch: 20 }, // Customer
-      { wch: 42 }, // Item
-      { wch: 8 }, // Qty
-      { wch: 16 }, // Rate
-      { wch: 14 }, // Amount
-      { wch: 14 }, // Tax
-      { wch: 14 }, // Disc
-      { wch: 14 }, // Bill
-      { wch: 14 }, // Bill type
-      { wch: 10 }, // Room
-      { wch: 12 }, // Plan
-      { wch: 14 }, // Payment
-      { wch: 14 }, // IsCancelled
-      { wch: 16 }, // Sponsor
-      { wch: 24 }, // Remarks
-    ];
+  ws["!cols"] = [
+    { wch: 12 }, // Date
+    { wch: 10 }, // Bill No
+    { wch: 20 }, // Customer
+    { wch: 35 }, // Item Details
+    { wch: 6 },  // Qty
+    { wch: 10 }, // Rate
+    { wch: 12 }, // Amount
+    { wch: 12 }, // Tax
+    { wch: 12 }, // Disc
+    { wch: 14 }, // Bill
+    { wch: 12 }, // Bill type
+    { wch: 10 }, // Room
+    { wch: 10 }, // Plan
+    { wch: 14 }, // Payment
+    { wch: 12 }, // IsCancelled
+    { wch: 16 }, // Sponsor
+    { wch: 24 }, // Remarks
+  ];
 
-    XLSX.utils.book_append_sheet(wb, ws, "Sales Register");
-    XLSX.writeFile(wb, "Sales-Register.xlsx");
-  };
+  XLSX.utils.book_append_sheet(wb, ws, "Sales Register");
+  XLSX.writeFile(wb, "Sales-Register.xlsx");
+};
 
   // ---- PRINT ----
 
   const handlePrint = () => {
-    if (!rows.length) return;
+  const flatRows = getFlattenedRows();
+  if (!flatRows.length) return;
 
-    const tableRows = rows
-      .map(
-        (row) => `
+  const tableRows = flatRows
+    .map(
+      (row) => `
       <tr>
         <td>${row.date || "-"}</td>
         <td>${row.billNo || "-"}</td>
         <td>${row.customer || "-"}</td>
         <td>${row.itemName || "-"}</td>
         <td style="text-align:center">${row.qty ?? 0}</td>
-        <td>${row.rate || "-"}</td>
+        <td>${row.rate ?? 0}</td>
         <td style="text-align:right">${fmt(row.amount)}</td>
         <td style="text-align:right">${fmt(row.taxAmount)}</td>
         <td style="text-align:right">${fmt(row.discAmount)}</td>
@@ -286,8 +335,8 @@ export default function SaleRegisterPage() {
         <td>${row.sponsorName || "-"}</td>
         <td>${row.remarks || "-"}</td>
       </tr>`
-      )
-      .join("");
+    )
+    .join("");
 
     const billTypeRowsHtml =
       Object.entries(billTypeSummary)
@@ -544,128 +593,177 @@ export default function SaleRegisterPage() {
           {/* TABLE */}
           <div className="overflow-x-auto">
             <table className="min-w-[1450px] border-collapse text-sm">
-              <thead className="sticky top-0 z-10 bg-[#0b1d34] text-white">
-                <tr>
-                  {[
-                    "DATE",
-                    "BILL NO",
-                    "CUSTOMER",
-                    "ITEM NAME",
-                    "QTY",
-                    "RATE",
-                    "AMOUNT",
-                    "TAX AMT",
-                    "DISC",
-                    "BILL AMOUNT",
-                    "BILL TYPE",
-                    "ROOM NO",
-                    "PLAN",
-                    "PAYMENT",
-                    "ISCANCELLED",
-                    "SPONSOR",
-                    "REMARKS",
-                  ].map((head) => (
-                    <th
-                      key={head}
-                      className="border border-slate-500 px-3 py-2 text-left font-semibold"
-                    >
-                      {head}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td
-                      colSpan={17}
-                      className="border border-slate-300 px-4 py-6 text-center"
-                    >
-                      Loading...
-                    </td>
-                  </tr>
-                ) : rows.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={17}
-                      className="border border-slate-300 px-4 py-6 text-center text-slate-500"
-                    >
-                      No sales register data found
-                    </td>
-                  </tr>
-                ) : (
-                  rows.map((row, index) => (
-                    <tr
-                      key={`${row.billNo}-${row.saleId || index}`}
-                      className="hover:bg-slate-50"
-                    >
-                      <td className="border border-slate-300 px-3 py-2">
-                        {row.date || "-"}
-                      </td>
-                      <td className="border border-slate-300 px-3 py-2">
-                        {row.billNo || "-"}
-                      </td>
-                      <td className="border border-slate-300 px-3 py-2">
-                        {row.customer || "-"}
-                      </td>
-                      <td className="border border-slate-300 px-3 py-2">
-                        {row.itemName || "-"}
-                      </td>
-                      <td className="border border-slate-300 px-3 py-2 text-center">
-                        {row.qty ?? 0}
-                      </td>
-                      <td className="border border-slate-300 px-3 py-2">
-                        {row.rate || "-"}
-                      </td>
-                      <td className="border border-slate-300 px-3 py-2 text-right">
-                        {fmt(row.amount)}
-                      </td>
-                      <td className="border border-slate-300 px-3 py-2 text-right">
-                        {fmt(row.taxAmount)}
-                      </td>
-                      <td className="border border-slate-300 px-3 py-2 text-right">
-                        {fmt(row.discAmount)}
-                      </td>
-                      <td className="border border-slate-300 px-3 py-2 text-right font-semibold">
-                        {fmt(row.billAmount)}
-                      </td>
-                      <td className="border border-slate-300 px-3 py-2">
-                        <span
-                          className={`inline-flex rounded px-2 py-1 text-xs font-semibold ${getBillTypeBadgeClass(
-                            row.billType
-                          )}`}
-                        >
-                          {row.billType || "-"}
-                        </span>
-                      </td>
-                      <td className="border border-slate-300 px-3 py-2">
-                        {row.roomNo || "-"}
-                      </td>
-                      <td className="border border-slate-300 px-3 py-2">
-                        {row.foodPlan || "-"}
-                      </td>
-                      <td className="border border-slate-300 px-3 py-2">
-                        <span
-                          className={`inline-flex rounded px-2 py-1 text-xs font-semibold ${getPaymentBadgeClass(
-                            row.paymentType
-                          )}`}
-                        >
-                          {row.paymentType || "-"}
-                        </span>
-                      </td>
-                      <td className="border border-slate-300 px-3 py-2">
-                        {row.isCancelled || "-"}
-                      </td>
-                      <td className="border border-slate-300 px-3 py-2">
-                        {row.sponsorName || "-"}
-                      </td>
-                      <td className="border border-slate-300 px-3 py-2">
-                        {row.remarks || "-"}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
+    <thead className="sticky top-0 z-10 bg-[#0b1d34] text-white">
+  <tr>
+    {[
+      "DATE",
+      "BILL NO",
+      "CUSTOMER",
+      "ITEM NAME",
+      "QTY",
+      "RATE",
+      "AMOUNT",
+      "TAX AMT",
+      "DIS. AMT",
+      "BILL AMOUNT",
+      "BILL TYPE",
+      "ROOM NO",
+      "Food Plan",
+      "PAYMENT TYPE",
+      "ISCANCELLED",
+      "SPONSOR NAME",
+      "REMARKS",
+    ].map((head) => (
+      <th
+        key={head}
+        className="border border-slate-500 px-3 py-2 text-left font-semibold"
+      >
+        {head}
+      </th>
+    ))}
+  </tr>
+</thead>
+<tbody>
+  {loading ? (
+    <tr>
+      <td
+        colSpan={16}
+        className="border border-slate-300 px-4 py-6 text-center"
+      >
+        Loading...
+      </td>
+    </tr>
+  ) : rows.length === 0 ? (
+    <tr>
+      <td
+        colSpan={16}
+        className="border border-slate-300 px-4 py-6 text-center text-slate-500"
+      >
+        No sales register data found
+      </td>
+    </tr>
+  ) : (
+    rows.map((row, index) => {
+      const items =
+        Array.isArray(row.itemDetails) && row.itemDetails.length
+          ? row.itemDetails
+          : [
+              {
+                name: row.itemName || "-",
+                qty: row.qty ?? 0,
+                rate: row.rate ?? 0,
+                amount: row.amount ?? 0,
+                taxAmount: row.taxAmount ?? 0,
+              },
+            ];
+
+      return items.map((item, itemIndex) => (
+        <tr
+          key={`${row.billNo}-${row.saleId || index}-${itemIndex}`}
+          className="hover:bg-slate-50"
+        >
+          {/* DATE, BILL NO, CUSTOMER – one time per bill */}
+          {itemIndex === 0 && (
+            <>
+              <td
+                rowSpan={items.length}
+                className="border border-slate-300 px-3 py-2 align-top"
+              >
+                {row.date || "-"}
+              </td>
+              <td
+                rowSpan={items.length}
+                className="border border-slate-300 px-3 py-2 align-top"
+              >
+                {row.billNo || "-"}
+              </td>
+              <td
+                rowSpan={items.length}
+                className="border border-slate-300 px-3 py-2 align-top"
+              >
+                {row.customer || "-"}
+              </td>
+            </>
+          )}
+
+          {/* ITEM columns – per item */}
+          <td className="border border-slate-300 px-3 py-2">
+            {item.name || "-"}
+          </td>
+          <td className="border border-slate-300 px-3 py-2 text-center">
+            {item.qty ?? 0}
+          </td>
+          <td className="border border-slate-300 px-3 py-2 text-right">
+            {item.rate ?? 0}
+          </td>
+          <td className="border border-slate-300 px-3 py-2 text-right">
+            {fmt(item.amount)}
+          </td>
+
+          {/* TAX / DISC / BILL / BILL TYPE / ROOM / PLAN / PAYMENT / SPONSOR / REMARKS – one time per bill */}
+          {itemIndex === 0 && (
+            <>
+              <td
+                rowSpan={items.length}
+                className="border border-slate-300 px-3 py-2 text-right align-top"
+              >
+                {fmt(row.taxAmount)}
+              </td>
+              <td
+                rowSpan={items.length}
+                className="border border-slate-300 px-3 py-2 text-right align-top"
+              >
+                {fmt(row.discAmount)}
+              </td>
+              <td
+                rowSpan={items.length}
+                className="border border-slate-300 px-3 py-2 text-right font-semibold align-top"
+              >
+                {fmt(row.billAmount)}
+              </td>
+              <td
+                rowSpan={items.length}
+                className="border border-slate-300 px-3 py-2 align-top"
+              >
+                {row.billType || "-"}
+              </td>
+              <td
+                rowSpan={items.length}
+                className="border border-slate-300 px-3 py-2 align-top"
+              >
+                {row.roomNo || "-"}
+              </td>
+              <td
+                rowSpan={items.length}
+                className="border border-slate-300 px-3 py-2 align-top"
+              >
+                {row.foodPlan || "-"}
+              </td>
+              <td
+                rowSpan={items.length}
+                className="border border-slate-300 px-3 py-2 align-top"
+              >
+                {row.paymentType || "-"}
+              </td>
+              <td
+                rowSpan={items.length}
+                className="border border-slate-300 px-3 py-2 align-top"
+              >
+                {row.sponsorName || "-"}
+              </td>
+              <td
+                rowSpan={items.length}
+                className="border border-slate-300 px-3 py-2 align-top"
+              >
+                {row.remarks || "-"}
+              </td>
+            </>
+          )}
+        </tr>
+      ));
+    })
+  )}
+</tbody>
               {rows.length > 0 && !loading && (
                 <tfoot>
                   <tr className="border-t-2 border-red-200 bg-red-50">

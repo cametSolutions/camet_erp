@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "@/api/api";
 import * as XLSX from "xlsx";
+import { useSelector } from "react-redux";
 
 const STATUS_OPTIONS = [
   { label: "All", value: "" },
@@ -37,6 +38,12 @@ export default function KotRegisterPage() {
     search: "",
   });
 
+
+    const cmp_id = useSelector(
+         (state) => state.secSelectedOrganization.secSelectedOrg._id
+       );
+
+
   const handleChangeFilter = (key, value) =>
     setFilters((prev) => ({ ...prev, [key]: value }));
 
@@ -48,8 +55,8 @@ export default function KotRegisterPage() {
       );
 
       const { data } = await api.get("/api/sUsers/register", {
-        params: cleanedParams,
-      });
+      params: { ...cleanedParams, cmp_id },  // ⬅️ send company id
+    });
 
       setRows(data?.data || []);
     } catch (error) {
