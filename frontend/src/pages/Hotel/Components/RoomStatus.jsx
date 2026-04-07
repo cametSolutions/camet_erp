@@ -9,7 +9,7 @@ const RoomStatus = ({
   onClick,
   type,
 }) => {
-  console.log(status);
+  console.log(room);
   const statusConfig = {
     vacant: {
       gradient: "from-emerald-500 to-teal-600",
@@ -107,7 +107,7 @@ const RoomStatus = ({
           </span>
           {/* Status label */}
           <span className={`text-sm font-medium leading-tight ${config.statusColor}`}>
-            {status}
+            {status == "dirty" ? "Cleaning" : status}
           </span>
           {type && (
             <span className={`${config.textColor} text-sm opacity-80 font-medium leading-tight`}>

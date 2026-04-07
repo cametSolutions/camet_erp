@@ -15,6 +15,7 @@ function EditChecking() {
   const isTariffRateChange = location?.state?.fromDashboard === true;
   const roomIdToEdit = location?.state?.roomId;
 
+  console.log(editData, "editData");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const [outStanding, setOutStanding] = useState([]);
@@ -45,8 +46,9 @@ function EditChecking() {
   }, [editData]);
 
   const handleSubmit = async (payload, paymentData,paymenttypeDetails) => {
+    console.log(payload,paymentData,paymenttypeDetails)
     try {
-      console.log(paymentData,paymenttypeDetails);
+
 
       const response = await api.put(
         `/api/sUsers/updateRoomBooking/${editData._id}`,

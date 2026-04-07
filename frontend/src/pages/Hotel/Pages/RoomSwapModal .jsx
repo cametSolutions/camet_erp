@@ -1,18 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { User, MapPin, Calendar, Clock, X, ArrowRight } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { User, MapPin, Calendar, X, ArrowRight } from "lucide-react";
 
-const RoomSwapModal = ({ 
-  isOpen, 
-  onClose, 
-  selectedRoom, 
+const RoomSwapModal = ({
+  isOpen,
+  onClose,
+  selectedRoom,
   onConfirmSwap,
   cmp_id,
-  api 
+  api,
 }) => {
   const [checkedInGuests, setCheckedInGuests] = useState([]);
   const [selectedGuest, setSelectedGuest] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedDate, setSelectedDate] = useState(
+    new Date().toISOString().split("T")[0],
+  );
 
   // Fetch checked-in guests when modal opens
   useEffect(() => {
@@ -24,104 +27,141 @@ const RoomSwapModal = ({
   const fetchCheckedInGuests = async () => {
     setLoading(true);
     try {
-      const response = await api.get(`/api/sUsers/getCheckedInGuests/${cmp_id}`, {
-        withCredentials: true,
-      });
-      
+      const response = await api.get(
+        `/api/sUsers/getCheckedInGuests/${cmp_id}`,
+        {
+          withCredentials: true,
+        },
+      );
+
       setCheckedInGuests(response.data.guests || []);
     } catch (error) {
-      console.error('Error fetching checked-in guests:', error);
-      alert('Failed to load checked-in guests');
+      console.error("Error fetching checked-in guests:", error);
+      alert("Failed to load checked-in guests");
     } finally {
       setLoading(false);
     }
   };
 
   const handleSwapRoom = async () => {
-  if (!selectedGuest || !selectedRoom) return;
+    if (!selectedGuest || !selectedRoom) return;
 
-  try {
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    // Take the first selected room (or whichever is chosen by user)
-       const oldRoomId = selectedGuest.room._id;
-    const response = await api.put(
-      `/api/sUsers/swapRoom/${selectedGuest._id}`,  // <-- use checkInId = guest._id
-      {
-        newRoomId: selectedRoom._id,
-        oldRoomId: oldRoomId,
-      },
-      {
-        withCredentials: true,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
-
-    if (response.data.success) {
-      alert(
-        `Room successfully swapped from ${response.data.swapDetails.fromRoom.name} to ${response.data.swapDetails.toRoom.name}`
+      // Take the first selected room (or whichever is chosen by user)
+      const oldRoomId = selectedGuest.room._id;
+      const response = await api.put(
+        `/api/sUsers/swapRoom/${selectedGuest._id}`, // <-- use checkInId = guest._id
+        {
+          newRoomId: selectedRoom._id,
+          oldRoomId: oldRoomId,
+          selectedDate:selectedDate
+        },
+        {
+          withCredentials: true,
+          headers: { "Content-Type": "application/json" },
+        },
       );
-      onConfirmSwap();
-      onClose();
+
+      if (response.data.success) {
+        alert(
+          `Room successfully swapped from ${response.data.swapDetails.fromRoom.name} to ${response.data.swapDetails.toRoom.name}`,
+        );
+        onConfirmSwap();
+        onClose();
+      }
+    } catch (error) {
+      console.error("Error swapping room:", error);
+      alert(
+        `Failed to swap room: ${
+          error.response?.data?.message || error.message
+        }`,
+      );
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    console.error("Error swapping room:", error);
-    alert(
-      `Failed to swap room: ${
-        error.response?.data?.message || error.message
-      }`
-    );
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   // Filter guests based on search term
   // Flatten guests into guest-room entries
-const flattenedGuests = checkedInGuests.flatMap((guest) =>
-  guest.selectedRooms.map((room) => ({
-     _id:guest. _id,
-    voucherNumber: guest.voucherNumber, // use _id from guest
-    customerName: guest.customerName,
-    mobileNumber: guest.mobileNumber,
-    checkInDate: guest.arrivalDate, // use arrivalDate
-    checkOutDate: guest.checkOutDate,
-    room: {
-      _id: room.roomId?._id || room.roomId,
-      roomName: room.roomId?.roomName || room.roomName,
-    },
-  }))
-);
+  const flattenedGuests = checkedInGuests.flatMap((guest) =>
+    guest.selectedRooms.map((room) => ({
+      _id: guest._id,
+      voucherNumber: guest.voucherNumber, // use _id from guest
+      customerName: guest.customerName,
+      mobileNumber: guest.mobileNumber,
+      checkInDate: guest.arrivalDate, // use arrivalDate
+      checkOutDate: guest.checkOutDate,
+      room: {
+        _id: room.roomId?._id || room.roomId,
+        roomName: room.roomId?.roomName || room.roomName,
+      },
+    })),
+  );
 
+  // Apply search filter
+  const filteredGuests = flattenedGuests.filter((entry) => {
+    const term = searchTerm?.toString().toLowerCase() || "";
+    const isNumber = !isNaN(term);
 
-// Apply search filter
-const filteredGuests = flattenedGuests.filter(
-  (entry) =>
-    entry.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    entry.mobileNumber.includes(searchTerm) ||
-    entry.room.roomName.toLowerCase().includes(searchTerm.toLowerCase())
-);
-
+    return (
+      entry?.customerName?.toLowerCase().includes(term) ||
+      // ✅ Only check mobile if search is number
+      (isNumber && entry?.mobileNumber?.toString().includes(term)) ||
+      entry?.room?.roomName?.toLowerCase().includes(term)
+    );
+  });
 
   if (!isOpen) return null;
-console.log(filteredGuests)
-console.log(checkedInGuests)
-console.log(selectedGuest)
+  console.log(filteredGuests);
+  console.log(checkedInGuests);
+  console.log(selectedGuest);
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60 z-50 p-4">
       <div className="bg-slate-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
         {/* Header - More compact */}
-        <div className="bg-slate-700 px-4 py-3 border-b border-slate-600 flex-shrink-0">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-white flex items-center gap-2">
-              <ArrowRight className="w-4 h-4 text-blue-400" />
-              Room Swap - {selectedRoom?.roomName}
-            </h2>
+        <div className="bg-slate-800/90 backdrop-blur-md px-5 py-4 border-b border-slate-700 shadow-lg flex-shrink-0">
+          <div className="flex items-center justify-between gap-4">
+            {/* 🔹 Left Title */}
+            <div className="flex items-center gap-3">
+              <div className="bg-blue-500/10 p-2 rounded-lg">
+                <ArrowRight className="w-4 h-4 text-blue-400" />
+              </div>
+
+              <h2 className="text-lg font-semibold text-white tracking-wide">
+                Room Swap
+                <span className="text-blue-400 ml-2">
+                  {selectedRoom?.roomName}
+                </span>
+              </h2>
+            </div>
+
+            {/* 🔹 Date Picker */}
+            <div className="flex items-center gap-3 bg-slate-700/60 px-3 py-2 rounded-lg border border-slate-600">
+              <Calendar className="w-4 h-4 text-blue-400" />
+
+              <span className="text-sm text-gray-300 whitespace-nowrap">
+                From Date
+              </span>
+
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="bg-transparent text-white text-sm outline-none 
+                   focus:ring-2 focus:ring-blue-500 px-2 py-1 rounded-md
+                   hover:bg-slate-600 transition-all"
+              />
+            </div>
+
+            {/* 🔹 Close Button */}
             <button
               onClick={onClose}
-              className="p-1 hover:bg-slate-600 rounded-full transition-colors"
+              className="p-2 rounded-full bg-slate-700 hover:bg-red-500/20 
+                 transition-all duration-200 group"
             >
-              <X className="w-4 h-4 text-gray-400" />
+              <X className="w-4 h-4 text-gray-400 group-hover:text-red-400" />
             </button>
           </div>
         </div>
@@ -151,8 +191,8 @@ console.log(selectedGuest)
                   onClick={() => setSelectedGuest(guest)}
                   className={`p-3 rounded-md border cursor-pointer transition-all duration-200 ${
                     selectedGuest?.checkInId === guest.checkInId
-                      ? 'border-blue-500 bg-blue-900/20'
-                      : 'border-slate-600 bg-slate-700 hover:border-blue-400 hover:bg-slate-650'
+                      ? "border-blue-500 bg-blue-900/20"
+                      : "border-slate-600 bg-slate-700 hover:border-blue-400 hover:bg-slate-650"
                   }`}
                 >
                   <div className="flex items-start justify-between">
@@ -165,8 +205,7 @@ console.log(selectedGuest)
                         </span>
                       </div>
 
-
-<div className="flex items-center gap-2 mb-1">
+                      <div className="flex items-center gap-2 mb-1">
                         <User className="w-3 h-3 text-cyan-400 flex-shrink-0" />
                         <span className="text-white font-semibold text-sm truncate">
                           {guest.voucherNumber}
@@ -174,12 +213,12 @@ console.log(selectedGuest)
                       </div>
                       {/* Current Room & Phone in one line */}
                       <div className="flex items-center gap-4 mb-1">
-    <div className="flex items-center gap-1">
-  <MapPin className="w-3 h-3 text-green-400 flex-shrink-0" />
-  <span className="text-gray-300 text-xs">
-    {guest.room?.roomName}
-  </span>
-</div>
+                        <div className="flex items-center gap-1">
+                          <MapPin className="w-3 h-3 text-green-400 flex-shrink-0" />
+                          <span className="text-gray-300 text-xs">
+                            {guest.room?.roomName}
+                          </span>
+                        </div>
 
                         <div className="text-gray-400 text-xs">
                           {guest.mobileNumber}
@@ -207,7 +246,9 @@ console.log(selectedGuest)
             <div className="text-center py-8">
               <User className="w-8 h-8 text-gray-500 mx-auto mb-2" />
               <p className="text-gray-400 text-sm">
-                {searchTerm ? 'No guests found matching your search' : 'No checked-in guests found'}
+                {searchTerm
+                  ? "No guests found matching your search"
+                  : "No checked-in guests found"}
               </p>
             </div>
           )}
@@ -221,9 +262,14 @@ console.log(selectedGuest)
                 Room Swap Summary:
               </div>
               <div className="text-xs text-gray-300">
-                Move <strong>{selectedGuest.customerName}</strong> from{' '}
-                <span className="text-red-300 font-medium">{selectedGuest?.room?.roomName}</span>{' '}
-                to <span className="text-green-300 font-medium">{selectedRoom?.roomName}</span>
+                Move <strong>{selectedGuest.customerName}</strong> from{" "}
+                <span className="text-red-300 font-medium">
+                  {selectedGuest?.room?.roomName}
+                </span>{" "}
+                to{" "}
+                <span className="text-green-300 font-medium">
+                  {selectedRoom?.roomName}
+                </span>
               </div>
             </div>
           )}

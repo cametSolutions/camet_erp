@@ -11,6 +11,7 @@ export default function HoldModal({
   checkInData = [],
   cmp_id,
   fetchBookings,
+  setSelectedCheckOut,
 }) {
  
   // State management
@@ -18,35 +19,42 @@ export default function HoldModal({
   const [selectedTaggedCheckIn, setSelectedTaggedCheckIn] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Initialize holds data
-  useEffect(() => {
-    if (selectedHolds.length > 0) {
-      const processedHolds = selectedHolds.map((hold) => {
-        const arrival = new Date(hold.arrivalDate);
+useEffect(() => {
+  if (selectedHolds.length > 0) {
+    // const processedHolds = selectedHolds.map((hold) => {
+    //   const arrival = new Date(hold.arrivalDate);
+    //   arrival.setHours(0, 0, 0, 0);
 
-        // Set today to start of the day (00:00:00)
-        const holdUntil = new Date();
-        holdUntil.setUTCHours(0, 0, 0, 0);
+    //   const today = new Date();
+    //   today.setHours(0, 0, 0, 0);
 
-        const diffTime = holdUntil - arrival;
+    //   // 🔥 Minimum holdUntil = arrival + 1 day
+    //   const minHoldUntil = new Date(arrival);
+    //   minHoldUntil.setDate(minHoldUntil.getDate() + 1);
 
-        const calculatedDays = Math.max(
-          1,
-          Math.ceil(diffTime / (1000 * 60 * 60 * 24)),
-        );
+    //   // ✅ Final holdUntil
+    //   const holdUntil = today < minHoldUntil ? minHoldUntil : today;
 
-        return {
-          ...hold,
-          stayDays: calculatedDays,
-          selectedRooms: hold.selectedRooms || [],
-          checkOutDate: holdUntil.toISOString().split("T")[0],
-        };
-      });
+    //   // difference
+    //   const diffTime = holdUntil - arrival;
 
-      setHoldData(processedHolds);
-    }
-  }, [selectedHolds]);
+    //   const calculatedDays = Math.max(
+    //     1,
+    //     Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    //   );
 
+    //   return {
+    //     ...hold,
+    //     arrivalDate: arrival.toISOString().split("T")[0],
+    //     stayDays: calculatedDays,
+    //     selectedRooms: hold.selectedRooms || [],
+    //     checkOutDate: holdUntil.toISOString().split("T")[0],
+    //   };
+    // });
+
+    setHoldData(selectedHolds);
+  }
+}, [selectedHolds]);
   // Handle stay days change
   const handleStayDaysChange = (id, newDays) => {
     setHoldData(
@@ -142,7 +150,7 @@ const handleConfirm = async () => {
     );
 
     toast.success(data.message || "Tagged successfully");
-
+    setSelectedCheckOut([])
     closeModal(false); // close only on success
     fetchBookings()
   } catch (error) {
@@ -185,7 +193,7 @@ const handleConfirm = async () => {
             >
               <option value="">Select tag check-in</option>
 
-              {checkInData.map((hold) => (
+              {checkInData.filter((checkIn) => !checkIn.isHold).map((hold) => (
                 <option key={hold._id} value={hold._id}>
                   #{hold.voucherNumber}
                 </option>

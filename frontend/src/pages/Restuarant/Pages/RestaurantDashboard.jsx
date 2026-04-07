@@ -22,7 +22,10 @@ import {
   ArrowLeft,
   Tag,
   ChevronDown,
-  Coffee, BarChart2, LayoutGrid, ListChecks
+  Coffee,
+  BarChart2,
+  LayoutGrid,
+  ListChecks,
 } from "lucide-react";
 
 import TableSelection from "../Pages/TableSelection";
@@ -624,30 +627,34 @@ const RestaurantPOS = () => {
       return acc + preTaxValue;
     }, 0);
 
-    return orderItemsAre.reduce((total, item) => {
-      const totalValue = Number(item?.total || item.price * item.quantity || 0);
+    return Math.round(
+      orderItemsAre.reduce((total, item) => {
+        const totalValue = Number(
+          item?.total || item.price * item.quantity || 0,
+        );
 
-      if (discountBasedOnGrossAmount) {
-        return total + totalValue;
-      }
+        if (discountBasedOnGrossAmount) {
+          return total + totalValue;
+        }
 
-      const igstRate = Number(item?.igst || 0);
-      const cgstRate = Number(item?.cgst || 0);
-      const sgstRate = Number(item?.sgst || 0);
-      const isInterState = igstRate > 0;
+        const igstRate = Number(item?.igst || 0);
+        const cgstRate = Number(item?.cgst || 0);
+        const sgstRate = Number(item?.sgst || 0);
+        const isInterState = igstRate > 0;
 
-      const taxableAfterDiscount = getItemTaxableAfterDiscount(
-        item,
-        totalDiscount,
-        grossTaxable,
-      );
+        const taxableAfterDiscount = getItemTaxableAfterDiscount(
+          item,
+          totalDiscount,
+          grossTaxable,
+        );
 
-      const taxOnDiscounted = isInterState
-        ? (taxableAfterDiscount * igstRate) / 100
-        : (taxableAfterDiscount * cgstRate) / 100 +
-          (taxableAfterDiscount * sgstRate) / 100;
-      return total + taxableAfterDiscount + taxOnDiscounted;
-    }, 0);
+        const taxOnDiscounted = isInterState
+          ? (taxableAfterDiscount * igstRate) / 100
+          : (taxableAfterDiscount * cgstRate) / 100 +
+            (taxableAfterDiscount * sgstRate) / 100;
+        return total + taxableAfterDiscount + taxOnDiscounted;
+      }, 0),
+    );
   };
 
   const grossTotal = Math.round(
@@ -1112,6 +1119,8 @@ const RestaurantPOS = () => {
       updatedItems,
       configurations[0]?.addRateWithTax?.restaurantSale,
     );
+    console.log(finalProductData);
+    // return
     console.log(parentKot);
 
     if (parentKot) {
@@ -1161,8 +1170,6 @@ const RestaurantPOS = () => {
       kitchenBatches: batchArray,
       parentTag: parentKot ? true : false,
     };
-
-    console.log(newOrder);
 
     let url = parentKot
       ? `/api/sUsers/editKOT/${cmp_id}/${parentKot._id}`
@@ -1500,7 +1507,7 @@ const RestaurantPOS = () => {
                 </div>
 
                 {/* Orders + 3-dots hidden on very small widths */}
-                <div className="relative hidden sm:flex items-center">
+                <div className="relative  sm:flex items-center">
                   <div
                     className="hover:cursor-pointer flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-800/50 border border-slate-700/60 rounded-l-md hover:bg-slate-700/60 transition-colors group"
                     onClick={() => navigate("/sUsers/KotPage")}
@@ -1525,96 +1532,134 @@ const RestaurantPOS = () => {
                         <span className="w-[3px] h-[3px] bg-gray-400 rounded-full group-hover:bg-gray-200 transition-colors"></span>
                       </span>
                     </button>
- {showOptions && (
-  <>
-    <div
-      className="fixed inset-0 z-40"
-      onClick={() => setShowOptions(false)}
-    />
-    <div className="absolute right-0 top-full mt-1.5 z-50 w-64 bg-white border 
-                    border-gray-200 rounded-xl shadow-xl overflow-hidden">
+                    {showOptions && (
+                      <>
+                        <div
+                          className="fixed inset-0 z-40"
+                          onClick={() => setShowOptions(false)}
+                        />
+                        <div
+                          className="absolute right-0 top-full mt-1.5 z-50 w-64 bg-white border 
+                    border-gray-200 rounded-xl shadow-xl overflow-hidden"
+                        >
+                          {/* Header */}
+                          <div className="flex items-center gap-2.5 px-3.5 py-3 border-b border-gray-100">
+                            <div className="w-7 h-7 rounded-lg bg-orange-50 flex items-center justify-center flex-shrink-0">
+                              <Coffee className="w-3.5 h-3.5 text-orange-700" />
+                            </div>
+                            <div>
+                              <p className="text-xs font-bold text-gray-800 tracking-wide uppercase">
+                                Restaurant Reports
+                              </p>
+                              <p className="text-[10px] text-gray-400 mt-0.5">
+                                3 report types available
+                              </p>
+                            </div>
+                          </div>
 
-      {/* Header */}
-      <div className="flex items-center gap-2.5 px-3.5 py-3 border-b border-gray-100">
-        <div className="w-7 h-7 rounded-lg bg-orange-50 flex items-center justify-center flex-shrink-0">
-          <Coffee className="w-3.5 h-3.5 text-orange-700" />
-        </div>
-        <div>
-          <p className="text-xs font-bold text-gray-800 tracking-wide uppercase">
-            Restaurant Reports
-          </p>
-          <p className="text-[10px] text-gray-400 mt-0.5">3 report types available</p>
-        </div>
-      </div>
-
-      {/* Items */}
-      <div className="p-1.5">
-
-        <button
-          onClick={() => { setShowOptions(false); navigate("/sUsers/BillSummary?type=restaurant"); }}
-          className="group flex items-center gap-3 w-full px-2.5 py-2 rounded-lg 
+                          {/* Items */}
+                          <div className="p-1.5">
+                            <button
+                              onClick={() => {
+                                setShowOptions(false);
+                                navigate("/sUsers/BillSummary?type=restaurant");
+                              }}
+                              className="group flex items-center gap-3 w-full px-2.5 py-2 rounded-lg 
                      hover:bg-gray-50 transition-colors text-left"
-        >
-          <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center flex-shrink-0">
-            <BarChart2 className="w-3.5 h-3.5 text-green-700" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-gray-800">Daily Sales</p>
-            <p className="text-[10px] text-gray-400 mt-0.5">Restaurant daily revenue summary</p>
-          </div>
-          <ChevronDown className="w-3 h-3 text-gray-300 -rotate-90 opacity-0 
-                                  group-hover:opacity-100 transition-opacity flex-shrink-0" />
-        </button>
+                            >
+                              <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center flex-shrink-0">
+                                <BarChart2 className="w-3.5 h-3.5 text-green-700" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-semibold text-gray-800">
+                                  Daily Sales
+                                </p>
+                                <p className="text-[10px] text-gray-400 mt-0.5">
+                                  Restaurant daily revenue summary
+                                </p>
+                              </div>
+                              <ChevronDown
+                                className="w-3 h-3 text-gray-300 -rotate-90 opacity-0 
+                                  group-hover:opacity-100 transition-opacity flex-shrink-0"
+                              />
+                            </button>
 
-        <div className="my-1 border-t border-gray-100" />
+                            <div className="my-1 border-t border-gray-100" />
 
-        <button
-          onClick={() => { setShowOptions(false); navigate("/sUsers/categoryprint"); }}
-          className="group flex items-center gap-3 w-full px-2.5 py-2 rounded-lg 
+                            <button
+                              onClick={() => {
+                                setShowOptions(false);
+                                navigate("/sUsers/categoryprint");
+                              }}
+                              className="group flex items-center gap-3 w-full px-2.5 py-2 rounded-lg 
                      hover:bg-gray-50 transition-colors text-left"
-        >
-          <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center flex-shrink-0">
-            <LayoutGrid className="w-3.5 h-3.5 text-purple-700" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-gray-800">Category Wise Sales</p>
-            <p className="text-[10px] text-gray-400 mt-0.5">Sales grouped by category</p>
-          </div>
-          <ChevronDown className="w-3 h-3 text-gray-300 -rotate-90 opacity-0 
-                                  group-hover:opacity-100 transition-opacity flex-shrink-0" />
-        </button>
+                            >
+                              <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center flex-shrink-0">
+                                <LayoutGrid className="w-3.5 h-3.5 text-purple-700" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-semibold text-gray-800">
+                                  Category Wise Sales
+                                </p>
+                                <p className="text-[10px] text-gray-400 mt-0.5">
+                                  Sales grouped by category
+                                </p>
+                              </div>
+                              <ChevronDown
+                                className="w-3 h-3 text-gray-300 -rotate-90 opacity-0 
+                                  group-hover:opacity-100 transition-opacity flex-shrink-0"
+                              />
+                            </button>
 
-        <button
-          onClick={() => { setShowOptions(false); navigate("/sUsers/itemwisereport"); }}
-          className="group flex items-center gap-3 w-full px-2.5 py-2 rounded-lg 
+                            <button
+                              onClick={() => {
+                                setShowOptions(false);
+                                navigate("/sUsers/itemwisereport");
+                              }}
+                              className="group flex items-center gap-3 w-full px-2.5 py-2 rounded-lg 
                      hover:bg-gray-50 transition-colors text-left"
-        >
-          <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-            <ListChecks className="w-3.5 h-3.5 text-blue-700" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-gray-800">Item Wise Sales</p>
-            <p className="text-[10px] text-gray-400 mt-0.5">Breakdown per menu item</p>
-          </div>
-          <ChevronDown className="w-3 h-3 text-gray-300 -rotate-90 opacity-0 
-                                  group-hover:opacity-100 transition-opacity flex-shrink-0" />
-        </button>
-  <button
-          onClick={() => { setShowOptions(false); navigate("/sUsers/register"); }}
-          className="group flex items-center gap-3 w-full px-2.5 py-2 rounded-lg 
+                            >
+                              <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                                <ListChecks className="w-3.5 h-3.5 text-blue-700" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-semibold text-gray-800">
+                                  Item Wise Sales
+                                </p>
+                                <p className="text-[10px] text-gray-400 mt-0.5">
+                                  Breakdown per menu item
+                                </p>
+                              </div>
+                              <ChevronDown
+                                className="w-3 h-3 text-gray-300 -rotate-90 opacity-0 
+                                  group-hover:opacity-100 transition-opacity flex-shrink-0"
+                              />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setShowOptions(false);
+                                navigate("/sUsers/register");
+                              }}
+                              className="group flex items-center gap-3 w-full px-2.5 py-2 rounded-lg 
                      hover:bg-gray-50 transition-colors text-left"
-        >
-          <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-            <BarChart2 className="w-3.5 h-3.5 text-blue-700" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-gray-800">Kot Register</p>
-            <p className="text-[10px] text-gray-400 mt-0.5">Breakdown of kots </p>
-          </div>
-          <ChevronDown className="w-3 h-3 text-gray-300 -rotate-90 opacity-0 
-                                  group-hover:opacity-100 transition-opacity flex-shrink-0" />
-        </button>
-         <button
+                            >
+                              <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                                <BarChart2 className="w-3.5 h-3.5 text-blue-700" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-semibold text-gray-800">
+                                  Kot Register
+                                </p>
+                                <p className="text-[10px] text-gray-400 mt-0.5">
+                                  Breakdown of kots{" "}
+                                </p>
+                              </div>
+                              <ChevronDown
+                                className="w-3 h-3 text-gray-300 -rotate-90 opacity-0 
+                                  group-hover:opacity-100 transition-opacity flex-shrink-0"
+                              />
+                            </button>
+                            {/* <button
           onClick={() => { setShowOptions(false); navigate("/sUsers/sales-register"); }}
           className="group flex items-center gap-3 w-full px-2.5 py-2 rounded-lg 
                      hover:bg-gray-50 transition-colors text-left"
@@ -1628,12 +1673,11 @@ const RestaurantPOS = () => {
           </div>
           <ChevronDown className="w-3 h-3 text-gray-300 -rotate-90 opacity-0 
                                   group-hover:opacity-100 transition-opacity flex-shrink-0" />
-        </button>
-       
-      </div>
-    </div>
-  </>
-)}
+        </button> */}
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
 
