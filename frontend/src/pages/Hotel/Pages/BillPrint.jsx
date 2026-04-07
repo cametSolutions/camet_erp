@@ -198,36 +198,39 @@ const transformDocToDateWiseLines = (doc) => {
       fullDays > 0 ? totalAdditionalPaxWithOutTax / fullDays : 0;
 
     // Swapping logic: adjust full days count
-    let fullDaysAre = fullDays;
-    console.log(room.isSwapped);
-    console.log(room.swappingDateFrom);
-    console.log(room)
+let fullDaysAre = fullDays;
 
-    if (room.isSwapped && room.swappingDateFrom) {
-      const swappingDate = new Date(room.swappingDateFrom);
-      const arrivalDate = new Date(doc.arrivalDate);
+const normalizeToDate = (d) => {
+  const nd = new Date(d);
+  nd.setHours(0, 0, 0, 0);
+  return nd;
+};
 
-      fullDaysAre = Math.floor(
-        (swappingDate - arrivalDate) / (1000 * 60 * 60 * 24) - 1,
-      );
+if (room.isSwapped && room.swappingDateFrom) {
+  const swappingDate = normalizeToDate(room.swappingDateFrom);
+  const arrivalDate = normalizeToDate(doc.arrivalDate);
 
-      if (fullDaysAre <= 0) {
-        fullDaysAre = 1;
-      }
-    }
+  fullDaysAre = Math.floor(
+    (swappingDate - arrivalDate) / (1000 * 60 * 60 * 24) - 1,
+  );
 
-    if (!room.isSwapped && room.swappingDateFrom) {
-      const swappingDate = new Date(room.swappingDateFrom);
-      const checkoutDate = new Date(doc.checkOutDate);
+  if (fullDaysAre <= 0) {
+    fullDaysAre = 1;
+  }
+}
 
-      fullDaysAre = Math.floor(
-        (swappingDate - checkoutDate) / (1000 * 60 * 60 * 24),
-      );
+if (!room.isSwapped && room.swappingDateFrom) {
+  const swappingDate = normalizeToDate(room.swappingDateFrom);
+  const checkoutDate = normalizeToDate(doc.checkOutDate);
 
-      if (fullDaysAre <= 0) {
-        fullDaysAre = 1;
-      }
-    }
+  fullDaysAre = Math.floor(
+    (checkoutDate - swappingDate) / (1000 * 60 * 60 * 24),
+  );
+
+  if (fullDaysAre <= 0) {
+    fullDaysAre = 0;
+  }
+}
     console.log(fullDaysAre);
 
     // Add full days (respect swap base date, read tariff via ISO key)
@@ -236,10 +239,10 @@ const transformDocToDateWiseLines = (doc) => {
         room.swappingDateFrom && !room.isSwapped
           ? new Date(room.swappingDateFrom)
           : new Date(roomStartDate);
-      const incrementNumber =
-        room.swappingDateFrom && !room.isSwapped
-          ? i
-          :i
+      const incrementNumber = i
+        // room.swappingDateFrom && !room.isSwapped
+        //   ? i
+        //   :i
 
       const currentDate = new Date(baseDate);
       currentDate.setDate(currentDate.getDate() + incrementNumber);

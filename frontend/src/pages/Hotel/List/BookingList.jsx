@@ -105,96 +105,94 @@ function BookingList() {
   );
 
   // ADD THIS FUNCTION: Calculate total from all checkouts
-const calculateTotalAmount = (checkouts) => {
-  if (!Array.isArray(checkouts) || checkouts.length === 0) return 0;
+  const calculateTotalAmount = (checkouts) => {
+    if (!Array.isArray(checkouts) || checkouts.length === 0) return 0;
 
-  return checkouts.reduce((total, checkout) => {
-    const rooms = checkout?.selectedRooms || [];
-    if (!rooms.length) return total;
+    return checkouts.reduce((total, checkout) => {
+      const rooms = checkout?.selectedRooms || [];
+      if (!rooms.length) return total;
 
-    const advance =
-      Number(checkout?.advanceAmount || 0) +
-      Number(checkout?.bookingId?.advanceAmount || 0);
+      const advance =
+        Number(checkout?.advanceAmount || 0) +
+        Number(checkout?.bookingId?.advanceAmount || 0);
 
-    const hasSwapping = rooms.some((r) => r?.swappingDateFrom);
+      const hasSwapping = rooms.some((r) => r?.swappingDateFrom);
 
-    const checkoutTotal = rooms.reduce((sum, room) => {
-      if (!hasSwapping) {
-        return sum + Number(room?.amountAfterTax || 0);
-      }
+      const checkoutTotal = rooms.reduce((sum, room) => {
+        if (!hasSwapping) {
+          return sum + Number(room?.amountAfterTax || 0);
+        }
 
-      let stayDays = Number(room?.stayDays || 1);
+        let stayDays = Number(room?.stayDays || 1);
 
-      // Old room before swap
-      if (room?.isSwapped && room?.swappingDateFrom) {
-        const swappingDate = new Date(room.swappingDateFrom);
-        const arrivalDate = new Date(checkout?.arrivalDate);
-
-        stayDays = Math.floor(
-          (swappingDate - arrivalDate) / (1000 * 60 * 60 * 24) - 1,
-        );
-
-        if (stayDays <= 0) stayDays = 1;
-      }
-      // New room after swap
-      else if (!room?.isSwapped && room?.swappingDateFrom) {
-        const swappingDate = new Date(room.swappingDateFrom);
-        const checkoutDate = new Date(checkout?.checkOutDate);
-
-        stayDays = Math.floor(
-          (checkoutDate - swappingDate) / (1000 * 60 * 60 * 24),
-        );
-
-        if (stayDays <= 0) stayDays = 1;
-      } else {
-        stayDays = Number(room?.stayDays || 1);
-      }
-
-      if (stayDays <= 0) stayDays = 1;
-
-      const totalStayDays = Number(room?.stayDays || 1) || 1;
-      const priceLevelRate = Number(room?.priceLevelRate || 0);
-      const taxPercentage = Number(room?.taxPercentage || 0);
-
-      const baseAmount = stayDays * priceLevelRate;
-      const taxAmount = (baseAmount * taxPercentage) / 100;
-
-      // These are already WITH TAX in your data
-      const additionalPaxPerDay =
-        Number(room?.additionalPaxAmountWithTax || 0) / totalStayDays;
-
-      const foodPlanPerDay =
-        Number(room?.foodPlanAmountWithTax || 0) / totalStayDays;
-
-      const additionalPaxAmount = additionalPaxPerDay * stayDays;
-      const foodPlanAmount = foodPlanPerDay * stayDays;
-
-      console.log({
-        stayDays,
-        totalStayDays,
-        priceLevelRate,
-        taxPercentage,
-        baseAmount,
-        taxAmount,
-        additionalPaxPerDay,
-        foodPlanPerDay,
-        additionalPaxAmount,
-        foodPlanAmount,
-      });
-      console.log(baseAmount + taxAmount + additionalPaxAmount + foodPlanAmount  );
-
-      return (
-        sum +
-        baseAmount +
-        taxAmount +
-        additionalPaxAmount +
-        foodPlanAmount
-      );
-    }, 0);
-
-    return total + (checkoutTotal - advance);
-  }, 0);
+      const normalizeToDate = (d) => {
+  const nd = new Date(d);
+  nd.setHours(0, 0, 0, 0);
+  return nd;
 };
+
+// Old room before swap: from arrival to day BEFORE swap
+if (room?.isSwapped && room?.swappingDateFrom) {
+  const swappingDate = normalizeToDate(room.swappingDateFrom);
+  const arrivalDate = normalizeToDate(checkout?.arrivalDate);
+
+  stayDays = Math.floor(
+    (swappingDate - arrivalDate) / (1000 * 60 * 60 * 24) - 1,
+  );
+
+  if (stayDays <= 0) stayDays = 1;
+}
+// New room after swap: from swap date to checkout date
+else if (!room?.isSwapped && room?.swappingDateFrom) {
+  const swappingDate = normalizeToDate(room.swappingDateFrom);
+  const checkoutDate = normalizeToDate(checkout.checkOutDate);
+
+  stayDays = Math.floor(
+    (checkoutDate - swappingDate) / (1000 * 60 * 60 * 24),
+  );
+
+  if (stayDays <= 0) stayDays = 0;
+} else {
+  stayDays = Number(room?.stayDays || 1);
+}
+
+// if (stayDays <= 0) stayDays = 1;
+
+        const totalStayDays = Number(room?.stayDays || 1) || 1;
+        const priceLevelRate = Number(room?.priceLevelRate || 0);
+        const taxPercentage = Number(room?.taxPercentage || 0);
+
+        const baseAmount = stayDays * priceLevelRate;
+        let taxAmount = (baseAmount * taxPercentage) / 100;
+
+        // These are already WITH TAX in your data
+        const additionalPaxPerDay =
+          Number(room?.additionalPaxAmountWithTax || 0) / totalStayDays;
+
+        const foodPlanPerDay =
+          Number(room?.foodPlanAmountWithTax || 0) / totalStayDays;
+
+        const additionalPaxAmount = additionalPaxPerDay * stayDays;
+        let foodPlanAmount = foodPlanPerDay * stayDays;
+
+        console.log(baseAmount, additionalPaxPerDay, foodPlanAmount);
+
+        taxAmount = configurations[0]?.addRateWithTax?.hotelSale
+          ? 0
+          : taxAmount;
+        foodPlanAmount = configurations[0]?.addRateWithTax?.hotelSale
+          ? 0
+          : foodPlanAmount;
+        console.log(taxAmount);
+
+        return (
+          sum + baseAmount + taxAmount + additionalPaxAmount + foodPlanAmount
+        );
+      }, 0);
+
+      return total + (checkoutTotal - advance);
+    }, 0);
+  };
   useEffect(() => {
     if (location.pathname === "/sUsers/bookingList") {
       const fetchStatus = async () => {
