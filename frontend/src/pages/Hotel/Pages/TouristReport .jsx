@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import api from "@/api/api";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
+import { useSelector } from "react-redux";
 
 const getToday = () => new Date().toISOString().slice(0, 10);
 
@@ -11,6 +12,10 @@ const TouristReport = () => {
     fromDate: getToday(),
     toDate: getToday(),
   });
+ const cmp_id = useSelector(
+         (state) => state.secSelectedOrganization.secSelectedOrg._id
+       );
+
 
   const [rows, setRows] = useState([]);
   const [summary, setSummary] = useState({
@@ -50,6 +55,7 @@ const TouristReport = () => {
         params: {
           fromDate: filters.fromDate,
           toDate: filters.toDate,
+          cmp_id: cmp_id,
         },
       });
 

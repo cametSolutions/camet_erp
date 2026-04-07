@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import api from "@/api/api";
+import { useSelector } from "react-redux";
 
 const getToday = () => new Date().toISOString().slice(0, 10);
 
@@ -17,12 +18,17 @@ const formatDisplayDate = (value) => {
   });
 };
 
+
 const FoodPlanReportPage = () => {
   const [filters, setFilters] = useState({
   fromDate: getToday(),
   toDate: getToday(),
 });
 
+
+ const cmp_id = useSelector(
+         (state) => state.secSelectedOrganization.secSelectedOrg._id
+       );
   const [data, setData] = useState([]);
   const [grandTotal, setGrandTotal] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -45,6 +51,7 @@ const FoodPlanReportPage = () => {
         params: {
           fromDate: filters.fromDate,
           toDate: filters.toDate,
+          cmp_id: cmp_id,
         },
       });
 
