@@ -2243,7 +2243,7 @@ export const getAllRoomsWithStatusForDate = async (req, res) => {
     const bookedRoomIds = new Set();
     for (const booking of bookings) {
       for (const selRoom of booking.selectedRooms) {
-        if (selRoom.roomId) {
+        if (selRoom.roomId ) {
           bookedRoomIds.add(selRoom.roomId.toString());
         }
       }
@@ -2337,6 +2337,7 @@ export const getDateBasedRoomsWithStatus = async (req, res) => {
       status: { $ne: "checkIn" },
       arrivalDate: { $lte: selectedDate },
       checkOutDate: { $gte: selectedDate },
+      
     });
 
     // 2. Fetch check-ins (status not 'checkOut')
