@@ -169,6 +169,20 @@ const calculateTotalAmount = (checkouts) => {
       const additionalPaxAmount = additionalPaxPerDay * stayDays;
       const foodPlanAmount = foodPlanPerDay * stayDays;
 
+      console.log({
+        stayDays,
+        totalStayDays,
+        priceLevelRate,
+        taxPercentage,
+        baseAmount,
+        taxAmount,
+        additionalPaxPerDay,
+        foodPlanPerDay,
+        additionalPaxAmount,
+        foodPlanAmount,
+      });
+      console.log(baseAmount + taxAmount + additionalPaxAmount + foodPlanAmount  );
+
       return (
         sum +
         baseAmount +

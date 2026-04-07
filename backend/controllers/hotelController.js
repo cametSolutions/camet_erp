@@ -3731,7 +3731,7 @@ export const swapRoom = async (req, res) => {
     session.startTransaction();
 
     const { checkInId } = req.params;
-    const { newRoomId, oldRoomId, selectedDate } = req.body;
+    const { newRoomId, oldRoomId,selectedDate } = req.body;
 
     if (!newRoomId || !oldRoomId) {
       await session.abortTransaction();
@@ -3816,14 +3816,14 @@ export const swapRoom = async (req, res) => {
     await roomModal.findByIdAndUpdate(
       oldRoomId,
       { status: "dirty" },
-      { isSwapped: true },
-      { new: true, session },
+      { isSwapped: true},
+      { new: true, session }
     );
 
     await roomModal.findByIdAndUpdate(
       newRoomId,
       { status: "occupied" },
-      { new: true, session },
+      { new: true, session }
     );
 
     // close old selected room row
@@ -3835,24 +3835,24 @@ export const swapRoom = async (req, res) => {
     const taxAmount = (totalAmount * taxPercentage) / 100;
 
     const selected = new Date(selectedDate);
-    const checkout = new Date(checkIn?.checkOutDate);
-    const arrivedAt = new Date(checkIn?.arrivalDate);
+const checkout = new Date(checkIn?.checkOutDate);
+const arrivedAt = new Date(checkIn?.arrivalDate)
 
-    let stayedDays = Math.ceil((selected - checkout) / (1000 * 60 * 60 * 24));
+let stayedDays = Math.ceil(
+  (selected - checkout) / (1000 * 60 * 60 * 24)
+);
 
-    let stayedDaysAtOldRoom = Math.ceil(
-      (arrivedAt - selected) / (1000 * 60 * 60 * 24),
-    );
+let stayedDaysAtOldRoom = Math.ceil(
+  (arrivedAt - selected) / (1000 * 60 * 60 * 24)
+);
 
-    // 🔥 Fix: if same day or negative → make it 1
-    if (stayedDays <= 0) {
-      stayedDays = 1;
-    }
+// 🔥 Fix: if same day or negative → make it 1
+if (stayedDays <= 0) {
+  stayedDays = 1;
+}
 
-    let selectedPriceLevel = await PriceLevel.findOne({
-      _id: newRoom.priceLevel?.[0]?.priceLevel,
-    });
-    selectedPriceLevel = selectedPriceLevel ? selectedPriceLevel : [];
+    let selectedPriceLevel = await PriceLevel.findOne({ _id: newRoom.priceLevel?.[0]?.priceLevel });
+    selectedPriceLevel = selectedPriceLevel ? selectedPriceLevel : []
     checkIn.selectedRooms.push({
       roomId: newRoom._id,
       roomName: newRoom.roomName,
@@ -3877,15 +3877,15 @@ export const swapRoom = async (req, res) => {
       isSwapped: false,
     });
 
-    checkIn.selectedRooms = checkIn.selectedRooms.map((room) => {
-      if (String(room.roomId) === String(oldRoom.roomId)) {
-        return {
-          ...room,
-          swappingDateFrom: selectedDate,
-        };
-      }
-      return room;
-    });
+   checkIn.selectedRooms = checkIn.selectedRooms.map((room) => {
+  if (String(room.roomId) === String(oldRoom.roomId)) {
+    return {
+      ...room,
+      swappingDateFrom: selectedDate,
+    };
+  }
+  return room;
+});
 
     if (checkIn.selectedRooms[checkInRoomIndex].hasOwnProperty("roomName")) {
       checkIn.selectedRooms[checkInRoomIndex].roomName = oldRoom.roomName;

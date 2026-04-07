@@ -199,6 +199,9 @@ const transformDocToDateWiseLines = (doc) => {
 
     // Swapping logic: adjust full days count
     let fullDaysAre = fullDays;
+    console.log(room.isSwapped);
+    console.log(room.swappingDateFrom);
+    console.log(room)
 
     if (room.isSwapped && room.swappingDateFrom) {
       const swappingDate = new Date(room.swappingDateFrom);
@@ -225,6 +228,7 @@ const transformDocToDateWiseLines = (doc) => {
         fullDaysAre = 1;
       }
     }
+    console.log(fullDaysAre);
 
     // Add full days (respect swap base date, read tariff via ISO key)
     for (let i = 0; i < fullDaysAre; i++) {
@@ -234,7 +238,7 @@ const transformDocToDateWiseLines = (doc) => {
           : new Date(roomStartDate);
       const incrementNumber =
         room.swappingDateFrom && !room.isSwapped
-          ? i-1
+          ? i
           :i
 
       const currentDate = new Date(baseDate);
