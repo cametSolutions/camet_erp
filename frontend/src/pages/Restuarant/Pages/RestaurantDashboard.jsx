@@ -1661,7 +1661,7 @@ const RestaurantPOS = () => {
                                   group-hover:opacity-100 transition-opacity flex-shrink-0"
                               />
                             </button>
-                            {/* <button
+                            <button
           onClick={() => { setShowOptions(false); navigate("/sUsers/sales-register"); }}
           className="group flex items-center gap-3 w-full px-2.5 py-2 rounded-lg 
                      hover:bg-gray-50 transition-colors text-left"
@@ -1675,7 +1675,7 @@ const RestaurantPOS = () => {
           </div>
           <ChevronDown className="w-3 h-3 text-gray-300 -rotate-90 opacity-0 
                                   group-hover:opacity-100 transition-opacity flex-shrink-0" />
-        </button> */}
+        </button>
                           </div>
                         </div>
                       </>
