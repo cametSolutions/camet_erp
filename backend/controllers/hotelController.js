@@ -5503,7 +5503,7 @@ export const getFlashReportForDate = async (req, res) => {
 
     const foodPlanTotal = checkouts.reduce(
       (sum, co) => sum + Number(co.foodPlanTotal || 0),
-      0,
+      0
     );
 
     const roomTotal = roomApartment + roomExtraBed;
@@ -5511,16 +5511,20 @@ export const getFlashReportForDate = async (req, res) => {
 
     const grandTotal = checkouts.reduce(
       (sum, co) => sum + Number(co.grandTotal || 0),
-      0,
+      0
     );
 
-    const occPercent = totalRooms > 0 ? (occupiedPaid / totalRooms) * 100 : 0;
+    const occPercent =
+      totalRooms > 0 ? (occupiedPaid / totalRooms) * 100 : 0;
 
-    const arrTotalRooms = totalRooms > 0 ? roomTotal / totalRooms : 0;
+    const arrTotalRooms =
+      totalRooms > 0 ? roomTotal / totalRooms : 0;
 
-    const arrSaleableRooms = saleableRooms > 0 ? roomTotal / saleableRooms : 0;
+    const arrSaleableRooms =
+      saleableRooms > 0 ? roomTotal / saleableRooms : 0;
 
-    const arrOccupiedRooms = totalOccupied > 0 ? roomTotal / totalOccupied : 0;
+    const arrOccupiedRooms =
+      totalOccupied > 0 ? roomTotal / totalOccupied : 0;
 
     const reportDate = new Date(toDate);
     const dayLabel = reportDate.toLocaleDateString("en-GB");
@@ -5582,6 +5586,7 @@ export const getFlashReportForDate = async (req, res) => {
     });
   }
 };
+
 
 export const getTouristReport = async (req, res) => {
   try {
@@ -5690,6 +5695,10 @@ export const getTouristReport = async (req, res) => {
   }
 };
 
+
+
+
+
 export const getFoodPlanReport = async (req, res) => {
   try {
     let { fromDate, toDate, cmp_id } = req.query;
@@ -5753,7 +5762,10 @@ export const getFoodPlanReport = async (req, res) => {
                 $ifNull: [
                   "$foodPlan.foodItemName",
                   {
-                    $ifNull: ["$foodPlan.name", "$foodPlan.foodPlan"],
+                    $ifNull: [
+                      "$foodPlan.name",
+                      "$foodPlan.foodPlan",
+                    ],
                   },
                 ],
               },
@@ -5775,7 +5787,11 @@ export const getFoodPlanReport = async (req, res) => {
           billNo: "$voucherNumber",
           billDate: "$arrivalDate",
           remarks: {
-            $cond: [{ $eq: ["$isHotelAgent", true] }, "AGENT", ""],
+            $cond: [
+              { $eq: ["$isHotelAgent", true] },
+              "AGENT",
+              "",
+            ],
           },
         },
       },
@@ -5847,6 +5863,8 @@ export const getFoodPlanReport = async (req, res) => {
   }
 };
 
+
+
 export const getOccupancyCheckoutReport = async (req, res) => {
   try {
     let { fromDate, toDate, cmp_id } = req.query;
@@ -5890,9 +5908,7 @@ export const getOccupancyCheckoutReport = async (req, res) => {
     let additionalPaxTotal = 0;
 
     checkins.forEach((doc) => {
-      const country = (doc?.country || doc?.guestCountry || "")
-        .trim()
-        .toLowerCase();
+      const country = (doc?.country || doc?.guestCountry || "").trim().toLowerCase();
       const isDomestic = !country || country === "india";
 
       if (isDomestic) domestic += 1;
@@ -5918,7 +5934,9 @@ export const getOccupancyCheckoutReport = async (req, res) => {
         occupiedRoomNames.add(room?.roomName);
 
         const roomTypeName =
-          room?.roomType?.roomTypeName || room?.roomType?.name || "";
+          room?.roomType?.roomTypeName ||
+          room?.roomType?.name ||
+          "";
 
         const type = roomTypeName.toLowerCase();
 
@@ -5975,7 +5993,9 @@ export const getOccupancyCheckoutReport = async (req, res) => {
         : 0;
 
     const arr =
-      occupiedRooms > 0 ? Number((roomRevenue / occupiedRooms).toFixed(2)) : 0;
+      occupiedRooms > 0
+        ? Number((roomRevenue / occupiedRooms).toFixed(2))
+        : 0;
 
     const roomStatus = allRooms
       .map((room) => ({

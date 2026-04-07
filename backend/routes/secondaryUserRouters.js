@@ -73,7 +73,9 @@ import {
     addItem, getAllItems, getItems, getCategories, deleteItem, updateItem, generateKot, getKot,getKotDash, updateKotStatus, editKot,
     getRoomDataForRestaurant, updateKotPayment, getPaymentType, saveTableNumber, getSalePrintData, updateTable, getTables, deleteTable,
     updateTableStatus, getKotDataByTable, updateConfigurationForKotApproval, getSummaryDashboard, cancelKot, directSale, searchItems,getComplementaryCashOrBank
-,addComplementaryCashOrBank,getRestaurantCategoryWiseSalesReport,getRestaurantDateWiseItemReport} from '../controllers/restaurantController.js'
+,addComplementaryCashOrBank,getRestaurantCategoryWiseSalesReport,getRestaurantDateWiseItemReport,
+getKotRegister,
+getSalesRegister} from '../controllers/restaurantController.js'
 
 
 router.post('/login', login)
@@ -407,6 +409,8 @@ router.get("/restaurant-date-wise-item-report", getRestaurantDateWiseItemReport)
 router.get("/tourist-report", getTouristReport);
 router.get("/foodplan-report", getFoodPlanReport);
 router.get("/occupancy-checkout-report", getOccupancyCheckoutReport);
+router.get("/register", getKotRegister);
+router.get("/sales-register", getSalesRegister);
 // Route to get detailed booking information for a specific room and date
 
 export default router
