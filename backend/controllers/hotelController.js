@@ -5489,13 +5489,21 @@ export const getTouristReport = async (req, res) => {
 
 export const getFoodPlanReport = async (req, res) => {
   try {
-    let { fromDate, toDate } = req.query;
+    let { fromDate, toDate, cmp_id } = req.query;
+
+    if (!cmp_id) {
+      return res.status(400).json({
+        success: false,
+        message: "cmp_id is required",
+      });
+    }
 
     const todayStr = new Date().toISOString().slice(0, 10);
     fromDate = fromDate || todayStr;
     toDate = toDate || todayStr;
 
     const match = {
+      cmp_id: new mongoose.Types.ObjectId(cmp_id),   // ⬅️ company filter
       arrivalDate: {
         $gte: fromDate,
         $lte: toDate,
@@ -5647,13 +5655,21 @@ export const getFoodPlanReport = async (req, res) => {
 
 export const getOccupancyCheckoutReport = async (req, res) => {
   try {
-    let { fromDate, toDate } = req.query;
+    let { fromDate, toDate, cmp_id } = req.query;
+
+    if (!cmp_id) {
+      return res.status(400).json({
+        success: false,
+        message: "cmp_id is required",
+      });
+    }
 
     const todayStr = new Date().toISOString().slice(0, 10);
     fromDate = fromDate || todayStr;
     toDate = toDate || todayStr;
 
     const match = {
+      cmp_id: new mongoose.Types.ObjectId(cmp_id),   // ⬅️ company filter
       arrivalDate: {
         $gte: fromDate,
         $lte: toDate,
@@ -5662,7 +5678,9 @@ export const getOccupancyCheckoutReport = async (req, res) => {
 
     const checkins = await CheckIn.find(match).lean();
 
-    const allRooms = await roomModal.find({}, { roomName: 1, roomType: 1 }).lean();
+    const allRooms = await roomModal
+      .find({ cmp_id: new mongoose.Types.ObjectId(cmp_id) }, { roomName: 1, roomType: 1 })
+      .lean();
 
     const rows = [];
     const planMap = {};
@@ -5694,10 +5712,10 @@ export const getOccupancyCheckoutReport = async (req, res) => {
         const pax = Number(room?.pax || 0);
         const tariff = Number(
           room?.amountAfterTax ||
-          room?.totalAmount ||
-          room?.baseAmountWithTax ||
-          room?.baseAmount ||
-          0
+            room?.totalAmount ||
+            room?.baseAmountWithTax ||
+            room?.baseAmount ||
+            0
         );
 
         roomRevenue += tariff;

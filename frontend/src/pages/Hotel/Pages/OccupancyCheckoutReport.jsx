@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import api from "@/api/api"; // change to your actual api file
+import { useSelector } from "react-redux";
 
 const OccupancyCheckoutReport = () => {
   const [filters, setFilters] = useState({
@@ -18,6 +19,10 @@ const OccupancyCheckoutReport = () => {
     printDateTime: "",
   });
 
+
+   const cmp_id = useSelector(
+           (state) => state.secSelectedOrganization.secSelectedOrg._id
+         );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -38,6 +43,7 @@ const OccupancyCheckoutReport = () => {
         params: {
           fromDate: filters.fromDate,
           toDate: filters.toDate,
+          cmp_id: cmp_id,
         },
       });
 

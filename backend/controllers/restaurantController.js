@@ -3630,11 +3630,19 @@ export const getRestaurantDateWiseItemReport = async (req, res) => {
 
 export const getKotRegister = async (req, res, next) => {
   try {
-    const { from, to, type, status, search } = req.query;
+    const { from, to, type, status, search, cmp_id } = req.query;
 
-    const match = {};
+    if (!cmp_id) {
+      return res.status(400).json({
+        success: false,
+        message: "cmp_id is required",
+      });
+    }
 
-    // date filter: default = today
+    const match = {
+      cmp_id: new mongoose.Types.ObjectId(cmp_id),
+    };
+
     if (from || to) {
       match.createdAt = {};
       if (from) match.createdAt.$gte = new Date(`${from}T00:00:00.000Z`);
@@ -3648,18 +3656,17 @@ export const getKotRegister = async (req, res, next) => {
       match.createdAt = { $gte: startOfDay, $lte: endOfDay };
     }
 
-    if (type) match.type = type;          // keep same casing as stored: "roomService"
+    if (type) match.type = type;
     if (status) match.status = status.toLowerCase();
 
     const pipeline = [
       { $match: match },
 
-      // JOIN Room collection using roomId from KOT
       {
         $lookup: {
-          from: roomModal.collection.name,   // e.g. "rooms"
-          localField: "roomId",              // field in KOT doc
-          foreignField: "_id",               // Room _id
+          from: roomModal.collection.name,
+          localField: "roomId",
+          foreignField: "_id",
           as: "roomDetails",
         },
       },
@@ -3688,33 +3695,69 @@ export const getKotRegister = async (req, res, next) => {
           batchNo: "$kitchenBatches.batchNo",
           itemId: "$kitchenBatches.items._id",
           itemName: "$kitchenBatches.items.product_name",
-          qty: { $ifNull: ["$kitchenBatches.items.quantity", 0] },
-
-          kotType: {
-            $switch: {
-              branches: [
-                { case: { $eq: ["$type", "dine-in"] }, then: "DINE-IN" },
-                { case: { $eq: ["$type", "roomService"] }, then: "ROOM SERVICE" },
-                { case: { $eq: ["$type", "takeaway"] }, then: "TAKEAWAY" },
-              ],
-              default: { $toUpper: "$type" },
-            },
+          qty: {
+            $ifNull: [
+              "$kitchenBatches.items.quantity",
+              "$kitchenBatches.items.qty",
+              0,
+            ],
           },
 
-          // show Room.roomName, fallback to checkIn/table if no room
+          // take exact DB value, no hardcoding
+          kotType: "$type",
+
           roomNo: {
             $ifNull: [
-              "$roomDetails.roomName",   // "1001A"
-            
+              "$roomDetails.roomName",
+              "$roomDetails.roomNo",
+              "$roomDetails.roomNumber",
+              "$roomDetails.room_name",
               "",
             ],
           },
 
-          foodPlan: "",
-          status: { $toUpper: "$status" },
-       remarks: { $ifNull: ["$note", "$cancelReason", ""] },
+          foodPlan: {
+            $cond: [
+              {
+                $and: [
+                  { $isArray: "$foodPlanDetails" },
+                  { $gt: [{ $size: "$foodPlanDetails" }, 0] },
+                ],
+              },
+              {
+                $reduce: {
+                  input: {
+                    $map: {
+                      input: "$foodPlanDetails",
+                      as: "fp",
+                      in: {
+                        $ifNull: [
+                          "$$fp.planType",
+                          "$$fp.foodPlanName",
+                          "$$fp.name",
+                          "",
+                        ],
+                      },
+                    },
+                  },
+                  initialValue: "",
+                  in: {
+                    $cond: [
+                      { $eq: ["$$value", ""] },
+                      "$$this",
+                      { $concat: ["$$value", ", ", "$$this"] },
+                    ],
+                  },
+                },
+              },
+              "",
+            ],
+          },
 
-        printedAt: "$kitchenBatches.printedAt",
+          status: { $toUpper: "$status" },
+          remarks: { $ifNull: ["$note", "$cancelReason", ""] },
+          printedAt: "$kitchenBatches.printedAt",
+          checkInNumber: { $ifNull: ["$checkInNumber", ""] },
         },
       },
 
@@ -3726,6 +3769,9 @@ export const getKotRegister = async (req, res, next) => {
                   { kotNo: { $regex: search, $options: "i" } },
                   { itemName: { $regex: search, $options: "i" } },
                   { roomNo: { $regex: search, $options: "i" } },
+                  { foodPlan: { $regex: search, $options: "i" } },
+                  { kotType: { $regex: search, $options: "i" } },
+                  { remarks: { $regex: search, $options: "i" } },
                 ],
               },
             },
@@ -3739,14 +3785,13 @@ export const getKotRegister = async (req, res, next) => {
 
     return res.status(200).json({
       success: true,
-      message: "Today KOT register fetched successfully",
+      message: "KOT register fetched successfully",
       data: rows,
     });
   } catch (error) {
     next(error);
   }
 };
-
 
 
 
@@ -3768,7 +3813,7 @@ export const getSalesRegister = async (req, res) => {
       search,
       includeCancelled,
     } = req.query;
-console.log("cmp_id",cmp_id)
+
     if (!cmp_id) {
       return res.status(400).json({
         success: false,
@@ -3802,7 +3847,8 @@ console.log("cmp_id",cmp_id)
 
     const restaurantSeries = voucherSeriesDocs.flatMap((doc) =>
       (doc.series || []).filter(
-        (series) => String(series?.under || "").trim().toLowerCase() === "restaurant"
+        (series) =>
+          String(series?.under || "").trim().toLowerCase() === "restaurant"
       )
     );
 
@@ -3848,6 +3894,7 @@ console.log("cmp_id",cmp_id)
         subTotal
         totalWithAdditionalCharges
         finalAmount
+        convertedFrom
       `)
       .sort({ date: -1, salesNumber: -1 })
       .lean();
@@ -3966,6 +4013,30 @@ console.log("cmp_id",cmp_id)
       );
     };
 
+    const convertedVoucherNumbers = sales
+      .flatMap((sale) => sale.convertedFrom || [])
+      .map((cf) => String(cf?.voucherNumber || "").trim())
+      .filter(Boolean);
+
+    const uniqueConvertedVoucherNumbers = [...new Set(convertedVoucherNumbers)];
+
+    const kotDocs = uniqueConvertedVoucherNumbers.length
+      ? await kotModal
+          .find({
+            cmp_id: new mongoose.Types.ObjectId(cmp_id), // only this company
+            voucherNumber: { $in: uniqueConvertedVoucherNumbers },
+          })
+          .select(
+            "voucherNumber type roomId checkInNumber tableNumber foodPlanDetails"
+          )
+          .populate("roomId", "roomName roomNo roomNumber room_name name")
+          .lean()
+      : [];
+
+    const kotMap = new Map(
+      kotDocs.map((kot) => [String(kot.voucherNumber).trim(), kot])
+    );
+
     let rows = sales.map((sale) => {
       const items = sale.items || [];
 
@@ -3978,7 +4049,9 @@ console.log("cmp_id",cmp_id)
         .map((item) => {
           const gdn = item?.GodownList?.[0] || {};
           const qty =
-            Number(item?.totalCount ?? item?.totalActualCount ?? item?.qty ?? 0) || 1;
+            Number(
+              item?.totalCount ?? item?.totalActualCount ?? item?.qty ?? 0
+            ) || 1;
 
           const rawRate =
             gdn?.basePrice ??
@@ -3993,7 +4066,10 @@ console.log("cmp_id",cmp_id)
 
       const qty = items.reduce(
         (sum, item) =>
-          sum + Number(item?.totalCount ?? item?.totalActualCount ?? item?.qty ?? 0),
+          sum +
+          Number(
+            item?.totalCount ?? item?.totalActualCount ?? item?.qty ?? 0
+          ),
         0
       );
 
@@ -4023,6 +4099,52 @@ console.log("cmp_id",cmp_id)
           amount
       );
 
+      const convertedVoucherNumber = String(
+        sale?.convertedFrom?.[0]?.voucherNumber || ""
+      ).trim();
+
+      const matchedKot = convertedVoucherNumber
+        ? kotMap.get(convertedVoucherNumber)
+        : null;
+
+      const roomNo =
+        matchedKot?.roomId?.roomName ||
+        matchedKot?.roomId?.roomNo ||
+        matchedKot?.roomId?.roomNumber ||
+        matchedKot?.roomId?.room_name ||
+        matchedKot?.roomId?.name ||
+        "-";
+
+      const foodPlan =
+        Array.isArray(matchedKot?.foodPlanDetails) &&
+        matchedKot.foodPlanDetails.length
+          ? matchedKot.foodPlanDetails
+              .map(
+                (fp) =>
+                  fp?.planType ||
+                  fp?.foodPlanName ||
+                  fp?.name ||
+                  ""
+              )
+              .filter(Boolean)
+              .join(", ")
+          : "-";
+
+      // billType from KOT.type when available, else fallback
+      let billType = sale.isPostToRoom ? "ROOM SERVICE" : "DINE-IN";
+      if (matchedKot?.type) {
+        const t = String(matchedKot.type).trim().toLowerCase();
+        if (t === "roomservice" || t === "room service") {
+          billType = "ROOM SERVICE";
+        } else if (t === "dine-in" || t === "dinein") {
+          billType = "DINE-IN";
+        } else if (t === "takeaway" || t === "take away") {
+          billType = "TAKEAWAY";
+        } else {
+          billType = String(matchedKot.type).toUpperCase();
+        }
+      }
+
       return {
         saleId: sale._id || sale.salesNumber,
         date: formatDate(sale.date),
@@ -4035,13 +4157,49 @@ console.log("cmp_id",cmp_id)
         taxAmount,
         discAmount,
         billAmount,
-        billType: sale.isPostToRoom ? "ROOM SERVICE" : "DINE-IN",
-        roomNo: sale.checkInId ? "ROOM" : "",
-        foodPlan: "-",
+        billType,
+        roomNo,
+        foodPlan,
         paymentType: derivePaymentType(sale),
         sponsorName: "",
         remarks: sale.note || "",
         isCancelled: sale.isCancelled === true ? "CANCELLED" : "-",
+        tableNumber: matchedKot?.tableNumber || "-",
+        checkInNumber: matchedKot?.checkInNumber || "-",
+        itemDetails: items.map((item) => {
+          const gdn = item?.GodownList?.[0] || {};
+          const qtyItem =
+            Number(
+              item?.totalCount ??
+                item?.totalActualCount ??
+                item?.qty ??
+                0
+            ) || 1;
+
+          const rawRate =
+            gdn?.basePrice ??
+            gdn?.selectedPriceRate ??
+            item?.Priceleveles?.[0]?.pricerate ??
+            item?.item_mrp ??
+            (Number(item?.total || 0) / qtyItem);
+
+          const amountItem = Number(item?.total || 0);
+
+          const taxItem =
+            Number(item?.totalCgstAmt || 0) +
+            Number(item?.totalSgstAmt || 0) +
+            Number(item?.totalIgstAmt || 0) +
+            Number(item?.totalCessAmt || 0) +
+            Number(item?.totalAddlCessAmt || 0);
+
+          return {
+            name: item?.product_name || item?.itemName || "",
+            qty: qtyItem,
+            rate: Number(rawRate || 0),
+            amount: amountItem,
+            taxAmount: taxItem,
+          };
+        }),
       };
     });
 
@@ -4060,7 +4218,10 @@ console.log("cmp_id",cmp_id)
           String(r.customer || "").toLowerCase().includes(q) ||
           String(r.itemName || "").toLowerCase().includes(q) ||
           String(r.remarks || "").toLowerCase().includes(q) ||
-          String(r.billNo || "").toLowerCase().includes(q)
+          String(r.billNo || "").toLowerCase().includes(q) ||
+          String(r.roomNo || "").toLowerCase().includes(q) ||
+          String(r.foodPlan || "").toLowerCase().includes(q) ||
+          String(r.billType || "").toLowerCase().includes(q)
       );
     }
 
