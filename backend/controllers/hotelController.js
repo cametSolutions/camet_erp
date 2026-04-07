@@ -803,10 +803,10 @@ export const getRooms = async (req, res) => {
 
     // Add booked room IDs
     overlappingBookings.forEach((booking) => {
-      if (booking.selectedRooms && Array.isArray(booking.selectedRooms)) {
+      if (booking.selectedRooms && Array.isArray(booking.selectedRooms )) {
         booking.selectedRooms.forEach((room) => {
           const roomId = room.roomId || room._id || room;
-          if (roomId) {
+          if (roomId ) {
             occupiedRoomId.add(roomId.toString());
           }
         });
@@ -815,10 +815,10 @@ export const getRooms = async (req, res) => {
     // console.log("allcheckins", AllCheckIns)
     // Add checked-in room IDs
     AllCheckIns.forEach((checkIn) => {
-      if (checkIn.selectedRooms && Array.isArray(checkIn.selectedRooms)) {
+      if (checkIn.selectedRooms && Array.isArray(checkIn.selectedRooms) && !checkIn.isHold) {
         checkIn.selectedRooms.forEach((room) => {
           const roomId = room.roomId || room._id || room;
-          if (roomId) {
+          if (roomId && !room.isSwapped) {
             occupiedRoomId.add(roomId.toString());
           }
         });
@@ -865,7 +865,6 @@ export const getRooms = async (req, res) => {
     });
   }
 };
-
 // function used to get all rooms
 
 export const getAllRooms = async (req, res) => {

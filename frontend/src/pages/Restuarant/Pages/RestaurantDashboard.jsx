@@ -537,10 +537,12 @@ const RestaurantPOS = () => {
                 });
               }
             });
+            console.log(room)
 
             return {
               ...selectedRoom,
               customerName: room?.customerName,
+              guestName: room?.guestName,
               mobileNumber: room?.mobileNumber,
               voucherNumber: room?.voucherNumber,
               foodPlan: completeFoodPlan,
@@ -2456,77 +2458,91 @@ const RestaurantPOS = () => {
 
             {/* Customer Details Input */}
             <div className="space-y-3 mb-6">
-              {(orderType === "roomService" || orderType === "dine-in") && (
-                <>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Room Number
-                    </label>
-                    <div className="relative ">
-                      <input
-                        type="text"
-                        placeholder="Search room..."
-                        className="px-3 py-2 border rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-violet-500"
-                        value={search}
-                        onChange={(e) => {
-                          setSearch(e.target.value);
-                          setShowResults(true);
-                        }}
-                      />
+          {(orderType === "roomService" || orderType === "dine-in") && (
+  <>
+    <div>
+      <label className="block text-sm font-semibold text-gray-700 mb-2">
+        Room Number
+      </label>
 
-                      {/* Dropdown results */}
-                      {showResults && search && (
-                        <ul className="absolute z-10 w-full bg-white border rounded-lg shadow max-h-60 overflow-y-auto">
-                          {filteredRooms.length > 0 ? (
-                            filteredRooms.map((room) => (
-                              <li
-                                key={room.roomId}
-                                className="px-4 py-2 hover:bg-violet-100 cursor-pointer"
-                                onClick={() => handleSelectRoom(room)}
-                              >
-                                {room.roomName} - {room.customerName} -{" "}
-                                {room.voucherNumber}
-                              </li>
-                            ))
-                          ) : (
-                            <li className="px-4 py-2 text-gray-500">
-                              No results found
-                            </li>
-                          )}
-                        </ul>
-                      )}
-                    </div>
-                  </div>
+      <div className="relative w-full">
+        <input
+          type="text"
+          placeholder="Search room..."
+          className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setShowResults(true);
+          }}
+        />
 
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Guest Name
-                    </label>
-                    <input
-                      type="text"
-                      value={roomDetails.guestName}
-                      onChange={(e) =>
-                        setRoomDetails({
-                          ...roomDetails,
-                          guestName: e.target.value,
-                        })
-                      }
-                      className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 text-sm bg-white transition-all duration-200"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Check-In Number
-                    </label>
-                    <input
-                      type="text"
-                      value={roomDetails.CheckInNumber || ""}
-                      readOnly
-                      className="w-full p-3 border border-gray-300 rounded-xl bg-gray-100 text-gray-600 text-sm"
-                    />
-                  </div>
-                </>
-              )}
+        {showResults && search && (
+          <ul className="absolute left-0 right-0 z-10 mt-1 w-full bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+            {filteredRooms.length > 0 ? (
+              <>
+                <li className="sticky top-0 z-10 grid grid-cols-[80px_1fr_120px] gap-2 px-3 py-2 text-[11px] font-semibold text-gray-600 uppercase bg-gray-100 border-b">
+                  <span>Room</span>
+                  <span>Customer</span>
+                  <span>Guest</span>
+                   <span>Check-In</span>
+                </li>
+
+                {filteredRooms.map((room) => (
+                  <li
+                    key={room.roomId}
+                    className="grid grid-cols-[80px_1fr_120px] gap-2 px-3 py-2 text-sm hover:bg-violet-100 cursor-pointer border-b last:border-b-0"
+                    onClick={() => handleSelectRoom(room)}
+                  >
+                    <span className="truncate font-medium">{room.roomName}</span>
+                    <span className="truncate">{room.customerName}</span>
+                    <span className="truncate">{room.guestName}</span>
+                    <span className=" text-gray-600">
+                      {room.voucherNumber}
+                    </span>
+                  </li>
+                ))}
+              </>
+            ) : (
+              <li className="px-3 py-2 text-sm text-gray-500">
+                No results found
+              </li>
+            )}
+          </ul>
+        )}
+      </div>
+    </div>
+
+    <div>
+      <label className="block text-sm font-semibold text-gray-700 mb-2">
+        Guest Name
+      </label>
+      <input
+        type="text"
+        value={roomDetails.guestName}
+        onChange={(e) =>
+          setRoomDetails({
+            ...roomDetails,
+            guestName: e.target.value,
+          })
+        }
+        className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 text-sm bg-white transition-all duration-200"
+      />
+    </div>
+
+    <div>
+      <label className="block text-sm font-semibold text-gray-700 mb-2">
+        Check-In Number
+      </label>
+      <input
+        type="text"
+        value={roomDetails.CheckInNumber || ""}
+        readOnly
+        className="w-full p-3 border border-gray-300 rounded-xl bg-gray-100 text-gray-600 text-sm"
+      />
+    </div>
+  </>
+)}
 
               {(orderType === "delivery" || orderType === "takeaway") && (
                 <>

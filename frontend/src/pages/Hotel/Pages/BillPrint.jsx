@@ -683,20 +683,46 @@ const transformDocToDateWiseLines = (doc) => {
       : dateWiseLines.reduce((t, i) => t + Number(i.baseAmount || 0), 0) -
         (planAmount + Number(foodPlanAmountWithTax));
 
-    const additionalPaxAmount = (doc.selectedRooms || []).reduce(
-      (total, room) => {
-        const stayDays = room.stayDays || 1;
-        const fullDays = Math.floor(stayDays); // Only count full days
-        const totalPaxWithoutTax = Number(
-          room.additionalPaxAmountWithOutTax || 0,
-        );
+const additionalPaxAmount = (doc.selectedRooms || []).reduce((total, room) => {
+  const originalStayDays = Number(room?.stayDays || 1);
+  const originalFullDays = Math.floor(originalStayDays);
 
-        // If there are full days, use the full amount; otherwise 0
-        return total + (fullDays > 0 ? totalPaxWithoutTax : 0);
-      },
-      0,
+  let effectiveFullDays = originalFullDays;
+
+  // Old room before swap
+  if (room?.isSwapped && room?.swappingDateFrom) {
+    const swappingDate = new Date(room.swappingDateFrom);
+    const arrivalDate = new Date(doc?.arrivalDate);
+
+    effectiveFullDays = Math.floor(
+      (swappingDate - arrivalDate) / (1000 * 60 * 60 * 24) - 1,
     );
+
+    if (effectiveFullDays <= 0) effectiveFullDays = 1;
+  }
+  // New room after swap
+  else if (!room?.isSwapped && room?.swappingDateFrom) {
+    const swappingDate = new Date(room.swappingDateFrom);
+    const checkoutDate = new Date(doc?.checkOutDate);
+
+    effectiveFullDays = Math.floor(
+      (checkoutDate - swappingDate) / (1000 * 60 * 60 * 24),
+    );
+
+    if (effectiveFullDays <= 0) effectiveFullDays = 1;
+  }
+
+  const totalPaxWithoutTax = Number(room?.additionalPaxAmountWithOutTax || 0);
+
+  // Per-day pax charge based on original room stay
+  const paxPerDay =
+    originalFullDays > 0 ? totalPaxWithoutTax / originalFullDays : 0;
+
+  return total + paxPerDay * effectiveFullDays;
+}, 0);
     console.log(dateWiseLines);
+    console.log(roomTariffTotal);
+    console.log(additionalPaxAmount)
     const roomTaxTotal = dateWiseLines.reduce(
       (t, i) => t + Number(i.taxAmount || 0),
       0,
@@ -1159,7 +1185,7 @@ const transformDocToDateWiseLines = (doc) => {
           paymentDetails?.paymentDetails?.selectedCreditor?.partyName;
       }
     }
-    console.log("hh", doc.checkOutTime);
+    
     return {
       hotel: {
         name: organization?.name,
@@ -1222,6 +1248,7 @@ const transformDocToDateWiseLines = (doc) => {
     };
   };
 
+
   // Build all billData per doc; decide where advances appear
   // Apply activeMode filtering after building the full bill
   const bills = useMemo(() => {
@@ -1236,7 +1263,7 @@ const transformDocToDateWiseLines = (doc) => {
       const owns = docOwnsAdvances(doc);
       const useAdvances = owns ? true : idx === firstPrimaryIdx;
       const bill = prepareBillDataForDoc(doc, useAdvances);
-
+console.log(bill.summary);
       // ── SPLIT MODE FILTERING ──────────────────────────────────────────────
       if (activeMode === "restaurant") {
         // Keep only restaurant / dine-in / room-service charges — NO advance
@@ -1255,6 +1282,7 @@ const transformDocToDateWiseLines = (doc) => {
           bal += Number(charge.amount || 0);
           return { ...charge, balance: bal.toFixed(2) };
         });
+        console.log(bill.summary);
 
         // Zero out room-related summary fields
         bill.summary.roomRent = "0.00";
@@ -1275,6 +1303,7 @@ const transformDocToDateWiseLines = (doc) => {
         bill.payment.advance = 0;
         bill.payment.netPay = restaurantOnlyTotal;
       } else if (activeMode === "room") {
+   
         // Keep only room-related charges + advances; exclude restaurant / dine-in charges
         bill.charges = bill.charges.filter((c) => {
           const desc = String(c.description);
@@ -1289,7 +1318,7 @@ const transformDocToDateWiseLines = (doc) => {
         // Advance entries have a negative amount so they correctly reduce the running balance
         let bal = 0;
         
-        console.log(bill.charges);
+      
 
         bill.charges = bill.charges.map((charge) => {
           const amt = Number(charge.amount || 0);
@@ -1319,6 +1348,7 @@ const transformDocToDateWiseLines = (doc) => {
         // Zero out restaurant summary fields
         bill.summary.restaurant = 0;
         bill.summary.roomService = 0;
+        console.log(bill.summary);
 
         const roomOnlyTotal =
           Number(bill.summary.roomRent || 0) +
