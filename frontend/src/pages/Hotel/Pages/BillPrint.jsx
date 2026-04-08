@@ -25,7 +25,7 @@ const HotelBillPrint = () => {
   const [paymentModeDetails, setPaymentModeDetails] = useState([]);
   // Props from location state
   const selectedCheckOut = location.state?.selectedCheckOut || [];
-  console.log(selectedCheckOut[1]);
+  console.log(selectedCheckOut[0]);
   console.log(paymentDetails);
 
   const checkoutmode = location?.state?.checkoutMode || null;
@@ -45,7 +45,16 @@ const HotelBillPrint = () => {
 
   useEffect(() => {
     const splitDetails = paymentDetails?.paymentDetails?.splitDetails;
-    console.log(splitDetails);
+    console.log(paymentDetails);
+    if(paymentDetails?.paymentDetails?.paymentMode === 'credit'){
+      console.log("hai")
+      setPaymentModeDetails([{
+          customerName:  paymentDetails?.paymentDetails?.selectedCreditor?.partyName,
+          mode:"Credit",
+          amount: paymentDetails?.paymentDetails?.cashAmount,
+      }])
+      return
+    }
 
     if (!splitDetails || !splitDetails.length) {
       setPaymentModeDetails([]);
@@ -70,6 +79,8 @@ const HotelBillPrint = () => {
     console.log(splitDetails);
     setPaymentModeDetails(Object.values(mergedMap));
   }, [paymentDetails]);
+
+  console.log(paymentModeDetails);
 
   // Fetch debit and KOT once for all docs shown
   const fetchDebitData = async (data) => {
@@ -1166,7 +1177,7 @@ const additionalPaxAmount = (doc.selectedRooms || []).reduce((total, room) => {
 
     const totalPax = basePax + additionalPaxCount;
 
-    console.log(doc);
+  
 
     const convertNumberToWords = (amount) =>
       `${Math.round(amount || 0)} Rupees Only`;
@@ -1177,7 +1188,7 @@ const additionalPaxAmount = (doc.selectedRooms || []).reduce((total, room) => {
     let partyCompanyName = doc?.customerId?.partyName;
 
     if (
-      paymentDetails?.paymentMode == "credit" &&
+      paymentDetails?. paymentMode == "credit" &&
       paymentDetails?.paymentDetails?.selectedCreditor
     ) {
       partyName = paymentDetails?.paymentDetails?.selectedCreditor?.partyName;
@@ -1255,6 +1266,7 @@ const additionalPaxAmount = (doc.selectedRooms || []).reduce((total, room) => {
     };
   };
 
+  console.log("paymentModeDetails",paymentModeDetails)
 
   // Build all billData per doc; decide where advances appear
   // Apply activeMode filtering after building the full bill
@@ -2135,7 +2147,7 @@ console.log(bill.summary);
                           fontWeight: "bold",
                         }}
                       >
-                        PAYMODE
+                        PAY MODE
                       </td>
                       <td
                         style={{

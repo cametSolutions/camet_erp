@@ -1,11 +1,11 @@
 /* eslint-disable react/prop-types */
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { toast } from "sonner";
 import { useSelector } from "react-redux";
 import { statesData } from "../../../../constants/states.js";
-import { countries } from "../../../../constants/countries.js";
 import useFetch from "../../../customHook/useFetch.jsx";
-
+import countryList from "react-select-country-list";
+import Select from "react-select";
 function AddPartyForm({
   submitHandler,
   partyDetails = {},
@@ -30,17 +30,19 @@ function AddPartyForm({
   const [country, setCountry] = useState("India");
   const [state, setState] = useState("Kerala");
   const [pin, setPin] = useState("");
-  const [isHotelAgent, setIsHotelAgent] = useState(false); 
+  const [isHotelAgent, setIsHotelAgent] = useState(false);
+
+  const options = useMemo(() => countryList().getData(), []);
 
   const selectedOrganization = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg
+    (state) => state.secSelectedOrganization.secSelectedOrg,
   );
 
   const { data: accountGroupList, loading: accountGroupLoading } = useFetch(
-    `/api/sUsers/getAccountGroups/${selectedOrganization._id}`
+    `/api/sUsers/getAccountGroups/${selectedOrganization._id}`,
   );
   const { data: subGroupList, loading: subGroupLoading } = useFetch(
-    `/api/sUsers/getSubGroup/${selectedOrganization._id}`
+    `/api/sUsers/getSubGroup/${selectedOrganization._id}`,
   );
 
   const validAccountGroups = ["Sundry Creditors", "Sundry Debtors"];
@@ -50,12 +52,14 @@ function AddPartyForm({
     setLoading(loading);
   }, [accountGroupLoading, subGroupLoading]);
 
+  console.log(country);
   useEffect(() => {
-    if(accountGroupList){
-      let findSpecificOne = accountGroupList.data?.find((acc) => acc?.accountGroup == "Sundry Debtors");
+    if (accountGroupList) {
+      let findSpecificOne = accountGroupList.data?.find(
+        (acc) => acc?.accountGroup == "Sundry Debtors",
+      );
       setAccountGroup(findSpecificOne?._id);
     }
-    
   }, [accountGroupList]);
 
   useEffect(() => {
@@ -78,7 +82,7 @@ function AddPartyForm({
         country,
         state,
         pin,
-        isHotelAgent
+        isHotelAgent,
       } = partyDetails;
 
       setAccountGroup(accountGroup?._id);
@@ -153,7 +157,7 @@ function AddPartyForm({
       state,
       pin,
       subGroup,
-      isHotelAgent
+      isHotelAgent,
     };
 
     submitHandler(formData);
@@ -195,7 +199,7 @@ function AddPartyForm({
                         <option value="">Select Account Group</option>
                         {accountGroupList?.data
                           ?.filter((item) =>
-                            validAccountGroups.includes(item.accountGroup)
+                            validAccountGroups.includes(item.accountGroup),
                           )
                           .map((group, index) => (
                             <option key={index} value={group._id}>
@@ -223,7 +227,7 @@ function AddPartyForm({
                         <option value="">Select Sub Group</option>
                         {subGroupList?.data
                           ?.filter(
-                            (item) => item.accountGroup?._id === accountGroup
+                            (item) => item.accountGroup?._id === accountGroup,
                           )
                           ?.map((subGroup, index) => (
                             <option key={index} value={subGroup._id}>
@@ -284,25 +288,26 @@ function AddPartyForm({
                       />
                     </div>
                   </div>
-                  {(selectedOrganization?.industry == 6 || selectedOrganization?.industry == 7) && (
-                      <div className="w-full lg:w-6/12 px-4">
-                        <div className="relative w-full mb-3">
-                          <label
-                            className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
-                            htmlFor="hotel-agent"
-                          >
-                            Hotel Agent
-                          </label>
-                          <input
-                            type="checkbox"
-                            id="hotel-agent"
-                            checked={isHotelAgent}
-                            onChange={(e) => setIsHotelAgent(e.target.checked)}
-                            className="form-checkbox h-5 w-5 text-blue-600"
-                          />
-                        </div>
+                  {(selectedOrganization?.industry == 6 ||
+                    selectedOrganization?.industry == 7) && (
+                    <div className="w-full lg:w-6/12 px-4">
+                      <div className="relative w-full mb-3">
+                        <label
+                          className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+                          htmlFor="hotel-agent"
+                        >
+                          Hotel Agent
+                        </label>
+                        <input
+                          type="checkbox"
+                          id="hotel-agent"
+                          checked={isHotelAgent}
+                          onChange={(e) => setIsHotelAgent(e.target.checked)}
+                          className="form-checkbox h-5 w-5 text-blue-600"
+                        />
                       </div>
-                    )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex flex-wrap">
@@ -315,26 +320,13 @@ function AddPartyForm({
                       >
                         Country
                       </label>
-                      <select
+                      <Select
                         className="border-0 px-3 mr-12 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                        onChange={(e) => {
-                          setCountry(e.target.value);
-
-                          setState("");
-                        }}
-                        value={country}
-                      >
-                        {countries.map((country) => (
-                          <option
-                            value={country?.countryName}
-                            key={country?.countryName}
-                          >
-                            {country?.countryName} ({country?.currency})
-                          </option>
-                        ))}
-
-                        {/* Add more options as needed */}
-                      </select>
+                        options={options}
+                        value={options.find((o) => o.label === country) || null}
+                        onChange={(opt) => setCountry(opt?.label || "")}
+                        placeholder="Select country"
+                      />
                     </div>
                   </div>
                   {country === "India" ? (
