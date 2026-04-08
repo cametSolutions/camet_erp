@@ -4337,7 +4337,7 @@ export const getHotelSalesDetails = async (req, res) => {
         tableNumber: sale.tableNumber || "",
         waiterName: sale.waiterName || "",
         roomNumber: sale.roomNumber || "",
-        guestName: sale.guestName || partyName,
+        guestName: sale.guestName ||"",
         itemCount: sale.items?.length || 0,
         isHotelSale: sale.isHotelSale || false,
         isRestaurantSale: sale.isRestaurantSale || false,
@@ -5876,23 +5876,35 @@ export const getOccupancyCheckoutReport = async (req, res) => {
       });
     }
 
-    const todayStr = new Date().toISOString().slice(0, 10);
-    fromDate = fromDate || todayStr;
-    toDate = toDate || todayStr;
+    fromDate = fromDate || "";
+    toDate = toDate || "";
 
     const match = {
-      cmp_id: new mongoose.Types.ObjectId(cmp_id),   // ⬅️ company filter
-      arrivalDate: {
+      cmp_id: new mongoose.Types.ObjectId(cmp_id),
+
+      // exclude checkout status data
+      status: { $ne: "checkOut" },
+    };
+
+    if (fromDate && toDate) {
+      match.arrivalDate = {
         $gte: fromDate,
         $lte: toDate,
-      },
-    };
+      };
+    } else if (fromDate) {
+      match.arrivalDate = { $gte: fromDate };
+    } else if (toDate) {
+      match.arrivalDate = { $lte: toDate };
+    }
+    console.log(match)
 
     const checkins = await CheckIn.find(match).lean();
 
     const allRooms = await roomModal
       .find({ cmp_id: new mongoose.Types.ObjectId(cmp_id) }, { roomName: 1, roomType: 1 })
       .lean();
+
+    // rest of your code same...
 
     const rows = [];
     const planMap = {};
