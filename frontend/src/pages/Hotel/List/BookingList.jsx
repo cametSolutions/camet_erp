@@ -693,12 +693,17 @@ function BookingList() {
           (c) => c._id === selectedCash,
         );
         const selectedCustomerData = selectedCheckOut?.find(
-          (c) => c.customerId._id === selectedCustomer || c.agentId._id === selectedCustomer,
+          (c) =>
+            c.customerId._id === selectedCustomer ||
+            c.guestId._id === selectedCustomer,
         );
-        let isAgent =  selectedCustomerData?.customerId?._id === selectedCustomer ? false : true;
+        let isAgent =
+          selectedCustomerData?.customerId?._id === selectedCustomer
+            ? false
+            : true;
         paymentDetails = {
           cashAmount:
-           selectedDataForPayment?.totalWithRestaurantSubTotal ||
+            selectedDataForPayment?.totalWithRestaurantSubTotal ||
             Number(selectedCheckOut[0]?.balanceToPay),
           onlineAmount: onlineAmount,
           selectedCash: selectedCash,
@@ -706,17 +711,19 @@ function BookingList() {
           paymentMode: paymentMode,
           splitDetails: [
             {
-              customer:
-                isAgent ? selectedCustomerData?.agentId?.partyName : selectedCustomerData?.customerId?.partyName ||
-                selectedCheckOut[0]?.customerId?.partyName,
+              customer: isAgent
+                ? selectedCustomerData?.guestId?.partyName
+                : selectedCustomerData?.customerId?.partyName ||
+                  selectedCheckOut[0]?.customerId?.partyName,
               source: selectedCash,
               sourceType: "cash",
               amount:
                 selectedDataForPayment?.totalWithRestaurantSubTotal ||
                 Number(selectedCheckOut[0]?.balanceToPay),
-              customerName:
-                isAgent ? selectedCustomerData?.agentId?.partyName : selectedCustomerData?.customerId?.partyName ||
-                selectedCheckOut[0]?.customerId?.partyName,
+              customerName: isAgent
+                ? selectedCustomerData?.guestId?.partyName
+                : selectedCustomerData?.customerId?.partyName ||
+                  selectedCheckOut[0]?.customerId?.partyName,
               subsource: selected.partyName,
             },
           ],
@@ -736,9 +743,14 @@ function BookingList() {
           (c) => c._id === selectedBank,
         );
         const selectedCustomerData = selectedCheckOut?.find(
-          (c) => c.customerId._id === selectedCustomer || c.agentId._id === selectedCustomer,
+          (c) =>
+            c.customerId._id === selectedCustomer ||
+            c.guestId._id === selectedCustomer,
         );
-          let isAgent =  selectedCustomerData?.customerId?._id === selectedCustomer ? false : true;
+        let isAgent =
+          selectedCustomerData?.customerId?._id === selectedCustomer
+            ? false
+            : true;
         console.log(selected);
         paymentDetails = {
           cashAmount: cashAmount,
@@ -750,17 +762,19 @@ function BookingList() {
           paymentMode: paymentMode,
           splitDetails: [
             {
-              customer:
-              isAgent ? selectedCustomerData?.agentId?.partyName  :  selectedCustomerData?.customerId?.partyName ||
-                selectedCheckOut[0]?.customerId?.partyName,
+              customer: isAgent
+                ? selectedCustomerData?.guestId?.partyName
+                : selectedCustomerData?.customerId?.partyName ||
+                  selectedCheckOut[0]?.customerId?.partyName,
               source: selectedBank,
               sourceType: "bank",
               amount:
                 selectedDataForPayment?.totalWithRestaurantSubTotal ||
                 Number(selectedCheckOut[0]?.balanceToPay),
-              customerName:
-               isAgent ? selectedCustomerData?.agentId?.partyName :  selectedCustomerData?.customerId?.partyName ||
-                selectedCheckOut[0]?.customerId?.partyName,
+              customerName: isAgent
+                ? selectedCustomerData?.guestId?.partyName
+                : selectedCustomerData?.customerId?.partyName ||
+                  selectedCheckOut[0]?.customerId?.partyName,
               subsource: selected.partyName,
             },
           ],
@@ -892,7 +906,7 @@ function BookingList() {
       selectedParty: selectedCustomer,
       restaurantBaseSaleData: restaurantBaseSaleData,
     });
-  
+
     if (partial) {
       console.log("Hhhh");
       console.log(dateandstaysdata);
@@ -2124,16 +2138,17 @@ function BookingList() {
                         );
                       }
 
-                      if (selected?.agentId?._id) {
+                      if (selected?.guestId?._id && selected?.guestId?._id !== selected?.customerId?._id) {
                         options.push(
                           <option
-                            key={`agent-${selected.agentId._id}`}
-                            value={selected.agentId._id}
+                            key={`agent-${selected.guestId._id}`}
+                            value={selected.guestId._id}
                           >
-                            {selected.agentId.partyName}
+                            {selected.guestId.partyName}
                           </option>,
                         );
                       }
+                      
 
                       return options;
                     })}
@@ -2267,7 +2282,10 @@ function BookingList() {
                                   (selectedCheckOut || [])
                                     .flatMap((item) => {
                                       const arr = [];
-
+                                      const customerId = item?.customerId?._id;
+                                      const guestId = item?.guestId?._id;
+                                      console.log(customerId)
+                                      console.log(guestId)
                                       if (item?.customerId?._id) {
                                         arr.push({
                                           id: item.customerId._id,
@@ -2276,10 +2294,10 @@ function BookingList() {
                                         });
                                       }
 
-                                      if (item?.agentId?._id) {
+                                      if (item?.guestId?._id && customerId !== guestId) {
                                         arr.push({
-                                          id: item.agentId._id,
-                                          name: item.agentId.partyName,
+                                          id: item.guestId._id,
+                                          name: item.guestId.partyName,
                                           type: "agent",
                                         });
                                       }
@@ -2296,8 +2314,8 @@ function BookingList() {
                               const selectedCustomerObj = customerOptions.find(
                                 (item) => item.id === selectedValue,
                               );
-                              console.log(customerOptions)
-                              console.log(selectedCustomerObj)
+                              console.log(customerOptions);
+                              console.log(selectedCustomerObj);
                               const selectedCustomerName =
                                 selectedCustomerObj?.name || "";
 
@@ -2326,10 +2344,10 @@ function BookingList() {
                                       });
                                     }
 
-                                    if (item?.agentId?._id) {
+                                    if (item?.guestId?._id && item.customerId._id !== item.guestId._id) {
                                       arr.push({
-                                        id: item.agentId._id,
-                                        name: item.agentId.partyName,
+                                        id: item.guestId._id,
+                                        name: item.guestId.partyName,
                                         type: "agent",
                                       });
                                     }
