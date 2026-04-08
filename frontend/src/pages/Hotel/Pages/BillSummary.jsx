@@ -1191,7 +1191,7 @@ console.log(result.data.sales[8]);
                             : "-"}
                         </td>
                         <td className="border border-gray-200 px-2 py-1 text-left">
-                          {row.partyName || "-"}
+                          {row.guestName || "-"}
                         </td>
                         <td className="border border-gray-200 px-2 py-1 text-right">
                           {Math.round(gross)}
