@@ -5,10 +5,10 @@ import api from "@/api/api"; // change to your actual api file
 import { useSelector } from "react-redux";
 
 const OccupancyCheckoutReport = () => {
-  const [filters, setFilters] = useState({
-    fromDate: new Date().toISOString().slice(0, 10),
-    toDate: new Date().toISOString().slice(0, 10),
-  });
+ const [filters, setFilters] = useState({
+  fromDate: "",
+  toDate: "",
+});
 
   const [report, setReport] = useState({
     summary: {},
@@ -35,17 +35,20 @@ const OccupancyCheckoutReport = () => {
   }, []);
 
   const fetchReport = async () => {
-    try {
-      setLoading(true);
-      setError("");
+  try {
+    setLoading(true);
+    setError("");
 
-      const response = await api.get("/api/sUsers/occupancy-checkout-report", {
+    const response = await api.get(
+      "/api/sUsers/occupancy-checkout-report",
+      {
         params: {
-          fromDate: filters.fromDate,
-          toDate: filters.toDate,
-          cmp_id: cmp_id,
+          fromDate: filters.fromDate || "",
+          toDate: filters.toDate || "",
+          cmp_id,
         },
-      });
+      }
+    );
 
       const result = response?.data;
 
@@ -241,26 +244,24 @@ const formatDateTime = (value) => {
                 <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                   From Date
                 </label>
-                <input
-                  type="date"
-                  name="fromDate"
-                  value={filters.fromDate}
-                  onChange={handleChange}
-                  className="h-11 rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-teal-600"
-                />
+              <input
+  type="date"
+  name="fromDate"
+  value={filters.fromDate}
+  onChange={handleChange}
+/>
               </div>
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                   To Date
                 </label>
-                <input
-                  type="date"
-                  name="toDate"
-                  value={filters.toDate}
-                  onChange={handleChange}
-                  className="h-11 rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-teal-600"
-                />
+               <input
+  type="date"
+  name="toDate"
+  value={filters.toDate}
+  onChange={handleChange}
+/>
               </div>
 
               <div className="flex flex-wrap items-end gap-2">

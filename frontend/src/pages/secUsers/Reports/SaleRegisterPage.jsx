@@ -1,5 +1,5 @@
 // pages/SalesRegister.jsx
-import { useEffect, useMemo, useState } from "react";
+import React, { Fragment, useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import api from "@/api/api";
 import * as XLSX from "xlsx";
@@ -21,27 +21,8 @@ const fmt = (n) =>
     maximumFractionDigits: 2,
   });
 
-const getPaymentBadgeClass = (type = "") => {
-  const v = type.toUpperCase();
-  if (v === "CASH/UPI") return "bg-indigo-100 text-indigo-700";
-  if (v === "CASH") return "bg-sky-100 text-sky-700";
-  if (v === "UPI") return "bg-violet-100 text-violet-700";
-  if (v === "CREDIT") return "bg-rose-100 text-rose-700";
-  if (v === "COMPLEMENTORY") return "bg-purple-100 text-purple-700";
-  if (v === "SPONSOR") return "bg-amber-100 text-amber-700";
-  return "bg-slate-100 text-slate-700";
-};
-
-const getBillTypeBadgeClass = (type = "") => {
-  const v = type.toUpperCase();
-  if (v === "DINE-IN") return "bg-emerald-100 text-emerald-700";
-  if (v === "ROOM SERVICE") return "bg-orange-100 text-orange-700";
-  if (v === "TAKEAWAY") return "bg-teal-100 text-teal-700";
-  return "bg-slate-100 text-slate-700";
-};
-
 const printPaymentClass = (type = "") => {
-  const v = type.toUpperCase();
+  const v = String(type || "").toUpperCase();
   if (v === "CASH/UPI") return "pay-cashupi";
   if (v === "CASH") return "pay-cash";
   if (v === "UPI") return "pay-upi";
@@ -54,10 +35,12 @@ const printPaymentClass = (type = "") => {
 export default function SaleRegisterPage() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [expandedRows, setExpandedRows] = useState({});
 
-   const cmp_id = useSelector(
-       (state) => state.secSelectedOrganization.secSelectedOrg._id
-     );
+  const cmp_id = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg._id
+  );
+
   const getToday = () => {
     const d = new Date();
     const pad = (n) => String(n).padStart(2, "0");
@@ -74,11 +57,18 @@ export default function SaleRegisterPage() {
   const handleChangeFilter = (key, value) =>
     setFilters((prev) => ({ ...prev, [key]: value }));
 
+  const toggleRow = (key) => {
+    setExpandedRows((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  };
+
   const fetchRegister = async (customFilters = filters) => {
     try {
       setLoading(true);
 
-        if (!cmp_id) {
+      if (!cmp_id) {
         console.error("cmp_id is undefined, cannot fetch sales register");
         setRows([]);
         return;
@@ -86,7 +76,7 @@ export default function SaleRegisterPage() {
 
       const cleanedParams = Object.fromEntries(
         Object.entries({
-          cmp_id,         // <-- include company id
+          cmp_id,
           ...customFilters,
         }).filter(([_, v]) => v !== "")
       );
@@ -96,6 +86,7 @@ export default function SaleRegisterPage() {
       });
 
       setRows(data?.data || []);
+      setExpandedRows({});
     } catch (error) {
       console.error("Failed to fetch Sales register", error);
       setRows([]);
@@ -122,19 +113,48 @@ export default function SaleRegisterPage() {
     fetchRegister(resetFilters);
   };
 
+  const normalizeFoodPlan = (value) => {
+    return typeof value === "string" && value.trim() ? value.trim() : "DIRECT";
+  };
+
+  const getItemsFromRow = (row) => {
+    if (Array.isArray(row?.itemDetails) && row.itemDetails.length) {
+      return row.itemDetails.map((item) => ({
+        name: item?.name || "-",
+        qty: Number(item?.qty || 0),
+        rate: Number(item?.rate || 0),
+        amount: Number(item?.amount || 0),
+        taxAmount: Number(item?.taxAmount || 0),
+      }));
+    }
+
+    return [
+      {
+        name: row?.itemName || "-",
+        qty: Number(row?.qty || 0),
+        rate: Number(row?.rate || 0),
+        amount: Number(row?.amount || 0),
+        taxAmount: Number(row?.taxAmount || 0),
+      },
+    ];
+  };
+
   // ---- SUMMARIES ----
 
   const topItems = useMemo(() => {
     const map = {};
+
     rows.forEach((row) => {
-      (row?.itemName || "")
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean)
-        .forEach((name) => {
-          map[name] = (map[name] || 0) + 1;
-        });
+      const items = getItemsFromRow(row);
+
+      items.forEach((item) => {
+        const name = String(item?.name || "").trim();
+        const qty = Number(item?.qty || 0);
+        if (!name) return;
+        map[name] = (map[name] || 0) + qty;
+      });
     });
+
     return Object.entries(map)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5);
@@ -143,10 +163,7 @@ export default function SaleRegisterPage() {
   const planSummary = useMemo(
     () =>
       rows.reduce((acc, row) => {
-        const key =
-          typeof row?.foodPlan === "string" && row?.foodPlan.trim()
-            ? row?.foodPlan.trim()
-            : "-";
+        const key = normalizeFoodPlan(row?.foodPlan);
         acc[key] = (acc[key] || 0) + 1;
         return acc;
       }, {}),
@@ -179,7 +196,14 @@ export default function SaleRegisterPage() {
   );
 
   const totalQty = useMemo(
-    () => rows.reduce((sum, r) => sum + Number(r?.qty || 0), 0),
+    () =>
+      rows.reduce((sum, row) => {
+        const qty = getItemsFromRow(row).reduce(
+          (s, item) => s + Number(item?.qty || 0),
+          0
+        );
+        return sum + qty;
+      }, 0),
     [rows]
   );
 
@@ -203,140 +227,124 @@ export default function SaleRegisterPage() {
     [rows]
   );
 
-
-
-
-  // convert each bill (row) with itemDetails[] into multiple lines
-const getFlattenedRows = () => {
-  const flattened = [];
-
-  rows.forEach((row) => {
-    const items = row?.itemDetails && Array.isArray(row?.itemDetails)
-      ? row?.itemDetails
-      : [];
-
-    // if no itemDetails, keep single line as now
-    if (!items.length) {
-      flattened.push(row);
-      return;
-    }
-
-    items.forEach((item, idx) => {
-      flattened.push({
-        // bill-level fields (repeat)
-        date: row.date,
-        billNo: row.billNo,
-        customer: row.customer,
-        billType: row.billType,
-        roomNo: row.roomNo,
-        foodPlan: row.foodPlan,
-        paymentType: row.paymentType,
-        isCancelled: row.isCancelled,
-        sponsorName: row.sponsorName,
-        remarks: row.remarks,
-        saleId: row.saleId,
-
-        // item-level fields (change per line)
-        itemName: item.name || "-",
-        qty: item.qty ?? 0,
-        rate: item.rate ?? 0,
-        amount: item.amount ?? 0,
-        taxAmount: item.taxAmount ?? 0,
-        discAmount: idx === 0 ? row.discAmount ?? 0 : 0,
-        billAmount: idx === 0 ? row.billAmount ?? 0 : 0,
-      });
-    });
-  });
-
-  return flattened;
-};
   // ---- EXPORT ----
 
-  const flatRows = getFlattenedRows();
+  const getFlattenedRows = () => {
+    const flattened = [];
+
+    rows.forEach((row) => {
+      const items = getItemsFromRow(row);
+
+      items.forEach((item, idx) => {
+        flattened.push({
+          date: row.date,
+          billNo: row.billNo,
+          customer: row.customer,
+          billType: row.billType,
+          roomNo: row.roomNo,
+          foodPlan: normalizeFoodPlan(row.foodPlan),
+          paymentType: row.paymentType,
+          isCancelled: row.isCancelled,
+          sponsorName: row.sponsorName,
+          remarks: row.remarks,
+          saleId: row.saleId,
+          itemName: item.name || "-",
+          qty: item.qty ?? 0,
+          rate: item.rate ?? 0,
+          amount: item.amount ?? 0,
+          taxAmount: item.taxAmount ?? 0,
+          discAmount: idx === 0 ? row.discAmount ?? 0 : 0,
+          billAmount: idx === 0 ? row.billAmount ?? 0 : 0,
+        });
+      });
+    });
+
+    return flattened;
+  };
 
   const handleExportExcel = () => {
-  const flatRows = getFlattenedRows();
-  if (!flatRows.length) return;
+    const flatRows = getFlattenedRows();
+    if (!flatRows.length) return;
 
-  const exportData = flatRows.map((row) => ({
-    Date: row.date || "-",
-    "Bill No": row.billNo || "-",
-    Customer: row.customer || "-",
-    "Item Details": row.itemName || "-",
-    Qty: row.qty ?? 0,
-    Rate: row.rate ?? 0,
-    Amount: row.amount ?? 0,
-    "Tax Amount": row.taxAmount ?? 0,
-    "Disc Amount": row.discAmount ?? 0,
-    "Bill Amount": row.billAmount ?? 0,
-    "Bill Type": row.billType || "-",
-    "Room No": row.roomNo || "-",
-    "Food Plan": row.foodPlan || "-",
-    "Payment Type": row.paymentType || "-",
-    "Is Cancelled": row.isCancelled || "-",
-    Sponsor: row.sponsorName || "-",
-    Remarks: row.remarks || "-",
-  }));
+    const exportData = flatRows.map((row) => ({
+      Date: row.date || "-",
+      "Bill No": row.billNo || "-",
+      Customer: row.customer || "-",
+      "Item Details": row.itemName || "-",
+      Qty: row.qty ?? 0,
+      Rate: row.rate ?? 0,
+      Amount: row.amount ?? 0,
+      "Tax Amount": row.taxAmount ?? 0,
+      "Disc Amount": row.discAmount ?? 0,
+      "Bill Amount": row.billAmount ?? 0,
+      "Bill Type": row.billType || "-",
+      "Room No": row.roomNo || "-",
+      "Food Plan": row.foodPlan || "DIRECT",
+      "Payment Type": row.paymentType || "-",
+      "Is Cancelled": row.isCancelled || "-",
+      Sponsor: row.sponsorName || "-",
+      Remarks: row.remarks || "-",
+    }));
 
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(exportData);
 
-  ws["!cols"] = [
-    { wch: 12 }, // Date
-    { wch: 10 }, // Bill No
-    { wch: 20 }, // Customer
-    { wch: 35 }, // Item Details
-    { wch: 6 },  // Qty
-    { wch: 10 }, // Rate
-    { wch: 12 }, // Amount
-    { wch: 12 }, // Tax
-    { wch: 12 }, // Disc
-    { wch: 14 }, // Bill
-    { wch: 12 }, // Bill type
-    { wch: 10 }, // Room
-    { wch: 10 }, // Plan
-    { wch: 14 }, // Payment
-    { wch: 12 }, // IsCancelled
-    { wch: 16 }, // Sponsor
-    { wch: 24 }, // Remarks
-  ];
+    ws["!cols"] = [
+      { wch: 12 },
+      { wch: 10 },
+      { wch: 20 },
+      { wch: 35 },
+      { wch: 6 },
+      { wch: 10 },
+      { wch: 12 },
+      { wch: 12 },
+      { wch: 12 },
+      { wch: 14 },
+      { wch: 12 },
+      { wch: 10 },
+      { wch: 12 },
+      { wch: 14 },
+      { wch: 12 },
+      { wch: 16 },
+      { wch: 24 },
+    ];
 
-  XLSX.utils.book_append_sheet(wb, ws, "Sales Register");
-  XLSX.writeFile(wb, "Sales-Register.xlsx");
-};
+    XLSX.utils.book_append_sheet(wb, ws, "Sales Register");
+    XLSX.writeFile(wb, "Sales-Register.xlsx");
+  };
 
   // ---- PRINT ----
 
   const handlePrint = () => {
-  const flatRows = getFlattenedRows();
-  if (!flatRows.length) return;
+    const flatRows = getFlattenedRows();
+    if (!flatRows.length) return;
 
-  const tableRows = flatRows
-    .map(
-      (row) => `
+    const tableRows = flatRows
+      .map(
+        (row) => `
       <tr>
         <td>${row.date || "-"}</td>
         <td>${row.billNo || "-"}</td>
         <td>${row.customer || "-"}</td>
         <td>${row.itemName || "-"}</td>
         <td style="text-align:center">${row.qty ?? 0}</td>
-        <td>${row.rate ?? 0}</td>
+        <td style="text-align:right">${Number(row.rate ?? 0).toFixed(2)}</td>
         <td style="text-align:right">${fmt(row.amount)}</td>
         <td style="text-align:right">${fmt(row.taxAmount)}</td>
         <td style="text-align:right">${fmt(row.discAmount)}</td>
         <td style="text-align:right">${fmt(row.billAmount)}</td>
         <td>${row.billType || "-"}</td>
         <td>${row.roomNo || "-"}</td>
-        <td>${row.foodPlan || "-"}</td>
-        <td><span class="badge ${printPaymentClass(
-          row.paymentType
-        )}">${row.paymentType || "-"}</span></td>
+        <td>${row.foodPlan || "DIRECT"}</td>
+        <td><span class="badge ${printPaymentClass(row.paymentType)}">${
+          row.paymentType || "-"
+        }</span></td>
         <td>${row.isCancelled || "-"}</td>
         <td>${row.sponsorName || "-"}</td>
         <td>${row.remarks || "-"}</td>
       </tr>`
-    )
-    .join("");
+      )
+      .join("");
 
     const billTypeRowsHtml =
       Object.entries(billTypeSummary)
@@ -358,7 +366,7 @@ const getFlattenedRows = () => {
       Object.entries(planSummary)
         .map(
           ([k, v]) =>
-            `<tr><td>${k}</td><td style="text-align:right">${v}</td></tr>`
+            `<tr><td>${k || "DIRECT"}</td><td style="text-align:right">${v}</td></tr>`
         )
         .join("") || `<tr><td colspan="2">No data</td></tr>`;
 
@@ -371,18 +379,10 @@ const getFlattenedRows = () => {
         .join("") || `<tr><td colspan="2">No data</td></tr>`;
 
     const salesSummaryHtml = `
-      <tr><td>Amount</td><td style="text-align:right">${fmt(
-        totalAmount
-      )}</td></tr>
-      <tr><td>Discount Amount</td><td style="text-align:right">${fmt(
-        totalDisc
-      )}</td></tr>
-      <tr><td>Tax Amount</td><td style="text-align:right">${fmt(
-        totalTax
-      )}</td></tr>
-      <tr><td>Total Sales Amount</td><td style="text-align:right">${fmt(
-        totalBill
-      )}</td></tr>
+      <tr><td>Amount</td><td style="text-align:right">${fmt(totalAmount)}</td></tr>
+      <tr><td>Discount Amount</td><td style="text-align:right">${fmt(totalDisc)}</td></tr>
+      <tr><td>Tax Amount</td><td style="text-align:right">${fmt(totalTax)}</td></tr>
+      <tr><td>Total Sales Amount</td><td style="text-align:right">${fmt(totalBill)}</td></tr>
       <tr><td>Cancelled Bills</td><td style="text-align:right">${cancelledCount}</td></tr>
     `;
 
@@ -485,8 +485,6 @@ const getFlattenedRows = () => {
     }, 500);
   };
 
-  // ---- RENDER ----
-
   return (
     <div className="min-h-screen bg-slate-100 p-4 md:p-6">
       <div className="mx-auto max-w-7xl space-y-4">
@@ -495,7 +493,6 @@ const getFlattenedRows = () => {
             SALES REGISTER
           </div>
 
-          {/* FILTER BAR */}
           <div className="border-b border-slate-300 bg-white p-4">
             <div className="grid grid-cols-1 items-end gap-3 md:grid-cols-2 xl:grid-cols-6">
               <div>
@@ -528,9 +525,7 @@ const getFlattenedRows = () => {
                 </label>
                 <select
                   value={filters.status}
-                  onChange={(e) =>
-                    handleChangeFilter("status", e.target.value)
-                  }
+                  onChange={(e) => handleChangeFilter("status", e.target.value)}
                   className="w-full rounded-md border border-slate-300 px-3 py-2 outline-none focus:border-red-500"
                 >
                   {STATUS_OPTIONS.map((opt) => (
@@ -549,9 +544,7 @@ const getFlattenedRows = () => {
                   type="text"
                   placeholder="Bill no / customer / item"
                   value={filters.search}
-                  onChange={(e) =>
-                    handleChangeFilter("search", e.target.value)
-                  }
+                  onChange={(e) => handleChangeFilter("search", e.target.value)}
                   className="w-full rounded-md border border-slate-300 px-3 py-2 outline-none focus:border-red-500"
                 />
               </div>
@@ -590,180 +583,233 @@ const getFlattenedRows = () => {
             </div>
           </div>
 
-          {/* TABLE */}
           <div className="overflow-x-auto">
             <table className="min-w-[1450px] border-collapse text-sm">
-    <thead className="sticky top-0 z-10 bg-[#0b1d34] text-white">
-  <tr>
-    {[
-      "DATE",
-      "BILL NO",
-      "CUSTOMER",
-      "ITEM NAME",
-      "QTY",
-      "RATE",
-      "AMOUNT",
-      "TAX AMT",
-      "DIS. AMT",
-      "BILL AMOUNT",
-      "BILL TYPE",
-      "ROOM NO",
-      "Food Plan",
-      "PAYMENT TYPE",
-      "ISCANCELLED",
-      "SPONSOR NAME",
-      "REMARKS",
-    ].map((head) => (
-      <th
-        key={head}
-        className="border border-slate-500 px-3 py-2 text-left font-semibold"
-      >
-        {head}
-      </th>
-    ))}
-  </tr>
-</thead>
-<tbody>
-  {loading ? (
-    <tr>
-      <td
-        colSpan={16}
-        className="border border-slate-300 px-4 py-6 text-center"
-      >
-        Loading...
-      </td>
-    </tr>
-  ) : rows.length === 0 ? (
-    <tr>
-      <td
-        colSpan={16}
-        className="border border-slate-300 px-4 py-6 text-center text-slate-500"
-      >
-        No sales register data found
-      </td>
-    </tr>
-  ) : (
-    rows.map((row, index) => {
-      const items =
-        Array.isArray(row.itemDetails) && row.itemDetails.length
-          ? row.itemDetails
-          : [
-              {
-                name: row.itemName || "-",
-                qty: row.qty ?? 0,
-                rate: row.rate ?? 0,
-                amount: row.amount ?? 0,
-                taxAmount: row.taxAmount ?? 0,
-              },
-            ];
+              <thead className="sticky top-0 z-10 bg-[#0b1d34] text-white">
+                <tr>
+                  {[
+                    "DATE",
+                    "BILL NO",
+                    "CUSTOMER",
+                    "ITEM NAME",
+                    "QTY",
+                    "RATE",
+                    "AMOUNT",
+                    "TAX AMT",
+                    "DIS. AMT",
+                    "BILL AMOUNT",
+                    "BILL TYPE",
+                    "ROOM NO",
+                    "FOOD PLAN",
+                    "PAYMENT TYPE",
+                    "ISCANCELLED",
+                    "SPONSOR NAME",
+                    "REMARKS",
+                  ].map((head) => (
+                    <th
+                      key={head}
+                      className="border border-slate-500 px-3 py-2 text-left font-semibold"
+                    >
+                      {head}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
 
-      return items.map((item, itemIndex) => (
-        <tr
-          key={`${row.billNo}-${row.saleId || index}-${itemIndex}`}
-          className="hover:bg-slate-50"
-        >
-          {/* DATE, BILL NO, CUSTOMER – one time per bill */}
-          {itemIndex === 0 && (
-            <>
-              <td
-                rowSpan={items.length}
-                className="border border-slate-300 px-3 py-2 align-top"
-              >
-                {row.date || "-"}
-              </td>
-              <td
-                rowSpan={items.length}
-                className="border border-slate-300 px-3 py-2 align-top"
-              >
-                {row.billNo || "-"}
-              </td>
-              <td
-                rowSpan={items.length}
-                className="border border-slate-300 px-3 py-2 align-top"
-              >
-                {row.customer || "-"}
-              </td>
-            </>
-          )}
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td
+                      colSpan={17}
+                      className="border border-slate-300 px-4 py-6 text-center"
+                    >
+                      Loading...
+                    </td>
+                  </tr>
+                ) : rows.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={17}
+                      className="border border-slate-300 px-4 py-6 text-center text-slate-500"
+                    >
+                      No sales register data found
+                    </td>
+                  </tr>
+                ) : (
+                  rows.map((row, index) => {
+                    const rowKey = row.saleId || row.billNo || index;
+                    const isExpanded = !!expandedRows[rowKey];
+                    const items = getItemsFromRow(row);
+                    const firstItemName = items[0]?.name || row.itemName || "-";
+                    const extraCount = Math.max(items.length - 1, 0);
+                    const rowQty = items.reduce(
+                      (sum, item) => sum + Number(item.qty || 0),
+                      0
+                    );
 
-          {/* ITEM columns – per item */}
-          <td className="border border-slate-300 px-3 py-2">
-            {item.name || "-"}
-          </td>
-          <td className="border border-slate-300 px-3 py-2 text-center">
-            {item.qty ?? 0}
-          </td>
-          <td className="border border-slate-300 px-3 py-2 text-right">
-            {item.rate ?? 0}
-          </td>
-          <td className="border border-slate-300 px-3 py-2 text-right">
-            {fmt(item.amount)}
-          </td>
+                    return (
+                      <Fragment key={rowKey}>
+                        <tr
+                          className="cursor-pointer hover:bg-slate-50"
+                          onClick={() => toggleRow(rowKey)}
+                        >
+                          <td className="border border-slate-300 px-3 py-2">
+                            {row.date || "-"}
+                          </td>
+                          <td className="border border-slate-300 px-3 py-2 font-medium">
+                            {row.billNo || "-"}
+                          </td>
+                          <td className="border border-slate-300 px-3 py-2">
+                            {row.customer || "-"}
+                          </td>
 
-          {/* TAX / DISC / BILL / BILL TYPE / ROOM / PLAN / PAYMENT / SPONSOR / REMARKS – one time per bill */}
-          {itemIndex === 0 && (
-            <>
-              <td
-                rowSpan={items.length}
-                className="border border-slate-300 px-3 py-2 text-right align-top"
-              >
-                {fmt(row.taxAmount)}
-              </td>
-              <td
-                rowSpan={items.length}
-                className="border border-slate-300 px-3 py-2 text-right align-top"
-              >
-                {fmt(row.discAmount)}
-              </td>
-              <td
-                rowSpan={items.length}
-                className="border border-slate-300 px-3 py-2 text-right font-semibold align-top"
-              >
-                {fmt(row.billAmount)}
-              </td>
-              <td
-                rowSpan={items.length}
-                className="border border-slate-300 px-3 py-2 align-top"
-              >
-                {row.billType || "-"}
-              </td>
-              <td
-                rowSpan={items.length}
-                className="border border-slate-300 px-3 py-2 align-top"
-              >
-                {row.roomNo || "-"}
-              </td>
-              <td
-                rowSpan={items.length}
-                className="border border-slate-300 px-3 py-2 align-top"
-              >
-                {row.foodPlan || "-"}
-              </td>
-              <td
-                rowSpan={items.length}
-                className="border border-slate-300 px-3 py-2 align-top"
-              >
-                {row.paymentType || "-"}
-              </td>
-              <td
-                rowSpan={items.length}
-                className="border border-slate-300 px-3 py-2 align-top"
-              >
-                {row.sponsorName || "-"}
-              </td>
-              <td
-                rowSpan={items.length}
-                className="border border-slate-300 px-3 py-2 align-top"
-              >
-                {row.remarks || "-"}
-              </td>
-            </>
-          )}
-        </tr>
-      ));
-    })
-  )}
-</tbody>
+                          <td className="border border-slate-300 px-3 py-2">
+                            <div className="flex items-center justify-between gap-2">
+                              <div>
+                                <div className="font-medium text-slate-800">
+                                  {firstItemName}
+                                </div>
+                                {extraCount > 0 && (
+                                  <div className="text-xs text-sky-700">
+                                    + {extraCount} more item
+                                    {extraCount > 1 ? "s" : ""}
+                                  </div>
+                                )}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleRow(rowKey);
+                                }}
+                                className="rounded border border-slate-300 px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100"
+                              >
+                                {isExpanded ? "Hide" : "View"}
+                              </button>
+                            </div>
+                          </td>
+
+                          <td className="border border-slate-300 px-3 py-2 text-center font-medium">
+                            {rowQty}
+                          </td>
+
+                          <td className="border border-slate-300 px-3 py-2 text-right">
+                            -
+                          </td>
+
+                          <td className="border border-slate-300 px-3 py-2 text-right">
+                            {fmt(row.amount)}
+                          </td>
+
+                          <td className="border border-slate-300 px-3 py-2 text-right">
+                            {fmt(row.taxAmount)}
+                          </td>
+
+                          <td className="border border-slate-300 px-3 py-2 text-right">
+                            {fmt(row.discAmount)}
+                          </td>
+
+                          <td className="border border-slate-300 px-3 py-2 text-right font-semibold">
+                            {fmt(row.billAmount)}
+                          </td>
+
+                          <td className="border border-slate-300 px-3 py-2">
+                            {row.billType || "-"}
+                          </td>
+
+                          <td className="border border-slate-300 px-3 py-2">
+                            {row.roomNo || "-"}
+                          </td>
+
+                          <td className="border border-slate-300 px-3 py-2">
+                            {normalizeFoodPlan(row.foodPlan)}
+                          </td>
+
+                          <td className="border border-slate-300 px-3 py-2">
+                            {row.paymentType || "-"}
+                          </td>
+
+                          <td className="border border-slate-300 px-3 py-2">
+                            {row.isCancelled || "-"}
+                          </td>
+
+                          <td className="border border-slate-300 px-3 py-2">
+                            {row.sponsorName || "-"}
+                          </td>
+
+                          <td className="border border-slate-300 px-3 py-2">
+                            {row.remarks || "-"}
+                          </td>
+                        </tr>
+
+                        {isExpanded && (
+                          <tr className="bg-amber-50/60">
+                            <td
+                              colSpan={17}
+                              className="border border-slate-300 px-3 py-3"
+                            >
+                              <div className="overflow-x-auto">
+                                <table className="min-w-full border-collapse text-sm">
+                                  <thead>
+                                    <tr className="bg-slate-100 text-slate-700">
+                                      <th className="border border-slate-300 px-3 py-2 text-left">
+                                        #
+                                      </th>
+                                      <th className="border border-slate-300 px-3 py-2 text-left">
+                                        Item Name
+                                      </th>
+                                      <th className="border border-slate-300 px-3 py-2 text-center">
+                                        Qty
+                                      </th>
+                                      <th className="border border-slate-300 px-3 py-2 text-right">
+                                        Rate
+                                      </th>
+                                      <th className="border border-slate-300 px-3 py-2 text-right">
+                                        Amount
+                                      </th>
+                                      <th className="border border-slate-300 px-3 py-2 text-right">
+                                        Tax
+                                      </th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {items.map((item, itemIndex) => (
+                                      <tr
+                                        key={`${rowKey}-${itemIndex}`}
+                                        className="bg-white"
+                                      >
+                                        <td className="border border-slate-300 px-3 py-2">
+                                          {itemIndex + 1}
+                                        </td>
+                                        <td className="border border-slate-300 px-3 py-2">
+                                          {item.name || "-"}
+                                        </td>
+                                        <td className="border border-slate-300 px-3 py-2 text-center">
+                                          {item.qty ?? 0}
+                                        </td>
+                                        <td className="border border-slate-300 px-3 py-2 text-right">
+                                          {Number(item.rate ?? 0).toFixed(2)}
+                                        </td>
+                                        <td className="border border-slate-300 px-3 py-2 text-right">
+                                          {fmt(item.amount)}
+                                        </td>
+                                        <td className="border border-slate-300 px-3 py-2 text-right">
+                                          {fmt(item.taxAmount)}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
+                    );
+                  })
+                )}
+              </tbody>
+
               {rows.length > 0 && !loading && (
                 <tfoot>
                   <tr className="border-t-2 border-red-200 bg-red-50">
@@ -796,9 +842,7 @@ const getFlattenedRows = () => {
             </table>
           </div>
 
-          {/* SUMMARY SECTION */}
           <div className="grid gap-6 p-4 md:grid-cols-2 lg:grid-cols-4">
-            {/* TOP 5 ITEMS */}
             <div className="max-w-sm">
               <div className="border border-slate-500">
                 <div className="px-3 py-2 text-lg font-bold">
@@ -832,12 +876,9 @@ const getFlattenedRows = () => {
               </div>
             </div>
 
-            {/* SALES SUMMARY */}
             <div className="max-w-sm">
               <div className="border border-slate-500">
-                <div className="px-3 py-2 text-lg font-bold">
-                  SALES SUMMARY
-                </div>
+                <div className="px-3 py-2 text-lg font-bold">SALES SUMMARY</div>
                 <table className="w-full">
                   <tbody>
                     <tr>
@@ -885,7 +926,6 @@ const getFlattenedRows = () => {
               </div>
             </div>
 
-            {/* BILL TYPE SUMMARY */}
             <div className="max-w-sm">
               <div className="border border-slate-500">
                 <div className="px-3 py-2 text-lg font-bold">
@@ -919,12 +959,9 @@ const getFlattenedRows = () => {
               </div>
             </div>
 
-            {/* PLAN SUMMARY */}
             <div className="max-w-sm">
               <div className="border border-slate-500">
-                <div className="px-3 py-2 text-lg font-bold">
-                  PLAN SUMMARY
-                </div>
+                <div className="px-3 py-2 text-lg font-bold">PLAN SUMMARY</div>
                 <table className="w-full">
                   <tbody>
                     {Object.keys(planSummary).length === 0 ? (
@@ -940,7 +977,7 @@ const getFlattenedRows = () => {
                       Object.entries(planSummary).map(([plan, count]) => (
                         <tr key={plan}>
                           <td className="border border-slate-300 px-3 py-2">
-                            {plan}
+                            {plan || "DIRECT"}
                           </td>
                           <td className="border border-slate-300 px-3 py-2 text-right font-medium">
                             {count}
@@ -953,7 +990,6 @@ const getFlattenedRows = () => {
               </div>
             </div>
 
-            {/* PAYMENT TYPE SUMMARY */}
             <div className="max-w-sm">
               <div className="border border-slate-500">
                 <div className="px-3 py-2 text-lg font-bold">
@@ -987,7 +1023,6 @@ const getFlattenedRows = () => {
               </div>
             </div>
           </div>
-          {/* END SUMMARY */}
         </div>
       </div>
     </div>
