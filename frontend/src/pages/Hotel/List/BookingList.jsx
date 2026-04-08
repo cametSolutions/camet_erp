@@ -130,6 +130,9 @@ function BookingList() {
           nd.setHours(0, 0, 0, 0);
           return nd;
         };
+        const swapDate = room?.swappingDateFrom
+          ? new Date(room.swappingDateFrom).toISOString().split("T")[0]
+          : "";
 
         // Old room before swap: from arrival to day BEFORE swap
         if (room?.isSwapped && room?.swappingDateFrom) {
@@ -140,7 +143,13 @@ function BookingList() {
             (swappingDate - arrivalDate) / (1000 * 60 * 60 * 24) - 1,
           );
 
-          if (stayDays <= 0) stayDays = 1;
+          if (stayDays <= 0) {
+            if (swapDate == checkout.arrivalDate) {
+              stayDays = 0;
+            } else {
+              stayDays = 1;
+            }
+          }
         }
         // New room after swap: from swap date to checkout date
         else if (!room?.isSwapped && room?.swappingDateFrom) {
@@ -151,11 +160,14 @@ function BookingList() {
             (checkoutDate - swappingDate) / (1000 * 60 * 60 * 24),
           );
 
-          if (stayDays <= 0) stayDays = 0;
-        } else {
-          stayDays = Number(room?.stayDays || 1);
+          if (stayDays <= 0) {
+            if (swapDate == checkout.arrivalDate) {
+              stayDays = 1;
+            } else {
+              stayDays = 0;
+            }
+          }
         }
-
         // if (stayDays <= 0) stayDays = 1;
 
         const totalStayDays = Number(room?.stayDays || 1) || 1;
@@ -2138,7 +2150,10 @@ function BookingList() {
                         );
                       }
 
-                      if (selected?.guestId?._id && selected?.guestId?._id !== selected?.customerId?._id) {
+                      if (
+                        selected?.guestId?._id &&
+                        selected?.guestId?._id !== selected?.customerId?._id
+                      ) {
                         options.push(
                           <option
                             key={`agent-${selected.guestId._id}`}
@@ -2148,7 +2163,6 @@ function BookingList() {
                           </option>,
                         );
                       }
-                      
 
                       return options;
                     })}
@@ -2284,8 +2298,8 @@ function BookingList() {
                                       const arr = [];
                                       const customerId = item?.customerId?._id;
                                       const guestId = item?.guestId?._id;
-                                      console.log(customerId)
-                                      console.log(guestId)
+                                      console.log(customerId);
+                                      console.log(guestId);
                                       if (item?.customerId?._id) {
                                         arr.push({
                                           id: item.customerId._id,
@@ -2294,7 +2308,10 @@ function BookingList() {
                                         });
                                       }
 
-                                      if (item?.guestId?._id && customerId !== guestId) {
+                                      if (
+                                        item?.guestId?._id &&
+                                        customerId !== guestId
+                                      ) {
                                         arr.push({
                                           id: item.guestId._id,
                                           name: item.guestId.partyName,
@@ -2344,7 +2361,10 @@ function BookingList() {
                                       });
                                     }
 
-                                    if (item?.guestId?._id && item.customerId._id !== item.guestId._id) {
+                                    if (
+                                      item?.guestId?._id &&
+                                      item.customerId._id !== item.guestId._id
+                                    ) {
                                       arr.push({
                                         id: item.guestId._id,
                                         name: item.guestId.partyName,
