@@ -125,38 +125,38 @@ function BookingList() {
 
         let stayDays = Number(room?.stayDays || 1);
 
-      const normalizeToDate = (d) => {
-  const nd = new Date(d);
-  nd.setHours(0, 0, 0, 0);
-  return nd;
-};
+        const normalizeToDate = (d) => {
+          const nd = new Date(d);
+          nd.setHours(0, 0, 0, 0);
+          return nd;
+        };
 
-// Old room before swap: from arrival to day BEFORE swap
-if (room?.isSwapped && room?.swappingDateFrom) {
-  const swappingDate = normalizeToDate(room.swappingDateFrom);
-  const arrivalDate = normalizeToDate(checkout?.arrivalDate);
+        // Old room before swap: from arrival to day BEFORE swap
+        if (room?.isSwapped && room?.swappingDateFrom) {
+          const swappingDate = normalizeToDate(room.swappingDateFrom);
+          const arrivalDate = normalizeToDate(checkout?.arrivalDate);
 
-  stayDays = Math.floor(
-    (swappingDate - arrivalDate) / (1000 * 60 * 60 * 24) - 1,
-  );
+          stayDays = Math.floor(
+            (swappingDate - arrivalDate) / (1000 * 60 * 60 * 24) - 1,
+          );
 
-  if (stayDays <= 0) stayDays = 1;
-}
-// New room after swap: from swap date to checkout date
-else if (!room?.isSwapped && room?.swappingDateFrom) {
-  const swappingDate = normalizeToDate(room.swappingDateFrom);
-  const checkoutDate = normalizeToDate(checkout.checkOutDate);
+          if (stayDays <= 0) stayDays = 1;
+        }
+        // New room after swap: from swap date to checkout date
+        else if (!room?.isSwapped && room?.swappingDateFrom) {
+          const swappingDate = normalizeToDate(room.swappingDateFrom);
+          const checkoutDate = normalizeToDate(checkout.checkOutDate);
 
-  stayDays = Math.floor(
-    (checkoutDate - swappingDate) / (1000 * 60 * 60 * 24),
-  );
+          stayDays = Math.floor(
+            (checkoutDate - swappingDate) / (1000 * 60 * 60 * 24),
+          );
 
-  if (stayDays <= 0) stayDays = 0;
-} else {
-  stayDays = Number(room?.stayDays || 1);
-}
+          if (stayDays <= 0) stayDays = 0;
+        } else {
+          stayDays = Number(room?.stayDays || 1);
+        }
 
-// if (stayDays <= 0) stayDays = 1;
+        // if (stayDays <= 0) stayDays = 1;
 
         const totalStayDays = Number(room?.stayDays || 1) || 1;
         const priceLevelRate = Number(room?.priceLevelRate || 0);
@@ -660,7 +660,7 @@ else if (!room?.isSwapped && room?.swappingDateFrom) {
     } else {
       updatedRows[index][field] = value;
     }
-    console.log(updatedRows);
+
     setSplitPaymentRows(updatedRows);
 
     // Calculate total and validate
@@ -693,12 +693,12 @@ else if (!room?.isSwapped && room?.swappingDateFrom) {
           (c) => c._id === selectedCash,
         );
         const selectedCustomerData = selectedCheckOut?.find(
-          (c) => c.customerId._id === selectedCustomer,
+          (c) => c.customerId._id === selectedCustomer || c.agentId._id === selectedCustomer,
         );
-        console.log(selectedCustomerData);
+        let isAgent =  selectedCustomerData?.customerId?._id === selectedCustomer ? false : true;
         paymentDetails = {
           cashAmount:
-            selectedDataForPayment?.totalWithRestaurantSubTotal ||
+           selectedDataForPayment?.totalWithRestaurantSubTotal ||
             Number(selectedCheckOut[0]?.balanceToPay),
           onlineAmount: onlineAmount,
           selectedCash: selectedCash,
@@ -707,7 +707,7 @@ else if (!room?.isSwapped && room?.swappingDateFrom) {
           splitDetails: [
             {
               customer:
-                selectedCustomerData?.customerId?.partyName ||
+                isAgent ? selectedCustomerData?.agentId?.partyName : selectedCustomerData?.customerId?.partyName ||
                 selectedCheckOut[0]?.customerId?.partyName,
               source: selectedCash,
               sourceType: "cash",
@@ -715,7 +715,7 @@ else if (!room?.isSwapped && room?.swappingDateFrom) {
                 selectedDataForPayment?.totalWithRestaurantSubTotal ||
                 Number(selectedCheckOut[0]?.balanceToPay),
               customerName:
-                selectedCustomerData?.customerId?.partyName ||
+                isAgent ? selectedCustomerData?.agentId?.partyName : selectedCustomerData?.customerId?.partyName ||
                 selectedCheckOut[0]?.customerId?.partyName,
               subsource: selected.partyName,
             },
@@ -736,8 +736,9 @@ else if (!room?.isSwapped && room?.swappingDateFrom) {
           (c) => c._id === selectedBank,
         );
         const selectedCustomerData = selectedCheckOut?.find(
-          (c) => c.customerId._id === selectedCustomer,
+          (c) => c.customerId._id === selectedCustomer || c.agentId._id === selectedCustomer,
         );
+          let isAgent =  selectedCustomerData?.customerId?._id === selectedCustomer ? false : true;
         console.log(selected);
         paymentDetails = {
           cashAmount: cashAmount,
@@ -750,7 +751,7 @@ else if (!room?.isSwapped && room?.swappingDateFrom) {
           splitDetails: [
             {
               customer:
-                selectedCustomerData?.customerId?.partyName ||
+              isAgent ? selectedCustomerData?.agentId?.partyName  :  selectedCustomerData?.customerId?.partyName ||
                 selectedCheckOut[0]?.customerId?.partyName,
               source: selectedBank,
               sourceType: "bank",
@@ -758,7 +759,7 @@ else if (!room?.isSwapped && room?.swappingDateFrom) {
                 selectedDataForPayment?.totalWithRestaurantSubTotal ||
                 Number(selectedCheckOut[0]?.balanceToPay),
               customerName:
-                selectedCustomerData?.customerId?.partyName ||
+               isAgent ? selectedCustomerData?.agentId?.partyName :  selectedCustomerData?.customerId?.partyName ||
                 selectedCheckOut[0]?.customerId?.partyName,
               subsource: selected.partyName,
             },
@@ -790,6 +791,7 @@ else if (!room?.isSwapped && room?.swappingDateFrom) {
         setSaveLoader(false);
         return;
       }
+      console.log(selectedCreditor);
       paymentDetails = {
         cashAmount:
           selectedDataForPayment?.totalWithRestaurantSubTotal ||
@@ -890,7 +892,7 @@ else if (!room?.isSwapped && room?.swappingDateFrom) {
       selectedParty: selectedCustomer,
       restaurantBaseSaleData: restaurantBaseSaleData,
     });
-
+  
     if (partial) {
       console.log("Hhhh");
       console.log(dateandstaysdata);
@@ -2107,14 +2109,34 @@ else if (!room?.isSwapped && room?.swappingDateFrom) {
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                   >
                     <option value="">Choose a customer...</option>
-                    {selectedCheckOut?.map((selected) => (
-                      <option
-                        key={selected?.customerId?._id}
-                        value={selected?.customerId?._id}
-                      >
-                        {selected?.customerId?.partyName}
-                      </option>
-                    ))}
+
+                    {selectedCheckOut?.flatMap((selected) => {
+                      const options = [];
+
+                      if (selected?.customerId?._id) {
+                        options.push(
+                          <option
+                            key={`customer-${selected.customerId._id}`}
+                            value={selected.customerId._id}
+                          >
+                            {selected.customerId.partyName}
+                          </option>,
+                        );
+                      }
+
+                      if (selected?.agentId?._id) {
+                        options.push(
+                          <option
+                            key={`agent-${selected.agentId._id}`}
+                            value={selected.agentId._id}
+                          >
+                            {selected.agentId.partyName}
+                          </option>,
+                        );
+                      }
+
+                      return options;
+                    })}
                   </select>
                 </div>
               )}
@@ -2238,31 +2260,93 @@ else if (!room?.isSwapped && room?.swappingDateFrom) {
                           <select
                             value={row.customer}
                             onChange={(e) => {
-                              const selectedCustomerObj =
-                                selectedCheckOut?.find(
-                                  (item) =>
-                                    item.customerId?._id === e.target.value,
-                                );
+                              const selectedValue = e.target.value;
 
+                              const customerOptions = [
+                                ...new Map(
+                                  (selectedCheckOut || [])
+                                    .flatMap((item) => {
+                                      const arr = [];
+
+                                      if (item?.customerId?._id) {
+                                        arr.push({
+                                          id: item.customerId._id,
+                                          name: item.customerId.partyName,
+                                          type: "customer",
+                                        });
+                                      }
+
+                                      if (item?.agentId?._id) {
+                                        arr.push({
+                                          id: item.agentId._id,
+                                          name: item.agentId.partyName,
+                                          type: "agent",
+                                        });
+                                      }
+
+                                      return arr;
+                                    })
+                                    .map((item) => [
+                                      `${item.type}-${item.id}`,
+                                      item,
+                                    ]),
+                                ).values(),
+                              ];
+
+                              const selectedCustomerObj = customerOptions.find(
+                                (item) => item.id === selectedValue,
+                              );
+                              console.log(customerOptions)
+                              console.log(selectedCustomerObj)
                               const selectedCustomerName =
-                                selectedCustomerObj?.customerId?.partyName;
-                              console.log(selectedCustomerName);
+                                selectedCustomerObj?.name || "";
+
                               updateSplitPaymentRow(
                                 index,
                                 "customer",
-                                e.target.value,
+                                selectedValue,
                                 selectedCustomerName,
                               );
                             }}
                             className="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
                           >
                             <option value="">Select Customer</option>
-                            {selectedCheckOut?.map((selected) => (
+
+                            {[
+                              ...new Map(
+                                (selectedCheckOut || [])
+                                  .flatMap((item) => {
+                                    const arr = [];
+
+                                    if (item?.customerId?._id) {
+                                      arr.push({
+                                        id: item.customerId._id,
+                                        name: item.customerId.partyName,
+                                        type: "customer",
+                                      });
+                                    }
+
+                                    if (item?.agentId?._id) {
+                                      arr.push({
+                                        id: item.agentId._id,
+                                        name: item.agentId.partyName,
+                                        type: "agent",
+                                      });
+                                    }
+
+                                    return arr;
+                                  })
+                                  .map((item) => [
+                                    `${item.type}-${item.id}`,
+                                    item,
+                                  ]),
+                              ).values(),
+                            ].map((item) => (
                               <option
-                                key={selected?.customerId?._id}
-                                value={selected?.customerId?._id}
+                                key={`${item.type}-${item.id}`}
+                                value={item.id}
                               >
-                                {selected?.customerId?.partyName}
+                                {item.name}
                               </option>
                             ))}
                           </select>

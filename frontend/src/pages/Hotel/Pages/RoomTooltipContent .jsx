@@ -7,7 +7,7 @@ const RoomTooltipContent = ({ room, tooltipData }) => {
 
   // Find the checkin record matching this room by roomId
   const checkin = checkins.find((c) =>
-    c.selectedRooms?.some((sr) => sr.roomId === room._id)
+    c.selectedRooms?.some((sr) => sr.roomId === room._id && !sr.isSwapped)
   );
 
   console.log("checkin", checkin);

@@ -511,10 +511,10 @@ const HotelDashboard = () => {
   };
 
   const handleConvertToAvailable = (room) => {
-    let findOne = selectedRooms.find((r) => r.roomId === room._id);
+    let findOne = selectedRooms.find((r) => r.roomId === room._id );
     if (findOne) {
       let checkIn = tooltipData?.checkins?.find((c) =>
-        c.selectedRooms?.some((sr) => sr.roomId === room._id),
+        c.selectedRooms?.some((sr) => sr.roomId === room._id ),
       );
       checkIn.selectedRooms.forEach((r) => {
         if (r.roomId.toString() == room._id.toString()) {
