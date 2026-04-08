@@ -105,6 +105,7 @@ function AvailableRooms({
   addTaxWithRate = false,
   handleDeletion = () => {},
   includeFoodRateWithRoom,
+  showRooms = true,
 }) {
   const [rooms, setRooms] = useState([]);
   const [search, setSearch] = useState("");
@@ -125,6 +126,8 @@ function AvailableRooms({
   const debounceTimerRef = useRef(null);
   const dropdownRef = useRef(null);
   const PAGE_SIZE = 50;
+
+  console.log(formData?.paxTotal);
   useEffect(() => {
     const fetchBookings = async () => {
       if (formData?.selectedRooms?.length > 0) {
@@ -161,6 +164,7 @@ function AvailableRooms({
               totalIgstAmt: booking.totalIgstAmt,
               dateTariffs: booking.dateTariffs || {},
               isSwapped: booking.isSwapped,
+              swappingDateFrom: booking.swappingDateFrom,
             };
 
             const taxCalculation = await calculateTax(normalizedBooking);
@@ -603,14 +607,44 @@ function AvailableRooms({
   };
 
   const handleDelete = (roomId) => {
+    console.log(bookings);
     if (isTariffRateChange) {
       toast.error("Cannot delete room while in tariff rate change mode");
       return;
     }
-    let filteredRoom = bookings.filter((b) => b.roomId !== roomId);
-    if (filteredRoom.length === 0) setRoomDeletedCompletely(true);
-    setBookings(filteredRoom);
-    handleDeletion(roomId);
+    let selectedRoom = bookings.find((b) => b.roomId === roomId);
+    console.log(selectedRoom);
+    if (selectedRoom.swappingDateFrom) {
+      // Collect all fromRoomIds for this roomId
+      const fromRoomIds = (formData.roomSwapHistory || [])
+        .filter((b) => String(b.toRoomId) === String(roomId))
+        .map((b) => String(b.fromRoomId));
+
+      if (fromRoomIds.length === 0) return;
+      console.log(fromRoomIds);
+      const updatedBookings = bookings.map((booking) => {
+        const bookingId = String(booking.roomId);
+
+        if (fromRoomIds.includes(bookingId)) {
+          return {
+            ...booking,
+            isSwapped: false,
+            swappingDateFrom: "",
+          };
+        }
+
+        return booking;
+      });
+      let filteredRoom = updatedBookings.filter((b) => b.roomId !== roomId);
+      if (filteredRoom.length === 0) setRoomDeletedCompletely(true);
+      setBookings(filteredRoom);
+    } else {
+      let filteredRoom = bookings.filter((b) => b.roomId !== roomId);
+      if (filteredRoom.length === 0) setRoomDeletedCompletely(true);
+      setBookings(filteredRoom);
+      console.log(filteredRoom);
+      handleDeletion(roomId);
+    }
   };
 
   const handleSelect = async (room) => {
@@ -714,7 +748,7 @@ function AvailableRooms({
   ) : (
     <>
       {/* Visual Room Selector - Only show when NOT in tariff rate change mode */}
-      {!isTariffRateChange && (
+      {!isTariffRateChange && showRooms && (
         <VisualRoomSelector
           rooms={rooms}
           selectedRooms={bookings}
@@ -722,6 +756,7 @@ function AvailableRooms({
           onRoomSelect={handleSelect}
           loading={loading}
           disabled={disabled}
+          showRooms={showRooms}
         />
       )}
 
@@ -791,7 +826,7 @@ function AvailableRooms({
                         className={`transition-all duration-200
     ${
       booking?.isSwapped
-        ? "bg-red-100 text-red-700 hover:bg-red-200 cursor-not-allowed opacity-80"
+        ? "bg-red-100 text-red-700 opacity-80 pointer-events-none"
         : "hover:bg-blue-50/50"
     }
   `}

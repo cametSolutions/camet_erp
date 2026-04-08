@@ -3747,62 +3747,58 @@ export const swapRoom = async (req, res) => {
   const session = await mongoose.startSession();
 
   try {
-    session.startTransaction();
+    await session.startTransaction();
 
     const { checkInId } = req.params;
-    const { newRoomId, oldRoomId, selectedDate } = req.body;
+    const {
+      newRoomId,
+      oldRoomId,
+      selectedDate,
+      formData = {},
+    } = req.body;
 
-    if (!newRoomId || !oldRoomId) {
-      await session.abortTransaction();
-      session.endSession();
-
+    if (!checkInId || !newRoomId || !oldRoomId) {
       return res.status(400).json({
         success: false,
-        message: "Both new room ID and old room ID are required",
+        message: "checkInId, newRoomId and oldRoomId are required",
       });
     }
 
     const checkIn = await CheckIn.findById(checkInId).session(session);
 
     if (!checkIn) {
-      await session.abortTransaction();
-      session.endSession();
-
       return res.status(404).json({
         success: false,
         message: "CheckIn record not found",
       });
     }
 
-    const checkInRoomIndex = checkIn.selectedRooms.findIndex((r) => {
-      const currentId =
-        r.roomId && r.roomId._id
-          ? r.roomId._id.toString()
-          : r.roomId.toString();
-
-      return currentId === oldRoomId.toString();
+    const oldSelectedRoomIndex = checkIn.selectedRooms.findIndex((room) => {
+      const roomId =
+        room?.roomId?._id?.toString?.() || room?.roomId?.toString?.();
+      return roomId === oldRoomId.toString();
     });
 
-    if (checkInRoomIndex === -1) {
-      await session.abortTransaction();
-      session.endSession();
-
+    if (oldSelectedRoomIndex === -1) {
       return res.status(400).json({
         success: false,
-        message: "Old room not found in CheckIn",
+        message: "Old room not found in selected rooms",
       });
     }
 
-    const newRoom = await roomModal
-      .findById(newRoomId)
-      .populate("roomType")
-      .populate("hsn")
-      .session(session);
+    const [oldRoom, newRoom] = await Promise.all([
+      roomModal.findById(oldRoomId).session(session),
+      roomModal.findById(newRoomId).session(session),
+    ]);
+
+    if (!oldRoom) {
+      return res.status(404).json({
+        success: false,
+        message: "Old room not found",
+      });
+    }
 
     if (!newRoom) {
-      await session.abortTransaction();
-      session.endSession();
-
       return res.status(404).json({
         success: false,
         message: "New room not found",
@@ -3810,157 +3806,183 @@ export const swapRoom = async (req, res) => {
     }
 
     if (!["vacant", "available"].includes(newRoom.status)) {
-      await session.abortTransaction();
-      session.endSession();
-
       return res.status(400).json({
         success: false,
         message: "New room is not available for swap",
       });
     }
 
-    const oldRoom = await roomModal.findById(oldRoomId).session(session);
+    const selectedRoomToAdd = Array.isArray(formData.selectedRooms)
+      ? formData.selectedRooms[0]
+      : null;
 
-    if (!oldRoom) {
-      await session.abortTransaction();
-      session.endSession();
-
-      return res.status(404).json({
+    if (!selectedRoomToAdd) {
+      return res.status(400).json({
         success: false,
-        message: "Old room not found",
+        message: "formData.selectedRooms[0] is required",
       });
     }
 
-    // room status updates
+    const newAdditionalPax = Array.isArray(formData.additionalPaxDetails)
+      ? formData.additionalPaxDetails
+      : [];
+
+    const newFoodPlan = Array.isArray(formData.foodPlan)
+      ? formData.foodPlan
+      : [];
+
+    const roomAmount = Number(selectedRoomToAdd?.amountAfterTax || 0);
+    const paxAmount = newAdditionalPax.reduce(
+      (sum, item) => sum + Number(item?.rate || 0),
+      0,
+    );
+    const foodPlanAmount = newFoodPlan.reduce(
+      (sum, item) => sum + Number(item?.rate || 0),
+      0,
+    );
+
     await roomModal.findByIdAndUpdate(
       oldRoomId,
-      { status: "dirty" },
-      { isSwapped: true },
+      {
+        $set: {
+          status: "dirty",
+          isSwapped: true,
+        },
+      },
       { new: true, session },
     );
 
     await roomModal.findByIdAndUpdate(
       newRoomId,
-      { status: "occupied" },
+      {
+        $set: {
+          status: "occupied",
+        },
+      },
       { new: true, session },
     );
 
-    // close old selected room row
-    checkIn.selectedRooms[checkInRoomIndex].isSwapped = true;
-    checkIn.selectedRooms[checkInRoomIndex].swappingDateFrom = selectedDate;
+    const oldSelectedRoom = checkIn.selectedRooms[oldSelectedRoomIndex];
+    oldSelectedRoom.isSwapped = true;
+    oldSelectedRoom.swappingDateFrom = selectedDate;
 
-    const totalAmount = Number(newRoom.priceLevel?.[0]?.priceRate || 0);
-    const taxPercentage = Number(newRoom.igst || 0);
-    const taxAmount = (totalAmount * taxPercentage) / 100;
-
-    const selected = new Date(selectedDate);
-    const checkout = new Date(checkIn?.checkOutDate);
-    const arrivedAt = new Date(checkIn?.arrivalDate);
-
-    let stayedDays = Math.ceil((selected - checkout) / (1000 * 60 * 60 * 24));
-
-    let stayedDaysAtOldRoom = Math.ceil(
-      (arrivedAt - selected) / (1000 * 60 * 60 * 24),
-    );
-
-    // 🔥 Fix: if same day or negative → make it 1
-    if (stayedDays <= 0) {
-      stayedDays = 1;
+    if (oldSelectedRoom.hasOwnProperty("roomName")) {
+      oldSelectedRoom.roomName = oldRoom.roomName;
     }
 
-    let selectedPriceLevel = await PriceLevel.findOne({
-      _id: newRoom.priceLevel?.[0]?.priceLevel,
-    });
-    selectedPriceLevel = selectedPriceLevel ? selectedPriceLevel : [];
-    checkIn.selectedRooms.push({
-      roomId: newRoom._id,
-      roomName: newRoom.roomName,
-      priceLevel: selectedPriceLevel,
-      roomType: newRoom.roomType,
-      dateTariffs: {},
-      pax: 2,
-      priceLevelRate: newRoom.priceLevel?.[0]?.priceRate || 0,
-      stayDays: stayedDays,
-      hsnDetails: newRoom?.hsn || oldRoom?.hsn,
-      totalAmount,
-      amountAfterTax: totalAmount + taxAmount,
-      amountWithOutTax: totalAmount,
-      taxPercentage,
-      taxAmount,
-      baseAmount: totalAmount,
-      baseAmountWithTax: totalAmount + taxAmount,
-      totalCgstAmt: taxAmount / 2,
-      totalSgstAmt: taxAmount / 2,
-      totalIgstAmt: taxAmount,
+    if (oldSelectedRoom.hasOwnProperty("roomNumber")) {
+      oldSelectedRoom.roomNumber = oldRoom.roomNumber || oldRoom.roomName;
+    }
+
+    const newSelectedRoom = {
+      ...selectedRoomToAdd,
       swappingDateFrom: selectedDate,
       isSwapped: false,
-    });
+    };
 
-    checkIn.selectedRooms = checkIn.selectedRooms.map((room) => {
-      if (String(room.roomId) === String(oldRoom.roomId)) {
-        return {
-          ...room,
-          swappingDateFrom: selectedDate,
-        };
-      }
-      return room;
-    });
+    checkIn.selectedRooms.push(newSelectedRoom);
 
-    if (checkIn.selectedRooms[checkInRoomIndex].hasOwnProperty("roomName")) {
-      checkIn.selectedRooms[checkInRoomIndex].roomName = oldRoom.roomName;
+    if (!Array.isArray(checkIn.additionalPaxDetails)) {
+      checkIn.additionalPaxDetails = [];
     }
 
-    if (checkIn.selectedRooms[checkInRoomIndex].hasOwnProperty("roomNumber")) {
-      checkIn.selectedRooms[checkInRoomIndex].roomName = oldRoom.roomName;
+    if (!Array.isArray(checkIn.foodPlan)) {
+      checkIn.foodPlan = [];
     }
 
-    if (!checkIn.roomSwapHistory) {
+    if (!Array.isArray(checkIn.roomSwapHistory)) {
       checkIn.roomSwapHistory = [];
+    }
+
+    if (newAdditionalPax.length > 0) {
+      checkIn.additionalPaxDetails.push(...newAdditionalPax);
+    }
+
+    if (newFoodPlan.length > 0) {
+      checkIn.foodPlan.push(...newFoodPlan);
     }
 
     checkIn.roomSwapHistory.push({
       fromRoomId: oldRoomId,
       toRoomId: newRoomId,
       swapDate: new Date(),
+      selectedDate,
       reason: "Guest requested room change",
     });
 
+    checkIn.roomTotal = Number(checkIn.roomTotal || 0) + roomAmount;
+    checkIn.paxTotal = Number(checkIn.paxTotal || 0) + paxAmount;
+    checkIn.foodPlanTotal = Number(checkIn.foodPlanTotal || 0) + foodPlanAmount;
+
+    checkIn.totalAmount =
+      Number(checkIn.roomTotal || 0) +
+      Number(checkIn.paxTotal || 0) +
+      Number(checkIn.foodPlanTotal || 0);
+
+    checkIn.grandTotal = checkIn.totalAmount;
+
+    const paidAmount =
+      Number(checkIn.advanceAmount || 0) +
+      Number(checkIn.paymenttypeDetails?.cash || 0) +
+      Number(checkIn.paymenttypeDetails?.bank || 0) +
+      Number(checkIn.paymenttypeDetails?.upi || 0) +
+      Number(checkIn.paymenttypeDetails?.credit || 0) +
+      Number(checkIn.paymenttypeDetails?.card || 0);
+
+    checkIn.balanceToPay = Number(checkIn.grandTotal || 0) - paidAmount;
+
     checkIn.markModified("selectedRooms");
+    checkIn.markModified("additionalPaxDetails");
+    checkIn.markModified("foodPlan");
     checkIn.markModified("roomSwapHistory");
+    checkIn.markModified("paymenttypeDetails");
 
     await checkIn.save({ session });
 
     await session.commitTransaction();
-    session.endSession();
 
     return res.status(200).json({
       success: true,
-      message: `Room successfully swapped from ${oldRoom?.roomName} to ${newRoom.roomName}`,
+      message: `Room successfully swapped from ${oldRoom.roomName} to ${newRoom.roomName}`,
       swapDetails: {
         checkInId: checkIn._id,
         customerName: checkIn.customerName,
         fromRoom: {
           id: oldRoomId,
-          name: oldRoom?.roomName,
+          name: oldRoom.roomName,
         },
         toRoom: {
           id: newRoomId,
           name: newRoom.roomName,
         },
+        selectedDate,
         swapDate: new Date(),
+        addedAmounts: {
+          roomAmount,
+          paxAmount,
+          foodPlanAmount,
+          totalAdded: roomAmount + paxAmount + foodPlanAmount,
+        },
+        totals: {
+          roomTotal: checkIn.roomTotal,
+          paxTotal: checkIn.paxTotal,
+          foodPlanTotal: checkIn.foodPlanTotal,
+          totalAmount: checkIn.totalAmount,
+          grandTotal: checkIn.grandTotal,
+          balanceToPay: checkIn.balanceToPay,
+        },
       },
     });
   } catch (error) {
     await session.abortTransaction();
-    session.endSession();
-
     console.error("Error in swapRoom:", error);
 
     return res.status(500).json({
       success: false,
-      message: "Failed to swap room",
-      error: error.message,
+      message: error.message || "Failed to swap room",
     });
+  } finally {
+    session.endSession();
   }
 };
 export const getRoomSwapHistory = async (req, res) => {

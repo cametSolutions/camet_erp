@@ -216,21 +216,32 @@ const normalizeToDate = (d) => {
   nd.setHours(0, 0, 0, 0);
   return nd;
 };
+const swapDate =
+  room?.swappingDateFrom
+    ? new Date(room.swappingDateFrom).toISOString().split("T")[0]
+    : "";
 
-if (room.isSwapped && room.swappingDateFrom) {
+if (room.isSwapped && room.swappingDateFrom    ) {
+  console.log(room.roomName)
   const swappingDate = normalizeToDate(room.swappingDateFrom);
   const arrivalDate = normalizeToDate(doc.arrivalDate);
 
   fullDaysAre = Math.floor(
     (swappingDate - arrivalDate) / (1000 * 60 * 60 * 24) - 1,
   );
+  
 
   if (fullDaysAre <= 0) {
+    if(swapDate == doc.arrivalDate){
+      fullDaysAre = 0
+    }else{
     fullDaysAre = 1;
+    }
   }
 }
 
 if (!room.isSwapped && room.swappingDateFrom) {
+    console.log(room.roomName)
   const swappingDate = normalizeToDate(room.swappingDateFrom);
   const checkoutDate = normalizeToDate(doc.checkOutDate);
 
@@ -238,8 +249,14 @@ if (!room.isSwapped && room.swappingDateFrom) {
     (checkoutDate - swappingDate) / (1000 * 60 * 60 * 24),
   );
 
+  
+
   if (fullDaysAre <= 0) {
+    if(swapDate == doc.arrivalDate){
+      fullDaysAre = 1
+    }else{
     fullDaysAre = 0;
+    }
   }
 }
     console.log(fullDaysAre);
