@@ -142,7 +142,7 @@ function BookingForm({
         highestDate =
           currentDateDefault > highestDate ? currentDateDefault : highestDate;
       }
-      console.log("editData", editData?.guestId);
+      console.log("editData", editData?.selectedRooms);
       setFormData((prev) => ({
         ...prev,
         country: editData?.country,
@@ -200,6 +200,7 @@ function BookingForm({
         gstNo: editData?.gstNo || "",
         otherChargeDetails: editData?.otherChargeDetails || [],
         addFoodPlanWithRate: editData?.addFoodPlanWithRate,
+        roomSwapHistory: editData?.roomSwapHistory || [],
       }));
       setIncludeFoodRateWithRoom(editData?.addFoodPlanWithRate);
     }
