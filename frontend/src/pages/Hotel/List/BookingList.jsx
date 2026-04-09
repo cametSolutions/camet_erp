@@ -7,7 +7,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { taxCalculator } from "../Helper/taxCalculator";
 import { MdDelete, MdVisibility, MdCancel } from "react-icons/md";
 import { motion } from "framer-motion";
-
+import KotBillTransferModal from "../Components/KotBillTransferModal";
 import Swal from "sweetalert2";
 import EnhancedCheckoutModal from "../Components/EnhancedCheckoutModal";
 import HoldModal from "../Components/HoldModal";
@@ -27,7 +27,17 @@ import InfiniteLoader from "react-window-infinite-loader";
 import { useLocation } from "react-router-dom";
 import SearchBar from "@/components/common/SearchBar";
 import TitleDiv from "@/components/common/TitleDiv";
-import { Check, CreditCard, X, Banknote, Plus, Trash2 } from "lucide-react";
+import {
+  Check,
+  CreditCard,
+  X,
+  Banknote,
+  Plus,
+  Trash2,
+  ArrowLeftRight,
+  Pause,
+  Play,
+} from "lucide-react";
 import useFetch from "@/customHook/useFetch";
 import PrintModal from "../Components/PrintModal";
 
@@ -87,6 +97,7 @@ function BookingList() {
     },
   ]);
   const [combinedSources, setCombinedSources] = useState([]);
+  const [restaurantBillTransfer,setShowRestaurantBillTransfer] = useState(false);
   const { roomId, roomName, filterByRoom } = location.state || {};
   const paymentDetails = useSelector((state) => state.paymentSlice);
   const { _id: cmp_id, configurations } = useSelector(
@@ -1974,40 +1985,64 @@ function BookingList() {
         {showPrintConfirmModal && <PrintModal onSubmit={handlePrintShow} />}
         {selectedCheckOut.length > 0 &&
           location.pathname === "/sUsers/checkInList" && (
-            <>
-              <div className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t shadow-lg px-4 py-3 flex justify-between items-center">
-                <div className="text-sm font-medium">
+            <div className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-[#dde1e7] shadow-md px-4 py-3 flex flex-wrap justify-between items-center gap-2">
+              {/* Left — count */}
+              <div className="flex items-center gap-1.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                <span className="text-xs text-slate-500 font-medium">
                   {selectedCheckOut.length} selected
-                </div>
-
-                <div className="flex gap-2">
-                  {selectedCheckOut.some((item) => item.isHold) ? (
-                    <button
-                      className="bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded"
-                      onClick={handleUnHold}
-                    >
-                      Unhold
-                    </button>
-                  ) : (
-                    <>
-                      <button
-                        onClick={handleProceedToCheckout}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded"
-                      >
-                        Proceed to Checkout
-                      </button>
-
-                      <button
-                        className="bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded"
-                        onClick={() => setShowEnhancedHoldModal(true)}
-                      >
-                        On Hold
-                      </button>
-                    </>
-                  )}
-                </div>
+                </span>
               </div>
-            </>
+
+              {/* Right — actions */}
+              <div className="flex flex-wrap items-center gap-2">
+                {selectedCheckOut.some((item) => item.isHold) ? (
+                  <button
+                    onClick={handleUnHold}
+                    className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-[5px] text-[13px]
+                     font-medium text-white bg-yellow-500 border border-yellow-500
+                     hover:bg-yellow-600 transition-colors duration-100 active:scale-[0.97]"
+                  >
+                    <Play size={13} />
+                    Unhold
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => setShowEnhancedHoldModal(true)}
+                      className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-[5px] text-[13px]
+                       font-medium text-slate-600 bg-white border border-slate-300
+                       hover:bg-slate-50 transition-colors duration-100 active:scale-[0.97]"
+                    >
+                      <Pause size={13} />
+                      On Hold
+                    </button>
+
+                    <button
+                      onClick={() => setShowRestaurantBillTransfer(true)}
+                      className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-[5px] text-[13px]
+                       font-medium text-slate-600 bg-white border border-slate-300
+                       hover:bg-slate-50 transition-colors duration-100 active:scale-[0.97]"
+                    >
+                      <ArrowLeftRight size={13} />
+                      <span className="hidden sm:inline">Restaurant Bill </span> Transfer
+                    </button>
+
+                    <div className="w-px h-5 bg-slate-200 mx-1 hidden sm:block" />
+
+                    <button
+                      onClick={handleProceedToCheckout}
+                      className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-[5px] text-[13px]
+                       font-medium text-white bg-blue-700 border border-blue-700
+                       hover:bg-blue-800 transition-colors duration-100 active:scale-[0.97]"
+                    >
+                      <Check size={13} />
+                      Checkout
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
           )}
 
         {showPaymentModal && (
@@ -2665,6 +2700,14 @@ function BookingList() {
               </InfiniteLoader>
             </div>
           </div>
+        )}
+        {restaurantBillTransfer && (
+          <KotBillTransferModal
+          selectedCheckIns={selectedCheckOut}
+          onClose={setShowRestaurantBillTransfer}
+           cmp_id={cmp_id}
+            />
+         
         )}
 
         {isLoading && !loader && (
