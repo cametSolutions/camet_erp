@@ -479,7 +479,7 @@ export const generateKot = async (req, res) => {
       foodPlanId: foodPlanId,
       foodPlanDetails: foodPlanData,
       isManuallyComplimentary: false,
-      kitchenBatches:req.body.kitchenBatches
+      kitchenBatches: req.body.kitchenBatches,
     };
 
     console.log("=== SAVING KOT ===");
@@ -562,28 +562,28 @@ export const editKot = async (req, res) => {
     let tag = req.body?.parentTag;
 
     // Update the KOT
-const updatedKot = await kotModal.findOneAndUpdate(
-  { _id: req.params.kotId, cmp_id },
-  {
-    $set: {
-      items: req.body.items,
-      type: req.body.type,
-      customer: customer,
-      tableNumber: req.body.customer?.tableNumber,
-      total: req.body.total,
-      status: req.body.status || "pending",
-      paymentMethod: req.body.paymentMethod,
-      roomId: req.body.customer?.roomId,
-      checkInNumber: req.body.customer?.checkInNumber,
- 
-      ...(!tag && { kitchenBatches: req.body.kitchenBatches }),
-    },
-    ...(tag && {
-      $push: { kitchenBatches: req.body.kitchenBatches }
-    }),
-  },
-  { new: true, session }
-);
+    const updatedKot = await kotModal.findOneAndUpdate(
+      { _id: req.params.kotId, cmp_id },
+      {
+        $set: {
+          items: req.body.items,
+          type: req.body.type,
+          customer: customer,
+          tableNumber: req.body.customer?.tableNumber,
+          total: req.body.total,
+          status: req.body.status || "pending",
+          paymentMethod: req.body.paymentMethod,
+          roomId: req.body.customer?.roomId,
+          checkInNumber: req.body.customer?.checkInNumber,
+
+          ...(!tag && { kitchenBatches: req.body.kitchenBatches }),
+        },
+        ...(tag && {
+          $push: { kitchenBatches: req.body.kitchenBatches },
+        }),
+      },
+      { new: true, session },
+    );
 
     // If previous KOT was dine-in, free up the old table
     if (previousKot.tableNumber && previousKot.type === "dine-in") {
@@ -677,7 +677,6 @@ export const getKot = async (req, res) => {
   }
 };
 
-
 export const getKotDash = async (req, res) => {
   try {
     const { cmp_id } = req.params;
@@ -707,43 +706,43 @@ export const getKotDash = async (req, res) => {
       .lean();
 
     const recalculatedKot = kot.map((kotDoc) => {
-   const recalculatedItems = (kotDoc?.items || [])
-  .map((item) => recalculateKotItem(item))
-  .filter(Boolean); // 🔥 removes null / skipped items
+      const recalculatedItems = (kotDoc?.items || [])
+        .map((item) => recalculateKotItem(item))
+        .filter(Boolean); // 🔥 removes null / skipped items
 
       const kotTotal = recalculatedItems.reduce(
         (sum, item) => sum + Number(item?.total || 0),
-        0
+        0,
       );
 
       const totalTaxableAmount = recalculatedItems.reduce(
         (sum, item) => sum + Number(item?.taxableAmount || 0),
-        0
+        0,
       );
 
       const totalCgstAmt = recalculatedItems.reduce(
         (sum, item) => sum + Number(item?.totalCgstAmt || 0),
-        0
+        0,
       );
 
       const totalSgstAmt = recalculatedItems.reduce(
         (sum, item) => sum + Number(item?.totalSgstAmt || 0),
-        0
+        0,
       );
 
       const totalIgstAmt = recalculatedItems.reduce(
         (sum, item) => sum + Number(item?.totalIgstAmt || 0),
-        0
+        0,
       );
 
       const totalCessAmt = recalculatedItems.reduce(
         (sum, item) => sum + Number(item?.totalCessAmt || 0),
-        0
+        0,
       );
 
       const totalAddlCessAmt = recalculatedItems.reduce(
         (sum, item) => sum + Number(item?.totalAddlCessAmt || 0),
-        0
+        0,
       );
 
       return {
@@ -771,7 +770,6 @@ export const getKotDash = async (req, res) => {
     });
   }
 };
-
 
 export const cancelKot = async (req, res) => {
   try {
@@ -818,7 +816,7 @@ export const updateKotStatus = async (req, res) => {
       await kotModal.updateOne(
         { _id: req.params.kotId },
         { $set: { "kitchenBatches.$[batch].status": status } },
-        { arrayFilters: [{ "batch.batchNo": batchNo }] }
+        { arrayFilters: [{ "batch.batchNo": batchNo }] },
       );
 
       // Step 2: Fetch the updated KOT to check all batch statuses
@@ -826,13 +824,15 @@ export const updateKotStatus = async (req, res) => {
 
       const allBatchesCompleted =
         updatedKot.kitchenBatches.length > 0 &&
-        updatedKot.kitchenBatches.every((batch) => batch.status === "completed");
+        updatedKot.kitchenBatches.every(
+          (batch) => batch.status === "completed",
+        );
 
       // Step 3: If all batches are completed, update KOT status too
       if (allBatchesCompleted) {
         await kotModal.updateOne(
           { _id: req.params.kotId },
-          { $set: { status: "completed" } }
+          { $set: { status: "completed" } },
         );
       }
 
@@ -848,7 +848,7 @@ export const updateKotStatus = async (req, res) => {
       updateQuery = { $set: rest };
       const kot = await kotModal.updateOne(
         { _id: req.params.kotId },
-        updateQuery
+        updateQuery,
       );
 
       return res.status(200).json({
@@ -1160,7 +1160,7 @@ export const directSale = async (req, res) => {
       console.log("paymentSplittingArray", paymentSplittingArray);
       const party = mapPartyData(selectedParty);
 
-      let additionalChargesArray = additionalCharges
+      let additionalChargesArray = additionalCharges;
       // Create a sales voucher entry (no KOT reference)
       const savedVoucherData = await createSalesVoucher(
         cmp_id,
@@ -1244,9 +1244,7 @@ export const updateKotPayment = async (req, res) => {
         note,
       } = req.body;
 
-
-
-      discountAmount = Number(req?.body?.additionalCharges[0]?.finalValue || 0)
+      discountAmount = Number(req?.body?.additionalCharges[0]?.finalValue || 0);
 
       // console.log("table", kotData);
       console.log("req?.body", req?.body);
@@ -1344,12 +1342,11 @@ export const updateKotPayment = async (req, res) => {
         selectedParty,
         paymentSplittingArray,
         req.body.additionalCharges || [],
-           discountBasedOnGrossAmount,
+        discountBasedOnGrossAmount,
         session,
         isComplimentary,
         isManuallyComplimentary,
         isPostToRoom,
-        
       );
       // ✅ Calculate with DISCOUNT
       const originalTotal = Number(kotData?.total || 0);
@@ -1404,86 +1401,83 @@ export const updateKotPayment = async (req, res) => {
       paymentCompleted = true;
       let selectedTableNumber = [];
 
-await Promise.all(
-  kotData?.voucherNumber.map(async (item) => {
-    const kot = await kotModal.findById(item.id).lean();
-    if (!kot) return;
+      await Promise.all(
+        kotData?.voucherNumber.map(async (item) => {
+          const kot = await kotModal.findById(item.id).lean();
+          if (!kot) return;
 
-    if (
-      kot?.tableNumber &&
-      !selectedTableNumber.includes(kot.tableNumber)
-    ) {
-      selectedTableNumber.push(kot.tableNumber);
-    }
+          if (
+            kot?.tableNumber &&
+            !selectedTableNumber.includes(kot.tableNumber)
+          ) {
+            selectedTableNumber.push(kot.tableNumber);
+          }
 
-    console.log(`=== UPDATING KOT ${item.id} ===`);
+          console.log(`=== UPDATING KOT ${item.id} ===`);
 
-    const selectedItems = kotData?.items || [];
+          const selectedItems = kotData?.items || [];
 
-    const billedItemMap = new Map(
-      selectedItems.map((si) => [
-        String(si._id),
-        Number(si.quantity || 0),
-      ])
-    );
+          const billedItemMap = new Map(
+            selectedItems.map((si) => [
+              String(si._id),
+              Number(si.quantity || 0),
+            ]),
+          );
 
-    const updatedItems = (kot?.items || []).map((kotItem) => {
-      const billedQty = Number(
-        billedItemMap.get(String(kotItem._id)) || 0
+          const updatedItems = (kot?.items || []).map((kotItem) => {
+            const billedQty = Number(
+              billedItemMap.get(String(kotItem._id)) || 0,
+            );
+
+            // ✅ use remainingQuantity if exists
+            const currentRemainingQty =
+              kotItem.remainingQty ?? kotItem.quantity ?? 0;
+
+            // ✅ IMPORTANT: if already 0 → skip completely
+            if (currentRemainingQty <= 0) {
+              return kotItem; // 🔥 no change at all
+            }
+
+            // ✅ calculate only if remaining > 0
+            const remainingQty = Math.max(currentRemainingQty - billedQty, 0);
+
+            return {
+              ...kotItem,
+              remainingQty,
+            };
+          });
+
+          const hasRemaining = updatedItems.some(
+            (i) => Number(i.remainingQty || 0) > 0,
+          );
+
+          const updateData = {
+            paymentMethod,
+            paymentCompleted: !hasRemaining,
+            discount: discountAmount,
+            discountChargeId: discountCharge?._id,
+            note,
+            items: updatedItems,
+            ...(!hasRemaining && { status: "completed" }),
+          };
+
+          if (isComplimentary) {
+            updateData.foodPlanDetails = {
+              ...(kot?.foodPlanDetails || {}),
+              isComplimentary: true,
+            };
+            updateData.isManuallyComplimentary = isManuallyComplimentary;
+          }
+
+          console.log("Update data:", updateData);
+
+          return kotModal.updateOne(
+            { _id: item.id },
+            { $set: updateData },
+            { session },
+          );
+        }),
       );
-
-      // ✅ use remainingQuantity if exists
-      const currentRemainingQty =
-        kotItem.remainingQty ?? kotItem.quantity ?? 0;
-
-      // ✅ IMPORTANT: if already 0 → skip completely
-      if (currentRemainingQty <= 0) {
-        return kotItem; // 🔥 no change at all
-      }
-
-      // ✅ calculate only if remaining > 0
-      const remainingQty = Math.max(
-        currentRemainingQty - billedQty,
-        0
-      );
-
-      return {
-        ...kotItem,
-        remainingQty,
-      };
-    });
-
-    const hasRemaining = updatedItems.some(
-      (i) => Number(i.remainingQty || 0) > 0
-    );
-
-    const updateData = {
-      paymentMethod,
-      paymentCompleted: !hasRemaining,
-      discount: discountAmount,
-      discountChargeId: discountCharge?._id,
-      note,
-      items: updatedItems,
-      ...(!hasRemaining && { status: "completed" }),
-    };
-
-    if (isComplimentary) {
-      updateData.foodPlanDetails = {
-        ...(kot?.foodPlanDetails || {}),
-        isComplimentary: true,
-      };
-      updateData.isManuallyComplimentary = isManuallyComplimentary;
-    }
-
-    console.log("Update data:", updateData);
-
-    return kotModal.updateOne(
-      { _id: item.id },
-      { $set: updateData },
-      { session }
-    );
-  })
-);
       // console.log("Selected Table Numbers:", selectedTableNumber);
 
       // Check pending
@@ -1697,7 +1691,8 @@ async function getSelectedParty(
   if (isPostToRoom) {
     console.log("koptData", kotData?.voucherNumber[0]?.checkInNumber);
     let checkInData = await CheckIn.findOne({
-      voucherNumber: kotData?.voucherNumber[0]?.checkInNumber, cmp_id :cmp_id
+      voucherNumber: kotData?.voucherNumber[0]?.checkInNumber,
+      cmp_id: cmp_id,
     }).session(session);
     console.log("checkInData", checkInData);
     partyId = checkInData?.customerId.toString();
@@ -1714,7 +1709,7 @@ async function getSelectedParty(
     }
   }
   console.log("partyId", partyId);
-  const selectedParty = await Party.findOne({ _id: partyId ,cmp_id:cmp_id })
+  const selectedParty = await Party.findOne({ _id: partyId, cmp_id: cmp_id })
     .populate("accountGroup")
     .session(session);
   if (!selectedParty) throw new Error(`Party not found: ${partyName}`);
@@ -1725,14 +1720,14 @@ async function getSelectedParty(
 async function createPaymentSplittingArray(paymentDetails, cashAmt, onlineAmt) {
   console.log("hhhhhhhhhhhhhhhh", paymentDetails, cashAmt, onlineAmt);
   const arr = [];
-  if(paymentDetails?.paymentMode === "credit" && cashAmt > 0) {
-      arr.push({
+  if (paymentDetails?.paymentMode === "credit" && cashAmt > 0) {
+    arr.push({
       type: "credit",
       amount: cashAmt,
       ref_id: paymentDetails?.selectedCreditor?._id,
       reference_name: paymentDetails?.selectedCreditor?.partyName,
-      credit_reference_type :paymentDetails?.selectedCreditor?.partyName,
-      creditor_gst:paymentDetails?.selectedCreditor?.gstNo
+      credit_reference_type: paymentDetails?.selectedCreditor?.partyName,
+      creditor_gst: paymentDetails?.selectedCreditor?.gstNo,
     });
   }
   if (paymentDetails?.paymentMode !== "credit" && cashAmt > 0) {
@@ -1874,7 +1869,7 @@ async function createSalesVoucher(
   selectedParty,
   paymentSplittingArray,
   additionalChargesArray = null,
-     discountBasedOnGrossAmount,  
+  discountBasedOnGrossAmount,
   session,
 ) {
   // console.log("additionalChargesArray", additionalChargesArray);
@@ -1888,14 +1883,18 @@ async function createSalesVoucher(
   // ✅ Calculate totals
   const totalAdditionalCharges = additionalCharges?.reduce((sum, charge) => {
     console.log("charge", charge);
-    return sum + Number(charge.finalValue ||charge.amount || charge.value || 0);
+    return (
+      sum + Number(charge.finalValue || charge.amount || charge.value || 0)
+    );
   }, 0);
 
   const discountTotal = additionalCharges
     .filter((charge) => charge.action === "sub")
     .reduce((sum, charge) => sum + Number(charge.finalValue || 0), 0);
 
-  const finalAmount =    discountBasedOnGrossAmount ? originalTotal - discountTotal : originalTotal
+  const finalAmount = discountBasedOnGrossAmount
+    ? originalTotal - discountTotal
+    : originalTotal;
 
   console.log("🔥 FINAL CALCULATIONS:", {
     originalTotal, // 1000
@@ -3265,6 +3264,8 @@ export const addComplementaryCashOrBank = async (req, res) => {
 };
 
 
+
+
 export const getRestaurantCategoryWiseSalesReport = async (req, res) => {
   try {
     const { cmp_id, startDate, endDate } = req.query;
@@ -3292,13 +3293,14 @@ export const getRestaurantCategoryWiseSalesReport = async (req, res) => {
       return res.status(200).json({
         success: true,
         data: [],
+        itemSummary: [],
         message: "No voucher series found for this company",
       });
     }
 
     const restaurantSeries = voucherSeriesDocs.flatMap((doc) =>
       (doc.series || []).filter(
-        (series) => String(series.under || "").toLowerCase() === "restaurant"
+        (series) => String(series?.under || "").trim().toLowerCase() === "restaurant"
       )
     );
 
@@ -3306,12 +3308,13 @@ export const getRestaurantCategoryWiseSalesReport = async (req, res) => {
       return res.status(200).json({
         success: true,
         data: [],
+        itemSummary: [],
         message: "No restaurant voucher series found",
       });
     }
 
     const restaurantSeriesIds = restaurantSeries.map(
-      (series) => new mongoose.Types.ObjectId(series._id)
+      (series) => new mongoose.Types.ObjectId(series._id),
     );
 
     const salesFilter = {
@@ -3330,6 +3333,7 @@ export const getRestaurantCategoryWiseSalesReport = async (req, res) => {
       return res.status(200).json({
         success: true,
         data: [],
+        itemSummary: [],
         message: "No restaurant sales found for selected date range",
       });
     }
@@ -3340,8 +3344,8 @@ export const getRestaurantCategoryWiseSalesReport = async (req, res) => {
           (sale.items || [])
             .map((item) => item.category)
             .filter(Boolean)
-            .map((id) => id.toString())
-        )
+            .map((id) => id.toString()),
+        ),
       ),
     ];
 
@@ -3351,8 +3355,8 @@ export const getRestaurantCategoryWiseSalesReport = async (req, res) => {
           (sale.items || [])
             .map((item) => item.sub_category)
             .filter(Boolean)
-            .map((id) => id.toString())
-        )
+            .map((id) => id.toString()),
+        ),
       ),
     ];
 
@@ -3385,28 +3389,25 @@ export const getRestaurantCategoryWiseSalesReport = async (req, res) => {
     });
 
     const grouped = {};
+    const itemSummaryMap = {};
 
     restaurantSales.forEach((sale) => {
-      console.log("SALE:", sale.salesNumber, "ITEMS:", sale.items?.length || 0);
       (sale.items || []).forEach((item) => {
-         console.log({
-      salesNumber: sale.salesNumber,
-      product_name: item.product_name,
-      category: item.category,
-      sub_category: item.sub_category,
-      qty: item.totalCount || item.totalActualCount || 0,
-      total: item.total || 0,
-    });
         const categoryId = item.category ? item.category.toString() : "uncategorized";
         const subcategoryId = item.sub_category
           ? item.sub_category.toString()
           : "uncategorized";
 
         const categoryName = categoryMap[categoryId] || "Uncategorized";
-        const subcategoryName = subcategoryMap[subcategoryId] || "Uncategorized";
+        const subcategoryName =
+          subcategoryMap[subcategoryId] || "Uncategorized";
 
-        const qty = Number(item.totalCount || item.totalActualCount || 0);
+        const qty = Number(
+          item.totalCount ?? item.totalActualCount ?? item.qty ?? 0
+        );
         const amount = Number(item.total || 0);
+        const productName = item.product_name || item.itemName || "Unnamed Item";
+        const unit = item.unit || "Nos";
 
         if (!grouped[categoryName]) {
           grouped[categoryName] = {
@@ -3431,8 +3432,8 @@ export const getRestaurantCategoryWiseSalesReport = async (req, res) => {
           salesNumber: sale.salesNumber,
           date: sale.date,
           product_id: item._id || null,
-          product_name: item.product_name || "",
-          unit: item.unit || "Nos",
+          product_name: productName,
+          unit,
           qty,
           amount,
           category_id: item.category || null,
@@ -3443,6 +3444,18 @@ export const getRestaurantCategoryWiseSalesReport = async (req, res) => {
         grouped[categoryName].totalAmount += amount;
         grouped[categoryName].subcategories[subcategoryName].totalQty += qty;
         grouped[categoryName].subcategories[subcategoryName].totalAmount += amount;
+
+        if (!itemSummaryMap[productName]) {
+          itemSummaryMap[productName] = {
+            product_name: productName,
+            unit,
+            totalQty: 0,
+            totalAmount: 0,
+          };
+        }
+
+        itemSummaryMap[productName].totalQty += qty;
+        itemSummaryMap[productName].totalAmount += amount;
       });
     });
 
@@ -3458,10 +3471,15 @@ export const getRestaurantCategoryWiseSalesReport = async (req, res) => {
       })),
     }));
 
+    const itemSummary = Object.values(itemSummaryMap).sort(
+      (a, b) => b.totalQty - a.totalQty
+    );
+
     return res.status(200).json({
       success: true,
       message: "Restaurant category wise sales report fetched successfully",
       data: result,
+      itemSummary,
     });
   } catch (error) {
     console.error("getRestaurantCategoryWiseSalesReport ERROR:", error);
@@ -3498,8 +3516,8 @@ export const getRestaurantDateWiseItemReport = async (req, res) => {
 
     const restaurantSeries = voucherSeriesDocs.flatMap((doc) =>
       (doc.series || []).filter(
-        (series) => String(series.under || "").toLowerCase() === "restaurant"
-      )
+        (series) => String(series.under || "").toLowerCase() === "restaurant",
+      ),
     );
 
     if (!restaurantSeries.length) {
@@ -3511,7 +3529,7 @@ export const getRestaurantDateWiseItemReport = async (req, res) => {
     }
 
     const restaurantSeriesIds = restaurantSeries.map(
-      (series) => new mongoose.Types.ObjectId(series._id)
+      (series) => new mongoose.Types.ObjectId(series._id),
     );
 
     const sales = await salesModel
@@ -3541,8 +3559,8 @@ export const getRestaurantDateWiseItemReport = async (req, res) => {
         sales.flatMap((sale) =>
           (sale.convertedFrom || [])
             .map((cf) => cf?.voucherNumber)
-            .filter(Boolean)
-        )
+            .filter(Boolean),
+        ),
       ),
     ];
 
@@ -3590,7 +3608,8 @@ export const getRestaurantDateWiseItemReport = async (req, res) => {
 
         groupedByDate[dateKey].items.push({
           billNo: sale.salesNumber || "",
-          kotNo: linkedKot?.voucherNumber || firstConverted?.voucherNumber || "",
+          kotNo:
+            linkedKot?.voucherNumber || firstConverted?.voucherNumber || "",
           kotType: linkedKot?.type || "",
           roomNo:
             linkedKot?.roomId?.roomName ||
@@ -3624,10 +3643,6 @@ export const getRestaurantDateWiseItemReport = async (req, res) => {
     });
   }
 };
-
-
-
-
 
 export const getKotRegister = async (req, res, next) => {
   try {
@@ -3717,43 +3732,43 @@ export const getKotRegister = async (req, res, next) => {
             ],
           },
 
-          foodPlan: {
-            $cond: [
-              {
-                $and: [
-                  { $isArray: "$foodPlanDetails" },
-                  { $gt: [{ $size: "$foodPlanDetails" }, 0] },
-                ],
-              },
-              {
-                $reduce: {
-                  input: {
-                    $map: {
-                      input: "$foodPlanDetails",
-                      as: "fp",
-                      in: {
-                        $ifNull: [
-                          "$$fp.planType",
-                          "$$fp.foodPlanName",
-                          "$$fp.name",
-                          "",
-                        ],
-                      },
-                    },
-                  },
-                  initialValue: "",
-                  in: {
-                    $cond: [
-                      { $eq: ["$$value", ""] },
-                      "$$this",
-                      { $concat: ["$$value", ", ", "$$this"] },
-                    ],
-                  },
-                },
-              },
-              "",
-            ],
+         foodPlan: {
+  $cond: [
+    {
+      $and: [
+        { $isArray: "$foodPlanDetails" },
+        { $gt: [{ $size: "$foodPlanDetails" }, 0] },
+      ],
+    },
+    {
+      $reduce: {
+        input: {
+          $map: {
+            input: "$foodPlanDetails",
+            as: "fp",
+            in: {
+              $ifNull: [
+                "$$fp.planType",
+                "$$fp.foodPlanName",
+                "$$fp.name",
+                "",
+              ],
+            },
           },
+        },
+        initialValue: "",
+        in: {
+          $cond: [
+            { $eq: ["$$value", ""] },
+            "$$this",
+            { $concat: ["$$value", ", ", "$$this"] },
+          ],
+        },
+      },
+    },
+    "DIRECT",
+  ],
+},
 
           status: { $toUpper: "$status" },
           remarks: { $ifNull: ["$note", "$cancelReason", ""] },
@@ -3794,28 +3809,9 @@ export const getKotRegister = async (req, res, next) => {
   }
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
 export const getSalesRegister = async (req, res) => {
   try {
-    const {
-      cmp_id,
-      from,
-      to,
-      status,
-      search,
-      includeCancelled,
-    } = req.query;
+    const { cmp_id, from, to, status, search, includeCancelled } = req.query;
 
     if (!cmp_id) {
       return res.status(400).json({
@@ -3827,7 +3823,7 @@ export const getSalesRegister = async (req, res) => {
     const now = new Date();
     const pad = (n) => String(n).padStart(2, "0");
     const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(
-      now.getDate()
+      now.getDate(),
     )}`;
 
     const fromStr = from || todayStr;
@@ -3836,7 +3832,6 @@ export const getSalesRegister = async (req, res) => {
     const start = new Date(`${fromStr}T00:00:00.000Z`);
     const end = new Date(`${toStr}T23:59:59.999Z`);
 
-    // 1) Load voucher series for this company (sales)
     const voucherSeriesDocs = await VoucherSeriesModel.find({
       cmp_id: new mongoose.Types.ObjectId(cmp_id),
       voucherType: "sales",
@@ -3849,12 +3844,13 @@ export const getSalesRegister = async (req, res) => {
       });
     }
 
-    // 2) Only restaurant series
     const restaurantSeries = voucherSeriesDocs.flatMap((doc) =>
       (doc.series || []).filter(
         (series) =>
-          String(series?.under || "").trim().toLowerCase() === "restaurant"
-      )
+          String(series?.under || "")
+            .trim()
+            .toLowerCase() === "restaurant",
+      ),
     );
 
     if (!restaurantSeries.length) {
@@ -3866,7 +3862,6 @@ export const getSalesRegister = async (req, res) => {
 
     const restaurantSeriesIds = restaurantSeries.map((series) => series._id);
 
-    // 3) Base filter
     const filter = {
       cmp_id: new mongoose.Types.ObjectId(cmp_id),
       series_id: { $in: restaurantSeriesIds },
@@ -3876,16 +3871,14 @@ export const getSalesRegister = async (req, res) => {
       },
     };
 
-    // payment status filter (CASH / UPI / CREDIT / COMPLEMENTORY / SPONSOR)
-    // we will apply AFTER deriving paymentType
-
     if (!includeCancelled || includeCancelled === "false") {
       filter.isCancelled = { $ne: true };
     }
 
     const sales = await salesModel
       .find(filter)
-      .select(`
+      .select(
+        `
         _id
         date
         selectedDate
@@ -3903,77 +3896,86 @@ export const getSalesRegister = async (req, res) => {
         subTotal
         totalWithAdditionalCharges
         finalAmount
+        additionalCharges
+        discountAmount
         convertedFrom
-      `)
+      `,
+      )
       .sort({ date: -1, salesNumber: -1 })
       .lean();
 
-    const derivePaymentType = (sale) => {
-      if (sale.isComplimentary) return "COMPLEMENTORY";
+    // ---------- payment type helpers unchanged ----------
+  const derivePaymentType = (sale) => {
+  if (sale.isComplimentary) return "COMPLEMENTORY";
 
-      const splits = sale.paymentSplittingData || [];
-      const nonZero = splits.filter((s) => Number(s?.amount || 0) > 0);
-      if (!nonZero.length) return "-";
+  const splits = Array.isArray(sale.paymentSplittingData)
+    ? sale.paymentSplittingData
+    : [];
+  const nonZero = splits.filter((s) => Number(s?.amount || 0) > 0);
 
-      const hasCash = nonZero.some(
-        (s) => String(s?.type || "").toLowerCase() === "cash"
-      );
-      const hasUpi = nonZero.some(
-        (s) => String(s?.type || "").toLowerCase() === "upi"
-      );
-      const hasCard = nonZero.some(
-        (s) => String(s?.type || "").toLowerCase() === "card"
-      );
-      const hasBank = nonZero.some(
-        (s) => String(s?.type || "").toLowerCase() === "bank"
-      );
-      const hasCheque = nonZero.some(
-        (s) => String(s?.type || "").toLowerCase() === "cheque"
-      );
-      const hasCredit = nonZero.some(
-        (s) => String(s?.type || "").toLowerCase() === "credit"
-      );
-      const hasSponsor = nonZero.some(
-        (s) => String(s?.type || "").toLowerCase() === "sponsor"
-      );
+  // NEW: if nothing paid here but posted to room → CREDIT
+  if (!nonZero.length && sale.isPostToRoom) {
+    return "CREDIT";
+  }
 
-      if (
-        hasCredit &&
-        !hasCash &&
-        !hasUpi &&
-        !hasCard &&
-        !hasBank &&
-        !hasCheque
-      ) {
-        return "CREDIT";
-      }
+  // If still no payment info and not post to room
+  if (!nonZero.length) return "-";
 
-      if (
-        hasSponsor &&
-        !hasCash &&
-        !hasUpi &&
-        !hasCard &&
-        !hasBank &&
-        !hasCheque &&
-        !hasCredit
-      ) {
-        return "SPONSOR";
-      }
+  const hasCash = nonZero.some(
+    (s) => String(s?.type || "").toLowerCase() === "cash"
+  );
+  const hasUpi = nonZero.some(
+    (s) => String(s?.type || "").toLowerCase() === "upi"
+  );
+  const hasCard = nonZero.some(
+    (s) => String(s?.type || "").toLowerCase() === "card"
+  );
+  const hasBank = nonZero.some(
+    (s) => String(s?.type || "").toLowerCase() === "bank"
+  );
+  const hasCheque = nonZero.some(
+    (s) => String(s?.type || "").toLowerCase() === "cheque"
+  );
+  const hasCredit = nonZero.some(
+    (s) => String(s?.type || "").toLowerCase() === "credit"
+  );
+  const hasSponsor = nonZero.some(
+    (s) => String(s?.type || "").toLowerCase() === "sponsor"
+  );
 
-      if (hasCash && hasUpi && nonZero.length === 2) return "CASH/UPI";
-      if (hasCash && !hasUpi && !hasCard && !hasBank && !hasCheque)
-        return "CASH";
-      if (!hasCash && hasUpi && !hasCard && !hasBank && !hasCheque)
-        return "UPI";
-      if (hasCard && !hasCash && !hasUpi && !hasBank && !hasCheque)
-        return "CARD";
-      if (hasBank && !hasCash && !hasUpi && !hasCard && !hasCheque)
-        return "BANK";
-      if (hasCheque && !hasCash && !hasUpi && !hasCard && !hasBank)
-        return "CHEQUE";
+  if (
+    hasCredit &&
+    !hasCash &&
+    !hasUpi &&
+    !hasCard &&
+    !hasBank &&
+    !hasCheque
+  ) {
+    return "CREDIT";
+  }
 
-      return "CASH/UPI";
-    };
+  if (
+    hasSponsor &&
+    !hasCash &&
+    !hasUpi &&
+    !hasCard &&
+    !hasBank &&
+    !hasCheque &&
+    !hasCredit
+  ) {
+    return "SPONSOR";
+  }
+
+  if (hasCash && hasUpi && nonZero.length === 2) return "CASH/UPI";
+  if (hasCash && !hasUpi && !hasCard && !hasBank && !hasCheque) return "CASH";
+  if (!hasCash && hasUpi && !hasCard && !hasBank && !hasCheque) return "UPI";
+  if (hasCard && !hasCash && !hasUpi && !hasBank && !hasCheque) return "CARD";
+  if (hasBank && !hasCash && !hasUpi && !hasCard && !hasCheque) return "BANK";
+  if (hasCheque && !hasCash && !hasUpi && !hasCard && !hasBank)
+    return "CHEQUE";
+
+  return "CASH/UPI";
+};
 
     const formatDate = (d) => {
       if (!d) return "-";
@@ -3990,7 +3992,7 @@ export const getSalesRegister = async (req, res) => {
 
       const fromAdditionalCharges = additionalCharges.reduce((sum, charge) => {
         const option = String(
-          charge?.option || charge?.label || charge?.name || ""
+          charge?.option || charge?.label || charge?.name || "",
         )
           .trim()
           .toLowerCase();
@@ -4022,10 +4024,11 @@ export const getSalesRegister = async (req, res) => {
           sale?.discountAmount ||
           sale?.despatchDetails?.discountAmount ||
           sale?.despatchDetails?.totalAdditionalCharges ||
-          0
+          0,
       );
     };
 
+    // ---------- KOT lookup unchanged ----------
     const convertedVoucherNumbers = sales
       .flatMap((sale) => sale.convertedFrom || [])
       .map((cf) => String(cf?.voucherNumber || "").trim())
@@ -4040,27 +4043,49 @@ export const getSalesRegister = async (req, res) => {
             voucherNumber: { $in: uniqueConvertedVoucherNumbers },
           })
           .select(
-            "voucherNumber type roomId checkInNumber tableNumber foodPlanDetails"
+            "voucherNumber type roomId checkInNumber tableNumber foodPlanDetails",
           )
           .populate("roomId", "roomName roomNo roomNumber room_name name")
           .lean()
       : [];
 
     const kotMap = new Map(
-      kotDocs.map((kot) => [String(kot.voucherNumber).trim(), kot])
+      kotDocs.map((kot) => [String(kot.voucherNumber).trim(), kot]),
     );
 
+    // ---------- NEW: checkout -> agent (sponsor) map ----------
+    const checkInIds = sales
+      .map((s) => s.checkInId)
+      .filter((id) => !!id)
+      .map((id) => new mongoose.Types.ObjectId(id));
+
+    let sponsorMap = new Map();
+
+    if (checkInIds.length) {
+      const checkouts = await CheckOut.find({
+        cmp_id: new mongoose.Types.ObjectId(cmp_id),
+        checkInId: { $in: checkInIds },
+      })
+        .select("checkInId agentId")
+        .populate("agentId", "partyName")
+        .lean();
+
+      sponsorMap = new Map(
+        checkouts.map((co) => [
+          String(co.checkInId),
+          co.agentId?.partyName || "",
+        ])
+      );
+    }
+
+    // ---------- build rows ----------
     let rows = sales.map((sale) => {
       const items = sale.items || [];
 
-      // build itemDetails[] for frontend
       const itemDetails = items.map((item) => {
         const qty =
           Number(
-            item?.totalCount ??
-              item?.totalActualCount ??
-              item?.qty ??
-              0
+            item?.totalCount ?? item?.totalActualCount ?? item?.qty ?? 0,
           ) || 0;
 
         const gdn = item?.GodownList?.[0] || {};
@@ -4069,7 +4094,7 @@ export const getSalesRegister = async (req, res) => {
           gdn?.selectedPriceRate ??
           item?.Priceleveles?.[0]?.pricerate ??
           item?.item_mrp ??
-          (Number(item?.total || 0) / (qty || 1));
+          Number(item?.total || 0) / (qty || 1);
 
         const tax =
           Number(item?.totalCgstAmt || 0) +
@@ -4092,12 +4117,12 @@ export const getSalesRegister = async (req, res) => {
       const amount = Number(
         sale?.subTotal ??
           sale?.despatchDetails?.subTotal ??
-          itemDetails.reduce((sum, it) => sum + Number(it.amount || 0), 0)
+          itemDetails.reduce((sum, it) => sum + Number(it.amount || 0), 0),
       );
 
       const taxAmount = itemDetails.reduce(
         (sum, it) => sum + Number(it.taxAmount || 0),
-        0
+        0,
       );
 
       const discAmount = getDiscountAmount(sale);
@@ -4105,12 +4130,11 @@ export const getSalesRegister = async (req, res) => {
       const billAmount = Number(
         sale?.totalWithAdditionalCharges ??
           sale?.finalAmount ??
-          amount + taxAmount - discAmount
+          amount + taxAmount - discAmount,
       );
 
       const paymentType = derivePaymentType(sale);
 
-      // KOT / room / plan
       const converted = (sale.convertedFrom || [])[0];
       const voucherNumber = converted?.voucherNumber
         ? String(converted.voucherNumber).trim()
@@ -4151,6 +4175,12 @@ export const getSalesRegister = async (req, res) => {
         foodPlan = fp || "Direct";
       }
 
+      // NEW: sponsor from checkout agentId
+      let sponsorName = "";
+      if (sale.checkInId) {
+        sponsorName = sponsorMap.get(String(sale.checkInId)) || "";
+      }
+
       const customer =
         sale?.party?.partyName || sale?.party?.name || "CASH CUSTOMER";
 
@@ -4163,7 +4193,7 @@ export const getSalesRegister = async (req, res) => {
         foodPlan,
         paymentType,
         isCancelled: sale.isCancelled ? "CANCELLED" : "",
-        sponsorName: "",
+        sponsorName,
         remarks: sale.note || "",
         saleId: sale._id,
 
@@ -4177,13 +4207,13 @@ export const getSalesRegister = async (req, res) => {
       };
     });
 
-    // payment status filter at row level (if status provided)
     if (status) {
       const s = status.trim().toUpperCase();
-      rows = rows.filter((r) => (r.paymentType || "").toUpperCase() === s);
+      rows = rows.filter(
+        (r) => (r.paymentType || "").toUpperCase() === s
+      );
     }
 
-    // search filter
     if (search && search.trim() !== "") {
       const q = search.trim().toLowerCase();
       rows = rows.filter((r) => {
@@ -4191,7 +4221,7 @@ export const getSalesRegister = async (req, res) => {
           (r.billNo || "").toLowerCase().includes(q) ||
           (r.customer || "").toLowerCase().includes(q) ||
           (r.itemDetails || []).some((it) =>
-            (it.name || "").toLowerCase().includes(q)
+            (it.name || "").toLowerCase().includes(q),
           )
         );
       });
@@ -4207,6 +4237,139 @@ export const getSalesRegister = async (req, res) => {
       success: false,
       message: "Failed to fetch sales register",
       error: err.message,
+    });
+  }
+};
+
+export const getRestaurantBillsDetails = async (req, res) => {
+  try {
+    const { cmp_id } = req.params;
+    let { checkInNumbers } = req.query;
+
+    // 🔹 Normalize checkInNumbers (handle string or array)
+    if (!checkInNumbers) {
+      return res.status(400).json({
+        success: false,
+        message: "checkInNumbers is required",
+      });
+    }
+
+    if (!Array.isArray(checkInNumbers)) {
+      checkInNumbers = [checkInNumbers];
+    }
+
+    // 🔹 DB Query (optimized)
+    const generatedKots = await kotModal
+      .find({
+        cmp_id,
+        checkInNumber: { $in: checkInNumbers },
+      })
+      .lean();
+
+    return res.status(200).json({
+      success: true,
+      message: "Data fetched successfully",
+      count: generatedKots.length,
+      data: generatedKots,
+    });
+  } catch (error) {
+    console.error("Error in getRestaurantBillsDetails:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
+export const getAllChecking = async (req, res) => {
+  try {
+    const { cmp_id } = req.params;
+
+    const checkInData = await CheckIn.find({
+      cmp_id,
+      status: { $ne: "checkOut" },
+    }).lean();
+
+    return res.status(200).json({
+      success: true,
+      message: "Check-in data fetched successfully",
+      count: checkInData.length,
+      data: checkInData,
+    });
+  } catch (error) {
+    console.error("Error in getAllChecking:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch check-in data",
+      error: error.message,
+    });
+  }
+};
+
+export const transferKotBills = async (req, res) => {
+  try {
+    const { cmp_id } = req.params;
+    const { groupedSelected, targetRoom } = req.body;
+
+    if (!Array.isArray(groupedSelected) || !groupedSelected.length) {
+      return res.status(400).json({
+        success: false,
+        message: "No bills selected for transfer",
+      });
+    }
+
+    if (!targetRoom?.roomId || !targetRoom?.checkInNo) {
+      return res.status(400).json({
+        success: false,
+        message: "Target room details are missing",
+      });
+    }
+
+    const allBills = groupedSelected.flatMap((group) => group.bills || []);
+    const party =await  partyModel.findOne({_id:targetRoom.party})
+
+    await Promise.all(
+      allBills.map(async (bill) => {
+        await kotModal.updateOne(
+          { _id: bill.id },
+          {
+            $set: {
+              checkInNumber: targetRoom.checkInNo,
+              roomId: targetRoom.roomId,
+              "customer.name": targetRoom.guestName || "",
+            },
+          },
+        );
+
+        await salesModel.updateOne(
+          {
+            cmp_id,
+            "convertedFrom.0.voucherNumber": bill.billNo,
+          },
+          {
+            $set: {
+              "convertedFrom.0.checkInNumber": targetRoom.checkInNo,
+              party:party,
+              partyAccount:party.accountGroupName
+            },
+          },
+        );
+      }),
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Bills transferred successfully",
+    });
+  } catch (error) {
+    console.error("Error in transferKotBills:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to transfer bills",
+      error: error.message,
     });
   }
 };

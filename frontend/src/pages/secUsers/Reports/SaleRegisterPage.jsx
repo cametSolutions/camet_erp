@@ -3,6 +3,7 @@ import React, { Fragment, useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import api from "@/api/api";
 import * as XLSX from "xlsx";
+import TitleDiv from "@/components/common/TitleDiv";
 
 const STATUS_OPTIONS = [
   { label: "All", value: "" },
@@ -486,6 +487,12 @@ export default function SaleRegisterPage() {
   };
 
   return (
+      <>
+                      <TitleDiv
+                        title={
+                          "SALE REGISTER"
+                        }
+                      />
     <div className="min-h-screen bg-slate-100 p-4 md:p-6">
       <div className="mx-auto max-w-7xl space-y-4">
         <div className="overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm">
@@ -1026,5 +1033,6 @@ export default function SaleRegisterPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }
