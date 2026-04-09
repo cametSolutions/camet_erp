@@ -4053,6 +4053,7 @@ export const getHotelSalesDetails = async (req, res) => {
                 _id: 1,
                 voucherNumber: 1,
                 agentId: 1,
+                guestName: 1,
               },
             },
           ],
@@ -4095,6 +4096,7 @@ export const getHotelSalesDetails = async (req, res) => {
                 type: 1,
                 total: 1,
                 createdAt: 1,
+                
               },
             },
           ],
@@ -4186,7 +4188,7 @@ export const getHotelSalesDetails = async (req, res) => {
       },
     ]);
 
-    console.log("salesData", salesData);
+    console.log("salesDatdda", salesData);
 
     // Transform data for frontend consumption
     const transformedData = salesData.map((sale) => {
@@ -4203,6 +4205,8 @@ export const getHotelSalesDetails = async (req, res) => {
         sale.partyDetails?.partyName ||
         sale.partyAccount ||
         "Cash";
+        const gusestName =sale?.checkOut?.guestName;
+        console.log("gusestName",gusestName)
 
       const isCreditSale =
         sale.partyAccount === "Sundry Debtors" ||
@@ -4337,7 +4341,7 @@ export const getHotelSalesDetails = async (req, res) => {
         tableNumber: sale.tableNumber || "",
         waiterName: sale.waiterName || "",
         roomNumber: sale.roomNumber || "",
-        guestName: sale.guestName ||"",
+        guestName: gusestName ||"",
         itemCount: sale.items?.length || 0,
         isHotelSale: sale.isHotelSale || false,
         isRestaurantSale: sale.isRestaurantSale || false,
@@ -5026,6 +5030,7 @@ export const getCheckoutStatementByDate = async (req, res) => {
           billNo: checkout.voucherNumber,
           date: checkout.bookingDate,
           customerName: checkout.customerName,
+          guestName: checkout.guestName,
           roomName: roomNames,
 
           totalAmount: parseFloat(checkout.totalAmount || 0),
@@ -5590,7 +5595,7 @@ export const getFlashReportForDate = async (req, res) => {
 
 export const getTouristReport = async (req, res) => {
   try {
-    let { fromDate, toDate, countryField = "country" } = req.query;
+    let { fromDate, toDate } = req.query;
 
     const todayStr = new Date().toISOString().slice(0, 10);
     fromDate = fromDate || todayStr;
@@ -5602,9 +5607,6 @@ export const getTouristReport = async (req, res) => {
         $lte: toDate,
       },
     };
-
-    const fieldToGroup =
-      countryField === "guestCountry" ? "$guestCountry" : "$country";
 
     const report = await CheckIn.aggregate([
       { $match: match },
@@ -5639,12 +5641,12 @@ export const getTouristReport = async (req, res) => {
             $cond: [
               {
                 $or: [
-                  { $eq: [fieldToGroup, null] },
-                  { $eq: [fieldToGroup, ""] },
+                  { $eq: ["$guestCountry", null] },
+                  { $eq: ["$guestCountry", ""] },
                 ],
               },
               "UNKNOWN",
-              { $toUpper: fieldToGroup },
+              { $toUpper: "$guestCountry" },
             ],
           },
         },
@@ -5667,8 +5669,11 @@ export const getTouristReport = async (req, res) => {
       { $sort: { pax: -1, nation: 1 } },
     ]);
 
-    const totalPax = report.reduce((sum, item) => sum + item.pax, 0);
-    const totalBookings = report.reduce((sum, item) => sum + item.bookings, 0);
+    const totalPax = report.reduce((sum, item) => sum + Number(item.pax || 0), 0);
+    const totalBookings = report.reduce(
+      (sum, item) => sum + Number(item.bookings || 0),
+      0
+    );
 
     return res.status(200).json({
       success: true,
@@ -5676,7 +5681,7 @@ export const getTouristReport = async (req, res) => {
       filters: {
         fromDate,
         toDate,
-        countryField,
+        countryField: "guestCountry",
       },
       summary: {
         totalNations: report.length,
@@ -5881,8 +5886,6 @@ export const getOccupancyCheckoutReport = async (req, res) => {
 
     const match = {
       cmp_id: new mongoose.Types.ObjectId(cmp_id),
-
-      // exclude checkout status data
       status: { $ne: "checkOut" },
     };
 
@@ -5896,15 +5899,15 @@ export const getOccupancyCheckoutReport = async (req, res) => {
     } else if (toDate) {
       match.arrivalDate = { $lte: toDate };
     }
-    console.log(match)
 
     const checkins = await CheckIn.find(match).lean();
 
     const allRooms = await roomModal
-      .find({ cmp_id: new mongoose.Types.ObjectId(cmp_id) }, { roomName: 1, roomType: 1 })
+      .find(
+        { cmp_id: new mongoose.Types.ObjectId(cmp_id) },
+        { roomName: 1, roomType: 1, status: 1 }
+      )
       .lean();
-
-    // rest of your code same...
 
     const rows = [];
     const planMap = {};
@@ -5913,14 +5916,12 @@ export const getOccupancyCheckoutReport = async (req, res) => {
     let roomRevenue = 0;
     let domestic = 0;
     let foreigners = 0;
-    let single = 0;
-    let doubleRoom = 0;
-    let triple = 0;
-    let other = 0;
     let additionalPaxTotal = 0;
 
     checkins.forEach((doc) => {
-      const country = (doc?.country || doc?.guestCountry || "").trim().toLowerCase();
+      const country = (doc?.country || doc?.guestCountry || "")
+        .trim()
+        .toLowerCase();
       const isDomestic = !country || country === "india";
 
       if (isDomestic) domestic += 1;
@@ -5943,19 +5944,9 @@ export const getOccupancyCheckoutReport = async (req, res) => {
         );
 
         roomRevenue += tariff;
-        occupiedRoomNames.add(room?.roomName);
-
-        const roomTypeName =
-          room?.roomType?.roomTypeName ||
-          room?.roomType?.name ||
-          "";
-
-        const type = roomTypeName.toLowerCase();
-
-        if (type.includes("single")) single += 1;
-        else if (type.includes("double")) doubleRoom += 1;
-        else if (type.includes("triple")) triple += 1;
-        else other += 1;
+        if (room?.roomName) {
+          occupiedRoomNames.add(room.roomName);
+        }
 
         let planName = "";
         if (Array.isArray(doc?.foodPlan) && doc.foodPlan.length > 0) {
@@ -5995,9 +5986,43 @@ export const getOccupancyCheckoutReport = async (req, res) => {
       });
     });
 
-    const occupiedRooms = occupiedRoomNames.size;
     const totalRooms = allRooms.length;
-    const vacant = Math.max(totalRooms - occupiedRooms, 0);
+
+    // status-wise counts from room master
+    let occupiedCount = 0;
+    let vacantCount = 0;
+    let cleaningCount = 0;
+    let blockedCount = 0;
+
+    const roomStatus = allRooms
+      .map((room) => {
+        const statusRaw = String(room.status || "").toLowerCase();
+        let status = "Vacant";
+
+        if (occupiedRoomNames.has(room.roomName)) {
+          status = "Occupied";
+        } else if (statusRaw === "cleaning" || statusRaw === "dirty") {
+          status = "Cleaning";
+        } else if (statusRaw === "blocked" || statusRaw === "block") {
+          status = "Blocked";
+        } else {
+          status = "Vacant";
+        }
+
+        if (status === "Occupied") occupiedCount += 1;
+        else if (status === "Vacant") vacantCount += 1;
+        else if (status === "Cleaning") cleaningCount += 1;
+        else if (status === "Blocked") blockedCount += 1;
+
+        return {
+          roomNo: room.roomName,
+          status,
+        };
+      })
+      .sort((a, b) => String(a.roomNo).localeCompare(String(b.roomNo)));
+
+    const occupiedRooms = occupiedCount;
+    const vacant = vacantCount;
 
     const occupancyPercentage =
       totalRooms > 0
@@ -6009,13 +6034,6 @@ export const getOccupancyCheckoutReport = async (req, res) => {
         ? Number((roomRevenue / occupiedRooms).toFixed(2))
         : 0;
 
-    const roomStatus = allRooms
-      .map((room) => ({
-        roomNo: room.roomName,
-        status: occupiedRoomNames.has(room.roomName) ? "Occupied" : "Vacant",
-      }))
-      .sort((a, b) => String(a.roomNo).localeCompare(String(b.roomNo)));
-
     const planSummary = Object.values(planMap);
 
     return res.status(200).json({
@@ -6024,17 +6042,18 @@ export const getOccupancyCheckoutReport = async (req, res) => {
       printDateTime: new Date(),
       summary: {
         occupancyPercentage,
-        houseCount: rows.reduce((sum, item) => sum + Number(item.pax || 0), 0),
+        houseCount: rows.reduce(
+          (sum, item) => sum + Number(item.pax || 0),
+          0
+        ),
         domestic,
         foreigners,
         roomRevenue: Number(roomRevenue.toFixed(2)),
         arr,
         roomsOccupied: occupiedRooms,
-        single,
-        double: doubleRoom,
-        triple,
-        other,
         vacant,
+        cleaning: cleaningCount,
+        blocked: blockedCount,
         totalRooms,
       },
       planSummary,

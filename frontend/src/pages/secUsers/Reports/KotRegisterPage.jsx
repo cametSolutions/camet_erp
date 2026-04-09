@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import api from "@/api/api";
 import * as XLSX from "xlsx";
 import { useSelector } from "react-redux";
+import TitleDiv from "@/components/common/TitleDiv";
 
 const STATUS_OPTIONS = [
   { label: "All", value: "" },
@@ -330,6 +331,12 @@ const handleExportExcel = () => {
   };
 
   return (
+    <>
+          <TitleDiv
+            title={
+              "KOT REGISTER"
+            }
+          />
     <div className="min-h-screen bg-slate-100 p-4 md:p-6">
       <div className="mx-auto max-w-7xl space-y-4">
         <div className="overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm">
@@ -524,9 +531,9 @@ const handleExportExcel = () => {
                     ) : (
                       Object.entries(planSummary).map(([plan, count]) => (
                         <tr key={plan}>
-                          <td className="border border-slate-300 px-3 py-2">
-                            {plan}
-                          </td>
+                         <td className="border border-slate-300 px-3 py-2">
+  {String(plan || "").trim() || "DIRECT"}
+</td>
                           <td className="border border-slate-300 px-3 py-2 text-right font-medium">
                             {count}
                           </td>
@@ -574,5 +581,6 @@ const handleExportExcel = () => {
         </div>
       </div>
     </div>
+    </>
   );
 }
