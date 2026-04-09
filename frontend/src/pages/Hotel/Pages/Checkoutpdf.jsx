@@ -197,7 +197,10 @@ const HotelCheckoutStatement = () => {
         <th className="text-left py-1.5 px-1 text-xs font-semibold">Bill #</th>
         <th className="text-left py-1.5 px-1 text-xs font-semibold">Date</th>
         <th className="text-left py-1.5 px-1 text-xs font-semibold">
-          Description
+          bill Name
+        </th>
+        <th className="text-left py-1.5 px-1 text-xs font-semibold">
+          Guest Name
         </th>
         <th className="text-left py-1.5 px-1 text-xs font-semibold">Room</th>
         <th className="text-right py-1.5 px-1 text-xs font-semibold">
@@ -237,6 +240,7 @@ const HotelCheckoutStatement = () => {
         <td className="py-1 px-1">{item.billNo || "-"}</td>
         <td className="py-1 px-1">{formatDate(item.date)}</td>
         <td className="py-1 px-1">{item.customerName || "-"}</td>
+        <td className="py-1 px-1">{item.guestName || "-"}</td>
         <td className="py-1 px-1">{item.roomName || "-"}</td>
         <td className="py-1 px-1 text-right">
           {item.grandTotal != null ? num(item.grandTotal).toFixed(2) : "-"}
