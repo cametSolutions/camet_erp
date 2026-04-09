@@ -803,10 +803,10 @@ export const getRooms = async (req, res) => {
 
     // Add booked room IDs
     overlappingBookings.forEach((booking) => {
-      if (booking.selectedRooms && Array.isArray(booking.selectedRooms )) {
+      if (booking.selectedRooms && Array.isArray(booking.selectedRooms)) {
         booking.selectedRooms.forEach((room) => {
           const roomId = room.roomId || room._id || room;
-          if (roomId ) {
+          if (roomId) {
             occupiedRoomId.add(roomId.toString());
           }
         });
@@ -815,7 +815,11 @@ export const getRooms = async (req, res) => {
     // console.log("allcheckins", AllCheckIns)
     // Add checked-in room IDs
     AllCheckIns.forEach((checkIn) => {
-      if (checkIn.selectedRooms && Array.isArray(checkIn.selectedRooms) && !checkIn.isHold) {
+      if (
+        checkIn.selectedRooms &&
+        Array.isArray(checkIn.selectedRooms) &&
+        !checkIn.isHold
+      ) {
         checkIn.selectedRooms.forEach((room) => {
           const roomId = room.roomId || room._id || room;
           if (roomId && !room.isSwapped) {
@@ -2242,7 +2246,7 @@ export const getAllRoomsWithStatusForDate = async (req, res) => {
     const bookedRoomIds = new Set();
     for (const booking of bookings) {
       for (const selRoom of booking.selectedRooms) {
-        if (selRoom.roomId ) {
+        if (selRoom.roomId) {
           bookedRoomIds.add(selRoom.roomId.toString());
         }
       }
@@ -2336,7 +2340,6 @@ export const getDateBasedRoomsWithStatus = async (req, res) => {
       status: { $ne: "checkIn" },
       arrivalDate: { $lte: selectedDate },
       checkOutDate: { $gte: selectedDate },
-      
     });
 
     // 2. Fetch check-ins (status not 'checkOut')
@@ -2900,9 +2903,9 @@ export const convertCheckOutToSale = async (req, res) => {
                 ? "cash"
                 : "bank";
         } else if (isPostToRoom || paymentMode === "credit") {
+          cashAmt = Number(paymentDetails?.cashAmount || 0);
           paymentMethod = "credit";
-          paidAmount = 0;
-          // pendingAmount = itemTotal;
+          paidAmount = Number(paymentDetails?.cashAmount || 0);
         }
 
         const pendingAmount =
@@ -2945,14 +2948,23 @@ export const convertCheckOutToSale = async (req, res) => {
         );
 
         const roomTotal = itemTotal;
+        let checkoutamounttypes = [];
 
-        const checkoutamounttypes = split.map((item) => {
-          return {
+        if (paymentMode !== "credit") {
+          checkoutamounttypes = split.map((item) => ({
             customerName: item.customerName,
             mode: item.subsource,
             amount: Number(item.amount),
-          };
-        });
+          }));
+        } else {
+          checkoutamounttypes = [
+            {
+              customerName: paymentDetails.selectedCreditor?.partyName,
+              mode: "credit",
+              amount: Number(paymentDetails.cashAmount),
+            },
+          ];
+        }
         // Create CheckOut FIRST
         const checkOutDoc = await CheckOut.create(
           [
@@ -3335,6 +3347,13 @@ function createPaymentSplittingArray(
         ref_id: split.source,
       });
     }
+  } else if (paymentMode == "credit") {
+    arr.push({
+      type: "credit",
+      amount: cashAmt,
+      ref_id: paymentDetails?.selectedCreditor?._id,
+      reference_name: paymentDetails?.selectedCreditor?.partyName,
+    });
   } else {
     // For single payment: use selectedCash/selectedBank
     if (cashAmt > 0) {
@@ -3731,7 +3750,7 @@ export const swapRoom = async (req, res) => {
     session.startTransaction();
 
     const { checkInId } = req.params;
-    const { newRoomId, oldRoomId,selectedDate } = req.body;
+    const { newRoomId, oldRoomId, selectedDate } = req.body;
 
     if (!newRoomId || !oldRoomId) {
       await session.abortTransaction();
@@ -3816,14 +3835,14 @@ export const swapRoom = async (req, res) => {
     await roomModal.findByIdAndUpdate(
       oldRoomId,
       { status: "dirty" },
-      { isSwapped: true},
-      { new: true, session }
+      { isSwapped: true },
+      { new: true, session },
     );
 
     await roomModal.findByIdAndUpdate(
       newRoomId,
       { status: "occupied" },
-      { new: true, session }
+      { new: true, session },
     );
 
     // close old selected room row
@@ -3835,24 +3854,24 @@ export const swapRoom = async (req, res) => {
     const taxAmount = (totalAmount * taxPercentage) / 100;
 
     const selected = new Date(selectedDate);
-const checkout = new Date(checkIn?.checkOutDate);
-const arrivedAt = new Date(checkIn?.arrivalDate)
+    const checkout = new Date(checkIn?.checkOutDate);
+    const arrivedAt = new Date(checkIn?.arrivalDate);
 
-let stayedDays = Math.ceil(
-  (selected - checkout) / (1000 * 60 * 60 * 24)
-);
+    let stayedDays = Math.ceil((selected - checkout) / (1000 * 60 * 60 * 24));
 
-let stayedDaysAtOldRoom = Math.ceil(
-  (arrivedAt - selected) / (1000 * 60 * 60 * 24)
-);
+    let stayedDaysAtOldRoom = Math.ceil(
+      (arrivedAt - selected) / (1000 * 60 * 60 * 24),
+    );
 
-// 🔥 Fix: if same day or negative → make it 1
-if (stayedDays <= 0) {
-  stayedDays = 1;
-}
+    // 🔥 Fix: if same day or negative → make it 1
+    if (stayedDays <= 0) {
+      stayedDays = 1;
+    }
 
-    let selectedPriceLevel = await PriceLevel.findOne({ _id: newRoom.priceLevel?.[0]?.priceLevel });
-    selectedPriceLevel = selectedPriceLevel ? selectedPriceLevel : []
+    let selectedPriceLevel = await PriceLevel.findOne({
+      _id: newRoom.priceLevel?.[0]?.priceLevel,
+    });
+    selectedPriceLevel = selectedPriceLevel ? selectedPriceLevel : [];
     checkIn.selectedRooms.push({
       roomId: newRoom._id,
       roomName: newRoom.roomName,
@@ -3877,15 +3896,15 @@ if (stayedDays <= 0) {
       isSwapped: false,
     });
 
-   checkIn.selectedRooms = checkIn.selectedRooms.map((room) => {
-  if (String(room.roomId) === String(oldRoom.roomId)) {
-    return {
-      ...room,
-      swappingDateFrom: selectedDate,
-    };
-  }
-  return room;
-});
+    checkIn.selectedRooms = checkIn.selectedRooms.map((room) => {
+      if (String(room.roomId) === String(oldRoom.roomId)) {
+        return {
+          ...room,
+          swappingDateFrom: selectedDate,
+        };
+      }
+      return room;
+    });
 
     if (checkIn.selectedRooms[checkInRoomIndex].hasOwnProperty("roomName")) {
       checkIn.selectedRooms[checkInRoomIndex].roomName = oldRoom.roomName;
@@ -5508,7 +5527,7 @@ export const getFlashReportForDate = async (req, res) => {
 
     const foodPlanTotal = checkouts.reduce(
       (sum, co) => sum + Number(co.foodPlanTotal || 0),
-      0
+      0,
     );
 
     const roomTotal = roomApartment + roomExtraBed;
@@ -5516,20 +5535,16 @@ export const getFlashReportForDate = async (req, res) => {
 
     const grandTotal = checkouts.reduce(
       (sum, co) => sum + Number(co.grandTotal || 0),
-      0
+      0,
     );
 
-    const occPercent =
-      totalRooms > 0 ? (occupiedPaid / totalRooms) * 100 : 0;
+    const occPercent = totalRooms > 0 ? (occupiedPaid / totalRooms) * 100 : 0;
 
-    const arrTotalRooms =
-      totalRooms > 0 ? roomTotal / totalRooms : 0;
+    const arrTotalRooms = totalRooms > 0 ? roomTotal / totalRooms : 0;
 
-    const arrSaleableRooms =
-      saleableRooms > 0 ? roomTotal / saleableRooms : 0;
+    const arrSaleableRooms = saleableRooms > 0 ? roomTotal / saleableRooms : 0;
 
-    const arrOccupiedRooms =
-      totalOccupied > 0 ? roomTotal / totalOccupied : 0;
+    const arrOccupiedRooms = totalOccupied > 0 ? roomTotal / totalOccupied : 0;
 
     const reportDate = new Date(toDate);
     const dayLabel = reportDate.toLocaleDateString("en-GB");
@@ -5591,7 +5606,6 @@ export const getFlashReportForDate = async (req, res) => {
     });
   }
 };
-
 
 export const getTouristReport = async (req, res) => {
   try {
@@ -5700,10 +5714,6 @@ export const getTouristReport = async (req, res) => {
   }
 };
 
-
-
-
-
 export const getFoodPlanReport = async (req, res) => {
   try {
     let { fromDate, toDate, cmp_id } = req.query;
@@ -5720,7 +5730,7 @@ export const getFoodPlanReport = async (req, res) => {
     toDate = toDate || todayStr;
 
     const match = {
-      cmp_id: new mongoose.Types.ObjectId(cmp_id),   // ⬅️ company filter
+      cmp_id: new mongoose.Types.ObjectId(cmp_id), // ⬅️ company filter
       arrivalDate: {
         $gte: fromDate,
         $lte: toDate,
@@ -5767,10 +5777,7 @@ export const getFoodPlanReport = async (req, res) => {
                 $ifNull: [
                   "$foodPlan.foodItemName",
                   {
-                    $ifNull: [
-                      "$foodPlan.name",
-                      "$foodPlan.foodPlan",
-                    ],
+                    $ifNull: ["$foodPlan.name", "$foodPlan.foodPlan"],
                   },
                 ],
               },
@@ -5792,11 +5799,7 @@ export const getFoodPlanReport = async (req, res) => {
           billNo: "$voucherNumber",
           billDate: "$arrivalDate",
           remarks: {
-            $cond: [
-              { $eq: ["$isHotelAgent", true] },
-              "AGENT",
-              "",
-            ],
+            $cond: [{ $eq: ["$isHotelAgent", true] }, "AGENT", ""],
           },
         },
       },
@@ -5868,8 +5871,6 @@ export const getFoodPlanReport = async (req, res) => {
   }
 };
 
-
-
 export const getOccupancyCheckoutReport = async (req, res) => {
   try {
     let { fromDate, toDate, cmp_id } = req.query;
@@ -5940,13 +5941,21 @@ export const getOccupancyCheckoutReport = async (req, res) => {
             room?.totalAmount ||
             room?.baseAmountWithTax ||
             room?.baseAmount ||
-            0
+            0,
         );
 
         roomRevenue += tariff;
-        if (room?.roomName) {
-          occupiedRoomNames.add(room.roomName);
-        }
+        occupiedRoomNames.add(room?.roomName);
+
+        const roomTypeName =
+          room?.roomType?.roomTypeName || room?.roomType?.name || "";
+
+        const type = roomTypeName.toLowerCase();
+
+        if (type.includes("single")) single += 1;
+        else if (type.includes("double")) doubleRoom += 1;
+        else if (type.includes("triple")) triple += 1;
+        else other += 1;
 
         let planName = "";
         if (Array.isArray(doc?.foodPlan) && doc.foodPlan.length > 0) {
@@ -6030,9 +6039,7 @@ export const getOccupancyCheckoutReport = async (req, res) => {
         : 0;
 
     const arr =
-      occupiedRooms > 0
-        ? Number((roomRevenue / occupiedRooms).toFixed(2))
-        : 0;
+      occupiedRooms > 0 ? Number((roomRevenue / occupiedRooms).toFixed(2)) : 0;
 
     const planSummary = Object.values(planMap);
 
