@@ -775,6 +775,7 @@ console.log(result.data.sales[8]);
       setLoading(false);
     }
   };
+console.log(salesData);
 
   const filteredSalesData = salesData.filter((item) => {
     const kotMatch = kotTypeFilter === "all" || item.kotType === kotTypeFilter;
@@ -1191,7 +1192,7 @@ console.log(result.data.sales[8]);
                             : "-"}
                         </td>
                         <td className="border border-gray-200 px-2 py-1 text-left">
-                          {row.guestName || "-"}
+                          {row.guestName || row.partyName}
                         </td>
                         <td className="border border-gray-200 px-2 py-1 text-right">
                           {Math.round(gross)}

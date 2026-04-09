@@ -4,6 +4,7 @@ import api from "@/api/api";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import { useSelector } from "react-redux";
+import TitleDiv from "@/components/common/TitleDiv";
 
 const getToday = () => new Date().toISOString().slice(0, 10);
 
@@ -177,6 +178,12 @@ const TouristReport = () => {
     );
   };
   return (
+     <>
+          <TitleDiv
+            title={
+              "Tourist Pax Report"
+            }
+          />
     <div className="min-h-screen bg-slate-100 p-3 md:p-6 print:bg-white print:p-0">
       <div className="mx-auto max-w-7xl print:max-w-full">
         <div className="mb-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm print:hidden md:p-6">
@@ -344,6 +351,7 @@ const TouristReport = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

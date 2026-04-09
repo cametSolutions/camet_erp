@@ -3265,6 +3265,8 @@ export const addComplementaryCashOrBank = async (req, res) => {
 };
 
 
+
+
 export const getRestaurantCategoryWiseSalesReport = async (req, res) => {
   try {
     const { cmp_id, startDate, endDate } = req.query;
@@ -3292,13 +3294,14 @@ export const getRestaurantCategoryWiseSalesReport = async (req, res) => {
       return res.status(200).json({
         success: true,
         data: [],
+        itemSummary: [],
         message: "No voucher series found for this company",
       });
     }
 
     const restaurantSeries = voucherSeriesDocs.flatMap((doc) =>
       (doc.series || []).filter(
-        (series) => String(series.under || "").toLowerCase() === "restaurant"
+        (series) => String(series?.under || "").trim().toLowerCase() === "restaurant"
       )
     );
 
@@ -3306,6 +3309,7 @@ export const getRestaurantCategoryWiseSalesReport = async (req, res) => {
       return res.status(200).json({
         success: true,
         data: [],
+        itemSummary: [],
         message: "No restaurant voucher series found",
       });
     }
@@ -3330,6 +3334,7 @@ export const getRestaurantCategoryWiseSalesReport = async (req, res) => {
       return res.status(200).json({
         success: true,
         data: [],
+        itemSummary: [],
         message: "No restaurant sales found for selected date range",
       });
     }
@@ -3385,18 +3390,10 @@ export const getRestaurantCategoryWiseSalesReport = async (req, res) => {
     });
 
     const grouped = {};
+    const itemSummaryMap = {};
 
     restaurantSales.forEach((sale) => {
-      console.log("SALE:", sale.salesNumber, "ITEMS:", sale.items?.length || 0);
       (sale.items || []).forEach((item) => {
-         console.log({
-      salesNumber: sale.salesNumber,
-      product_name: item.product_name,
-      category: item.category,
-      sub_category: item.sub_category,
-      qty: item.totalCount || item.totalActualCount || 0,
-      total: item.total || 0,
-    });
         const categoryId = item.category ? item.category.toString() : "uncategorized";
         const subcategoryId = item.sub_category
           ? item.sub_category.toString()
@@ -3405,8 +3402,12 @@ export const getRestaurantCategoryWiseSalesReport = async (req, res) => {
         const categoryName = categoryMap[categoryId] || "Uncategorized";
         const subcategoryName = subcategoryMap[subcategoryId] || "Uncategorized";
 
-        const qty = Number(item.totalCount || item.totalActualCount || 0);
+        const qty = Number(
+          item.totalCount ?? item.totalActualCount ?? item.qty ?? 0
+        );
         const amount = Number(item.total || 0);
+        const productName = item.product_name || item.itemName || "Unnamed Item";
+        const unit = item.unit || "Nos";
 
         if (!grouped[categoryName]) {
           grouped[categoryName] = {
@@ -3431,8 +3432,8 @@ export const getRestaurantCategoryWiseSalesReport = async (req, res) => {
           salesNumber: sale.salesNumber,
           date: sale.date,
           product_id: item._id || null,
-          product_name: item.product_name || "",
-          unit: item.unit || "Nos",
+          product_name: productName,
+          unit,
           qty,
           amount,
           category_id: item.category || null,
@@ -3443,6 +3444,18 @@ export const getRestaurantCategoryWiseSalesReport = async (req, res) => {
         grouped[categoryName].totalAmount += amount;
         grouped[categoryName].subcategories[subcategoryName].totalQty += qty;
         grouped[categoryName].subcategories[subcategoryName].totalAmount += amount;
+
+        if (!itemSummaryMap[productName]) {
+          itemSummaryMap[productName] = {
+            product_name: productName,
+            unit,
+            totalQty: 0,
+            totalAmount: 0,
+          };
+        }
+
+        itemSummaryMap[productName].totalQty += qty;
+        itemSummaryMap[productName].totalAmount += amount;
       });
     });
 
@@ -3458,10 +3471,15 @@ export const getRestaurantCategoryWiseSalesReport = async (req, res) => {
       })),
     }));
 
+    const itemSummary = Object.values(itemSummaryMap).sort(
+      (a, b) => b.totalQty - a.totalQty
+    );
+
     return res.status(200).json({
       success: true,
       message: "Restaurant category wise sales report fetched successfully",
       data: result,
+      itemSummary,
     });
   } catch (error) {
     console.error("getRestaurantCategoryWiseSalesReport ERROR:", error);
@@ -3717,43 +3735,43 @@ export const getKotRegister = async (req, res, next) => {
             ],
           },
 
-          foodPlan: {
-            $cond: [
-              {
-                $and: [
-                  { $isArray: "$foodPlanDetails" },
-                  { $gt: [{ $size: "$foodPlanDetails" }, 0] },
-                ],
-              },
-              {
-                $reduce: {
-                  input: {
-                    $map: {
-                      input: "$foodPlanDetails",
-                      as: "fp",
-                      in: {
-                        $ifNull: [
-                          "$$fp.planType",
-                          "$$fp.foodPlanName",
-                          "$$fp.name",
-                          "",
-                        ],
-                      },
-                    },
-                  },
-                  initialValue: "",
-                  in: {
-                    $cond: [
-                      { $eq: ["$$value", ""] },
-                      "$$this",
-                      { $concat: ["$$value", ", ", "$$this"] },
-                    ],
-                  },
-                },
-              },
-              "",
-            ],
+         foodPlan: {
+  $cond: [
+    {
+      $and: [
+        { $isArray: "$foodPlanDetails" },
+        { $gt: [{ $size: "$foodPlanDetails" }, 0] },
+      ],
+    },
+    {
+      $reduce: {
+        input: {
+          $map: {
+            input: "$foodPlanDetails",
+            as: "fp",
+            in: {
+              $ifNull: [
+                "$$fp.planType",
+                "$$fp.foodPlanName",
+                "$$fp.name",
+                "",
+              ],
+            },
           },
+        },
+        initialValue: "",
+        in: {
+          $cond: [
+            { $eq: ["$$value", ""] },
+            "$$this",
+            { $concat: ["$$value", ", ", "$$this"] },
+          ],
+        },
+      },
+    },
+    "DIRECT",
+  ],
+},
 
           status: { $toUpper: "$status" },
           remarks: { $ifNull: ["$note", "$cancelReason", ""] },
@@ -3836,7 +3854,6 @@ export const getSalesRegister = async (req, res) => {
     const start = new Date(`${fromStr}T00:00:00.000Z`);
     const end = new Date(`${toStr}T23:59:59.999Z`);
 
-    // 1) Load voucher series for this company (sales)
     const voucherSeriesDocs = await VoucherSeriesModel.find({
       cmp_id: new mongoose.Types.ObjectId(cmp_id),
       voucherType: "sales",
@@ -3849,7 +3866,6 @@ export const getSalesRegister = async (req, res) => {
       });
     }
 
-    // 2) Only restaurant series
     const restaurantSeries = voucherSeriesDocs.flatMap((doc) =>
       (doc.series || []).filter(
         (series) =>
@@ -3866,7 +3882,6 @@ export const getSalesRegister = async (req, res) => {
 
     const restaurantSeriesIds = restaurantSeries.map((series) => series._id);
 
-    // 3) Base filter
     const filter = {
       cmp_id: new mongoose.Types.ObjectId(cmp_id),
       series_id: { $in: restaurantSeriesIds },
@@ -3875,9 +3890,6 @@ export const getSalesRegister = async (req, res) => {
         $lte: end,
       },
     };
-
-    // payment status filter (CASH / UPI / CREDIT / COMPLEMENTORY / SPONSOR)
-    // we will apply AFTER deriving paymentType
 
     if (!includeCancelled || includeCancelled === "false") {
       filter.isCancelled = { $ne: true };
@@ -3903,77 +3915,85 @@ export const getSalesRegister = async (req, res) => {
         subTotal
         totalWithAdditionalCharges
         finalAmount
+        additionalCharges
+        discountAmount
         convertedFrom
       `)
       .sort({ date: -1, salesNumber: -1 })
       .lean();
 
-    const derivePaymentType = (sale) => {
-      if (sale.isComplimentary) return "COMPLEMENTORY";
+    // ---------- payment type helpers unchanged ----------
+  const derivePaymentType = (sale) => {
+  if (sale.isComplimentary) return "COMPLEMENTORY";
 
-      const splits = sale.paymentSplittingData || [];
-      const nonZero = splits.filter((s) => Number(s?.amount || 0) > 0);
-      if (!nonZero.length) return "-";
+  const splits = Array.isArray(sale.paymentSplittingData)
+    ? sale.paymentSplittingData
+    : [];
+  const nonZero = splits.filter((s) => Number(s?.amount || 0) > 0);
 
-      const hasCash = nonZero.some(
-        (s) => String(s?.type || "").toLowerCase() === "cash"
-      );
-      const hasUpi = nonZero.some(
-        (s) => String(s?.type || "").toLowerCase() === "upi"
-      );
-      const hasCard = nonZero.some(
-        (s) => String(s?.type || "").toLowerCase() === "card"
-      );
-      const hasBank = nonZero.some(
-        (s) => String(s?.type || "").toLowerCase() === "bank"
-      );
-      const hasCheque = nonZero.some(
-        (s) => String(s?.type || "").toLowerCase() === "cheque"
-      );
-      const hasCredit = nonZero.some(
-        (s) => String(s?.type || "").toLowerCase() === "credit"
-      );
-      const hasSponsor = nonZero.some(
-        (s) => String(s?.type || "").toLowerCase() === "sponsor"
-      );
+  // NEW: if nothing paid here but posted to room → CREDIT
+  if (!nonZero.length && sale.isPostToRoom) {
+    return "CREDIT";
+  }
 
-      if (
-        hasCredit &&
-        !hasCash &&
-        !hasUpi &&
-        !hasCard &&
-        !hasBank &&
-        !hasCheque
-      ) {
-        return "CREDIT";
-      }
+  // If still no payment info and not post to room
+  if (!nonZero.length) return "-";
 
-      if (
-        hasSponsor &&
-        !hasCash &&
-        !hasUpi &&
-        !hasCard &&
-        !hasBank &&
-        !hasCheque &&
-        !hasCredit
-      ) {
-        return "SPONSOR";
-      }
+  const hasCash = nonZero.some(
+    (s) => String(s?.type || "").toLowerCase() === "cash"
+  );
+  const hasUpi = nonZero.some(
+    (s) => String(s?.type || "").toLowerCase() === "upi"
+  );
+  const hasCard = nonZero.some(
+    (s) => String(s?.type || "").toLowerCase() === "card"
+  );
+  const hasBank = nonZero.some(
+    (s) => String(s?.type || "").toLowerCase() === "bank"
+  );
+  const hasCheque = nonZero.some(
+    (s) => String(s?.type || "").toLowerCase() === "cheque"
+  );
+  const hasCredit = nonZero.some(
+    (s) => String(s?.type || "").toLowerCase() === "credit"
+  );
+  const hasSponsor = nonZero.some(
+    (s) => String(s?.type || "").toLowerCase() === "sponsor"
+  );
 
-      if (hasCash && hasUpi && nonZero.length === 2) return "CASH/UPI";
-      if (hasCash && !hasUpi && !hasCard && !hasBank && !hasCheque)
-        return "CASH";
-      if (!hasCash && hasUpi && !hasCard && !hasBank && !hasCheque)
-        return "UPI";
-      if (hasCard && !hasCash && !hasUpi && !hasBank && !hasCheque)
-        return "CARD";
-      if (hasBank && !hasCash && !hasUpi && !hasCard && !hasCheque)
-        return "BANK";
-      if (hasCheque && !hasCash && !hasUpi && !hasCard && !hasBank)
-        return "CHEQUE";
+  if (
+    hasCredit &&
+    !hasCash &&
+    !hasUpi &&
+    !hasCard &&
+    !hasBank &&
+    !hasCheque
+  ) {
+    return "CREDIT";
+  }
 
-      return "CASH/UPI";
-    };
+  if (
+    hasSponsor &&
+    !hasCash &&
+    !hasUpi &&
+    !hasCard &&
+    !hasBank &&
+    !hasCheque &&
+    !hasCredit
+  ) {
+    return "SPONSOR";
+  }
+
+  if (hasCash && hasUpi && nonZero.length === 2) return "CASH/UPI";
+  if (hasCash && !hasUpi && !hasCard && !hasBank && !hasCheque) return "CASH";
+  if (!hasCash && hasUpi && !hasCard && !hasBank && !hasCheque) return "UPI";
+  if (hasCard && !hasCash && !hasUpi && !hasBank && !hasCheque) return "CARD";
+  if (hasBank && !hasCash && !hasUpi && !hasCard && !hasCheque) return "BANK";
+  if (hasCheque && !hasCash && !hasUpi && !hasCard && !hasBank)
+    return "CHEQUE";
+
+  return "CASH/UPI";
+};
 
     const formatDate = (d) => {
       if (!d) return "-";
@@ -4026,6 +4046,7 @@ export const getSalesRegister = async (req, res) => {
       );
     };
 
+    // ---------- KOT lookup unchanged ----------
     const convertedVoucherNumbers = sales
       .flatMap((sale) => sale.convertedFrom || [])
       .map((cf) => String(cf?.voucherNumber || "").trim())
@@ -4050,10 +4071,35 @@ export const getSalesRegister = async (req, res) => {
       kotDocs.map((kot) => [String(kot.voucherNumber).trim(), kot])
     );
 
+    // ---------- NEW: checkout -> agent (sponsor) map ----------
+    const checkInIds = sales
+      .map((s) => s.checkInId)
+      .filter((id) => !!id)
+      .map((id) => new mongoose.Types.ObjectId(id));
+
+    let sponsorMap = new Map();
+
+    if (checkInIds.length) {
+      const checkouts = await CheckOut.find({
+        cmp_id: new mongoose.Types.ObjectId(cmp_id),
+        checkInId: { $in: checkInIds },
+      })
+        .select("checkInId agentId")
+        .populate("agentId", "partyName")
+        .lean();
+
+      sponsorMap = new Map(
+        checkouts.map((co) => [
+          String(co.checkInId),
+          co.agentId?.partyName || "",
+        ])
+      );
+    }
+
+    // ---------- build rows ----------
     let rows = sales.map((sale) => {
       const items = sale.items || [];
 
-      // build itemDetails[] for frontend
       const itemDetails = items.map((item) => {
         const qty =
           Number(
@@ -4110,7 +4156,6 @@ export const getSalesRegister = async (req, res) => {
 
       const paymentType = derivePaymentType(sale);
 
-      // KOT / room / plan
       const converted = (sale.convertedFrom || [])[0];
       const voucherNumber = converted?.voucherNumber
         ? String(converted.voucherNumber).trim()
@@ -4151,6 +4196,12 @@ export const getSalesRegister = async (req, res) => {
         foodPlan = fp || "Direct";
       }
 
+      // NEW: sponsor from checkout agentId
+      let sponsorName = "";
+      if (sale.checkInId) {
+        sponsorName = sponsorMap.get(String(sale.checkInId)) || "";
+      }
+
       const customer =
         sale?.party?.partyName || sale?.party?.name || "CASH CUSTOMER";
 
@@ -4163,7 +4214,7 @@ export const getSalesRegister = async (req, res) => {
         foodPlan,
         paymentType,
         isCancelled: sale.isCancelled ? "CANCELLED" : "",
-        sponsorName: "",
+        sponsorName,
         remarks: sale.note || "",
         saleId: sale._id,
 
@@ -4177,13 +4228,13 @@ export const getSalesRegister = async (req, res) => {
       };
     });
 
-    // payment status filter at row level (if status provided)
     if (status) {
       const s = status.trim().toUpperCase();
-      rows = rows.filter((r) => (r.paymentType || "").toUpperCase() === s);
+      rows = rows.filter(
+        (r) => (r.paymentType || "").toUpperCase() === s
+      );
     }
 
-    // search filter
     if (search && search.trim() !== "") {
       const q = search.trim().toLowerCase();
       rows = rows.filter((r) => {

@@ -4,6 +4,7 @@ import { useSelector } from "react-redux";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import TitleDiv from "@/components/common/TitleDiv";
 
 const fmt = (n) =>
   (n || 0).toLocaleString("en-IN", {
@@ -275,6 +276,12 @@ export default function HotelReport() {
   };
 
   return (
+     <>
+                  <TitleDiv
+                    title={
+                      "Item Wise REGISTER"
+                    }
+                  />
     <div style={{ padding: 24, fontFamily: "Segoe UI, sans-serif" }}>
       <h2 style={{ marginBottom: 16 }}>Restaurant Date Wise Sales Items Report</h2>
 
@@ -463,5 +470,6 @@ export default function HotelReport() {
         </div>
       )}
     </div>
+    </>
   );
 }
