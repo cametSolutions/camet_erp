@@ -95,6 +95,14 @@ function BookingList() {
       customerName: "",
     },
   ]);
+    const ROOM_COLORS = [
+  { bg: "#EEEDFE", border: "#AFA9EC", icon: "#534AB7", text: "#3C3489" },
+  { bg: "#E1F5EE", border: "#5DCAA5", icon: "#0F6E56", text: "#085041" },
+  { bg: "#FAECE7", border: "#F0997B", icon: "#993C1D", text: "#712B13" },
+  { bg: "#E6F1FB", border: "#85B7EB", icon: "#185FA5", text: "#0C447C" },
+  { bg: "#FBEAF0", border: "#ED93B1", icon: "#993556", text: "#72243E" },
+];
+
   const [combinedSources, setCombinedSources] = useState([]);
   const [restaurantBillTransfer, setShowRestaurantBillTransfer] =
     useState(false);
@@ -1436,44 +1444,44 @@ const Row = ({ index, style }) => {
     <div style={style} className="border-b border-gray-200 bg-white">
       
       {/* 🔹 MAIN ROW */}
-      <div
+            <div
+        key={index}
+        // style={adjustedStyle}
         className={`
-          flex items-center px-4 py-3 text-sm
-          cursor-pointer transition-all duration-200 ease-in-out
-          ${
-            isCheckOutSelected(el) &&
-            location.pathname === "/sUsers/checkInList" &&
-            el.isHold
-              ? "bg-red-400 border-red-400 ring-2 ring-red-400"
-              : el.isHold && location.pathname === "/sUsers/checkInList"
-                ? "bg-red-100 border-blue-100"
-                : isCheckOutSelected(el) &&
-                    location.pathname === "/sUsers/checkInList"
-                  ? "bg-blue-500 border-blue-400 ring-2 ring-blue-200"
-                  : ""
-          }
-          ${isSelected(el) ? "bg-blue-50 border-blue-100" : "bg-white hover:animate-pulse"}
-        `}
+  flex items-center px-4 py-3 text-sm
+  border-b border-gray-200 
+  cursor-pointer transition-all duration-200 ease-in-out  
+  ${
+    isCheckOutSelected(el) &&
+    location.pathname === "/sUsers/checkInList" &&
+    el.isHold
+      ? "bg-red-400 border-red-400 ring-2 ring-red-400"
+      : el.isHold && location.pathname === "/sUsers/checkInList"
+        ? "bg-red-100 border-blue-100"
+        : isCheckOutSelected(el) && location.pathname === "/sUsers/checkInList"
+          ? "bg-blue-100 border-blue-400 ring-2 ring-blue-200"
+          : ""
+  }${isSelected(el) ? "bg-blue-50 border-blue-100" : "bg-white hover:animate-pulse"}
+`}
         onClick={() => {
           if (el?.checkInId?.status === "checkOut") return;
-
           let findOne = selectedCheckOut.find((item) => item._id === el._id);
           if (findOne) {
             setSelectedCheckOut((prev) =>
               prev.filter((item) => item._id !== el._id),
             );
+
             return;
           }
-
           let findIsHold = selectedCheckOut.find((item) => item.isHold);
           if (selectedCheckOut.length >= 1 && findIsHold && !el.isHold) return;
           if (selectedCheckOut.length >= 1 && !findIsHold && el.isHold) return;
-
-          if (selectedCheckOut.length === 0) {
+          if (selectedCheckOut.length == 0) {
             setSelectedCustomer(el.customerId?._id);
           }
 
           setSelectedCheckOut((prev) => [...prev, el]);
+          // setShowEnhancedCheckoutModal(!showEnhancedCheckoutModal)
         }}
       >
         <div className="hidden md:flex items-center w-full">
@@ -1611,17 +1619,41 @@ const Row = ({ index, style }) => {
 
       {/* 🔹 COMPACT EXPANDED ROW */}
       {expandedRows[el._id] && (
-        <div className="px-4 py-1 border-t border-gray-200 font-bold bg-white">
-          <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-600">
-            {el?.selectedRooms?.map((room, roomIndex) => (
-              <span key={room._id || roomIndex}>
-                {room?.roomName || "-"}{" "}
-                {room?.isSwapped ? "(SWAPPED)" : ""}
-              </span>
-            ))}
-          </div>
+<div className="px-4 py-1 border-t border-gray-100 bg-gray-50">
+  <div className="flex flex-wrap gap-2">
+    {el?.selectedRooms?.map((room, roomIndex) => {
+      const c = ROOM_COLORS[roomIndex % ROOM_COLORS.length];
+      return (
+        <div
+          key={room._id || roomIndex}
+          className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5"
+          style={{ background: c.bg, border: `0.5px solid ${c.border}` }}
+        >
+          <svg
+            width="12" height="12" viewBox="0 0 16 16"
+            fill="none" xmlns="http://www.w3.org/2000/svg"
+            style={{ flexShrink: 0 }}
+          >
+            <rect x="2" y="7" width="12" height="8" rx="1"
+              stroke={c.icon} strokeWidth="1.4" />
+            <path d="M5 7V5a3 3 0 0 1 6 0v2"
+              stroke={c.icon} strokeWidth="1.4" />
+          </svg>
+          <span className="text-[12px] font-medium" style={{ color: c.text }}>
+            {room?.roomName || "—"}
+          </span>
+          {room?.isSwapped && (
+            <span className="text-[11px] font-medium rounded px-1.5 py-0.5"
+              style={{ background: "#FAEEDA", color: "#633806", border: "0.5px solid #EF9F27" }}>
+              Swapped
+            </span>
+          )}
         </div>
-      )}
+      );
+    })}
+  </div>
+</div>
+)}
     </div>
   );
 };
