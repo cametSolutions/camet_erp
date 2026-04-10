@@ -264,7 +264,7 @@ const OccupancyCheckoutReport = () => {
      <>
           <TitleDiv
             title={
-            "Occupancy report"
+            "Occupancy  of rooms report"
             }
           />
     <div className="min-h-screen bg-slate-100 p-2 md:p-3 print:bg-white print:p-0">
