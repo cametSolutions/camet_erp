@@ -77,7 +77,8 @@ function BookingList() {
   const [cashOrBank, setCashOrBank] = useState({});
   const [checkinidsarray, setcheckinids] = useState(null);
   const [restaurantBaseSaleData, setRestaurantBaseSaleData] = useState({});
-  const [showEnhancedCheckoutModal, setShowEnhancedCheckoutModal] = useState(false);
+  const [showEnhancedCheckoutModal, setShowEnhancedCheckoutModal] =
+    useState(false);
   const [showEnhancedHoldModal, setShowEnhancedHoldModal] = useState(false);
   const [showPrintConfirmModal, setShowPrintConfirmModal] = useState(false);
   const [processedCheckoutData, setProcessedCheckoutData] = useState(null);
@@ -95,13 +96,13 @@ function BookingList() {
       customerName: "",
     },
   ]);
-    const ROOM_COLORS = [
-  { bg: "#EEEDFE", border: "#AFA9EC", icon: "#534AB7", text: "#3C3489" },
-  { bg: "#E1F5EE", border: "#5DCAA5", icon: "#0F6E56", text: "#085041" },
-  { bg: "#FAECE7", border: "#F0997B", icon: "#993C1D", text: "#712B13" },
-  { bg: "#E6F1FB", border: "#85B7EB", icon: "#185FA5", text: "#0C447C" },
-  { bg: "#FBEAF0", border: "#ED93B1", icon: "#993556", text: "#72243E" },
-];
+  const ROOM_COLORS = [
+    { bg: "#EEEDFE", border: "#AFA9EC", icon: "#534AB7", text: "#3C3489" },
+    { bg: "#E1F5EE", border: "#5DCAA5", icon: "#0F6E56", text: "#085041" },
+    { bg: "#FAECE7", border: "#F0997B", icon: "#993C1D", text: "#712B13" },
+    { bg: "#E6F1FB", border: "#85B7EB", icon: "#185FA5", text: "#0C447C" },
+    { bg: "#FBEAF0", border: "#ED93B1", icon: "#993556", text: "#72243E" },
+  ];
 
   const [combinedSources, setCombinedSources] = useState([]);
   const [restaurantBillTransfer, setShowRestaurantBillTransfer] =
@@ -122,23 +123,23 @@ function BookingList() {
 
   // const listRef = useRef();
 
-const getRowHeight = (index) => {
-  const item = bookings[index];
-  if (!item) return 2;
+  const getRowHeight = (index) => {
+    const item = bookings[index];
+    if (!item) return 2;
 
-  const roomCount = item?.selectedRooms?.length || 0;
+    const roomCount = item?.selectedRooms?.length || 0;
 
-  if (expandedRows[item._id]) {
-    return Math.max(100, 2 + roomCount );
-  }
+    if (expandedRows[item._id]) {
+      return Math.max(100, 2 + roomCount);
+    }
 
-  return 56;
-};
-useEffect(() => {
-  if (listRef.current) {
-    listRef.current.resetAfterIndex(0);
-  }
-}, [expandedRows]);
+    return 56;
+  };
+  useEffect(() => {
+    if (listRef.current) {
+      listRef.current.resetAfterIndex(0);
+    }
+  }, [expandedRows]);
   const getVoucherType = () => {
     const path = location.pathname;
     if (path.includes("Receipt")) return "receipt";
@@ -1361,6 +1362,7 @@ useEffect(() => {
 
     setCheckoutMode(checkoutMode === "single" ? "multiple" : "single");
   };
+
   console.log(checkoutMode);
   const TableHeader = () => (
     <div className="bg-gray-100 border-b border-gray-300 sticky top-0 z-10">
@@ -1412,42 +1414,50 @@ useEffect(() => {
 
   const isSelected = (id) => selectedIds.has(id);
 
-const Row = ({ index, style }) => {
-  if (!isItemLoaded(index)) {
-    return (
-      <div
-        style={style}
-        className="flex items-center px-4 py-3 border-b border-gray-200 bg-white"
-      >
-        <div className="animate-pulse md:flex w-full items-center">
-          <div className="w-10 h-4 bg-gray-200 rounded mr-4"></div>
-          <div className="w-24 h-4 bg-gray-200 rounded mr-4"></div>
-          <div className="w-32 h-4 bg-gray-200 rounded mr-4"></div>
+  const Row = ({ index, style }) => {
+    if (!isItemLoaded(index)) {
+      return (
+        <div
+          style={style}
+          className="flex items-center px-4 py-3 border-b border-gray-200 bg-white"
+        >
+          <div className="animate-pulse md:flex w-full items-center">
+            <div className="w-10 h-4 bg-gray-200 rounded mr-4"></div>
+            <div className="w-24 h-4 bg-gray-200 rounded mr-4"></div>
+            <div className="w-32 h-4 bg-gray-200 rounded mr-4"></div>
+          </div>
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
-  const el = bookings[index];
-  if (!el) return null;
+    const el = bookings[index];
+    if (!el) return null;
 
-  const isCheckOutSelected = (order) => {
-    return selectedCheckOut.find((item) => item._id === order._id);
-  };
+    const findSwappedRooms = (room) => {
+      let specifcSwap = el.roomSwapHistory.find(
+        (swap) => swap.fromRoomId === room.roomId,
+      );
+      let toRoom =
+        specifcSwap &&
+        el.selectedRooms.find((room) => room.roomId === specifcSwap.toRoomId);
+      return toRoom ? toRoom.roomName : "";
+    };
+    const isCheckOutSelected = (order) => {
+      return selectedCheckOut.find((item) => item._id === order._id);
+    };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return "-";
-    return new Date(dateString).toLocaleDateString("en-GB");
-  };
+    const formatDate = (dateString) => {
+      if (!dateString) return "-";
+      return new Date(dateString).toLocaleDateString("en-GB");
+    };
 
-  return (
-    <div style={style} className="border-b border-gray-200 bg-white">
-      
-      {/* 🔹 MAIN ROW */}
-            <div
-        key={index}
-        // style={adjustedStyle}
-        className={`
+    return (
+      <div style={style} className="border-b border-gray-200 bg-white">
+        {/* 🔹 MAIN ROW */}
+        <div
+          key={index}
+          // style={adjustedStyle}
+          className={`
   flex items-center px-4 py-3 text-sm
   border-b border-gray-200 
   cursor-pointer transition-all duration-200 ease-in-out  
@@ -1463,290 +1473,319 @@ const Row = ({ index, style }) => {
           : ""
   }${isSelected(el) ? "bg-blue-50 border-blue-100" : "bg-white hover:animate-pulse"}
 `}
-        onClick={() => {
-          if (el?.checkInId?.status === "checkOut") return;
-          let findOne = selectedCheckOut.find((item) => item._id === el._id);
-          if (findOne) {
-            setSelectedCheckOut((prev) =>
-              prev.filter((item) => item._id !== el._id),
-            );
+          onClick={() => {
+            if (el?.checkInId?.status === "checkOut") return;
+            let findOne = selectedCheckOut.find((item) => item._id === el._id);
+            if (findOne) {
+              setSelectedCheckOut((prev) =>
+                prev.filter((item) => item._id !== el._id),
+              );
 
-            return;
-          }
-          let findIsHold = selectedCheckOut.find((item) => item.isHold);
-          if (selectedCheckOut.length >= 1 && findIsHold && !el.isHold) return;
-          if (selectedCheckOut.length >= 1 && !findIsHold && el.isHold) return;
-          if (selectedCheckOut.length == 0) {
-            setSelectedCustomer(el.customerId?._id);
-          }
+              return;
+            }
+            let findIsHold = selectedCheckOut.find((item) => item.isHold);
+            if (selectedCheckOut.length >= 1 && findIsHold && !el.isHold)
+              return;
+            if (selectedCheckOut.length >= 1 && !findIsHold && el.isHold)
+              return;
+            if (selectedCheckOut.length == 0) {
+              setSelectedCustomer(el.customerId?._id);
+            }
 
-          setSelectedCheckOut((prev) => [...prev, el]);
-          // setShowEnhancedCheckoutModal(!showEnhancedCheckoutModal)
-        }}
-      >
-        <div className="hidden md:flex items-center w-full">
-
-          <div className="w-10 text-center text-gray-700 font-medium">
-            {index + 1}
-          </div>
-
-          <div className="w-28 text-center text-gray-600 text-xs">
-            {formatDate(el?.bookingDate)}
-          </div>
-
-          <div className="w-32 text-center text-gray-700 font-semibold text-xs">
-            {el?.voucherNumber || "-"}
-          </div>
-
-          <div
-            className="w-40 text-center text-gray-700 truncate text-xs"
-            title={el?.customerId?.partyName}
-          >
-            {el?.customerId?.partyName || "-"}
-          </div>
-
-          {/* 🔹 ROOM CLICK */}
-          <div className="w-20 text-center text-gray-600 font-medium">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleRowExpand(el._id);
-              }}
-              className="text-xs text-blue-600 hover:text-blue-800 underline"
-            >
-              {el?.selectedRooms?.length > 1
-                ? `${el.selectedRooms.length} Room${el.selectedRooms.length > 1 ? "s" : ""}`
-                : `${el.selectedRooms?.[0]?.roomName}`}
-            </button>
-          </div>
-
-          <div className="w-36 text-center text-gray-600 text-xs">
-            {formatDate(el?.arrivalDate)}
-            <span>({el.arrivalTime})</span>
-          </div>
-
-          <div className="w-28 text-center text-gray-600 text-xs">
-            ₹{el?.selectedRooms?.[0]?.priceLevelRate || "0.00"}
-            {el.selectedRooms.length > 1 && "....."}
-          </div>
-
-          <div className="w-20 text-center text-gray-600 font-medium">
-            {calculateTotalPax(el?.additionalPaxDetails, el?.selectedRooms)}
-          </div>
-
-          <div className="w-28 text-center text-gray-600 text-xs">
-            {el?.foodPlan?.[0]?.foodPlan || "0.00"}
-          </div>
-
-          <div className="w-28 text-center text-gray-600 text-xs">
-            ₹{el?.selectedRooms?.[0]?.foodPlanAmountWithOutTax || "0.00"}
-          </div>
-
-          <div className="w-28 text-center text-gray-600 text-xs font-medium">
-            {getTravelAgentName(el) || el?.agentId?.partyName}
-          </div>
-
-          {isCheckoutList && (
-            <div className="w-28 text-center text-gray-600 text-xs font-medium">
-              {getPaymentStatusDisplay(el?.paymenttypeDetails)}
-            </div>
-          )}
-
-          <div className="w-24 text-center text-gray-600 text-xs">
-            ₹
-            {el?.advanceAmount
-              ? formatCurrency(
-                  el.bookingId
-                    ? Number(el.bookingId?.advanceAmount || 0) +
-                        Number(el.advanceAmount)
-                    : el.advanceAmount,
-                ).replace("₹", "")
-              : "0.00"}
-          </div>
-
-          <div className="w-28 text-center text-gray-800 font-semibold text-xs">
-            ₹
-            {el?.grandTotal
-              ? formatCurrency(el.roomTotal).replace("₹", "")
-              : "00.00"}
-          </div>
-
-          {/* 🔹 ACTION BUTTONS */}
-          <div className="w-32 flex items-center justify-center gap-1">
-            {((location.pathname === "/sUsers/bookingList" &&
-              el?.status != "checkIn") ||
-              (el?.status != "checkOut" &&
-                location.pathname != "/sUsers/checkInList" &&
-                location.pathname != "/sUsers/checkOutList")) && (
-              <button
-                onClick={(e) => handleCheckin(e, el)}
-                className="bg-black hover:bg-blue-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
-              >
-                CheckIn
-              </button>
-            )}
-            {location.pathname === "/sUsers/checkInList" && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate("/sUsers/CheckInPrint", {
-                    state: {
-                      selectedCheckOut: [el],
-                      customerId: el.customerId._id,
-                    },
-                  });
-                }}
-                className="bg-purple-500 hover:bg-purple-600 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
-                title="Print Registration Card"
-              >
-                Print
-              </button>
-            )}
-            {el?.status === "checkIn" &&
-              location.pathname === "/sUsers/bookingList" && (
-                <button
-                  onClick={(e) => e.stopPropagation()}
-                  className="bg-green-600 hover:bg-green-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
-                >
-                  CheckedIn
-                </button>
-              )}
-            {el?.status === "checkOut" &&
-              location.pathname === "/sUsers/checkInList" && (
-                <button
-                  onClick={(e) => e.stopPropagation()}
-                  className="bg-green-600 hover:bg-green-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
-                >
-                  CheckedOut
-                </button>
-              )}
-            {location.pathname === "/sUsers/checkOutList" && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedCustomer(el.customerId?._id);
-                  setSelectedCheckOut([el]);
-                  const hasPrint1 = configurations[0]?.defaultPrint?.print1;
-                  console.log(hasPrint1);
-
-                  navigate(
-                    hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint",
-                    {
-                      state: {
-                        selectedCheckOut: bookings?.filter(
-                          (item) => item.voucherNumber === el.voucherNumber,
-                        ),
-                        customerId: el.customerId?._id,
-                        isForPreview: false,
-                      },
-                    },
-                  );
-                }}
-                className="bg-green-600 hover:bg-green-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
-              >
-                Print
-              </button>
-            )}
-            {(el?.status != "checkIn" &&
-              location.pathname == "/sUsers/bookingList") ||
-            (el?.status != "checkOut" &&
-              location.pathname == "/sUsers/checkInList") ? (
-              <div className="flex items-center gap-1">
-                <FaEdit
-                  title="Edit booking details"
-                  className="text-blue-500 cursor-pointer hover:text-blue-700 text-sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (location.pathname === "/sUsers/bookingList") {
-                      navigate("/sUsers/editBooking", {
-                        state: el,
-                      });
-                    } else if (location.pathname === "/sUsers/checkInList") {
-                      navigate("/sUsers/editChecking", {
-                        state: el,
-                      });
-                    } else {
-                      navigate("/sUsers/editChecking", {
-                        state: el,
-                      });
-                    }
-                  }}
-                />
-
-                <MdDelete
-                  title="Delete booking details"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDelete(el._id);
-                  }}
-                  className="text-red-500 cursor-pointer hover:text-red-700 text-sm"
-                />
-              </div>
-            ) : null}
-            {location.pathname === "/sUsers/bookingList" &&
-              el?.status !== "checkIn" &&
-              el?.status !== "cancelled" && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleCancelBooking(el._id, el.voucherNumber);
-                  }}
-                  className="bg-amber-500 hover:bg-amber-600 text-white font-semibold py-1 px-2 rounded text-xs transition duration-300"
-                  title="Cancel booking"
-                >
-                  <MdCancel />
-                </button>
-              )}{" "}
-            {el?.status === "cancelled" && (
-              <span className="bg-red-100 text-red-700 font-semibold py-1 px-3 rounded text-xs">
-                Cancelled
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* 🔹 COMPACT EXPANDED ROW */}
-      {expandedRows[el._id] && (
-<div className="px-4 py-1 border-t border-gray-100 bg-gray-50">
-  <div className="flex flex-wrap gap-2">
-    {el?.selectedRooms?.map((room, roomIndex) => {
-      const c = ROOM_COLORS[roomIndex % ROOM_COLORS.length];
-      return (
-        <div
-          key={room._id || roomIndex}
-          className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5"
-          style={{ background: c.bg, border: `0.5px solid ${c.border}` }}
+            setSelectedCheckOut((prev) => [...prev, el]);
+            // setShowEnhancedCheckoutModal(!showEnhancedCheckoutModal)
+          }}
         >
-          <svg
-            width="12" height="12" viewBox="0 0 16 16"
-            fill="none" xmlns="http://www.w3.org/2000/svg"
-            style={{ flexShrink: 0 }}
-          >
-            <rect x="2" y="7" width="12" height="8" rx="1"
-              stroke={c.icon} strokeWidth="1.4" />
-            <path d="M5 7V5a3 3 0 0 1 6 0v2"
-              stroke={c.icon} strokeWidth="1.4" />
-          </svg>
-          <span className="text-[12px] font-medium" style={{ color: c.text }}>
-            {room?.roomName || "—"}
-          </span>
-          {room?.isSwapped && (
-            <span className="text-[11px] font-medium rounded px-1.5 py-0.5"
-              style={{ background: "#FAEEDA", color: "#633806", border: "0.5px solid #EF9F27" }}>
-              Swapped
-            </span>
-          )}
+          <div className="hidden md:flex items-center w-full">
+            <div className="w-10 text-center text-gray-700 font-medium">
+              {index + 1}
+            </div>
+
+            <div className="w-28 text-center text-gray-600 text-xs">
+              {formatDate(el?.bookingDate)}
+            </div>
+
+            <div className="w-32 text-center text-gray-700 font-semibold text-xs">
+              {el?.voucherNumber || "-"}
+            </div>
+
+            <div
+              className="w-40 text-center text-gray-700 truncate text-xs"
+              title={el?.customerId?.partyName}
+            >
+              {el?.customerId?.partyName || "-"}
+            </div>
+
+            {/* 🔹 ROOM CLICK */}
+            <div className="w-20 text-center text-gray-600 font-medium">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleRowExpand(el._id);
+                }}
+                className="text-xs text-blue-600 hover:text-blue-800 underline"
+              >
+                {el?.selectedRooms?.length > 1
+                  ? `${el.selectedRooms.length} Room${el.selectedRooms.length > 1 ? "s" : ""}`
+                  : `${el.selectedRooms?.[0]?.roomName}`}
+              </button>
+            </div>
+
+            <div className="w-36 text-center text-gray-600 text-xs">
+              {formatDate(el?.arrivalDate)}
+              <span>({el.arrivalTime})</span>
+            </div>
+
+            <div className="w-28 text-center text-gray-600 text-xs">
+              ₹{el?.selectedRooms?.[0]?.priceLevelRate || "0.00"}
+              {el.selectedRooms.length > 1 && "....."}
+            </div>
+
+            <div className="w-20 text-center text-gray-600 font-medium">
+              {calculateTotalPax(el?.additionalPaxDetails, el?.selectedRooms)}
+            </div>
+
+            <div className="w-28 text-center text-gray-600 text-xs">
+              {el?.foodPlan?.[0]?.foodPlan || "0.00"}
+            </div>
+
+            <div className="w-28 text-center text-gray-600 text-xs">
+              ₹{el?.selectedRooms?.[0]?.foodPlanAmountWithOutTax || "0.00"}
+            </div>
+
+            <div className="w-28 text-center text-gray-600 text-xs font-medium">
+              {getTravelAgentName(el) || el?.agentId?.partyName}
+            </div>
+
+            {isCheckoutList && (
+              <div className="w-28 text-center text-gray-600 text-xs font-medium">
+                {getPaymentStatusDisplay(el?.paymenttypeDetails)}
+              </div>
+            )}
+
+            <div className="w-24 text-center text-gray-600 text-xs">
+              ₹
+              {el?.advanceAmount
+                ? formatCurrency(
+                    el.bookingId
+                      ? Number(el.bookingId?.advanceAmount || 0) +
+                          Number(el.advanceAmount)
+                      : el.advanceAmount,
+                  ).replace("₹", "")
+                : "0.00"}
+            </div>
+
+            <div className="w-28 text-center text-gray-800 font-semibold text-xs">
+              ₹
+              {el?.grandTotal
+                ? formatCurrency(el.roomTotal).replace("₹", "")
+                : "00.00"}
+            </div>
+
+            {/* 🔹 ACTION BUTTONS */}
+            <div className="w-32 flex items-center justify-center gap-1">
+              {((location.pathname === "/sUsers/bookingList" &&
+                el?.status != "checkIn") ||
+                (el?.status != "checkOut" &&
+                  location.pathname != "/sUsers/checkInList" &&
+                  location.pathname != "/sUsers/checkOutList")) && (
+                <button
+                  onClick={(e) => handleCheckin(e, el)}
+                  className="bg-black hover:bg-blue-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
+                >
+                  CheckIn
+                </button>
+              )}
+              {location.pathname === "/sUsers/checkInList" && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate("/sUsers/CheckInPrint", {
+                      state: {
+                        selectedCheckOut: [el],
+                        customerId: el.customerId._id,
+                      },
+                    });
+                  }}
+                  className="bg-purple-500 hover:bg-purple-600 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
+                  title="Print Registration Card"
+                >
+                  Print
+                </button>
+              )}
+              {el?.status === "checkIn" &&
+                location.pathname === "/sUsers/bookingList" && (
+                  <button
+                    onClick={(e) => e.stopPropagation()}
+                    className="bg-green-600 hover:bg-green-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
+                  >
+                    CheckedIn
+                  </button>
+                )}
+              {el?.status === "checkOut" &&
+                location.pathname === "/sUsers/checkInList" && (
+                  <button
+                    onClick={(e) => e.stopPropagation()}
+                    className="bg-green-600 hover:bg-green-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
+                  >
+                    CheckedOut
+                  </button>
+                )}
+              {location.pathname === "/sUsers/checkOutList" && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedCustomer(el.customerId?._id);
+                    setSelectedCheckOut([el]);
+                    const hasPrint1 = configurations[0]?.defaultPrint?.print1;
+                    console.log(hasPrint1);
+
+                    navigate(
+                      hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint",
+                      {
+                        state: {
+                          selectedCheckOut: bookings?.filter(
+                            (item) => item.voucherNumber === el.voucherNumber,
+                          ),
+                          customerId: el.customerId?._id,
+                          isForPreview: false,
+                        },
+                      },
+                    );
+                  }}
+                  className="bg-green-600 hover:bg-green-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
+                >
+                  Print
+                </button>
+              )}
+              {(el?.status != "checkIn" &&
+                location.pathname == "/sUsers/bookingList") ||
+              (el?.status != "checkOut" &&
+                location.pathname == "/sUsers/checkInList") ? (
+                <div className="flex items-center gap-1">
+                  <FaEdit
+                    title="Edit booking details"
+                    className="text-blue-500 cursor-pointer hover:text-blue-700 text-sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (location.pathname === "/sUsers/bookingList") {
+                        navigate("/sUsers/editBooking", {
+                          state: el,
+                        });
+                      } else if (location.pathname === "/sUsers/checkInList") {
+                        navigate("/sUsers/editChecking", {
+                          state: el,
+                        });
+                      } else {
+                        navigate("/sUsers/editChecking", {
+                          state: el,
+                        });
+                      }
+                    }}
+                  />
+
+                  <MdDelete
+                    title="Delete booking details"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(el._id);
+                    }}
+                    className="text-red-500 cursor-pointer hover:text-red-700 text-sm"
+                  />
+                </div>
+              ) : null}
+              {location.pathname === "/sUsers/bookingList" &&
+                el?.status !== "checkIn" &&
+                el?.status !== "cancelled" && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCancelBooking(el._id, el.voucherNumber);
+                    }}
+                    className="bg-amber-500 hover:bg-amber-600 text-white font-semibold py-1 px-2 rounded text-xs transition duration-300"
+                    title="Cancel booking"
+                  >
+                    <MdCancel />
+                  </button>
+                )}{" "}
+              {el?.status === "cancelled" && (
+                <span className="bg-red-100 text-red-700 font-semibold py-1 px-3 rounded text-xs">
+                  Cancelled
+                </span>
+              )}
+            </div>
+          </div>
         </div>
-      );
-    })}
-  </div>
-</div>
-)}
-    </div>
-  );
-};
+
+        {/* 🔹 COMPACT EXPANDED ROW */}
+        {expandedRows[el._id] && (
+          <div className="px-4 py-1 border-t border-gray-100 bg-gray-50">
+            <div className="flex flex-wrap gap-2">
+              {el?.selectedRooms?.map((room, roomIndex) => {
+                const c = ROOM_COLORS[roomIndex % ROOM_COLORS.length];
+                return (
+                  <div
+                    key={room._id || roomIndex}
+                    className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5"
+                    style={{
+                      background: c.bg,
+                      border: `0.5px solid ${c.border}`,
+                    }}
+                  >
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                      style={{ flexShrink: 0 }}
+                    >
+                      <rect
+                        x="2"
+                        y="7"
+                        width="12"
+                        height="8"
+                        rx="1"
+                        stroke={c.icon}
+                        strokeWidth="1.4"
+                      />
+                      <path
+                        d="M5 7V5a3 3 0 0 1 6 0v2"
+                        stroke={c.icon}
+                        strokeWidth="1.4"
+                      />
+                    </svg>
+                    <span
+                      className="text-[12px] font-medium"
+                      style={{ color: c.text }}
+                    >
+                      {room?.roomName || "—"}
+                    </span>
+                    {room?.isSwapped && (
+                      <span
+                        className="text-[11px] font-medium rounded px-1.5 py-0.5"
+                        style={{
+                          background: "#FAEEDA",
+                          color: "#633806",
+                          border: "0.5px solid #EF9F27",
+                        }}
+                      >
+                        Swapped to{" "}
+                        <span className="text-black animate-pulse">
+                          {findSwappedRooms(room)}
+                        </span>
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const handleCloseBasedOnDate = () => {
     console.log("hh", processedCheckoutData);
@@ -2657,14 +2696,14 @@ const Row = ({ index, style }) => {
               >
                 {({ onItemsRendered, ref }) => (
                   <List
-  ref={listRef}
-  height={listHeight}
-  itemCount={hasMore ? bookings.length + 1 : bookings.length}
-  itemSize={getRowHeight}
-  width="100%"
->
-  {Row}
-</List>
+                    ref={listRef}
+                    height={listHeight}
+                    itemCount={hasMore ? bookings.length + 1 : bookings.length}
+                    itemSize={getRowHeight}
+                    width="100%"
+                  >
+                    {Row}
+                  </List>
                 )}
               </InfiniteLoader>
             </div>
