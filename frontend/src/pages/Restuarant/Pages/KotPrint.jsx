@@ -78,6 +78,12 @@ const KOTPrintFormat = () => {
             <span className="font-bold mr-2">Table:</span>
             <span>{kotData.tableNumber}</span>
           </div>
+          {kotData.roomId.roomName && (
+          <div className="flex items-center">
+            <span className="font-bold mr-2">Room:</span>
+            <span>{kotData.roomId.roomName}</span>
+          </div>
+          )}
         </div>
         
         {/* Items Table */}

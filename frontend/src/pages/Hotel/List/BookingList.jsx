@@ -22,7 +22,7 @@ import {
   setPrintDetails,
   removeAll,
 } from "../../../../slices/hotelSlices/paymentSlice.js";
-import { FixedSizeList as List } from "react-window";
+import { VariableSizeList as List } from "react-window";
 import InfiniteLoader from "react-window-infinite-loader";
 import { useLocation } from "react-router-dom";
 import SearchBar from "@/components/common/SearchBar";
@@ -77,8 +77,7 @@ function BookingList() {
   const [cashOrBank, setCashOrBank] = useState({});
   const [checkinidsarray, setcheckinids] = useState(null);
   const [restaurantBaseSaleData, setRestaurantBaseSaleData] = useState({});
-  const [showEnhancedCheckoutModal, setShowEnhancedCheckoutModal] =
-    useState(false);
+  const [showEnhancedCheckoutModal, setShowEnhancedCheckoutModal] = useState(false);
   const [showEnhancedHoldModal, setShowEnhancedHoldModal] = useState(false);
   const [showPrintConfirmModal, setShowPrintConfirmModal] = useState(false);
   const [processedCheckoutData, setProcessedCheckoutData] = useState(null);
@@ -97,12 +96,41 @@ function BookingList() {
     },
   ]);
   const [combinedSources, setCombinedSources] = useState([]);
-  const [restaurantBillTransfer,setShowRestaurantBillTransfer] = useState(false);
+  const [restaurantBillTransfer, setShowRestaurantBillTransfer] =
+    useState(false);
   const { roomId, roomName, filterByRoom } = location.state || {};
   const paymentDetails = useSelector((state) => state.paymentSlice);
   const { _id: cmp_id, configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg,
   );
+  const [expandedRows, setExpandedRows] = useState({});
+
+  const toggleRowExpand = (id) => {
+    setExpandedRows((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
+
+  // const listRef = useRef();
+
+const getRowHeight = (index) => {
+  const item = bookings[index];
+  if (!item) return 2;
+
+  const roomCount = item?.selectedRooms?.length || 0;
+
+  if (expandedRows[item._id]) {
+    return Math.max(100, 2 + roomCount );
+  }
+
+  return 56;
+};
+useEffect(() => {
+  if (listRef.current) {
+    listRef.current.resetAfterIndex(0);
+  }
+}, [expandedRows]);
   const getVoucherType = () => {
     const path = location.pathname;
     if (path.includes("Receipt")) return "receipt";
@@ -1376,195 +1404,80 @@ function BookingList() {
 
   const isSelected = (id) => selectedIds.has(id);
 
-  const Row = ({ index, style }) => {
-    if (!isItemLoaded(index)) {
-      return (
-        <div
-          style={style}
-          className="flex items-center px-4 py-3 border-b border-gray-200 bg-white"
-        >
-          <div className="animate-pulse flex w-full items-center md:hidden ">
-            <div className="w-10 h-4 bg-gray-200 rounded mr-4"></div>
-            <div className="w-28 h-4 bg-gray-200 rounded mr-4"></div>
-            <div className="w-32 h-4 bg-gray-200 rounded mr-4"></div>
-          </div>
-          <div className="animate-pulse md:flex w-full items-center">
-            <div className="w-10 h-4 bg-gray-200 rounded mr-4"></div>
-            <div className="w-24 h-4 bg-gray-200 rounded mr-4"></div>
-            <div className="w-32 h-4 bg-gray-200 rounded mr-4"></div>
-            <div className="w-40 h-4 bg-gray-200 rounded mr-4"></div>
-            <div className="w-20 h-4 bg-gray-200 rounded mr-4"></div>
-            <div className="w-36 h-4 bg-gray-200 rounded mr-4"></div>
-            <div className="w-28 h-4 bg-gray-200 rounded mr-4"></div>
-            <div className="w-20 h-4 bg-gray-200 rounded mr-4"></div>
-            <div className="w-28 h-4 bg-gray-200 rounded mr-4"></div>
-            <div className="w-24 h-4 bg-gray-200 rounded mr-4"></div>
-            <div className="w-28 h-4 bg-gray-200 rounded mr-4"></div>
-            <div className="w-32 h-4 bg-gray-200 rounded"></div>
-          </div>
-        </div>
-      );
-    }
-
-    const el = bookings[index];
-    if (!el) return null;
-
-    const adjustedStyle = {
-      ...style,
-      height: "56px",
-    };
-
-    const isCheckOutSelected = (order) => {
-      return selectedCheckOut.find((item) => item._id === order._id);
-    };
-
-    const formatDate = (dateString) => {
-      if (!dateString) return "-";
-      return new Date(dateString).toLocaleDateString("en-GB");
-    };
-
-    console.log(el);
-
+const Row = ({ index, style }) => {
+  if (!isItemLoaded(index)) {
     return (
       <div
-        key={index}
-        style={adjustedStyle}
+        style={style}
+        className="flex items-center px-4 py-3 border-b border-gray-200 bg-white"
+      >
+        <div className="animate-pulse md:flex w-full items-center">
+          <div className="w-10 h-4 bg-gray-200 rounded mr-4"></div>
+          <div className="w-24 h-4 bg-gray-200 rounded mr-4"></div>
+          <div className="w-32 h-4 bg-gray-200 rounded mr-4"></div>
+        </div>
+      </div>
+    );
+  }
+
+  const el = bookings[index];
+  if (!el) return null;
+
+  const isCheckOutSelected = (order) => {
+    return selectedCheckOut.find((item) => item._id === order._id);
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "-";
+    return new Date(dateString).toLocaleDateString("en-GB");
+  };
+
+  return (
+    <div style={style} className="border-b border-gray-200 bg-white">
+      
+      {/* 🔹 MAIN ROW */}
+      <div
         className={`
-  flex items-center px-4 py-3 text-sm
-  border-b border-gray-200 
-  cursor-pointer transition-all duration-200 ease-in-out  
-  ${
-    isCheckOutSelected(el) &&
-    location.pathname === "/sUsers/checkInList" &&
-    el.isHold
-      ? "bg-red-400 border-red-400 ring-2 ring-red-400"
-      : el.isHold && location.pathname === "/sUsers/checkInList"
-        ? "bg-red-100 border-blue-100"
-        : isCheckOutSelected(el) && location.pathname === "/sUsers/checkInList"
-          ? "bg-blue-100 border-blue-400 ring-2 ring-blue-200"
-          : ""
-  }${isSelected(el) ? "bg-blue-50 border-blue-100" : "bg-white hover:animate-pulse"}
-`}
+          flex items-center px-4 py-3 text-sm
+          cursor-pointer transition-all duration-200 ease-in-out
+          ${
+            isCheckOutSelected(el) &&
+            location.pathname === "/sUsers/checkInList" &&
+            el.isHold
+              ? "bg-red-400 border-red-400 ring-2 ring-red-400"
+              : el.isHold && location.pathname === "/sUsers/checkInList"
+                ? "bg-red-100 border-blue-100"
+                : isCheckOutSelected(el) &&
+                    location.pathname === "/sUsers/checkInList"
+                  ? "bg-blue-500 border-blue-400 ring-2 ring-blue-200"
+                  : ""
+          }
+          ${isSelected(el) ? "bg-blue-50 border-blue-100" : "bg-white hover:animate-pulse"}
+        `}
         onClick={() => {
           if (el?.checkInId?.status === "checkOut") return;
+
           let findOne = selectedCheckOut.find((item) => item._id === el._id);
           if (findOne) {
             setSelectedCheckOut((prev) =>
               prev.filter((item) => item._id !== el._id),
             );
-
             return;
           }
+
           let findIsHold = selectedCheckOut.find((item) => item.isHold);
           if (selectedCheckOut.length >= 1 && findIsHold && !el.isHold) return;
           if (selectedCheckOut.length >= 1 && !findIsHold && el.isHold) return;
-          if (selectedCheckOut.length == 0) {
+
+          if (selectedCheckOut.length === 0) {
             setSelectedCustomer(el.customerId?._id);
           }
 
           setSelectedCheckOut((prev) => [...prev, el]);
-          // setShowEnhancedCheckoutModal(!showEnhancedCheckoutModal)
         }}
       >
-        <div className="flex justify-between items-center w-full md:hidden text-xs">
-          <div className="text-gray-700 font-medium">{index + 1}</div>
-          <div className="text-gray-700 font-semibold">
-            {el?.voucherNumber || "-"}
-          </div>
-          <div className="text-gray-700 truncate">
-            {el?.customerId?.partyName || "-"}
-          </div>
-          <div className="w-32 flex items-center justify-center gap-1">
-            {((location.pathname === "/sUsers/bookingList" &&
-              el?.status != "checkIn" &&
-              el?.status != "cancelled") ||
-              (el?.status != "checkOut" &&
-                location.pathname === "/sUsers/checkInList") ||
-              (Number(el?.balanceToPay) > 0 &&
-                location.pathname === "/sUsers/checkOutList")) && (
-              <button
-                onClick={(e) => handleCheckin(e, el)}
-                className="bg-black hover:bg-blue-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
-              >
-                {location.pathname === "/sUsers/checkInList"
-                  ? "Checkout"
-                  : location.pathname === "/sUsers/checkOutList"
-                    ? "Close"
-                    : "CheckIn"}
-              </button>
-            )}
-
-            {((el?.status === "checkIn" &&
-              location.pathname === "/sUsers/bookingList") ||
-              (el?.status === "checkOut" &&
-                location.pathname === "/sUsers/checkInList") ||
-              (Number(el?.balanceToPay) <= 0 &&
-                location.pathname === "/sUsers/checkOutList")) && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (location.pathname === "/sUsers/checkOutList") {
-                    setSelectedCustomer(el.customerId?._id);
-                    setSelectedCheckOut([el]);
-                    navigate("sUsers/BillPrint", {
-                      state: {
-                        selectedCheckOut: bookings?.filter(
-                          (item) => item.voucherNumber === el.voucherNumber,
-                        ),
-                        customerId: el.customerId?._id,
-                        isForPreview: false,
-                      },
-                    });
-                  }
-                }}
-                className="bg-green-600 hover:bg-green-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
-              >
-                {location.pathname === "/sUsers/checkInList" ||
-                location.pathname === "/sUsers/bookingList"
-                  ? "CheckedOut"
-                  : "Print"}
-              </button>
-            )}
-
-            {(el?.status != "checkIn" &&
-              location.pathname == "/sUsers/bookingList") ||
-            (el?.status != "checkOut" &&
-              location.pathname == "/sUsers/checkInList") ? (
-              <div className="flex items-center gap-1">
-                <FaEdit
-                  title="Edit booking details"
-                  className="text-blue-500 cursor-pointer hover:text-blue-700 text-sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (location.pathname === "/sUsers/bookingList") {
-                      navigate("/sUsers/editBooking", {
-                        state: el,
-                      });
-                    } else if (location.pathname === "/sUsers/checkInList") {
-                      navigate("/sUsers/editChecking", {
-                        state: el,
-                      });
-                    } else {
-                      navigate("/sUsers/editChecking", {
-                        state: el,
-                      });
-                    }
-                  }}
-                />
-
-                <MdDelete
-                  title="Delete booking details"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDelete(el._id);
-                  }}
-                  className="text-red-500 cursor-pointer hover:text-red-700 text-sm"
-                />
-              </div>
-            ) : null}
-          </div>
-        </div>
         <div className="hidden md:flex items-center w-full">
+
           <div className="w-10 text-center text-gray-700 font-medium">
             {index + 1}
           </div>
@@ -1584,10 +1497,20 @@ function BookingList() {
             {el?.customerId?.partyName || "-"}
           </div>
 
-          <div className="w-24 text-center text-gray-600 font-medium">
-            {/* {el?.selectedRooms?.map((r) => r.roomName).join(", ") || "-"} */}
-            {el?.selectedRooms[0]?.roomName || "-"}
-            {el.selectedRooms.length > 1 && "....."}
+          {/* 🔹 ROOM CLICK */}
+          <div className="w-20 text-center text-gray-600 font-medium">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleRowExpand(el._id);
+              }}
+              className="text-xs text-blue-600 hover:text-blue-800 underline"
+            >
+              {el?.selectedRooms?.length > 1
+                ? `${el.selectedRooms.length} Room${el.selectedRooms.length > 1 ? "s" : ""}`
+                : `${el.selectedRooms?.[0]?.roomName}`}
+            </button>
           </div>
 
           <div className="w-36 text-center text-gray-600 text-xs">
@@ -1596,31 +1519,32 @@ function BookingList() {
           </div>
 
           <div className="w-28 text-center text-gray-600 text-xs">
-            ₹{el?.selectedRooms[0]?.priceLevelRate || "0.00"}
+            ₹{el?.selectedRooms?.[0]?.priceLevelRate || "0.00"}
             {el.selectedRooms.length > 1 && "....."}
-            {/* {el?.selectedRooms?.map((r) => r.priceLevelRate).join(",") ||
-              "0.00"} */}
           </div>
 
           <div className="w-20 text-center text-gray-600 font-medium">
-            {/* {el?.selectedRooms?.[0]?.pax || 0} */}
-            {/*Total pax count indlcuding additionalpax */}
             {calculateTotalPax(el?.additionalPaxDetails, el?.selectedRooms)}
           </div>
+
           <div className="w-28 text-center text-gray-600 text-xs">
             {el?.foodPlan?.[0]?.foodPlan || "0.00"}
           </div>
+
           <div className="w-28 text-center text-gray-600 text-xs">
             ₹{el?.selectedRooms?.[0]?.foodPlanAmountWithOutTax || "0.00"}
           </div>
+
           <div className="w-28 text-center text-gray-600 text-xs font-medium">
             {getTravelAgentName(el) || el?.agentId?.partyName}
           </div>
+
           {isCheckoutList && (
             <div className="w-28 text-center text-gray-600 text-xs font-medium">
               {getPaymentStatusDisplay(el?.paymenttypeDetails)}
             </div>
           )}
+
           <div className="w-24 text-center text-gray-600 text-xs">
             ₹
             {el?.advanceAmount
@@ -1640,19 +1564,9 @@ function BookingList() {
               : "00.00"}
           </div>
 
+          {/* 🔹 ACTION BUTTONS */}
           <div className="w-32 flex items-center justify-center gap-1">
-            {((location.pathname === "/sUsers/bookingList" &&
-              el?.status != "checkIn") ||
-              (el?.status != "checkOut" &&
-                location.pathname != "/sUsers/checkInList" &&
-                location.pathname != "/sUsers/checkOutList")) && (
-              <button
-                onClick={(e) => handleCheckin(e, el)}
-                className="bg-black hover:bg-blue-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
-              >
-                CheckIn
-              </button>
-            )}
+
             {location.pathname === "/sUsers/checkInList" && (
               <button
                 onClick={(e) => {
@@ -1664,85 +1578,25 @@ function BookingList() {
                     },
                   });
                 }}
-                className="bg-purple-500 hover:bg-purple-600 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
-                title="Print Registration Card"
+                className="bg-purple-500 hover:bg-purple-600 text-white font-semibold py-1 px-3 rounded text-xs"
               >
                 Print
               </button>
             )}
-            {el?.status === "checkIn" &&
-              location.pathname === "/sUsers/bookingList" && (
-                <button
-                  onClick={(e) => e.stopPropagation()}
-                  className="bg-green-600 hover:bg-green-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
-                >
-                  CheckedIn
-                </button>
-              )}
-            {el?.status === "checkOut" &&
-              location.pathname === "/sUsers/checkInList" && (
-                <button
-                  onClick={(e) => e.stopPropagation()}
-                  className="bg-green-600 hover:bg-green-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
-                >
-                  CheckedOut
-                </button>
-              )}
-            {location.pathname === "/sUsers/checkOutList" && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedCustomer(el.customerId?._id);
-                  setSelectedCheckOut([el]);
-                  const hasPrint1 = configurations[0]?.defaultPrint?.print1;
-                  console.log(hasPrint1);
 
-                  navigate(
-                    hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint",
-                    {
-                      state: {
-                        selectedCheckOut: bookings?.filter(
-                          (item) => item.voucherNumber === el.voucherNumber,
-                        ),
-                        customerId: el.customerId?._id,
-                        isForPreview: false,
-                      },
-                    },
-                  );
-                }}
-                className="bg-green-600 hover:bg-green-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
-              >
-                Print
-              </button>
-            )}
             {(el?.status != "checkIn" &&
               location.pathname == "/sUsers/bookingList") ||
             (el?.status != "checkOut" &&
               location.pathname == "/sUsers/checkInList") ? (
               <div className="flex items-center gap-1">
                 <FaEdit
-                  title="Edit booking details"
                   className="text-blue-500 cursor-pointer hover:text-blue-700 text-sm"
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (location.pathname === "/sUsers/bookingList") {
-                      navigate("/sUsers/editBooking", {
-                        state: el,
-                      });
-                    } else if (location.pathname === "/sUsers/checkInList") {
-                      navigate("/sUsers/editChecking", {
-                        state: el,
-                      });
-                    } else {
-                      navigate("/sUsers/editChecking", {
-                        state: el,
-                      });
-                    }
+                    navigate("/sUsers/editChecking", { state: el });
                   }}
                 />
-
                 <MdDelete
-                  title="Delete booking details"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleDelete(el._id);
@@ -1751,30 +1605,26 @@ function BookingList() {
                 />
               </div>
             ) : null}
-            {location.pathname === "/sUsers/bookingList" &&
-              el?.status !== "checkIn" &&
-              el?.status !== "cancelled" && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleCancelBooking(el._id, el.voucherNumber);
-                  }}
-                  className="bg-amber-500 hover:bg-amber-600 text-white font-semibold py-1 px-2 rounded text-xs transition duration-300"
-                  title="Cancel booking"
-                >
-                  <MdCancel />
-                </button>
-              )}{" "}
-            {el?.status === "cancelled" && (
-              <span className="bg-red-100 text-red-700 font-semibold py-1 px-3 rounded text-xs">
-                Cancelled
-              </span>
-            )}
           </div>
         </div>
       </div>
-    );
-  };
+
+      {/* 🔹 COMPACT EXPANDED ROW */}
+      {expandedRows[el._id] && (
+        <div className="px-4 py-1 border-t border-gray-200 font-bold bg-white">
+          <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-600">
+            {el?.selectedRooms?.map((room, roomIndex) => (
+              <span key={room._id || roomIndex}>
+                {room?.roomName || "-"}{" "}
+                {room?.isSwapped ? "(SWAPPED)" : ""}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
   const handleCloseBasedOnDate = () => {
     console.log("hh", processedCheckoutData);
@@ -2025,7 +1875,10 @@ function BookingList() {
                        hover:bg-slate-50 transition-colors duration-100 active:scale-[0.97]"
                     >
                       <ArrowLeftRight size={13} />
-                      <span className="hidden sm:inline">Restaurant Bill </span> Transfer
+                      <span className="hidden sm:inline">
+                        Restaurant Bill{" "}
+                      </span>{" "}
+                      Transfer
                     </button>
 
                     <div className="w-px h-5 bg-slate-200 mx-1 hidden sm:block" />
@@ -2682,20 +2535,14 @@ function BookingList() {
               >
                 {({ onItemsRendered, ref }) => (
                   <List
-                    className="pb-4"
-                    height={listHeight - 140}
-                    itemCount={
-                      hasMore ? bookings?.length + 1 : bookings?.length
-                    }
-                    itemSize={56}
-                    onItemsRendered={onItemsRendered}
-                    ref={(listInstance) => {
-                      ref(listInstance);
-                      listRef.current = listInstance;
-                    }}
-                  >
-                    {Row}
-                  </List>
+  ref={listRef}
+  height={listHeight}
+  itemCount={hasMore ? bookings.length + 1 : bookings.length}
+  itemSize={getRowHeight}
+  width="100%"
+>
+  {Row}
+</List>
                 )}
               </InfiniteLoader>
             </div>
@@ -2703,11 +2550,10 @@ function BookingList() {
         )}
         {restaurantBillTransfer && (
           <KotBillTransferModal
-          selectedCheckIns={selectedCheckOut}
-          onClose={setShowRestaurantBillTransfer}
-           cmp_id={cmp_id}
-            />
-         
+            selectedCheckIns={selectedCheckOut}
+            onClose={setShowRestaurantBillTransfer}
+            cmp_id={cmp_id}
+          />
         )}
 
         {isLoading && !loader && (
