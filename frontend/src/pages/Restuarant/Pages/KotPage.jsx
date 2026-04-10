@@ -454,7 +454,7 @@ console.log(selectedAdditionalChargeData);
   // function used to perform print  with kot
   const handleKotPrint = (data, batchNo) => {
     let newItems = data?.items || [];
-
+console.log(data);
     if (batchNo !== null && batchNo !== undefined && batchNo !== "") {
       console.log(batchNo);
       const batchData = data.kitchenBatches.find(
@@ -477,6 +477,7 @@ console.log(selectedAdditionalChargeData);
           });
       }
     }
+    console.log(data)
     const orderData = {
       kotNo: data?.voucherNumber,
       tableNo: data?.tableNumber,
@@ -484,6 +485,7 @@ console.log(selectedAdditionalChargeData);
       createdAt: data?.createdAt,
       customerName: data?.customer?.name,
       type: data?.type,
+      roomName:data?.roomId?.roomName
     };
 
     setSelectedMode(null);
