@@ -1203,7 +1203,8 @@ const additionalPaxAmount = (doc.selectedRooms || []).reduce((total, room) => {
     let partyPhone = doc?.guestId?.mobileNumber || "";
     let partyGstNo = doc?.customerId?.gstNo || "";
     let partyCompanyName = doc?.customerId?.partyName;
-
+console.log(partyGstNo);
+console.log(doc?.customerId);
     if (
       paymentDetails?. paymentMode == "credit" &&
       paymentDetails?.paymentDetails?.selectedCreditor
