@@ -1574,7 +1574,18 @@ const Row = ({ index, style }) => {
 
           {/* 🔹 ACTION BUTTONS */}
           <div className="w-32 flex items-center justify-center gap-1">
-
+            {((location.pathname === "/sUsers/bookingList" &&
+              el?.status != "checkIn") ||
+              (el?.status != "checkOut" &&
+                location.pathname != "/sUsers/checkInList" &&
+                location.pathname != "/sUsers/checkOutList")) && (
+              <button
+                onClick={(e) => handleCheckin(e, el)}
+                className="bg-black hover:bg-blue-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
+              >
+                CheckIn
+              </button>
+            )}
             {location.pathname === "/sUsers/checkInList" && (
               <button
                 onClick={(e) => {
@@ -1586,25 +1597,85 @@ const Row = ({ index, style }) => {
                     },
                   });
                 }}
-                className="bg-purple-500 hover:bg-purple-600 text-white font-semibold py-1 px-3 rounded text-xs"
+                className="bg-purple-500 hover:bg-purple-600 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
+                title="Print Registration Card"
               >
                 Print
               </button>
             )}
+            {el?.status === "checkIn" &&
+              location.pathname === "/sUsers/bookingList" && (
+                <button
+                  onClick={(e) => e.stopPropagation()}
+                  className="bg-green-600 hover:bg-green-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
+                >
+                  CheckedIn
+                </button>
+              )}
+            {el?.status === "checkOut" &&
+              location.pathname === "/sUsers/checkInList" && (
+                <button
+                  onClick={(e) => e.stopPropagation()}
+                  className="bg-green-600 hover:bg-green-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
+                >
+                  CheckedOut
+                </button>
+              )}
+            {location.pathname === "/sUsers/checkOutList" && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedCustomer(el.customerId?._id);
+                  setSelectedCheckOut([el]);
+                  const hasPrint1 = configurations[0]?.defaultPrint?.print1;
+                  console.log(hasPrint1);
 
+                  navigate(
+                    hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint",
+                    {
+                      state: {
+                        selectedCheckOut: bookings?.filter(
+                          (item) => item.voucherNumber === el.voucherNumber,
+                        ),
+                        customerId: el.customerId?._id,
+                        isForPreview: false,
+                      },
+                    },
+                  );
+                }}
+                className="bg-green-600 hover:bg-green-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
+              >
+                Print
+              </button>
+            )}
             {(el?.status != "checkIn" &&
               location.pathname == "/sUsers/bookingList") ||
             (el?.status != "checkOut" &&
               location.pathname == "/sUsers/checkInList") ? (
               <div className="flex items-center gap-1">
                 <FaEdit
+                  title="Edit booking details"
                   className="text-blue-500 cursor-pointer hover:text-blue-700 text-sm"
                   onClick={(e) => {
                     e.stopPropagation();
-                    navigate("/sUsers/editChecking", { state: el });
+                    if (location.pathname === "/sUsers/bookingList") {
+                      navigate("/sUsers/editBooking", {
+                        state: el,
+                      });
+                    } else if (location.pathname === "/sUsers/checkInList") {
+                      navigate("/sUsers/editChecking", {
+                        state: el,
+                      });
+                    } else {
+                      navigate("/sUsers/editChecking", {
+                        state: el,
+                      });
+                    }
                   }}
                 />
+
                 <MdDelete
+                  title="Delete booking details"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleDelete(el._id);
@@ -1613,6 +1684,25 @@ const Row = ({ index, style }) => {
                 />
               </div>
             ) : null}
+            {location.pathname === "/sUsers/bookingList" &&
+              el?.status !== "checkIn" &&
+              el?.status !== "cancelled" && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleCancelBooking(el._id, el.voucherNumber);
+                  }}
+                  className="bg-amber-500 hover:bg-amber-600 text-white font-semibold py-1 px-2 rounded text-xs transition duration-300"
+                  title="Cancel booking"
+                >
+                  <MdCancel />
+                </button>
+              )}{" "}
+            {el?.status === "cancelled" && (
+              <span className="bg-red-100 text-red-700 font-semibold py-1 px-3 rounded text-xs">
+                Cancelled
+              </span>
+            )}
           </div>
         </div>
       </div>
