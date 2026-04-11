@@ -86,16 +86,25 @@ function BookingList() {
   const [dateandstaysdata, setdateandstaysdata] = useState([]);
   const [finalPrintData, setFinalPrintData] = useState([]);
   // NEW: State for split payment rows and sources
-  const [splitPaymentRows, setSplitPaymentRows] = useState([
-    {
-      customer: "",
-      source: "",
-      sourceType: "",
-      amount: "",
-      subsource: "",
-      customerName: "",
-    },
-  ]);
+const [splitPaymentRows, setSplitPaymentRows] = useState([
+  {
+    customer: "",
+    customerName: "",
+    source: "",
+    sourceType: "",
+    subsource: "",
+    amount: "",
+    remarks: "",
+    cardNo: "",
+    cardHolder: "",
+    upiNo: "",
+    transactionNo: "",
+    refNo: "",
+    underCategory: "", // 👈 add this
+  },
+]);
+
+
 
   const [remarks, setRemarks] = useState("");
   const [transactionNumber, setTransactionNumber] = useState("");
@@ -107,6 +116,7 @@ function BookingList() {
     { bg: "#E6F1FB", border: "#85B7EB", icon: "#185FA5", text: "#0C447C" },
     { bg: "#FBEAF0", border: "#ED93B1", icon: "#993556", text: "#72243E" },
   ];
+
 
   const [combinedSources, setCombinedSources] = useState([]);
   const [restaurantBillTransfer, setShowRestaurantBillTransfer] =
@@ -684,13 +694,26 @@ function BookingList() {
   };
 
   // NEW: Functions for split payment row management
-  const addSplitPaymentRow = () => {
-    console.log(splitPaymentRows);
-    setSplitPaymentRows([
-      ...splitPaymentRows,
-      { customer: "", source: "", sourceType: "", amount: "" },
-    ]);
-  };
+const addSplitPaymentRow = () => {
+  setSplitPaymentRows([
+    ...splitPaymentRows,
+    {
+      customer: "",
+      customerName: "",
+      source: "",
+      sourceType: "",
+      subsource: "",
+      amount: "",
+      remarks: "",
+      cardNo: "",
+      cardHolder: "",
+      upiNo: "",
+      transactionNo: "",
+      refNo: "",
+      underCategory: "", // 👈 add this
+    },
+  ]);
+};
   console.log(splitPaymentRows);
   const removeSplitPaymentRow = (index) => {
     if (splitPaymentRows.length > 1) {
@@ -2176,53 +2199,6 @@ function BookingList() {
                 </div>
               </div>
 
-              {/* Hide Select Customer in split mode */}
-              {paymentMode !== "split" && (
-                <div className="mb-6">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Select Customer
-                  </label>
-                  <select
-                    value={selectedCustomer}
-                    onChange={(e) => setSelectedCustomer(e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                  >
-                    <option value="">Choose a customer...</option>
-
-                    {selectedCheckOut?.flatMap((selected) => {
-                      const options = [];
-
-                      if (selected?.customerId?._id) {
-                        options.push(
-                          <option
-                            key={`customer-${selected.customerId._id}`}
-                            value={selected.customerId._id}
-                          >
-                            {selected.customerId.partyName}
-                          </option>,
-                        );
-                      }
-
-                      if (
-                        selected?.guestId?._id &&
-                        selected?.guestId?._id !== selected?.customerId?._id
-                      ) {
-                        options.push(
-                          <option
-                            key={`agent-${selected.guestId._id}`}
-                            value={selected.guestId._id}
-                          >
-                            {selected.guestId.partyName}
-                          </option>,
-                        );
-                      }
-
-                      return options;
-                    })}
-                  </select>
-                </div>
-              )}
-
               {paymentMode === "single" && (
                 <div className="mb-3">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -2316,8 +2292,351 @@ function BookingList() {
               )}
 
               {/* NEW: Split Payment with 3 Columns and Real Sources */}
-            
+{paymentMode === "split" && (
+  <div className="mb-3">
+    <label className="block text-sm font-medium text-gray-700 mb-2">
+      Split Payment Details
+    </label>
 
+    {/* Header Row */}
+    <div className="grid grid-cols-12 gap-2 mb-2 text-xs font-semibold text-gray-600">
+      <div className="col-span-4">Customer</div>
+      <div className="col-span-4">Source</div>
+      <div className="col-span-3">Amount</div>
+      <div className="col-span-1"></div>
+    </div>
+
+    {/* Payment Rows */}
+    <div className="space-y-3">
+      {splitPaymentRows.map((row, index) => {
+        const sourceObj = combinedSources.find((s) => s.id === row.source);
+        const sourceType = sourceObj?.type || "";
+
+        return (
+          <div key={index} className="border border-gray-200 rounded-lg p-2 bg-gray-50">
+
+            {/* Main Row */}
+            <div className="grid grid-cols-12 gap-2 items-center mb-2">
+
+              {/* Customer */}
+              <div className="col-span-4">
+                <select
+                  value={row.customer}
+                  onChange={(e) => {
+                    const selectedValue = e.target.value;
+                    const customerOptions = [
+                      ...new Map(
+                        (selectedCheckOut || [])
+                          .flatMap((item) => {
+                            const arr = [];
+                            const customerId = item?.customerId?._id;
+                            const guestId = item?.guestId?._id;
+                            if (item?.customerId?._id) {
+                              arr.push({ id: item.customerId._id, name: item.customerId.partyName, type: "customer" });
+                            }
+                            if (item?.guestId?._id && customerId !== guestId) {
+                              arr.push({ id: item.guestId._id, name: item.guestId.partyName, type: "agent" });
+                            }
+                            return arr;
+                          })
+                          .map((item) => [`${item.type}-${item.id}`, item]),
+                      ).values(),
+                    ];
+                    const selectedCustomerObj = customerOptions.find((item) => item.id === selectedValue);
+                    updateSplitPaymentRow(index, "customer", selectedValue, selectedCustomerObj?.name || "");
+                  }}
+                  className="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
+                >
+                  <option value="">Select Customer</option>
+                  {[
+                    ...new Map(
+                      (selectedCheckOut || [])
+                        .flatMap((item) => {
+                          const arr = [];
+                          if (item?.customerId?._id)
+                            arr.push({ id: item.customerId._id, name: item.customerId.partyName, type: "customer" });
+                          if (item?.guestId?._id && item.customerId._id !== item.guestId._id)
+                            arr.push({ id: item.guestId._id, name: item.guestId.partyName, type: "agent" });
+                          return arr;
+                        })
+                        .map((item) => [`${item.type}-${item.id}`, item]),
+                    ).values(),
+                  ].map((item) => (
+                    <option key={`${item.type}-${item.id}`} value={item.id}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Source */}
+              <div className="col-span-4">
+                <select
+                  value={row.source}
+                  onChange={(e) => updateSplitPaymentRow(index, "source", e.target.value)}
+                  className="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
+                >
+                  <option value="">Select Source</option>
+                  {combinedSources.map((source) => (
+                    <option key={source.id} value={source.id}>
+                      {source.name}({source?.type})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Amount */}
+              <div className="col-span-3">
+                <div className="relative">
+                  <span className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-500 text-xs">₹</span>
+                  <input
+                    type="number"
+                    value={row.amount}
+                    onChange={(e) => updateSplitPaymentRow(index, "amount", e.target.value)}
+                    className="w-full pl-5 pr-2 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
+                    placeholder="0.00"
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+              </div>
+
+              {/* Delete */}
+              <div className="col-span-1 flex justify-center">
+                {splitPaymentRows.length > 1 && (
+                  <button
+                    onClick={() => removeSplitPaymentRow(index)}
+                    className="text-red-500 hover:text-red-700 p-1"
+                    title="Remove row"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Under Tag - Category Selection */}
+            <div className="mb-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs text-gray-500 font-medium">Under:</span>
+                {["food", "room", "laundry"].map((category) => (
+                  <button
+                    key={category}
+                    type="button"
+                    onClick={() =>
+                      updateSplitPaymentRow(
+                        index,
+                        "underCategory",
+                        row.underCategory === category ? "" : category,
+                      )
+                    }
+                    className={`px-2.5 py-0.5 rounded-full text-xs font-medium border transition-colors capitalize ${
+                      row.underCategory === category
+                        ? category === "food"
+                          ? "bg-orange-100 border-orange-400 text-orange-700"
+                          : category === "room"
+                            ? "bg-blue-100 border-blue-400 text-blue-700"
+                            : "bg-purple-100 border-purple-400 text-purple-700"
+                        : "bg-white border-gray-300 text-gray-500 hover:border-gray-400"
+                    }`}
+                  >
+                    {category === "food" && "🍽 "}
+                    {category === "room" && "🛏 "}
+                    {category === "laundry" && "👕 "}
+                    {category.charAt(0).toUpperCase() + category.slice(1)}
+                  </button>
+                ))}
+                {row.underCategory && (
+                  <span className="text-xs text-gray-400 italic">
+                    Selected:{" "}
+                    <span className="font-semibold text-gray-600 capitalize">
+                      {row.underCategory}
+                    </span>
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Dynamic Extra Fields based on source type */}
+
+            {/* CASH */}
+            {sourceType === "cash" && (
+              <div className="grid grid-cols-2 gap-2">
+              
+                <div>
+                  <label className="block text-xs text-gray-500 mb-0.5">Remarks</label>
+                  <input
+                    type="text"
+                    value={row.remarks || ""}
+                    onChange={(e) => updateSplitPaymentRow(index, "remarks", e.target.value)}
+                    className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Remarks"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* CARD / BANK */}
+            {(sourceType === "card" || sourceType === "bank") && (
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="block text-xs text-gray-500 mb-0.5">Card No.</label>
+                  <input
+                    type="text"
+                    value={row.cardNo || ""}
+                    onChange={(e) => updateSplitPaymentRow(index, "cardNo", e.target.value)}
+                    className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Card No."
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-0.5">Card Holder</label>
+                  <input
+                    type="text"
+                    value={row.cardHolder || ""}
+                    onChange={(e) => updateSplitPaymentRow(index, "cardHolder", e.target.value)}
+                    className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Card Holder"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-0.5">Remarks</label>
+                  <input
+                    type="text"
+                    value={row.remarks || ""}
+                    onChange={(e) => updateSplitPaymentRow(index, "remarks", e.target.value)}
+                    className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Remarks"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* UPI */}
+            {sourceType === "upi" && (
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="block text-xs text-gray-500 mb-0.5">UPI No.</label>
+                  <input
+                    type="text"
+                    value={row.upiNo || ""}
+                    onChange={(e) => updateSplitPaymentRow(index, "upiNo", e.target.value)}
+                    className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="UPI No."
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-0.5">Transaction No.</label>
+                  <input
+                    type="text"
+                    value={row.transactionNo || ""}
+                    onChange={(e) => updateSplitPaymentRow(index, "transactionNo", e.target.value)}
+                    className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Transaction No."
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-0.5">Remarks</label>
+                  <input
+                    type="text"
+                    value={row.remarks || ""}
+                    onChange={(e) => updateSplitPaymentRow(index, "remarks", e.target.value)}
+                    className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Remarks"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* CREDIT */}
+            {sourceType === "credit" && (
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs text-gray-500 mb-0.5">Ref. No</label>
+                  <input
+                    type="text"
+                    value={row.refNo || ""}
+                    onChange={(e) => updateSplitPaymentRow(index, "refNo", e.target.value)}
+                    className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Ref. No"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-0.5">Remarks</label>
+                  <input
+                    type="text"
+                    value={row.remarks || ""}
+                    onChange={(e) => updateSplitPaymentRow(index, "remarks", e.target.value)}
+                    className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Remarks"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Any other source type — just Remarks */}
+            {sourceType !== "" &&
+              !["cash", "card", "bank", "upi", "credit"].includes(sourceType) && (
+              <div>
+                <label className="block text-xs text-gray-500 mb-0.5">Remarks</label>
+                <input
+                  type="text"
+                  value={row.remarks || ""}
+                  onChange={(e) => updateSplitPaymentRow(index, "remarks", e.target.value)}
+                  className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Remarks"
+                />
+              </div>
+            )}
+
+          </div>
+        );
+      })}
+    </div>
+
+    {/* Add Row Button */}
+    <button
+      onClick={addSplitPaymentRow}
+      className="mt-2 flex items-center gap-1 text-blue-600 hover:text-blue-700 text-xs font-medium"
+    >
+      <Plus className="w-4 h-4" />
+      Add Payment Row
+    </button>
+
+    {/* Payment Summary */}
+    <div className="bg-gray-50 p-2 rounded-lg border mt-3">
+      <div className="flex justify-between text-xs text-gray-600 mb-1">
+        <span>Total Entered:</span>
+        <span>
+          ₹{splitPaymentRows
+            .reduce((sum, row) => sum + (parseFloat(row.amount) || 0), 0)
+            .toFixed(2)}
+        </span>
+      </div>
+      <div className="flex justify-between text-xs font-medium">
+        <span>Order Total:</span>
+        <span>
+          ₹{" "}
+          {((Number(selectedDataForPayment?.total) ||
+            Number(selectedCheckOut[0]?.balanceToPay)) + Number(selectedDataForPayment?.restaurantSubTotal || 0))?.toFixed(2) }
+        </span>
+      </div>
+      {splitPaymentRows.reduce((sum, row) => sum + (parseFloat(row.amount) || 0), 0) !==
+        selectedDataForPayment?.total && (
+        <div className="flex justify-between text-xs text-amber-600 mt-1">
+          <span>Difference:</span>
+          <span>
+            ₹{(
+              ((selectedDataForPayment?.total ||
+                Number(selectedCheckOut[0]?.balanceToPay)) + (selectedDataForPayment?.restaurantSubTotal || 0)) -
+              splitPaymentRows.reduce((sum, row) => sum + (parseFloat(row.amount) || 0), 0)
+            ).toFixed(2)}
+          </span>
+        </div>
+      )}
+    </div>
+  </div>
+)}
               {paymentMode === "credit" && (
                 <div className="mb-3">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -2341,8 +2660,7 @@ function BookingList() {
                 </div>
               )}
 
-              {["cash", "card"].includes(paymentMethod)  &&
-                (selectedCash || selectedBank || selectedCreditor) && (
+              {paymentMode !== "split" && (
                   <div className="mt-3">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Remarks
