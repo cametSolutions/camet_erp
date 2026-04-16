@@ -2962,29 +2962,27 @@ export const convertCheckOutToSale = async (req, res) => {
         );
 
         const roomTotal = itemTotal;
-       let checkoutamounttypes = [];
+        let checkoutamounttypes = [];
 
-if (paymentMode !== "credit") {
-  checkoutamounttypes = split
-    .filter((item) => item.underCategory !== "food")
-    .map((item) => ({
-      customerName: item.customerName,
-      mode: item.subsource,
-      amount: Number(item.amount || 0),
-    }));
-} else {
-  checkoutamounttypes = [
-    {
-      customerName: paymentDetails.selectedCreditor?.partyName,
-      mode: "credit",
-      amount: Number(paymentDetails.cashAmount || 0),
-    },
-  ];
-}
+        if (paymentMode !== "credit") {
+          checkoutamounttypes = split
+            .filter((item) => item.underCategory !== "food")
+            .map((item) => ({
+              customerName: item.customerName,
+              mode: item.subsource,
+              amount: Number(item.amount || 0),
+            }));
+        } else {
+          checkoutamounttypes = [
+            {
+              customerName: paymentDetails.selectedCreditor?.partyName,
+              mode: "credit",
+              amount: Number(paymentDetails.cashAmount || 0),
+            },
+          ];
+        }
 
-
-
-        console.log("checkoutamounttypes",checkoutamounttypes)
+        console.log("checkoutamounttypes", checkoutamounttypes);
 
         const paymentTotals = restaurantSplitArray.reduce(
           (acc, item) => {
@@ -3090,6 +3088,7 @@ if (paymentMode !== "credit") {
         salesarray = savedVoucherData;
 
         if (otherCharges.length > 0) {
+          
         }
 
         if (savedVoucherData) {
