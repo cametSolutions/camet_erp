@@ -551,6 +551,7 @@ if (!room.isSwapped && room.swappingDateFrom) {
   // };
 
   const buildPerRoomRestaurantLinesForDoc = (doc) => {
+    console.log("buildPerRoomRestaurantLinesForDoc", doc);
   const lines = [];
 
   // safer check-in number for current checkout doc
@@ -1164,14 +1165,14 @@ const additionalPaxAmount = (doc.selectedRooms || []).reduce((total, room) => {
     
 
     const grandTotal =
-      Number(roomTariffTotal) +
+      (Number(roomTariffTotal) +
       Number(additionalPaxAmount) +
       Number(planAmount) +
       Number(foodPlanAmountWithTax) +
       Number(sgstAmount) +
       Number(cgstAmount) +
       Number(restaurantTotal) +
-      otherChargeAmount;
+      otherChargeAmount) - Number(paymentDetails?.paymentDetails?.discountAmount ||doc.discountAmount || 0);
     const netPay = Math.abs(grandTotal - advanceTotal);
 
     // Compose hotel/guest info per doc
@@ -1221,6 +1222,9 @@ console.log(doc?.customerId);
           paymentDetails?.paymentDetails?.selectedCreditor?.partyName;
       }
     }
+ let discount = paymentDetails?.paymentDetails?.discountAmount ||doc.discountAmount || 0;
+ console.log(doc);
+    console.log(paymentDetails);
     
     return {
       hotel: {
@@ -1264,6 +1268,7 @@ console.log(doc?.customerId);
         roomRent: (
           Number(roomTariffTotal || 0) + Number(additionalPaxAmount || 0)
         ).toFixed(2),
+        discount : discount, 
         sgst: sgstAmount,
         cgst: cgstAmount,
         restaurant: dineInTotal, // ✅ Only dine-in restaurant amount
@@ -1957,6 +1962,28 @@ console.log(bill.summary);
                         >
                           {Number(
                             billData?.summary?.roomRent || 0,
+                          ).toLocaleString("en-IN", {
+                            minimumFractionDigits: 2,
+                          })}
+                        </td>
+                      </tr>
+                    )}
+                     {activeMode !== "restaurant" && (
+                      <tr>
+                        <td
+                          style={{ border: "1px solid #000", padding: "4px" }}
+                        >
+                          Discount
+                        </td>
+                        <td
+                          style={{
+                            border: "1px solid #000",
+                            padding: "4px",
+                            textAlign: "right",
+                          }}
+                        >
+                          {Number(
+                            billData?.summary?.discount || 0,
                           ).toLocaleString("en-IN", {
                             minimumFractionDigits: 2,
                           })}

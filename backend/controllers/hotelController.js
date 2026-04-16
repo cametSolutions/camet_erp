@@ -2651,11 +2651,12 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
       /* WHEN NO UNIQUE CHECK-IN IDS (CHECKOUT CASE) */
       /* -------------------------------------------------- */
       for (const checkout of checkoutData) {
+        console.log("checkout",checkout)
         let bookingSide = [];
         if (checkout.bookingId?._id) {
           bookingSide = await TallyData.find({
             billId: checkout.bookingId?._id,
-            ...paymentGreaterThanZeroQuery,
+            // ...paymentGreaterThanZeroQuery,
           }).lean();
         }
 
@@ -2663,12 +2664,13 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
         console.log("CheckInId:", checkout.checkInId?._id || checkout._id);
         const checkInSide = await TallyData.find({
           billId: checkout.checkInId?._id || checkout._id,
-          ...paymentGreaterThanZeroQuery,
+          // ...paymentGreaterThanZeroQuery,
         }).lean();
         console.log("CheckInSide:", checkInSide.length);
         const salesData = await salesModel
           .findOne({
             salesNumber: checkout.voucherNumber,
+            cmp_id,
           })
           .lean();
 
@@ -2747,35 +2749,57 @@ async function hotelVoucherSeries(cmp_id, session) {
 }
 
 export const convertCheckOutToSale = async (req, res) => {
-  // console.log("convertchecktouttosale")
   const session = await mongoose.startSession();
   try {
     let isAnyPartial = false;
     let checkOutAfterSave = [];
+
+    // transaction is starting from here
     await session.withTransaction(async () => {
+      //company id is passed as param
       const { cmp_id } = req.params;
-      console.log("cmpidddd", cmp_id);
+
+      // body is destructuring for accessing data easily
 
       const {
+        paymentMethod,
         paymentDetails,
         selectedCheckOut = [],
-        restaurantBaseSaleData,
+        restaurantBaseSaleData = [],
         isPostToRoom = false,
         roomAssignments = null,
         checkoutMode,
         checkinIds,
       } = req.body;
 
-      console.log("isPostToRoom", isPostToRoom);
-
+      // storing  paymenttypeDetails data to a variable
       let tracker = paymentDetails?.paymenttypeDetails;
+
+      // getting all amount paid with for restaurant side
+
+      let restaurantTotal =
+        restaurantBaseSaleData.length > 0
+          ? restaurantBaseSaleData.reduce(
+              (acc, item) => acc + item.finalAmount,
+              0,
+            )
+          : 0;
 
       if (!paymentDetails) throw new Error("Missing payment details");
 
+      // storing payment mode like(single , split ..etc)
       const paymentMode = paymentDetails?.paymentMode;
+
+      // split payment details
       const split = paymentDetails?.splitDetails || [];
+
+      // additionalCharge details
+      const additionalCharges = paymentDetails?.additionalChargeArray || [];
+
+      // filtering split details without credit
       const splitDetails = split.filter((item) => item.source !== "credit");
-      console.log("splitedetsasilss", splitDetails);
+
+      // fetching specific voucher series
       const specificVoucherSeries = await hotelVoucherSeries(cmp_id, session);
 
       // Process each checkout separately
@@ -2783,10 +2807,12 @@ export const convertCheckOutToSale = async (req, res) => {
       let salesarray;
 
       for (const item of selectedCheckOut) {
-        // console.log("itemdddddd", item);
+        // getting booking number
         const bookingVoucherNumber =
           item?.bookingId?.voucherNumber || item?.bookingId;
+        // getting checking number
         const checkingVoucherNumber = item?.voucherNumber;
+        // getting both booking and checkIn details
         const matchedBooking = await Booking.find({
           voucherNumber: bookingVoucherNumber,
         });
@@ -2803,35 +2829,14 @@ export const convertCheckOutToSale = async (req, res) => {
             }
           });
         };
-        console.log(item.otherChargeDetails);
-        let otherCharges = {};
-        // handle other charges
-        if (
-          item.otherChargeDetails &&
-          Object.keys(item.otherChargeDetails).length > 0
-        ) {
-          console.log(item.otherChargeDetails);
-          otherCharges = [
-            {
-              _id: item.otherChargeDetails?.charge?._id,
-              option: item.otherChargeDetails?.charge?.name,
-              value: item.otherChargeDetails?.amount,
-              action: "add",
-              taxPercentage: item.otherChargeDetails?.charge?.taxPercentage,
-              taxAmt:
-                (Number(item.amount) *
-                  Number(item.otherChargeDetails?.charge?.taxPercentage)) /
-                  100 || 0,
-              hsn: item.otherChargeDetails?.charge?.hsn,
-              finalValue:
-                (Number(item.amount) *
-                  Number(item.otherChargeDetails?.charge?.taxPercentage)) /
-                  100 +
-                  Number(item.otherChargeDetails?.amount) || 0,
-            },
-          ];
-        }
-        console.log("othercharges", otherCharges);
+
+        let otherCharges = additionalCharges;
+        let totalOtherChargeAmount = otherCharges.reduce(
+          (acc, item) => acc + Number(item.finalValue),
+          0,
+        );
+
+        // getting paymenttypeDetails that we used with in booking and checking (how advance stored in booking and checking)
         // 1) start from existing paymentDetails.paymenttypeDetails
         const merged = { ...paymentDetails.paymenttypeDetails };
 
@@ -2847,21 +2852,29 @@ export const convertCheckOutToSale = async (req, res) => {
 
         // 4) assign back to paymentDetails
         paymentDetails.paymenttypeDetails = merged;
+
         results = [];
+
+        // getting selected party id
         const selectedPartyId = item?.customerId?._id || item?.customerId;
+        // error used to handle if selected party is not their
         if (!selectedPartyId)
           throw new Error("Missing customerId._id in checkout item");
 
+        // getting total amount
         const itemTotal = (item.selectedRooms || []).reduce(
           (acc, room) => acc + Number(room.amountAfterTax || 0),
           0,
         );
 
+        // fetching specific party
         const partyData = await getSelectedParty(
           selectedPartyId,
           cmp_id,
           session,
         );
+
+        // Arrange party details in a format  to store with sale
         const party = mapPartyData(partyData);
 
         // ============ DETERMINE PAYMENT FOR THIS SALE ============
@@ -2871,10 +2884,12 @@ export const convertCheckOutToSale = async (req, res) => {
         let paidAmount = 0;
         // let pendingAmount = 0;
         let applicableSplits = [];
+        let remarks = "";
 
         if (paymentMode === "single") {
           cashAmt = Number(paymentDetails?.cashAmount || 0);
           onlineAmt = Number(paymentDetails?.onlineAmount || 0);
+          remarks = paymentDetails?.remarks;
           paymentMethod =
             cashAmt > 0 ? "cash" : onlineAmt > 0 ? "bank" : "unknown";
           paidAmount = cashAmt + onlineAmt;
@@ -2911,13 +2926,14 @@ export const convertCheckOutToSale = async (req, res) => {
         const pendingAmount =
           itemTotal - (paidAmount + Number(item?.Totaladvance));
 
-        const paymentSplittingArray = createPaymentSplittingArray(
-          paymentDetails,
-          cashAmt,
-          onlineAmt,
-          applicableSplits,
-        );
-
+        const { arr: paymentSplittingArray, restaurantSplitArray } =
+          createPaymentSplittingArray(
+            paymentDetails,
+            cashAmt,
+            onlineAmt,
+            applicableSplits,
+            restaurantTotal,
+          );
         const saleNumber = await generateVoucherNumber(
           cmp_id,
           "sales",
@@ -2926,7 +2942,7 @@ export const convertCheckOutToSale = async (req, res) => {
         );
 
         const checkInId = item?._id;
-        // console.log("checkinidddd", checkInId)
+
         const roomsBeingCheckedOut = item?.selectedRooms || [];
         const originalCheckIn =
           await CheckIn.findById(checkInId).session(session);
@@ -2951,20 +2967,49 @@ export const convertCheckOutToSale = async (req, res) => {
         let checkoutamounttypes = [];
 
         if (paymentMode !== "credit") {
-          checkoutamounttypes = split.map((item) => ({
-            customerName: item.customerName,
-            mode: item.subsource,
-            amount: Number(item.amount),
-          }));
+          checkoutamounttypes = split
+            .filter((item) => item.underCategory !== "food")
+            .map((item) => ({
+              customerName: item.customerName,
+              mode: item.subsource,
+              amount: Number(item.amount || 0),
+            }));
         } else {
           checkoutamounttypes = [
             {
               customerName: paymentDetails.selectedCreditor?.partyName,
               mode: "credit",
-              amount: Number(paymentDetails.cashAmount),
+              amount: Number(paymentDetails.cashAmount || 0),
             },
           ];
         }
+
+        console.log("checkoutamounttypes", checkoutamounttypes);
+
+        const paymentTotals = restaurantSplitArray.reduce(
+          (acc, item) => {
+            const type = item.sourceType;
+            const amount = Number(item.amount || 0);
+
+            if (type === "cash") acc.cash += amount;
+            else if (type === "upi") acc.upi += amount;
+            else if (type === "bank") acc.bank += amount;
+            else if (type === "card") acc.card += amount;
+            else if (type === "credit") acc.credit += amount;
+
+            return acc;
+          },
+          {
+            cash: 0,
+            upi: 0,
+            bank: 0,
+            card: 0,
+            credit: 0,
+          },
+        );
+
+        const { cash, upi, bank, card, credit } = paymentTotals;
+
         // Create CheckOut FIRST
         const checkOutDoc = await CheckOut.create(
           [
@@ -2985,12 +3030,13 @@ export const convertCheckOutToSale = async (req, res) => {
               balanceToPay: pendingAmount <= 0 ? 0 : pendingAmount,
               isPartialCheckout: isThisPartial,
               originalCheckInId: checkInId,
+              discountAmount: Number(item?.discountAmount || 0) + Number(totalOtherChargeAmount || 0),
               paymenttypeDetails: {
-                cash: tracker.cash,
-                bank: tracker.bank,
-                upi: tracker.upi,
-                card: tracker.card,
-                credit: tracker.credit,
+                cash: cash,
+                bank: bank,
+                upi: upi,
+                card: card,
+                credit: credit,
               },
               checkoutpaymenttypedetails: checkoutamounttypes,
               checkoutType:
@@ -3039,9 +3085,15 @@ export const convertCheckOutToSale = async (req, res) => {
           checkOutDoc[0]._id,
           amount,
           otherCharges,
+          totalOtherChargeAmount,
           // isPostToRoom = false,
         );
         salesarray = savedVoucherData;
+
+        if (otherCharges.length > 0) {
+          
+        }
+
         if (savedVoucherData) {
           console.log(savedVoucherData.length);
         }
@@ -3185,6 +3237,7 @@ export const convertCheckOutToSale = async (req, res) => {
             }).session(session);
             sourceType = "bank";
           }
+          console.log(results);
 
           // Create ONE settlement for all sales
           await saveSettlement(
@@ -3334,18 +3387,45 @@ function createPaymentSplittingArray(
   cashAmt,
   onlineAmt,
   applicableSplits = [],
+  restaurantTotal,
 ) {
   const arr = [];
   const paymentMode = paymentDetails?.paymentMode;
-
+  const restaurantSplitArray = [];
   if (paymentMode === "split" && applicableSplits.length > 0) {
     // For split payment: use applicableSplits (customer-matched splits)
     for (const split of applicableSplits) {
-      arr.push({
-        type: split.sourceType === "cash" ? "cash" : "upi",
-        amount: Number(split.amount || 0),
-        ref_id: split.source,
-      });
+      if (split.underCategory == "room") {
+        arr.push({
+          type: split.sourceType === "cash" ? "cash" : "upi",
+          amount: Number(split.amount || 0),
+          ref_id: split.source,
+          customer: split.customer,
+          customerName: split.customerName,
+          remarks: split.remarks,
+          source: split.source,
+          sourceType: split.sourceType,
+          subsource: split.subsource,
+          transactionNo: split.transactionNo,
+          underCategory: split.underCategory,
+          upiNo: split.upiNo,
+        });
+      } else {
+        restaurantSplitArray.push({
+          type: split.sourceType === "cash" ? "cash" : "upi",
+          amount: Number(split.amount || 0),
+          ref_id: split.source,
+          customer: split.customer,
+          customerName: split.customerName,
+          remarks: split.remarks,
+          source: split.source,
+          sourceType: split.sourceType,
+          subsource: split.subsource,
+          transactionNo: split.transactionNo,
+          underCategory: split.underCategory,
+          upiNo: split.upiNo,
+        });
+      }
     }
   } else if (paymentMode == "credit") {
     arr.push({
@@ -3359,20 +3439,20 @@ function createPaymentSplittingArray(
     if (cashAmt > 0) {
       arr.push({
         type: "cash",
-        amount: cashAmt,
+        amount: cashAmt - restaurantTotal,
         ref_id: paymentDetails?.selectedCash,
       });
     }
     if (onlineAmt > 0) {
       arr.push({
         type: "upi",
-        amount: onlineAmt,
+        amount: onlineAmt - restaurantTotal,
         ref_id: paymentDetails?.selectedBank,
       });
     }
   }
 
-  return arr;
+  return { arr, restaurantSplitArray };
 }
 
 function mapPartyData(selectedParty) {
@@ -3412,14 +3492,15 @@ async function createSalesVoucher(
   checkInId = null,
   checkOutId = null,
   amount = 0,
-  isPostToRoom = false,
   otherCharges,
+  totalOtherChargeAmount,
+  isPostToRoom = false,
 ) {
   const AlreadyExistingItems = selectedCheckOut.flatMap(
     (item) => item.selectedRooms,
   );
 
-  console.log("isPostToRoomffffffffff", isPostToRoom);
+  console.log("isPostToRoomffffffffff", otherCharges);
   let items = [];
 
   AlreadyExistingItems.forEach((room) => {
@@ -3501,13 +3582,16 @@ async function createSalesVoucher(
         partyAccount: selectedParty.accountGroup?.accountGroup,
         items,
         address: selectedParty.billingAddress,
-        finalAmount: amount,
+        finalAmount: Math.abs(amount - totalOtherChargeAmount),
         subTotal: amount,
         paymentSplittingData: paymentSplittingArray,
         convertedFrom,
         checkInId: checkInId,
         checkOutId: checkOutId,
         additionalCharges: otherCharges,
+        totalAdditionalCharges: -totalOtherChargeAmount,
+        totalWithAdditionalCharges: Math.abs(amount - totalOtherChargeAmount),
+        totalPaymentSplits: Math.abs(amount - totalOtherChargeAmount),
       },
     ],
     { session },
@@ -3750,12 +3834,7 @@ export const swapRoom = async (req, res) => {
     await session.startTransaction();
 
     const { checkInId } = req.params;
-    const {
-      newRoomId,
-      oldRoomId,
-      selectedDate,
-      formData = {},
-    } = req.body;
+    const { newRoomId, oldRoomId, selectedDate, formData = {} } = req.body;
 
     if (!checkInId || !newRoomId || !oldRoomId) {
       return res.status(400).json({
@@ -4137,7 +4216,6 @@ export const getHotelSalesDetails = async (req, res) => {
                 type: 1,
                 total: 1,
                 createdAt: 1,
-                
               },
             },
           ],
@@ -4246,8 +4324,8 @@ export const getHotelSalesDetails = async (req, res) => {
         sale.partyDetails?.partyName ||
         sale.partyAccount ||
         "Cash";
-        const gusestName =sale?.checkOut?.guestName;
-        console.log("gusestName",gusestName)
+      const gusestName = sale?.checkOut?.guestName;
+      console.log("gusestName", gusestName);
 
       const isCreditSale =
         sale.partyAccount === "Sundry Debtors" ||
@@ -4382,7 +4460,7 @@ export const getHotelSalesDetails = async (req, res) => {
         tableNumber: sale.tableNumber || "",
         waiterName: sale.waiterName || "",
         roomNumber: sale.roomNumber || "",
-        guestName: gusestName ||"",
+        guestName: gusestName || "",
         itemCount: sale.items?.length || 0,
         isHotelSale: sale.isHotelSale || false,
         isRestaurantSale: sale.isRestaurantSale || false,
@@ -5705,10 +5783,13 @@ export const getTouristReport = async (req, res) => {
       { $sort: { pax: -1, nation: 1 } },
     ]);
 
-    const totalPax = report.reduce((sum, item) => sum + Number(item.pax || 0), 0);
+    const totalPax = report.reduce(
+      (sum, item) => sum + Number(item.pax || 0),
+      0,
+    );
     const totalBookings = report.reduce(
       (sum, item) => sum + Number(item.bookings || 0),
-      0
+      0,
     );
 
     return res.status(200).json({
@@ -5928,7 +6009,7 @@ export const getOccupancyCheckoutReport = async (req, res) => {
     const allRooms = await roomModal
       .find(
         { cmp_id: new mongoose.Types.ObjectId(cmp_id) },
-        { roomName: 1, roomType: 1, status: 1 }
+        { roomName: 1, roomType: 1, status: 1 },
       )
       .lean();
 
@@ -6071,10 +6152,7 @@ export const getOccupancyCheckoutReport = async (req, res) => {
       printDateTime: new Date(),
       summary: {
         occupancyPercentage,
-        houseCount: rows.reduce(
-          (sum, item) => sum + Number(item.pax || 0),
-          0
-        ),
+        houseCount: rows.reduce((sum, item) => sum + Number(item.pax || 0), 0),
         domestic,
         foreigners,
         roomRevenue: Number(roomRevenue.toFixed(2)),
