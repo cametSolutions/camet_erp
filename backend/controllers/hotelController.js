@@ -2651,11 +2651,12 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
       /* WHEN NO UNIQUE CHECK-IN IDS (CHECKOUT CASE) */
       /* -------------------------------------------------- */
       for (const checkout of checkoutData) {
+        console.log("checkout",checkout)
         let bookingSide = [];
         if (checkout.bookingId?._id) {
           bookingSide = await TallyData.find({
             billId: checkout.bookingId?._id,
-            ...paymentGreaterThanZeroQuery,
+            // ...paymentGreaterThanZeroQuery,
           }).lean();
         }
 
@@ -2663,12 +2664,13 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
         console.log("CheckInId:", checkout.checkInId?._id || checkout._id);
         const checkInSide = await TallyData.find({
           billId: checkout.checkInId?._id || checkout._id,
-          ...paymentGreaterThanZeroQuery,
+          // ...paymentGreaterThanZeroQuery,
         }).lean();
         console.log("CheckInSide:", checkInSide.length);
         const salesData = await salesModel
           .findOne({
             salesNumber: checkout.voucherNumber,
+            cmp_id,
           })
           .lean();
 
@@ -3028,6 +3030,7 @@ export const convertCheckOutToSale = async (req, res) => {
               balanceToPay: pendingAmount <= 0 ? 0 : pendingAmount,
               isPartialCheckout: isThisPartial,
               originalCheckInId: checkInId,
+              discountAmount: Number(item?.discountAmount || 0) + Number(totalOtherChargeAmount || 0),
               paymenttypeDetails: {
                 cash: cash,
                 bank: bank,

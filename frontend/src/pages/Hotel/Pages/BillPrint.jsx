@@ -551,6 +551,7 @@ if (!room.isSwapped && room.swappingDateFrom) {
   // };
 
   const buildPerRoomRestaurantLinesForDoc = (doc) => {
+    console.log("buildPerRoomRestaurantLinesForDoc", doc);
   const lines = [];
 
   // safer check-in number for current checkout doc
@@ -1171,7 +1172,7 @@ const additionalPaxAmount = (doc.selectedRooms || []).reduce((total, room) => {
       Number(sgstAmount) +
       Number(cgstAmount) +
       Number(restaurantTotal) +
-      otherChargeAmount) - Number(paymentDetails?.paymentDetails?.discountAmount || 0);
+      otherChargeAmount) - Number(paymentDetails?.paymentDetails?.discountAmount ||doc.discountAmount || 0);
     const netPay = Math.abs(grandTotal - advanceTotal);
 
     // Compose hotel/guest info per doc
@@ -1221,7 +1222,8 @@ console.log(doc?.customerId);
           paymentDetails?.paymentDetails?.selectedCreditor?.partyName;
       }
     }
-
+ let discount = paymentDetails?.paymentDetails?.discountAmount ||doc.discountAmount || 0;
+ console.log(doc);
     console.log(paymentDetails);
     
     return {
@@ -1266,7 +1268,7 @@ console.log(doc?.customerId);
         roomRent: (
           Number(roomTariffTotal || 0) + Number(additionalPaxAmount || 0)
         ).toFixed(2),
-        discount : paymentDetails?.paymentDetails?.discountAmount,
+        discount : discount, 
         sgst: sgstAmount,
         cgst: cgstAmount,
         restaurant: dineInTotal, // ✅ Only dine-in restaurant amount
