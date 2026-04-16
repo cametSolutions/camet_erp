@@ -789,7 +789,6 @@ console.log(salesData);
   const totals = filteredSalesData.reduce(
     (acc, item) => {
       const grossAmount = (item.amount || 0) - (item.igst || 0);
-
       return {
         amount: acc.amount + grossAmount,
         disc: acc.disc + (item.disc || 0),

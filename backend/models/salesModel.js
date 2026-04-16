@@ -8,7 +8,7 @@ const paymentSplitSchema = new Schema(
     type: {
       type: String,
       required: true,
-      enum: ["cash", "upi","card","bank", "cheque", "credit"],
+      enum: ["cash", "upi", "card", "bank", "cheque", "credit"],
     },
     amount: { type: Number, default: 0 },
     ref_id: {
@@ -21,7 +21,7 @@ const paymentSplitSchema = new Schema(
       type: String,
       default: "", // Only relevant for credit
     },
-       creditor_gst: {
+    creditor_gst: {
       type: String,
       default: "", // Only relevant for credit
     },
@@ -29,8 +29,34 @@ const paymentSplitSchema = new Schema(
       type: String,
       default: "", // Only relevant for credit
     },
+    customer: {
+      type: Schema.Types.ObjectId,
+      ref: "Party",
+      default: null,
+    },
+    customerName: {
+      type: String,
+      default: "",
+    },
+    remarks: {
+      type: String,
+      default: "",
+    },
+    source: {
+      type: Schema.Types.ObjectId,
+      ref: "Party",
+      default: null,
+    },
+    sourceType: { type: String, default: "" },
+    subsource: {
+      type: String,
+      default: "",
+    },
+    transactionNo: { type: String, default: "" },
+    underCategory: { type: String, default: "" },
+    upiNo: { type: String, default: "" },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const salesSchema = new Schema(
@@ -258,8 +284,8 @@ const salesSchema = new Schema(
         finalValue: { type: Number },
       },
     ],
-   isComplimentary: { type: Boolean, default: false }, 
-   isPostToRoom: { type: Boolean, default: false },
+    isComplimentary: { type: Boolean, default: false },
+    isPostToRoom: { type: Boolean, default: false },
     note: { type: String },
 
     subTotal: { type: Number, default: null },
@@ -289,18 +315,18 @@ const salesSchema = new Schema(
     },
 
     isCancelled: { type: Boolean, default: false },
-    checkInId: { type: mongoose.Schema.Types.ObjectId, ref: "CheckIn"},
-    checkOutId: { type: mongoose.Schema.Types.ObjectId, ref: "CheckOut"},
+    checkInId: { type: mongoose.Schema.Types.ObjectId, ref: "CheckIn" },
+    checkOutId: { type: mongoose.Schema.Types.ObjectId, ref: "CheckOut" },
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 // 1. Primary unique identifier (sales number per company)
 salesSchema.index(
   { cmp_id: 1, series_id: 1, salesNumber: 1 },
-  { unique: true, name: "unique_sales_number_per_series" }
+  { unique: true, name: "unique_sales_number_per_series" },
 );
 
 // 3. Most common query pattern (company + date sorting)
@@ -332,7 +358,7 @@ salesSchema.index(
   {
     name: "series_number_validation_idx",
     background: true,
-  }
+  },
 );
 
 export default mongoose.model("Sales", salesSchema);
