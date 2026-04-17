@@ -65,8 +65,8 @@ const HotelBillPrint = () => {
 
     splitDetails?.forEach((item) => {
       const key = `${item.customerName}-${item.subsource}`;
-
-      if (!mergedMap[key]) {
+      if (!item.amount) return;
+      if (!mergedMap[key]  ) {
         mergedMap[key] = {
           customerName: item.customerName,
           mode: item.subsource || item.source,

@@ -465,6 +465,7 @@ function BookingList() {
       const restaurantSubTotal = selectedCheckOut.reduce((total, item) => {
         return total + (item.restaurantSubTotal || 0);
       }, 0);
+      console.log(restaurantSubTotal);
 
       setSelectedDataForPayment((prevData) => ({
         ...prevData,
@@ -849,9 +850,8 @@ function BookingList() {
     );
     if (
       total >
-      (selectedDataForPayment?.totalWithRestaurantSubTotal ||
-        Number(selectedCheckOut[0]?.balanceToPay)?.toFixed(2))
-    ) {
+      (selectedDataForPayment?.totalWithRestaurantSubTotal )?.toFixed(2))
+     {
       setPaymentError("Total split amount exceeds order total");
     } else {
       setPaymentError("");
@@ -886,6 +886,9 @@ function BookingList() {
       const expectedRestaurantTotal = Number(
         selectedDataForPayment?.restaurantSubTotal || 0,
       );
+
+      console.log(expectedRestaurantTotal);
+      console.log(restaurantSubTotal)
 
       if (
         Number(splitTotal.toFixed(2)) !== Number(expectedSplitTotal.toFixed(2))
@@ -927,8 +930,7 @@ function BookingList() {
               ? selectedDataForPayment?.additionalChargeAmount
               : 0,
           cashAmount:
-            (selectedDataForPayment?.totalWithRestaurantSubTotal ||
-              Number(selectedCheckOut[0]?.balanceToPay)) -
+            (selectedDataForPayment?.totalWithRestaurantSubTotal) -
             Number(selectedDataForPayment?.additionalChargeAmount || 0),
           onlineAmount: onlineAmount,
           selectedCash: selectedCash,
@@ -943,8 +945,7 @@ function BookingList() {
               source: selectedCash,
               sourceType: "cash",
               amount:
-                (selectedDataForPayment?.totalWithRestaurantSubTotal ||
-                  Number(selectedCheckOut[0]?.balanceToPay)) -
+                (selectedDataForPayment?.totalWithRestaurantSubTotal ) -
                 Number(selectedDataForPayment?.additionalChargeAmount || 0),
               customerName: isAgent
                 ? selectedCustomerData?.guestId?.partyName
@@ -956,8 +957,7 @@ function BookingList() {
           ],
           paymenttypeDetails: {
             cash:
-              selectedDataForPayment?.totalWithRestaurantSubTotal ||
-              Number(selectedCheckOut[0]?.balanceToPay),
+              selectedDataForPayment?.totalWithRestaurantSubTotal || 0,
             bank: 0,
             card: 0,
             upi: 0,
@@ -987,8 +987,7 @@ function BookingList() {
               : 0,
           cashAmount: cashAmount,
           onlineAmount:
-            (selectedDataForPayment?.totalWithRestaurantSubTotal ||
-              Number(selectedCheckOut[0]?.balanceToPay)) -
+            (selectedDataForPayment?.totalWithRestaurantSubTotal || 0 ) -
             Number(selectedDataForPayment?.additionalChargeAmount || 0),
           selectedCash: "",
           selectedBank: selectedBank,
@@ -1002,8 +1001,7 @@ function BookingList() {
               source: selectedBank,
               sourceType: "bank",
               amount:
-                selectedDataForPayment?.totalWithRestaurantSubTotal ||
-                Number(selectedCheckOut[0]?.balanceToPay),
+                selectedDataForPayment?.totalWithRestaurantSubTotal  || 0 ,
               customerName: isAgent
                 ? selectedCustomerData?.guestId?.partyName
                 : selectedCustomerData?.customerId?.partyName ||
@@ -1016,18 +1014,15 @@ function BookingList() {
             cash: 0,
             bank:
               selected.under == "bank"
-                ? selectedDataForPayment?.totalWithRestaurantSubTotal ||
-                  Number(selectedCheckOut[0]?.balanceToPay)
+                ? selectedDataForPayment?.totalWithRestaurantSubTotal 
                 : 0,
             upi:
               selected.under == "upi"
-                ? selectedDataForPayment?.totalWithRestaurantSubTotal ||
-                  Number(selectedCheckOut[0]?.balanceToPay)
+                ? selectedDataForPayment?.totalWithRestaurantSubTotal 
                 : 0,
             card:
               selected.under == "card"
-                ? selectedDataForPayment?.totalWithRestaurantSubTotal ||
-                  Number(selectedCheckOut[0]?.balanceToPay)
+                ? selectedDataForPayment?.totalWithRestaurantSubTotal 
                 : 0,
             credit: 0,
           },
@@ -1048,8 +1043,7 @@ function BookingList() {
             ? selectedDataForPayment?.additionalChargeAmount
             : 0,
         cashAmount:
-          (selectedDataForPayment?.totalWithRestaurantSubTotal ||
-            Number(selectedCheckOut[0]?.balanceToPay)) -
+          (selectedDataForPayment?.totalWithRestaurantSubTotal) -
           Number(selectedDataForPayment?.additionalChargeAmount || 0),
         selectedCreditor: selectedCreditor,
         remarks: remarks,
@@ -1059,8 +1053,7 @@ function BookingList() {
           bank: 0,
           upi: 0,
           credit:
-            (selectedDataForPayment?.totalWithRestaurantSubTotal ||
-              Number(selectedCheckOut[0]?.balanceToPay)) -
+            (selectedDataForPayment?.totalWithRestaurantSubTotal || 0) -
             Number(selectedDataForPayment?.additionalChargeAmount || 0),
           card: 0,
         },
@@ -1074,7 +1067,6 @@ function BookingList() {
 
       let payment = (
         (selectedDataForPayment?.totalWithRestaurantSubTotal ||
-          Number(selectedCheckOut[0]?.balanceToPay) ||
           0) - Number(selectedDataForPayment?.additionalChargeAmount || 0)
       ).toFixed(2);
       console.log("Paujsdf", totalSplitAmount, payment);
@@ -2536,8 +2528,7 @@ function BookingList() {
                     {/* Compute once for reuse */}
                     {(() => {
                       const orderTotal =
-                        (Number(selectedDataForPayment?.total) ||
-                          Number(selectedCheckOut[0]?.balanceToPay)) +
+                        (Number(selectedDataForPayment?.total) || 0) +
                         Number(
                           selectedDataForPayment?.restaurantSubTotal || 0,
                         ) -
