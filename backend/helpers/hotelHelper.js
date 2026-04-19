@@ -156,29 +156,29 @@ export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
     const checkInNumbers = bookings.map((b) => b.voucherNumber);
 
     // 2) Find all related sales in one query
-   const sales = await salesModel
+  const sales = await salesModel
   .find({
     cmp_id: filter.cmp_id,
     isPostToRoom: true,
     isCancelled: false,
     "convertedFrom.checkInNumber": { $in: checkInNumbers },
   })
-  .select("_id finalAmount isPostToRoom convertedFrom.checkInNumber");
+  .select("_id finalAmount isPostToRoom convertedFrom.checkInNumber paymentSplittingData");
 
-// 3) Build map: checkInNumber -> total finalAmount
+// Build map: checkInNumber -> { totalAmount, paymentSplittingData }
 const totalByCheckIn = {};
 const processedSaleIds = new Set();
 
 for (const sale of sales) {
   const saleId = String(sale._id);
 
-  // Skip repeated sale document
   if (processedSaleIds.has(saleId)) continue;
   processedSaleIds.add(saleId);
 
   const saleAmount = sale.isPostToRoom ? Number(sale.finalAmount || 0) : 0;
+  const saleSplits = sale.paymentSplittingData || [];
+  console.log("jidss",sale.paymentSplittingData);
 
-  // Avoid repeated checkInNumber inside same sale
   const uniqueCheckInNumbers = new Set(
     (sale.convertedFrom || [])
       .map((conv) => conv?.checkInNumber)
@@ -186,22 +186,43 @@ for (const sale of sales) {
   );
 
   for (const checkInNumber of uniqueCheckInNumbers) {
-    totalByCheckIn[checkInNumber] =
-      (totalByCheckIn[checkInNumber] || 0) + saleAmount;
+    if (!totalByCheckIn[checkInNumber]) {
+      totalByCheckIn[checkInNumber] = {
+        totalAmount: 0,
+        paymentSplittingData: [],
+      };
+    }
+
+    totalByCheckIn[checkInNumber].totalAmount += saleAmount;
+
+    // Merge splits — combine amounts if same source, else push new
+    for (const split of saleSplits) {
+      const existing = totalByCheckIn[checkInNumber].paymentSplittingData.find(
+        (s) => s.source === split.source && s.type === split.type
+      );
+
+      if (existing) {
+        existing.amount = parseFloat(
+          (existing.amount + Number(split.amount || 0)).toFixed(2)
+        );
+      } else {
+        totalByCheckIn[checkInNumber].paymentSplittingData.push({ ...split });
+      }
+    }
   }
 }
 
 // 4) Attach to bookings
 const bookingsWithSales = bookings.map((b) => {
   const voucherNumber = b.voucherNumber;
-  const total = Number(totalByCheckIn[voucherNumber] || 0);
-
+  const checkInData = totalByCheckIn[voucherNumber] || { totalAmount: 0, paymentSplittingData: [] };
+console.log(checkInData)
   return {
     ...b.toObject(),
-    restaurantSubTotal: total,
+    restaurantSubTotal: checkInData.totalAmount,
+    restaurantPaymentSplittingData: checkInData.paymentSplittingData,
   };
 });
-
     return { bookings: bookingsWithSales, totalBookings };
   } catch (error) {
     console.error("❌ Error fetching bookings from database:", error);

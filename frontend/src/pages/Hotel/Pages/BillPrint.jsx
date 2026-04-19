@@ -105,7 +105,8 @@ const HotelBillPrint = () => {
   useEffect(() => {
     if (selectedCheckOut?.length > 0) {
       if (!isForPreview) {
-        console.log("hddddd");
+        console.log(selectedCheckOut[0].restaurantPaymentSplittingData);
+        console.log("hddddd",);
         console.log(selectedCheckOut[0].checkoutpaymenttypedetails);
         const mergedMap = {};
         selectedCheckOut[0].checkoutpaymenttypedetails?.forEach((item) => {

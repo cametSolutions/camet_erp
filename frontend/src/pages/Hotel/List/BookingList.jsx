@@ -615,6 +615,9 @@ function BookingList() {
             return [booking];
           });
         }
+        if (location.pathname === "/sUsers/checkOutList") {
+        console.log(bookingData);
+        }
 
         if (pageNumber === 1) {
           setBookings(bookingData);

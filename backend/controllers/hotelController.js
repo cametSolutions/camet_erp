@@ -2651,7 +2651,7 @@ export const fetchOutStandingAndFoodData = async (req, res) => {
       /* WHEN NO UNIQUE CHECK-IN IDS (CHECKOUT CASE) */
       /* -------------------------------------------------- */
       for (const checkout of checkoutData) {
-        console.log("checkout",checkout)
+        console.log("checkout", checkout);
         let bookingSide = [];
         if (checkout.bookingId?._id) {
           bookingSide = await TallyData.find({
@@ -2927,13 +2927,16 @@ export const convertCheckOutToSale = async (req, res) => {
           itemTotal - (paidAmount + Number(item?.Totaladvance));
 
         const { arr: paymentSplittingArray, restaurantSplitArray } =
-          createPaymentSplittingArray(
+         await  createPaymentSplittingArray(
             paymentDetails,
             cashAmt,
             onlineAmt,
             applicableSplits,
             restaurantTotal,
+            restaurantBaseSaleData,
+            session,
           );
+
         const saleNumber = await generateVoucherNumber(
           cmp_id,
           "sales",
@@ -3030,7 +3033,9 @@ export const convertCheckOutToSale = async (req, res) => {
               balanceToPay: pendingAmount <= 0 ? 0 : pendingAmount,
               isPartialCheckout: isThisPartial,
               originalCheckInId: checkInId,
-              discountAmount: Number(item?.discountAmount || 0) + Number(totalOtherChargeAmount || 0),
+              discountAmount:
+                Number(item?.discountAmount || 0) +
+                Number(totalOtherChargeAmount || 0),
               paymenttypeDetails: {
                 cash: cash,
                 bank: bank,
@@ -3091,7 +3096,6 @@ export const convertCheckOutToSale = async (req, res) => {
         salesarray = savedVoucherData;
 
         if (otherCharges.length > 0) {
-          
         }
 
         if (savedVoucherData) {
@@ -3382,52 +3386,240 @@ export const convertCheckOutToSale = async (req, res) => {
   }
 };
 
-function createPaymentSplittingArray(
+// async function createPaymentSplittingArray(
+//   paymentDetails,
+//   cashAmt,
+//   onlineAmt,
+//   applicableSplits = [],
+//   restaurantTotal,
+//   restaurantBaseSaleData,
+//   session
+// ) {
+//   const arr = [];
+//   const paymentMode = paymentDetails?.paymentMode;
+//   const restaurantSplitArray = [];
+//   if (paymentMode === "split" && applicableSplits.length > 0) {
+//     // For split payment: use applicableSplits (customer-matched splits)
+//     for (const split of applicableSplits) {
+//       if (split.underCategory == "room") {
+//         arr.push({
+//           type: split.sourceType === "cash" ? "cash" : "upi",
+//           amount: Number(split.amount || 0),
+//           ref_id: split.source,
+//           customer: split.customer,
+//           customerName: split.customerName,
+//           remarks: split.remarks,
+//           source: split.source,
+//           sourceType: split.sourceType,
+//           subsource: split.subsource,
+//           transactionNo: split.transactionNo,
+//           underCategory: split.underCategory,
+//           upiNo: split.upiNo,
+//         });
+//       } else {
+//         restaurantSplitArray.push({
+//           type: split.sourceType === "cash" ? "cash" : "upi",
+//           amount: Number(split.amount || 0),
+//           ref_id: split.source,
+//           customer: split.customer,
+//           customerName: split.customerName,
+//           remarks: split.remarks,
+//           source: split.source,
+//           sourceType: split.sourceType,
+//           subsource: split.subsource,
+//           transactionNo: split.transactionNo,
+//           underCategory: split.underCategory,
+//           upiNo: split.upiNo,
+//         });
+//       }
+//     }
+//   } else if (paymentMode == "credit") {
+//     arr.push({
+//       type: "credit",
+//       amount: cashAmt,
+//       ref_id: paymentDetails?.selectedCreditor?._id,
+//       reference_name: paymentDetails?.selectedCreditor?.partyName,
+//     });
+//   } else {
+//     // For single payment: use selectedCash/selectedBank
+//     if (cashAmt > 0) {
+//       arr.push({
+//         type: "cash",
+//         amount: cashAmt - restaurantTotal,
+//         ref_id: paymentDetails?.selectedCash,
+//       });
+//     }
+//     if (onlineAmt > 0) {
+//       arr.push({
+//         type: "upi",
+//         amount: onlineAmt - restaurantTotal,
+//         ref_id: paymentDetails?.selectedBank,
+//       });
+//     }
+//   }
+// // concept implemented for  a  situation when  a restaurant  sale need to update how payment is done
+//   if (restaurantBaseSaleData.length > 0 && restaurantTotal > 0) {
+//     if (paymentMode === "split" && restaurantSplitArray.length > 0) {
+//       if (restaurantBaseSaleData.length == 1) {
+//         await salesModel.findOneAndUpdate(
+//           { _id: restaurantBaseSaleData[0]._id },
+//           {
+//             $set: {
+//               paymentSplittingData: restaurantSplitArray,
+//             },
+//           },
+//         );
+//       } else {
+//         const updatePromises = [];
+//         let remainingSplits = restaurantSplitArray.map((split) => ({
+//           ...split,
+//         })); 
+
+//         for (const item of restaurantBaseSaleData) {
+//           let remaining = item.finalAmount;
+//           const itemSplits = [];
+
+//           for (const split of remainingSplits) {
+//             if (remaining <= 0) break;
+
+//             if (split.amount <= remaining) {
+//               // Use this split fully
+//               itemSplits.push({ ...split });
+//               remaining = parseFloat((remaining - split.amount).toFixed(2));
+//               split.amount = 0; // exhausted
+//             } else {
+//               // Partially use this split
+//               itemSplits.push({ ...split, amount: remaining });
+//               split.amount = parseFloat((split.amount - remaining).toFixed(2));
+//               remaining = 0;
+//             }
+//           }
+
+//           // Remove exhausted splits for next iteration
+//           remainingSplits = remainingSplits.filter((s) => s.amount > 0);
+
+//           updatePromises.push(
+//             salesModel.findOneAndUpdate(
+//               { _id: item._id },
+//               { $set: { paymentSplittingData: itemSplits } },
+//               { session,new: true } ,
+//             ),
+//           );
+//         }
+
+//         await Promise.all(updatePromises);
+//       }
+//     }} else {
+//   // Single or Credit payment — assign greedily from a unified split array
+//   const unifiedSplits = [];
+
+//   if (paymentMode === "credit") {
+//     unifiedSplits.push({
+//       type: "credit",
+//       amount: restaurantTotal,
+//       ref_id: paymentDetails?.selectedCreditor?._id,
+//       reference_name: paymentDetails?.selectedCreditor?.partyName,
+//     });
+//   } else {
+//     // Single payment (cash or online)
+//     if (cashAmt > 0) {
+//       unifiedSplits.push({
+//         type: "cash",
+//         amount: cashAmt > restaurantTotal ? restaurantTotal : cashAmt,
+//         ref_id: paymentDetails?.selectedCash,
+//       });
+//     }
+//     if (onlineAmt > 0 && unifiedSplits.reduce((s, x) => s + x.amount, 0) < restaurantTotal) {
+//       const alreadyCovered = unifiedSplits.reduce((s, x) => s + x.amount, 0);
+//       unifiedSplits.push({
+//         type: "upi",
+//         amount: parseFloat((restaurantTotal - alreadyCovered).toFixed(2)),
+//         ref_id: paymentDetails?.selectedBank,
+//       });
+//     }
+//   }
+
+//   if (restaurantBaseSaleData.length === 1) {
+//     await salesModel.findOneAndUpdate(
+//       { _id: restaurantBaseSaleData[0]._id },
+//       { $set: { paymentSplittingData: unifiedSplits } ,{session} }
+//     );
+//   } else {
+//     const updatePromises = [];
+//     let remainingSplits = unifiedSplits.map((split) => ({ ...split }));
+
+//     for (const item of restaurantBaseSaleData) {
+//       let remaining = item.finalAmount;
+//       const itemSplits = [];
+
+//       for (const split of remainingSplits) {
+//         if (remaining <= 0) break;
+
+//         if (split.amount <= remaining) {
+//           itemSplits.push({ ...split });
+//           remaining = parseFloat((remaining - split.amount).toFixed(2));
+//           split.amount = 0;
+//         } else {
+//           itemSplits.push({ ...split, amount: remaining });
+//           split.amount = parseFloat((split.amount - remaining).toFixed(2));
+//           remaining = 0;
+//         }
+//       }
+
+//       remainingSplits = remainingSplits.filter((s) => s.amount > 0);
+
+//       updatePromises.push(
+//         salesModel.findOneAndUpdate(
+//           { _id: item._id },
+//           { $set: { paymentSplittingData: itemSplits } },
+//           { session , new: true }
+//         )
+//       );
+//     }
+
+//     await Promise.all(updatePromises);
+//   }
+
+//   return { arr, restaurantSplitArray };
+// }
+
+async function createPaymentSplittingArray(
   paymentDetails,
   cashAmt,
   onlineAmt,
   applicableSplits = [],
   restaurantTotal,
+  restaurantBaseSaleData,
+  session
 ) {
   const arr = [];
   const paymentMode = paymentDetails?.paymentMode;
   const restaurantSplitArray = [];
+
   if (paymentMode === "split" && applicableSplits.length > 0) {
-    // For split payment: use applicableSplits (customer-matched splits)
     for (const split of applicableSplits) {
-      if (split.underCategory == "room") {
-        arr.push({
-          type: split.sourceType === "cash" ? "cash" : "upi",
-          amount: Number(split.amount || 0),
-          ref_id: split.source,
-          customer: split.customer,
-          customerName: split.customerName,
-          remarks: split.remarks,
-          source: split.source,
-          sourceType: split.sourceType,
-          subsource: split.subsource,
-          transactionNo: split.transactionNo,
-          underCategory: split.underCategory,
-          upiNo: split.upiNo,
-        });
+      const splitObj = {
+        type: split.sourceType === "cash" ? "cash" : "upi",
+        amount: Number(split.amount || 0),
+        ref_id: split.source,
+        customer: split.customer,
+        customerName: split.customerName,
+        remarks: split.remarks,
+        source: split.source,
+        sourceType: split.sourceType,
+        subsource: split.subsource,
+        transactionNo: split.transactionNo,
+        underCategory: split.underCategory,
+        upiNo: split.upiNo,
+      };
+
+      if (split.underCategory === "room") {
+        arr.push(splitObj);
       } else {
-        restaurantSplitArray.push({
-          type: split.sourceType === "cash" ? "cash" : "upi",
-          amount: Number(split.amount || 0),
-          ref_id: split.source,
-          customer: split.customer,
-          customerName: split.customerName,
-          remarks: split.remarks,
-          source: split.source,
-          sourceType: split.sourceType,
-          subsource: split.subsource,
-          transactionNo: split.transactionNo,
-          underCategory: split.underCategory,
-          upiNo: split.upiNo,
-        });
+        restaurantSplitArray.push(splitObj);
       }
     }
-  } else if (paymentMode == "credit") {
+  } else if (paymentMode === "credit") {
     arr.push({
       type: "credit",
       amount: cashAmt,
@@ -3435,7 +3627,6 @@ function createPaymentSplittingArray(
       reference_name: paymentDetails?.selectedCreditor?.partyName,
     });
   } else {
-    // For single payment: use selectedCash/selectedBank
     if (cashAmt > 0) {
       arr.push({
         type: "cash",
@@ -3449,6 +3640,86 @@ function createPaymentSplittingArray(
         amount: onlineAmt - restaurantTotal,
         ref_id: paymentDetails?.selectedBank,
       });
+    }
+  }
+
+  // Handle restaurant sale payment splitting
+  if (restaurantBaseSaleData.length > 0 && restaurantTotal > 0) {
+    let splitsToDistribute = [];
+
+    if (paymentMode === "split" && restaurantSplitArray.length > 0) {
+      // Use restaurant-specific splits
+      splitsToDistribute = restaurantSplitArray.map((s) => ({ ...s }));
+    } else {
+      // Build unified splits for single/credit payment
+      if (paymentMode === "credit") {
+        splitsToDistribute.push({
+          type: "credit",
+          amount: restaurantTotal,
+          ref_id: paymentDetails?.selectedCreditor?._id,
+          reference_name: paymentDetails?.selectedCreditor?.partyName,
+        });
+      } else {
+        if (cashAmt > 0) {
+          splitsToDistribute.push({
+            type: "cash",
+            amount: cashAmt > restaurantTotal ? restaurantTotal : cashAmt,
+            ref_id: paymentDetails?.selectedCash,
+          });
+        }
+        const alreadyCovered = splitsToDistribute.reduce((s, x) => s + x.amount, 0);
+        if (onlineAmt > 0 && alreadyCovered < restaurantTotal) {
+          splitsToDistribute.push({
+            type: "upi",
+            amount: parseFloat((restaurantTotal - alreadyCovered).toFixed(2)),
+            ref_id: paymentDetails?.selectedBank,
+          });
+        }
+      }
+    }
+
+    // Single sale — assign all splits directly
+    if (restaurantBaseSaleData.length === 1) {
+      await salesModel.findOneAndUpdate(
+        { _id: restaurantBaseSaleData[0]._id },
+        { $set: { paymentSplittingData: splitsToDistribute } },
+        { session, new: true }
+      );
+    } else {
+      // Multiple sales — greedy distribution
+      const updatePromises = [];
+      let remainingSplits = splitsToDistribute;
+
+      for (const item of restaurantBaseSaleData) {
+        let remaining = item.finalAmount;
+        const itemSplits = [];
+
+        for (const split of remainingSplits) {
+          if (remaining <= 0) break;
+
+          if (split.amount <= remaining) {
+            itemSplits.push({ ...split });
+            remaining = parseFloat((remaining - split.amount).toFixed(2));
+            split.amount = 0;
+          } else {
+            itemSplits.push({ ...split, amount: remaining });
+            split.amount = parseFloat((split.amount - remaining).toFixed(2));
+            remaining = 0;
+          }
+        }
+
+        remainingSplits = remainingSplits.filter((s) => s.amount > 0);
+
+        updatePromises.push(
+          salesModel.findOneAndUpdate(
+            { _id: item._id },
+            { $set: { paymentSplittingData: itemSplits } },
+            { session, new: true }
+          )
+        );
+      }
+
+      await Promise.all(updatePromises);
     }
   }
 
