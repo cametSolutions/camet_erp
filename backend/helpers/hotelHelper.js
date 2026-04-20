@@ -151,34 +151,36 @@ export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
         .limit(limit > 0 ? limit : 0),
       selectedModal.countDocuments(filter),
     ]);
-    console.log(filter)
 
-    const checkInNumbers = bookings.map((b) => b.voucherNumber);
 
+    const checkInNumbers = params?.modal == "checkIn" ? bookings.map((b) => b.voucherNumber) :
+     params?.modal == "checkOut"? bookings.map((b) => b.checkInId?.voucherNumber) : []
     // 2) Find all related sales in one query
-   const sales = await salesModel
+  const sales = await salesModel
   .find({
     cmp_id: filter.cmp_id,
     isPostToRoom: true,
     isCancelled: false,
     "convertedFrom.checkInNumber": { $in: checkInNumbers },
   })
-  .select("_id finalAmount isPostToRoom convertedFrom.checkInNumber");
+  .select("_id finalAmount isPostToRoom convertedFrom.checkInNumber paymentSplittingData");
 
-// 3) Build map: checkInNumber -> total finalAmount
+// Build map: checkInNumber -> { totalAmount, paymentSplittingData }
+// console.log(sales)
 const totalByCheckIn = {};
 const processedSaleIds = new Set();
 
 for (const sale of sales) {
   const saleId = String(sale._id);
 
-  // Skip repeated sale document
   if (processedSaleIds.has(saleId)) continue;
   processedSaleIds.add(saleId);
 
   const saleAmount = sale.isPostToRoom ? Number(sale.finalAmount || 0) : 0;
+  const saleSplits = sale.paymentSplittingData || [];
+  
+  // console.log("jidss",sale.paymentSplittingData);
 
-  // Avoid repeated checkInNumber inside same sale
   const uniqueCheckInNumbers = new Set(
     (sale.convertedFrom || [])
       .map((conv) => conv?.checkInNumber)
@@ -186,22 +188,37 @@ for (const sale of sales) {
   );
 
   for (const checkInNumber of uniqueCheckInNumbers) {
-    totalByCheckIn[checkInNumber] =
-      (totalByCheckIn[checkInNumber] || 0) + saleAmount;
+    if (!totalByCheckIn[checkInNumber]) {
+      totalByCheckIn[checkInNumber] = {
+        totalAmount: 0,
+        paymentSplittingData: [],
+      };
+    }
+
+    totalByCheckIn[checkInNumber].totalAmount += saleAmount;
+
+    // Merge splits — combine amounts if same source, else push new
+    for (const split of saleSplits) {
+
+        totalByCheckIn[checkInNumber].paymentSplittingData.push({ ...split });
+
+    }
   }
 }
 
 // 4) Attach to bookings
 const bookingsWithSales = bookings.map((b) => {
-  const voucherNumber = b.voucherNumber;
-  const total = Number(totalByCheckIn[voucherNumber] || 0);
-
+  const voucherNumber = params?.modal == "checkIn" ? b.voucherNumber : params?.modal == "checkOut" ? b.checkInId?.voucherNumber : ""
+  const checkInData = totalByCheckIn[voucherNumber] || { totalAmount: 0, paymentSplittingData: [] };
+   if(b.voucherNumber == "CO-820-2025"){
+    console.log("bbbbbbbbb",checkInData?.paymentSplittingData)
+  } 
   return {
     ...b.toObject(),
-    restaurantSubTotal: total,
+    restaurantSubTotal: checkInData.totalAmount,
+    restaurantPaymentSplittingData: checkInData.paymentSplittingData,
   };
 });
-
     return { bookings: bookingsWithSales, totalBookings };
   } catch (error) {
     console.error("❌ Error fetching bookings from database:", error);
@@ -210,7 +227,6 @@ const bookingsWithSales = bookings.map((b) => {
     throw new Error("Failed to fetch bookings. Please try again.");
   }
 };
-
 // function used to send response for booking
 export const sendBookingsResponse = (res, bookings, totalBookings, params) => {
   if (bookings && bookings.length > 0) {
