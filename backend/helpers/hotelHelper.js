@@ -214,19 +214,41 @@ for (const sale of sales) {
 }
 
 // 4) Attach to bookings
-const bookingsWithSales = bookings.map((b) => {
-  const voucherNumber = params?.modal == "checkIn" ? b.voucherNumber : params?.modal == "checkOut" ? b.checkInId?.voucherNumber : ""
-  const checkInData = totalByCheckIn[voucherNumber] || { totalAmount: 0, paymentSplittingData: [] };
-   if(b.voucherNumber == "CO-820-2025"){
-    console.log("bbbbbbbbb",checkInData?.paymentSplittingData)
-  } 
-  return {
-    ...b.toObject(),
-    restaurantSubTotal: checkInData.totalAmount,
-    restaurantPaymentSplittingData: checkInData.paymentSplittingData,
-  };
-});
-    return { bookings: bookingsWithSales, totalBookings };
+const bookingsWithSales = await Promise.all(
+  bookings.map(async (b) => {
+    const voucherNumber =
+      params?.modal === "checkIn"
+        ? b.voucherNumber
+        : params?.modal === "checkOut"
+        ? b.checkInId?.voucherNumber
+        : "";
+
+    const checkInData = totalByCheckIn[voucherNumber] || {
+      totalAmount: 0,
+      paymentSplittingData: [],
+    };
+
+    const specificSale = params?.modal === "checkIn"? [] : params?.modal === "checkOut"?  await salesModel.findOne({
+      cmp_id: filter.cmp_id,
+      salesNumber :  b.voucherNumber,
+    }) : []
+
+if( b.voucherNumber == "CO-823-2025"){
+ console.log("checkInDataccccccccccc",specificSale);
+}
+
+    return {
+      ...b.toObject(),
+      restaurantSubTotal: checkInData.totalAmount,
+      restaurantPaymentSplittingData: [
+        ...(specificSale?.paymentSplittingData || []),
+        ...(checkInData.paymentSplittingData || []),
+      ],
+    };
+  })
+);
+
+return { bookings: bookingsWithSales, totalBookings };
   } catch (error) {
     console.error("❌ Error fetching bookings from database:", error);
 

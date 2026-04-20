@@ -3091,7 +3091,7 @@ async function hotelVoucherSeries(cmp_id, session) {
 //         salesarray = savedVoucherData;
 
 //         if (otherCharges.length > 0) {
-          
+
 //         }
 
 //         if (savedVoucherData) {
@@ -3382,7 +3382,6 @@ async function hotelVoucherSeries(cmp_id, session) {
 //   }
 // };
 
-
 export const convertCheckOutToSale = async (req, res) => {
   const session = await mongoose.startSession();
 
@@ -3572,7 +3571,7 @@ export const convertCheckOutToSale = async (req, res) => {
           itemTotal - (paidAmount + Number(item?.Totaladvance || 0));
 
         const { arr: paymentSplittingArray, restaurantSplitArray } =
-         await  createPaymentSplittingArray(
+          await createPaymentSplittingArray(
             paymentDetails,
             cashAmt,
             onlineAmt,
@@ -3581,7 +3580,8 @@ export const convertCheckOutToSale = async (req, res) => {
             restaurantBaseSaleData,
             session,
           );
-
+ 
+          
         const saleNumber = await generateVoucherNumber(
           cmp_id,
           "sales",
@@ -3623,7 +3623,7 @@ export const convertCheckOutToSale = async (req, res) => {
             .map((splitItem) => ({
               customerName: splitItem.customerName,
               mode: splitItem.subsource,
-              amount: Number(splitItem.amount || 0),
+              amount: Number(splitItem.amount || 0) ,
             }));
         } else {
           checkoutamounttypes = [
@@ -4102,7 +4102,7 @@ export const convertCheckOutToSale = async (req, res) => {
 //         const updatePromises = [];
 //         let remainingSplits = restaurantSplitArray.map((split) => ({
 //           ...split,
-//         })); 
+//         }));
 
 //         for (const item of restaurantBaseSaleData) {
 //           let remaining = item.finalAmount;
@@ -4212,6 +4212,215 @@ export const convertCheckOutToSale = async (req, res) => {
 //   return { arr, restaurantSplitArray };
 // }
 
+// async function createPaymentSplittingArray(
+//   paymentDetails,
+//   cashAmt,
+//   onlineAmt,
+//   applicableSplits = [],
+//   restaurantTotal,
+//   restaurantBaseSaleData,
+//   session,
+// ) {
+//   const arr = [];
+//   const paymentMode = paymentDetails?.paymentMode;
+//   const restaurantSplitArray = [];
+
+//   if (paymentMode === "split" && applicableSplits.length > 0) {
+//     for (const split of applicableSplits) {
+//       const splitObj = {
+//         type: split.sourceType === "cash" ? "cash" : "bank",
+//         amount: Number(split.amount || 0),
+//         ref_id: split.source,
+//         customer: split.customer,
+//         customerName: split.customerName,
+//         remarks: split.remarks,
+//         source: split.source,
+//         sourceType: split.sourceType,
+//         subsource: split.subsource,
+//         transactionNo: split.transactionNo,
+//         underCategory: split.underCategory,
+//         upiNo: split.upiNo,
+//       };
+
+//       if (split.underCategory === "room") {
+//         arr.push(splitObj);
+//       } else {
+//         restaurantSplitArray.push(splitObj);
+//       }
+//     }
+//   } else if (paymentMode === "credit") {
+//     let split = paymentDetails.splitDetails[0];
+//     arr.push({
+//       type: "credit",
+//       amount: cashAmt - restaurantTotal,
+//       ref_id: paymentDetails?.selectedCreditor?._id,
+//       reference_name: paymentDetails?.selectedCreditor?.partyName,
+//       customer: paymentDetails?.selectedCreditor,
+//       customerName: paymentDetails?.selectedCreditor?.partyName,
+//       remarks: split.remarks,
+//       source: split.source,
+//       sourceType: split.sourceType,
+//       subsource: split.subsource,
+//     });
+//     restaurantSplitArray.push({
+//       type: "credit",
+//       amount: restaurantTotal,
+//       ref_id: paymentDetails?.selectedCreditor?._id,
+//       reference_name: paymentDetails?.selectedCreditor?.partyName,
+//       customer: paymentDetails?.selectedCreditor,
+//       customerName: paymentDetails?.selectedCreditor?.partyName,
+//       remarks: split.remarks,
+//       source: split.source,
+//       sourceType: split.sourceType,
+//       subsource: split.subsource,
+//     });
+//   } else {
+//     let split = paymentDetails.splitDetails[0];
+//     console.log("split", split);
+//     if (cashAmt > 0) {
+//       console.log("cashAmt", paymentDetails);
+//       arr.push({
+//         type: "cash",
+//         amount: cashAmt - restaurantTotal,
+//         ref_id: paymentDetails?.selectedCash,
+//         // customer: split.customer,
+//         customerName: split.customerName,
+//         remarks: split.remarks,
+//         source: split.source,
+//         sourceType: split.sourceType,
+//         subsource: split.subsource,
+//       });
+
+//       restaurantSplitArray.push({
+//         type: "cash",
+//         amount: restaurantTotal,
+//         ref_id: paymentDetails?.selectedCash,
+//         customer: split.customer,
+//         customerName: split.customerName,
+//         remarks: split.remarks,
+//         source: split.source,
+//         sourceType: split.sourceType,
+//         subsource: split.subsource,
+//       });
+//     }
+//     if (onlineAmt > 0) {
+//       arr.push({
+//         type: "bank",
+//         amount: onlineAmt - restaurantTotal,
+//         ref_id: paymentDetails?.selectedBank,
+//         // customer: split.customer,
+//         customerName: split.customerName,
+//         remarks: split.remarks,
+//         source: split.source,
+//         sourceType: split.sourceType,
+//         subsource: split.subsource,
+//         transactionNo: split.transactionNo,
+//         underCategory: split.underCategory,
+//         upiNo: split.upiNo,
+//       });
+//       restaurantSplitArray.push({
+//         type: "bank",
+//         amount: restaurantTotal,
+//         ref_id: paymentDetails?.selectedBank,
+//         customer: split.customer,
+//         customerName: split.customerName,
+//         remarks: split.remarks,
+//         source: split.source,
+//         sourceType: split.sourceType,
+//         subsource: split.subsource,
+//         transactionNo: split.transactionNo,
+//         underCategory: split.underCategory,
+//         upiNo: split.upiNo,
+//       });
+//     }
+//   }
+
+//   // Handle restaurant sale payment splitting
+//   if (restaurantBaseSaleData.length > 0 && restaurantTotal > 0) {
+//     let splitsToDistribute = [];
+//    let split = paymentDetails.splitDetails[0];
+//     if (paymentMode === "split" && restaurantSplitArray.length > 0) {
+//       // Use restaurant-specific splits
+//       splitsToDistribute = restaurantSplitArray.map((s) => ({ ...s }));
+//     } else {
+//       // Build unified splits for single/credit payment
+//       if (paymentMode === "credit") {
+//         splitsToDistribute.push({
+//           type: "credit",
+//           amount: restaurantTotal,
+//           ref_id: paymentDetails?.selectedCreditor?._id,
+//           reference_name: paymentDetails?.selectedCreditor?.partyName,
+//         });
+//       } else {
+//         if (cashAmt > 0) {
+//           splitsToDistribute.push({
+//             type: "cash",
+//             amount: cashAmt > restaurantTotal ? restaurantTotal : cashAmt,
+//             ref_id: paymentDetails?.selectedCash,
+//           });
+//         }
+//         const alreadyCovered = splitsToDistribute.reduce(
+//           (s, x) => s + x.amount,
+//           0,
+//         );
+//         if (onlineAmt > 0 && alreadyCovered < restaurantTotal) {
+//           splitsToDistribute.push({
+//             type: "upi",
+//             amount: parseFloat((restaurantTotal - alreadyCovered).toFixed(2)),
+//             ref_id: paymentDetails?.selectedBank,
+//           });
+//         }
+//       }
+//     }
+
+//     // Single sale — assign all splits directly
+//     if (restaurantBaseSaleData.length === 1) {
+//       await salesModel.findOneAndUpdate(
+//         { _id: restaurantBaseSaleData[0]._id },
+//         { $set: { paymentSplittingData: splitsToDistribute } },
+//         { session, new: true },
+//       );
+//     } else {
+//       // Multiple sales — greedy distribution
+//       const updatePromises = [];
+//       let remainingSplits = splitsToDistribute;
+
+//       for (const item of restaurantBaseSaleData) {
+//         let remaining = item.finalAmount;
+//         const itemSplits = [];
+
+//         for (const split of remainingSplits) {
+//           if (remaining <= 0) break;
+
+//           if (split.amount <= remaining) {
+//             itemSplits.push({ ...split });
+//             remaining = parseFloat((remaining - split.amount).toFixed(2));
+//             split.amount = 0;
+//           } else {
+//             itemSplits.push({ ...split, amount: remaining });
+//             split.amount = parseFloat((split.amount - remaining).toFixed(2));
+//             remaining = 0;
+//           }
+//         }
+
+//         remainingSplits = remainingSplits.filter((s) => s.amount > 0);
+
+//         updatePromises.push(
+//           salesModel.findOneAndUpdate(
+//             { _id: item._id },
+//             { $set: { paymentSplittingData: itemSplits } },
+//             { session, new: true },
+//           ),
+//         );
+//       }
+
+//       await Promise.all(updatePromises);
+//     }
+//   }
+
+//   return { arr, restaurantSplitArray };
+// }
+
 async function createPaymentSplittingArray(
   paymentDetails,
   cashAmt,
@@ -4219,21 +4428,24 @@ async function createPaymentSplittingArray(
   applicableSplits = [],
   restaurantTotal,
   restaurantBaseSaleData,
-  session
+  session,
 ) {
   const arr = [];
   const paymentMode = paymentDetails?.paymentMode;
   const restaurantSplitArray = [];
 
+  // Helper to safely extract ObjectId from customer
+  const getCustomerId = (customer) => customer?._id ?? customer ?? undefined;
+
   if (paymentMode === "split" && applicableSplits.length > 0) {
     for (const split of applicableSplits) {
       const splitObj = {
-        type: split.sourceType === "cash" ? "cash" : "upi",
+        type: split.sourceType === "cash" ? "cash" : "bank",
         amount: Number(split.amount || 0),
         ref_id: split.source,
-        customer: split.customer,
+        customer: getCustomerId(split.customer),
         customerName: split.customerName,
-        remarks: split.remarks,
+        remarks: split.remarks ?? null,
         source: split.source,
         sourceType: split.sourceType,
         subsource: split.subsource,
@@ -4249,26 +4461,122 @@ async function createPaymentSplittingArray(
       }
     }
   } else if (paymentMode === "credit") {
+    const split = paymentDetails.splitDetails[0];
+    const hotelAmt = cashAmt - restaurantTotal;
+
     arr.push({
       type: "credit",
-      amount: cashAmt,
+      amount: hotelAmt,
       ref_id: paymentDetails?.selectedCreditor?._id,
       reference_name: paymentDetails?.selectedCreditor?.partyName,
+      customer: getCustomerId(paymentDetails?.selectedCreditor),
+      customerName: paymentDetails?.selectedCreditor?.partyName,
+      remarks: split.remarks ?? null,
+      source: split.source,
+      sourceType: split.sourceType,
+      subsource: split.subsource,
+      transactionNo: split.transactionNo,
+      underCategory: split.underCategory,
+      upiNo: split.upiNo,
+    });
+
+    restaurantSplitArray.push({
+      type: "credit",
+      amount: restaurantTotal,
+      ref_id: paymentDetails?.selectedCreditor?._id,
+      reference_name: paymentDetails?.selectedCreditor?.partyName,
+      customer: getCustomerId(paymentDetails?.selectedCreditor),
+      customerName: paymentDetails?.selectedCreditor?.partyName,
+      remarks: split.remarks ?? null,
+      source: split.source,
+      sourceType: split.sourceType,
+      subsource: split.subsource,
+      transactionNo: split.transactionNo,
+      underCategory: split.underCategory,
+      upiNo: split.upiNo,
     });
   } else {
+    const split = paymentDetails.splitDetails[0];
+
     if (cashAmt > 0) {
-      arr.push({
-        type: "cash",
-        amount: cashAmt - restaurantTotal,
-        ref_id: paymentDetails?.selectedCash,
-      });
+      const hotelCashAmt = Math.max(0, cashAmt - restaurantTotal);
+      const restaurantCashAmt = Math.min(cashAmt, restaurantTotal);
+
+      if (hotelCashAmt > 0) {
+        arr.push({
+          type: "cash",
+          amount: parseFloat(hotelCashAmt.toFixed(2)),
+          ref_id: paymentDetails?.selectedCash,
+          customer: getCustomerId(split.customer),
+          customerName: split.customerName,
+          remarks: split.remarks ?? null,
+          source: split.source,
+          sourceType: split.sourceType,
+          subsource: split.subsource,
+          transactionNo: split.transactionNo,
+          underCategory: split.underCategory,
+          upiNo: split.upiNo,
+        });
+      }
+
+      if (restaurantCashAmt > 0) {
+        restaurantSplitArray.push({
+          type: "cash",
+          amount: parseFloat(restaurantCashAmt.toFixed(2)),
+          ref_id: paymentDetails?.selectedCash,
+          customer: getCustomerId(split.customer),
+          customerName: split.customerName,
+          remarks: split.remarks ?? null,
+          source: split.source,
+          sourceType: split.sourceType,
+          subsource: split.subsource,
+          transactionNo: split.transactionNo,
+          underCategory: split.underCategory,
+          upiNo: split.upiNo,
+        });
+      }
     }
+
     if (onlineAmt > 0) {
-      arr.push({
-        type: "upi",
-        amount: onlineAmt - restaurantTotal,
-        ref_id: paymentDetails?.selectedBank,
-      });
+      const restaurantAlreadyCovered = Math.min(cashAmt, restaurantTotal);
+      const restaurantOnlineAmt = parseFloat(
+        Math.min(onlineAmt, Math.max(0, restaurantTotal - restaurantAlreadyCovered)).toFixed(2),
+      );
+      const hotelOnlineAmt = parseFloat((onlineAmt - restaurantOnlineAmt).toFixed(2));
+
+      if (hotelOnlineAmt > 0) {
+        arr.push({
+          type: "bank",
+          amount: hotelOnlineAmt,
+          ref_id: paymentDetails?.selectedBank,
+          customer: getCustomerId(split.customer),
+          customerName: split.customerName,
+          remarks: split.remarks ?? null,
+          source: split.source,
+          sourceType: split.sourceType,
+          subsource: split.subsource,
+          transactionNo: split.transactionNo,
+          underCategory: split.underCategory,
+          upiNo: split.upiNo,
+        });
+      }
+
+      if (restaurantOnlineAmt > 0) {
+        restaurantSplitArray.push({
+          type: "bank",
+          amount: restaurantOnlineAmt,
+          ref_id: paymentDetails?.selectedBank,
+          customer: getCustomerId(split.customer),
+          customerName: split.customerName,
+          remarks: split.remarks ?? null,
+          source: split.source,
+          sourceType: split.sourceType,
+          subsource: split.subsource,
+          transactionNo: split.transactionNo,
+          underCategory: split.underCategory,
+          upiNo: split.upiNo,
+        });
+      }
     }
   }
 
@@ -4277,42 +4585,33 @@ async function createPaymentSplittingArray(
     let splitsToDistribute = [];
 
     if (paymentMode === "split" && restaurantSplitArray.length > 0) {
-      // Use restaurant-specific splits
       splitsToDistribute = restaurantSplitArray.map((s) => ({ ...s }));
+    } else if (paymentMode === "credit") {
+      const split = paymentDetails.splitDetails[0];
+      splitsToDistribute.push({
+        type: "credit",
+        amount: restaurantTotal,
+        ref_id: paymentDetails?.selectedCreditor?._id,
+        reference_name: paymentDetails?.selectedCreditor?.partyName,
+        customer: getCustomerId(paymentDetails?.selectedCreditor),
+        customerName: paymentDetails?.selectedCreditor?.partyName,
+        remarks: split.remarks ?? null,
+        source: split.source,
+        sourceType: split.sourceType,
+        subsource: split.subsource,
+        transactionNo: split.transactionNo,
+        underCategory: split.underCategory,
+        upiNo: split.upiNo,
+      });
     } else {
-      // Build unified splits for single/credit payment
-      if (paymentMode === "credit") {
-        splitsToDistribute.push({
-          type: "credit",
-          amount: restaurantTotal,
-          ref_id: paymentDetails?.selectedCreditor?._id,
-          reference_name: paymentDetails?.selectedCreditor?.partyName,
-        });
-      } else {
-        if (cashAmt > 0) {
-          splitsToDistribute.push({
-            type: "cash",
-            amount: cashAmt > restaurantTotal ? restaurantTotal : cashAmt,
-            ref_id: paymentDetails?.selectedCash,
-          });
-        }
-        const alreadyCovered = splitsToDistribute.reduce((s, x) => s + x.amount, 0);
-        if (onlineAmt > 0 && alreadyCovered < restaurantTotal) {
-          splitsToDistribute.push({
-            type: "upi",
-            amount: parseFloat((restaurantTotal - alreadyCovered).toFixed(2)),
-            ref_id: paymentDetails?.selectedBank,
-          });
-        }
-      }
+      splitsToDistribute = restaurantSplitArray.map((s) => ({ ...s }));
     }
 
-    // Single sale — assign all splits directly
     if (restaurantBaseSaleData.length === 1) {
       await salesModel.findOneAndUpdate(
         { _id: restaurantBaseSaleData[0]._id },
         { $set: { paymentSplittingData: splitsToDistribute } },
-        { session, new: true }
+        { session, new: true },
       );
     } else {
       // Multiple sales — greedy distribution
@@ -4343,8 +4642,8 @@ async function createPaymentSplittingArray(
           salesModel.findOneAndUpdate(
             { _id: item._id },
             { $set: { paymentSplittingData: itemSplits } },
-            { session, new: true }
-          )
+            { session, new: true },
+          ),
         );
       }
 

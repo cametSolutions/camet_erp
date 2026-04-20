@@ -104,6 +104,7 @@ const HotelBillPrint = () => {
 
   useEffect(() => {
     if (selectedCheckOut?.length > 0) {
+      console.log(selectedCheckOut);
       if (!isForPreview) {
            const rawData = selectedCheckOut[0].restaurantPaymentSplittingData || [];
 console.log(rawData);
@@ -113,15 +114,16 @@ console.log(rawData);
       );
       console.log("cleanData", cleanData);
         const mergedMap = {};
-        let mapData = [...cleanData,...selectedCheckOut[0].checkoutpaymenttypedetails]
+        let mapData = [...cleanData]
        mapData?.forEach((item) => {
-          const key = `${item.customerName}-${item.mode || item.subsource}`;
+          const key = `${item.customerName || selectedCheckOut[0].customerName}-${item.mode || item.subsource || item.type}`;
 
           if (!mergedMap[key]) {
             mergedMap[key] = {
               customerName: item.customerName || selectedCheckOut[0].customerName,
-              mode: item.mode || item.subsource,
+              mode: item.mode || item.subsource || item.type,
               amount: Number(item.amount),
+              underCategory: item.underCategory
             };
           } else {
             mergedMap[key].amount += Number(item.amount);
@@ -2211,9 +2213,10 @@ console.log(bill.summary);
                         AMOUNT
                       </td>
                     </tr>
-                    {selected == "default" && (
+                    {/* {selected == "default" && ( */}
                       <>
-                        {paymentModeDetails.map((item, index) => (
+                        {paymentModeDetails.filter((item) => selected == "room" ? item.underCategory == "room" :
+                        selected == "restaurant" ? item.underCategory == "food" : true ).map((item, index) => (
                           <tr key={index}>
                             <td
                               style={{
@@ -2237,9 +2240,9 @@ console.log(bill.summary);
                           </tr>
                         ))}
                       </>
-                    )}
+                    {/* )} */}
 
-                    {(selected == "room" || selected == "restaurant") && (
+                    {/* {(selected == "room" || selected == "restaurant") && (
                       <>
                         <tr>
                           <td
@@ -2263,7 +2266,7 @@ console.log(bill.summary);
                           </td>
                         </tr>
                       </>
-                    )}
+                    )} */}
                     <tr>
                       <td
                         style={{ border: "1px solid #000", padding: "4px" }}

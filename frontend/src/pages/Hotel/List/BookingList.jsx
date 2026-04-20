@@ -272,6 +272,7 @@ function BookingList() {
         const additionalPaxPerDay =
           Number(room?.additionalPaxAmountWithTax || 0) / totalStayDays;
 
+
         const foodPlanPerDay =
           Number(room?.foodPlanAmountWithTax || 0) / totalStayDays;
 
@@ -293,7 +294,7 @@ function BookingList() {
         );
       }, 0);
 
-      return total + (checkoutTotal - advance);
+      return total + (checkoutTotal - advance) + Number(checkout?.otherChargeDetails?.amount || 0);
     }, 0);
   };
   useEffect(() => {
@@ -924,7 +925,7 @@ function BookingList() {
           selectedCustomerData?.customerId?._id === selectedCustomer
             ? false
             : true;
-        console.log("isAgent", isAgent);
+        console.log("isAgent", selectedCustomerData);
         paymentDetails = {
           selectedDataForPayment: selectedDataForPayment,
           additionalChargeArray: additionalChargeDataBasedOnSelection,
@@ -942,9 +943,9 @@ function BookingList() {
           splitDetails: [
             {
               customer: isAgent
-                ? selectedCustomerData?.guestId?.partyName
-                : selectedCustomerData?.customerId?.partyName ||
-                  selectedCheckOut[0]?.customerId?.partyName,
+                ? selectedCustomerData?.guestId
+                : selectedCustomerData?.customerId ||
+                  selectedCheckOut[0]?.customerId,
               source: selectedCash,
               sourceType: "cash",
               amount:
@@ -998,9 +999,9 @@ function BookingList() {
           splitDetails: [
             {
               customer: isAgent
-                ? selectedCustomerData?.guestId?.partyName
-                : selectedCustomerData?.customerId?.partyName ||
-                  selectedCheckOut[0]?.customerId?.partyName,
+                ? selectedCustomerData?.guestId
+                : selectedCustomerData?.customerId ||
+                  selectedCheckOut[0]?.customerId,
               source: selectedBank,
               sourceType: "bank",
               amount:
