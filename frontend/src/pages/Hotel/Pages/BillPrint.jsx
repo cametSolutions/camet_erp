@@ -105,17 +105,22 @@ const HotelBillPrint = () => {
   useEffect(() => {
     if (selectedCheckOut?.length > 0) {
       if (!isForPreview) {
-        console.log(selectedCheckOut[0].restaurantPaymentSplittingData);
-        console.log("hddddd",);
-        console.log(selectedCheckOut[0].checkoutpaymenttypedetails);
+           const rawData = selectedCheckOut[0].restaurantPaymentSplittingData || [];
+console.log(rawData);
+      // ✅ Convert to normal array
+      const cleanData = rawData.map(item =>
+        item?.toObject ? item.toObject() : item._doc ? item._doc : item
+      );
+      console.log("cleanData", cleanData);
         const mergedMap = {};
-        selectedCheckOut[0].checkoutpaymenttypedetails?.forEach((item) => {
-          const key = `${item.customerName}-${item.mode}`;
+        let mapData = [...cleanData,...selectedCheckOut[0].checkoutpaymenttypedetails]
+       mapData?.forEach((item) => {
+          const key = `${item.customerName}-${item.mode || item.subsource}`;
 
           if (!mergedMap[key]) {
             mergedMap[key] = {
-              customerName: item.customerName,
-              mode: item.mode,
+              customerName: item.customerName || selectedCheckOut[0].customerName,
+              mode: item.mode || item.subsource,
               amount: Number(item.amount),
             };
           } else {

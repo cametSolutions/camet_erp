@@ -151,10 +151,10 @@ export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
         .limit(limit > 0 ? limit : 0),
       selectedModal.countDocuments(filter),
     ]);
-    console.log(filter)
 
-    const checkInNumbers = bookings.map((b) => b.voucherNumber);
 
+    const checkInNumbers = params?.modal == "checkIn" ? bookings.map((b) => b.voucherNumber) :
+     params?.modal == "checkOut"? bookings.map((b) => b.checkInId?.voucherNumber) : []
     // 2) Find all related sales in one query
   const sales = await salesModel
   .find({
@@ -177,7 +177,8 @@ for (const sale of sales) {
 
   const saleAmount = sale.isPostToRoom ? Number(sale.finalAmount || 0) : 0;
   const saleSplits = sale.paymentSplittingData || [];
-  console.log("jidss",sale.paymentSplittingData);
+  
+  // console.log("jidss",sale.paymentSplittingData);
 
   const uniqueCheckInNumbers = new Set(
     (sale.convertedFrom || [])
@@ -214,9 +215,11 @@ for (const sale of sales) {
 
 // 4) Attach to bookings
 const bookingsWithSales = bookings.map((b) => {
-  const voucherNumber = b.voucherNumber;
+  const voucherNumber = params?.modal == "checkIn" ? b.voucherNumber : params?.modal == "checkOut" ? b.checkInId?.voucherNumber : ""
   const checkInData = totalByCheckIn[voucherNumber] || { totalAmount: 0, paymentSplittingData: [] };
-console.log(checkInData)
+   if(b.voucherNumber == "CO-820-2025"){
+    console.log("bbbbbbbbb",checkInData?.paymentSplittingData)
+  } 
   return {
     ...b.toObject(),
     restaurantSubTotal: checkInData.totalAmount,
@@ -231,7 +234,6 @@ console.log(checkInData)
     throw new Error("Failed to fetch bookings. Please try again.");
   }
 };
-
 // function used to send response for booking
 export const sendBookingsResponse = (res, bookings, totalBookings, params) => {
   if (bookings && bookings.length > 0) {
