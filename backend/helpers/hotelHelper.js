@@ -573,9 +573,15 @@ export const createReceiptForSales = async (
 
   // Get checkInId from request
   // const checkInId = req.body.selectedCheckOut?.map((it) => it.allCheckInIds)
-  const checkInId = req.body.selectedCheckOut?.flatMap(
+
+  let checkInId = []
+  if (req.body.selectedCheckOut.length == 1){
+    checkInId = [req.body.selectedCheckOut[0]._id]
+  }else{
+checkInId = req.body.selectedCheckOut?.flatMap(
     (it) => it.allCheckInIds,
-  );
+  ).filter(Boolean);
+  }
 
   if (!checkInId) {
     throw new Error("Missing checkInId in selectedCheckOut");
