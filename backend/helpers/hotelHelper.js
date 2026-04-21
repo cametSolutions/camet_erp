@@ -576,6 +576,7 @@ export const createReceiptForSales = async (
   const checkInId = req.body.selectedCheckOut?.flatMap(
     (it) => it.allCheckInIds,
   );
+  console.log("checkInId", checkInId);
 
   if (!checkInId) {
     throw new Error("Missing checkInId in selectedCheckOut");
