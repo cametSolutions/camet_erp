@@ -350,7 +350,15 @@ function VoucherThreeInchPdf({
                         ?.map((item) => item?.tableNumber)
                         .join(", ")}
                   </div>
-
+                  <div>
+                    Table No:{" "}
+                    {data?.voucherNumber
+                      ?.map((item) => item?.tableNumber)
+                      .join(", ") ||
+                      data?.convertedFrom
+                        ?.map((item) => item?.tableNumber)
+                        .join(", ")}
+                  </div>
                   <div>
                     {new Date(data?.Date || data?.createdAt).toLocaleTimeString(
                       "en-GB",
@@ -456,11 +464,13 @@ function VoucherThreeInchPdf({
                   // console.log("welcome", el);
                   // console.log("welcome", data);
                   // console.log("welcome", el?.totalCount);
-                   const total = el?.total || 0;
+                  const total = el?.total || 0;
                   const count = el?.totalCount || 0;
                   const totalTax = Number(
-    el?.totalIgstAmt || (el?.totalCgstAmt || 0) + (el?.totalSgstAmt || 0) || 0
-  );
+                    el?.totalIgstAmt ||
+                      (el?.totalCgstAmt || 0) + (el?.totalSgstAmt || 0) ||
+                      0,
+                  );
                   const addRateWithTax =
                     org?.configurations?.[0]?.addRateWithTax?.restaurantSale ??
                     org?.configurations?.[0]?.addRateWithTax?.sale ??
@@ -477,7 +487,6 @@ function VoucherThreeInchPdf({
 
                   const amount = Math.round(Number(rate) * count).toFixed(2);
 
-                
                   // const rate = count > 0 ? (total / count).toFixed(1) : "0";
 
                   return (

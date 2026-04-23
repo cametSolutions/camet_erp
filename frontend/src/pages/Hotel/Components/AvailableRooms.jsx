@@ -607,7 +607,7 @@ function AvailableRooms({
   };
 
   const handleDelete = (roomId) => {
-    console.log(bookings);
+    console.log(roomId);
     if (isTariffRateChange) {
       toast.error("Cannot delete room while in tariff rate change mode");
       return;
@@ -615,10 +615,14 @@ function AvailableRooms({
     let selectedRoom = bookings.find((b) => b.roomId === roomId);
     console.log(selectedRoom);
     if (selectedRoom.swappingDateFrom) {
+      console.log(selectedRoom);
+      console.log(formData.roomSwapHistory );
       // Collect all fromRoomIds for this roomId
       const fromRoomIds = (formData.roomSwapHistory || [])
         .filter((b) => String(b.toRoomId) === String(roomId))
         .map((b) => String(b.fromRoomId));
+
+        console.log(fromRoomIds);
 
       if (fromRoomIds.length === 0) return;
       console.log(fromRoomIds);
@@ -635,10 +639,13 @@ function AvailableRooms({
 
         return booking;
       });
+
+      console.log(updatedBookings);
       let filteredRoom = updatedBookings.filter((b) => b.roomId !== roomId);
       if (filteredRoom.length === 0) setRoomDeletedCompletely(true);
       setBookings(filteredRoom);
     } else {
+         console.log(selectedRoom);
       let filteredRoom = bookings.filter((b) => b.roomId !== roomId);
       if (filteredRoom.length === 0) setRoomDeletedCompletely(true);
       setBookings(filteredRoom);

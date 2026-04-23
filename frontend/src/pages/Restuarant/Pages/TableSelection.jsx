@@ -206,11 +206,14 @@ const TableTiles = ({
   // Handle table click and fetch KOTs
   const handleTableClick = async (table) => {
     sectionRef.current?.scrollIntoView({ behavior: "smooth" });
+    console.log("Table clicked:", roomDetails);
     if (onTableSelect) {
-      onTableSelect(table);
+      onTableSelect(table , roomDetails);
+       console.log("Table clicked:", roomDetails);
     }
+ console.log("Table clicked:", roomDetails);
+    if (showKOTs) { 
 
-    if (showKOTs) {
       setSelectedTable(table);
       setKotLoading(true);
 

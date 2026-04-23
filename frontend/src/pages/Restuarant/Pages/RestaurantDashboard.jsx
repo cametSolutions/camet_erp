@@ -1030,7 +1030,9 @@ const RestaurantPOS = () => {
     setShowPaymentModal(true);
   };
 
-  const generateKOT = async (selectedTableNumber, tableStatus, parentKot) => {
+  const generateKOT = async (selectedTableNumber, tableStatus, parentKot ,  roomSelected) => {
+    let roomObj =  roomSelected ? roomSelected : roomDetails
+    console.log(roomObj)
     let updatedItems = [];
     let orderCustomerDetails = {
       ...customerDetails,
@@ -1184,7 +1186,7 @@ const RestaurantPOS = () => {
         withCredentials: true,
       });
       if (response.data?.success) {
-        handleKotPrint(response.data?.data);
+        handleKotPrint(response.data?.data,roomObj);
         console.log(selectedTableNumber);
         if (orderType === "dine-in") {
           await api.put(
@@ -1261,15 +1263,16 @@ const RestaurantPOS = () => {
     return typeMap[type] || type;
   };
 
-  const handleKotPrint = (data) => {
+  const handleKotPrint = (data,roomDetails) => {
+    console.log(roomDetails);
     const orderData = {
       kotNo: data?.voucherNumber,
       tableNo: data?.tableNumber,
       type: data.type,
       items: orderItems,
       createdAt: new Date(),
+      roomName : roomDetails?.roomno
     };
-
     generateAndPrintKOT(orderData, true, false, companyName);
   };
 
@@ -2402,8 +2405,8 @@ const RestaurantPOS = () => {
             <div>
               <TableSelection
                 showKOTs={false}
-                onTableSelect={(table) => {
-                  generateKOT(table.tableNumber, table.status);
+                onTableSelect={(table , roomDetails) => {
+                  generateKOT(table.tableNumber, table.status ,null,roomDetails)
                   setShowFullTableSelection(false);
                 }}
                 roomData={roomData}
