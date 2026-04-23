@@ -64,7 +64,7 @@ function BookingList() {
   const listRef = useRef();
   const searchTimeoutRef = useRef(null);
   const limit = 60;
-
+  const pageRef = useRef(1);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [selectedDataForPayment, setSelectedDataForPayment] = useState(null);
@@ -126,6 +126,21 @@ function BookingList() {
     { bg: "#FBEAF0", border: "#ED93B1", icon: "#993556", text: "#72243E" },
   ];
 
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    const calculateHeight = () => {
+      if (containerRef.current) {
+        setListHeight(containerRef.current.clientHeight);
+      }
+    };
+
+    calculateHeight();
+    window.addEventListener("resize", calculateHeight);
+
+    return () => window.removeEventListener("resize", calculateHeight);
+  }, []);
+
   const [combinedSources, setCombinedSources] = useState([]);
   const [restaurantBillTransfer, setShowRestaurantBillTransfer] =
     useState(false);
@@ -148,7 +163,7 @@ function BookingList() {
 
   const getRowHeight = (index) => {
     const item = bookings[index];
-    if (!item) return 2;
+    if (!item) return 56;
 
     const roomCount = item?.selectedRooms?.length || 0;
 
@@ -272,7 +287,6 @@ function BookingList() {
         const additionalPaxPerDay =
           Number(room?.additionalPaxAmountWithTax || 0) / totalStayDays;
 
-
         const foodPlanPerDay =
           Number(room?.foodPlanAmountWithTax || 0) / totalStayDays;
 
@@ -294,7 +308,11 @@ function BookingList() {
         );
       }, 0);
 
-      return total + (checkoutTotal - advance) + Number(checkout?.otherChargeDetails?.amount || 0);
+      return (
+        total +
+        (checkoutTotal - advance) +
+        Number(checkout?.otherChargeDetails?.amount || 0)
+      );
     }, 0);
   };
   useEffect(() => {
@@ -486,6 +504,7 @@ function BookingList() {
     searchTimeoutRef.current = setTimeout(() => {
       setSearchTerm(data);
       setPage(1);
+      pageRef.current = 1;
       setBookings([]);
       setHasMore(true);
     }, 500);
@@ -617,7 +636,7 @@ function BookingList() {
           });
         }
         if (location.pathname === "/sUsers/checkOutList") {
-        console.log(bookingData);
+          console.log(res.data?.pagination);
         }
 
         if (pageNumber === 1) {
@@ -625,7 +644,7 @@ function BookingList() {
         } else {
           setBookings((prev) => [...prev, ...bookingData]);
         }
-
+        pageRef.current = pageNumber;
         setHasMore(res.data.pagination?.hasMore);
         setPage(pageNumber);
       } catch (error) {
@@ -761,7 +780,7 @@ function BookingList() {
 
   useEffect(() => {
     const calculateHeight = () => {
-      const newHeight = window.innerHeight - 95;
+      const newHeight = window.innerHeight - 135;
       setListHeight(newHeight);
     };
 
@@ -774,10 +793,8 @@ function BookingList() {
   const isItemLoaded = (index) => index < bookings.length;
 
   const loadMoreItems = () => {
-    if (!isLoading && hasMore) {
-      return fetchBookings(page + 1, searchTerm);
-    }
-    return Promise.resolve();
+    if (isLoading || !hasMore) return Promise.resolve();
+    return fetchBookings(pageRef.current + 1, searchTerm);
   };
 
   const formatCurrency = (amount) => {
@@ -853,9 +870,8 @@ function BookingList() {
       0,
     );
     if (
-      total >
-      (selectedDataForPayment?.totalWithRestaurantSubTotal )?.toFixed(2))
-     {
+      total > selectedDataForPayment?.totalWithRestaurantSubTotal?.toFixed(2)
+    ) {
       setPaymentError("Total split amount exceeds order total");
     } else {
       setPaymentError("");
@@ -892,7 +908,7 @@ function BookingList() {
       );
 
       console.log(expectedRestaurantTotal);
-      console.log(restaurantSubTotal)
+      console.log(restaurantSubTotal);
 
       if (
         Number(splitTotal.toFixed(2)) !== Number(expectedSplitTotal.toFixed(2))
@@ -934,7 +950,7 @@ function BookingList() {
               ? selectedDataForPayment?.additionalChargeAmount
               : 0,
           cashAmount:
-            (selectedDataForPayment?.totalWithRestaurantSubTotal) -
+            selectedDataForPayment?.totalWithRestaurantSubTotal -
             Number(selectedDataForPayment?.additionalChargeAmount || 0),
           onlineAmount: onlineAmount,
           selectedCash: selectedCash,
@@ -949,7 +965,7 @@ function BookingList() {
               source: selectedCash,
               sourceType: "cash",
               amount:
-                (selectedDataForPayment?.totalWithRestaurantSubTotal ) -
+                selectedDataForPayment?.totalWithRestaurantSubTotal -
                 Number(selectedDataForPayment?.additionalChargeAmount || 0),
               customerName: isAgent
                 ? selectedCustomerData?.guestId?.partyName
@@ -960,8 +976,7 @@ function BookingList() {
             },
           ],
           paymenttypeDetails: {
-            cash:
-              selectedDataForPayment?.totalWithRestaurantSubTotal || 0,
+            cash: selectedDataForPayment?.totalWithRestaurantSubTotal || 0,
             bank: 0,
             card: 0,
             upi: 0,
@@ -991,7 +1006,7 @@ function BookingList() {
               : 0,
           cashAmount: cashAmount,
           onlineAmount:
-            (selectedDataForPayment?.totalWithRestaurantSubTotal || 0 ) -
+            (selectedDataForPayment?.totalWithRestaurantSubTotal || 0) -
             Number(selectedDataForPayment?.additionalChargeAmount || 0),
           selectedCash: "",
           selectedBank: selectedBank,
@@ -1004,8 +1019,7 @@ function BookingList() {
                   selectedCheckOut[0]?.customerId,
               source: selectedBank,
               sourceType: "bank",
-              amount:
-                selectedDataForPayment?.totalWithRestaurantSubTotal  || 0 ,
+              amount: selectedDataForPayment?.totalWithRestaurantSubTotal || 0,
               customerName: isAgent
                 ? selectedCustomerData?.guestId?.partyName
                 : selectedCustomerData?.customerId?.partyName ||
@@ -1018,15 +1032,15 @@ function BookingList() {
             cash: 0,
             bank:
               selected.under == "bank"
-                ? selectedDataForPayment?.totalWithRestaurantSubTotal 
+                ? selectedDataForPayment?.totalWithRestaurantSubTotal
                 : 0,
             upi:
               selected.under == "upi"
-                ? selectedDataForPayment?.totalWithRestaurantSubTotal 
+                ? selectedDataForPayment?.totalWithRestaurantSubTotal
                 : 0,
             card:
               selected.under == "card"
-                ? selectedDataForPayment?.totalWithRestaurantSubTotal 
+                ? selectedDataForPayment?.totalWithRestaurantSubTotal
                 : 0,
             credit: 0,
           },
@@ -1047,7 +1061,7 @@ function BookingList() {
             ? selectedDataForPayment?.additionalChargeAmount
             : 0,
         cashAmount:
-          (selectedDataForPayment?.totalWithRestaurantSubTotal) -
+          selectedDataForPayment?.totalWithRestaurantSubTotal -
           Number(selectedDataForPayment?.additionalChargeAmount || 0),
         selectedCreditor: selectedCreditor,
         remarks: remarks,
@@ -1070,8 +1084,8 @@ function BookingList() {
       );
 
       let payment = (
-        (selectedDataForPayment?.totalWithRestaurantSubTotal ||
-          0) - Number(selectedDataForPayment?.additionalChargeAmount || 0)
+        (selectedDataForPayment?.totalWithRestaurantSubTotal || 0) -
+        Number(selectedDataForPayment?.additionalChargeAmount || 0)
       ).toFixed(2);
       console.log("Paujsdf", totalSplitAmount, payment);
 
@@ -2639,7 +2653,7 @@ function BookingList() {
                                       : "bg-gray-50 dark:bg-neutral-800 border-gray-100 dark:border-neutral-700"
                                   }`}
                                 >
-                                         {/* Under Tag */}
+                                  {/* Under Tag */}
                                   <div className="flex items-center gap-2 flex-wrap ">
                                     <span className="text-[11px] text-gray-400 font-medium">
                                       Under:
@@ -3397,22 +3411,29 @@ function BookingList() {
         )}
 
         {bookings && bookings.length > 0 && (
-          <div className="bg-white border border-gray-300 rounded-lg mx-4 mt-4 overflow-hidden shadow-sm">
+          <div
+            className="bg-white border border-gray-300 rounded-lg mx-4 mt-4 overflow-hidden shadow-sm"
+            ref={containerRef}
+          >
             <TableHeader />
             <div className="pb-4">
               <InfiniteLoader
                 isItemLoaded={isItemLoaded}
-                itemCount={hasMore ? bookings?.length + 1 : bookings?.length}
+                itemCount={hasMore ? bookings.length + 1 : bookings.length}
                 loadMoreItems={loadMoreItems}
                 threshold={10}
               >
                 {({ onItemsRendered, ref }) => (
                   <List
-                    ref={listRef}
                     height={listHeight}
                     itemCount={hasMore ? bookings.length + 1 : bookings.length}
                     itemSize={getRowHeight}
                     width="100%"
+                    onItemsRendered={onItemsRendered}
+                    ref={(listInstance) => {
+                      ref(listInstance);
+                      listRef.current = listInstance;
+                    }}
                   >
                     {Row}
                   </List>
