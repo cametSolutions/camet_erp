@@ -3934,7 +3934,13 @@ export const updateConfigurationForHotelAndRestaurant = async (req, res) => {
           [`configurations.0.discountBasedOnGrossAmount`]: data.checked,
         },
       };
-    } else if (data.title) {
+    } else if (data.title == "discountBasedOnGrossAmountInHotel") {
+      updateData = {
+        $set: {
+          [`configurations.0.discountBasedOnGrossAmountInHotel`]: data.checked,
+        },
+      };
+    }else if (data.title) {
       // Fallback for backward compatibility with old toggle structure
       updateData = {
         $set: {

@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { lazy, Suspense } from "react";
 import { toast } from "sonner";
 import api from "@/api/api";
 import CustomBarLoader from "@/components/common/CustomBarLoader";
@@ -15,6 +15,8 @@ import useFetch from "@/customHook/useFetch";
 import OutStandingModal from "./OutStandingModal";
 import PaymentModal from "./PaymentModal";
 import OtherChargeSearchInPutBox from "./OtherChargeSearchInPutBox";
+const AdditionalChargesModal = lazy(() => import("./AdditionalChargesModal"));
+import SuspenseLoader from "@/components/common/SuspenseLoader";
 function BookingForm({
   isLoading = false,
   setIsLoading = false,
@@ -39,18 +41,23 @@ function BookingForm({
   const [errorObject, setErrorObject] = useState({});
   const [hotelAgent, setHotelAgent] = useState({});
   const [visitOfPurpose, setVisitOfPurpose] = useState([]);
-  const [modalOpen, setModalOpen] = useState(false);
+  const [advanceModalOpen, setAdvanceModalOpen] = useState(false);
+  const [otherChargeModalOpen, setOtherChargeModalOpen] = useState(false);
   const [country, setCountry] = useState("");
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [saveLoader, setSaveLoader] = useState(false);
-
+  const [additionalChargeData, setAdditionalChargeData] = useState([]);
+  const [selectedAdditionalCharge, setSelectedAdditionalCharge] = useState([]);
 
   const { _id: cmp_id, configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg,
-  ); 
+  );
   let addFoodPlanWithRate = configurations?.[0]?.foodPlaWithRoomRate;
-  
-  const [includeFoodRateWithRoom, setIncludeFoodRateWithRoom] = useState(addFoodPlanWithRate ?? false);
+  let discountBasedOnGrossAmount = configurations?.[0]?.discountBasedOnGrossAmountInHotel;
+
+  const [includeFoodRateWithRoom, setIncludeFoodRateWithRoom] = useState(
+    addFoodPlanWithRate ?? false,
+  );
   const { data, loading } = useFetch(
     `/api/sUsers/getProductSubDetails/${cmp_id}?type=roomType`,
   );
@@ -171,7 +178,7 @@ function BookingForm({
         voucherId: editData?.voucherId,
         customerName: editData?.customerId?.partyName,
         accountGroup: editData?.customerId?.accountGroup,
-        guestName: editData?.guestId?.partyName  ,
+        guestName: editData?.guestId?.partyName,
         guestId: editData?.guestId?._id || editData?.guestId,
         guestCountry: editData?.country,
         guestState: editData?.state,
@@ -210,7 +217,24 @@ function BookingForm({
     if (roomId) setSelectedRoomId(roomId);
   }, [roomId]);
 
-  console.log(formData.otherChargeDetails);
+  useEffect(() => {
+    const callAdditionalCharge = async () => {
+      const response = await api.get(
+        `/api/sUsers/additionalcharges/${cmp_id}`,
+        {
+          withCredentials: true,
+        },
+      );
+      setAdditionalChargeData(response?.data?.additionalCharges);
+      let discountCharge = response?.data?.additionalCharges.find(
+        (charge) => charge.name.toLowerCase() === "discount" || "DISCOUNT",
+      );
+      setSelectedAdditionalCharge(
+        discountCharge?._id || response?.data?.additionalCharges[0]?._id,
+      );
+    };
+    callAdditionalCharge();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -506,7 +530,7 @@ function BookingForm({
     }
 
     setErrorObject((prev) => ({ ...prev, advanceAmount: "" }));
-console.log("advanceAmount", advanceAmount,isFor);
+    console.log("advanceAmount", advanceAmount, isFor);
     if (isFor === "deliveryNote" || isFor === "sales") {
       console.log("advanceAmount", advanceAmount);
       setFormData((prev) => ({
@@ -647,7 +671,7 @@ console.log("advanceAmount", advanceAmount,isFor);
       ...prev,
       foodPlan: [...filterData, ...details],
       foodPlanTotal: totalAmount,
-      addFoodPlanWithRate:includeFoodRateWithRoom,
+      addFoodPlanWithRate: includeFoodRateWithRoom,
       updatedDate: currentDateDefault,
     }));
   };
@@ -818,7 +842,12 @@ console.log("advanceAmount", advanceAmount,isFor);
         return;
       }
     }
-    if (customerId && !guestId && guestName != customerName && !isTariffRateChange) {
+    if (
+      customerId &&
+      !guestId &&
+      guestName != customerName &&
+      !isTariffRateChange
+    ) {
       try {
         const dataObject = {
           accountGroup: "",
@@ -901,13 +930,12 @@ console.log("advanceAmount", advanceAmount,isFor);
     if (
       Number(formData.advanceAmount) <= 0 ||
       formData.advanceAmount == editData?.advanceAmount
-
     ) {
       if (isSubmittingRef.current) return;
       isSubmittingRef.current = true;
       console.log(payload);
-      let paymenttypeDetails= editData?.paymenttypeDetails
-      handleSubmit(payload,null,paymenttypeDetails);
+      let paymenttypeDetails = editData?.paymenttypeDetails;
+      handleSubmit(payload, null, paymenttypeDetails);
     } else {
       setFormData((prev) => ({ ...prev, ...payload }));
       setShowPaymentModal(true);
@@ -951,7 +979,7 @@ console.log("advanceAmount", advanceAmount,isFor);
       card: card,
       credit: credit,
     };
-    // setSaveLoader(false) 
+    // setSaveLoader(false)
     handleSubmit(payload, paymentData, paymenttypeDetails);
   };
 
@@ -1639,7 +1667,7 @@ console.log("advanceAmount", advanceAmount,isFor);
                         />
                       </div>
                     </div>
-                    <div className="w-full lg:w-6/12 px-4">
+                    {/* <div className="w-full lg:w-6/12 px-4">
                       <div className="relative w-full mb-3">
                         <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
                           Discount Percentage
@@ -1656,7 +1684,7 @@ console.log("advanceAmount", advanceAmount,isFor);
                           className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                         />
                       </div>
-                    </div>
+                    </div> */}
                     <div className="w-full lg:w-6/12 px-4">
                       <div className="relative w-full mb-3 ">
                         <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
@@ -1684,6 +1712,7 @@ console.log("advanceAmount", advanceAmount,isFor);
                           {isFor == "sales" ? "Amount" : "Advance Amount"}
                         </label>
                         <input
+                          readOnly
                           type="number"
                           name="advanceAmount"
                           value={formData?.advanceAmount}
@@ -1744,11 +1773,6 @@ console.log("advanceAmount", advanceAmount,isFor);
                           Grand Total
                         </label>
                         <div className="space-y-2">
-                          {/* Original Amount */}
-                          {/* <div className="text-xs text-gray-500">
-        Original: ₹(Number{formData?.grandTotal?.toFixed(2)})
-      </div> */}
-                          {/* Rounded Amount */}
                           <input
                             type="number"
                             name="grandTotal"
@@ -1759,19 +1783,62 @@ console.log("advanceAmount", advanceAmount,isFor);
                         </div>
                       </div>
                     </div>
+                    {formData?.grandTotal > 0 && (
+                    <div className="w-full lg:w-6/12 px-4">
+                      <div className="flex gap-2 mt-6">
+                        {/* Advance — outlined, compact */}
+                        <button
+                          type="button"
+                          onClick={() => setAdvanceModalOpen(true)}
+                          className="group flex items-center gap-1.5 px-3 py-2 rounded border border-gray-200 bg-white hover:border-gray-800 hover:bg-gray-50 active:scale-95 transition-all duration-150"
+                        >
+                          <svg
+                            className="w-3.5 h-3.5 text-gray-400 group-hover:text-gray-800 transition-colors duration-150"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <rect x="2" y="5" width="20" height="14" rx="2" />
+                            <line x1="2" y1="10" x2="22" y2="10" />
+                          </svg>
+                          <span className="text-xs font-700 text-gray-600 group-hover:text-gray-900 transition-colors duration-150">
+                            Advance
+                          </span>
+                        </button>
+
+                        {/* Other Charges — filled navy, compact */}
+                        <button
+                          type="button"
+                          onClick={() => setOtherChargeModalOpen(true)}
+                          className="group flex items-center gap-1.5 px-3 py-2 rounded bg-[#0f172a] hover:bg-[#1e293b] active:scale-95 transition-all duration-150"
+                        >
+                          <svg
+                            className="w-3.5 h-3.5 text-white/70 group-hover:text-white transition-colors duration-150"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <circle cx="12" cy="12" r="10" />
+                            <line x1="12" y1="8" x2="12" y2="16" />
+                            <line x1="8" y1="12" x2="16" y2="12" />
+                          </svg>
+                          <span className="text-xs font-semibold text-white">
+                            Other Charges
+                          </span>
+                        </button>
+                      </div>
+                    </div>
+                    )}
                   </div>
 
                   {/* Save Button */}
                   <div className="flex justify-end">
-                    {outStanding.length > 0 && (
-                      <button
-                        className="bg-pink-500 mt-4 ml-4 w-20 text-white active:bg-pink-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none mr-1 ease-linear transition-all duration-150 transform hover:scale-105"
-                        type="button"
-                        onClick={() => setModalOpen(true)}
-                      >
-                        History
-                      </button>
-                    )}
                     <button
                       className="bg-pink-500 mt-4 ml-4 w-20 text-white active:bg-pink-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none mr-1 ease-linear transition-all duration-150 transform hover:scale-105"
                       type="button"
@@ -1880,7 +1947,7 @@ console.log("advanceAmount", advanceAmount,isFor);
                   <button
                     className="bg-pink-500 mt-4 ml-4 w-24 text-white font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md"
                     type="button"
-                    onClick={() => setModalOpen(true)}
+                    onClick={() => setAdvanceModalOpen(true)}
                   >
                     History
                   </button>
@@ -1895,6 +1962,22 @@ console.log("advanceAmount", advanceAmount,isFor);
               </div>
             </div>
           )}
+
+          <Suspense fallback={<SuspenseLoader />}>
+            {otherChargeModalOpen && (
+              <AdditionalChargesModal
+                isOpen={otherChargeModalOpen}
+                onClose={() => setOtherChargeModalOpen(false)}
+                onSave={(charges) => {
+                  console.log(charges);
+                  setOtherChargeModalOpen(false);
+                }}
+                additionalChargeData={additionalChargeData}
+                formData={formData}
+                discountBasedOnGrossAmount={discountBasedOnGrossAmount}
+              />
+            )}
+          </Suspense>
 
           {displayAdditionalPax && (
             <div className="fixed inset-0 flex items-center justify-center bg-black/80 z-50">
@@ -1929,8 +2012,8 @@ console.log("advanceAmount", advanceAmount,isFor);
       )}
 
       <OutStandingModal
-        showModal={modalOpen}
-        onClose={() => setModalOpen(false)}
+        showModal={advanceModalOpen}
+        onClose={() => setAdvanceModalOpen(false)}
         outStanding={outStanding}
       />
     </>

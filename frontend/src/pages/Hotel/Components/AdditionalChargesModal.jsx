@@ -1,222 +1,398 @@
 import { useState } from "react";
-
-const CHARGES = [
-  "Transportation", "Laundry", "Room Service", "Minibar",
-  "Parking", "Spa", "Airport Transfer", "Breakfast",
-  "Loyalty Discount", "Promo Code", "Early Checkout", "Staff Discount"
-];
-
-export default function AdditionalChargesModal({ isOpen, onClose, onSave ,additionalChargeData , formData , setFormData}) {
+import { calculateOtherCharges } from "../Helper/hotelHelper.js";
+import { taxCalculator } from "../Helper/taxCalculator.js";
+import { toast } from "sonner";
+export default function AdditionalChargesModal({
+  isOpen,
+  onClose,
+  onSave,
+  additionalChargeData = [],
+  formData = {},
+  discountBasedOnGrossAmount = true,
+}) {
   const [rows, setRows] = useState([
-    { id: 1, charge: "", operation: "add", amountType: "flat", value: "" }
+    {
+      _id: additionalChargeData[0]?._id || 1,
+      option: additionalChargeData[0]?.name || "",
+      value: 0,
+      action: "sub",
+      taxPercentage: additionalChargeData[0]?.taxPercentage || 0,
+      taxAmt: 0,
+      hsn: additionalChargeData[0]?.hsn || "",
+      finalValue: 0,
+      amountType: "percentage",
+    },
   ]);
 
-  
+  const addRow = () => {
+    if(rows.length >= 1){
+      let lastRow = rows[rows.length - 1];
+      if(lastRow.option === "" || lastRow.value === "" || lastRow.action === "" || lastRow.taxPercentage === "" || lastRow.taxAmt === "" || lastRow.hsn === "" || lastRow.finalValue === "") {
+        toast.error("Please fill all the fields in the last row before adding a new row.");
+        return;
+      }
+    }
+    setRows((prev) => [
+      ...prev,
+      {
+        _id: 1,
+        option:  "",
+        value: 0,
+        action: "sub",
+        taxPercentage:  0,
+        taxAmt: 0,
+        hsn:  "",
+        finalValue: 0,
+        amountType: "percentage",
+      },
+    ]);
+  };
 
-  const addRow = () =>
-    setRows(r => [...r, { id: Date.now(), charge: "", operation: "add", amountType: "flat", value: "" }]);
+  const removeRow = (id) => {
+    setRows((prev) => prev.filter((row) => row._id !== id));
+  };
+  const update = async (id, field, val) => {
+    console.log(field, val);
+    if (field == "value" || field == "charge" || field == "amountType") {
+      let additionalCharge = {};
+      let specificRow = rows.find((row) => row._id === id) || {};
+      console.log(specificRow);
+      if (field == "charge") {
+        additionalCharge = additionalChargeData.find((row) => row._id == val);
+        if (!additionalCharge) {
+          toast.error("Please select a valid additional charge");
+          return;
+        }
+        specificRow._id = val;
+        specificRow.option = additionalCharge.name;
+        specificRow.taxPercentage = additionalCharge.taxPercentage;
+        specificRow.hsn = additionalCharge.hsn;
+      } else if (field == "value") {
+        specificRow.value = val;
+      } else if(field == "amountType") {
+        specificRow.amountType = val;
+      }
+      let discountData = await calculateOtherCharges({
+        total: formData?.grandTotal || 0,
+        inputValue: specificRow?.value || 0,
+        inputType: specificRow?.amountType,
+        taxPercentage: specificRow?.taxPercentage || 0,
+        discountBasedOnGrossAmount,
+        formData,
+      });
+      specificRow.taxAmt = discountData.taxAmt;
+      specificRow.finalValue = discountData.finalValue;
+      setRows((prev) =>
+        prev.map((row) => (row._id === id ? { ...specificRow } : row)),
+      );
+    } else {
+      setRows((prev) =>
+        prev.map((row) => (row._id === id ? { ...row, [field]: val } : row)),
+      );
+    }
+  };
 
-  const removeRow = (id) => setRows(r => r.filter(x => x.id !== id));
+  const totalCharges = rows
+    .filter((r) => r.action === "add" && r.finalValue)
+    .reduce((a, r) => a + parseFloat(r.finalValue || 0), 0);
 
-  const update = (id, field, val) =>
-    setRows(r => r.map(x => x.id === id ? { ...x, [field]: val } : x));
+  const totalDiscount = rows
+    .filter((r) => r.action === "sub" && r.finalValue)
+    .reduce((a, r) => a + parseFloat(r.finalValue || 0), 0);
+
+  const balanceAmount = (formData?.grandTotal + totalCharges )  - totalDiscount;
+
+    console.log(totalCharges);
+    console.log(totalDiscount);
 
   if (!isOpen) return null;
 
   return (
-    /* Backdrop */
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      {/* Modal */}
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-fade-in">
-
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/55 px-4 backdrop-blur-sm">
+      <div
+        className="w-full max-w-5xl overflow-hidden rounded-md bg-white shadow-[0_20px_60px_rgba(15,26,46,0.3),0_0_0_1px_rgba(15,26,46,0.1)]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* HEADER */}
+        <div className="flex items-center justify-between bg-slate-900 px-5 py-3.5">
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-[#0f172a] flex items-center justify-center">
-              <svg className="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            <div className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white/30 text-white">
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="16" />
+                <line x1="8" y1="12" x2="16" y2="12" />
               </svg>
             </div>
-            <div>
-              <p className="text-sm font-semibold text-gray-800">Additional Charges</p>
-              <p className="text-[11px] text-gray-400">Add extra fees or subtract discounts</p>
-            </div>
+            <span className="text-[15px] font-extrabold tracking-[0.01em] text-white">
+              Other Charges
+            </span>
           </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-all"
-          >
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-            </svg>
-          </button>
-        </div>
-
-        {/* Column Labels */}
-        <div className="grid grid-cols-12 gap-3 px-6 pt-4 pb-1">
-          <p className="col-span-4 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Charge type</p>
-          <p className="col-span-3 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Operation</p>
-          <p className="col-span-2 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Value as</p>
-          <p className="col-span-2 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Amount</p>
-          <p className="col-span-1"></p>
-        </div>
-
-        {/* Rows */}
-        <div className="px-6 pb-4 space-y-3 mt-1 max-h-72 overflow-y-auto">
-          {rows.map((row) => (
-            <div
-              key={row.id}
-              className={`grid grid-cols-12 gap-3 items-center p-3 rounded-xl border transition-all duration-150 ${
-                row.operation === "add"
-                  ? "bg-slate-50 border-slate-200"
-                  : "bg-green-50 border-green-200"
-              }`}
-            >
-              {/* Charge dropdown */}
-              <div className="col-span-4">
-                <select
-                  value={row.charge}
-                  onChange={(e) => update(row.id, "charge", e.target.value)}
-                  className="w-full text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition-all"
-                >
-                  <option value="">Select charge</option>
-                  {additionalChargeData.map(c => <option key={c._id}>{c.name}</option>)}
-                </select>
-              </div>
-
-              {/* Add / Subtract toggle */}
-              <div className="col-span-3">
-                <div className="flex rounded-lg overflow-hidden border border-gray-200 bg-white">
-                  <button
-                    type="button"
-                    onClick={() => update(row.id, "operation", "add")}
-                    className={`flex-1 flex items-center justify-center gap-1 py-2 text-xs font-semibold transition-all duration-150 ${
-                      row.operation === "add"
-                        ? "bg-[#0f172a] text-white"
-                        : "text-gray-400 hover:text-gray-600"
-                    }`}
-                  >
-                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
-                      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                    </svg>
-                    Add
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => update(row.id, "operation", "subtract")}
-                    className={`flex-1 flex items-center justify-center gap-1 py-2 text-xs font-semibold transition-all duration-150 ${
-                      row.operation === "subtract"
-                        ? "bg-green-600 text-white"
-                        : "text-gray-400 hover:text-gray-600"
-                    }`}
-                  >
-                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
-                      <line x1="5" y1="12" x2="19" y2="12"/>
-                    </svg>
-                    Subtract
-                  </button>
-                </div>
-              </div>
-
-              {/* Flat / % toggle */}
-              <div className="col-span-2">
-                <div className="flex rounded-lg overflow-hidden border border-gray-200 bg-white">
-                  <button
-                    type="button"
-                    onClick={() => update(row.id, "amountType", "flat")}
-                    className={`flex-1 py-2 text-xs font-semibold transition-all duration-150 ${
-                      row.amountType === "flat"
-                        ? "bg-[#0f172a] text-white"
-                        : "text-gray-400 hover:text-gray-600"
-                    }`}
-                  >
-                    ₹
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => update(row.id, "amountType", "percent")}
-                    className={`flex-1 py-2 text-xs font-semibold transition-all duration-150 ${
-                      row.amountType === "percent"
-                        ? "bg-[#0f172a] text-white"
-                        : "text-gray-400 hover:text-gray-600"
-                    }`}
-                  >
-                    %
-                  </button>
-                </div>
-              </div>
-
-              {/* Amount input */}
-              <div className="col-span-2">
-                <div className="flex items-center bg-white border border-gray-200 rounded-lg px-3 py-2 gap-1 focus-within:ring-2 focus-within:ring-indigo-300 focus-within:border-indigo-400 transition-all">
-                  <span className="text-xs text-gray-400 font-medium">
-                    {row.amountType === "flat" ? "₹" : "%"}
-                  </span>
-                  <input
-                    type="number"
-                    min="0"
-                    placeholder="0"
-                    value={row.value}
-                    onChange={(e) => update(row.id, "value", e.target.value)}
-                    className="w-full text-sm font-medium text-gray-700 bg-transparent outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* Remove */}
-              <div className="col-span-1 flex justify-center">
-                <button
-                  type="button"
-                  onClick={() => removeRow(row.id)}
-                  className="w-7 h-7 rounded-full flex items-center justify-center text-gray-300 hover:bg-red-50 hover:text-red-500 transition-all"
-                >
-                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                  </svg>
-                </button>
-              </div>
+          {formData?.grandTotal > 0 && (
+            <div className="text-right">
+              <p className="m-0 text-[10px] font-bold uppercase tracking-[0.06em] text-white/40">
+                Grand Total
+              </p>
+              <p className="m-0 text-[13px] font-extrabold text-blue-500 text-center">
+                {formData?.grandTotal.toLocaleString("en-IN")}
+              </p>
             </div>
-          ))}
+          )}
 
-          {/* Add row button */}
-          <button
-            type="button"
-            onClick={addRow}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-dashed border-gray-300 text-xs font-semibold text-gray-400 hover:border-indigo-400 hover:text-indigo-500 hover:bg-indigo-50 transition-all duration-150"
-          >
-            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-            Add another charge
-          </button>
+          <div className="flex items-center gap-4">
+            {totalCharges > 0 && (
+              <div className="text-right">
+                <p className="m-0 text-[10px] font-bold uppercase tracking-[0.06em] text-white/40">
+                  Charges
+                </p>
+                <p className="m-0 text-[13px] font-extrabold text-pink-500 text-center">
+                  +₹{totalCharges.toLocaleString("en-IN")}
+                </p>
+              </div>
+            )}
+
+            {totalDiscount > 0 && (
+              <div className="text-right">
+                <p className="m-0 text-[10px] font-bold uppercase tracking-[0.06em] text-white/40">
+                  Discount
+                </p>
+                <p className="m-0 text-[13px] font-extrabold text-green-400 text-center">
+                  −₹{totalDiscount.toLocaleString("en-IN")}
+                </p>
+              </div>
+            )}
+
+            <button
+              onClick={onClose}
+              className="flex h-[30px] w-[30px] items-center justify-center rounded bg-white/10 text-white/50 transition hover:bg-white/15"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
         </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-4 bg-[#0f172a]">
-          <span className="text-xs text-slate-400 font-medium">
-            {rows.length} charge{rows.length !== 1 ? "s" : ""} added
+        {/* COLUMN LABELS */}
+        <div className="grid grid-cols-[1fr_152px_88px_120px_120px_36px] gap-2.5 border-b border-slate-200 bg-slate-50 px-5 py-2.5">
+          {["Charge Type", "Operation", "Value As", "Value", "Amount", ""].map(
+            (label, i) => (
+              <p
+                key={i}
+                className="m-0 text-[11px] font-extrabold uppercase tracking-[0.08em] text-gray-700"
+              >
+                {label}
+              </p>
+            ),
+          )}
+        </div>
+
+        {/* ROWS */}
+        <div className="max-h-[280px] overflow-y-auto bg-white px-5 py-3 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:w-1">
+          <div className="flex flex-col gap-2">
+            {rows.map((row) => {
+              const isSub = row.action === "sub";
+
+              return (
+                <div
+                  key={row._id}
+                  className={`grid grid-cols-[1fr_152px_88px_120px_120px_36px] items-center gap-2.5 rounded border px-3 py-2.5 transition ${
+                    isSub
+                      ? "border-green-200 bg-green-50"
+                      : "border-slate-200 bg-slate-50"
+                  }`}
+                >
+                  {/* Charge Type */}
+                  <select
+                    value={row._id}
+                    onChange={(e) => update(row._id, "charge", e.target.value)}
+                    className="w-full rounded border border-slate-200 bg-white px-2.5 py-[7px] text-[13px] font-semibold text-slate-900 outline-none transition focus:border-slate-900"
+                  >
+                    <option value="">Select charge</option>
+                    {additionalChargeData.map((c) => (
+                      <option key={c._id} value={c._id}>
+                        {c.name}{" "}
+                        {c.taxPercentage > 0 && `(${c.taxPercentage}%)`}
+                      </option>
+                    ))}
+                  </select>
+
+                  {/* Operation */}
+                  <div className="flex overflow-hidden rounded border border-slate-200">
+                    {[
+                      { val: "add", label: "ADD" },
+                      { val: "sub", label: "SUB" },
+                    ].map(({ val, label }) => {
+                      const active = row.action === val;
+                      return (
+                        <button
+                          key={val}
+                          type="button"
+                          onClick={() => update(row._id, "action", val)}
+                          className={`flex-1 px-1 py-[7px] text-[11px] font-extrabold tracking-[0.05em] transition ${
+                            active
+                              ? val === "add"
+                                ? "bg-slate-900 text-white"
+                                : "bg-green-700 text-white"
+                              : "bg-white text-slate-400"
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Amount Type */}
+                  <div className="flex overflow-hidden rounded border border-slate-200">
+                    {[
+                      { val: "flat", label: "₹" },
+                      { val: "percentage", label: "%" },
+                    ].map(({ val, label }) => {
+                      const active = row.amountType === val;
+                      return (
+                        <button
+                          key={val}
+                          type="button"
+                          onClick={() => update(row._id, "amountType", val)}
+                          className={`flex-1 py-[7px] text-[13px] font-extrabold transition ${
+                            active
+                              ? "bg-slate-900 text-white"
+                              : "bg-white text-slate-400"
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Value */}
+                  <div className="flex items-center gap-1 rounded border border-slate-200 bg-white px-2.5 py-[7px] focus-within:border-slate-900">
+                    <span className="shrink-0 text-[12px] font-bold text-slate-400">
+                      {row.amountType === "flat" ? "₹" : "%"}
+                    </span>
+                    <input
+                      type="number"
+                      min="0"
+                      placeholder="0.00"
+                      value={row.value}
+                      onChange={(e) => update(row._id, "value", e.target.value)}
+                      className="w-full border-none bg-transparent text-[13px] font-bold text-slate-900 outline-none [font-variant-numeric:tabular-nums] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    />
+                  </div>
+
+                  {/* Amount */}
+                  <div className="flex items-center gap-1 rounded border border-slate-200 bg-white px-2.5 py-[7px] focus-within:border-slate-900">
+                    <span className="shrink-0 text-[12px] font-bold text-slate-400">
+                      ₹
+                    </span>
+                    <input
+                      readOnly
+                      type="number"
+                      min="0"
+                      placeholder="0.00"
+                      value={row.finalValue}
+                      className="w-full border-none bg-transparent text-[13px] font-bold text-slate-900 outline-none [font-variant-numeric:tabular-nums] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    />
+                  </div>
+
+                  {/* Delete */}
+                  <button
+                    type="button"
+                    onClick={() => removeRow(row._id)}
+                    className="flex h-8 w-8 items-center justify-center rounded border border-slate-200 bg-white text-slate-300 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-500"
+                  >
+                    <svg
+                      width="13"
+                      height="13"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                    >
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                  </button>
+                </div>
+              );
+            })}
+
+            <button
+              type="button"
+              onClick={addRow}
+              className="mt-0.5 flex w-full items-center justify-center gap-1.5 rounded border border-dashed border-slate-200 bg-transparent px-3 py-2.5 text-[11px] font-extrabold uppercase tracking-[0.06em] text-slate-400 transition hover:border-slate-900 hover:text-slate-900"
+            >
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+              >
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              Add Charge
+            </button>
+          </div>
+        </div>
+
+        {/* FOOTER */}
+        <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50 px-5 py-3">
+          <span className="text-[11px] font-extrabold uppercase tracking-[0.07em] text-green-600">
+            Balance Amount : {balanceAmount}
           </span>
-          <div className="flex items-center gap-3">
+
+          <div className="flex items-center gap-2.5">
             <button
               type="button"
               onClick={onClose}
-              className="text-xs font-semibold text-slate-400 hover:text-white transition-colors px-4 py-2"
+              className="rounded border border-slate-200 bg-white px-5 py-2 text-[13px] font-extrabold tracking-[0.04em] text-slate-900 transition hover:bg-slate-100"
             >
-              Cancel
+              CANCEL
             </button>
+
             <button
               type="button"
               onClick={() => onSave(rows)}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-pink-500 hover:bg-pink-600 text-white text-sm font-semibold active:scale-95 transition-all duration-150"
+              className="flex items-center gap-1.5 rounded bg-pink-600 px-6 py-2 text-[13px] font-extrabold tracking-[0.05em] text-white transition hover:bg-pink-700 active:scale-[0.97]"
             >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-                <polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                <polyline points="17 21 17 13 7 13 7 21" />
+                <polyline points="7 3 7 8 15 8" />
               </svg>
-              Save charges
+              SAVE
             </button>
           </div>
         </div>
