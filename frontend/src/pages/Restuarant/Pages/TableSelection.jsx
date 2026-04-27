@@ -166,13 +166,14 @@ const TableTiles = ({
     setRoomDetails({
       _id: room?.roomId || "",
       roomno: room?.roomName || "",
-      guestName: room?.customerName || "",
+      customerName: room?.customerName || "",
+      guestName: room?.guestName || "",
       CheckInNumber: room?.voucherNumber || "",
       foodPlan: room?.foodPlan || null, // ✅ Pass the complete object
     });
 
     setSearch(
-      `${room.roomName} - ${room.customerName} - ${room.voucherNumber}`,
+      `${room.roomName} - ${room.customerName} - ${room.guestName} - ${room.voucherNumber}`,
     );
     setShowResults(false);
   };

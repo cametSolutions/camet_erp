@@ -12,6 +12,7 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
   const location = useLocation();
   const contentToPrint = useRef(null);
 
+  
   !data && (data = location?.state);
   !org &&
     (org = useSelector(
@@ -20,7 +21,7 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
   let showPrintButton =
     org?.configurations?.[0]?.defaultPrint?.showBeforeSaleInRestaurant;
   const { isFinalized } = useParams();
-
+console.log(data);
   // const isIndian = useSelector(
   //   (state) =>
   //     state?.secSelectedOrganization?.secSelectedOrg?.country === "India",
@@ -196,7 +197,8 @@ useEffect(() => {
 
     // or a single comma‑separated string:
     const names = foodPlanArray?.map((item) => item.planType).join(", ");
-    return `Food Paln: ${names}`;
+
+    return  names.length > 0 ? `Food Paln: ${names}` : null;
   };
   console.log(data?.finalAmount);
   console.log(data);
@@ -479,6 +481,14 @@ useEffect(() => {
               <div style={{ marginTop: "2px" }}>
                 <span style={{ textTransform: "capitalize" }}>
                   {data.orderType.replace(/-/g, " ")}
+                </span>
+              </div>
+            )}
+               {data?.party?.partyName && (
+              <div style={{ marginTop: "2px" }}>
+                <span style={{ textTransform: "capitalize" }}>Guest : </span>
+                <span style={{ textTransform: "capitalize" }}>
+                  {data?.party?.partyName}
                 </span>
               </div>
             )}
@@ -777,6 +787,7 @@ useEffect(() => {
               </div>
             </div>
             {getFoodPlan() && <div style={bold}>{getFoodPlan()}</div>}
+       
             {/* {data?.voucherNumber?.[0]?.checkInNumber && (
               <div style={flexRow}>
                 <div style={bold}>{data.voucherNumber[0].checkInNumber}</div>
