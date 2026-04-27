@@ -108,6 +108,21 @@ const selectedRoomSchema = new mongoose.Schema({
   swappingDateFrom: { type: Date },
   lastRateUpdatedAt: { type: Date, default: Date.now },
   isCheckedOut: { type: Boolean, default: false },
+  discountAmount : Number,
+  otherChargeAmount : Number,
+  adjustments: [
+    {
+      _id: { type: mongoose.Schema.Types.ObjectId, ref: "AdditionalCharge" },
+      option: { type: String },
+      value: { type: String },
+      action: { type: String },
+      taxPercentage: { type: Number },
+      taxAmt: { type: Number },
+      hsn: { type: String },
+      finalValue: { type: Number },
+      amountType: { type: String },
+    },
+  ],
 });
 
 const bookingSchema = new mongoose.Schema(
@@ -176,11 +191,13 @@ const bookingSchema = new mongoose.Schema(
       credit: { type: Number, default: 0 },
       card: { type: Number, default: 0 },
     },
-    checkoutpaymenttypedetails: [{
-      customerName: { type: String },
-      mode: { type: String },
-      amount: { type: Number }
-    }],
+    checkoutpaymenttypedetails: [
+      {
+        customerName: { type: String },
+        mode: { type: String },
+        amount: { type: Number },
+      },
+    ],
     grandTotal: String,
     customerId: { type: mongoose.Schema.Types.ObjectId, ref: "Party" },
     customerName: String,
@@ -244,24 +261,20 @@ const bookingSchema = new mongoose.Schema(
     grcno: String,
     isHold: { type: Boolean, default: false },
     taggedCheckIns: { type: mongoose.Schema.Types.ObjectId, ref: "CheckIn" },
-    holdArray:[],
-    otherChargeDetails: 
-  {
-    amount: {
-      type: Number,
-    },
-    charge: {
-      _id: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Charge"
+    holdArray: [],
+    otherChargeDetails: [
+      {
+        _id: { type: mongoose.Schema.Types.ObjectId, ref: "AdditionalCharge" },
+        option: { type: String },
+        value: { type: String },
+        action: { type: String },
+        taxPercentage: { type: Number },
+        taxAmt: { type: Number },
+        hsn: { type: String },
+        finalValue: { type: Number },
+        amountType: { type: String },
       },
-      cmp_id: mongoose.Schema.Types.ObjectId,
-      Primary_user_id: mongoose.Schema.Types.ObjectId,
-      name: String,
-      hsn: String,
-      taxPercentage: Number
-    }
-  },
+    ],
   },
   { timestamps: true },
 );

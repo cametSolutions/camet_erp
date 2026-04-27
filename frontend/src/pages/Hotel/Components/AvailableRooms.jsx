@@ -5,7 +5,7 @@ import { useLocation } from "react-router-dom";
 import api from "@/api/api";
 import { toast } from "sonner";
 
-import { Users, Utensils, Trash2 } from "lucide-react";
+import { Users, Utensils, Trash2 ,SlidersHorizontal  } from "lucide-react";
 import { taxCalculator } from "../Helper/taxCalculator";
 import { FaHistory } from "react-icons/fa";
 import TariffHistory from "./TariffHistory";
@@ -1090,6 +1090,53 @@ function AvailableRooms({
                                 </p>
                               </div>
 
+                                   <div className="text-center">
+                                <button
+                                  onClick={() => {
+                                    selectedRoomData(
+                                      booking?.roomId,
+                                      "addAdjustment",
+                                    );
+                                    setPendingRoomId(booking.roomId);
+                                  }}
+                                  disabled={isTariffRateChange ? true : false}
+                                  className="bg-gradient-to-r from-red-500 to-rose-500 text-white px-2 py-1 rounded text-xs font-medium hover:from-red-600 hover:to-rose-600 transition-all duration-200 flex items-center gap-1"
+                                >
+                                  <SlidersHorizontal  className="w-3 h-3" />
+                                 Adj
+                                </button>
+                                <p className="text-xs font-bold text-blue-700 mt-1">
+                                  {booking?.stayDays > 1 ? (
+                                    <div className="flex flex-col items-center">
+                                      <span className="text-[10px] text-gray-500">
+                                        {booking?.stayDays} × ₹
+                                        {Number(
+                                          (
+                                            booking?.foodPlanAmountWithOutTax /
+                                              booking?.stayDays || 0
+                                          ).toFixed(0),
+                                        )}
+                                      </span>
+
+                                      <span className="text-xs font-bold">
+                                        ₹
+                                        {Number(
+                                          booking?.foodPlanAmountWithOutTax ||
+                                            0,
+                                        ).toFixed(0)}
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <span>
+                                      ₹
+                                      {Number(
+                                        booking?.foodPlanAmountWithOutTax || 0,
+                                      ).toFixed(0)}
+                                    </span>
+                                  )}
+                                </p>
+                              </div>
+
                               {!isTariffRateChange && (
                                 <button
                                   onClick={() => handleDelete(booking.roomId)}
@@ -1130,7 +1177,7 @@ function AvailableRooms({
                           )?.amountAfterTax
                         : "₹" + Number(totalAmount).toFixed(2)}
                     </td>
-                    <td colSpan={2}></td>
+                    <td colSpan={3}></td>
                     <td className="px-1 py-2 font-bold text-blue-700 text-center text-xs">
                       <div className="flex gap-2">
                         {formData?.paxTotal && (

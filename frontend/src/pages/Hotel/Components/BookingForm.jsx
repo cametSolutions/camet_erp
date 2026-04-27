@@ -14,9 +14,9 @@ import FoodPlanComponent from "./FoodPlanComponent";
 import useFetch from "@/customHook/useFetch";
 import OutStandingModal from "./OutStandingModal";
 import PaymentModal from "./PaymentModal";
-import OtherChargeSearchInPutBox from "./OtherChargeSearchInPutBox";
 const AdditionalChargesModal = lazy(() => import("./AdditionalChargesModal"));
 import SuspenseLoader from "@/components/common/SuspenseLoader";
+import { calculateOtherCharges } from "../Helper/hotelHelper.js";
 function BookingForm({
   isLoading = false,
   setIsLoading = false,
@@ -137,6 +137,7 @@ function BookingForm({
     addTaxWithRate: configurations[0]?.addRateWithTax?.hotelSale,
   });
 
+  // useEffect used to set up the edited data 
   useEffect(() => {
     if (editData) {
       setSelectedParty(editData?.customerId);
@@ -213,10 +214,12 @@ function BookingForm({
     }
   }, [editData]);
 
+  // setting room id for selected room
   useEffect(() => {
     if (roomId) setSelectedRoomId(roomId);
   }, [roomId]);
 
+  // function used to fetch additional charge data
   useEffect(() => {
     const callAdditionalCharge = async () => {
       const response = await api.get(
@@ -236,6 +239,7 @@ function BookingForm({
     callAdditionalCharge();
   }, []);
 
+  // on change function
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -344,6 +348,7 @@ function BookingForm({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // arrival time and date helper
   const handleArrivalTimeChange = (time) =>
     console.log(time) ||
     setFormData((prev) => ({
@@ -352,6 +357,8 @@ function BookingForm({
       updatedDate: currentDateDefault,
     }));
 
+
+  // checkout  time and date helper
   const handleCheckOutTimeChange = (time) =>
     setFormData((prev) => ({
       ...prev,
@@ -359,9 +366,11 @@ function BookingForm({
       updatedDate: currentDateDefault,
     }));
 
+  // checking customer is indian or foreign
   const isForeign =
     country.trim().toLowerCase() !== "india" && country.trim() !== "";
 
+    // getting voucher series data for specific ones
   const fetchData = useCallback(async () => {
     try {
       const response = await api.get(
@@ -402,154 +411,170 @@ function BookingForm({
     }
   }, [cmp_id, isFor, setIsLoading]);
 
+  // activation useEffect for fetching data
   useEffect(() => {
     if (!editData || isFor === "deliveryNote" || isFor === "sales") {
       fetchData();
     }
   }, [fetchData, editData, isFor]);
 
-  // Fixed calculation: Room total + Pax + Food Plan = Total Amount, then apply discount
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      const roomTotal = Number(formData?.roomTotal || 0);
-      const paxTotal = Number(formData?.paxTotal || 0);
-      const foodPlanTotal = Number(formData?.foodPlanTotal || 0);
+// Fixed calculation: Room total + Pax + Food Plan = Total Amount, then apply discount (from other charges in final side)
+  
+useEffect(() => {
+  const handler = setTimeout(() => {
+    const roomTotal = Number(formData?.roomTotal || 0);
+    const paxTotal = Number(formData?.paxTotal || 0);
+    const foodPlanTotal = Number(formData?.foodPlanTotal || 0);
 
-      // Total before discount
-      let otherChargeAmount = 0;
-      let finalOtherChargeAmount = 0;
-      if (
-        formData.otherChargeDetails &&
-        Object.keys(formData.otherChargeDetails).length > 0
-      ) {
-        otherChargeAmount =
-          Math.round(
-            Number(formData.otherChargeDetails?.amount || 0) *
-              Number(formData.otherChargeDetails?.charge?.taxPercentage || 0),
-          ) / 100;
-        finalOtherChargeAmount = Math.round(
-          Number(formData.otherChargeDetails?.amount) +
-            Number(otherChargeAmount),
-        );
-      }
+    let otherChargeAmount = 0;
+    let discountAmount = 0;
 
-      const totalAmount = Math.round(roomTotal + finalOtherChargeAmount);
-      // Apply discount
-      const discountAmount = Math.round(Number(formData.discountAmount || 0));
-      const grandTotal = Math.round(
-        (totalAmount - discountAmount).toFixed(2) + finalOtherChargeAmount,
+    if (
+      Array.isArray(formData?.otherChargeDetails) &&
+      formData.otherChargeDetails.length > 0
+    ) {
+      const valueDetails = formData.otherChargeDetails.reduce(
+        (acc, item) => {
+          const value = Number(item?.finalValue || 0);
+
+          if (item?.action === "add") {
+            acc.otherChargeAmount += value;
+          } else if (item?.action === "sub") {
+            acc.discountAmount += value;
+          }
+
+          return acc;
+        },
+        { otherChargeAmount: 0, discountAmount: 0 }
       );
 
-      // Calculate balance
-      const totalAdvance = Math.round(
-        Number(
-          formData.totalAdvance > 0
-            ? formData.totalAdvance
-            : formData.advanceAmount || 0,
-        ),
-      );
+      otherChargeAmount = valueDetails.otherChargeAmount;
+      discountAmount = valueDetails.discountAmount;
+    }
+    const totalAmount = roomTotal + paxTotal + foodPlanTotal + otherChargeAmount - discountAmount;
+    const additionalCharge = Math.abs(Number(discountAmount) - Number(otherChargeAmount))
+    const grandTotal =  roomTotal + paxTotal + foodPlanTotal
 
-      const balanceToPay = Math.round(grandTotal - totalAdvance).toFixed(2);
-      console.log(balanceToPay);
+    const totalAdvance = Number(
+      formData?.totalAdvance > 0
+        ? formData.totalAdvance
+        : formData?.advanceAmount || 0
+    );
 
-      // Calculate discount percentage
-      const discountPercentage =
-        totalAmount > 0
-          ? Math.round((discountAmount / totalAmount) * 100).toFixed(2)
-          : 0;
+    const balanceToPay = (Number(grandTotal) - totalAdvance - additionalCharge).toFixed(2);
 
-      setFormData((prev) => ({
-        ...prev,
-        totalAmount: totalAmount.toFixed(2),
-        discountPercentage,
-        grandTotal,
-        balanceToPay,
-      }));
-    }, 300);
-
-    return () => clearTimeout(handler);
-  }, [
-    formData.roomTotal,
-    formData.paxTotal,
-    formData.foodPlanTotal,
-    formData.discountAmount,
-    formData.totalAdvance,
-    formData.otherChargeDetails,
-  ]);
-
-  const handleDiscountPercentageChange = (e) => {
-    const { value } = e.target;
-    const percentage = Number(value) || 0;
-    const totalAmount =
-      Number(formData?.roomTotal || 0) +
-      Number(formData?.paxTotal || 0) +
-      Number(formData?.foodPlanTotal || 0);
-    const calculatedAmount = (totalAmount * percentage) / 100;
     setFormData((prev) => ({
       ...prev,
-      discountPercentage: value,
-      discountAmount: calculatedAmount.toFixed(2),
-      updatedDate: currentDateDefault,
+      totalAmount: totalAmount.toFixed(2),
+      otherChargeAmount: Number(otherChargeAmount.toFixed(2)),
+      discountAmount: Number(discountAmount.toFixed(2)),
+      grandTotal,
+      balanceToPay,
     }));
-  };
+  }, 300);
 
-  const handleDiscountAmountChange = (e) => {
-    const { value } = e.target;
-    const amount = Number(value) || 0;
-    const totalAmount =
-      Number(formData?.roomTotal || 0) +
-      Number(formData?.paxTotal || 0) +
-      Number(formData?.foodPlanTotal || 0);
-    if (amount >= 0 && amount <= totalAmount) {
-      const calculatedPercentage =
-        totalAmount > 0 ? (amount / totalAmount) * 100 : 0;
-      setFormData((prev) => ({
-        ...prev,
-        discountAmount: value,
-        discountPercentage: calculatedPercentage.toFixed(2),
-        updatedDate: currentDateDefault,
-      }));
+  return () => clearTimeout(handler);
+}, [
+  formData.roomTotal,
+  formData.paxTotal,
+  formData.foodPlanTotal,
+  formData.totalAdvance,
+  formData.advanceAmount,
+  formData.otherChargeDetails,
+]);
+
+// recalculating other charges if any of the values are changed in the parent side component
+const isEqual = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+useEffect(() => {
+  const handler = setTimeout(async () => {
+    const roomTotal = Number(formData?.roomTotal || 0);
+    const paxTotal = Number(formData?.paxTotal || 0);
+    const foodPlanTotal = Number(formData?.foodPlanTotal || 0);
+
+    let updatedOtherChargeDetails = Array.isArray(formData?.otherChargeDetails)
+      ? [...formData.otherChargeDetails]
+      : [];
+
+    if (updatedOtherChargeDetails.length > 0) {
+      updatedOtherChargeDetails = await Promise.all(
+        updatedOtherChargeDetails.map(async (item) => {
+            const recalculated = await calculateOtherCharges({
+              total: roomTotal + paxTotal + foodPlanTotal,
+              inputValue: Number(item?.value || 0),
+              inputType: item?.amountType,
+              taxPercentage: Number(item?.taxPercentage || 0),
+              discountBasedOnGrossAmount,
+              formData,
+            });
+
+            console.log(recalculated);
+
+            return {
+              ...item,
+              taxAmt: Number(recalculated?.taxAmt || 0),
+              finalValue: Number(recalculated?.finalValue || 0),
+            };
+        }),
+      );
     }
-  };
 
-  const handleAdvanceAmountChange = (e) => {
-    const { value } = e.target;
-    const advanceAmount = Math.round(Number(value));
-    const previousAdvance = Number(editData?.previousAdvance || 0);
-    const grandTotal = Number(formData?.grandTotal || 0);
-    const totalAdvance = advanceAmount + previousAdvance;
-    const maxAllowed = grandTotal - previousAdvance;
+    console.log(updatedOtherChargeDetails)
 
-    if (advanceAmount > maxAllowed) {
-      setErrorObject((prev) => ({
-        ...prev,
-        advanceAmount:
-          "Advance amount should be less than or equal to grand total",
-      }));
-      return;
+    const { otherChargeAmount, discountAmount } =
+      updatedOtherChargeDetails.reduce(
+        (acc, item) => {
+          const value = Number(item?.finalValue || 0);
+
+          if (item?.action === "add") acc.otherChargeAmount += value;
+          if (item?.action === "sub") acc.discountAmount += value;
+
+          return acc;
+        },
+        { otherChargeAmount: 0, discountAmount: 0 },
+      );
+
+    const subTotal = roomTotal + paxTotal + foodPlanTotal;
+    const grandTotal = subTotal + otherChargeAmount - discountAmount;
+
+    const totalAdvance = Number(
+      formData?.totalAdvance > 0
+        ? formData.totalAdvance
+        : formData?.advanceAmount || 0,
+    );
+
+    const balanceToPay = (grandTotal - totalAdvance).toFixed(2);
+
+    // 🔥 PREVENT LOOP
+    if (
+      isEqual(updatedOtherChargeDetails, formData.otherChargeDetails) &&
+      Number(formData.grandTotal) === Number(grandTotal)
+    ) {
+      return; // no change → no setState → no loop
     }
 
-    setErrorObject((prev) => ({ ...prev, advanceAmount: "" }));
-    console.log("advanceAmount", advanceAmount, isFor);
-    if (isFor === "deliveryNote" || isFor === "sales") {
-      console.log("advanceAmount", advanceAmount);
-      setFormData((prev) => ({
-        ...prev,
-        advanceAmount: value,
-        balanceToPay: (grandTotal - previousAdvance - advanceAmount).toFixed(2),
-        totalAdvance: totalAdvance,
-        updatedDate: currentDateDefault,
-      }));
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        advanceAmount: value,
-        balanceToPay: (grandTotal - advanceAmount).toFixed(2),
-        totalAdvance: totalAdvance,
-        updatedDate: currentDateDefault,
-      }));
-    }
-  };
+    setFormData((prev) => ({
+      ...prev,
+      otherChargeDetails: updatedOtherChargeDetails,
+      otherChargeAmount,
+      discountAmount,
+      totalAmount: subTotal.toFixed(2),
+      grandTotal: Number(grandTotal.toFixed(2)),
+      balanceToPay,
+    }));
+  }, 300);
+
+  return () => clearTimeout(handler);
+}, [
+  formData.roomTotal,
+  formData.paxTotal,
+  formData.foodPlanTotal,
+  formData.totalAdvance,
+  formData.advanceAmount,
+  formData.selectedRooms,
+  formData.otherChargeDetails,
+]);
+
+
 
   const handleSelection = (party, search, isGuest) => {
     if (isGuest) {
@@ -622,11 +647,14 @@ function BookingForm({
     }
   };
   const handleSelectOtherCharge = (charge) => {
-    console.log(charge);
-    setFormData((prev) => ({
-      ...prev,
-      otherChargeDetails: charge,
-    }));
+    if(selectedRoomId ){
+      console.log(charge);
+    }
+    // setFormData((prev) => ({
+    //   ...prev,
+    //   otherChargeDetails: charge,
+    // }));
+    setSelectedRoomId(null)
   };
 
   const handleAvailableRoomSelection = (selectedRoom) => {
@@ -683,6 +711,10 @@ function BookingForm({
     }
     if (to === "addFoodPlan") {
       setDisplayFoodPlan(true);
+      setSelectedRoomId(id);
+    }
+    if (to === "addAdjustment") {
+      setOtherChargeModalOpen(true);
       setSelectedRoomId(id);
     }
   };
@@ -1616,15 +1648,15 @@ function BookingForm({
                           </div>
                         </div>
                       </div>
-                      <div className="lg:col-span-2">
+                      {/* <div className="lg:col-span-2">
                         <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
                           Other Charge
-                        </label>
-                        <OtherChargeSearchInPutBox
+                        </label> */}
+                        {/* <OtherChargeSearchInPutBox
                           onSelect={handleSelectOtherCharge}
                           selectedCharge={formData.otherChargeDetails}
-                        />
-                      </div>
+                        /> */}
+                      {/* </div> */}
 
                       {/* Available Rooms (spans all columns) */}
                       <div className="col-span-full lg:col-span-5">
@@ -1667,24 +1699,6 @@ function BookingForm({
                         />
                       </div>
                     </div>
-                    {/* <div className="w-full lg:w-6/12 px-4">
-                      <div className="relative w-full mb-3">
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Discount Percentage
-                        </label>
-                        <input
-                          type="number"
-                          name="discountPercentage"
-                          value={formData?.discountPercentage}
-                          onChange={handleDiscountPercentageChange}
-                          min="0"
-                          max="100"
-                          step="0.01"
-                          readOnly
-                          className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                        />
-                      </div>
-                    </div> */}
                     <div className="w-full lg:w-6/12 px-4">
                       <div className="relative w-full mb-3 ">
                         <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
@@ -1698,7 +1712,6 @@ function BookingForm({
                               ? ""
                               : formData?.discountAmount
                           }
-                          onChange={handleDiscountAmountChange}
                           min="0"
                           step="0.01"
                           readOnly
@@ -1709,14 +1722,13 @@ function BookingForm({
                     <div className="w-full lg:w-6/12 px-4">
                       <div className="relative w-full mb-3">
                         <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          {isFor == "sales" ? "Amount" : "Advance Amount"}
+                         Other Charge Amount
                         </label>
                         <input
                           readOnly
                           type="number"
                           name="advanceAmount"
-                          value={formData?.advanceAmount}
-                          onChange={handleAdvanceAmountChange}
+                          value={formData?.otherChargeAmount}
                           className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                         />
                         {errorObject?.advanceAmount &&
@@ -1727,7 +1739,7 @@ function BookingForm({
                           )}
                       </div>
                     </div>
-                    <div className="w-full lg:w-6/12 px-4">
+                    {/* <div className="w-full lg:w-6/12 px-4">
                       <div className="relative w-full mb-3">
                         <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
                           Previous Advance
@@ -1738,6 +1750,26 @@ function BookingForm({
                           value={formData?.previousAdvance}
                           className="text-red-500 border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                         />
+                      </div>
+                    </div> */}
+                    <div className="w-full lg:w-6/12 px-4">
+                      <div className="relative w-full mb-3">
+                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                          {isFor == "sales" ? "Amount" : "Advance Amount"}
+                        </label>
+                        <input
+                          readOnly
+                          type="number"
+                          name="advanceAmount"
+                          value={formData?.advanceAmount}
+                          className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                        />
+                        {errorObject?.advanceAmount &&
+                          errorObject?.advanceAmount !== "" && (
+                            <span className="text-red-500">
+                              {errorObject?.advanceAmount}
+                            </span>
+                          )}
                       </div>
                     </div>
                     <div className="w-full lg:w-6/12 px-4">
@@ -1935,9 +1967,6 @@ function BookingForm({
 
               <TotalsSection
                 formData={formData}
-                handleDiscountAmountChange={handleDiscountAmountChange}
-                handleDiscountPercentageChange={handleDiscountPercentageChange}
-                handleAdvanceAmountChange={handleAdvanceAmountChange}
                 roomIdToUpdate={roomId}
                 errorObject={errorObject}
               />
@@ -1969,12 +1998,14 @@ function BookingForm({
                 isOpen={otherChargeModalOpen}
                 onClose={() => setOtherChargeModalOpen(false)}
                 onSave={(charges) => {
-                  console.log(charges);
+                  handleSelectOtherCharge(charges);
                   setOtherChargeModalOpen(false);
                 }}
                 additionalChargeData={additionalChargeData}
                 formData={formData}
                 discountBasedOnGrossAmount={discountBasedOnGrossAmount}
+                selectedForRoom ={selectedRoomId ? true : false}
+                selectedRoomId={selectedRoomId}
               />
             )}
           </Suspense>
@@ -2071,9 +2102,6 @@ const tariffRelatedCalculation = (type, formData, roomId) => {
 
 function TotalsSection({
   formData,
-  handleDiscountAmountChange,
-  handleDiscountPercentageChange,
-  handleAdvanceAmountChange,
   roomIdToUpdate,
   errorObject,
 }) {
@@ -2109,29 +2137,6 @@ function TotalsSection({
               roomIdToUpdate,
             )}
           />
-          {/* <FieldRO
-            label="Total Amount (Before Discount)"
-            value={formData?.totalAmount || 0}
-          />
-          <LabeledInputNumber
-            label="Discount %"
-            name="discountPercentage"
-            value={formData?.discountPercentage}
-            onChange={handleDiscountPercentageChange}
-            min="0"
-            max="100"
-            step="0.01"
-          />
-          <LabeledInputNumber
-            label="Discount Amount"
-            name="discountAmount"
-            value={
-              formData?.discountAmount === "0" ? "" : formData?.discountAmount
-            }
-            onChange={handleDiscountAmountChange}
-            min="0"
-            step="0.01"
-          /> */}
         </div>
       </div>
 
@@ -2140,25 +2145,6 @@ function TotalsSection({
           Summary
         </h3>
         <div className="space-y-3">
-          {/* <FieldRO
-            label="Previous Advance"
-            value={formData?.previousAdvance || 0}
-          />
-          <LabeledInputNumber
-            label="Advance Amount"
-            name="advanceAmount"
-            value={formData?.advanceAmount}
-            onChange={handleAdvanceAmountChange}
-          />
-          {errorObject?.advanceAmount && errorObject?.advanceAmount !== "" && (
-            <span className="text-red-500 text-xs">
-              {errorObject?.advanceAmount}
-            </span>
-          )}
-          <FieldRO
-            label="Total Advance"
-            value={Number(formData?.totalAdvance || 0)}
-          /> */}
           <div>
             <label className="block uppercase text-blueGray-600 text-xs font-bold mb-1">
               Total Without Tax
