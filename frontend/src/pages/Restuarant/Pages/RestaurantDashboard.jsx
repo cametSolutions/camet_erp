@@ -177,7 +177,7 @@ const RestaurantPOS = () => {
       });
       setRoomDetails({
         _id: kotDataForEdit?.roomId?._id || "",
-        guestName: kotDataForEdit?.customer?.name || "",
+        guestName: kotDataForEdit?.guestId?.name || "",
         CheckInNumber: kotDataForEdit?.checkInNumber || "",
       });
     }
@@ -343,7 +343,7 @@ const RestaurantPOS = () => {
     setRoomDetails({
       _id: room?.roomId || "",
       roomno: room?.roomName || "",
-      guestName: room?.customerName || "",
+      guestName: room?.guestName || "",
       CheckInNumber: room?.voucherNumber || "",
       foodPlan: foodPlanData, // ✅ Store processed food plan
     });
@@ -1032,7 +1032,6 @@ const RestaurantPOS = () => {
 
   const generateKOT = async (selectedTableNumber, tableStatus, parentKot ,  roomSelected) => {
     let roomObj =  roomSelected ? roomSelected : roomDetails
-    console.log(roomObj)
     let updatedItems = [];
     let orderCustomerDetails = {
       ...customerDetails,
@@ -1142,6 +1141,7 @@ const RestaurantPOS = () => {
           checkInNumber: roomDetails?.CheckInNumber,
           name: roomDetails?.guestName,
           tableNumber: selectedTableNumber,
+          guestName: roomDetails?.guestName,
           tableStatus,
           foodPlan: roomDetails?.foodPlan || null,
         };
@@ -1156,6 +1156,7 @@ const RestaurantPOS = () => {
         roomId: roomDetails?._id,
         checkInNumber: roomDetails?.CheckInNumber,
         name: roomDetails?.guestName,
+        guestName: roomDetails?.guestName,
         foodPlan: roomDetails?.foodPlan || null,
       };
     } else {
@@ -1271,7 +1272,8 @@ const RestaurantPOS = () => {
       type: data.type,
       items: orderItems,
       createdAt: new Date(),
-      roomName : roomDetails?.roomno
+      roomName : roomDetails?.roomno,
+      guestName : roomDetails?.guestName
     };
     generateAndPrintKOT(orderData, true, false, companyName);
   };

@@ -1695,7 +1695,7 @@ async function getSelectedParty(
       cmp_id: cmp_id,
     }).session(session);
     console.log("checkInData", checkInData);
-    partyId = checkInData?.customerId.toString();
+    partyId = checkInData?.guestId.toString();
     console.log("partyId", partyId);
   } else {
     if (paymentDetails?.paymentMode == "single") {
