@@ -46,14 +46,17 @@ const HotelBillPrint = () => {
   useEffect(() => {
     const splitDetails = paymentDetails?.paymentDetails?.splitDetails;
     console.log(paymentDetails);
-    if(paymentDetails?.paymentDetails?.paymentMode === 'credit'){
-      console.log("hai")
-      setPaymentModeDetails([{
-          customerName:  paymentDetails?.paymentDetails?.selectedCreditor?.partyName,
-          mode:"Credit",
+    if (paymentDetails?.paymentDetails?.paymentMode === "credit") {
+      console.log("hai");
+      setPaymentModeDetails([
+        {
+          customerName:
+            paymentDetails?.paymentDetails?.selectedCreditor?.partyName,
+          mode: "Credit",
           amount: paymentDetails?.paymentDetails?.cashAmount,
-      }])
-      return
+        },
+      ]);
+      return;
     }
 
     if (!splitDetails || !splitDetails.length) {
@@ -66,7 +69,7 @@ const HotelBillPrint = () => {
     splitDetails?.forEach((item) => {
       const key = `${item.customerName}-${item.subsource}`;
       if (!item.amount) return;
-      if (!mergedMap[key]  ) {
+      if (!mergedMap[key]) {
         mergedMap[key] = {
           customerName: item.customerName,
           mode: item.subsource || item.source,
@@ -106,24 +109,26 @@ const HotelBillPrint = () => {
     if (selectedCheckOut?.length > 0) {
       console.log(selectedCheckOut);
       if (!isForPreview) {
-           const rawData = selectedCheckOut[0].restaurantPaymentSplittingData || [];
-console.log(rawData);
-      // ✅ Convert to normal array
-      const cleanData = rawData.map(item =>
-        item?.toObject ? item.toObject() : item._doc ? item._doc : item
-      );
-      console.log("cleanData", cleanData);
+        const rawData =
+          selectedCheckOut[0].restaurantPaymentSplittingData || [];
+        console.log(rawData);
+        // ✅ Convert to normal array
+        const cleanData = rawData.map((item) =>
+          item?.toObject ? item.toObject() : item._doc ? item._doc : item,
+        );
+        console.log("cleanData", cleanData);
         const mergedMap = {};
-        let mapData = [...cleanData]
-       mapData?.forEach((item) => {
+        let mapData = [...cleanData];
+        mapData?.forEach((item) => {
           const key = `${item.customerName || selectedCheckOut[0].customerName}-${item.mode || item.subsource || item.type}`;
 
           if (!mergedMap[key]) {
             mergedMap[key] = {
-              customerName: item.customerName || selectedCheckOut[0].customerName,
+              customerName:
+                item.customerName || selectedCheckOut[0].customerName,
               mode: item.mode || item.subsource || item.type,
               amount: Number(item.amount),
-              underCategory: item.underCategory
+              underCategory: item.underCategory,
             };
           } else {
             mergedMap[key].amount += Number(item.amount);
@@ -158,530 +163,325 @@ console.log(rawData);
   // Per-doc transforms
   // Replace your transformDocToDateWiseLines function with this complete version:
 
-const transformDocToDateWiseLines = (doc) => {
-  const result = [];
+  const transformDocToDateWiseLines = (doc) => {
+    const result = [];
 
-  (doc.selectedRooms || [])?.forEach((room) => {
-    const roomStartDate = new Date(room.arrivalDate || doc.arrivalDate);
+    (doc.selectedRooms || [])?.forEach((room) => {
+      const roomStartDate = new Date(room.arrivalDate || doc.arrivalDate);
 
-    const stayDays = room.stayDays || 1;
-    const fullDays = Math.floor(stayDays);
-    const fractionalDay = stayDays - fullDays;
+      const stayDays = room.stayDays || 1;
+      const fullDays = Math.floor(stayDays);
+      const fractionalDay = stayDays - fullDays;
 
-    const perDayAmount =
-      Number(room.priceLevelRate || 0) ||
-      Number(room.baseAmountWithTax || 0) / stayDays;
+      const perDayAmount =
+        Number(room.priceLevelRate || 0) ||
+        Number(room.baseAmountWithTax || 0) / stayDays;
 
-    const dayWisePrices = {};
-    const dayWiseTax = {};
+      const dayWisePrices = {};
+      const dayWiseTax = {};
 
-    const dateTariffs = room.dateTariffs || {};
-    let activePrice = room?.priceLevelRate;
+      const dateTariffs = room.dateTariffs || {};
+      let activePrice = room?.priceLevelRate;
 
-    // Build per-day prices/taxes keyed by ISO date (YYYY-MM-DD)
-    for (let i = 0; i < stayDays; i++) {
-      const d = new Date(roomStartDate);
-      d.setDate(roomStartDate.getDate() + i);
-      const key = d.toISOString().split("T")[0];
+      // Build per-day prices/taxes keyed by ISO date (YYYY-MM-DD)
+      for (let i = 0; i < stayDays; i++) {
+        const d = new Date(roomStartDate);
+        d.setDate(roomStartDate.getDate() + i);
+        const key = d.toISOString().split("T")[0];
 
-      if (dateTariffs[key] !== undefined) {
-        activePrice = Number(dateTariffs[key]);
+        if (dateTariffs[key] !== undefined) {
+          activePrice = Number(dateTariffs[key]);
+        }
+
+        dayWisePrices[key] = doc.addTaxWithRate
+          ? Number(activePrice || 0) /
+            (1 + Number(room?.taxPercentage || 0) / 100)
+          : Number(activePrice || 0);
+
+        dayWiseTax[key] = doc.addTaxWithRate
+          ? Number(activePrice || 0) - dayWisePrices[key]
+          : (Number(activePrice || 0) * Number(room?.taxPercentage || 0)) / 100;
       }
 
-      dayWisePrices[key] = doc.addTaxWithRate
-        ? Number(activePrice || 0) /
-          (1 + Number(room?.taxPercentage || 0) / 100)
-        : Number(activePrice || 0);
+      const foodPlanAmountWithTaxPerDay =
+        Number(room.foodPlanAmountWithTax || 0) / stayDays;
+      const foodPlanAmountWithOutTaxPerDay =
+        Number(room.foodPlanAmountWithOutTax || 0) / stayDays;
 
-      dayWiseTax[key] = doc.addTaxWithRate
-        ? Number(activePrice || 0) - dayWisePrices[key]
-        : (Number(activePrice || 0) * Number(room?.taxPercentage || 0)) / 100;
-    }
+      // Additional pax, spread only across full days
+      const totalAdditionalPaxWithTax = Number(
+        room.additionalPaxAmountWithTax || 0,
+      );
+      const totalAdditionalPaxWithOutTax = Number(
+        room.additionalPaxAmountWithOutTax || 0,
+      );
 
-    const foodPlanAmountWithTaxPerDay =
-      Number(room.foodPlanAmountWithTax || 0) / stayDays;
-    const foodPlanAmountWithOutTaxPerDay =
-      Number(room.foodPlanAmountWithOutTax || 0) / stayDays;
+      const additionalPaxDataWithTaxPerDay =
+        fullDays > 0 ? totalAdditionalPaxWithTax / fullDays : 0;
+      const additionalPaxDataWithOutTaxPerDay =
+        fullDays > 0 ? totalAdditionalPaxWithOutTax / fullDays : 0;
 
-    // Additional pax, spread only across full days
-    const totalAdditionalPaxWithTax = Number(
-      room.additionalPaxAmountWithTax || 0,
-    );
-    const totalAdditionalPaxWithOutTax = Number(
-      room.additionalPaxAmountWithOutTax || 0,
-    );
+      // Swapping logic: adjust full days count
+      let fullDaysAre = fullDays;
 
-    const additionalPaxDataWithTaxPerDay =
-      fullDays > 0 ? totalAdditionalPaxWithTax / fullDays : 0;
-    const additionalPaxDataWithOutTaxPerDay =
-      fullDays > 0 ? totalAdditionalPaxWithOutTax / fullDays : 0;
+      const normalizeToDate = (d) => {
+        const nd = new Date(d);
+        nd.setHours(0, 0, 0, 0);
+        return nd;
+      };
+      const swapDate = room?.swappingDateFrom
+        ? new Date(room.swappingDateFrom).toISOString().split("T")[0]
+        : "";
 
-    // Swapping logic: adjust full days count
-let fullDaysAre = fullDays;
+      if (room.isSwapped && room.swappingDateFrom) {
+        console.log(room.roomName);
+        const swappingDate = normalizeToDate(room.swappingDateFrom);
+        const arrivalDate = normalizeToDate(doc.arrivalDate);
 
-const normalizeToDate = (d) => {
-  const nd = new Date(d);
-  nd.setHours(0, 0, 0, 0);
-  return nd;
-};
-const swapDate =
-  room?.swappingDateFrom
-    ? new Date(room.swappingDateFrom).toISOString().split("T")[0]
-    : "";
+        fullDaysAre = Math.floor(
+          (swappingDate - arrivalDate) / (1000 * 60 * 60 * 24) - 1,
+        );
 
-if (room.isSwapped && room.swappingDateFrom    ) {
-  console.log(room.roomName)
-  const swappingDate = normalizeToDate(room.swappingDateFrom);
-  const arrivalDate = normalizeToDate(doc.arrivalDate);
+        if (fullDaysAre <= 0) {
+          if (swapDate == doc.arrivalDate) {
+            fullDaysAre = 0;
+          } else {
+            fullDaysAre = 1;
+          }
+        }
+      }
 
-  fullDaysAre = Math.floor(
-    (swappingDate - arrivalDate) / (1000 * 60 * 60 * 24) - 1,
-  );
-  
+      if (!room.isSwapped && room.swappingDateFrom) {
+        console.log(room.roomName);
+        const swappingDate = normalizeToDate(room.swappingDateFrom);
+        const checkoutDate = normalizeToDate(doc.checkOutDate);
 
-  if (fullDaysAre <= 0) {
-    if(swapDate == doc.arrivalDate){
-      fullDaysAre = 0
-    }else{
-    fullDaysAre = 1;
-    }
-  }
-}
+        fullDaysAre = Math.floor(
+          (checkoutDate - swappingDate) / (1000 * 60 * 60 * 24),
+        );
 
-if (!room.isSwapped && room.swappingDateFrom) {
-    console.log(room.roomName)
-  const swappingDate = normalizeToDate(room.swappingDateFrom);
-  const checkoutDate = normalizeToDate(doc.checkOutDate);
+        if (fullDaysAre <= 0) {
+          if (swapDate == doc.arrivalDate) {
+            fullDaysAre = 1;
+          } else {
+            fullDaysAre = 0;
+          }
+        }
+      }
+      console.log(fullDaysAre);
 
-  fullDaysAre = Math.floor(
-    (checkoutDate - swappingDate) / (1000 * 60 * 60 * 24),
-  );
-
-  
-
-  if (fullDaysAre <= 0) {
-    if(swapDate == doc.arrivalDate){
-      fullDaysAre = 1
-    }else{
-    fullDaysAre = 0;
-    }
-  }
-}
-    console.log(fullDaysAre);
-
-    // Add full days (respect swap base date, read tariff via ISO key)
-    for (let i = 0; i < fullDaysAre; i++) {
-      const baseDate =
-        room.swappingDateFrom && !room.isSwapped
-          ? new Date(room.swappingDateFrom)
-          : new Date(roomStartDate);
-      const incrementNumber = i
+      // Add full days (respect swap base date, read tariff via ISO key)
+      for (let i = 0; i < fullDaysAre; i++) {
+        const baseDate =
+          room.swappingDateFrom && !room.isSwapped
+            ? new Date(room.swappingDateFrom)
+            : new Date(roomStartDate);
+        const incrementNumber = i;
         // room.swappingDateFrom && !room.isSwapped
         //   ? i
         //   :i
 
-      const currentDate = new Date(baseDate);
-      currentDate.setDate(currentDate.getDate() + incrementNumber);
+        const currentDate = new Date(baseDate);
+        currentDate.setDate(currentDate.getDate() + incrementNumber);
 
-      const isoKey = currentDate.toISOString().split("T")[0];
-      const formattedDate = currentDate
-        .toLocaleDateString("en-GB")
-        .replace(/\//g, "-");
+        const isoKey = currentDate.toISOString().split("T")[0];
+        const formattedDate = currentDate
+          .toLocaleDateString("en-GB")
+          .replace(/\//g, "-");
+        const subArray = room?.otherChargeDetails.filter((item) => item.action === "sub");
+        const addArray = room?.otherChargeDetails.filter((item) => item.action === "add");
 
-      result.push({
-        date: formattedDate,
-        description: `Room Rent - Room ${room.roomName}`,
-        docNo: doc.voucherNumber,
-        amount: Number(dayWisePrices[isoKey]?.toFixed(2) || 0),
-        baseAmountWithTax: perDayAmount,
-        baseAmount: Number(dayWisePrices[isoKey]?.toFixed(2) || 0),
-        taxAmount: Number(dayWiseTax[isoKey]?.toFixed(2) || 0),
-        dayWisePrices,
-        voucherNumber: doc.voucherNumber,
-        roomName: room.roomName,
-        hsn: room?.hsnDetails?.hsn,
-        customerName: doc.customerId?.partyName,
-        foodPlanAmountWithTax: foodPlanAmountWithTaxPerDay,
-        foodPlanAmountWithOutTax: foodPlanAmountWithOutTaxPerDay,
-        additionalPaxDataWithTax: additionalPaxDataWithTaxPerDay,
-        additionalPaxDataWithOutTax: additionalPaxDataWithOutTaxPerDay,
-        roomId: room?.roomId || room?._id,
-        roomArrivalDate: formattedDate,
-        isFullDay: true,
-        addTaxWithRate: doc.addTaxWithRate,
-      });
-    }
+        result.push({
+          date: formattedDate,
+          description: `Room Rent - Room ${room.roomName}`,
+          docNo: doc.voucherNumber,
+          amount: Number(dayWisePrices[isoKey]?.toFixed(2) || 0),
+          baseAmountWithTax: perDayAmount,
+          baseAmount: Number(dayWisePrices[isoKey]?.toFixed(2) || 0),
+          taxAmount: Number(dayWiseTax[isoKey]?.toFixed(2) || 0),
+          dayWisePrices,
+          voucherNumber: doc.voucherNumber,
+          roomName: room.roomName,
+          hsn: room?.hsnDetails?.hsn,
+          customerName: doc.customerId?.partyName,
+          foodPlanAmountWithTax: foodPlanAmountWithTaxPerDay,
+          foodPlanAmountWithOutTax: foodPlanAmountWithOutTaxPerDay,
+          additionalPaxDataWithTax: additionalPaxDataWithTaxPerDay,
+          additionalPaxDataWithOutTax: additionalPaxDataWithOutTaxPerDay,
+          roomId: room?.roomId || room?._id,
+          roomArrivalDate: formattedDate,
+          isFullDay: true,
+          addTaxWithRate: doc.addTaxWithRate,
+          subArray,
+          addArray,
+        });
+      }
 
-    // Add fractional day (half day) – no additional pax
-    if (fractionalDay > 0) {
-      const baseDate =
-        room.swappingDateFrom && !room.isSwapped
-          ? new Date(room.swappingDateFrom)
-          : new Date(roomStartDate);
+      // Add fractional day (half day) – no additional pax
+      if (fractionalDay > 0) {
+        const baseDate =
+          room.swappingDateFrom && !room.isSwapped
+            ? new Date(room.swappingDateFrom)
+            : new Date(roomStartDate);
 
-      const fractionalDate = new Date(baseDate);
-      fractionalDate.setDate(fractionalDate.getDate() + fullDaysAre);
+        const fractionalDate = new Date(baseDate);
+        fractionalDate.setDate(fractionalDate.getDate() + fullDaysAre);
 
-      const isoKey = fractionalDate.toISOString().split("T")[0];
-      const formattedFractionalDate = fractionalDate
-        .toLocaleDateString("en-GB")
-        .replace(/\//g, "-");
+        const isoKey = fractionalDate.toISOString().split("T")[0];
+        const formattedFractionalDate = fractionalDate
+          .toLocaleDateString("en-GB")
+          .replace(/\//g, "-");
 
-      result.push({
-        date: formattedFractionalDate,
-        description: `Room Rent - Room ${room.roomName} (Half Day)`,
-        docNo: doc.voucherNumber,
-        amount: Number(dayWisePrices[isoKey] || 0) * 0.5,
-        baseAmountWithTax: perDayAmount * 0.5,
-        baseAmount: Number(dayWisePrices[isoKey] || 0) * 0.5,
-        taxAmount: Number(dayWiseTax[isoKey] || 0) * 0.5,
-        voucherNumber: doc.voucherNumber,
-        roomName: room.roomName,
-        hsn: room?.hsnDetails?.hsn,
-        customerName: doc.customerId?.partyName,
-        foodPlanAmountWithTax: foodPlanAmountWithTaxPerDay * 0.5,
-        foodPlanAmountWithOutTax: foodPlanAmountWithOutTaxPerDay * 0.5,
-        additionalPaxDataWithTax: 0,
-        additionalPaxDataWithOutTax: 0,
-        roomId: room?.roomId || room?._id,
-        isFullDay: false,
-        checkoutDate: formattedFractionalDate,
-      });
-    }
-  });
-
-  return result;
-};
-
-  const getKotTotalsByRoom = (kots = []) => {
-    const map = new Map();
-    kots?.forEach((kot) => {
-      const roomId = kot?.kotDetails?.roomId;
-      if (!roomId) return;
-      const amount = Number(
-        kot?.finalAmount ?? kot?.subTotal ?? kot?.total ?? 0,
-      );
-      const key = String(roomId);
-      map.set(key, (map.get(key) ?? 0) + amount);
+        result.push({
+          date: formattedFractionalDate,
+          description: `Room Rent - Room ${room.roomName} (Half Day)`,
+          docNo: doc.voucherNumber,
+          amount: Number(dayWisePrices[isoKey] || 0) * 0.5,
+          baseAmountWithTax: perDayAmount * 0.5,
+          baseAmount: Number(dayWisePrices[isoKey] || 0) * 0.5,
+          taxAmount: Number(dayWiseTax[isoKey] || 0) * 0.5,
+          voucherNumber: doc.voucherNumber,
+          roomName: room.roomName,
+          hsn: room?.hsnDetails?.hsn,
+          customerName: doc.customerId?.partyName,
+          foodPlanAmountWithTax: foodPlanAmountWithTaxPerDay * 0.5,
+          foodPlanAmountWithOutTax: foodPlanAmountWithOutTaxPerDay * 0.5,
+          additionalPaxDataWithTax: 0,
+          additionalPaxDataWithOutTax: 0,
+          roomId: room?.roomId || room?._id,
+          isFullDay: false,
+          checkoutDate: formattedFractionalDate,
+        });
+      }
     });
-    return map;
+
+    return result;
   };
-
-  // Build per-room restaurant line for a doc's rooms only
-  // Build per-room restaurant line for a doc's rooms only
-  // Build per-room restaurant line for a doc's rooms only
-  // const buildPerRoomRestaurantLinesForDoc = (doc) => {
-  //   console.log("=== Building restaurant lines ===");
-  //   console.log("Doc:", doc);
-  //   console.log("All KOT Data:", kotData.length);
-
-  //   const lines = [];
-
-  //   // Get all room IDs from this document
-  //   const roomIdSet = new Set(
-  //     (doc.selectedRooms || [])
-  //       .map((r) => String(r?.roomId || r?._id || r?.id))
-  //       .filter(Boolean),
-  //   );
-
-  //   // Split KOTs based on available fields
-  //   const roomServiceKots = [];
-  //   const dineInKots = [];
-
-  //   kotData?.forEach((kot) => {
-  //     console.log(kot);
-  //     let voucherNumber = doc?.checkInId?.voucherNumber
-  //       ? doc.checkInId.voucherNumber
-  //       : kot?.convertedFrom[0].checkInNumber;
-  //       console.log(voucherNumber);
-  //     if (voucherNumber !== kot?.convertedFrom[0].checkInNumber) return;
-  //     const kotRoomId = String(kot?.kotDetails?.roomId || kot?.roomId || "");
-  //     const tableNumber =
-  //       kot?.kotDetails?.tableNumber ||
-  //       kot?.tableNumber ||
-  //       kot?.customer?.tableNumber;
-  //     const type = kot?.type || "";
-
-  //     console.log(
-  //       `KOT ${kot?.salesNumber}: roomId=${kotRoomId}, tableNumber=${tableNumber}, type=${type}`,
-  //     );
-
-  //     // CLASSIFICATION LOGIC:
-  //     // 1. If KOT has tableNumber -> it's DINE IN (even if it has roomId)
-  //     // 2. If KOT has roomId but NO tableNumber -> it's ROOM SERVICE
-  //     // 3. If type is "takeaway" or "delivery" -> treat as DINE IN
-
-  //     if (tableNumber) {
-  //       // Has table number = Dine In
-  //       dineInKots.push(kot);
-  //       console.log(`  -> RESTAURANT DINE IN (has tableNumber)`);
-  //     } else if (type === "takeaway" || type === "delivery") {
-  //       // Takeaway/Delivery = Dine In
-  //       dineInKots.push(kot);
-  //       console.log(`  -> RESTAURANT DINE IN (takeaway/delivery)`);
-  //     } else if (kotRoomId && roomIdSet.has(kotRoomId)) {
-  //       // Has roomId but no table = Room Service
-  //       roomServiceKots.push(kot);
-  //       console.log(`  -> ROOM SERVICE (has roomId, no table)`);
-  //     } else {
-  //       // Default to Dine In if unclear
-  //       dineInKots.push(kot);
-  //       console.log(`  -> RESTAURANT DINE IN (default)`);
-  //     }
-  //   });
-
-  //   console.log("Room Service KOTs:", roomServiceKots.length);
-  //   console.log("Dine In KOTs:", dineInKots.length);
-
-  //   // 1. Add Room Service charges (grouped by room)
-  //   const roomServiceTotals = {};
-  //   roomServiceKots?.forEach((kot) => {
-  //     const roomId = String(kot?.kotDetails?.roomId || kot?.roomId || "");
-  //     const amount = Number(
-  //       kot?.finalAmount ?? kot?.subTotal ?? kot?.total ?? 0,
-  //     );
-
-  //     if (!roomServiceTotals[roomId]) {
-  //       roomServiceTotals[roomId] = {
-  //         amount: 0,
-  //         docNos: [],
-  //       };
-  //     }
-  //     roomServiceTotals[roomId].date = kot.date;
-  //     roomServiceTotals[roomId].amount += amount;
-  //     if (kot?.salesNumber) {
-  //       roomServiceTotals[roomId].docNos.push(kot.salesNumber);
-  //     }
-  //   });
-
-  //   Object.keys(roomServiceTotals)?.forEach((roomId) => {
-  //     const roomName =
-  //       (doc.selectedRooms || []).find(
-  //         (r) => String(r?.roomId || r?._id || r?.id) === roomId,
-  //       )?.roomName || "Unknown Room";
-
-  //     const docNo = roomServiceTotals[roomId].docNos.join(", ") || "-";
-
-  //     console.log(
-  //       `Adding Room Service line: ${roomName} = ${roomServiceTotals[roomId].amount}`,
-  //     );
-  //     console.log("xxx ", roomServiceTotals[roomId].date);
-  //     const d = new Date(roomServiceTotals[roomId].date);
-  //     let date = `${d.getDate().toString().padStart(2, "0")}-${(d.getMonth() + 1).toString().padStart(2, "0")}-${d.getFullYear()}`;
-
-  //     lines.push({
-  //       date: date,
-  //       description: `Room Service - ${roomName}`,
-  //       docNo: docNo,
-  //       amount: Number(roomServiceTotals[roomId].amount || 0),
-  //       taxes: 0,
-  //       advance: "",
-  //       roomName: roomName,
-  //       roomId: roomId,
-  //       type: "roomService",
-  //     });
-  //   });
-
-  //   // 2. Add Restaurant Dine In charges (grouped by table or as one line)
-  //   const dineInTotals = {};
-  //   dineInKots?.forEach((kot) => {
-  //     const tableNo =
-  //       kot?.kotDetails?.tableNumber ||
-  //       kot?.tableNumber ||
-  //       kot?.customer?.tableNumber ||
-  //       "Restaurant";
-  //     const amount = Number(
-  //       kot?.finalAmount ?? kot?.subTotal ?? kot?.total ?? 0,
-  //     );
-
-  //     if (!dineInTotals[tableNo]) {
-  //       dineInTotals[tableNo] = {
-  //         amount: 0,
-  //         docNos: [],
-  //       };
-  //     }
-
-  //     dineInTotals[tableNo].amount += amount;
-  //     const d = new Date(kot.date);
-  //     dineInTotals[tableNo].date =
-  //       `${d.getDate().toString().padStart(2, "0")}-${(d.getMonth() + 1).toString().padStart(2, "0")}-${d.getFullYear()}`;
-
-  //     if (kot?.salesNumber) {
-  //       dineInTotals[tableNo].docNos.push(kot.salesNumber);
-  //     }
-  //   });
-  //   console.log("dineInTotals", dineInTotals);
-  //   Object.keys(dineInTotals)?.forEach((tableNo) => {
-  //     const docNo = dineInTotals[tableNo].docNos;
-  //     console.log("docNo", docNo);
-  //     const formatDocNos = (docNos = []) => {
-  //       if (!docNos.length) return "";
-
-  //       const splitDocs = docNos.map((doc) => doc.split("-"));
-
-  //       const firstPrefix = splitDocs[0]?.[0];
-  //       const firstSuffix = splitDocs[0]?.[2];
-
-  //       const isSameFormat = splitDocs.every(
-  //         ([prefix, , suffix]) =>
-  //           prefix === firstPrefix && suffix === firstSuffix,
-  //       );
-
-  //       // ✅ If same prefix & suffix → shorten format
-  //       if (isSameFormat) {
-  //         return splitDocs
-  //           .map(([prefix, number, suffix], index) =>
-  //             index === 0 ? `${prefix}-${number}-${suffix}` : number,
-  //           )
-  //           .join(", ");
-  //       }
-
-  //       // ❌ If different → return full values
-  //       return docNos.join(", ");
-  //     };
-  //     const docNoFormatted = formatDocNos(docNo);
-  //     console.log("docNoFormatted", docNoFormatted);
-  //     lines.push({
-  //       date: dineInTotals[tableNo].date,
-  //       description: `Restaurant Dine In - ${tableNo}`,
-  //       docNo: docNoFormatted,
-  //       amount: Number(dineInTotals[tableNo].amount || 0),
-  //       taxes: 0,
-  //       advance: "",
-  //       roomName: "",
-  //       roomId: "",
-  //       type: "dineIn",
-  //     });
-  //   });
-
-  //   console.log("=== Final restaurant lines ===", lines);
-  //   return lines;
-  // };
 
   const buildPerRoomRestaurantLinesForDoc = (doc) => {
     console.log("buildPerRoomRestaurantLinesForDoc", doc);
-  const lines = [];
+    const lines = [];
 
-  // safer check-in number for current checkout doc
-  const currentCheckInNumber =
-    doc?.checkInId?.voucherNumber ||
-    doc?.checkInNumber ||
-    doc?.voucherNumber ||
-    "";
-
-  // all room ids of this checkout
-  const roomIdSet = new Set(
-    (doc.selectedRooms || [])
-      .map((r) => String(r?.roomId || r?._id || r?.id))
-      .filter(Boolean),
-  );
-
-  // keep only KOTs that belong to THIS checkout/check-in
-  const currentDocKots = (kotData || []).filter((kot) => {
-    const convertedFrom = kot?.convertedFrom || [];
-
-    const belongsToThisCheckIn = convertedFrom.some(
-      (cf) =>
-        String(cf?.checkInNumber || "") === String(currentCheckInNumber),
-    );
-
-    return belongsToThisCheckIn;
-  });
-
-  const roomServiceTotals = {};
-  const dineInTotals = {};
-
-  currentDocKots.forEach((kot) => {
-    const kotRoomId = String(kot?.kotDetails?.roomId || kot?.roomId || "");
-    const tableNo =
-      kot?.kotDetails?.tableNumber ||
-      kot?.tableNumber ||
-      kot?.customer?.tableNumber ||
+    // safer check-in number for current checkout doc
+    const currentCheckInNumber =
+      doc?.checkInId?.voucherNumber ||
+      doc?.checkInNumber ||
+      doc?.voucherNumber ||
       "";
 
-    const type = String(kot?.type || "").toLowerCase();
-
-    const amount = Number(
-      kot?.finalAmount ?? kot?.subTotal ?? kot?.total ?? 0,
+    // all room ids of this checkout
+    const roomIdSet = new Set(
+      (doc.selectedRooms || [])
+        .map((r) => String(r?.roomId || r?._id || r?.id))
+        .filter(Boolean),
     );
 
-    const salesNo = kot?.salesNumber || "-";
+    // keep only KOTs that belong to THIS checkout/check-in
+    const currentDocKots = (kotData || []).filter((kot) => {
+      const convertedFrom = kot?.convertedFrom || [];
 
-    const kotDateValue = kot?.date || kot?.createdAt || new Date();
-    const d = new Date(kotDateValue);
-    const formattedDate = `${String(d.getDate()).padStart(2, "0")}-${String(
-      d.getMonth() + 1,
-    ).padStart(2, "0")}-${d.getFullYear()}`;
+      const belongsToThisCheckIn = convertedFrom.some(
+        (cf) =>
+          String(cf?.checkInNumber || "") === String(currentCheckInNumber),
+      );
 
-    // ROOM SERVICE:
-    // has roomId matched with this checkout rooms AND no table number
-    if (kotRoomId && roomIdSet.has(kotRoomId) && !tableNo) {
-      if (!roomServiceTotals[kotRoomId]) {
-        roomServiceTotals[kotRoomId] = {
+      return belongsToThisCheckIn;
+    });
+
+    const roomServiceTotals = {};
+    const dineInTotals = {};
+
+    currentDocKots.forEach((kot) => {
+      const kotRoomId = String(kot?.kotDetails?.roomId || kot?.roomId || "");
+      const tableNo =
+        kot?.kotDetails?.tableNumber ||
+        kot?.tableNumber ||
+        kot?.customer?.tableNumber ||
+        "";
+
+      const type = String(kot?.type || "").toLowerCase();
+
+      const amount = Number(
+        kot?.finalAmount ?? kot?.subTotal ?? kot?.total ?? 0,
+      );
+
+      const salesNo = kot?.salesNumber || "-";
+
+      const kotDateValue = kot?.date || kot?.createdAt || new Date();
+      const d = new Date(kotDateValue);
+      const formattedDate = `${String(d.getDate()).padStart(2, "0")}-${String(
+        d.getMonth() + 1,
+      ).padStart(2, "0")}-${d.getFullYear()}`;
+
+      // ROOM SERVICE:
+      // has roomId matched with this checkout rooms AND no table number
+      if (kotRoomId && roomIdSet.has(kotRoomId) && !tableNo) {
+        if (!roomServiceTotals[kotRoomId]) {
+          roomServiceTotals[kotRoomId] = {
+            amount: 0,
+            docNos: [],
+            date: formattedDate,
+          };
+        }
+
+        roomServiceTotals[kotRoomId].amount += amount;
+        if (salesNo !== "-") roomServiceTotals[kotRoomId].docNos.push(salesNo);
+        return;
+      }
+
+      // DINE IN / TAKEAWAY / DELIVERY:
+      // only one common restaurant section for this doc
+      const dineKey = tableNo || "Restaurant";
+
+      if (!dineInTotals[dineKey]) {
+        dineInTotals[dineKey] = {
           amount: 0,
           docNos: [],
           date: formattedDate,
         };
       }
 
-      roomServiceTotals[kotRoomId].amount += amount;
-      if (salesNo !== "-") roomServiceTotals[kotRoomId].docNos.push(salesNo);
-      return;
-    }
-
-    // DINE IN / TAKEAWAY / DELIVERY:
-    // only one common restaurant section for this doc
-    const dineKey = tableNo || "Restaurant";
-
-    if (!dineInTotals[dineKey]) {
-      dineInTotals[dineKey] = {
-        amount: 0,
-        docNos: [],
-        date: formattedDate,
-      };
-    }
-
-    dineInTotals[dineKey].amount += amount;
-    if (salesNo !== "-") dineInTotals[dineKey].docNos.push(salesNo);
-  });
-
-  // room service lines
-  Object.keys(roomServiceTotals).forEach((roomId) => {
-    const roomName =
-      (doc.selectedRooms || []).find(
-        (r) => String(r?.roomId || r?._id || r?.id) === roomId,
-      )?.roomName || "Unknown Room";
-
-    lines.push({
-      date: roomServiceTotals[roomId].date,
-      description: `Room Service - ${roomName}`,
-      docNo: [...new Set(roomServiceTotals[roomId].docNos)].join(", ") || "-",
-      amount: Number(roomServiceTotals[roomId].amount || 0),
-      taxes: 0,
-      advance: "",
-      roomName,
-      roomId,
-      type: "roomService",
+      dineInTotals[dineKey].amount += amount;
+      if (salesNo !== "-") dineInTotals[dineKey].docNos.push(salesNo);
     });
-  });
 
-  // dine-in lines
-  Object.keys(dineInTotals).forEach((tableNo) => {
-    lines.push({
-      date: dineInTotals[tableNo].date,
-      description: `Restaurant Dine In - ${tableNo}`,
-      docNo: [...new Set(dineInTotals[tableNo].docNos)].join(", ") || "-",
-      amount: Number(dineInTotals[tableNo].amount || 0),
-      taxes: 0,
-      advance: "",
-      roomName: "",
-      roomId: "",
-      type: "dineIn",
+    // room service lines
+    Object.keys(roomServiceTotals).forEach((roomId) => {
+      const roomName =
+        (doc.selectedRooms || []).find(
+          (r) => String(r?.roomId || r?._id || r?.id) === roomId,
+        )?.roomName || "Unknown Room";
+
+      lines.push({
+        date: roomServiceTotals[roomId].date,
+        description: `Room Service - ${roomName}`,
+        docNo: [...new Set(roomServiceTotals[roomId].docNos)].join(", ") || "-",
+        amount: Number(roomServiceTotals[roomId].amount || 0),
+        taxes: 0,
+        advance: "",
+        roomName,
+        roomId,
+        type: "roomService",
+      });
     });
-  });
 
-  return lines;
-};
+    // dine-in lines
+    Object.keys(dineInTotals).forEach((tableNo) => {
+      lines.push({
+        date: dineInTotals[tableNo].date,
+        description: `Restaurant Dine In - ${tableNo}`,
+        docNo: [...new Set(dineInTotals[tableNo].docNos)].join(", ") || "-",
+        amount: Number(dineInTotals[tableNo].amount || 0),
+        taxes: 0,
+        advance: "",
+        roomName: "",
+        roomId: "",
+        type: "dineIn",
+      });
+    });
+
+    return lines;
+  };
 
   // Helpers to decide where to show advances
   const docOwnsAdvances = (doc) => {
@@ -721,52 +521,58 @@ if (!room.isSwapped && room.swappingDateFrom) {
       .toFixed(2);
     console.log(foodPlanAmountWithTax);
     console.log(planAmount);
+console.log(dateWiseLines);
 
     let roomTariffTotal = !doc?.addFoodPlanWithRate
       ? dateWiseLines.reduce((t, i) => t + Number(i.baseAmount || 0), 0)
       : dateWiseLines.reduce((t, i) => t + Number(i.baseAmount || 0), 0) -
         (planAmount + Number(foodPlanAmountWithTax));
 
-const additionalPaxAmount = (doc.selectedRooms || []).reduce((total, room) => {
-  const originalStayDays = Number(room?.stayDays || 1);
-  const originalFullDays = Math.floor(originalStayDays);
+    const additionalPaxAmount = (doc.selectedRooms || []).reduce(
+      (total, room) => {
+        const originalStayDays = Number(room?.stayDays || 1);
+        const originalFullDays = Math.floor(originalStayDays);
 
-  let effectiveFullDays = originalFullDays;
+        let effectiveFullDays = originalFullDays;
 
-  // Old room before swap
-  if (room?.isSwapped && room?.swappingDateFrom) {
-    const swappingDate = new Date(room.swappingDateFrom);
-    const arrivalDate = new Date(doc?.arrivalDate);
+        // Old room before swap
+        if (room?.isSwapped && room?.swappingDateFrom) {
+          const swappingDate = new Date(room.swappingDateFrom);
+          const arrivalDate = new Date(doc?.arrivalDate);
 
-    effectiveFullDays = Math.floor(
-      (swappingDate - arrivalDate) / (1000 * 60 * 60 * 24) - 1,
+          effectiveFullDays = Math.floor(
+            (swappingDate - arrivalDate) / (1000 * 60 * 60 * 24) - 1,
+          );
+
+          if (effectiveFullDays <= 0) effectiveFullDays = 1;
+        }
+        // New room after swap
+        else if (!room?.isSwapped && room?.swappingDateFrom) {
+          const swappingDate = new Date(room.swappingDateFrom);
+          const checkoutDate = new Date(doc?.checkOutDate);
+
+          effectiveFullDays = Math.floor(
+            (checkoutDate - swappingDate) / (1000 * 60 * 60 * 24),
+          );
+
+          if (effectiveFullDays <= 0) effectiveFullDays = 1;
+        }
+
+        const totalPaxWithoutTax = Number(
+          room?.additionalPaxAmountWithOutTax || 0,
+        );
+
+        // Per-day pax charge based on original room stay
+        const paxPerDay =
+          originalFullDays > 0 ? totalPaxWithoutTax / originalFullDays : 0;
+
+        return total + paxPerDay * effectiveFullDays;
+      },
+      0,
     );
-
-    if (effectiveFullDays <= 0) effectiveFullDays = 1;
-  }
-  // New room after swap
-  else if (!room?.isSwapped && room?.swappingDateFrom) {
-    const swappingDate = new Date(room.swappingDateFrom);
-    const checkoutDate = new Date(doc?.checkOutDate);
-
-    effectiveFullDays = Math.floor(
-      (checkoutDate - swappingDate) / (1000 * 60 * 60 * 24),
-    );
-
-    if (effectiveFullDays <= 0) effectiveFullDays = 1;
-  }
-
-  const totalPaxWithoutTax = Number(room?.additionalPaxAmountWithOutTax || 0);
-
-  // Per-day pax charge based on original room stay
-  const paxPerDay =
-    originalFullDays > 0 ? totalPaxWithoutTax / originalFullDays : 0;
-
-  return total + paxPerDay * effectiveFullDays;
-}, 0);
     console.log(dateWiseLines);
     console.log(roomTariffTotal);
-    console.log(additionalPaxAmount)
+    console.log(additionalPaxAmount);
     const roomTaxTotal = dateWiseLines.reduce(
       (t, i) => t + Number(i.taxAmount || 0),
       0,
@@ -863,7 +669,7 @@ const additionalPaxAmount = (doc.selectedRooms || []).reduce((total, room) => {
             roomName: item.roomName,
           });
         });
-        console.log(charges);
+        console.log(fullDayCharges[0].addArray);
 
         // 2. Add CGST and SGST for FULL DAYS (if any)
         if (fullDayCharges.length > 0) {
@@ -878,7 +684,7 @@ const additionalPaxAmount = (doc.selectedRooms || []).reduce((total, room) => {
 
             charges.push({
               // date: roomArrivalDate, // Use arrival date for full day taxes
-              description: `CGST on Rent@${halfRoomTaxPercentage}%`,
+              description: `CGST on Rent @ ${halfRoomTaxPercentage}%`,
               docNo: "-",
               amount: 0,
               taxes: fullDayCGST.toFixed(2),
@@ -888,7 +694,7 @@ const additionalPaxAmount = (doc.selectedRooms || []).reduce((total, room) => {
 
             charges.push({
               // date: roomArrivalDate, // Use arrival date for full day taxes
-              description: `SGST on Rent@${halfRoomTaxPercentage}%`,
+              description: `SGST on Rent @ ${halfRoomTaxPercentage}%`,
               docNo: "-",
               amount: 0,
               taxes: fullDaySGST.toFixed(2),
@@ -897,6 +703,34 @@ const additionalPaxAmount = (doc.selectedRooms || []).reduce((total, room) => {
             });
           }
         }
+
+        if(fullDayCharges[0].subArray.length > 0){
+            fullDayCharges[0].subArray.map((item, index) => {
+                   charges.push({
+              // date: roomArrivalDate, // Use arrival date for full day taxes
+              description: `Room Discount ${item?.option} @ ${item?.taxPercentage}%`,
+              docNo: "-",
+              amount: - item.finalValue.toFixed(2),
+              taxes: item?.taxAmt.toFixed(2),
+              advance: "",
+              roomName,
+            });
+            })
+          }
+
+           if(fullDayCharges[0].addArray.length > 0){
+            fullDayCharges[0].addArray.map((item, index) => {
+                   charges.push({
+              // date: roomArrivalDate, // Use arrival date for full day taxes
+              description: `Other Charge ${item?.option} @ ${item?.taxPercentage}%`,
+              docNo: "-",
+              amount: item.finalValue.toFixed(2),
+              taxes: item?.taxAmt.toFixed(2),
+              advance: "",
+              roomName,
+            });
+            })
+          }
 
         // 3. Add HALF DAY room rent charges with CHECKOUT DATE
         halfDayCharges?.forEach((item) => {
@@ -1170,17 +1004,20 @@ const additionalPaxAmount = (doc.selectedRooms || []).reduce((total, room) => {
           Number(doc?.otherChargeDetails?.amount) || 0;
     }
 
-    
-
     const grandTotal =
-      (Number(roomTariffTotal) +
+      Number(roomTariffTotal) +
       Number(additionalPaxAmount) +
       Number(planAmount) +
       Number(foodPlanAmountWithTax) +
       Number(sgstAmount) +
       Number(cgstAmount) +
       Number(restaurantTotal) +
-      otherChargeAmount) - Number(paymentDetails?.paymentDetails?.discountAmount ||doc.discountAmount || 0);
+      otherChargeAmount -
+      Number(
+        paymentDetails?.paymentDetails?.discountAmount ||
+          doc.discountAmount ||
+          0,
+      );
     const netPay = Math.abs(grandTotal - advanceTotal);
 
     // Compose hotel/guest info per doc
@@ -1203,8 +1040,6 @@ const additionalPaxAmount = (doc.selectedRooms || []).reduce((total, room) => {
 
     const totalPax = basePax + additionalPaxCount;
 
-  
-
     const convertNumberToWords = (amount) =>
       `${Math.round(amount || 0)} Rupees Only`;
     let partyName = doc?.guestId?.partyName;
@@ -1212,10 +1047,10 @@ const additionalPaxAmount = (doc.selectedRooms || []).reduce((total, room) => {
     let partyPhone = doc?.guestId?.mobileNumber || "";
     let partyGstNo = doc?.customerId?.gstNo || "";
     let partyCompanyName = doc?.customerId?.partyName;
-console.log(partyGstNo);
-console.log(doc?.customerId);
+    console.log(partyGstNo);
+    console.log(doc?.customerId);
     if (
-      paymentDetails?. paymentMode == "credit" &&
+      paymentDetails?.paymentMode == "credit" &&
       paymentDetails?.paymentDetails?.selectedCreditor
     ) {
       partyName = paymentDetails?.paymentDetails?.selectedCreditor?.partyName;
@@ -1230,10 +1065,10 @@ console.log(doc?.customerId);
           paymentDetails?.paymentDetails?.selectedCreditor?.partyName;
       }
     }
- let discount = paymentDetails?.paymentDetails?.discountAmount ||doc.discountAmount || 0;
- console.log(doc);
+    let discount = paymentDetails?.paymentDetails?.discountAmount || doc.discountAmount || 0;
+    console.log(paymentDetails?.paymentDetails?.discountAmount);
     console.log(paymentDetails);
-    
+
     return {
       hotel: {
         name: organization?.name,
@@ -1276,7 +1111,7 @@ console.log(doc?.customerId);
         roomRent: (
           Number(roomTariffTotal || 0) + Number(additionalPaxAmount || 0)
         ).toFixed(2),
-        discount : discount, 
+        discount: discount,
         sgst: sgstAmount,
         cgst: cgstAmount,
         restaurant: dineInTotal, // ✅ Only dine-in restaurant amount
@@ -1297,7 +1132,7 @@ console.log(doc?.customerId);
     };
   };
 
-  console.log("paymentModeDetails",paymentModeDetails)
+  console.log("paymentModeDetails", paymentModeDetails);
 
   // Build all billData per doc; decide where advances appear
   // Apply activeMode filtering after building the full bill
@@ -1313,7 +1148,7 @@ console.log(doc?.customerId);
       const owns = docOwnsAdvances(doc);
       const useAdvances = owns ? true : idx === firstPrimaryIdx;
       const bill = prepareBillDataForDoc(doc, useAdvances);
-console.log(bill.summary);
+      console.log(bill.summary);
       // ── SPLIT MODE FILTERING ──────────────────────────────────────────────
       if (activeMode === "restaurant") {
         // Keep only restaurant / dine-in / room-service charges — NO advance
@@ -1353,7 +1188,6 @@ console.log(bill.summary);
         bill.payment.advance = 0;
         bill.payment.netPay = restaurantOnlyTotal;
       } else if (activeMode === "room") {
-   
         // Keep only room-related charges + advances; exclude restaurant / dine-in charges
         bill.charges = bill.charges.filter((c) => {
           const desc = String(c.description);
@@ -1367,8 +1201,6 @@ console.log(bill.summary);
         // Recalculate balance for filtered charges
         // Advance entries have a negative amount so they correctly reduce the running balance
         let bal = 0;
-        
-      
 
         bill.charges = bill.charges.map((charge) => {
           const amt = Number(charge.amount || 0);
@@ -1976,7 +1808,7 @@ console.log(bill.summary);
                         </td>
                       </tr>
                     )}
-                     {activeMode !== "restaurant" && (
+                    {activeMode !== "restaurant" && (
                       <tr>
                         <td
                           style={{ border: "1px solid #000", padding: "4px" }}
@@ -2214,9 +2046,16 @@ console.log(bill.summary);
                       </td>
                     </tr>
                     {/* {selected == "default" && ( */}
-                      <>
-                        {paymentModeDetails.filter((item) => selected == "room" ? item.underCategory == "room" :
-                        selected == "restaurant" ? item.underCategory == "food" : true ).map((item, index) => (
+                    <>
+                      {paymentModeDetails
+                        .filter((item) =>
+                          selected == "room"
+                            ? item.underCategory == "room"
+                            : selected == "restaurant"
+                              ? item.underCategory == "food"
+                              : true,
+                        )
+                        .map((item, index) => (
                           <tr key={index}>
                             <td
                               style={{
@@ -2239,7 +2078,7 @@ console.log(bill.summary);
                             </td>
                           </tr>
                         ))}
-                      </>
+                    </>
                     {/* )} */}
 
                     {/* {(selected == "room" || selected == "restaurant") && (

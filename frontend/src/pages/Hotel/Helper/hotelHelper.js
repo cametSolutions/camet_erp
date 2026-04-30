@@ -3,9 +3,11 @@ export const calculateDiscountValues = ({
   inputValue,
   inputType,
   taxPercentage = 0,
+  additionalChargeIncludeTax = false,
 }) => {
   const baseAmount = Number(total || 0);
   const enteredValue = Number(inputValue || 0);
+  const taxRate = Number(taxPercentage || 0);
 
   let discountAmount = 0;
 
@@ -15,16 +17,26 @@ export const calculateDiscountValues = ({
     discountAmount = Math.min(enteredValue, baseAmount);
   }
 
-
   discountAmount = Number(discountAmount.toFixed(2));
-  console.log(discountAmount);
-  const taxAmt = Number(
-    ((discountAmount * Number(taxPercentage || 0)) / 100).toFixed(2)
-  );
 
-  const finalValue = Number((discountAmount + taxAmt).toFixed(2));
+  let taxAmt = 0;
+  let finalValue = 0;
 
-  console.log(finalValue);
+  if (additionalChargeIncludeTax) {
+    // amount includes tax
+    taxAmt = Number(
+      ((discountAmount * taxRate) / (100 + taxRate)).toFixed(2)
+    );
+
+    finalValue = discountAmount;
+  } else {
+    // amount excludes tax
+    taxAmt = Number(
+      ((discountAmount * taxRate) / 100).toFixed(2)
+    );
+
+    finalValue = Number((discountAmount + taxAmt).toFixed(2));
+  }
 
   return {
     value: discountAmount,
@@ -41,6 +53,7 @@ export const calculateOtherCharges = async ({
   discountBasedOnGrossAmount = false,
   formData,
   charge = {}, // 👈 pass selected charge object
+  additionalChargeIncludeTax,
 }) => {
   const selectedRooms = formData?.selectedRooms || [];
   let value = Number(inputValue || 0);

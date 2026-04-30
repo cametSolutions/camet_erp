@@ -47,7 +47,6 @@ function BookingForm({
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [saveLoader, setSaveLoader] = useState(false);
   const [additionalChargeData, setAdditionalChargeData] = useState([]);
-  const [selectedAdditionalCharge, setSelectedAdditionalCharge] = useState([]);
 
   const { _id: cmp_id, configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg,
@@ -229,12 +228,6 @@ function BookingForm({
         },
       );
       setAdditionalChargeData(response?.data?.additionalCharges);
-      let discountCharge = response?.data?.additionalCharges.find(
-        (charge) => charge.name.toLowerCase() === "discount" || "DISCOUNT",
-      );
-      setSelectedAdditionalCharge(
-        discountCharge?._id || response?.data?.additionalCharges[0]?._id,
-      );
     };
     callAdditionalCharge();
   }, []);
@@ -423,8 +416,6 @@ function BookingForm({
 useEffect(() => {
   const handler = setTimeout(() => {
     const roomTotal = Number(formData?.roomTotal || 0);
-    const paxTotal = Number(formData?.paxTotal || 0);
-    const foodPlanTotal = Number(formData?.foodPlanTotal || 0);
 
     let otherChargeAmount = 0;
     let discountAmount = 0;
@@ -451,9 +442,10 @@ useEffect(() => {
       otherChargeAmount = valueDetails.otherChargeAmount;
       discountAmount = valueDetails.discountAmount;
     }
-    const totalAmount = roomTotal + paxTotal + foodPlanTotal + otherChargeAmount - discountAmount;
+    const totalAmount = roomTotal 
     const additionalCharge = Math.abs(Number(discountAmount) - Number(otherChargeAmount))
-    const grandTotal =  roomTotal + paxTotal + foodPlanTotal
+    const grandTotal =  roomTotal 
+
 
     const totalAdvance = Number(
       formData?.totalAdvance > 0
@@ -488,8 +480,6 @@ const isEqual = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 useEffect(() => {
   const handler = setTimeout(async () => {
     const roomTotal = Number(formData?.roomTotal || 0);
-    const paxTotal = Number(formData?.paxTotal || 0);
-    const foodPlanTotal = Number(formData?.foodPlanTotal || 0);
 
     let updatedOtherChargeDetails = Array.isArray(formData?.otherChargeDetails)
       ? [...formData.otherChargeDetails]
@@ -499,7 +489,7 @@ useEffect(() => {
       updatedOtherChargeDetails = await Promise.all(
         updatedOtherChargeDetails.map(async (item) => {
             const recalculated = await calculateOtherCharges({
-              total: roomTotal + paxTotal + foodPlanTotal,
+              total: roomTotal,
               inputValue: Number(item?.value || 0),
               inputType: item?.amountType,
               taxPercentage: Number(item?.taxPercentage || 0),
@@ -533,7 +523,7 @@ useEffect(() => {
         { otherChargeAmount: 0, discountAmount: 0 },
       );
 
-    const subTotal = roomTotal + paxTotal + foodPlanTotal;
+    const subTotal = roomTotal ;
     const grandTotal = subTotal + otherChargeAmount - discountAmount;
 
     const totalAdvance = Number(
@@ -646,16 +636,80 @@ useEffect(() => {
       }));
     }
   };
-  const handleSelectOtherCharge = (charge) => {
-    if(selectedRoomId ){
-      console.log(charge);
-    }
-    // setFormData((prev) => ({
-    //   ...prev,
-    //   otherChargeDetails: charge,
-    // }));
-    setSelectedRoomId(null)
-  };
+
+const handleSelectOtherCharge = (charge, selectedForRoom, forAllRooms) => {
+
+    const discountAmount = charge.reduce((acc, item) => {
+      if (item?.action === "sub") acc += Number(item?.finalValue || 0);
+      return acc;
+    }, 0);
+
+    const otherChargeAmount = charge.reduce((acc, item) => {
+      if (item?.action === "add") acc += Number(item?.finalValue || 0);
+      return acc;
+    }, 0);
+
+    const discountAmountWithOutTax = charge.reduce((acc, item) => {
+  if (item?.action === "sub") {
+    const amount = Number(item?.finalValue || 0);
+    const tax = Number(item?.taxAmt || 0);
+
+    acc += item?.includeTax ? amount - tax : amount;
+  }
+
+  return acc;
+}, 0);
+
+const otherChargeWithOutTax = charge.reduce((acc, item) => {
+  if (item?.action === "add") {
+    const amount = Number(item?.finalValue || 0);
+    const tax = Number(item?.taxAmt || 0);
+
+    acc += item?.includeTax ? amount - tax : amount;
+  }
+
+  return acc;
+}, 0);
+
+  if (selectedRoomId && selectedForRoom) {
+    const updatedRooms = formData?.selectedRooms?.map((room) => {
+      if (forAllRooms || room.roomId === selectedRoomId) {
+        return {
+          ...room,
+          otherChargeDetails: charge,
+          discountAmount,
+          otherChargeAmount,
+          discountAmountWithOutTax,
+          otherChargeWithOutTax
+        };
+      }
+
+      return room;
+    });
+
+
+    setFormData((prev) => ({
+      ...prev,
+      selectedRooms: updatedRooms,
+    }));
+  }else{
+    
+      setFormData((prev) => ({
+      ...prev,
+      otherChargeDetails: charge,
+      discountAmount,
+      otherChargeAmount,
+      discountAmountWithOutTax,
+      otherChargeWithOutTax
+      
+
+    }));
+  }
+
+  setSelectedRoomId(null);
+  setOtherChargeModalOpen(false);
+};
+
 
   const handleAvailableRoomSelection = (selectedRoom) => {
     setFormData((prev) => ({
@@ -703,6 +757,8 @@ useEffect(() => {
       updatedDate: currentDateDefault,
     }));
   };
+
+  console.log(formData.selectedRooms)
 
   const selectedRoomData = (id, to) => {
     if (to === "addPax") {
@@ -1072,7 +1128,7 @@ useEffect(() => {
   };
 
   const tariffMode = isTariffRateChange === true;
-  console.log("hi");
+
   return (
     <>
       {isLoading || visitOfPurposeLoading || loading ? (
@@ -1758,10 +1814,11 @@ useEffect(() => {
                           {isFor == "sales" ? "Amount" : "Advance Amount"}
                         </label>
                         <input
-                          readOnly
+                          // readOnly
                           type="number"
                           name="advanceAmount"
                           value={formData?.advanceAmount}
+                          onChange={}
                           className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                         />
                         {errorObject?.advanceAmount &&
@@ -1997,9 +2054,8 @@ useEffect(() => {
               <AdditionalChargesModal
                 isOpen={otherChargeModalOpen}
                 onClose={() => setOtherChargeModalOpen(false)}
-                onSave={(charges) => {
-                  handleSelectOtherCharge(charges);
-                  setOtherChargeModalOpen(false);
+                onSave={(charges,selectedForRoom,forAllRooms) => {
+                  handleSelectOtherCharge(charges,selectedForRoom,forAllRooms);
                 }}
                 additionalChargeData={additionalChargeData}
                 formData={formData}
@@ -2075,6 +2131,7 @@ const tariffRelatedCalculation = (type, formData, roomId) => {
     formData?.selectedRooms?.find((item) => item.roomId === roomId)
       ?.amountAfterTax || 0;
 
+      
   // 5. Total With Tax (sum of all)
   const totalWithoutTax = roomTotal + additionalPaxTotal + foodPlanTotal;
 

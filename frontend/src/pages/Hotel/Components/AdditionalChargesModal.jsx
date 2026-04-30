@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { calculateOtherCharges } from "../Helper/hotelHelper.js";
 import { toast } from "sonner";
 
 const createRow = (charge = {}) => ({
   rowId: Date.now() + Math.random(),
-  _id: charge?._id || "", // charge id
+  _id: charge?._id || "",
   option: charge?.name || "",
   value: "",
   action: "sub",
@@ -13,6 +13,7 @@ const createRow = (charge = {}) => ({
   hsn: charge?.hsn || "",
   finalValue: 0,
   amountType: "percentage",
+  includeTax: true, // NEW: tax included by default
 });
 
 export default function AdditionalChargesModal({
@@ -22,20 +23,46 @@ export default function AdditionalChargesModal({
   additionalChargeData = [],
   formData = {},
   discountBasedOnGrossAmount = true,
-  selectedForRoom =false,
-  selectedRoomId
+  selectedForRoom = false,
+  selectedRoomId,
 }) {
-  const [rows, setRows] = useState(   formData?.otherChargeDetails.length > 0 ? formData?.otherChargeDetails : [
- createRow(additionalChargeData?.[0] || {}),
-  ]);
+  const [rows, setRows] = useState(
+    formData?.otherChargeDetails.length > 0
+      ? formData?.otherChargeDetails
+      : [createRow(additionalChargeData?.[0] || {})],
+  );
 
-  const [forAllRooms,setForAllRooms] = useState(false)
+  const [forAllRooms, setForAllRooms] = useState(false);
 
-  console.log(rows);
+  useEffect(() => {
+    if (!selectedForRoom || !selectedRoomId) return;
+
+    const selectedRoom = formData?.selectedRooms?.find(
+      (item) => item.roomId === selectedRoomId,
+    );
+
+    if (
+      selectedRoom &&
+      Array.isArray(selectedRoom.otherChargeDetails) &&
+      selectedRoom.otherChargeDetails.length > 0
+    ) {
+      setRows(selectedRoom.otherChargeDetails);
+    }
+  }, [selectedForRoom, selectedRoomId, formData?.selectedRooms]);
+
+  const selectedRoomDetails = selectedForRoom
+    ? formData?.selectedRooms?.find((room) => room.roomId === selectedRoomId)
+    : null;
+
+  const grandTotal = selectedRoomDetails
+    ? selectedRoomDetails?.amountWithOutTax
+    : formData?.grandTotal
+      ? formData?.grandTotal
+      : 0;
 
   const recalculateRow = async (row) => {
     const discountData = await calculateOtherCharges({
-      total: Number(grandTotal|| 0),
+      total: Number(grandTotal || 0),
       inputValue: Number(row?.value || 0),
       inputType: row?.amountType,
       taxPercentage: Number(row?.taxPercentage || 0),
@@ -43,17 +70,26 @@ export default function AdditionalChargesModal({
       formData,
     });
 
+    let taxAmt = Number(discountData?.taxAmt || 0);
+    let finalValue = Number(discountData?.finalValue || 0);
+
+    // NEW: if tax is NOT included, calculate tax on top of finalValue and add it
+    if (!row.includeTax && Number(row.taxPercentage || 0) > 0) {
+      const extraTax = (finalValue * Number(row.taxPercentage)) / 100;
+      taxAmt = extraTax;
+      finalValue = finalValue + extraTax;
+    }
+
     return {
       ...row,
-      taxAmt: Number(discountData?.taxAmt || 0),
-      finalValue: Number(discountData?.finalValue || 0),
+      taxAmt,
+      finalValue,
     };
   };
 
   const addRow = () => {
     if (rows.length >= 1) {
       const lastRow = rows[rows.length - 1];
-
       if (!lastRow._id || Number(lastRow.value) <= 0) {
         toast.error(
           "Please fill the charge and value in the last row before adding a new row.",
@@ -61,7 +97,6 @@ export default function AdditionalChargesModal({
         return;
       }
     }
-
     setRows((prev) => [...prev, createRow()]);
   };
 
@@ -79,56 +114,36 @@ export default function AdditionalChargesModal({
       const additionalCharge = additionalChargeData.find(
         (item) => String(item._id) === String(val),
       );
-
       if (!additionalCharge) {
         toast.error("Please select a valid additional charge");
         return;
       }
-
       updatedRow = {
         ...updatedRow,
-        _id: additionalCharge._id, // charge id
+        _id: additionalCharge._id,
         option: additionalCharge.name,
         taxPercentage: Number(additionalCharge.taxPercentage || 0),
         hsn: additionalCharge.hsn || "",
       };
-
       updatedRow = await recalculateRow(updatedRow);
     } else if (field === "value") {
-      updatedRow = {
-        ...updatedRow,
-        value: val,
-      };
-
+      updatedRow = { ...updatedRow, value: val };
       updatedRow = await recalculateRow(updatedRow);
     } else if (field === "amountType") {
-      updatedRow = {
-        ...updatedRow,
-        amountType: val,
-      };
-
+      updatedRow = { ...updatedRow, amountType: val };
+      updatedRow = await recalculateRow(updatedRow);
+    } else if (field === "includeTax") {
+      // NEW: toggle tax inclusion and recalculate
+      updatedRow = { ...updatedRow, includeTax: val };
       updatedRow = await recalculateRow(updatedRow);
     } else {
-      updatedRow = {
-        ...updatedRow,
-        [field]: val,
-      };
+      updatedRow = { ...updatedRow, [field]: val };
     }
 
     setRows((prev) =>
       prev.map((row) => (row.rowId === rowId ? updatedRow : row)),
     );
   };
-
- const selectedRoomDetails = selectedForRoom
-  ? formData?.selectedRooms?.find(
-      (room) => room.roomId === selectedRoomId
-    )
-  : null;
-
-  
-
-  const grandTotal = selectedRoomDetails ? selectedRoomDetails?.amountWithOutTax : formData?.grandTotal ? formData?.grandTotal : 0
 
   const totalCharges = rows
     .filter((r) => r.action === "add" && Number(r.finalValue) > 0)
@@ -138,10 +153,7 @@ export default function AdditionalChargesModal({
     .filter((r) => r.action === "sub" && Number(r.finalValue) > 0)
     .reduce((a, r) => a + Number(r.finalValue || 0), 0);
 
-  const balanceAmount =
-    Number(grandTotal || 0) + totalCharges - totalDiscount;
-
-
+  const balanceAmount = Number(grandTotal || 0) + totalCharges - totalDiscount;
 
   if (!isOpen) return null;
 
@@ -151,50 +163,47 @@ export default function AdditionalChargesModal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-5xl overflow-hidden rounded-md bg-white shadow-[0_20px_60px_rgba(15,26,46,0.3),0_0_0_1px_rgba(15,26,46,0.1)]"
+        className="w-full max-w-6xl overflow-hidden rounded-md bg-white shadow-[0_20px_60px_rgba(15,26,46,0.3),0_0_0_1px_rgba(15,26,46,0.1)]"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Header */}
         <div className="flex items-center justify-between bg-slate-900 px-5 py-3.5">
-          {(selectedForRoom && selectedRoomId) ? (
-  <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-300 bg-white px-4 py-2 transition-all duration-200 hover:border-blue-500 hover:bg-blue-50">
-
-  <input
-    type="checkbox"
-    className="h-5 w-5 rounded border-slate-400 text-blue-600 focus:ring-2 focus:ring-blue-400"
-    value={forAllRooms}
-    onChange={(e) => setForAllRooms(e.target.checked)}
-  />
-
-  <div className="flex items-center gap-2">
-    <span className="text-[15px] font-bold text-slate-700">
-      For All Rooms
-    </span>
-  </div>
-
-</label>
+          {selectedForRoom && selectedRoomId ? (
+            <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-300 bg-white px-4 py-2 transition-all duration-200 hover:border-blue-500 hover:bg-blue-50">
+              <input
+                type="checkbox"
+                className="h-5 w-5 rounded border-slate-400 text-blue-600 focus:ring-2 focus:ring-blue-400"
+                value={forAllRooms}
+                onChange={(e) => setForAllRooms(e.target.checked)}
+              />
+              <div className="flex items-center gap-2">
+                <span className="text-[15px] font-bold text-slate-700">
+                  For All Rooms
+                </span>
+              </div>
+            </label>
           ) : (
-                 <div className="flex items-center gap-2.5">
-            <div className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white/30 text-white">
-              <svg
-                width="13"
-                height="13"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-              >
-                <circle cx="12" cy="12" r="10" />
-                <line x1="12" y1="8" x2="12" y2="16" />
-                <line x1="8" y1="12" x2="16" y2="12" />
-              </svg>
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white/30 text-white">
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="16" />
+                  <line x1="8" y1="12" x2="16" y2="12" />
+                </svg>
+              </div>
+              <span className="text-[15px] font-extrabold tracking-[0.01em] text-white">
+                Other Charges
+              </span>
             </div>
-            <span className="text-[15px] font-extrabold tracking-[0.01em] text-white">
-              Other Charges
-            </span>
-          </div> 
           )}
-    
 
           {Number(grandTotal || 0) > 0 && (
             <div className="text-right">
@@ -202,7 +211,7 @@ export default function AdditionalChargesModal({
                 Grand Total
               </p>
               <p className="m-0 text-center text-[13px] font-extrabold text-blue-500">
-                {Number(grandTotal|| 0).toLocaleString("en-IN")}
+                {Number(grandTotal || 0).toLocaleString("en-IN")}
               </p>
             </div>
           )}
@@ -250,8 +259,9 @@ export default function AdditionalChargesModal({
           </div>
         </div>
 
-        <div className="grid grid-cols-[1fr_152px_88px_120px_120px_36px] gap-2.5 border-b border-slate-200 bg-slate-50 px-5 py-2.5">
-          {["Charge Type", "Operation", "Value As", "Value", "Amount", ""].map(
+        {/* Column Headers — added "Tax" column */}
+        <div className="grid grid-cols-[1fr_152px_88px_110px_100px_110px_36px] gap-2.5 border-b border-slate-200 bg-slate-50 px-5 py-2.5">
+          {["Charge Type", "Operation", "Value As", "Value", "Tax", "Amount", ""].map(
             (label, i) => (
               <p
                 key={i}
@@ -263,25 +273,26 @@ export default function AdditionalChargesModal({
           )}
         </div>
 
+        {/* Rows */}
         <div className="max-h-[280px] overflow-y-auto bg-white px-5 py-3 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:w-1">
           <div className="flex flex-col gap-2">
             {rows.map((row) => {
               const isSub = row.action === "sub";
+              const hasTax = Number(row.taxPercentage || 0) > 0;
 
               return (
                 <div
                   key={row.rowId}
-                  className={`grid grid-cols-[1fr_152px_88px_120px_120px_36px] items-center gap-2.5 rounded border px-3 py-2.5 transition ${
+                  className={`grid grid-cols-[1fr_152px_88px_110px_100px_110px_36px] items-center gap-2.5 rounded border px-3 py-2.5 transition ${
                     isSub
                       ? "border-green-200 bg-green-50"
                       : "border-slate-200 bg-slate-50"
                   }`}
                 >
+                  {/* Charge Type */}
                   <select
                     value={row._id}
-                    onChange={(e) =>
-                      update(row.rowId, "charge", e.target.value)
-                    }
+                    onChange={(e) => update(row.rowId, "charge", e.target.value)}
                     className="w-full rounded border border-slate-200 bg-white px-2.5 py-[7px] text-[13px] font-semibold text-slate-900 outline-none transition focus:border-slate-900"
                   >
                     <option value="">Select charge</option>
@@ -295,6 +306,7 @@ export default function AdditionalChargesModal({
                     ))}
                   </select>
 
+                  {/* Operation */}
                   <div className="flex overflow-hidden rounded border border-slate-200">
                     {[
                       { val: "add", label: "ADD" },
@@ -320,6 +332,7 @@ export default function AdditionalChargesModal({
                     })}
                   </div>
 
+                  {/* Value As */}
                   <div className="flex overflow-hidden rounded border border-slate-200">
                     {[
                       { val: "flat", label: "₹" },
@@ -343,6 +356,7 @@ export default function AdditionalChargesModal({
                     })}
                   </div>
 
+                  {/* Value Input */}
                   <div className="flex items-center gap-1 rounded border border-slate-200 bg-white px-2.5 py-[7px] focus-within:border-slate-900">
                     <span className="shrink-0 text-[12px] font-bold text-slate-400">
                       {row.amountType === "flat" ? "₹" : "%"}
@@ -352,14 +366,48 @@ export default function AdditionalChargesModal({
                       min="0"
                       placeholder="0.00"
                       value={row.value}
-                      onChange={(e) =>
-                        update(row.rowId, "value", e.target.value)
-                      }
+                      onChange={(e) => update(row.rowId, "value", e.target.value)}
                       className="w-full border-none bg-transparent text-[13px] font-bold text-slate-900 outline-none [font-variant-numeric:tabular-nums] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                     />
                   </div>
 
-                  <div className="flex items-center gap-1 rounded border border-slate-200 bg-white px-2.5 py-[7px] focus-within:border-slate-900">
+                  {/* NEW: Include Tax Toggle */}
+                  {hasTax ? (
+                    <div className="flex overflow-hidden rounded border border-slate-200">
+                      {[
+                        { val: true, label: "INC" },
+                        { val: false, label: "EXC" },
+                      ].map(({ val, label }) => {
+                        const active = row.includeTax === val;
+                        return (
+                          <button
+                            key={label}
+                            type="button"
+                            onClick={() => update(row.rowId, "includeTax", val)}
+                            className={`flex-1 py-[7px] text-[11px] font-extrabold tracking-[0.04em] transition ${
+                              active
+                                ? val === true
+                                  ? "bg-amber-500 text-white"
+                                  : "bg-blue-600 text-white"
+                                : "bg-white text-slate-400"
+                            }`}
+                          >
+                            {label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    // No tax on this charge — show a muted placeholder
+                    <div className="flex items-center justify-center rounded border border-dashed border-slate-200 py-[7px]">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-300">
+                        No Tax
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Final Amount (read-only) */}
+                  <div className="flex items-center gap-1 rounded border border-slate-200 bg-white px-2.5 py-[7px]">
                     <span className="shrink-0 text-[12px] font-bold text-slate-400">
                       ₹
                     </span>
@@ -373,6 +421,7 @@ export default function AdditionalChargesModal({
                     />
                   </div>
 
+                  {/* Remove Row */}
                   <button
                     type="button"
                     onClick={() => removeRow(row.rowId)}
@@ -417,6 +466,7 @@ export default function AdditionalChargesModal({
           </div>
         </div>
 
+        {/* Footer */}
         <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50 px-5 py-3">
           <span className="text-[11px] font-extrabold uppercase tracking-[0.07em] text-green-600">
             Balance Amount : {balanceAmount.toLocaleString("en-IN")}
@@ -440,8 +490,7 @@ export default function AdditionalChargesModal({
                     return;
                   }
                 }
-
-                onSave(rows);
+                onSave(rows, selectedForRoom, forAllRooms);
               }}
               className="flex items-center gap-1.5 rounded bg-pink-600 px-6 py-2 text-[13px] font-extrabold tracking-[0.05em] text-white transition hover:bg-pink-700 active:scale-[0.97]"
             >

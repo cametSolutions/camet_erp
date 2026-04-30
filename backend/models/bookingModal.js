@@ -108,9 +108,17 @@ const selectedRoomSchema = new mongoose.Schema({
   swappingDateFrom: { type: Date },
   lastRateUpdatedAt: { type: Date, default: Date.now },
   isCheckedOut: { type: Boolean, default: false },
-  discountAmount : Number,
-  otherChargeAmount : Number,
-  adjustments: [
+  discountAmount: Number,
+  otherChargeAmount: Number,
+     discountAmountWithOutTax: {
+      type: Number,
+      default: 0,
+    },
+    otherChargeWithOutTax: {
+      type: Number,
+      default: 0,
+    },
+  otherChargeDetails: [
     {
       _id: { type: mongoose.Schema.Types.ObjectId, ref: "AdditionalCharge" },
       option: { type: String },
@@ -121,6 +129,7 @@ const selectedRoomSchema = new mongoose.Schema({
       hsn: { type: String },
       finalValue: { type: Number },
       amountType: { type: String },
+      includeTax: { type: Boolean },
     },
   ],
 });
@@ -171,7 +180,6 @@ const bookingSchema = new mongoose.Schema(
     priceLevelRate: String,
     priceLevelId: String,
     discountPercentage: String,
-    discountAmount: String,
     advanceAmount: String,
     totalAmount: String,
     balanceToPay: String,
@@ -273,8 +281,25 @@ const bookingSchema = new mongoose.Schema(
         hsn: { type: String },
         finalValue: { type: Number },
         amountType: { type: String },
+        includeTax: { type: Boolean },
       },
     ],
+    discountAmount: {
+      type: Number,
+      default: 0,
+    },
+    otherChargeAmount: {
+      type: Number,
+      default: 0,
+    },
+    discountAmountWithOutTax: {
+      type: Number,
+      default: 0,
+    },
+    otherChargeWithOutTax: {
+      type: Number,
+      default: 0,
+    },
   },
   { timestamps: true },
 );
