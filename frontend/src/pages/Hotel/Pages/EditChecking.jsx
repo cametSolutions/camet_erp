@@ -34,16 +34,16 @@ function EditChecking() {
     }
   }, [data]);
 
-  useEffect(() => {
-    if (editData) {
-      editData.previousAdvance = Number(
-        editData?.bookingId?.advanceAmount || 0,
-      );
-      editData.totalAdvance =
-        Number(editData?.bookingId?.advanceAmount || 0) +
-        Number(editData?.advanceAmount || 0);
-    }
-  }, [editData]);
+  // useEffect(() => {
+  //   if (editData) {
+  //     editData.previousAdvance = Number(
+  //       editData?.bookingId?.advanceAmount || 0,
+  //     );
+  //     editData.totalAdvance =
+  //       Number(editData?.bookingId?.totalAdvance || 0) +
+  //       Number(editData?.totalAdvance || 0);
+  //   }
+  // }, [editData]);
 
   const handleSubmit = async (payload, paymentData,paymenttypeDetails) => {
     console.log(payload,paymentData,paymenttypeDetails)

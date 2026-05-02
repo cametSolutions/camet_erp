@@ -924,6 +924,7 @@ export const deleteReceipt = async (tallyId, session = null) => {
     throw error;
   }
 };
+
 export const deleteSettlements = async (tallyId, session = null) => {
   try {
     if (!tallyId) {

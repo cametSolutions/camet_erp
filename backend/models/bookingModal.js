@@ -110,14 +110,14 @@ const selectedRoomSchema = new mongoose.Schema({
   isCheckedOut: { type: Boolean, default: false },
   discountAmount: Number,
   otherChargeAmount: Number,
-     discountAmountWithOutTax: {
-      type: Number,
-      default: 0,
-    },
-    otherChargeWithOutTax: {
-      type: Number,
-      default: 0,
-    },
+  discountAmountWithOutTax: {
+    type: Number,
+    default: 0,
+  },
+  otherChargeWithOutTax: {
+    type: Number,
+    default: 0,
+  },
   otherChargeDetails: [
     {
       _id: { type: mongoose.Schema.Types.ObjectId, ref: "AdditionalCharge" },
@@ -181,6 +181,7 @@ const bookingSchema = new mongoose.Schema(
     priceLevelId: String,
     discountPercentage: String,
     advanceAmount: String,
+    totalAdvance: String,
     totalAmount: String,
     balanceToPay: String,
     addFoodPlanWithRate: { type: Boolean, default: false },

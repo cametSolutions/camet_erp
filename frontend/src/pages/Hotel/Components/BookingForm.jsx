@@ -52,7 +52,8 @@ function BookingForm({
     (state) => state.secSelectedOrganization.secSelectedOrg,
   );
   let addFoodPlanWithRate = configurations?.[0]?.foodPlaWithRoomRate;
-  let discountBasedOnGrossAmount = configurations?.[0]?.discountBasedOnGrossAmountInHotel;
+  let discountBasedOnGrossAmount =
+    configurations?.[0]?.discountBasedOnGrossAmountInHotel;
 
   const [includeFoodRateWithRoom, setIncludeFoodRateWithRoom] = useState(
     addFoodPlanWithRate ?? false,
@@ -136,7 +137,7 @@ function BookingForm({
     addTaxWithRate: configurations[0]?.addRateWithTax?.hotelSale,
   });
 
-  // useEffect used to set up the edited data 
+  // useEffect used to set up the edited data
   useEffect(() => {
     if (editData) {
       setSelectedParty(editData?.customerId);
@@ -149,7 +150,7 @@ function BookingForm({
         highestDate =
           currentDateDefault > highestDate ? currentDateDefault : highestDate;
       }
-      console.log("editData", editData?.selectedRooms);
+      console.log("editData", editData);
       setFormData((prev) => ({
         ...prev,
         country: editData?.country,
@@ -186,7 +187,7 @@ function BookingForm({
         guestDetailedAddress: editData?.guestDetailedAddress,
         guestMobileNumber: editData?.guestMobileNumber,
         balanceToPay: editData?.balanceToPay || 0,
-        advanceAmount: editData?.advanceAmount || 0,
+        advanceAmount:  0,
         previousAdvance: editData?.previousAdvance || 0,
         company: editData?.company || "",
         nextDestination: editData?.nextDestination || "",
@@ -208,6 +209,7 @@ function BookingForm({
         otherChargeDetails: editData?.otherChargeDetails || [],
         addFoodPlanWithRate: editData?.addFoodPlanWithRate,
         roomSwapHistory: editData?.roomSwapHistory || [],
+        deletedAmount: 0,
       }));
       setIncludeFoodRateWithRoom(editData?.addFoodPlanWithRate);
     }
@@ -350,7 +352,6 @@ function BookingForm({
       updatedDate: currentDateDefault,
     }));
 
-
   // checkout  time and date helper
   const handleCheckOutTimeChange = (time) =>
     setFormData((prev) => ({
@@ -363,7 +364,7 @@ function BookingForm({
   const isForeign =
     country.trim().toLowerCase() !== "india" && country.trim() !== "";
 
-    // getting voucher series data for specific ones
+  // getting voucher series data for specific ones
   const fetchData = useCallback(async () => {
     try {
       const response = await api.get(
@@ -411,83 +412,90 @@ function BookingForm({
     }
   }, [fetchData, editData, isFor]);
 
-// Fixed calculation: Room total + Pax + Food Plan = Total Amount, then apply discount (from other charges in final side)
-  
-useEffect(() => {
-  const handler = setTimeout(() => {
-    const roomTotal = Number(formData?.roomTotal || 0);
+  // Fixed calculation: Room total + Pax + Food Plan = Total Amount, then apply discount (from other charges in final side)
 
-    let otherChargeAmount = 0;
-    let discountAmount = 0;
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      const roomTotal = Number(formData?.roomTotal || 0);
 
-    if (
-      Array.isArray(formData?.otherChargeDetails) &&
-      formData.otherChargeDetails.length > 0
-    ) {
-      const valueDetails = formData.otherChargeDetails.reduce(
-        (acc, item) => {
-          const value = Number(item?.finalValue || 0);
+      let otherChargeAmount = 0;
+      let discountAmount = 0;
 
-          if (item?.action === "add") {
-            acc.otherChargeAmount += value;
-          } else if (item?.action === "sub") {
-            acc.discountAmount += value;
-          }
+      if (
+        Array.isArray(formData?.otherChargeDetails) &&
+        formData.otherChargeDetails.length > 0
+      ) {
+        const valueDetails = formData.otherChargeDetails.reduce(
+          (acc, item) => {
+            const value = Number(item?.finalValue || 0);
 
-          return acc;
-        },
-        { otherChargeAmount: 0, discountAmount: 0 }
+            if (item?.action === "add") {
+              acc.otherChargeAmount += value;
+            } else if (item?.action === "sub") {
+              acc.discountAmount += value;
+            }
+
+            return acc;
+          },
+          { otherChargeAmount: 0, discountAmount: 0 },
+        );
+
+        otherChargeAmount = valueDetails.otherChargeAmount;
+        discountAmount = valueDetails.discountAmount;
+      }
+      const totalAmount = roomTotal;
+      const additionalCharge = Math.abs(
+        Number(discountAmount) - Number(otherChargeAmount),
+      );
+      const grandTotal = roomTotal;
+
+      const totalAdvance = Number(
+        formData?.totalAdvance > 0
+          ? formData.totalAdvance
+          : formData?.advanceAmount || 0,
       );
 
-      otherChargeAmount = valueDetails.otherChargeAmount;
-      discountAmount = valueDetails.discountAmount;
-    }
-    const totalAmount = roomTotal 
-    const additionalCharge = Math.abs(Number(discountAmount) - Number(otherChargeAmount))
-    const grandTotal =  roomTotal 
+      const balanceToPay = (
+        Number(grandTotal) -
+        totalAdvance -
+        additionalCharge
+      ).toFixed(2);
 
+      setFormData((prev) => ({
+        ...prev,
+        totalAmount: totalAmount.toFixed(2),
+        otherChargeAmount: Number(otherChargeAmount.toFixed(2)),
+        discountAmount: Number(discountAmount.toFixed(2)),
+        grandTotal,
+        balanceToPay,
+      }));
+    }, 300);
 
-    const totalAdvance = Number(
-      formData?.totalAdvance > 0
-        ? formData.totalAdvance
-        : formData?.advanceAmount || 0
-    );
+    return () => clearTimeout(handler);
+  }, [
+    formData.roomTotal,
+    formData.paxTotal,
+    formData.foodPlanTotal,
+    formData.totalAdvance,
+    formData.advanceAmount,
+    formData.otherChargeDetails,
+  ]);
 
-    const balanceToPay = (Number(grandTotal) - totalAdvance - additionalCharge).toFixed(2);
+  // recalculating other charges if any of the values are changed in the parent side component
+  const isEqual = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  useEffect(() => {
+    const handler = setTimeout(async () => {
+      const roomTotal = Number(formData?.roomTotal || 0);
 
-    setFormData((prev) => ({
-      ...prev,
-      totalAmount: totalAmount.toFixed(2),
-      otherChargeAmount: Number(otherChargeAmount.toFixed(2)),
-      discountAmount: Number(discountAmount.toFixed(2)),
-      grandTotal,
-      balanceToPay,
-    }));
-  }, 300);
+      let updatedOtherChargeDetails = Array.isArray(
+        formData?.otherChargeDetails,
+      )
+        ? [...formData.otherChargeDetails]
+        : [];
 
-  return () => clearTimeout(handler);
-}, [
-  formData.roomTotal,
-  formData.paxTotal,
-  formData.foodPlanTotal,
-  formData.totalAdvance,
-  formData.advanceAmount,
-  formData.otherChargeDetails,
-]);
-
-// recalculating other charges if any of the values are changed in the parent side component
-const isEqual = (a, b) => JSON.stringify(a) === JSON.stringify(b);
-useEffect(() => {
-  const handler = setTimeout(async () => {
-    const roomTotal = Number(formData?.roomTotal || 0);
-
-    let updatedOtherChargeDetails = Array.isArray(formData?.otherChargeDetails)
-      ? [...formData.otherChargeDetails]
-      : [];
-
-    if (updatedOtherChargeDetails.length > 0) {
-      updatedOtherChargeDetails = await Promise.all(
-        updatedOtherChargeDetails.map(async (item) => {
+      if (updatedOtherChargeDetails.length > 0) {
+        updatedOtherChargeDetails = await Promise.all(
+          updatedOtherChargeDetails.map(async (item) => {
             const recalculated = await calculateOtherCharges({
               total: roomTotal,
               inputValue: Number(item?.value || 0),
@@ -504,67 +512,65 @@ useEffect(() => {
               taxAmt: Number(recalculated?.taxAmt || 0),
               finalValue: Number(recalculated?.finalValue || 0),
             };
-        }),
+          }),
+        );
+      }
+
+      console.log(updatedOtherChargeDetails);
+
+      const { otherChargeAmount, discountAmount } =
+        updatedOtherChargeDetails.reduce(
+          (acc, item) => {
+            const value = Number(item?.finalValue || 0);
+
+            if (item?.action === "add") acc.otherChargeAmount += value;
+            if (item?.action === "sub") acc.discountAmount += value;
+
+            return acc;
+          },
+          { otherChargeAmount: 0, discountAmount: 0 },
+        );
+
+      const subTotal = roomTotal;
+      const grandTotal = subTotal + otherChargeAmount - discountAmount;
+
+      const totalAdvance = Number(
+        formData?.totalAdvance > 0
+          ? formData.totalAdvance
+          : formData?.advanceAmount || 0,
       );
-    }
 
-    console.log(updatedOtherChargeDetails)
+      const balanceToPay = (grandTotal - totalAdvance).toFixed(2);
 
-    const { otherChargeAmount, discountAmount } =
-      updatedOtherChargeDetails.reduce(
-        (acc, item) => {
-          const value = Number(item?.finalValue || 0);
+      // 🔥 PREVENT LOOP
+      if (
+        isEqual(updatedOtherChargeDetails, formData.otherChargeDetails) &&
+        Number(formData.grandTotal) === Number(grandTotal)
+      ) {
+        return; // no change → no setState → no loop
+      }
 
-          if (item?.action === "add") acc.otherChargeAmount += value;
-          if (item?.action === "sub") acc.discountAmount += value;
+      setFormData((prev) => ({
+        ...prev,
+        otherChargeDetails: updatedOtherChargeDetails,
+        otherChargeAmount,
+        discountAmount,
+        totalAmount: subTotal.toFixed(2),
+        grandTotal: Number(grandTotal.toFixed(2)),
+        balanceToPay,
+      }));
+    }, 300);
 
-          return acc;
-        },
-        { otherChargeAmount: 0, discountAmount: 0 },
-      );
-
-    const subTotal = roomTotal ;
-    const grandTotal = subTotal + otherChargeAmount - discountAmount;
-
-    const totalAdvance = Number(
-      formData?.totalAdvance > 0
-        ? formData.totalAdvance
-        : formData?.advanceAmount || 0,
-    );
-
-    const balanceToPay = (grandTotal - totalAdvance).toFixed(2);
-
-    // 🔥 PREVENT LOOP
-    if (
-      isEqual(updatedOtherChargeDetails, formData.otherChargeDetails) &&
-      Number(formData.grandTotal) === Number(grandTotal)
-    ) {
-      return; // no change → no setState → no loop
-    }
-
-    setFormData((prev) => ({
-      ...prev,
-      otherChargeDetails: updatedOtherChargeDetails,
-      otherChargeAmount,
-      discountAmount,
-      totalAmount: subTotal.toFixed(2),
-      grandTotal: Number(grandTotal.toFixed(2)),
-      balanceToPay,
-    }));
-  }, 300);
-
-  return () => clearTimeout(handler);
-}, [
-  formData.roomTotal,
-  formData.paxTotal,
-  formData.foodPlanTotal,
-  formData.totalAdvance,
-  formData.advanceAmount,
-  formData.selectedRooms,
-  formData.otherChargeDetails,
-]);
-
-
+    return () => clearTimeout(handler);
+  }, [
+    formData.roomTotal,
+    formData.paxTotal,
+    formData.foodPlanTotal,
+    formData.totalAdvance,
+    formData.advanceAmount,
+    formData.selectedRooms,
+    formData.otherChargeDetails,
+  ]);
 
   const handleSelection = (party, search, isGuest) => {
     if (isGuest) {
@@ -637,8 +643,7 @@ useEffect(() => {
     }
   };
 
-const handleSelectOtherCharge = (charge, selectedForRoom, forAllRooms) => {
-
+  const handleSelectOtherCharge = (charge, selectedForRoom, forAllRooms) => {
     const discountAmount = charge.reduce((acc, item) => {
       if (item?.action === "sub") acc += Number(item?.finalValue || 0);
       return acc;
@@ -650,66 +655,61 @@ const handleSelectOtherCharge = (charge, selectedForRoom, forAllRooms) => {
     }, 0);
 
     const discountAmountWithOutTax = charge.reduce((acc, item) => {
-  if (item?.action === "sub") {
-    const amount = Number(item?.finalValue || 0);
-    const tax = Number(item?.taxAmt || 0);
+      if (item?.action === "sub") {
+        const amount = Number(item?.finalValue || 0);
+        const tax = Number(item?.taxAmt || 0);
 
-    acc += item?.includeTax ? amount - tax : amount;
-  }
-
-  return acc;
-}, 0);
-
-const otherChargeWithOutTax = charge.reduce((acc, item) => {
-  if (item?.action === "add") {
-    const amount = Number(item?.finalValue || 0);
-    const tax = Number(item?.taxAmt || 0);
-
-    acc += item?.includeTax ? amount - tax : amount;
-  }
-
-  return acc;
-}, 0);
-
-  if (selectedRoomId && selectedForRoom) {
-    const updatedRooms = formData?.selectedRooms?.map((room) => {
-      if (forAllRooms || room.roomId === selectedRoomId) {
-        return {
-          ...room,
-          otherChargeDetails: charge,
-          discountAmount,
-          otherChargeAmount,
-          discountAmountWithOutTax,
-          otherChargeWithOutTax
-        };
+        acc += item?.includeTax ? amount - tax : amount;
       }
 
-      return room;
-    });
+      return acc;
+    }, 0);
 
+    const otherChargeWithOutTax = charge.reduce((acc, item) => {
+      if (item?.action === "add") {
+        const amount = Number(item?.finalValue || 0);
+        const tax = Number(item?.taxAmt || 0);
 
-    setFormData((prev) => ({
-      ...prev,
-      selectedRooms: updatedRooms,
-    }));
-  }else{
-    
+        acc += item?.includeTax ? amount - tax : amount;
+      }
+
+      return acc;
+    }, 0);
+
+    if (selectedRoomId && selectedForRoom) {
+      const updatedRooms = formData?.selectedRooms?.map((room) => {
+        if (forAllRooms || room.roomId === selectedRoomId) {
+          return {
+            ...room,
+            otherChargeDetails: charge,
+            discountAmount,
+            otherChargeAmount,
+            discountAmountWithOutTax,
+            otherChargeWithOutTax,
+          };
+        }
+
+        return room;
+      });
+
       setFormData((prev) => ({
-      ...prev,
-      otherChargeDetails: charge,
-      discountAmount,
-      otherChargeAmount,
-      discountAmountWithOutTax,
-      otherChargeWithOutTax
-      
+        ...prev,
+        selectedRooms: updatedRooms,
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        otherChargeDetails: charge,
+        discountAmount,
+        otherChargeAmount,
+        discountAmountWithOutTax,
+        otherChargeWithOutTax,
+      }));
+    }
 
-    }));
-  }
-
-  setSelectedRoomId(null);
-  setOtherChargeModalOpen(false);
-};
-
+    setSelectedRoomId(null);
+    setOtherChargeModalOpen(false);
+  };
 
   const handleAvailableRoomSelection = (selectedRoom) => {
     setFormData((prev) => ({
@@ -758,7 +758,7 @@ const otherChargeWithOutTax = charge.reduce((acc, item) => {
     }));
   };
 
-  console.log(formData.selectedRooms)
+  console.log(formData.selectedRooms);
 
   const selectedRoomData = (id, to) => {
     if (to === "addPax") {
@@ -1016,8 +1016,9 @@ const otherChargeWithOutTax = charge.reduce((acc, item) => {
     };
 
     if (
-      Number(formData.advanceAmount) <= 0 ||
-      formData.advanceAmount == editData?.advanceAmount
+      Number(formData.advanceAmount) <= 0
+      // (Number(formData.advanceAmount) + Number(formData.deletedAmount) ) ==
+      //   Number(editData?.advanceAmount)
     ) {
       if (isSubmittingRef.current) return;
       isSubmittingRef.current = true;
@@ -1048,6 +1049,22 @@ const otherChargeWithOutTax = charge.reduce((acc, item) => {
     const credit = 0;
     let bank = 0;
 
+    console.log(paymentData)
+  //     {
+  //   mode: 'single',
+  //   totalAmount: 100,
+  //   payments: [
+  //     {
+  //       method: 'cash',
+  //       paymentType: 'cash',
+  //       amount: 100,
+  //       accountId: '6895bff914dac3df95ec3971',
+  //       accountName: 'Cash1'
+  //     }
+  //   ]
+  // }
+    // return
+
     paymentData.payments.forEach((item) => {
       if (item.paymentType === "upi") {
         upi += item.amount;
@@ -1067,8 +1084,11 @@ const otherChargeWithOutTax = charge.reduce((acc, item) => {
       card: card,
       credit: credit,
     };
+    console.log(payload)
+
     // setSaveLoader(false)
     handleSubmit(payload, paymentData, paymenttypeDetails);
+    
   };
 
   const handleDeletion = (roomId) => {
@@ -1125,6 +1145,72 @@ const otherChargeWithOutTax = charge.reduce((acc, item) => {
         customerId: name && !selectedParty ? "" : prev.customerId,
       }));
     }
+  };
+
+  const handleAdvanceAmountChange = (e) => {
+    const { value } = e.target;
+    const advanceAmount = Math.round(Number(value));
+    const previousAdvance = Number(editData?.previousAdvance || 0);
+    const grandTotal = Number(formData?.grandTotal || 0);
+    const totalAdvance = Number(editData?.totalAdvance || 0 ) + Number(value || 0);
+    const maxAllowed = grandTotal - previousAdvance;
+
+    console.log("advanceAmount", advanceAmount);
+    console.log("grandTotal", grandTotal);
+    console.log("previousAdvance", editData?.totalAdvance);
+    console.log("totalAdvance", totalAdvance);
+
+    if (advanceAmount > maxAllowed) {
+      setErrorObject((prev) => ({
+        ...prev,
+        advanceAmount:
+          "Advance amount should be less than or equal to grand total",
+      }));
+      return;
+    }
+
+    setErrorObject((prev) => ({ ...prev, advanceAmount: "" }));
+
+    if (isFor === "deliveryNote" || isFor === "sales") {
+      console.log("advanceAmount", advanceAmount);
+      setFormData((prev) => ({
+        ...prev,
+        advanceAmount: value,
+        balanceToPay: (grandTotal - previousAdvance - advanceAmount).toFixed(2),
+        totalAdvance: totalAdvance,
+        updatedDate: currentDateDefault,
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        advanceAmount: value,
+        balanceToPay: (grandTotal - advanceAmount).toFixed(2),
+        totalAdvance: totalAdvance,
+        updatedDate: currentDateDefault,
+      }));
+    }
+  };
+
+  const handleOutstanding = (id) => {
+    let deletedOutStanding = outStanding.find((item) => item._id === id);
+
+    setFormData((prev) => ({
+      ...prev,
+      advanceAmount:0,
+      balanceToPay:
+        Number(formData.balanceToPay) + deletedOutStanding.bill_amount,
+      totalAdvance:
+        Number(formData.totalAdvance) - deletedOutStanding.bill_amount,
+      deletedAmount:
+        Number(formData.deletedAmount) + deletedOutStanding.bill_amount,
+    }));
+    editData.advanceAmount = 0;
+    editData.balanceToPay =
+      Number(editData.balanceToPay) + deletedOutStanding.bill_amount;
+    editData.totalAdvance =
+      Number(editData.totalAdvance) - deletedOutStanding.bill_amount;
+    editData.deletedAmount =
+      Number(editData.deletedAmount) + deletedOutStanding.bill_amount;
   };
 
   const tariffMode = isTariffRateChange === true;
@@ -1708,7 +1794,7 @@ const otherChargeWithOutTax = charge.reduce((acc, item) => {
                         <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
                           Other Charge
                         </label> */}
-                        {/* <OtherChargeSearchInPutBox
+                      {/* <OtherChargeSearchInPutBox
                           onSelect={handleSelectOtherCharge}
                           selectedCharge={formData.otherChargeDetails}
                         /> */}
@@ -1778,7 +1864,7 @@ const otherChargeWithOutTax = charge.reduce((acc, item) => {
                     <div className="w-full lg:w-6/12 px-4">
                       <div className="relative w-full mb-3">
                         <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                         Other Charge Amount
+                          Other Charge Amount
                         </label>
                         <input
                           readOnly
@@ -1873,56 +1959,56 @@ const otherChargeWithOutTax = charge.reduce((acc, item) => {
                       </div>
                     </div>
                     {formData?.grandTotal > 0 && (
-                    <div className="w-full lg:w-6/12 px-4">
-                      <div className="flex gap-2 mt-6">
-                        {/* Advance — outlined, compact */}
-                        <button
-                          type="button"
-                          onClick={() => setAdvanceModalOpen(true)}
-                          className="group flex items-center gap-1.5 px-3 py-2 rounded border border-gray-200 bg-white hover:border-gray-800 hover:bg-gray-50 active:scale-95 transition-all duration-150"
-                        >
-                          <svg
-                            className="w-3.5 h-3.5 text-gray-400 group-hover:text-gray-800 transition-colors duration-150"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
+                      <div className="w-full lg:w-6/12 px-4">
+                        <div className="flex gap-2 mt-6">
+                          {/* Advance — outlined, compact */}
+                          <button
+                            type="button"
+                            onClick={() => setAdvanceModalOpen(true)}
+                            className="group flex items-center gap-1.5 px-3 py-2 rounded border border-gray-200 bg-white hover:border-gray-800 hover:bg-gray-50 active:scale-95 transition-all duration-150"
                           >
-                            <rect x="2" y="5" width="20" height="14" rx="2" />
-                            <line x1="2" y1="10" x2="22" y2="10" />
-                          </svg>
-                          <span className="text-xs font-700 text-gray-600 group-hover:text-gray-900 transition-colors duration-150">
-                            Advance
-                          </span>
-                        </button>
+                            <svg
+                              className="w-3.5 h-3.5 text-gray-400 group-hover:text-gray-800 transition-colors duration-150"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <rect x="2" y="5" width="20" height="14" rx="2" />
+                              <line x1="2" y1="10" x2="22" y2="10" />
+                            </svg>
+                            <span className="text-xs font-700 text-gray-600 group-hover:text-gray-900 transition-colors duration-150">
+                              Advance
+                            </span>
+                          </button>
 
-                        {/* Other Charges — filled navy, compact */}
-                        <button
-                          type="button"
-                          onClick={() => setOtherChargeModalOpen(true)}
-                          className="group flex items-center gap-1.5 px-3 py-2 rounded bg-[#0f172a] hover:bg-[#1e293b] active:scale-95 transition-all duration-150"
-                        >
-                          <svg
-                            className="w-3.5 h-3.5 text-white/70 group-hover:text-white transition-colors duration-150"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
+                          {/* Other Charges — filled navy, compact */}
+                          <button
+                            type="button"
+                            onClick={() => setOtherChargeModalOpen(true)}
+                            className="group flex items-center gap-1.5 px-3 py-2 rounded bg-[#0f172a] hover:bg-[#1e293b] active:scale-95 transition-all duration-150"
                           >
-                            <circle cx="12" cy="12" r="10" />
-                            <line x1="12" y1="8" x2="12" y2="16" />
-                            <line x1="8" y1="12" x2="16" y2="12" />
-                          </svg>
-                          <span className="text-xs font-semibold text-white">
-                            Other Charges
-                          </span>
-                        </button>
+                            <svg
+                              className="w-3.5 h-3.5 text-white/70 group-hover:text-white transition-colors duration-150"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <circle cx="12" cy="12" r="10" />
+                              <line x1="12" y1="8" x2="12" y2="16" />
+                              <line x1="8" y1="12" x2="16" y2="12" />
+                            </svg>
+                            <span className="text-xs font-semibold text-white">
+                              Other Charges
+                            </span>
+                          </button>
+                        </div>
                       </div>
-                    </div>
                     )}
                   </div>
 
@@ -2054,13 +2140,17 @@ const otherChargeWithOutTax = charge.reduce((acc, item) => {
               <AdditionalChargesModal
                 isOpen={otherChargeModalOpen}
                 onClose={() => setOtherChargeModalOpen(false)}
-                onSave={(charges,selectedForRoom,forAllRooms) => {
-                  handleSelectOtherCharge(charges,selectedForRoom,forAllRooms);
+                onSave={(charges, selectedForRoom, forAllRooms) => {
+                  handleSelectOtherCharge(
+                    charges,
+                    selectedForRoom,
+                    forAllRooms,
+                  );
                 }}
                 additionalChargeData={additionalChargeData}
                 formData={formData}
                 discountBasedOnGrossAmount={discountBasedOnGrossAmount}
-                selectedForRoom ={selectedRoomId ? true : false}
+                selectedForRoom={selectedRoomId ? true : false}
                 selectedRoomId={selectedRoomId}
               />
             )}
@@ -2102,6 +2192,8 @@ const otherChargeWithOutTax = charge.reduce((acc, item) => {
         showModal={advanceModalOpen}
         onClose={() => setAdvanceModalOpen(false)}
         outStanding={outStanding}
+        cmp_id={cmp_id}
+        sendDataToParent={handleOutstanding}
       />
     </>
   );
@@ -2131,7 +2223,6 @@ const tariffRelatedCalculation = (type, formData, roomId) => {
     formData?.selectedRooms?.find((item) => item.roomId === roomId)
       ?.amountAfterTax || 0;
 
-      
   // 5. Total With Tax (sum of all)
   const totalWithoutTax = roomTotal + additionalPaxTotal + foodPlanTotal;
 
@@ -2157,11 +2248,7 @@ const tariffRelatedCalculation = (type, formData, roomId) => {
   }
 };
 
-function TotalsSection({
-  formData,
-  roomIdToUpdate,
-  errorObject,
-}) {
+function TotalsSection({ formData, roomIdToUpdate, errorObject }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
       <div className="bg-gray-50 border rounded-xl shadow-md p-4">

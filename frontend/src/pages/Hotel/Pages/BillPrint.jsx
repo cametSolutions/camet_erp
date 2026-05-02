@@ -1066,8 +1066,15 @@ console.log(dateWiseLines);
       }
     }
     let discount = paymentDetails?.paymentDetails?.discountAmount || doc.discountAmount || 0;
+    let roomWiseDiscount = doc.selectedRooms.reduce((acc, curr) => {
+      return acc + Number(curr.discountAmount || 0);
+    },0)
+    let otherChargesAmount = doc.selectedRooms.reduce((acc, curr) => {
+      return acc + Number(curr.otherChargeAmount || 0);
+    },0)
+    console.log(roomWiseDiscount, otherChargesAmount);
     console.log(paymentDetails?.paymentDetails?.discountAmount);
-    console.log(paymentDetails);
+    console.log(doc);
 
     return {
       hotel: {
@@ -1109,7 +1116,7 @@ console.log(dateWiseLines);
       charges: chargesWithBalance,
       summary: {
         roomRent: (
-          Number(roomTariffTotal || 0) + Number(additionalPaxAmount || 0)
+          (Number(roomTariffTotal || 0) + Number(additionalPaxAmount || 0) + Number(otherChargesAmount || 0)) - Number(roomWiseDiscount || 0)
         ).toFixed(2),
         discount: discount,
         sgst: sgstAmount,

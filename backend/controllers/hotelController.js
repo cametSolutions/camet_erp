@@ -1133,6 +1133,7 @@ export const roomBooking = async (req, res) => {
 
         ...bookingData,
       });
+
       savedBooking = await newBooking.save({ session });
 
       // 🔹 Handle Advance Receipt if advanceAmount > 0
@@ -1316,7 +1317,7 @@ export const roomBooking = async (req, res) => {
               payment.method === "cash" ? "cash" : "bank",
               selectedModal.modelName,
               newBooking.voucherNumber,
-              newBooking?._id,
+              advanceObject._id,
               payment.amount,
               new Date(),
               selectedParty?.partyName,
@@ -1852,15 +1853,7 @@ export const updateBooking = async (req, res) => {
     // TRANSACTION
     // -----------------------------
     await session.withTransaction(async () => {
-      // 1) Delete existing receipts & settlements & advance (TallyData)
-      if (bookingId) {
-        await deleteReceipt(bookingId, session);
-        await deleteSettlements(bookingId, session);
-        await TallyData.deleteMany({ billId: bookingId.toString() }).session(
-          session,
-        );
-      }
-
+    
       // 2) Handle advance logic (delete-only vs delete+recreate)
       if (bookingData.advanceAmount && bookingData.advanceAmount > 0) {
         // a) Create new TallyData advance object
@@ -2030,13 +2023,15 @@ export const updateBooking = async (req, res) => {
             );
           }
         }
-      } else {
-        // No advance now -> ensure old advance records are gone
-        await TallyData.deleteMany({ billId: bookingId.toString() }).session(
-          session,
-        );
-      }
+      } 
+      // else {
+      //   // No advance now -> ensure old advance records are gone
+      //   await TallyData.deleteMany({ billId: bookingId.toString() }).session(
+      //     session,
+      //   );
+      // }
       //advance tracking
+
       const today = new Date().toISOString().slice(0, 10);
       const newAdvance = bookingData.advanceAmount;
 
@@ -6352,5 +6347,125 @@ export const getOccupancyCheckoutReport = async (req, res) => {
       message: "Failed to generate occupancy checkout report",
       error: error.message,
     });
+  }
+};
+
+
+export const deleteAdvance = async (req, res) => {
+  const session = await mongoose.startSession();
+
+  try {
+    const { id } = req.params;
+    const { cmp_id } = req.query;
+
+    if (!id || !cmp_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Advance ID and company ID are required",
+      });
+    }
+
+    session.startTransaction();
+
+    const deletedAdvance = await TallyData.findOneAndDelete(
+      { _id: id, cmp_id },
+      { session }
+    );
+
+    if (!deletedAdvance) {
+      await session.abortTransaction();
+      return res.status(404).json({
+        success: false,
+        message: "Advance not found",
+      });
+    }
+      if (deletedAdvance) {
+        await deleteReceipt(id, session);
+        await deleteSettlements(id, session);
+      }
+
+    const advanceAmount = Number(deletedAdvance?.bill_amount || 0);
+
+    if (Number.isNaN(advanceAmount)) {
+      await session.abortTransaction();
+      return res.status(400).json({
+        success: false,
+        message: "Invalid advance amount",
+      });
+    }
+
+    // 🔹 HANDLE BOOKING
+    if (deletedAdvance?.billId) {
+      const booking = await Booking.findOne(
+        { _id: deletedAdvance.billId, cmp_id },
+        null,
+        { session }
+      );
+
+      if (booking) {
+        const current = Number(booking.advanceAmount || 0);
+        const updated = current - advanceAmount;
+        let totalAdvance = Number(booking.totalAdvance || 0) - advanceAmount
+        let currentBlance = Number(booking.balanceToPay || 0);
+        let updatedBalance = currentBlance + advanceAmount;
+        await Booking.updateOne(
+          { _id: booking._id },
+          {
+            $set: {
+              advanceAmount: String(updated),
+              balanceToPay : String(updatedBalance),
+              totalAdvance : String(totalAdvance)
+            },
+          },
+          { session }
+        );
+      }
+    }
+
+    // 🔹 HANDLE CHECKIN
+    if (deletedAdvance?.billId) {
+      const checkIn = await CheckIn.findOne(
+        { _id: deletedAdvance.billId, cmp_id },
+        null,
+        { session }
+      );
+
+      if (checkIn) {
+        const current = Number(checkIn.advanceAmount || 0);
+        const updated = current - advanceAmount;
+        let currentBlance = Number(checkIn.balanceToPay || 0);
+        let updatedBalance = currentBlance + advanceAmount;
+        await CheckIn.updateOne(
+          { _id: checkIn._id },
+          {
+            $set: {
+              advanceAmount: String(updated),
+              balanceToPay : String(updatedBalance)
+            },
+          },
+          { session }
+        );
+      }
+    }
+
+    await session.commitTransaction();
+
+    return res.status(200).json({
+      success: true,
+      message: "Advance deleted successfully",
+      data: deletedAdvance,
+    });
+  } catch (error) {
+    if (session.inTransaction()) {
+      await session.abortTransaction();
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to delete advance",
+      error: error.message,
+    });
+  } finally {
+    session.endSession();
   }
 };

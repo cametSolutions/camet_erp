@@ -488,12 +488,11 @@ function BookingList() {
       const totalAmount = calculateTotalAmount(selectedCheckOut);
       console.log(selectedCheckOut.length);
       const advanceAmount = selectedCheckOut.reduce((total, item) => {
+        console.log(item?.totalAdvance);
         return (
-          total +
-          (Number(item.advanceAmount || 0) +
-            Number(item.bookingId?.advanceAmount || 0))
+          total +Number(item.totalAdvance || 0)
         );
-      }, 0);
+        }, 0);
       console.log(advanceAmount);
 
       const restaurantSubTotal = selectedCheckOut.reduce((total, item) => {
