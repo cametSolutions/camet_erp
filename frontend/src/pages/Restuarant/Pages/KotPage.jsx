@@ -484,6 +484,7 @@ console.log(data);
       items: newItems,
       createdAt: data?.createdAt,
       customerName: data?.customer?.name,
+      guestName: data?.customer?.guestName,
       type: data?.type,
       roomName:data?.roomId?.roomName
     };

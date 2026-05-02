@@ -108,6 +108,7 @@ export const fetchData = async (type, cmp_id, serialNumber, res, userId) => {
               seriesName: series.seriesName,
               prefix: series.prefix,
               suffix: series.suffix,
+              under: series.under ? series.under : "others",
             });
           });
         }

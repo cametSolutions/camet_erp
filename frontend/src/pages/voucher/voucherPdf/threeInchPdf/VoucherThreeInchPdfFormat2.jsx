@@ -15,6 +15,7 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
   const location = useLocation();
   const contentToPrint = useRef(null);
 
+  
   !data && (data = location?.state);
   !org &&
     (org = useSelector(
@@ -24,8 +25,12 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
   let showPrintButton =
     org?.configurations?.[0]?.defaultPrint?.showBeforeSaleInRestaurant;
   const { isFinalized } = useParams();
-
-  const isIndian = true;
+console.log(data);
+  // const isIndian = useSelector(
+  //   (state) =>
+  //     state?.secSelectedOrganization?.secSelectedOrg?.country === "India",
+  // );
+  const isIndian = true
   const party = data?.party;
 
   // ✅ FIX: Proper isSameState logic
@@ -172,7 +177,8 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
     const foodPlanArray = data?.roomDetails?.foodPlanDetails;
     if (!hasCheckIn && !Array.isArray(foodPlanArray)) return null;
     const names = foodPlanArray?.map((item) => item.planType).join(", ");
-    return `Food Plan: ${names}`;
+
+    return  names.length > 0 ? `Food Paln: ${names}` : null;
   };
 
   const netAmount = Math.round(Number(data?.finalAmount || 0)).toFixed(2);
@@ -607,6 +613,14 @@ ${orgName}`;
                 <span style={{ textTransform: "capitalize" }}>{data.orderType.replace(/-/g, " ")}</span>
               </div>
             )}
+               {data?.party?.partyName && (
+              <div style={{ marginTop: "2px" }}>
+                <span style={{ textTransform: "capitalize" }}>Guest : </span>
+                <span style={{ textTransform: "capitalize" }}>
+                  {data?.party?.partyName}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Items Header */}
@@ -727,11 +741,32 @@ ${orgName}`;
               </div>
             </div>
             {getFoodPlan() && <div style={bold}>{getFoodPlan()}</div>}
-            <div style={{ ...flexRow, justifyContent: "flex-end", paddingRight: "3px", fontWeight: "bold" }}>
-              {discountBasedOnGrossAmount && Number(discount) && (
-                <>Discount: <span style={bold}>{discount || "0.00"}</span></>
-              )}
-            </div>
+       
+            {/* {data?.voucherNumber?.[0]?.checkInNumber && (
+              <div style={flexRow}>
+                <div style={bold}>{data.voucherNumber[0].checkInNumber}</div>
+                <div style={{ paddingRight: "3px" }}>
+                  GST: <span style={bold}>{tax}</span>
+                </div>
+              </div>
+            )} */}
+
+            {/* {Number(discount) > 0 && ( */}
+              <div
+                style={{
+                  ...flexRow,
+                  justifyContent: "flex-end",
+                  paddingRight: "3px",
+                  fontWeight: "bold",
+                }}
+              >
+                {discountBasedOnGrossAmount && Number(discount) &&  (
+                  <>
+                    Discount: <span style={bold}>{discount || "0.00"}</span>
+                  </>
+                )}
+              </div>
+            {/* )} */}
           </div>
 
           <div style={{ borderBottom: "1px dotted #000", margin: "6px 0" }} />

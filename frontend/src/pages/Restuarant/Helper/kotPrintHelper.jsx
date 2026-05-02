@@ -69,6 +69,9 @@ export const generateKitchenOrderTicket = (
   orderData,
   restaurantName = "ABC RESTAURANT"
 ) => {
+
+  console.log(orderData);
+
   validateOrderData(orderData);
 
   const pdf = new jsPDF({
@@ -298,6 +301,7 @@ export const printDirectHTML = (
   restaurantName = "ABC RESTAURANT",
   isKOT = true
 ) => {
+  console.log(orderData);
   if (!orderData) return;
 
   const { date, time } = formatDateTime(orderData.createdAt);
@@ -356,6 +360,9 @@ export const printDirectHTML = (
 
         <div class="order-info">
         ${orderData.roomName ? `<div>Room:${orderData.roomName}</div>` : '<div></div>'}
+      </div>
+          <div class="order-info">
+        ${orderData.guestName ? `<div>Guest:${orderData.guestName}</div>` : '<div></div>'}
       </div>
       <div class="items-header"><span>SL ITEM</span><span>QTY</span></div>
       <div class="divider"></div>
