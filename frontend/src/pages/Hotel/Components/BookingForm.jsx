@@ -15,10 +15,10 @@ import useFetch from "@/customHook/useFetch";
 import OutStandingModal from "./OutStandingModal";
 import PaymentModal from "./PaymentModal";
 import OtherChargeSearchInPutBox from "./OtherChargeSearchInPutBox";
-import {useRef} from "react";
+// import {useRef} from "react";
 
-import { MdCloudUpload, MdImage, MdDelete } from "react-icons/md"
-import uploadImageToCloudinary from "../../../../utils/uploadCloudinary";
+// import { MdCloudUpload, MdImage, MdDelete } from "react-icons/md"
+// import uploadImageToCloudinary from "../../../../utils/uploadCloudinary";
 function BookingForm({
   isLoading = false,
   setIsLoading = false,
@@ -49,20 +49,20 @@ function BookingForm({
   const [saveLoader, setSaveLoader] = useState(false);
 
 
-  const idFrontRef = useRef(null)
-const idBackRef = useRef(null)
-const [idProof, setIdProof] = useState({
-  idType: "",           // Aadhaar / Passport / Driving License etc.
-  idNumber: "",
-  frontFile: null,
-  backFile: null,
-  frontPreview: "",
-  backPreview: "",
-  frontUrl: "",         // uploaded Cloudinary URL
-  backUrl: "",
-  isUploadingFront: false,
-  isUploadingBack: false,
-})
+//   const idFrontRef = useRef(null)
+// const idBackRef = useRef(null)
+// const [idProof, setIdProof] = useState({
+//   idType: "",           // Aadhaar / Passport / Driving License etc.
+//   idNumber: "",
+//   frontFile: null,
+//   backFile: null,
+//   frontPreview: "",
+//   backPreview: "",
+//   frontUrl: "",         // uploaded Cloudinary URL
+//   backUrl: "",
+//   isUploadingFront: false,
+//   isUploadingBack: false,
+// })
 
 
   const { _id: cmp_id, configurations } = useSelector(
@@ -813,70 +813,70 @@ console.log("advanceAmount", advanceAmount,isFor);
     }
   };
 
-const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, onRemove }) => {
-  const isUploading = idProof[`isUploading${side.charAt(0).toUpperCase() + side.slice(1)}`]
-  const preview = idProof[`${side}Preview`]
-  const file = idProof[`${side}File`]
-  const url = idProof[`${side}Url`]
+// const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, onRemove }) => {
+//   const isUploading = idProof[`isUploading${side.charAt(0).toUpperCase() + side.slice(1)}`]
+//   const preview = idProof[`${side}Preview`]
+//   const file = idProof[`${side}File`]
+//   const url = idProof[`${side}Url`]
 
-  return (
-    <div className="w-full lg:w-6/12 px-4">
-      <div className="relative w-full mb-3">
-        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-          {label}
-        </label>
+//   return (
+//     <div className="w-full lg:w-6/12 px-4">
+//       <div className="relative w-full mb-3">
+//         <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+//           {label}
+//         </label>
 
-        {/* Preview */}
-        {preview && (
-          <div className="mb-3 relative inline-block">
-            {preview.startsWith("data:application/pdf") ? (
-              <div className="w-24 h-24 flex items-center justify-center bg-gray-100 rounded border shadow text-xs text-gray-500">PDF</div>
-            ) : (
-              <img src={preview} alt={label} className="w-24 h-24 object-cover rounded border shadow" />
-            )}
-            <button
-              type="button"
-              onClick={() => onRemove(side)}
-              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
-            >×</button>
-          </div>
-        )}
+//         {/* Preview */}
+//         {preview && (
+//           <div className="mb-3 relative inline-block">
+//             {preview.startsWith("data:application/pdf") ? (
+//               <div className="w-24 h-24 flex items-center justify-center bg-gray-100 rounded border shadow text-xs text-gray-500">PDF</div>
+//             ) : (
+//               <img src={preview} alt={label} className="w-24 h-24 object-cover rounded border shadow" />
+//             )}
+//             <button
+//               type="button"
+//               onClick={() => onRemove(side)}
+//               className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+//             >×</button>
+//           </div>
+//         )}
 
-        {/* File Input */}
-        <div className="flex items-center space-x-2">
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*,application/pdf"
-            onChange={(e) => onFileChange(side, e)}
-            className="hidden"
-          />
-          <div
-            onClick={() => fileRef.current?.click()}
-            className="flex items-center px-3 py-2 bg-gray-100 text-gray-700 rounded cursor-pointer hover:bg-gray-200 text-sm"
-          >
-            <MdImage className="mr-2" />
-            Choose File
-          </div>
+//         {/* File Input */}
+//         <div className="flex items-center space-x-2">
+//           <input
+//             ref={fileRef}
+//             type="file"
+//             accept="image/*,application/pdf"
+//             onChange={(e) => onFileChange(side, e)}
+//             className="hidden"
+//           />
+//           <div
+//             onClick={() => fileRef.current?.click()}
+//             className="flex items-center px-3 py-2 bg-gray-100 text-gray-700 rounded cursor-pointer hover:bg-gray-200 text-sm"
+//           >
+//             <MdImage className="mr-2" />
+//             Choose File
+//           </div>
 
-          {file && !url && (
-            <button
-              type="button"
-              onClick={() => onUpload(side)}
-              disabled={isUploading}
-              className="flex items-center px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-blue-300 text-sm"
-            >
-              <MdCloudUpload className="mr-2" />
-              {isUploading ? "Uploading..." : "Upload"}
-            </button>
-          )}
-        </div>
+//           {file && !url && (
+//             <button
+//               type="button"
+//               onClick={() => onUpload(side)}
+//               disabled={isUploading}
+//               className="flex items-center px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-blue-300 text-sm"
+//             >
+//               <MdCloudUpload className="mr-2" />
+//               {isUploading ? "Uploading..." : "Upload"}
+//             </button>
+//           )}
+//         </div>
 
-        {url && <p className="text-green-600 text-xs mt-1">✓ Uploaded successfully</p>}
-      </div>
-    </div>
-  )
-}
+//         {url && <p className="text-green-600 text-xs mt-1">✓ Uploaded successfully</p>}
+//       </div>
+//     </div>
+//   )
+// }
 
 
   const submitHandler = async () => {
@@ -1615,14 +1615,14 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
                   </div>
 
 {/* ID Proof Section */}
-<div className="w-full px-4 mt-4">
+{/* <div className="w-full px-4 mt-4">
   <h6 className="text-blueGray-400 text-sm mb-4 font-bold uppercase border-b pb-2">
     ID Proof
   </h6>
-</div>
+</div> */}
 
 {/* ID Type */}
-<div className="w-full lg:w-6/12 px-4">
+{/* <div className="w-full lg:w-6/12 px-4">
   <div className="relative w-full mb-3">
     <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
       ID Type
@@ -1641,10 +1641,10 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
       <option value="pan">PAN Card</option>
     </select>
   </div>
-</div>
+</div> */}
 
 {/* ID Number */}
-<div className="w-full lg:w-6/12 px-4">
+{/* <div className="w-full lg:w-6/12 px-4">
   <div className="relative w-full mb-3">
     <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
       ID Number
@@ -1659,10 +1659,10 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
       className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full"
     />
   </div>
-</div>
+</div> */}
 
 {/* Front Upload */}
-<IdUploadSlot
+{/* <IdUploadSlot
   label="ID Front Side"
   side="front"
   fileRef={idFrontRef}
@@ -1670,10 +1670,10 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
   onFileChange={handleIdFileChange}
   onUpload={handleIdUpload}
   onRemove={handleIdRemove}
-/>
+/> */}
 
 {/* Back Upload */}
-<IdUploadSlot
+{/* <IdUploadSlot
   label="ID Back Side"
   side="back"
   fileRef={idBackRef}
@@ -1681,7 +1681,7 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
   onFileChange={handleIdFileChange}
   onUpload={handleIdUpload}
   onRemove={handleIdRemove}
-/>
+/> */}
 
 
                   {/* Guest Info Box */}
