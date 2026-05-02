@@ -660,3 +660,39 @@ export const handleBillDownloadPDF = async (
     paymentModeDetails
   );
 };
+
+// ─── New Export: Generate PDF and return as base64 string ────────────────────
+export const generateBillPDFAsBase64 = async (
+  billDataOrArray,
+  organization,
+  paymentModeDetails = [],
+  isForPreview = false
+) => {
+  const bills = Array.isArray(billDataOrArray) ? billDataOrArray : [billDataOrArray];
+  if (!bills.length) return null;
+
+  const doc = new jsPDF("p", "mm", "a4");
+
+  let base64Logo = null;
+  try {
+    base64Logo = await getBase64FromUrl(organization?.logo);
+  } catch (err) {
+    console.error("Failed to load logo", err);
+  }
+
+  for (let i = 0; i < bills.length; i++) {
+    if (i > 0) doc.addPage();
+    await drawSingleBill(doc, bills[i], isForPreview, paymentModeDetails, base64Logo);
+  }
+
+  // Return raw base64 string (no data URI prefix)
+  return new Promise((resolve) => {
+    const blob = doc.output("blob");
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64 = reader.result.split(",")[1]; // strip "data:application/pdf;base64,"
+      resolve(base64);
+    };
+    reader.readAsDataURL(blob);
+  });
+};
