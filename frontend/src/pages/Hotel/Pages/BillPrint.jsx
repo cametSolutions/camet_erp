@@ -11,8 +11,11 @@ import "jspdf-autotable";
 import {
   handleBillPrintInvoice,
   handleBillDownloadPDF,
-} from "../PrintSide/generateBillPrintPDF";
+  generateBillPDFAsBase64,
+  } from "../PrintSide/generateBillPrintPDF";
 
+
+import Swal from 'sweetalert2';
 const HotelBillPrint = () => {
   // Router and Redux state
   const location = useLocation();
@@ -1423,6 +1426,217 @@ console.log(bill.summary);
       handleBillPrintInvoice(multi, organization, paymentModeDetails); // pass array
     }
   };
+
+const handleShareBill = async (option, message, ccEmails, toEmail) => {
+  if (!bills?.length) throw new Error("No bill data available");
+  const firstBill = bills[0];
+
+  if (option === "WhatsApp") {
+    handleBillDownloadPDF(bills, organization, paymentModeDetails);
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    const encodedText = encodeURIComponent(message);
+    window.open(`https://wa.me/?text=${encodedText}`, "_blank");
+    return true;
+  }
+
+  if (option === "Mail") {
+    // Generate PDF as base64
+    const pdfBase64 = await generateBillPDFAsBase64(
+      bills,
+      organization,
+      paymentModeDetails,
+      isForPreview
+    );
+
+    if (!pdfBase64) throw new Error("Failed to generate PDF");
+
+    const res = await api.post(
+      "/api/sUsers/send-bill-email",
+      {
+        toEmail,
+        ccEmails,
+        message,
+        billNo: firstBill?.guest?.billNo,
+        guestName: firstBill?.guest?.name,
+        organizationName: organization?.name,
+        pdfBase64,
+        pdfFileName: `Bill-${firstBill?.guest?.billNo || "Invoice"}.pdf`,
+      },
+      { withCredentials: true }
+    );
+
+    if (!res.data?.success) throw new Error(res.data?.message || "Failed to send email");
+    return true;
+  }
+};
+
+ const handleShareClick = async () => {
+    if (!bills?.length) {
+      toast.error('No bill data to share');
+      return;
+    }
+
+    const firstBill  = bills[0];
+    const guestName  = firstBill?.guest?.name || 'Guest';
+    const billNo     = firstBill?.guest?.billNo || '';
+    const roomNo     = firstBill?.guest?.roomNo || '';
+    const arrival    = firstBill?.stay?.arrival || '';
+    const departure  = firstBill?.stay?.departure || '';
+    const netPay     = Number(firstBill?.payment?.netPay || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 });
+    const hotelName  = organization?.name || '';
+    const hotelPhone = organization?.mobile || '';
+
+    const defaultMessage =
+`Dear ${guestName},
+
+Thank you for choosing ${hotelName}!
+
+Your Checkout Summary:
+  Bill No    : ${billNo}
+  Room No    : ${roomNo}
+  Arrival    : ${arrival}
+  Departure  : ${departure}
+  Net Amount : ₹${netPay}
+
+We hope you had a wonderful stay and look forward to welcoming you again.
+
+For any queries, contact us at ${hotelPhone}.
+
+Warm Regards,
+${hotelName}`;
+
+    const { value: option } = await Swal.fire({
+      title: 'Share through',
+      input: 'radio',
+      inputOptions: { WhatsApp: 'WhatsApp', Mail: 'Mail' },
+      confirmButtonText: 'Next',
+      confirmButtonColor: '#000000',
+      showCancelButton: true,
+      cancelButtonText: 'Cancel',
+      cancelButtonColor: '#dd3333',
+      inputValidator: (v) => !v && 'Please select an option!',
+    });
+
+    if (!option) return;
+
+    let toEmail  = '';
+    let ccEmails = [];
+
+    if (option === 'Mail') {
+      const { value: emailData, isDismissed } = await Swal.fire({
+        title: 'Email Details',
+        html: `
+          <div style="text-align:left; padding:10px;">
+            <label style="display:block; margin-bottom:6px; font-weight:bold; font-size:14px;">
+              To Email <span style="color:red;">*</span>
+            </label>
+            <input
+              id="swal-to"
+              type="email"
+              class="swal2-input"
+              placeholder="guest@example.com"
+              style="width:95%; margin:0 0 14px 0;"
+            />
+            <label style="display:block; margin-bottom:6px; font-weight:bold; font-size:14px;">
+              CC Emails <span style="color:gray; font-weight:normal;">(Optional)</span>
+            </label>
+            <input
+              id="swal-cc"
+              type="text"
+              class="swal2-input"
+              placeholder="cc1@example.com, cc2@example.com"
+              style="width:95%; margin:0;"
+            />
+            <small style="color:gray; display:block; margin-top:6px;">
+              💡 Separate multiple CC emails with commas
+            </small>
+          </div>
+        `,
+        showCancelButton: true,
+        cancelButtonColor: '#dd3333',
+        confirmButtonText: 'Next',
+        confirmButtonColor: '#000000',
+        width: '540px',
+        focusConfirm: false,
+        preConfirm: () => {
+          const to = document.getElementById('swal-to').value.trim();
+          const cc = document.getElementById('swal-cc').value.trim();
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!to) { Swal.showValidationMessage('Please enter recipient email'); return false; }
+          if (!emailRegex.test(to)) { Swal.showValidationMessage('Please enter a valid email address'); return false; }
+          if (cc) {
+            const invalid = cc.split(',').map((e) => e.trim()).filter((e) => e && !emailRegex.test(e));
+            if (invalid.length) { Swal.showValidationMessage(`Invalid CC email(s): ${invalid.join(', ')}`); return false; }
+          }
+          return { to, cc };
+        },
+      });
+
+      if (isDismissed || !emailData) return;
+      toEmail  = emailData.to;
+      ccEmails = emailData.cc ? emailData.cc.split(',').map((e) => e.trim()).filter(Boolean) : [];
+    }
+
+    const { value: finalMessage, isDismissed: msgDismissed } = await Swal.fire({
+      title: 'Compose Message',
+      html: `
+        <div style="text-align:left; padding:10px;">
+          <label style="display:block; margin-bottom:6px; font-weight:bold; font-size:14px;">
+            Message <span style="color:red;">*</span>
+          </label>
+          <textarea
+            id="swal-message"
+            class="swal2-textarea"
+            style="width:95%; height:280px; padding:10px; font-size:13px; resize:vertical;"
+          >${defaultMessage}</textarea>
+        </div>
+      `,
+      showCancelButton: true,
+      cancelButtonColor: '#dd3333',
+      confirmButtonText: 'Send',
+      confirmButtonColor: '#000000',
+      width: '660px',
+      focusConfirm: false,
+      preConfirm: () => {
+        const msg = document.getElementById('swal-message').value;
+        if (!msg?.trim()) { Swal.showValidationMessage('Please enter a message'); return false; }
+        return msg;
+      },
+    });
+
+    if (msgDismissed || !finalMessage) return;
+
+    Swal.fire({
+      title: option === 'Mail' ? 'Sending Email...' : 'Preparing WhatsApp...',
+      html: `
+        <div style="text-align:center; padding:16px;">
+          <p>Please wait...</p>
+          ${option === 'Mail' && toEmail ? `<p style="color:gray; font-size:13px; margin-top:8px;">To: ${toEmail}</p>` : ''}
+          ${ccEmails.length ? `<p style="color:gray; font-size:13px;">CC: ${ccEmails.join(', ')}</p>` : ''}
+        </div>
+      `,
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading(),
+    });
+
+    try {
+      await handleShareBill(option, finalMessage, ccEmails, toEmail);
+      Swal.fire({
+        icon: 'success',
+        title: 'Success!',
+        text: option === 'Mail' ? 'Email sent successfully!' : 'PDF downloaded! Opening WhatsApp...',
+        confirmButtonColor: '#000000',
+      });
+    } catch (error) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: error.message || 'Failed to share. Please try again.',
+        confirmButtonColor: '#000000',
+      });
+    }
+  };
+
   console.log(paymentModeDetails);
   console.log("bills", bills);
   return (
@@ -2484,6 +2698,14 @@ console.log(bill.summary);
             💳 Split Payment
           </button>
 
+
+   <button
+          onClick={handleShareClick}
+          className="bg-black text-white px-6 py-2 rounded-lg font-medium hover:bg-green-600 transition-colors"
+        >
+          Share
+        </button>
+        
           {isForPreview && (
             <button
               onClick={() => {

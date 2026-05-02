@@ -734,6 +734,68 @@ console.log("advanceAmount", advanceAmount,isFor);
       toast.error("Please enter a customer name");
       return;
     }
+
+ if (!formData.customerId) {
+    try {
+      const res = await api.get(`/api/sUsers/PartyList/${cmpid}`, {
+        params: {
+          page: 1,
+          limit: 50,
+          search: formData.customerName.trim(),
+          voucher: "sale",
+          isAgent: false,
+        },
+        withCredentials: true,
+      });
+
+      const parties = res?.data?.partyList ?? [];
+      const exactMatch = parties.find(
+        (p) => p.partyName?.toLowerCase() === formData.customerName.trim().toLowerCase()
+      );
+
+      if (exactMatch) {
+        toast.warning(
+          `Customer "${formData.customerName.trim()}" already exists. Please select from the dropdown instead of typing manually.`,
+          { duration: 5000 }
+        );
+        return; // ❌ Block save
+      }
+    } catch (_) {
+      // silently fail — don't block submit on network error
+    }
+  }
+
+  // ✅ NEW: Same check for Guest Name
+  if (!formData.guestId && formData.guestName && formData.guestName.trim() !== "") {
+    try {
+      const res = await api.get(`/api/sUsers/PartyList/${cmp_id}`, {
+        params: {
+          page: 1,
+          limit: 50,
+          search: formData.guestName.trim(),
+          voucher: "sale",
+          isAgent: false,
+        },
+        withCredentials: true,
+      });
+
+      const parties = res?.data?.partyList ?? [];
+      const exactMatch = parties.find(
+        (p) => p.partyName?.toLowerCase() === formData.guestName.trim().toLowerCase()
+      );
+
+      if (exactMatch) {
+        toast.warning(
+          `Guest "${formData.guestName.trim()}" already exists. Please select from the dropdown instead of typing manually.`,
+          { duration: 5000 }
+        );
+        return; // ❌ Block save
+      }
+    } catch (_) {
+      // silently fail
+    }
+  }
+
     if (Number(formData.grandTotal) < 0) {
       toast.error(
         "Please select at least one room or enter price for selected room",
@@ -814,7 +876,7 @@ console.log("advanceAmount", advanceAmount,isFor);
           guestMobileNumber = res.data?.result?.mobileNumber;
         }
       } catch {
-        toast.error("Failed to create customer");
+        toast.error("Failed to create customer ");
         return;
       }
     }
@@ -857,7 +919,7 @@ console.log("advanceAmount", advanceAmount,isFor);
         guestDetailedAddress = res.data?.result?.billingAddress;
         guestMobileNumber = res.data?.result?.mobileNumber;
       } catch {
-        toast.error("Failed to create customer");
+        toast.error("Failed to create customer c");
         return;
       }
     }
