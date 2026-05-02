@@ -6469,6 +6469,8 @@ export const viewReport = async (req, res) => {
   const stayDays = ci.stayDays || room.stayDays || 1;
   const noPax = room.pax || 2;
   const plan = foodPlanEntry.foodPlan || "EP";
+ 
+console.log(foodPlanEntry)
 
   // ✅ Food plan — use room-level amounts if available, fallback to rate calc
   const foodPlanAmountWithTax =
@@ -6483,9 +6485,7 @@ export const viewReport = async (req, res) => {
   const planTotal        = foodPlanAmountWithTax;
   const planTaxable      = +foodPlanAmountWithoutTax.toFixed(2);
   const planSales = +(planTaxable * stayDays).toFixed(2);
-  const planRate         = noPax > 0 && stayDays > 0
-    ? foodPlanAmountWithTax / (noPax * stayDays)
-    : foodPlanEntry.rate || 0;
+  const planRate         =  foodPlanEntry.rate || 0;
 
   // ✅ Room rent — from checkin room level
   const baseRoomRent = room.priceLevelRate
