@@ -4325,7 +4325,7 @@ export const getHotelSalesDetails = async (req, res) => {
           : { $exists: false };
     }
 
-    const salesData = await salesModel.aggregate([
+    const AllSalesData = await salesModel.aggregate([
       // 1️⃣ Match
       { $match: query },
 
@@ -4479,7 +4479,11 @@ export const getHotelSalesDetails = async (req, res) => {
       },
     ]);
 
-    console.log("salesDatdda", salesData);
+   const salesData = [
+  ...new Map(
+    AllSalesData.map(item => [item.salesNumber, item])
+  ).values()
+];
 
     // Transform data for frontend consumption
     const transformedData = salesData.map((sale) => {
