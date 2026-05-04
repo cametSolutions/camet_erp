@@ -6231,6 +6231,10 @@ export const getOccupancyCheckoutReport = async (req, res) => {
           room?.roomType?.roomTypeName || room?.roomType?.name || "";
 
         const type = roomTypeName.toLowerCase();
+        let single = 0;
+        let doubleRoom = 0;
+        let triple = 0;
+        let other = 0;
 
         if (type.includes("single")) single += 1;
         else if (type.includes("double")) doubleRoom += 1;
