@@ -55,6 +55,15 @@ const reports = [
     iconColor: "text-teal-700",
     path: "/sUsers/occupancy-checkout-report",
   },
+   {
+    label: "The View Report",
+    desc: "food plan pax report ",
+  icon: Coffee,
+    iconBg: "bg-teal-50",
+    iconColor: "text-teal-700",
+    path: "/sUsers/viewReport",
+  },
+          
 ];
 
 const ReportsMenu = () => {

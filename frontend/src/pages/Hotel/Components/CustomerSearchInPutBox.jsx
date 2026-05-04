@@ -3,6 +3,7 @@ import { ChevronDown, Search, X } from "lucide-react";
 import { useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
 import api from "@/api/api";
+import { toast } from "sonner";
 
 
 function CustomerSearchInputBox({ 
@@ -24,7 +25,8 @@ function CustomerSearchInputBox({
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
-  const debounceTimerRef = useRef(null);
+ const debounceTimerRef = useRef(null);
+const duplicateCheckRef = useRef(null); 
   const dropdownRef = useRef(null);
   const listRef = useRef(null);
   const PAGE_SIZE = 50;
@@ -63,6 +65,46 @@ function CustomerSearchInputBox({
     }
   }, [cmp_id, location.pathname ]);
 
+
+   const checkDuplicateName = useCallback((name) => {
+    if (!name || name.trim().length < 2) return;
+    if (selectedValue) return; // user already selected from dropdown, skip
+
+    if (duplicateCheckRef.current) clearTimeout(duplicateCheckRef.current);
+
+    duplicateCheckRef.current = setTimeout(async () => {
+      try {
+        const res = await api.get(`/api/sUsers/PartyList/${cmp_id}`, {
+          params: {
+            page: 1,
+            limit: 50,
+            search: name.trim(),
+            voucher: getVoucherType(),
+            isAgent,
+          },
+          withCredentials: true,
+        });
+
+        const fetchedParties = res?.data?.partyList ?? [];
+
+        const exactMatch = fetchedParties.find(
+          (p) => p.partyName?.toLowerCase() === name.trim().toLowerCase()
+        );
+
+        if (exactMatch) {
+          const label = isGuest ? "Guest" : "Customer";
+          toast.warning(
+            `${label} "${name.trim()}" already exists. Please select from the dropdown.`,
+            { duration: 4000 }
+          );
+        }
+      } catch (_) {
+        // silently fail — don't block UX
+      }
+    }, 500);
+  }, [cmp_id, isAgent, isGuest, selectedValue]);
+
+
   const handleInputChange = useCallback((term) => {
   setSearch(term);
   setPage(1);
@@ -70,11 +112,13 @@ function CustomerSearchInputBox({
   debounceTimerRef.current = setTimeout(() => {
     fetchParties(1, term);
   }, 300);
+
+    checkDuplicateName(term);
   // Always send search term to parent, even when empty
   if (sendSearchToParent) {
-    sendSearchToParent(term, isGuest);
+    sendSearchToParent("", isGuest);
   }
-}, [fetchParties, sendSearchToParent]);
+}, [fetchParties, sendSearchToParent,checkDuplicateName]);
 
   const loadMore = useCallback(() => {
     if (!loading && hasMore) {
@@ -92,9 +136,9 @@ function CustomerSearchInputBox({
   const handleSelect = (party) => {
   setSelectedValue(party);
   setIsOpen(false);
-  const searchTerm = search; // Capture before clearing
+  
   setSearch("");
-  onSelect(party, searchTerm, isGuest); // Pass the search term
+  onSelect(party, party.partyName, isGuest); // Pass the search term
 };
 
   const handleClear = (e) => {

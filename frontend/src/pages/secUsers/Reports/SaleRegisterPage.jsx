@@ -4,6 +4,8 @@ import { useSelector } from "react-redux";
 import api from "@/api/api";
 import * as XLSX from "xlsx";
 import TitleDiv from "@/components/common/TitleDiv";
+import { useNavigate } from "react-router-dom";
+import { Pencil } from "lucide-react";
 
 const STATUS_OPTIONS = [
   { label: "All", value: "" },
@@ -37,7 +39,7 @@ export default function SaleRegisterPage() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [expandedRows, setExpandedRows] = useState({});
-
+const navigate = useNavigate();
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   );
@@ -65,6 +67,13 @@ export default function SaleRegisterPage() {
     }));
   };
 
+
+  const handleEdit = (e, row) => {
+  e.stopPropagation();
+  navigate(`/sUsers/editSale/${row.saleId}`, {
+    state: { saleData: row },
+  });
+};
   const fetchRegister = async (customFilters = filters) => {
     try {
       setLoading(true);
@@ -436,6 +445,7 @@ export default function SaleRegisterPage() {
         <th>ISCANCELLED</th>
         <th>SPONSOR NAME</th>
         <th>REMARKS</th>
+     
       </tr>
     </thead>
     <tbody>
@@ -612,6 +622,7 @@ export default function SaleRegisterPage() {
                     "ISCANCELLED",
                     "SPONSOR NAME",
                     "REMARKS",
+                    "EDIT",
                   ].map((head) => (
                     <th
                       key={head}
@@ -747,6 +758,16 @@ export default function SaleRegisterPage() {
                           <td className="border border-slate-300 px-3 py-2">
                             {row.remarks || "-"}
                           </td>
+                           <td className="border border-slate-300 px-3 py-2 text-center">
+  <button
+    type="button"
+    onClick={(e) => handleEdit(e, row)}
+    className="inline-flex items-center gap-1 rounded-md bg-amber-500 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-amber-600"
+  >
+    <Pencil size={12} />
+    Edit
+  </button>
+</td>
                         </tr>
 
                         {isExpanded && (
@@ -803,6 +824,7 @@ export default function SaleRegisterPage() {
                                         <td className="border border-slate-300 px-3 py-2 text-right">
                                           {fmt(item.taxAmount)}
                                         </td>
+                                       
                                       </tr>
                                     ))}
                                   </tbody>
