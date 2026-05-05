@@ -7,10 +7,9 @@ import TitleDiv from "@/components/common/TitleDiv";
 
 const OccupancyCheckoutReport = () => {
   const [filters, setFilters] = useState({
-    fromDate: "",
-    toDate: "",
+    fromDate: new Date().toISOString().slice(0, 10),
+    toDate: new Date().toISOString().slice(0, 10),
   });
-
   const [report, setReport] = useState({
     summary: {},
     planSummary: [],
@@ -62,6 +61,8 @@ const OccupancyCheckoutReport = () => {
       });
 
       const result = response?.data;
+
+      console.log(result);  
 
       if (result?.success) {
         setReport({

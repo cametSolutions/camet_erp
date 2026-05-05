@@ -2959,7 +2959,6 @@ export const convertCheckOutToSale = async (req, res) => {
 
         console.log("paymentSplittingArray", paymentSplittingArray);
         console.log("restaurantSplitArray", restaurantSplitArray);
-  
 
         const saleNumber = await generateVoucherNumber(
           cmp_id,
@@ -3353,7 +3352,7 @@ export const convertCheckOutToSale = async (req, res) => {
         }
       }
 
-      return
+      return;
 
       multiCheckoutResults = results;
     });
@@ -4480,11 +4479,9 @@ export const getHotelSalesDetails = async (req, res) => {
       },
     ]);
 
-   const salesData = [
-  ...new Map(
-    AllSalesData.map(item => [item.salesNumber, item])
-  ).values()
-];
+    const salesData = [
+      ...new Map(AllSalesData.map((item) => [item.salesNumber, item])).values(),
+    ];
 
     // Transform data for frontend consumption
     const transformedData = salesData.map((sale) => {
@@ -6170,16 +6167,20 @@ export const getOccupancyCheckoutReport = async (req, res) => {
       status: { $ne: "checkOut" },
     };
 
-    if (fromDate && toDate) {
-      match.arrivalDate = {
-        $gte: fromDate,
-        $lte: toDate,
-      };
-    } else if (fromDate) {
-      match.arrivalDate = { $gte: fromDate };
-    } else if (toDate) {
-      match.arrivalDate = { $lte: toDate };
-    }
+    // if (fromDate && toDate) {
+      // match.arrivalDate = {
+        // $gte: fromDate,
+        // $lte: toDate,
+      // };
+      // match.checkOutDate = {
+      //  $lte: new Date().toISOString().slice(0, 10),
+      // }
+    // }
+    // } else if (fromDate) {
+    //   match.arrivalDate = { $gte: fromDate };
+    // } else if (toDate) {
+    //   match.arrivalDate = { $lte: toDate };
+    // }
 
     const checkins = await CheckIn.find(match).lean();
 
@@ -6200,9 +6201,10 @@ export const getOccupancyCheckoutReport = async (req, res) => {
     let additionalPaxTotal = 0;
 
     checkins.forEach((doc) => {
-      const country = (doc?.country || doc?.guestCountry || "")
+      const country = (doc?.guestCountry || doc?.country || "")
         .trim()
         .toLowerCase();
+
       const isDomestic = !country || country === "india";
 
       if (isDomestic) domestic += 1;
@@ -6216,13 +6218,7 @@ export const getOccupancyCheckoutReport = async (req, res) => {
 
       (doc?.selectedRooms || []).forEach((room) => {
         const pax = Number(room?.pax || 0);
-        const tariff = Number(
-          room?.amountAfterTax ||
-            room?.totalAmount ||
-            room?.baseAmountWithTax ||
-            room?.baseAmount ||
-            0,
-        );
+        const tariff = Number(room?.priceLevelRate || 0);
 
         roomRevenue += tariff;
         occupiedRoomNames.add(room?.roomName);
@@ -6243,12 +6239,22 @@ export const getOccupancyCheckoutReport = async (req, res) => {
 
         let planName = "";
         if (Array.isArray(doc?.foodPlan) && doc.foodPlan.length > 0) {
-          planName = doc.foodPlan[0]?.foodPlan || "Plan";
-        }
+          const foundPlan = doc.foodPlan.filter(
+            (plan) => plan?.roomId?.toString() === room?.roomId?.toString(),
+          );
+          const getPlanNames = (plans = []) =>
+            plans
+              .map((p) => p?.foodPlan)
+              .filter(Boolean)
+              .join(", ") || "";
 
-        if (!planMap[planName]) {
-          planMap[planName] = {
-            plan: planName,
+          planName = getPlanNames(foundPlan);
+    
+        if(foundPlan.length >= 0){
+          foundPlan.map((plan)=>{
+           if (!planMap[plan.foodPlan]) {
+          planMap[plan.foodPlan] = {
+            plan: plan.foodPlan,
             rms: 0,
             pax: 0,
             addnl: 0,
@@ -6256,11 +6262,14 @@ export const getOccupancyCheckoutReport = async (req, res) => {
           };
         }
 
-        planMap[planName].rms += 1;
-        planMap[planName].pax += pax;
-        planMap[planName].addnl += additionalPaxCount;
-        planMap[planName].total += pax + additionalPaxCount;
-
+        planMap[plan.foodPlan].rms += 1;
+        planMap[plan.foodPlan].pax += pax;
+        planMap[plan.foodPlan].addnl += additionalPaxCount;
+        planMap[plan.foodPlan].total += pax + additionalPaxCount;
+                 })
+ }
+     }
+        console.log("planMap[planName]:", planName);
         rows.push({
           slNo: rows.length + 1,
           room: room?.roomName || "",
@@ -6273,8 +6282,8 @@ export const getOccupancyCheckoutReport = async (req, res) => {
           departureDate: doc?.checkOutDate || "",
           plan: planName,
           tariff,
-          discountPercent: Number(doc?.discountPercentage || 0),
-          discountAmount: Number(doc?.discountAmount || 0),
+          discountPercent: 0,
+          discountAmount: 0,
         });
       });
     });
@@ -6358,11 +6367,6 @@ export const getOccupancyCheckoutReport = async (req, res) => {
   }
 };
 
-
-
-
-
-
 export const sendBillEmail = async (req, res) => {
   const {
     toEmail,
@@ -6376,11 +6380,15 @@ export const sendBillEmail = async (req, res) => {
   } = req.body;
 
   if (!toEmail) {
-    return res.status(400).json({ success: false, message: "Recipient email is required" });
+    return res
+      .status(400)
+      .json({ success: false, message: "Recipient email is required" });
   }
 
   if (!pdfBase64) {
-    return res.status(400).json({ success: false, message: "PDF data is missing" });
+    return res
+      .status(400)
+      .json({ success: false, message: "PDF data is missing" });
   }
 
   // Convert base64 string → Buffer (most reliable for nodemailer)
@@ -6388,7 +6396,9 @@ export const sendBillEmail = async (req, res) => {
   try {
     pdfBuffer = Buffer.from(pdfBase64, "base64");
   } catch (err) {
-    return res.status(400).json({ success: false, message: "Invalid PDF data" });
+    return res
+      .status(400)
+      .json({ success: false, message: "Invalid PDF data" });
   }
 
   const transporter = nodemailer.createTransport({
@@ -6409,20 +6419,20 @@ export const sendBillEmail = async (req, res) => {
       attachments: [
         {
           filename: pdfFileName || `Bill-${billNo}.pdf`,
-          content: pdfBuffer,           // Buffer — not raw base64 string
+          content: pdfBuffer, // Buffer — not raw base64 string
           contentType: "application/pdf",
         },
       ],
     });
 
-    return res.status(200).json({ success: true, message: "Email sent successfully" });
+    return res
+      .status(200)
+      .json({ success: true, message: "Email sent successfully" });
   } catch (err) {
     console.error("Email send error:", err);
     return res.status(500).json({ success: false, message: err.message });
   }
 };
-
-
 
 // GET /api/reports/sales-report?startDate=2026-04-01&endDate=2026-04-30&cmp_id=xxx
 export const viewReport = async (req, res) => {
@@ -6430,7 +6440,9 @@ export const viewReport = async (req, res) => {
     const { startDate, endDate, cmp_id } = req.query;
 
     if (!startDate || !endDate || !cmp_id) {
-      return res.status(400).json({ message: "startDate, endDate, cmp_id required" });
+      return res
+        .status(400)
+        .json({ message: "startDate, endDate, cmp_id required" });
     }
 
     const start = new Date(startDate);
@@ -6438,17 +6450,21 @@ export const viewReport = async (req, res) => {
     end.setHours(23, 59, 59, 999);
 
     // Fetch sales vouchers in date range
-    const sales = await salesModel.find({
-      cmp_id,
-      voucherType: "sales",
-      date: { $gte: start, $lte: end },
-      isCancelled: false,
-    }).lean();
+    const sales = await salesModel
+      .find({
+        cmp_id,
+        voucherType: "sales",
+        date: { $gte: start, $lte: end },
+        isCancelled: false,
+      })
+      .lean();
 
     // Collect all checkIn IDs from convertedFrom
     const checkInNumbers = sales
-      .map((s) =>
-        s.convertedFrom?.[0]?.checkInNumber || s.convertedFrom?.[0]?.voucherNumber
+      .map(
+        (s) =>
+          s.convertedFrom?.[0]?.checkInNumber ||
+          s.convertedFrom?.[0]?.voucherNumber,
       )
       .filter(Boolean);
 
@@ -6464,148 +6480,159 @@ export const viewReport = async (req, res) => {
       checkInMap[ci.voucherNumber] = ci;
     });
 
-   const reportRows = sales.map((sale) => {
-  const checkInRef =
-    sale.convertedFrom?.[0]?.checkInNumber ||
-    sale.convertedFrom?.[0]?.voucherNumber;
-  const ci = checkInMap[checkInRef] || {};
+    const reportRows = sales.map((sale) => {
+      const checkInRef =
+        sale.convertedFrom?.[0]?.checkInNumber ||
+        sale.convertedFrom?.[0]?.voucherNumber;
+      const ci = checkInMap[checkInRef] || {};
 
-  // Room and plan data from checkIn
-  const room = ci.selectedRooms?.[0] || {};
-  const foodPlanEntry = ci.foodPlan?.[0] || {};
-  const roomName = room.roomName || sale.items?.[0]?.product_name || "";
-  const stayDays = ci.stayDays || room.stayDays || 1;
-  const noPax = room.pax || 2;
-  const plan = foodPlanEntry.foodPlan || "EP";
- 
-console.log(foodPlanEntry)
+      // Room and plan data from checkIn
+      const room = ci.selectedRooms?.[0] || {};
+      const foodPlanEntry = ci.foodPlan?.[0] || {};
+      const roomName = room.roomName || sale.items?.[0]?.product_name || "";
+      const stayDays = ci.stayDays || room.stayDays || 1;
+      const noPax = room.pax || 2;
+      const plan = foodPlanEntry.foodPlan || "EP";
 
-  // ✅ Food plan — use room-level amounts if available, fallback to rate calc
-  const foodPlanAmountWithTax =
-    room.foodPlanAmountWithTax ||
-    room.foodPlanAmount ||
-    (foodPlanEntry.rate || 0) * noPax * stayDays;
+      console.log(foodPlanEntry);
 
-  const foodPlanAmountWithoutTax =
-    room.foodPlanAmountWithOutTax ||
-    (foodPlanAmountWithTax > 0 ? foodPlanAmountWithTax / 1.05 : 0);
+      // ✅ Food plan — use room-level amounts if available, fallback to rate calc
+      const foodPlanAmountWithTax =
+        room.foodPlanAmountWithTax ||
+        room.foodPlanAmount ||
+        (foodPlanEntry.rate || 0) * noPax * stayDays;
 
-  const planTotal        = foodPlanAmountWithTax;
-  const planTaxable      = +foodPlanAmountWithoutTax.toFixed(2);
-  const planSales = +(planTaxable * stayDays).toFixed(2);
-  const planRate         =  foodPlanEntry.rate || 0;
+      const foodPlanAmountWithoutTax =
+        room.foodPlanAmountWithOutTax ||
+        (foodPlanAmountWithTax > 0 ? foodPlanAmountWithTax / 1.05 : 0);
 
-  // ✅ Room rent — from checkin room level
-  const baseRoomRent = room.priceLevelRate
-    ? parseFloat(room.priceLevelRate) * stayDays
-    : sale.subTotal || sale.finalAmount;
+      const planTotal = foodPlanAmountWithTax;
+      const planTaxable = +foodPlanAmountWithoutTax.toFixed(2);
+      const planSales = +(planTaxable * stayDays).toFixed(2);
+      const planRate = foodPlanEntry.rate || 0;
 
-  // ✅ Discount — from additionalCharges where option === "discount"
-  const additionalCharges = sale.additionalCharges || [];
-  const discountEntry = additionalCharges.find(
-    (ac) => ac.option?.toLowerCase() === "discount" && ac.action === "sub"
-  );
-  const discountAmount  = discountEntry ? Math.abs(discountEntry.finalValue || 0) : 0;
-  const discountPercent = baseRoomRent > 0
-    ? +((discountAmount / baseRoomRent) * 100).toFixed(2)
-    : 0;
+      // ✅ Room rent — from checkin room level
+      const baseRoomRent = room.priceLevelRate
+        ? parseFloat(room.priceLevelRate) * stayDays
+        : sale.subTotal || sale.finalAmount;
 
-  // Room rent after discount
-  const roomRent = baseRoomRent - discountAmount;
+      // ✅ Discount — from additionalCharges where option === "discount"
+      const additionalCharges = sale.additionalCharges || [];
+      const discountEntry = additionalCharges.find(
+        (ac) => ac.option?.toLowerCase() === "discount" && ac.action === "sub",
+      );
+      const discountAmount = discountEntry
+        ? Math.abs(discountEntry.finalValue || 0)
+        : 0;
+      const discountPercent =
+        baseRoomRent > 0
+          ? +((discountAmount / baseRoomRent) * 100).toFixed(2)
+          : 0;
 
-  // Tax calculations
-  const item   = sale.items?.[0] || {};
-  const isIGST = item.igst > 0 && item.cgst === 0;
+      // Room rent after discount
+      const roomRent = baseRoomRent - discountAmount;
 
-  const roomRentTaxable = roomRent / 1.05;
-  const roomRentCGST    = isIGST ? 0 : roomRentTaxable * 0.025;
-  const roomRentSGST    = isIGST ? 0 : roomRentTaxable * 0.025;
-  const roomRentIGST    = isIGST ? roomRentTaxable * 0.05 : 0;
+      // Tax calculations
+      const item = sale.items?.[0] || {};
+      const isIGST = item.igst > 0 && item.cgst === 0;
 
-  const planCGST = isIGST ? 0 : planTaxable * 0.025;
-  const planSGST = isIGST ? 0 : planTaxable * 0.025;
+      const roomRentTaxable = roomRent / 1.05;
+      const roomRentCGST = isIGST ? 0 : roomRentTaxable * 0.025;
+      const roomRentSGST = isIGST ? 0 : roomRentTaxable * 0.025;
+      const roomRentIGST = isIGST ? roomRentTaxable * 0.05 : 0;
 
-  const revenue    = roomRent + planSales;
-  const totalCGST  = roomRentCGST + planCGST;
-  const totalSGST  = roomRentSGST + planSGST;
-  const totalIGST  = roomRentIGST;
-  const grossAmount = revenue;
-  const totalTax   = isIGST ? totalIGST : totalCGST + totalSGST;
+      const planCGST = isIGST ? 0 : planTaxable * 0.025;
+      const planSGST = isIGST ? 0 : planTaxable * 0.025;
 
-  // netTotal uses totalWithAdditionalCharges (after discount applied)
-  const netTotal   = sale.totalWithAdditionalCharges || sale.finalAmount || ci.totalAmount;
-  const difference = grossAmount + totalTax - netTotal;
+      const revenue = roomRent + planSales;
+      const totalCGST = roomRentCGST + planCGST;
+      const totalSGST = roomRentSGST + planSGST;
+      const totalIGST = roomRentIGST;
+      const grossAmount = revenue;
+      const totalTax = isIGST ? totalIGST : totalCGST + totalSGST;
 
-  // Payment splits
-  const payments = sale.paymentSplittingData || [];
-  const getAmt = (type) =>
-    payments
-      .filter((x) => x.type?.toLowerCase() === type)
-      .reduce((sum, x) => sum + (x.amount || 0), 0);
+      // netTotal uses totalWithAdditionalCharges (after discount applied)
+      const netTotal =
+        sale.totalWithAdditionalCharges || sale.finalAmount || ci.totalAmount;
+      const difference = grossAmount + totalTax - netTotal;
 
-  const cashAmt   = getAmt("cash");
-  const upiAmt    = getAmt("upi");
-  const bankAmt   = getAmt("bank");
-  const cardAmt   = getAmt("card");
-  const creditAmt = getAmt("credit");
+      // Payment splits
+      const payments = sale.paymentSplittingData || [];
+      const getAmt = (type) =>
+        payments
+          .filter((x) => x.type?.toLowerCase() === type)
+          .reduce((sum, x) => sum + (x.amount || 0), 0);
 
-  const paymentModes =
-    [...new Set(payments.map((x) => x.type?.toUpperCase()).filter(Boolean))].join(", ") || "-";
+      const cashAmt = getAmt("cash");
+      const upiAmt = getAmt("upi");
+      const bankAmt = getAmt("bank");
+      const cardAmt = getAmt("card");
+      const creditAmt = getAmt("credit");
 
-  const creditEntry       = payments.find((x) => x.type?.toLowerCase() === "credit");
-  const isCredit          = sale.finalOutstandingAmount > 0 || creditAmt > 0;
-  const creditDescription = isCredit
-    ? creditEntry?.customerName || sale.party?.partyName || ""
-    : "";
+      const paymentModes =
+        [
+          ...new Set(
+            payments.map((x) => x.type?.toUpperCase()).filter(Boolean),
+          ),
+        ].join(", ") || "-";
 
-  return {
-    billNo:           sale.salesNumber,
-    date:             sale.date,
-    agentName:        sale.party?.partyName || "",
-    plan,
-    rooms:            roomName,
-    noRooms:          ci.selectedRooms?.length || 1,
-    days:             stayDays,
-    totalAmount:      netTotal,
-    perDayRevenue:    stayDays > 0 ? +(netTotal / stayDays).toFixed(2) : netTotal,
-    noPax,
-    planRate:         +planRate.toFixed(2),
-    planTotal:        +planTotal.toFixed(2),
-    planTaxable,
-    roomRent:         +roomRent.toFixed(2),
-    roomRentTaxable:  +roomRentTaxable.toFixed(2),
-    roomRentTotal:    +(roomRentTaxable * stayDays).toFixed(2),
-    roomRentCGST:     +roomRentCGST.toFixed(2),
-    roomRentSGST:     +roomRentSGST.toFixed(2),
-     planSales:       +(planTaxable * stayDays).toFixed(2),
-    planSalesCGST:    +planCGST.toFixed(2),
-    planSalesSGST:    +planSGST.toFixed(2),
-    revenue:          +revenue.toFixed(2),
-    revenueCGST:      +totalCGST.toFixed(2),
-    revenueSGST:      +totalSGST.toFixed(2),
-    differenceAmt:    +difference.toFixed(2),
-    grossAmount:      +grossAmount.toFixed(2),
-    grossCGST:        +totalCGST.toFixed(2),
-    grossSGST:        +totalSGST.toFixed(2),
-    totalTax:         +totalTax.toFixed(2),
+      const creditEntry = payments.find(
+        (x) => x.type?.toLowerCase() === "credit",
+      );
+      const isCredit = sale.finalOutstandingAmount > 0 || creditAmt > 0;
+      const creditDescription = isCredit
+        ? creditEntry?.customerName || sale.party?.partyName || ""
+        : "";
 
-    // ✅ Discount fields
-    discountPercent,
-    discountAmount:   +discountAmount.toFixed(2),
+      return {
+        billNo: sale.salesNumber,
+        date: sale.date,
+        agentName: sale.party?.partyName || "",
+        plan,
+        rooms: roomName,
+        noRooms: ci.selectedRooms?.length || 1,
+        days: stayDays,
+        totalAmount: netTotal,
+        perDayRevenue:
+          stayDays > 0 ? +(netTotal / stayDays).toFixed(2) : netTotal,
+        noPax,
+        planRate: +planRate.toFixed(2),
+        planTotal: +planTotal.toFixed(2),
+        planTaxable,
+        roomRent: +roomRent.toFixed(2),
+        roomRentTaxable: +roomRentTaxable.toFixed(2),
+        roomRentTotal: +(roomRentTaxable * stayDays).toFixed(2),
+        roomRentCGST: +roomRentCGST.toFixed(2),
+        roomRentSGST: +roomRentSGST.toFixed(2),
+        planSales: +(planTaxable * stayDays).toFixed(2),
+        planSalesCGST: +planCGST.toFixed(2),
+        planSalesSGST: +planSGST.toFixed(2),
+        revenue: +revenue.toFixed(2),
+        revenueCGST: +totalCGST.toFixed(2),
+        revenueSGST: +totalSGST.toFixed(2),
+        differenceAmt: +difference.toFixed(2),
+        grossAmount: +grossAmount.toFixed(2),
+        grossCGST: +totalCGST.toFixed(2),
+        grossSGST: +totalSGST.toFixed(2),
+        totalTax: +totalTax.toFixed(2),
 
-    roundOff:         0,
-    netTotal,
-    cash:             cashAmt,
-    upi:              upiAmt,
-    bank:             bankAmt,
-    card:             cardAmt,
-    paymentMode:      paymentModes,
-    credit:           isCredit ? (creditAmt || netTotal) : 0,
-    creditDescription,
-    checkInNumber:    checkInRef || "",
-    guestName:        ci.guestName || "",
-  };
-});
+        // ✅ Discount fields
+        discountPercent,
+        discountAmount: +discountAmount.toFixed(2),
+
+        roundOff: 0,
+        netTotal,
+        cash: cashAmt,
+        upi: upiAmt,
+        bank: bankAmt,
+        card: cardAmt,
+        paymentMode: paymentModes,
+        credit: isCredit ? creditAmt || netTotal : 0,
+        creditDescription,
+        checkInNumber: checkInRef || "",
+        guestName: ci.guestName || "",
+      };
+    });
 
     res.json({ success: true, count: reportRows.length, data: reportRows });
   } catch (err) {
@@ -6613,4 +6640,3 @@ console.log(foodPlanEntry)
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
-
