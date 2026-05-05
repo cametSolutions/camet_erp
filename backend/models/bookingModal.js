@@ -209,6 +209,12 @@ const bookingSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "CheckIn",
     },
+    idProof: {
+  idType:   { type: String, default: "" },
+  idNumber: { type: String, default: "" },
+  frontUrl: { type: String, default: "" },
+  backUrl:  { type: String, default: "" },
+},
     roomSwapHistory: [roomSwapHistorySchema],
     isPartiallyCheckedOut: {
       type: Boolean,
@@ -261,6 +267,7 @@ const bookingSchema = new mongoose.Schema(
       hsn: String,
       taxPercentage: Number
     }
+    
   },
   },
   { timestamps: true },

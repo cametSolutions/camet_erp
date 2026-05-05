@@ -7,6 +7,7 @@ import { useLocation } from "react-router-dom";
 import PrintModal from "@/pages/Hotel/Components/PrintModal";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import ItemSelector from "../components/ItemSelector";
+import { useQuery } from "@tanstack/react-query";
 
 import {
   MdDescription,
@@ -122,9 +123,22 @@ const OrdersDashboard = () => {
  const discountBasedOnGrossAmount =
   org?.configurations?.[0]?.discountBasedOnGrossAmount ?? false;
 
-  const { data, refreshHook } = useFetch(
-    `/api/sUsers/getKotDataDash/${cmp_id}?date=${selectedDate}`,
-  );
+ const queryClient = useQueryClient(); // ✅ uncomment/move this to here
+
+const { data, refetch: refreshHook } = useQuery({
+  queryKey: ["kotDash", cmp_id, selectedDate],
+  queryFn: async () => {
+    const res = await api.get(
+      `/api/sUsers/getKotDataDash/${cmp_id}?date=${selectedDate}`,
+      { withCredentials: true },
+    );
+    return res.data;
+  },
+  refetchInterval: 10000,        // ✅ auto-refresh every 10 seconds
+  refetchIntervalInBackground: true, // ✅ refreshes even when tab is not focused
+  staleTime: 5000,
+  enabled: !!cmp_id,
+});
 
   const fetchData = useCallback(async () => {
     if (isLoading) return;
@@ -208,13 +222,11 @@ console.log(selectedAdditionalChargeData);
     fetchData();
   }, []);
 
-  useEffect(() => {
-    if (data) {
-      
-       console.log(data?.data[data.data.length -1]);
-      setOrders(data?.data);
-    }
-  }, [data, selectedDate]);
+useEffect(() => {
+  if (data?.data) {
+    setOrders(data.data);
+  }
+}, [data]);
 
   const { data: paymentTypeData } = useFetch(
     `/api/sUsers/getPaymentType/${cmp_id}`,
@@ -436,9 +448,9 @@ console.log(selectedAdditionalChargeData);
             };
           }),
         );
-      } else {
-        console.error("Failed to update backend:", response.data || response);
-      }
+      queryClient.invalidateQueries({ queryKey: ["kotDash", cmp_id, selectedDate] });
+      
+    }
     } catch (error) {
       console.error(
         "Error updating order status:",
@@ -509,7 +521,7 @@ console.log(data);
         setOrders((prevOrders) =>
           prevOrders.filter((kot) => kot._id !== selectedOrderForCancel._id),
         );
-
+  queryClient.invalidateQueries({ queryKey: ["kotDash", cmp_id, selectedDate] });
         setShowCancelModal(false);
         setCancelReason(""); // clear reason field
         setSelectedOrderForCancel(null);
@@ -837,7 +849,7 @@ console.log(data);
       setSaveLoader(false);
       setCashAmount(0);
       setOnlineAmount(0);
-      refreshHook();
+      queryClient.invalidateQueries({ queryKey: ["kotDash", cmp_id, selectedDate] });
       setPaymentMode("single");
       setSelectedCreditor("");
       setSelectedKot([]);
@@ -1033,7 +1045,7 @@ console.log(data);
 
   console.log(paymentMethod);
   const handleSaveSales = (status) => {
-   refreshHook()
+    queryClient.invalidateQueries({ queryKey: ["kotDash", cmp_id, selectedDate] }); // ✅
     setConformationModal(false);
     setSelectedDataForPayment(previewForSales);
     if (isPostToRoom && status) {
