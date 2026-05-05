@@ -468,8 +468,9 @@ const SummaryDashboard = lazy(
 );
 const BillSummary = lazy(() => import("@/pages/Hotel/Pages/BillSummary"));
 const CheckInPrint = lazy(() => import("@/pages/Hotel/Pages/CheckInPrint"));
-const ViewReport = lazy(() => import("@/pages/Hotel/Pages/ViewReport"));
+const ViewReport = lazy(() => import("@/pages/Hotel/Pages/ViewReport.jsx"));
 const Checkoutpdf = lazy(() => import("@/pages/Hotel/Pages/Checkoutpdf"));
+
 const ReceiptInvoicepage = lazy(
   () => import("@/pages/Hotel/Pages/ReceiptInvoicepage"),
 );
