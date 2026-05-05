@@ -4,6 +4,7 @@ import { saveAs } from "file-saver";
 import api from "@/api/api";
 import { useSelector } from "react-redux";
 import TitleDiv from "@/components/common/TitleDiv";
+import { Viewport } from "@radix-ui/react-select";
 
 const formatDate = (d) => {
   if (!d) return "";
@@ -35,7 +36,7 @@ const COLUMNS = [
   { key: "totalAmount",       label: "Total Amt",      width: "90px",  render: fmt },
   { key: "perDayRevenue",     label: "Per Day",        width: "80px",  render: fmt },
   { key: "noPax",             label: "Pax",            width: "50px" },
-   { key: "planRate",             label: "planRate",            width: "50px" },
+  { key: "planRate",             label: "planRate",            width: "50px" },
   { key: "planTotal",         label: "Plan Total",     width: "90px",  render: fmt },
   { key: "planTaxable",       label: "Plan Taxable",   width: "100px", render: fmt },
   { key: "roomRent",          label: "Room Rent",      width: "90px",  render: fmt },
@@ -99,6 +100,8 @@ export default function ViewReport() {
       });
 
       const result = response?.data;
+      
+      console.log(result);
 
       if (result?.success) {
         setRows(result.data || []);
@@ -114,6 +117,8 @@ export default function ViewReport() {
       setLoading(false);
     }
   };
+
+  console.log(rows);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
