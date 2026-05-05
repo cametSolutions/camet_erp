@@ -205,79 +205,86 @@ const FoodPlanReportPage = () => {
 };
 console.log(data)
   return (
-     <>
-          <TitleDiv
-            title={
-            "Food Plan Report"
-            }
-          />
+  <>
+    <TitleDiv title="Food Plan Report" />
     <div className="min-h-screen bg-slate-100 p-3 md:p-6 print:bg-white print:p-0">
-      <div className="mx-auto max-w-7xl">
+      <div className="w-full">
+
         {/* Toolbar */}
-        <div className="mb-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm print:hidden md:p-6">
-            <h1 className="text-xl font-bold">OUTLET WISE COMPLIMENTARY SALE REPORT</h1>
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between mb-1">
-          
+      {/* Toolbar */}
+<div className="mb-5 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm print:hidden md:p-4">
+  <form
+    onSubmit={handleSubmit}
+    className="flex flex-wrap items-end justify-between gap-3 w-full"
+  >
+    {/* LEFT — Heading */}
+    <div>
+      <h1 className="text-base font-bold tracking-tight text-slate-900 md:text-lg uppercase">
+        Outlet Wise Complimentary Sale Report
+      </h1>
+    </div>
 
-            <form
-              onSubmit={handleSubmit}
-              className="grid w-full grid-cols-3 gap-3 md:grid-cols-3 lg:w-auto"
-            >
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  From Date
-                </label>
-                <input
-                  type="date"
-                  name="fromDate"
-                  value={filters.fromDate}
-                  onChange={handleChange}
-                  className="h-11 rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-teal-600"
-                />
-              </div>
+    {/* RIGHT — Dates + Buttons */}
+    <div className="flex flex-wrap items-end gap-2">
 
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  To Date
-                </label>
-                <input
-                  type="date"
-                  name="toDate"
-                  value={filters.toDate}
-                  onChange={handleChange}
-                  className="h-11 rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-teal-600"
-                />
-              </div>
+      {/* From Date */}
+      <div className="flex flex-col gap-1 w-36">
+        <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+          From Date
+        </label>
+        <input
+          type="date"
+          name="fromDate"
+          value={filters.fromDate}
+          onChange={handleChange}
+          className="h-9 rounded-lg border border-slate-300 bg-white px-2 text-xs outline-none transition focus:border-teal-600"
+        />
+      </div>
 
-              <div className="flex flex-wrap items-end gap-2">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="inline-flex h-11 items-center justify-center rounded-xl bg-teal-700 px-4 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-70"
-                >
-                  {loading ? "Loading..." : "Get Report"}
-                </button>
+      {/* To Date */}
+      <div className="flex flex-col gap-1 w-36">
+        <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+          To Date
+        </label>
+        <input
+          type="date"
+          name="toDate"
+          value={filters.toDate}
+          onChange={handleChange}
+          className="h-9 rounded-lg border border-slate-300 bg-white px-2 text-xs outline-none transition focus:border-teal-600"
+        />
+      </div>
 
-                <button
-                  type="button"
-                  onClick={handlePrint}
-                  className="inline-flex h-11 items-center justify-center rounded-xl bg-slate-200 px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-300"
-                >
-                  Print
-                </button>
+      {/* Get Report */}
+      <button
+        type="submit"
+        disabled={loading}
+        className="inline-flex h-9 items-center justify-center rounded-lg bg-teal-700 px-4 text-xs font-semibold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-70"
+      >
+        {loading ? "Loading..." : "Get Report"}
+      </button>
 
-                <button
-                  type="button"
-                  disabled={!data.length}
-                  onClick={handleExportExcel}
-                  className="inline-flex h-11 items-center justify-center rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  Export Excel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+      {/* Print */}
+      <button
+        type="button"
+        onClick={handlePrint}
+        className="inline-flex h-9 items-center justify-center rounded-lg bg-slate-200 px-4 text-xs font-semibold text-slate-700 transition hover:bg-slate-300"
+      >
+        Print
+      </button>
+
+      {/* Export Excel */}
+      <button
+        type="button"
+        disabled={!data.length}
+        onClick={handleExportExcel}
+        className="inline-flex h-9 items-center justify-center rounded-lg bg-emerald-600 px-4 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        Export Excel
+      </button>
+    </div>
+  </form>
+</div>
 
         {error ? (
           <div className="mb-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 print:hidden">
@@ -285,19 +292,14 @@ console.log(data)
           </div>
         ) : null}
 
-        {/* Printable report */}
+        {/* Printable Report */}
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm print:rounded-none print:border-0 print:p-4 print:shadow-none md:p-7">
-        
 
           <div className="mt-4 flex flex-col justify-between gap-3 text-sm md:flex-row">
             <div>
-              <div>
-                For the Period {formatDisplayDate(filters.fromDate)} To{" "}
-                {formatDisplayDate(filters.toDate)}
-              </div>
-             
+              For the Period {formatDisplayDate(filters.fromDate)} To{" "}
+              {formatDisplayDate(filters.toDate)}
             </div>
-
             <div className="text-left text-sm md:text-right">
               <div className="text-xs font-medium text-slate-500">
                 Print Date &amp; Time
@@ -325,26 +327,20 @@ console.log(data)
               <tbody>
                 {loading ? (
                   <tr>
-                    <td
-                      colSpan={7}
-                      className="px-2 py-8 text-center text-slate-500"
-                    >
+                    <td colSpan={7} className="px-2 py-8 text-center text-slate-500">
                       Loading report...
                     </td>
                   </tr>
                 ) : !data.length ? (
                   <tr>
-                    <td
-                      colSpan={7}
-                      className="px-2 py-8 text-center text-slate-500"
-                    >
+                    <td colSpan={7} className="px-2 py-8 text-center text-slate-500">
                       No data found
                     </td>
                   </tr>
                 ) : (
                   data.map((fp, fpIdx) => (
                     <React.Fragment key={fpIdx}>
-                      {/* Section header like COMPLIMENTARY / MAP / MD */}
+                      {/* Section Header */}
                       <tr>
                         <td
                           colSpan={7}
@@ -354,25 +350,26 @@ console.log(data)
                         </td>
                       </tr>
 
-                  {fp.rows.flat().map((row, idx) => (
-  <tr
-    key={`${fp.foodPlan}-${idx}`}
-    className="border-b border-dashed border-slate-300"
-  >
-    <td className="px-2 py-1">{row.billNo}</td>
-    <td className="px-2 py-1">{row.billDate}</td>
-    <td className="px-2 py-1 text-slate-800">{row.itemName}</td>
-    <td className="px-2 py-1 text-right">{row.qty}</td>
-    <td className="px-2 py-1 text-right">
-      {Number(row.rate || 0).toFixed(2)}
-    </td>
-    <td className="px-2 py-1 text-right">
-      {Number(row.amount || 0).toFixed(2)}
-    </td>
-    <td className="px-2 py-1">{row.remarks}</td>
-  </tr>
-))}
-                      {/* Sub total row */}
+                      {fp.rows.flat().map((row, idx) => (
+                        <tr
+                          key={`${fp.foodPlan}-${idx}`}
+                          className="border-b border-dashed border-slate-300"
+                        >
+                          <td className="px-2 py-1">{row.billNo}</td>
+                          <td className="px-2 py-1">{row.billDate}</td>
+                          <td className="px-2 py-1 text-slate-800">{row.itemName}</td>
+                          <td className="px-2 py-1 text-right">{row.qty}</td>
+                          <td className="px-2 py-1 text-right">
+                            {Number(row.rate || 0).toFixed(2)}
+                          </td>
+                          <td className="px-2 py-1 text-right">
+                            {Number(row.amount || 0).toFixed(2)}
+                          </td>
+                          <td className="px-2 py-1">{row.remarks}</td>
+                        </tr>
+                      ))}
+
+                      {/* Sub Total */}
                       <tr>
                         <td className="px-2 py-2"></td>
                         <td className="px-2 py-2"></td>
@@ -413,8 +410,8 @@ console.log(data)
         </div>
       </div>
     </div>
-    </>
-  );
+  </>
+);
 };
 
 export default FoodPlanReportPage;
