@@ -15,10 +15,10 @@ import useFetch from "@/customHook/useFetch";
 import OutStandingModal from "./OutStandingModal";
 import PaymentModal from "./PaymentModal";
 import OtherChargeSearchInPutBox from "./OtherChargeSearchInPutBox";
-// import {useRef} from "react";
+import {useRef} from "react";
 
-// import { MdCloudUpload, MdImage, MdDelete } from "react-icons/md"
-// import uploadImageToCloudinary from "../../../../utils/uploadCloudinary";
+import { MdCloudUpload, MdImage, MdDelete } from "react-icons/md"
+import uploadImageToCloudinary from "../../../../utils/uploadCloudinary";
 function BookingForm({
   isLoading = false,
   setIsLoading = false,
@@ -49,20 +49,20 @@ function BookingForm({
   const [saveLoader, setSaveLoader] = useState(false);
 
 
-//   const idFrontRef = useRef(null)
-// const idBackRef = useRef(null)
-// const [idProof, setIdProof] = useState({
-//   idType: "",           // Aadhaar / Passport / Driving License etc.
-//   idNumber: "",
-//   frontFile: null,
-//   backFile: null,
-//   frontPreview: "",
-//   backPreview: "",
-//   frontUrl: "",         // uploaded Cloudinary URL
-//   backUrl: "",
-//   isUploadingFront: false,
-//   isUploadingBack: false,
-// })
+  const idFrontRef = useRef(null)
+const idBackRef = useRef(null)
+const [idProof, setIdProof] = useState({
+  idType: "",           // Aadhaar / Passport / Driving License etc.
+  idNumber: "",
+  frontFile: null,
+  backFile: null,
+  frontPreview: "",
+  backPreview: "",
+  frontUrl: "",         // uploaded Cloudinary URL
+  backUrl: "",
+  isUploadingFront: false,
+  isUploadingBack: false,
+})
 
 
   const { _id: cmp_id, configurations } = useSelector(
@@ -150,81 +150,98 @@ function BookingForm({
     addTaxWithRate: configurations[0]?.addRateWithTax?.hotelSale,
   });
 
-  useEffect(() => {
-    if (editData) {
-      setSelectedParty(editData?.customerId);
-      setSelectedGuest(editData?.guestId);
-      setHotelAgent(editData?.agentId);
-      setCountry(editData?.country || "");
-      setVoucherNumber(editData?.voucherNumber);
-      let highestDate = editData?.checkOutDate;
-      if (isTariffRateChange) {
-        highestDate =
-          currentDateDefault > highestDate ? currentDateDefault : highestDate;
-      }
-      console.log("editData", editData?.selectedRooms);
-      setFormData((prev) => ({
-        ...prev,
-        country: editData?.country,
-        customerId: editData?.customerId?._id,
-        voucherNumber: editData?.voucherNumber,
-        state: editData?.state,
-        pinCode: editData?.pinCode,
-        detailedAddress: editData?.detailedAddress,
-        mobileNumber: editData?.mobileNumber,
-        arrivalDate: editData?.arrivalDate || prev.arrivalDate,
-        arrivalTime: editData?.arrivalTime || prev.arrivalTime,
-        checkOutDate: highestDate || prev.checkOutDate,
-        checkOutTime: editData?.checkOutTime || prev.checkOutTime,
-        stayDays: editData?.stayDays ?? prev.stayDays,
-        bookingType: editData?.bookingType || prev.bookingType,
-        selectedRooms: editData?.selectedRooms || [],
-        additionalPaxDetails: editData?.additionalPaxDetails || [],
-        foodPlan: editData?.foodPlan || [],
-        paxTotal: editData?.paxTotal || 0,
-        foodPlanTotal: editData?.foodPlanTotal || 0,
-        roomTotal: editData?.roomTotal || 0,
-        discountPercentage: editData?.discountPercentage || 0,
-        discountAmount: editData?.discountAmount || 0,
-        totalAdvance: editData?.totalAdvance || 0,
-        visitOfPurpose: editData?.visitOfPurpose,
-        voucherId: editData?.voucherId,
-        customerName: editData?.customerId?.partyName,
-        accountGroup: editData?.customerId?.accountGroup,
-        guestName: editData?.guestId?.partyName  ,
-        guestId: editData?.guestId?._id || editData?.guestId,
-        guestCountry: editData?.country,
-        guestState: editData?.state,
-        guestPinCode: editData?.pinCode,
-        guestDetailedAddress: editData?.guestDetailedAddress,
-        guestMobileNumber: editData?.guestMobileNumber,
-        balanceToPay: editData?.balanceToPay || 0,
-        advanceAmount: editData?.advanceAmount || 0,
-        previousAdvance: editData?.previousAdvance || 0,
-        company: editData?.company || "",
-        nextDestination: editData?.nextDestination || "",
-        dateOfBirth: editData?.dateOfBirth || "",
-        dateOfArrivalInIndia: editData?.dateOfArrivalInIndia || "",
-        visaNo: editData?.visaNo || "",
-        visaPOI: editData?.visaPOI || "",
-        visaDOI: editData?.visaDOI || "",
-        visaExpDt: editData?.visaExpDt || "",
-        certOfRegistrationNumber: editData?.certOfRegistrationNumber || "",
-        passportNo: editData?.passportNo || "",
-        placeOfIssue: editData?.placeOfIssue || "",
-        dateOfIssue: editData?.dateOfIssue || "",
-        dateOfExpiry: editData?.dateOfExpiry || "",
-        grcno: editData?.grcno || "",
-        currentDate: editData?.arrivalDate || currentDateDefault,
-        updatedDate: editData?.updatedDate || currentDateDefault,
-        gstNo: editData?.gstNo || "",
-        otherChargeDetails: editData?.otherChargeDetails || [],
-        addFoodPlanWithRate: editData?.addFoodPlanWithRate,
-        roomSwapHistory: editData?.roomSwapHistory || [],
-      }));
-      setIncludeFoodRateWithRoom(editData?.addFoodPlanWithRate);
+useEffect(() => {
+  if (editData) {
+    setSelectedParty(editData?.customerId);
+    setSelectedGuest(editData?.guestId);
+    setHotelAgent(editData?.agentId);
+    setCountry(editData?.country || "");
+    setVoucherNumber(editData?.voucherNumber);
+    let highestDate = editData?.checkOutDate;
+    if (isTariffRateChange) {
+      highestDate =
+        currentDateDefault > highestDate ? currentDateDefault : highestDate;
     }
-  }, [editData]);
+    setFormData((prev) => ({
+      ...prev,
+      country: editData?.country,
+      customerId: editData?.customerId?._id,
+      voucherNumber: editData?.voucherNumber,
+      state: editData?.state,
+      pinCode: editData?.pinCode,
+      detailedAddress: editData?.detailedAddress,
+      mobileNumber: editData?.mobileNumber,
+      arrivalDate: editData?.arrivalDate || prev.arrivalDate,
+      arrivalTime: editData?.arrivalTime || prev.arrivalTime,
+      checkOutDate: highestDate || prev.checkOutDate,
+      checkOutTime: editData?.checkOutTime || prev.checkOutTime,
+      stayDays: editData?.stayDays ?? prev.stayDays,
+      bookingType: editData?.bookingType || prev.bookingType,
+      selectedRooms: editData?.selectedRooms || [],
+      additionalPaxDetails: editData?.additionalPaxDetails || [],
+      foodPlan: editData?.foodPlan || [],
+      paxTotal: editData?.paxTotal || 0,
+      foodPlanTotal: editData?.foodPlanTotal || 0,
+      roomTotal: editData?.roomTotal || 0,
+      discountPercentage: editData?.discountPercentage || 0,
+      discountAmount: editData?.discountAmount || 0,
+      totalAdvance: editData?.totalAdvance || 0,
+      visitOfPurpose: editData?.visitOfPurpose,
+      voucherId: editData?.voucherId,
+      customerName: editData?.customerId?.partyName,
+      accountGroup: editData?.customerId?.accountGroup,
+      guestName: editData?.guestId?.partyName,
+      guestId: editData?.guestId?._id || editData?.guestId,
+      guestCountry: editData?.country,
+      guestState: editData?.state,
+      guestPinCode: editData?.pinCode,
+      guestDetailedAddress: editData?.guestDetailedAddress,
+      guestMobileNumber: editData?.guestMobileNumber,
+      balanceToPay: editData?.balanceToPay || 0,
+      advanceAmount: editData?.advanceAmount || 0,
+      previousAdvance: editData?.previousAdvance || 0,
+      company: editData?.company || "",
+      nextDestination: editData?.nextDestination || "",
+      dateOfBirth: editData?.dateOfBirth || "",
+      dateOfArrivalInIndia: editData?.dateOfArrivalInIndia || "",
+      visaNo: editData?.visaNo || "",
+      visaPOI: editData?.visaPOI || "",
+      visaDOI: editData?.visaDOI || "",
+      visaExpDt: editData?.visaExpDt || "",
+      certOfRegistrationNumber: editData?.certOfRegistrationNumber || "",
+      passportNo: editData?.passportNo || "",
+      placeOfIssue: editData?.placeOfIssue || "",
+      dateOfIssue: editData?.dateOfIssue || "",
+      dateOfExpiry: editData?.dateOfExpiry || "",
+      grcno: editData?.grcno || "",
+      currentDate: editData?.arrivalDate || currentDateDefault,
+      updatedDate: editData?.updatedDate || currentDateDefault,
+      gstNo: editData?.gstNo || "",
+      otherChargeDetails: editData?.otherChargeDetails || [],
+      addFoodPlanWithRate: editData?.addFoodPlanWithRate,
+      roomSwapHistory: editData?.roomSwapHistory || [],
+    }));
+
+    setIncludeFoodRateWithRoom(editData?.addFoodPlanWithRate);
+
+    // ✅ Restore idProof when editing
+    if (editData?.idProof) {
+      setIdProof({
+        idType:           editData.idProof.idType   || "",
+        idNumber:         editData.idProof.idNumber || "",
+        frontFile:        null,
+        backFile:         null,
+        frontPreview:     editData.idProof.frontUrl || "",
+        backPreview:      editData.idProof.backUrl  || "",
+        frontUrl:         editData.idProof.frontUrl || "",
+        backUrl:          editData.idProof.backUrl  || "",
+        isUploadingFront: false,
+        isUploadingBack:  false,
+      });
+    }
+  }
+}, [editData]);
+  
 
   useEffect(() => {
     if (roomId) setSelectedRoomId(roomId);
@@ -813,70 +830,70 @@ console.log("advanceAmount", advanceAmount,isFor);
     }
   };
 
-// const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, onRemove }) => {
-//   const isUploading = idProof[`isUploading${side.charAt(0).toUpperCase() + side.slice(1)}`]
-//   const preview = idProof[`${side}Preview`]
-//   const file = idProof[`${side}File`]
-//   const url = idProof[`${side}Url`]
+const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, onRemove }) => {
+  const isUploading = idProof[`isUploading${side.charAt(0).toUpperCase() + side.slice(1)}`]
+  const preview = idProof[`${side}Preview`]
+  const file = idProof[`${side}File`]
+  const url = idProof[`${side}Url`]
 
-//   return (
-//     <div className="w-full lg:w-6/12 px-4">
-//       <div className="relative w-full mb-3">
-//         <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-//           {label}
-//         </label>
+  return (
+    <div className="w-full lg:w-6/12 px-4">
+      <div className="relative w-full mb-3">
+        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+          {label}
+        </label>
 
-//         {/* Preview */}
-//         {preview && (
-//           <div className="mb-3 relative inline-block">
-//             {preview.startsWith("data:application/pdf") ? (
-//               <div className="w-24 h-24 flex items-center justify-center bg-gray-100 rounded border shadow text-xs text-gray-500">PDF</div>
-//             ) : (
-//               <img src={preview} alt={label} className="w-24 h-24 object-cover rounded border shadow" />
-//             )}
-//             <button
-//               type="button"
-//               onClick={() => onRemove(side)}
-//               className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
-//             >×</button>
-//           </div>
-//         )}
+        {/* Preview */}
+        {preview && (
+          <div className="mb-3 relative inline-block">
+            {preview.startsWith("data:application/pdf") ? (
+              <div className="w-24 h-24 flex items-center justify-center bg-gray-100 rounded border shadow text-xs text-gray-500">PDF</div>
+            ) : (
+              <img src={preview} alt={label} className="w-24 h-24 object-cover rounded border shadow" />
+            )}
+            <button
+              type="button"
+              onClick={() => onRemove(side)}
+              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+            >×</button>
+          </div>
+        )}
 
-//         {/* File Input */}
-//         <div className="flex items-center space-x-2">
-//           <input
-//             ref={fileRef}
-//             type="file"
-//             accept="image/*,application/pdf"
-//             onChange={(e) => onFileChange(side, e)}
-//             className="hidden"
-//           />
-//           <div
-//             onClick={() => fileRef.current?.click()}
-//             className="flex items-center px-3 py-2 bg-gray-100 text-gray-700 rounded cursor-pointer hover:bg-gray-200 text-sm"
-//           >
-//             <MdImage className="mr-2" />
-//             Choose File
-//           </div>
+        {/* File Input */}
+        <div className="flex items-center space-x-2">
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*,application/pdf"
+            onChange={(e) => onFileChange(side, e)}
+            className="hidden"
+          />
+          <div
+            onClick={() => fileRef.current?.click()}
+            className="flex items-center px-3 py-2 bg-gray-100 text-gray-700 rounded cursor-pointer hover:bg-gray-200 text-sm"
+          >
+            <MdImage className="mr-2" />
+            Choose File
+          </div>
 
-//           {file && !url && (
-//             <button
-//               type="button"
-//               onClick={() => onUpload(side)}
-//               disabled={isUploading}
-//               className="flex items-center px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-blue-300 text-sm"
-//             >
-//               <MdCloudUpload className="mr-2" />
-//               {isUploading ? "Uploading..." : "Upload"}
-//             </button>
-//           )}
-//         </div>
+          {file && !url && (
+            <button
+              type="button"
+              onClick={() => onUpload(side)}
+              disabled={isUploading}
+              className="flex items-center px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-blue-300 text-sm"
+            >
+              <MdCloudUpload className="mr-2" />
+              {isUploading ? "Uploading..." : "Upload"}
+            </button>
+          )}
+        </div>
 
-//         {url && <p className="text-green-600 text-xs mt-1">✓ Uploaded successfully</p>}
-//       </div>
-//     </div>
-//   )
-// }
+        {url && <p className="text-green-600 text-xs mt-1">✓ Uploaded successfully</p>}
+      </div>
+    </div>
+  )
+}
 
 
   const submitHandler = async () => {
@@ -1108,7 +1125,13 @@ console.log("advanceAmount", advanceAmount,isFor);
       detailedAddress,
       mobileNumber,
       voucherNumber,
-      selectedRooms: formData.selectedRooms, // Should contain ALL rooms
+      selectedRooms: formData.selectedRooms, 
+      idProof: {
+    idType:   idProof.idType,
+    idNumber: idProof.idNumber,
+    frontUrl: idProof.frontUrl,
+    backUrl:  idProof.backUrl,
+  },// Should contain ALL rooms
     };
 
     if (
@@ -1137,6 +1160,12 @@ console.log("advanceAmount", advanceAmount,isFor);
     const payload = {
       ...formData,
       selectedRooms: finalSelectedRooms,
+      idProof: {
+    idType:   idProof.idType,
+    idNumber: idProof.idNumber,
+    frontUrl: idProof.frontUrl,
+    backUrl:  idProof.backUrl,
+  },
     };
 
     let cash = 0;
@@ -1615,73 +1644,81 @@ console.log("advanceAmount", advanceAmount,isFor);
                   </div>
 
 {/* ID Proof Section */}
-{/* <div className="w-full px-4 mt-4">
+<div className="w-full px-4 mt-4">
   <h6 className="text-blueGray-400 text-sm mb-4 font-bold uppercase border-b pb-2">
     ID Proof
   </h6>
-</div> */}
+</div>
 
-{/* ID Type */}
-{/* <div className="w-full lg:w-6/12 px-4">
-  <div className="relative w-full mb-3">
-    <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-      ID Type
-    </label>
-    <select
-      name="idType"
-      value={idProof.idType}
-      onChange={handleIdChange}
-      className="border-0 px-3 py-3 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full"
-    >
-      <option value="">Select ID Type</option>
-      <option value="aadhaar">Aadhaar Card</option>
-      <option value="passport">Passport</option>
-      <option value="driving_license">Driving License</option>
-      <option value="voter_id">Voter ID</option>
-      <option value="pan">PAN Card</option>
-    </select>
+<div className="flex flex-wrap w-full">
+
+  {/* ID Type */}
+  <div className="w-full lg:w-6/12 px-4">
+    <div className="relative w-full mb-3">
+      <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+        ID Type
+      </label>
+      <select
+        name="idType"
+        value={idProof.idType}
+        onChange={handleIdChange}
+        className="border-0 px-3 py-3 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full"
+      >
+        <option value="">Select ID Type</option>
+        <option value="aadhaar">Aadhaar Card</option>
+        <option value="passport">Passport</option>
+        <option value="driving_license">Driving License</option>
+        <option value="voter_id">Voter ID</option>
+        <option value="pan">PAN Card</option>
+      </select>
+    </div>
   </div>
-</div> */}
 
-{/* ID Number */}
-{/* <div className="w-full lg:w-6/12 px-4">
-  <div className="relative w-full mb-3">
-    <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-      ID Number
-    </label>
-    <input
-      type="text"
-      name="idNumber"
-      placeholder="Enter ID number"
-      value={idProof.idNumber}
-      onChange={handleIdChange}
-      maxLength={20}
-      className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full"
+  {/* ID Number */}
+  <div className="w-full lg:w-6/12 px-4">
+    <div className="relative w-full mb-3">
+      <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+        ID Number
+      </label>
+      <input
+        type="text"
+        name="idNumber"
+        placeholder="Enter ID number"
+        value={idProof.idNumber}
+        onChange={handleIdChange}
+        maxLength={20}
+        className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full"
+      />
+    </div>
+  </div>
+
+  {/* ID Front Upload */}
+  <div className="w-full lg:w-6/12 px-4">
+    <IdUploadSlot
+      label="ID Front Side"
+      side="front"
+      fileRef={idFrontRef}
+      idProof={idProof}
+      onFileChange={handleIdFileChange}
+      onUpload={handleIdUpload}
+      onRemove={handleIdRemove}
     />
   </div>
-</div> */}
 
-{/* Front Upload */}
-{/* <IdUploadSlot
-  label="ID Front Side"
-  side="front"
-  fileRef={idFrontRef}
-  idProof={idProof}
-  onFileChange={handleIdFileChange}
-  onUpload={handleIdUpload}
-  onRemove={handleIdRemove}
-/> */}
+  {/* ID Back Upload */}
+  <div className="w-full lg:w-6/12 px-4">
+    <IdUploadSlot
+      label="ID Back Side"
+      side="back"
+      fileRef={idBackRef}
+      idProof={idProof}
+      onFileChange={handleIdFileChange}
+      onUpload={handleIdUpload}
+      onRemove={handleIdRemove}
+    />
+  </div>
 
-{/* Back Upload */}
-{/* <IdUploadSlot
-  label="ID Back Side"
-  side="back"
-  fileRef={idBackRef}
-  idProof={idProof}
-  onFileChange={handleIdFileChange}
-  onUpload={handleIdUpload}
-  onRemove={handleIdRemove}
-/> */}
+</div>
 
 
                   {/* Guest Info Box */}
