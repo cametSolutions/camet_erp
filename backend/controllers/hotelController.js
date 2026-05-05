@@ -6166,21 +6166,14 @@ export const getOccupancyCheckoutReport = async (req, res) => {
       cmp_id: new mongoose.Types.ObjectId(cmp_id),
       status: { $ne: "checkOut" },
     };
-
-    // if (fromDate && toDate) {
-      // match.arrivalDate = {
-        // $gte: fromDate,
-        // $lte: toDate,
-      // };
-      // match.checkOutDate = {
-      //  $lte: new Date().toISOString().slice(0, 10),
-      // }
-    // }
-    // } else if (fromDate) {
-    //   match.arrivalDate = { $gte: fromDate };
-    // } else if (toDate) {
-    //   match.arrivalDate = { $lte: toDate };
-    // }
+    console.log("match", fromDate);
+    if (fromDate && toDate) {
+      match.$or = [
+        {
+          arrivalDate: { $lte: toDate },
+        },
+      ];
+    }
 
     const checkins = await CheckIn.find(match).lean();
 
@@ -6249,26 +6242,26 @@ export const getOccupancyCheckoutReport = async (req, res) => {
               .join(", ") || "";
 
           planName = getPlanNames(foundPlan);
-    
-        if(foundPlan.length >= 0){
-          foundPlan.map((plan)=>{
-           if (!planMap[plan.foodPlan]) {
-          planMap[plan.foodPlan] = {
-            plan: plan.foodPlan,
-            rms: 0,
-            pax: 0,
-            addnl: 0,
-            total: 0,
-          };
-        }
 
-        planMap[plan.foodPlan].rms += 1;
-        planMap[plan.foodPlan].pax += pax;
-        planMap[plan.foodPlan].addnl += additionalPaxCount;
-        planMap[plan.foodPlan].total += pax + additionalPaxCount;
-                 })
- }
-     }
+          if (foundPlan.length >= 0) {
+            foundPlan.map((plan) => {
+              if (!planMap[plan.foodPlan]) {
+                planMap[plan.foodPlan] = {
+                  plan: plan.foodPlan,
+                  rms: 0,
+                  pax: 0,
+                  addnl: 0,
+                  total: 0,
+                };
+              }
+
+              planMap[plan.foodPlan].rms += 1;
+              planMap[plan.foodPlan].pax += pax;
+              planMap[plan.foodPlan].addnl += additionalPaxCount;
+              planMap[plan.foodPlan].total += pax + additionalPaxCount;
+            });
+          }
+        }
         console.log("planMap[planName]:", planName);
         rows.push({
           slNo: rows.length + 1,
