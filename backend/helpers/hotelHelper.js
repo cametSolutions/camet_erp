@@ -364,6 +364,184 @@ export const updateReceiptForRooms = async (
   // console.log("Receipts updated successfully.");
 };
 
+// export const createReceiptForSales = async (
+//   cmp_id,
+//   payment,
+//   paymentMethod,
+//   customerName,
+//   amount,
+//   partyId,
+//   saleData,
+//   createdTallyData,
+//   req,
+//   restaurantBaseSaleData,
+//   session
+// ) => {
+//   const receipts = [];
+
+//   // find voucher series for receipt
+//   const voucher = await VoucherSeriesModel.findOne({
+//     cmp_id,
+//     voucherType: "receipt",
+//   }).session(session);
+
+//   const series_id = voucher?.series
+//     ?.find((s) => s.under === "hotel")
+//     ?._id.toString();
+
+//   if (!series_id) {
+//     throw new Error("No valid receipt series found for hotel");
+//   }
+//   console.log("restaurantBaseSaleData", restaurantBaseSaleData);
+
+//   let billData
+//   let outStandingArray = [];
+//   restaurantBaseSaleData.map(async (sale) => {
+//     let outStandingData = await TallyData.findOne({ billId: sale._id });
+//     outStandingArray.push(outStandingData);
+//   });
+
+//   // Single Payment Mode
+//   if (payment?.paymentMode === "single") {
+//     const receiptVoucher = await generateVoucherNumber(
+//       cmp_id,
+//       "receipt",
+//       series_id,
+//       session
+//     );
+
+//     const serialNumber = await getNewSerialNumber(
+//       receiptModel,
+//       "serialNumber",
+//       session
+//     );
+//     let trackedBalance = amount;
+//     outStandingArray.map(async (outStanding) => {
+//       billData.push({
+//         _id: outStanding._id,
+//         bill_no: outStanding?.bill_no,
+//         billId: outStanding.billId,
+//         bill_date: new Date(),
+//         billPending_amt: outStanding.bill_amount,
+//         source: "hotel",
+//         settledAmount: outStanding?.bill_amount,
+//         remainingAmount: 0,
+//       });
+//       trackedBalance = trackedBalance - Number(outStanding?.bill_amount);
+//     });
+
+//     billData.push({
+//       _id: createdTallyData._id,
+//       bill_no: saleData?.salesNumber,
+//       billId: saleData._id,
+//       bill_date: new Date(),
+//       billPending_amt: 0,
+//       source: "hotel",
+//       settledAmount: trackedBalance,
+//       remainingAmount: 0,
+//     });
+
+//     const paymentDetails =
+//       paymentMethod === "cash"
+//         ? { cash_ledname: customerName, cash_name: customerName }
+//         : { bank_ledname: customerName, bank_name: customerName };
+
+//     const newReceipt = await buildReceipt(
+//       receiptVoucher,
+//       serialNumber,
+//       paymentDetails,
+//       amount,
+//       paymentMethod === "cash" ? "Cash" : "Online",
+//       partyId,
+//       cmp_id,
+//       series_id,
+//       billData,
+//       req,
+//       session
+//     );
+
+//     receipts.push(newReceipt);
+//   }
+
+//   // Multiple Payment Mode
+//   else if (payment?.paymentMode === "multiple") {
+//     // Online part
+//     if (Number(payment?.onlineAmount) > 0) {
+//       const receiptVoucher = await generateVoucherNumber(
+//         cmp_id,
+//         "receipt",
+//         series_id,
+//         session
+//       );
+
+//       const serialNumber = await getNewSerialNumber(
+//         receiptModel,
+//         "serialNumber",
+//         session
+//       );
+
+//       const paymentDetails = {
+//         bank_ledname: customerName,
+//         bank_name: customerName,
+//       };
+
+//       const newReceipt = await buildReceipt(
+//         receiptVoucher,
+//         serialNumber,
+//         paymentDetails,
+//         Number(payment?.onlineAmount),
+//         "Online",
+//         partyId,
+//         cmp_id,
+//         series_id,
+//         billData,
+//         req,
+//         session
+//       );
+
+//       receipts.push(newReceipt);
+//     }
+
+//     // Cash part
+//     if (Number(payment?.cashAmount) > 0) {
+//       const receiptVoucher = await generateVoucherNumber(
+//         cmp_id,
+//         "receipt",
+//         series_id,
+//         session
+//       );
+
+//       const serialNumber = await getNewSerialNumber(
+//         receiptModel,
+//         "serialNumber",
+//         session
+//       );
+
+//       const paymentDetails = {
+//         cash_ledname: customerName,
+//         cash_name: customerName,
+//       };
+
+//       const newReceipt = await buildReceipt(
+//         receiptVoucher,
+//         serialNumber,
+//         paymentDetails,
+//         Number(payment?.cashAmount),
+//         "Cash",
+//         partyId,
+//         cmp_id,
+//         series_id,
+//         billData,
+//         req,
+//         session
+//       );
+
+//       receipts.push(newReceipt);
+//     }
+//   }
+
+//   return receipts;
+// };
 
 export const createReceiptForSales = async (
   cmp_id,
@@ -924,7 +1102,6 @@ export const deleteReceipt = async (tallyId, session = null) => {
     throw error;
   }
 };
-
 export const deleteSettlements = async (tallyId, session = null) => {
   try {
     if (!tallyId) {
@@ -949,6 +1126,3 @@ export const deleteSettlements = async (tallyId, session = null) => {
     throw error;
   }
 };
-
-// helper used to calculate other charges based on if it is calculated based on the each room or total room amount
-

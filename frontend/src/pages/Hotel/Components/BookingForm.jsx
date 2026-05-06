@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { useSelector } from "react-redux";
-import { lazy, Suspense } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import api from "@/api/api";
 import CustomBarLoader from "@/components/common/CustomBarLoader";
@@ -14,9 +14,6 @@ import FoodPlanComponent from "./FoodPlanComponent";
 import useFetch from "@/customHook/useFetch";
 import OutStandingModal from "./OutStandingModal";
 import PaymentModal from "./PaymentModal";
-const AdditionalChargesModal = lazy(() => import("./AdditionalChargesModal"));
-import SuspenseLoader from "@/components/common/SuspenseLoader";
-import { calculateOtherCharges } from "../Helper/hotelHelper.js";
 import OtherChargeSearchInPutBox from "./OtherChargeSearchInPutBox";
 import {useRef} from "react";
 
@@ -46,12 +43,11 @@ function BookingForm({
   const [errorObject, setErrorObject] = useState({});
   const [hotelAgent, setHotelAgent] = useState({});
   const [visitOfPurpose, setVisitOfPurpose] = useState([]);
-  const [advanceModalOpen, setAdvanceModalOpen] = useState(false);
-  const [otherChargeModalOpen, setOtherChargeModalOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
   const [country, setCountry] = useState("");
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [saveLoader, setSaveLoader] = useState(false);
-  const [additionalChargeData, setAdditionalChargeData] = useState([]);
+
 
   const idFrontRef = useRef(null)
 const idBackRef = useRef(null)
@@ -71,14 +67,10 @@ const [idProof, setIdProof] = useState({
 
   const { _id: cmp_id, configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg,
-  );
+  ); 
   let addFoodPlanWithRate = configurations?.[0]?.foodPlaWithRoomRate;
-  let discountBasedOnGrossAmount =
-    configurations?.[0]?.discountBasedOnGrossAmountInHotel;
-
-  const [includeFoodRateWithRoom, setIncludeFoodRateWithRoom] = useState(
-    addFoodPlanWithRate ?? false,
-  );
+  
+  const [includeFoodRateWithRoom, setIncludeFoodRateWithRoom] = useState(addFoodPlanWithRate ?? false);
   const { data, loading } = useFetch(
     `/api/sUsers/getProductSubDetails/${cmp_id}?type=roomType`,
   );
@@ -251,26 +243,12 @@ useEffect(() => {
 }, [editData]);
   
 
-  // setting room id for selected room
   useEffect(() => {
     if (roomId) setSelectedRoomId(roomId);
   }, [roomId]);
 
-  // function used to fetch additional charge data
-  useEffect(() => {
-    const callAdditionalCharge = async () => {
-      const response = await api.get(
-        `/api/sUsers/additionalcharges/${cmp_id}`,
-        {
-          withCredentials: true,
-        },
-      );
-      setAdditionalChargeData(response?.data?.additionalCharges);
-    };
-    callAdditionalCharge();
-  }, []);
+  console.log(formData.otherChargeDetails);
 
-  // on change function
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -379,7 +357,6 @@ useEffect(() => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // arrival time and date helper
 const handleIdChange = (e) => {
   const { name, value } = e.target
   setIdProof((prev) => ({ ...prev, [name]: value }))
@@ -452,7 +429,6 @@ const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1)
       updatedDate: currentDateDefault,
     }));
 
-  // checkout  time and date helper
   const handleCheckOutTimeChange = (time) =>
     setFormData((prev) => ({
       ...prev,
@@ -460,11 +436,9 @@ const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1)
       updatedDate: currentDateDefault,
     }));
 
-  // checking customer is indian or foreign
   const isForeign =
     country.trim().toLowerCase() !== "india" && country.trim() !== "";
 
-  // getting voucher series data for specific ones
   const fetchData = useCallback(async () => {
     try {
       const response = await api.get(
@@ -505,65 +479,66 @@ const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1)
     }
   }, [cmp_id, isFor, setIsLoading]);
 
-  // activation useEffect for fetching data
   useEffect(() => {
     if (!editData || isFor === "deliveryNote" || isFor === "sales") {
       fetchData();
     }
   }, [fetchData, editData, isFor]);
 
-  // Fixed calculation: Room total + Pax + Food Plan = Total Amount, then apply discount (from other charges in final side)
-
+  // Fixed calculation: Room total + Pax + Food Plan = Total Amount, then apply discount
   useEffect(() => {
     const handler = setTimeout(() => {
       const roomTotal = Number(formData?.roomTotal || 0);
+      const paxTotal = Number(formData?.paxTotal || 0);
+      const foodPlanTotal = Number(formData?.foodPlanTotal || 0);
 
+      // Total before discount
       let otherChargeAmount = 0;
-      let discountAmount = 0;
-
+      let finalOtherChargeAmount = 0;
       if (
-        Array.isArray(formData?.otherChargeDetails) &&
-        formData.otherChargeDetails.length > 0
+        formData.otherChargeDetails &&
+        Object.keys(formData.otherChargeDetails).length > 0
       ) {
-        const valueDetails = formData.otherChargeDetails.reduce(
-          (acc, item) => {
-            const value = Number(item?.finalValue || 0);
-
-            if (item?.action === "add") {
-              acc.otherChargeAmount += value;
-            } else if (item?.action === "sub") {
-              acc.discountAmount += value;
-            }
-
-            return acc;
-          },
-          { otherChargeAmount: 0, discountAmount: 0 },
+        otherChargeAmount =
+          Math.round(
+            Number(formData.otherChargeDetails?.amount || 0) *
+              Number(formData.otherChargeDetails?.charge?.taxPercentage || 0),
+          ) / 100;
+        finalOtherChargeAmount = Math.round(
+          Number(formData.otherChargeDetails?.amount) +
+            Number(otherChargeAmount),
         );
-
-        otherChargeAmount = valueDetails.otherChargeAmount;
-        discountAmount = valueDetails.discountAmount;
       }
-      const totalAmount = roomTotal;
-    
 
-      const grandTotal = roomTotal;
-
-      const totalAdvance = Number(
-        formData?.totalAdvance > 0
-          ? formData.totalAdvance
-          : formData?.advanceAmount || 0,
+      const totalAmount = Math.round(roomTotal + finalOtherChargeAmount);
+      // Apply discount
+      const discountAmount = Math.round(Number(formData.discountAmount || 0));
+      const grandTotal = Math.round(
+        (totalAmount - discountAmount).toFixed(2) + finalOtherChargeAmount,
       );
 
-      const balanceToPay = (
-        Number(grandTotal) - discountAmount -
-        totalAdvance + otherChargeAmount 
-      ).toFixed(2);
+      // Calculate balance
+      const totalAdvance = Math.round(
+        Number(
+          formData.totalAdvance > 0
+            ? formData.totalAdvance
+            : formData.advanceAmount || 0,
+        ),
+      );
+
+      const balanceToPay = Math.round(grandTotal - totalAdvance).toFixed(2);
+      console.log(balanceToPay);
+
+      // Calculate discount percentage
+      const discountPercentage =
+        totalAmount > 0
+          ? Math.round((discountAmount / totalAmount) * 100).toFixed(2)
+          : 0;
 
       setFormData((prev) => ({
         ...prev,
         totalAmount: totalAmount.toFixed(2),
-        otherChargeAmount: Number(otherChargeAmount.toFixed(2)),
-        discountAmount: Number(discountAmount.toFixed(2)),
+        discountPercentage,
         grandTotal,
         balanceToPay,
       }));
@@ -574,101 +549,84 @@ const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1)
     formData.roomTotal,
     formData.paxTotal,
     formData.foodPlanTotal,
+    formData.discountAmount,
     formData.totalAdvance,
-    formData.advanceAmount,
     formData.otherChargeDetails,
   ]);
 
-  // recalculating other charges if any of the values are changed in the parent side component
-  const isEqual = (a, b) => JSON.stringify(a) === JSON.stringify(b);
-  useEffect(() => {
-    const handler = setTimeout(async () => {
-      const roomTotal = Number(formData?.roomTotal || 0);
+  const handleDiscountPercentageChange = (e) => {
+    const { value } = e.target;
+    const percentage = Number(value) || 0;
+    const totalAmount =
+      Number(formData?.roomTotal || 0) +
+      Number(formData?.paxTotal || 0) +
+      Number(formData?.foodPlanTotal || 0);
+    const calculatedAmount = (totalAmount * percentage) / 100;
+    setFormData((prev) => ({
+      ...prev,
+      discountPercentage: value,
+      discountAmount: calculatedAmount.toFixed(2),
+      updatedDate: currentDateDefault,
+    }));
+  };
 
-      let updatedOtherChargeDetails = Array.isArray(
-        formData?.otherChargeDetails,
-      )
-        ? [...formData.otherChargeDetails]
-        : [];
-
-      if (updatedOtherChargeDetails.length > 0) {
-        updatedOtherChargeDetails = await Promise.all(
-          updatedOtherChargeDetails.map(async (item) => {
-            const recalculated = await calculateOtherCharges({
-              total: roomTotal,
-              inputValue: Number(item?.value || 0),
-              inputType: item?.amountType,
-              taxPercentage: Number(item?.taxPercentage || 0),
-              discountBasedOnGrossAmount,
-              formData,
-            });
-
-            console.log(recalculated);
-
-            return {
-              ...item,
-              taxAmt: Number(recalculated?.taxAmt || 0),
-              finalValue: Number(recalculated?.finalValue || 0),
-            };
-          }),
-        );
-      }
-
-      console.log(updatedOtherChargeDetails);
-
-      const { otherChargeAmount, discountAmount } =
-        updatedOtherChargeDetails.reduce(
-          (acc, item) => {
-            const value = Number(item?.finalValue || 0);
-
-            if (item?.action === "add") acc.otherChargeAmount += value;
-            if (item?.action === "sub") acc.discountAmount += value;
-
-            return acc;
-          },
-          { otherChargeAmount: 0, discountAmount: 0 },
-        );
-
-      const subTotal = roomTotal;
-      const grandTotal = subTotal + otherChargeAmount - discountAmount;
-
-      const totalAdvance = Number(
-        formData?.totalAdvance > 0
-          ? formData.totalAdvance
-          : formData?.advanceAmount || 0,
-      );
-
-      const balanceToPay = (grandTotal - totalAdvance).toFixed(2);
-
-      // 🔥 PREVENT LOOP
-      if (
-        isEqual(updatedOtherChargeDetails, formData.otherChargeDetails) &&
-        Number(formData.grandTotal) === Number(grandTotal)
-      ) {
-        return; // no change → no setState → no loop
-      }
-
+  const handleDiscountAmountChange = (e) => {
+    const { value } = e.target;
+    const amount = Number(value) || 0;
+    const totalAmount =
+      Number(formData?.roomTotal || 0) +
+      Number(formData?.paxTotal || 0) +
+      Number(formData?.foodPlanTotal || 0);
+    if (amount >= 0 && amount <= totalAmount) {
+      const calculatedPercentage =
+        totalAmount > 0 ? (amount / totalAmount) * 100 : 0;
       setFormData((prev) => ({
         ...prev,
-        otherChargeDetails: updatedOtherChargeDetails,
-        otherChargeAmount,
-        discountAmount,
-        totalAmount: subTotal.toFixed(2),
-        grandTotal: Number(grandTotal.toFixed(2)),
-        balanceToPay,
+        discountAmount: value,
+        discountPercentage: calculatedPercentage.toFixed(2),
+        updatedDate: currentDateDefault,
       }));
-    }, 300);
+    }
+  };
 
-    return () => clearTimeout(handler);
-  }, [
-    formData.roomTotal,
-    formData.paxTotal,
-    formData.foodPlanTotal,
-    formData.totalAdvance,
-    formData.advanceAmount,
-    formData.selectedRooms,
-    formData.otherChargeDetails,
-  ]);
+  const handleAdvanceAmountChange = (e) => {
+    const { value } = e.target;
+    const advanceAmount = Math.round(Number(value));
+    const previousAdvance = Number(editData?.previousAdvance || 0);
+    const grandTotal = Number(formData?.grandTotal || 0);
+    const totalAdvance = advanceAmount + previousAdvance;
+    const maxAllowed = grandTotal - previousAdvance;
+
+    if (advanceAmount > maxAllowed) {
+      setErrorObject((prev) => ({
+        ...prev,
+        advanceAmount:
+          "Advance amount should be less than or equal to grand total",
+      }));
+      return;
+    }
+
+    setErrorObject((prev) => ({ ...prev, advanceAmount: "" }));
+console.log("advanceAmount", advanceAmount,isFor);
+    if (isFor === "deliveryNote" || isFor === "sales") {
+      console.log("advanceAmount", advanceAmount);
+      setFormData((prev) => ({
+        ...prev,
+        advanceAmount: value,
+        balanceToPay: (grandTotal - previousAdvance - advanceAmount).toFixed(2),
+        totalAdvance: totalAdvance,
+        updatedDate: currentDateDefault,
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        advanceAmount: value,
+        balanceToPay: (grandTotal - advanceAmount).toFixed(2),
+        totalAdvance: totalAdvance,
+        updatedDate: currentDateDefault,
+      }));
+    }
+  };
 
   const handleSelection = (party, search, isGuest) => {
     if (isGuest) {
@@ -740,73 +698,12 @@ const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1)
       }));
     }
   };
-
-  const handleSelectOtherCharge = (charge, selectedForRoom, forAllRooms) => {
-    const discountAmount = charge.reduce((acc, item) => {
-      if (item?.action === "sub") acc += Number(item?.finalValue || 0);
-      return acc;
-    }, 0);
-
-    const otherChargeAmount = charge.reduce((acc, item) => {
-      if (item?.action === "add") acc += Number(item?.finalValue || 0);
-      return acc;
-    }, 0);
-
-    const discountAmountWithOutTax = charge.reduce((acc, item) => {
-      if (item?.action === "sub") {
-        const amount = Number(item?.finalValue || 0);
-        const tax = Number(item?.taxAmt || 0);
-
-        acc += item?.includeTax ? amount - tax : amount;
-      }
-
-      return acc;
-    }, 0);
-
-    const otherChargeWithOutTax = charge.reduce((acc, item) => {
-      if (item?.action === "add") {
-        const amount = Number(item?.finalValue || 0);
-        const tax = Number(item?.taxAmt || 0);
-
-        acc += item?.includeTax ? amount - tax : amount;
-      }
-
-      return acc;
-    }, 0);
-
-    if (selectedRoomId && selectedForRoom) {
-      const updatedRooms = formData?.selectedRooms?.map((room) => {
-        if (forAllRooms || room.roomId === selectedRoomId) {
-          return {
-            ...room,
-            otherChargeDetails: charge,
-            discountAmount,
-            otherChargeAmount,
-            discountAmountWithOutTax,
-            otherChargeWithOutTax,
-          };
-        }
-
-        return room;
-      });
-
-      setFormData((prev) => ({
-        ...prev,
-        selectedRooms: updatedRooms,
-      }));
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        otherChargeDetails: charge,
-        discountAmount,
-        otherChargeAmount,
-        discountAmountWithOutTax,
-        otherChargeWithOutTax,
-      }));
-    }
-
-    setSelectedRoomId(null);
-    setOtherChargeModalOpen(false);
+  const handleSelectOtherCharge = (charge) => {
+    console.log(charge);
+    setFormData((prev) => ({
+      ...prev,
+      otherChargeDetails: charge,
+    }));
   };
 
   const handleAvailableRoomSelection = (selectedRoom) => {
@@ -851,12 +748,10 @@ const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1)
       ...prev,
       foodPlan: [...filterData, ...details],
       foodPlanTotal: totalAmount,
-      addFoodPlanWithRate: includeFoodRateWithRoom,
+      addFoodPlanWithRate:includeFoodRateWithRoom,
       updatedDate: currentDateDefault,
     }));
   };
-
-  console.log(formData.selectedRooms);
 
   const selectedRoomData = (id, to) => {
     if (to === "addPax") {
@@ -865,10 +760,6 @@ const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1)
     }
     if (to === "addFoodPlan") {
       setDisplayFoodPlan(true);
-      setSelectedRoomId(id);
-    }
-    if (to === "addAdjustment") {
-      setOtherChargeModalOpen(true);
       setSelectedRoomId(id);
     }
   };
@@ -1157,12 +1048,7 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
         return;
       }
     }
-    if (
-      customerId &&
-      !guestId &&
-      guestName != customerName &&
-      !isTariffRateChange
-    ) {
+    if (customerId && !guestId && guestName != customerName && !isTariffRateChange) {
       try {
         const dataObject = {
           accountGroup: "",
@@ -1249,15 +1135,15 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
     };
 
     if (
-      Number(formData.advanceAmount) <= 0
-      // (Number(formData.advanceAmount) + Number(formData.deletedAmount) ) ==
-      //   Number(editData?.advanceAmount)
+      Number(formData.advanceAmount) <= 0 ||
+      formData.advanceAmount == editData?.advanceAmount
+
     ) {
       if (isSubmittingRef.current) return;
       isSubmittingRef.current = true;
       console.log(payload);
-      let paymenttypeDetails = editData?.paymenttypeDetails;
-      handleSubmit(payload, null, paymenttypeDetails);
+      let paymenttypeDetails= editData?.paymenttypeDetails
+      handleSubmit(payload,null,paymenttypeDetails);
     } else {
       setFormData((prev) => ({ ...prev, ...payload }));
       setShowPaymentModal(true);
@@ -1288,22 +1174,6 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
     const credit = 0;
     let bank = 0;
 
-    console.log(paymentData)
-  //     {
-  //   mode: 'single',
-  //   totalAmount: 100,
-  //   payments: [
-  //     {
-  //       method: 'cash',
-  //       paymentType: 'cash',
-  //       amount: 100,
-  //       accountId: '6895bff914dac3df95ec3971',
-  //       accountName: 'Cash1'
-  //     }
-  //   ]
-  // }
-    // return
-
     paymentData.payments.forEach((item) => {
       if (item.paymentType === "upi") {
         upi += item.amount;
@@ -1323,11 +1193,8 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
       card: card,
       credit: credit,
     };
-    console.log(payload)
-
-    // setSaveLoader(false)
+    // setSaveLoader(false) 
     handleSubmit(payload, paymentData, paymenttypeDetails);
-    
   };
 
   const handleDeletion = (roomId) => {
@@ -1386,74 +1253,8 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
     }
   };
 
-  const handleAdvanceAmountChange = (e) => {
-    const { value } = e.target;
-    const advanceAmount = Math.round(Number(value));
-    const previousAdvance = Number(editData?.previousAdvance || 0);
-    const grandTotal = Number(formData?.grandTotal || 0);
-    const totalAdvance = Number(editData?.totalAdvance || 0 ) + Number(value || 0);
-    const maxAllowed = grandTotal - previousAdvance;
-
-    console.log("advanceAmount", advanceAmount);
-    console.log("grandTotal", grandTotal);
-    console.log("previousAdvance", editData?.totalAdvance);
-    console.log("totalAdvance", totalAdvance);
-
-    if (advanceAmount > maxAllowed) {
-      setErrorObject((prev) => ({
-        ...prev,
-        advanceAmount:
-          "Advance amount should be less than or equal to grand total",
-      }));
-      return;
-    }
-
-    setErrorObject((prev) => ({ ...prev, advanceAmount: "" }));
-
-    if (isFor === "deliveryNote" || isFor === "sales") {
-      console.log("advanceAmount", advanceAmount);
-      setFormData((prev) => ({
-        ...prev,
-        advanceAmount: value,
-        balanceToPay: (grandTotal - previousAdvance - advanceAmount).toFixed(2),
-        totalAdvance: totalAdvance,
-        updatedDate: currentDateDefault,
-      }));
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        advanceAmount: value,
-        balanceToPay: (grandTotal - advanceAmount).toFixed(2),
-        totalAdvance: totalAdvance,
-        updatedDate: currentDateDefault,
-      }));
-    }
-  };
-
-  const handleOutstanding = (id) => {
-    let deletedOutStanding = outStanding.find((item) => item._id === id);
-
-    setFormData((prev) => ({
-      ...prev,
-      advanceAmount:0,
-      balanceToPay:
-        Number(formData.balanceToPay) + deletedOutStanding.bill_amount,
-      totalAdvance:
-        Number(formData.totalAdvance) - deletedOutStanding.bill_amount,
-      deletedAmount:
-        Number(formData.deletedAmount) + deletedOutStanding.bill_amount,
-    }));
-    editData.advanceAmount = 0;
-    editData.balanceToPay =
-      Number(editData.balanceToPay) + deletedOutStanding.bill_amount;
-    editData.totalAdvance =
-      Number(editData.totalAdvance) - deletedOutStanding.bill_amount;
-    editData.deletedAmount =
-      Number(editData.deletedAmount) + deletedOutStanding.bill_amount;
-  };
-
   const tariffMode = isTariffRateChange === true;
-
+  console.log("hi");
   return (
     <>
       {isLoading || visitOfPurposeLoading || loading ? (
@@ -2107,15 +1908,15 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
                           </div>
                         </div>
                       </div>
-                      {/* <div className="lg:col-span-2">
+                      <div className="lg:col-span-2">
                         <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
                           Other Charge
-                        </label> */}
-                      {/* <OtherChargeSearchInPutBox
+                        </label>
+                        <OtherChargeSearchInPutBox
                           onSelect={handleSelectOtherCharge}
                           selectedCharge={formData.otherChargeDetails}
-                        /> */}
-                      {/* </div> */}
+                        />
+                      </div>
 
                       {/* Available Rooms (spans all columns) */}
                       <div className="col-span-full lg:col-span-5">
@@ -2159,6 +1960,24 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
                       </div>
                     </div>
                     <div className="w-full lg:w-6/12 px-4">
+                      <div className="relative w-full mb-3">
+                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                          Discount Percentage
+                        </label>
+                        <input
+                          type="number"
+                          name="discountPercentage"
+                          value={formData?.discountPercentage}
+                          onChange={handleDiscountPercentageChange}
+                          min="0"
+                          max="100"
+                          step="0.01"
+                          readOnly
+                          className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                        />
+                      </div>
+                    </div>
+                    <div className="w-full lg:w-6/12 px-4">
                       <div className="relative w-full mb-3 ">
                         <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
                           Discount Amount
@@ -2171,6 +1990,7 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
                               ? ""
                               : formData?.discountAmount
                           }
+                          onChange={handleDiscountAmountChange}
                           min="0"
                           step="0.01"
                           readOnly
@@ -2181,43 +2001,9 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
                     <div className="w-full lg:w-6/12 px-4">
                       <div className="relative w-full mb-3">
                         <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Other Charge Amount
-                        </label>
-                        <input
-                          readOnly
-                          type="number"
-                          name="advanceAmount"
-                          value={formData?.otherChargeAmount}
-                          className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                        />
-                        {errorObject?.advanceAmount &&
-                          errorObject?.advanceAmount !== "" && (
-                            <span className="text-red-500">
-                              {errorObject?.advanceAmount}
-                            </span>
-                          )}
-                      </div>
-                    </div>
-                    {/* <div className="w-full lg:w-6/12 px-4">
-                      <div className="relative w-full mb-3">
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Previous Advance
-                        </label>
-                        <input
-                          type="number"
-                          readOnly
-                          value={formData?.previousAdvance}
-                          className="text-red-500 border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                        />
-                      </div>
-                    </div> */}
-                    <div className="w-full lg:w-6/12 px-4">
-                      <div className="relative w-full mb-3">
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
                           {isFor == "sales" ? "Amount" : "Advance Amount"}
                         </label>
                         <input
-                          // readOnly
                           type="number"
                           name="advanceAmount"
                           value={formData?.advanceAmount}
@@ -2230,6 +2016,19 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
                               {errorObject?.advanceAmount}
                             </span>
                           )}
+                      </div>
+                    </div>
+                    <div className="w-full lg:w-6/12 px-4">
+                      <div className="relative w-full mb-3">
+                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                          Previous Advance
+                        </label>
+                        <input
+                          type="number"
+                          readOnly
+                          value={formData?.previousAdvance}
+                          className="text-red-500 border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                        />
                       </div>
                     </div>
                     <div className="w-full lg:w-6/12 px-4">
@@ -2265,6 +2064,11 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
                           Grand Total
                         </label>
                         <div className="space-y-2">
+                          {/* Original Amount */}
+                          {/* <div className="text-xs text-gray-500">
+        Original: ₹(Number{formData?.grandTotal?.toFixed(2)})
+      </div> */}
+                          {/* Rounded Amount */}
                           <input
                             type="number"
                             name="grandTotal"
@@ -2275,62 +2079,19 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
                         </div>
                       </div>
                     </div>
-                    {formData?.grandTotal > 0 && (
-                      <div className="w-full lg:w-6/12 px-4">
-                        <div className="flex gap-2 mt-6">
-                          {/* Advance — outlined, compact */}
-                          <button
-                            type="button"
-                            onClick={() => setAdvanceModalOpen(true)}
-                            className="group flex items-center gap-1.5 px-3 py-2 rounded border border-gray-200 bg-white hover:border-gray-800 hover:bg-gray-50 active:scale-95 transition-all duration-150"
-                          >
-                            <svg
-                              className="w-3.5 h-3.5 text-gray-400 group-hover:text-gray-800 transition-colors duration-150"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            >
-                              <rect x="2" y="5" width="20" height="14" rx="2" />
-                              <line x1="2" y1="10" x2="22" y2="10" />
-                            </svg>
-                            <span className="text-xs font-700 text-gray-600 group-hover:text-gray-900 transition-colors duration-150">
-                              Advance
-                            </span>
-                          </button>
-
-                          {/* Other Charges — filled navy, compact */}
-                          <button
-                            type="button"
-                            onClick={() => setOtherChargeModalOpen(true)}
-                            className="group flex items-center gap-1.5 px-3 py-2 rounded bg-[#0f172a] hover:bg-[#1e293b] active:scale-95 transition-all duration-150"
-                          >
-                            <svg
-                              className="w-3.5 h-3.5 text-white/70 group-hover:text-white transition-colors duration-150"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            >
-                              <circle cx="12" cy="12" r="10" />
-                              <line x1="12" y1="8" x2="12" y2="16" />
-                              <line x1="8" y1="12" x2="16" y2="12" />
-                            </svg>
-                            <span className="text-xs font-semibold text-white">
-                              Other Charges
-                            </span>
-                          </button>
-                        </div>
-                      </div>
-                    )}
                   </div>
 
                   {/* Save Button */}
                   <div className="flex justify-end">
+                    {outStanding.length > 0 && (
+                      <button
+                        className="bg-pink-500 mt-4 ml-4 w-20 text-white active:bg-pink-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none mr-1 ease-linear transition-all duration-150 transform hover:scale-105"
+                        type="button"
+                        onClick={() => setModalOpen(true)}
+                      >
+                        History
+                      </button>
+                    )}
                     <button
                       className="bg-pink-500 mt-4 ml-4 w-20 text-white active:bg-pink-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none mr-1 ease-linear transition-all duration-150 transform hover:scale-105"
                       type="button"
@@ -2427,6 +2188,9 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
 
               <TotalsSection
                 formData={formData}
+                handleDiscountAmountChange={handleDiscountAmountChange}
+                handleDiscountPercentageChange={handleDiscountPercentageChange}
+                handleAdvanceAmountChange={handleAdvanceAmountChange}
                 roomIdToUpdate={roomId}
                 errorObject={errorObject}
               />
@@ -2436,7 +2200,7 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
                   <button
                     className="bg-pink-500 mt-4 ml-4 w-24 text-white font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md"
                     type="button"
-                    onClick={() => setAdvanceModalOpen(true)}
+                    onClick={() => setModalOpen(true)}
                   >
                     History
                   </button>
@@ -2451,27 +2215,6 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
               </div>
             </div>
           )}
-
-          <Suspense fallback={<SuspenseLoader />}>
-            {otherChargeModalOpen && (
-              <AdditionalChargesModal
-                isOpen={otherChargeModalOpen}
-                onClose={() => setOtherChargeModalOpen(false)}
-                onSave={(charges, selectedForRoom, forAllRooms) => {
-                  handleSelectOtherCharge(
-                    charges,
-                    selectedForRoom,
-                    forAllRooms,
-                  );
-                }}
-                additionalChargeData={additionalChargeData}
-                formData={formData}
-                discountBasedOnGrossAmount={discountBasedOnGrossAmount}
-                selectedForRoom={selectedRoomId ? true : false}
-                selectedRoomId={selectedRoomId}
-              />
-            )}
-          </Suspense>
 
           {displayAdditionalPax && (
             <div className="fixed inset-0 flex items-center justify-center bg-black/80 z-50">
@@ -2506,11 +2249,9 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
       )}
 
       <OutStandingModal
-        showModal={advanceModalOpen}
-        onClose={() => setAdvanceModalOpen(false)}
+        showModal={modalOpen}
+        onClose={() => setModalOpen(false)}
         outStanding={outStanding}
-        cmp_id={cmp_id}
-        sendDataToParent={handleOutstanding}
       />
     </>
   );
@@ -2565,7 +2306,14 @@ const tariffRelatedCalculation = (type, formData, roomId) => {
   }
 };
 
-function TotalsSection({ formData, roomIdToUpdate, errorObject }) {
+function TotalsSection({
+  formData,
+  handleDiscountAmountChange,
+  handleDiscountPercentageChange,
+  handleAdvanceAmountChange,
+  roomIdToUpdate,
+  errorObject,
+}) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
       <div className="bg-gray-50 border rounded-xl shadow-md p-4">
@@ -2598,6 +2346,29 @@ function TotalsSection({ formData, roomIdToUpdate, errorObject }) {
               roomIdToUpdate,
             )}
           />
+          {/* <FieldRO
+            label="Total Amount (Before Discount)"
+            value={formData?.totalAmount || 0}
+          />
+          <LabeledInputNumber
+            label="Discount %"
+            name="discountPercentage"
+            value={formData?.discountPercentage}
+            onChange={handleDiscountPercentageChange}
+            min="0"
+            max="100"
+            step="0.01"
+          />
+          <LabeledInputNumber
+            label="Discount Amount"
+            name="discountAmount"
+            value={
+              formData?.discountAmount === "0" ? "" : formData?.discountAmount
+            }
+            onChange={handleDiscountAmountChange}
+            min="0"
+            step="0.01"
+          /> */}
         </div>
       </div>
 
@@ -2606,6 +2377,25 @@ function TotalsSection({ formData, roomIdToUpdate, errorObject }) {
           Summary
         </h3>
         <div className="space-y-3">
+          {/* <FieldRO
+            label="Previous Advance"
+            value={formData?.previousAdvance || 0}
+          />
+          <LabeledInputNumber
+            label="Advance Amount"
+            name="advanceAmount"
+            value={formData?.advanceAmount}
+            onChange={handleAdvanceAmountChange}
+          />
+          {errorObject?.advanceAmount && errorObject?.advanceAmount !== "" && (
+            <span className="text-red-500 text-xs">
+              {errorObject?.advanceAmount}
+            </span>
+          )}
+          <FieldRO
+            label="Total Advance"
+            value={Number(formData?.totalAdvance || 0)}
+          /> */}
           <div>
             <label className="block uppercase text-blueGray-600 text-xs font-bold mb-1">
               Total Without Tax

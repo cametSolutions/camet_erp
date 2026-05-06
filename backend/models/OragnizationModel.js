@@ -161,10 +161,6 @@ const organizationSchema = new mongoose.Schema(
           type: Boolean,
           default: true,
         },
-          discountBasedOnGrossAmountInHotel: {
-          type: Boolean,
-          default: true,
-        },
 
         termsAndConditions: [
           {

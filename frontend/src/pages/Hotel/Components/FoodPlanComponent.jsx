@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { MdDelete, MdPlaylistAdd } from "react-icons/md";
 import useFetch from "@/customHook/useFetch";
 import { toast } from "sonner";
+import { useSelector } from "react-redux";
 
 function FoodPlanComponent({
   cmp_id,
