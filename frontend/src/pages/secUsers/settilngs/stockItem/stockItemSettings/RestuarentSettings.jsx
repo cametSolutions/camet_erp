@@ -172,6 +172,27 @@ const restuarentSettings = () => {
       dbField: "restaurant",
     });
     settingsOptions.push({
+  title: "Email Bill Paper Size",
+  description: "Select paper size for emailed bill PDF",
+  icon: <TiPrinter />,
+  to: "sec",
+  active: true,
+  checkboxGroup: true,
+  checkboxes: [
+    {
+      label: "A4",
+      checked: configurations?.[0]?.defaultPrint?.emailBillSizeA4 ?? true,
+      dbField: "defaultPrint.emailBillSizeA4",
+    },
+    {
+      label: "A5",
+      checked: configurations?.[0]?.defaultPrint?.emailBillSizeA5 ?? false,
+      dbField: "defaultPrint.emailBillSizeA5",
+    },
+  ],
+  dbField: "emailBillSize",
+});
+    settingsOptions.push({
       title: "Select complementary cash or bank",
       description: "For better restaurant management",
       icon: <SiCashapp />,

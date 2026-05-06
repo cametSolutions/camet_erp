@@ -302,18 +302,18 @@ function BookingList() {
         foodPlanAmount = configurations[0]?.addRateWithTax?.hotelSale
           ? 0
           : foodPlanAmount;
-        console.log(taxAmount);
+
+        console.log(additionalPaxAmount);
 
         return (
           sum + baseAmount + taxAmount + additionalPaxAmount + foodPlanAmount
         );
       }, 0);
 
+      console.log(total, checkoutTotal, advance);
+
       return (
-        total +
-        (checkoutTotal - advance) +
-        Number(checkout?.otherChargeDetails?.amount || 0)
-      );
+        total + checkoutTotal)
     }, 0);
   };
   useEffect(() => {
@@ -481,16 +481,17 @@ function BookingList() {
       }
     }
   }, [location?.state?.selectedCheckOut]);
+  console.log(selectedDataForPayment);
 
   // ADD THIS: Update total whenever selectedCheckOut changes
   useEffect(() => {
     if (selectedCheckOut && selectedCheckOut.length > 0) {
       const totalAmount = calculateTotalAmount(selectedCheckOut);
-      console.log(selectedCheckOut.length);
+      console.log(totalAmount);
       const advanceAmount = selectedCheckOut.reduce((total, item) => {
         console.log(item?.totalAdvance);
         return (
-          total +Number(item.totalAdvance || 0)
+          total + Number(item.totalAdvance || 0)
         );
         }, 0);
       console.log(advanceAmount);
@@ -506,16 +507,14 @@ function BookingList() {
       let otherChargeAmountAdded = bookings.reduce((sum, booking) => {
         return sum + Number(booking?.otherChargeAmount || 0);
       }, 0);
-
+console.log(discountAmount,otherChargeAmountAdded);
       setSelectedDataForPayment((prevData) => ({
         ...prevData,
-        total: totalAmount,
+        total: totalAmount ,
         advanceAmount: advanceAmount,
         restaurantSubTotal: restaurantSubTotal,
-        totalWithRestaurantSubTotal: totalAmount + restaurantSubTotal,
-        additionalChargeAmount: Math.abs(
-          discountAmount - otherChargeAmountAdded,
-        ),
+        totalWithRestaurantSubTotal: totalAmount + restaurantSubTotal - advanceAmount,
+        additionalChargeAmount: otherChargeAmountAdded || 0,
         discountAmount: discountAmount,
         otherChargeAmount: otherChargeAmountAdded,
       }));
@@ -903,6 +902,7 @@ function BookingList() {
       setPaymentError("");
     }
   };
+
   const handleSavePayment = async () => {
     console.log("hddd");
     console.log(selectedCheckOut);
@@ -2637,10 +2637,12 @@ function BookingList() {
                         (Number(selectedDataForPayment?.total) || 0) +
                         Number(
                           selectedDataForPayment?.restaurantSubTotal || 0,
-                        ) -
-                        Number(
-                          selectedDataForPayment?.additionalChargeAmount || 0,
-                        );
+                        ) + Number(selectedDataForPayment?.otherChargeAmount || 0) -
+                      (Number(
+                          selectedDataForPayment?.discountAmount || 0,
+                        ) + Number(
+                          selectedDataForPayment?.advanceAmount || 0,
+                        ));
 
                       const totalEntered = splitPaymentRows.reduce(
                         (sum, row) => sum + (parseFloat(row.amount) || 0),
@@ -3385,8 +3387,7 @@ function BookingList() {
                       <span className="text-gray-700 dark:text-gray-300 font-medium">
                         ₹
                         {(
-                          Number(selectedDataForPayment?.total) +
-                          Number(selectedDataForPayment?.advanceAmount)
+                          Number(selectedDataForPayment?.total)
                         )?.toFixed(2) ||
                           (
                             Number(selectedCheckOut[0]?.balanceToPay) +
@@ -3465,14 +3466,18 @@ function BookingList() {
                       <span className="text-[13px] font-semibold text-gray-800 dark:text-gray-100">
                         Amount To Pay
                       </span>
+                      
                       <span className="text-[15px] font-bold text-blue-600 dark:text-blue-400">
                         ₹
                         {(
                           selectedDataForPayment?.total +
-                          Number(selectedDataForPayment?.restaurantSubTotal) -
+                          Number(selectedDataForPayment?.restaurantSubTotal) + Number(selectedDataForPayment?.otherChargeAmount)   -
+                        (Number(
+                            selectedDataForPayment?.advanceAmount || 0,
+                          ) +
                           Number(
-                            selectedDataForPayment?.additionalChargeAmount || 0,
-                          )
+                            selectedDataForPayment?.discountAmount || 0,
+                          ))
                         ).toFixed(2) ||
                           (
                             Number(selectedCheckOut[0]?.balanceToPay) +

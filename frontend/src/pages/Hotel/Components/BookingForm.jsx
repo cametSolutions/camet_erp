@@ -17,6 +17,11 @@ import PaymentModal from "./PaymentModal";
 const AdditionalChargesModal = lazy(() => import("./AdditionalChargesModal"));
 import SuspenseLoader from "@/components/common/SuspenseLoader";
 import { calculateOtherCharges } from "../Helper/hotelHelper.js";
+import OtherChargeSearchInPutBox from "./OtherChargeSearchInPutBox";
+// import {useRef} from "react";
+
+// import { MdCloudUpload, MdImage, MdDelete } from "react-icons/md"
+// import uploadImageToCloudinary from "../../../../utils/uploadCloudinary";
 function BookingForm({
   isLoading = false,
   setIsLoading = false,
@@ -47,6 +52,22 @@ function BookingForm({
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [saveLoader, setSaveLoader] = useState(false);
   const [additionalChargeData, setAdditionalChargeData] = useState([]);
+
+//   const idFrontRef = useRef(null)
+// const idBackRef = useRef(null)
+// const [idProof, setIdProof] = useState({
+//   idType: "",           // Aadhaar / Passport / Driving License etc.
+//   idNumber: "",
+//   frontFile: null,
+//   backFile: null,
+//   frontPreview: "",
+//   backPreview: "",
+//   frontUrl: "",         // uploaded Cloudinary URL
+//   backUrl: "",
+//   isUploadingFront: false,
+//   isUploadingBack: false,
+// })
+
 
   const { _id: cmp_id, configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg,
@@ -344,6 +365,70 @@ function BookingForm({
   };
 
   // arrival time and date helper
+const handleIdChange = (e) => {
+  const { name, value } = e.target
+  setIdProof((prev) => ({ ...prev, [name]: value }))
+}
+
+const handleIdFileChange = (side, e) => {
+  const file = e.target.files[0]
+  if (!file) return
+
+  const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "application/pdf"]
+  if (!allowedTypes.includes(file.type)) {
+    toast.error("Please select JPEG, PNG, WebP or PDF")
+    return
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    toast.error("File size should be less than 5MB")
+    return
+  }
+
+  const reader = new FileReader()
+  reader.onloadend = () => {
+    setIdProof((prev) => ({
+      ...prev,
+      [`${side}File`]: file,
+      [`${side}Preview`]: reader.result,
+      [`${side}Url`]: "",   // reset uploaded URL when new file selected
+    }))
+  }
+  reader.readAsDataURL(file)
+}
+
+const handleIdUpload = async (side) => {
+  const file = idProof[`${side}File`]
+  if (!file) { toast.error("Please select a file first"); return }
+
+  setIdProof((prev) => ({ ...prev, [`isUploading${capitalize(side)}`]: true }))
+  try {
+    const data = await uploadImageToCloudinary(file)
+    setIdProof((prev) => ({
+      ...prev,
+      [`${side}Url`]: data.secure_url,
+      [`${side}File`]: null,
+      [`isUploading${capitalize(side)}`]: false,
+    }))
+    toast.success(`ID ${side} uploaded successfully`)
+  } catch {
+    toast.error("Upload failed. Try again.")
+    setIdProof((prev) => ({ ...prev, [`isUploading${capitalize(side)}`]: false }))
+  }
+}
+
+const handleIdRemove = (side) => {
+  setIdProof((prev) => ({
+    ...prev,
+    [`${side}File`]: null,
+    [`${side}Preview`]: "",
+    [`${side}Url`]: "",
+  }))
+  if (side === "front" && idFrontRef.current) idFrontRef.current.value = ""
+  if (side === "back" && idBackRef.current) idBackRef.current.value = ""
+}
+
+const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1)
+
   const handleArrivalTimeChange = (time) =>
     console.log(time) ||
     setFormData((prev) => ({
@@ -841,11 +926,140 @@ function BookingForm({
     }
   };
 
+// const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, onRemove }) => {
+//   const isUploading = idProof[`isUploading${side.charAt(0).toUpperCase() + side.slice(1)}`]
+//   const preview = idProof[`${side}Preview`]
+//   const file = idProof[`${side}File`]
+//   const url = idProof[`${side}Url`]
+
+//   return (
+//     <div className="w-full lg:w-6/12 px-4">
+//       <div className="relative w-full mb-3">
+//         <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+//           {label}
+//         </label>
+
+//         {/* Preview */}
+//         {preview && (
+//           <div className="mb-3 relative inline-block">
+//             {preview.startsWith("data:application/pdf") ? (
+//               <div className="w-24 h-24 flex items-center justify-center bg-gray-100 rounded border shadow text-xs text-gray-500">PDF</div>
+//             ) : (
+//               <img src={preview} alt={label} className="w-24 h-24 object-cover rounded border shadow" />
+//             )}
+//             <button
+//               type="button"
+//               onClick={() => onRemove(side)}
+//               className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+//             >×</button>
+//           </div>
+//         )}
+
+//         {/* File Input */}
+//         <div className="flex items-center space-x-2">
+//           <input
+//             ref={fileRef}
+//             type="file"
+//             accept="image/*,application/pdf"
+//             onChange={(e) => onFileChange(side, e)}
+//             className="hidden"
+//           />
+//           <div
+//             onClick={() => fileRef.current?.click()}
+//             className="flex items-center px-3 py-2 bg-gray-100 text-gray-700 rounded cursor-pointer hover:bg-gray-200 text-sm"
+//           >
+//             <MdImage className="mr-2" />
+//             Choose File
+//           </div>
+
+//           {file && !url && (
+//             <button
+//               type="button"
+//               onClick={() => onUpload(side)}
+//               disabled={isUploading}
+//               className="flex items-center px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-blue-300 text-sm"
+//             >
+//               <MdCloudUpload className="mr-2" />
+//               {isUploading ? "Uploading..." : "Upload"}
+//             </button>
+//           )}
+//         </div>
+
+//         {url && <p className="text-green-600 text-xs mt-1">✓ Uploaded successfully</p>}
+//       </div>
+//     </div>
+//   )
+// }
+
+
   const submitHandler = async () => {
     if (!formData.customerName || formData.customerName.trim() === "") {
       toast.error("Please enter a customer name");
       return;
     }
+
+    
+ if (!formData.customerId) {
+    try {
+      const res = await api.get(`/api/sUsers/PartyList/${cmpid}`, {
+        params: {
+          page: 1,
+          limit: 50,
+          search: formData.customerName.trim(),
+          voucher: "sale",
+          isAgent: false,
+        },
+        withCredentials: true,
+      });
+
+      const parties = res?.data?.partyList ?? [];
+      const exactMatch = parties.find(
+        (p) => p.partyName?.toLowerCase() === formData.customerName.trim().toLowerCase()
+      );
+
+      if (exactMatch) {
+        toast.warning(
+          `Customer "${formData.customerName.trim()}" already exists. Please select from the dropdown instead of typing manually.`,
+          { duration: 5000 }
+        );
+        return; // ❌ Block save
+      }
+    } catch (_) {
+      // silently fail — don't block submit on network error
+    }
+  }
+
+  // ✅ NEW: Same check for Guest Name
+  if (!formData.guestId && formData.guestName && formData.guestName.trim() !== "") {
+    try {
+      const res = await api.get(`/api/sUsers/PartyList/${cmp_id}`, {
+        params: {
+          page: 1,
+          limit: 50,
+          search: formData.guestName.trim(),
+          voucher: "sale",
+          isAgent: false,
+        },
+        withCredentials: true,
+      });
+
+      const parties = res?.data?.partyList ?? [];
+      const exactMatch = parties.find(
+        (p) => p.partyName?.toLowerCase() === formData.guestName.trim().toLowerCase()
+      );
+
+      if (exactMatch) {
+        toast.warning(
+          `Guest "${formData.guestName.trim()}" already exists. Please select from the dropdown instead of typing manually.`,
+          { duration: 5000 }
+        );
+        return; // ❌ Block save
+      }
+    } catch (_) {
+      // silently fail
+    }
+  }
+
     if (Number(formData.grandTotal) < 0) {
       toast.error(
         "Please select at least one room or enter price for selected room",
@@ -926,7 +1140,7 @@ function BookingForm({
           guestMobileNumber = res.data?.result?.mobileNumber;
         }
       } catch {
-        toast.error("Failed to create customer");
+        toast.error("Failed to create customer ");
         return;
       }
     }
@@ -974,7 +1188,7 @@ function BookingForm({
         guestDetailedAddress = res.data?.result?.billingAddress;
         guestMobileNumber = res.data?.result?.mobileNumber;
       } catch {
-        toast.error("Failed to create customer");
+        toast.error("Failed to create customer c");
         return;
       }
     }
@@ -1602,6 +1816,76 @@ function BookingForm({
                       </>
                     )}
                   </div>
+
+{/* ID Proof Section */}
+{/* <div className="w-full px-4 mt-4">
+  <h6 className="text-blueGray-400 text-sm mb-4 font-bold uppercase border-b pb-2">
+    ID Proof
+  </h6>
+</div> */}
+
+{/* ID Type */}
+{/* <div className="w-full lg:w-6/12 px-4">
+  <div className="relative w-full mb-3">
+    <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+      ID Type
+    </label>
+    <select
+      name="idType"
+      value={idProof.idType}
+      onChange={handleIdChange}
+      className="border-0 px-3 py-3 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full"
+    >
+      <option value="">Select ID Type</option>
+      <option value="aadhaar">Aadhaar Card</option>
+      <option value="passport">Passport</option>
+      <option value="driving_license">Driving License</option>
+      <option value="voter_id">Voter ID</option>
+      <option value="pan">PAN Card</option>
+    </select>
+  </div>
+</div> */}
+
+{/* ID Number */}
+{/* <div className="w-full lg:w-6/12 px-4">
+  <div className="relative w-full mb-3">
+    <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+      ID Number
+    </label>
+    <input
+      type="text"
+      name="idNumber"
+      placeholder="Enter ID number"
+      value={idProof.idNumber}
+      onChange={handleIdChange}
+      maxLength={20}
+      className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full"
+    />
+  </div>
+</div> */}
+
+{/* Front Upload */}
+{/* <IdUploadSlot
+  label="ID Front Side"
+  side="front"
+  fileRef={idFrontRef}
+  idProof={idProof}
+  onFileChange={handleIdFileChange}
+  onUpload={handleIdUpload}
+  onRemove={handleIdRemove}
+/> */}
+
+{/* Back Upload */}
+{/* <IdUploadSlot
+  label="ID Back Side"
+  side="back"
+  fileRef={idBackRef}
+  idProof={idProof}
+  onFileChange={handleIdFileChange}
+  onUpload={handleIdUpload}
+  onRemove={handleIdRemove}
+/> */}
+
 
                   {/* Guest Info Box */}
 

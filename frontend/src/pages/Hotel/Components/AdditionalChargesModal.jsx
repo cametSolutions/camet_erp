@@ -26,7 +26,8 @@ export default function AdditionalChargesModal({
   selectedForRoom = false,
   selectedRoomId,
 }) {
-  const [rows, setRows] = useState( selectedRoomId ? formData?.selectedRooms?.find((room) => room.roomId === selectedRoomId)?.otherChargeDetails || [] :
+  console.log(selectedRoomId, selectedForRoom);
+  const [rows, setRows] = useState( selectedRoomId && selectedForRoom ? formData?.selectedRooms?.find((room) => room.roomId === selectedRoomId)?.otherChargeDetails || [] :
     formData?.otherChargeDetails.length > 0
       ? formData?.otherChargeDetails
       : [createRow(additionalChargeData?.[0] || {})],
