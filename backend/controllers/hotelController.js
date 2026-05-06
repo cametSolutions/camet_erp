@@ -1597,7 +1597,7 @@ export const deleteBooking = async (req, res) => {
 //     const paxTotal = Number(bookingData.paxTotal || 0);
 //     const foodPlanTotal = Number(bookingData.foodPlanTotal || 0);
 //     const totalBeforeDiscount = newRoomTotal + paxTotal + foodPlanTotal;
-//     const discountAmount = Number(bookingData.discountAmount || 0);
+//     const discountAmount = Number(bookingData. || 0);
 //     bookingData.grandTotal = totalBeforeDiscount - discountAmount;
 //     bookingData.totalAmount = totalBeforeDiscount;
 
