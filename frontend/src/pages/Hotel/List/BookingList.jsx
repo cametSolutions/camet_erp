@@ -1648,7 +1648,7 @@ function BookingList() {
       if (!dateString) return "-";
       return new Date(dateString).toLocaleDateString("en-GB");
     };
-
+console.log(el)
     return (
       <div style={style} className="border-b border-gray-200 bg-white">
         {/* 🔹 MAIN ROW */}

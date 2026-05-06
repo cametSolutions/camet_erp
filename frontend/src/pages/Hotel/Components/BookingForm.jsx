@@ -905,7 +905,7 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
     
  if (!formData.customerId) {
     try {
-      const res = await api.get(`/api/sUsers/PartyList/${cmpid}`, {
+      const res = await api.get(`/api/sUsers/PartyList/${cmp_id}`, {
         params: {
           page: 1,
           limit: 50,

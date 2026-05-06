@@ -706,6 +706,13 @@ export const getKotDash = async (req, res) => {
       .lean();
 
     const recalculatedKot = kot.map((kotDoc) => {
+   if (kotDoc.paymentCompleted) {
+        return {
+          ...kotDoc,
+          items: kotDoc.items || [],   // ← directly from DB, no recalculation
+          total: kotDoc.total || 0,    // ← directly from DB
+        };
+      }
       const recalculatedItems = (kotDoc?.items || [])
         .map((item) => recalculateKotItem(item))
         .filter(Boolean); // 🔥 removes null / skipped items
