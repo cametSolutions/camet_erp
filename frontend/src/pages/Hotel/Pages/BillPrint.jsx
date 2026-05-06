@@ -16,6 +16,7 @@ import {
 
 
 import Swal from 'sweetalert2';
+import { constructNow } from "date-fns";
 const HotelBillPrint = () => {
   // Router and Redux state
   const location = useLocation();
@@ -986,7 +987,7 @@ console.log(dateWiseLines);
           : "0.00",
       };
     });
-    console.log(doc?.checkOutTime);
+    console.log(doc);
     console.log(
       roomTariffTotal,
       planAmount,
@@ -1000,13 +1001,8 @@ console.log(dateWiseLines);
       doc?.otherChargeDetails &&
       Object.keys(doc?.otherChargeDetails).length > 0
     ) {
-      otherChargeAmount =
-        (Number(doc?.otherChargeDetails?.amount) *
-          Number(doc?.otherChargeDetails?.charge?.taxPercentage)) /
-          100 +
-          Number(doc?.otherChargeDetails?.amount) || 0;
+      otherChargeAmount = doc?.otherChargeAmount 
     }
-
     const grandTotal =
       Number(roomTariffTotal) +
       Number(additionalPaxAmount) +
@@ -1069,14 +1065,16 @@ console.log(dateWiseLines);
       }
     }
     let discount = paymentDetails?.paymentDetails?.discountAmount || doc.discountAmount || 0;
+    console.log(discount);
+    console.log(doc.discountAmount);
     let roomWiseDiscount = doc.selectedRooms.reduce((acc, curr) => {
       return acc + Number(curr.discountAmount || 0);
     },0)
     let otherChargesAmount = doc.selectedRooms.reduce((acc, curr) => {
       return acc + Number(curr.otherChargeAmount || 0);
     },0)
-    console.log(roomWiseDiscount, otherChargesAmount);
-    console.log(paymentDetails?.paymentDetails?.discountAmount);
+    console.log(roomWiseDiscount, otherChargesAmount,discount);
+    console.log(paymentDetails?.paymentDetails);
     console.log(doc);
 
     return {
@@ -1186,6 +1184,8 @@ console.log(dateWiseLines);
         bill.summary.foodPlan = 0;
         bill.summary.additionalPax = 0;
         bill.summary.otherChargeAmount = 0;
+
+        console.log(bill.summary);
 
         const restaurantOnlyTotal =
           Number(bill.summary.restaurant || 0) +

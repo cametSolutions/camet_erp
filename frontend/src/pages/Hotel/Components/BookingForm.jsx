@@ -529,9 +529,8 @@ const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1)
         discountAmount = valueDetails.discountAmount;
       }
       const totalAmount = roomTotal;
-      const additionalCharge = Math.abs(
-        Number(discountAmount) - Number(otherChargeAmount),
-      );
+    
+
       const grandTotal = roomTotal;
 
       const totalAdvance = Number(
@@ -541,9 +540,8 @@ const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1)
       );
 
       const balanceToPay = (
-        Number(grandTotal) -
-        totalAdvance -
-        additionalCharge
+        Number(grandTotal) - discountAmount -
+        totalAdvance + otherChargeAmount 
       ).toFixed(2);
 
       setFormData((prev) => ({

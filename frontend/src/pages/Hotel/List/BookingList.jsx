@@ -472,6 +472,7 @@ function BookingList() {
       const totalAmount = calculateTotalAmount(
         location?.state?.selectedCheckOut,
       );
+      console.log(  paymentDetails?.paymentDetails?.selectedDataForPayment);
 
       setSelectedDataForPayment(
         paymentDetails?.paymentDetails?.selectedDataForPayment,
@@ -481,11 +482,11 @@ function BookingList() {
       }
     }
   }, [location?.state?.selectedCheckOut]);
-  console.log(selectedDataForPayment);
+
 
   // ADD THIS: Update total whenever selectedCheckOut changes
   useEffect(() => {
-    if (selectedCheckOut && selectedCheckOut.length > 0) {
+    if (selectedCheckOut && selectedCheckOut.length > 0 && bookings.length > 0) {
       const totalAmount = calculateTotalAmount(selectedCheckOut);
       console.log(totalAmount);
       const advanceAmount = selectedCheckOut.reduce((total, item) => {
@@ -494,7 +495,8 @@ function BookingList() {
           total + Number(item.totalAdvance || 0)
         );
         }, 0);
-      console.log(advanceAmount);
+        console.log(advanceAmount);
+      console.log(bookings);
 
       const restaurantSubTotal = selectedCheckOut.reduce((total, item) => {
         return total + (item.restaurantSubTotal || 0);
@@ -508,12 +510,13 @@ function BookingList() {
         return sum + Number(booking?.otherChargeAmount || 0);
       }, 0);
 console.log(discountAmount,otherChargeAmountAdded);
+console.log(totalAmount,advanceAmount,restaurantSubTotal);
       setSelectedDataForPayment((prevData) => ({
         ...prevData,
         total: totalAmount ,
         advanceAmount: advanceAmount,
         restaurantSubTotal: restaurantSubTotal,
-        totalWithRestaurantSubTotal: totalAmount + restaurantSubTotal - advanceAmount,
+        totalWithRestaurantSubTotal: totalAmount + restaurantSubTotal + otherChargeAmountAdded - (advanceAmount + discountAmount),
         additionalChargeAmount: otherChargeAmountAdded || 0,
         discountAmount: discountAmount,
         otherChargeAmount: otherChargeAmountAdded,
@@ -521,6 +524,7 @@ console.log(discountAmount,otherChargeAmountAdded);
     }
   }, [selectedCheckOut]);
 
+  console.log(selectedDataForPayment);
   const searchData = (data) => {
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
@@ -932,8 +936,7 @@ console.log(discountAmount,otherChargeAmountAdded);
       );
 
       const expectedSplitTotal = Math.abs(
-        Number(selectedDataForPayment?.totalWithRestaurantSubTotal || 0) -
-          Number(selectedDataForPayment?.additionalChargeAmount || 0),
+        Number(selectedDataForPayment?.totalWithRestaurantSubTotal || 0)
       );
 
       const expectedRestaurantTotal = Number(
@@ -983,8 +986,7 @@ console.log(discountAmount,otherChargeAmountAdded);
               ? selectedDataForPayment?.discountAmount
               : 0,
           cashAmount:
-            selectedDataForPayment?.totalWithRestaurantSubTotal -
-            Number(selectedDataForPayment?.discountAmount || 0),
+            selectedDataForPayment?.totalWithRestaurantSubTotal ,
           onlineAmount: onlineAmount,
           selectedCash: selectedCash,
           selectedBank: "",
@@ -998,8 +1000,7 @@ console.log(discountAmount,otherChargeAmountAdded);
               source: selectedCash,
               sourceType: "cash",
               amount:
-                selectedDataForPayment?.totalWithRestaurantSubTotal -
-                Number(selectedDataForPayment?.discountAmount || 0),
+                selectedDataForPayment?.totalWithRestaurantSubTotal || 0,
               customerName: isAgent
                 ? selectedCustomerData?.guestId?.partyName
                 : selectedCustomerData?.customerId?.partyName ||
@@ -1039,8 +1040,7 @@ console.log(discountAmount,otherChargeAmountAdded);
               : 0,
           cashAmount: cashAmount,
           onlineAmount:
-            (selectedDataForPayment?.totalWithRestaurantSubTotal || 0) -
-            Number(selectedDataForPayment?.discountAmount || 0),
+            (selectedDataForPayment?.totalWithRestaurantSubTotal || 0),
           selectedCash: "",
           selectedBank: selectedBank,
           paymentMode: paymentMode,
@@ -1094,8 +1094,7 @@ console.log(discountAmount,otherChargeAmountAdded);
             ? selectedDataForPayment?.discountAmount
             : 0,
         cashAmount:
-          selectedDataForPayment?.totalWithRestaurantSubTotal -
-          Number(selectedDataForPayment?.discountAmount || 0),
+          selectedDataForPayment?.totalWithRestaurantSubTotal || 0,
         selectedCreditor: selectedCreditor,
         remarks: remarks,
         paymentMode: paymentMode,
@@ -1104,8 +1103,7 @@ console.log(discountAmount,otherChargeAmountAdded);
           bank: 0,
           upi: 0,
           credit:
-            (selectedDataForPayment?.totalWithRestaurantSubTotal || 0) -
-            Number(selectedDataForPayment?.discountAmount || 0),
+            (selectedDataForPayment?.totalWithRestaurantSubTotal || 0) ,
           card: 0,
         },
       };
@@ -1117,8 +1115,7 @@ console.log(discountAmount,otherChargeAmountAdded);
       );
 
       let payment = (
-        (selectedDataForPayment?.totalWithRestaurantSubTotal || 0) -
-        Number(selectedDataForPayment?.discountAmount || 0)
+        (selectedDataForPayment?.totalWithRestaurantSubTotal || 0) 
       ).toFixed(2);
       console.log("Paujsdf", totalSplitAmount, payment);
 

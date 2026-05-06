@@ -178,7 +178,7 @@ console.log(data);
     if (!hasCheckIn && !Array.isArray(foodPlanArray)) return null;
     const names = foodPlanArray?.map((item) => item.planType).join(", ");
 
-    return  names.length > 0 ? `Food Paln: ${names}` : null;
+    return  names?.length > 0 ? `Food Paln: ${names}` : null;
   };
 
   const netAmount = Math.round(Number(data?.finalAmount || 0)).toFixed(2);

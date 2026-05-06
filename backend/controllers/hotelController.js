@@ -3053,8 +3053,7 @@ export const convertCheckOutToSale = async (req, res) => {
               isPartialCheckout: isThisPartial,
               originalCheckInId: checkInId,
               discountAmount:
-                Number(item?.discountAmount || 0) +
-                Number(totalOtherChargeAmount || 0),
+                Number(item?.discountAmount || 0),
               paymenttypeDetails: {
                 cash,
                 bank,
