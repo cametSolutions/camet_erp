@@ -619,6 +619,8 @@ console.log("advanceAmount", advanceAmount,isFor);
       setSelectedGuest(party);
     }
 
+console.log(party);
+
     if (!party) {
       if (!isGuest) {
         setFormData((prev) => ({
@@ -888,7 +890,7 @@ console.log("advanceAmount", advanceAmount,isFor);
     
  if (!formData.customerId) {
     try {
-      const res = await api.get(`/api/sUsers/PartyList/${cmpid}`, {
+      const res = await api.get(`/api/sUsers/PartyList/${cmp_id}`, {
         params: {
           page: 1,
           limit: 50,
@@ -953,6 +955,8 @@ console.log("advanceAmount", advanceAmount,isFor);
       );
       return;
     }
+
+    console.log("formData", formData);
 
     let customerId = formData.customerId?.trim?.() || formData.customerId || "";
     let customerName = formData.customerName.trim(); // Use trimmed name
@@ -1054,6 +1058,7 @@ console.log("advanceAmount", advanceAmount,isFor);
           cpm_id: cmp_id,
           guestName,
         };
+        console.log(dataObject);
 
         const res = await api.post("/api/sUsers/addParty", dataObject, {
           headers: { "Content-Type": "application/json" },
@@ -1206,6 +1211,7 @@ console.log("advanceAmount", advanceAmount,isFor);
 
   const handleClose = () => setShowPaymentModal(false);
   const handleSearchCustomer = (name, isGuest) => {
+    console.log(name);
     if (isGuest) {
       setFormData((prev) => ({
         ...prev,
