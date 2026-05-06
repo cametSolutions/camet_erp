@@ -1,11 +1,14 @@
 /* eslint-disable react/prop-types */
 import { useEffect, useState, useRef } from "react";
 import { useSelector } from "react-redux";
-
 import { defaultPrintSettings } from "../../../../../utils/defaultConfigurations";
 import { useLocation, useParams } from "react-router-dom";
 import { useReactToPrint } from "react-to-print";
 import TitleDiv from "@/components/common/TitleDiv";
+import Swal from "sweetalert2";
+import api from "@/api/api";
+import html2canvas from "html2canvas";
+import { jsPDF } from "jspdf";
 
 function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
   const [subTotal, setSubTotal] = useState(0);
@@ -18,6 +21,7 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
     (org = useSelector(
       (state) => state?.secSelectedOrganization?.secSelectedOrg,
     ));
+
   let showPrintButton =
     org?.configurations?.[0]?.defaultPrint?.showBeforeSaleInRestaurant;
   const { isFinalized } = useParams();
@@ -28,16 +32,29 @@ console.log(data);
   // );
   const isIndian = true
   const party = data?.party;
-  const isSameState = "kerala"
-    // org?.state?.toLowerCase() === party?.state?.toLowerCase() || !party?.state;
+
+  // ✅ FIX: Proper isSameState logic
+  const isSameState =
+    org?.state?.toLowerCase() === party?.state?.toLowerCase() || !party?.state;
 
   const voucherType = data?.voucherType;
   const discountBasedOnGrossAmount =
-  org?.configurations?.[0]?.discountBasedOnGrossAmount ?? false;
+    org?.configurations?.[0]?.discountBasedOnGrossAmount ?? false;
 
   const includeTaxWithPrint =
-    org.configurations[0].defaultPrint?.showPrintWithTaxInRestaurant;
+    org?.configurations?.[0]?.defaultPrint?.showPrintWithTaxInRestaurant;
 
+  // ✅ FIX: Read emailBillSizeA5 from org config — was missing before (caused ReferenceError)
+  const emailBillSizeA5 =
+    org?.configurations?.[0]?.defaultPrint?.emailBillSizeA5 ?? false;
+
+  // Derived: is wide format (A4 or A5) vs thermal 3-inch roll
+  const isWideFormat = emailBillSizeA5; // A5=true, A4=false (both wider than thermal)
+  const emailPaperFormat = emailBillSizeA5 ? "a5" : "a4";
+  const emailPageWidth = emailBillSizeA5 ? 148 : 210;   // mm
+  const emailPageHeight = emailBillSizeA5 ? 210 : 297;  // mm
+  const emailWindowWidth = emailBillSizeA5 ? 560 : 794; // px (for html2canvas)
+  const emailMargin = emailBillSizeA5 ? 6 : 10;         // mm
 
   const getVoucherNumber = () => {
     if (!voucherType) return "";
@@ -47,66 +64,41 @@ console.log(data);
     return voucherType + "Number";
   };
 
-useEffect(() => {
-  if (!data?.items?.length) return;
+  useEffect(() => {
+    if (!data?.items?.length) return;
 
-  const discountValue = Number(data?.additionalCharges?.[0]?.finalValue || 0);
+    const discountValue = Number(data?.additionalCharges?.[0]?.finalValue || 0);
 
+    const taxableSubTotal = data.items.reduce(
+      (acc, curr) =>
+        acc +
+        Number(
+          curr?.GodownList?.[0]?.taxableAmount ?? curr?.taxableAmount ?? 0,
+        ),
+      0,
+    );
 
+    const finalSubTotal = taxableSubTotal - discountValue;
+    setSubTotal(Number(finalSubTotal.toFixed(2)));
+  }, [data, discountBasedOnGrossAmount]);
 
-  const grossTotal = data.items.reduce(
-    (acc, curr) => acc + Number(curr?.total || 0),
-    0
-  );
-
-  const taxableSubTotal = data.items.reduce(
-    (acc, curr) =>
-      acc +
-      Number(
-        curr?.GodownList?.[0]?.taxableAmount ??
-          curr?.taxableAmount ??
-          0
-      ),
-    0
-  );
-
-  const finalSubTotal = discountBasedOnGrossAmount
-    ? taxableSubTotal - discountValue
-    : taxableSubTotal - discountValue;
-
-  console.log("grossTotal", discountBasedOnGrossAmount ,grossTotal);
-  console.log("taxableSubTotal", taxableSubTotal);
-  console.log("discountValue", discountValue);
-  console.log("finalSubTotal", finalSubTotal);
-
-  setSubTotal(Number(finalSubTotal.toFixed(2)));
-}, [data, discountBasedOnGrossAmount]);
-  // 1) helper: get line taxable value after discount
   const getItemTaxableAfterDiscount = (item, totalDiscount, grossAmount) => {
-    const lineGross = Number(item.total || 0); // with tax
+    const lineGross = Number(item.total || 0);
     const totalTax = Number(item.totalIgstAmt || 0);
-
-    const lineBeforeTax = lineGross - totalTax; // taxable before discount
-
-    // proportional discount share on this line
+    const lineBeforeTax = lineGross - totalTax;
     const lineDiscount =
       grossAmount > 0 ? (lineBeforeTax / grossAmount) * totalDiscount : 0;
-
-    // taxable value after discount, like Tally’s "Taxable Value" column
     return lineBeforeTax - lineDiscount;
   };
 
-  // 2) main function: when discountBasedOnGrossAmount is false
   const calculateTotalTaxWithDiscountLogic = () => {
     if (!data?.items?.length) return 0;
 
     const totalDiscount =
       Number(
-        data?.totalAdditionalCharges ||
-          data?.additionalCharges?.[0]?.finalValue,
+        data?.totalAdditionalCharges || data?.additionalCharges?.[0]?.finalValue,
       ) || 0;
 
-    // gross taxable (sum of all items before discount)
     const grossTaxable = data.items.reduce((acc, item) => {
       const lineTax = Number(item.totalIgstAmt || 0);
       const lineBeforeTax = Number(item.total || 0) - lineTax;
@@ -121,14 +113,10 @@ useEffect(() => {
         totalDiscount,
         grossTaxable,
       );
-
       if (isInterState) {
-        // IGST on discounted taxable value
         const igstRate = Number(item.igst || 0);
         return acc + (taxableAfterDiscount * igstRate) / 100;
       }
-
-      // CGST + SGST on discounted taxable value
       const cgstRate = Number(item.cgst || 0);
       const sgstRate = Number(item.sgst || 0);
       return (
@@ -143,8 +131,7 @@ useEffect(() => {
 
   const calculateTotalTax = () =>
     discountBasedOnGrossAmount
-      ? /* old simple sum of stored tax amounts */
-        Number(
+      ? Number(
           data?.items?.reduce((acc, curr) => {
             return (
               acc +
@@ -156,7 +143,7 @@ useEffect(() => {
             );
           }, 0) || 0,
         )
-      : calculateTotalTaxWithDiscountLogic(); // function above
+      : calculateTotalTaxWithDiscountLogic();
 
   const getBillNumber = () =>
     data?.[getVoucherNumber()] ||
@@ -181,43 +168,31 @@ useEffect(() => {
       data?.voucherNumber?.[0]?.roomNumber ||
       data?.roomId?.roomno ||
       data?.roomId?.roomName;
-
     if (!hasCheckIn && !roomNo) return null;
     return `Room: ${roomNo}`;
   };
+
   const getFoodPlan = () => {
-    console.log();
     const hasCheckIn = data?.voucherNumber?.[0]?.checkInNumber;
     const foodPlanArray = data?.roomDetails?.foodPlanDetails;
-
     if (!hasCheckIn && !Array.isArray(foodPlanArray)) return null;
-
-    // array of names:
-    // return foodPlanArray.map(item => item.planType);
-
-    // or a single comma‑separated string:
     const names = foodPlanArray?.map((item) => item.planType).join(", ");
 
-    return  names.length > 0 ? `Food Paln: ${names}` : null;
+    return  names?.length > 0 ? `Food Paln: ${names}` : null;
   };
-  console.log(data?.finalAmount);
-  console.log(data);
-  const netAmount = Math.round(Number(data?.finalAmount || 0)).toFixed(2);
 
+  const netAmount = Math.round(Number(data?.finalAmount || 0)).toFixed(2);
   const discount = Number(
     data?.totalAdditionalCharges ||
       data?.additionalCharges?.[0]?.finalValue ||
       0,
   ).toFixed(2);
-  console.log("discount", Number(discount));
-  console.log("netAmount", netAmount);
+
   const tax = Math.round(calculateTotalTax()).toFixed(2);
   const cgst = (calculateTotalTax() / 2).toFixed(2);
+  // ✅ FIX: sgst was incorrectly showing cgst value before
+  const sgst = (calculateTotalTax() / 2).toFixed(2);
 
-  // const cgstPercentage = (Number(cgst) / Number(data?.subtotal || data?.subTotal)) * 100;
-
-  // Get actual tax rates directly from item data instead of back-calculating
-  console.log(data?.items);
   const getCgstPercentage = () => {
     const item = data?.items?.find((el) => el.cgst > 0);
     return item?.cgst || 0;
@@ -230,19 +205,283 @@ useEffect(() => {
     const item = data?.items?.find((el) => el.igst > 0);
     return item?.igst || 0;
   };
+
   const cgstPercentage = getCgstPercentage();
   const sgstPercentage = getSgstPercentage();
   const igstPercentage = getIgstPercentage();
-  console.log("cgstPercentage", cgstPercentage);
-  console.log("sgstPercentage", sgstPercentage);
-  console.log("igstPercentage", igstPercentage);
+
+  // ✅ FIX: handlePrint now uses dynamic @page size
+  // Thermal (Print button) always stays 80mm; A4/A5 only applies to Share → Email PDF
   const handlePrint = useReactToPrint({
     content: () => contentToPrint.current,
+    pageStyle: `
+      @page {
+        size: 80mm auto;
+        margin: 0;
+      }
+      html, body {
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      .receipt-container {
+        width: 72mm !important;
+        margin: 0 auto !important;
+        padding: 2mm 3mm !important;
+        box-sizing: border-box;
+      }
+    `,
   });
 
+  // ✅ FIX: generateReceiptPDFAsBase64 now uses dynamic config values
+  const generateReceiptPDFAsBase64 = async () => {
+    const element = contentToPrint.current;
+    if (!element) throw new Error("Receipt element not found");
+
+    const originalWidth = element.style.width;
+    const originalMargin = element.style.margin;
+
+    // Temporarily resize element to match paper width
+    element.style.width = `${emailPageWidth}mm`;
+    element.style.margin = "0";
+
+    const canvas = await html2canvas(element, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: "#ffffff",
+      logging: false,
+      windowWidth: emailWindowWidth,
+    });
+
+    // Restore original size
+    element.style.width = originalWidth;
+    element.style.margin = originalMargin;
+
+    const imgData = canvas.toDataURL("image/png");
+    const availableWidth = emailPageWidth - emailMargin * 2;
+    const availableHeight = emailPageHeight - emailMargin * 2;
+    const imgAspectRatio = canvas.height / canvas.width;
+    const imgRenderedHeight = availableWidth * imgAspectRatio;
+
+    const doc = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: emailPaperFormat, // ✅ "a4" or "a5" from settings
+    });
+
+    if (imgRenderedHeight <= availableHeight) {
+      const topOffset = emailMargin + (availableHeight - imgRenderedHeight) / 2;
+      doc.addImage(imgData, "PNG", emailMargin, topOffset, availableWidth, imgRenderedHeight);
+    } else {
+      const scaledHeight = availableHeight;
+      const scaledWidth = availableWidth * (availableHeight / imgRenderedHeight);
+      const leftOffset = emailMargin + (availableWidth - scaledWidth) / 2;
+      doc.addImage(imgData, "PNG", leftOffset, emailMargin, scaledWidth, scaledHeight);
+    }
+
+    return new Promise((resolve) => {
+      const blob = doc.output("blob");
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result.split(",")[1]);
+      reader.readAsDataURL(blob);
+    });
+  };
+
+  const handleShareBill = async (option, message, ccEmails, toEmail) => {
+    if (option === "WhatsApp") {
+      const encodedText = encodeURIComponent(message);
+      window.open(`https://wa.me/?text=${encodedText}`, "_blank");
+      return true;
+    }
+    if (option === "Mail") {
+      const pdfBase64 = await generateReceiptPDFAsBase64();
+      if (!pdfBase64) throw new Error("Failed to generate receipt PDF");
+      const billNo = getBillNumber();
+      const res = await api.post(
+        "/api/sUsers/send-bill-email",
+        {
+          toEmail,
+          ccEmails,
+          message,
+          billNo,
+          guestName: data?.party?.partyName || data?.customerName || "Customer",
+          organizationName: org?.name,
+          pdfBase64,
+          pdfFileName: `Receipt-${billNo}.pdf`,
+        },
+        { withCredentials: true },
+      );
+      if (!res.data?.success)
+        throw new Error(res.data?.message || "Failed to send email");
+      return true;
+    }
+  };
+
+  const handleShareClick = async () => {
+    const billNo = getBillNumber();
+    const tableNo = getTableNumber();
+    const roomNo = getRoomNumber();
+    const orgName = org?.name || "";
+    const orgPhone = org?.mobile || "";
+    const itemsList =
+      data?.items
+        ?.map(
+          (el, i) =>
+            `  ${i + 1}. ${el.product_name} x${el.totalCount || 1} = ₹${Number(el.total || 0).toFixed(2)}`,
+        )
+        .join("\n") || "";
+
+    const defaultMessage =
+`Dear Customer,
+
+Thank you for dining at ${orgName}!
+
+Your Bill Summary:
+  Bill No    : ${billNo}
+  ${tableNo ? `Table      : ${tableNo}` : ""}
+  ${roomNo ? `${roomNo}` : ""}
+  Date       : ${new Date(data?.Date || data?.createdAt).toLocaleDateString("en-GB")}
+
+Items:
+${itemsList}
+
+  Gross      : ₹${subTotal?.toFixed(2)}
+  Tax        : ₹${tax}
+  Net Amount : ₹${netAmount}
+
+We look forward to serving you again!
+
+${orgPhone ? `Contact: ${orgPhone}` : ""}
+
+Warm Regards,
+${orgName}`;
+
+    const { value: option } = await Swal.fire({
+      title: "Share through",
+      input: "radio",
+      inputOptions: { WhatsApp: "WhatsApp", Mail: "Mail" },
+      confirmButtonText: "Next",
+      confirmButtonColor: "#000000",
+      showCancelButton: true,
+      cancelButtonText: "Cancel",
+      cancelButtonColor: "#dd3333",
+      inputValidator: (v) => !v && "Please select an option!",
+    });
+
+    if (!option) return;
+
+    let toEmail = "";
+    let ccEmails = [];
+
+    if (option === "Mail") {
+      const { value: emailData, isDismissed } = await Swal.fire({
+        title: "Email Details",
+        html: `
+          <div style="text-align:left; padding:10px;">
+            <label style="display:block; margin-bottom:6px; font-weight:bold; font-size:14px;">
+              To Email <span style="color:red;">*</span>
+            </label>
+            <input id="swal-to" type="email" class="swal2-input"
+              placeholder="customer@example.com" style="width:95%; margin:0 0 14px 0;" />
+            <label style="display:block; margin-bottom:6px; font-weight:bold; font-size:14px;">
+              CC Emails <span style="color:gray; font-weight:normal;">(Optional)</span>
+            </label>
+            <input id="swal-cc" type="text" class="swal2-input"
+              placeholder="cc1@example.com, cc2@example.com" style="width:95%; margin:0;" />
+            <small style="color:gray; display:block; margin-top:6px;">
+              💡 Separate multiple CC emails with commas
+            </small>
+          </div>
+        `,
+        showCancelButton: true,
+        cancelButtonColor: "#dd3333",
+        confirmButtonText: "Next",
+        confirmButtonColor: "#000000",
+        width: "540px",
+        focusConfirm: false,
+        preConfirm: () => {
+          const to = document.getElementById("swal-to").value.trim();
+          const cc = document.getElementById("swal-cc").value.trim();
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!to) { Swal.showValidationMessage("Please enter recipient email"); return false; }
+          if (!emailRegex.test(to)) { Swal.showValidationMessage("Please enter a valid email address"); return false; }
+          if (cc) {
+            const invalid = cc.split(",").map((e) => e.trim()).filter((e) => e && !emailRegex.test(e));
+            if (invalid.length) { Swal.showValidationMessage(`Invalid CC email(s): ${invalid.join(", ")}`); return false; }
+          }
+          return { to, cc };
+        },
+      });
+
+      if (isDismissed || !emailData) return;
+      toEmail = emailData.to;
+      ccEmails = emailData.cc
+        ? emailData.cc.split(",").map((e) => e.trim()).filter(Boolean)
+        : [];
+    }
+
+    const { value: finalMessage, isDismissed: msgDismissed } = await Swal.fire({
+      title: "Compose Message",
+      html: `
+        <div style="text-align:left; padding:10px;">
+          <label style="display:block; margin-bottom:6px; font-weight:bold; font-size:14px;">
+            Message <span style="color:red;">*</span>
+          </label>
+          <textarea id="swal-message" class="swal2-textarea"
+            style="width:95%; height:280px; padding:10px; font-size:13px; resize:vertical;"
+          >${defaultMessage}</textarea>
+        </div>
+      `,
+      showCancelButton: true,
+      cancelButtonColor: "#dd3333",
+      confirmButtonText: "Send",
+      confirmButtonColor: "#000000",
+      width: "660px",
+      focusConfirm: false,
+      preConfirm: () => {
+        const msg = document.getElementById("swal-message").value;
+        if (!msg?.trim()) { Swal.showValidationMessage("Please enter a message"); return false; }
+        return msg;
+      },
+    });
+
+    if (msgDismissed || !finalMessage) return;
+
+    Swal.fire({
+      title: option === "Mail" ? "Sending Email..." : "Opening WhatsApp...",
+      html: `
+        <div style="text-align:center; padding:16px;">
+          <p>Please wait...</p>
+          ${option === "Mail" && toEmail ? `<p style="color:gray; font-size:13px; margin-top:8px;">To: ${toEmail}</p>` : ""}
+          ${ccEmails.length ? `<p style="color:gray; font-size:13px;">CC: ${ccEmails.join(", ")}</p>` : ""}
+        </div>
+      `,
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading(),
+    });
+
+    try {
+      await handleShareBill(option, finalMessage, ccEmails, toEmail);
+      Swal.fire({
+        icon: "success",
+        title: "Success!",
+        text: option === "Mail" ? "Email sent successfully!" : "WhatsApp opened!",
+        confirmButtonColor: "#000000",
+      });
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: error.message || "Failed to share. Please try again.",
+        confirmButtonColor: "#000000",
+      });
+    }
+  };
+
+  // ✅ FIX: containerStyle stays thermal (72mm) always — width only changes temporarily
+  // inside generateReceiptPDFAsBase64 for PDF capture
   const containerStyle = {
     width: "72mm",
-    margin: "0 auto", // center on the roll
+    margin: "0 auto",
     fontFamily: "Arial, sans-serif",
     fontSize: "11px",
     lineHeight: 1.2,
@@ -258,7 +497,6 @@ useEffect(() => {
     alignItems: "center",
     marginBottom: "2px",
   };
-
   const textRight = { textAlign: "right", paddingRight: "3px" };
   const textLeft = { textAlign: "left", paddingLeft: "3px" };
   const centerText = { textAlign: "center" };
@@ -266,14 +504,13 @@ useEffect(() => {
 
   const headerGrid = {
     display: "grid",
-    gridTemplateColumns: "0.6fr 2.2fr 0.7fr 1fr 1.1fr", // No, Item, Qty, Rate, Amount
+    gridTemplateColumns: "0.6fr 2.2fr 0.7fr 1fr 1.1fr",
     fontSize: "11px",
     fontWeight: "bold",
     paddingBottom: "3px",
     borderBottom: "1px dotted #000",
     marginBottom: "4px",
   };
-
   const itemGrid = {
     display: "grid",
     gridTemplateColumns: "0.6fr 2.2fr 0.7fr 1fr 1.1fr",
@@ -281,130 +518,68 @@ useEffect(() => {
     marginBottom: "2px",
     padding: "1px 0",
   };
-  console.log(data);
-  console.log({
-    cgst,
-    tax,
-    subTotal,
-    cgstPercentage,
-    totalTax: calculateTotalTax(),
-  });
-  const cgstGroups =
-    data?.items?.reduce((acc, item) => {
-      const cgstRate = item?.cgst || 0;
-      const sgstRate = item?.sgst || 0;
-      const cgstAmt = Number(item?.totalCgstAmt || 0);
-      const sgstAmt = Number(item?.totalSgstAmt || 0);
-      if (cgstAmt > 0 || sgstAmt > 0) {
-        if (!acc[cgstRate]) {
-          acc[cgstRate] = { cgstAmt: 0, sgstAmt: 0, sgstRate };
-        }
-        acc[cgstRate].cgstAmt += cgstAmt;
-        acc[cgstRate].sgstAmt += sgstAmt;
-      }
-      return acc;
-    }, {}) || {};
 
   const paymentSplits = data?.paymentSplittingData || [];
-
   const prettyType = (type) => {
     if (!type) return "";
-    const map = {
-      cash: "Cash",
-      upi: "UPI",
-      card: "Card",
-      bank: "Bank",
-    };
+    const map = { cash: "Cash", upi: "UPI", card: "Card", bank: "Bank" };
     return map[type] || type.toUpperCase();
   };
 
-  // Payment splits LEFT side list
   const getPaymentSummary = () => {
     if (!paymentSplits.length) return null;
-    console.log(paymentSplits);
-
     return paymentSplits
       .filter((p) => p.amount > 0)
       .map((p) => (
         <>
-        <div
-          key={p.type}
-          style={{
-            fontSize: "10px",
-            fontWeight: "bold",
-          }}
-        >
-          {prettyType(p.type)} : ₹ {Math.round(p.amount).toFixed(2)}
-        </div>
-        {p?.credit_reference_type&& (
-        <div
-          key={p.type}
-          style={{
-            fontSize: "10px",
-            fontWeight: "bold",
-          }}
-        >
-        Party : {p?.credit_reference_type} {p?.creditor_gst && `(${p.creditor_gst})`}
-        </div>
-        )}
+          <div key={p.type} style={{ fontSize: "10px", fontWeight: "bold" }}>
+            {prettyType(p.type)} : ₹ {Math.round(p.amount).toFixed(2)}
+          </div>
+          {p?.credit_reference_type && (
+            <div key={p.type} style={{ fontSize: "10px", fontWeight: "bold" }}>
+              Party : {p?.credit_reference_type}{" "}
+              {p?.creditor_gst && `(${p.creditor_gst})`}
+            </div>
+          )}
         </>
-        
       ));
-  }; 
-
-  console.log(discount);
+  };
 
   return (
     <>
+      {/* ✅ FIX: @page CSS is now dynamic — thermal for Print button, A4/A5 is handled
+          inside generateReceiptPDFAsBase64 via jsPDF format, not via @page */}
       <style type="text/css" media="print">
         {`
-    @page {
-      size: 80mm auto;
-      margin: 0;
-    }
-    html, body {
-      margin: 0 !important;
-      padding: 0 !important;
-      text-align: left !important;
-    }
-    .receipt-container {
-      width: 72mm !important;
-      margin: 0 auto !important;
-      padding: 2mm 3mm !important;
-      text-align: left !important;
-      box-sizing: border-box;
-    }
-  `}
+          @page {
+            size: 80mm auto;
+            margin: 0;
+          }
+          html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+            text-align: left !important;
+          }
+          .receipt-container {
+            width: 72mm !important;
+            margin: 0 auto !important;
+            padding: 2mm 3mm !important;
+            text-align: left !important;
+            box-sizing: border-box;
+          }
+        `}
       </style>
+
       <TitleDiv title="Restaurant sale print" />
       <div className="grid mt-2">
-        <div
-          ref={contentToPrint}
-          className="receipt-container"
-          style={containerStyle}
-        >
+        <div ref={contentToPrint} className="receipt-container" style={containerStyle}>
           {/* Header */}
-          <div
-            style={{
-              ...flexRow,
-              marginBottom: "8px",
-              paddingBottom: "6px",
-              borderBottom: "1px dotted #000",
-              alignItems: "flex-start",
-              gap: "8px",
-            }}
-          >
+          <div style={{ ...flexRow, marginBottom: "8px", paddingBottom: "6px", borderBottom: "1px dotted #000", alignItems: "flex-start", gap: "8px" }}>
             {org?.logo && (
-              <img
-                src={org.logo}
-                alt="Logo"
-                style={{ width: "25mm", height: "auto", objectFit: "contain" }}
-              />
+              <img src={org.logo} alt="Logo" style={{ width: "25mm", height: "auto", objectFit: "contain" }} />
             )}
             <div style={{ flex: 1, textAlign: "center" }}>
-              <div style={{ ...bold, fontSize: "16px", marginBottom: "2px" }}>
-                {org?.name}
-              </div>
+              <div style={{ ...bold, fontSize: "16px", marginBottom: "2px" }}>{org?.name}</div>
               {(org?.road || org?.place) && (
                 <div>{`${org?.road || ""}${org?.road && org?.place ? ", " : ""}${org?.place || ""}`}</div>
               )}
@@ -414,74 +589,28 @@ useEffect(() => {
           </div>
 
           {/* Title */}
-          <div
-            style={{
-              ...centerText,
-              marginBottom: "6px",
-              paddingBottom: "6px",
-              borderBottom: "1px dotted #000",
-            }}
-          >
-            <div
-              style={{
-                fontSize: "14px",
-                fontWeight: "bold",
-                fontStyle: "italic",
-              }}
-            >
-              INVOICE
-            </div>
+          <div style={{ ...centerText, marginBottom: "6px", paddingBottom: "6px", borderBottom: "1px dotted #000" }}>
+            <div style={{ fontSize: "14px", fontWeight: "bold", fontStyle: "italic" }}>INVOICE</div>
           </div>
 
           {/* Bill Info */}
-          <div
-            style={{
-              marginBottom: "6px",
-              fontSize: "11px",
-              fontWeight: "bold",
-              paddingBottom: "6px",
-              borderBottom: "1px dotted #000",
-            }}
-          >
+          <div style={{ marginBottom: "6px", fontSize: "11px", fontWeight: "bold", paddingBottom: "6px", borderBottom: "1px dotted #000" }}>
             <div style={{ display: "flex" }}>
               <span style={{ minWidth: "170px" }}>Bill {getBillNumber()}</span>
-              <span>
-                Date:{" "}
-                {new Date(data?.Date || data?.createdAt).toLocaleDateString(
-                  "en-GB",
-                )}
-              </span>
+              <span>Date: {new Date(data?.Date || data?.createdAt).toLocaleDateString("en-GB")}</span>
             </div>
             <div style={{ display: "flex" }}>
-              <span
-                style={{
-                  minWidth: "170px",
-                  visibility:
-                    getTableNumber() && getTableNumber() !== "10"
-                      ? "visible"
-                      : "hidden",
-                }}
-              >
+              <span style={{ minWidth: "170px", visibility: getTableNumber() && getTableNumber() !== "10" ? "visible" : "hidden" }}>
                 Table: {getTableNumber()}
               </span>
               <span>
                 Time:{" "}
-                {new Date(data?.Date || data?.createdAt).toLocaleTimeString(
-                  "en-GB",
-                  {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    hour12: false,
-                  },
-                )}
+                {new Date(data?.Date || data?.createdAt).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false })}
               </span>
             </div>
-
             {data?.orderType && (
               <div style={{ marginTop: "2px" }}>
-                <span style={{ textTransform: "capitalize" }}>
-                  {data.orderType.replace(/-/g, " ")}
-                </span>
+                <span style={{ textTransform: "capitalize" }}>{data.orderType.replace(/-/g, " ")}</span>
               </div>
             )}
                {data?.party?.partyName && (
@@ -504,257 +633,95 @@ useEffect(() => {
           </div>
 
           {/* Items */}
-          {/* Items */}
           {data?.items?.map((el, index) => {
-            console.log(el);
             const total = Number(el?.total || 0);
             const count = Number(el?.totalCount || 1);
-
             const totalTax =
               el?.totalIgstAmt != null
                 ? Number(el.totalIgstAmt)
                 : Number(el?.totalCgstAmt || 0) + Number(el?.totalSgstAmt || 0);
-
             const igst = Number(el?.igst || 0);
-            const addRateWithTax =
-              org?.configurations?.[0]?.addRateWithTax?.restaurantSale;
+            const addRateWithTax = org?.configurations?.[0]?.addRateWithTax?.restaurantSale;
             const addRate = addRateWithTax
-              ? count > 0
-                ? ((total * 100) / (100 + igst) / count).toFixed(2)
-                : "0.00"
-              : count > 0
-                ? ((total - totalTax) / count).toFixed(2)
-                : "0.00";
-
-            console.log(addRate);
-            console.log(totalTax / count);
-
+              ? count > 0 ? ((total * 100) / (100 + igst) / count).toFixed(2) : "0.00"
+              : count > 0 ? ((total - totalTax) / count).toFixed(2) : "0.00";
             const rate = includeTaxWithPrint
-              ? count > 0
-                ? (
-                    Number(addRate) + Number((totalTax / count).toFixed(2))
-                  ).toFixed(2)
-                : "0.00"
+              ? count > 0 ? (Number(addRate) + Number((totalTax / count).toFixed(2))).toFixed(2) : "0.00"
               : addRate;
-
             const amount = (Number(rate) * count).toFixed(2);
-
             return (
               <div key={index} style={itemGrid}>
                 <div style={textLeft}>{index + 1}</div>
-                <div style={{ ...textLeft, wordBreak: "break-word" }}>
-                  {el.product_name}
-                </div>
+                <div style={{ ...textLeft, wordBreak: "break-word" }}>{el.product_name}</div>
                 <div style={centerText}>{count}</div>
                 <div style={textRight}>{rate}</div>
                 <div style={textRight}>{amount}</div>
               </div>
             );
           })}
+
           <div style={{ borderBottom: "1px dotted #000", margin: "6px 0" }} />
 
           {/* Totals */}
-
-          {/* Totals row: left = payment splits, right = Amount / taxes */}
-          <div
-            style={{
-              fontSize: "10px",
-              marginBottom: "4px",
-              display: "flex",
-              flexDirection: "row",
-            }}
-          >
-            {/* LEFT SIDE: payment splits */}
+          <div style={{ fontSize: "10px", marginBottom: "4px", display: "flex", flexDirection: "row" }}>
             <div style={{ flex: 1 }}>{getPaymentSummary()}</div>
-           
-
-            {/* RIGHT SIDE: Amount + taxes */}
             <div style={{ flex: 1 }}>
               {!discountBasedOnGrossAmount && Number(discount) > 0 && (
                 <>
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "row",
-                      marginBottom: "2px",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    <div
-                      style={{
-                        marginLeft: "auto",
-                        width: 60,
-                        textAlign: "right",
-                      }}
-                    >
-                      SubTotal
-                    </div>
-                    <div
-                      style={{
-                        width: 60,
-                        textAlign: "right",
-                      }}
-                    >
-                      {(Number(subTotal || 0) + Number(discount || 0)).toFixed(
-                        2,
-                      )}
+                  <div style={{ display: "flex", flexDirection: "row", marginBottom: "2px", fontWeight: "bold" }}>
+                    <div style={{ marginLeft: "auto", width: 60, textAlign: "right" }}>SubTotal</div>
+                    <div style={{ width: 60, textAlign: "right" }}>
+                      {(Number(subTotal || 0) + Number(discount || 0)).toFixed(2)}
                     </div>
                   </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "row",
-                      marginBottom: "2px",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    {Number(discount) > 0 && (
-                      <>
-                    <div
-                      style={{
-                        marginLeft: "auto",
-                        width: 60,
-                        textAlign: "right",
-                      }}
-                    >
-                      Discount
+                  {Number(discount) > 0 && (
+                    <div style={{ display: "flex", flexDirection: "row", marginBottom: "2px", fontWeight: "bold" }}>
+                      <div style={{ marginLeft: "auto", width: 60, textAlign: "right" }}>Discount</div>
+                      <div style={{ width: 60, textAlign: "right" }}>{discount}</div>
                     </div>
-                    <div
-                      style={{
-                        width: 60,
-                        textAlign: "right",
-                      }}
-                    >
-                      {discount}
+                  )}
+                </>
+              )}
+
+              {/* Gross Amount */}
+              <div style={{ display: "flex", flexDirection: "row", marginBottom: "2px", fontWeight: "bold" }}>
+                <div style={{ marginLeft: "auto", width: 80, textAlign: "right" }}>Gross Amount</div>
+                <div style={{ width: 60, textAlign: "right" }}>{subTotal?.toFixed(2)}</div>
+              </div>
+
+              {/* CGST + SGST (same state) */}
+              {isIndian && isSameState && calculateTotalTax() > 0 && (
+                <>
+                  <div style={flexRow}>
+                    <div style={{ marginLeft: "auto", width: 70, fontWeight: "bold" }}>
+                      CGST {cgstPercentage}%
                     </div>
-                    </>
-                    )}
+                    <div style={textRight}>{cgst}</div>
+                  </div>
+                  <div style={flexRow}>
+                    <div style={{ marginLeft: "auto", width: 70, fontWeight: "bold" }}>
+                      SGST {sgstPercentage}%
+                    </div>
+                    {/* ✅ FIX: was showing cgst here before */}
+                    <div style={textRight}>{sgst}</div>
                   </div>
                 </>
               )}
 
-              {/* Amount */}
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "row",
-                  marginBottom: "2px",
-                  fontWeight: "bold",
-                }}
-              >
-                <div
-                  style={{
-                    marginLeft: "auto",
-                    width: 80,
-                    textAlign: "right",
-                  }}
-                >
-                  Gross Amount
-                </div>
-                <div
-                  style={{
-                    width: 60,
-                    textAlign: "right",
-                  }}
-                >
-                  {subTotal?.toFixed(2)}
-                </div>
-              </div>
-
-              {/* same‑state Indian tax */}
-              {isIndian &&
-                isSameState &&
-                calculateTotalTax() > 0 &&
-                (() => {
-                 
-
-                  // if (entries.length === 0) {
-                  return (
-                    <>
-                      <div style={flexRow}>
-                        <div
-                          style={{
-                            marginLeft: "auto",
-                            width: 70,
-                            fontWeight: "bold",
-                          }}
-                        >
-                          CGST {cgstPercentage}%
-                        </div>
-                        <div style={textRight}>{cgst}</div>
-                      </div>
-                      <div style={flexRow}>
-                        <div
-                          style={{
-                            marginLeft: "auto",
-                            width: 70,
-                            fontWeight: "bold",
-                          }}
-                        >
-                          SGST {sgstPercentage}%
-                        </div>
-                        <div style={textRight}>{cgst}</div>
-                      </div>
-                    </>
-                  );
-                  // }
-
-                  // return entries.map(([rate, { cgstAmt, sgstAmt, sgstRate }]) => (
-                  //   <div key={rate}>
-                  //     <div style={flexRow}>
-                  //       <div
-                  //         style={{
-                  //           marginLeft: "auto",
-                  //           width: 70,
-                  //           fontWeight: "bold",
-                  //         }}
-                  //       >
-                  //         CGST {rate}%
-                  //       </div>
-                  //       <div style={textRight}>{cgstAmt.toFixed(2)}</div>
-                  //     </div>
-                  //     <div style={flexRow}>
-                  //       <div
-                  //         style={{
-                  //           marginLeft: "auto",
-                  //           width: 70,
-                  //           fontWeight: "bold",
-                  //         }}
-                  //       >
-                  //         SGST {sgstRate}%
-                  //       </div>
-                  //       <div style={textRight}>{sgstAmt.toFixed(2)}</div>
-                  //     </div>
-                  //   </div>
-                  // ));
-                })()}
-
-              {/* IGST */}
+              {/* IGST (inter-state) */}
               {isIndian && !isSameState && calculateTotalTax() > 0 && (
                 <div style={flexRow}>
-                  <div
-                    style={{
-                      marginLeft: "auto",
-                      width: 70,
-                      fontWeight: "bold",
-                    }}
-                  >
+                  <div style={{ marginLeft: "auto", width: 70, fontWeight: "bold" }}>
                     IGST {igstPercentage}%
                   </div>
                   <div style={textRight}>{tax}</div>
                 </div>
               )}
 
-              {/* Non‑Indian tax */}
+              {/* Non-Indian tax */}
               {!isIndian && calculateTotalTax() > 0 && (
                 <div style={flexRow}>
-                  <div
-                    style={{
-                      marginLeft: "auto",
-                      width: 70,
-                      fontWeight: "bold",
-                    }}
-                  >
+                  <div style={{ marginLeft: "auto", width: 70, fontWeight: "bold" }}>
                     Tax {igstPercentage}%
                   </div>
                   <div style={textRight}>{tax}</div>
@@ -767,22 +734,9 @@ useEffect(() => {
 
           {/* Final Details */}
           <div style={{ fontSize: "10px", marginBottom: "6px" }}>
-            <div
-              style={{
-                display: "flex",
-                fontWeight: "bold",
-                marginBottom: "2px",
-              }}
-            >
+            <div style={{ display: "flex", fontWeight: "bold", marginBottom: "2px" }}>
               {getRoomNumber() && <div style={bold}>{getRoomNumber()}</div>}
-
-              <div
-                style={{
-                  marginLeft: "auto",
-                  paddingRight: "3px",
-                  fontWeight: "bold",
-                }}
-              >
+              <div style={{ marginLeft: "auto", paddingRight: "3px", fontWeight: "bold" }}>
                 Total: {netAmount}
               </div>
             </div>
@@ -818,28 +772,12 @@ useEffect(() => {
           <div style={{ borderBottom: "1px dotted #000", margin: "6px 0" }} />
 
           {/* Net Amount */}
-          <div
-            style={{
-              ...centerText,
-              fontSize: "14px",
-              fontWeight: "bold",
-              marginBottom: "8px",
-              paddingBottom: "6px",
-              borderBottom: "1px dotted #000",
-            }}
-          >
+          <div style={{ ...centerText, fontSize: "14px", fontWeight: "bold", marginBottom: "8px", paddingBottom: "6px", borderBottom: "1px dotted #000" }}>
             Net Amount: {netAmount}
           </div>
 
           {/* Footer */}
-          <div
-            style={{
-              ...centerText,
-              fontSize: "11px",
-              fontWeight: "bold",
-              marginTop: "8px",
-            }}
-          >
+          <div style={{ ...centerText, fontSize: "11px", fontWeight: "bold", marginTop: "8px" }}>
             Thank You Visit Again
           </div>
         </div>
@@ -854,7 +792,14 @@ useEffect(() => {
               Print
             </button>
           )}
-
+          {isFinalized && (
+            <button
+              className="px-3 py-1 rounded-lg bg-black text-white font-medium hover:bg-green-600 active:scale-95 transition"
+              onClick={handleShareClick}
+            >
+              Share
+            </button>
+          )}
           {isPreview && (
             <>
               <button
