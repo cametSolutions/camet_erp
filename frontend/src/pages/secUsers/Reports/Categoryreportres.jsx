@@ -357,107 +357,78 @@ export default function HotelReport() {
 
   return (
     <>
-      <TitleDiv title={"Category Wise REGISTER"} />
+      <TitleDiv title={"CATEGORY WISE REGISTER"} />
 
       <div style={{ padding: 24, fontFamily: "Segoe UI, sans-serif" }}>
-        <h2 style={{ marginBottom: 16 }}>Restaurant Category Wise Sales Report</h2>
+      
 
-        <div
-          style={{
-            display: "flex",
-            gap: 12,
-            alignItems: "end",
-            flexWrap: "wrap",
-            marginBottom: 20,
-            padding: 16,
-            border: "1px solid #ddd",
-            borderRadius: 8,
-            background: "#fafafa",
-          }}
-        >
-          <div>
-            <label style={{ display: "block", marginBottom: 6, fontSize: 14 }}>
-              From Date
-            </label>
-            <input
-              type="date"
-              value={fromDate}
-              onChange={(e) => setFromDate(e.target.value)}
-              style={{
-                padding: 8,
-                border: "1px solid #ccc",
-                borderRadius: 6,
-                minWidth: 160,
-              }}
-            />
-          </div>
+     <div className="mb-5 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm print:hidden md:p-4">
+  <div className="flex flex-wrap items-end justify-between gap-3 w-full">
 
-          <div>
-            <label style={{ display: "block", marginBottom: 6, fontSize: 14 }}>
-              To Date
-            </label>
-            <input
-              type="date"
-              value={toDate}
-              onChange={(e) => setToDate(e.target.value)}
-              style={{
-                padding: 8,
-                border: "1px solid #ccc",
-                borderRadius: 6,
-                minWidth: 160,
-              }}
-            />
-          </div>
+    {/* LEFT — Heading */}
+    <div>
+      <h1 className="text-base font-bold tracking-tight text-slate-900 md:text-lg uppercase">
+       Restaurant Category Wise Sales Report
+      </h1>
+    </div>
 
-          <button
-            onClick={fetchReport}
-            style={{
-              background: "#1a3a5c",
-              color: "#fff",
-              border: "none",
-              padding: "10px 18px",
-              borderRadius: 6,
-              cursor: "pointer",
-              fontWeight: 600,
-            }}
-          >
-            Fetch Report
-          </button>
+    {/* RIGHT — Dates + Buttons */}
+    <div className="flex flex-wrap items-end gap-2">
 
-          <button
-            onClick={exportToExcel}
-            disabled={!reportData.length}
-            style={{
-              background: "#1d6f42",
-              color: "#fff",
-              border: "none",
-              padding: "10px 18px",
-              borderRadius: 6,
-              cursor: "pointer",
-              fontWeight: 600,
-              opacity: reportData.length ? 1 : 0.6,
-            }}
-          >
-            Export Excel
-          </button>
+      {/* From Date */}
+      <div className="flex flex-col gap-1 w-36">
+        <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+          From Date
+        </label>
+        <input
+          type="date"
+          value={fromDate}
+          onChange={(e) => setFromDate(e.target.value)}
+          className="h-9 rounded-lg border border-slate-300 bg-white px-2 text-xs outline-none transition focus:border-teal-600"
+        />
+      </div>
 
-          <button
-            onClick={exportToPDF}
-            disabled={!reportData.length}
-            style={{
-              background: "#b52b27",
-              color: "#fff",
-              border: "none",
-              padding: "10px 18px",
-              borderRadius: 6,
-              cursor: "pointer",
-              fontWeight: 600,
-              opacity: reportData.length ? 1 : 0.6,
-            }}
-          >
-            Export PDF
-          </button>
-        </div>
+      {/* To Date */}
+      <div className="flex flex-col gap-1 w-36">
+        <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+          To Date
+        </label>
+        <input
+          type="date"
+          value={toDate}
+          onChange={(e) => setToDate(e.target.value)}
+          className="h-9 rounded-lg border border-slate-300 bg-white px-2 text-xs outline-none transition focus:border-teal-600"
+        />
+      </div>
+
+      {/* Fetch Report */}
+      <button
+        onClick={fetchReport}
+        className="inline-flex h-9 items-center justify-center rounded-lg bg-teal-700 px-4 text-xs font-semibold text-white transition hover:bg-teal-800"
+      >
+        Fetch Report
+      </button>
+
+      {/* Export Excel */}
+      <button
+        onClick={exportToExcel}
+        disabled={!reportData.length}
+        className="inline-flex h-9 items-center justify-center rounded-lg bg-emerald-600 px-4 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        Export Excel
+      </button>
+
+      {/* Export PDF */}
+      <button
+        onClick={exportToPDF}
+        disabled={!reportData.length}
+        className="inline-flex h-9 items-center justify-center rounded-lg bg-rose-700 px-4 text-xs font-semibold text-white transition hover:bg-rose-800 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        Export PDF
+      </button>
+    </div>
+  </div>
+</div>
 
         {loading && <div>Loading report...</div>}
         {error && <div style={{ color: "red", marginBottom: 16 }}>Error: {error}</div>}
