@@ -126,7 +126,7 @@ const OccupancyCheckoutReport = () => {
     XLSX.utils.sheet_add_aoa(
       ws,
       [
-        ["THE FEEL MUNNAR RESORT AND SPA"],
+        [""],
         [],
         ["Occupancy List Summary :-"],
         [],
@@ -348,9 +348,7 @@ const OccupancyCheckoutReport = () => {
         ) : null}
 
         <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm print:rounded-none print:border-0 print:p-0 print:shadow-none md:p-4">
-          <h2 className="text-lg font-semibold text-slate-900">
-            THE FEEL MUNNAR RESORT AND SPA
-          </h2>
+         
           <p className="mt-3 text-sm font-semibold">
             Occupancy List Summary :-
           </p>
