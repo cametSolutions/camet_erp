@@ -20,6 +20,7 @@ import {
   addSubGroups,
   addSubDetails,
   addGodowns,
+  backfillUniqueSaleNumber,
 } from "../controllers/tallyController.js";
 
 const router = express.Router();
@@ -42,6 +43,7 @@ router.post("/master/addCategory", addSubDetails);
 router.post("/master/addSubCategory", addSubDetails);
 router.post("/master/item/updateStock", updateStock);
 router.post("/master/item/updatePriceLevels", updatePriceLevels);
+router.post("/master/backfillUniqueSaleNumber", backfillUniqueSaleNumber);
 // router.post("/master/clearStock/:cmp_id", clearStock);
 
 //get

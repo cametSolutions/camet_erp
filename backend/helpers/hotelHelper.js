@@ -164,7 +164,8 @@ export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
     "convertedFrom.checkInNumber": { $in: checkInNumbers },
   })
   .select("_id finalAmount isPostToRoom convertedFrom.checkInNumber paymentSplittingData");
-
+  let displayTotal = 0
+ 
 // Build map: checkInNumber -> { totalAmount, paymentSplittingData }
 const totalByCheckIn = {};
 const processedSaleIds = new Set();
@@ -237,8 +238,22 @@ if( b.voucherNumber == "CO-823-2025"){
  console.log("checkInDataccccccccccc",specificSale);
 }
 
+ if(params?.modal == "checkOut"){
+    displayTotal = await salesModel
+    .find({
+      cmp_id: filter.cmp_id,
+      isPostToRoom: false,
+      isCancelled: false,
+      "convertedFrom.checkInNumber": { $in: checkInNumbers },
+    })
+    .select("_id finalAmount isPostToRoom convertedFrom.checkInNumber paymentSplittingData");
+
+    console.log("displayTotal",displayTotal); 
+  }
+
     return {
       ...b.toObject(),
+      displayTotal: displayTotal.length > 0 ? displayTotal.reduce((total, sale) => total + Number(sale.finalAmount || 0), 0) : 0,
       restaurantSubTotal: checkInData.totalAmount,
       restaurantPaymentSplittingData: [
         ...(specificSale?.paymentSplittingData || []),

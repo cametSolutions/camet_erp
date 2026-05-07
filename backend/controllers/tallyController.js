@@ -18,7 +18,7 @@ import {
   Subcategory,
 } from "../models/subDetails.js";
 import accountGroupModel from "../models/accountGroup.js";
-
+import salesModel from "../models/salesModel.js";
 export const saveDataFromTally = async (req, res) => {
   try {
     const { data, partyIds } = await req.body;
@@ -2529,4 +2529,41 @@ export const givePurchase = async (req, res) => {
   return fetchData("purchase", cmp_id, serialNumber, res);
 };
 
+export const backfillUniqueSaleNumber = async (req, res) => {
+  try {
+    const companies = await salesModel.distinct("cmp_id");
 
+    for (const cmp_id of companies) {
+      const sales = await salesModel
+        .find({ cmp_id })
+        .sort({ date: 1, createdAt: 1, _id: 1 })
+        .select("_id");
+
+      let number = 1;
+
+      for (const sale of sales) {
+        await salesModel.updateOne(
+          { _id: sale._id },
+          {
+            $set: {
+              uniqueSaleNumber: number,
+            },
+          }
+        );
+
+        number++;
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Existing sales numbered company-wise successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to backfill sale numbers",
+      error: error.message,
+    });
+  }
+};
