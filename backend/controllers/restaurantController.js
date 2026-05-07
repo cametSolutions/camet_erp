@@ -705,8 +705,13 @@ export const getKotDash = async (req, res) => {
       })
       .lean();
 
-    const recalculatedKot = kot.map((kotDoc) => {
-   if (kotDoc.paymentCompleted) {
+   const recalculatedKot = await Promise.all(
+     kot.map(async (kotDoc) => {
+    const findSpecificSale = await salesModel.findOne({
+      cmp_id,
+     "convertedFrom.id": String(kotDoc._id),
+    })
+      if (kotDoc.paymentCompleted) {
         return {
           ...kotDoc,
           items: kotDoc.items || [],   // ← directly from DB, no recalculation
@@ -715,7 +720,7 @@ export const getKotDash = async (req, res) => {
       }
       const recalculatedItems = (kotDoc?.items || [])
         .map((item) => recalculateKotItem(item))
-        .filter(Boolean); // 🔥 removes null / skipped items
+        .filter(Boolean); 
 
       const kotTotal = recalculatedItems.reduce(
         (sum, item) => sum + Number(item?.total || 0),
@@ -762,8 +767,9 @@ export const getKotDash = async (req, res) => {
         totalIgstAmt: round2(totalIgstAmt),
         totalCessAmt: round2(totalCessAmt),
         totalAddlCessAmt: round2(totalAddlCessAmt),
+        salesNumber: findSpecificSale?.salesNumber
       };
-    });
+    }));
 
     res.status(200).json({
       success: true,

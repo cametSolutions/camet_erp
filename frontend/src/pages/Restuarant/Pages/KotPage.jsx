@@ -80,7 +80,8 @@ const OrdersDashboard = () => {
   const selectedKotFromRedirect = location.state?.selectedKot;
   const fromTable = location.state?.fromTable ?? false;
   const [showKotNotification, setShowKotNotification] = useState(fromTable);
-  const [specificSelectedKotItemWise, setSpecificSelectedKotItemWise] = useState(null);
+  const [specificSelectedKotItemWise, setSpecificSelectedKotItemWise] =
+    useState(null);
   // state used for showing pdf print
 
   const [salePrintData, setSalePrintData] = useState(null);
@@ -105,7 +106,7 @@ const OrdersDashboard = () => {
   const [showBatchWiseKotPrint, setShowBatchWiseKotPrint] = useState(false);
   const [dataForBatchWisePrint, setDataForBatchWisePrint] = useState(null);
   const [selectedMode, setSelectedMode] = useState(null);
-  const [isSpecific,setIsSpecific] = useState(false);
+  const [isSpecific, setIsSpecific] = useState(false);
   const toggleExpand = (id) =>
     setExpandedOrders((prev) => ({ ...prev, [id]: !prev[id] }));
 
@@ -120,8 +121,8 @@ const OrdersDashboard = () => {
     (state) => state.secSelectedOrganization.secSelectedOrg,
   );
 
- const discountBasedOnGrossAmount =
-  org?.configurations?.[0]?.discountBasedOnGrossAmount ?? false;
+  const discountBasedOnGrossAmount =
+    org?.configurations?.[0]?.discountBasedOnGrossAmount ?? false;
 
  const queryClient = useQueryClient(); // ✅ uncomment/move this to here
 
@@ -166,20 +167,20 @@ const { data, refetch: refreshHook } = useQuery({
           : Array.isArray(response.data)
             ? response.data
             : [];
-           const discountCharges = additionalChargesResponse.filter((charge) =>
-  charge.name?.toLowerCase().includes("discount")
-);
+        const discountCharges = additionalChargesResponse.filter((charge) =>
+          charge.name?.toLowerCase().includes("discount"),
+        );
 
-setAdditionalCharges(discountCharges);
+        setAdditionalCharges(discountCharges);
 
-if (discountCharges.length > 0) {
-  setSelectedAdditionalChargeData(discountCharges[0]._id);
-} else {
-  setSelectedAdditionalChargeData(additionalChargesResponse[0]?._id);
-}
+        if (discountCharges.length > 0) {
+          setSelectedAdditionalChargeData(discountCharges[0]._id);
+        } else {
+          setSelectedAdditionalChargeData(additionalChargesResponse[0]?._id);
+        }
         setAllAdditionalChargesFromRedux(additionalChargesResponse);
       }
-console.log(selectedAdditionalChargeData);
+      console.log(selectedAdditionalChargeData);
       // ✅ Now SAFE to filter
       const discountCharges = additionalChargesResponse.filter((charge) =>
         charge.name.toLowerCase().includes("discount"),
@@ -222,11 +223,11 @@ console.log(selectedAdditionalChargeData);
     fetchData();
   }, []);
 
-useEffect(() => {
-  if (data?.data) {
-    setOrders(data.data);
-  }
-}, [data]);
+  useEffect(() => {
+    if (data) {
+      setOrders(data?.data);
+    }
+  }, [data, selectedDate]);
 
   const { data: paymentTypeData } = useFetch(
     `/api/sUsers/getPaymentType/${cmp_id}`,
@@ -466,7 +467,7 @@ useEffect(() => {
   // function used to perform print  with kot
   const handleKotPrint = (data, batchNo) => {
     let newItems = data?.items || [];
-console.log(data);
+    console.log(data);
     if (batchNo !== null && batchNo !== undefined && batchNo !== "") {
       console.log(batchNo);
       const batchData = data.kitchenBatches.find(
@@ -489,7 +490,7 @@ console.log(data);
           });
       }
     }
-    console.log(data)
+    console.log(data);
     const orderData = {
       kotNo: data?.voucherNumber,
       tableNo: data?.tableNumber,
@@ -498,7 +499,7 @@ console.log(data);
       customerName: data?.customer?.name,
       guestName: data?.customer?.guestName,
       type: data?.type,
-      roomName:data?.roomId?.roomName
+      roomName: data?.roomId?.roomName,
     };
 
     setSelectedMode(null);
@@ -572,8 +573,6 @@ console.log(data);
     const role = urlParams.get("role") || "reception";
     setUserRole(role);
   }, []);
-
-
 
   useEffect(() => {
     if (salePrintData) {
@@ -811,16 +810,15 @@ console.log(data);
       );
 
       if (response.status === 200 || response.status === 201) {
- setOrders((prev) =>
-    prev.map((order) =>
-      selectedKotData.voucherNumber.some(
-        (selected) => selected.voucherNumber === order.voucherNumber
-      )
-        ? { ...order, paymentCompleted: true , status:"completed"  }
-        : order
-    )
-  );
-
+        setOrders((prev) =>
+          prev.map((order) =>
+            selectedKotData.voucherNumber.some(
+              (selected) => selected.voucherNumber === order.voucherNumber,
+            )
+              ? { ...order, paymentCompleted: true, status: "completed" }
+              : order,
+          ),
+        );
 
         toast.success(
           isComplimentary
@@ -916,9 +914,8 @@ console.log(data);
 
     let roomDetails = null;
     let itemList = selectedKot.flatMap((item) => {
-
       let findOne = filteredOrders.find((order) => order._id == item.id);
-      
+
       if (findOne) {
         if (!roomDetails && findOne.roomId) {
           roomDetails = {
@@ -1086,12 +1083,11 @@ console.log(data);
     }
     setShowVoucherPdf(false);
     setShowPaymentModal(true);
-    
   };
 
   console.log("selectedKot", showPaymentModal);
 
-  const handleEditKot = (kotData,batchNo,order) => {
+  const handleEditKot = (kotData, batchNo, order) => {
     if (kotData?.paymentCompleted) {
       toast.error("Kot Payment is completed so you can't edit");
       return;
@@ -1101,7 +1097,9 @@ console.log(data);
     //   toast.error("Kot is already completed so you can't edit");
     //   return;
     // }
-    navigate("/sUsers/RestaurantDashboard", { state: { kotData,batchNo,order} });
+    navigate("/sUsers/RestaurantDashboard", {
+      state: { kotData, batchNo, order },
+    });
   };
 
   const handlePrint = useReactToPrint({
@@ -1135,7 +1133,6 @@ console.log(data);
   }, [selectedKot]);
 
   const handlePrintShow = () => {
-
     let updatedData = { ...printData.salesRecord, ...printData?.kotData };
     console.log(updatedData);
     navigate(`/sUsers/sharesalesThreeInch2/${true}`, {
@@ -1195,20 +1192,18 @@ console.log(data);
   const handleSpecificItemSale = (data) => {
     console.log("data", data);
     setOrders((prevOrders) =>
-  prevOrders.map((order) => {
-    const matchedItem = data.find((item) => item._id === order._id);
+      prevOrders.map((order) => {
+        const matchedItem = data.find((item) => item._id === order._id);
 
-    if (matchedItem) {
-      return { ...order, ...matchedItem };
-    }
+        if (matchedItem) {
+          return { ...order, ...matchedItem };
+        }
 
-    return order;
-  })
-);
-    setSpecificSelectedKotItemWise(data)
-  }
-
-
+        return order;
+      }),
+    );
+    setSpecificSelectedKotItemWise(data);
+  };
 
   return (
     <>
@@ -1751,7 +1746,11 @@ console.log(order)
                       <div className="flex flex-nowrap gap-3 overflow-x-auto pb-1">
                         {orders.map((order) => {
                           const currentStatusConfig =
-                            statusConfig[order.kitchenBatches.length > 0 ? order.kitchenBatches[0].status : order.status];
+                            statusConfig[
+                              order.kitchenBatches.length > 0
+                                ? order.kitchenBatches[0].status
+                                : order.status
+                            ];
                           const isSelected = selectedKot.find(
                             (item) => item.id === order._id,
                           );
@@ -1760,7 +1759,7 @@ console.log(order)
                           const discountedTotal =
                             Number(order.total) - Number(order.discount || 0);
 
-                            console.log(order);
+                          console.log(order);
 
                           return (
                             <div
@@ -1856,6 +1855,7 @@ console.log(order)
                                   <span className="text-sm font-bold text-blue-900">
                                     #{order.voucherNumber}
                                   </span>
+
                                   {(order.isManuallyComplimentary ||
                                     order.foodPlanDetails?.isComplimentary) && (
                                     <span className="text-[9px] bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded-full font-medium">
@@ -1863,6 +1863,16 @@ console.log(order)
                                     </span>
                                   )}
                                 </div>
+                                {order.salesNumber && (
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-xs font-bold text-blue-500">
+                                      SNo:
+                                    </span>
+                                    <span className="text-xs font-bold text-blue-500">
+                                      #{order.salesNumber}
+                                    </span>
+                                  </div>
+                                )}
 
                                 <div className="flex items-center gap-1 text-[10px] text-gray-500">
                                   <MdAccessTime className="w-3 h-3 flex-shrink-0" />
@@ -2102,7 +2112,7 @@ console.log(order)
 
             {/* ── Floating Pay Button ── */}
             {selectedKot.length > 0 && (
-               <div className="fixed bottom-4 right-4 z-50 w-[320px] max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-2xl border border-gray-200 p-4 animate-slideUp">
+              <div className="fixed bottom-4 right-4 z-50 w-[320px] max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-2xl border border-gray-200 p-4 animate-slideUp">
                 <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-4 min-w-[280px]">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
@@ -2121,8 +2131,8 @@ console.log(order)
                     </div>
                     <button
                       onClick={() => {
-                        setSelectedKot([])
-                        refreshHook()
+                        setSelectedKot([]);
+                        refreshHook();
                       }}
                       className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded-full transition-all"
                     >
@@ -2227,27 +2237,39 @@ console.log(order)
 
                                   let subtotal = 0;
 
-                                const flatItems = itemList.map((x) => x.items || []).flat();
-                                
-if (discountBasedOnGrossAmount) {
-  subtotal = flatItems.reduce(
-    (acc, item) => acc + Number(item.total || item.individualTotal || 0),
-    0
-  );
-} else {
-  subtotal = flatItems.reduce((acc, item) => {
-    const total = Number(item.total || item.individualTotal || 0);
+                                  const flatItems = itemList
+                                    .map((x) => x.items || [])
+                                    .flat();
 
-    // ✅ get accurate IGST
-    const igst =
-      Number(item?.GodownList?.[0]?.igstAmount) ||
-      Number(item?.igstAmount) ||
-      Number(item?.totalIgstAmt) ||
-      0;
+                                  if (discountBasedOnGrossAmount) {
+                                    subtotal = flatItems.reduce(
+                                      (acc, item) =>
+                                        acc +
+                                        Number(
+                                          item.total ||
+                                            item.individualTotal ||
+                                            0,
+                                        ),
+                                      0,
+                                    );
+                                  } else {
+                                    subtotal = flatItems.reduce((acc, item) => {
+                                      const total = Number(
+                                        item.total || item.individualTotal || 0,
+                                      );
 
-    return acc + (total - igst);
-  }, 0);
-}
+                                      // ✅ get accurate IGST
+                                      const igst =
+                                        Number(
+                                          item?.GodownList?.[0]?.igstAmount,
+                                        ) ||
+                                        Number(item?.igstAmount) ||
+                                        Number(item?.totalIgstAmt) ||
+                                        0;
+
+                                      return acc + (total - igst);
+                                    }, 0);
+                                  }
 
                                   console.log(subtotal);
 
@@ -2372,13 +2394,13 @@ if (discountBasedOnGrossAmount) {
                           </span>
                         </label>
                       </div>
-                          <div className="mt-3 p-2 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="mt-3 p-2 bg-green-50 border border-green-200 rounded-lg">
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input
                             type="checkbox"
                             checked={isSpecific}
                             onChange={(e) => {
-                              refreshHook()
+                              refreshHook();
                               setIsSpecific(e.target.checked);
                             }}
                             className="mt-1 w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 flex-shrink-0"
@@ -2416,8 +2438,8 @@ if (discountBasedOnGrossAmount) {
                   <div className="flex gap-2">
                     <button
                       onClick={() => {
-                        setSelectedKot([])
-                        refreshHook()
+                        setSelectedKot([]);
+                        refreshHook();
                       }}
                       className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-all duration-200"
                     >
@@ -2589,7 +2611,7 @@ if (discountBasedOnGrossAmount) {
                         setCashAmount(0);
                         setOnlineAmount(0);
                         setPaymentError("");
-                        setPaymentMethod("credit")
+                        setPaymentMethod("credit");
                         // Reset split payment selections
                         // setSelectedCash("");
                         // setSelectedBank("");
@@ -3107,12 +3129,11 @@ if (discountBasedOnGrossAmount) {
       )}
       {isSpecific && (
         <ItemSelector
-        items={selectedKot}
-        kotData={filteredOrders}
-        onChange = {handleSpecificItemSale}
-        onClose = {() => setIsSpecific(false)}
-     
-         />
+          items={selectedKot}
+          kotData={filteredOrders}
+          onChange={handleSpecificItemSale}
+          onClose={() => setIsSpecific(false)}
+        />
       )}
     </>
   );
