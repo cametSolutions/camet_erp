@@ -197,7 +197,7 @@ export const generatePDF = (
         <tr>
           <th>Bill No</th>
           <th>Date</th>
-          <th>Agent Name</th>
+          <th>Guest Name</th>
           <th>Gross Amount</th>
           <th>CGST</th>
           <th>SGST</th>
@@ -458,7 +458,7 @@ const exportToExcel = (
     [
       "Bill No",
       "Date",
-      "Agent Name",
+      "Guest Name",
       "Gross Amount",
       "CGST",
       "SGST",
@@ -871,7 +871,7 @@ console.log(salesData);
       mealPeriodFilter,
     );
   };
-
+console.log(filteredSalesData);
   return (
     <>
       <TitleDiv
@@ -1095,7 +1095,10 @@ console.log(salesData);
                     Date
                   </th>
                   <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
-                    Agent Name
+                    Guest Name
+                  </th>
+                   <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
+                    Room Name
                   </th>
                   <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
                     Gross Amount
@@ -1193,6 +1196,11 @@ console.log(salesData);
                         <td className="border border-gray-200 px-2 py-1 text-left">
                           {row.guestName || row.partyName}
                         </td>
+                           <td className="border border-gray-200 px-2 py-1 text-center">
+    {row.roomName ||
+      row.items?.map((i) => i.product_name).filter(Boolean).join(", ") ||
+      "-"}
+  </td>
                         <td className="border border-gray-200 px-2 py-1 text-right">
                           {Math.round(gross)}
                         </td>

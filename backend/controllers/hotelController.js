@@ -4479,13 +4479,21 @@ export const getHotelSalesDetails = async (req, res) => {
       },
     ]);
 
-    const salesData = [
+    
+  
+  const salesData = [
       ...new Map(AllSalesData.map((item) => [item.salesNumber, item])).values(),
     ];
 
     // Transform data for frontend consumption
     const transformedData = salesData.map((sale) => {
       console.log("saleeeeeeee", sale);
+
+      const roomName =
+  sale?.items
+    ?.map((item) => item.product_name)
+    ?.filter(Boolean)
+    ?.join(", ") || "";
       // Extract payment information
       let cashAmount = 0,
         bankAmount = 0,
@@ -4634,6 +4642,7 @@ export const getHotelSalesDetails = async (req, res) => {
         tableNumber: sale.tableNumber || "",
         waiterName: sale.waiterName || "",
         roomNumber: sale.roomNumber || "",
+         roomName: roomName,   
         guestName: gusestName || "",
         itemCount: sale.items?.length || 0,
         isHotelSale: sale.isHotelSale || false,
