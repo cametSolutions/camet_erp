@@ -1122,7 +1122,7 @@ const RestaurantPOS = () => {
       updatedItems,
       configurations[0]?.addRateWithTax?.restaurantSale,
     );
-    console.log(finalProductData);
+    console.log(roomDetails);
     // return
     console.log(parentKot);
 
@@ -1273,7 +1273,8 @@ const RestaurantPOS = () => {
       items: orderItems,
       createdAt: new Date(),
       roomName : roomDetails?.roomno,
-      guestName : roomDetails?.guestName
+      guestName : roomDetails?.guestName,
+      foodPlan:roomDetails?.foodPlan || [],
     };
     generateAndPrintKOT(orderData, true, false, companyName);
   };
