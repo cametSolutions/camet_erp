@@ -294,6 +294,7 @@ const salesSchema = new Schema(
     totalPaymentSplits: { type: Number, default: null },
     finalOutstandingAmount: { type: Number, default: null },
     finalAmount: { type: Number, required: true, default: 0 },
+    uniqueSaleNumber: {type: Number,default: null,},
 
     paymentSplittingData: {
       type: [paymentSplitSchema],
@@ -322,6 +323,26 @@ const salesSchema = new Schema(
     timestamps: true,
   },
 );
+
+salesSchema.pre("save", async function (next) {
+  try {
+    if (!this.isNew || this.uniqueSaleNumber) {
+      return next();
+    }
+
+    const lastSale = await this.constructor
+      .findOne({ cmp_id: this.cmp_id })
+      .sort({ uniqueSaleNumber: -1 })
+      .select("uniqueSaleNumber");
+
+    this.uniqueSaleNumber =
+      Number(lastSale?.uniqueSaleNumber || 0) + 1;
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
 
 // 1. Primary unique identifier (sales number per company)
 salesSchema.index(
