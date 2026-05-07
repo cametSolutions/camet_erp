@@ -97,7 +97,7 @@ const RoomSwapModal = ({
 const flattenedGuests = useMemo(() => {
   return (checkedInGuests || []).flatMap((guest) =>
     (guest?.selectedRooms || [])
-      .filter((room) =>   (!room?.isSwapped && !room?.swappingDateFrom))
+      .filter((room) =>   (!room?.isSwapped))
       .map((room, index) => ({
         key: `${guest?._id}-${room?.roomId?._id || room?.roomId}-${index}`,
         _id: guest?._id,

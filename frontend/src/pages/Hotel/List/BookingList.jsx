@@ -651,6 +651,7 @@ console.log(totalAmount,advanceAmount,restaurantSubTotal);
         );
 
         let bookingData = res?.data?.bookingData || [];
+        console.log("bookingData", bookingData[0]);
 
         if (location.pathname === "/sUsers/checkInList") {
           bookingData = bookingData.flatMap((booking) => {
@@ -1739,9 +1740,9 @@ console.log(totalAmount,advanceAmount,restaurantSubTotal);
 
             <div
               className="w-40 text-center text-gray-700 truncate text-xs"
-              title={el?.customerId?.partyName}
+              title={el?.guestId?.partyName}
             >
-              {el?.customerId?.partyName || "-"}
+              {el?.guestId?.partyName || "-"}
             </div>
 
             {/* 🔹 ROOM CLICK */}
@@ -1806,7 +1807,7 @@ console.log(totalAmount,advanceAmount,restaurantSubTotal);
 
             <div className="w-28 text-center text-gray-800 font-semibold text-xs">
               ₹
-              {el?.grandTotal
+              {el?.displayTotal > 0 ? el?.displayTotal : el?.grandTotal
                 ? formatCurrency(el.roomTotal).replace("₹", "")
                 : "00.00"}
             </div>

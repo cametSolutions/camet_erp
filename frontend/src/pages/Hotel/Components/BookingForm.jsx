@@ -678,6 +678,8 @@ const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1)
       setSelectedGuest(party);
     }
 
+console.log(party);
+
     if (!party) {
       if (!isGuest) {
         setFormData((prev) => ({
@@ -1014,7 +1016,7 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
     
  if (!formData.customerId) {
     try {
-      const res = await api.get(`/api/sUsers/PartyList/${cmpid}`, {
+      const res = await api.get(`/api/sUsers/PartyList/${cmp_id}`, {
         params: {
           page: 1,
           limit: 50,
@@ -1079,6 +1081,8 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
       );
       return;
     }
+
+    console.log("formData", formData);
 
     let customerId = formData.customerId?.trim?.() || formData.customerId || "";
     let customerName = formData.customerName.trim(); // Use trimmed name
@@ -1185,6 +1189,7 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
           cpm_id: cmp_id,
           guestName,
         };
+        console.log(dataObject);
 
         const res = await api.post("/api/sUsers/addParty", dataObject, {
           headers: { "Content-Type": "application/json" },
@@ -1368,6 +1373,7 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
 
   const handleClose = () => setShowPaymentModal(false);
   const handleSearchCustomer = (name, isGuest) => {
+    console.log(name);
     if (isGuest) {
       setFormData((prev) => ({
         ...prev,

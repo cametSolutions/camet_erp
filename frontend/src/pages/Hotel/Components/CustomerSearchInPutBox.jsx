@@ -116,7 +116,7 @@ const duplicateCheckRef = useRef(null);
     checkDuplicateName(term);
   // Always send search term to parent, even when empty
   if (sendSearchToParent) {
-    sendSearchToParent("", isGuest);
+    sendSearchToParent(term, isGuest);
   }
 }, [fetchParties, sendSearchToParent,checkDuplicateName]);
 
