@@ -709,13 +709,14 @@ export const getKotDash = async (req, res) => {
      kot.map(async (kotDoc) => {
     const findSpecificSale = await salesModel.findOne({
       cmp_id,
-     "convertedFrom.id": String(kotDoc._id),
+     "convertedFrom.voucherNumber": kotDoc.voucherNumber,
     })
       if (kotDoc.paymentCompleted) {
         return {
           ...kotDoc,
           items: kotDoc.items || [],   // ← directly from DB, no recalculation
           total: kotDoc.total || 0,    // ← directly from DB
+          salesNumber: findSpecificSale?.salesNumber
         };
       }
       const recalculatedItems = (kotDoc?.items || [])

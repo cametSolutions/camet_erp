@@ -6216,11 +6216,11 @@ export const getOccupancyCheckoutReport = async (req, res) => {
 
       (doc?.selectedRooms || []).forEach((room) => {
         const pax = Number(room?.pax || 0);
-        const tariff = Number(
+        const tariff = Number(room?.baseAmount ||
           room?.amountAfterTax ||
             room?.totalAmount ||
             room?.baseAmountWithTax ||
-            room?.baseAmount ||
+            
             0,
         );
 

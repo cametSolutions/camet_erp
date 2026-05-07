@@ -1710,9 +1710,9 @@ function BookingList() {
 
             <div
               className="w-40 text-center text-gray-700 truncate text-xs"
-              title={el?.guestId?.partyName}
+              title={el?.customerId?.partyName}
             >
-              {el?.guestId?.partyName || "-"}
+              {el?.customerId?.partyName || "-"}
             </div>
 
             {/* 🔹 ROOM CLICK */}

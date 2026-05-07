@@ -253,7 +253,7 @@ if( b.voucherNumber == "CO-823-2025"){
 
     return {
       ...b.toObject(),
-      displayTotal: displayTotal.length > 0 ? displayTotal.reduce((total, sale) => total + Number(sale.finalAmount || 0), 0) : 0,
+      // displayTotal: displayTotal.length > 0 ? displayTotal.reduce((total, sale) => total + Number(sale.finalAmount || 0), 0) : 0,
       restaurantSubTotal: checkInData.totalAmount,
       restaurantPaymentSplittingData: [
         ...(specificSale?.paymentSplittingData || []),
